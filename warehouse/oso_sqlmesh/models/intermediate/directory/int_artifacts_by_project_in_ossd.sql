@@ -136,6 +136,21 @@ WITH projects AS (
     'DEFILLAMA_PROTOCOL' AS artifact_type
   FROM projects
   CROSS JOIN UNNEST(projects.defillama) AS @unnested_struct_ref(unnested_defillama)
+), ossd_funding AS (
+  SELECT
+    projects.project_id,
+    funding.to_project_name AS artifact_source_id,
+    funding.funding_source AS artifact_source,
+    funding.funding_namespace AS artifact_namespace,
+    funding.to_project_name AS artifact_name,
+    CONCAT(
+      'https://www.opensource.observer/projects/',
+      funding.to_project_name
+    ) AS artifact_url,
+    'WALLET' AS artifact_type
+  FROM oso.stg_ossd__current_funding AS funding
+  JOIN oso.int_projects AS projects
+    ON funding.to_project_name = projects.project_name
 ), all_artifacts AS (
   SELECT
     project_id,
@@ -206,6 +221,16 @@ WITH projects AS (
     artifact_name,
     artifact_url
   FROM all_defillama
+  UNION ALL
+  SELECT
+    project_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  FROM ossd_funding
 ), all_normalized_artifacts AS (
   SELECT DISTINCT
     project_id,

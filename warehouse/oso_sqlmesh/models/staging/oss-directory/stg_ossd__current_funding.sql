@@ -1,5 +1,5 @@
 MODEL (
-  name oso.stg_ossd__funding,
+  name oso.stg_ossd__current_funding,
   description 'The most recent view of funding information from the ossd source',
   dialect trino,
   kind FULL,
@@ -9,7 +9,7 @@ MODEL (
 );
 
 SELECT
-  @oso_entity_id(
+  @oso_id(
     'OSS_FUNDING',
     'oso',
     CONCAT(
@@ -20,11 +20,12 @@ SELECT
   ) AS funding_id,
   'OSS_FUNDING' AS funding_source,
   'oso' AS funding_namespace,
-  funding.to_project_name,
-  funding.amount,
-  funding.funding_date,
-  funding.from_funder_name,
-  funding.grant_pool_name,
-  funding.metadata,
+  LOWER(funding.to_project_name) AS to_project_name,
+  CAST(REPLACE(COALESCE(CAST(funding.amount AS VARCHAR), '0'), ',', '')
+    AS DOUBLE) AS amount,
+  funding.funding_date::TIMESTAMP AS funding_date,
+  LOWER(funding.from_funder_name) AS from_funder_name,
+  LOWER(funding.grant_pool_name) AS grant_pool_name,
+  funding.metadata::JSON AS metadata,
   funding.file_path
 FROM @oso_source('bigquery.ossd.funding') AS funding
