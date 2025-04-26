@@ -184,11 +184,13 @@ jobs:
 
       - name: Lint (Node)
         run: pnpm lint
-        if: ${{ always() && steps.supabase.conclusion == 'success' && matrix.component == 'node' }}
+        if: ${{ always() && matrix.component == 'node' }}
+        #if: ${{ always() && steps.supabase.conclusion == 'success' && matrix.component == 'node' }}
 
       - name: Test (Node)
         run: pnpm test
-        if: ${{ always() && steps.supabase.conclusion == 'success' &&  matrix.component == 'node' }}
+        if: ${{ always() && matrix.component == 'node' }}
+        #if: ${{ always() && steps.supabase.conclusion == 'success' &&  matrix.component == 'node' }}
 
       # ─────────────────────────────────────────────────────────────────────
       # dbt steps (deprecated)
