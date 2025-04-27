@@ -33,6 +33,7 @@ Open Source Observer is a free analytics suite that helps funders measure the im
   - `/dbt`: dbt configuration
   - `/docker`: Docker configuration
   - `/metrics_tools`: Python utilities for managing data
+  - `/oso_agent`: OSO agent
   - `/oso_dagster`: Dagster configuration for orchestrating software-defined assets
   - `/oso_sqlmesh`: sqlmesh configuration
   - `/pyoso`: Python package for `pyoso`

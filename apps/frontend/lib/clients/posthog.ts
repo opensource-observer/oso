@@ -1,7 +1,7 @@
 import { PostHog } from "posthog-node";
 import { POSTHOG_HOST, POSTHOG_KEY } from "../config";
 
-export default function PostHogClient() {
+function PostHogClient() {
   const posthogClient = new PostHog(POSTHOG_KEY, {
     host: POSTHOG_HOST,
     flushAt: 1,
@@ -9,3 +9,5 @@ export default function PostHogClient() {
   });
   return posthogClient;
 }
+
+export { PostHogClient };
