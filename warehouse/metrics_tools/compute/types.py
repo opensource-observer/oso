@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from metrics_tools.definition import MetricModelDefinition
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from sqlmesh.core.dialect import parse_one
+from sqlmesh.core.dialect import exp, parse_one
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,8 @@ DUCKDB_TO_PANDAS_TYPE_MAP = {
     "BLOB": "bytes",
     "BYTEA": "bytes",
     "NUMERIC": "float64",
+    "DECIMAL": "float64",
+    "DECIMAL(18, 3)": "float64",
 }
 
 
@@ -59,7 +61,18 @@ class ColumnsDefinition(BaseModel):
 
     def columns_as(self, dialect: str) -> t.List[t.Tuple[str, str]]:
         return [
-            (col_name, parse_one(col_type, dialect=self.dialect).sql(dialect=dialect))
+            (
+                col_name,
+                # Because of clickhouse, we need to do this workaround to remove the
+                # Nullable references.
+                exp.DataType.build(
+                    dtype=parse_one(
+                        col_type, into=exp.DataType, dialect=self.dialect
+                    ).sql(dialect=self.dialect),
+                    dialect=dialect,
+                    nullable=False,
+                ).sql(dialect=dialect),
+            )
             for col_name, col_type in self.columns
         ]
 

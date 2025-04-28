@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { Provider } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
 import { assertNever, spawn } from "@opensource-observer/utils";
 import { supabaseClient } from "../../lib/clients/supabase";
 import { RegistrationProps } from "../../lib/types/plasmic";
@@ -53,16 +54,23 @@ function AuthActions(props: AuthActionsProps) {
     scopes,
     redirectOnComplete,
   } = props;
+  const posthog = usePostHog();
   const router = useRouter();
   const path = usePathname();
   const signInWithOAuth = async () => {
     const redirect = `${PROTOCOL}://${DOMAIN}/${redirectOnComplete ?? path}`;
     const ensureProvider = provider ?? DEFAULT_PROVIDER;
+    const ensureScopes = scopes ?? DEFAULT_SCOPES[ensureProvider];
+    posthog.capture("user_login", {
+      redirect,
+      scopes: ensureScopes,
+      provider: ensureProvider,
+    });
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: ensureProvider,
       options: {
         redirectTo: redirect,
-        scopes: scopes ?? DEFAULT_SCOPES[ensureProvider],
+        scopes: ensureScopes,
         queryParams: {
           access_type: "offline",
           prompt: "consent",
@@ -74,6 +82,11 @@ function AuthActions(props: AuthActionsProps) {
 
   const signOut = async () => {
     const { error } = await supabaseClient.auth.signOut();
+    // Make sure we dis-associate the logged in user
+    posthog.capture("user_logout", {
+      redirect: redirectOnComplete,
+    });
+    posthog.reset();
     console.log("Supabase signout: ", error);
     if (redirectOnComplete) {
       router.push(redirectOnComplete);

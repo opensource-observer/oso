@@ -48,18 +48,53 @@ pnpm start
 
 ### GraphQL queries
 
-We codegen types for all GraphQL queries. If you make changes to the GraphQL schema (e.g. on Hasura), make sure to run
+:::tip
+The default `pnpm build` will handle all of this.
+:::
+
+We self-host an Apollo gateway in Next.js/Vercel, which routes all requests to Hasura.
+If the Hasura schema changes, we need to regenerate the supergraph schema for Apollo:
 
 ```bash
-pnpm graphql:compile
+pnpm graphql:schema
+```
+
+We codegen TypeScript types for all GraphQL queries.
+If you make changes to the GraphQL schema (e.g. on Hasura), make sure to run:
+
+```bash
+pnpm graphql:codegen
 ```
 
 ## Deploy
 
 Currently, all deployments are automatically handled by Vercel's GitHub app.
 
-## Architecture
+## Supabase Migrations
 
-More coming...
+For updating the database schema or functions, make sure to put it in a migration.
 
-All data is accessed through a Hasura GraphQL engine. In the future, we may be able to run this on Cloudflare workers/pages in the edge runtime due to this architecture decision.
+```bash
+npx supabase migration new
+```
+
+After editing the migration, you can apply it to production with:
+
+```bash
+npx supabase db push
+```
+
+If you need to see which migrations have been applied, you can run:
+
+```bash
+pnpm migration list
+```
+
+Then, to codegen all Supabase schemas as TypeScript types:
+
+```bash
+pnpm supabase:gentypes
+```
+
+For more details, check out the
+[Supabase docs](https://supabase.com/docs/reference/cli/supabase-migration).

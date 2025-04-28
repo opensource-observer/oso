@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { useAsync } from "react-use";
+import { usePostHog } from "posthog-js/react";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
@@ -7,9 +8,7 @@ import {
 } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { logger } from "../../lib/logger";
-import { clientAnalytics } from "../../lib/clients/segment";
 import { supabaseClient } from "../../lib/clients/supabase";
-import { spawn } from "@opensource-observer/utils";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
 
@@ -52,6 +51,7 @@ function AuthRouter(props: AuthRouterProps) {
     testNoAuth,
   } = props;
   const key = variableName ?? DEFAULT_PLASMIC_VARIABLE;
+  const posthog = usePostHog();
 
   const {
     value: data,
@@ -67,17 +67,12 @@ function AuthRouter(props: AuthRouterProps) {
     const {
       data: { session },
     } = await supabaseClient.auth.getSession();
-    // Identify the user via Segment
+    // Identify the user via PostHog
     if (user) {
-      spawn(
-        clientAnalytics!.identify({
-          userId: user.id,
-          traits: {
-            name: user.user_metadata?.name,
-            email: user.email,
-          },
-        }),
-      );
+      posthog?.identify(user.id, {
+        name: user.user_metadata?.name,
+        email: user.email,
+      });
     }
 
     console.log("User: ", user);

@@ -3,42 +3,56 @@ import "server-only";
 import { type NextRequest } from "next/server";
 import { supabasePrivileged } from "../clients/supabase";
 import { User as SupabaseUser } from "@supabase/supabase-js";
-import { serverAnalytics } from "../clients/segment";
 
 type AnonUser = {
   role: "anonymous";
 };
-
-type User = {
-  role: "user";
+type UserDetails = {
   userId: string;
   email?: string;
   name: string;
 };
+type NormalUser = UserDetails & {
+  role: "user";
+};
+type AdminUser = UserDetails & {
+  role: "admin";
+};
 
-export type Session = AnonUser | User;
+type User = AnonUser | NormalUser | AdminUser;
 
 // HTTP headers
 const AUTH_PREFIX = "bearer";
 
 // Supabase schema
+//// admin_users table
+const ADMIN_USER_TABLE = "admin_users";
+const ADMIN_USER_USER_ID_COLUMN = "user_id";
+const ADMIN_USER_ALL_COLUMNS = `${ADMIN_USER_USER_ID_COLUMN}`;
+//// api_keys table
 const API_KEY_TABLE = "api_keys";
-const USER_ID_COLUMN = "user_id";
-const API_KEY_COLUMN = "api_key";
-const DELETED_COLUMN = "deleted_at";
-const ALL_COLUMNS = `${USER_ID_COLUMN},${API_KEY_COLUMN},${DELETED_COLUMN}`;
+const API_KEY_USER_ID_COLUMN = "user_id";
+const API_KEY_API_KEY_COLUMN = "api_key";
+const API_KEY_DELETED_COLUMN = "deleted_at";
+const API_KEY_ALL_COLUMNS = `${API_KEY_USER_ID_COLUMN},${API_KEY_API_KEY_COLUMN},${API_KEY_DELETED_COLUMN}`;
 
 const makeAnonUser = (): AnonUser => ({
   role: "anonymous",
 });
-const makeUser = (user: SupabaseUser): User => ({
+const makeNormalUser = (user: SupabaseUser): NormalUser => ({
   role: "user",
   userId: user.id,
   email: user.email,
   name: user.user_metadata.name,
 });
+const makeAdminUser = (user: SupabaseUser): AdminUser => ({
+  role: "admin",
+  userId: user.id,
+  email: user.email,
+  name: user.user_metadata.name,
+});
 
-async function getSession(request: NextRequest): Promise<Session> {
+async function getUser(request: NextRequest): Promise<User> {
   const headers = request.headers;
   const auth = headers.get("authorization");
 
@@ -57,8 +71,8 @@ async function getSession(request: NextRequest): Promise<Session> {
   // Get the user by API token
   const { data: keyData, error: keyError } = await supabasePrivileged
     .from(API_KEY_TABLE)
-    .select(ALL_COLUMNS)
-    .eq(API_KEY_COLUMN, token);
+    .select(API_KEY_ALL_COLUMNS)
+    .eq(API_KEY_API_KEY_COLUMN, token);
 
   if (keyError || !keyData) {
     console.warn(`auth: Error retrieving API keys => anon`, keyError);
@@ -79,21 +93,40 @@ async function getSession(request: NextRequest): Promise<Session> {
     console.warn(`auth: Error retrieving user data => anon`, userError);
     return makeAnonUser();
   }
+  const user = userData.user;
 
-  console.log(`auth: API key and user valid valid => user`);
-  return makeUser(userData.user);
+  // Check for admins
+  const { data: adminData, error: adminError } = await supabasePrivileged
+    .from(ADMIN_USER_TABLE)
+    .select(ADMIN_USER_ALL_COLUMNS)
+    .eq(ADMIN_USER_USER_ID_COLUMN, userId);
+
+  if (adminError || !adminData) {
+    console.warn(
+      `auth: Valid key, error retrieving admin users => user`,
+      adminError,
+    );
+    return makeNormalUser(user);
+  } else if (adminData.length > 0) {
+    console.log(`auth: Valid key and admin => admin`);
+    return makeAdminUser(user);
+  }
+
+  console.log(`auth: API key and user valid => user`);
+  return makeNormalUser(userData.user);
 }
 
-export async function verifySession(request: NextRequest) {
+/**
+async function verifySession(request: NextRequest) {
   const session = await getSession(request);
-
+  
   const trackParams = {
     event: "api_call",
     properties: {
       path: request.nextUrl.pathname,
     },
   };
-
+  
   if (session.role === "user") {
     serverAnalytics!.track({
       userId: session.userId,
@@ -105,6 +138,10 @@ export async function verifySession(request: NextRequest) {
       ...trackParams,
     });
   }
-
+  
   return session;
 }
+*/
+
+export { getUser };
+export type { AnonUser, NormalUser, AdminUser, User };
