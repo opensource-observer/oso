@@ -10,6 +10,7 @@ MODEL (
 WITH manual_mappings AS (
   SELECT project_id, url FROM (VALUES
     ('0xc377ed1b705bcc856a628f961f1e7c8ca943e6f3727b7c179c657e227e8e852c', 'https://github.com/miguelmota/merkletreejs'),
+    ('0x48220ef1d103189cd918e9290db4c4b99b463ae2817fb5ef0cc54556a7961b6f', 'https://github.com/miguelmota/keccak256'),
     ('0xcc8d03e014e121d10602eeff729b755d5dc6a317df0d6302c8a9d3b5424aaba8', 'https://github.com/ethereum/solc-js')
   ) AS x (project_id, url)
 ),
