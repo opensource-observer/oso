@@ -15,17 +15,17 @@ Every event is associated with an artifact that belongs to a single project. For
 
 The `to` and `from` relationships between artifacts in an event are critical to OSO's ability to understand the impact of a project's activities and situate it in the context of overall network/ecosystem activity.
 
-## Event Sources
-
----
-
-All sources of event data are associated with a unique `event_source`. We are adding new event sources all the time. The `event_source` is the same as the `artifact_source` for the artifacts the `to` and `from` artifacts in the event.
-
 ## Event Sources and Types
 
 ---
 
-OSO tracks events from multiple sources, each with its own set of event types. Below is a list of key event sources and their associated event types.
+OSO tracks events from multiple sources, each with its own set of event types.
+
+All sources of event data are associated with a unique `event_source`. We are adding new event sources all the time. The `event_source` is the same as the `artifact_source` for the artifacts the `to` and `from` artifacts in the event.
+
+Below is a list of key event sources and their associated event types.
+
+---
 
 ### GitHub Events (GITHUB)
 
@@ -151,15 +151,11 @@ All events in OSO follow a consistent schema with the following key fields:
 | `from_artifact_source_id` | Source ID of the source artifact                        |
 | `amount`                  | Numeric value associated with the event (if applicable) |
 
-## Using Events for Analysis
+## Using Events for Analysis with pyoso
 
 ---
 
 Events form the foundation for many OSO metrics and analyses. Raw and processed event data is available to the community via pyoso.
-
-## Examples with pyoso
-
----
 
 Here are examples of how to use pyoso to access event data:
 
