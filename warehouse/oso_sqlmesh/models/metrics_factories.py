@@ -17,7 +17,7 @@ timeseries_metrics(
         "int_issue_event_time_deltas",
         "int_first_of_event_from_artifact__github",
         "int_events_daily__blockchain",
-        "int_events_daily__blockchain_transfers",
+        # "int_events_daily__blockchain_transfers",
         "int_events_daily__4337",
         "int_events_daily__defillama_tvl",
         "int_events_daily__github",
@@ -431,24 +431,24 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=blockchain"],
         ),
-        "transfer_volume": MetricQueryDef(
-            ref="blockchain/transfer_volume.sql",
-            time_aggregations=[
-                "daily",
-                "weekly",
-                "monthly",
-                "quarterly",
-                "biannually",
-                "yearly",
-            ],
-            entity_types=["artifact", "project", "collection"],
-            over_all_time=True,
-            metadata=MetricMetadata(
-                display_name="Transfer Volume",
-                description="Metrics related to volume of blockchain transfers",
-            ),
-            additional_tags=["data_category=blockchain"],
-        ),
+        # "transfer_volume": MetricQueryDef(
+        #     ref="blockchain/transfer_volume.sql",
+        #     time_aggregations=[
+        #         "daily",
+        #         "weekly",
+        #         "monthly",
+        #         "quarterly",
+        #         "biannually",
+        #         "yearly",
+        #     ],
+        #     entity_types=["artifact", "project", "collection"],
+        #     over_all_time=True,
+        #     metadata=MetricMetadata(
+        #         display_name="Transfer Volume",
+        #         description="Metrics related to volume of blockchain transfers",
+        #     ),
+        #     additional_tags=["data_category=blockchain"],
+        # ),
         "contract_invocations": MetricQueryDef(
             ref="blockchain/contract_invocations.sql",
             time_aggregations=[
