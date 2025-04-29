@@ -23,6 +23,7 @@ timeseries_metrics(
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
+        "int_events__funding_awarded",
     ],
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
@@ -518,6 +519,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Funding Received",
                 description="Metrics related to funding received",
+            ),
+            additional_tags=["data_category=funding"],
+        ),
+        "funding_awarded": MetricQueryDef(
+            ref="funding/funding_awarded.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Funding Awarded",
+                description="Metrics related to funding awarded",
             ),
             additional_tags=["data_category=funding"],
         ),
