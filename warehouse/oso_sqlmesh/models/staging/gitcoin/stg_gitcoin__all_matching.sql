@@ -4,7 +4,10 @@ MODEL (
   kind full,
   cron '@daily',
   dialect trino,
-  grain (time, project_recipient_address, gitcoin_project_id, gitcoin_round_id, chain_id)
+  grain (time, project_recipient_address, gitcoin_project_id, gitcoin_round_id, chain_id),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT distinct
@@ -12,7 +15,6 @@ SELECT distinct
   timestamp::DATE AS time,
   round_id::VARCHAR AS gitcoin_round_id,
   round_num::INTEGER AS round_number,
-  round_name::VARCHAR as round_name,
   chain_id::INTEGER AS chain_id,
   project_id::VARCHAR AS gitcoin_project_id,
   trim(title)::VARCHAR AS project_application_title,

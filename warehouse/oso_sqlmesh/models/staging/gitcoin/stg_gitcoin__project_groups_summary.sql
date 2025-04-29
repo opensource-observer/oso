@@ -1,13 +1,13 @@
 MODEL (
   name oso.stg_gitcoin__project_groups_summary,
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column latest_project_application_timestamp,
-    batch_size 365,
-    batch_concurrency 1
-  ),
-  start @github_incremental_start,
+  description "Staging table for data on Gitcoin project groups",
+  kind full,
   cron '@daily',
-  grain (latest_project_application_timestamp, gitcoin_group_id, latest_gitcoin_project_id)
+  dialect trino,
+  grain (latest_project_application_timestamp, gitcoin_group_id, latest_gitcoin_project_id),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
 );
 
 SELECT
@@ -23,4 +23,3 @@ SELECT
   trim(lower(latest_project_twitter))::VARCHAR AS latest_project_twitter,
   trim(lower(latest_project_github))::VARCHAR AS latest_project_github
 FROM @oso_source('bigquery.gitcoin.project_groups_summary')
-WHERE latest_created_application BETWEEN @start_dt AND @end_dt
