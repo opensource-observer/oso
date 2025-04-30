@@ -6,6 +6,7 @@ import aiotrino
 import gcsfs
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 GOOGLE_PROJECT = os.environ.get("GOOGLE_PROJECT", "opensource-observer")
 BUCKET = os.environ.get("BUCKET_NAME", "oso-iceberg-usc1")
