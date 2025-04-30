@@ -49,7 +49,7 @@ The columns are ["metric_id", "artifact_id", "sample_date", "amount", "unit"].
 For more information on how to run the agent, check the `--help` flag:
 
 ```bash
-% uv run main.py --help
+% uv run warehouse/oso_agent/main.py --help
 Usage: main.py [OPTIONS] COMMAND [ARGS]...
 
   OSO Agent CLI with ReAct capabilities.
