@@ -10,7 +10,7 @@ spec:
         spec:
           containers:
             - name: pynessie-gc
-              image: ghcr.io/projectnessie/oso:latest
+              image: ghcr.io/opensource-observer/oso:latest
               command: ["uv", "run", "pynessie-gc"]
               env:
                 - name: BUKCET_NAME
