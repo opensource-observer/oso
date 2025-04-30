@@ -24,7 +24,7 @@ COPY pyproject.toml uv.lock /usr/src/app/
 RUN ln -s /usr/bin/python3.12 /usr/local/bin/python
 ENV UV_PROJECT_ENVIRONMENT=/usr/local/
 
-RUN uv sync
+RUN uv sync --all-packages
 
 RUN rm -r /usr/src/app/warehouse && \
     rm -r /usr/src/app/ops
