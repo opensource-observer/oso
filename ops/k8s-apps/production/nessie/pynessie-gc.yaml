@@ -21,11 +21,13 @@ spec:
                   value: "8080"
                 - name: TRINO_SCHEMA
                   value: sqlmesh__oso
+                - name: CONCURRENCY_LIMIT
+                  value: "3"
               resources:
                 requests:
                   cpu: 1
                   memory: 1Gi
                 limits:
-                  memory: 1Gi
+                  memory: 2Gi
           restartPolicy: Never
           serviceAccountName: production-nessie
