@@ -108,7 +108,7 @@ members = [
     "warehouse/oso_agent",
     "warehouse/oso_mcp",
     "warehouse/pyoso"
-]
+, "warehouse/pynessie-gc"]
 
 [build-system]
 requires = ["hatchling"]
