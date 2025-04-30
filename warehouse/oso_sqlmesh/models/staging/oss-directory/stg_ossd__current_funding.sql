@@ -21,7 +21,7 @@ SELECT
   'OSS_FUNDING' AS funding_source,
   'oso' AS funding_namespace,
   LOWER(funding.to_project_name) AS to_project_name,
-  COALESCE(funding.amount, 0.0) AS amount,
+  COALESCE(TRY_CAST(funding.amount AS DOUBLE), 0.0) AS amount,
   funding.funding_date AS funding_date,
   LOWER(funding.from_funder_name) AS from_funder_name,
   LOWER(funding.grant_pool_name) AS grant_pool_name,
