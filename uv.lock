@@ -12,6 +12,7 @@ members = [
     "oso",
     "oso-agent",
     "oso-mcp",
+    "pynessie-gc",
     "pyoso",
 ]
 
@@ -310,6 +311,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/49/cf/17f8a6b6b97f77b5981fbce1266913e718daaa3467b46f60a785cbaadc29/asyncache-0.3.1.tar.gz", hash = "sha256:9a1e60a75668e794657489bdea6540ee7e3259c483517b934670db7600bf5035", size = 3797 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2f/94/51927deb4f40872361ec4f5534f68f7a9ce81c4ef20bf5cd765307f4c15d/asyncache-0.3.1-py3-none-any.whl", hash = "sha256:ef20a1024d265090dd1e0785c961cf98b9c32cc7d9478973dcf25ac1b80011f5", size = 3722 },
+]
+
+[[package]]
+name = "asyncio"
+version = "3.4.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/54/054bafaf2c0fb8473d423743e191fcdf49b2c1fd5e9af3524efbe097bafd/asyncio-3.4.3.tar.gz", hash = "sha256:83360ff8bc97980e4ff25c964c7bd3923d333d177aa4f7fb736b019f26c7cb41", size = 204411 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/22/74/07679c5b9f98a7cb0fc147b1ef1cc1853bc07a4eb9cb5731e24732c5f773/asyncio-3.4.3-py3-none-any.whl", hash = "sha256:c4d18b22701821de07bd6aea8b53d21449ec0ec5680645e5317062ea21817d2d", size = 101767 },
 ]
 
 [[package]]
@@ -4222,6 +4232,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/10/ee/c78cd9b1a574b63ce365b6a6f066082dbbc8aee93aacc83d7bc32aed7919/pykube-ng-23.6.0.tar.gz", hash = "sha256:46de8e17ed87c1a1014667d60e7d94a1f3fa2b8037b41e67d32c28b5869af35d", size = 26058 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5b/b9/4292259e80f93163d9ba0c69ccb3d44cf240acbdcb18adbc81a8f8d2e3d6/pykube_ng-23.6.0-py3-none-any.whl", hash = "sha256:63f20f634bfcd83966edec32f892286f75dffb817a2c097434ecc039e558ec8f", size = 26181 },
+]
+
+[[package]]
+name = "pynessie-gc"
+version = "0.1.0"
+source = { editable = "warehouse/pynessie-gc" }
+dependencies = [
+    { name = "aiotrino" },
+    { name = "asyncio" },
+    { name = "gcsfs" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiotrino", specifier = ">=0.2.3" },
+    { name = "asyncio", specifier = ">=3.4.3" },
+    { name = "gcsfs", specifier = ">=2024.12.0" },
 ]
 
 [[package]]
