@@ -10,7 +10,7 @@ TRINO_HOST = os.environ.get("TRINO_HOST", "localhost")
 TRINO_PORT = os.environ.get("TRINO_PORT", "8080")
 TRINO_SCHEMA = os.environ.get("TRINO_SCHEMA", "sqlmesh__oso")
 
-CONCURRENCY_LIMIT = 100
+CONCURRENCY_LIMIT = int(os.environ.get("CONCURRENCY_LIMIT", "10"))
 
 def get_iceberg_table_name(path: str) -> str:
     parts = path.split("/")
