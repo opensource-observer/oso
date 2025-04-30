@@ -9,7 +9,7 @@ MODEL (
   start @blockchain_incremental_start,
   cron '@daily',
   dialect trino,
-  partitioned_by (DAY("bucket_day"), "event_type", "event_source"),
+  partitioned_by (DAY("bucket_day")),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
     has_at_least_n_rows(threshold := 0)
@@ -42,6 +42,7 @@ SELECT
   '' AS from_artifact_namespace,
   from_address AS from_artifact_name,
   from_address AS from_artifact_source_id,
-  amount
+  SUM(amount) AS amount
 FROM txns
 WHERE amount > 0
+GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
