@@ -1,8 +1,11 @@
 import asyncio
+import logging
 import os
 
 import aiotrino
 import gcsfs
+
+logger = logging.getLogger(__name__)
 
 GOOGLE_PROJECT = os.environ.get("GOOGLE_PROJECT", "opensource-observer")
 BUCKET = os.environ.get("BUCKET_NAME", "oso-iceberg-usc1")
@@ -28,11 +31,12 @@ def get_iceberg_table_name(path: str) -> str:
 
 async def delete_iceberg_table(storage_client: gcsfs.GCSFileSystem, path: str):
     folder_name = path.split("/")[-1]
-    print(f"Deleting {folder_name}")
+    logger.info(f"Deleting {folder_name}")
     await storage_client._rm(path, recursive=True)
 
 
 async def _main():
+    logger.info(f"Connecting to Trino at {TRINO_HOST}:{TRINO_PORT}")
     trino_client = aiotrino.dbapi.connect(
         host=TRINO_HOST, port=TRINO_PORT, user="trino", request_timeout=180
     )
@@ -44,6 +48,7 @@ async def _main():
         tables = await cur.fetchall()
         tables_set = set([t[0] for t in tables])
         await cur.close()
+        logger.info(f"Found {len(tables_set)} tables in Trino")
 
         folder_paths = await storage_client._ls(f"{BUCKET}/warehouse/{TRINO_SCHEMA}/")
         deleted_paths = [
@@ -51,7 +56,7 @@ async def _main():
             for path in folder_paths
             if isinstance(path, str) and get_iceberg_table_name(path) not in tables_set
         ]
-        print(f"Found {len(deleted_paths)}/{len(folder_paths)} deleted paths")
+        logger.info(f"Found {len(deleted_paths)}/{len(folder_paths)} deleted paths")
 
         # Run the delete tasks concurrently with a limit
         tasks = set()
@@ -63,6 +68,7 @@ async def _main():
                 )
             tasks.add(asyncio.create_task(delete_iceberg_table(storage_client, path)))
         await asyncio.wait(tasks)
+        logger.info(f"Deleted {len(deleted_paths)} paths")
     finally:
         await trino_client.close()
         if storage_client.session:
