@@ -1,5 +1,4 @@
 import asyncio
-import itertools
 import os
 
 import aiotrino
@@ -11,6 +10,7 @@ TRINO_HOST = os.environ.get("TRINO_HOST", "localhost")
 TRINO_PORT = os.environ.get("TRINO_PORT", "8080")
 TRINO_SCHEMA = os.environ.get("TRINO_SCHEMA", "sqlmesh__oso")
 
+CONCURRENCY_LIMIT = 100
 
 def get_iceberg_table_name(path: str) -> str:
     parts = path.split("/")
@@ -51,15 +51,18 @@ async def _main():
             for path in folder_paths
             if isinstance(path, str) and get_iceberg_table_name(path) not in tables_set
         ]
-
         print(f"Found {len(deleted_paths)}/{len(folder_paths)} deleted paths")
-        await asyncio.gather(
-            *map(
-                delete_iceberg_table,
-                itertools.repeat(storage_client),
-                (p for p in deleted_paths),
-            )
-        )
+
+        # Run the delete tasks concurrently with a limit
+        tasks = set()
+        for path in deleted_paths:
+            if len(tasks) >= CONCURRENCY_LIMIT:
+                # Wait for task to finish before adding a new one
+                _done, tasks = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+            tasks.add(asyncio.create_task(delete_iceberg_table(storage_client, path)))
+        await asyncio.wait(tasks)
     finally:
         await trino_client.close()
         if storage_client.session:
