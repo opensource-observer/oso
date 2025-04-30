@@ -24,8 +24,8 @@ spec:
               resources:
                 requests:
                   cpu: 1
-                  memory: 256Mi
+                  memory: 1Gi
                 limits:
-                  memory: 512Mi
+                  memory: 1Gi
           restartPolicy: Never
           serviceAccountName: production-nessie
