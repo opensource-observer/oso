@@ -4,6 +4,7 @@ packages:
   - "apps/hasura-clickhouse"
   - "lib/oss-artifact-validators"
   - "lib/utils"
+  - "lib/ycb"
   - "ops/external-prs"
   - "ops/github-app-utils"
   - "warehouse/cube"
