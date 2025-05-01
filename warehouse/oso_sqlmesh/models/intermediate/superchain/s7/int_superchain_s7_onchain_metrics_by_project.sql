@@ -227,7 +227,7 @@ qualified_addresses AS (
     APPROX_DISTINCT(
       CASE
         WHEN event_type = 'WORLDCHAIN_VERIFIED_USEROP'
-        OR is_farcaster_user = false
+        OR is_farcaster_user = true
       THEN from_artifact_id
       ELSE NULL
       END
