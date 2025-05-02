@@ -4,8 +4,7 @@ services:
       - "${SQLMESH_TRINO_PORT:-8080}:8080"
     image: "trinodb/trino:472"
     volumes:
-      - ./docker/trino/etc:/usr/lib/trino/etc:ro
-      - ./docker/trino/catalog:/etc/trino/catalog
+      - ./docker/trino/etc:/etc/trino/
 
   nessie:
     hostname: nessie

@@ -5,6 +5,7 @@ import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
 import { HttpError, assertNever, spawn } from "@opensource-observer/utils";
 import { usePostHog } from "posthog-js/react";
+import { EVENTS } from "../../lib/types/posthog";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { supabaseClient } from "../../lib/clients/supabase";
 
@@ -135,7 +136,7 @@ function SupabaseWrite(props: SupabaseWriteProps) {
 
     // Execute query
     const { error, status } = await query;
-    posthog.capture("supabase_write", {
+    posthog.capture(EVENTS.DB_WRITE, {
       tableName,
       actionType,
       status,
