@@ -9,6 +9,7 @@ type AnonUser = {
 };
 type UserDetails = {
   userId: string;
+  keyName: string;
   email?: string;
   name: string;
 };
@@ -19,7 +20,8 @@ type AdminUser = UserDetails & {
   role: "admin";
 };
 
-type User = AnonUser | NormalUser | AdminUser;
+type AuthUser = NormalUser | AdminUser;
+type User = AnonUser | AuthUser;
 
 // HTTP headers
 const AUTH_PREFIX = "bearer";
@@ -32,22 +34,25 @@ const ADMIN_USER_ALL_COLUMNS = `${ADMIN_USER_USER_ID_COLUMN}`;
 //// api_keys table
 const API_KEY_TABLE = "api_keys";
 const API_KEY_USER_ID_COLUMN = "user_id";
+const API_KEY_NAME_COLUMN = "name";
 const API_KEY_API_KEY_COLUMN = "api_key";
 const API_KEY_DELETED_COLUMN = "deleted_at";
-const API_KEY_ALL_COLUMNS = `${API_KEY_USER_ID_COLUMN},${API_KEY_API_KEY_COLUMN},${API_KEY_DELETED_COLUMN}`;
+const API_KEY_ALL_COLUMNS = `${API_KEY_USER_ID_COLUMN},${API_KEY_NAME_COLUMN},${API_KEY_API_KEY_COLUMN},${API_KEY_DELETED_COLUMN}`;
 
 const makeAnonUser = (): AnonUser => ({
   role: "anonymous",
 });
-const makeNormalUser = (user: SupabaseUser): NormalUser => ({
+const makeNormalUser = (user: SupabaseUser, keyName: string): NormalUser => ({
   role: "user",
   userId: user.id,
+  keyName,
   email: user.email,
   name: user.user_metadata.name,
 });
-const makeAdminUser = (user: SupabaseUser): AdminUser => ({
+const makeAdminUser = (user: SupabaseUser, keyName: string): AdminUser => ({
   role: "admin",
   userId: user.id,
+  keyName,
   email: user.email,
   name: user.user_metadata.name,
 });
@@ -86,7 +91,8 @@ async function getUser(request: NextRequest): Promise<User> {
     return makeAnonUser();
   }
 
-  const userId = activeKeys[0].user_id;
+  const activeKey = activeKeys[0];
+  const userId = activeKey.user_id;
   const { data: userData, error: userError } =
     await supabasePrivileged.auth.admin.getUserById(userId);
   if (userError || !userData) {
@@ -106,14 +112,14 @@ async function getUser(request: NextRequest): Promise<User> {
       `auth: Valid key, error retrieving admin users => user`,
       adminError,
     );
-    return makeNormalUser(user);
+    return makeNormalUser(user, activeKey.name);
   } else if (adminData.length > 0) {
     console.log(`auth: Valid key and admin => admin`);
-    return makeAdminUser(user);
+    return makeAdminUser(user, activeKey.name);
   }
 
   console.log(`auth: API key and user valid => user`);
-  return makeNormalUser(userData.user);
+  return makeNormalUser(userData.user, activeKey.name);
 }
 
 /**
@@ -144,4 +150,4 @@ async function verifySession(request: NextRequest) {
 */
 
 export { getUser };
-export type { AnonUser, NormalUser, AdminUser, User };
+export type { AnonUser, NormalUser, AdminUser, AuthUser, User };
