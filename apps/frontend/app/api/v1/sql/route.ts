@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-
 import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
+import { withPostHog } from "../../../../lib/clients/posthog";
+import { getTableNamesFromSql } from "../../../../lib/parsing";
 //import { logger } from "../../../lib/logger";
 
 // Next.js route control
@@ -50,6 +51,17 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Please provide a 'query' parameter", 400);
   }
   try {
+    await withPostHog(async (posthog, userId: string) => {
+      posthog.capture({
+        distinctId: userId,
+        event: "api_call",
+        properties: {
+          type: "sql",
+          models: getTableNamesFromSql(query),
+          query: query,
+        },
+      });
+    }, request);
     const [firstRow, rows] = await doQuery(query);
     const readableStream = mapToReadableStream(firstRow, rows, format);
     return new NextResponse(readableStream, {
