@@ -65,6 +65,7 @@ class AuthenticatedDataSource extends RemoteGraphQLDataSource {
             models: modelNames,
             query: opts.request.query,
             apiKeyName: user.keyName,
+            origin: user.origin,
           },
         });
       }, opts.context.req),

@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
           models: getTableNamesFromSql(query),
           query: query,
           apiKeyName: user.keyName,
+          origin: user.origin,
         },
       });
     }, request);
