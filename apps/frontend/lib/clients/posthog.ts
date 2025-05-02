@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { PostHog } from "posthog-node";
 import { POSTHOG_HOST, POSTHOG_KEY } from "../config";
-import { getUser } from "../auth/auth";
+import { AuthUser, getUser } from "../auth/auth";
 
 /**
  * Use this if you want direct access to the PostHog client
@@ -25,13 +25,13 @@ function PostHogClient() {
  * @param request
  */
 async function withPostHog(
-  fn: (posthog: PostHog, userId: string) => Promise<void>,
+  fn: (posthog: PostHog, user: AuthUser) => Promise<void>,
   request: NextRequest,
 ) {
   const posthog = PostHogClient();
   const user = await getUser(request);
   if (user.role !== "anonymous") {
-    await fn(posthog, user.userId);
+    await fn(posthog, user);
   } else {
     console.warn("PostHog: No user found");
   }
