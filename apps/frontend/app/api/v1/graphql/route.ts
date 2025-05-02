@@ -12,6 +12,7 @@ import { NextRequest } from "next/server";
 import { spawn } from "@opensource-observer/utils";
 import { withPostHog } from "../../../../lib/clients/posthog";
 import { EVENTS } from "../../../../lib/types/posthog";
+import { AuthUser } from "../../../../lib/auth/auth";
 //import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 //import { HASURA_URL } from "../../../../lib/config";
 
@@ -54,15 +55,16 @@ class AuthenticatedDataSource extends RemoteGraphQLDataSource {
     const modelNames = getModelNames(op);
     //console.log(modelNames);
     spawn(
-      withPostHog(async (posthog, userId: string) => {
+      withPostHog(async (posthog, user: AuthUser) => {
         posthog.capture({
-          distinctId: userId,
+          distinctId: user.userId,
           event: EVENTS.API_CALL,
           properties: {
             type: "graphql",
             operation: op.operation,
             models: modelNames,
             query: opts.request.query,
+            apiKeyName: user.keyName,
           },
         });
       }, opts.context.req),
