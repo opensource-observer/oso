@@ -1,6 +1,14 @@
+import { type NextRequest } from "next/server";
 import { PostHog } from "posthog-node";
 import { POSTHOG_HOST, POSTHOG_KEY } from "../config";
+import { getUser } from "../auth/auth";
 
+/**
+ * Use this if you want direct access to the PostHog client
+ * - You will need to call posthog.shutdown() when done
+ * - You will need to call posthog.capture() manually
+ * @returns
+ */
 function PostHogClient() {
   const posthogClient = new PostHog(POSTHOG_KEY, {
     host: POSTHOG_HOST,
@@ -10,4 +18,24 @@ function PostHogClient() {
   return posthogClient;
 }
 
-export { PostHogClient };
+/**
+ * Use this to simplify PostHog usage,
+ * which will automatically identify and teardown
+ * @param fn
+ * @param request
+ */
+async function withPostHog(
+  fn: (posthog: PostHog, userId: string) => Promise<void>,
+  request: NextRequest,
+) {
+  const posthog = PostHogClient();
+  const user = await getUser(request);
+  if (user.role !== "anonymous") {
+    await fn(posthog, user.userId);
+  } else {
+    console.warn("PostHog: No user found");
+  }
+  await posthog.shutdown();
+}
+
+export { PostHogClient, withPostHog };
