@@ -11,7 +11,7 @@ MODEL (
 );
 
 SELECT
-  group_id::VARCHAR AS gitcoin_group_id,
-  project_id::VARCHAR AS gitcoin_project_id,
-  source::VARCHAR AS latest_gitcoin_data_source
+  UPPER(source)::VARCHAR AS source,
+  LOWER(group_id)::VARCHAR AS group_id,
+  LOWER(project_id)::VARCHAR AS project_id
 FROM @oso_source('bigquery.gitcoin.project_lookup')

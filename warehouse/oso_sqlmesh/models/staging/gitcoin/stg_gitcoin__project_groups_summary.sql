@@ -11,15 +11,15 @@ MODEL (
 );
 
 SELECT
-  DATE_TRUNC('DAY', latest_created_application::DATE) AS latest_project_application_timestamp,
-  group_id::VARCHAR AS gitcoin_group_id,
-  latest_created_project_id::VARCHAR AS latest_gitcoin_project_id,
+  CONCAT('GITCOIN_', UPPER(latest_source))::VARCHAR AS source,
+  latest_created_application::TIMESTAMP AS updated_at,
+  LOWER(group_id)::VARCHAR AS group_id,
+  LOWER(latest_created_project_id)::VARCHAR AS project_id,
   total_amount_donated::FLOAT AS total_amount_donated_in_usd,
   application_count::INTEGER AS group_application_count,
-  latest_source::VARCHAR AS latest_gitcoin_data_source,
-  trim(title)::VARCHAR AS project_application_title,
-  lower(latest_payout_address)::VARCHAR AS latest_project_recipient_address,
-  trim(lower(latest_website))::VARCHAR AS latest_project_website,
-  trim(lower(latest_project_twitter))::VARCHAR AS latest_project_twitter,
-  trim(lower(latest_project_github))::VARCHAR AS latest_project_github
+  TRIM(title)::VARCHAR AS project_application_title,
+  TRIM(LOWER(latest_payout_address))::VARCHAR AS payout_address,
+  TRIM(LOWER(latest_website))::VARCHAR AS website,
+  TRIM(LOWER(latest_project_twitter))::VARCHAR AS twitter,
+  TRIM(LOWER(latest_project_github))::VARCHAR AS github
 FROM @oso_source('bigquery.gitcoin.project_groups_summary')
