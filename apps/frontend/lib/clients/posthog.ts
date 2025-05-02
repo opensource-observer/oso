@@ -28,8 +28,9 @@ async function withPostHog(
   fn: (posthog: PostHog, user: AuthUser) => Promise<void>,
   request: NextRequest,
 ) {
-  const posthog = PostHogClient();
   const user = await getUser(request);
+  //console.log(user);
+  const posthog = PostHogClient();
   if (user.role !== "anonymous") {
     await fn(posthog, user);
   } else {
