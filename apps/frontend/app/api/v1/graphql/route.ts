@@ -1,9 +1,17 @@
 import { ApolloServer } from "@apollo/server";
-import { ApolloGateway } from "@apollo/gateway";
+import {
+  ApolloGateway,
+  RemoteGraphQLDataSource,
+  GraphQLDataSourceProcessOptions,
+} from "@apollo/gateway";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
+import { OperationDefinitionNode } from "graphql";
 import { readFileSync } from "fs";
 import path from "path";
 import { NextRequest } from "next/server";
+import { spawn } from "@opensource-observer/utils";
+import { withPostHog } from "../../../../lib/clients/posthog";
+import { EVENTS } from "../../../../lib/types/posthog";
 //import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 //import { HASURA_URL } from "../../../../lib/config";
 
@@ -14,8 +22,60 @@ const supergraphPath = path.join(
 );
 const supergraphSdl = readFileSync(supergraphPath).toString();
 
+/**
+ * Extract all model names from a GraphQL operation
+ * @param operation
+ * @returns
+ */
+function getModelNames(operation: OperationDefinitionNode): string[] {
+  const modelNames: string[] = [];
+  const selectionSet = operation.selectionSet.selections;
+
+  for (const selection of selectionSet) {
+    if (selection.kind === "Field") {
+      const fieldName = selection.name.value;
+      modelNames.push(fieldName);
+    }
+  }
+
+  return modelNames;
+}
+
+/**
+ * Custom Apollo Gateway Data Source,
+ * used to inspect the GraphQL operation in-line
+ */
+class AuthenticatedDataSource extends RemoteGraphQLDataSource {
+  willSendRequest(opts: GraphQLDataSourceProcessOptions) {
+    if (opts.kind !== "incoming operation") {
+      return;
+    }
+    const op = opts.incomingRequestContext.operation;
+    const modelNames = getModelNames(op);
+    //console.log(modelNames);
+    spawn(
+      withPostHog(async (posthog, userId: string) => {
+        posthog.capture({
+          distinctId: userId,
+          event: EVENTS.API_CALL,
+          properties: {
+            type: "graphql",
+            operation: op.operation,
+            models: modelNames,
+            query: opts.request.query,
+          },
+        });
+      }, opts.context.req),
+    );
+  }
+}
+
+// Setup the Apollo Gateway and server
 const gateway = new ApolloGateway({
   supergraphSdl,
+  buildService({ url }) {
+    return new AuthenticatedDataSource({ url });
+  },
   /**
   supergraphSdl: new IntrospectAndCompose({
     subgraphs: [
@@ -32,7 +92,11 @@ const server = new ApolloServer({
 });
 
 const handler = startServerAndCreateNextHandler<NextRequest>(server, {
-  context: async (req) => ({ req }),
+  // Use this to add custom middleware to set context
+  context: async (req) => {
+    //const user = await getUser(req);
+    return { req };
+  },
 });
 
 export { handler as GET, handler as POST };
