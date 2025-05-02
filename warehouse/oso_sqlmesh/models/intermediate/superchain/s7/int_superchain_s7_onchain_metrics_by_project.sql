@@ -125,8 +125,8 @@ worldchain_events AS (
   GROUP BY 1, 2, 3
 ),
 
--- Gas fees
-transaction_gas_fee AS (
+-- Gas fees (including internal transactions)
+gas_fees AS (
   SELECT
     project_id,
     chain,
@@ -134,6 +134,19 @@ transaction_gas_fee AS (
     'gas_fees_monthly' AS metric_name,
     SUM(gas_fee) AS amount
   FROM grouped_events
+  GROUP BY 1, 2, 3
+),
+
+-- Gas fees (outer transaction level only)
+transaction_level_only_gas_fees AS (
+  SELECT
+    project_id,
+    chain,
+    sample_date,
+    'gas_fees_transaction_level_only_monthly' AS metric_name,
+    SUM(gas_fee) AS amount
+  FROM grouped_events
+  WHERE event_type = 'CONTRACT_INVOCATION'
   GROUP BY 1, 2, 3
 ),
 
@@ -204,6 +217,25 @@ monthly_active_addresses AS (
   GROUP BY 1, 2, 3
 ),
 
+-- Qualified addresses
+qualified_addresses AS (
+  SELECT
+    project_id,
+    chain,
+    sample_date,
+    'qualified_addresses_monthly' AS metric_name,
+    APPROX_DISTINCT(
+      CASE
+        WHEN event_type = 'WORLDCHAIN_VERIFIED_USEROP'
+        OR is_farcaster_user = true
+      THEN from_artifact_id
+      ELSE NULL
+      END
+    ) AS amount
+  FROM all_events
+  GROUP BY 1, 2, 3
+),
+
 union_all_metrics AS (
   SELECT *
   FROM amortized_transaction_count
@@ -224,7 +256,10 @@ union_all_metrics AS (
   FROM worldchain_events
   UNION ALL
   SELECT *
-  FROM transaction_gas_fee
+  FROM gas_fees
+  UNION ALL
+  SELECT *
+  FROM transaction_level_only_gas_fees
   UNION ALL
   SELECT *
   FROM defillama_tvl
@@ -237,6 +272,9 @@ union_all_metrics AS (
   UNION ALL
   SELECT *
   FROM monthly_active_addresses
+  UNION ALL
+  SELECT *
+  FROM qualified_addresses
 )
 
 SELECT

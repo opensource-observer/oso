@@ -6,9 +6,12 @@ import { User as SupabaseUser } from "@supabase/supabase-js";
 
 type AnonUser = {
   role: "anonymous";
+  origin: string | null;
 };
 type UserDetails = {
   userId: string;
+  keyName: string;
+  origin: string | null;
   email?: string;
   name: string;
 };
@@ -19,7 +22,8 @@ type AdminUser = UserDetails & {
   role: "admin";
 };
 
-type User = AnonUser | NormalUser | AdminUser;
+type AuthUser = NormalUser | AdminUser;
+type User = AnonUser | AuthUser;
 
 // HTTP headers
 const AUTH_PREFIX = "bearer";
@@ -32,34 +36,49 @@ const ADMIN_USER_ALL_COLUMNS = `${ADMIN_USER_USER_ID_COLUMN}`;
 //// api_keys table
 const API_KEY_TABLE = "api_keys";
 const API_KEY_USER_ID_COLUMN = "user_id";
+const API_KEY_NAME_COLUMN = "name";
 const API_KEY_API_KEY_COLUMN = "api_key";
 const API_KEY_DELETED_COLUMN = "deleted_at";
-const API_KEY_ALL_COLUMNS = `${API_KEY_USER_ID_COLUMN},${API_KEY_API_KEY_COLUMN},${API_KEY_DELETED_COLUMN}`;
+const API_KEY_ALL_COLUMNS = `${API_KEY_USER_ID_COLUMN},${API_KEY_NAME_COLUMN},${API_KEY_API_KEY_COLUMN},${API_KEY_DELETED_COLUMN}`;
 
-const makeAnonUser = (): AnonUser => ({
+const makeAnonUser = (origin: string | null): AnonUser => ({
   role: "anonymous",
+  origin,
 });
-const makeNormalUser = (user: SupabaseUser): NormalUser => ({
+const makeNormalUser = (
+  user: SupabaseUser,
+  keyName: string,
+  origin: string | null,
+): NormalUser => ({
   role: "user",
   userId: user.id,
+  keyName,
+  origin,
   email: user.email,
   name: user.user_metadata.name,
 });
-const makeAdminUser = (user: SupabaseUser): AdminUser => ({
+const makeAdminUser = (
+  user: SupabaseUser,
+  keyName: string,
+  origin: string | null,
+): AdminUser => ({
   role: "admin",
   userId: user.id,
+  keyName,
+  origin,
   email: user.email,
   name: user.user_metadata.name,
 });
 
 async function getUser(request: NextRequest): Promise<User> {
   const headers = request.headers;
+  const origin = getOrigin(request);
   const auth = headers.get("authorization");
 
   // If no token provided, then return anonymous role
   if (!auth) {
     console.log(`auth: No token => anon`);
-    return makeAnonUser();
+    return makeAnonUser(origin);
   }
 
   // Get the token
@@ -76,22 +95,23 @@ async function getUser(request: NextRequest): Promise<User> {
 
   if (keyError || !keyData) {
     console.warn(`auth: Error retrieving API keys => anon`, keyError);
-    return makeAnonUser();
+    return makeAnonUser(origin);
   }
 
   // Filter out inactive/deleted keys
   const activeKeys = keyData.filter((x) => !x.deleted_at);
   if (activeKeys.length < 1) {
     console.log(`auth: API key not valid => anon`);
-    return makeAnonUser();
+    return makeAnonUser(origin);
   }
 
-  const userId = activeKeys[0].user_id;
+  const activeKey = activeKeys[0];
+  const userId = activeKey.user_id;
   const { data: userData, error: userError } =
     await supabasePrivileged.auth.admin.getUserById(userId);
   if (userError || !userData) {
     console.warn(`auth: Error retrieving user data => anon`, userError);
-    return makeAnonUser();
+    return makeAnonUser(origin);
   }
   const user = userData.user;
 
@@ -106,42 +126,21 @@ async function getUser(request: NextRequest): Promise<User> {
       `auth: Valid key, error retrieving admin users => user`,
       adminError,
     );
-    return makeNormalUser(user);
+    return makeNormalUser(user, activeKey.name, origin);
   } else if (adminData.length > 0) {
     console.log(`auth: Valid key and admin => admin`);
-    return makeAdminUser(user);
+    return makeAdminUser(user, activeKey.name, origin);
   }
 
   console.log(`auth: API key and user valid => user`);
-  return makeNormalUser(userData.user);
+  return makeNormalUser(userData.user, activeKey.name, origin);
 }
 
-/**
-async function verifySession(request: NextRequest) {
-  const session = await getSession(request);
-  
-  const trackParams = {
-    event: "api_call",
-    properties: {
-      path: request.nextUrl.pathname,
-    },
-  };
-  
-  if (session.role === "user") {
-    serverAnalytics!.track({
-      userId: session.userId,
-      ...trackParams,
-    });
-  } else {
-    serverAnalytics!.track({
-      anonymousId: crypto.randomUUID(),
-      ...trackParams,
-    });
-  }
-  
-  return session;
+function getOrigin(req: NextRequest) {
+  const host = req.headers.get("host");
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  return forwardedHost ?? host;
 }
-*/
 
 export { getUser };
-export type { AnonUser, NormalUser, AdminUser, User };
+export type { AnonUser, NormalUser, AdminUser, AuthUser, User };

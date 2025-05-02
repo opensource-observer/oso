@@ -15,122 +15,235 @@ Every event is associated with an artifact that belongs to a single project. For
 
 The `to` and `from` relationships between artifacts in an event are critical to OSO's ability to understand the impact of a project's activities and situate it in the context of overall network/ecosystem activity.
 
-## Event Sources
+## Event Sources and Types
 
 ---
 
-All sources of event data are associated with a unique `event_source`. We are adding new event sources all the time. The current event sources can be viewed [here](https://models.opensource.observer/#!/model/model.opensource_observer.int_events#depends_on). The full events DAG can be viewed [here](https://models.opensource.observer/#!/model/model.opensource_observer.int_events?g_v=1&g_i=%2Bint_events%2B).
+OSO tracks events from multiple sources, each with its own set of event types.
 
-## Currently Supported Event Types
+All sources of event data are associated with a unique `event_source`. We are adding new event sources all the time. The `event_source` is the same as the `artifact_source` for the artifacts the `to` and `from` artifacts in the event.
+
+Below is a list of key event sources and their associated event types.
 
 ---
 
-Event types are used to classify activities that relate to a given artifact namespace. The following event types are currently supported:
+### GitHub Events (GITHUB)
 
-### Code Events
+GitHub events track activities related to code repositories, including commits, issues, pull requests, and more.
 
-These events track activities related to source code management and collaboration:
+#### Code Events
 
-#### COMMIT_CODE
+- **COMMIT_CODE**: A commit made to a code repository
+- **FORKED**: A repository being forked by a user
+- **RELEASE_PUBLISHED**: Publication of a new release version
+- **STARRED**: A repository being starred by a user
 
-Represents a commit made to a code repository. This event is used to track changes in the source code over time.
+#### Issue Events
 
-#### FORKED
+- **ISSUE_OPENED**: Opening of a new issue
+- **ISSUE_CLOSED**: Closing of an issue
+- **ISSUE_REOPENED**: Reopening of a previously closed issue
+- **ISSUE_COMMENT**: A comment made on an issue
 
-Represents the event when a repository is forked. This event is used to track the distribution and branching of the source code.
+#### Pull Request Events
 
-#### RELEASE_PUBLISHED
+- **PULL_REQUEST_OPENED**: Opening of a new pull request
+- **PULL_REQUEST_CLOSED**: Closing of a pull request
+- **PULL_REQUEST_MERGED**: Merging of a pull request into the main branch
+- **PULL_REQUEST_REOPENED**: Reopening of a previously closed pull request
+- **PULL_REQUEST_REVIEW_COMMENT**: A comment made during pull request review
 
-Represents the publication of a new release version of the software.
+#### Derived Metrics
 
-#### STARRED
+- **Commit Frequency**: Number of commits per day/week/month
+- **Contributor Activity**: Number of unique contributors over time
+- **Issue Resolution Time**: Average time to close issues
+- **Pull Request Merge Rate**: Percentage of pull requests that get merged
+- **Repository Engagement**: Combined score of stars, forks, and watchers
 
-Represents the starring of a repository by a user. This event is used to track the popularity and user interest in the repository.
+### Blockchain Events
 
-### Issue Events
+Blockchain events track on-chain activities, including contract invocations and transactions. The `event_source` is the name of the blockchain, eg, `OPTIMISM`, `BASE`, `ARBITRUM_ONE`, etc.
 
-These events track the lifecycle of issues in a repository:
+#### Contract Events
 
-#### ISSUE_OPENED
+- **CONTRACT_INVOCATION**: Direct invocation of a contract
+- **CONTRACT_INTERNAL_INVOCATION**: Internal contract calls
 
-Represents the opening of a new issue in a repository. This event is used to track new problems or feature requests reported by users.
+#### Derived Metrics
 
-#### ISSUE_CLOSED
+- **Contract Usage**: Number of contract invocations per day
+- **Gas Usage**: Total gas consumed by contract interactions
+- **Transaction Volume**: Number of transactions involving a contract
+- **User Base**: Number of unique addresses interacting with a contract over a given time period
 
-Represents the closing of an issue in a repository. This event is used to track the resolution and management of reported issues.
+### ERC-4337 Events (4337)
 
-#### ISSUE_REOPENED
+ERC-4337 events track account abstraction activities on the blockchain.
 
-Represents the reopening of a previously closed issue in a repository. This event is used to track the reoccurrence or unresolved status of issues.
+#### User Operation Events
 
-#### ISSUE_COMMENT
+- **CONTRACT_INVOCATION_VIA_USEROP**: Contract invocation through a user operation
+- **CONTRACT_INVOCATION_VIA_PAYMASTER**: Contract invocation through a paymaster
+- **CONTRACT_INVOCATION_VIA_BUNDLER**: Contract invocation through a bundler
 
-Represents a comment made on an issue in a repository.
+#### Derived Metrics
 
-### Pull Request Events
+- **User Operation Volume**: Number of user operations per day
+- **Paymaster Usage**: Percentage of operations using paymasters
+- **Bundler Distribution**: Distribution of operations across bundlers
 
-These events track the lifecycle of pull requests:
+### Funding Events (FUNDING)
 
-#### PULL_REQUEST_OPENED
+Funding events track financial transactions related to open source projects.
 
-Represents the opening of a new pull request in a repository. This event is used to track proposed changes to the codebase.
+#### Financial Events
 
-#### PULL_REQUEST_CLOSED
+- **GRANT_RECEIVED_USD**: Receipt of a grant in USD equivalent
+- **CREDIT**: Incoming financial transaction (Open Collective)
+- **DEBIT**: Outgoing financial transaction (Open Collective)
 
-Represents the closing of a pull request in a repository. This event is used to track the finalization and rejection of proposed code changes.
+#### Derived Metrics
 
-#### PULL_REQUEST_MERGED
+- **Funding Volume**: Total funding received over time
+- **Funding Sources**: Distribution of funding by source
+- **Expense Categories**: Breakdown of expenses by category
+- **Funding Sustainability**: Ratio of incoming to outgoing funds
 
-Represents the merging of a pull request into the main branch of a repository. This event is used to track the integration of code changes.
+### Dependency Events (DEPS_DEV)
 
-#### PULL_REQUEST_REOPENED
+Dependency events track package dependencies and their changes.
 
-Represents the reopening of a previously closed pull request in a repository. This event is used to track the reconsideration of proposed code changes.
+#### Dependency Events
 
-#### PULL_REQUEST_REVIEW_COMMENT
+- **ADD_DEPENDENCY**: Addition of a new dependency
+- **REMOVE_DEPENDENCY**: Removal of an existing dependency
+- **DOWNLOADS**: Number of package downloads on a given date
 
-Represents a comment made during the review of a pull request.
+#### Derived Metrics
 
-### Onchain Events
+- **Dependency Growth**: Rate of dependency addition over time
+- **Dependency Churn**: Rate of dependency changes
+- **Package Popularity**: Download trends over time
+- **Dependency Health**: Ratio of active to deprecated dependencies
 
-These events track blockchain-related activities:
+## Event Schema
 
-#### CONTRACT_INVOCATION_DAILY_COUNT
+---
 
-Represents the daily count of contract invocations. This event is used to track the frequency of contract interactions on the blockchain.
+All events in OSO follow a consistent schema with the following key fields:
 
-#### CONTRACT_INVOCATION_SUCCESS_DAILY_COUNT
+| Field                     | Description                                             |
+| ------------------------- | ------------------------------------------------------- |
+| `time`                    | Timestamp of the event                                  |
+| `to_artifact_id`          | ID of the target artifact                               |
+| `from_artifact_id`        | ID of the source artifact                               |
+| `event_type`              | Type of event (e.g., COMMIT_CODE, CONTRACT_INVOCATION)  |
+| `event_source_id`         | Unique identifier for the event source                  |
+| `event_source`            | Source of the event (e.g., GITHUB, BLOCKCHAIN)          |
+| `to_artifact_name`        | Name of the target artifact                             |
+| `to_artifact_namespace`   | Namespace of the target artifact                        |
+| `to_artifact_type`        | Type of the target artifact                             |
+| `to_artifact_source_id`   | Source ID of the target artifact                        |
+| `from_artifact_name`      | Name of the source artifact                             |
+| `from_artifact_namespace` | Namespace of the source artifact                        |
+| `from_artifact_type`      | Type of the source artifact                             |
+| `from_artifact_source_id` | Source ID of the source artifact                        |
+| `amount`                  | Numeric value associated with the event (if applicable) |
 
-Represents the daily count of successful contract invocations. This event is used to measure the success rate of contract executions on the blockchain.
+## Using Events for Analysis with pyoso
 
-#### CONTRACT_INVOCATION_DAILY_L2_GAS_USED
+---
 
-Represents the total gas used in contract invocations on Layer 2 networks on a daily basis. This event helps track the resource consumption of contract executions.
+Events form the foundation for many OSO metrics and analyses. Raw and processed event data is available to the community via pyoso.
 
-### Financial Events
+Here are examples of how to use pyoso to access event data:
 
-These events track financial transactions:
+### GitHub Events Example
 
-#### GRANT_RECEIVED_USD
+```python
+import os
+import pandas as pd
+from pyoso import Client
 
-Represents the receipt of a grant in USD equilvalent; currently only available for sources listed in [oss-funding](https://github.com/opensource-observer/oss-funding).
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
 
-#### CREDIT
+# Find the number of unique contributors to a specific repository
+query = """
+SELECT
+  COUNT(DISTINCT from_artifact_name) as unique_contributors
+FROM int_events__github
+WHERE
+  event_source = 'GITHUB'
+  AND to_artifact_namespace = 'ethereum'
+  AND to_artifact_name = 'go-ethereum'
+  AND time >= CURRENT_DATE - INTERVAL '30' DAY
+"""
+df = client.to_pandas(query)
+print(f"Number of unique contributors in the last 30 days: {df['unique_contributors'].iloc[0]}")
 
-Represents an incoming financial transaction or credit to an account; currently only available for Open Collective.
+# Get daily commit counts
+query = """
+SELECT
+  DATE(time) as day,
+  COUNT(*) as commit_count
+FROM int_events__github
+WHERE
+  event_source = 'GITHUB'
+  AND event_type = 'COMMIT_CODE'
+  AND to_artifact_namespace = 'ethereum'
+  AND to_artifact_name = 'go-ethereum'
+  AND time >= CURRENT_DATE - INTERVAL '30' DAY
+GROUP BY DATE(time)
+ORDER BY day
+"""
+df = client.to_pandas(query)
+print("\nDaily commit counts:")
+print(df)
+```
 
-#### DEBIT
+### Blockchain Events Example
 
-Represents an outgoing financial transaction or debit from an account; currently only available for Open Collective.
+```python
+import os
+import pandas as pd
+from pyoso import Client
 
-### Dependency Events
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
 
-These events track package dependencies:
+# Find the number of transactions for a specific contract on Optimism
+query = """
+SELECT
+  COUNT(*) as transaction_count,
+  COUNT(DISTINCT from_artifact_name) as unique_users
+FROM int_events__blockchain
+WHERE
+  event_source = 'OPTIMISM'
+  AND event_type = 'CONTRACT_INVOCATION'
+  AND to_artifact_name = '0x4200000000000000000000000000000000000006'  -- WETH contract on Optimism
+  AND time >= CURRENT_DATE - INTERVAL '7' DAY
+"""
+df = client.to_pandas(query)
+print(f"Number of transactions in the last 7 days: {df['transaction_count'].iloc[0]}")
+print(f"Number of unique users: {df['unique_users'].iloc[0]}")
 
-#### ADD_DEPENDENCY
-
-Represents the addition of a new dependency to a project.
-
-#### DOWNLOADS
-
-Represents the number of downloads for a package on a given date according to the package manager's public data.
+# Get daily transaction counts
+query = """
+SELECT
+  DATE(time) as day,
+  COUNT(*) as transaction_count
+FROM int_events__blockchain
+WHERE
+  event_source = 'OPTIMISM'
+  AND event_type = 'CONTRACT_INVOCATION'
+  AND to_artifact_name = '0x4200000000000000000000000000000000000006'
+  AND time >= CURRENT_DATE - INTERVAL '7' DAY
+GROUP BY DATE(time)
+ORDER BY day
+"""
+df = client.to_pandas(query)
+print("\nDaily transaction counts:")
+print(df)
+```

@@ -1,0 +1,21 @@
+[project]
+name = "pynessie-gc"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Ícaro Guerra", email = "icaro@plasmic.app" }
+]
+requires-python = "==3.12.*"
+dependencies = [
+    "aiotrino>=0.2.3",
+    "asyncio>=3.4.3",
+    "gcsfs>=2024.12.0",
+]
+
+[project.scripts]
+pynessie-gc = "pynessie_gc:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -83,12 +83,12 @@ const nextConfig = {
             {
               source: "/gather",
               destination:
-                "https://app.gather.town/invite?token=o8uSbZC4S_CokNYto7sM",
+                "https://app.v2.gather.town/app/c6afa3c8-f374-4fc5-af79-a0a7a45498cb/join?guest=true",
               permanent: false,
             },
             {
               source: "/status",
-              destination: "https://stats.uptimerobot.com/uFqxl2jxGA",
+              destination: "https://status.opensource.observer",
               permanent: false,
             },
             {
