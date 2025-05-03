@@ -3,7 +3,7 @@ import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
 import { withPostHog } from "../../../../lib/clients/posthog";
 import { getTableNamesFromSql } from "../../../../lib/parsing";
-import { AuthUser } from "../../../../lib/auth/auth";
+import { getUser } from "../../../../lib/auth/auth";
 //import { logger } from "../../../lib/logger";
 
 // Next.js route control
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const query = body?.[QUERY];
   const format = body?.[FORMAT] ?? "json";
+  const user = await getUser(request);
   // TODO: add authentication
   //const auth = request.headers.get("authorization");
 
@@ -50,9 +51,13 @@ export async function POST(request: NextRequest) {
   if (!query) {
     console.log(`/api/sql: Missing query`);
     return makeErrorResponse("Please provide a 'query' parameter", 400);
+    // If user is not authenticated, short-circuit
+  } else if (user.role === "anonymous") {
+    console.log(`/api/sql: User is anonymous`);
+    return makeErrorResponse("User is anonymous", 401);
   }
   try {
-    await withPostHog(async (posthog, user: AuthUser) => {
+    await withPostHog(async (posthog) => {
       posthog.capture({
         distinctId: user.userId,
         event: "api_call",
@@ -61,10 +66,10 @@ export async function POST(request: NextRequest) {
           models: getTableNamesFromSql(query),
           query: query,
           apiKeyName: user.keyName,
-          origin: user.origin,
+          host: user.host,
         },
       });
-    }, request);
+    });
     const [firstRow, rows] = await doQuery(query);
     const readableStream = mapToReadableStream(firstRow, rows, format);
     return new NextResponse(readableStream, {
