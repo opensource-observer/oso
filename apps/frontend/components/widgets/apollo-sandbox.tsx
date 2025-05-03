@@ -2,8 +2,8 @@
 
 import { ApolloSandbox } from "@apollo/sandbox/react";
 import { useAsync } from "react-use";
-import { DOMAIN } from "../../lib/config";
 import { supabaseClient } from "../../lib/clients/supabase";
+import { DOMAIN } from "../../lib/config";
 
 const API_PROTOCOL = "https://";
 const API_BASE = API_PROTOCOL + DOMAIN;
@@ -23,17 +23,22 @@ function EmbeddedSandbox(props: EmbeddedSandboxProps) {
       session,
     };
   }, []);
+  //console.log(data);
   const token = data?.session?.access_token;
-  const headers = token
-    ? { Authorization: `Bearer ${token}` }
-    : ({} as Record<string, string>);
+  //console.log("headers", headers);
 
   return (
     <ApolloSandbox
       className={props.className}
       initialEndpoint={API_URL.toString()}
-      initialState={{
-        sharedHeaders: headers,
+      handleRequest={(endpointUrl, options) => {
+        return fetch(endpointUrl, {
+          ...options,
+          headers: {
+            ...options.headers,
+            authorization: `Bearer ${token}`,
+          },
+        });
       }}
     />
   );

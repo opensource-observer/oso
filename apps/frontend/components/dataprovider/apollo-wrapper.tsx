@@ -1,63 +1,67 @@
 "use client";
 
-import { ApolloLink, HttpLink } from "@apollo/client";
+import { ApolloLink, HttpLink, useApolloClient } from "@apollo/client";
 import {
   ApolloNextAppProvider,
   InMemoryCache,
   ApolloClient,
   SSRMultipartLink,
 } from "@apollo/experimental-nextjs-app-support";
-import { useAsync } from "react-use";
-import { supabaseClient } from "../../lib/clients/supabase";
+import { userToken } from "../../lib/clients/supabase";
 import { DB_GRAPHQL_URL } from "../../lib/config";
 
-function makeMakeClient(token?: string) {
-  const makeLink = () => {
-    //console.log(userToken);
-    const httpLink = new HttpLink({
-      uri: DB_GRAPHQL_URL,
-      headers: token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {},
-    });
-    return httpLink;
-  };
-  const makeClient = () => {
-    const httpLink = makeLink();
-    const client = new ApolloClient({
-      cache: new InMemoryCache(),
-      link:
-        typeof window === "undefined"
-          ? ApolloLink.from([
-              new SSRMultipartLink({
-                stripDefer: true,
-              }),
-              httpLink,
-            ])
-          : httpLink,
-    });
-    return client;
-  };
-  return makeClient;
+/**
+ * You must call this hook in any component that uses Apollo in code client-side
+ * This will ensure that the Apollo client eventually gets the correct
+ * Supabase credentials, which gets populated later on.
+ * This is a workaround for the fact that the Apollo client is initialized
+ * before the Supabase client is initialized.
+ */
+let initialized = false;
+const useEnsureAuth = () => {
+  const client = useApolloClient();
+  if (!initialized && userToken) {
+    client.setLink(makeLink());
+    initialized = true;
+  }
+};
+
+function makeLink() {
+  //console.log(userToken);
+  const httpLink = new HttpLink({
+    uri: DB_GRAPHQL_URL,
+    headers: userToken
+      ? {
+          Authorization: `Bearer ${userToken}`,
+        }
+      : {},
+  });
+  return httpLink;
+}
+
+function makeClient() {
+  const httpLink = makeLink();
+  const client = new ApolloClient({
+    cache: new InMemoryCache(),
+    link:
+      typeof window === "undefined"
+        ? ApolloLink.from([
+            new SSRMultipartLink({
+              stripDefer: true,
+            }),
+            httpLink,
+          ])
+        : httpLink,
+  });
+  return client;
 }
 
 function ApolloWrapper({ children }: React.PropsWithChildren) {
-  const { value: data } = useAsync(async () => {
-    const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
-    return {
-      session,
-    };
-  }, []);
-  const token = data?.session?.access_token;
   return (
-    <ApolloNextAppProvider makeClient={makeMakeClient(token)}>
+    <ApolloNextAppProvider makeClient={makeClient}>
       {children}
     </ApolloNextAppProvider>
   );
 }
 
-export { ApolloWrapper };
+export { ApolloWrapper, useEnsureAuth };
