@@ -82,7 +82,7 @@ async function getUserByJwt(token: string, host: string | null): Promise<User> {
   const { data, error } = await createSupabaseClient().auth.getUser(token);
   if (error) {
     //console.warn(`auth: Error retrieving user by JWT => anon`, error);
-    console.warn(`auth: Error retrieving user by JWT => anon`);
+    //console.warn(`auth: Error retrieving user by JWT => anon`);
     return makeAnonUser(host);
   }
 
