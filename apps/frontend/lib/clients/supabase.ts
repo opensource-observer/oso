@@ -8,7 +8,10 @@ import {
 import { Database } from "../types/supabase";
 
 // Supabase unprivileged client
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function createSupabaseClient() {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+const supabaseClient = createSupabaseClient();
 // Supabase service account
 const supabasePrivileged = createClient<Database>(
   SUPABASE_URL,
@@ -70,5 +73,11 @@ async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
   return data;
 }
 
-export { supabaseClient, supabasePrivileged, supabaseQuery, userToken };
+export {
+  createSupabaseClient,
+  supabaseClient,
+  supabasePrivileged,
+  supabaseQuery,
+  userToken,
+};
 export type { SupabaseQueryArgs };

@@ -12,7 +12,7 @@ import { NextRequest } from "next/server";
 import { spawn } from "@opensource-observer/utils";
 import { withPostHog } from "../../../../lib/clients/posthog";
 import { EVENTS } from "../../../../lib/types/posthog";
-import { AuthUser } from "../../../../lib/auth/auth";
+import { getUser } from "../../../../lib/auth/auth";
 //import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 //import { HASURA_URL } from "../../../../lib/config";
 
@@ -53,23 +53,28 @@ class AuthenticatedDataSource extends RemoteGraphQLDataSource {
     }
     const op = opts.incomingRequestContext.operation;
     const modelNames = getModelNames(op);
+    const user = opts.context.user;
     //console.log(modelNames);
-    spawn(
-      withPostHog(async (posthog, user: AuthUser) => {
-        posthog.capture({
-          distinctId: user.userId,
-          event: EVENTS.API_CALL,
-          properties: {
-            type: "graphql",
-            operation: op.operation,
-            models: modelNames,
-            query: opts.request.query,
-            apiKeyName: user.keyName,
-            origin: user.origin,
-          },
-        });
-      }, opts.context.req),
-    );
+    if (user && user.role !== "anonymous") {
+      spawn(
+        withPostHog(async (posthog) => {
+          posthog.capture({
+            distinctId: user.userId,
+            event: EVENTS.API_CALL,
+            properties: {
+              type: "graphql",
+              operation: op.operation,
+              models: modelNames,
+              query: opts.request.query,
+              apiKeyName: user.keyName,
+              host: user.host,
+            },
+          });
+        }),
+      );
+    } else {
+      console.warn("/graphql: User is anonymous. No tracking");
+    }
   }
 }
 
@@ -97,8 +102,8 @@ const server = new ApolloServer({
 const handler = startServerAndCreateNextHandler<NextRequest>(server, {
   // Use this to add custom middleware to set context
   context: async (req) => {
-    //const user = await getUser(req);
-    return { req };
+    const user = await getUser(req);
+    return { req, user };
   },
 });
 
