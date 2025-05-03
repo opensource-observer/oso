@@ -14,6 +14,7 @@ export const requireEnv = (value: string | undefined, identifier: string) => {
 export const NODE_ENV = process.env.NODE_ENV ?? "development";
 export const STATIC_EXPORT = !!process.env.STATIC_EXPORT;
 export const POSTHOG_HOST = "/ingest";
+export const POSTHOG_HOST_DIRECT = "https://us.i.posthog.com";
 export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "MISSING";
 export const GOOGLE_ANALYTICS_KEY =
   process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_KEY ?? "MISSING";
