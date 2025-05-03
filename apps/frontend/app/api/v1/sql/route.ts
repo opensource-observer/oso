@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
+import { spawn } from "@opensource-observer/utils";
 import { withPostHog } from "../../../../lib/clients/posthog";
 import { getTableNamesFromSql } from "../../../../lib/parsing";
 import { getUser } from "../../../../lib/auth/auth";
@@ -57,19 +58,21 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("User is anonymous", 401);
   }
   try {
-    await withPostHog(async (posthog) => {
-      posthog.capture({
-        distinctId: user.userId,
-        event: "api_call",
-        properties: {
-          type: "sql",
-          models: getTableNamesFromSql(query),
-          query: query,
-          apiKeyName: user.keyName,
-          host: user.host,
-        },
-      });
-    });
+    spawn(
+      withPostHog(async (posthog) => {
+        posthog.capture({
+          distinctId: user.userId,
+          event: "api_call",
+          properties: {
+            type: "sql",
+            models: getTableNamesFromSql(query),
+            query: query,
+            apiKeyName: user.keyName,
+            host: user.host,
+          },
+        });
+      }),
+    );
     const [firstRow, rows] = await doQuery(query);
     const readableStream = mapToReadableStream(firstRow, rows, format);
     return new NextResponse(readableStream, {
