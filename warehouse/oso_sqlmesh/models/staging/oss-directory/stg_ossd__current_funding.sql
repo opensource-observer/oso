@@ -1,6 +1,6 @@
 MODEL (
   name oso.stg_ossd__current_funding,
-  description 'The most recent view of funding information from the ossd source',
+  description 'The most recent view of funding information from the OSSD source',
   dialect trino,
   kind FULL,
   audits (
@@ -22,7 +22,7 @@ SELECT
   'oso' AS funding_namespace,
   LOWER(funding.to_project_name) AS to_project_name,
   COALESCE(TRY_CAST(funding.amount AS DOUBLE), 0.0) AS amount,
-  funding.funding_date AS funding_date,
+  funding.funding_date::TIMESTAMP AS funding_date,
   LOWER(funding.from_funder_name) AS from_funder_name,
   LOWER(funding.grant_pool_name) AS grant_pool_name,
   funding.metadata AS metadata,
