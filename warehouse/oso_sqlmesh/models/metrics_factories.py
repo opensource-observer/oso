@@ -17,6 +17,7 @@ timeseries_metrics(
         "int_issue_event_time_deltas",
         "int_first_of_event_from_artifact__github",
         "int_events_daily__blockchain",
+        "int_events_daily__blockchain_token_transfers",
         "int_events_daily__4337",
         "int_events_daily__defillama_tvl",
         "int_events_daily__github",
@@ -426,6 +427,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Transactions",
                 description="Metrics related to blockchain transactions",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
+        "token_transfers": MetricQueryDef(
+            ref="blockchain/token_transfers.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Token Transfers",
+                description="Metrics related to volume of blockchain token transfers",
             ),
             additional_tags=["data_category=blockchain"],
         ),
