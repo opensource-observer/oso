@@ -18,17 +18,6 @@ const supabasePrivileged = createClient<Database>(
   SUPABASE_SERVICE_KEY,
 );
 
-// Get the user JWT token
-let userToken: string | undefined;
-supabaseClient.auth
-  .getSession()
-  .then((data) => {
-    userToken = data.data.session?.access_token;
-  })
-  .catch((e) => {
-    console.warn("Failed to get Supabase session, ", e);
-  });
-
 type SupabaseQueryArgs = {
   tableName: string; // table to query
   columns?: string; // comma-delimited column names (e.g. `address,claimId`)
@@ -78,6 +67,5 @@ export {
   supabaseClient,
   supabasePrivileged,
   supabaseQuery,
-  userToken,
 };
 export type { SupabaseQueryArgs };
