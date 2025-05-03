@@ -3,8 +3,6 @@ MODEL (
   description 'Intermediate table for funding awarded events',
   dialect trino,
   kind full,
-  partitioned_by ( DAY("time"), "event_type" ),
-  grain ( time, event_source, from_artifact_name, to_artifact_name ),
   audits (
     HAS_AT_LEAST_N_ROWS(threshold := 0)
   )
