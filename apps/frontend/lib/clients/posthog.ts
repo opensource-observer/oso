@@ -1,5 +1,5 @@
 import { PostHog } from "posthog-node";
-import { POSTHOG_HOST, POSTHOG_KEY } from "../config";
+import { POSTHOG_HOST_DIRECT, POSTHOG_KEY } from "../config";
 
 /**
  * Use this if you want direct access to the PostHog client
@@ -9,7 +9,9 @@ import { POSTHOG_HOST, POSTHOG_KEY } from "../config";
  */
 function PostHogClient() {
   const posthogClient = new PostHog(POSTHOG_KEY, {
-    host: POSTHOG_HOST,
+    // You must send server-side events directly to PostHog.
+    // The redirect URL doesn't seem to work for server-side events
+    host: POSTHOG_HOST_DIRECT,
     flushAt: 1,
     flushInterval: 0,
   });
