@@ -14,6 +14,15 @@ const google = createGoogleGenerativeAI({
 });
 const model = google("gemini-2.5-pro-exp-03-25");
 
+const getLatestMessage = (messages: any[]) => {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return "Message not found";
+  }
+  const latestMessage = messages[messages.length - 1];
+  const content = latestMessage?.content;
+  return content || "Message not found";
+};
+
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
   const { messages } = await req.json();
@@ -33,7 +42,7 @@ export async function POST(req: NextRequest) {
           event: "api_call",
           properties: {
             type: "chat",
-            messages,
+            message: getLatestMessage(messages),
             apiKeyName: user.keyName,
             host: user.host,
           },
