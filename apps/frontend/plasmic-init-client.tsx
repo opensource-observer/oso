@@ -44,7 +44,7 @@ import { register as registerMetricsUtils } from "./lib/metrics-utils";
  */
 
 PLASMIC.registerFunction(format, {
-  name: "format",
+  name: "formatSql",
   params: [
     {
       name: "query",
@@ -207,6 +207,10 @@ PLASMIC.registerComponent(MonacoEditor, {
     height: {
       type: "string",
       defaultValue: "200px",
+    },
+    language: {
+      type: "string",
+      defaultValue: "sql",
     },
     theme: {
       type: "string",

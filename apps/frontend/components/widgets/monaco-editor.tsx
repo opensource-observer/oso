@@ -7,6 +7,7 @@ interface MonacoEditorProps {
   value?: string;
   onChange?: (value: string) => void;
   height?: string;
+  language?: string;
   theme?: string;
   options?: any;
 }
@@ -16,6 +17,7 @@ function MonacoEditor({
   value,
   onChange,
   height,
+  language,
   theme,
   options,
 }: MonacoEditorProps) {
@@ -35,7 +37,7 @@ function MonacoEditor({
     <Editor
       className={className}
       height={height}
-      language="sql"
+      language={language}
       value={value}
       theme={theme}
       options={defaultOptions}
