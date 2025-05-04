@@ -1,15 +1,17 @@
 "use client";
 
+//import dynamic from "next/dynamic";
 import { useState } from "react";
-import dynamic from "next/dynamic";
-import { OSOChat } from "../../components/widgets/oso-chat";
 import { format } from "sql-formatter";
 import { logger } from "../../lib/logger";
+import { MonacoEditor } from "../../components/widgets/monaco-editor";
 
+/**
 const MonacoSQLEditor = dynamic(
   () => import("../../components/widgets/monaco-editor"),
   { ssr: false },
 );
+*/
 
 export default function SQLStudioPage() {
   const [sqlQuery, setSqlQuery] = useState("");
@@ -221,7 +223,7 @@ export default function SQLStudioPage() {
               </div>
 
               <div className="h-64 border-b border-gray-200">
-                <MonacoSQLEditor
+                <MonacoEditor
                   value={sqlQuery}
                   onChange={setSqlQuery}
                   height="100%"
@@ -321,8 +323,6 @@ export default function SQLStudioPage() {
           </div>
         )}
       </main>
-
-      <OSOChat />
     </div>
   );
 }

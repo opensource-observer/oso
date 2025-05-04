@@ -3,19 +3,21 @@
 import Editor from "@monaco-editor/react";
 
 interface MonacoEditorProps {
-  value: string;
-  onChange: (value: string) => void;
+  className?: string;
+  value?: string;
+  onChange?: (value: string) => void;
   height?: string;
   theme?: string;
   options?: any;
 }
 
-export default function MonacoSQLEditor({
+function MonacoEditor({
+  className,
   value,
   onChange,
-  height = "200px",
-  theme = "vs-light",
-  options = {},
+  height,
+  theme,
+  options,
 }: MonacoEditorProps) {
   const defaultOptions = {
     minimap: { enabled: false },
@@ -31,12 +33,13 @@ export default function MonacoSQLEditor({
 
   return (
     <Editor
+      className={className}
       height={height}
       language="sql"
       value={value}
       theme={theme}
       options={defaultOptions}
-      onChange={(value) => onChange(value || "")}
+      onChange={(value) => (onChange ? onChange(value || "") : undefined)}
       loading={
         <div className="flex items-center justify-center h-full">
           Loading editor...
@@ -45,3 +48,5 @@ export default function MonacoSQLEditor({
     />
   );
 }
+
+export { MonacoEditor };
