@@ -189,8 +189,8 @@ PLASMIC.registerComponent(OSOChat, {
 });
 
 PLASMIC.registerComponent(MonacoEditor, {
-  name: "MonacoSQLEditor",
-  description: "Monaco SQL editor",
+  name: "MonacoEditor",
+  description: "Monaco editor",
   props: {
     value: {
       type: "string",
@@ -215,6 +215,14 @@ PLASMIC.registerComponent(MonacoEditor, {
     options: {
       type: "object",
       defaultValue: {},
+    },
+  },
+  states: {
+    value: {
+      type: "writable",
+      variableType: "text",
+      valueProp: "value",
+      onChangeProp: "onChange",
     },
   },
   importPath: "./components/widgets/monaco-editor",
