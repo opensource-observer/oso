@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { ALGOLIA_INDEX } from "./lib/config";
 import { PLASMIC } from "./plasmic-init";
+import { format } from "sql-formatter";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
@@ -31,6 +32,8 @@ import {
   AuthActions,
   AuthActionsRegistration,
 } from "./components/widgets/auth-actions";
+import { MonacoEditor } from "./components/widgets/monaco-editor";
+import { OSOChat } from "./components/widgets/oso-chat";
 import { register as registerMetricsUtils } from "./lib/metrics-utils";
 
 /**
@@ -39,6 +42,27 @@ import { register as registerMetricsUtils } from "./lib/metrics-utils";
  * For more details see:
  * https://docs.plasmic.app/learn/code-components-ref/
  */
+
+PLASMIC.registerFunction(format, {
+  name: "format",
+  params: [
+    {
+      name: "query",
+      type: "string",
+      description: "the SQL query to format",
+    },
+    {
+      name: "options",
+      type: "object",
+      description: "options to pass to sql-formatter",
+    },
+  ],
+  returnValue: {
+    type: "string",
+    description: "the formatted SQL",
+  },
+  importPath: "sql-formatter",
+});
 
 PLASMIC.registerFunction(generateApiKey, {
   name: "generateApiKey",
@@ -154,6 +178,47 @@ PLASMIC.registerComponent(
     importPath: "./components/widgets/algolia",
   },
 );
+
+PLASMIC.registerComponent(OSOChat, {
+  name: "OSOChat",
+  description: "LLM-powered chat overlay",
+  props: {
+    children: "slot",
+  },
+  importPath: "./components/widgets/oso-chat",
+});
+
+PLASMIC.registerComponent(MonacoEditor, {
+  name: "MonacoSQLEditor",
+  description: "Monaco SQL editor",
+  props: {
+    value: {
+      type: "string",
+    },
+    onChange: {
+      type: "eventHandler",
+      argTypes: [
+        {
+          name: "value",
+          type: "string",
+        },
+      ],
+    },
+    height: {
+      type: "string",
+      defaultValue: "200px",
+    },
+    theme: {
+      type: "string",
+      defaultValue: "vs-light",
+    },
+    options: {
+      type: "object",
+      defaultValue: {},
+    },
+  },
+  importPath: "./components/widgets/monaco-editor",
+});
 
 PLASMIC.registerComponent(FeedbackWrapper, {
   name: "FeedbackWrapper",

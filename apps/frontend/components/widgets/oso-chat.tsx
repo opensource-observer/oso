@@ -1,11 +1,19 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useRef, useState } from "react";
+import { ReactElement, useEffect, useRef, useState } from "react";
 import { userToken } from "../../lib/clients/supabase";
 import ReactMarkdown from "react-markdown";
 
-export function OSOChat() {
+const CHAT_PATH = "/api/v1/chat";
+
+interface OSOChatProps {
+  className?: string; // Plasmic CSS class
+  children?: ReactElement; // Show this
+}
+
+export function OSOChat(props: OSOChatProps) {
+  const { className, children } = props;
   const {
     messages,
     input,
@@ -14,7 +22,7 @@ export function OSOChat() {
     status,
     setMessages,
   } = useChat({
-    api: "/api/v1/chat",
+    api: CHAT_PATH,
     headers: userToken
       ? {
           Authorization: `Bearer ${userToken}`,
@@ -78,8 +86,12 @@ export function OSOChat() {
     </div>
   );
 
+  if (!children) {
+    return <p>Missing children</p>;
+  }
+
   return (
-    <>
+    <div className={className}>
       <button
         onClick={() => setIsOpen(true)}
         className={`fixed bottom-4 right-4 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-md ${
@@ -87,20 +99,7 @@ export function OSOChat() {
         }`}
         aria-label="Open chat"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-          />
-        </svg>
+        {children}
       </button>
 
       <div
@@ -301,6 +300,6 @@ export function OSOChat() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
