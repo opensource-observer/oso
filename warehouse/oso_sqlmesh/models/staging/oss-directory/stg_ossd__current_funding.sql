@@ -21,8 +21,14 @@ SELECT
   'OSS_FUNDING' AS funding_source,
   'oso' AS funding_namespace,
   LOWER(funding.to_project_name) AS to_project_name,
-  COALESCE(TRY_CAST(funding.amount AS DOUBLE), 0.0) AS amount,
-  CAST(DATE(funding.funding_date) AS TIMESTAMP) AS funding_date,
+  COALESCE(
+    TRY_CAST(funding.amount AS DOUBLE),
+    0.0
+  ) AS amount,
+  COALESCE(
+    TRY_CAST(funding.funding_date AS TIMESTAMP),
+    CAST('1970-01-01' AS TIMESTAMP)
+  ) AS funding_date,
   LOWER(funding.from_funder_name) AS from_funder_name,
   LOWER(funding.grant_pool_name) AS grant_pool_name,
   funding.metadata AS metadata,
