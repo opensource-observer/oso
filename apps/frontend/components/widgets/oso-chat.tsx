@@ -91,16 +91,10 @@ export function OSOChat(props: OSOChatProps) {
   }
 
   return (
-    <div className={className}>
-      <button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-4 right-4 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-md ${
-          isOpen ? "hidden" : "flex"
-        }`}
-        aria-label="Open chat"
-      >
+    <>
+      <div className={className} onClick={() => setIsOpen(true)}>
         {children}
-      </button>
+      </div>
 
       <div
         className={`fixed inset-0 bg-black bg-opacity-30 z-50 transition-opacity duration-300 ${
@@ -300,6 +294,6 @@ export function OSOChat(props: OSOChatProps) {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
