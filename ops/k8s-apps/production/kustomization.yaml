@@ -12,3 +12,4 @@ resources:
   - ./sqlmesh-cloudsql-proxy
   - ./keda
   - ./mcp
+
