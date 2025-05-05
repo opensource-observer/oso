@@ -1,0 +1,31 @@
+global:
+  fullnameOverride: ""
+app:
+  # name: "oso" # This must be set
+  # command: []
+  # args: []
+  host: 0.0.0.0
+  hostEnvVar: APP_HOST
+  port: 8000
+  portEnvVar: APP_PORT
+  image:
+    repo: ghcr.io/opensource-observer/oso
+    tag: latest
+  logging:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    root:
+      level: "ERROR"
+    oso_mcp:
+      level: "DEBUG"
+    uvicorn:
+      level: "INFO"
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  resources: {}
+  envVars: {}
+  # if you want to set env vars in a raw format but this makes it harder to
+  # extend with flux
+  rawEnvVars: [] 
+  volumes: []
+  volumeMounts: []
