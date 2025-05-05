@@ -9,3 +9,4 @@ resources:
   - ./hive-metastore
   - ./nessie
   - ./trino
+  - ./mcp

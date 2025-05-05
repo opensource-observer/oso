@@ -8,3 +8,4 @@
 app:
   name: "oso" 
   command: ["python"]
+  args: []
