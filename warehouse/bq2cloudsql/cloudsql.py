@@ -242,7 +242,7 @@ class CloudSQLClient(object):
             pp.pprint(r)
             if r["status"] not in ["PENDING", "RUNNING"]:
                 if r["status"] != "DONE":
-                    raise Exception("An error occured importing")
+                    raise Exception("An error occurred importing")
                 print("done importing")
                 return
             time.sleep(1)

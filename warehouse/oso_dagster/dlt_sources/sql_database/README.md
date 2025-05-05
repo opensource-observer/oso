@@ -26,7 +26,7 @@ To setup the SQL Database Verified Source read the [full documentation here.](ht
    Here's what the `secrets.toml` looks like:
 
    ```toml
-   # Put your secret values and credentials here. do not share this file and do not upload it to github.
+   # Put your secret values and credentials here. Do not share this file and do not upload it to github.
    # We will set up creds with the following connection URL, which is a public database
 
    # The credentials are as follows
@@ -217,7 +217,7 @@ With dataset above and local postgres instance, connectorx is 2x faster than pya
 
 ### Postgres / MSSQL
 
-No issues found. Postgres is the only backend where we observed 2x speedup with connector x. On other db systems it performs same as `pyarrrow` backend or slower.
+No issues found. Postgres is the only backend where we observed 2x speedup with connector x. On other db systems it performs same as `pyarrow` backend or slower.
 
 ## Learn more
 
