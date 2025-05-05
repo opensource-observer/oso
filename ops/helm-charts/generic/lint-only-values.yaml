@@ -1,0 +1,10 @@
+# To use this make sure you have the following in your helm config for vscode:
+# "helm-intellisense.customValueFileNames": [
+#     "prod-values.yaml",
+#     "dev-values.yaml",
+#     "values.yaml"
+# ]
+
+app:
+  name: "oso" 
+  command: ["python"]
