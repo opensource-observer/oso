@@ -4,6 +4,8 @@ app:
   # name: "oso" # This must be set
   # command: []
   # args: []
+  service:
+    annotations: {}
   host: 0.0.0.0
   hostEnvVar: APP_HOST
   port: 8000
