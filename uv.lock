@@ -3651,7 +3651,7 @@ dev = [
 [[package]]
 name = "oso-agent"
 version = "0.1.0"
-source = { virtual = "warehouse/oso_agent" }
+source = { editable = "warehouse/oso_agent" }
 dependencies = [
     { name = "arize-phoenix-otel" },
     { name = "dotenv" },
