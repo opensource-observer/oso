@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from llama_index.core.agent.workflow import ReActAgent
 from llama_index.core.tools import BaseTool, FunctionTool
+from llama_index.llms.gemini import Gemini
+from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.llms.ollama import Ollama
 from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
@@ -12,7 +14,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 from opentelemetry.sdk import trace as trace_sdk
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-from .config import AgentConfig
+from .config import AgentConfig, GeminiLLMConfig, GoogleGenAILLMConfig, LocalLLMConfig
 from .errors import AgentConfigError, AgentRuntimeError
 
 logger = logging.getLogger("oso-agent")
@@ -104,14 +106,7 @@ class Agent:
         self._setup_telemetry()
 
         try:
-            logger.info(
-                f"Initializing Ollama LLM with model {self.config.ollama_model}"
-            )
-            llm = Ollama(
-                model=self.config.ollama_model,
-                base_url=self.config.ollama_url,
-                request_timeout=self.config.ollama_timeout,
-            )
+            llm = await self._setup_llm(self.config)
 
             logger.info("Creating agent tools")
             local_tools = self._create_local_tools()
@@ -128,6 +123,29 @@ class Agent:
         except Exception as e:
             logger.error(f"Failed to create agent: {e}")
             raise AgentConfigError(f"Failed to create agent: {e}") from e
+        
+    async def _setup_llm(self, config: AgentConfig):
+        """Setup the LLM for the agent depending on the configuration"""
+        match config.llm:
+            case LocalLLMConfig(ollama_model=model, ollama_url=base_url, ollama_timeout=timeout):
+                logger.info(f"Initializing Ollama LLM with model {config.llm.ollama_model}")
+                return Ollama(
+                    model=model,
+                    base_url=base_url,
+                    request_timeout=timeout,
+                )
+            case GeminiLLMConfig(google_api_key=api_key, model=model):
+                logger.info("Initializing Gemini LLM")
+                # Placeholder for Gemini LLM initialization
+                return Gemini(api_key=api_key, model=model)
+            case GoogleGenAILLMConfig(google_api_key=api_key, model=model):
+                logger.info("Initializing Google GenAI LLM")
+                return GoogleGenAI(api_key=api_key, model=model)
+            case _:
+                raise AgentConfigError(
+                    f"Unsupported LLM type: {config.llm.type}"
+                )
+        
 
     async def run(self, query: str) -> str:
         """Run a query through the agent."""
