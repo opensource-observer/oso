@@ -3674,7 +3674,7 @@ requires-dist = [
 [[package]]
 name = "oso-mcp"
 version = "0.1.0"
-source = { virtual = "warehouse/oso_mcp" }
+source = { editable = "warehouse/oso_mcp" }
 dependencies = [
     { name = "mcp", extra = ["cli"] },
     { name = "pydantic" },
