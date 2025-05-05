@@ -1,11 +1,14 @@
+import typing as t
 from typing import List, Optional
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings
+
+from ..utils.config import agent_config_dict
 
 
-class AgentConfig(BaseSettings):
-    """Configuration for the agent and its components."""
+class LocalLLMConfig(BaseModel):
+    type: t.Literal["local"] = "local"
 
     ollama_model: str = Field(
         default="llama3.2:3b", description="Ollama model to use for the agent"
@@ -17,10 +20,34 @@ class AgentConfig(BaseSettings):
         default=60.0, description="Timeout in seconds for Ollama API requests", gt=0
     )
 
+class GeminiLLMConfig(BaseModel):
+    type: t.Literal["google_gemini"] = "google_gemini"
+
+    google_api_key: str
+
+class GoogleGenAILLMConfig(BaseModel):
+    type: t.Literal["google_genai"] = "google_genai"
+
+    google_api_key: str
+
+LLMConfig = t.Union[
+    LocalLLMConfig,
+    GeminiLLMConfig,
+    GoogleGenAILLMConfig,
+]
+
+class AgentConfig(BaseSettings):
+    """Configuration for the agent and its components."""
+
+    model_config = agent_config_dict()
+
+    llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
+
     oso_mcp_url: str = Field(
         default="http://localhost:8000/sse", description="URL for the OSO MCP API"
     )
     use_mcp: bool = Field(default=True, description="Whether to use MCP tools")
+
     allowed_mcp_tools: Optional[List[str]] = Field(
         default=None,
         description="List of allowed MCP tool names, or None for all tools",
@@ -38,18 +65,6 @@ class AgentConfig(BaseSettings):
         default="You are a helpful assistant that can query the OpenSource Observer datalake.",
         description="System prompt for the agent",
     )
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        env_prefix="AGENT_",
-        extra="ignore",
-    )
-
-    @classmethod
-    def from_env(cls) -> "AgentConfig":
-        """Load config from environment and .env file."""
-        return cls()
 
     def update(self, **kwargs) -> "AgentConfig":
         """Create a new config with updates applied."""
