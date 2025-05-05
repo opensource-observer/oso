@@ -134,13 +134,13 @@ class Agent:
                     base_url=base_url,
                     request_timeout=timeout,
                 )
-            case GeminiLLMConfig(google_api_key=api_key):
+            case GeminiLLMConfig(google_api_key=api_key, model=model):
                 logger.info("Initializing Gemini LLM")
                 # Placeholder for Gemini LLM initialization
-                return Gemini(api_key=api_key)
-            case GoogleGenAILLMConfig(google_api_key=api_key):
+                return Gemini(api_key=api_key, model=model)
+            case GoogleGenAILLMConfig(google_api_key=api_key, model=model):
                 logger.info("Initializing Google GenAI LLM")
-                return GoogleGenAI(api_key=api_key)
+                return GoogleGenAI(api_key=api_key, model=model)
             case _:
                 raise AgentConfigError(
                     f"Unsupported LLM type: {config.llm.type}"

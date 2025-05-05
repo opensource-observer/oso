@@ -25,10 +25,14 @@ class GeminiLLMConfig(BaseModel):
 
     google_api_key: str
 
+    model: str = Field(default="models/gemini-2.0-flash")
+
 class GoogleGenAILLMConfig(BaseModel):
     type: t.Literal["google_genai"] = "google_genai"
 
     google_api_key: str
+    
+    model: str = Field(default="gemini-2.0-flash")
 
 LLMConfig = t.Union[
     LocalLLMConfig,
