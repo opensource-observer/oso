@@ -27,12 +27,22 @@ class GeminiLLMConfig(BaseModel):
 
     model: str = Field(default="models/gemini-2.0-flash")
 
+    @property
+    def api_key(self) -> str:
+        """Return the API key for the Gemini model."""
+        return self.google_api_key.get_secret_value()
+
 class GoogleGenAILLMConfig(BaseModel):
     type: t.Literal["google_genai"] = "google_genai"
 
     google_api_key: SecretStr
     
     model: str = Field(default="gemini-2.0-flash")
+
+    @property
+    def api_key(self) -> str:
+        """Return the API key for the Gemini model."""
+        return self.google_api_key.get_secret_value()
 
 LLMConfig = t.Union[
     LocalLLMConfig,
