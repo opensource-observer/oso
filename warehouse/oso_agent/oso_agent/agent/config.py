@@ -81,7 +81,10 @@ class AgentConfig(BaseSettings):
         description="Whether to use the Arize Phoenix cloud API",
     )
 
-    arize_phoenix_api_key: SecretStr = Field(description="API key for the Arize Phoenix API")
+    arize_phoenix_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        description="API key for the Arize Phoenix API"
+    )
 
     system_prompt: str = Field(
         default="You are a helpful assistant that can query the OpenSource Observer datalake.",
