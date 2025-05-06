@@ -15,11 +15,13 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 )
 from opentelemetry.sdk import trace as trace_sdk
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from phoenix.otel import register
 
 from .config import AgentConfig, GeminiLLMConfig, GoogleGenAILLMConfig, LocalLLMConfig
 from .errors import AgentConfigError
 
 logger = logging.getLogger(__name__)
+
 
 async def _create_mcp_tools(config: AgentConfig) -> list[FunctionTool]:
     """Create and return MCP tools if enabled."""
@@ -49,11 +51,14 @@ async def _create_mcp_tools(config: AgentConfig) -> list[FunctionTool]:
         if config.use_mcp:
             raise AgentConfigError(f"Failed to initialize MCP tools: {e}") from e
         return []
-    
+
+
 async def _setup_llm(config: AgentConfig):
     """Setup the LLM for the agent depending on the configuration"""
     match config.llm:
-        case LocalLLMConfig(ollama_model=model, ollama_url=base_url, ollama_timeout=timeout):
+        case LocalLLMConfig(
+            ollama_model=model, ollama_url=base_url, ollama_timeout=timeout
+        ):
             logger.info(f"Initializing Ollama LLM with model {config.llm.ollama_model}")
             return Ollama(
                 model=model,
@@ -68,10 +73,9 @@ async def _setup_llm(config: AgentConfig):
             logger.info("Initializing Google GenAI LLM")
             return GoogleGenAI(api_key=api_key, model=model)
         case _:
-            raise AgentConfigError(
-                f"Unsupported LLM type: {config.llm.type}"
-            )
-        
+            raise AgentConfigError(f"Unsupported LLM type: {config.llm.type}")
+
+
 def _create_local_tools() -> list[BaseTool]:
     """Create and return local tools."""
 
@@ -82,7 +86,8 @@ def _create_local_tools() -> list[BaseTool]:
 
     return [
         FunctionTool.from_defaults(multiply),
-    ] 
+    ]
+
 
 async def _create_agent(config: AgentConfig) -> ReActAgent:
     """Create and configure the ReAct agent."""
@@ -93,7 +98,7 @@ async def _create_agent(config: AgentConfig) -> ReActAgent:
         llm = await _setup_llm(config)
 
         logger.info("Creating agent tools")
-        #local_tools = _create_local_tools()
+        # local_tools = _create_local_tools()
         mcp_tools = await _create_mcp_tools(config)
         tools = mcp_tools
         logger.info(f"Created {len(tools)} total tools")
@@ -107,41 +112,70 @@ async def _create_agent(config: AgentConfig) -> ReActAgent:
     except Exception as e:
         logger.error(f"Failed to create agent: {e}")
         raise AgentConfigError(f"Failed to create agent: {e}") from e
-    
+
+
 def _setup_telemetry(config: AgentConfig) -> t.Optional[trace_sdk.TracerProvider]:
     """Setup OpenTelemetry tracing if enabled."""
     if not config.enable_telemetry:
         return None
 
     try:
-        tracer_provider = trace_sdk.TracerProvider()
+        if config.arize_phoenix_use_cloud:
+            if not config.arize_phoenix_api_key.get_secret_value():
+                logger.warning(
+                    "Arize Phoenix API key is empty but cloud mode is enabled"
+                )
+                return None
+
+            logger.info("Setting up telemetry with Arize Phoenix Cloud")
+
+            tracer_provider = register(
+                project_name="oso-agent",
+                endpoint="https://app.phoenix.arize.com/v1/traces",
+                batch=True,
+                headers={
+                    "api_key": config.arize_phoenix_api_key.get_secret_value(),
+                },
+                set_global_tracer_provider=False,
+                verbose=False,
+            )
+
+            LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
+            logger.info("Phoenix Cloud telemetry successfully initialized")
+            return tracer_provider
 
         logger.info(
-            f"Setting up telemetry with Phoenix at {config.arize_phoenix_traces_url}"
+            f"Setting up telemetry with local Phoenix at {config.arize_phoenix_traces_url}"
         )
-        phoenix_exporter = HTTPSpanExporter(
-            endpoint=config.arize_phoenix_traces_url
-        )
+        tracer_provider = trace_sdk.TracerProvider()
+        phoenix_exporter = HTTPSpanExporter(endpoint=config.arize_phoenix_traces_url)
         phoenix_processor = SimpleSpanProcessor(phoenix_exporter)
         tracer_provider.add_span_processor(span_processor=phoenix_processor)
 
         LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
-        logger.info("Telemetry successfully initialized")
+        logger.info("Local telemetry successfully initialized")
         return tracer_provider
+
     except Exception as e:
         logger.error(f"Failed to initialize telemetry: {e}")
         return None
 
+
 class Agent:
     """LlamaIndex ReAct agent with configured tools and LLM."""
 
-    def __init__(self, config: AgentConfig, react_agent: ReActAgent, tools: list[BaseTool], mcp_tools: list[FunctionTool]):
+    def __init__(
+        self,
+        config: AgentConfig,
+        react_agent: ReActAgent,
+        tools: list[BaseTool],
+        mcp_tools: list[FunctionTool],
+    ):
         """Initialize agent attributes."""
         self.config = config
         self.react_agent: ReActAgent = react_agent
         self.tools: list[BaseTool] = tools
         self.mcp_tools: list[FunctionTool] = mcp_tools
-
 
     @classmethod
     async def create(cls, config: AgentConfig):
@@ -153,15 +187,18 @@ class Agent:
 
         agent = cls(config, react_agent, tools, mcp_tools)
         return agent
-        
 
-    async def run(self, query: str, chat_history: list[ChatMessage] | None = None) -> str:
+    async def run(
+        self, query: str, chat_history: list[ChatMessage] | None = None
+    ) -> str:
         """Run a query through the agent."""
 
         chat_buffer = ChatMemoryBuffer(token_limit=1000000)
 
         logger.info(f"Running query: {query}")
         chat_history = chat_history or []
-        
-        response = await self.react_agent.run(query, chat_history=chat_history, memory=chat_buffer)
+
+        response = await self.react_agent.run(
+            query, chat_history=chat_history, memory=chat_buffer
+        )
         return str(response)
