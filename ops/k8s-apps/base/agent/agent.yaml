@@ -28,7 +28,7 @@ spec:
     app:
       name: "oso-agent"
       command: ["uv"]
-      args: 
+      args:
         - run
         - --directory
         - warehouse/oso_agent
@@ -37,7 +37,6 @@ spec:
         - --host
         - 0.0.0.0
         - --port
-        - 8000
+        - 8080
       hostEnvVar: "AGENT_HOST"
       portEnvVar: "AGENT_PORT"
-
