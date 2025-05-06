@@ -1,5 +1,6 @@
 import logging
 import typing as t
+import uuid
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -12,6 +13,7 @@ from oso_agent.server.definition import (
     AppLifespanFactory,
     ChatRequest,
 )
+from oso_agent.utils.log import setup_logging
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 def default_lifecycle(config: AgentServerConfig):
     @asynccontextmanager
     async def initialize_app(app: FastAPI):
-        agent = Agent.create(config)
+        agent = await Agent.create(config)
         try:
             yield {
                 "agent": agent,
@@ -48,6 +50,8 @@ def app_factory(lifespan_factory: AppLifespanFactory[AgentServerConfig], config:
 def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any]):
     # Dependency to get the cluster manager
 
+    setup_logging(3)
+
     app = FastAPI(lifespan=lifespan)
 
     @app.get("/status")
@@ -55,7 +59,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         """Liveness endpoint"""
         return {"status": "Service is running"}
 
-    @app.post("/v0/chat", response_model=PlainTextResponse)
+    @app.post("/v0/chat")
     async def chat(
         request: Request,
         chat_request: ChatRequest,
@@ -66,6 +70,15 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
             query=chat_request.current_message.content,
             chat_history=chat_request.to_llama_index_chat_history(),
         )
-        return response
+
+        # We should likely be streaming this, but for now, we'll just return the
+        # whole response
+        lines: list[str] = []
+        lines.append(f'f:{{"messageId": "{str(uuid.uuid4())}"}}')
+        for line in response.split("\n"):
+            lines.append(f"0: {line}")
+        lines.append('d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n')
+
+        return PlainTextResponse("\n".join(lines))
 
     return app

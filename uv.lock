@@ -3787,6 +3787,7 @@ dependencies = [
     { name = "llama-index-llms-ollama" },
     { name = "llama-index-tools-mcp" },
     { name = "openinference-instrumentation-llama-index" },
+    { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.metadata]
@@ -3799,6 +3800,7 @@ requires-dist = [
     { name = "llama-index-llms-ollama", specifier = ">=0.5.4" },
     { name = "llama-index-tools-mcp", specifier = ">=0.1.1" },
     { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.2" },
 ]
 
 [[package]]
@@ -3980,7 +3982,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess" },
+    { name = "ptyprocess", marker = "sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450 }
 wheels = [

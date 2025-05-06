@@ -25,7 +25,9 @@ class ChatRequestMessage(BaseModel):
 
     role: t.Literal["user", "assistant"]
     content: str
-    parts: ChatRequestMessagePart = Field(discriminator="type")
+    parts: list[t.Annotated[ChatRequestMessagePart, Field(discriminator="type")]] = Field(
+        default_factory=lambda: []
+    )
 
 class ChatRequest(BaseModel):
     """Request to chat with the agent."""
@@ -38,7 +40,8 @@ class ChatRequest(BaseModel):
     @property
     def current_message(self) -> ChatRequestMessage:
         """Get the current message in the chat history."""
-        if not len(self.messages) < 1:
+        print(f"LenMessage={len(self.messages)}")
+        if len(self.messages) < 1:
             raise ValueError("No messages in chat history")
         return self.messages[-1]
 
