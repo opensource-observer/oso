@@ -3,12 +3,15 @@ import logging
 import sys
 
 import click
+from dotenv import load_dotenv
 
 from ..agent.agent import Agent
 from ..agent.config import AgentConfig
 from ..agent.errors import AgentConfigError, AgentError, AgentRuntimeError
 from ..utils.log import setup_logging
 from .utils import common_options, pass_config
+
+load_dotenv()
 
 logger = logging.getLogger("oso-agent")
 

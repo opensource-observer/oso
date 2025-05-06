@@ -17,7 +17,7 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from .config import AgentConfig, GeminiLLMConfig, GoogleGenAILLMConfig, LocalLLMConfig
 from .errors import AgentConfigError, AgentRuntimeError
 
-logger = logging.getLogger("oso-agent")
+logger = logging.getLogger(__name__)
 
 
 class Agent:
