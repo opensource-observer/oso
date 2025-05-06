@@ -1,7 +1,7 @@
 import typing as t
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings
 
 from ..utils.config import agent_config_dict
@@ -23,16 +23,26 @@ class LocalLLMConfig(BaseModel):
 class GeminiLLMConfig(BaseModel):
     type: t.Literal["google_gemini"] = "google_gemini"
 
-    google_api_key: str
+    google_api_key: SecretStr
 
     model: str = Field(default="models/gemini-2.0-flash")
+
+    @property
+    def api_key(self) -> str:
+        """Return the API key for the Gemini model."""
+        return self.google_api_key.get_secret_value()
 
 class GoogleGenAILLMConfig(BaseModel):
     type: t.Literal["google_genai"] = "google_genai"
 
-    google_api_key: str
+    google_api_key: SecretStr
     
     model: str = Field(default="gemini-2.0-flash")
+
+    @property
+    def api_key(self) -> str:
+        """Return the API key for the Gemini model."""
+        return self.google_api_key.get_secret_value()
 
 LLMConfig = t.Union[
     LocalLLMConfig,
