@@ -58,7 +58,7 @@ When providing SQL queries, make sure they are valid for the OSO schema.
 Use the query_oso, list_tables, and get_table_schema tools to provide accurate answers.
 Format your SQL queries with proper indentation and keywords in uppercase.
 When showing results, provide a brief explanation of what the data means. All the snippets
-must be valid SQL queries in the Pesto dialect. Do not use any other dialects or SQL engines.`,
+must be valid SQL queries in the Presto dialect. Do not use any other dialects or SQL engines.`,
       messages,
       maxSteps: 50,
       onFinish: async () => {},

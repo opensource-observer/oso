@@ -29,7 +29,7 @@ def cli(ctx, verbose):
     """
     setup_logging(verbose)
 
-    ctx.obj = AgentConfig.from_env()
+    ctx.obj = AgentConfig()
 
 
 @cli.command()
@@ -112,7 +112,7 @@ async def _run_interactive_session(config: AgentConfig):
     try:
         agent = await Agent.create(config)
         click.echo(
-            f"Interactive agent session started with model: {config.ollama_model}"
+            f"Interactive agent session started with model: {config.llm.type}"
         )
         click.echo(f"System prompt: {config.system_prompt}")
         click.echo("Type 'exit' or press Ctrl+D to quit.")
@@ -184,7 +184,7 @@ async def _run_demo(config: AgentConfig):
             "Please give me the first 10 rows of the table `projects_v1`",
         ]
 
-        click.echo(f"Running demo with model: {config.ollama_model}")
+        click.echo(f"Running demo with model: {config.llm.type}")
         click.echo(f"System prompt: {config.system_prompt}")
 
         for i, query in enumerate(queries, 1):

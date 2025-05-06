@@ -957,7 +957,7 @@ wheels = [
 
 [[package]]
 name = "dagster-sqlmesh"
-version = "0.15.0"
+version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dagster" },
@@ -965,9 +965,9 @@ dependencies = [
     { name = "pytest" },
     { name = "sqlmesh" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/69/8c/903888189c069ea2ec34328ca4c24b55194fa1eefbf04608e45867b02e7d/dagster_sqlmesh-0.15.0.tar.gz", hash = "sha256:2d2c5382890dffa4b12af622e332459db6e0922911c6dec41a4775fa08408eb2", size = 204155 }
+sdist = { url = "https://files.pythonhosted.org/packages/81/ce/999aea03485077a85de19fe5c5ba3d4a74b4205e87d2d34e62d49183765d/dagster_sqlmesh-0.16.0.tar.gz", hash = "sha256:30cff54abd5e348a43d8b90e175f8e2ce6bd2787aac9b03800dc7671bb24c5c1", size = 209287 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/af/96/05a34c81584cdee2327c186ef50f29ae5627e34b7c48eb6b8924960caa02/dagster_sqlmesh-0.15.0-py3-none-any.whl", hash = "sha256:0f2d13a2e9e5e6a5f9fb715163e003f03cc8fd1001722d4fb1bc21b3661e5a82", size = 29040 },
+    { url = "https://files.pythonhosted.org/packages/84/cf/672b3dac15031a3337e7a6bc1dd31a7ac73ed208de7d516371819d443511/dagster_sqlmesh-0.16.0-py3-none-any.whl", hash = "sha256:f467e00438649c0373fbff95131fb2b7a2a28652d1d95f4a89f0ffebca74e17d", size = 30726 },
 ]
 
 [[package]]
@@ -1649,6 +1649,21 @@ wheels = [
 ]
 
 [[package]]
+name = "google-ai-generativelanguage"
+version = "0.6.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/d1/48fe5d7a43d278e9f6b5ada810b0a3530bbeac7ed7fcbcd366f932f05316/google_ai_generativelanguage-0.6.15.tar.gz", hash = "sha256:8f6d9dc4c12b065fe2d0289026171acea5183ebf2d0b11cefe12f3821e159ec3", size = 1375443 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7c/a3/67b8a6ff5001a1d8864922f2d6488dc2a14367ceb651bc3f09a947f2f306/google_ai_generativelanguage-0.6.15-py3-none-any.whl", hash = "sha256:5a03ef86377aa184ffef3662ca28f19eeee158733e45d7947982eb953c6ebb6c", size = 1327356 },
+]
+
+[[package]]
 name = "google-api-core"
 version = "2.24.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1901,6 +1916,42 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/25/53/e5e449c368dd26ade5fb2bb209e046d4309ed0623be65b13f0ce026cb520/google_crc32c-1.6.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c87d98c7c4a69066fd31701c4e10d178a648c2cac3452e62c6b24dc51f9fcc00", size = 32995 },
     { url = "https://files.pythonhosted.org/packages/52/12/9bf6042d5b0ac8c25afed562fb78e51b0641474097e4139e858b45de40a5/google_crc32c-1.6.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bd5e7d2445d1a958c266bfa5d04c39932dc54093fa391736dbfdb0f1929c1fb3", size = 32614 },
     { url = "https://files.pythonhosted.org/packages/76/29/fc20f5ec36eac1eea0d0b2de4118c774c5f59c513f2a8630d4db6991f3e0/google_crc32c-1.6.0-cp312-cp312-win_amd64.whl", hash = "sha256:7aec8e88a3583515f9e0957fe4f5f6d8d4997e36d0f61624e70469771584c760", size = 33445 },
+]
+
+[[package]]
+name = "google-genai"
+version = "1.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "google-auth" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5e/1f/0861dad47febbb391123a529f3655582e2a7ce14aadb6ddc527dd7dea470/google_genai-1.13.0.tar.gz", hash = "sha256:de7b4960d361c7ea85b715ce0e07fe34903d94affa82d566d9eb04e8f92512b9", size = 165727 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c5/2c/1833fa15311fa4f0790e9c8ea3488382fe428c3eca62b329d6aa355871ae/google_genai-1.13.0-py3-none-any.whl", hash = "sha256:e88417c95f333827ed051282803db627192fd8e5fdf5b49b6f26644a67775d1a", size = 164405 },
+]
+
+[[package]]
+name = "google-generativeai"
+version = "0.8.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-ai-generativelanguage" },
+    { name = "google-api-core" },
+    { name = "google-api-python-client" },
+    { name = "google-auth" },
+    { name = "protobuf" },
+    { name = "pydantic" },
+    { name = "tqdm" },
+    { name = "typing-extensions" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/40/c42ff9ded9f09ec9392879a8e6538a00b2dc185e834a3392917626255419/google_generativeai-0.8.5-py3-none-any.whl", hash = "sha256:22b420817fb263f8ed520b33285f45976d5b21e904da32b80d4fd20c055123a2", size = 155427 },
 ]
 
 [[package]]
@@ -2762,6 +2813,34 @@ wheels = [
 ]
 
 [[package]]
+name = "llama-index-llms-gemini"
+version = "0.4.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-generativeai" },
+    { name = "llama-index-core" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/cc/1f65b7ec2318a9bd69c013ee7aad3ad9563f1475eb47ac65c91a388aca6e/llama_index_llms_gemini-0.4.14.tar.gz", hash = "sha256:ea53a5be7fad63f7e3c69cca2b759ccc2d8c36b33596daa38b9e91793f674074", size = 9108 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/28/61/b5234c977c5c4fdcd91f7759ec0947dac818003e13ee14b3f589390e988b/llama_index_llms_gemini-0.4.14-py3-none-any.whl", hash = "sha256:e094037e80c2f97e66dc5ecb5701237e1dde330a8368ad180cca7ebcb60f8319", size = 9581 },
+]
+
+[[package]]
+name = "llama-index-llms-google-genai"
+version = "0.1.12"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-genai" },
+    { name = "llama-index-core" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9e/80/86b951327ae8fccb7d13dc573ba089ae8e309181266fb0fc4ab6ae83afc7/llama_index_llms_google_genai-0.1.12.tar.gz", hash = "sha256:cba7538b9ee22cfa40a1628d74232ee631c90cd025c2c2b99ce5fbea16f8d953", size = 10015 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ac/b3/2e2a33beb5dbb231579a7a0c6f8193eb06cebbae8b08de20e81c4179204d/llama_index_llms_google_genai-0.1.12-py3-none-any.whl", hash = "sha256:08f0c132b3b4f9705f968b2757289d116646cbdd16a7ba61cca86bf04073176d", size = 10372 },
+]
+
+[[package]]
 name = "llama-index-llms-ollama"
 version = "0.5.4"
 source = { registry = "https://pypi.org/simple" }
@@ -3584,7 +3663,7 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = "==0.15.0" },
+    { name = "dagster-sqlmesh", specifier = "==0.16.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.0.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.0.0" },
@@ -3656,6 +3735,8 @@ dependencies = [
     { name = "arize-phoenix-otel" },
     { name = "dotenv" },
     { name = "llama-index" },
+    { name = "llama-index-llms-gemini" },
+    { name = "llama-index-llms-google-genai" },
     { name = "llama-index-llms-ollama" },
     { name = "llama-index-tools-mcp" },
     { name = "openinference-instrumentation-llama-index" },
@@ -3666,6 +3747,8 @@ requires-dist = [
     { name = "arize-phoenix-otel", specifier = ">=0.9.1" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "llama-index", specifier = ">=0.12.29" },
+    { name = "llama-index-llms-gemini", specifier = ">=0.4.14" },
+    { name = "llama-index-llms-google-genai", specifier = ">=0.1.12" },
     { name = "llama-index-llms-ollama", specifier = ">=0.5.4" },
     { name = "llama-index-tools-mcp", specifier = ">=0.1.1" },
     { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.0" },
@@ -5088,11 +5171,11 @@ wheels = [
 
 [[package]]
 name = "sqlglot"
-version = "26.13.2"
+version = "26.16.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/16/ba/1328ee0e4fb34b04d63307a7e9f16413096672388ad3f75b8998833f314e/sqlglot-26.13.2.tar.gz", hash = "sha256:fd0062311af3f38f7e419ce241e457a2ab082225b78539d713670e3246e9fc46", size = 5348477 }
+sdist = { url = "https://files.pythonhosted.org/packages/38/90/e487ae7c3722896e9b6911ac95e472a0bf37069061fdd3f54181db00ec28/sqlglot-26.16.4.tar.gz", hash = "sha256:0de74266e4ab1286801c40640a8bd99f96c1ec0fc20681f3c55802f39ce4b3ec", size = 5355134 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/e1/8f6d1804df5615b3f3da37e68c3d25d05f07eb7963f66682832852ed236a/sqlglot-26.13.2-py3-none-any.whl", hash = "sha256:edf8fc6c9a3cc03c64adb6eb4531660acce449f3987af5ce6fd8d3a041468fbb", size = 457629 },
+    { url = "https://files.pythonhosted.org/packages/00/b3/f91be0e284bb221d5e52073e3ab73e788e9101d7f7e7561dd771daed7a81/sqlglot-26.16.4-py3-none-any.whl", hash = "sha256:dbff0ace2e21c9169182d6852b8f6eb56d86fc6477354abcb5bda7ab93292975", size = 460033 },
 ]
 
 [package.optional-dependencies]
@@ -5120,7 +5203,7 @@ wheels = [
 
 [[package]]
 name = "sqlmesh"
-version = "0.174.2"
+version = "0.178.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astor" },
@@ -5141,9 +5224,9 @@ dependencies = [
     { name = "tenacity" },
     { name = "time-machine" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0a/6e/d0961560eb1a045a6ca7ccd1fa419e94759ae3643f3c49976f1d9d971717/sqlmesh-0.174.2.tar.gz", hash = "sha256:e4b4d66447d7c53242bccb48343bfc2553625e646cc9728c5abc0e014deae34f", size = 9677704 }
+sdist = { url = "https://files.pythonhosted.org/packages/ca/e4/d554fe4daf9dc9a122405c0bf5f4c61d91e941b39eed12bbbd0bb4cb83f7/sqlmesh-0.178.2.tar.gz", hash = "sha256:b7f90083e0dcd934994917aa75f0ae72193e4273f49dfc90bcd65fb690293c5e", size = 9737090 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cd/11/74b174017db93b6a3b46aecc5992e6133f76653e69cda90013a4de9aaaa8/sqlmesh-0.174.2-py3-none-any.whl", hash = "sha256:b7481b44db0a12ee8e0faf92ee8b8b70dd1123c362e5457c149639042cb35801", size = 5411255 },
+    { url = "https://files.pythonhosted.org/packages/39/53/30ea0b304a64a27a5c2f238a55b09790209c94f3aacca2badf678ce72fa7/sqlmesh-0.178.2-py3-none-any.whl", hash = "sha256:13594063e463adbe7b56c03077c0865adf19cd2a62c3ac5c50b3a820e7eadd71", size = 5382561 },
 ]
 
 [package.optional-dependencies]
