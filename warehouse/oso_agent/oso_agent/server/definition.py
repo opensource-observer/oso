@@ -1,14 +1,14 @@
 
 from pydantic import Field
-from pydantic_settings import SettingsConfigDict
 
 from ..agent.config import AgentConfig
+from ..utils.config import agent_config_dict
 
 
 class AgentServerConfig(AgentConfig):
     """Configuration for the agent and its components."""
 
-    model_config = SettingsConfigDict(env_prefix="agent_")
+    model_config = agent_config_dict()
 
     port: int = Field(
         default=8000, description="Port for the server to run on"

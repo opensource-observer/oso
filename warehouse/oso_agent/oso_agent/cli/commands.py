@@ -4,6 +4,7 @@ import sys
 
 import click
 from dotenv import load_dotenv
+from llama_index.core.llms import ChatMessage, MessageRole
 
 from ..agent.agent import Agent
 from ..agent.config import AgentConfig
@@ -120,6 +121,8 @@ async def _run_interactive_session(config: AgentConfig):
         click.echo(f"System prompt: {config.system_prompt}")
         click.echo("Type 'exit' or press Ctrl+D to quit.")
 
+        history: list[ChatMessage] = []
+
         while True:
             try:
                 query = click.prompt("\nQuery", type=str)
@@ -130,7 +133,14 @@ async def _run_interactive_session(config: AgentConfig):
                     with click.progressbar(
                         length=1, label="Thinking", show_eta=False, show_percent=False
                     ) as b:
-                        response = await agent.run(query)
+                        response = await agent.run(query, chat_history=history)
+                        history.append(ChatMessage(
+                            role=MessageRole.USER, content=query,
+                        ))
+                        history.append(ChatMessage(
+                            role=MessageRole.ASSISTANT, content=response,
+                        ))
+                        print(history)
                         b.update(1)
 
                     click.echo("\nResponse:")
