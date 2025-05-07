@@ -70,9 +70,20 @@ class AgentConfig(BaseSettings):
     enable_telemetry: bool = Field(
         default=True, description="Whether to enable OpenTelemetry instrumentation"
     )
+
     arize_phoenix_traces_url: str = Field(
         default="http://localhost:6006/v1/traces",
         description="URL for the Arize Phoenix traces API",
+    )
+
+    arize_phoenix_use_cloud: bool = Field(
+        default=False,
+        description="Whether to use the Arize Phoenix cloud API",
+    )
+
+    arize_phoenix_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        description="API key for the Arize Phoenix API"
     )
 
     system_prompt: str = Field(

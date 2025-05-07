@@ -4,6 +4,10 @@ app:
   # name: "oso" # This must be set
   # command: []
   # args: []
+  ingress:
+    enabled: false
+    className: "default"
+    annotations: {}
   service:
     annotations: {}
   host: 0.0.0.0
