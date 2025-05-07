@@ -62,4 +62,4 @@ export const ALGOLIA_API_KEY =
 export const ALGOLIA_INDEX = process.env.NEXT_PUBLIC_ALGOLIA_INDEX ?? "MISSING";
 export const FEEDBACK_FARM_ID =
   process.env.NEXT_PUBLIC_FEEDBACK_FARM_ID ?? "MISSING";
-export const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY ?? "MISSING";
+export const OSO_AGENT_URL = process.env.OSO_AGENT_URL ?? "MISSING";

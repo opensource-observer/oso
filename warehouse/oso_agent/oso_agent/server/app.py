@@ -1,3 +1,4 @@
+import json
 import logging
 import typing as t
 import uuid
@@ -32,9 +33,11 @@ def default_lifecycle(config: AgentServerConfig):
 
     return initialize_app
 
+
 class ApplicationStateStorage(t.Protocol):
     @property
     def state(self) -> State: ...
+
 
 def get_agent(storage: ApplicationStateStorage, config: AgentServerConfig) -> Agent:
     """Get the agent from the application state."""
@@ -42,10 +45,14 @@ def get_agent(storage: ApplicationStateStorage, config: AgentServerConfig) -> Ag
     assert agent is not None, "Agent not initialized"
     return t.cast(Agent, agent)
 
-def app_factory(lifespan_factory: AppLifespanFactory[AgentServerConfig], config: AgentServerConfig):
+
+def app_factory(
+    lifespan_factory: AppLifespanFactory[AgentServerConfig], config: AgentServerConfig
+):
     logger.debug(f"loading application with config: {config}")
     app = setup_app(config, lifespan=lifespan_factory(config))
     return app
+
 
 def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any]):
     # Dependency to get the cluster manager
@@ -71,14 +78,19 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
             chat_history=chat_request.to_llama_index_chat_history(),
         )
 
-        # We should likely be streaming this, but for now, we'll just return the
-        # whole response
         lines: list[str] = []
-        lines.append(f'f:{{"messageId": "{str(uuid.uuid4())}"}}')
-        for line in response.split("\n"):
-            lines.append(f"0: {line}")
-        lines.append('d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n')
+        message_id = str(uuid.uuid4())
 
-        return PlainTextResponse("\n".join(lines))
+        lines.append(f'f:{{"messageId":"{message_id}"}}\n')
+
+        for line in response.split("\n"):
+            escaped_line = json.dumps(line)
+            lines.append(f"0:{escaped_line}\n")
+
+        lines.append(
+            'd:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n'
+        )
+
+        return PlainTextResponse("".join(lines))
 
     return app
