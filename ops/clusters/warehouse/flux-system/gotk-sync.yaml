@@ -8,7 +8,7 @@ metadata:
 spec:
   interval: 60s
   ref:
-    branch: ravenac95/start-agent-deployment
+    branch: main
   url: https://github.com/opensource-observer/oso.git
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
