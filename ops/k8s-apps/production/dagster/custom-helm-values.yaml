@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20250508164641-1e99518 # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20250508170415-b4ae18e # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
