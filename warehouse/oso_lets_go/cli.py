@@ -18,6 +18,7 @@ import aiotrino
 import dotenv
 import git
 import kr8s
+import requests
 from kr8s.objects import Job, Namespace, Service
 from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
@@ -300,6 +301,21 @@ def clean_expired_trino_hive_files(
         )
     )
 
+@production.command()
+@click.option("--service-name", default="receiver")
+@click.option("--namespace", default="flux-system")
+@click.option("--endpoint", required=True)
+@click.option("--remote-port", type=int, default=8080)
+def trigger_image_update(service_name: str, namespace: str, endpoint: str, remote_port: int):
+    flux_service = Service.get(
+        service_name,
+        namespace,
+    )
+    with flux_service.portforward(remote_port=remote_port) as local_port:
+        logger.info(f"Port forwarded to localhost:{local_port}")
+        url = f"http://localhost:{local_port}{endpoint}"
+        requests.get(f"http://localhost:{local_port}{endpoint}")
+        logger.info(f"Image update webhook triggered for {service_name} in {namespace}")
 
 @production.command()
 @click.option("--namespace", default="production-dagster")

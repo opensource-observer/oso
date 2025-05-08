@@ -68,6 +68,12 @@ jobs:
           location: ${{ secrets.GKE_CLUSTER_REGION }}
           project_id: ${{ vars.GOOGLE_PROJECT_ID }}
 
+      # Trigger a webhook to the flux notification service to notify it of the
+      # new image. This will trigger the notification controller to update the
+      # image in the kubernetes cluster.
+      - name: Trigger flux image update
+        run: uv run oso production trigger-image-update --endpoint ${{ secrets.FLUX_IMAGE_UPDATE_WEBHOOK_ENDPOINT }}
+
       # We may need a better place for this in the future but for now we need to
       # ensure that sqlmesh state is up to date _before_ we deploy the new
       # containers
