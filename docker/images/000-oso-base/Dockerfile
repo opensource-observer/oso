@@ -23,7 +23,7 @@ RUN apt-get update && \
     tar xvf gcloud.tar.gz && \
     bash ./google-cloud-sdk/install.sh && \
     rm gcloud.tar.gz && true && \
-    echo "${ORDERED_TAG}}" > /oso.ordered_tag.txt && \
+    echo "${ORDERED_TAG}" > /oso.ordered_tag.txt && \
     echo "${REPO_SHA}" > /oso.repo_sha.txt
 ENV PATH $PATH:/google-cloud-sdk/bin
 
