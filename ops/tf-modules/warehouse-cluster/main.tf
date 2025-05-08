@@ -442,11 +442,11 @@ module "gke" {
   network_policy                       = false
   horizontal_pod_autoscaling           = true
   filestore_csi_driver                 = false
+  gcs_fuse_csi_driver                  = true
   deletion_protection                  = false
   monitoring_enable_managed_prometheus = true
   logging_enabled_components           = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER", "WORKLOADS"]
   monitoring_enabled_components        = ["SYSTEM_COMPONENTS", "APISERVER", "SCHEDULER", "CONTROLLER_MANAGER"]
-
 
   node_pools = local.node_pools
 
