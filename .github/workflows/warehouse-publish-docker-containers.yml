@@ -16,6 +16,9 @@ jobs:
     environment: indexer
     runs-on: ubuntu-latest
 
+    # We should skip this if the commit message contains the string '#production-deploy'
+    if: ${{ !contains(github.event.head_commit.message, '#production-deploy') }}
+
     permissions:
       packages: write
       contents: 'read'

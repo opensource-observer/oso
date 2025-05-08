@@ -19,3 +19,8 @@ spec:
   force: true
   prune: true
   wait: true
+
+  images:
+    - name: ghcr.io/opensource-observer/oso
+      newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+      newTag: latest # {"$imagepolicy": "flux-system:oso:tag"}

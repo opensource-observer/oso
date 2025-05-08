@@ -5,6 +5,7 @@ resources:
 - ../common/flux-image-webhook-receiver.yaml
 - ../common/oso-image-repository.yaml
 - ../common/oso-image-policy.yaml
+- ../common/oso-image-automation.yaml
 - ./secrets-store-csi-driver
 - ./gcp-secrets-store-plugin
 - kube-secrets-init.yaml
