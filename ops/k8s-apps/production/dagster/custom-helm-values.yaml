@@ -81,7 +81,7 @@ spec:
               - "-m"
               - "oso_dagster.definitions"
             includeConfigInLaunchedRuns:
-              enabled: f
+              enabled: false
     sqlmesh:
       gateway: "trino"
       trino:
