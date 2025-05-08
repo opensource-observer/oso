@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: trino-catalog-pv
+  namespace: production-consumer-trino
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 100Mi
+  storageClassName: gcs-rwx
+  mountOptions:
+    - implicit-dirs
+  csi:
+    driver: gcsfuse.csi.storage.gke.io
+    volumeHandle: oso-dynamic-connectors
+  claimRef:
+    name: trino-catalog-pvc
+    namespace: production-consumer-trino
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trino-catalog-pvc
+  namespace: production-consumer-trino
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: gcs-rwx
+  resources:
+    requests:
+      storage: 100Mi
