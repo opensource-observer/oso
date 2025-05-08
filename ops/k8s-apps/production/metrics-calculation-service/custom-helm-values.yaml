@@ -3,6 +3,12 @@ kind: HelmRelease
 metadata:
   name: production-mcs
 spec:
+  postRenderers:
+    - kustomize:
+        images:
+          - name: ghcr.io/opensource-observer/oso
+            newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+            newTag: 20250508153959-65a2467 # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     mcs:
       frontend:

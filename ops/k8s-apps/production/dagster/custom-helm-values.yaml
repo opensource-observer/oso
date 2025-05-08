@@ -3,6 +3,12 @@ kind: HelmRelease
 metadata:
   name: production-dagster
 spec:
+  postRenderers:
+    - kustomize:
+        images:
+          - name: ghcr.io/opensource-observer/oso
+            newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+            newTag: 20250508153959-65a2467 # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
@@ -18,7 +24,6 @@ spec:
     dagster:
       global: 
         serviceAccountName: production-dagster
-
       ingress:
         enabled: true
         ingressClassName: ingress-internal-cloudflare
