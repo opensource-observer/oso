@@ -140,7 +140,8 @@ REPO_DIR=$(pwd)
 # Publish all images 
 images_to_build="$(find ./docker/images/* -type f -name 'Dockerfile' -exec sh -c 'dirname $0' {} \;)"
 immutable_tag="$(git rev-parse HEAD)"
-immutable_ordered_tag="$(date +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
+immutable_ordered_tag="deploy-$(date +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
+
 if [[ `git status --porcelain` ]]; then
   # We don't actually want to commit this image if things aren't clean
   # so we use a different tag for the lexical tag

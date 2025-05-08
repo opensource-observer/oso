@@ -7,7 +7,7 @@ metadata:
 spec:
   filterTags:
     extract: '$timestamp'
-    pattern: '^(?P<timestamp>[0-9]+){14}-[0-9abcdefABCDEF]{7}$'
+    pattern: '^deploy-(?P<timestamp>[0-9]{14})-[0-9abcdefABCDEF]{7}$'
   imageRepositoryRef:
     name: oso
   policy:
