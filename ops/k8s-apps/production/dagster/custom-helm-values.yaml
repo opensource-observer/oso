@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: 20250508153959-65a2467 # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20250508164641-1e99518 # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
@@ -22,7 +22,7 @@ spec:
     cache:
       uri: "redis://redis.production-redis.svc.cluster.local:6379?ttl=3600"
     dagster:
-      global: 
+      global:
         serviceAccountName: production-dagster
       ingress:
         enabled: true
@@ -31,7 +31,6 @@ spec:
           host: admin-dagster.opensource.observer
         readOnlyDagsterWebserver:
           host: dagster.opensource.observer
-
       dagsterDaemon:
         runRetries:
           enabled: true
@@ -45,7 +44,6 @@ spec:
           requests:
             cpu: 100m
             memory: 512Mi
-
       dagsterWebserver:
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
@@ -56,7 +54,6 @@ spec:
           requests:
             cpu: 100m
             memory: 512Mi
-
       runLauncher:
         config:
           k8sRunLauncher:
@@ -76,7 +73,6 @@ spec:
                   requests:
                     cpu: 100m
                     memory: 1024Mi
-        
     sqlmesh:
       gateway: "trino"
       trino:
