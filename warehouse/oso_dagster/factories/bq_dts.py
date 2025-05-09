@@ -74,7 +74,7 @@ def bq_dts_asset(asset_config: BqDtsAssetConfig):
 
         with bigquery_datatransfer.get_client(global_config) as bq_dts_client:
             context.log.info(
-                f"Ensuring BigQuery Data Transfer asset by impersonating {global_config.dbt_impersonate_service_account}"
+                f"Ensuring BigQuery Data Transfer asset by impersonating {global_config.gcp_impersonate_service_account}"
             )
             ensure_bq_dts_transfer(bq_dts_client, asset_config, context.log)
             context.log.info(

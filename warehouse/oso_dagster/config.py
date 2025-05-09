@@ -47,7 +47,7 @@ class DagsterConfig(BaseSettings):
     # HTTP Caching used with the github repository resolver. This is a uri
     http_cache: t.Optional[str] = None
 
-    dbt_impersonate_service_account: str = ""
+    gcp_impersonate_service_account: str = ""
 
     verbose_logs: bool = False
 
