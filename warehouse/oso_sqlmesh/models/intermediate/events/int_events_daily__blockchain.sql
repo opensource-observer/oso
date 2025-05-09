@@ -11,7 +11,11 @@ MODEL (
   partitioned_by (DAY("bucket_day"), "event_type", "event_source"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := bucket_day,
+      audit_date_part := 'day',
+    ),
   )
 );
 

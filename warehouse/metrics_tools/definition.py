@@ -140,6 +140,9 @@ class MetricQueryDef:
 
     audits: t.Optional[list[tuple[str, dict]]] = None
 
+    # Additional audits only for the incremental models
+    incremental_audits: t.Optional[list[tuple[str, dict]]] = None
+
     def raw_sql(self, queries_dir: str):
         return open(os.path.join(queries_dir, self.ref)).read()
 
@@ -374,3 +377,4 @@ class TimeseriesMetricsOptions(t.TypedDict):
     queries_dir: t.NotRequired[str]
     enabled: t.NotRequired[bool]
     audits: t.NotRequired[list[tuple[str, dict]]]
+    incremental_audits: t.NotRequired[list[tuple[str, dict]]]

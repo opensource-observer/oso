@@ -11,7 +11,11 @@ MODEL (
   start @github_incremental_start,
   partitioned_by DAY(event_time),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := event_time,
+      audit_date_part := 'day',
+    ),
   )
 );
 

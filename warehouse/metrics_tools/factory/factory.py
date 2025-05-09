@@ -140,6 +140,11 @@ class TimeseriesMetrics:
     def audits(self):
         """The audits to use for rendered queries"""
         return self._raw_options.get("audits", [])
+    
+    @property
+    def incremental_audits(self):
+        """The audits to use for rendered queries of incremental models"""
+        return self._raw_options.get("incremental_audits", [])
 
     def generate_queries(self):
         if self._rendered:
@@ -561,6 +566,9 @@ class TimeseriesMetrics:
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
 
+        incremental_audits = (query._source.incremental_audits or [])[:]
+        audits.extend(self.incremental_audits)
+
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
         override_path = Path(inspect.getfile(generated_rolling_query_proxy))
@@ -592,7 +600,7 @@ class TimeseriesMetrics:
                 "model_metrics_type=rolling_window",
                 *query_config["additional_tags"],
             ],
-            audits=audits,
+            audits=audits + incremental_audits,
         )(generated_rolling_query_proxy)
 
     def generate_time_aggregation_model_for_rendered_query(
@@ -691,6 +699,10 @@ class TimeseriesMetrics:
                 **kind_options,
             }
             model_type_tag = "model_type=incremental"
+
+            incremental_audits = (query._source.incremental_audits or [])[:]
+            incremental_audits.extend(self.incremental_audits)
+            audits.extend(incremental_audits)
 
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",

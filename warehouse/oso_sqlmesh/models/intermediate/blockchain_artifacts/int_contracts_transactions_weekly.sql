@@ -10,7 +10,11 @@ MODEL (
   partitioned_by (DAY(week), chain),
   start '2024-08-01',
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := week,
+      audit_date_part := 'week',
+    ),
   )
 );
 

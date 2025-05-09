@@ -10,7 +10,11 @@ MODEL (
   start '2015-01-01',
   cron '@daily',
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := time,
+      audit_date_part := 'day',
+    ),
   )
 );
 

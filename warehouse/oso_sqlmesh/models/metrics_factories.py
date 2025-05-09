@@ -27,6 +27,9 @@ timeseries_metrics(
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
     ],
+    incremental_audits=[
+        ("no_gaps", {"time_column": "metrics_sample_date", "audit_date_part": "day"}),
+    ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
         # A time_aggregation is just a simple addition of the aggregation. So basically we

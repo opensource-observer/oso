@@ -16,7 +16,11 @@ MODEL (
     address_verified_until
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := block_timestamp,
+      audit_date_part := 'day',
+    ),
   )
 );
 
