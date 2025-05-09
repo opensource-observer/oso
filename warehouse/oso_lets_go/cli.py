@@ -13,6 +13,7 @@ import warnings
 from ast import parse
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+from urllib.parse import urljoin
 
 import aiotrino
 import dotenv
@@ -305,17 +306,24 @@ def clean_expired_trino_hive_files(
 @click.option("--service-name", default="receiver")
 @click.option("--namespace", default="flux-system")
 @click.option("--endpoint", required=True)
-@click.option("--remote-port", type=int, default=8080)
+@click.option("--remote-port", type=int, default=9292)
 def trigger_image_update(service_name: str, namespace: str, endpoint: str, remote_port: int):
     flux_service = Service.get(
         service_name,
         namespace,
     )
+    # Turns out the remote port should be 9292 for the flux service and not 8080
+    # as the service has listed. Not sure why but this is the port that the service
+    # forwards to.
     with flux_service.portforward(remote_port=remote_port) as local_port:
         logger.info(f"Port forwarded to localhost:{local_port}")
-        url = f"http://localhost:{local_port}{endpoint}"
-        requests.get(f"http://localhost:{local_port}{endpoint}")
-        logger.info(f"Image update webhook triggered for {service_name} in {namespace}")
+
+        url = urljoin(f"http://localhost:{local_port}", endpoint)
+        res = requests.get(url)
+        if res.status_code != 200:
+            logger.error(f"Failed to trigger image update: {res.status_code} {res.text}")
+        else:
+            logger.info(f"Image update webhook triggered for {service_name} in {namespace}")
 
 @production.command()
 @click.option("--namespace", default="production-dagster")
