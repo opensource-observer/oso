@@ -15,12 +15,14 @@ jobs:
   sync-to-production:
     # This job should only run on `#production-deploy` commits on main
     if: ${{ contains(github.event.head_commit.message, '#production-deploy') }}
+    environment: ops
 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the production branch
         uses: actions/checkout@v3
         with:
+          token: ${{ secrets.GH_TOKEN }}
           ref: production
           fetch-depth: 0
 
