@@ -1,7 +1,0 @@
-sources:
-  - name: ethereum_attestation_service_optimism
-    database: opensource-observer
-    schema: ethereum_attestation_service_optimism
-    tables:
-      - name: attestations
-        identifier: attestations
