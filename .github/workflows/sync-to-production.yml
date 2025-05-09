@@ -30,7 +30,7 @@ jobs:
 
       - name: Check if fast-forward is possible
         run: |
-          base=$(git merge-base HEAD origin/main
+          base=$(git merge-base HEAD origin/main)
           head=$(git rev-parse HEAD)
           if [ "$base" != "$head" ]; then
             echo "Cannot fast-forward: ${head} is not an ancestor of origin/main"
