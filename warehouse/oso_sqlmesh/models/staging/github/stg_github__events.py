@@ -45,8 +45,6 @@ def github_events(
     start: datetime,
     end: datetime,
     execution_time: datetime,
-    gateway: str,
-    runtime_stage: str,
     **kwargs,
 ) -> pd.DataFrame | exp.Expression:
     """We need to use a python model due to the way the github events are stored
@@ -57,7 +55,9 @@ def github_events(
 
     import arrow
 
-    if runtime_stage == "testing" or gateway != "trino":
+    runtime_stage = context.var('runtime_stage')
+
+    if runtime_stage == "testing" or context.gateway != "trino":
         data = {
             "type": ["PushEvent"],
             "public": [True],
