@@ -1,8 +1,0 @@
----
-# defaults file for postgres
-postgres_db: postgres
-postgres_port: 5432
-postgres_oso_user_name: oso_replication
-postgres_oso_user_expiration: infinity
-postgres_oso_replication_slot_name: oso_replication_slot
-postgres_oso_publication_name: oso_publication
