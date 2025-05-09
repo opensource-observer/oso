@@ -142,6 +142,11 @@ class TimeseriesMetrics:
         return self._raw_options.get("audits", [])
     
     @property
+    def audit_factories(self):
+        """The audits to use for rendered queries"""
+        return self._raw_options.get("audit_factories", [])
+    
+    @property
     def incremental_audits(self):
         """The audits to use for rendered queries of incremental models"""
         return self._raw_options.get("incremental_audits", [])
@@ -567,7 +572,13 @@ class TimeseriesMetrics:
         audits.extend(self.audits)
 
         incremental_audits = (query._source.incremental_audits or [])[:]
-        audits.extend(self.incremental_audits)
+        incremental_audits.extend(self.incremental_audits)
+        audits.extend(incremental_audits)
+
+        for audit_factory in self.audit_factories:
+            audit = audit_factory(query_config)
+            if audit:
+                audits.append(audit)
 
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
@@ -600,7 +611,7 @@ class TimeseriesMetrics:
                 "model_metrics_type=rolling_window",
                 *query_config["additional_tags"],
             ],
-            audits=audits + incremental_audits,
+            audits=audits,
         )(generated_rolling_query_proxy)
 
     def generate_time_aggregation_model_for_rendered_query(
@@ -682,6 +693,15 @@ class TimeseriesMetrics:
         query = query_config["query"]
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
+        
+        for audit_factory in self.audit_factories:
+            audit = audit_factory(query_config)
+            if audit:
+                audits.append(audit)
+
+        ignored_rules: list[str] = []
+        if time_aggregation == "biannually":
+            ignored_rules.append("incrementalmustdefinenogapsaudit")
 
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
@@ -727,6 +747,7 @@ class TimeseriesMetrics:
                 *query_config["additional_tags"],
             ],
             audits=audits,
+            ignored_rules=ignored_rules,
         )(generated_query)
 
     def generate_point_in_time_model_for_rendered_query(

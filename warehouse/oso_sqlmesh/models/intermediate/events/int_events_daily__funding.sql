@@ -13,7 +13,7 @@ MODEL (
     has_at_least_n_rows(threshold := 0),
     no_gaps(
       time_column := bucket_day,
-      audit_date_part := 'day',
+      no_gap_date_part := 'day',
     ),
   )
 );

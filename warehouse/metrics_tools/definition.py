@@ -9,6 +9,9 @@ from sqlglot import exp
 from sqlmesh.core.macros import MacroEvaluator
 from sqlmesh.utils.date import TimeLike
 
+if t.TYPE_CHECKING:
+    from metrics_tools.factory.factory import MetricQueryConfig
+
 CURR_DIR = os.path.dirname(__file__)
 QUERIES_DIR = os.path.abspath(os.path.join(CURR_DIR, "../oso_sqlmesh/oso_metrics"))
 
@@ -378,3 +381,4 @@ class TimeseriesMetricsOptions(t.TypedDict):
     enabled: t.NotRequired[bool]
     audits: t.NotRequired[list[tuple[str, dict]]]
     incremental_audits: t.NotRequired[list[tuple[str, dict]]]
+    audit_factories: t.NotRequired[list[t.Callable[["MetricQueryConfig"], tuple[str, dict] | None]]]

@@ -14,7 +14,7 @@ MODEL (
     not_null(columns := (to_artifact_name, to_artifact_namespace, event_type, event_source_id, event_source)),
     no_gaps(
       time_column := time,
-      audit_date_part := 'day',
+      no_gap_date_part := 'day',
     ),
   )
 );

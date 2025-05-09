@@ -37,7 +37,7 @@ from sqlmesh.core.model import ModelKindName
     physical_properties={"max_commit_retry": 15},
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
-        ("no_gaps", {"time_column": "created_at", "audit_date_part": "day"}),
+        ("no_gaps", {"time_column": exp.to_column("created_at"), "no_gap_date_part": "day"}),
     ],
 )
 def github_events(

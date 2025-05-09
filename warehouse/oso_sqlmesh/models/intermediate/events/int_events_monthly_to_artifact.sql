@@ -14,7 +14,7 @@ MODEL (
     not_null(columns := (event_type, event_source)),
     no_gaps(
       time_column := bucket_week,
-      audit_date_part := 'week',
+      no_gap_date_part := 'week',
     ),
   )
 );

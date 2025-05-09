@@ -14,7 +14,7 @@ MODEL (
     not_null(columns := (sha,)),
     no_gaps(
       time_column := created_at,
-      audit_date_part := 'day',
+      no_gap_date_part := 'day',
     ),
   )
 );

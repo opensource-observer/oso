@@ -13,7 +13,7 @@ MODEL (
     has_at_least_n_rows(threshold := 0),
     no_gaps(
       time_column := snapshot_at,
-      audit_date_part := 'month',
+      no_gap_date_part := 'month',
     ),
   )
 );
