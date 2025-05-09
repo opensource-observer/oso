@@ -1,10 +1,8 @@
 import os
 import typing as t
-from functools import cached_property
 from pathlib import Path
 
 import requests
-from oso_dagster.utils.dbt import BQTargetConfigTemplate, load_dbt_manifests
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -49,15 +47,7 @@ class DagsterConfig(BaseSettings):
     # HTTP Caching used with the github repository resolver. This is a uri
     http_cache: t.Optional[str] = None
 
-    dbt_target_base_dir: str = ""
-
-    dbt_profiles_dir: str = os.path.expanduser("~/.dbt")
-
-    production_dbt_target: str = "production"
-
     dbt_impersonate_service_account: str = ""
-
-    dbt_parse_project_on_load: bool = False
 
     verbose_logs: bool = False
 
@@ -100,8 +90,6 @@ class DagsterConfig(BaseSettings):
             self.dagster_home = os.path.join(self.repo_dir, ".dagster_local_home")
         if not self.local_duckdb_path:
             self.local_duckdb_path = os.path.join(self.dagster_home, "local.duckdb")
-        if not self.main_dbt_project_dir:
-            self.main_dbt_project_dir = self.repo_dir
         if not self.sqlmesh_dir:
             self.sqlmesh_dir = os.path.join(self.repo_dir, "warehouse/oso_sqlmesh")
 
@@ -115,21 +103,3 @@ class DagsterConfig(BaseSettings):
 
     def initialize(self):
         Path(self.dagster_home).mkdir(exist_ok=True)
-
-    @cached_property
-    def dbt_manifests(self):
-        return load_dbt_manifests(
-            self.dbt_target_base_dir,
-            self.main_dbt_project_dir,
-            self.project_id,
-            self.dbt_profile_name,
-            [
-                ("production", "oso"),
-                ("base_playground", "oso_base_playground"),
-                ("playground", "oso_playground"),
-            ],
-            BQTargetConfigTemplate(
-                impersonate_service_account=self.dbt_impersonate_service_account
-            ),
-            parse_projects=self.dbt_parse_project_on_load,
-        )
