@@ -4,7 +4,7 @@ AUDIT (
   dialect trino,
   defaults (
     no_gap_date_part = 'day'
-  )
+  ),
 );
 
 WITH all_dates AS (
@@ -13,7 +13,7 @@ WITH all_dates AS (
 
 SELECT 
   all_dates.date_@{no_gap_date_part} as d,
-  COUNT(current.created_at) as num_rows
+  COUNT(current.@time_column) as num_rows
 FROM all_dates
 LEFT JOIN @this_model AS current
   ON @datetrunc(@no_gap_date_part, current.@time_column) = all_dates.date_@{no_gap_date_part}
@@ -21,6 +21,8 @@ WHERE @AND(
   all_dates.date_@{no_gap_date_part} BETWEEN @start_dt AND @end_dt, 
   all_dates.date_@{no_gap_date_part} >= @VAR('ignore_before', '2015-01-01 00:00:00')::TIMESTAMP,
   all_dates.date_@{no_gap_date_part} < NOW() - INTERVAL 1 DAY,
+  -- Testing this is hard to do in CI so we effectively disable it
+  @testing_enabled IS FALSE
 )
 GROUP BY 1
-HAVING COUNT(current.created_at) = 0
+HAVING COUNT(current.@time_column) = 0

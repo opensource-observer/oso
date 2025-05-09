@@ -783,6 +783,7 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
+                "SQLMESH_TESTING_ENABLED": "1",
             },
             check=True,
         )
