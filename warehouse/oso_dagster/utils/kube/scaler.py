@@ -11,7 +11,7 @@ async def ensure_scale_up(*, name: str, namespace: str, scale: int) -> None:
     if deployment.replicas != scale:
         result = deployment.scale(scale)
         if isawaitable(result):
-            await result
+            await result # type: ignore
 
 
 async def ensure_scale_down(*, name: str, namespace: str) -> None:
@@ -20,4 +20,4 @@ async def ensure_scale_down(*, name: str, namespace: str) -> None:
     if deployment.replicas != 0:
         result = deployment.scale(0)
         if isawaitable(result):
-            await result
+            await result # type: ignore
