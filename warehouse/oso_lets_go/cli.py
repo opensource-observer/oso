@@ -18,8 +18,8 @@ from urllib.parse import urljoin
 import aiotrino
 import dotenv
 import git
+import httpx
 import kr8s
-import requests
 from kr8s.objects import Job, Namespace, Service
 from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
@@ -315,15 +315,16 @@ def trigger_image_update(service_name: str, namespace: str, endpoint: str, remot
     # Turns out the remote port should be 9292 for the flux service and not 8080
     # as the service has listed. Not sure why but this is the port that the service
     # forwards to.
-    with flux_service.portforward(remote_port=remote_port) as local_port:
+    with flux_service.portforward(remote_port=remote_port, local_port=None) as local_port:
         logger.info(f"Port forwarded to localhost:{local_port}")
 
         url = urljoin(f"http://localhost:{local_port}", endpoint)
-        res = requests.get(url)
+        res = httpx.get(url)
         if res.status_code != 200:
             logger.error(f"Failed to trigger image update: {res.status_code} {res.text}")
         else:
             logger.info(f"Image update webhook triggered for {service_name} in {namespace}")
+
 
 @production.command()
 @click.option("--namespace", default="production-dagster")
