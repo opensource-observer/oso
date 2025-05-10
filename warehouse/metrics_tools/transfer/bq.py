@@ -1,5 +1,6 @@
 import logging
 import typing as t
+from itertools import batched
 
 from google.cloud import bigquery, storage
 from google.cloud.exceptions import NotFound
@@ -7,6 +8,8 @@ from metrics_tools.compute.types import ExportReference, ExportType, TableRefere
 from metrics_tools.transfer.base import ImporterInterface
 
 logger = logging.getLogger(__name__)
+
+BIGQUERY_BATCH_SIZE = 10000
 
 
 class BigQueryImporter(ImporterInterface):
@@ -63,21 +66,55 @@ class BigQueryImporter(ImporterInterface):
         if not source_uris:
             raise ValueError(f"No files found in GCS path {gcs_path}")
 
-        logger.info(
-            f"Importing {len(source_uris)} files from directory {gcs_path} to {table_id}"
-        )
+        if len(source_uris) > BIGQUERY_BATCH_SIZE:
+            logger.info(
+                f"Large number of source files detected ({len(source_uris)}). "
+                f"Processing in batches of {BIGQUERY_BATCH_SIZE} to respect BigQuery limits."
+            )
 
-        job_config = bigquery.LoadJobConfig(
-            source_format=bigquery.SourceFormat.PARQUET,
-            autodetect=True,
-            write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-        )
+            total_batches = (
+                len(source_uris) + BIGQUERY_BATCH_SIZE - 1
+            ) // BIGQUERY_BATCH_SIZE
 
-        load_job = self._client.load_table_from_uri(
-            source_uris, table_id, job_config=job_config
-        )
+            for batch_num, batch in enumerate(
+                batched(source_uris, BIGQUERY_BATCH_SIZE), 1
+            ):
+                logger.info(
+                    f"Processing batch {batch_num}/{total_batches}: {len(batch)} files"
+                )
 
-        load_job.result()
+                job_config = bigquery.LoadJobConfig(
+                    source_format=bigquery.SourceFormat.PARQUET,
+                    autodetect=True,
+                    write_disposition=(
+                        bigquery.WriteDisposition.WRITE_TRUNCATE
+                        if batch_num == 1
+                        else bigquery.WriteDisposition.WRITE_APPEND
+                    ),
+                )
+
+                load_job = self._client.load_table_from_uri(
+                    batch, table_id, job_config=job_config
+                )
+
+                load_job.result()
+                logger.info(f"Batch {batch_num} import completed successfully.")
+        else:
+            logger.info(
+                f"Importing {len(source_uris)} files from directory {gcs_path} to {table_id}"
+            )
+
+            job_config = bigquery.LoadJobConfig(
+                source_format=bigquery.SourceFormat.PARQUET,
+                autodetect=True,
+                write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+            )
+
+            load_job = self._client.load_table_from_uri(
+                source_uris, table_id, job_config=job_config
+            )
+
+            load_job.result()
 
         logger.info(f"Import completed successfully for table {table_id}.")
 
