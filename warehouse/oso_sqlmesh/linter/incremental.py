@@ -80,7 +80,6 @@ class IncrementalMustHaveLookback(Rule):
             )
 
         lookback_seconds = model.kind.lookback * interval_seconds
-        print(f"lookback_seconds: {lookback_seconds}, minimum_lookback_seconds: {minimum_lookback_seconds}")
         if lookback_seconds >= minimum_lookback_seconds:
             return None
         
