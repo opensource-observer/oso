@@ -11,7 +11,11 @@ MODEL (
   partitioned_by DAY(created_at),
   dialect trino,
   audits (
-    not_null(columns := (sha,))
+    not_null(columns := (sha,)),
+    no_gaps(
+      time_column := created_at,
+      no_gap_date_part := 'day',
+    ),
   )
 );
 

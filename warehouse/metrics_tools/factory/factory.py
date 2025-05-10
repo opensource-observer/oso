@@ -140,6 +140,16 @@ class TimeseriesMetrics:
     def audits(self):
         """The audits to use for rendered queries"""
         return self._raw_options.get("audits", [])
+    
+    @property
+    def audit_factories(self):
+        """The audits to use for rendered queries"""
+        return self._raw_options.get("audit_factories", [])
+    
+    @property
+    def incremental_audits(self):
+        """The audits to use for rendered queries of incremental models"""
+        return self._raw_options.get("incremental_audits", [])
 
     def generate_queries(self):
         if self._rendered:
@@ -561,6 +571,15 @@ class TimeseriesMetrics:
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
 
+        incremental_audits = (query._source.incremental_audits or [])[:]
+        incremental_audits.extend(self.incremental_audits)
+        audits.extend(incremental_audits)
+
+        for audit_factory in self.audit_factories:
+            audit = audit_factory(query_config)
+            if audit:
+                audits.append(audit)
+
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
         override_path = Path(inspect.getfile(generated_rolling_query_proxy))
@@ -674,6 +693,15 @@ class TimeseriesMetrics:
         query = query_config["query"]
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
+        
+        for audit_factory in self.audit_factories:
+            audit = audit_factory(query_config)
+            if audit:
+                audits.append(audit)
+
+        ignored_rules: list[str] = []
+        if time_aggregation == "biannually":
+            ignored_rules.append("incrementalmustdefinenogapsaudit")
 
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
@@ -691,6 +719,10 @@ class TimeseriesMetrics:
                 **kind_options,
             }
             model_type_tag = "model_type=incremental"
+
+            incremental_audits = (query._source.incremental_audits or [])[:]
+            incremental_audits.extend(self.incremental_audits)
+            audits.extend(incremental_audits)
 
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
@@ -715,6 +747,7 @@ class TimeseriesMetrics:
                 *query_config["additional_tags"],
             ],
             audits=audits,
+            ignored_rules=ignored_rules,
         )(generated_query)
 
     def generate_point_in_time_model_for_rendered_query(

@@ -2,11 +2,44 @@ import os
 
 from dotenv import load_dotenv
 from metrics_tools.definition import MetricMetadata
-from metrics_tools.factory import MetricQueryDef, timeseries_metrics
+from metrics_tools.factory import MetricQueryConfig, MetricQueryDef, timeseries_metrics
+from sqlglot import exp
 
 # Annoyingly sqlmesh doesn't load things in an expected order but we want to be
 # able to override the start date for local testing and things
 load_dotenv()
+
+
+TRANSLATE_TIME_AGGREGATION = {
+    "daily": "day",
+    "weekly": "week",
+    "monthly": "month",
+    "quarterly": "quarter",
+    "yearly": "year",
+}
+
+
+def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
+    if not config["incremental"]:
+        return None
+    time_aggregation = config["ref"].get("time_aggregation")
+    if time_aggregation is None:
+        return None
+
+    if time_aggregation == "biannually":
+        # Hack for now, ignore biannual
+        return None
+
+    return (
+        "no_gaps",
+        {
+            "no_gap_date_part": TRANSLATE_TIME_AGGREGATION[time_aggregation],
+            "time_column": exp.to_column(
+                "metrics_sample_date",
+            ),
+        },
+    )
+
 
 timeseries_metrics(
     default_dialect="trino",
@@ -27,6 +60,7 @@ timeseries_metrics(
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
     ],
+    audit_factories=[no_gaps_audit_factory],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
         # A time_aggregation is just a simple addition of the aggregation. So basically we

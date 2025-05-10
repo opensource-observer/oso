@@ -26,6 +26,7 @@ config = Config(
         enabled=True,
         rules={
             "incrementalmusthavetimepartition",
+            "incrementalmustdefinenogapsaudit",
             "timepartitionsmustbebucketed",
             "nomissingaudits",
             "entitycategorytagrequired",
@@ -124,5 +125,6 @@ config = Config(
         "github_incremental_start": constants.github_incremental_start,
         "funding_incremental_start": constants.funding_incremental_start,
         "defillama_incremental_start": constants.defillama_incremental_start,
+        "testing_enabled": constants.testing_enabled,
     },
 )

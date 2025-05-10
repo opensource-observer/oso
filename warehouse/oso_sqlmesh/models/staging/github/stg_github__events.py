@@ -37,6 +37,7 @@ from sqlmesh.core.model import ModelKindName
     physical_properties={"max_commit_retry": 15},
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
+        ("no_gaps", {"time_column": exp.to_column("created_at"), "no_gap_date_part": "day"}),
     ],
 )
 def github_events(
@@ -44,8 +45,6 @@ def github_events(
     start: datetime,
     end: datetime,
     execution_time: datetime,
-    gateway: str,
-    runtime_stage: str,
     **kwargs,
 ) -> pd.DataFrame | exp.Expression:
     """We need to use a python model due to the way the github events are stored
@@ -56,7 +55,9 @@ def github_events(
 
     import arrow
 
-    if runtime_stage == "testing" or gateway != "trino":
+    runtime_stage = context.var('runtime_stage')
+
+    if runtime_stage == "testing" or context.gateway != "trino":
         data = {
             "type": ["PushEvent"],
             "public": [True],

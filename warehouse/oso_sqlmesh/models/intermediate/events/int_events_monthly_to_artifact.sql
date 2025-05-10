@@ -11,7 +11,11 @@ MODEL (
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
   enabled false,
   audits (
-    not_null(columns := (event_type, event_source))
+    not_null(columns := (event_type, event_source)),
+    no_gaps(
+      time_column := bucket_week,
+      no_gap_date_part := 'week',
+    ),
   )
 );
 
