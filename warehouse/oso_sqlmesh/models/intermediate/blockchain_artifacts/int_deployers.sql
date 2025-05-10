@@ -3,7 +3,8 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
     batch_size 365,
-    batch_concurrency 1
+    batch_concurrency 1,
+    lookback 31
   ),
   start @blockchain_incremental_start,
   partitioned_by (DAY("block_timestamp"), "chain"),

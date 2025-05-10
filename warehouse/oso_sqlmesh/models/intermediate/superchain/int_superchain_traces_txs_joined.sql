@@ -5,7 +5,7 @@ MODEL (
     time_column block_timestamp,
     batch_size 90,
     batch_concurrency 1,
-    lookback 7
+    lookback 31
   ),
   start @blockchain_incremental_start,
   cron '@daily',

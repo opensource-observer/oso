@@ -3,7 +3,8 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
-    batch_concurrency 1
+    batch_concurrency 1,
+    lookback 31
   ),
   start @github_incremental_start,
   cron '@daily',

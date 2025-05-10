@@ -4,7 +4,8 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column week,
     batch_size 180,
-    batch_concurrency 3
+    batch_concurrency 3,
+    lookback 31,
   ) /* forward_only true, */ /* on_destructive_change warn */,
   cron '@weekly',
   partitioned_by (DAY(week), chain),
