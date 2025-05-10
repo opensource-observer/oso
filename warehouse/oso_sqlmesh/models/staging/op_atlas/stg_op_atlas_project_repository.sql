@@ -61,9 +61,9 @@ op_atlas_repos AS (
 
 SELECT DISTINCT
   @oso_entity_id('OP_ATLAS', '', op_atlas_repos.project_id) AS project_id,
-  /* TODO: Remove this once we index the universe  */
   CASE
-    WHEN ossd_repos.id IS NOT NULL THEN ossd_repos.id::VARCHAR
+    WHEN all_repos.artifact_source_id IS NOT NULL
+    THEN all_repos.artifact_source_id
     ELSE op_atlas_repos.artifact_url
   END AS artifact_source_id,
   'GITHUB' AS artifact_source,
@@ -72,6 +72,6 @@ SELECT DISTINCT
   op_atlas_repos.artifact_url,
   'REPOSITORY' AS artifact_type
 FROM op_atlas_repos
-LEFT OUTER JOIN oso.stg_ossd__current_repositories AS ossd_repos
-  ON LOWER(op_atlas_repos.artifact_namespace) = LOWER(ossd_repos.owner)
-  AND LOWER(op_atlas_repos.artifact_name) = LOWER(ossd_repos.name)
+LEFT OUTER JOIN oso.int_repositories_all AS all_repos
+  ON LOWER(op_atlas_repos.artifact_namespace) = LOWER(all_repos.artifact_namespace)
+  AND LOWER(op_atlas_repos.artifact_name) = LOWER(all_repos.artifact_name)
