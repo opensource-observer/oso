@@ -30,7 +30,7 @@ from sqlmesh.core.model import ModelKindName
         "time_column": "created_at",
         "batch_size": 90,
         "batch_concurrency": 3,
-        "lookback": 7,
+        "lookback": 31,
         "forward_only": True,
     },
     partitioned_by=("day(created_at)",),

@@ -4,7 +4,7 @@ MODEL (
     time_column event_time,
     batch_size 90,
     batch_concurrency 3,
-    lookback 7
+    lookback 31
   ),
   start @github_incremental_start,
   partitioned_by DAY(event_time),

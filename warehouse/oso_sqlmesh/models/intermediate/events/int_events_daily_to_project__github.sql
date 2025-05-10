@@ -4,7 +4,8 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
     batch_size 365,
-    batch_concurrency 1
+    batch_concurrency 1,
+    lookback 31
   ),
   start '2015-01-01',
   cron '@daily',
