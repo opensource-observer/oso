@@ -1,11 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getUser } from "./lib/auth/auth";
-import { withPostHog } from "./lib/clients/posthog";
+import { createPostHog } from "./lib/clients/posthog";
 import { EVENTS } from "./lib/types/posthog";
 import { logger } from "./lib/logger";
 import { getTableNamesFromSql } from "./lib/parsing";
 import type { User } from "./lib/types/user";
-import type { PostHog } from "posthog-node";
 import { OperationDefinitionNode, parse, visit } from "graphql";
 
 const API_TYPES = ["sql", "graphql", "chat"] as const;
@@ -206,6 +205,7 @@ async function trackApiCall(
 ): Promise<void> {
   const path = request.nextUrl.pathname;
   const body = await getRequestBody(request);
+  await using posthog = createPostHog();
 
   const baseData: BaseTrackingData = {
     type: apiType,
@@ -252,12 +252,10 @@ async function trackApiCall(
     }
   }
 
-  await withPostHog(async (posthog: PostHog) => {
-    posthog.capture({
-      distinctId: user.userId,
-      event: EVENTS.API_CALL,
-      properties: trackingData,
-    });
+  posthog.client.capture({
+    distinctId: user.userId,
+    event: EVENTS.API_CALL,
+    properties: trackingData,
   });
 }
 
