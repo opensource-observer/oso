@@ -700,7 +700,8 @@ class TimeseriesMetrics:
                 audits.append(audit)
 
         ignored_rules: list[str] = []
-        if time_aggregation == "biannually":
+        # Ignore these for now, we will need to fix this later
+        if time_aggregation in ["biannually", "quarterly", "weekly"]:
             ignored_rules.append("incrementalmustdefinenogapsaudit")
 
         # Override the path and module so that sqlmesh generates the

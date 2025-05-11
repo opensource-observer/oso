@@ -15,7 +15,7 @@ INTERVAL_CONVERSION: dict[str, tuple[int, str]] = {
     "month": (1, "month"),
     "quarter": (3, "month"),
     "biannual": (6, "month"),
-    "annual": (1, "year"),
+    "year": (1, "year"),
 }
 
 @macro()
