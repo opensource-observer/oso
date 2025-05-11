@@ -17,11 +17,12 @@ MODEL (
   ),
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := block_timestamp,
-      no_gap_date_part := 'day',
-    ),
-  )
+  ),
+  -- This model is likely not consistent with data every day so we must ignore this
+  -- rule for now
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+  ),
 );
 
 WITH raw AS (
