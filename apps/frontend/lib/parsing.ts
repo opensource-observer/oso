@@ -1,5 +1,4 @@
 import dayjs from "dayjs";
-import _ from "lodash";
 import { Parser, AST } from "node-sql-parser";
 
 /**
@@ -24,11 +23,23 @@ const stringToIntArray = (ids?: string[]): number[] =>
 const eventTimeToLabel = (t: any) => dayjs(t).format("YYYY-MM-DD");
 
 /**
+ * Capitalize the first letter of a string and lowercase the rest
+ * @param str
+ * @returns
+ */
+const capitalize = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+/**
  * If we get enums (e.g. NPM_PACKAGE), normalize it into a readable label
  * @param t
  * @returns
  */
-const eventTypeToLabel = (t: string) => _.capitalize(t.replace(/_/g, " "));
+const eventTypeToLabel = (t: string) => {
+  const spacedText = t.replace(/_/g, " ");
+  return capitalize(spacedText);
+};
 
 /**
  * Get the names of all tables referenced in a SQL AST
@@ -37,10 +48,8 @@ const eventTypeToLabel = (t: string) => _.capitalize(t.replace(/_/g, " "));
  */
 function getTableNamesFromAst(ast: AST): string[] {
   if (ast.type == "select") {
-    const cteNames = ast.with ? _.flatMap(ast.with, (x) => x.name.value) : [];
-    const cteTables = ast.with
-      ? _.flatMap(ast.with, (x) => x.stmt.tableList)
-      : [];
+    const cteNames = ast.with ? ast.with.map((x) => x.name.value) : [];
+    const cteTables = ast.with ? ast.with.flatMap((x) => x.stmt.tableList) : [];
     // Sometimes the table name is prefixed with the operation
     // e.g. "select::null::event",
     // This just gets the last part
@@ -72,11 +81,10 @@ function getTableNamesFromSql(query: string): string[] {
   const parser = new Parser();
   const ast = parser.astify(query);
   const tableNames = Array.isArray(ast)
-    ? _.flatMap(ast, (x) => getTableNamesFromAst(x))
+    ? ast.flatMap((x) => getTableNamesFromAst(x))
     : getTableNamesFromAst(ast);
 
-  // De-duplicate
-  return _.uniq(tableNames);
+  return Array.from(new Set(tableNames));
 }
 
 export {
