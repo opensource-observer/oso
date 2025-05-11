@@ -14,7 +14,7 @@ function PostHogClient() {
     host: POSTHOG_HOST_DIRECT,
     flushAt: 1,
     flushInterval: 0,
-    fetch,
+    fetch: (...args) => fetch(...args),
   });
   return posthogClient;
 }
