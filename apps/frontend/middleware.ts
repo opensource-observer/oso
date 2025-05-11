@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getUser } from "./lib/auth/auth";
-import { createPostHog } from "./lib/clients/posthog";
 import { EVENTS } from "./lib/types/posthog";
 import { logger } from "./lib/logger";
 import { getTableNamesFromSql } from "./lib/parsing";
 import type { User } from "./lib/types/user";
 import { OperationDefinitionNode, parse, visit } from "graphql";
+import { POSTHOG_HOST_DIRECT, POSTHOG_KEY } from "./lib/config";
 
 const API_TYPES = ["sql", "graphql", "chat"] as const;
 type ApiType = (typeof API_TYPES)[number];
@@ -205,7 +205,6 @@ async function trackApiCall(
 ): Promise<void> {
   const path = request.nextUrl.pathname;
   const body = await getRequestBody(request);
-  await using posthog = createPostHog();
 
   const baseData: BaseTrackingData = {
     type: apiType,
@@ -252,7 +251,7 @@ async function trackApiCall(
     }
   }
 
-  posthog.client.capture({
+  await simpleCapture({
     distinctId: user.userId,
     event: EVENTS.API_CALL,
     properties: trackingData,
@@ -290,4 +289,47 @@ export function getUserFromHeaders(request: NextRequest): UserInfoFromHeaders {
     role: request.headers.get("x-user-role"),
     keyName: request.headers.get("x-user-key-name"),
   };
+}
+
+// TODO(jabolo): use the PostHog SDK instead of this. Currently, the SDK
+// does not work on edge middleware, so we are using a direct HTTP request.
+interface UserEventCapture {
+  distinctId: string;
+  event: string;
+  properties?: Record<string, any>;
+  timestamp?: string;
+}
+
+/**
+ * Simple capture function to send events to PostHog
+ * - This is a direct HTTP request, not using the PostHog client
+ * @param event
+ */
+async function simpleCapture(event: UserEventCapture): Promise<void> {
+  const payload = {
+    api_key: POSTHOG_KEY,
+    event: event.event,
+    distinct_id: event.distinctId,
+    properties: event.properties || {},
+    timestamp: event.timestamp || new Date().toISOString(),
+  };
+
+  try {
+    const response = await fetch(`${POSTHOG_HOST_DIRECT}/capture/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `PostHog capture failed: ${response.status} - ${errorText}`,
+      );
+    }
+  } catch (error) {
+    logger.error("Failed to capture PostHog event:", error);
+  }
 }
