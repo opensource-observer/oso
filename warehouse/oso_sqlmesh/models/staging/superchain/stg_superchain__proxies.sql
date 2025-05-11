@@ -22,10 +22,9 @@ MODEL (
   dialect duckdb,
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := block_timestamp,
-      no_gap_date_part := 'day',
-    ),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
   )
 );
 

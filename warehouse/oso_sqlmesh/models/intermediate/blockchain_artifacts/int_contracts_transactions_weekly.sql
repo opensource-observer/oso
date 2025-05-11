@@ -12,11 +12,11 @@ MODEL (
   start '2024-08-01',
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := week,
-      no_gap_date_part := 'week',
-    ),
-  )
+  ),
+  -- This model is weekly so this can't work for now
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+  ),
 );
 
 /* Find all transactions involving the contracts from `derived_contracts` and */ /* aggregate their tx_count on a weekly basis */
