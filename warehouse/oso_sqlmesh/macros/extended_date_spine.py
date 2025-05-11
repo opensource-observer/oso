@@ -31,8 +31,6 @@ def extended_date_spine(
     if evaluator.runtime_stage in ["loading", "creating"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
 
-    assert interval in INTERVAL_CONVERSION, f"Invalid interval type={interval}"
-
     if isinstance(interval, exp.Literal):
         interval_str = exp_literal_to_py_literal(interval)
     else:
