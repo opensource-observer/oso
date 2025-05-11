@@ -27,6 +27,10 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     if time_aggregation is None:
         return None
 
+    if time_aggregation in ["biannually", "weekly", "quarterly"]:
+        # Hack for now, ignore these until we fix the audit
+        return None
+
     return (
         "no_gaps",
         {

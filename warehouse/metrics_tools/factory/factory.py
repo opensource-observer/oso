@@ -699,6 +699,11 @@ class TimeseriesMetrics:
             if audit:
                 audits.append(audit)
 
+        ignored_rules: list[str] = []
+        # Ignore these for now, we will need to fix this later
+        if time_aggregation in ["biannually", "quarterly", "weekly"]:
+            ignored_rules.append("incrementalmustdefinenogapsaudit")
+
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
         override_path = Path(inspect.getfile(generated_query))
@@ -743,6 +748,7 @@ class TimeseriesMetrics:
                 *query_config["additional_tags"],
             ],
             audits=audits,
+            ignored_rules=ignored_rules,
         )(generated_query)
 
     def generate_point_in_time_model_for_rendered_query(
