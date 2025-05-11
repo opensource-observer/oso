@@ -33,11 +33,10 @@ def extended_date_spine(
 
     assert interval in INTERVAL_CONVERSION, f"Invalid interval type={interval}"
 
-    interval_str = evaluator.eval_expression(interval)
-    if isinstance(interval_str, exp.Literal):
-        interval_str = exp_literal_to_py_literal(interval_str)
+    if isinstance(interval, exp.Literal):
+        interval_str = exp_literal_to_py_literal(interval)
     else:
-        raise ValueError(f"Unexpected interval type: {interval_str}")
+        raise ValueError(f"Unexpected interval input: {interval}")
 
     current_interval = INTERVAL_CONVERSION[interval_str]
 
