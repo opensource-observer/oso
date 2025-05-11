@@ -8,7 +8,7 @@ AUDIT (
 );
 
 WITH all_dates AS (
-  @date_spine(@no_gap_date_part, @start_ds, @end_ds)
+  @extended_date_spine(@no_gap_date_part, @start_ds, @end_ds)
 )
 
 SELECT 
