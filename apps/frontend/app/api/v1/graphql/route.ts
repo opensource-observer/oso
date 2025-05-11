@@ -1,18 +1,9 @@
 import { ApolloServer } from "@apollo/server";
-import {
-  ApolloGateway,
-  RemoteGraphQLDataSource,
-  GraphQLDataSourceProcessOptions,
-} from "@apollo/gateway";
+import { ApolloGateway, RemoteGraphQLDataSource } from "@apollo/gateway";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
-import { OperationDefinitionNode } from "graphql";
 import { readFileSync } from "fs";
 import path from "path";
 import { NextRequest } from "next/server";
-import { spawn } from "@opensource-observer/utils";
-import { withPostHog } from "../../../../lib/clients/posthog";
-import { EVENTS } from "../../../../lib/types/posthog";
-import { getUser } from "../../../../lib/auth/auth";
 //import { ApolloGateway, IntrospectAndCompose } from "@apollo/gateway";
 //import { HASURA_URL } from "../../../../lib/config";
 
@@ -23,66 +14,11 @@ const supergraphPath = path.join(
 );
 const supergraphSdl = readFileSync(supergraphPath).toString();
 
-/**
- * Extract all model names from a GraphQL operation
- * @param operation
- * @returns
- */
-function getModelNames(operation: OperationDefinitionNode): string[] {
-  const modelNames: string[] = [];
-  const selectionSet = operation.selectionSet.selections;
-
-  for (const selection of selectionSet) {
-    if (selection.kind === "Field") {
-      const fieldName = selection.name.value;
-      modelNames.push(fieldName);
-    }
-  }
-
-  return modelNames;
-}
-
-/**
- * Custom Apollo Gateway Data Source,
- * used to inspect the GraphQL operation in-line
- */
-class AuthenticatedDataSource extends RemoteGraphQLDataSource {
-  willSendRequest(opts: GraphQLDataSourceProcessOptions) {
-    if (opts.kind !== "incoming operation") {
-      return;
-    }
-    const op = opts.incomingRequestContext.operation;
-    const modelNames = getModelNames(op);
-    const user = opts.context.user;
-    //console.log(modelNames);
-    if (user && user.role !== "anonymous") {
-      spawn(
-        withPostHog(async (posthog) => {
-          posthog.capture({
-            distinctId: user.userId,
-            event: EVENTS.API_CALL,
-            properties: {
-              type: "graphql",
-              operation: op.operation,
-              models: modelNames,
-              query: opts.request.query,
-              apiKeyName: user.keyName,
-              host: user.host,
-            },
-          });
-        }),
-      );
-    } else {
-      console.warn("/graphql: User is anonymous. No tracking");
-    }
-  }
-}
-
 // Setup the Apollo Gateway and server
 const gateway = new ApolloGateway({
   supergraphSdl,
   buildService({ url }) {
-    return new AuthenticatedDataSource({ url });
+    return new RemoteGraphQLDataSource({ url });
   },
   /**
   supergraphSdl: new IntrospectAndCompose({
@@ -102,7 +38,16 @@ const server = new ApolloServer({
 const handler = startServerAndCreateNextHandler<NextRequest>(server, {
   // Use this to add custom middleware to set context
   context: async (req) => {
-    const user = await getUser(req);
+    const userId = req.headers.get("x-user-id");
+    const userRole = req.headers.get("x-user-role");
+    const keyName = req.headers.get("x-user-key-name");
+
+    const user = {
+      userId: userId || "",
+      role: userRole || "anonymous",
+      keyName: keyName || "",
+    };
+
     return { req, user };
   },
 });

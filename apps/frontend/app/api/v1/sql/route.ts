@@ -1,10 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
-import { spawn } from "@opensource-observer/utils";
-import { withPostHog } from "../../../../lib/clients/posthog";
-import { getTableNamesFromSql } from "../../../../lib/parsing";
-import { getUser } from "../../../../lib/auth/auth";
 //import { logger } from "../../../lib/logger";
 
 // Next.js route control
@@ -44,7 +40,17 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const query = body?.[QUERY];
   const format = body?.[FORMAT] ?? "json";
-  const user = await getUser(request);
+
+  const userId = request.headers.get("x-user-id");
+  const userRole = request.headers.get("x-user-role");
+  const keyName = request.headers.get("x-user-key-name");
+
+  const user = {
+    userId: userId || "",
+    role: userRole || "anonymous",
+    keyName: keyName || "",
+  };
+
   // TODO: add authentication
   //const auth = request.headers.get("authorization");
 
@@ -58,21 +64,6 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("User is anonymous", 401);
   }
   try {
-    spawn(
-      withPostHog(async (posthog) => {
-        posthog.capture({
-          distinctId: user.userId,
-          event: "api_call",
-          properties: {
-            type: "sql",
-            models: getTableNamesFromSql(query),
-            query: query,
-            apiKeyName: user.keyName,
-            host: user.host,
-          },
-        });
-      }),
-    );
     const [firstRow, rows] = await doQuery(query);
     const readableStream = mapToReadableStream(firstRow, rows, format);
     return new NextResponse(readableStream, {
