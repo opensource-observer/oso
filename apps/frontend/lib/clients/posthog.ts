@@ -14,22 +14,26 @@ function PostHogClient() {
     host: POSTHOG_HOST_DIRECT,
     flushAt: 1,
     flushInterval: 0,
+    fetch,
   });
   return posthogClient;
 }
 
 /**
- * Use this to simplify PostHog usage,
- * which will automatically identify and teardown
- * @param fn
- * @param request
+ * Creates a disposable PostHog instance
+ * - Automatically calls posthog.shutdown() when done
+ * @returns
  */
-async function withPostHog(fn: (posthog: PostHog) => Promise<void>) {
-  //console.log(user);
+function createPostHog() {
   const posthog = PostHogClient();
-  await fn(posthog);
-  // TODO: this seems to be taking many seconds
-  await posthog.shutdown();
+
+  return {
+    client: posthog,
+    [Symbol.asyncDispose]: async () => {
+      // TODO: this seems to be taking many seconds
+      await posthog.shutdown();
+    },
+  };
 }
 
-export { PostHogClient, withPostHog };
+export { PostHogClient, createPostHog };
