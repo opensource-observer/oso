@@ -12,11 +12,11 @@ WITH all_dates AS (
 )
 
 SELECT 
-  all_dates.date_@{no_gap_date_part} as d,
+  @time_bucket_aggregation(all_dates.date_@{no_gap_date_part}, @no_gap_date_part) as d,
   COUNT(current.@time_column) as num_rows
 FROM all_dates
 LEFT JOIN @this_model AS current
-  ON @datetrunc(@no_gap_date_part, current.@time_column) = all_dates.date_@{no_gap_date_part}
+  ON @time_bucket_aggregation(current.@time_column, @no_gap_date_part) = all_dates.date_@{no_gap_date_part}
 WHERE @AND(
   all_dates.date_@{no_gap_date_part} BETWEEN @start_dt AND @end_dt, 
   all_dates.date_@{no_gap_date_part} >= @VAR('ignore_before', '2015-01-01 00:00:00')::TIMESTAMP,
