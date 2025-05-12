@@ -15,22 +15,9 @@ spec:
     serviceAccount:
       name: production-consumer-trino
     accessControl:
-      type: configmap
-      configFile: "rules.json"
-      rules:
-        rules.json: |-
-          {
-            "catalogs": [
-              {
-                "user": "admin",
-                "allow": "all"
-              },
-              {
-                "catalog": ".*",
-                "allow": "read-only"
-              }
-            ]
-          }
+      type: properties
+      properties: |
+        access-control.name=read-only
     additionalConfigProperties:
       - http-server.process-forwarded=true
       - internal-communication.shared-secret=gcp:secretmanager:production-consumer-trino-shared-secret/versions/latest
@@ -55,7 +42,7 @@ spec:
           command:
             - /bin/sh
             - -c
-            - 'echo "${TRINO_ADMIN}\n${TRINO_USER}" > /etc/auth/password.db'
+            - 'printf "${TRINO_ADMIN}\n${TRINO_USER}" > /etc/auth/password.db'
           env:
             - name: TRINO_USER
               value: gcp:secretmanager:production-consumer-trino-auth/versions/latest
@@ -82,10 +69,9 @@ spec:
         maxHeapSize: "7G"
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
-      configMounts:
-        - name: catalog-store-config
-          configMap: catalog-store-config
-          path: /etc/trino
+      additionalConfigFiles:
+        catalog-store.properties: |
+          catalog.config-dir=/etc/trino/dynamic-catalog
       additionalVolumeMounts:
         - name: trino-auth-volume
           mountPath: /etc/trino/auth/password
@@ -136,7 +122,7 @@ spec:
       config:
         authenticationType: PASSWORD
         query:
-          maxMemory: "100GB"  
+          maxMemory: "100GB"
       workers: 1
       autoscaling:
         enabled: true
