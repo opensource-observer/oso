@@ -23,7 +23,7 @@ spec:
   interval: 50m
   install:
     remediation:
-      retries: 3
+      retries: 5
   values:
     osoDagster:
       verboseLogs: 1
