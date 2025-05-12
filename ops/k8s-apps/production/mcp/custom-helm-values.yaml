@@ -3,6 +3,12 @@ kind: HelmRelease
 metadata:
   name: production-mcp
 spec:
+  postRenderers:
+    - kustomize:
+        images:
+          - name: ghcr.io/opensource-observer/oso
+            newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+            newTag: deploy-20250512154443-720baf0 # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       envVars:

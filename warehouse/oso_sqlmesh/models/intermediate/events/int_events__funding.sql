@@ -4,14 +4,18 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 90,
-    batch_concurrency 1
+    batch_concurrency 1,
+    lookback 31
   ),
   start @funding_incremental_start,
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
   )
 );
 

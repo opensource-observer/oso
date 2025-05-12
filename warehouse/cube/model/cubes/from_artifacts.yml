@@ -1,8 +1,0 @@
-cubes:
-  - name: from_artifacts
-    extends: artifacts
-
-    joins:
-      - name: artifacts 
-        sql: '{CUBE}.artifact_id = {artifacts.artifact_id}'
-        relationship: one_to_one 

@@ -4,7 +4,8 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_month,
     batch_size 12,
-    batch_concurrency 1
+    batch_concurrency 1,
+    lookback 1
   ),
   start '2015-01-01',
   cron '@monthly',
@@ -14,7 +15,11 @@ MODEL (
     'entity_category=project'
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := bucket_month,
+      no_gap_date_part := 'month',
+    ),
   )
 );
 

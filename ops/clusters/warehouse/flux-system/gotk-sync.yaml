@@ -6,9 +6,11 @@ metadata:
   name: flux-system
   namespace: flux-system
 spec:
-  interval: 60s
+  interval: 1m0s
   ref:
-    branch: main
+    branch: production
+  secretRef:
+    name: flux-system
   url: https://github.com/opensource-observer/oso.git
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1

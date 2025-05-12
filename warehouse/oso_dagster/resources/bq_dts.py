@@ -76,13 +76,13 @@ class BigQueryDataTransferResource(ConfigurableResource):
             with setup_gcp_creds(self.gcp_credentials):
                 yield DataTransferServiceClient()
 
-        elif global_config.dbt_impersonate_service_account != "":
+        elif global_config.gcp_impersonate_service_account != "":
             # By default, create an impersonated credential for a service account.
             # This is necessary to create BigQuery DataTransfer jobs
             credentials, project_id = auth.default()
             target_credentials = impersonated_credentials.Credentials(
                 source_credentials=credentials,
-                target_principal=global_config.dbt_impersonate_service_account,
+                target_principal=global_config.gcp_impersonate_service_account,
                 target_scopes=IMPERSONATE_SCOPES,
                 lifetime=IMPERSONATE_LIFETIME,
             )

@@ -1,0 +1,15 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: oso
+  namespace: flux-system
+spec:
+  filterTags:
+    extract: '$timestamp'
+    pattern: '^deploy-(?P<timestamp>[0-9]{14})-[0-9abcdefABCDEF]{7}$'
+  imageRepositoryRef:
+    name: oso
+  policy:
+    alphabetical:
+      order: asc

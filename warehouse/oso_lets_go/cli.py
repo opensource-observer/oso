@@ -13,10 +13,12 @@ import warnings
 from ast import parse
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+from urllib.parse import urljoin
 
 import aiotrino
 import dotenv
 import git
+import httpx
 import kr8s
 from kr8s.objects import Job, Namespace, Service
 from metrics_tools.definition import MetricModelDefinition
@@ -299,6 +301,29 @@ def clean_expired_trino_hive_files(
             dry_run,
         )
     )
+
+@production.command()
+@click.option("--service-name", default="receiver")
+@click.option("--namespace", default="flux-system")
+@click.option("--endpoint", required=True)
+@click.option("--remote-port", type=int, default=9292)
+def trigger_image_update(service_name: str, namespace: str, endpoint: str, remote_port: int):
+    flux_service = Service.get(
+        service_name,
+        namespace,
+    )
+    # Turns out the remote port should be 9292 for the flux service and not 8080
+    # as the service has listed. Not sure why but this is the port that the service
+    # forwards to.
+    with flux_service.portforward(remote_port=remote_port, local_port=None) as local_port:
+        logger.info(f"Port forwarded to localhost:{local_port}")
+
+        url = urljoin(f"http://localhost:{local_port}", endpoint)
+        res = httpx.get(url)
+        if res.status_code != 200:
+            logger.error(f"Failed to trigger image update: {res.status_code} {res.text}")
+        else:
+            logger.info(f"Image update webhook triggered for {service_name} in {namespace}")
 
 
 @production.command()
@@ -758,6 +783,7 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
+                "SQLMESH_TESTING_ENABLED": "1",
             },
             check=True,
         )
@@ -779,6 +805,7 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
                     "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
                     "SQLMESH_TRINO_HOST": "localhost",
                     "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+                    "SQLMESH_TESTING_ENABLED": "1",
                 },
                 check=True,
             )

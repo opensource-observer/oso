@@ -4,14 +4,19 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column week,
     batch_size 180,
-    batch_concurrency 3
+    batch_concurrency 3,
+    lookback 31,
   ) /* forward_only true, */ /* on_destructive_change warn */,
   cron '@weekly',
   partitioned_by (DAY(week), chain),
   start '2024-08-01',
   audits (
-    has_at_least_n_rows(threshold := 0)
-  )
+    has_at_least_n_rows(threshold := 0),
+  ),
+  -- This model is weekly so this can't work for now
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+  ),
 );
 
 /* Find all transactions involving the contracts from `derived_contracts` and */ /* aggregate their tx_count on a weekly basis */

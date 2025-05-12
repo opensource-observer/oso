@@ -41,9 +41,13 @@ class MacroOverridingModel(model):
         if len(self._additional_macros) > 0:
             macros = MacroRegistry(f"macros_for_{self.name}")
             system_macros = kwargs.get("macros", macros)
-            macros.update(system_macros or macro.get_registry())
+            macros.update(system_macros) 
+            macros.update(macro.get_registry())
 
-            macros = create_macro_registry_from_list(self._additional_macros)
+            additional_macros = create_macro_registry_from_list(self._additional_macros)
+            macros.update(additional_macros)
+            if not macros.get('datetrunc'):
+                raise ValueError("FUCL")
             kwargs["macros"] = macros
 
         vars = kwargs.get("variables", {})

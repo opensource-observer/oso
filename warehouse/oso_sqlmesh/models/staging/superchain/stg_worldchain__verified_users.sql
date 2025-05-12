@@ -4,7 +4,7 @@ MODEL (
     time_column block_timestamp,
     batch_size 90,
     batch_concurrency 1,
-    lookback 7
+    lookback 31
   ),
   dialect trino,
   start DATE('2024-08-27'),
@@ -16,8 +16,13 @@ MODEL (
     address_verified_until
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
-  )
+    has_at_least_n_rows(threshold := 0),
+  ),
+  -- This model is likely not consistent with data every day so we must ignore this
+  -- rule for now
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+  ),
 );
 
 WITH raw AS (

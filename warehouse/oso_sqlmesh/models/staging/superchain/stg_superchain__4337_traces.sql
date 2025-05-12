@@ -4,7 +4,7 @@ MODEL (
     time_column block_timestamp,
     batch_size 90,
     batch_concurrency 1,
-    lookback 7
+    lookback 31
   ),
   dialect trino,
   start @blockchain_incremental_start,
@@ -22,7 +22,10 @@ MODEL (
     method_id
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
   )
 );
 
@@ -36,8 +39,8 @@ SELECT
   to_address,
   bundler_address AS bundler_address,
   userop_paymaster AS paymaster_address,
-  useropevent_actualgascost::BIGINT AS userop_gas_cost,
-  useropevent_actualgasused::BIGINT AS userop_gas_used,
+  useropevent_actualgascost::DOUBLE AS userop_gas_cost,
+  useropevent_actualgasused::DOUBLE AS userop_gas_used,
   CAST(
     CASE WHEN input != '0x' 
       THEN 0 

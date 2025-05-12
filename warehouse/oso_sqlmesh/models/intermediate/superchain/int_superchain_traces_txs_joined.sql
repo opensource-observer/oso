@@ -5,7 +5,7 @@ MODEL (
     time_column block_timestamp,
     batch_size 90,
     batch_concurrency 1,
-    lookback 7
+    lookback 31
   ),
   start @blockchain_incremental_start,
   cron '@daily',
@@ -23,7 +23,11 @@ MODEL (
     gas_price_tx
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := block_timestamp,
+      no_gap_date_part := 'day',
+    ),
   )
 );
 

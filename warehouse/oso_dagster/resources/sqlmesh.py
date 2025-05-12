@@ -3,7 +3,9 @@ Auxiliary resources for sqlmesh
 """
 
 import logging
+import math
 import typing as t
+from itertools import batched
 
 from dagster import (
     AssetExecutionContext,
@@ -27,6 +29,8 @@ from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.model import Model
 
 logger = logging.getLogger(__name__)
+
+BIGQUERY_BATCH_SIZE = 10000
 
 
 class SQLMeshExporter:
@@ -274,30 +278,74 @@ class Trino2BigQuerySQLMeshExporter(SQLMeshExporter):
                 "trino-export", log_override=context.log
             ) as exporter:
                 with bigquery_importer.get() as importer:
-                    selected_output_names = (
+                    selected_output_names = list(
                         context.op_execution_context.selected_output_names
                     )
-                    for table_name in selected_output_names:
-                        await transfer(
-                            Source(
-                                exporter=exporter,
-                                table=TableReference(
-                                    catalog_name=self._source_catalog,
-                                    schema_name=self._source_schema,
-                                    table_name=table_name,
-                                ),
-                            ),
-                            Destination(
-                                importer=importer,
-                                table=TableReference(
-                                    schema_name=self._dataset_id, table_name=table_name
-                                ),
-                            ),
-                            log_override=context.log,
+
+                    if len(selected_output_names) > BIGQUERY_BATCH_SIZE:
+                        context.log.info(
+                            f"Large number of tables detected ({len(selected_output_names)}). "
+                            f"Processing in batches of {BIGQUERY_BATCH_SIZE} to respect BigQuery limits."
                         )
-                        yield MaterializeResult(
-                            asset_key=AssetKey(table_name).with_prefix(self._prefix)
+
+                        total_batches = math.ceil(
+                            len(selected_output_names) / BIGQUERY_BATCH_SIZE
                         )
+
+                        for batch_num, batch in enumerate(
+                            batched(selected_output_names, BIGQUERY_BATCH_SIZE), 1
+                        ):
+                            context.log.info(
+                                f"Processing batch {batch_num}/{total_batches}: {len(batch)} tables"
+                            )
+
+                            for table_name in batch:
+                                await transfer(
+                                    Source(
+                                        exporter=exporter,
+                                        table=TableReference(
+                                            catalog_name=self._source_catalog,
+                                            schema_name=self._source_schema,
+                                            table_name=table_name,
+                                        ),
+                                    ),
+                                    Destination(
+                                        importer=importer,
+                                        table=TableReference(
+                                            schema_name=self._dataset_id,
+                                            table_name=table_name,
+                                        ),
+                                    ),
+                                    log_override=context.log,
+                                )
+                                yield MaterializeResult(
+                                    asset_key=AssetKey(table_name).with_prefix(
+                                        self._prefix
+                                    )
+                                )
+                    else:
+                        for table_name in selected_output_names:
+                            await transfer(
+                                Source(
+                                    exporter=exporter,
+                                    table=TableReference(
+                                        catalog_name=self._source_catalog,
+                                        schema_name=self._source_schema,
+                                        table_name=table_name,
+                                    ),
+                                ),
+                                Destination(
+                                    importer=importer,
+                                    table=TableReference(
+                                        schema_name=self._dataset_id,
+                                        table_name=table_name,
+                                    ),
+                                ),
+                                log_override=context.log,
+                            )
+                            yield MaterializeResult(
+                                asset_key=AssetKey(table_name).with_prefix(self._prefix)
+                            )
 
         return trino_bigquery_export
 
@@ -399,30 +447,74 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
                 gcs_bucket_name=self._bucket_name,
             ) as exporter:
                 with bigquery_importer.get() as importer:
-                    selected_output_names = (
+                    selected_output_names = list(
                         context.op_execution_context.selected_output_names
                     )
-                    for table_name in selected_output_names:
-                        await transfer(
-                            Source(
-                                exporter=exporter,
-                                table=TableReference(
-                                    catalog_name=self._source_catalog,
-                                    schema_name=self._source_schema,
-                                    table_name=table_name,
-                                ),
-                            ),
-                            Destination(
-                                importer=importer,
-                                table=TableReference(
-                                    schema_name=self._dataset_id, table_name=table_name
-                                ),
-                            ),
-                            log_override=context.log,
+
+                    if len(selected_output_names) > BIGQUERY_BATCH_SIZE:
+                        context.log.info(
+                            f"Large number of tables detected ({len(selected_output_names)}). "
+                            f"Processing in batches of {BIGQUERY_BATCH_SIZE} to respect BigQuery limits."
                         )
-                        yield MaterializeResult(
-                            asset_key=AssetKey(table_name).with_prefix(self._prefix)
+
+                        total_batches = math.ceil(
+                            len(selected_output_names) / BIGQUERY_BATCH_SIZE
                         )
+
+                        for batch_num, batch in enumerate(
+                            batched(selected_output_names, BIGQUERY_BATCH_SIZE), 1
+                        ):
+                            context.log.info(
+                                f"Processing batch {batch_num}/{total_batches}: {len(batch)} tables"
+                            )
+
+                            for table_name in batch:
+                                await transfer(
+                                    Source(
+                                        exporter=exporter,
+                                        table=TableReference(
+                                            catalog_name=self._source_catalog,
+                                            schema_name=self._source_schema,
+                                            table_name=table_name,
+                                        ),
+                                    ),
+                                    Destination(
+                                        importer=importer,
+                                        table=TableReference(
+                                            schema_name=self._dataset_id,
+                                            table_name=table_name,
+                                        ),
+                                    ),
+                                    log_override=context.log,
+                                )
+                                yield MaterializeResult(
+                                    asset_key=AssetKey(table_name).with_prefix(
+                                        self._prefix
+                                    )
+                                )
+                    else:
+                        for table_name in selected_output_names:
+                            await transfer(
+                                Source(
+                                    exporter=exporter,
+                                    table=TableReference(
+                                        catalog_name=self._source_catalog,
+                                        schema_name=self._source_schema,
+                                        table_name=table_name,
+                                    ),
+                                ),
+                                Destination(
+                                    importer=importer,
+                                    table=TableReference(
+                                        schema_name=self._dataset_id,
+                                        table_name=table_name,
+                                    ),
+                                ),
+                                log_override=context.log,
+                            )
+                            yield MaterializeResult(
+                                asset_key=AssetKey(table_name).with_prefix(self._prefix)
+                            )
 
         return duckdb_bigquery_export
 

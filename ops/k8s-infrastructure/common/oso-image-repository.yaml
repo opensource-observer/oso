@@ -1,0 +1,12 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: oso
+  namespace: flux-system
+spec:
+  image: ghcr.io/opensource-observer/oso
+  interval: 5m0s
+  accessFrom:
+    namespaceSelectors:
+      - matchLabels: {}

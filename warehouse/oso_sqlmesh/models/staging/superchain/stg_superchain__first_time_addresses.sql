@@ -19,8 +19,11 @@ model(
     ),
     enabled false,
     audits (
-      has_at_least_n_rows(threshold := 0)
-    )
+      has_at_least_n_rows(threshold := 0),
+    ),
+    ignored_rules (
+      "incrementalmustdefinenogapsaudit",
+    ),
 )
 ;
 

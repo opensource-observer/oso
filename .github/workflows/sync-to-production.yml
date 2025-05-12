@@ -1,0 +1,46 @@
+# Update the production branch with the latest changes from the main branch
+# In the future this should be a PR to the production as a deployment 
+# method
+
+name: Sync Production Branch
+
+on:
+  push:
+    branches: [main]
+    
+permissions: 
+  contents: write
+
+jobs:
+  sync-to-production:
+    # This job should only run on `#production-deploy` commits on main
+    if: ${{ contains(github.event.head_commit.message, '#production-deploy') }}
+    environment: ops
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the production branch
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          ref: production
+          fetch-depth: 0
+
+      - name: Add source branch remote ref
+        run: |
+          git fetch origin
+
+      - name: Check if fast-forward is possible
+        run: |
+          base=$(git merge-base HEAD origin/main)
+          head=$(git rev-parse HEAD)
+          if [ "$base" != "$head" ]; then
+            echo "Cannot fast-forward: ${head} is not an ancestor of origin/main"
+            exit 1
+          fi
+
+      - name: Perform fast-forward
+        run: |
+          git merge --ff-only origin/main
+          git push origin HEAD
+  

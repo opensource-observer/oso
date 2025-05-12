@@ -5,12 +5,16 @@ MODEL (
     time_column deployment_timestamp,
     batch_size 90,
     batch_concurrency 1,
-    lookback 30
+    lookback 31
   ) /* forward_only true */,
   start @blockchain_incremental_start,
   partitioned_by (DAY("deployment_timestamp"), "chain"),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := deployment_timestamp,
+      no_gap_date_part := 'day',
+    ),
   )
 );
 

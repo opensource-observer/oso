@@ -4,14 +4,19 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 180,
-    batch_concurrency 1
+    batch_concurrency 1,
+    lookback 31
   ),
   start @blockchain_incremental_start,
   cron '@weekly',
   partitioned_by (DAY("time"), "event_type", "event_source"),
   grain (time, from_artifact_id, to_artifact_id, event_source_id),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := time,
+      no_gap_date_part := 'day',
+    ),
   )
 );
 

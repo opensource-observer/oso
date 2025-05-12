@@ -1035,7 +1035,7 @@ distributed = [
 
 [[package]]
 name = "dask-kubernetes"
-version = "2024.9.0"
+version = "2025.4.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dask" },
@@ -1047,9 +1047,9 @@ dependencies = [
     { name = "pykube-ng" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/3e/6d7aa2c65f3c3754f758a93a3813d22f4f28081253feac02af33e81ac717/dask_kubernetes-2024.9.0.tar.gz", hash = "sha256:6b97812c5fad496914a53457f1e4ec9a44be7b7be732b8f228b541842c70c9ef", size = 93972 }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/2e/d521e301a43251e91f8f4305df938f584f12788dd3f578934619c17d8ced/dask_kubernetes-2025.4.3.tar.gz", hash = "sha256:5da98aa2565df3b3348f4df3871db8ff2b9511c6bad6aa789a974f6212a45516", size = 89646 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/9c/a730d54f098793d6c28329b09c59b9798e2fa916a6877a54dafe58bf1d28/dask_kubernetes-2024.9.0-py3-none-any.whl", hash = "sha256:a24fab41eb316a77a73426a2db3b87a979ac54f19ba3b278d8eb4d4f7ece81ac", size = 158104 },
+    { url = "https://files.pythonhosted.org/packages/b9/93/eb2b33604474145d7797c2c313485f2cf8249602787f89015001bef94872/dask_kubernetes-2025.4.3-py3-none-any.whl", hash = "sha256:70fa7ef7c4bb56dc92bbe48a178830d5b088b5a38b84df7f76bebb491c761b69", size = 141161 },
 ]
 
 [[package]]
@@ -2624,7 +2624,7 @@ wheels = [
 
 [[package]]
 name = "kr8s"
-version = "0.17.4"
+version = "0.20.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -2635,10 +2635,11 @@ dependencies = [
     { name = "python-box" },
     { name = "python-jsonpath" },
     { name = "pyyaml" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/61/f3/0d3b322681a9a62039c5ea6a6240d5e537ddc666673288ae4890365027b0/kr8s-0.17.4.tar.gz", hash = "sha256:b1993bf415a5ee8be90268dd020605bba7ebce67a54b4e1e4c60089a9da4894f", size = 2851801 }
+sdist = { url = "https://files.pythonhosted.org/packages/05/f5/cda575c218d331cbf6fa3b8dd992f3b8f908bf13d1b7a4ba6afd97535cd4/kr8s-0.20.7.tar.gz", hash = "sha256:ac45e966beea0f6f92f635b3e61e64b8e27962b4825d77b814a663e819a8ec16", size = 2858691 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e9/01/f63a8794cbcb21b756d720d78fd31998a67e648d999e9e6e920c93cbac94/kr8s-0.17.4-py3-none-any.whl", hash = "sha256:8c8d1adc831452963bf6c5dc2756ed80aab82733216f4fe0618a3bdb3b1b2186", size = 70560 },
+    { url = "https://files.pythonhosted.org/packages/2a/66/92a695d3640073cec7469db1583034b0fb742629cb502c58bda5de985b8b/kr8s-0.20.7-py3-none-any.whl", hash = "sha256:e489b97ff513c167f427f479ad5420c78adffd1a6ce5033b079109374200c0c6", size = 77300 },
 ]
 
 [[package]]
@@ -3652,6 +3653,7 @@ dependencies = [
     { name = "google-cloud-service-usage" },
     { name = "google-cloud-storage" },
     { name = "isort" },
+    { name = "kr8s" },
     { name = "lz4" },
     { name = "minio" },
     { name = "openrank-sdk" },
@@ -3712,8 +3714,8 @@ requires-dist = [
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-sqlmesh", specifier = "==0.16.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
-    { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.0.0" },
-    { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.0.0" },
+    { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.5.0" },
+    { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.5.0" },
     { name = "dbt-bigquery", specifier = ">=1.7.0,<2.0.0" },
     { name = "dbt-core", specifier = ">=1.8.2,<2.0.0" },
     { name = "discord-webhook", specifier = ">=1.3.1,<2.0.0" },
@@ -3736,6 +3738,7 @@ requires-dist = [
     { name = "google-cloud-service-usage", specifier = ">=1.10.3,<2.0.0" },
     { name = "google-cloud-storage", specifier = ">=2.14.0,<3.0.0" },
     { name = "isort", specifier = ">=5.13.2,<6.0.0" },
+    { name = "kr8s", specifier = "==0.20.7" },
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
     { name = "minio", specifier = ">=7.2.15,<8.0.0" },
     { name = "openrank-sdk", specifier = ">=0.4.0,<1.0.0" },
