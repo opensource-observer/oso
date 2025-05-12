@@ -701,7 +701,7 @@ class TimeseriesMetrics:
 
         ignored_rules: list[str] = []
         # Ignore these for now, we will need to fix this later
-        if time_aggregation in ["biannually", "quarterly", "weekly"]:
+        if time_aggregation in ["biannually", "quarterly", "weekly"] and "funding" in query_config["table_name"]:
             ignored_rules.append("incrementalmustdefinenogapsaudit")
 
         # Override the path and module so that sqlmesh generates the
