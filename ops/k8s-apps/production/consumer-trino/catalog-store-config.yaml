@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: catalog-store-config
-data:
-  catalog-store.properties: |
-    catalog.config-dir: /etc/trino/dynamic-catalog
