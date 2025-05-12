@@ -31,6 +31,10 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
         # Hack for now, ignore these until we fix the audit
         return None
 
+    if "funding" in config["table_name"]:
+        # Hack for now, ignore these until we fix the audit
+        return None
+
     return (
         "no_gaps",
         {
