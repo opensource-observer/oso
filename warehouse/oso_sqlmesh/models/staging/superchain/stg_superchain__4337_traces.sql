@@ -40,8 +40,8 @@ SELECT
   to_address,
   bundler_address AS bundler_address,
   userop_paymaster AS paymaster_address,
-  useropevent_actualgascost::BIGINT AS userop_gas_cost,
-  useropevent_actualgasused::BIGINT AS userop_gas_used,
+  useropevent_actualgascost::DOUBLE AS userop_gas_cost,
+  useropevent_actualgasused::DOUBLE AS userop_gas_used,
   CAST(
     CASE WHEN input != '0x' 
       THEN 0 

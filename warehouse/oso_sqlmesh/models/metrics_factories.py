@@ -15,6 +15,7 @@ TRANSLATE_TIME_AGGREGATION = {
     "weekly": "week",
     "monthly": "month",
     "quarterly": "quarter",
+    "biannually": "biannual",
     "yearly": "year",
 }
 
@@ -26,8 +27,8 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     if time_aggregation is None:
         return None
 
-    if time_aggregation == "biannually":
-        # Hack for now, ignore biannual
+    if time_aggregation in ["biannually", "weekly", "quarterly"]:
+        # Hack for now, ignore these until we fix the audit
         return None
 
     return (

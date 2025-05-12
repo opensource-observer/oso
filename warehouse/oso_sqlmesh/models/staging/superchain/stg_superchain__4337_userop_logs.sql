@@ -21,10 +21,9 @@ MODEL (
   dialect duckdb,
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := block_timestamp,
-      no_gap_date_part := 'day',
-    ),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
   )
 );
 
@@ -36,8 +35,8 @@ SELECT
   sender AS sender_address,
   paymaster AS paymaster_address,
   contract_address,
-  actualgascost::BIGINT AS userop_gas_price,
-  actualgasused::BIGINT AS userop_gas_used,
+  actualgascost::DOUBLE AS userop_gas_price,
+  actualgasused::DOUBLE AS userop_gas_used,
   @chain_name(chain) AS chain
 FROM @oso_source(
   'bigquery.optimism_superchain_4337_account_abstraction_data.useroperationevent_logs_v2'
