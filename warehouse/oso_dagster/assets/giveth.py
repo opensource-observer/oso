@@ -233,3 +233,34 @@ def fetch_giveth_data():
     print("Projects DF preview:")
     print(projects_df.head(3))
     yield Output(projects_df, output_name="giveth__projects_by_round_v2")
+
+
+
+from .graphql_updated import GraphQLResourceConfig, graphql_factory
+
+@multi_asset(
+    outs={
+        "giveth__projects_by_round_paginated": AssetOut(),
+    },
+)
+def fetch_giveth_paginated():
+    config = GraphQLResourceConfig(
+        name="giveth_projects",
+        endpoint="https://mainnet.serve.giveth.io/graphql",
+        target_type="Project",
+        target_query="allProjects",
+        parameters={
+            "qfRoundId": {"type": "Int!", "value": 65},
+        },
+        pagination={
+            "method": "offset",
+            "offset_param": "skip",
+            "limit_param": "take",
+            "page_size": 25,
+            "start_offset": 0,
+            "retries": 3,
+        }
+    )
+
+    fetch_paginated = graphql_factory(config)
+    yield Output(list(fetch_paginated().execute_in_process().output_for_node("giveth_projects")), output_name="giveth__projects_by_round_paginated")
