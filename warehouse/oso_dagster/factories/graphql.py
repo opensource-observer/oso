@@ -126,6 +126,7 @@ class GraphQLResourceConfig:
     """
 
     # TODO(jabolo): Add ability to pass secrets
+    pagination: Optional[Dict[str, Any]] = None
     name: str
     endpoint: str
     target_type: str
@@ -134,6 +135,28 @@ class GraphQLResourceConfig:
     headers: Optional[Dict[str, str]] = None
     transform_fn: Optional[Callable[[Any], Any]] = None
     parameters: Optional[Dict[str, Dict[str, Any]]] = None
+    pagination = {
+        field: "cursor",
+        from: "1970-01-01T00:00:00Z",
+        to: "2023-01-01T00:00:00Z",
+        timeout: ...
+        filter_fn: lambda x: x["id"] % 2 == 0,
+    }
+    # [... -> ...]
+    # cooldowns
+    # id -> 0, 1, 2, ...
+    # skip even numbers
+    # it can fail // fail, retry n times AND fail (wait 1s, wait 2s, wait 3s -> fail (debounce))
+
+"""
+
+while (True):
+    try:
+        fetch_data()
+        yield data
+    ...
+
+"""
 
 
 def get_graphql_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
@@ -547,6 +570,12 @@ def _graphql_factory(
                 context.log.info(
                     f"GraphQLFactory: generated query:\n\n{generated_query}"
                 )
+
+                # if pagination is no none
+                # 1. extract all segments (1970-01-01 -> 1970-01-02, ...)
+                # 2. for each segment, execute the query
+                # error handling + de-bounce
+                # yield query
 
                 try:
                     result = client.execute(
