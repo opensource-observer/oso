@@ -24,7 +24,7 @@ spec:
   install:
     remediation:
       retries: 3
-  updrade:
+  upgrade:
     remediation:
       retries: 3
   values:
