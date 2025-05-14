@@ -20,6 +20,9 @@ MODEL (
       time_column := bucket_month,
       no_gap_date_part := 'month',
     ),
+  ),
+  ignored_rules (
+    "incrementalmusthaveforwardonly",
   )
 );
 

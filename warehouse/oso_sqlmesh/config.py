@@ -28,6 +28,7 @@ config = Config(
             "incrementalmusthavetimepartition",
             "incrementalmustdefinenogapsaudit",
             "incrementalmusthavelookback",
+            "incrementalmusthaveforwardonly",
             "timepartitionsmustbebucketed",
             "nomissingaudits",
             "entitycategorytagrequired",

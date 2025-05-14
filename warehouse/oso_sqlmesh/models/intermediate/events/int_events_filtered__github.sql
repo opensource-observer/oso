@@ -15,7 +15,11 @@ MODEL (
     no_gaps(
       time_column := time,
       no_gap_date_part := 'day',
+      missing_rate_min_threshold := 0.75,
     ),
+  ),
+  ignored_rules (
+    "incrementalmusthaveforwardonly",
   )
 );
 

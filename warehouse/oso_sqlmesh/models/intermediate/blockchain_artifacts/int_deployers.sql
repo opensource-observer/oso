@@ -4,7 +4,9 @@ MODEL (
     time_column block_timestamp,
     batch_size 365,
     batch_concurrency 1,
-    lookback 31
+    lookback 31,
+    forward_only true,
+    on_destructive_change warn,
   ),
   start @blockchain_incremental_start,
   partitioned_by (DAY("block_timestamp"), "chain"),

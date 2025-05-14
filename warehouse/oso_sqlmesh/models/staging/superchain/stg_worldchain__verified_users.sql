@@ -22,6 +22,7 @@ MODEL (
   -- rule for now
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
+    "incrementalmusthaveforwardonly",
   ),
 );
 
