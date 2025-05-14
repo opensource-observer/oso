@@ -1,8 +1,10 @@
 import os
+import typing as t
 
 from dotenv import load_dotenv
 from metrics_tools.definition import MetricMetadata
 from metrics_tools.factory import MetricQueryConfig, MetricQueryDef, timeseries_metrics
+from metrics_tools.models import constants
 from sqlglot import exp
 
 # Annoyingly sqlmesh doesn't load things in an expected order but we want to be
@@ -23,10 +25,17 @@ TRANSLATE_TIME_AGGREGATION = {
 def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     if not config["incremental"]:
         return None
+
     time_aggregation = config["ref"].get("time_aggregation")
     if time_aggregation is None:
         return None
 
+    options: t.Dict[str, t.Any] = {
+        "no_gap_date_part": TRANSLATE_TIME_AGGREGATION[time_aggregation],
+        "time_column": exp.to_column(
+            "metrics_sample_date",
+        ),
+    }
     if time_aggregation in ["biannually", "weekly", "quarterly"]:
         # Hack for now, ignore these until we fix the audit
         return None
@@ -34,15 +43,13 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     if "funding" in config["table_name"]:
         # Hack for now, ignore these until we fix the audit
         return None
+    
+    if "data_category=blockchain" in config["additional_tags"]:
+        options["ignore_before"] = constants.superchain_audit_start
 
     return (
         "no_gaps",
-        {
-            "no_gap_date_part": TRANSLATE_TIME_AGGREGATION[time_aggregation],
-            "time_column": exp.to_column(
-                "metrics_sample_date",
-            ),
-        },
+        options,
     )
 
 
