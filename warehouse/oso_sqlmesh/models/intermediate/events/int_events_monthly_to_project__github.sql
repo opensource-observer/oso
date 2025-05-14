@@ -4,7 +4,7 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_month,
     batch_size 12,
-    batch_concurrency 1,
+    batch_concurrency 2,
     lookback 1
   ),
   start '2015-01-01',
