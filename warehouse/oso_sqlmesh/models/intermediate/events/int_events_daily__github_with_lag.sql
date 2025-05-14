@@ -3,7 +3,7 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
     batch_size 365,
-    batch_concurrency 1,
+    batch_concurrency 2,
     lookback 31,
     forward_only true,
   ),

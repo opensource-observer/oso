@@ -3,7 +3,7 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column deployment_timestamp,
     batch_size 90,
-    batch_concurrency 1,
+    batch_concurrency 2,
     lookback 31,
     forward_only true,
     on_destructive_change warn,
