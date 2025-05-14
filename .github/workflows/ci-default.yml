@@ -175,6 +175,12 @@ jobs:
           bash .github/scripts/run-supabase-local.sh apps/frontend
         if: ${{ matrix.component == 'node' }}
 
+        # Lint first, because build will codegen
+      - name: Lint (Node)
+        run: pnpm lint
+        if: ${{ always() && matrix.component == 'node' }}
+        #if: ${{ always() && steps.supabase.conclusion == 'success' && matrix.component == 'node' }}
+
       - name: Build (Node)
         uses: nick-fields/retry@v3
         with:
@@ -182,11 +188,6 @@ jobs:
           max_attempts: 3
           command: pnpm build
         if: ${{ matrix.component == 'node' }}
-
-      - name: Lint (Node)
-        run: pnpm lint
-        if: ${{ always() && matrix.component == 'node' }}
-        #if: ${{ always() && steps.supabase.conclusion == 'success' && matrix.component == 'node' }}
 
       - name: Test (Node)
         run: pnpm test
