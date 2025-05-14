@@ -127,5 +127,6 @@ config = Config(
         "funding_incremental_start": constants.funding_incremental_start,
         "defillama_incremental_start": constants.defillama_incremental_start,
         "testing_enabled": constants.testing_enabled,
+        "superchain_audit_start": constants.superchain_audit_start,
     },
 )
