@@ -4,7 +4,8 @@ MODEL (
     time_column bucket_week,
     batch_size 365,
     batch_concurrency 1,
-    lookback 31
+    lookback 31,
+    forward_only true,
   ),
   start '2015-01-01',
   cron '@daily',

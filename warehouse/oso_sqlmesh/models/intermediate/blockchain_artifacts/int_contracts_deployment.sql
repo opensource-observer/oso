@@ -4,8 +4,10 @@ MODEL (
     time_column deployment_timestamp,
     batch_size 90,
     batch_concurrency 1,
-    lookback 31
-  ) /* forward_only true, */ /* on_destructive_change warn */,
+    lookback 31,
+    forward_only true,
+    on_destructive_change warn,
+  ),
   start @blockchain_incremental_start,
   partitioned_by (DAY("deployment_timestamp"), "chain"),
   audits (

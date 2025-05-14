@@ -21,6 +21,9 @@ MODEL (
       time_column := time,
       no_gap_date_part := 'day',
     ),
+  ),
+  ignored_rules (
+    "incrementalmusthaveforwardonly",
   )
 );
 

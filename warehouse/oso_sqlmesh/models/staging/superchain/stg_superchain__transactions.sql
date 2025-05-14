@@ -4,7 +4,8 @@ MODEL (
     time_column block_timestamp,
     batch_size 90,
     batch_concurrency 1,
-    lookback 31
+    lookback 31,
+    forward_only true,
   ),
   start '2021-10-01',
   cron '@daily',

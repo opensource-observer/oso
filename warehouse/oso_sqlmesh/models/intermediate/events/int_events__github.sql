@@ -4,7 +4,9 @@ MODEL (
     time_column time,
     batch_size 365,
     batch_concurrency 1,
-    lookback 31
+    lookback 31,
+    forward_only true,
+    on_destructive_change warn,
   ),
   start @github_incremental_start,
   cron '@daily',
