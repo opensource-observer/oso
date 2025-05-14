@@ -14,10 +14,33 @@ spec:
         value: gcp:secretmanager:production-mcs-gcs-secret/versions/latest
     serviceAccount:
       name: production-consumer-trino
+    securityContext:
+      fsGroup: 1000
     accessControl:
-      type: properties
-      properties: |
-        access-control.name=read-only
+      type: configmap
+      refreshPeriod: 60s
+      configFile: "rules.json"
+      rules:
+        rules.json: |
+          {
+            "catalogs": [
+              {
+                "user": "admin",
+                "allow": "owner"
+              },
+              {
+                "catalog": "system",
+                "allow": "none"
+              },
+              {
+                "user": "user",
+                "allow": "read-only"
+              },
+              {
+                "allow": "all"
+              }
+            ]
+          }
     additionalConfigProperties:
       - http-server.process-forwarded=true
       - internal-communication.shared-secret=gcp:secretmanager:production-consumer-trino-shared-secret/versions/latest
