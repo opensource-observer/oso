@@ -31,4 +31,4 @@ WITH all_dates AS (
 -- the rate of missing rows is below
 SELECT COALESCE(AVG(num_rows), 1.0) AS avg_rows_per_day
 FROM rows_per_day
-HAVING COALESCE(AVG(num_rows), 1.0) < @missing_rows_rate_threshold::FLOAT
+HAVING COALESCE(AVG(num_rows), 1.0) < @missing_rate_min_threshold::FLOAT
