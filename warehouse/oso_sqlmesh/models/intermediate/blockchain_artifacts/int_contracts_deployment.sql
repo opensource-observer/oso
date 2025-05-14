@@ -14,6 +14,7 @@ MODEL (
       time_column := deployment_timestamp,
       no_gap_date_part := 'day',
       ignore_before := @superchain_audit_start,
+      missing_rate_min_threshold := 0.95,
     ),
   )
 );
