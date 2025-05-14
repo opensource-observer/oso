@@ -25,6 +25,12 @@ In order to properly install `supabase`, you'll need to explicitly approve post-
 pnpm approve-builds
 ```
 
+## Log into Supabase
+
+```bash
+pnpm supabase login
+```
+
 ## Run the dev server
 
 To run the dev server, which will also automatically watch for changes from Plasmic and the GraphQL schema:
