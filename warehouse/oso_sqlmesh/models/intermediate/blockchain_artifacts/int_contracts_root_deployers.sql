@@ -14,6 +14,7 @@ MODEL (
     no_gaps(
       time_column := deployment_timestamp,
       no_gap_date_part := 'day',
+      ignore_before := @superchain_audit_start,
     ),
   )
 );

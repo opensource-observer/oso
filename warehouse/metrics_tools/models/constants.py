@@ -9,6 +9,7 @@ def coalesce_start_value(var_name: str, default: str) -> str:
     )
 
 
+superchain_audit_start = coalesce_str(["SQLMESH_DEBUG_START", "SQLMESH_DEBUG_SUPERCHAIN_AUDIT"], "2021-12-01")
 blockchain_incremental_start = coalesce_start_value("BLOCKCHAIN", "2021-10-01")
 deps_dev_incremental_start = coalesce_start_value("DEPS_DEV", "2015-01-01")
 github_incremental_start = coalesce_start_value("GITHUB", "2015-01-01")
