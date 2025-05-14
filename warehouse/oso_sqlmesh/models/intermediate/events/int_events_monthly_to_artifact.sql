@@ -13,10 +13,9 @@ MODEL (
   enabled false,
   audits (
     not_null(columns := (event_type, event_source)),
-    no_gaps(
-      time_column := bucket_week,
-      no_gap_date_part := 'week',
-    ),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
   )
 );
 

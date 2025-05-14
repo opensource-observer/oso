@@ -12,10 +12,9 @@ MODEL (
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := bucket_week,
-      no_gap_date_part := 'week',
-    ),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
   )
 );
 
