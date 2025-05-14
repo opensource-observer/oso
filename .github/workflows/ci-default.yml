@@ -168,11 +168,11 @@ jobs:
 
       # ─────────────────────────────────────────────────────────────────────
       # Node steps
-      #- name: Run supabase local
-      #  id: supabase
-      #  run: |
-      #    bash .github/scripts/run-supabase-local.sh apps/frontend
-      #  if: ${{ matrix.component == 'node' }}
+      - name: Run supabase local
+        id: supabase
+        run: |
+          bash .github/scripts/run-supabase-local.sh apps/frontend
+        if: ${{ matrix.component == 'node' }}
 
       - name: Build (Node)
         uses: nick-fields/retry@v3

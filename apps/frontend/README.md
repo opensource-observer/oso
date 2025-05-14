@@ -19,6 +19,12 @@ We typically use `pnpm` for package management.
 pnpm install
 ```
 
+In order to properly install `supabase`, you'll need to explicitly approve post-installation scripts:
+
+```bash
+pnpm approve-builds
+```
+
 ## Run the dev server
 
 To run the dev server, which will also automatically watch for changes from Plasmic and the GraphQL schema:
@@ -46,7 +52,7 @@ You can serve built files with:
 pnpm start
 ```
 
-### GraphQL queries
+### Codegen
 
 :::tip
 The default `pnpm build` will handle all of this.
@@ -66,35 +72,13 @@ If you make changes to the GraphQL schema (e.g. on Hasura), make sure to run:
 pnpm graphql:codegen
 ```
 
-## Deploy
-
-Currently, all deployments are automatically handled by Vercel's GitHub app.
-
-## Supabase Migrations
-
-For updating the database schema or functions, make sure to put it in a migration.
-
-```bash
-npx supabase migration new
-```
-
-After editing the migration, you can apply it to production with:
-
-```bash
-npx supabase db push
-```
-
-If you need to see which migrations have been applied, you can run:
-
-```bash
-pnpm migration list
-```
-
-Then, to codegen all Supabase schemas as TypeScript types:
+We also codegen TypeScript types for all Supabase queries.
+If you make changes to the Supabase schema, make sure to run:
 
 ```bash
 pnpm supabase:gentypes
 ```
 
-For more details, check out the
-[Supabase docs](https://supabase.com/docs/reference/cli/supabase-migration).
+## Deploy
+
+Currently, all deployments are automatically handled by Vercel's GitHub app.

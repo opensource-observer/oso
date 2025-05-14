@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "build": "pnpm graphql:schema && pnpm graphql:codegen && next build",
+    "build": "pnpm graphql:schema && pnpm supabase:gentypes && pnpm graphql:codegen && next build",
     "deploy": "pnpm build",
     "dev": "pnpm graphql:watch && next dev",
     "graphql:schema": "rover supergraph compose --elv2-license 'accept' --config ./supergraph-config.yaml > ./app/api/v1/graphql/supergraph.graphql",
@@ -110,6 +110,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8.5.3",
+    "supabase": "^2.22.12",
     "tailwindcss": "^3.4.4",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
