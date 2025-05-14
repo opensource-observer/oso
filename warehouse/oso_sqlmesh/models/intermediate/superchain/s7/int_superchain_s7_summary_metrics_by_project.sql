@@ -13,7 +13,7 @@ MODEL (
 );
 
 
-@DEF(default_sample_date, DATE '2025-03-01');
+@DEF(default_sample_date, DATE '2025-04-01');
 
 WITH onchain_builder_eligibility AS (
   SELECT DISTINCT
