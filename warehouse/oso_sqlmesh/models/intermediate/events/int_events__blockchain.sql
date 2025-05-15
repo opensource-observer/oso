@@ -4,8 +4,9 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 180,
-    batch_concurrency 1,
-    lookback 31
+    batch_concurrency 2,
+    lookback 31,
+    forward_only true,
   ),
   start @blockchain_incremental_start,
   cron '@daily',
@@ -17,6 +18,7 @@ MODEL (
       time_column := time,
       no_gap_date_part := 'day',
       ignore_before := @superchain_audit_start,
+      missing_rate_min_threshold := 0.95,
     ),
   )
 );

@@ -14,13 +14,7 @@ MODEL (
 
 @DEF(event_date_threshold, DATE('2024-01-01'));
 
-WITH s7_projects AS (
-  SELECT DISTINCT project_id
-  FROM oso.projects_by_collection_v1
-  WHERE collection_name IN ('7-1', '7-2')
-),
-
-events AS (
+WITH events AS (
   SELECT DISTINCT
     to_artifact_id,
     COUNT(DISTINCT CASE WHEN event_type = 'STARRED' THEN from_artifact_id END)
@@ -36,10 +30,10 @@ events AS (
 )
 
 SELECT DISTINCT
-  abp.project_id,
-  abp.artifact_id AS repo_artifact_id,
-  abp.artifact_namespace AS repo_artifact_namespace,
-  abp.artifact_name AS repo_artifact_name,
+  app.project_id,
+  repos.artifact_id AS repo_artifact_id,
+  repos.artifact_namespace AS repo_artifact_namespace,
+  repos.artifact_name AS repo_artifact_name,
   events.star_count,
   events.fork_count,
   repos.last_release_published,
@@ -48,10 +42,12 @@ SELECT DISTINCT
   repos.is_fork,
   repos.created_at,
   repos.updated_at
-FROM oso.artifacts_by_project_v1 AS abp
-JOIN s7_projects ON abp.project_id = s7_projects.project_id
-LEFT JOIN oso.int_repositories_enriched repos
-  ON abp.artifact_id = repos.artifact_id
+FROM oso.stg_op_atlas_application AS app
+JOIN oso.stg_op_atlas_project_repository AS pr
+  ON app.project_id = pr.project_id
+JOIN oso.int_repositories_enriched AS repos
+  ON repos.artifact_namespace = pr.artifact_namespace
+  AND repos.artifact_name = pr.artifact_name
 LEFT JOIN events
-  ON abp.artifact_id = events.to_artifact_id
-WHERE abp.artifact_source = 'GITHUB'
+  ON events.to_artifact_id = repos.artifact_id
+WHERE app.round_id = '7'
