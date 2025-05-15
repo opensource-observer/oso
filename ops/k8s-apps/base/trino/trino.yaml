@@ -61,6 +61,13 @@ spec:
         - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
       
     worker:
+      gracefulShutdown:
+        enabled: true
+        # Try to keep this low for spot preemption
+        gracePeriodSeconds: 15
+      # This number is likely ignored by gcp but if this is happening during
+      # natural horizontal scaling it provides a buffer for the grace period
+      terminationGracePeriodSeconds: 60
       additionalVolumes:
         - name: cluster-self-signed-bundle
           configMap:
