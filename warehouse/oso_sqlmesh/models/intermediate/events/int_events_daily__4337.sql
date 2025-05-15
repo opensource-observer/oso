@@ -4,8 +4,9 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
     batch_size 180,
-    batch_concurrency 1,
-    lookback 31
+    batch_concurrency 2,
+    lookback 31,
+    forward_only true,
   ),
   start @blockchain_incremental_start,
   cron '@daily',
