@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { spawn } from "@opensource-observer/utils";
-import { withPostHog } from "../../../../lib/clients/posthog";
 import { logger } from "../../../../lib/logger";
 import { getUser } from "../../../../lib/auth/auth";
 import { OSO_AGENT_URL } from "../../../../lib/config";
+import {
+  CreditsService,
+  TransactionType,
+} from "../../../../lib/services/credits";
+import { trackServerEvent } from "../../../../lib/analytics/track";
 
 export const maxDuration = 60;
 
@@ -27,21 +30,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  try {
-    spawn(
-      withPostHog(async (posthog) => {
-        posthog.capture({
-          distinctId: user.userId,
-          event: "api_call",
-          properties: {
-            type: "chat",
-            message: getLatestMessage(prompt.messages),
-            apiKeyName: user.keyName,
-            host: user.host,
-          },
-        });
-      }),
+  const creditsDeducted = await CreditsService.checkAndDeductCredits(
+    user,
+    TransactionType.CHAT_QUERY,
+    "/api/v1/chat",
+    { message: getLatestMessage(prompt.messages) },
+  );
+
+  if (!creditsDeducted) {
+    logger.log(`/api/chat: Insufficient credits for user ${user.userId}`);
+    return NextResponse.json(
+      { error: "Insufficient credits" },
+      { status: 402 },
     );
+  }
+
+  try {
+    await trackServerEvent(user, "api_call", {
+      type: "chat",
+      message: getLatestMessage(prompt.messages),
+    });
 
     const response = await fetch(OSO_AGENT_URL, {
       method: "POST",
