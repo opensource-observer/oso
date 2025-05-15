@@ -1,22 +1,39 @@
-type AnonUser = {
-  role: "anonymous";
+export type UserRole = "anonymous" | "user" | "admin";
+export type OrgRole = "admin" | "member";
+
+interface BaseUser {
+  role: UserRole;
   host: string | null;
+}
+
+export type AnonUser = BaseUser & {
+  role: "anonymous";
 };
-type UserDetails = {
+
+export interface UserDetails {
   userId: string;
   keyName: string;
-  host: string | null;
   email?: string;
   name: string;
-};
-type NormalUser = UserDetails & {
-  role: "user";
-};
-type AdminUser = UserDetails & {
-  role: "admin";
-};
+}
 
-type AuthUser = NormalUser | AdminUser;
-type User = AnonUser | AuthUser;
+export interface OrganizationDetails {
+  orgId: string;
+  orgName: string;
+  orgRole: OrgRole;
+}
 
-export type { AnonUser, NormalUser, AdminUser, AuthUser, User };
+export type NormalUser = BaseUser &
+  UserDetails &
+  Partial<OrganizationDetails> & {
+    role: "user";
+  };
+
+export type AdminUser = BaseUser &
+  UserDetails &
+  Partial<OrganizationDetails> & {
+    role: "admin";
+  };
+
+export type AuthUser = NormalUser | AdminUser;
+export type User = AnonUser | AuthUser;

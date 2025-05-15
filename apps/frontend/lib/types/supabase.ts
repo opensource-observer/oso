@@ -43,6 +43,7 @@ export type Database = {
           deleted_at: string | null;
           id: string;
           name: string;
+          org_id: string | null;
           updated_at: string;
           user_id: string;
         };
@@ -52,6 +53,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           name: string;
+          org_id?: string | null;
           updated_at?: string;
           user_id: string;
         };
@@ -61,10 +63,19 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           name?: string;
+          org_id?: string | null;
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       organizations: {
         Row: {
