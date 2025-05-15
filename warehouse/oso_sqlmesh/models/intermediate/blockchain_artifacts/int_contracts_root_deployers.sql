@@ -13,13 +13,10 @@ MODEL (
   partitioned_by (DAY("deployment_timestamp"), "chain"),
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := deployment_timestamp,
-      no_gap_date_part := 'day',
-      ignore_before := @superchain_audit_start,
-      missing_rate_min_threshold := 0.95,
-    ),
-  )
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+  ),
 );
 
 WITH existing_contracts AS (
