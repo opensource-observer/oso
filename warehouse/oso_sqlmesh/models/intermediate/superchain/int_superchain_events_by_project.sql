@@ -3,7 +3,7 @@ MODEL (
   kind incremental_by_time_range(
    time_column time,
    batch_size 60,
-   batch_concurrency 1,
+   batch_concurrency 2,
    lookback 31
   ),
   start '2024-09-01',
@@ -19,6 +19,7 @@ MODEL (
   ),
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
+    "incrementalmusthaveforwardonly",
   )
 );
 

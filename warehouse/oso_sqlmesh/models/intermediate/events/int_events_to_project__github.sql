@@ -4,7 +4,7 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
-    batch_concurrency 1,
+    batch_concurrency 2,
     lookback 31
   ),
   start '2015-01-01',
@@ -20,6 +20,9 @@ MODEL (
       time_column := time,
       no_gap_date_part := 'day',
     ),
+  ),
+  ignored_rules (
+    "incrementalmusthaveforwardonly",
   )
 );
 

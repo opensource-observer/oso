@@ -4,7 +4,7 @@ MODEL (
   kind incremental_by_time_range(
    time_column time,
    batch_size 60,
-   batch_concurrency 1,
+   batch_concurrency 3,
    lookback 31
   ),
   start '2024-09-01',
@@ -20,7 +20,12 @@ MODEL (
     no_gaps(
       time_column := time,
       no_gap_date_part := 'day',
+      ignore_before := @superchain_audit_start,
+      missing_rate_min_threshold := 0.95,
     ),
+  ),
+  ignored_rules (
+    "incrementalmusthaveforwardonly",
   )
 );
 

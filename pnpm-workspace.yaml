@@ -1,8 +1,10 @@
 packages:
-  - "apps/docs"
-  - "apps/frontend"
-  - "apps/hasura-clickhouse"
-  - "lib/oss-artifact-validators"
-  - "lib/utils"
-  - "ops/external-prs"
-  - "ops/github-app-utils"
+  - apps/docs
+  - apps/frontend
+  - apps/hasura-clickhouse
+  - lib/oss-artifact-validators
+  - lib/utils
+  - ops/external-prs
+  - ops/github-app-utils
+onlyBuiltDependencies:
+  - supabase

@@ -4,7 +4,8 @@ MODEL (
     time_column snapshot_at,
     batch_size 90,
     batch_concurrency 3,
-    lookback 31
+    lookback 31,
+    forward_only true,
   ),
   start @deps_dev_incremental_start,
   partitioned_by DAY(snapshot_at),

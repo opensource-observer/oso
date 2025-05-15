@@ -4,7 +4,8 @@ MODEL (
     time_column event_time,
     batch_size 90,
     batch_concurrency 3,
-    lookback 31
+    lookback 31,
+    forward_only true,
   ),
   dialect "duckdb",
   start @github_incremental_start,
