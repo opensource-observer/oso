@@ -1,17 +1,15 @@
 MODEL (
   name oso.int_repositories_all,
   description 'All GitHub repositories identified from GH Archive',
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column first_commit_time,
-    batch_size 365,
-    batch_concurrency 1,
-    lookback 31
+  kind SCD_TYPE_2_BY_TIME (
+    unique_key artifact_source_id,
+    updated_at_name last_commit_time
   ),
   start @github_incremental_start,
   cron '@daily',
   dialect trino,
   partitioned_by DAY("first_commit_time"),
-  grain (first_commit_time, artifact_id),
+  grain (first_commit_time, artifact_source_id, artifact_id),
   columns (
     artifact_id TEXT,
     artifact_source_id TEXT,
@@ -49,7 +47,7 @@ existing_repos AS (
     artifact_name,
     first_commit_time,
     last_commit_time
-  FROM oso.int_repositories_all
+  FROM @this_model
   WHERE first_commit_time < @start_dt
 ),
 
