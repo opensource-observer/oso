@@ -65,8 +65,9 @@ spec:
         enabled: true
         # Try to keep this low for spot preemption
         gracePeriodSeconds: 15
-      # This number is likely ignored by gcp but if this is happening during
-      # natural horizontal scaling it provides a buffer for the grace period
+      # This number is likely ignored by gcp during spot preemption but if this
+      # is happening during horizontal scaling it provides a buffer for the
+      # grace period
       terminationGracePeriodSeconds: 60
       additionalVolumes:
         - name: cluster-self-signed-bundle
