@@ -33,6 +33,10 @@ spec:
                 "allow": "none"
               },
               {
+                "user": "jwt-.*",
+                "allow": "read-only"
+              },
+              {
                 "user": "user",
                 "allow": "read-only"
               },
@@ -58,19 +62,23 @@ spec:
 
     initContainers:
       coordinator:
-        # used to create the password.db file
+        # Used to create auth files
         - name: init-coordinator
           image: alpine
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
             - -c
-            - 'printf "${TRINO_ADMIN}\n${TRINO_USER}" > /etc/auth/password.db'
+            - 'mkdir /etc/auth/password;
+               printf "${TRINO_ADMIN}\n${TRINO_USER}" > /etc/auth/password/password.db;
+               printf "${JWT_BASE64_SECRET_KEY}" > /etc/auth/jwt.key'
           env:
             - name: TRINO_USER
               value: gcp:secretmanager:production-consumer-trino-auth/versions/latest
             - name: TRINO_ADMIN
               value: gcp:secretmanager:production-consumer-trino-admin/versions/latest
+            - name: JWT_BASE64_SECRET_KEY
+              value: gcp:secretmanager:production-consumer-trino-jwt-secret-key/versions/latest
           volumeMounts:
             - mountPath: /etc/auth
               name: trino-auth-volume
@@ -97,7 +105,7 @@ spec:
           catalog.config-dir=/etc/trino/dynamic-catalog
       additionalVolumeMounts:
         - name: trino-auth-volume
-          mountPath: /etc/trino/auth/password
+          mountPath: /etc/trino/auth
           readOnly: true
         - name: trino-catalog-volume
           mountPath: /etc/trino/dynamic-catalog
@@ -143,9 +151,13 @@ spec:
         name: filesystem
         baseDir: gs://oso-consumer-iceberg-exchange-usc1/trino-exchange
       config:
-        authenticationType: PASSWORD
+        authenticationType: PASSWORD,JWT
         query:
           maxMemory: "100GB"
+      coordinatorExtraConfig: |
+        http-server.authentication.jwt.key-file=/etc/trino/auth/jwt.key
+        http-server.authentication.jwt.required-issuer=opensource-observer
+        http-server.authentication.jwt.required-audience=consumer-trino
       workers: 1
       autoscaling:
         enabled: true
