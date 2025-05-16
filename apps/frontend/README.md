@@ -32,6 +32,10 @@ pnpm supabase login
 pnpm supabase start
 ```
 
+Remember to update your `.env.local` with the generated local Supabase settings.
+We recommend that you **DO NOT** use the production Supabase server locally,
+as tests and migrations can be dangerous/destructive.
+
 ## Run the dev server
 
 To run the dev server, which will also automatically watch for changes from Plasmic and the GraphQL schema:
