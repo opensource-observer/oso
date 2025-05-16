@@ -113,13 +113,13 @@ function SupabaseWrite(props: SupabaseWriteProps) {
 
     let query =
       actionType === "insert"
-        ? supabaseClient.from(tableName).insert(data)
+        ? supabaseClient.from(tableName as any).insert(data)
         : actionType === "update"
-          ? supabaseClient.from(tableName).update(data)
+          ? supabaseClient.from(tableName as any).update(data)
           : actionType === "upsert"
-            ? supabaseClient.from(tableName).upsert(data)
+            ? supabaseClient.from(tableName as any).upsert(data)
             : actionType === "delete"
-              ? supabaseClient.from(tableName).delete()
+              ? supabaseClient.from(tableName as any).delete()
               : assertNever(actionType);
 
     // Iterate over the filters
