@@ -9,8 +9,9 @@ import { Database } from "../types/supabase";
 
 // Supabase unprivileged client
 function createSupabaseClient() {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
+// Supabase client for use in the browser
 const supabaseClient = createSupabaseClient();
 // Supabase service account
 const supabasePrivileged = createClient<Database>(
@@ -42,7 +43,7 @@ type SupabaseQueryArgs = {
 
 async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
   const { tableName, columns, filters, limit, orderBy, orderAscending } = args;
-  let query = supabaseClient.from(tableName).select(columns);
+  let query = supabaseClient.from(tableName as any).select(columns);
   // Iterate over the filters
   if (Array.isArray(filters)) {
     for (let i = 0; i < filters.length; i++) {
