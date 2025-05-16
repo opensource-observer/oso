@@ -23,7 +23,11 @@ MODEL (
   ),
   ignored_rules (
     "incrementalmusthaveforwardonly",
-  )
+  ),
+  tags (
+    "github",
+    "incremental",
+  ),
 );
 
 SELECT

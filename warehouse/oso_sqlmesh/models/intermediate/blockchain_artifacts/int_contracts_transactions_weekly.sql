@@ -19,6 +19,11 @@ MODEL (
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
   ),
+  tags (
+    "blockchain",
+    "superchain",
+    "incremental",
+  ),
 );
 
 /* Find all transactions involving the contracts from `derived_contracts` and */ /* aggregate their tx_count on a weekly basis */

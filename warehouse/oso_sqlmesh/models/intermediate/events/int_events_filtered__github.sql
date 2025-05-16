@@ -20,6 +20,9 @@ MODEL (
   ),
   ignored_rules (
     "incrementalmusthaveforwardonly",
+  ),
+  tags (
+    "incremental"
   )
 );
 
