@@ -182,7 +182,7 @@ class OsoAppClient {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find organization with id=${args.orgId}`,
+        `Unable to find organization with id=${orgId}`,
       );
     }
     return data;
