@@ -17,6 +17,9 @@ MODEL (
   ),
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
+  ),
+  tags (
+    "incremental"
   )
 );
 

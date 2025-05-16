@@ -13,7 +13,8 @@ MODEL (
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
   enabled false,
   tags (
-    'entity_category=collection'
+    'entity_category=collection',
+    "incremental"
   ),
   audits (
     has_at_least_n_rows(threshold := 0),

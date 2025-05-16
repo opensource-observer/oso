@@ -17,7 +17,11 @@ MODEL (
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
     "incrementalmusthaveforwardonly",
-  )
+  ),
+  tags (
+    "funding",
+    "incremental",
+  ),
 );
 
 WITH open_collective_expenses AS (
