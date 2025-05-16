@@ -25,10 +25,11 @@ In order to properly install `supabase`, you'll need to explicitly approve post-
 pnpm approve-builds
 ```
 
-## Log into Supabase
+## Log into Supabase and start the dev server
 
 ```bash
 pnpm supabase login
+pnpm supabase start
 ```
 
 ## Run the dev server
