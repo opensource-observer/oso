@@ -31,7 +31,7 @@ WITH unioned_events AS (
     from_artifact_id,
     to_artifact_id,
     transaction_hash,
-    (userop_gas_cost::DOUBLE / 1e18) AS gas_fee::DOUBLE
+    (userop_gas_cost::DOUBLE / 1e18)::DOUBLE AS gas_fee
   FROM oso.int_events__4337
   WHERE time BETWEEN @start_dt AND @end_dt
   UNION ALL
