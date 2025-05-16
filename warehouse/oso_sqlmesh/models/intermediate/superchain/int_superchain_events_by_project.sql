@@ -42,7 +42,7 @@ WITH unioned_events AS (
     from_artifact_id,
     to_artifact_id,
     transaction_hash,
-    (gas_used::DOUBLE * gas_price_tx::DOUBLE / 1e18) AS gas_fee::DOUBLE:warn
+    (gas_used::DOUBLE * gas_price_tx::DOUBLE / 1e18) AS gas_fee::DOUBLE
   FROM oso.int_events__blockchain
   WHERE time BETWEEN @start_dt AND @end_dt
 )
