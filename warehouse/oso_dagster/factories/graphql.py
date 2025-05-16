@@ -126,7 +126,6 @@ class GraphQLResourceConfig:
     """
 
     # TODO(jabolo): Add ability to pass secrets
-    pagination: Optional[Dict[str, Any]] = None
     name: str
     endpoint: str
     target_type: str
@@ -135,13 +134,14 @@ class GraphQLResourceConfig:
     headers: Optional[Dict[str, str]] = None
     transform_fn: Optional[Callable[[Any], Any]] = None
     parameters: Optional[Dict[str, Dict[str, Any]]] = None
-    pagination = {
-        field: "cursor",
-        from: "1970-01-01T00:00:00Z",
-        to: "2023-01-01T00:00:00Z",
-        timeout: ...
-        filter_fn: lambda x: x["id"] % 2 == 0,
-    }
+    pagination: Optional[Dict[str, Any]] = None
+    # pagination = {
+    #     field: "cursor",
+    #     from: "1970-01-01T00:00:00Z",
+    #     to: "2023-01-01T00:00:00Z",
+    #     timeout: ...
+    #     filter_fn: lambda x: x["id"] % 2 == 0,
+    # }
     # [... -> ...]
     # cooldowns
     # id -> 0, 1, 2, ...
