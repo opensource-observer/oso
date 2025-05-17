@@ -3,10 +3,14 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseClient as defaultClient } from "./supabase";
 import { Database, Tables } from "../types/supabase";
 import { MissingDataError, AuthError } from "../types/errors";
+import { ensure } from "@opensource-observer/utils";
 
 /**
  * OsoAppClient is the client library for the OSO app.
  * It provides the read/write functionality.
+ * - Note that all method arguments are a single Partial object.
+ * - This is to make it easier to pass arguments from Plasmic Studio,
+ *   but it does mean we need to validate arguments
  */
 class OsoAppClient {
   private supabaseClient: SupabaseClient<Database>;
@@ -59,7 +63,12 @@ class OsoAppClient {
    * Updates the current logged in user profile.
    * @param profile
    */
-  async updateMyUserProfile(profile: Partial<Tables<"user_profiles">>) {
+  async updateMyUserProfile(
+    args: Partial<{
+      profile: Partial<Tables<"user_profiles">>;
+    }>,
+  ) {
+    const profile = ensure(args.profile, "Missing profile argument");
     const user = await this.getUser();
     const { error } = await this.supabaseClient
       .from("user_profiles")
@@ -75,11 +84,20 @@ class OsoAppClient {
    * - Relies on DB column constraints/triggers to ensure API key constraints
    * @param keyData
    */
-  async createApiKey(keyData: Pick<Tables<"api_keys">, "name" | "api_key">) {
+  async createApiKey(
+    args: Partial<{
+      name: string;
+      apiKey: string;
+    }>,
+  ) {
+    const name = ensure(args.name, "Missing name argument");
+    const apiKey = ensure(args.apiKey, "Missing apiKey argument");
     const user = await this.getUser();
-    const { error } = await this.supabaseClient
-      .from("api_keys")
-      .insert({ ...keyData, user_id: user.id });
+    const { error } = await this.supabaseClient.from("api_keys").insert({
+      name,
+      api_key: apiKey,
+      user_id: user.id,
+    });
     if (error) {
       throw error;
     }
@@ -89,11 +107,17 @@ class OsoAppClient {
    * Creates a new organization
    * @param orgName
    */
-  async createOrganization(orgName: string) {
+  async createOrganization(
+    args: Partial<{
+      orgName: string;
+    }>,
+  ) {
+    const orgName = ensure(args.orgName, "Missing orgName argument");
     const user = await this.getUser();
-    const { error } = await this.supabaseClient
-      .from("organizations")
-      .insert({ org_name: orgName, created_by: user.id });
+    const { error } = await this.supabaseClient.from("organizations").insert({
+      org_name: orgName,
+      created_by: user.id,
+    });
     if (error) {
       throw error;
     }
@@ -143,7 +167,12 @@ class OsoAppClient {
    * @param orgId
    * @returns
    */
-  async getOrganizationById(orgId: string) {
+  async getOrganizationById(
+    args: Partial<{
+      orgId: string;
+    }>,
+  ) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
     const { data, error } = await this.supabaseClient
       .from("organizations")
       .select("*")
@@ -164,7 +193,12 @@ class OsoAppClient {
    * @param orgId
    * @returns
    */
-  async getOrganizationMembers(orgId: string) {
+  async getOrganizationMembers(
+    args: Partial<{
+      orgId: string;
+    }>,
+  ) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
     // Get the owner/creator of the organization
     const { data: creatorData, error: creatorError } = await this.supabaseClient
       .from("organizations")
@@ -206,10 +240,15 @@ class OsoAppClient {
    * Adds a user to an organization.
    */
   async addUserToOrganizationByEmail(
-    orgId: string,
-    email: string,
-    role: string,
+    args: Partial<{
+      orgId: string;
+      email: string;
+      role: string;
+    }>,
   ) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const email = ensure(args.email, "Missing email argument");
+    const role = ensure(args.role, "Missing role argument");
     const { data: profileData, error: profileError } = await this.supabaseClient
       .from("user_profiles")
       .select("*")
@@ -237,7 +276,16 @@ class OsoAppClient {
    * @param userId
    * @param role
    */
-  async changeUserRole(orgId: string, userId: string, role: string) {
+  async changeUserRole(
+    args: Partial<{
+      orgId: string;
+      userId: string;
+      role: string;
+    }>,
+  ) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const userId = ensure(args.userId, "Missing userId argument");
+    const role = ensure(args.role, "Missing role argument");
     const { error } = await this.supabaseClient
       .from("users_by_organization")
       .update({ user_role: role })
@@ -255,7 +303,14 @@ class OsoAppClient {
    * @param orgId
    * @param userId
    */
-  async removeUserFromOrganization(orgId: string, userId: string) {
+  async removeUserFromOrganization(
+    args: Partial<{
+      orgId: string;
+      userId: string;
+    }>,
+  ) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const userId = ensure(args.userId, "Missing userId argument");
     const { error } = await this.supabaseClient
       .from("users_by_organization")
       .update({ deleted_at: new Date().toISOString() })
@@ -271,7 +326,12 @@ class OsoAppClient {
    * - We use `deleted_at` to mark the organization as removed instead of deleting the row
    * @param orgId
    */
-  async deleteOrganization(orgId: string) {
+  async deleteOrganization(
+    args: Partial<{
+      orgId: string;
+    }>,
+  ) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
     const { error } = await this.supabaseClient
       .from("organizations")
       .update({ deleted_at: new Date().toISOString() })
