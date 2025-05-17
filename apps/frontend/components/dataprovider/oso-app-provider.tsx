@@ -91,23 +91,20 @@ const OsoAppProvider = React.forwardRef<OsoAppClient>(function _OsoAppProvider(
     } else if (!dataFetches || _.isEmpty(dataFetches)) {
       return;
     }
-    const promises = new Map<string, Promise<any>>();
-    for (const [name, { method, args }] of Object.entries(dataFetches)) {
+    const result: Record<string, any> = {};
+    for (const [key, { method, args }] of Object.entries(dataFetches)) {
       if (!method) {
         throw new Error(`No method provided for data fetch ${name}`);
       }
       if (!args) {
         throw new Error(`No args provided for data fetch ${name}`);
       }
-      const fn = (osoClient as any)[method];
-      if (typeof fn === "function") {
-        promises.set(name, fn(args));
-      } else {
-        throw new Error(`Method ${method} is not a function`);
-      }
+      result[key] = await (osoClient as any)[method](args);
     }
-    return await Promise.all(promises);
+    return result;
   });
+  //console.log(data);
+  //console.log(error);
 
   // Error messages are currently rendered in the component
   if (!dataFetches || _.isEmpty(dataFetches)) {
