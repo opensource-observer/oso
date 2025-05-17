@@ -39,7 +39,7 @@ type OsoAppProviderProps = CommonDataProviderProps & {
 
 const OsoAppProviderRegistration: any = {
   ...CommonDataProviderRegistration,
-  clientCalls: {
+  dataFetches: {
     type: "object",
     helpText:
       "e.g. { members: { method: 'getOrganizationMembers', args: { orgId: 'ORG_ID_HERE' } } }",
