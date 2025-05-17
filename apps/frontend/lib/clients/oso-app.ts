@@ -219,8 +219,7 @@ class OsoAppClient {
     const { data: userData, error: userError } = await this.supabaseClient
       .from("user_profiles")
       .select("*")
-      .in("id", _.keys(userRoleMap))
-      .is("deleted_at", null);
+      .in("id", _.keys(userRoleMap));
     if (creatorError || memberError || userError) {
       throw creatorError || memberError || userError;
     } else if (!userData) {
