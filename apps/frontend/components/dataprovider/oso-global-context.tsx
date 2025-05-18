@@ -5,7 +5,6 @@ import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
 import * as config from "../../lib/config";
 import { OsoAppClient } from "../../lib/clients/oso-app";
-import { RegistrationProps } from "../../lib/types/plasmic";
 
 const PLASMIC_KEY = "globals";
 const PLASMIC_CONTEXT_NAME = "OsoGlobalContext";
@@ -42,14 +41,13 @@ interface OsoGlobalContextProps {
   errorCodeMap?: any; // Map of error codes to error messages
 }
 
-const OsoGlobalContextPropsRegistration: RegistrationProps<OsoGlobalContextProps> =
-  {
-    errorCodeMap: {
-      type: "object",
-      defaultValue: {},
-      helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
-    },
-  };
+const OsoGlobalContextPropsRegistration: any = {
+  errorCodeMap: {
+    type: "object",
+    defaultValue: {},
+    helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
+  },
+};
 
 function OsoGlobalContext(props: OsoGlobalContextProps) {
   const { children, errorCodeMap } = props;
