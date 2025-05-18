@@ -35,6 +35,26 @@ import {
 import { MonacoEditor } from "./components/widgets/monaco-editor";
 import { OSOChat } from "./components/widgets/oso-chat";
 import { register as registerMetricsUtils } from "./lib/metrics-utils";
+import {
+  OsoDataProvider,
+  OsoDataProviderRegistration,
+} from "./components/dataprovider/oso-data-provider";
+import {
+  OsoGlobalContext,
+  OsoGlobalActions,
+} from "./components/dataprovider/oso-global-context";
+
+/**
+ * Plasmic global context
+ */
+
+PLASMIC.registerGlobalContext(OsoGlobalContext, {
+  name: "OsoGlobalContext",
+  props: {},
+  providesData: true,
+  globalActions: { ...OsoGlobalActions },
+  importPath: "./components/dataprovider/oso-global-context",
+});
 
 /**
  * Plasmic component registration
@@ -246,6 +266,14 @@ PLASMIC.registerComponent(SupabaseQuery, {
   props: { ...SupabaseQueryRegistration },
   providesData: true,
   importPath: "./components/dataprovider/supabase-query",
+});
+
+PLASMIC.registerComponent(OsoDataProvider, {
+  name: "OsoDataProvider",
+  description: "OSO data provider",
+  props: { ...OsoDataProviderRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/oso-data-provider",
 });
 
 PLASMIC.registerComponent(SupabaseWrite, {
