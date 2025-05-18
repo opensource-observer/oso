@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, Session } from "@supabase/supabase-js";
 import { HttpError } from "@opensource-observer/utils";
 import {
   SUPABASE_URL,
@@ -8,23 +8,21 @@ import {
 import { Database } from "../types/supabase";
 
 // Supabase unprivileged client
-function createSupabaseClient() {
+function createNormalSupabaseClient() {
   return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
+function createPrivilegedSupabaseClient() {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+}
 // Supabase client for use in the browser
-const supabaseClient = createSupabaseClient();
-// Supabase service account
-const supabasePrivileged = createClient<Database>(
-  SUPABASE_URL,
-  SUPABASE_SERVICE_KEY,
-);
+const supabaseClient = createNormalSupabaseClient();
 
-// Get the user JWT token
-let userToken: string | undefined;
+// Get the user session
+let userSession: Session | null | undefined;
 supabaseClient.auth
   .getSession()
   .then((data) => {
-    userToken = data.data.session?.access_token;
+    userSession = data.data.session;
   })
   .catch((e) => {
     console.warn("Failed to get Supabase session, ", e);
@@ -75,10 +73,10 @@ async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
 }
 
 export {
-  createSupabaseClient,
+  createNormalSupabaseClient,
+  createPrivilegedSupabaseClient,
   supabaseClient,
-  supabasePrivileged,
   supabaseQuery,
-  userToken,
+  userSession,
 };
 export type { SupabaseQueryArgs };

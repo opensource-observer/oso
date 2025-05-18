@@ -57,8 +57,13 @@ function AuthActions(props: AuthActionsProps) {
   const posthog = usePostHog();
   const router = useRouter();
   const path = usePathname();
+  const rawRedirectPath = redirectOnComplete ?? path;
+  const redirectPath = rawRedirectPath.startsWith("/")
+    ? rawRedirectPath
+    : `/${rawRedirectPath}`;
+  const redirect = `${PROTOCOL}://${DOMAIN}${redirectPath}`;
+  //console.log(redirect);
   const signInWithOAuth = async () => {
-    const redirect = `${PROTOCOL}://${DOMAIN}/${redirectOnComplete ?? path}`;
     const ensureProvider = provider ?? DEFAULT_PROVIDER;
     const ensureScopes = scopes ?? DEFAULT_SCOPES[ensureProvider];
     posthog.capture("user_login", {
