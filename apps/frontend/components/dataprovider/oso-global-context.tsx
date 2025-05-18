@@ -44,7 +44,6 @@ interface OsoGlobalContextProps {
 
 const OsoGlobalContextPropsRegistration: RegistrationProps<OsoGlobalContextProps> =
   {
-    children: "slot",
     errorCodeMap: {
       type: "object",
       defaultValue: {},
