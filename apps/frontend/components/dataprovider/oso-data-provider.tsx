@@ -50,7 +50,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   const { dataFetches, variableName, testData, useTestData } = props;
   const key = variableName ?? genKey(props);
   const osoClient = new OsoAppClient();
-  const { data, error, isLoading } = useSWR(key, async () => {
+  const { data, mutate, error, isLoading } = useSWR(key, async () => {
     if (useTestData) {
       return testData;
     } else if (!dataFetches || _.isEmpty(dataFetches)) {
@@ -80,7 +80,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   return (
     <DataProviderView
       {...props}
-      formattedData={data}
+      formattedData={{ ...data, mutate }}
       loading={isLoading}
       error={error}
     />

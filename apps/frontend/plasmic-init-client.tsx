@@ -42,6 +42,7 @@ import {
 import {
   OsoGlobalContext,
   OsoGlobalActions,
+  OsoGlobalContextPropsRegistration,
 } from "./components/dataprovider/oso-global-context";
 
 /**
@@ -50,7 +51,7 @@ import {
 
 PLASMIC.registerGlobalContext(OsoGlobalContext, {
   name: "OsoGlobalContext",
-  props: {},
+  props: { ...OsoGlobalContextPropsRegistration },
   providesData: true,
   globalActions: { ...OsoGlobalActions },
   importPath: "./components/dataprovider/oso-global-context",
