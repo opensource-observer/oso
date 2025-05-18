@@ -13,6 +13,8 @@ MODEL (
 
 @DEF(min_package_connection_count, 3);
 @DEF(min_developer_connection_count, 5);
+@DEF(start_gas_date, DATE('2025-04-01'));
+@DEF(end_gas_date, DATE('2025-05-01'));
 
 WITH devtooling_projects AS (
   SELECT
@@ -71,44 +73,70 @@ project_metrics AS (
     ON dp.project_id = pkgs.project_id
   LEFT JOIN developer_connections devs
     ON dp.project_id = devs.project_id
+),
+
+initial_metrics AS (
+  SELECT
+    m.project_name,
+    m.display_name,
+    m.is_eligible,
+    m.project_id,
+    m.star_count,
+    m.fork_count,
+    m.num_packages_in_deps_dev AS num_packages_in_deps_dev,
+    m.package_connection_count,
+    m.developer_connection_count,
+    filter(
+      ARRAY_AGG(DISTINCT CASE 
+                          WHEN g.onchain_builder_project_id IS NOT NULL 
+                          THEN g.onchain_builder_project_id 
+                        END),
+      x -> x IS NOT NULL
+    ) AS onchain_builder_oso_project_ids,
+    filter(
+      ARRAY_AGG(DISTINCT CASE 
+                          WHEN g.onchain_builder_op_atlas_project_id IS NOT NULL 
+                          THEN g.onchain_builder_op_atlas_project_id 
+                        END),
+      x -> x IS NOT NULL
+    ) AS onchain_builder_op_atlas_ids,
+    m.developer_names AS trusted_developer_usernames,
+  FROM project_metrics m
+  LEFT JOIN oso.int_superchain_s7_devtooling_graph g
+    ON m.project_id = g.devtooling_project_id
+  GROUP BY
+    m.project_name,
+    m.display_name,
+    m.is_eligible,
+    m.project_id,
+    m.star_count,
+    m.fork_count,
+    m.num_packages_in_deps_dev,
+    m.package_connection_count,
+    m.developer_connection_count,
+    m.developer_names
+),
+
+downstream_gas AS (
+  SELECT
+    im.project_id,
+    SUM(tm.amount) AS downstream_gas
+  FROM initial_metrics AS im
+  CROSS JOIN UNNEST(im.onchain_builder_oso_project_ids) AS b(builder_id)
+  JOIN oso.timeseries_metrics_by_project_v0 AS tm
+    ON tm.project_id = b.builder_id
+  JOIN oso.metrics_v0 AS m
+    ON tm.metric_id = m.metric_id
+   AND m.display_name = 'Gas Fees'
+  WHERE
+    tm.sample_date >= @start_gas_date
+    AND tm.sample_date < @end_gas_date
+  GROUP BY im.project_id
 )
 
 SELECT
-  m.project_name,
-  m.display_name,
-  m.is_eligible,
-  m.project_id,
-  m.star_count,
-  m.fork_count,
-  m.num_packages_in_deps_dev AS num_packages_in_deps_dev,
-  m.package_connection_count,
-  m.developer_connection_count,
-  filter(
-    ARRAY_AGG(DISTINCT CASE 
-                         WHEN g.onchain_builder_project_id IS NOT NULL 
-                         THEN g.onchain_builder_project_id 
-                       END),
-    x -> x IS NOT NULL
-  ) AS onchain_builder_oso_project_ids,
-  filter(
-    ARRAY_AGG(DISTINCT CASE 
-                         WHEN g.onchain_builder_op_atlas_project_id IS NOT NULL 
-                         THEN g.onchain_builder_op_atlas_project_id 
-                       END),
-    x -> x IS NOT NULL
-  ) AS onchain_builder_op_atlas_ids,
-  m.developer_names AS trusted_developer_usernames
-FROM project_metrics m
-LEFT JOIN oso.int_superchain_s7_devtooling_graph g
-  ON m.project_id = g.devtooling_project_id
-GROUP BY
-  m.project_name,
-  m.display_name,
-  m.is_eligible,
-  m.project_id,
-  m.star_count,
-  m.fork_count,
-  m.num_packages_in_deps_dev,
-  m.package_connection_count,
-  m.developer_connection_count,
-  m.developer_names
+  im.*,
+  COALESCE(dg.downstream_gas, 0) AS downstream_gas
+FROM initial_metrics AS im
+LEFT JOIN downstream_gas AS dg
+  ON im.project_id = dg.project_id
