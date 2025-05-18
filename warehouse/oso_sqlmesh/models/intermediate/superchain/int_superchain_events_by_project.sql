@@ -3,8 +3,8 @@ MODEL (
   kind incremental_by_time_range(
    time_column time,
    batch_size 60,
-   batch_concurrency 1,
-   lookback 7
+   batch_concurrency 2,
+   lookback 31
   ),
   start '2024-09-01',
   cron '@daily',
@@ -15,7 +15,11 @@ MODEL (
     'entity_category=project'
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+    "incrementalmusthaveforwardonly",
   )
 );
 
@@ -27,7 +31,7 @@ WITH unioned_events AS (
     from_artifact_id,
     to_artifact_id,
     transaction_hash,
-    (userop_gas_cost / 1e18) AS gas_fee
+    (userop_gas_cost::DOUBLE / 1e18)::DOUBLE AS gas_fee
   FROM oso.int_events__4337
   WHERE time BETWEEN @start_dt AND @end_dt
   UNION ALL
@@ -38,7 +42,7 @@ WITH unioned_events AS (
     from_artifact_id,
     to_artifact_id,
     transaction_hash,
-    (gas_used * gas_price_tx / 1e18) AS gas_fee
+    (gas_used::DOUBLE * gas_price_tx::DOUBLE / 1e18)::DOUBLE AS gas_fee
   FROM oso.int_events__blockchain
   WHERE time BETWEEN @start_dt AND @end_dt
 )

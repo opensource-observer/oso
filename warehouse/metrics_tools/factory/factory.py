@@ -96,7 +96,9 @@ class TimeseriesMetrics:
         for query in metrics_queries:
             model_defs = query.provided_model_defs
             for model_def in model_defs:
-                peer_table_map[model_def_to_str(model_def)] = query.table_name(model_def)
+                peer_table_map[model_def_to_str(model_def)] = query.table_name(
+                    model_def
+                )
 
         return cls(timeseries_sources, metrics_queries, peer_table_map, raw_options)
 
@@ -135,11 +137,21 @@ class TimeseriesMetrics:
     def schema(self):
         """The schema (sometimes db name) to use for rendered queries"""
         return self._raw_options["schema"]
-    
+
     @property
     def audits(self):
         """The audits to use for rendered queries"""
         return self._raw_options.get("audits", [])
+
+    @property
+    def audit_factories(self):
+        """The audits to use for rendered queries"""
+        return self._raw_options.get("audit_factories", [])
+
+    @property
+    def incremental_audits(self):
+        """The audits to use for rendered queries of incremental models"""
+        return self._raw_options.get("incremental_audits", [])
 
     def generate_queries(self):
         if self._rendered:
@@ -539,7 +551,7 @@ class TimeseriesMetrics:
         kind_common = {
             "batch_size": ref.get("batch_size", 365),
             "batch_concurrency": 1,
-            "lookback": 10,
+            "lookback": 31,
             "forward_only": True,
             "time_column": "metrics_sample_date",
             "on_destructive_change": "warn",
@@ -560,6 +572,15 @@ class TimeseriesMetrics:
 
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
+
+        incremental_audits = (query._source.incremental_audits or [])[:]
+        incremental_audits.extend(self.incremental_audits)
+        audits.extend(incremental_audits)
+
+        for audit_factory in self.audit_factories:
+            audit = audit_factory(query_config)
+            if audit:
+                audits.append(audit)
 
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
@@ -628,12 +649,12 @@ class TimeseriesMetrics:
             "batch_concurrency": 3,
             "forward_only": True,
         }
-        kind_options = {"lookback": 10, **kind_common}
+        kind_options = {"lookback": 31, **kind_common}
         partitioned_by = ("day(metrics_sample_date)",)
 
         if time_aggregation == "weekly":
             kind_options = {
-                "lookback": 10,
+                "lookback": 31,
                 "batch_size": 365,
                 **kind_common,
             }
@@ -675,6 +696,20 @@ class TimeseriesMetrics:
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
 
+        for audit_factory in self.audit_factories:
+            audit = audit_factory(query_config)
+            if audit:
+                audits.append(audit)
+
+        ignored_rules: list[str] = []
+        # Ignore these for now, we will need to fix this later
+        if (
+            time_aggregation in ["biannually", "quarterly", "weekly"]
+            or "funding" in query_config["table_name"]
+            or "releases" in query_config["table_name"]
+        ):
+            ignored_rules.append("incrementalmustdefinenogapsaudit")
+
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
         override_path = Path(inspect.getfile(generated_query))
@@ -691,6 +726,10 @@ class TimeseriesMetrics:
                 **kind_options,
             }
             model_type_tag = "model_type=incremental"
+
+            incremental_audits = (query._source.incremental_audits or [])[:]
+            incremental_audits.extend(self.incremental_audits)
+            audits.extend(incremental_audits)
 
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
@@ -715,6 +754,7 @@ class TimeseriesMetrics:
                 *query_config["additional_tags"],
             ],
             audits=audits,
+            ignored_rules=ignored_rules,
         )(generated_query)
 
     def generate_point_in_time_model_for_rendered_query(

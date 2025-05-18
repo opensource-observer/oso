@@ -6,7 +6,7 @@ sidebar_position: 4
 Supabase is the main OLTP database that we use
 for user operations on the website.
 
-## Setup
+## Production Setup
 
 - Database >> Extensions
   - Enable the "plpgsql", "plv8" and "pgjwt" extensions
@@ -28,6 +28,32 @@ cd apps/frontend/
 pnpm supabase db push
 ```
 
+## Local Setup
+
+### Setup
+
+From `apps/frontend`:
+
+```bash
+pnpm install
+pnpm approve-builds
+```
+
+### Running local dev Supabase instance
+
+```bash
+# Start the background service
+pnpm supabase start
+# Stop the background service
+pnpm supabase stop
+```
+
+### Reset local state
+
+```bash
+pnpm supabase db reset
+```
+
 ## Migrations
 
 For updating the database schema or functions, make sure to put it in a migration.
@@ -46,6 +72,22 @@ If you need to see which migrations have been applied, you can run:
 
 ```bash
 pnpm migration list
+```
+
+To squash migrations into a single file:
+
+```bash
+pnpm supabase migration squash
+```
+
+### Alternative workflow
+
+Sometimes, it is really nice to be able to just edit on [Supabase.com](https://supabase.com/)
+directly. If you do that, you can auto-generate a migration of the diff
+by comparing your local Supabase to production:
+
+```bash
+pnpm supabase db diff --linked -f MIGRATION_FILENAME
 ```
 
 For more details, check out the

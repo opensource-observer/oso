@@ -14,15 +14,43 @@ spec:
         value: gcp:secretmanager:production-mcs-gcs-secret/versions/latest
     serviceAccount:
       name: production-consumer-trino
+    securityContext:
+      fsGroup: 1000
     accessControl:
-      type: properties
-      properties: |
-        access-control.name=read-only
+      type: configmap
+      refreshPeriod: 60s
+      configFile: "rules.json"
+      rules:
+        rules.json: |
+          {
+            "catalogs": [
+              {
+                "user": "admin",
+                "allow": "owner"
+              },
+              {
+                "catalog": "system",
+                "allow": "none"
+              },
+              {
+                "user": "jwt-.*",
+                "allow": "read-only"
+              },
+              {
+                "user": "user",
+                "allow": "read-only"
+              },
+              {
+                "allow": "all"
+              }
+            ]
+          }
     additionalConfigProperties:
       - http-server.process-forwarded=true
       - internal-communication.shared-secret=gcp:secretmanager:production-consumer-trino-shared-secret/versions/latest
       - http-server.authentication.allow-insecure-over-http=true
       - retry-policy=QUERY
+      - catalog.management=dynamic
     ingress:
       enabled: true
       className: ingress-internal-cloudflare
@@ -34,20 +62,29 @@ spec:
 
     initContainers:
       coordinator:
-        - name: init-coordinator-auth
+        # Used to create auth files
+        - name: init-coordinator
           image: alpine
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
             - -c
-            - 'echo "${TRINO_AUTH}" > /etc/auth/password.db'
+            - 'mkdir /etc/auth/password;
+               printf "${TRINO_ADMIN}\n${TRINO_USER}" > /etc/auth/password/password.db;
+               printf "${JWT_BASE64_SECRET_KEY}" > /etc/auth/jwt.key'
           env:
-            - name: TRINO_AUTH
+            - name: TRINO_USER
               value: gcp:secretmanager:production-consumer-trino-auth/versions/latest
+            - name: TRINO_ADMIN
+              value: gcp:secretmanager:production-consumer-trino-admin/versions/latest
+            - name: JWT_BASE64_SECRET_KEY
+              value: gcp:secretmanager:production-consumer-trino-jwt-secret-key/versions/latest
           volumeMounts:
             - mountPath: /etc/auth
               name: trino-auth-volume
     coordinator:
+      annotations:
+        gke-gcsfuse/volumes: "true"
       resources:
         requests:
           cpu: 1200m
@@ -63,13 +100,22 @@ spec:
         maxHeapSize: "7G"
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      additionalConfigFiles:
+        catalog-store.properties: |
+          catalog.config-dir=/etc/trino/dynamic-catalog
       additionalVolumeMounts:
         - name: trino-auth-volume
-          mountPath: /etc/trino/auth/password
+          mountPath: /etc/trino/auth
           readOnly: true
+        - name: trino-catalog-volume
+          mountPath: /etc/trino/dynamic-catalog
+          readOnly: false
       additionalVolumes:
         - name: trino-auth-volume
           emptyDir: {}
+        - name: trino-catalog-volume
+          persistentVolumeClaim:
+            claimName: trino-catalog-pvc
 
     worker:
       resources:
@@ -105,9 +151,13 @@ spec:
         name: filesystem
         baseDir: gs://oso-consumer-iceberg-exchange-usc1/trino-exchange
       config:
-        authenticationType: PASSWORD
+        authenticationType: PASSWORD,JWT
         query:
           maxMemory: "100GB"
+      coordinatorExtraConfig: |
+        http-server.authentication.jwt.key-file=/etc/trino/auth/jwt.key
+        http-server.authentication.jwt.required-issuer=opensource-observer
+        http-server.authentication.jwt.required-audience=consumer-trino
       workers: 1
       autoscaling:
         enabled: true
@@ -130,15 +180,3 @@ spec:
                 value: 2
                 periodSeconds: 15
             selectPolicy: Max
-    catalogs:
-      iceberg: |
-        connector.name=iceberg
-        iceberg.catalog.type=rest
-        iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
-        iceberg.rest-catalog.prefix=main
-        iceberg.rest-catalog.warehouse=gs://oso-iceberg-usc1/warehouse/
-        fs.native-gcs.enabled=true
-        gcs.project-id=opensource-observer
-      # bigquery: |
-      #   connector.name=bigquery
-      #   bigquery.project-id=opensource-observer

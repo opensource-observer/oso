@@ -34,7 +34,15 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       api_keys: {
         Row: {
@@ -64,11 +72,55 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_user_id_fkey1";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
-      profiles: {
+      organizations: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          id: string;
+          org_name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      user_profiles: {
         Row: {
           avatar_url: string | null;
+          email: string | null;
           full_name: string | null;
           id: string;
           updated_at: string | null;
@@ -77,6 +129,7 @@ export type Database = {
         };
         Insert: {
           avatar_url?: string | null;
+          email?: string | null;
           full_name?: string | null;
           id: string;
           updated_at?: string | null;
@@ -85,6 +138,7 @@ export type Database = {
         };
         Update: {
           avatar_url?: string | null;
+          email?: string | null;
           full_name?: string | null;
           id?: string;
           updated_at?: string | null;
@@ -92,6 +146,51 @@ export type Database = {
           website?: string | null;
         };
         Relationships: [];
+      };
+      users_by_organization: {
+        Row: {
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          org_id: string;
+          updated_at: string;
+          user_id: string;
+          user_role: string;
+        };
+        Insert: {
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_id: string;
+          updated_at?: string;
+          user_id: string;
+          user_role: string;
+        };
+        Update: {
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_id?: string;
+          updated_at?: string;
+          user_id?: string;
+          user_role?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "users_by_organization_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "users_by_organization_user_id_fkey1";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: {

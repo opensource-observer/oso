@@ -3,8 +3,9 @@ model(
     kind incremental_by_time_range(
         time_column first_block_timestamp,
         batch_size 180,
-        batch_concurrency 1,
-        lookback 7
+        batch_concurrency 2,
+        lookback 31,
+        forward_only true,
     ),
     start @blockchain_incremental_start,
     cron '@daily',
@@ -19,8 +20,15 @@ model(
     ),
     enabled false,
     audits (
-      has_at_least_n_rows(threshold := 0)
-    )
+      has_at_least_n_rows(threshold := 0),
+    ),
+    ignored_rules (
+      "incrementalmustdefinenogapsaudit",
+    ),
+    tags (
+      "superchain",
+      "incremental",
+    ),
 )
 ;
 

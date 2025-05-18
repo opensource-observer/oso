@@ -4,13 +4,20 @@ MODEL (
     time_column snapshot_at,
     batch_size 90,
     batch_concurrency 3,
-    lookback 7
+    lookback 31,
+    forward_only true,
   ),
   start @deps_dev_incremental_start,
   partitioned_by DAY(snapshot_at),
   dialect duckdb,
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+  ),
+  tags (
+    "incremental"
   )
 );
 

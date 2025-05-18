@@ -4,8 +4,9 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
     batch_size 90,
-    batch_concurrency 1,
-    lookback 7
+    batch_concurrency 3,
+    lookback 31,
+    forward_only true,
   ),
   start @blockchain_incremental_start,
   cron '@daily',
@@ -23,7 +24,13 @@ MODEL (
     gas_price_tx
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := block_timestamp,
+      no_gap_date_part := 'day',
+      ignore_before := @superchain_audit_start,
+      missing_rate_min_threshold := 0.95,
+    ),
   )
 );
 

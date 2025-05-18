@@ -1,4 +1,5 @@
 import os
+import sys
 
 import dotenv
 from metrics_tools.models import constants
@@ -21,11 +22,18 @@ from sqlmesh.core.config.connection import (
 
 dotenv.load_dotenv()
 
+# SOMETHING broke with the executable path for the sqlmesh package
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CURR_DIR))
+
 config = Config(
     linter=LinterConfig(
         enabled=True,
         rules={
             "incrementalmusthavetimepartition",
+            "incrementalmustdefinenogapsaudit",
+            "incrementalmusthavelookback",
+            "incrementalmusthaveforwardonly",
             "timepartitionsmustbebucketed",
             "nomissingaudits",
             "entitycategorytagrequired",
@@ -124,5 +132,7 @@ config = Config(
         "github_incremental_start": constants.github_incremental_start,
         "funding_incremental_start": constants.funding_incremental_start,
         "defillama_incremental_start": constants.defillama_incremental_start,
+        "testing_enabled": constants.testing_enabled,
+        "superchain_audit_start": constants.superchain_audit_start,
     },
 )

@@ -3,8 +3,9 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
     batch_size 180,
-    batch_concurrency 1,
-    lookback 7
+    batch_concurrency 2,
+    lookback 31,
+    forward_only true,
   ),
   start @blockchain_incremental_start,
   cron '@daily',
@@ -12,8 +13,18 @@ MODEL (
   grain (block_timestamp, chain_id, transaction_hash, deployer_address, contract_address),
   dialect duckdb,
   audits (
-    has_at_least_n_rows(threshold := 0)
-  )
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := block_timestamp,
+      no_gap_date_part := 'day',
+      ignore_before := @superchain_audit_start,
+      missing_rate_min_threshold := 0.95,
+    ),
+  ),
+  tags (
+    "superchain",
+    "incremental",
+  ),
 );
 
 @transactions_with_receipts_deployers(

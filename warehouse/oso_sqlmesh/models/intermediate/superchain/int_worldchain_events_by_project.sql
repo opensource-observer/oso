@@ -4,8 +4,8 @@ MODEL (
   kind incremental_by_time_range(
    time_column time,
    batch_size 60,
-   batch_concurrency 1,
-   lookback 7
+   batch_concurrency 3,
+   lookback 31
   ),
   start '2024-09-01',
   cron '@daily',
@@ -16,7 +16,11 @@ MODEL (
     'entity_category=project'
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+  ),
+  ignored_rules (
+    "incrementalmusthaveforwardonly",
+    "incrementalmustdefinenogapsaudit",
   )
 );
 

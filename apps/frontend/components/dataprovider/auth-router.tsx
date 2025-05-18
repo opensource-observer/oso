@@ -8,7 +8,7 @@ import {
 } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { logger } from "../../lib/logger";
-import { supabaseClient } from "../../lib/clients/supabase";
+import { supabaseClient, userSession } from "../../lib/clients/supabase";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
 
@@ -61,13 +61,16 @@ function AuthRouter(props: AuthRouterProps) {
     if (useTestData) {
       return testData;
     }
+    /**
     const {
       data: { user },
     } = await supabaseClient.auth.getUser();
     const {
       data: { session },
     } = await supabaseClient.auth.getSession();
+    */
     // Identify the user via PostHog
+    const user = userSession?.user;
     if (user) {
       posthog?.identify(user.id, {
         name: user.user_metadata?.name,
@@ -76,10 +79,10 @@ function AuthRouter(props: AuthRouterProps) {
     }
 
     console.log("User: ", user);
-    console.log("Session: ", session);
+    console.log("Session: ", userSession);
     return {
       user,
-      session,
+      session: userSession,
       supabase: supabaseClient,
     };
   }, []);

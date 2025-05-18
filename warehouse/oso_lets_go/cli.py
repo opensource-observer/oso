@@ -783,6 +783,7 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
+                "SQLMESH_TESTING_ENABLED": "1",
             },
             check=True,
         )
@@ -804,6 +805,7 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
                     "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
                     "SQLMESH_TRINO_HOST": "localhost",
                     "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+                    "SQLMESH_TESTING_ENABLED": "1",
                 },
                 check=True,
             )

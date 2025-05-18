@@ -3,7 +3,9 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
-    batch_concurrency 1
+    batch_concurrency 2,
+    lookback 31,
+    forward_only true
   ),
   start '2015-01-01',
   cron '@daily',
@@ -11,7 +13,14 @@ MODEL (
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
   dialect duckdb,
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := time,
+      no_gap_date_part := 'day',
+    ),
+  ),
+  tags (
+    "incremental"
   )
 );
 

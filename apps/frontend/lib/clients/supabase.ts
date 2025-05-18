@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, Session } from "@supabase/supabase-js";
 import { HttpError } from "@opensource-observer/utils";
 import {
   SUPABASE_URL,
@@ -8,22 +8,21 @@ import {
 import { Database } from "../types/supabase";
 
 // Supabase unprivileged client
-function createSupabaseClient() {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function createNormalSupabaseClient() {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
-const supabaseClient = createSupabaseClient();
-// Supabase service account
-const supabasePrivileged = createClient<Database>(
-  SUPABASE_URL,
-  SUPABASE_SERVICE_KEY,
-);
+function createPrivilegedSupabaseClient() {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+}
+// Supabase client for use in the browser
+const supabaseClient = createNormalSupabaseClient();
 
-// Get the user JWT token
-let userToken: string | undefined;
+// Get the user session
+let userSession: Session | null | undefined;
 supabaseClient.auth
   .getSession()
   .then((data) => {
-    userToken = data.data.session?.access_token;
+    userSession = data.data.session;
   })
   .catch((e) => {
     console.warn("Failed to get Supabase session, ", e);
@@ -42,7 +41,7 @@ type SupabaseQueryArgs = {
 
 async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
   const { tableName, columns, filters, limit, orderBy, orderAscending } = args;
-  let query = supabaseClient.from(tableName).select(columns);
+  let query = supabaseClient.from(tableName as any).select(columns);
   // Iterate over the filters
   if (Array.isArray(filters)) {
     for (let i = 0; i < filters.length; i++) {
@@ -74,10 +73,10 @@ async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
 }
 
 export {
-  createSupabaseClient,
+  createNormalSupabaseClient,
+  createPrivilegedSupabaseClient,
   supabaseClient,
-  supabasePrivileged,
   supabaseQuery,
-  userToken,
+  userSession,
 };
 export type { SupabaseQueryArgs };
