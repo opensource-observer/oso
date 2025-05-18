@@ -1,7 +1,10 @@
 import "server-only";
 
 import { type NextRequest } from "next/server";
-import { supabasePrivileged, createSupabaseClient } from "../clients/supabase";
+import {
+  createPrivilegedSupabaseClient,
+  createNormalSupabaseClient,
+} from "../clients/supabase";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { AnonUser, NormalUser, AdminUser, AuthUser, User } from "../types/user";
 
@@ -22,6 +25,7 @@ const API_KEY_NAME_COLUMN = "name";
 const API_KEY_API_KEY_COLUMN = "api_key";
 const API_KEY_DELETED_COLUMN = "deleted_at";
 const API_KEY_ALL_COLUMNS = `${API_KEY_USER_ID_COLUMN},${API_KEY_NAME_COLUMN},${API_KEY_API_KEY_COLUMN},${API_KEY_DELETED_COLUMN}`;
+const supabasePrivileged = createPrivilegedSupabaseClient();
 
 const makeAnonUser = (host: string | null): AnonUser => ({
   role: "anonymous",
@@ -79,7 +83,8 @@ async function getUserByApiKey(
 }
 
 async function getUserByJwt(token: string, host: string | null): Promise<User> {
-  const { data, error } = await createSupabaseClient().auth.getUser(token);
+  const { data, error } =
+    await createNormalSupabaseClient().auth.getUser(token);
   if (error) {
     //console.warn(`auth: Error retrieving user by JWT => anon`, error);
     //console.warn(`auth: Error retrieving user by JWT => anon`);

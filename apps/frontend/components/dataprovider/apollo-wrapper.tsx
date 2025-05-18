@@ -7,7 +7,7 @@ import {
   ApolloClient,
   SSRMultipartLink,
 } from "@apollo/experimental-nextjs-app-support";
-import { userToken } from "../../lib/clients/supabase";
+import { userSession } from "../../lib/clients/supabase";
 import { DB_GRAPHQL_URL } from "../../lib/config";
 
 /**
@@ -20,7 +20,7 @@ import { DB_GRAPHQL_URL } from "../../lib/config";
 let initialized = false;
 const useEnsureAuth = () => {
   const client = useApolloClient();
-  if (!initialized && userToken) {
+  if (!initialized && userSession?.access_token) {
     client.setLink(makeLink());
     initialized = true;
   }
@@ -30,9 +30,9 @@ function makeLink() {
   //console.log(userToken);
   const httpLink = new HttpLink({
     uri: DB_GRAPHQL_URL,
-    headers: userToken
+    headers: userSession?.access_token
       ? {
-          Authorization: `Bearer ${userToken}`,
+          Authorization: `Bearer ${userSession.access_token}`,
         }
       : {},
   });
