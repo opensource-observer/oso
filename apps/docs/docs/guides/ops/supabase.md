@@ -80,10 +80,14 @@ To squash migrations into a single file:
 pnpm supabase migration squash
 ```
 
-To compare your local database with production and auto-generate a migration of the diff
+### Alternative workflow
+
+Sometimes, it is really nice to be able to just edit on [Supabase.com](https://supabase.com/)
+directly. If you do that, you can auto-generate a migration of the diff
+by comparing your local Supabase to production:
 
 ```bash
-pnpm supabase db diff
+pnpm supabase db diff --linked -f MIGRATION_FILENAME
 ```
 
 For more details, check out the
