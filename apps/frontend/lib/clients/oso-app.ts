@@ -104,6 +104,45 @@ class OsoAppClient {
   }
 
   /**
+   * Gets the current logged in user's API keys
+   * @returns
+   */
+  async getMyApiKeys() {
+    const user = await this.getUser();
+    const { data, error } = await this.supabaseClient
+      .from("api_keys")
+      .select("id,name,created_at")
+      .eq("user_id", user.id)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find API keys for id=${user.id}`);
+    }
+    return data;
+  }
+
+  /**
+   * Removes an API Key
+   * - We use `deleted_at` to mark the key as removed instead of deleting the row
+   * @param orgId
+   */
+  async deleteApiKey(
+    args: Partial<{
+      keyId: string;
+    }>,
+  ) {
+    const keyId = ensure(args.keyId, "Missing keyId argument");
+    const { error } = await this.supabaseClient
+      .from("api_keys")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", keyId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Creates a new organization
    * @param orgName
    */

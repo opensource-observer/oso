@@ -9,6 +9,7 @@ const PLASMIC_CONTEXT_NAME = "OsoGlobalContext";
 const OsoGlobalActions: any = {
   updateMyUserProfile: { parameters: [{ name: "args", type: "object" }] },
   createApiKey: { parameters: [{ name: "args", type: "object" }] },
+  deleteApiKey: { parameters: [{ name: "args", type: "object" }] },
   createOrganization: { parameters: [{ name: "args", type: "object" }] },
   addUserToOrganizationByEmail: {
     parameters: [{ name: "args", type: "object" }],
@@ -28,32 +29,38 @@ interface OsoGlobalContextProps {
 function OsoGlobalContext(props: OsoGlobalContextProps) {
   const { children } = props;
   const [actionResult, setResult] = React.useState<any>(null);
+  const [actionError, setError] = React.useState<any>(null);
   const osoClient = new OsoAppClient();
   const data = {
     config,
     actionResult,
+    actionError,
   };
 
   const actions = React.useMemo(
     () => ({
       updateMyUserProfile: (args: any) =>
-        osoClient.updateMyUserProfile(args).then((res) => setResult(res)),
+        osoClient.updateMyUserProfile(args).then(setResult).catch(setError),
       createApiKey: (args: any) =>
-        osoClient.createApiKey(args).then((res) => setResult(res)),
+        osoClient.createApiKey(args).then(setResult).catch(setError),
+      deleteApiKey: (args: any) =>
+        osoClient.deleteApiKey(args).then(setResult).catch(setError),
       createOrganization: (args: any) =>
-        osoClient.createOrganization(args).then((res) => setResult(res)),
+        osoClient.createOrganization(args).then(setResult).catch(setError),
       addUserToOrganizationByEmail: (args: any) =>
         osoClient
           .addUserToOrganizationByEmail(args)
-          .then((res) => setResult(res)),
+          .then(setResult)
+          .catch(setError),
       changeUserRole: (args: any) =>
-        osoClient.changeUserRole(args).then((res) => setResult(res)),
+        osoClient.changeUserRole(args).then(setResult).catch(setError),
       removeUserFromOrganization: (args: any) =>
         osoClient
           .removeUserFromOrganization(args)
-          .then((res) => setResult(res)),
+          .then(setResult)
+          .catch(setError),
       deleteOrganization: (args: any) =>
-        osoClient.deleteOrganization(args).then((res) => setResult(res)),
+        osoClient.deleteOrganization(args).then(setResult).catch(setError),
     }),
     [osoClient],
   );
