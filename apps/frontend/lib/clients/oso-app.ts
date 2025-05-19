@@ -89,6 +89,7 @@ class OsoAppClient {
     args: Partial<{
       name: string;
       apiKey: string;
+      orgId: string;
     }>,
   ) {
     console.log("createApiKey: ", args.name);
@@ -99,6 +100,7 @@ class OsoAppClient {
       name,
       api_key: apiKey,
       user_id: user.id,
+      org_id: args.orgId,
     });
     if (error) {
       throw error;
@@ -114,7 +116,7 @@ class OsoAppClient {
     const user = await this.getUser();
     const { data, error } = await this.supabaseClient
       .from("api_keys")
-      .select("id,name,created_at")
+      .select("id, name, created_at, org_id")
       .eq("user_id", user.id)
       .is("deleted_at", null);
     if (error) {
@@ -147,7 +149,7 @@ class OsoAppClient {
   }
 
   /**
-   * Creates a new organization
+   * Creates a new organization and adds the creator as admin member
    * @param orgName
    */
   async createOrganization(
@@ -158,13 +160,36 @@ class OsoAppClient {
     console.log("createOrganization: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const user = await this.getUser();
-    const { error } = await this.supabaseClient.from("organizations").insert({
-      org_name: orgName,
-      created_by: user.id,
-    });
-    if (error) {
-      throw error;
+
+    const { data: orgData, error: orgError } = await this.supabaseClient
+      .from("organizations")
+      .insert({
+        org_name: orgName,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (orgError) {
+      throw orgError;
     }
+    if (!orgData) {
+      throw new MissingDataError("Failed to create organization");
+    }
+
+    const { error: memberError } = await this.supabaseClient
+      .from("users_by_organization")
+      .insert({
+        org_id: orgData.id,
+        user_id: user.id,
+        user_role: "admin",
+      });
+
+    if (memberError) {
+      throw memberError;
+    }
+
+    return orgData;
   }
 
   /**
