@@ -7,7 +7,7 @@ import { HttpError, assertNever, spawn } from "@opensource-observer/utils";
 import { usePostHog } from "posthog-js/react";
 import { EVENTS } from "../../lib/types/posthog";
 import { RegistrationProps } from "../../lib/types/plasmic";
-import { supabaseClient } from "../../lib/clients/supabase";
+import { useSupabaseState } from "../hooks/supabase";
 
 type SnackbarState = ADT<{
   closed: Record<string, unknown>;
@@ -84,6 +84,7 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     errorCodeMap,
   } = props;
   const posthog = usePostHog();
+  const supabaseState = useSupabaseState();
   const router = useRouter();
   const [snackbarState, setSnackbarState] = React.useState<SnackbarState>({
     _type: "closed",
@@ -99,7 +100,9 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     setSnackbarState({ _type: "closed" });
   };
   const clickHandler = async () => {
-    if (!actionType) {
+    if (!supabaseState?.supabaseClient) {
+      return console.warn("SupabaseWrite: Supabase client not initialized yet");
+    } else if (!actionType) {
       return console.warn("SupabaseWrite: Select an actionType first");
     } else if (!tableName) {
       return console.warn("SupabaseWrite: Enter a tableName first");
@@ -110,6 +113,7 @@ function SupabaseWrite(props: SupabaseWriteProps) {
         "SupabaseWrite: This actionType requires valid filters",
       );
     }
+    const supabaseClient = supabaseState.supabaseClient;
 
     let query =
       actionType === "insert"
