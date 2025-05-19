@@ -18,7 +18,12 @@ MODEL (
   ),
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
-  )
+  ),
+  tags (
+    "blockchain",
+    "superchain",
+    "incremental",
+  ),
 );
 
 WITH filtered_events AS (

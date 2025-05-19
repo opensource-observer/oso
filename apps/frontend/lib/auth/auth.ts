@@ -1,6 +1,9 @@
 import "server-only";
 import { type NextRequest } from "next/server";
-import { supabasePrivileged, createSupabaseClient } from "../clients/supabase";
+import {
+  createPrivilegedSupabaseClient,
+  createNormalSupabaseClient,
+} from "../clients/supabase";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import {
   AnonUser,
@@ -49,6 +52,8 @@ const COLUMNS = {
     DELETED_AT: "deleted_at",
   },
 } as const;
+
+const supabasePrivileged = createPrivilegedSupabaseClient();
 
 /**
  * Factory function for anonymous users
@@ -277,7 +282,8 @@ async function getUserByApiKey(
  * Authenticate a user via JWT token
  */
 async function getUserByJwt(token: string, host: string | null): Promise<User> {
-  const { data, error } = await createSupabaseClient().auth.getUser(token);
+  const { data, error } =
+    await createNormalSupabaseClient().auth.getUser(token);
   if (error) {
     return makeAnonUser(host);
   }

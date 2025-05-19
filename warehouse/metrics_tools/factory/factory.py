@@ -96,7 +96,9 @@ class TimeseriesMetrics:
         for query in metrics_queries:
             model_defs = query.provided_model_defs
             for model_def in model_defs:
-                peer_table_map[model_def_to_str(model_def)] = query.table_name(model_def)
+                peer_table_map[model_def_to_str(model_def)] = query.table_name(
+                    model_def
+                )
 
         return cls(timeseries_sources, metrics_queries, peer_table_map, raw_options)
 
@@ -135,17 +137,17 @@ class TimeseriesMetrics:
     def schema(self):
         """The schema (sometimes db name) to use for rendered queries"""
         return self._raw_options["schema"]
-    
+
     @property
     def audits(self):
         """The audits to use for rendered queries"""
         return self._raw_options.get("audits", [])
-    
+
     @property
     def audit_factories(self):
         """The audits to use for rendered queries"""
         return self._raw_options.get("audit_factories", [])
-    
+
     @property
     def incremental_audits(self):
         """The audits to use for rendered queries of incremental models"""
@@ -693,7 +695,7 @@ class TimeseriesMetrics:
         query = query_config["query"]
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
-        
+
         for audit_factory in self.audit_factories:
             audit = audit_factory(query_config)
             if audit:
@@ -701,7 +703,11 @@ class TimeseriesMetrics:
 
         ignored_rules: list[str] = []
         # Ignore these for now, we will need to fix this later
-        if time_aggregation in ["biannually", "quarterly", "weekly"] or "funding" in query_config["table_name"]:
+        if (
+            time_aggregation in ["biannually", "quarterly", "weekly"]
+            or "funding" in query_config["table_name"]
+            or "releases" in query_config["table_name"]
+        ):
             ignored_rules.append("incrementalmustdefinenogapsaudit")
 
         # Override the path and module so that sqlmesh generates the

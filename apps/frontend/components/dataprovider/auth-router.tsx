@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { useAsync } from "react-use";
 import { usePostHog } from "posthog-js/react";
 import {
   CommonDataProviderProps,
@@ -7,8 +6,7 @@ import {
   DataProviderView,
 } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
-import { logger } from "../../lib/logger";
-import { supabaseClient } from "../../lib/clients/supabase";
+import { useSupabaseState } from "../hooks/supabase";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
 
@@ -51,46 +49,27 @@ function AuthRouter(props: AuthRouterProps) {
     testNoAuth,
   } = props;
   const key = variableName ?? DEFAULT_PLASMIC_VARIABLE;
+  const supabaseState = useSupabaseState();
   const posthog = usePostHog();
 
-  const {
-    value: data,
-    error,
-    loading,
-  } = useAsync(async () => {
-    if (useTestData) {
-      return testData;
-    }
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
-    const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
-    // Identify the user via PostHog
-    if (user) {
-      posthog?.identify(user.id, {
-        name: user.user_metadata?.name,
-        email: user.email,
-      });
-    }
+  const data = useTestData
+    ? testData
+    : {
+        user: supabaseState?.session?.user,
+        session: supabaseState?.session,
+        supabase: supabaseState?.supabaseClient,
+      };
 
-    console.log("User: ", user);
-    console.log("Session: ", session);
-    return {
-      user,
-      session,
-      supabase: supabaseClient,
-    };
-  }, []);
-
-  // Error messages are currently silently logged
-  if (!loading && error) {
-    logger.error(error);
+  if (!useTestData && data.user) {
+    posthog?.identify(data.user.id, {
+      name: data.user.user_metadata?.name,
+      email: data.user.email,
+    });
   }
+  //console.log("AuthRouter: ", data);
 
   // Show unauthenticated view
-  if (testNoAuth || (!loading && !ignoreNoAuth && !data?.user)) {
+  if (testNoAuth || (!ignoreNoAuth && !data?.user)) {
     return <div className={className}>{noAuthChildren}</div>;
   }
 
@@ -99,8 +78,8 @@ function AuthRouter(props: AuthRouterProps) {
       {...props}
       variableName={key}
       formattedData={data}
-      loading={loading}
-      error={error}
+      loading={false}
+      error={null}
     />
   );
 }

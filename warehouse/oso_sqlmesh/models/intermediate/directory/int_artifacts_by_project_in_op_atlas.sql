@@ -64,15 +64,25 @@ all_contracts AS (
   FROM oso.stg_op_atlas_project_contract
 ),
 all_deployers AS (
+  WITH deployer_counts AS (
+    SELECT
+      artifact_source_id,
+      COUNT(DISTINCT project_id) as project_count
+    FROM oso.stg_op_atlas_project_deployer
+    GROUP BY artifact_source_id
+  )
   SELECT DISTINCT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_namespace,
-    artifact_name,
-    artifact_url,
-    artifact_type
-  FROM oso.stg_op_atlas_project_deployer
+    d.project_id,
+    d.artifact_source_id,
+    d.artifact_source,
+    d.artifact_namespace,
+    d.artifact_name,
+    d.artifact_url,
+    d.artifact_type
+  FROM oso.stg_op_atlas_project_deployer d
+  JOIN deployer_counts dc
+    ON d.artifact_source_id = dc.artifact_source_id
+  WHERE dc.project_count = 1
 ),
 all_defillama AS (
   SELECT

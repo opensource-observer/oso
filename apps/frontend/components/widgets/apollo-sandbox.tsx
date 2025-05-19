@@ -1,8 +1,7 @@
 "use client";
 
 import { ApolloSandbox } from "@apollo/sandbox/react";
-import { useAsync } from "react-use";
-import { supabaseClient } from "../../lib/clients/supabase";
+import { useSupabaseState } from "../hooks/supabase";
 import { DOMAIN } from "../../lib/config";
 
 const API_PROTOCOL = "https://";
@@ -15,16 +14,9 @@ type EmbeddedSandboxProps = {
 };
 
 function EmbeddedSandbox(props: EmbeddedSandboxProps) {
-  const { value: data } = useAsync(async () => {
-    const {
-      data: { session },
-    } = await supabaseClient.auth.getSession();
-    return {
-      session,
-    };
-  }, []);
-  //console.log(data);
-  const token = data?.session?.access_token;
+  const supabaseState = useSupabaseState();
+  const token = supabaseState?.session?.access_token;
+  //console.log(session);
   //console.log("headers", headers);
 
   return (

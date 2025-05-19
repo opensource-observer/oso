@@ -25,6 +25,10 @@ model(
     ignored_rules (
       "incrementalmustdefinenogapsaudit",
     ),
+    tags (
+      "superchain",
+      "incremental",
+    ),
 )
 ;
 

@@ -34,7 +34,15 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       api_keys: {
         Row: {
@@ -102,11 +110,20 @@ export type Database = {
           org_name?: string;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey1";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
-      profiles: {
+      user_profiles: {
         Row: {
           avatar_url: string | null;
+          email: string | null;
           full_name: string | null;
           id: string;
           updated_at: string | null;
@@ -115,6 +132,7 @@ export type Database = {
         };
         Insert: {
           avatar_url?: string | null;
+          email?: string | null;
           full_name?: string | null;
           id: string;
           updated_at?: string | null;
@@ -123,6 +141,7 @@ export type Database = {
         };
         Update: {
           avatar_url?: string | null;
+          email?: string | null;
           full_name?: string | null;
           id?: string;
           updated_at?: string | null;
@@ -165,6 +184,13 @@ export type Database = {
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "users_by_organization_user_id_fkey1";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
             referencedColumns: ["id"];
           },
         ];
