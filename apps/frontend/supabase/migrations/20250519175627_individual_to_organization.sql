@@ -18,11 +18,14 @@ WITH users_without_orgs AS (
 ), 
 new_orgs AS (
   INSERT INTO organizations (created_by, org_name)
-  SELECT 
+  SELECT
     user_id,
     COALESCE(
-      NULLIF(user_name, '') || '''s Organization',
-      'Organization ' || substr(user_id::text, 1, 8)
+      CASE 
+        WHEN user_name LIKE '%s' THEN NULLIF(user_name, '') || ''' Organization ' 
+        ELSE NULLIF(user_name, '') || '''s Organization ' 
+      END || substr(md5(random()::text), 1, 8),
+      'Organization ' || substr(md5(random()::text), 1, 8)
     )
   FROM users_without_orgs
   RETURNING id, created_by
