@@ -1,6 +1,6 @@
 ---
 title: Ops Video Guides
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 This is a set of video guides by our internal team.
