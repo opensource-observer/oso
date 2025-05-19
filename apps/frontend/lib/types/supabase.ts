@@ -83,6 +83,13 @@ export type Database = {
             referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "api_keys_user_id_fkey1";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
         ];
       };
       organizations: {
