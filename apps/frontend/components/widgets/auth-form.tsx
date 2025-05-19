@@ -1,7 +1,8 @@
 "use client";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabaseClient } from "../../lib/clients/supabase";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { useSupabaseState } from "../hooks/supabase";
 
 const REDIRECT_URL = "http://localhost:3000/";
 
@@ -11,11 +12,16 @@ type AuthFormProps = {
 
 export function AuthForm(props: AuthFormProps) {
   const { className } = props;
+  const supabaseState = useSupabaseState();
+
+  if (!supabaseState) {
+    return <>Supabase not initialized yet</>;
+  }
 
   return (
     <div className={className}>
       <Auth
-        supabaseClient={supabaseClient}
+        supabaseClient={supabaseState?.supabaseClient as SupabaseClient<any>}
         appearance={{ theme: ThemeSupa }}
         providers={["google"]}
         queryParams={{
