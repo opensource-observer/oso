@@ -1,9 +1,8 @@
 import _ from "lodash";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { supabaseClient as defaultClient } from "./supabase";
+import { ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "../types/supabase";
 import { MissingDataError, AuthError } from "../types/errors";
-import { ensure } from "@opensource-observer/utils";
 
 /**
  * OsoAppClient is the client library for the OSO app.
@@ -20,8 +19,8 @@ class OsoAppClient {
    * Otherwise default to the one stored as a global
    * @param inboundClient
    */
-  constructor(inboundClient?: SupabaseClient<Database>) {
-    this.supabaseClient = inboundClient || defaultClient;
+  constructor(inboundClient: SupabaseClient<Database>) {
+    this.supabaseClient = inboundClient;
   }
 
   /**
@@ -43,6 +42,7 @@ class OsoAppClient {
    * @returns
    */
   async getMyUserProfile() {
+    console.log("getMyUserProfile");
     const user = await this.getUser();
     const { data, error } = await this.supabaseClient
       .from("user_profiles")
@@ -68,6 +68,7 @@ class OsoAppClient {
       profile: Partial<Tables<"user_profiles">>;
     }>,
   ) {
+    console.log("updateMyUserProfile: ", args);
     const profile = ensure(args.profile, "Missing profile argument");
     const user = await this.getUser();
     const { error } = await this.supabaseClient
@@ -90,6 +91,7 @@ class OsoAppClient {
       apiKey: string;
     }>,
   ) {
+    console.log("createApiKey: ", args.name);
     const name = ensure(args.name, "Missing name argument");
     const apiKey = ensure(args.apiKey, "Missing apiKey argument");
     const user = await this.getUser();
@@ -108,6 +110,7 @@ class OsoAppClient {
    * @returns
    */
   async getMyApiKeys() {
+    console.log("getMyApiKeys");
     const user = await this.getUser();
     const { data, error } = await this.supabaseClient
       .from("api_keys")
@@ -132,6 +135,7 @@ class OsoAppClient {
       keyId: string;
     }>,
   ) {
+    console.log("deleteApiKey: ", args);
     const keyId = ensure(args.keyId, "Missing keyId argument");
     const { error } = await this.supabaseClient
       .from("api_keys")
@@ -151,6 +155,7 @@ class OsoAppClient {
       orgName: string;
     }>,
   ) {
+    console.log("createOrganization: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const user = await this.getUser();
     const { error } = await this.supabaseClient.from("organizations").insert({
@@ -167,6 +172,7 @@ class OsoAppClient {
    * @returns
    */
   async getMyOrganizations() {
+    console.log("getMyOrganizations");
     const user = await this.getUser();
     // Get the organizations that the user has created
     const { data: createdOrgs, error: createdError } = await this.supabaseClient
@@ -211,6 +217,7 @@ class OsoAppClient {
       orgId: string;
     }>,
   ) {
+    console.log("getOrganizationById: ", args);
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const { data, error } = await this.supabaseClient
       .from("organizations")
@@ -237,6 +244,7 @@ class OsoAppClient {
       orgId: string;
     }>,
   ) {
+    console.log("getOrganizationMembers: ", args);
     const orgId = ensure(args.orgId, "Missing orgId argument");
     // Get the owner/creator of the organization
     const { data: creatorData, error: creatorError } = await this.supabaseClient
@@ -284,6 +292,7 @@ class OsoAppClient {
       role: string;
     }>,
   ) {
+    console.log("addUserToOrganizationByEmail: ", args);
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const email = ensure(args.email, "Missing email argument");
     const role = ensure(args.role, "Missing role argument");
@@ -321,6 +330,7 @@ class OsoAppClient {
       role: string;
     }>,
   ) {
+    console.log("changeUserRole: ", args);
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const userId = ensure(args.userId, "Missing userId argument");
     const role = ensure(args.role, "Missing role argument");
@@ -347,6 +357,7 @@ class OsoAppClient {
       userId: string;
     }>,
   ) {
+    console.log("removeUserFromOrganization: ", args);
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const userId = ensure(args.userId, "Missing userId argument");
     const { error } = await this.supabaseClient
@@ -369,6 +380,7 @@ class OsoAppClient {
       orgId: string;
     }>,
   ) {
+    console.log("deleteOrganization: ", args);
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const { error } = await this.supabaseClient
       .from("organizations")

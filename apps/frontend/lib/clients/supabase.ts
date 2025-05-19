@@ -1,4 +1,4 @@
-import { createClient, Session } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { HttpError } from "@opensource-observer/utils";
 import {
   SUPABASE_URL,
@@ -14,9 +14,8 @@ function createNormalSupabaseClient() {
 function createPrivilegedSupabaseClient() {
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 }
-// Supabase client for use in the browser
-const supabaseClient = createNormalSupabaseClient();
 
+/**
 // Get the user session
 let userSession: Session | null | undefined;
 supabaseClient.auth
@@ -27,6 +26,7 @@ supabaseClient.auth
   .catch((e) => {
     console.warn("Failed to get Supabase session, ", e);
   });
+*/
 
 type SupabaseQueryArgs = {
   tableName: string; // table to query
@@ -39,7 +39,10 @@ type SupabaseQueryArgs = {
   orderAscending?: boolean; // True if ascending, false if descending
 };
 
-async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
+async function supabaseQuery(
+  supabaseClient: SupabaseClient,
+  args: SupabaseQueryArgs,
+): Promise<any[]> {
   const { tableName, columns, filters, limit, orderBy, orderAscending } = args;
   let query = supabaseClient.from(tableName as any).select(columns);
   // Iterate over the filters
@@ -75,8 +78,6 @@ async function supabaseQuery(args: SupabaseQueryArgs): Promise<any[]> {
 export {
   createNormalSupabaseClient,
   createPrivilegedSupabaseClient,
-  supabaseClient,
   supabaseQuery,
-  userSession,
 };
 export type { SupabaseQueryArgs };

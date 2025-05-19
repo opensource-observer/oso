@@ -7,7 +7,7 @@ import {
   CommonDataProviderRegistration,
   DataProviderView,
 } from "./provider-view";
-import { OsoAppClient } from "../../lib/clients/oso-app";
+import { useOsoAppClient } from "../hooks/oso-app";
 
 // The name used to pass data into the Plasmic DataProvider
 const KEY_PREFIX = "oso";
@@ -49,12 +49,14 @@ const OsoDataProviderRegistration: RegistrationProps<OsoDataProviderProps> = {
 function OsoDataProvider(props: OsoDataProviderProps) {
   const { dataFetches, variableName, testData, useTestData } = props;
   const key = variableName ?? genKey(props);
-  const osoClient = new OsoAppClient();
+  const { client } = useOsoAppClient();
   const { data, mutate, error, isLoading } = useSWR(key, async () => {
     if (useTestData) {
       return testData;
     } else if (!dataFetches || _.isEmpty(dataFetches)) {
       return;
+    } else if (!client) {
+      throw new Error("No Supabase client found");
     }
     const result: Record<string, any> = {};
     for (const [key, { method, args }] of Object.entries(dataFetches)) {
@@ -64,7 +66,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
       if (!args) {
         throw new Error(`No args provided for data fetch ${name}`);
       }
-      result[key] = await (osoClient as any)[method](args);
+      result[key] = await (client as any)[method](args);
     }
     return result;
   });
@@ -80,7 +82,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   return (
     <DataProviderView
       {...props}
-      formattedData={{ ...data, mutate }}
+      formattedData={{ ...data, revalidate: mutate }}
       loading={isLoading}
       error={error}
     />

@@ -4,7 +4,7 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
 import * as config from "../../lib/config";
-import { OsoAppClient } from "../../lib/clients/oso-app";
+import { useOsoAppClient } from "../hooks/oso-app";
 
 const PLASMIC_KEY = "globals";
 const PLASMIC_CONTEXT_NAME = "OsoGlobalContext";
@@ -51,12 +51,12 @@ const OsoGlobalContextPropsRegistration: any = {
 
 function OsoGlobalContext(props: OsoGlobalContextProps) {
   const { children, errorCodeMap } = props;
+  const { client } = useOsoAppClient();
   const [actionResult, setResult] = React.useState<any>(null);
   const [actionError, setError] = React.useState<any>(null);
   const [snackbarState, setSnackbarState] = React.useState<SnackbarState>({
     _type: "closed",
   });
-  const osoClient = new OsoAppClient();
   const data = {
     config,
     actionResult,
@@ -64,10 +64,12 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
   };
 
   const handleSuccess = (result: any) => {
+    console.log("Success: ", result);
     setResult(result);
     setSnackbarState({ _type: "success" });
   };
   const handleError = (error: any) => {
+    console.log("Error: ", error);
     setError(error);
     setSnackbarState({
       _type: "error",
@@ -86,38 +88,32 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
   const actions = React.useMemo(
     () => ({
       updateMyUserProfile: (args: any) =>
-        osoClient
+        client!
           .updateMyUserProfile(args)
           .then(handleSuccess)
           .catch(handleError),
       createApiKey: (args: any) =>
-        osoClient.createApiKey(args).then(handleSuccess).catch(handleError),
+        client!.createApiKey(args).then(handleSuccess).catch(handleError),
       deleteApiKey: (args: any) =>
-        osoClient.deleteApiKey(args).then(handleSuccess).catch(handleError),
+        client!.deleteApiKey(args).then(handleSuccess).catch(handleError),
       createOrganization: (args: any) =>
-        osoClient
-          .createOrganization(args)
-          .then(handleSuccess)
-          .catch(handleError),
+        client!.createOrganization(args).then(handleSuccess).catch(handleError),
       addUserToOrganizationByEmail: (args: any) =>
-        osoClient
+        client!
           .addUserToOrganizationByEmail(args)
           .then(handleSuccess)
           .catch(handleError),
       changeUserRole: (args: any) =>
-        osoClient.changeUserRole(args).then(handleSuccess).catch(handleError),
+        client!.changeUserRole(args).then(handleSuccess).catch(handleError),
       removeUserFromOrganization: (args: any) =>
-        osoClient
+        client!
           .removeUserFromOrganization(args)
           .then(handleSuccess)
           .catch(handleError),
       deleteOrganization: (args: any) =>
-        osoClient
-          .deleteOrganization(args)
-          .then(handleSuccess)
-          .catch(handleError),
+        client!.deleteOrganization(args).then(handleSuccess).catch(handleError),
     }),
-    [osoClient],
+    [client],
   );
 
   return (

@@ -8,7 +8,6 @@ import {
   ensure,
   uncheckedCast,
 } from "@opensource-observer/utils";
-import { useEnsureAuth } from "./apollo-wrapper";
 import {
   GET_TIMESERIES_METRICS_BY_ARTIFACT,
   GET_TIMESERIES_METRICS_BY_PROJECT,
@@ -323,7 +322,6 @@ const formatData = (
  * @returns
  */
 function MetricsDataProvider(props: MetricsDataProviderProps) {
-  useEnsureAuth();
   return props.entityType === "artifact" ? (
     <ArtifactMetricsDataProvider {...props} />
   ) : props.entityType === "project" ? (
