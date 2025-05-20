@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       apiKeyName: user.keyName,
       host: user.host,
     });
-    
+
     const client = getTrinoClient(jwt);
     const [firstRow, rows] = await doQuery(client, query);
     const readableStream = mapToReadableStream(firstRow, rows, format);
