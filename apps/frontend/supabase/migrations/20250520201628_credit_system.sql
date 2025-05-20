@@ -1,4 +1,3 @@
--- Create a table for user credits
 CREATE TABLE IF NOT EXISTS user_credits (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users NOT NULL,
@@ -8,7 +7,6 @@ CREATE TABLE IF NOT EXISTS user_credits (
   UNIQUE (user_id)
 );
 
--- Create a table for credit transactions
 CREATE TABLE IF NOT EXISTS credit_transactions (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users NOT NULL,
@@ -19,37 +17,31 @@ CREATE TABLE IF NOT EXISTS credit_transactions (
   metadata JSONB
 );
 
--- Set up Row Level Security (RLS)
 ALTER TABLE user_credits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE credit_transactions ENABLE ROW LEVEL SECURITY;
 
--- RLS policies for user_credits
 DROP POLICY IF EXISTS "Users can view their own credits" ON user_credits;
 CREATE POLICY "Users can view their own credits" ON user_credits
   FOR SELECT USING (auth.uid() = user_id);
 
--- RLS policies for credit_transactions
 DROP POLICY IF EXISTS "Users can view their own transactions" ON credit_transactions;
 CREATE POLICY "Users can view their own transactions" ON credit_transactions
   FOR SELECT USING (auth.uid() = user_id);
 
--- Function to add credits when a new user signs up
 CREATE OR REPLACE FUNCTION initialize_user_credits()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO user_credits (user_id, credits_balance)
-  VALUES (NEW.id, 100); -- Give new users 100 credits initially
+  VALUES (NEW.id, 100);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger to initialize credits for new users
 DROP TRIGGER IF EXISTS on_auth_user_created_add_credits ON auth.users;
 CREATE TRIGGER on_auth_user_created_add_credits
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION initialize_user_credits();
 
--- Function to deduct credits
 CREATE OR REPLACE FUNCTION deduct_credits(
   p_user_id UUID,
   p_amount INTEGER,
@@ -118,7 +110,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to add credits
 CREATE OR REPLACE FUNCTION add_credits(
   p_user_id UUID,
   p_amount INTEGER,
@@ -182,7 +173,6 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to get user credits
 CREATE OR REPLACE FUNCTION get_user_credits(p_user_id UUID)
 RETURNS INTEGER AS $$
 DECLARE
@@ -195,7 +185,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create indexes
 CREATE INDEX IF NOT EXISTS idx_user_credits_user_id ON user_credits(user_id);
 CREATE INDEX IF NOT EXISTS idx_credit_transactions_user_id ON credit_transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_credit_transactions_created_at ON credit_transactions(created_at);
