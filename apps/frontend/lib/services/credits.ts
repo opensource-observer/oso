@@ -1,4 +1,4 @@
-import { supabaseClient } from "../clients/supabase";
+import { createNormalSupabaseClient } from "../clients/supabase";
 import { logger } from "../logger";
 import { User } from "../types/user";
 
@@ -10,14 +10,16 @@ export enum TransactionType {
   PURCHASE = "purchase",
 }
 
+import { Json } from "../types/supabase";
+
 export interface CreditTransaction {
   id: string;
   user_id: string;
   amount: number;
   transaction_type: string;
-  api_endpoint?: string;
+  api_endpoint?: string | null;
   created_at: string;
-  metadata?: Record<string, any>;
+  metadata?: Json | null;
 }
 
 export interface UserCredits {
@@ -29,6 +31,8 @@ export interface UserCredits {
 }
 
 const COST_PER_API_CALL = 1;
+
+const supabaseClient = createNormalSupabaseClient();
 
 export const CreditsService = {
   async getUserCredits(userId: string): Promise<UserCredits | null> {
