@@ -7,6 +7,7 @@ requires-python = ">=3.10"
 authors = [{ name = "OSO Team", email = "opensource-observer@googlegroups.com" }]
 dependencies = [
     "arize-phoenix-otel>=0.9.1",
+    "discord-py>=2.5.2",
     "dotenv>=0.9.9",
     "llama-index>=0.12.29",
     "llama-index-llms-gemini>=0.4.14",
