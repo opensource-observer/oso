@@ -65,6 +65,7 @@ aggregated AS (
     ne.artifact_source_id,
     ne.artifact_namespace,
     ne.artifact_name
+)
 
 SELECT
   artifact_id::TEXT,
