@@ -16,7 +16,9 @@
     "lint:prettier": "prettier --ignore-path ../../.gitignore --ignore-path .gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
     "start": "next start",
     "start-debug": "NODE_OPTIONS='--inspect' next dev",
-    "supabase:gentypes": "npx supabase gen types typescript --project-id 'dfjsvzdlhmtnsqbfmcpm' --schema public > ./lib/types/supabase.ts && prettier --write ./lib/types/supabase.ts",
+    "supabase:zod": "supazod -i ./lib/types/supabase.ts -o ./lib/types/schema.ts",
+    "supabase:gentypes": "npx supabase gen types typescript --project-id 'dfjsvzdlhmtnsqbfmcpm' --schema public > ./lib/types/supabase.ts && prettier --write ./lib/types/supabase.ts && pnpm supabase:zod",
+    "supabase:gentypes-local": "npx supabase gen types typescript --db-url 'postgresql://postgres:postgres@127.0.0.1:54322/postgres' --schema public > ./lib/types/supabase.ts && prettier --write ./lib/types/supabase.ts && pnpm supabase:zod",
     "test": "dotenv -e .env.local -- jest --ci --passWithNoTests",
     "test:watch": "jest --watch"
   },
