@@ -2,10 +2,10 @@ import asyncio
 
 from discord import Client, Intents, Message, TextChannel
 from oso_agent.agent.agent import Agent
-from oso_agent.server.definition import AgentServerConfig
+from oso_agent.server.definition import BotConfig
 
 
-def setup_bot(config: AgentServerConfig, agent: Agent):
+def setup_bot(config: BotConfig, agent: Agent):
     intents = Intents.default()
     intents.message_content = True
 
@@ -38,7 +38,7 @@ async def bot_main():
     import dotenv
     dotenv.load_dotenv()
 
-    config = AgentServerConfig()
+    config = BotConfig()
     bot = setup_bot(config, None) # type: ignore
     await bot.login(config.discord_bot_token.get_secret_value())
     task = asyncio.create_task(bot.connect())
@@ -52,4 +52,5 @@ async def bot_main():
 
 
 if __name__ == "__main__":
+    # Hack: should move this to the cli module
     asyncio.run(bot_main())

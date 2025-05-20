@@ -54,6 +54,22 @@ class ChatRequest(BaseModel):
             )
             for message in self.messages
         ]
+    
+
+class BotConfig(AgentConfig):
+    """Configuration for the bot."""
+
+    model_config = agent_config_dict()
+
+    discord_bot_token: SecretStr = Field(
+        default=SecretStr(""),
+        description="API key for the Arize Phoenix API"
+    )
+
+    discord_channel_id: SecretStr = Field(
+        default=SecretStr(""),
+        description="Channel ID that the bot should respond in"
+    )
 
 class AgentServerConfig(AgentConfig):
     """Configuration for the agent and its components."""
@@ -69,15 +85,6 @@ class AgentServerConfig(AgentConfig):
         description="Host for the server to run on",
     )
 
-    discord_bot_token: SecretStr = Field(
-        default=SecretStr(""),
-        description="API key for the Arize Phoenix API"
-    )
-
-    discord_channel_id: SecretStr = Field(
-        default=SecretStr(""),
-        description="Channel ID that the bot should respond in"
-    )
 
 AppLifespan = t.Callable[[FastAPI], t.Any]
 

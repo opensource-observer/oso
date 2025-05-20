@@ -14,6 +14,7 @@ from oso_agent.server.bot import setup_bot
 from oso_agent.server.definition import (
     AgentServerConfig,
     AppLifespanFactory,
+    BotConfig,
     ChatRequest,
 )
 from oso_agent.utils.log import setup_logging
@@ -27,9 +28,11 @@ def default_lifecycle(config: AgentServerConfig):
     async def initialize_app(app: FastAPI):
         agent = await Agent.create(config)
 
-        bot = setup_bot(config, agent)
+        bot_config = BotConfig()
 
-        await bot.login(config.discord_bot_token.get_secret_value())
+        bot = setup_bot(bot_config, agent)
+
+        await bot.login(bot_config.discord_bot_token.get_secret_value())
         connect_task = asyncio.create_task(bot.connect())
 
         try:
