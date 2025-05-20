@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
-import type { QueryResult, Iterator } from "trino-client";
+import type { QueryResult, Iterator, Trino } from "trino-client";
 import { getUser } from "../../../../lib/auth/auth";
 import {
   CreditsService,
@@ -9,10 +9,10 @@ import {
 import { getTableNamesFromSql } from "../../../../lib/parsing";
 import { trackServerEvent } from "../../../../lib/analytics/track";
 import { logger } from "../../../../lib/logger";
+import * as jsonwebtoken from "jsonwebtoken";
+import { AuthUser } from "../../../../lib/types/user";
 
 // Next.js route control
-//export const runtime = "edge"; // 'nodejs' (default) | 'edge'
-//export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const maxDuration = 300;
 
@@ -23,10 +23,10 @@ const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
 async function doQuery(
+  client: Trino,
   query: string,
 ): Promise<[QueryResult, Iterator<QueryResult>]> {
   logger.log(`Running query: ${query}`);
-  const client = getTrinoClient();
   const rows = await client.query(query);
   // We check the first row of the returned data to see if there was an error in the query
   const firstRow = await rows.next();
@@ -34,6 +34,26 @@ async function doQuery(
     throw new TrinoError(firstRow.value.error);
   }
   return [firstRow.value, rows];
+}
+
+function signJWT(user: AuthUser) {
+  const secret = process.env.TRINO_JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT Secret not found: unable to authenticate");
+  }
+  // TODO: make subject use organization name
+  return jsonwebtoken.sign(
+    {
+      userId: user.userId,
+    },
+    secret,
+    {
+      algorithm: "HS256",
+      subject: `jwt-${user.email}`,
+      audience: "consumer-trino",
+      issuer: "opensource-observer",
+    },
+  );
 }
 
 /**
@@ -48,8 +68,6 @@ export async function POST(request: NextRequest) {
   const query = body?.[QUERY];
   const format = body?.[FORMAT] ?? "json";
   const user = await getUser(request);
-  // TODO: add authentication
-  //const auth = request.headers.get("authorization");
 
   // If no query provided, short-circuit
   if (!query) {
@@ -74,13 +92,19 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Insufficient credits", 402);
   }
 
+  const jwt = signJWT(user);
+
   try {
     await trackServerEvent(user, "api_call", {
       type: "sql",
       models: getTableNamesFromSql(query),
       query: query,
+      apiKeyName: user.keyName,
+      host: user.host,
     });
-    const [firstRow, rows] = await doQuery(query);
+    
+    const client = getTrinoClient(jwt);
+    const [firstRow, rows] = await doQuery(client, query);
     const readableStream = mapToReadableStream(firstRow, rows, format);
     return new NextResponse(readableStream, {
       headers: {

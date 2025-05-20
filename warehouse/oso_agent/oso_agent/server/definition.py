@@ -2,7 +2,7 @@ import typing as t
 
 from fastapi import FastAPI
 from llama_index.core.llms import ChatMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
 from ..agent.config import AgentConfig
 from ..utils.config import agent_config_dict
@@ -54,6 +54,22 @@ class ChatRequest(BaseModel):
             )
             for message in self.messages
         ]
+    
+
+class BotConfig(AgentConfig):
+    """Configuration for the bot."""
+
+    model_config = agent_config_dict()
+
+    discord_bot_token: SecretStr = Field(
+        default=SecretStr(""),
+        description="API key for the Arize Phoenix API"
+    )
+
+    discord_channel_id: SecretStr = Field(
+        default=SecretStr(""),
+        description="Channel ID that the bot should respond in"
+    )
 
 class AgentServerConfig(AgentConfig):
     """Configuration for the agent and its components."""
@@ -68,6 +84,7 @@ class AgentServerConfig(AgentConfig):
         default="127.0.1",
         description="Host for the server to run on",
     )
+
 
 AppLifespan = t.Callable[[FastAPI], t.Any]
 

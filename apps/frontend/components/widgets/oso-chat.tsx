@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { userToken } from "../../lib/clients/supabase";
+import { useSupabaseState } from "../hooks/supabase";
 import ReactMarkdown from "react-markdown";
 
 const CHAT_PATH = "/api/v1/chat";
@@ -14,6 +14,8 @@ interface OSOChatProps {
 
 export function OSOChat(props: OSOChatProps) {
   const { className, children } = props;
+  const supabaseState = useSupabaseState();
+  const session = supabaseState?.session;
   const {
     messages,
     input,
@@ -23,9 +25,9 @@ export function OSOChat(props: OSOChatProps) {
     setMessages,
   } = useChat({
     api: CHAT_PATH,
-    headers: userToken
+    headers: session
       ? {
-          Authorization: `Bearer ${userToken}`,
+          Authorization: `Bearer ${session.access_token}`,
         }
       : undefined,
   });

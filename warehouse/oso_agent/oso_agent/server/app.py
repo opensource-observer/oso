@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import typing as t
@@ -9,9 +10,11 @@ from fastapi import FastAPI, Request
 from fastapi.datastructures import State
 from fastapi.responses import PlainTextResponse
 from oso_agent.agent.agent import Agent
+from oso_agent.server.bot import setup_bot
 from oso_agent.server.definition import (
     AgentServerConfig,
     AppLifespanFactory,
+    BotConfig,
     ChatRequest,
 )
 from oso_agent.utils.log import setup_logging
@@ -24,12 +27,21 @@ def default_lifecycle(config: AgentServerConfig):
     @asynccontextmanager
     async def initialize_app(app: FastAPI):
         agent = await Agent.create(config)
+
+        bot_config = BotConfig()
+
+        bot = setup_bot(bot_config, agent)
+
+        await bot.login(bot_config.discord_bot_token.get_secret_value())
+        connect_task = asyncio.create_task(bot.connect())
+
         try:
             yield {
                 "agent": agent,
             }
         finally:
-            pass
+            await bot.close()
+            await connect_task
 
     return initialize_app
 

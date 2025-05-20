@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20250515010121-4fc96de # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20250520182622-d4cdeba # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       ingress:
@@ -20,3 +20,5 @@ spec:
         AGENT_OSO_MCP_URL: "http://production-mcp-app.production-mcp.svc.cluster.local:8000/sse"
         AGENT_ARIZE_PHOENIX_API_KEY: gcp:secretmanager:production-agent-arize-phoenix-api-key/versions/latest
         AGENT_ARIZE_PHOENIX_USE_CLOUD: "1"
+        AGENT_DISCORD_BOT_TOKEN: gcp:secretmanager:production-agent-discord-bot-token/versions/latest
+        AGENT_DISCORD_CHANNEL_ID: gcp:secretmanager:production-agent-discord-channel-id/versions/latest
