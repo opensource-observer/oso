@@ -24,6 +24,10 @@ MODEL (
     "incrementalmustdefinenogapsaudit",
     "incrementalmusthaveforwardonly",
   ),
+  tags (
+    "superchain",
+    "incremental",
+  ),
 );
 
 WITH raw AS (

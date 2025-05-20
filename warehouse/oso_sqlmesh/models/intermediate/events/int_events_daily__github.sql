@@ -17,6 +17,9 @@ MODEL (
       time_column := bucket_day,
       no_gap_date_part := 'day',
     ),
+  ),
+  tags (
+    "incremental"
   )
 );
 

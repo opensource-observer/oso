@@ -16,6 +16,9 @@ MODEL (
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
   ),
+  tags (
+    "incremental"
+  )
 );
 
 /* The intent is to get the _first_ factory deployments as some contracts */ /* deployed via deterministic deployers allows for multiple calls to the */ /* create2 function. */

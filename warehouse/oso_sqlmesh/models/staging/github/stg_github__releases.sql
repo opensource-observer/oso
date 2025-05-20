@@ -16,6 +16,9 @@ MODEL (
       time_column := created_at,
       no_gap_date_part := 'day',
     ),
+  ),
+  tags (
+    "incremental"
   )
 );
 

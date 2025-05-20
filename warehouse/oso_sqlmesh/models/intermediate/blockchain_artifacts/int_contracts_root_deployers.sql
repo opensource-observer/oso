@@ -17,6 +17,11 @@ MODEL (
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
   ),
+  tags (
+    "blockchain",
+    "superchain",
+    "incremental",
+  ),
 );
 
 WITH existing_contracts AS (

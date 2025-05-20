@@ -1,5 +1,6 @@
 import { ApolloWrapper } from "../components/dataprovider/apollo-wrapper";
 import { PostHogProvider } from "../components/dataprovider/posthog-provider";
+import { SupabaseProvider } from "../components/hooks/supabase";
 import { GoogleAnalytics } from "../components/widgets/google-analytics";
 import "./globals.css";
 
@@ -14,9 +15,11 @@ export default function RootLayout({
         <link rel="icon" href="/img/oso-emblem-black.svg" />
       </head>
       <body>
-        <PostHogProvider>
-          <ApolloWrapper>{children}</ApolloWrapper>
-        </PostHogProvider>
+        <SupabaseProvider>
+          <PostHogProvider>
+            <ApolloWrapper>{children}</ApolloWrapper>
+          </PostHogProvider>
+        </SupabaseProvider>
       </body>
       <GoogleAnalytics />
     </html>

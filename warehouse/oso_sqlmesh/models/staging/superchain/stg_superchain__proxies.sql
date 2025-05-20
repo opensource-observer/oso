@@ -26,7 +26,11 @@ MODEL (
   ),
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
-  )
+  ),
+  tags (
+    "superchain",
+    "incremental",
+  ),
 );
 
 @known_proxies(

@@ -20,6 +20,9 @@ MODEL (
       ignore_before := @superchain_audit_start,
       missing_rate_min_threshold := 0.95,
     ),
+  ),
+  tags (
+    "incremental"
   )
 );
 

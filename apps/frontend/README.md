@@ -25,11 +25,16 @@ In order to properly install `supabase`, you'll need to explicitly approve post-
 pnpm approve-builds
 ```
 
-## Log into Supabase
+## Log into Supabase and start the dev server
 
 ```bash
 pnpm supabase login
+pnpm supabase start
 ```
+
+Remember to update your `.env.local` with the generated local Supabase settings.
+We recommend that you **DO NOT** use the production Supabase server locally,
+as tests and migrations can be dangerous/destructive.
 
 ## Run the dev server
 

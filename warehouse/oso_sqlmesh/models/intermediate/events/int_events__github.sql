@@ -19,7 +19,11 @@ MODEL (
       time_column := time,
       no_gap_date_part := 'day',
     ),
-  )
+  ),
+  tags (
+    "github",
+    "incremental",
+  ),
 );
 
 WITH raw_events AS (

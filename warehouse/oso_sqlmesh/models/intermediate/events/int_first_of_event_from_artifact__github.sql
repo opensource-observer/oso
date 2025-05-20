@@ -5,7 +5,10 @@ MODEL (
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
     not_null(columns := (event_type, event_source))
-  )
+  ),
+  tags (
+    "github",
+  ),
 );
 
 SELECT

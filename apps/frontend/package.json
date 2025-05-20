@@ -17,7 +17,7 @@
     "start": "next start",
     "start-debug": "NODE_OPTIONS='--inspect' next dev",
     "supabase:gentypes": "npx supabase gen types typescript --project-id 'dfjsvzdlhmtnsqbfmcpm' --schema public > ./lib/types/supabase.ts && prettier --write ./lib/types/supabase.ts",
-    "test": "jest --ci --passWithNoTests",
+    "test": "dotenv -e .env.local -- jest --ci --passWithNoTests",
     "test:watch": "jest --watch"
   },
   "dependencies": {

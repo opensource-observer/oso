@@ -1,4 +1,5 @@
 import os
+import sys
 
 import dotenv
 from metrics_tools.models import constants
@@ -20,6 +21,10 @@ from sqlmesh.core.config.connection import (
 )
 
 dotenv.load_dotenv()
+
+# SOMETHING broke with the executable path for the sqlmesh package
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CURR_DIR))
 
 config = Config(
     linter=LinterConfig(

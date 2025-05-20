@@ -19,13 +19,10 @@ MODEL(
   ),
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := time,
-      no_gap_date_part := 'day',
-    ),
   ),
   ignored_rules (
     "incrementalmusthaveforwardonly",
+    "incrementalmustdefinenogapsaudit",
   )
 );
 

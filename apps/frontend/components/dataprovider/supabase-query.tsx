@@ -1,6 +1,8 @@
 import React from "react";
 import useSWR from "swr";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseQueryArgs, supabaseQuery } from "../../lib/clients/supabase";
+import { useSupabaseState } from "../hooks/supabase";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import {
   CommonDataProviderProps,
@@ -71,13 +73,20 @@ function SupabaseQuery(props: SupabaseQueryProps) {
   // These props are set in the Plasmic Studio
   const { variableName, tableName, useTestData, testData } = props;
   const key = variableName ?? genKey(props);
+  const supabaseState = useSupabaseState();
   const { data, error, isLoading } = useSWR(key, async () => {
     if (useTestData) {
       return testData;
     } else if (!tableName) {
       return;
+    } else if (!supabaseState) {
+      return console.warn("Supabase not initialized yet");
     }
-    return await supabaseQuery({ ...props, tableName });
+    const supabaseClient = supabaseState.supabaseClient;
+    return await supabaseQuery(supabaseClient as SupabaseClient<any>, {
+      ...props,
+      tableName,
+    });
   });
 
   // Error messages are currently rendered in the component

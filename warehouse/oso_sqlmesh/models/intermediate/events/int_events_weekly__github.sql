@@ -16,7 +16,11 @@ MODEL (
   ),
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
-  )
+  ),
+  tags (
+    "github",
+    "incremental",
+  ),
 );
 
 SELECT

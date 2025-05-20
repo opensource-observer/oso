@@ -1,15 +1,16 @@
-import { BasicAuth, QueryError, Trino } from "trino-client";
-import { TRINO_PASSWORD, TRINO_URL, TRINO_USERNAME } from "../config";
+import { QueryError, Trino } from "trino-client";
+import { TRINO_URL } from "../config";
 
-const TRINO_CLIENT = Trino.create({
-  server: TRINO_URL,
-  catalog: "iceberg",
-  schema: "oso",
-  auth: new BasicAuth(TRINO_USERNAME, TRINO_PASSWORD),
-});
-
-export function getTrinoClient() {
-  return TRINO_CLIENT;
+export function getTrinoClient(jwt: string) {
+  return Trino.create({
+    server: TRINO_URL,
+    catalog: "iceberg",
+    schema: "oso",
+    extraHeaders: {
+      Authorization: `Bearer ${jwt}`,
+      "X-Trino-User": "", // For some reason this lib adds this header by default and this is the only way to remove it
+    },
+  });
 }
 
 export class TrinoError extends Error {
