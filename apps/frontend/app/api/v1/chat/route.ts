@@ -7,6 +7,7 @@ import {
   TransactionType,
 } from "../../../../lib/services/credits";
 import { trackServerEvent } from "../../../../lib/analytics/track";
+import { EVENTS } from "../../../../lib/types/posthog";
 
 export const maxDuration = 60;
 
@@ -22,6 +23,7 @@ const getLatestMessage = (messages: any[]) => {
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
   const prompt = await req.json();
+  await using tracker = trackServerEvent(user);
 
   if (user.role === "anonymous") {
     return NextResponse.json(
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await trackServerEvent(user, "api_call", {
+    tracker.track(EVENTS.API_CALL, {
       type: "chat",
       message: getLatestMessage(prompt.messages),
     });

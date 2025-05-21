@@ -1,60 +1,38 @@
 import { User } from "../types/user";
+import { PostHog } from "posthog-node";
 import { PostHogClient } from "../clients/posthog";
-import { spawn } from "@opensource-observer/utils";
-import { usePostHog } from "posthog-js/react";
-import { useAuth } from "../hooks/useAuth";
-import { useCallback } from "react";
 
-export async function trackServerEvent(
-  user: User,
-  eventName: string,
-  properties: Record<string, any> = {},
-) {
-  if (user.role === "anonymous") {
-    return;
+export class PostHogTracker {
+  private client: PostHog;
+  private user: User;
+
+  constructor(user: User) {
+    this.client = PostHogClient();
+    this.user = user;
   }
 
-  return spawn(
-    (async () => {
-      const posthog = PostHogClient();
-      try {
-        posthog.capture({
-          distinctId: user.userId,
-          event: eventName,
-          properties: {
-            ...properties,
-            apiKeyName: user.keyName,
-            host: user.host,
-            userRole: user.role,
-          },
-        });
-      } finally {
-        await posthog.shutdown();
-      }
-    })(),
-  );
+  track(eventName: string, properties: Record<string, any> = {}) {
+    if (this.user.role === "anonymous") {
+      return;
+    }
+
+    this.client.capture({
+      distinctId: this.user.userId,
+      event: eventName,
+      properties: {
+        ...properties,
+        apiKeyName: this.user.keyName,
+        host: this.user.host,
+        userRole: this.user.role,
+      },
+    });
+  }
+
+  async [Symbol.asyncDispose]() {
+    await this.client.shutdown();
+  }
 }
 
-export function useTrack() {
-  const { user, isAuthenticated } = useAuth();
-  const posthog = usePostHog();
-
-  const trackEvent = useCallback(
-    (eventName: string, properties: Record<string, any> = {}) => {
-      if (isAuthenticated && posthog && user.role !== "anonymous") {
-        posthog.capture(eventName, {
-          distinctId: user.userId,
-          ...properties,
-          apiKeyName: user.keyName,
-          host: user.host,
-          userRole: user.role,
-        });
-        return true;
-      }
-      return false;
-    },
-    [posthog, user, isAuthenticated],
-  );
-
-  return { trackEvent };
+export function trackServerEvent(user: User) {
+  return new PostHogTracker(user);
 }

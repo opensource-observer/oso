@@ -11,6 +11,7 @@ import { trackServerEvent } from "../../../../lib/analytics/track";
 import { logger } from "../../../../lib/logger";
 import * as jsonwebtoken from "jsonwebtoken";
 import { AuthUser } from "../../../../lib/types/user";
+import { EVENTS } from "../../../../lib/types/posthog";
 
 // Next.js route control
 export const revalidate = 0;
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
   const query = body?.[QUERY];
   const format = body?.[FORMAT] ?? "json";
   const user = await getUser(request);
+  await using tracker = trackServerEvent(user);
 
   // If no query provided, short-circuit
   if (!query) {
@@ -95,7 +97,7 @@ export async function POST(request: NextRequest) {
   const jwt = signJWT(user);
 
   try {
-    await trackServerEvent(user, "api_call", {
+    tracker.track(EVENTS.API_CALL, {
       type: "sql",
       models: getTableNamesFromSql(query),
       query: query,

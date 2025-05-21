@@ -56,9 +56,10 @@ class AuthenticatedDataSource extends RemoteGraphQLDataSource {
     const op = opts.incomingRequestContext.operation;
     const modelNames = getModelNames(op);
     const user = opts.context.user;
+    await using tracker = trackServerEvent(user);
 
     if (user && user.role !== "anonymous") {
-      await trackServerEvent(user, EVENTS.API_CALL, {
+      tracker.track(EVENTS.API_CALL, {
         type: "graphql",
         operation: op.operation,
         models: modelNames,
