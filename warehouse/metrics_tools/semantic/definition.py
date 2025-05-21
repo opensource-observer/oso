@@ -1,3 +1,4 @@
+import hashlib
 import typing as t
 from collections.abc import Sequence
 from enum import Enum
@@ -62,6 +63,11 @@ class RegistryDAG:
 
         for model_name in self.topological_sort():
             self.ancestor_depth[model_name] = get_ancestor_depth(model_name)
+
+    def get_ancestor_depth(self, name: str) -> int:
+        if name not in self.ancestor_depth:
+            raise ValueError(f"Model {name} not found in registry")
+        return self.ancestor_depth[name]
 
     def depth_sorted_models(self, models: t.Collection[str], reverse: bool = False):
         """Sorts the models in depth order"""
@@ -194,32 +200,31 @@ class Registry:
 
         self.dag.determine_ancestor_values()
 
-    def join_references(
-        self, from_model: str, to_model: str, initial_ref_name: str = ""
-    ) -> t.List["ModelBoundReference"]:
+    def join_relationships(
+        self, from_model: str, to_model: str, through_attribute: str = ""
+    ) -> t.List["ModelBoundRelationship"]:
         """Returns the join path between two models"""
         from_path, to_path = self.dag.join_paths(from_model, to_model)
 
         def build_join_path(
-            model_path: t.List[str], initial_ref_name: str = ""
-        ) -> t.List[ModelBoundReference]:
-            thru_ref_name = ""
+            model_path: t.List[str], via_attribute: str = ""
+        ) -> t.List[ModelBoundRelationship]:
             prev_model: Model | None = None
-            join_path: t.List[ModelBoundReference] = []
+            join_path: t.List[ModelBoundRelationship] = []
             for model_name in model_path:
                 if prev_model is None:
-                    thru_ref_name = initial_ref_name
+                    via_attribute = via_attribute
                     prev_model = self.models[model_name]
                     continue
 
-                reference = prev_model.get_reference(
-                    name=thru_ref_name, model_ref=model_name
+                relationship = prev_model.get_relationship(
+                    name=via_attribute, model_ref=model_name
                 )
                 prev_model = self.models[model_name]
-                join_path.append(reference)
+                join_path.append(relationship)
             return join_path
 
-        from_path_joins = build_join_path(from_path, initial_ref_name)
+        from_path_joins = build_join_path(from_path, through_attribute)
         to_path_joins = build_join_path(to_path)
 
         return from_path_joins + to_path_joins
@@ -247,7 +252,7 @@ class Dimension(BaseModel):
     query: t.Optional[str | exp.Expression | t.Callable[..., exp.Expression]] = None
 
 
-class ReferenceType(str, Enum):
+class RelationshipType(str, Enum):
     """The type of reference to use for the model.
 
     This is used to determine how to join the models together.
@@ -258,22 +263,22 @@ class ReferenceType(str, Enum):
     RIGHT = "right"
 
 
-class Reference(BaseModel):
+class Relationship(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = ""
     model_ref: str
-    type: ReferenceType
+    type: RelationshipType
     via: t.Optional[str] = None
     self_key_column: t.Optional[str] = None
     foreign_key_column: t.Optional[str] = None
 
 
-class ModelBoundReference(BaseModel):
+class ModelBoundRelationship(BaseModel):
     model: str
     name: str = ""
     model_ref: str
-    type: ReferenceType
+    type: RelationshipType
     via: t.Optional[str] = None
     self_key_column: t.Optional[str] = None
     foreign_key_column: t.Optional[str] = None
@@ -315,7 +320,7 @@ class Model(BaseModel):
 
     dimensions: t.List[Dimension] = Field(default_factory=lambda: [])
     metrics: t.List[Metric] = Field(default_factory=lambda: [])
-    references: t.List[Reference] = Field(default_factory=lambda: [])
+    references: t.List[Relationship] = Field(default_factory=lambda: [])
 
     @model_validator(mode="after")
     def build_reference_lookup(self):
@@ -323,7 +328,7 @@ class Model(BaseModel):
         self._dimension_lookup: t.Dict[str, Dimension] = {
             dimension.name: dimension for dimension in self.dimensions
         }
-        self._model_ref_lookup: t.Dict[str, t.List[Reference]] = {}
+        self._model_ref_lookup: t.Dict[str, t.List[Relationship]] = {}
         for reference in self.references:
             if reference.model_ref not in self._model_ref_lookup:
                 self._model_ref_lookup[reference.model_ref] = []
@@ -342,7 +347,9 @@ class Model(BaseModel):
         """Returns the table name for the model"""
         return self.name
 
-    def get_reference(self, *, model_ref: str, name: str = "") -> "ModelBoundReference":
+    def get_relationship(
+        self, *, model_ref: str, name: str = ""
+    ) -> "ModelBoundRelationship":
         """Returns the reference with the given name or model_ref"""
         if name == "" and model_ref == "":
             raise ValueError("Must provide either name or model_ref to get reference")
@@ -354,7 +361,7 @@ class Model(BaseModel):
                         raise ValueError(
                             f"Reference {name} does not match model_ref {model_ref}"
                         )
-                    return ModelBoundReference(
+                    return ModelBoundRelationship(
                         model=self.name,
                         name=reference.name,
                         model_ref=reference.model_ref,
@@ -366,12 +373,12 @@ class Model(BaseModel):
 
         for reference in self.references:
             references = self._model_ref_lookup[reference.model_ref]
-            if len(references) > 1: 
+            if len(references) > 1:
                 raise ModelHasAmbiguousJoinPath(
                     f"Reference {model_ref} is ambiguous in model {self.name}"
                 )
             if reference.model_ref == model_ref:
-                return ModelBoundReference(
+                return ModelBoundRelationship(
                     model=self.name,
                     name=reference.name,
                     model_ref=reference.model_ref,
@@ -395,11 +402,13 @@ class ModelHasNoJoinPath(Exception):
 class ModelHasAmbiguousJoinPath(Exception):
     pass
 
+
 class Join(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     table: str
     via: str | None = None
+
 
 class QueryColumnDAG:
     def __init__(self):
@@ -425,6 +434,111 @@ class QueryColumnDAG:
             self._columns_graph[f"{column.table}.{column.name}"] = node
             prev = column
 
+
+class AttributeReference(BaseModel):
+    ref: list[str]
+
+    @model_validator(mode="after")
+    def process_ref(self):
+        self._columns = [exp.to_column(r) for r in self.ref]
+        return self
+
+    @classmethod
+    def from_string(cls, ref: str) -> "AttributeReference":
+        return cls(ref=ref.split("->"))
+
+    def traverser(self):
+        return ReferenceTraverser(self)
+
+    @property
+    def base_model(self):
+        return self._columns[0].table
+
+    @property
+    def columns(self):
+        return self._columns
+
+    @property
+    def as_column(self):
+        traverser = self.traverser()
+        while traverser.next():
+            pass
+        return traverser.current_column
+
+
+class ReferenceTraverser:
+    """AttributeReferences are used to reference a dimension or metric in a
+    model.
+
+    Because some models may reference another model more than once. The way this
+    would be distinguished would be through different foreign key columns.
+    Reference traversal, tracks the joins through these columns. We do this by
+    enabling joins through a specific column.
+
+    The following table shows how a traverser works, given a reference
+    `a.b->c.d->e.f`
+
+    Index             | 0      | 1               | 2                         |
+    --------------------------------------------------------------------------
+    Through Column    | a.b    | c.d             | e.f                       |
+    Alias for table g | md5(g) | md5(md5(a.b)+g) | md5(md5(md5(a.b)+c.d)+g)  |
+
+    This allows us to ensure that we don't duplicate joins by ensuring that each
+    level through a given column reference uses the same table alias.
+
+    """
+
+    def __init__(self, reference: AttributeReference, initial_value=""):
+        self.reference = reference
+        self.index = 0
+        self.alias_stack: list[str] = [initial_value]
+
+    def next(self):
+        if self.index >= len(self.reference.columns) - 1:
+            return False
+        self.alias_stack.append(
+            self._generate_alias(
+                self.alias_stack[-1],
+                self.current_model_name,
+                self.current_column.name,
+            )
+        )
+        self.index += 1
+        return True
+
+    def prev(self):
+        if self.index == 0:
+            return False
+        self.alias_stack.pop()
+        self.index -= 1
+        return True
+
+    def _generate_alias(self, prev_alias: str, current_table: str, column: str = ""):
+        m = hashlib.md5()
+        m.update(prev_alias.encode("utf-8"))
+        m.update(current_table.encode("utf-8"))
+        if column:
+            m.update(column.encode("utf-8"))
+        return f"{current_table}_{m.hexdigest()[:8]}"
+
+    def alias(self, model_name: str):
+        """Creates an alias at the given traverser position"""
+        return self._generate_alias(self.alias_stack[-1], model_name)
+
+    @property
+    def current_table_alias(self):
+        return self.alias(self.current_model_name)
+
+    @property
+    def current_model_name(self):
+        return self.reference.columns[self.index].table
+
+    @property
+    def current_column(self):
+        return exp.Column(
+            table=exp.to_identifier(self.current_table_alias),
+            this=exp.to_identifier(self.reference.columns[self.index].name),
+        )
 
 
 class SemanticQuery(BaseModel):
@@ -460,7 +574,6 @@ class SemanticQuery(BaseModel):
         self._vias = vias_map
 
         return self
-
 
     def sql(self, registry: Registry):
         # multiple vias on the same model mean we need to do some ctes
@@ -501,35 +614,35 @@ class SemanticQuery(BaseModel):
         query = exp.select(*select_columns).from_(base_table)
         if len(sorted_tables) > 1:
             for table in sorted_tables[1:]:
-                references = registry.join_references(base_table, table)
+                relationships = registry.join_relationships(base_table, table)
                 join_from = registry.get_model(base_table)
-                for reference in references:
-                    referenced_model = registry.get_model(reference.model_ref)
+                for relationship in relationships:
+                    referenced_model = registry.get_model(relationship.model_ref)
 
-                    if reference.model_ref in already_joined_tables:
+                    if relationship.model_ref in already_joined_tables:
                         continue
 
-                    if reference.via:
+                    if relationship.via:
                         query = query.join(
-                            reference.via,
-                            on=f"{join_from.table}.{join_from.primary_key} = {reference.via}.{reference.self_key_column}",
+                            relationship.via,
+                            on=f"{join_from.table}.{join_from.primary_key} = {relationship.via}.{relationship.self_key_column}",
                             join_type="inner",
                         )
                         query = query.join(
                             referenced_model.table,
-                            on=f"{reference.via}.{reference.foreign_key_column} = {referenced_model.table}.{referenced_model.primary_key}",
+                            on=f"{relationship.via}.{relationship.foreign_key_column} = {referenced_model.table}.{referenced_model.primary_key}",
                             join_type="inner",
                         )
                     else:
                         primary_key = referenced_model.primary_key
                         query = query.join(
                             referenced_model.table,
-                            on=f"{join_from.table}.{reference.foreign_key_column} = {referenced_model.table}.{primary_key}",
+                            on=f"{join_from.table}.{relationship.foreign_key_column} = {referenced_model.table}.{primary_key}",
                             join_type="inner",
                         )
 
                     join_from = referenced_model
-                    already_joined_tables.add(reference.model_ref)
+                    already_joined_tables.add(relationship.model_ref)
         query = query.group_by(*select_columns)
         return query
 

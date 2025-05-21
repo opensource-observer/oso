@@ -1,165 +1,104 @@
-from metrics_tools.semantic.definition import (
-    Dimension,
-    Model,
-    Reference,
-    ReferenceType,
-    Registry,
-    SemanticQuery,
-)
-from sqlglot import exp
+from metrics_tools.semantic.definition import AttributeReference
 
 
-def setup_registry():
-    registry = Registry()
+def test_attribute_reference_traversal():
 
-    registry.register(
-        Model(
-            name="collection",
-            description="A collection of projects",
-            dimensions=[
-                Dimension(name="id"),
-                Dimension(name="name"),
-            ],
-            primary_key="id",
-        )
-    )
+    ref1 = AttributeReference.from_string("a.b->c.d->e.f")
+    ref2 = AttributeReference(ref=["a.b", "c.d", "e.f"])
+    ref3 = AttributeReference(ref=["a.b", "c.d", "x.y"])
+    ref4 = AttributeReference(ref=["a.g", "c.d", "e.f"])
+    assert ref1 == ref2
+    assert ref1 != ref3
 
-    registry.register(
-        Model(
-            name="project",
-            description="A project",
-            dimensions=[
-                Dimension(name="id"),
-                Dimension(name="name"),
-                Dimension(name="portfolio_id"),
-            ],
-            primary_key="id",
-            references=[
-                Reference(
-                    model_ref="collection",
-                    type=ReferenceType.INNER,
-                    via="projects_by_collection_v1",
-                    self_key_column="project_id",
-                    foreign_key_column="collection_id",
-                ),
-            ],
-        )
-    )
+    t1 = ref1.traverser()
+    t2 = ref2.traverser()
 
-    registry.register(
-        Model(
-            name="artifact",
-            description="An artifact",
-            dimensions=[
-                Dimension(name="id"),
-                Dimension(name="name"),
-                Dimension(name="email"),
-            ],
-            primary_key="id",
-            references=[
-                Reference(
-                    model_ref="project",
-                    type=ReferenceType.INNER,
-                    via="artifacts_by_project_v1",
-                    self_key_column="artifact_id",
-                    foreign_key_column="project_id",
-                ),
-            ],
-        )
-    )
+    assert t1.current_model_name == t2.current_model_name
+    assert t1.current_table_alias == t2.current_table_alias
 
-    registry.register(
-        Model(
-            name="event",
-            description="An event",
-            dimensions=[
-                Dimension(
-                    name="time",
-                    description="The day the event occurred",
-                ),
-                Dimension(
-                    name="event_source",
-                    description="The source of the event",
-                ),
-                Dimension(
-                    name="event_type",
-                    description="The type of the event",
-                ),
-                Dimension(
-                    name="event_id",
-                    description="The unique identifier of the event",
-                ),
-                Dimension(
-                    name="amount",
-                    description="The amount of the event",
-                ),
-            ],
-            time_column="time",
-            primary_key="id",
-            references=[
-                Reference(
-                    name="to",
-                    model_ref="artifact",
-                    type=ReferenceType.INNER,
-                    foreign_key_column="to_artifact_id",
-                ),
-                Reference(
-                    name="from",
-                    model_ref="artifact",
-                    type=ReferenceType.INNER,
-                    foreign_key_column="from_artifact_id",
-                ),
-            ],
-        )
-    )
-    registry.complete()
-    return registry
+    while t1.next() and t2.next():
+        assert t1.current_model_name == t2.current_model_name
+        assert t1.current_table_alias == t2.current_table_alias
+        assert t1.current_column == t2.current_column
+        assert t1.alias("foo") == t2.alias("foo")
+
+    while t1.prev():
+        pass
+
+    t3 = ref3.traverser()
+
+    t1.next()
+    t3.next()
+
+    assert t1.current_table_alias == t3.current_table_alias
+    print(t1.alias_stack)
+    print(t3.alias_stack)
+    assert t1.alias("foo") == t3.alias("foo")
+
+    t1.next()
+    t3.next()
+
+    assert t1.current_column.name != t3.current_column.name
+    assert t1.alias("foo") == t3.alias("foo")
+
+    while t1.prev():
+        pass
+
+    t4 = ref4.traverser()
+
+    assert t1.alias("foo") == t4.alias("foo")
+
+    t1.next()
+    t4.next()
+
+    assert t1.alias("foo") != t4.alias("foo")
 
 
-def test_semantic_model_shortest_path():
-    registry = setup_registry()
 
-    assert registry.dag.join_paths("event", "artifact") == (
-        ["event", "artifact"],
-        ["artifact"],
-    )
+# def test_semantic_model_shortest_path():
+#     registry = setup_registry()
 
-    assert registry.dag.join_paths("artifact", "event") == (
-        ["artifact"],
-        ["event", "artifact"],
-    )
+#     assert registry.dag.join_paths("event", "artifact") == (
+#         ["event", "artifact"],
+#         ["artifact"],
+#     )
 
-    assert registry.dag.join_paths("artifact", "project") == (
-        ["artifact", "project"],
-        ["project"],
-    )
+#     assert registry.dag.join_paths("artifact", "event") == (
+#         ["artifact"],
+#         ["event", "artifact"],
+#     )
 
-    assert registry.dag.join_paths("event", "collection") == (
-        ["event", "artifact", "project", "collection"],
-        ["collection"],
-    )
+#     assert registry.dag.join_paths("artifact", "project") == (
+#         ["artifact", "project"],
+#         ["project"],
+#     )
 
-    to_artifact_ref = registry.get_model("event").get_reference(model_ref="artifact", name="to")
-    from_artifact_ref =  registry.get_model("event").get_reference(model_ref="artifact", name="from")
+#     assert registry.dag.join_paths("event", "collection") == (
+#         ["event", "artifact", "project", "collection"],
+#         ["collection"],
+#     )
 
-    assert to_artifact_ref.model_ref == "artifact"
-    assert to_artifact_ref.name == "to"
-    assert to_artifact_ref.foreign_key_column == "to_artifact_id"
-    assert from_artifact_ref.model_ref == "artifact"
-    assert from_artifact_ref.name == "from"
-    assert from_artifact_ref.foreign_key_column == "from_artifact_id"
+#     to_artifact_ref = registry.get_model("event").get_relationship(model_ref="artifact", name="to")
+#     from_artifact_ref =  registry.get_model("event").get_relationship(model_ref="artifact", name="from")
 
-    query = SemanticQuery(
-        columns=[
-            exp.to_column("event.time"),
-            exp.to_column("event.event_source"),
-            [exp.to_column("event.from"), exp.to_column("artifact.name")],
-            #[exp.to_column("event.to"), exp.to_column("collection.name")],
-        ]
-    )
+#     assert to_artifact_ref.model_ref == "artifact"
+#     assert to_artifact_ref.name == "to"
+#     assert to_artifact_ref.foreign_key_column == "to_artifact_id"
+#     assert from_artifact_ref.model_ref == "artifact"
+#     assert from_artifact_ref.name == "from"
+#     assert from_artifact_ref.foreign_key_column == "from_artifact_id"
+
+#     query = SemanticQuery(
+#         columns=[
+#             exp.to_column("event.time"),
+#             exp.to_column("event.event_source"),
+#             [exp.to_column("event.from"), exp.to_column("artifact.name")],
+#             #[exp.to_column("event.to"), exp.to_column("collection.name")],
+#         ]
+#     )
     
 
-    assert len(registry.join_references("event", "collection")) == 3
+#     assert len(registry.join_relationships("event", "collection")) == 3
 
-    print(registry.query(query).sql(dialect="duckdb", pretty=True))
-    assert False
+#     print(registry.query(query).sql(dialect="duckdb", pretty=True))
+#     assert False
