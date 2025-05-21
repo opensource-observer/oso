@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock
 
 import pytest
-from metrics_tools.compute.cache import CacheExportManager, FakeExportAdapter
-from metrics_tools.compute.types import (
+from metrics_service.cache import CacheExportManager, FakeExportAdapter
+from metrics_service.types import (
     ColumnsDefinition,
     ExportReference,
     ExportType,

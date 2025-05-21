@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 import duckdb
 from google.cloud import storage
-from metrics_tools.compute.types import (
+from metrics_service.types import (
     ColumnsDefinition,
     ExportReference,
     ExportType,

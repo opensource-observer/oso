@@ -9,8 +9,8 @@ import uuid
 from datetime import datetime
 
 from dask.distributed import CancelledError
-from metrics_tools.compute.result import DBImportAdapter
-from metrics_tools.compute.worker import execute_duckdb_load
+from metrics_service.result import DBImportAdapter
+from metrics_service.worker import execute_duckdb_load
 from metrics_tools.runner import FakeEngineAdapter, MetricsRunner
 from pyee.asyncio import AsyncIOEventEmitter
 

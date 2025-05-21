@@ -15,7 +15,7 @@ metadata:
 spec:
   chart:
     spec:
-      chart: ./ops/helm-charts/metrics-calculation-service
+      chart: ./ops/helm-charts/metrics-service
       sourceRef:
         kind: GitRepository
         name: flux-system
