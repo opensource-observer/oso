@@ -1,8 +1,8 @@
 import _ from "lodash";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { ensure } from "@opensource-observer/utils";
-import { Database, Tables } from "../types/supabase";
-import { MissingDataError, AuthError } from "../types/errors";
+import { Database, Tables } from "../../types/supabase";
+import { MissingDataError, AuthError } from "../../types/errors";
 
 /**
  * OsoAppClient is the client library for the OSO app.

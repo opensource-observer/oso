@@ -1,7 +1,7 @@
 "use client";
 
 import { useSupabaseState } from "./supabase";
-import { OsoAppClient } from "../../lib/clients/oso-app";
+import { OsoAppClient } from "../../lib/clients/oso-app/oso-app";
 
 function useOsoAppClient() {
   const supabaseState = useSupabaseState();
