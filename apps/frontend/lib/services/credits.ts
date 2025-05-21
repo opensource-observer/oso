@@ -1,6 +1,9 @@
 import { createNormalSupabaseClient } from "../clients/supabase";
 import { logger } from "../logger";
-import { User } from "../types/user";
+import { AnonUser, User } from "../types/user";
+
+// TODO(jabolo): Disable this once we transition to the new credits system
+const CREDITS_PREVIEW_MODE = true;
 
 export enum TransactionType {
   SQL_QUERY = "sql_query",
@@ -34,8 +37,12 @@ const COST_PER_API_CALL = 1;
 
 const supabaseClient = createNormalSupabaseClient();
 
-export const CreditsService = {
-  async getUserCredits(userId: string): Promise<UserCredits | null> {
+export class CreditsService {
+  static isAnonymousUser(user: User): user is AnonUser {
+    return user.role === "anonymous";
+  }
+
+  static async getUserCredits(userId: string): Promise<UserCredits | null> {
     const { data, error } = await supabaseClient
       .from("user_credits")
       .select("*")
@@ -48,9 +55,9 @@ export const CreditsService = {
     }
 
     return data;
-  },
+  }
 
-  async getCreditTransactions(
+  static async getCreditTransactions(
     userId: string,
     limit = 50,
     offset = 0,
@@ -68,16 +75,61 @@ export const CreditsService = {
     }
 
     return data || [];
-  },
+  }
 
-  async checkAndDeductCredits(
+  static async recordPreviewUsage(
     user: User,
     transactionType: TransactionType,
     apiEndpoint?: string,
     metadata?: Record<string, any>,
   ): Promise<boolean> {
-    if (user.role === "anonymous") {
+    try {
+      await supabaseClient.from("credit_transactions").insert({
+        user_id: user.role === "anonymous" ? user.role : user.userId,
+        amount: 0,
+        transaction_type: `${transactionType}_preview`,
+        api_endpoint: apiEndpoint,
+        metadata: {
+          ...metadata,
+          preview_mode: true,
+          would_cost: COST_PER_API_CALL,
+        },
+      });
+
+      if (CreditsService.isAnonymousUser(user)) {
+        logger.log(
+          `Preview credit usage tracked for anonymous user on ${transactionType} at ${apiEndpoint}`,
+        );
+      } else {
+        logger.log(
+          `Preview credit usage tracked for user ${user.userId} on ${transactionType} at ${apiEndpoint}`,
+        );
+      }
+
+      return true;
+    } catch (error) {
+      logger.error("Error logging preview transaction:", error);
+      return true;
+    }
+  }
+
+  static async checkAndDeductCredits(
+    user: User,
+    transactionType: TransactionType,
+    apiEndpoint?: string,
+    metadata?: Record<string, any>,
+  ): Promise<boolean> {
+    if (CreditsService.isAnonymousUser(user)) {
       return false;
+    }
+
+    if (CREDITS_PREVIEW_MODE) {
+      return this.recordPreviewUsage(
+        user,
+        transactionType,
+        apiEndpoint,
+        metadata,
+      );
     }
 
     const { data, error } = await supabaseClient.rpc("deduct_credits", {
@@ -94,5 +146,5 @@ export const CreditsService = {
     }
 
     return data;
-  },
-};
+  }
+}
