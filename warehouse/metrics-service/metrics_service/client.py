@@ -9,7 +9,7 @@ from datetime import datetime
 from urllib.parse import urljoin
 
 import httpx
-from metrics_tools.compute.types import (
+from metrics_service.types import (
     ClusterStartRequest,
     ClusterStatus,
     EmptyResponse,

@@ -8,10 +8,10 @@ from datetime import datetime
 
 import click
 import requests
-from metrics_tools.compute.client import Client
+from metrics_service.client import Client
+from oso_core.mesh.definition import MetricModelDefinition
 from pydantic_core import to_jsonable_python
 
-from ..definition import MetricModelDefinition
 from .types import (
     ClusterStartRequest,
     ColumnsDefinition,

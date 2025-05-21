@@ -12,7 +12,7 @@ import gcsfs
 import polars as pl
 from dask.distributed import Worker, WorkerPlugin, get_worker
 from google.cloud import storage
-from metrics_tools.compute.types import ExportReference, ExportType
+from metrics_service.types import ExportReference, ExportType
 from metrics_tools.utils.logging import setup_module_logging
 from sqlglot import exp
 

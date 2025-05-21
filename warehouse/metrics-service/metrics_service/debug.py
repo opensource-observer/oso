@@ -3,11 +3,8 @@
 import asyncio
 import logging
 
-from metrics_tools.compute.cluster import (
-    KubeClusterFactory,
-    make_new_cluster_with_defaults,
-)
-from metrics_tools.compute.types import AppConfig
+from metrics_service.cluster import KubeClusterFactory, make_new_cluster_with_defaults
+from metrics_service.types import AppConfig
 
 logger = logging.getLogger(__name__)
 
