@@ -288,6 +288,16 @@ export type Database = {
         Args: { event: Json };
         Returns: Json;
       };
+      preview_deduct_credits: {
+        Args: {
+          p_user_id: string;
+          p_amount: number;
+          p_transaction_type: string;
+          p_api_endpoint?: string;
+          p_metadata?: Json;
+        };
+        Returns: boolean;
+      };
     };
     Enums: {
       [_ in never]: never;

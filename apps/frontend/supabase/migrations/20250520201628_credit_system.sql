@@ -112,6 +112,52 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+CREATE OR REPLACE FUNCTION public.preview_deduct_credits(
+  p_user_id UUID,
+  p_amount INTEGER,
+  p_transaction_type TEXT,
+  p_api_endpoint TEXT DEFAULT NULL,
+  p_metadata JSONB DEFAULT NULL
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  current_balance INTEGER;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.user_credits WHERE user_id = p_user_id) THEN
+    INSERT INTO public.user_credits (user_id, credits_balance)
+    VALUES (p_user_id, 0);
+    current_balance := 0;
+  ELSE
+    SELECT credits_balance INTO current_balance
+    FROM public.user_credits
+    WHERE user_id = p_user_id
+    FOR UPDATE;
+  END IF;
+  
+  UPDATE public.user_credits
+  SET 
+    credits_balance = credits_balance - p_amount,
+    updated_at = NOW()
+  WHERE user_id = p_user_id;
+  
+  INSERT INTO public.credit_transactions (
+    user_id, 
+    amount, 
+    transaction_type, 
+    api_endpoint, 
+    metadata
+  ) VALUES (
+    p_user_id, 
+    -p_amount, 
+    p_transaction_type || '_preview', 
+    p_api_endpoint, 
+    jsonb_build_object('preview_mode', true) || COALESCE(p_metadata, '{}'::jsonb)
+  );
+  
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 CREATE OR REPLACE FUNCTION public.add_credits(
   p_user_id UUID,
   p_amount INTEGER,

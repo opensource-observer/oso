@@ -1,6 +1,7 @@
 import { createNormalSupabaseClient } from "../clients/supabase";
 import { logger } from "../logger";
-import { AnonUser, User } from "../types/user";
+import type { AnonUser, User } from "../types/user";
+import type { Json } from "../types/supabase";
 
 // TODO(jabolo): Disable this once we transition to the new credits system
 const CREDITS_PREVIEW_MODE = true;
@@ -12,8 +13,6 @@ export enum TransactionType {
   ADMIN_GRANT = "admin_grant",
   PURCHASE = "purchase",
 }
-
-import { Json } from "../types/supabase";
 
 export interface CreditTransaction {
   id: string;
@@ -77,42 +76,6 @@ export class CreditsService {
     return data || [];
   }
 
-  static async recordPreviewUsage(
-    user: User,
-    transactionType: TransactionType,
-    apiEndpoint?: string,
-    metadata?: Record<string, any>,
-  ): Promise<boolean> {
-    try {
-      await supabaseClient.from("credit_transactions").insert({
-        user_id: user.role === "anonymous" ? user.role : user.userId,
-        amount: 0,
-        transaction_type: `${transactionType}_preview`,
-        api_endpoint: apiEndpoint,
-        metadata: {
-          ...metadata,
-          preview_mode: true,
-          would_cost: COST_PER_API_CALL,
-        },
-      });
-
-      if (CreditsService.isAnonymousUser(user)) {
-        logger.log(
-          `Preview credit usage tracked for anonymous user on ${transactionType} at ${apiEndpoint}`,
-        );
-      } else {
-        logger.log(
-          `Preview credit usage tracked for user ${user.userId} on ${transactionType} at ${apiEndpoint}`,
-        );
-      }
-
-      return true;
-    } catch (error) {
-      logger.error("Error logging preview transaction:", error);
-      return true;
-    }
-  }
-
   static async checkAndDeductCredits(
     user: User,
     transactionType: TransactionType,
@@ -123,16 +86,11 @@ export class CreditsService {
       return false;
     }
 
-    if (CREDITS_PREVIEW_MODE) {
-      return this.recordPreviewUsage(
-        user,
-        transactionType,
-        apiEndpoint,
-        metadata,
-      );
-    }
+    const rpcFunction = CREDITS_PREVIEW_MODE
+      ? "preview_deduct_credits"
+      : "deduct_credits";
 
-    const { data, error } = await supabaseClient.rpc("deduct_credits", {
+    const { data, error } = await supabaseClient.rpc(rpcFunction, {
       p_user_id: user.userId,
       p_amount: COST_PER_API_CALL,
       p_transaction_type: transactionType,
@@ -141,8 +99,17 @@ export class CreditsService {
     });
 
     if (error) {
-      logger.error("Error deducting credits:", error);
+      logger.error(
+        `Error ${CREDITS_PREVIEW_MODE ? "previewing" : "deducting"} credits:`,
+        error,
+      );
       return false;
+    }
+
+    if (CREDITS_PREVIEW_MODE) {
+      logger.log(
+        `Preview credit usage tracked for user ${user.userId} on ${transactionType} at ${apiEndpoint}`,
+      );
     }
 
     return data;
