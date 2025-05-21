@@ -3,11 +3,11 @@ import typing as t
 from datetime import datetime
 
 import pytest
-from metrics_tools.compute.cache import CacheExportManager, FakeExportAdapter
-from metrics_tools.compute.cluster import ClusterManager, LocalClusterFactory
-from metrics_tools.compute.result import DummyImportAdapter
-from metrics_tools.compute.service import MetricsCalculationService
-from metrics_tools.compute.types import (
+from metrics_service.cache import CacheExportManager, FakeExportAdapter
+from metrics_service.cluster import ClusterManager, LocalClusterFactory
+from metrics_service.result import DummyImportAdapter
+from metrics_service.service import MetricsCalculationService
+from metrics_service.types import (
     ClusterStartRequest,
     ColumnsDefinition,
     ExportReference,

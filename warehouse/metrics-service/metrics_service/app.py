@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.datastructures import State
 from fastapi.websockets import WebSocketState
-from metrics_tools.compute.result import (
+from metrics_service.result import (
     DummyImportAdapter,
     FakeLocalImportAdapter,
     TrinoImportAdapter,

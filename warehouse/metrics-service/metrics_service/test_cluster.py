@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 from dask.distributed import Client
-from metrics_tools.compute.cluster import (
+from metrics_service.cluster import (
     ClusterFactory,
     ClusterManager,
     ClusterProxy,

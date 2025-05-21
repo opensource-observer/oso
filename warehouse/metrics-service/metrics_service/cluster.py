@@ -11,7 +11,7 @@ from dask.distributed import Client
 from dask.distributed import Future as DaskFuture
 from dask.distributed import LocalCluster
 from dask_kubernetes.operator import KubeCluster, make_cluster_spec
-from metrics_tools.compute.types import ClusterConfig, ClusterStatus
+from metrics_service.types import ClusterConfig, ClusterStatus
 from pyee.asyncio import AsyncIOEventEmitter
 
 from .worker import (
