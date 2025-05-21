@@ -1,7 +1,7 @@
 [project]
 name = "metrics-service"
 version = "0.1.0"
-description = "Metrics compute service"
+description = "Metrics calculation service"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "OSO Team", email = "opensource-observer@googlegroups.com" }]

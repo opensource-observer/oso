@@ -6,7 +6,7 @@ resources:
   - ./redis
   - ./trino
   - ./consumer-trino
-  #- ./metrics-calculation-service
+  #- ./metrics-service
   - ./nessie
   - ./nessie-cloudsql-proxy
   - ./sqlmesh-cloudsql-proxy

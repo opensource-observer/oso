@@ -1,3 +1,3 @@
 # metrics-service
 
-Metrics compute service for calculating rolling windows with high frequency.
+Metrics calculation service for calculating rolling windows with high frequency.
