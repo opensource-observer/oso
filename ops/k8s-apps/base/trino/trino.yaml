@@ -26,7 +26,7 @@ spec:
   chart:
     spec:
       chart: trino
-      version: "1.38.0"
+      version: "1.39.0"
       sourceRef:
         kind: HelmRepository
         name: trino
@@ -61,6 +61,14 @@ spec:
         - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
       
     worker:
+      gracefulShutdown:
+        enabled: true
+        # Try to keep this low for spot preemption
+        gracePeriodSeconds: 15
+      # This number is likely ignored by gcp during spot preemption but if this
+      # is happening during horizontal scaling it provides a buffer for the
+      # grace period
+      terminationGracePeriodSeconds: 60
       additionalVolumes:
         - name: cluster-self-signed-bundle
           configMap:
