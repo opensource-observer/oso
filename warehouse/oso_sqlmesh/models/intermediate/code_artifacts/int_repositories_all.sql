@@ -9,7 +9,13 @@ MODEL (
   cron '@daily',
   dialect trino,
   partitioned_by DAY("first_commit_time"),
-  grain (first_commit_time, artifact_source_id, artifact_id),
+  grain (
+    artifact_id,
+    artifact_source_id,
+    artifact_namespace,
+    artifact_name,
+    first_commit_time
+  ),
   columns (
     artifact_id TEXT,
     artifact_source_id TEXT,
@@ -27,66 +33,45 @@ MODEL (
   )
 );
 
-WITH new_commits AS (
+WITH new_events AS (
   SELECT
-    to_artifact_id AS artifact_id,
-    to_artifact_source_id AS artifact_source_id,
-    to_artifact_namespace AS artifact_namespace,
-    to_artifact_name AS artifact_name,
-    time
-  FROM oso.int_events__github
+      to_artifact_id AS artifact_id,
+      to_artifact_source_id AS artifact_source_id,
+      to_artifact_namespace AS artifact_namespace,
+      to_artifact_name AS artifact_name,
+      time AS commit_time
+  FROM  oso.int_events__github
   WHERE event_type = 'COMMIT_CODE'
     AND time BETWEEN @start_dt AND @end_dt
 ),
 
-existing_repos AS (
+aggregated AS (
   SELECT
-    artifact_id,
-    artifact_source_id,
-    artifact_namespace,
-    artifact_name,
-    first_commit_time,
-    last_commit_time
-  FROM @this_model
-  WHERE first_commit_time < @start_dt
-),
-
-combined_data AS (
-  SELECT
-    artifact_id,
-    artifact_source_id,
-    artifact_namespace,
-    artifact_name,
-    time
-  FROM new_commits
-  
-  UNION ALL
-  
-  SELECT
-    artifact_id,
-    artifact_source_id,
-    artifact_namespace,
-    artifact_name,
-    first_commit_time AS time
-  FROM existing_repos
-  
-  UNION ALL
-  
-  SELECT
-    artifact_id,
-    artifact_source_id,
-    artifact_namespace,
-    artifact_name,
-    last_commit_time AS time
-  FROM existing_repos
+    ne.artifact_id,
+    ne.artifact_source_id,
+    ne.artifact_namespace,
+    ne.artifact_name,
+    LEAST(
+      MIN(ne.commit_time),
+      COALESCE(MIN(hist.first_commit_time), MIN(ne.commit_time))
+    ) AS first_commit_time,
+    MAX(ne.commit_time) AS last_commit_time
+  FROM new_events AS ne
+  LEFT JOIN @this_model AS hist
+    ON hist.artifact_source_id = ne.artifact_source_id
+    AND hist.artifact_id = ne.artifact_id
+  GROUP BY
+    ne.artifact_id,
+    ne.artifact_source_id,
+    ne.artifact_namespace,
+    ne.artifact_name
 )
 
 SELECT
-  artifact_id,
-  artifact_source_id,
-  artifact_namespace,
-  artifact_name,
-  MIN(time) AS first_commit_time,
-  MAX(time) AS last_commit_time
-FROM combined_data
-GROUP BY 1, 2, 3, 4
+  artifact_id::TEXT,
+  artifact_source_id::TEXT,
+  artifact_namespace::TEXT,
+  artifact_name::TEXT,
+  first_commit_time::TIMESTAMP,
+  last_commit_time::TIMESTAMP
+FROM aggregated
