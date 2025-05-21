@@ -122,6 +122,53 @@ export type Database = {
         };
         Relationships: [];
       };
+      dynamic_connectors: {
+        Row: {
+          config: Json | null;
+          connector_name: string;
+          connector_type: string;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          id: string;
+          is_public: boolean | null;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          config?: Json | null;
+          connector_name: string;
+          connector_type: string;
+          created_at?: string;
+          created_by: string;
+          deleted_at?: string | null;
+          id?: string;
+          is_public?: boolean | null;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          config?: Json | null;
+          connector_name?: string;
+          connector_type?: string;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          id?: string;
+          is_public?: boolean | null;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_org_id";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       organizations: {
         Row: {
           created_at: string;
