@@ -1,8 +1,6 @@
 import hashlib
 import typing as t
-from collections.abc import Sequence
 from enum import Enum
-from functools import reduce
 from graphlib import TopologicalSorter
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -98,9 +96,10 @@ class RegistryDAG:
     ) -> t.Tuple[t.List[str], t.List[str]]:
         """Returns the shortest ordered paths between two models in the dag.
 
-        This will always return two paths, one from the from_model to the join point
-        and one from the join point to the to_model. The join point is the model that intersects the two paths.
-        If the two models are the same, then the paths will be empty.
+        This will always return two paths, one from the from_model to the join
+        point and one from the join point to the to_model. The join point is the
+        model that intersects the two paths. If the two models are the same,
+        then the paths will be empty.
         """
 
         if from_model not in self.adjacency_map:
@@ -202,15 +201,15 @@ class Registry:
 
     def join_relationships(
         self, from_model: str, to_model: str, through_attribute: str = ""
-    ) -> t.List["ModelBoundRelationship"]:
+    ) -> t.List["BoundRelationship"]:
         """Returns the join path between two models"""
         from_path, to_path = self.dag.join_paths(from_model, to_model)
 
         def build_join_path(
             model_path: t.List[str], via_attribute: str = ""
-        ) -> t.List[ModelBoundRelationship]:
+        ) -> t.List[BoundRelationship]:
             prev_model: Model | None = None
-            join_path: t.List[ModelBoundRelationship] = []
+            join_path: t.List[BoundRelationship] = []
             for model_name in model_path:
                 if prev_model is None:
                     via_attribute = via_attribute
@@ -233,23 +232,68 @@ class Registry:
         """Returns the SQL query for the given query"""
         # Get the columns and filters from the query
         return query.sql(self)
+    
+
+class BoundMetric(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    model_name: str
+    name: str
+    description: str = ""
+    query: exp.Expression
+    filters: t.List[exp.Expression] = Field(default_factory=lambda: [])
 
 
 class Metric(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     name: str
     description: str = ""
-    query: str | exp.Expression
-    filters: t.Optional[str | exp.Expression] = None
+    query: str
+    filters: str | None = None
+
+    def query_as_expression(self, model_name: str) -> exp.Expression:
+        """Returns the SQL expression for the metric"""
+        return parse_one(self.query)
+    
+    def as_bound_metric(self, model_name: str) -> "BoundMetric":
+        """Returns the bound metric for the given model"""
+
+        return BoundMetric(
+            model_name=model_name,
+            name=self.name,
+            description=self.description,
+            query=self.query_as_expression(model_name),
+            filters=[parse_one(f) for f in self.filters] if self.filters else [],
+        )
+
+
+class BoundDimension(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    model_name: str
+    name: str
+    description: str = ""
+    query: exp.Expression
 
 
 class Dimension(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     name: str
     description: str = ""
-    query: t.Optional[str | exp.Expression | t.Callable[..., exp.Expression]] = None
+    query: t.Optional[str] = None
+
+    def as_expression(self, table: str) -> exp.Expression:
+        if self.query:
+            return parse_one(self.query)
+        return exp.Column(
+            table=exp.to_identifier(table), this=exp.to_identifier(self.name)
+        )
+
+    def as_bound_dimension(self, model_name: str) -> "BoundDimension":
+        return BoundDimension(
+            model_name=model_name,
+            name=self.name,
+            description=self.description,
+            query=self.as_expression(model_name),
+        )
 
 
 class RelationshipType(str, Enum):
@@ -258,28 +302,27 @@ class RelationshipType(str, Enum):
     This is used to determine how to join the models together.
     """
 
-    INNER = "inner"
-    LEFT = "left"
-    RIGHT = "right"
+    ONE_TO_ONE = "one_to_one"
+    MANY_TO_ONE = "many_to_one"
+    ONE_TO_MANY = "one_to_many"
+    MANY_TO_MANY = "many_to_many"
 
 
 class Relationship(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     name: str = ""
     model_ref: str
     type: RelationshipType
-    via: t.Optional[str] = None
+    join_table: t.Optional[str] = None
     self_key_column: t.Optional[str] = None
     foreign_key_column: t.Optional[str] = None
 
 
-class ModelBoundRelationship(BaseModel):
+class BoundRelationship(BaseModel):
     model: str
     name: str = ""
     model_ref: str
     type: RelationshipType
-    via: t.Optional[str] = None
+    join_table: t.Optional[str] = None
     self_key_column: t.Optional[str] = None
     foreign_key_column: t.Optional[str] = None
 
@@ -307,12 +350,10 @@ class View(BaseModel):
 
 
 class Model(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     name: str
     description: str = ""
 
-    primary_key: str | exp.Expression | t.List[str] | t.List[exp.Expression]
+    primary_key: str
     time_column: t.Optional[str] = None
 
     # These are additional interfaces to the model
@@ -325,9 +366,10 @@ class Model(BaseModel):
     @model_validator(mode="after")
     def build_reference_lookup(self):
         """Builds a lookup of the references in the model"""
-        self._dimension_lookup: t.Dict[str, Dimension] = {
-            dimension.name: dimension for dimension in self.dimensions
+        self._dimension_lookup: t.Dict[str, BoundDimension] = {
+            dimension.name: dimension.as_bound_dimension(self.name) for dimension in self.dimensions
         }
+        
         self._model_ref_lookup: t.Dict[str, t.List[Relationship]] = {}
         for reference in self.references:
             if reference.model_ref not in self._model_ref_lookup:
@@ -336,7 +378,7 @@ class Model(BaseModel):
 
         return self
 
-    def get_dimension(self, name: str) -> Dimension:
+    def get_dimension(self, name: str) -> BoundDimension:
         """Returns the dimension with the given name"""
         if name not in self._dimension_lookup:
             raise ValueError(f"Dimension {name} not found in model {self.name}")
@@ -349,7 +391,7 @@ class Model(BaseModel):
 
     def get_relationship(
         self, *, model_ref: str, name: str = ""
-    ) -> "ModelBoundRelationship":
+    ) -> "BoundRelationship":
         """Returns the reference with the given name or model_ref"""
         if name == "" and model_ref == "":
             raise ValueError("Must provide either name or model_ref to get reference")
@@ -361,14 +403,14 @@ class Model(BaseModel):
                         raise ValueError(
                             f"Reference {name} does not match model_ref {model_ref}"
                         )
-                    return ModelBoundRelationship(
+                    return BoundRelationship(
                         model=self.name,
                         name=reference.name,
                         model_ref=reference.model_ref,
                         type=reference.type,
                         self_key_column=reference.self_key_column,
                         foreign_key_column=reference.foreign_key_column,
-                        via=reference.via,
+                        join_table=reference.join_table,
                     )
 
         for reference in self.references:
@@ -378,14 +420,14 @@ class Model(BaseModel):
                     f"Reference {model_ref} is ambiguous in model {self.name}"
                 )
             if reference.model_ref == model_ref:
-                return ModelBoundRelationship(
+                return BoundRelationship(
                     model=self.name,
                     name=reference.name,
                     model_ref=reference.model_ref,
                     type=reference.type,
                     self_key_column=reference.self_key_column,
                     foreign_key_column=reference.foreign_key_column,
-                    via=reference.via,
+                    join_table=reference.join_table,
                 )
         raise ValueError(f"Reference {name} not found in model {self.name}")
 
@@ -408,31 +450,6 @@ class Join(BaseModel):
 
     table: str
     via: str | None = None
-
-
-class QueryColumnDAG:
-    def __init__(self):
-        self._columns_graph: t.Dict[str, t.Set[str]] = {}
-        self._vias: t.Dict[str, str] = {}
-        self._select_columns: list[str] = []
-
-    def add_column(self, column: exp.Column):
-        """Adds a column to the registry"""
-
-        # Shouldn't add any deps for the column
-        node = self._columns_graph.get(f"{column.table}.{column.name}", set())
-        self._columns_graph[f"{column.table}.{column.name}"] = node
-
-        self._select_columns.append(f"{column.table}.{column.name}")
-
-    def add_column_with_via(self, columns: t.List[exp.Column]):
-        prev = None
-        for column in columns:
-            node = self._columns_graph.get(f"{column.table}.{column.name}", set())
-            if prev:
-                node.add(f"{prev.table}.{prev.name}")
-            self._columns_graph[f"{column.table}.{column.name}"] = node
-            prev = column
 
 
 class AttributeReference(BaseModel):
@@ -544,188 +561,109 @@ class ReferenceTraverser:
 class SemanticQuery(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    columns: t.List[exp.Column | t.List[exp.Column]]
-    filters: t.List[exp.Expression] | None = None
+    columns: t.List[str]
+    filters: t.List[str] = Field(default_factory=lambda: [])
 
     @model_validator(mode="after")
     def process_columns(self):
-        required_tables: set[str] = set()
-        vias_map: dict[str, t.List[t.List[exp.Column]]] = {}
-        select_columns: t.List[exp.Column] = []
-
-        # get the required tables for the query
-        columns = self.columns
-        for column in columns:
-            # If it's a sequence then this will require joins
-            if isinstance(column, Sequence):
-                base_via = column[0]
-                vias = vias_map.get(base_via.table, [])
-                vias.append(column)
-                vias_map[base_via.table] = vias
-
-                final_column = column[-1]
-                table = final_column.table
-                select_columns.append(final_column)
-            else:
-                table = column.table
-                select_columns.append(column)
-            required_tables.add(table)
-
-        self._vias = vias_map
+        # Bit of a circular dependency but makes this easier to work with
+        self._processed_columns = [
+            AttributeReference.from_string(col) for col in self.columns
+        ]
+        self._processed_filters = [parse_one(f) for f in self.filters]
 
         return self
 
     def sql(self, registry: Registry):
-        # multiple vias on the same model mean we need to do some ctes
-        # as long as there aren't multiple vias then we can just do a single join
+        from metrics_tools.semantic.query import QueryBuilder
 
-        columns = self.columns
-        required_tables: set[str] = set()
-        vias_map: dict[str, t.List[t.List[exp.Column]]] = {}
-        select_columns: t.List[exp.Column] = []
-
-        # get the required tables for the query
-        for column in columns:
-            # If it's a sequence then this will require joins
-            if isinstance(column, Sequence):
-                base_via = column[0]
-                vias = vias_map.get(base_via.table, [])
-                vias.append(column)
-                vias_map[base_via.table] = vias
-
-                final_column = column[-1]
-                table = final_column.table
-                select_columns.append(final_column)
-            else:
-                table = column.table
-                select_columns.append(column)
-            required_tables.add(table)
-
-        # Get deepest table and use that as the base table
-        # This is the table that will be used to join all the other tables
-        # together
-        sorted_tables = registry.dag.depth_sorted_models(required_tables, reverse=True)
-        base_table = sorted_tables[0]
-
-        already_joined_tables = set()
-
-        # Starting at the base table we will join all other tables together
-        # using the join paths
-        query = exp.select(*select_columns).from_(base_table)
-        if len(sorted_tables) > 1:
-            for table in sorted_tables[1:]:
-                relationships = registry.join_relationships(base_table, table)
-                join_from = registry.get_model(base_table)
-                for relationship in relationships:
-                    referenced_model = registry.get_model(relationship.model_ref)
-
-                    if relationship.model_ref in already_joined_tables:
-                        continue
-
-                    if relationship.via:
-                        query = query.join(
-                            relationship.via,
-                            on=f"{join_from.table}.{join_from.primary_key} = {relationship.via}.{relationship.self_key_column}",
-                            join_type="inner",
-                        )
-                        query = query.join(
-                            referenced_model.table,
-                            on=f"{relationship.via}.{relationship.foreign_key_column} = {referenced_model.table}.{referenced_model.primary_key}",
-                            join_type="inner",
-                        )
-                    else:
-                        primary_key = referenced_model.primary_key
-                        query = query.join(
-                            referenced_model.table,
-                            on=f"{join_from.table}.{relationship.foreign_key_column} = {referenced_model.table}.{primary_key}",
-                            join_type="inner",
-                        )
-
-                    join_from = referenced_model
-                    already_joined_tables.add(relationship.model_ref)
-        query = query.group_by(*select_columns)
-        return query
+        query = QueryBuilder(registry)
+        for column in self._processed_columns:
+            query.add_select(column)
+        for filter in self._processed_filters:
+            query.add_filter(filter)
+        return query.build()
 
 
-class ParameterizedSemanticQuery(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+# class ParameterizedSemanticQuery(BaseModel):
+#     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    input_vars: t.List[str] = Field(default_factory=lambda: [])
-    description: str = ""
-    columns: t.List[str | exp.Column | t.Callable[..., str | exp.Column]] = Field(
-        default_factory=lambda: []
-    )
-    filters: t.List[str | exp.Expression | t.Callable[..., str | exp.Expression]] = (
-        Field(default_factory=lambda: [])
-    )
+#     input_vars: t.List[str] = Field(default_factory=lambda: [])
+#     description: str = ""
+#     columns: t.List[str | exp.Column | t.Callable[..., str | exp.Column]] = Field(
+#         default_factory=lambda: []
+#     )
+#     filters: t.List[str | exp.Expression | t.Callable[..., str | exp.Expression]] = (
+#         Field(default_factory=lambda: [])
+#     )
 
-    generators: t.Dict[str, t.List[t.Any]] = Field(default_factory=lambda: {})
+#     generators: t.Dict[str, t.List[t.Any]] = Field(default_factory=lambda: {})
 
-    def __call__(
-        self, inputs: t.Optional[t.Dict[str, t.List[t.Any]]]
-    ) -> t.Sequence[SemanticQuery]:
-        # using the inputs calculate the actual columns
-        # Convert query into it's generated queries
+#     def __call__(
+#         self, inputs: t.Optional[t.Dict[str, t.List[t.Any]]]
+#     ) -> t.Sequence[SemanticQuery]:
+#         # using the inputs calculate the actual columns
+#         # Convert query into it's generated queries
 
-        if not inputs:
-            return [
-                SemanticQuery(
-                    columns=self.process_columns({}),
-                    filters=self.process_filters({}),
-                )
-            ]
-        permutations = reduce(
-            lambda x, y: x * y, map(lambda x: len(x), inputs.values()), 1
-        )
-        key_order = list(inputs.keys())
+#         if not inputs:
+#             return [
+#                 SemanticQuery(
+#                     columns=self.process_columns({}),
+#                     filters=self.process_filters({}),
+#                 )
+#             ]
+#         permutations = reduce(
+#             lambda x, y: x * y, map(lambda x: len(x), inputs.values()), 1
+#         )
+#         key_order = list(inputs.keys())
 
-        count = 0
-        generated: t.List[SemanticQuery] = []
-        while count < permutations:
-            key_indices = {k: 0 for k in key_order}
-            key_index_calc = count
-            for key in key_order:
-                key_indices[key] = key_index_calc % len(inputs[key])
-                key_index_calc = key_index_calc // len(inputs[key])
-            inputs = {k: v[key_indices[k]] for k, v in inputs.items()}
-            generated.append(
-                SemanticQuery(
-                    columns=self.process_columns(inputs),
-                    filters=self.process_filters(inputs),
-                )
-            )
-        return generated
+#         count = 0
+#         generated: t.List[SemanticQuery] = []
+#         while count < permutations:
+#             key_indices = {k: 0 for k in key_order}
+#             key_index_calc = count
+#             for key in key_order:
+#                 key_indices[key] = key_index_calc % len(inputs[key])
+#                 key_index_calc = key_index_calc // len(inputs[key])
+#             inputs = {k: v[key_indices[k]] for k, v in inputs.items()}
+#             generated.append(
+#                 SemanticQuery(
+#                     columns=self.process_columns(inputs),
+#                     filters=self.process_filters(inputs),
+#                 )
+#             )
+#         return generated
 
-    def process_filters(self, inputs: t.Dict[str, t.Any]) -> t.List[exp.Expression]:
-        filters: t.List[exp.Expression] = []
-        for filter in self.filters:
-            if callable(filter):
-                filter = filter(**inputs)
-            if isinstance(filter, str):
-                filter = parse_one(filter)
-            filters.append(filter)
-        return filters
+#     def process_filters(self, inputs: t.Dict[str, t.Any]) -> t.List[exp.Expression]:
+#         filters: t.List[exp.Expression] = []
+#         for filter in self.filters:
+#             if callable(filter):
+#                 filter = filter(**inputs)
+#             if isinstance(filter, str):
+#                 filter = parse_one(filter)
+#             filters.append(filter)
+#         return filters
 
-    def process_columns(
-        self, inputs: t.Dict[str, t.Any]
-    ) -> t.List[exp.Column | t.List[exp.Column]]:
-        columns: t.List[exp.Column | t.List[exp.Column]] = []
-        for column in self.columns:
-            if callable(column):
-                column = column(**inputs)
+#     def process_columns(
+#         self, inputs: t.Dict[str, t.Any]
+#     ) -> t.List[exp.Column | t.List[exp.Column]]:
+#         columns: t.List[exp.Column | t.List[exp.Column]] = []
+#         for column in self.columns:
+#             if callable(column):
+#                 column = column(**inputs)
 
-            if isinstance(column, str):
-                if "->" in column:
-                    column = list(map(lambda a: exp.to_column(a), column.split("->")))
-                else:
-                    column = exp.to_column(column)
-                columns.append(column)
-            elif isinstance(column, exp.Expression):
-                if isinstance(column, exp.Column):
-                    columns.append(column)
-                else:
-                    raise ValueError(f"Unsupported expression {column}")
-        return columns
+#             if isinstance(column, str):
+#                 if "->" in column:
+#                     column = list(map(lambda a: exp.to_column(a), column.split("->")))
+#                 else:
+#                     column = exp.to_column(column)
+#                 columns.append(column)
+#             elif isinstance(column, exp.Expression):
+#                 if isinstance(column, exp.Column):
+#                     columns.append(column)
+#                 else:
+#                     raise ValueError(f"Unsupported expression {column}")
+#         return columns
 
 
 class EntityConnector(ViewConnector):

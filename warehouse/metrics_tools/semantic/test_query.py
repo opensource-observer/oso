@@ -1,6 +1,7 @@
 from metrics_tools.semantic.definition import AttributeReference
-from metrics_tools.semantic.example import setup_registry
 from metrics_tools.semantic.query import QueryBuilder
+from metrics_tools.semantic.testing import setup_registry
+from sqlglot import exp
 
 
 def test_query_builder():
@@ -12,4 +13,20 @@ def test_query_builder():
     query.add_select(AttributeReference.from_string("event.from->artifact.name"))
     query.add_select(AttributeReference.from_string("event.to->collection.name"))
 
-    print(query.build().sql(dialect="duckdb", pretty=True))
+    query_exp = query.build()
+
+    print(query_exp.sql(pretty=True, dialect="duckdb"))
+
+    joins = list(query_exp.find_all(exp.Join))
+
+    assert len(joins) == 6
+
+    tables = [j.this for j in joins]
+    tables_count = {}
+    for table in tables:
+        table_count = tables_count.get(table.name, 0)
+        tables_count[table.name] = table_count + 1
+
+    assert tables_count["artifact"] == 2
+    assert tables_count["project"] == 1
+    assert tables_count["collection"] == 1

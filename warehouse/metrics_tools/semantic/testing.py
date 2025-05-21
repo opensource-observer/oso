@@ -1,3 +1,4 @@
+# An example semantic model for testing
 from .definition import Dimension, Model, Registry, Relationship, RelationshipType
 
 
@@ -29,8 +30,8 @@ def setup_registry():
             references=[
                 Relationship(
                     model_ref="collection",
-                    type=RelationshipType.INNER,
-                    via="projects_by_collection_v1",
+                    type=RelationshipType.MANY_TO_MANY,
+                    join_table="projects_by_collection_v1",
                     self_key_column="project_id",
                     foreign_key_column="collection_id",
                 ),
@@ -51,8 +52,8 @@ def setup_registry():
             references=[
                 Relationship(
                     model_ref="project",
-                    type=RelationshipType.INNER,
-                    via="artifacts_by_project_v1",
+                    type=RelationshipType.MANY_TO_MANY,
+                    join_table="artifacts_by_project_v1",
                     self_key_column="artifact_id",
                     foreign_key_column="project_id",
                 ),
@@ -92,13 +93,13 @@ def setup_registry():
                 Relationship(
                     name="to",
                     model_ref="artifact",
-                    type=RelationshipType.INNER,
+                    type=RelationshipType.MANY_TO_ONE,
                     foreign_key_column="to_artifact_id",
                 ),
                 Relationship(
                     name="from",
                     model_ref="artifact",
-                    type=RelationshipType.INNER,
+                    type=RelationshipType.MANY_TO_ONE,
                     foreign_key_column="from_artifact_id",
                 ),
             ],

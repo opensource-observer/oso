@@ -1,4 +1,5 @@
-from metrics_tools.semantic.definition import AttributeReference
+from metrics_tools.semantic.definition import AttributeReference, SemanticQuery
+from metrics_tools.semantic.testing import setup_registry
 
 
 def test_attribute_reference_traversal():
@@ -54,51 +55,50 @@ def test_attribute_reference_traversal():
     assert t1.alias("foo") != t4.alias("foo")
 
 
+def test_semantic_model_shortest_path():
+    registry = setup_registry()
 
-# def test_semantic_model_shortest_path():
-#     registry = setup_registry()
+    assert registry.dag.join_paths("event", "artifact") == (
+        ["event", "artifact"],
+        ["artifact"],
+    )
 
-#     assert registry.dag.join_paths("event", "artifact") == (
-#         ["event", "artifact"],
-#         ["artifact"],
-#     )
+    assert registry.dag.join_paths("artifact", "event") == (
+        ["artifact"],
+        ["event", "artifact"],
+    )
 
-#     assert registry.dag.join_paths("artifact", "event") == (
-#         ["artifact"],
-#         ["event", "artifact"],
-#     )
+    assert registry.dag.join_paths("artifact", "project") == (
+        ["artifact", "project"],
+        ["project"],
+    )
 
-#     assert registry.dag.join_paths("artifact", "project") == (
-#         ["artifact", "project"],
-#         ["project"],
-#     )
+    assert registry.dag.join_paths("event", "collection") == (
+        ["event", "artifact", "project", "collection"],
+        ["collection"],
+    )
 
-#     assert registry.dag.join_paths("event", "collection") == (
-#         ["event", "artifact", "project", "collection"],
-#         ["collection"],
-#     )
+    to_artifact_ref = registry.get_model("event").get_relationship(model_ref="artifact", name="to")
+    from_artifact_ref =  registry.get_model("event").get_relationship(model_ref="artifact", name="from")
 
-#     to_artifact_ref = registry.get_model("event").get_relationship(model_ref="artifact", name="to")
-#     from_artifact_ref =  registry.get_model("event").get_relationship(model_ref="artifact", name="from")
+    assert to_artifact_ref.model_ref == "artifact"
+    assert to_artifact_ref.name == "to"
+    assert to_artifact_ref.foreign_key_column == "to_artifact_id"
+    assert from_artifact_ref.model_ref == "artifact"
+    assert from_artifact_ref.name == "from"
+    assert from_artifact_ref.foreign_key_column == "from_artifact_id"
 
-#     assert to_artifact_ref.model_ref == "artifact"
-#     assert to_artifact_ref.name == "to"
-#     assert to_artifact_ref.foreign_key_column == "to_artifact_id"
-#     assert from_artifact_ref.model_ref == "artifact"
-#     assert from_artifact_ref.name == "from"
-#     assert from_artifact_ref.foreign_key_column == "from_artifact_id"
+def test_semantic_query():
+    registry = setup_registry()
 
-#     query = SemanticQuery(
-#         columns=[
-#             exp.to_column("event.time"),
-#             exp.to_column("event.event_source"),
-#             [exp.to_column("event.from"), exp.to_column("artifact.name")],
-#             #[exp.to_column("event.to"), exp.to_column("collection.name")],
-#         ]
-#     )
-    
+    query = SemanticQuery(
+        columns=[
+            "event.time",
+            "event.event_source",
+            "event.from->artifact.name",
+            "event.to->collection.name",
+        ]
+    )
 
-#     assert len(registry.join_relationships("event", "collection")) == 3
-
-#     print(registry.query(query).sql(dialect="duckdb", pretty=True))
-#     assert False
+    query_exp = registry.query(query)
+    assert query_exp is not None

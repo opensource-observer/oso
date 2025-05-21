@@ -29,11 +29,30 @@ def is_expression_attribute_reference(node: exp.Expression) -> bool:
 
 @dataclass
 class AttributeTransformerResult:
+    """Internal result only used for the attribute reference transformer"""
     node: exp.Expression
     references: list[AttributeReference]
 
 
 class AttributeReferenceTransformer:
+    """Provides a transformer that tracks attribute references in an expression
+    and replaces them with macro functions that can be resolved at sql
+    generation time
+
+    Should be called with the `transform` class method.
+    """
+
+    @classmethod
+    def transform(cls, node: exp.Expression):
+        """Transform an expression and return a result that also contains the
+        attribute references found in the expression"""
+
+        transformer = cls()
+        transformed_node = node.transform(transformer)
+        return AttributeTransformerResult(
+            node=transformed_node, references=transformer.references
+        )
+
     def __init__(self):
         self.references: list[AttributeReference] = []
 
@@ -52,14 +71,6 @@ class AttributeReferenceTransformer:
                 )
             )
         return node
-
-    @classmethod
-    def transform(cls, node: exp.Expression):
-        transformer = cls()
-        transformed_node = node.transform(transformer)
-        return AttributeTransformerResult(
-            node=transformed_node, references=transformer.references
-        )
 
 
 class FilterNode:
@@ -150,7 +161,10 @@ class QueryBuilder:
         # Add filters
         for filter_node in self._filter_nodes:
             filter_node.resolve(self._registry)
-        
+
+        # Apply appropriate group by
+        query = query.group_by(*columns)
+
         return query
 
 
@@ -212,23 +226,30 @@ class QueryJoiner:
             referenced_model = registry.get_model(relationship.model_ref)
             referenced_model_alias = create_alias(relationship.model_ref)
 
+            referenced_model_table = exp.to_table(relationship.model_ref)
+            referenced_model_table = referenced_model_table.as_(referenced_model_alias)
+
             if referenced_model_alias in self._already_joined:
                 continue
 
-            if relationship.via:
+            if relationship.join_table:
+                join_table_alias = create_alias(relationship.join_table)
+                join_table = exp.to_table(relationship.join_table)
+                join_table = join_table.as_(join_table_alias)
+
                 query = query.join(
-                    relationship.via,
-                    on=f"{from_table_alias}.{from_model.primary_key} = {relationship.via}.{relationship.self_key_column}",
+                    join_table,
+                    on=f"{from_table_alias}.{from_model.primary_key} = {join_table_alias}.{relationship.self_key_column}",
                     join_type="left",
                 )
                 query = query.join(
-                    referenced_model_alias,
-                    on=f"{relationship.via}.{relationship.foreign_key_column} = {referenced_model_alias}.{referenced_model.primary_key}",
+                    referenced_model_table,
+                    on=f"{join_table_alias}.{relationship.foreign_key_column} = {referenced_model_alias}.{referenced_model.primary_key}",
                     join_type="left",
                 )
             else:
                 query = query.join(
-                    referenced_model_alias,
+                    referenced_model_table,
                     on=f"{from_table_alias}.{relationship.foreign_key_column} = {referenced_model_alias}.{referenced_model.primary_key}",
                     join_type="left",
                 )
