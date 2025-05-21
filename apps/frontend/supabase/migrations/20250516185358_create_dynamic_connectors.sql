@@ -25,9 +25,19 @@ CREATE policy "Connectors are usable by org members." ON dynamic_connectors AS P
         FROM
             users_by_organization
         WHERE
-            users_by_organization.user_id = auth.uid()
-            AND users_by_organization.org_id = dynamic_connectors.id
+            users_by_organization.org_id = dynamic_connectors.id
+            AND users_by_organization.user_id = auth.uid()
             AND users_by_organization.deleted_at IS NULL
+    )
+    OR EXISTS(
+        SELECT
+            1
+        FROM
+            organizations
+        WHERE
+            organizations.id = dynamic_connectors.org_id
+            AND organizations.created_by = auth.uid()
+            AND organizations.deleted_at IS NULL
     )
 );
 
@@ -43,9 +53,19 @@ UPDATE
             FROM
                 users_by_organization
             WHERE
-                users_by_organization.user_id = auth.uid()
-                AND users_by_organization.org_id = dynamic_connectors.id
+                users_by_organization.org_id = dynamic_connectors.id
+                AND users_by_organization.user_id = auth.uid()
                 AND users_by_organization.user_role = 'admin'
                 AND users_by_organization.deleted_at IS NULL
+        )
+        OR EXISTS(
+            SELECT
+                1
+            FROM
+                organizations
+            WHERE
+                organizations.id = dynamic_connectors.org_id
+                AND organizations.created_by = auth.uid()
+                AND organizations.deleted_at IS NULL
         )
     );
