@@ -92,6 +92,36 @@ export type Database = {
           },
         ];
       };
+      credit_transactions: {
+        Row: {
+          amount: number;
+          api_endpoint: string | null;
+          created_at: string;
+          id: string;
+          metadata: Json | null;
+          transaction_type: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          api_endpoint?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: Json | null;
+          transaction_type: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          api_endpoint?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: Json | null;
+          transaction_type?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       dynamic_connectors: {
         Row: {
           config: Json | null;
@@ -131,7 +161,7 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "dynamic_connectors_org_id_fkey";
+            foreignKeyName: "fk_org_id";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -173,6 +203,30 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      user_credits: {
+        Row: {
+          created_at: string;
+          credits_balance: number;
+          id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          credits_balance?: number;
+          id?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          credits_balance?: number;
+          id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       user_profiles: {
         Row: {
@@ -254,9 +308,42 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      add_credits: {
+        Args: {
+          p_user_id: string;
+          p_amount: number;
+          p_transaction_type: string;
+          p_metadata?: Json;
+        };
+        Returns: boolean;
+      };
+      deduct_credits: {
+        Args: {
+          p_user_id: string;
+          p_amount: number;
+          p_transaction_type: string;
+          p_api_endpoint?: string;
+          p_metadata?: Json;
+        };
+        Returns: boolean;
+      };
+      get_user_credits: {
+        Args: { p_user_id: string };
+        Returns: number;
+      };
       hasura_token_hook: {
         Args: { event: Json };
         Returns: Json;
+      };
+      preview_deduct_credits: {
+        Args: {
+          p_user_id: string;
+          p_amount: number;
+          p_transaction_type: string;
+          p_api_endpoint?: string;
+          p_metadata?: Json;
+        };
+        Returns: boolean;
       };
     };
     Enums: {
