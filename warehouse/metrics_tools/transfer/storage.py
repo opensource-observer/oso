@@ -1,7 +1,7 @@
 import typing as t
 from datetime import datetime
 
-from metrics_tools.compute.types import ExportReference
+from metrics_service.types import ExportReference
 
 
 class TimeOrderedStorageFile(t.Protocol):

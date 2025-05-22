@@ -3,8 +3,8 @@ import typing as t
 from datetime import datetime
 
 import pandas as pd
-from metrics_tools.compute.client import Client
-from metrics_tools.compute.types import ExportType
+from metrics_service.client import Client
+from metrics_service.types import ExportType
 from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.runner import MetricsRunner

@@ -512,7 +512,7 @@ def call_mcs(
     with get_mcs_url(
         mcs_url, mcs_k8s_service_name, mcs_k8s_namespace, use_port_forward
     ) as mcs_url:
-        from metrics_tools.compute.client import Client as MCSClient
+        from metrics_service.client import Client as MCSClient
 
         if metric_name == "noop":
             # This is a special case for triggering essentially a noop job

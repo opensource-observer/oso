@@ -4,7 +4,7 @@ from itertools import batched
 
 from google.cloud import bigquery, storage
 from google.cloud.exceptions import NotFound
-from metrics_tools.compute.types import ExportReference, ExportType, TableReference
+from metrics_service.types import ExportReference, ExportType, TableReference
 from metrics_tools.transfer.base import ImporterInterface
 
 logger = logging.getLogger(__name__)

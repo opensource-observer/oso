@@ -4,7 +4,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from clickhouse_connect.driver.client import Client
-from metrics_tools.compute.types import ExportReference, ExportType, TableReference
+from metrics_service.types import ExportReference, ExportType, TableReference
 from metrics_tools.transfer.base import ImporterInterface
 from oso_dagster.utils.clickhouse import (
     create_table,

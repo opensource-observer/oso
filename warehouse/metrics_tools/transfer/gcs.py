@@ -5,7 +5,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from gcloud.aio import storage
-from metrics_tools.compute.types import ExportReference, ExportType
+from metrics_service.types import ExportReference, ExportType
 from metrics_tools.transfer.storage import TimeOrderedStorage, TimeOrderedStorageFile
 
 logger = logging.getLogger(__name__)
