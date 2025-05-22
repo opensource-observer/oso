@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { logger } from "../../../../lib/logger";
 import { getUser } from "../../../../lib/auth/auth";
 import { OSO_AGENT_URL } from "../../../../lib/config";
@@ -25,13 +25,6 @@ export async function POST(req: NextRequest) {
   const prompt = await req.json();
   await using tracker = trackServerEvent(user);
 
-  if (user.role === "anonymous") {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 },
-    );
-  }
-
   const creditsDeducted = await CreditsService.checkAndDeductCredits(
     user,
     TransactionType.CHAT_QUERY,
@@ -40,7 +33,11 @@ export async function POST(req: NextRequest) {
   );
 
   if (!creditsDeducted) {
-    logger.log(`/api/chat: Insufficient credits for user ${user.userId}`);
+    logger.log(
+      `/api/chat: Insufficient credits for user ${
+        user.role === "anonymous" ? "anonymous" : user.userId
+      }`,
+    );
     return NextResponse.json(
       { error: "Insufficient credits" },
       { status: 402 },

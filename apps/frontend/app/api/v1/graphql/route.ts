@@ -1,8 +1,8 @@
 import { ApolloServer } from "@apollo/server";
 import {
   ApolloGateway,
-  RemoteGraphQLDataSource,
   GraphQLDataSourceProcessOptions,
+  RemoteGraphQLDataSource,
 } from "@apollo/gateway";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { OperationDefinitionNode } from "graphql";
@@ -85,24 +85,18 @@ const server = new ApolloServer({
 });
 
 const customHandler = async (req: NextRequest) => {
-  const user = await getUser(req);
-
   if (req.method === "OPTIONS") {
     return new NextResponse(null, { status: 204 });
   }
 
-  if (user.role === "anonymous") {
-    return NextResponse.json(
-      { errors: [{ message: "Authentication required" }] },
-      { status: 401 },
-    );
-  }
+  const user = await getUser(req);
+  const requestClone = req.clone();
 
   let operation = "unknown";
   let query = "";
 
   try {
-    const body = await req.json();
+    const body = await requestClone.json();
     query = body.query || "";
 
     // TODO(jabolo): Use a real parser to extract operation type and name
@@ -125,7 +119,11 @@ const customHandler = async (req: NextRequest) => {
   );
 
   if (!creditsDeducted) {
-    logger.log(`/api/graphql: Insufficient credits for user ${user.userId}`);
+    logger.log(
+      `/api/graphql: Insufficient credits for user ${
+        user.role === "anonymous" ? "anonymous" : user.userId
+      }`,
+    );
     return NextResponse.json(
       { errors: [{ message: "Insufficient credits" }] },
       { status: 402 },
@@ -133,8 +131,7 @@ const customHandler = async (req: NextRequest) => {
   }
 
   const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
-    context: async (req) => {
-      const user = await getUser(req);
+    context: async () => {
       return { req, user };
     },
   });
