@@ -63,7 +63,10 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
         If the tag is a string with a `:` it will be split on the `:` and the
         key will be the left side the value will be the right side.
         """
-        tags: t.Dict[str, str] = {}
+        tags: t.Dict[str, str] = {
+            "opensource.observer/group": "sqlmesh",
+            "dagster/concurrency_key": "sqlmesh",
+        }
         for tag in model.tags:
             if "=" in tag:
                 key, value = tag.split("=")

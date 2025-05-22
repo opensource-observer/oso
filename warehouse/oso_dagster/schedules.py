@@ -15,6 +15,7 @@ from oso_dagster.utils.tags import (
     experimental_tag,
     partitioned_assets,
     sbom_source_tag,
+    sqlmesh_tag,
     stable_source_tag,
     unstable_source_tag,
 )
@@ -78,7 +79,8 @@ materialize_core_assets = define_asset_job(
     - stable_source_tag
     - unstable_source_tag
     - sbom_source_tag
-    - partitioned_assets,
+    - partitioned_assets
+    - sqlmesh_tag,
 )
 
 materialize_stable_source_assets = define_asset_job(
@@ -95,6 +97,11 @@ materialize_sbom_source_assets = define_asset_job(
     "materialize_sbom_assets_job",
     sbom_source_tag,
 )
+
+materialize_sqlmesh_assets = define_asset_job(
+            "materialize_sqlmesh_assets_job",
+            sqlmesh_tag,
+        )
 
 
 schedules: list[ScheduleDefinition] = [
@@ -125,6 +132,14 @@ schedules: list[ScheduleDefinition] = [
     ScheduleDefinition(
         job=materialize_sbom_source_assets,
         cron_schedule="0 6 * * 2,5",
+        tags={
+            "dagster/priority": "-1",
+        },
+    ),
+    # Run sqlmesh assets every 3 days at midnight
+    ScheduleDefinition(
+        job=materialize_sqlmesh_assets,
+        cron_schedule="0 18 * * 0",
         tags={
             "dagster/priority": "-1",
         },
