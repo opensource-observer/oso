@@ -85,17 +85,18 @@ const server = new ApolloServer({
 });
 
 const customHandler = async (req: NextRequest) => {
-  const user = await getUser(req);
-
   if (req.method === "OPTIONS") {
     return new NextResponse(null, { status: 204 });
   }
+
+  const user = await getUser(req);
+  const requestClone = req.clone();
 
   let operation = "unknown";
   let query = "";
 
   try {
-    const body = await req.json();
+    const body = await requestClone.json();
     query = body.query || "";
 
     // TODO(jabolo): Use a real parser to extract operation type and name
@@ -130,8 +131,7 @@ const customHandler = async (req: NextRequest) => {
   }
 
   const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
-    context: async (req) => {
-      const user = await getUser(req);
+    context: async () => {
       return { req, user };
     },
   });
