@@ -81,7 +81,7 @@ class AgentServerConfig(AgentConfig):
     )
 
     host: str = Field(
-        default="127.0.1",
+        default="127.0.0.1",
         description="Host for the server to run on",
     )
 
