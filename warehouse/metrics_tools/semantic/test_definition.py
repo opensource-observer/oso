@@ -39,7 +39,7 @@ def test_attribute_reference_traversal():
     t1.next()
     t3.next()
 
-    assert t1.current_column.name != t3.current_column.name
+    assert t1.current_attribute_name != t3.current_attribute_name
     assert t1.alias("foo") == t3.alias("foo")
 
     while t1.prev():
@@ -78,8 +78,8 @@ def test_semantic_model_shortest_path():
         ["collection"],
     )
 
-    to_artifact_ref = registry.get_model("event").get_relationship(model_ref="artifact", name="to")
-    from_artifact_ref =  registry.get_model("event").get_relationship(model_ref="artifact", name="from")
+    to_artifact_ref = registry.get_model("event").find_relationship(model_ref="artifact", name="to")
+    from_artifact_ref =  registry.get_model("event").find_relationship(model_ref="artifact", name="from")
 
     assert to_artifact_ref.model_ref == "artifact"
     assert to_artifact_ref.name == "to"
