@@ -20,7 +20,7 @@ def test_attribute_reference_traversal():
     while t1.next() and t2.next():
         assert t1.current_model_name == t2.current_model_name
         assert t1.current_table_alias == t2.current_table_alias
-        assert t1.current_column == t2.current_column
+        assert t1.current_attribute_name == t2.current_attribute_name
         assert t1.alias("foo") == t2.alias("foo")
 
     while t1.prev():
