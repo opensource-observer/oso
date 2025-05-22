@@ -1,8 +1,8 @@
 import { ApolloServer } from "@apollo/server";
 import {
   ApolloGateway,
-  RemoteGraphQLDataSource,
   GraphQLDataSourceProcessOptions,
+  RemoteGraphQLDataSource,
 } from "@apollo/gateway";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { OperationDefinitionNode } from "graphql";
@@ -91,13 +91,6 @@ const customHandler = async (req: NextRequest) => {
     return new NextResponse(null, { status: 204 });
   }
 
-  if (user.role === "anonymous") {
-    return NextResponse.json(
-      { errors: [{ message: "Authentication required" }] },
-      { status: 401 },
-    );
-  }
-
   let operation = "unknown";
   let query = "";
 
@@ -125,7 +118,11 @@ const customHandler = async (req: NextRequest) => {
   );
 
   if (!creditsDeducted) {
-    logger.log(`/api/graphql: Insufficient credits for user ${user.userId}`);
+    logger.log(
+      `/api/graphql: Insufficient credits for user ${
+        user.role === "anonymous" ? "anonymous" : user.userId
+      }`,
+    );
     return NextResponse.json(
       { errors: [{ message: "Insufficient credits" }] },
       { status: 402 },
