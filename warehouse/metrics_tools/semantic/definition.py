@@ -216,7 +216,7 @@ class Registry:
                     prev_model = self.models[model_name]
                     continue
 
-                relationship = prev_model.get_relationship(
+                relationship = prev_model.find_relationship(
                     name=via_attribute, model_ref=model_name
                 )
                 prev_model = self.models[model_name]
@@ -232,7 +232,7 @@ class Registry:
         """Returns the SQL query for the given query"""
         # Get the columns and filters from the query
         return query.sql(self)
-    
+
 
 class BoundMetric(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -253,7 +253,7 @@ class Metric(BaseModel):
     def query_as_expression(self, model_name: str) -> exp.Expression:
         """Returns the SQL expression for the metric"""
         return parse_one(self.query)
-    
+
     def as_bound_metric(self, model_name: str) -> "BoundMetric":
         """Returns the bound metric for the given model"""
 
@@ -274,17 +274,44 @@ class BoundDimension(BaseModel):
     description: str = ""
     query: exp.Expression
 
+    def with_alias(self, alias: str) -> exp.Expression:
+        """Returns the SQL expression for the dimension with the given alias"""
+        query = self.query
+
+        def transform_columns(node: exp.Expression):
+            if isinstance(node, exp.Column):
+                if isinstance(node.table, exp.Identifier) and node.table.this != "self":
+                    raise ValueError(
+                        "Cannot reference another model in a dimension. Use `self` as the table alias for the model"
+                    )
+                return exp.Column(
+                    table=exp.to_identifier(alias),
+                    this=node.this,
+                )
+            return node
+
+        return query.transform(transform_columns)
+
 
 class Dimension(BaseModel):
     name: str
     description: str = ""
-    query: t.Optional[str] = None
+    query: str = ""
+    column_name: str = ""
 
-    def as_expression(self, table: str) -> exp.Expression:
+    @model_validator(mode="after")
+    def process_dimension(self):
+        if self.query and self.column_name:
+            raise ValueError("Cannot specify both query and column_name for dimension")
+        if not self.query and not self.column_name:
+            self.column_name = self.name
+        return self
+
+    def as_expression(self) -> exp.Expression:
         if self.query:
             return parse_one(self.query)
         return exp.Column(
-            table=exp.to_identifier(table), this=exp.to_identifier(self.name)
+            table=exp.to_identifier("self"), this=exp.to_identifier(self.column_name)
         )
 
     def as_bound_dimension(self, model_name: str) -> "BoundDimension":
@@ -292,7 +319,7 @@ class Dimension(BaseModel):
             model_name=model_name,
             name=self.name,
             description=self.description,
-            query=self.as_expression(model_name),
+            query=self.as_expression(),
         )
 
 
@@ -352,8 +379,9 @@ class View(BaseModel):
 class Model(BaseModel):
     name: str
     description: str = ""
+    table: str
 
-    primary_key: str
+    primary_key: str = ""
     time_column: t.Optional[str] = None
 
     # These are additional interfaces to the model
@@ -366,30 +394,57 @@ class Model(BaseModel):
     @model_validator(mode="after")
     def build_reference_lookup(self):
         """Builds a lookup of the references in the model"""
-        self._dimension_lookup: t.Dict[str, BoundDimension] = {
-            dimension.name: dimension.as_bound_dimension(self.name) for dimension in self.dimensions
-        }
-        
-        self._model_ref_lookup: t.Dict[str, t.List[Relationship]] = {}
+
+        attributes: dict[str, BoundDimension | BoundMetric | BoundRelationship] = {}
+
+        for dimension in self.dimensions:
+            # Ensure we don't have duplicate names
+            if dimension.name in attributes:
+                raise ValueError(
+                    f"Dimension {dimension.name} already exists in model {self.name}"
+                )
+            attributes[dimension.name] = dimension.as_bound_dimension(self.name)
+
+        self._model_ref_lookup_by_model_name: dict[str, list[Relationship]] = {}
         for reference in self.references:
-            if reference.model_ref not in self._model_ref_lookup:
-                self._model_ref_lookup[reference.model_ref] = []
-            self._model_ref_lookup[reference.model_ref].append(reference)
+            if reference.name in attributes:
+                raise ValueError(
+                    f"{reference.name} already exists in model {self.name}. Must be unique"
+                )
+
+            attributes[reference.name] = BoundRelationship(
+                model=self.name,
+                name=reference.name,
+                model_ref=reference.model_ref,
+                type=reference.type,
+                self_key_column=reference.self_key_column,
+                foreign_key_column=reference.foreign_key_column,
+                join_table=reference.join_table,
+            )
+
+            if reference.model_ref not in self._model_ref_lookup_by_model_name:
+                self._model_ref_lookup_by_model_name[reference.model_ref] = []
+            self._model_ref_lookup_by_model_name[reference.model_ref].append(reference)
+
+        self._all_attributes = attributes
 
         return self
 
     def get_dimension(self, name: str) -> BoundDimension:
         """Returns the dimension with the given name"""
-        if name not in self._dimension_lookup:
-            raise ValueError(f"Dimension {name} not found in model {self.name}")
-        return self._dimension_lookup[name]
+        dimension = self.get_attribute(name)
+        if not isinstance(dimension, BoundDimension):
+            raise ValueError(f"{name} is not a dimension in model {self.name}")
+        return dimension
+    
+    def get_relationship(self, name: str) -> BoundRelationship:
+        """Returns the relationship with the given name"""
+        relationship = self.get_attribute(name)
+        if not isinstance(relationship, BoundRelationship):
+            raise ValueError(f"{name} is not a relationship in model {self.name}")
+        return relationship
 
-    @property
-    def table(self) -> str:
-        """Returns the table name for the model"""
-        return self.name
-
-    def get_relationship(
+    def find_relationship(
         self, *, model_ref: str, name: str = ""
     ) -> "BoundRelationship":
         """Returns the reference with the given name or model_ref"""
@@ -403,33 +458,39 @@ class Model(BaseModel):
                         raise ValueError(
                             f"Reference {name} does not match model_ref {model_ref}"
                         )
-                    return BoundRelationship(
-                        model=self.name,
-                        name=reference.name,
-                        model_ref=reference.model_ref,
-                        type=reference.type,
-                        self_key_column=reference.self_key_column,
-                        foreign_key_column=reference.foreign_key_column,
-                        join_table=reference.join_table,
-                    )
+                    return self.get_relationship(name)
 
         for reference in self.references:
-            references = self._model_ref_lookup[reference.model_ref]
+            references = self._model_ref_lookup_by_model_name[reference.model_ref]
             if len(references) > 1:
                 raise ModelHasAmbiguousJoinPath(
                     f"Reference {model_ref} is ambiguous in model {self.name}"
                 )
             if reference.model_ref == model_ref:
-                return BoundRelationship(
-                    model=self.name,
-                    name=reference.name,
-                    model_ref=reference.model_ref,
-                    type=reference.type,
-                    self_key_column=reference.self_key_column,
-                    foreign_key_column=reference.foreign_key_column,
-                    join_table=reference.join_table,
-                )
+                relationship = self._all_attributes[reference.name]
+                if not isinstance(relationship, BoundRelationship):
+                    raise ValueError(
+                        f"{reference.name} is not a reference in model {self.name}"
+                    )
+                return relationship
         raise ValueError(f"Reference {name} not found in model {self.name}")
+
+    @property
+    def table_exp(self):
+        """Returns the table for the model"""
+        return exp.to_table(self.table)
+
+    def get_attribute(self, name: str) -> BoundDimension | BoundMetric | BoundRelationship:
+        """Resolves the attribute to a column in the model"""
+        if name not in self._all_attributes:
+            raise ValueError(f"Attribute {name} not found in model {self.name}")
+        return self._all_attributes[name]
+    
+    def resolve_dimension_with_alias(self, name: str, alias: str):
+        """Returns the dimension with the given name and alias"""
+        dimension = self.get_dimension(name)
+
+        return dimension.with_alias(alias)
 
 
 class RollingWindow(BaseModel):
@@ -464,8 +525,8 @@ class AttributeReference(BaseModel):
     def from_string(cls, ref: str) -> "AttributeReference":
         return cls(ref=ref.split("->"))
 
-    def traverser(self):
-        return ReferenceTraverser(self)
+    def traverser(self, initial_value: str = ""):
+        return ReferenceTraverser(self, initial_value=initial_value)
 
     @property
     def base_model(self):
@@ -475,12 +536,11 @@ class AttributeReference(BaseModel):
     def columns(self):
         return self._columns
 
-    @property
-    def as_column(self):
+    def as_column(self, registry: Registry):
         traverser = self.traverser()
         while traverser.next():
             pass
-        return traverser.current_column
+        return traverser.current_column(registry)
 
 
 class ReferenceTraverser:
@@ -517,7 +577,7 @@ class ReferenceTraverser:
             self._generate_alias(
                 self.alias_stack[-1],
                 self.current_model_name,
-                self.current_column.name,
+                self.current_attribute_name,
             )
         )
         self.index += 1
@@ -551,11 +611,26 @@ class ReferenceTraverser:
         return self.reference.columns[self.index].table
 
     @property
-    def current_column(self):
-        return exp.Column(
-            table=exp.to_identifier(self.current_table_alias),
-            this=exp.to_identifier(self.reference.columns[self.index].name),
-        )
+    def current_attribute_name(self):
+        return self.reference.columns[self.index].name
+
+    def current_column(self, registry: Registry):
+        """Returns the current column in the traverser"""
+        model = registry.get_model(self.current_model_name)
+
+        attribute = model.get_attribute(self.current_attribute_name)
+
+        match attribute:
+            case BoundDimension():
+                return attribute.with_alias(self.current_table_alias)
+            case BoundMetric():
+                raise NotImplementedError(
+                    "Cannot use metrics in traverser yet"
+                )
+            case BoundRelationship():
+                raise ValueError(
+                    f"Cannot use relationship {self.current_attribute_name} in traverser"
+                )
 
 
 class SemanticQuery(BaseModel):
@@ -563,6 +638,8 @@ class SemanticQuery(BaseModel):
 
     columns: t.List[str]
     filters: t.List[str] = Field(default_factory=lambda: [])
+
+    limit: int = 0
 
     @model_validator(mode="after")
     def process_columns(self):
@@ -582,6 +659,7 @@ class SemanticQuery(BaseModel):
             query.add_select(column)
         for filter in self._processed_filters:
             query.add_filter(filter)
+        query.add_limit(self.limit)
         return query.build()
 
 

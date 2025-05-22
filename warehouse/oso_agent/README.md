@@ -24,7 +24,7 @@ Add this to the `.env` file in `warehouse/oso_mcp/`
 First run the MCP server in a separate terminal:
 
 ```bash
-uv run warehouse/oso_mcp/main.py
+uv run mcp serve
 ```
 
 For now, in another separate terminal run arize phoenix in a docker container
@@ -37,7 +37,7 @@ docker run -it --rm -p 6006:6006 -p 4317:4317 arizephoenix/phoenix:latest
 Then run the agent with an example query:
 
 ```bash
-% uv run warehouse/oso_agent/main.py query "what columns does the table timeseries_metrics_by_artifact_v0 have?"
+% uv run agent query "what columns does the table timeseries_metrics_by_artifact_v0 have?"
 Processing query  [####################################]
 
 Response:
@@ -49,20 +49,5 @@ The columns are ["metric_id", "artifact_id", "sample_date", "amount", "unit"].
 For more information on how to run the agent, check the `--help` flag:
 
 ```bash
-% uv run warehouse/oso_agent/main.py --help
-Usage: main.py [OPTIONS] COMMAND [ARGS]...
-
-  OSO Agent CLI with ReAct capabilities.
-
-  This tool provides a command-line interface for interacting with a ReAct
-  agent. The agent can use both local tools and MCP tools.
-
-Options:
-  -v, --verbose  Increase verbosity (can be used multiple times)
-  -h, --help     Show this message and exit.
-
-Commands:
-  demo   Run demo queries to showcase agent capabilities.
-  query  Run a single query through the agent.
-  shell  Start an interactive shell session with the agent.
+% uv run agent --help
 ```

@@ -101,6 +101,7 @@ class QueryBuilder:
         self._references: list[AttributeReference] = []
         self._filter_nodes: list[FilterNode] = []
         self._deepest_reference: AttributeReference | None = None
+        self._limit = 0
 
     def add_reference(self, reference: AttributeReference):
         """Adds an attribute reference to the query
@@ -135,6 +136,18 @@ class QueryBuilder:
         for ref in filter_node.references:
             self.add_reference(ref)
         return self
+    
+    def add_limit(self, limit: int):
+        """Add a limit to the query"""
+        self._limit = limit
+        return self
+    
+    @property
+    def base_model(self):
+        """Get the base model of the query"""
+        if not self._deepest_reference:
+            raise ValueError("No reference added to the query")
+        return self._registry.get_model(self._deepest_reference.base_model)
 
     def build(self):
         """Render a select query"""
@@ -142,14 +155,18 @@ class QueryBuilder:
         if not self._deepest_reference:
             raise ValueError("No reference added to the query")
 
-        base_model_name = self._deepest_reference.base_model
-        base_model = self._registry.get_model(base_model_name)
+        base_model = self.base_model
+        deepest_reference = self._deepest_reference
 
         # Turn references into actual expressions
-        columns = [ref.as_column for ref in self._references]
+        columns = [ref.as_column(self._registry) for ref in self._references]
 
         # Establish base query
         query = exp.select(*columns)
+
+        base_table = base_model.table_exp
+        base_table_with_alias = base_table.as_(deepest_reference.traverser().alias(base_model.name))
+        query = query.from_(base_table_with_alias)
 
         # Add joins
         joiner = QueryJoiner(query, base_model, self._registry)
@@ -164,6 +181,9 @@ class QueryBuilder:
 
         # Apply appropriate group by
         query = query.group_by(*columns)
+
+        if self._limit:
+            query = query.limit(self._limit)
 
         return query
 
@@ -180,16 +200,18 @@ class QueryJoiner:
         """Join the reference to the current base model"""
         traverser = reference.traverser()
 
-        # Join to the base_model
-        self.join(
-            from_model_name=self._base_model.name,
-            from_table_alias=self._base_model.table,
-            to_model_name=reference.base_model,
-        )
+        if self._base_model.name != reference.base_model:
+            # Join to the base_model
+            self.join(
+                from_model_name=self._base_model.name,
+                from_table_alias=traverser.alias(self._base_model.name),
+                to_model_name=reference.base_model,
+                create_alias=traverser.alias,
+            )
 
         from_model_name = reference.base_model
-        from_table_alias = reference.base_model
-        from_table_through_attribute = traverser.current_column.name
+        from_table_alias = traverser.alias(reference.base_model)
+        from_table_through_attribute = traverser.current_attribute_name
 
         while traverser.next():
             self.join(
@@ -202,7 +224,7 @@ class QueryJoiner:
 
             from_model_name = traverser.current_model_name
             from_table_alias = traverser.alias(from_model_name)
-            from_table_through_attribute = traverser.current_column.name
+            from_table_through_attribute = traverser.current_attribute_name
 
     def join(
         self,
@@ -213,7 +235,7 @@ class QueryJoiner:
         create_alias: t.Callable[[str], str] = lambda x: x,
         through_attribute: str = "",
     ):
-        print(f"Joining {from_model_name} to {to_model_name} through {through_attribute}")
+        print(f"Joining `{from_model_name}` to `{to_model_name}` through `{through_attribute}`")
         registry = self._registry
         query = self._select
 
@@ -222,19 +244,20 @@ class QueryJoiner:
         )
         from_model = registry.get_model(from_model_name)
 
+        print(f"Join path: {join_path}")
+
         for relationship in join_path:
             referenced_model = registry.get_model(relationship.model_ref)
             referenced_model_alias = create_alias(relationship.model_ref)
 
-            referenced_model_table = exp.to_table(relationship.model_ref)
-            referenced_model_table = referenced_model_table.as_(referenced_model_alias)
+            referenced_model_table = referenced_model.table_exp.as_(referenced_model_alias)
 
             if referenced_model_alias in self._already_joined:
                 continue
 
             if relationship.join_table:
-                join_table_alias = create_alias(relationship.join_table)
                 join_table = exp.to_table(relationship.join_table)
+                join_table_alias = create_alias(join_table.name)
                 join_table = join_table.as_(join_table_alias)
 
                 query = query.join(
@@ -253,6 +276,10 @@ class QueryJoiner:
                     on=f"{from_table_alias}.{relationship.foreign_key_column} = {referenced_model_alias}.{referenced_model.primary_key}",
                     join_type="left",
                 )
+
+            from_table_alias = referenced_model_alias
+            from_model_name = referenced_model.name
+            from_model = referenced_model
 
             self._already_joined.add(referenced_model_alias)
         self._select = query

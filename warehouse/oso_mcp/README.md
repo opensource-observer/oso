@@ -23,13 +23,21 @@ data, and on-chain activity.
 1. Install dependencies:
 
 ```bash
-uv venv && uv sync
+uv sync --all-packages
 ```
 
 2. Get an OSO API key from
    [Open Source Observer](https://www.opensource.observer). Follow the
    instructions in the [Getting OSO API Key](#getting-oso-api-key) section to
    obtain your key.
+
+## Running the MCP server
+
+You can start an instance of the MCP server
+
+```bash
+uv run mcp serve
+```
 
 ## Setting Up with Claude Desktop
 
