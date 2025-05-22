@@ -83,7 +83,7 @@ export class CreditsService {
     metadata?: Record<string, any>,
   ): Promise<boolean> {
     if (CreditsService.isAnonymousUser(user)) {
-      return false;
+      return CREDITS_PREVIEW_MODE;
     }
 
     const rpcFunction = CREDITS_PREVIEW_MODE
