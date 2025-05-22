@@ -26,7 +26,7 @@ To setup the SQL Database Verified Source read the [full documentation here.](ht
    Here's what the `secrets.toml` looks like:
 
    ```toml
-   # Put your secret values and credentials here. Do not share this file and do not upload it to github.
+   # Put your secret values and credentials here. do not share this file and do not upload it to github.
    # We will set up creds with the following connection URL, which is a public database
 
    # The credentials are as follows
