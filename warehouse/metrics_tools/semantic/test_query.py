@@ -27,6 +27,6 @@ def test_query_builder():
         table_count = tables_count.get(table.name, 0)
         tables_count[table.name] = table_count + 1
 
-    assert tables_count["artifact"] == 2
-    assert tables_count["project"] == 1
-    assert tables_count["collection"] == 1
+    assert tables_count["artifacts_v1"] == 2
+    assert tables_count["projects_v1"] == 1
+    assert tables_count["collections_v1"] == 1

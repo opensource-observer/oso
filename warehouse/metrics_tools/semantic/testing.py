@@ -8,30 +8,31 @@ def setup_registry():
     registry.register(
         Model(
             name="collection",
+            table="oso.collections_v1",
             description="A collection of projects",
             dimensions=[
-                Dimension(name="id"),
-                Dimension(name="name"),
+                Dimension(name="id", column_name="collection_id"),
+                Dimension(name="name", column_name="collection_name"),
             ],
-            primary_key="id",
+            primary_key="collection_id",
         )
     )
 
     registry.register(
         Model(
             name="project",
+            table="oso.projects_v1",
             description="A project",
             dimensions=[
-                Dimension(name="id"),
-                Dimension(name="name"),
-                Dimension(name="portfolio_id"),
+                Dimension(name="id", column_name="project_id"),
+                Dimension(name="name", column_name="project_name"),
             ],
-            primary_key="id",
+            primary_key="project_id",
             references=[
                 Relationship(
                     model_ref="collection",
                     type=RelationshipType.MANY_TO_MANY,
-                    join_table="projects_by_collection_v1",
+                    join_table="oso.projects_by_collection_v1",
                     self_key_column="project_id",
                     foreign_key_column="collection_id",
                 ),
@@ -42,18 +43,19 @@ def setup_registry():
     registry.register(
         Model(
             name="artifact",
+            table="oso.artifacts_v1",
             description="An artifact",
             dimensions=[
-                Dimension(name="id"),
-                Dimension(name="name"),
-                Dimension(name="email"),
+                Dimension(name="id", column_name="artifact_id"),
+                Dimension(name="name", column_name="artifact_name"),
+                Dimension(name="url", column_name="artifact_url"),
             ],
-            primary_key="id",
+            primary_key="artifact_id",
             references=[
                 Relationship(
                     model_ref="project",
                     type=RelationshipType.MANY_TO_MANY,
-                    join_table="artifacts_by_project_v1",
+                    join_table="oso.artifacts_by_project_v1",
                     self_key_column="artifact_id",
                     foreign_key_column="project_id",
                 ),
@@ -64,6 +66,7 @@ def setup_registry():
     registry.register(
         Model(
             name="event",
+            table="oso.int_events__github",
             description="An event",
             dimensions=[
                 Dimension(
@@ -88,7 +91,7 @@ def setup_registry():
                 ),
             ],
             time_column="time",
-            primary_key="id",
+            primary_key="event_id",
             references=[
                 Relationship(
                     name="to",
