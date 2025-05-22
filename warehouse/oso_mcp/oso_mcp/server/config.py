@@ -6,6 +6,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class MCPConfig(BaseSettings):
     """Configuration for the agent and its components."""
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="MCP_",
+        extra="ignore",
+    )
 
     host: str = Field(
         default="127.0.0.1",
@@ -22,13 +28,8 @@ class MCPConfig(BaseSettings):
     )
 
     oso_api_key: str = Field(
-        default="OSO API KEY",
+        default="MISSING OSO API KEY",
         description="API key for OSO",
     )
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        env_prefix="MCP_",
-        extra="ignore",
-    )
+   
