@@ -1,0 +1,262 @@
+---
+title: "Join Dune & OSO Data: Uniswap v4 Hooks"
+description: "Side-by-side Colab and Hex notebooks that collect hook stats, enrich them with OSO metadata, build monthly metrics, and plot the results."
+sidebar_position: 9
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::info
+The goal of this tutorial is to  create a mini ["Hook Rank" dashboard](https://hookrank.io) by stitching together  
+project data from OSO with TVL / volume stats from Dune.
+:::
+
+## Prerequisites
+
+| What you need | Why | Get it |
+|:--------------|:----|:-------|
+| OSO API key   | Query the public Data Lake | [Get Started](../get-started/python) |
+| Dune API key  | Call the Uniswap-hooks query programmatically | [Dune API Docs](https://dune.com/docs/api/) |
+
+
+## Environment Setup
+
+Both notebooks start by **installing libraries** and **loading secrets**.
+
+<Tabs groupId="setup">
+<TabItem value="colab" label="Colab">
+
+:::tip
+See our full guide for [using pyoso in Colab](../guides/notebooks/colab.md).
+:::
+
+```python
+# !pip install -q pyoso dune-client      # first run only
+
+from google.colab import userdata
+from dune_client.client import DuneClient
+from pyoso import Client                 # ← OSO Python SDK
+
+OSO_API_KEY  = userdata.get('OSO_API_KEY')   # stored in Colab > Secrets
+DUNE_API_KEY = userdata.get('DUNE_API_KEY')
+
+oso  = Client(api_key=OSO_API_KEY)
+dune = DuneClient(DUNE_API_KEY)
+```
+
+</TabItem>
+<TabItem value="hex" label="Hex">
+
+:::tip
+See our full guide for [using pyoso in Hex](../guides/notebooks/hex.md).
+:::
+
+```python
+import os
+from pyoso import Client
+from dune_client.client import DuneClient
+
+OSO_API_KEY  = os.getenv("OSO_API_KEY")      # Hex > Environments
+DUNE_API_KEY = os.getenv("DUNE_API_KEY")
+
+oso  = Client(api_key=OSO_API_KEY)
+dune = DuneClient(DUNE_API_KEY)
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Pull Hook-Level TVL / Volume from Dune
+
+We reuse Sealaunch's public query (ID `4703306`) which already aggregates TVL,
+pool count, trades, and volume per hook + chain.
+
+```python
+result = dune.get_latest_result(4703306)
+df_dune = pd.DataFrame(
+    result.result.rows,
+    columns=result.result.metadata.column_names
+)
+
+# columns: hooks, current_tvl, total_volume, ...
+df_dune.head()        
+```
+
+**What just happened?**
+
+* Dune executed the SQL behind the dashboard and returned a result set.  
+* `hooks` is a **contract address** (checksummed).  
+* Stats are already summed across the whole chain.
+
+---
+
+## Map Each Hook to an OSO Project
+
+If a hook contract has ever been claimed inside OSO—for example via an
+Optimism Retro Funding application—we can attach rich project metadata.
+
+The `artifacts_by_project_v1` table contains the mapping between artifacts (like contract addresses) and projects.
+
+```sql
+artifacts_by_project_v1
+└─ artifact_id
+└─ artifact_name      (address, lower-case)
+└─ artifact_source    (chain)
+└─ project_id  → projects_v1
+```
+
+Now let's turn this into a query we can run in pyoso.
+
+```python
+STRINGIFY = lambda xs: "'" + "','".join(xs) + "'"
+
+HOOK_ADDRESSES = list(df_dune["hooks"].str.lower())
+df_meta = oso.to_pandas(f"""
+  SELECT
+    p.display_name,
+    abp.artifact_name  AS hook,
+    abp.artifact_source AS chain,
+    abp.artifact_id
+  FROM artifacts_by_project_v1 abp
+  JOIN projects_v1 p ON abp.project_id = p.project_id
+  WHERE abp.artifact_name IN ({STRINGIFY(HOOK_ADDRESSES)})
+""")
+```
+
+We now know which hooks belong to which projects (if any).
+
+The `artifact_id` is a stable key we'll reuse for event queries. It hashes both the contract address and the chain into a unique identifier.
+
+---
+
+## Grab Raw Onchain Events for Those Hooks
+
+For this example, we'll use the `int_superchain_events_by_project` table which contains **every contract invocation** plus
+labelled derivative events (UserOps, paymasters, Farcaster actions, etc.). This table is used for Retro Funding metrics. Because it has the `int` prefix, it may not be 100% stable. 
+
+We filter by:
+
+* `to_artifact_id` ∈ our hook IDs  
+* Time window starting **2025-04-20** (adjust as you like)
+
+```python
+HOOK_IDS = df_meta["artifact_id"].unique()
+df_events = oso.to_pandas(f"""
+SELECT
+    e.to_artifact_id AS project_id,
+    e.time AS sample_date,
+    e.event_type,
+    e.event_source AS chain,
+    e.from_artifact_id,
+    e.gas_fee,
+    COALESCE(u.is_farcaster_user, FALSE) AS is_farcaster_user
+FROM int_superchain_events_by_project e
+LEFT JOIN int_superchain_onchain_user_labels u
+  ON e.from_artifact_id = u.artifact_id
+WHERE e.time >= DATE '2025-04-20'
+  AND e.to_artifact_id IN ({STRINGIFY(HOOK_IDS)})
+""")
+```
+---
+
+## Engineer Monthly Metrics
+
+We aggregate the raw events into **six metrics**:
+
+| Metric | Definition |
+|:-------|:-----------|
+| `transactions_monthly` | `CONTRACT_INVOCATION` counts |
+| `internal_transactions_monthly` | any other event type |
+| `contract_invocations_monthly` | sum of both above |
+| `account_abstraction_userops_monthly` | events tagged `USEROP / PAYMASTER / BUNDLER` |
+| `active_farcaster_users_monthly` | distinct Farcaster IDs hitting the hook |
+| `active_addresses_monthly` | distinct EOA/SCW callers |
+
+We'll define a helper function to build these metrics in Python. You could also do this directly in SQL.
+
+```python
+def build_hook_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["sample_date"] = pd.to_datetime(df["sample_date"]).dt.normalize()
+    df.rename(columns={"project_id": "artifact_id"}, inplace=True)
+
+    grouped = (df.groupby(["sample_date","artifact_id","chain","event_type"], as_index=False)
+                 .agg(count_events=("event_type","size"),
+                      gas_fee=("gas_fee","sum")))
+
+    def _sum(src, label):
+        return (src.groupby(["artifact_id","chain","sample_date"], as_index=False)["count_events"]
+                   .sum().rename(columns={"count_events":"amount"})
+                   .assign(metric_name=label))
+
+    AA = {"CONTRACT_INVOCATION_VIA_USEROP",
+          "CONTRACT_INVOCATION_VIA_PAYMASTER",
+          "CONTRACT_INVOCATION_VIA_BUNDLER"}
+
+    return pd.concat([
+        _sum(grouped.query("event_type == 'CONTRACT_INVOCATION'"), "transactions_monthly"),
+        _sum(grouped.query("event_type != 'CONTRACT_INVOCATION'"), "internal_transactions_monthly"),
+        _sum(grouped, "contract_invocations_monthly"),
+        _sum(grouped[grouped["event_type"].isin(AA)], "account_abstraction_userops_monthly"),
+        (df[df["is_farcaster_user"]]
+            .groupby(["artifact_id","chain","sample_date"], as_index=False)["from_artifact_id"]
+            .nunique().rename(columns={"from_artifact_id":"amount"})
+            .assign(metric_name="active_farcaster_users_monthly")),
+        (df.groupby(["artifact_id","chain","sample_date"], as_index=False)["from_artifact_id"]
+             .nunique().rename(columns={"from_artifact_id":"amount"})
+             .assign(metric_name="active_addresses_monthly")),
+    ], ignore_index=True)[["artifact_id","chain","sample_date","metric_name","amount"]]
+```
+
+Merge metrics back with project names:
+
+```python
+df_metrics = (build_hook_metrics(df_events)
+              .merge(df_meta[["artifact_id","hook","display_name"]], on="artifact_id"))
+```
+
+---
+
+## Plot a Quick Chart
+
+Pick any combination of `display_name`, `metric_name`, and `artifact_id`.
+
+```python
+import plotly.express as px
+
+project = "Bunniapp by Timeless Finance"
+metric  = "active_farcaster_users_monthly"
+hook_id = df_meta.loc[df_meta.display_name == project, "artifact_id"].iloc[0]
+
+fig = px.line(df_metrics.query(
+        "metric_name == @metric and artifact_id == @hook_id"),
+        x="sample_date", y="amount", color="chain",
+        title=f"{project} · {metric}")
+fig.show()
+```
+
+You now have an **interactive cross-chain time-series** for that hook.  
+Swap `metric` to `"gas_monthly"` or `"transactions_monthly"` to explore
+different signals.
+
+---
+
+## Next Steps
+
+* **Surface unclaimed hooks** → invite teams to OSO + Retro Funding.  
+* **Add TVL & volume trends** → Dune daily snapshots join on `hook + chain + day`.  
+* **Publish a dashboard** → Hex *published app* or a lightweight Streamlit page.  
+* **ROI experiments** → compare TVL ↗ vs. gas or Farcaster reach.
+
+## Resources
+
+- Colab implementation ([notebook](https://colab.research.google.com/drive/1PdKUoFm3Au3oBXCVdOwCwjccPeDjwh_P?usp=sharing))
+- Hex implementation ([notebook](https://app.hex.tech/00bffd76-9d33-4243-8e7e-9add359f25c7/app/019684ba-c2a0-7000-88cc-fc44ae2b293f/latest))
+- Jupyter implementation ([notebook](https://github.com/opensource-observer/insights/blob/main/tutorials/UniswapHooks.ipynb)
+
+Inspiration:
+- https://hookrank.io/
+- https://dune.com/sealaunch/uniswap-v4-hooks
