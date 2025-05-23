@@ -4066,6 +4066,9 @@ dependencies = [
     { name = "llama-index-llms-ollama" },
     { name = "llama-index-tools-mcp" },
     { name = "openinference-instrumentation-llama-index" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "sqlglot", extra = ["rs"] },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -4081,6 +4084,9 @@ requires-dist = [
     { name = "llama-index-llms-ollama", specifier = ">=0.5.4" },
     { name = "llama-index-tools-mcp", specifier = ">=0.1.1" },
     { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.0" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", specifier = ">=0.26.0" },
+    { name = "sqlglot", extras = ["rs"], specifier = ">=26.16.4" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.2" },
 ]
 
