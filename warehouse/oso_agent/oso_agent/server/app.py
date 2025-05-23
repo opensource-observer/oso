@@ -28,7 +28,7 @@ def default_lifecycle(config: AgentServerConfig):
     @asynccontextmanager
     async def initialize_app(app: FastAPI):
         registry = await AgentRegistry.create(config)
-        agent = registry.get_agent("react")
+        agent = registry.get_agent(config.agent_name)
 
         bot_config = BotConfig()
         bot = setup_bot(bot_config, agent)

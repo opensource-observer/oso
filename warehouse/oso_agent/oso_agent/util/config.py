@@ -59,6 +59,8 @@ class AgentConfig(BaseSettings):
 
     model_config = agent_config_dict()
 
+    agent_name: str = Field(default="react", description="Name of the agent to use")
+
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
 
     oso_mcp_url: str = Field(
