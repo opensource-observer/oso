@@ -18,7 +18,7 @@ logger = logging.getLogger("oso-agent")
 
 async def create_agent(config: AgentConfig):
     registry = await AgentRegistry.create(config)
-    agent = registry.get_agent("sql")
+    agent = registry.get_agent(config.agent_name)
     return agent
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -54,13 +54,13 @@ def cli(ctx, verbose):
     help="URL for the Ollama API",
 )
 @pass_config
-def query(config, query, ollama_model, ollama_url):
+def query(config, query, agent_name, ollama_model, ollama_url):
     """Run a single query through the agent.
 
     QUERY is the text to send to the agent.
     """
     updated_config = config.update(
-        ollama_model=ollama_model, ollama_url=ollama_url
+        agent_name=agent_name, ollama_model=ollama_model, ollama_url=ollama_url
     )
 
     try:
@@ -82,6 +82,9 @@ def query(config, query, ollama_model, ollama_url):
 async def _run_query(query: str, config: AgentConfig) -> str:
     """Run a query through the agent asynchronously."""
     agent = await create_agent(config)
+    click.echo(
+        f"Query started with agent={config.agent_name} and model={config.llm.type}"
+    )
     return await agent.run(query)
 
 
@@ -98,14 +101,14 @@ async def _run_query(query: str, config: AgentConfig) -> str:
     help="URL for the Ollama API",
 )
 @pass_config
-def shell(config, ollama_model, ollama_url):
+def shell(config, agent_name, ollama_model, ollama_url):
     """Start an interactive shell session with the agent.
 
     This command starts a REPL-like interface where you can
     type queries and get responses from the agent.
     """
     updated_config = config.update(
-        ollama_model=ollama_model, ollama_url=ollama_url
+        agent_name=agent_name, ollama_model=ollama_model, ollama_url=ollama_url
     )
 
     try:
@@ -120,7 +123,7 @@ async def _run_interactive_session(config: AgentConfig):
     try:
         agent = await create_agent(config)
         click.echo(
-            f"Interactive agent session started with model: {config.llm.type}"
+            f"Interactive agent session started with agent={config.agent_name} and model={config.llm.type}"
         )
         click.echo("Type 'exit' or press Ctrl+D to quit.")
 
@@ -164,18 +167,24 @@ async def _run_interactive_session(config: AgentConfig):
 @click.option(
     "--ollama-model",
     "-m",
-    help="Ollama model to use (defaults to a smaller model for demo)",
-    default="llama3.2:3b",
+    help="Ollama model to use",
+)
+@click.option(
+    "--ollama-url",
+    "-u",
+    help="URL for the Ollama API",
 )
 @pass_config
-def demo(config, ollama_model):
+def demo(config, agent_name, ollama_model, ollama_url):
     """Run demo queries to showcase agent capabilities.
 
     This command runs a set of predefined queries to demonstrate
     the agent's functionality with local and MCP tools.
     """
     updated_config = config.update(
+        agent_name=agent_name,
         ollama_model=ollama_model,
+        ollama_url=ollama_url,
     )
 
     try:
@@ -189,7 +198,9 @@ async def _run_demo(config: AgentConfig):
     """Run demo queries asynchronously."""
     try:
         agent = await create_agent(config)
-
+        click.echo(
+            f"Demo started with agent={config.agent_name} and model={config.llm.type}"
+        )
         queries = [
             "What is 1234 * 4567?",
             "Please give me the first 10 rows of the table `projects_v1`",
