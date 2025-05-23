@@ -57,10 +57,10 @@ export const CLICKHOUSE_PASSWORD =
 export const CLICKHOUSE_DB_NAME = process.env.CLICKHOUSE_DB_NAME ?? "default";
 
 export const TRINO_URL = process.env.TRINO_URL ?? "MISSING TRINO_URL";
-export const TRINO_USERNAME =
-  process.env.TRINO_USERNAME ?? "MISSING TRINO_USERNAME";
-export const TRINO_PASSWORD =
-  process.env.TRINO_PASSWORD ?? "MISSING TRINO_PASSWORD";
+export const TRINO_ADMIN_USER =
+  process.env.TRINO_ADMIN_USER ?? "MISSING TRINO_USERNAME";
+export const TRINO_ADMIN_PASSWORD =
+  process.env.TRINO_ADMIN_PASSWORD ?? "MISSING TRINO_PASSWORD";
 export const TRINO_CATALOG = process.env.TRINO_CATALOG ?? "iceberg";
 export const TRINO_SCHEMA = process.env.TRINO_SCHEMA ?? "oso";
 
