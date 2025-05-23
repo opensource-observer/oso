@@ -44,7 +44,7 @@ client = Client()
 
 # Fetch artifacts
 query = "SELECT * FROM artifacts_v1 LIMIT 5"
-artifacts = client.query(query)
+artifacts = client.to_pandas(query)
 
 print(artifacts)
 ```
