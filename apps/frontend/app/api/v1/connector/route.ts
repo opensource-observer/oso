@@ -150,7 +150,10 @@ export async function DELETE(request: NextRequest) {
 
   const deletedConnector = await supabaseClient
     .from("dynamic_connectors")
-    .delete()
+    .update({
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .select()
     .single();
@@ -170,7 +173,10 @@ export async function DELETE(request: NextRequest) {
     // Best effort reverting operation
     await supabaseClient
       .from("dynamic_connectors")
-      .insert(deletedConnector.data);
+      .update({
+        deleted_at: null,
+      })
+      .eq("id", id);
 
     return NextResponse.json(
       {

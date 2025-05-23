@@ -294,17 +294,10 @@ describe("API /api/v1/connector", () => {
 
     afterEach(async () => {
       if (connectorToDelete && connectorToDelete.id) {
-        const { data: stillExists } = await supabaseAdminClient
+        await supabaseAdminClient
           .from("dynamic_connectors")
-          .select("id")
-          .eq("id", connectorToDelete.id)
-          .maybeSingle();
-        if (stillExists) {
-          await supabaseAdminClient
-            .from("dynamic_connectors")
-            .delete()
-            .eq("id", connectorToDelete.id);
-        }
+          .delete()
+          .eq("id", connectorToDelete.id);
       }
     });
 
@@ -334,11 +327,10 @@ describe("API /api/v1/connector", () => {
 
       const { data: found } = await supabaseAdminClient
         .from("dynamic_connectors")
-        .select("id")
+        .select()
         .eq("id", connectorToDelete.id)
         .maybeSingle();
-      expect(found).toBeNull();
-      connectorToDelete = null;
+      expect(found?.deleted_at).not.toBeNull();
     });
 
     it("should return 401 if authentication fails for DELETE", async () => {
@@ -415,27 +407,14 @@ describe("API /api/v1/connector", () => {
       const { data: revertedConnector, error: fetchError } =
         await supabaseAdminClient
           .from("dynamic_connectors")
-          .select(
-            "id, connector_name, org_id, connector_type, created_by, is_public",
-          ) // Select fields for comparison
+          .select()
           .eq("id", originalConnectorData.id)
-          .single(); // Expect it to be there
+          .single();
 
       expect(fetchError).toBeNull();
       if (!revertedConnector) throw new Error("Reverted connector not found");
 
-      expect(revertedConnector.id).toBe(originalConnectorData.id);
-      expect(revertedConnector.connector_name).toBe(
-        originalConnectorData.connector_name,
-      );
-      expect(revertedConnector.org_id).toBe(originalConnectorData.org_id);
-      expect(revertedConnector.connector_type).toBe(
-        originalConnectorData.connector_type,
-      );
-      expect(revertedConnector.created_by).toBe(
-        originalConnectorData.created_by,
-      );
-      expect(revertedConnector.is_public).toBe(originalConnectorData.is_public);
+      expect(revertedConnector.deleted_at).toBeNull();
     });
   });
 });
