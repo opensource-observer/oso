@@ -33,12 +33,10 @@ def cli(ctx, verbose):
     """OSO Agent CLI with ReAct capabilities.
 
     This tool provides a command-line interface for interacting with a
-    ReAct agent. The agent can use both local tools and MCP tools.
+    OSO agents. The agent can use both local tools and MCP tools.
     """
     setup_logging(verbose)
-
     ctx.obj = AgentConfig()
-
 
 @cli.command()
 @click.argument("query", required=True)

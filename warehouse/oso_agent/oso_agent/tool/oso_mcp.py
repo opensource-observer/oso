@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 from llama_index.core.tools import FunctionTool
 from llama_index.tools.mcp import BasicMCPClient, McpToolSpec
@@ -9,9 +9,7 @@ from ..util.errors import AgentConfigError
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_MCP_TOOLS = None
-
-async def create_oso_mcp_tools(config: AgentConfig) -> List[FunctionTool]:
+async def create_oso_mcp_tools(config: AgentConfig, allowed_tools: Optional[List[str]] = None) -> List[FunctionTool]:
     """Create and return MCP tools if enabled."""
     if not config.use_mcp:
         logger.info("MCP tools disabled, skipping")
@@ -22,7 +20,7 @@ async def create_oso_mcp_tools(config: AgentConfig) -> List[FunctionTool]:
         mcp_client = BasicMCPClient(config.oso_mcp_url)
         mcp_tool_spec = McpToolSpec(
             client=mcp_client,
-            allowed_tools=ALLOWED_MCP_TOOLS,
+            allowed_tools=allowed_tools,
         )
         tools = await mcp_tool_spec.to_tool_list_async()
         tool_names = ", ".join(
