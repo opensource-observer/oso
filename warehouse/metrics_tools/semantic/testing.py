@@ -1,5 +1,12 @@
 # An example semantic model for testing
-from .definition import Dimension, Model, Registry, Relationship, RelationshipType
+from .definition import (
+    Dimension,
+    Metric,
+    Model,
+    Registry,
+    Relationship,
+    RelationshipType,
+)
 
 
 def setup_registry():
@@ -15,6 +22,18 @@ def setup_registry():
                 Dimension(name="name", column_name="collection_name"),
             ],
             primary_key="collection_id",
+            metrics=[
+                Metric(
+                    name="count",
+                    description="The number of collections",
+                    query="COUNT(self.id)",
+                ),
+                # Metric(
+                #     name="number_of_projects",
+                #     description="The number of related projects in the collection",
+                #     query="COUNT(project.id)",
+                # )
+            ]
         )
     )
 
@@ -37,6 +56,18 @@ def setup_registry():
                     foreign_key_column="collection_id",
                 ),
             ],
+            metrics=[
+                Metric(
+                    name="count",
+                    description="The number of projects",
+                    query="COUNT(self.id)",
+                ),
+                # Metric(
+                #     name="number_of_artifacts",
+                #     description="The number of related artifacts in the project",
+                #     query="COUNT(artifact.id)",
+                # )
+            ]
         )
     )
 
@@ -60,6 +91,13 @@ def setup_registry():
                     foreign_key_column="project_id",
                 ),
             ],
+            metrics=[
+                Metric(
+                    name="count",
+                    description="The number of artifacts",
+                    query="COUNT(self.id)",
+                ),
+            ]
         )
     )
 
@@ -72,6 +110,21 @@ def setup_registry():
                 Dimension(
                     name="time",
                     description="The day the event occurred",
+                ),
+                Dimension(
+                    name="month",
+                    description="The month the event occurred",
+                    query="TIMESTAMP_TRUNC(self.time, 'month')",
+                ),
+                Dimension(
+                    name="day",
+                    description="The day the event occurred",
+                    query="TIMESTAMP_TRUNC(self.time, 'day')",
+                ),
+                Dimension(
+                    name="year",
+                    description="The year the event occurred",
+                    query="TIMESTAMP_TRUNC(self.time, 'year')",
                 ),
                 Dimension(
                     name="event_source",
@@ -89,6 +142,11 @@ def setup_registry():
                     name="amount",
                     description="The amount of the event",
                 ),
+                Dimension(
+                    name="event_type_classification",
+                    description="The classification of the event type",
+                    query="CASE WHEN self.event_type = 'COMMIT' THEN 'COMMIT' ELSE 'OTHER' END",
+                )
             ],
             time_column="time",
             primary_key="event_id",
