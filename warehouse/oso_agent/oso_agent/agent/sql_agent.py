@@ -1,36 +1,40 @@
 import logging
 
-from llama_index.core.agent.workflow import FunctionAgent
+#from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 
 from ..tool.llm import create_llm
-from ..tool.oso_mcp import create_oso_mcp_tools
 
-#from llama_index.core.llms import ChatMessage
-#from llama_index.core.memory import ChatMemoryBuffer
-#from llama_index.core.tools import BaseTool, FunctionTool
+#from ..tool.oso_mcp import create_oso_mcp_tools
+from ..types.sql_query import SqlQuery
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError
+from .basic_agent import BasicAgent
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT: str = "You are a helpful assistant that can query the Open Source Observer data lake."
+SYSTEM_PROMPT: str = """
+You are a text to SQL translator.
+You will be given a natural language query and you should return a SQL query
+that is equivalent to the natural language query.
 
-async def create_sql_agent(config: AgentConfig) -> FunctionAgent:
+Make sure that your response only contains a single valid SQL query.
+Do not include any other text or explanation.
+"""
+
+async def create_sql_agent(config: AgentConfig) -> BaseWorkflowAgent:
     """Create and configure the SQL agent."""
 
     try:
+        # Create a structured LLM for generating SQL queries
         llm = create_llm(config)
+        sllm = llm.as_structured_llm(SqlQuery)
+        tools = []
 
-        logger.info("Creating agent tools")
-        # local_tools = _create_local_tools()
-        mcp_tools = await create_oso_mcp_tools(config)
-        tools = mcp_tools
-        logger.info(f"Created {len(tools)} total tools")
-
-        logger.info("Initializing ReAct agent")
-        return FunctionAgent(
+        logger.info("Initializing SQL agent")
+        return BasicAgent(
             tools=tools,
-            llm=llm,
+            llm=sllm,
             system_prompt=SYSTEM_PROMPT,
         )
     except Exception as e:
