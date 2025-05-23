@@ -6,7 +6,7 @@ const config: Config = {
   preset: "ts-jest",
   testEnvironment: "node",
   transform: {
-    "^.+.js?$": ["babel-jest", {}],
+    "^.+.js?$": ["babel-jest", { configFile: "./babel.config.testing.js" }],
   },
   transformIgnorePatterns: [`node_modules/(?!${esModules})`],
 };

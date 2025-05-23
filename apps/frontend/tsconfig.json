@@ -27,7 +27,7 @@
     "**/*.tsx",
     "next.config.js",
     "jest.config.ts",
-    "babel.config.js",
+    "babel.config.testing.js",
     "tailwind.config.js",
     ".next/types/**/*.ts"
   ],
