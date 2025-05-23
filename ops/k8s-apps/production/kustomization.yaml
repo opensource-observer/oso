@@ -13,3 +13,4 @@ resources:
   - ./keda
   - ./mcp
   - ./agent
+  - ./open-policy-agent

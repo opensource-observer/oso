@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: base-open-policy-agent
+  labels:
+    toolkit.fluxcd.io/tenant: apps
+    ops.opensource.observer/environment: base
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: production-opa
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opa-config
+data:
+  opa-config.yaml: |-
+    labels:
+      app: opa
+
+    services:
+      gcs:
+        url: https://storage.googleapis.com/storage/v1/b/oso-opa-policies/o
+        credentials:
+          gcp_metadata:
+            scopes:
+              - https://www.googleapis.com/auth/devstorage.read_only
+
+    bundles:
+      authz:
+        service: gcs
+        resource: "bundle.tar.gz?alt=media"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opa
+  labels:
+    app: opa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opa
+  template:
+    metadata:
+      labels:
+        app: opa
+      name: opa
+    spec:
+      serviceAccountName: production-opa
+      containers:
+        - name: opa
+          image: openpolicyagent/opa:1.4.2
+          ports:
+            - name: http
+              containerPort: 8181
+          args:
+            - "run"
+            - "--ignore=.*" # exclude hidden dirs created by Kubernetes
+            - "--server"
+            - "--addr=0.0.0.0:8181"
+            - "--config-file=/opa-config/opa-config.yaml"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              scheme: HTTP
+              port: 8181
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health?bundle=true
+              scheme: HTTP
+              port: 8181
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - readOnly: true
+              mountPath: /opa-config
+              name: opa-config
+      volumes:
+        - name: opa-config
+          configMap:
+            name: opa-config
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: opa
+  labels:
+    app: opa
+spec:
+  type: ClusterIP
+  selector:
+    app: opa
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8181
+      targetPort: 8181
