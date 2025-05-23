@@ -9,6 +9,15 @@ export class PostHogTracker {
   constructor(user: User) {
     this.client = PostHogClient();
     this.user = user;
+    if (user.role !== "anonymous") {
+      this.client.identify({
+        distinctId: user.userId,
+        properties: {
+          name: user.name,
+          email: user.email,
+        },
+      });
+    }
   }
 
   track(eventName: string, properties: Record<string, any> = {}) {
