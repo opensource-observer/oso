@@ -2,7 +2,7 @@ import asyncio
 
 import nest_asyncio
 import phoenix as px
-from oso_agent.agent.agent import Agent
+from oso_agent.agent.registry import AgentRegistry
 from oso_agent.eval.config import EvalConfig
 from phoenix.experiments import run_experiment
 from phoenix.experiments.evaluators import ContainsAnyKeyword
@@ -13,7 +13,8 @@ contains_keyword = ContainsAnyKeyword(keywords=["UPDATE", "SELECT"])
 
 async def main():
   config = EvalConfig()
-  agent = await Agent.create(config)
+  registry = await AgentRegistry.create(config)
+  agent = registry.get_agent("react")
   phoenix_client = px.Client()
   dataset = phoenix_client.get_dataset(
     name="test",

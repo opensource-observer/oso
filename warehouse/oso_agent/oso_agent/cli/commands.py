@@ -6,16 +6,20 @@ import click
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
 
-from ..agent.agent import Agent
-from ..agent.config import AgentConfig
-from ..agent.errors import AgentConfigError, AgentError, AgentRuntimeError
-from ..utils.log import setup_logging
+from ..agent.registry import AgentRegistry
+from ..util.config import AgentConfig
+from ..util.errors import AgentConfigError, AgentError, AgentRuntimeError
+from ..util.log import setup_logging
 from .utils import common_options, pass_config
 
 load_dotenv()
 
 logger = logging.getLogger("oso-agent")
 
+async def create_agent(config: AgentConfig):
+    registry = await AgentRegistry.create(config)
+    agent = registry.get_agent("sql")
+    return agent
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
@@ -50,13 +54,13 @@ def cli(ctx, verbose):
     help="URL for the Ollama API",
 )
 @pass_config
-def query(config, query, system_prompt, ollama_model, ollama_url):
+def query(config, query, ollama_model, ollama_url):
     """Run a single query through the agent.
 
     QUERY is the text to send to the agent.
     """
     updated_config = config.update(
-        system_prompt=system_prompt, ollama_model=ollama_model, ollama_url=ollama_url
+        ollama_model=ollama_model, ollama_url=ollama_url
     )
 
     try:
@@ -77,7 +81,7 @@ def query(config, query, system_prompt, ollama_model, ollama_url):
 
 async def _run_query(query: str, config: AgentConfig) -> str:
     """Run a query through the agent asynchronously."""
-    agent = await Agent.create(config)
+    agent = await create_agent(config)
     return await agent.run(query)
 
 
@@ -94,14 +98,14 @@ async def _run_query(query: str, config: AgentConfig) -> str:
     help="URL for the Ollama API",
 )
 @pass_config
-def shell(config, system_prompt, ollama_model, ollama_url):
+def shell(config, ollama_model, ollama_url):
     """Start an interactive shell session with the agent.
 
     This command starts a REPL-like interface where you can
     type queries and get responses from the agent.
     """
     updated_config = config.update(
-        system_prompt=system_prompt, ollama_model=ollama_model, ollama_url=ollama_url
+        ollama_model=ollama_model, ollama_url=ollama_url
     )
 
     try:
@@ -114,11 +118,10 @@ def shell(config, system_prompt, ollama_model, ollama_url):
 async def _run_interactive_session(config: AgentConfig):
     """Run an interactive session with the agent asynchronously."""
     try:
-        agent = await Agent.create(config)
+        agent = await create_agent(config)
         click.echo(
             f"Interactive agent session started with model: {config.llm.type}"
         )
-        click.echo(f"System prompt: {config.system_prompt}")
         click.echo("Type 'exit' or press Ctrl+D to quit.")
 
         history: list[ChatMessage] = []
@@ -165,18 +168,13 @@ async def _run_interactive_session(config: AgentConfig):
     default="llama3.2:3b",
 )
 @pass_config
-def demo(config, system_prompt, ollama_model):
+def demo(config, ollama_model):
     """Run demo queries to showcase agent capabilities.
 
     This command runs a set of predefined queries to demonstrate
     the agent's functionality with local and MCP tools.
     """
-    demo_system_prompt = (
-        system_prompt
-        or "You are a helpful assistant that can query the OpenSource Observer datalake."
-    )
     updated_config = config.update(
-        system_prompt=demo_system_prompt,
         ollama_model=ollama_model,
     )
 
@@ -190,7 +188,7 @@ def demo(config, system_prompt, ollama_model):
 async def _run_demo(config: AgentConfig):
     """Run demo queries asynchronously."""
     try:
-        agent = await Agent.create(config)
+        agent = await create_agent(config)
 
         queries = [
             "What is 1234 * 4567?",
@@ -198,7 +196,6 @@ async def _run_demo(config: AgentConfig):
         ]
 
         click.echo(f"Running demo with model: {config.llm.type}")
-        click.echo(f"System prompt: {config.system_prompt}")
 
         for i, query in enumerate(queries, 1):
             click.echo(f"\nDemo query {i}: {query}")

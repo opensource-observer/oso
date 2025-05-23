@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.datastructures import State
 from fastapi.responses import PlainTextResponse
-from oso_agent.agent.agent import Agent
+from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from oso_agent.agent.registry import AgentRegistry
 from oso_agent.server.bot import setup_bot
 from oso_agent.server.definition import (
     AgentServerConfig,
@@ -17,7 +18,7 @@ from oso_agent.server.definition import (
     BotConfig,
     ChatRequest,
 )
-from oso_agent.utils.log import setup_logging
+from oso_agent.util.log import setup_logging
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -26,12 +27,11 @@ logger = logging.getLogger(__name__)
 def default_lifecycle(config: AgentServerConfig):
     @asynccontextmanager
     async def initialize_app(app: FastAPI):
-        agent = await Agent.create(config)
+        registry = await AgentRegistry.create(config)
+        agent = registry.get_agent("react")
 
         bot_config = BotConfig()
-
         bot = setup_bot(bot_config, agent)
-
         await bot.login(bot_config.discord_bot_token.get_secret_value())
         connect_task = asyncio.create_task(bot.connect())
 
@@ -51,11 +51,11 @@ class ApplicationStateStorage(t.Protocol):
     def state(self) -> State: ...
 
 
-def get_agent(storage: ApplicationStateStorage, config: AgentServerConfig) -> Agent:
+def get_agent(storage: ApplicationStateStorage, config: AgentServerConfig) -> BaseWorkflowAgent:
     """Get the agent from the application state."""
     agent = storage.state.agent
     assert agent is not None, "Agent not initialized"
-    return t.cast(Agent, agent)
+    return t.cast(BaseWorkflowAgent, agent)
 
 
 def app_factory(
