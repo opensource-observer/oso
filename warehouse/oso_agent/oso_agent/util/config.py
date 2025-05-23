@@ -1,11 +1,15 @@
 import typing as t
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, SecretStr
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from ..utils.config import agent_config_dict
 
+def agent_config_dict():
+    """Return the configuration dictionary for the agent."""
+    return SettingsConfigDict(
+        env_prefix="agent_", 
+        env_nested_delimiter="__"
+    )
 
 class LocalLLMConfig(BaseModel):
     type: t.Literal["local"] = "local"
@@ -62,11 +66,6 @@ class AgentConfig(BaseSettings):
     )
     use_mcp: bool = Field(default=True, description="Whether to use MCP tools")
 
-    allowed_mcp_tools: Optional[List[str]] = Field(
-        default=None,
-        description="List of allowed MCP tool names, or None for all tools",
-    )
-
     enable_telemetry: bool = Field(
         default=True, description="Whether to enable OpenTelemetry instrumentation"
     )
@@ -84,11 +83,6 @@ class AgentConfig(BaseSettings):
     arize_phoenix_api_key: SecretStr = Field(
         default=SecretStr(""),
         description="API key for the Arize Phoenix API"
-    )
-
-    system_prompt: str = Field(
-        default="You are a helpful assistant that can query the OpenSource Observer datalake.",
-        description="System prompt for the agent",
     )
 
     def update(self, **kwargs) -> "AgentConfig":

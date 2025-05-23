@@ -1,7 +1,6 @@
 from pydantic import Field
 
-from ..agent.config import AgentConfig
-from ..utils.config import agent_config_dict
+from ..util.config import AgentConfig, agent_config_dict
 
 
 class EvalConfig(AgentConfig):

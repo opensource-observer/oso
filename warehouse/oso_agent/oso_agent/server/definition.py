@@ -4,8 +4,7 @@ from fastapi import FastAPI
 from llama_index.core.llms import ChatMessage
 from pydantic import BaseModel, Field, SecretStr
 
-from ..agent.config import AgentConfig
-from ..utils.config import agent_config_dict
+from ..util.config import AgentConfig, agent_config_dict
 
 
 class ChatRequestMessageTextPart(BaseModel):

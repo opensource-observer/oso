@@ -1,11 +1,11 @@
 import asyncio
 
 from discord import Client, Intents, Message, TextChannel
-from oso_agent.agent.agent import Agent
+from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from oso_agent.server.definition import BotConfig
 
 
-def setup_bot(config: BotConfig, agent: Agent):
+def setup_bot(config: BotConfig, agent: BaseWorkflowAgent):
     intents = Intents.default()
     intents.message_content = True
 
