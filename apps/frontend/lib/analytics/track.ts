@@ -10,9 +10,12 @@ export class PostHogTracker {
     this.client = PostHogClient();
     this.user = user;
     if (user.role !== "anonymous") {
-      this.client.identify(user.userId, {
-        name: user.name,
-        email: user.email,
+      this.client.identify({
+        distinctId: user.userId,
+        properties: {
+          name: user.name,
+          email: user.email,
+        },
       });
     }
   }
