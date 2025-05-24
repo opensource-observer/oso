@@ -1,13 +1,23 @@
-from metrics_tools.semantic.definition import AttributeReference, SemanticQuery
+from metrics_tools.semantic.definition import (
+    AttributeReference,
+    AttributeReferenceTransformer,
+    BoundMetric,
+    Dimension,
+    Metric,
+    Model,
+    Registry,
+    SemanticQuery,
+)
 from metrics_tools.semantic.testing import setup_registry
+from sqlglot import parse_one
 
 
 def test_attribute_reference_traversal():
 
     ref1 = AttributeReference.from_string("a.b->c.d->e.f")
-    ref2 = AttributeReference(ref=["a.b", "c.d", "e.f"])
-    ref3 = AttributeReference(ref=["a.b", "c.d", "x.y"])
-    ref4 = AttributeReference(ref=["a.g", "c.d", "e.f"])
+    ref2 = AttributeReference(path=["a.b", "c.d", "e.f"])
+    ref3 = AttributeReference(path=["a.b", "c.d", "x.y"])
+    ref4 = AttributeReference(path=["a.g", "c.d", "e.f"])
     assert ref1 == ref2
     assert ref1 != ref3
 
@@ -78,8 +88,12 @@ def test_semantic_model_shortest_path():
         ["collection"],
     )
 
-    to_artifact_ref = registry.get_model("event").find_relationship(model_ref="artifact", name="to")
-    from_artifact_ref =  registry.get_model("event").find_relationship(model_ref="artifact", name="from")
+    to_artifact_ref = registry.get_model("event").find_relationship(
+        model_ref="artifact", name="to"
+    )
+    from_artifact_ref = registry.get_model("event").find_relationship(
+        model_ref="artifact", name="from"
+    )
 
     assert to_artifact_ref.model_ref == "artifact"
     assert to_artifact_ref.name == "to"
@@ -87,6 +101,7 @@ def test_semantic_model_shortest_path():
     assert from_artifact_ref.model_ref == "artifact"
     assert from_artifact_ref.name == "from"
     assert from_artifact_ref.foreign_key_column == "from_artifact_id"
+
 
 def test_semantic_query():
     registry = setup_registry()
@@ -102,3 +117,62 @@ def test_semantic_query():
 
     query_exp = registry.query(query)
     assert query_exp is not None
+
+
+def test_attribute_reference_transformer():
+    simple_column = parse_one("event.to")
+    transformer0 = AttributeReferenceTransformer()
+    transformed_result0 = transformer0.transform(simple_column)
+    assert transformed_result0 is not None
+    assert len(transformed_result0.references) == 1
+    assert transformed_result0.references[0] == AttributeReference.from_string("event.to")
+
+    multiple_refs_sql = parse_one("event.to->artifact.count > event.from->artifact.count")
+
+    transformer1 = AttributeReferenceTransformer()
+    transformed_result1 = transformer1.transform(multiple_refs_sql)
+
+    assert transformed_result1 is not None
+    assert transformed_result1.node != multiple_refs_sql
+    assert len(transformed_result1.references) == 2
+
+    assert AttributeReference.from_string("event.to->artifact.count") in transformed_result1.references
+    assert AttributeReference.from_string("event.from->artifact.count") in transformed_result1.references
+
+
+
+
+def test_resolve_metrics():
+    # registry = setup_registry()
+
+    registry = Registry()
+
+    model = Model(
+        name="artifact",
+        table="oso.artifacts_v1",
+        description="An artifact",
+        dimensions=[
+            Dimension(name="id", column_name="artifact_id"),
+        ],
+        primary_key="artifact_id",
+        metrics=[
+            Metric(
+                name="count",
+                description="The number of artifacts",
+                query="COUNT(self.id)",
+            )
+        ],
+    )
+    registry.register(model)
+
+    metric = model.get_attribute("count")
+
+    assert isinstance(metric, BoundMetric), "count should be a BoundMetric"
+    assert metric is not None, "metric should not be None"
+
+    ref = AttributeReference.from_string("artifact.id")
+    traverser = ref.traverser()
+
+    query_part = metric.to_query_part(traverser, ref, registry)
+
+    assert query_part.resolved_references == [ref]
