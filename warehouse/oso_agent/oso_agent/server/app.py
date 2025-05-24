@@ -31,7 +31,7 @@ def default_lifecycle(config: AgentServerConfig):
         agent = registry.get_agent(config.agent_name)
 
         bot_config = BotConfig()
-        bot = setup_bot(bot_config, agent)
+        bot = await setup_bot(bot_config, agent)
         await bot.login(bot_config.discord_bot_token.get_secret_value())
         connect_task = asyncio.create_task(bot.connect())
 
