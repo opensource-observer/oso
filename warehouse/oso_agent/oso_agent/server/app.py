@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.datastructures import State
 from fastapi.responses import PlainTextResponse
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from oso_agent.agent.registry import AgentRegistry
+from oso_agent.agent.agent_registry import AgentRegistry
 from oso_agent.server.bot import setup_bot
 from oso_agent.server.definition import (
     AgentServerConfig,
@@ -20,6 +20,8 @@ from oso_agent.server.definition import (
 )
 from oso_agent.util.log import setup_logging
 
+from ..util.tracing import setup_telemetry
+
 load_dotenv()
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
 def default_lifecycle(config: AgentServerConfig):
     @asynccontextmanager
     async def initialize_app(app: FastAPI):
+        setup_telemetry(config)
         registry = await AgentRegistry.create(config)
         agent = registry.get_agent(config.agent_name)
 

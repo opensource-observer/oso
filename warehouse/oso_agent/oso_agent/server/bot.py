@@ -5,7 +5,7 @@ from discord import Intents, Member
 from discord.ext.commands import Bot
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 
-from ..eval.text2sql import text2sql_experiment
+from ..eval.experiment_registry import get_experiments
 from .definition import BotConfig
 
 logger = logging.getLogger(__name__)
@@ -35,10 +35,12 @@ async def setup_bot(config: BotConfig, agent: BaseWorkflowAgent):
             f"Experiment {experiment_name} started with agent={config.agent_name} and model={config.llm.type}"
         )
 
-        if experiment_name == "text2sql":
-            # Run the text2sql experiment
-            response = await text2sql_experiment(config, agent)
-            logger.info("...text2sql experiment completed.")
+        experiments = get_experiments()
+        if experiment_name in experiments:
+            # Run the experiment
+            experiment_func = experiments[experiment_name]
+            response = await experiment_func(config, agent)
+            logger.info(f"...{experiment_name} experiment completed.")
             await ctx.send(str(response))
         else:
             await ctx.send(f"Experiment {experiment_name} not found. Please check the experiment name.")

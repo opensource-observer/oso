@@ -1,5 +1,5 @@
+from .agent_registry import AgentRegistry
 from .react_agent import create_react_agent
-from .registry import AgentRegistry
 from .sql_agent import create_sql_agent
 
 __all__ = [
