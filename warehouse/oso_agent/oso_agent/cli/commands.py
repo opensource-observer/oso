@@ -8,6 +8,8 @@ from llama_index.core.llms import ChatMessage, MessageRole
 
 from ..agent.registry import AgentRegistry
 from ..eval.text2sql import text2sql_experiment
+from ..server.bot import setup_bot
+from ..server.definition import BotConfig
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentError, AgentRuntimeError
 from ..util.log import setup_logging
@@ -279,3 +281,31 @@ async def _run_demo(config: AgentConfig):
                 click.echo(f"Error: {e}", err=True)
     except Exception as e:
         click.echo(f"Error in demo: {e}", err=True)
+
+@cli.command()
+@pass_config
+def discord(config, agent_name):
+    """Run the Discord bot
+
+    experiment_name is the name of the experiment to run.
+    """
+    bot_config = BotConfig()
+    try:
+        asyncio.run(_discord_bot_main(bot_config))
+    except AgentConfigError as e:
+        click.echo(f"Configuration error: {e}", err=True)
+        sys.exit(1)
+
+async def _discord_bot_main(config: BotConfig) -> None:
+    """Testing function to run the bot manually"""
+    agent = await create_agent(config)
+    bot = await setup_bot(config, agent)
+    await bot.login(config.discord_bot_token.get_secret_value())
+    task = asyncio.create_task(bot.connect())
+    try:
+        logger.info("Running bot")
+        await asyncio.sleep(10000)
+    finally:
+        logger.info("Closing bot")
+        await bot.close()
+        await task
