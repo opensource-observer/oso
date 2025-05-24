@@ -87,6 +87,11 @@ class AgentConfig(BaseSettings):
         description="API key for the Arize Phoenix API"
     )
 
+    eval_dataset_text2sql: str = Field(
+        default="text2sql",
+        description="Arize Phoenix dataset for text2sql evaluations",
+    )
+
     def update(self, **kwargs) -> "AgentConfig":
         """Create a new config with updates applied."""
         updates = {k: v for k, v in kwargs.items() if v is not None}

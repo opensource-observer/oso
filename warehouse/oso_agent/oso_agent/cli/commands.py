@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
 
 from ..agent.registry import AgentRegistry
+from ..eval.text2sql import text2sql_experiment
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentError, AgentRuntimeError
 from ..util.log import setup_logging
@@ -85,6 +86,61 @@ async def _run_query(query: str, config: AgentConfig) -> str:
     )
     return await agent.run(query)
 
+@cli.command()
+@click.argument("experiment_name", required=True)
+@common_options
+@click.option(
+    "--ollama-model",
+    "-m",
+    help="Ollama model to use",
+)
+@click.option(
+    "--ollama-url",
+    "-u",
+    help="URL for the Ollama API",
+)
+@pass_config
+def experiment(config, experiment_name, agent_name, ollama_model, ollama_url):
+    """Run a single experiment through the agent.
+
+    experiment_name is the name of the experiment to run.
+    """
+    updated_config = config.update(
+        agent_name=agent_name, ollama_model=ollama_model, ollama_url=ollama_url
+    )
+
+    try:
+        with click.progressbar(
+            length=1, label="Processing experiment", show_eta=False, show_percent=False
+        ) as b:
+            response = asyncio.run(_run_experiment(experiment_name, updated_config))
+            b.update(1)
+
+        click.echo("\nResponse:")
+        click.echo("─" * 80)
+        click.echo(response)
+        click.echo("─" * 80)
+    except AgentError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+async def _run_experiment(experiment_name: str, config: AgentConfig) -> str:
+    """Run an experiment through the agent asynchronously."""
+    agent = await create_agent(config)
+    click.echo(
+        f"Experiment {experiment_name} started with agent={config.agent_name} and model={config.llm.type}"
+    )
+
+    if experiment_name == "text2sql":
+        # Run the text2sql experiment
+        response = await text2sql_experiment(config, agent)
+        click.echo("...text2sql experiment completed.")
+        return str(response)
+    else:
+        raise AgentRuntimeError(
+            f"Experiment {experiment_name} not found. Please check the experiment name."
+        )
 
 @cli.command()
 @common_options
