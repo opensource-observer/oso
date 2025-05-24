@@ -6,13 +6,14 @@ import click
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
 
-from ..agent.registry import AgentRegistry
-from ..eval.text2sql import text2sql_experiment
+from ..agent.agent_registry import AgentRegistry
+from ..eval.experiment_registry import get_experiments
 from ..server.bot import setup_bot
 from ..server.definition import BotConfig
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentError, AgentRuntimeError
 from ..util.log import setup_logging
+from ..util.tracing import setup_telemetry
 from .utils import common_options, pass_config
 
 load_dotenv()
@@ -38,8 +39,10 @@ def cli(ctx, verbose):
     This tool provides a command-line interface for interacting with a
     OSO agents. The agent can use both local tools and MCP tools.
     """
+    config = AgentConfig()
     setup_logging(verbose)
-    ctx.obj = AgentConfig()
+    setup_telemetry(config)
+    ctx.obj = config
 
 @cli.command()
 @click.argument("query", required=True)
@@ -134,10 +137,12 @@ async def _run_experiment(experiment_name: str, config: AgentConfig) -> str:
         f"Experiment {experiment_name} started with agent={config.agent_name} and model={config.llm.type}"
     )
 
-    if experiment_name == "text2sql":
+    experiments = get_experiments()
+    if experiment_name in experiments:
+        experiment_func = experiments[experiment_name]
         # Run the text2sql experiment
-        response = await text2sql_experiment(config, agent)
-        click.echo("...text2sql experiment completed.")
+        response = await experiment_func(config, agent)
+        click.echo(f"...{experiment_name} experiment completed.")
         return str(response)
     else:
         raise AgentRuntimeError(
@@ -284,7 +289,7 @@ async def _run_demo(config: AgentConfig):
 
 @cli.command()
 @pass_config
-def discord(config, agent_name):
+def discord(config):
     """Run the Discord bot
 
     experiment_name is the name of the experiment to run.

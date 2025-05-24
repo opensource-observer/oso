@@ -1,6 +1,5 @@
 """Utility functions for the application."""
 
-from ..util.log import setup_logging
 from .config import (
     AgentConfig,
     GeminiLLMConfig,
@@ -9,16 +8,19 @@ from .config import (
     agent_config_dict,
 )
 from .errors import AgentConfigError, AgentError, AgentMissingError, AgentRuntimeError
+from .log import setup_logging
+from .tracing import setup_telemetry
 
 __all__ = [
-    "setup_logging",
-    "agent_config_dict",
     "AgentConfig",
     "LocalLLMConfig",
     "GeminiLLMConfig",
     "GoogleGenAILLMConfig",
+    "agent_config_dict",
     "AgentConfigError",
     "AgentError",
-    "AgentRuntimeError",
     "AgentMissingError",
+    "AgentRuntimeError",
+    "setup_logging",
+    "setup_telemetry",
 ]
