@@ -79,10 +79,10 @@ filtered_events AS (
     e.event_type,
     e.to_artifact_id AS repo_artifact_id,
     e.from_artifact_id AS developer_id,
-    LOWER(u.github_username) AS developer_name
+    LOWER(u.artifact_name) AS developer_name
   FROM oso.int_events_daily__github AS e
-  JOIN oso.int_github_users AS u
-    ON e.from_artifact_id = u.user_id
+  JOIN oso.int_github_users_bot_filtered AS u
+    ON e.from_artifact_id = u.artifact_id
   WHERE
     u.is_bot = FALSE
     AND e.event_type IN (

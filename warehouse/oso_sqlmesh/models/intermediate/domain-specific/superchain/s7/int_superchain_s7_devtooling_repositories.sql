@@ -16,17 +16,20 @@ MODEL (
 
 WITH events AS (
   SELECT DISTINCT
-    to_artifact_id,
-    COUNT(DISTINCT CASE WHEN event_type = 'STARRED' THEN from_artifact_id END)
-      AS star_count,
-    COUNT(DISTINCT CASE WHEN event_type = 'FORKED' THEN from_artifact_id END)
-      AS fork_count
-  FROM oso.int_events_to_project__github
+    e.to_artifact_id,
+    COUNT(
+      DISTINCT CASE WHEN e.event_type = 'STARRED' THEN e.from_artifact_id END
+    ) AS star_count,
+    COUNT(
+      DISTINCT CASE WHEN e.event_type = 'FORKED' THEN e.from_artifact_id END
+    ) AS fork_count
+  FROM oso.int_events_daily__github AS e
+  JOIN oso.int_artifacts_by_project_in_op_atlas AS app
+    ON e.to_artifact_id = app.artifact_id
   WHERE
-    "time" >= @event_date_threshold
-    AND event_type IN ('STARRED', 'FORKED')
-    AND event_source = 'GITHUB'
-  GROUP BY 1
+    e.bucket_day >= @event_date_threshold
+    AND e.event_type IN ('STARRED', 'FORKED')
+  GROUP BY e.to_artifact_id
 )
 
 SELECT DISTINCT
@@ -36,7 +39,6 @@ SELECT DISTINCT
   repos.artifact_name AS repo_artifact_name,
   events.star_count,
   events.fork_count,
-  repos.last_release_published,
   repos.num_packages_in_deps_dev,
   repos.num_dependent_repos_in_oso,
   repos.is_fork,

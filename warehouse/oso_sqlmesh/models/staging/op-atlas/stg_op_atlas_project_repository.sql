@@ -72,6 +72,6 @@ SELECT DISTINCT
   op_atlas_repos.artifact_url,
   'REPOSITORY' AS artifact_type
 FROM op_atlas_repos
-LEFT OUTER JOIN oso.int_repositories_all AS all_repos
-  ON LOWER(op_atlas_repos.artifact_namespace) = LOWER(all_repos.artifact_namespace)
-  AND LOWER(op_atlas_repos.artifact_name) = LOWER(all_repos.artifact_name)
+LEFT OUTER JOIN oso.int_github_repositories AS all_repos
+  ON LOWER(op_atlas_repos.artifact_namespace) = all_repos.artifact_namespace
+  AND LOWER(op_atlas_repos.artifact_name) = all_repos.artifact_name

@@ -7,7 +7,7 @@ MODEL (
     lookback 31,
     forward_only true,
   ),
-  start '2015-01-01',
+  start @github_incremental_start,
   cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
@@ -19,6 +19,7 @@ MODEL (
     ),
   ),
   tags (
+    "github",
     "incremental"
   )
 );
