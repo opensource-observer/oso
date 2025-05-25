@@ -19,7 +19,8 @@ MODEL (
     ),
   ),
   tags (
-    "incremental"
+    "github",
+    "incremental",
   )
 );
 

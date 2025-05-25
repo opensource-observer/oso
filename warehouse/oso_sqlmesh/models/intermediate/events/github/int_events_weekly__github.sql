@@ -7,15 +7,16 @@ MODEL (
     lookback 31,
     forward_only true,
   ),
-  start '2015-01-01',
+  start @github_incremental_start,
   cron '@daily',
-  partitioned_by (DAY("bucket_week"), "event_source", "event_type"),
-  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
+  partitioned_by (DAY("bucket_week"), "event_type"),
+  grain (bucket_week, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
     has_at_least_n_rows(threshold := 0),
-  ),
-  ignored_rules (
-    "incrementalmustdefinenogapsaudit",
+    no_gaps(
+      time_column := bucket_week,
+      no_gap_date_part := 'week',
+    ),
   ),
   tags (
     "github",
@@ -29,10 +30,10 @@ SELECT
   from_artifact_id,
   event_source,
   event_type,
-  SUM(amount)
+  SUM(amount) AS amount
 FROM oso.int_events_daily__github
 WHERE
-  bucket_day BETWEEN @start_date AND @end_date
+  bucket_day BETWEEN @start_dt AND @end_dt
 GROUP BY
   1,
   from_artifact_id,

@@ -23,6 +23,8 @@ def weight_events(event_type, amount):
 @model(
     "oso.int_openrank_developer",
     kind="full",
+    dialect="trino",
+    enabled=False,
     depends_on=[
         "oso.int_artifacts",
         "oso.int_events_monthly_to_project__github",
