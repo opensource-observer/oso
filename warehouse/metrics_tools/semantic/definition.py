@@ -160,11 +160,18 @@ class BoundModelAttribute(t.Protocol):
     ) -> "QueryPart":
         """Returns the QueryPart for the bound query part"""
         ...
-    
+
+    def validate(self):
+        ...
+
 
 class UnboundModelAttribute(t.Protocol):
-    def bind(self, model: "Model") -> "BoundModelAttribute":
-        """Binds the query part to the given model and returns a QueryPart"""
+    def bind(self, model: "Model", dependencies: dict[str, "AttributePath"]) -> "BoundModelAttribute":
+        """Binds the query part to the given model and returns a attribute"""
+        ...
+
+    def attribute_references(self) -> t.List["AttributePath"]:
+        """Returns the references for model attributes"""
         ...
 
 
@@ -277,9 +284,22 @@ class Metric(BaseModel):
     description: str = ""
     query: str = ""
 
+    @model_validator(mode="after")
+    def process_metric(self):
+        expression = parse_one(self.query)
+        result = AttributePathTransformer.transform(expression, self_model_name="self")
+        self._expression = expression
+
+        self._attribute_references = result.references
+        return self
+
     def query_as_expression(self) -> exp.Expression:
         """Returns the SQL expression for the metric"""
-        return parse_one(self.query)
+        return self._expression
+    
+    def attribute_references(self) -> t.List["AttributePath"]:
+        """Returns the references for model attributes"""
+        return self._attribute_references
 
     def bind(self, model: "Model") -> "BoundMetric":
         """Returns the bound metric for the given model"""
@@ -365,14 +385,33 @@ class Dimension(BaseModel):
             raise ValueError("Cannot specify both query and column_name for dimension")
         if not self.query and not self.column_name:
             self.column_name = self.name
+
+        if self.query:
+            expression = parse_one(self.query)
+        else:
+            expression = exp.Column(
+                table=exp.to_identifier("self"), this=exp.to_identifier(self.column_name)
+            )
+        
+        # find all references in the expression
+        result = AttributePathTransformer.transform(expression, self_model_name="self")
+        self._expression = expression
+
+        # Ensure all references point to self
+        for ref in result.references:
+            if ref.base_model != "self":
+                raise ValueError(
+                    f"Dimension {self.name} cannot reference another model. Found reference to {ref.base_model}. Only use `self`"
+                )
+        self._attribute_references = result.references
+
         return self
 
     def as_expression(self) -> exp.Expression:
-        if self.query:
-            return parse_one(self.query)
-        return exp.Column(
-            table=exp.to_identifier("self"), this=exp.to_identifier(self.column_name)
-        )
+        return self._expression
+    
+    def attribute_references(self) -> t.List["AttributePath"]:
+        return self._attribute_references
 
     def bind(self, model: "Model") -> "BoundDimension":
         return BoundDimension(
@@ -390,6 +429,15 @@ class BoundDimension:
     def __init__(self, model: "Model", dimension: Dimension):
         self.model = model
         self.dimension = dimension
+
+    def validate(self):
+        """Validates the dimension to ensure it is valid for the model
+        
+        Dimensions must resolve to a column or another dimension in the model.
+
+        If the dimension is an expression, it must not reference another model.
+        """
+        pass
 
     def with_alias(self, alias: str) -> exp.Expression:
         """Returns the SQL expression for the dimension with the given alias"""
@@ -525,25 +573,61 @@ class Model(BaseModel):
     references: t.List[Relationship] = Field(default_factory=lambda: [])
 
     @model_validator(mode="after")
-    def build_reference_lookup(self):
+    def build_attribute_lookup(self):
         """Builds a lookup of the references in the model"""
         attributes: dict[str, BoundDimension | BoundMetric | BoundRelationship] = {}
 
+        # Topologically sort the dimensions
+        attribute_graph: t.Dict[str, t.Set[str]] = {}
         for dimension in self.dimensions:
-            # Ensure we don't have duplicate names
-            if dimension.name in attributes:
+            if dimension.name in attribute_graph:
                 raise ValueError(
                     f"Dimension {dimension.name} already exists in model {self.name}"
                 )
+            references = dimension.attribute_references()
+
+            attribute_graph[dimension.name] = set()
+
+            for reference in references:
+                if reference.is_relationship() or reference.base_model != "self":
+                    raise ValueError(
+                        "Cannot reference a relationship in a dimension"
+                    )
+                # Attribute/Column name
+                attribute_name = exp_to_str(reference.final_attribute().this)
+
+                if attribute_name == dimension.name:
+                    # If the attribute name is the same as the dimension name, we can skip it.
+                    # For a dimension this just means that the dimension is a column in the table
+                    continue
+
+                attribute_graph[dimension.name].add(exp_to_str(reference.final_attribute().this))
+
             attributes[dimension.name] = dimension.bind(self)
 
+        # Check for cycles in the dimensions
+        dimensions_sorter = TopologicalSorter(attribute_graph)
+        dimensions_sorter.prepare()
+
+        # Check for cycles in the metrics and dimensions
+        # For now this only checks for cycles in the current model. 
         for metric in self.metrics:
             # Ensure we don't have duplicate names
-            if metric.name in attributes:
+            if metric.name in attributes or metric.name in attribute_graph:
                 raise ValueError(
                     f"Metric {metric.name} already exists in model {self.name}"
                 )
+            attribute_graph[metric.name] = set()
+            for reference in metric.attribute_references():
+                if reference.is_relationship() or reference.base_model != "self":
+                    continue # Relationships are handled at query time (for now)
+                attribute_graph[metric.name].add(exp_to_str(reference.final_attribute().this))
+
             attributes[metric.name] = metric.bind(self)
+
+        # Ensure we have no cycles
+        attribute_sorter = TopologicalSorter(attribute_graph)
+        attribute_sorter.prepare()
 
         self._model_ref_lookup_by_model_name: dict[str, list[Relationship]] = {}
         for reference in self.references:
@@ -762,6 +846,10 @@ class AttributePath(BaseModel):
         """Returns the final column in the reference"""
         return self._columns[-1]
     
+    def is_relationship(self) -> bool:
+        """Checks if the reference is a relationship"""
+        return len(self._columns) > 1
+    
 class AttributeTransformerResult(BaseModel):
     """Internal result only used for the attribute reference transformer"""
 
@@ -933,16 +1021,15 @@ class AttributePathTraverser:
     model.
 
     Because some models may reference another model more than once. The way this
-    would be distinguished would be through different foreign key columns.
-    Reference traversal, tracks the joins through these columns. We do this by
-    enabling joins through a specific column.
+    would be distinguished would be through different model relationship
+    attributes. Path traversal, tracks the joins through these attributes.
 
-    The following table shows how a traverser works, given a reference
+    The following table shows how a traverser works, given a path 
     `a.b->c.d->e.f`:
 
     | Index             | 0      | 1               | 2                        |
     |-------------------|--------|-----------------|--------------------------|
-    | Through Column    | a.b    | c.d             | e.f                      |
+    | Through Column    |        | a.b             | c.d                      |
     | Alias for table g | md5(g) | md5(md5(a.b)+g) | md5(md5(md5(a.b)+c.d)+g) |
 
     This allows us to ensure that we don't duplicate joins by ensuring that each
