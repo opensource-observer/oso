@@ -17,6 +17,7 @@ class QueryBuilder:
         self._deepest_reference: AttributePath | None = None
 
         self._select_parts: list[QueryPart] = []
+        self._select_aliases: list[str] = []
         self._filter_parts: list[QueryPart] = []
 
         self._limit = 0
@@ -40,7 +41,7 @@ class QueryBuilder:
 
         return self
 
-    def add_select(self, reference: AttributePath):
+    def add_select(self, reference: AttributePath, alias: str):
         """Add a model attribute to the select clause"""
         # validate the select by checking the attribute references
 
@@ -52,6 +53,7 @@ class QueryBuilder:
             if resolved_reference not in self._references:
                 self.add_reference(resolved_reference)
         self._select_parts.append(part)
+        self._select_aliases.append(alias)
         return self
 
     def add_filter(self, filter: Filter):
@@ -94,7 +96,7 @@ class QueryBuilder:
 
         for i in range(len(select_parts)):
             part = select_parts[i]
-            select_expressions.append(part.expression)
+            select_expressions.append(part.expression.as_(self._select_aliases[i]))
 
             if not part.is_aggregate:
                 group_by_expressions.append(str(i + 1))

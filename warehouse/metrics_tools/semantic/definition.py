@@ -853,6 +853,14 @@ class AttributePath(BaseModel):
             for column in self._columns
         ]
         return "->".join(columns_as_strs)
+    
+    def to_select_alias(self) -> str:
+        """Returns the string representation of the reference as a select alias"""
+        columns_as_strs = [
+            f"{exp_to_str(column.table)}_{exp_to_str(column.this)}"
+            for column in self._columns
+        ]
+        return "__".join(columns_as_strs)
 
     def __eq__(self, other: object) -> bool:
         """Checks if the reference is equal to another reference"""
@@ -1188,10 +1196,24 @@ class SemanticQuery(BaseModel):
 
     @model_validator(mode="after")
     def process_columns(self):
-        # Bit of a circular dependency but makes this easier to work with
-        self._processed_columns = [
-            AttributePath.from_string(col) for col in self.columns
-        ]
+        self._processed_columns: t.List[t.Tuple[AttributePath, str]] = []
+        for col in self.columns:
+            result = AttributePathTransformer.transform(parse_one(col))
+            if len(result.references) != 1:
+                raise ValueError(
+                    f"Invalid column reference {col}. Must be a single reference with an optional alias"
+                )
+            if not isinstance(result.node, (exp.Anonymous, exp.Alias)):
+                raise ValueError(
+                    f"Invalid column reference {col}. Must be a single reference with an optional alias"
+                )
+            column_path = result.references[0]
+            alias = column_path.to_select_alias()
+            if isinstance(result.node, exp.Alias):
+                alias = exp_to_str(result.node.alias)
+
+            self._processed_columns.append((column_path, alias))
+            
         self._processed_filters = [Filter(query=f) for f in self.filters]
 
         return self
@@ -1200,8 +1222,8 @@ class SemanticQuery(BaseModel):
         from metrics_tools.semantic.query import QueryBuilder
 
         query = QueryBuilder(registry)
-        for column in self._processed_columns:
-            query.add_select(column)
+        for column, alias in self._processed_columns:
+            query.add_select(column, alias)
         for filter in self._processed_filters:
             query.add_filter(filter)
         query.add_limit(self.limit)

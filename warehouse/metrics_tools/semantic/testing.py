@@ -43,8 +43,16 @@ def setup_registry():
             table="oso.projects_v1",
             description="A project",
             dimensions=[
-                Dimension(name="id", column_name="project_id"),
-                Dimension(name="name", column_name="project_name"),
+                Dimension(
+                    name="id", 
+                    description="The unique identifier of the project",
+                    column_name="project_id"
+                ),
+                Dimension(
+                    name="name",
+                    description="The name of the project",
+                    column_name="project_name"
+                ),
             ],
             primary_key="project_id",
             references=[
@@ -77,9 +85,21 @@ def setup_registry():
             table="oso.artifacts_v1",
             description="An artifact",
             dimensions=[
-                Dimension(name="id", column_name="artifact_id"),
-                Dimension(name="name", column_name="artifact_name"),
-                Dimension(name="url", column_name="artifact_url"),
+                Dimension(
+                    name="id", 
+                    description="The unique identifier of the artifact",
+                    column_name="artifact_id",
+                ),
+                Dimension(
+                    name="name",
+                    description="The name of the artifact",
+                    column_name="artifact_name"
+                ),
+                Dimension(
+                    name="url",
+                    description="The URL of the artifact",
+                    column_name="artifact_url"
+                ),
             ],
             primary_key="artifact_id",
             references=[
@@ -103,7 +123,7 @@ def setup_registry():
 
     registry.register(
         Model(
-            name="event",
+            name="github_event",
             table="oso.int_events__github",
             description="An event",
             dimensions=[
@@ -135,7 +155,7 @@ def setup_registry():
                     description="The type of the event",
                 ),
                 Dimension(
-                    name="event_id",
+                    name="id",
                     description="The unique identifier of the event",
                 ),
                 Dimension(
@@ -152,7 +172,7 @@ def setup_registry():
                 Metric(
                     name="count",
                     description="The number of events",
-                    query="COUNT(self.event_id)",
+                    query="COUNT(self.id)",
                 ),
                 Metric(
                     name="total_amount",

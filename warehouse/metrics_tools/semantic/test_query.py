@@ -8,11 +8,11 @@ def test_query_builder_with_dimensions():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.add_select(AttributePath.from_string("event.month"))
-    query.add_select(AttributePath.from_string("event.event_source"))
-    query.add_select(AttributePath.from_string("event.from->artifact.name"))
-    query.add_select(AttributePath.from_string("event.to->collection.name"))
-    query.add_filter(Filter(query="event.month = DATE '2023-01-01'"))
+    query.add_select(AttributePath.from_string("github_event.month"), "event_month")
+    query.add_select(AttributePath.from_string("github_event.event_source"), "event_source")
+    query.add_select(AttributePath.from_string("github_event.from->artifact.name"), "artifact_name")
+    query.add_select(AttributePath.from_string("github_event.to->collection.name"), "collection_name")
+    query.add_filter(Filter(query="github_event.month = DATE '2023-01-01'"))
 
     query_exp = query.build()
 
@@ -36,8 +36,8 @@ def test_query_builder_with_metrics():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.add_select(AttributePath.from_string("collection.name"))
-    query.add_select(AttributePath.from_string("project.count"))
+    query.add_select(AttributePath.from_string("collection.name"), "collection_name")
+    query.add_select(AttributePath.from_string("project.count"), "project_count")
 
     query_exp = query.build()
 
