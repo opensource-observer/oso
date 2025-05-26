@@ -4,7 +4,7 @@ import typing as t
 from metrics_tools.utils.glot import exp_to_str
 from sqlglot import exp
 
-from .definition import AttributeReference, Filter, Model, QueryPart, Registry
+from .definition import AttributePath, Filter, Model, QueryPart, Registry
 
 logger = logging.getLogger(__name__)
 
@@ -12,16 +12,16 @@ logger = logging.getLogger(__name__)
 class QueryBuilder:
     def __init__(self, registry: Registry):
         self._registry = registry
-        self._select_refs: list[AttributeReference] = []
-        self._references: list[AttributeReference] = []
-        self._deepest_reference: AttributeReference | None = None
+        self._select_refs: list[AttributePath] = []
+        self._references: list[AttributePath] = []
+        self._deepest_reference: AttributePath | None = None
 
         self._select_parts: list[QueryPart] = []
         self._filter_parts: list[QueryPart] = []
 
         self._limit = 0
 
-    def add_reference(self, reference: AttributeReference):
+    def add_reference(self, reference: AttributePath):
         """Adds an attribute reference to the query
 
         Every reference adds 0 or more joins to the query
@@ -40,7 +40,7 @@ class QueryBuilder:
 
         return self
 
-    def add_select(self, reference: AttributeReference):
+    def add_select(self, reference: AttributePath):
         """Add a model attribute to the select clause"""
         # validate the select by checking the attribute references
 
@@ -57,7 +57,7 @@ class QueryBuilder:
     def add_filter(self, filter: Filter):
         """Add a filter to the query"""
 
-        traverser = AttributeReference(path=[]).traverser()
+        traverser = AttributePath(path=[]).traverser()
         filter_part = filter.to_query_part(traverser, filter.query, self._registry)
 
         for ref in filter_part.resolved_references:
@@ -138,7 +138,7 @@ class QueryBuilder:
                 # We need to replace the function with the actual column name
                 # from the registry
                 semantic_ref = exp_to_str(node.expressions[0])
-                ref = AttributeReference.from_string(semantic_ref)
+                ref = AttributePath.from_string(semantic_ref)
                 # Hack for now we should replace with a lookup in this instance
                 traverser = ref.traverser()
                 while traverser.next():
@@ -158,7 +158,7 @@ class QueryJoiner:
         self._already_joined: set[str] = set()
         self._already_joined.add(base_model.name)
 
-    def join_reference(self, reference: AttributeReference):
+    def join_reference(self, reference: AttributePath):
         """Join the reference to the current base model"""
         traverser = reference.traverser()
 

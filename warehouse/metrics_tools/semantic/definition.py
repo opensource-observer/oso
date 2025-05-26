@@ -149,6 +149,23 @@ class RegistryDAG:
                 if model == join_point:
                     break
         return from_path, to_path
+    
+
+class BoundModelAttribute(t.Protocol):
+    def to_query_part(
+        self,
+        traverser: "AttributePathTraverser",
+        original: "AttributePath | str",
+        registry: "Registry",
+    ) -> "QueryPart":
+        """Returns the QueryPart for the bound query part"""
+        ...
+    
+
+class UnboundModelAttribute(t.Protocol):
+    def bind(self, model: "Model") -> "BoundModelAttribute":
+        """Binds the query part to the given model and returns a QueryPart"""
+        ...
 
 
 class Registry:
@@ -264,7 +281,7 @@ class Metric(BaseModel):
         """Returns the SQL expression for the metric"""
         return parse_one(self.query)
 
-    def as_bound_metric(self, model: "Model") -> "BoundMetric":
+    def bind(self, model: "Model") -> "BoundMetric":
         """Returns the bound metric for the given model"""
 
         return BoundMetric(
@@ -283,14 +300,14 @@ class BoundMetric:
 
     def to_query_part(
         self,
-        traverser: "ReferenceTraverser",
-        original: "AttributeReference | str",
+        traverser: "AttributePathTraverser",
+        original: "AttributePath | str",
         registry: Registry,
     ) -> "QueryPart":
         """Returns the SQL expression for the metric"""
 
         query = self.metric.query_as_expression()
-        result = AttributeReferenceTransformer.transform(
+        result = AttributePathTransformer.transform(
             query, traverser.copy(), self_model_name=self.model.name
         )
 
@@ -312,11 +329,11 @@ class Filter(BaseModel):
 
     def to_query_part(
         self,
-        traverser: "ReferenceTraverser",
-        original: "AttributeReference | str",
+        traverser: "AttributePathTraverser",
+        original: "AttributePath | str",
         registry: Registry,
     ) -> "QueryPart":
-        result = AttributeReferenceTransformer.transform(
+        result = AttributePathTransformer.transform(
             self.as_expression(), traverser=traverser
         )
 
@@ -330,6 +347,13 @@ class Filter(BaseModel):
 
 
 class Dimension(BaseModel):
+    """A dimension is a column or expression that must resolve to a column in
+    the table.
+
+    The dimension can either be a simple column reference or a non-aggregating
+    expression.
+    """
+
     name: str
     description: str = ""
     query: str = ""
@@ -350,7 +374,7 @@ class Dimension(BaseModel):
             table=exp.to_identifier("self"), this=exp.to_identifier(self.column_name)
         )
 
-    def as_bound_dimension(self, model: "Model") -> "BoundDimension":
+    def bind(self, model: "Model") -> "BoundDimension":
         return BoundDimension(
             model=model,
             dimension=self,
@@ -392,8 +416,8 @@ class BoundDimension:
 
     def to_query_part(
         self,
-        traverser: "ReferenceTraverser",
-        original: "AttributeReference | str",
+        traverser: "AttributePathTraverser",
+        original: "AttributePath | str",
         registry: Registry,
     ) -> "QueryPart":
         """Returns the QueryPart"""
@@ -401,7 +425,7 @@ class BoundDimension:
         # table_alias = traverser.alias(self.model.name)
 
         query = self.dimension.as_expression()
-        result = AttributeReferenceTransformer.transform(
+        result = AttributePathTransformer.transform(
             query, traverser=traverser, self_model_name=self.model.name
         )
 
@@ -511,7 +535,7 @@ class Model(BaseModel):
                 raise ValueError(
                     f"Dimension {dimension.name} already exists in model {self.name}"
                 )
-            attributes[dimension.name] = dimension.as_bound_dimension(self)
+            attributes[dimension.name] = dimension.bind(self)
 
         for metric in self.metrics:
             # Ensure we don't have duplicate names
@@ -519,7 +543,7 @@ class Model(BaseModel):
                 raise ValueError(
                     f"Metric {metric.name} already exists in model {self.name}"
                 )
-            attributes[metric.name] = metric.as_bound_metric(self)
+            attributes[metric.name] = metric.bind(self)
 
         self._model_ref_lookup_by_model_name: dict[str, list[Relationship]] = {}
         for reference in self.references:
@@ -545,6 +569,11 @@ class Model(BaseModel):
         self._all_attributes = attributes
 
         return self
+
+    @property
+    def attribute_names(self) -> t.List[str]:
+        """Returns the names of all attributes in the model"""
+        return list(self._all_attributes.keys())
 
     def get_dimension(self, name: str) -> BoundDimension:
         """Returns the dimension with the given name"""
@@ -631,7 +660,7 @@ class Join(BaseModel):
     via: str | None = None
 
 
-class AttributeReference(BaseModel):
+class AttributePath(BaseModel):
     path: list[str]
 
     @model_validator(mode="after")
@@ -646,11 +675,11 @@ class AttributeReference(BaseModel):
         return self
 
     @classmethod
-    def from_string(cls, path: str) -> "AttributeReference":
+    def from_string(cls, path: str) -> "AttributePath":
         return cls(path=path.split("->"))
 
     def traverser(self, initial_value: str = ""):
-        return ReferenceTraverser(self, initial_value=initial_value)
+        return AttributePathTraverser(self, initial_value=initial_value)
 
     @property
     def base_model(self):
@@ -680,7 +709,7 @@ class AttributeReference(BaseModel):
 
     def resolve_child_references(
         self, registry: Registry, depth: int = 0
-    ) -> list["AttributeReference"]:
+    ) -> list["AttributePath"]:
         """Resolves the child references for the given registry
 
         Metrics can reference dimensions in related models. This resolves
@@ -725,18 +754,21 @@ class AttributeReference(BaseModel):
 
     def __eq__(self, other: object) -> bool:
         """Checks if the reference is equal to another reference"""
-        if not isinstance(other, AttributeReference):
+        if not isinstance(other, AttributePath):
             return False
         return self.path == other.path
-
-
+    
+    def final_attribute(self) -> exp.Column:
+        """Returns the final column in the reference"""
+        return self._columns[-1]
+    
 class AttributeTransformerResult(BaseModel):
     """Internal result only used for the attribute reference transformer"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     node: exp.Expression
-    references: list[AttributeReference]
+    references: list[AttributePath]
 
 
 def is_expression_attribute_reference(node: exp.Expression) -> bool:
@@ -759,7 +791,7 @@ def is_expression_attribute_reference(node: exp.Expression) -> bool:
     return True
 
 
-class AttributeReferenceTransformer:
+class AttributePathTransformer:
     """Provides a transformer that tracks attribute references in an expression
     and replaces them with macro functions that can be resolved at sql
     generation time
@@ -771,13 +803,14 @@ class AttributeReferenceTransformer:
     def transform(
         cls,
         node: exp.Expression,
-        traverser: "ReferenceTraverser | None" = None,
+        traverser: "AttributePathTraverser | None" = None,
         self_model_name: str = "",
+        registry: Registry | None = None,
     ):
         """Transform an expression and return a result that also contains the
         attribute references found in the expression"""
 
-        transformer = cls(traverser=traverser, self_model_name=self_model_name)
+        transformer = cls(traverser=traverser, self_model_name=self_model_name, registry=registry)
         transformed_node = node.transform(transformer)
 
         return AttributeTransformerResult(
@@ -785,14 +818,15 @@ class AttributeReferenceTransformer:
         )
 
     def __init__(
-        self, traverser: "ReferenceTraverser | None" = None, self_model_name: str = ""
+        self, traverser: "AttributePathTraverser | None" = None, self_model_name: str = "", registry: Registry | None = None
     ):
-        self.references: list[AttributeReference] = []
+        self.references: list[AttributePath] = []
         self.self_model_name = self_model_name
         if traverser:
             self.traverser = traverser
         else:
-            self.traverser = ReferenceTraverser(reference=AttributeReference(path=[]))
+            self.traverser = AttributePathTraverser(reference=AttributePath(path=[]))
+        self.registry = registry
 
     def __call__(self, node: exp.Expression):
         if is_expression_attribute_reference(node):
@@ -805,7 +839,7 @@ class AttributeReferenceTransformer:
                         # TODO ... improve this error message
                         raise ValueError("Cannot use self reference in this expression")
                     model_name = self.self_model_name
-                reference = AttributeReference.from_string(
+                reference = AttributePath.from_string(
                     f"{model_name}.{column_name}"
                 )
             else:
@@ -824,19 +858,37 @@ class AttributeReferenceTransformer:
                             )
                         model_name = self.self_model_name
                         reference_path[i] = f"{model_name}.{exp_to_str(as_column.this)}"
-                reference = AttributeReference(path=reference_path)
+                reference = AttributePath(path=reference_path)
 
             appended_reference = self.append_scoped_reference(reference)
             refs_as_literals = str(appended_reference)
+
+            # Check if the reference is to a model's attribute or to an actual column
+            # if self.registry:
+            #     part = appended_reference.resolve(self.registry)
+                # final_attribute = appended_reference.final_attribute()
+                # final_model_name = exp_to_str(final_attribute.table)
+                # if final_model_name == "self":
+                #     final_model_name = self.self_model_name
+                # final_attribute_name = exp_to_str(final_attribute.this)
+                # final_model = self.registry.get_model(final_model_name)
+                # try:
+                #     final_attribute_val = final_model.get_attribute(
+                #         final_attribute_name
+                #     )
+                # except ValueError:
+                #     # We assume this is an actual column
+                #     pass
+
             return exp.Anonymous(this="$semantic_ref", expressions=[refs_as_literals])
         return node
 
-    def append_scoped_reference(self, reference: AttributeReference):
+    def append_scoped_reference(self, reference: AttributePath):
         """Appends a reference to the transformer"""
         scoped_reference = self.traverser.create_scoped_reference(reference)
         self.references.append(scoped_reference)
         return scoped_reference
-
+    
 
 class QueryPart(BaseModel):
     """The most basic representation of a part of a query.
@@ -858,7 +910,7 @@ class QueryPart(BaseModel):
 
     registry: Registry
 
-    original: AttributeReference | str
+    original: AttributePath | str
 
     expression: exp.Expression = Field(description="The final sql expression")
 
@@ -866,7 +918,7 @@ class QueryPart(BaseModel):
         description="Whether the column is an aggregate function"
     )
 
-    resolved_references: t.List[AttributeReference] = Field(
+    resolved_references: t.List[AttributePath] = Field(
         description="All of the resolved references for the attribute resolved for the current registry"
     )
 
@@ -876,7 +928,7 @@ class QueryPart(BaseModel):
         return self.is_aggregate
 
 
-class ReferenceTraverser:
+class AttributePathTraverser:
     """AttributeReferences are used to reference a dimension or metric in a
     model.
 
@@ -897,7 +949,7 @@ class ReferenceTraverser:
     level through a given column reference uses the same table alias.
     """
 
-    def __init__(self, reference: AttributeReference, initial_value=""):
+    def __init__(self, reference: AttributePath, initial_value=""):
         self.reference = reference
         self.index = 0
         self.alias_stack: list[str] = [initial_value]
@@ -937,7 +989,7 @@ class ReferenceTraverser:
 
     def copy(self):
         """Creates a copy of the traverser"""
-        traverser = ReferenceTraverser(
+        traverser = AttributePathTraverser(
             reference=self.reference,
             initial_value=self.alias_stack[-1],
         )
@@ -946,15 +998,15 @@ class ReferenceTraverser:
         return traverser
 
     def create_scoped_reference(
-        self, reference: AttributeReference
-    ) -> AttributeReference:
+        self, reference: AttributePath
+    ) -> AttributePath:
         """Creates a scoped reference for the given model and column"""
         if self.index == 0:
             return reference
         else:
             new_ref = self.reference.path[: self.index]
             new_ref.extend(reference.path)
-            return AttributeReference(path=new_ref)
+            return AttributePath(path=new_ref)
 
     @property
     def current_table_alias(self):
@@ -1017,7 +1069,7 @@ class SemanticQuery(BaseModel):
     def process_columns(self):
         # Bit of a circular dependency but makes this easier to work with
         self._processed_columns = [
-            AttributeReference.from_string(col) for col in self.columns
+            AttributePath.from_string(col) for col in self.columns
         ]
         self._processed_filters = [Filter(query=f) for f in self.filters]
 

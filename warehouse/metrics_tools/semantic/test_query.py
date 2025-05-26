@@ -1,4 +1,4 @@
-from metrics_tools.semantic.definition import AttributeReference, Filter
+from metrics_tools.semantic.definition import AttributePath, Filter
 from metrics_tools.semantic.query import QueryBuilder
 from metrics_tools.semantic.testing import setup_registry
 from sqlglot import exp
@@ -8,10 +8,10 @@ def test_query_builder_with_dimensions():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.add_select(AttributeReference.from_string("event.month"))
-    query.add_select(AttributeReference.from_string("event.event_source"))
-    query.add_select(AttributeReference.from_string("event.from->artifact.name"))
-    query.add_select(AttributeReference.from_string("event.to->collection.name"))
+    query.add_select(AttributePath.from_string("event.month"))
+    query.add_select(AttributePath.from_string("event.event_source"))
+    query.add_select(AttributePath.from_string("event.from->artifact.name"))
+    query.add_select(AttributePath.from_string("event.to->collection.name"))
     query.add_filter(Filter(query="event.month = DATE '2023-01-01'"))
 
     query_exp = query.build()
@@ -36,8 +36,8 @@ def test_query_builder_with_metrics():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.add_select(AttributeReference.from_string("collection.name"))
-    query.add_select(AttributeReference.from_string("project.count"))
+    query.add_select(AttributePath.from_string("collection.name"))
+    query.add_select(AttributePath.from_string("project.count"))
 
     query_exp = query.build()
 
