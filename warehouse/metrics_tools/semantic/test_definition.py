@@ -127,8 +127,6 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
     result_df = result.df()
     print(result_df)
 
-    assert False
-
 def test_resolve_attributes_to_query_part(semantic_registry: Registry):
     # Test resolving a single attribute
     ref0 = AttributePath.from_string("artifact.name")
