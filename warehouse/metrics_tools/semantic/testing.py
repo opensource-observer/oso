@@ -1,5 +1,12 @@
 # An example semantic model for testing
-from .definition import Dimension, Model, Registry, Relationship, RelationshipType
+from .definition import (
+    Dimension,
+    Metric,
+    Model,
+    Registry,
+    Relationship,
+    RelationshipType,
+)
 
 
 def setup_registry():
@@ -15,6 +22,18 @@ def setup_registry():
                 Dimension(name="name", column_name="collection_name"),
             ],
             primary_key="collection_id",
+            metrics=[
+                Metric(
+                    name="count",
+                    description="The number of collections",
+                    query="COUNT(self.id)",
+                ),
+                # Metric(
+                #     name="number_of_projects",
+                #     description="The number of related projects in the collection",
+                #     query="COUNT(project.id)",
+                # )
+            ]
         )
     )
 
@@ -24,8 +43,16 @@ def setup_registry():
             table="oso.projects_v1",
             description="A project",
             dimensions=[
-                Dimension(name="id", column_name="project_id"),
-                Dimension(name="name", column_name="project_name"),
+                Dimension(
+                    name="id", 
+                    description="The unique identifier of the project",
+                    column_name="project_id"
+                ),
+                Dimension(
+                    name="name",
+                    description="The name of the project",
+                    column_name="project_name"
+                ),
             ],
             primary_key="project_id",
             references=[
@@ -37,6 +64,18 @@ def setup_registry():
                     foreign_key_column="collection_id",
                 ),
             ],
+            metrics=[
+                Metric(
+                    name="count",
+                    description="The number of projects",
+                    query="COUNT(self.id)",
+                ),
+                # Metric(
+                #     name="number_of_artifacts",
+                #     description="The number of related artifacts in the project",
+                #     query="COUNT(artifact.id)",
+                # )
+            ]
         )
     )
 
@@ -46,9 +85,21 @@ def setup_registry():
             table="oso.artifacts_v1",
             description="An artifact",
             dimensions=[
-                Dimension(name="id", column_name="artifact_id"),
-                Dimension(name="name", column_name="artifact_name"),
-                Dimension(name="url", column_name="artifact_url"),
+                Dimension(
+                    name="id", 
+                    description="The unique identifier of the artifact",
+                    column_name="artifact_id",
+                ),
+                Dimension(
+                    name="name",
+                    description="The name of the artifact",
+                    column_name="artifact_name"
+                ),
+                Dimension(
+                    name="url",
+                    description="The URL of the artifact",
+                    column_name="artifact_url"
+                ),
             ],
             primary_key="artifact_id",
             references=[
@@ -60,18 +111,40 @@ def setup_registry():
                     foreign_key_column="project_id",
                 ),
             ],
+            metrics=[
+                Metric(
+                    name="count",
+                    description="The number of artifacts",
+                    query="COUNT(self.id)",
+                ),
+            ]
         )
     )
 
     registry.register(
         Model(
-            name="event",
+            name="github_event",
             table="oso.int_events__github",
             description="An event",
             dimensions=[
                 Dimension(
                     name="time",
                     description="The day the event occurred",
+                ),
+                Dimension(
+                    name="month",
+                    description="The month the event occurred",
+                    query="DATE_TRUNC('month', self.time::date)",
+                ),
+                Dimension(
+                    name="day",
+                    description="The day the event occurred",
+                    query="DATE_TRUNC('day', self.time::date)",
+                ),
+                Dimension(
+                    name="year",
+                    description="The year the event occurred",
+                    query="DATE_TRUNC('year', self.time::date)",
                 ),
                 Dimension(
                     name="event_source",
@@ -82,12 +155,29 @@ def setup_registry():
                     description="The type of the event",
                 ),
                 Dimension(
-                    name="event_id",
+                    name="id",
                     description="The unique identifier of the event",
                 ),
                 Dimension(
                     name="amount",
                     description="The amount of the event",
+                ),
+                Dimension(
+                    name="event_type_classification",
+                    description="The classification of the event type",
+                    query="CASE WHEN self.event_type = 'COMMIT' THEN 'COMMIT' ELSE 'OTHER' END",
+                )
+            ],
+            metrics=[
+                Metric(
+                    name="count",
+                    description="The number of events",
+                    query="COUNT(self.id)",
+                ),
+                Metric(
+                    name="total_amount",
+                    description="The total amount of events",
+                    query="SUM(self.amount)",
                 ),
             ],
             time_column="time",
