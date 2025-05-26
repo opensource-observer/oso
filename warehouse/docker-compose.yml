@@ -50,7 +50,7 @@ services:
 
   # This job will create the "iceberg" bucket on Minio
   mc-job:
-    image: 'minio/mc'
+    image: 'minio/mc:RELEASE.2025-04-16T18-13-26Z'
     entrypoint: |
       /bin/bash -c "
       sleep 5;
