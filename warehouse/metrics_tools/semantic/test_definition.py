@@ -104,14 +104,15 @@ def test_semantic_model_shortest_path():
     assert from_artifact_ref.foreign_key_column == "from_artifact_id"
 
 
-
 def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
     registry = setup_registry()
 
     query = SemanticQuery(
         columns=[
+            "event.month",
             "event.event_type",
             "event.to->collection.name",
+            "event.total_amount",
         ],
         filters=[
             "event.from->artifact.name = 'repo1'",
@@ -128,6 +129,28 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
 
     assert False
 
+def test_resolve_attributes_to_query_part(semantic_registry: Registry):
+    # Test resolving a single attribute
+    ref0 = AttributePath.from_string("artifact.name")
+
+    resolved_query_part0 = ref0.resolve(semantic_registry)
+    assert resolved_query_part0 is not None
+    assert resolved_query_part0.expression.sql(dialect="duckdb") == "$SEMANTIC_REF('artifact.artifact_name')"
+
+    parent_path = AttributePath.from_string("event.to->artifact.id")
+    parent_traverser = parent_path.traverser()
+    while parent_traverser.next():
+        pass
+    scoped_resolved_query_part = ref0.resolve(semantic_registry, parent_traverser=parent_traverser)
+
+    assert scoped_resolved_query_part is not None
+    assert scoped_resolved_query_part.expression.sql(dialect="duckdb") == "$SEMANTIC_REF('event.to->artifact.artifact_name')"
+
+    ref1 = AttributePath.from_string("event.from->artifact.name")
+    resolved_query_part1 = ref1.resolve(semantic_registry)
+    assert resolved_query_part1 is not None
+    assert resolved_query_part1.expression.sql(dialect="duckdb") == "$SEMANTIC_REF('event.from->artifact.artifact_name')"
+    
 
 def test_attribute_reference_transformer():
     simple_column = parse_one("event.to")

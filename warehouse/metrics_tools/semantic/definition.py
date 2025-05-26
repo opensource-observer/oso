@@ -354,8 +354,32 @@ class Filter(BaseModel):
         registry: Registry,
     ) -> "QueryPart":
         result = AttributePathTransformer.transform(
-            self.as_expression(), traverser=traverser
+            self.as_expression(), traverser=traverser, registry=registry
         )
+
+        # Resolve the references to model attributes. If the attribute is a
+        # metric then this is an aggregation.
+        for reference in result.references:
+            attribute = reference.final_attribute()
+            model_name = exp_to_str(attribute.table)
+            attribute_name = exp_to_str(attribute.this)
+            model = registry.get_model(model_name)
+
+            try:
+                if isinstance(model.get_attribute(attribute_name), BoundMetric):
+                    # If the attribute is a metric, we need to treat it as an aggregate
+                    # function. This means we need to use a subquery to calculate the
+                    # metric before applying the filter.
+                    return QueryPart(
+                        registry=registry,
+                        original=original,
+                        expression=result.node,
+                        is_aggregate=True,
+                        resolved_references=result.references,
+                    )
+            except ValueError:
+                # HACK. This means the attribute is a column... hopefully
+                pass
 
         return QueryPart(
             registry=registry,
@@ -429,15 +453,6 @@ class BoundDimension:
     def __init__(self, model: "Model", dimension: Dimension):
         self.model = model
         self.dimension = dimension
-
-    def validate(self):
-        """Validates the dimension to ensure it is valid for the model
-        
-        Dimensions must resolve to a column or another dimension in the model.
-
-        If the dimension is an expression, it must not reference another model.
-        """
-        pass
 
     def with_alias(self, alias: str) -> exp.Expression:
         """Returns the SQL expression for the dimension with the given alias"""
@@ -773,7 +788,7 @@ class AttributePath(BaseModel):
     def columns(self):
         return self._columns
 
-    def resolve(self, registry: Registry):
+    def resolve(self, registry: Registry, parent_traverser: "AttributePathTraverser | None" = None):
         traverser = self.traverser()
         while traverser.next():
             pass
@@ -783,13 +798,16 @@ class AttributePath(BaseModel):
         )
         match current_attribute:
             case BoundDimension():
-                return current_attribute.to_query_part(traverser.copy(), self, registry)
+                part = current_attribute.to_query_part(traverser.copy(), self, registry)
             case BoundMetric():
-                return current_attribute.to_query_part(traverser.copy(), self, registry)
+                part = current_attribute.to_query_part(traverser.copy(), self, registry)
             case BoundRelationship():
                 raise InvalidAttributeReferenceError(
                     self, "final attribute cannot be a relationship"
                 )
+        if parent_traverser:
+            part = part.scope(parent_traverser)
+        return part
 
     def resolve_child_references(
         self, registry: Registry, depth: int = 0
@@ -949,24 +967,14 @@ class AttributePathTransformer:
                 reference = AttributePath(path=reference_path)
 
             appended_reference = self.append_scoped_reference(reference)
-            refs_as_literals = str(appended_reference)
+            refs_as_literals = exp.Literal.string(str(appended_reference))
 
             # Check if the reference is to a model's attribute or to an actual column
-            # if self.registry:
-            #     part = appended_reference.resolve(self.registry)
-                # final_attribute = appended_reference.final_attribute()
-                # final_model_name = exp_to_str(final_attribute.table)
-                # if final_model_name == "self":
-                #     final_model_name = self.self_model_name
-                # final_attribute_name = exp_to_str(final_attribute.this)
-                # final_model = self.registry.get_model(final_model_name)
-                # try:
-                #     final_attribute_val = final_model.get_attribute(
-                #         final_attribute_name
-                #     )
-                # except ValueError:
-                #     # We assume this is an actual column
-                #     pass
+            if self.registry:
+                part = appended_reference.resolve(self.registry, parent_traverser=self.traverser.copy())
+                for references in part.resolved_references:
+                    self.references.append(references)
+                return part.expression
 
             return exp.Anonymous(this="$semantic_ref", expressions=[refs_as_literals])
         return node
@@ -1014,6 +1022,32 @@ class QueryPart(BaseModel):
     def is_additive(self):
         """Whether the column is additive"""
         return self.is_aggregate
+    
+    def scope(self, traverser: "AttributePathTraverser") -> "QueryPart":
+        """Scopes the query part to the given traverser"""
+        scoped_references: list[AttributePath] = []
+
+        def scope_semantic_refs(node: exp.Expression):
+            if isinstance(node, exp.Anonymous) and exp_to_str(node.this).lower() == "$semantic_ref":
+                # Replace the reference with the scoped reference
+                current_reference = AttributePath.from_string(exp_to_str(node.expressions[0]))
+                scoped_reference = traverser.create_scoped_reference(current_reference)
+                scoped_references.append(scoped_reference)
+                return exp.Anonymous(
+                    this="$semantic_ref",
+                    expressions=[exp.Literal.string(str(scoped_reference))],
+                )
+            return node
+        
+        scoped_expression = self.expression.transform(scope_semantic_refs)
+        
+        return QueryPart(
+            registry=self.registry,
+            original=self.original,
+            expression=scoped_expression,
+            is_aggregate=self.is_aggregate,
+            resolved_references=scoped_references,
+        )
 
 
 class AttributePathTraverser:

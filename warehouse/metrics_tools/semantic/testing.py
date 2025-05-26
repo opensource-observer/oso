@@ -114,17 +114,17 @@ def setup_registry():
                 Dimension(
                     name="month",
                     description="The month the event occurred",
-                    query="TIMESTAMP_TRUNC(self.time, 'month')",
+                    query="DATE_TRUNC('month', self.time::date)",
                 ),
                 Dimension(
                     name="day",
                     description="The day the event occurred",
-                    query="TIMESTAMP_TRUNC(self.time, 'day')",
+                    query="DATE_TRUNC('day', self.time::date)",
                 ),
                 Dimension(
                     name="year",
                     description="The year the event occurred",
-                    query="TIMESTAMP_TRUNC(self.time, 'year')",
+                    query="DATE_TRUNC('year', self.time::date)",
                 ),
                 Dimension(
                     name="event_source",
@@ -147,6 +147,18 @@ def setup_registry():
                     description="The classification of the event type",
                     query="CASE WHEN self.event_type = 'COMMIT' THEN 'COMMIT' ELSE 'OTHER' END",
                 )
+            ],
+            metrics=[
+                Metric(
+                    name="count",
+                    description="The number of events",
+                    query="COUNT(self.event_id)",
+                ),
+                Metric(
+                    name="total_amount",
+                    description="The total amount of events",
+                    query="SUM(self.amount)",
+                ),
             ],
             time_column="time",
             primary_key="event_id",
