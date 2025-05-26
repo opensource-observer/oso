@@ -125,6 +125,8 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
 
     result = semantic_db_conn.sql(query_exp.sql(dialect="duckdb"))
     result_df = result.df()
+    result_df = result_df.sort_values(by=["collection_name"])
+    result_df = result_df.reset_index(drop=True)
     print(result_df)
 
     pd.testing.assert_frame_equal(
