@@ -13,3 +13,7 @@ class AgentConfigError(AgentError):
 class AgentRuntimeError(AgentError):
     """Exception for agent runtime errors."""
     pass
+
+class ToolRuntimeError(AgentError):
+    """Exception for tool runtime errors."""
+    pass
