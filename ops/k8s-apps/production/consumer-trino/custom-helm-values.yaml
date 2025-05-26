@@ -17,34 +17,9 @@ spec:
     securityContext:
       fsGroup: 1000
     accessControl:
-      type: configmap
-      refreshPeriod: 60s
-      configFile: "rules.json"
-      rules:
-        rules.json: |
-          {
-            "catalogs": [
-              {
-                "user": "admin",
-                "allow": "owner"
-              },
-              {
-                "catalog": "system",
-                "allow": "none"
-              },
-              {
-                "user": "jwt-.*",
-                "allow": "read-only"
-              },
-              {
-                "user": "user",
-                "allow": "read-only"
-              },
-              {
-                "allow": "all"
-              }
-            ]
-          }
+      type: properties
+      properties: |
+        access-control.config-files=/etc/trino/file-based.properties,/etc/trino/opa.properties
     additionalConfigProperties:
       - http-server.process-forwarded=true
       - internal-communication.shared-secret=gcp:secretmanager:production-consumer-trino-shared-secret/versions/latest
@@ -103,6 +78,17 @@ spec:
       additionalConfigFiles:
         catalog-store.properties: |
           catalog.config-dir=/etc/trino/dynamic-catalog
+        file-based.properties: |
+          access-control.name=file
+          security.refresh-period=60s
+          security.config-file=/etc/trino/access-control/rules.json
+        opa.properties: |
+          access-control.name=opa
+          opa.policy.uri=http://opa.production-open-policy-agent.svc.cluster.local:8181/v1/data/trino/allow
+      configMounts:
+        - name: trino-file-access-control
+          configMap: trino-access-control
+          path: /etc/trino/access-control
       additionalVolumeMounts:
         - name: trino-auth-volume
           mountPath: /etc/trino/auth
@@ -158,6 +144,7 @@ spec:
         http-server.authentication.jwt.key-file=/etc/trino/auth/jwt.key
         http-server.authentication.jwt.required-issuer=opensource-observer
         http-server.authentication.jwt.required-audience=consumer-trino
+        access-control.config-files=/etc/trino/file-based.properties,/etc/trino/opa.properties
       workers: 1
       autoscaling:
         enabled: true
