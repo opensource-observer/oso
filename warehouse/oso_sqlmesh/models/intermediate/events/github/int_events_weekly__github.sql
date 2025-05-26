@@ -6,7 +6,6 @@ MODEL (
     batch_concurrency 2,
     lookback 31,
     forward_only true,
-    on_destructive_change 'allow',
   ),
   start @github_incremental_start,
   cron '@daily',

@@ -12,8 +12,9 @@ SELECT
   artifact_id,
   artifact_namespace,
   artifact_name,
-  MIN(first_commit_time) AS first_commit_time,
-  MAX(last_commit_time) AS last_commit_time
+  'REPOSITORY' AS artifact_type,
+  'https://github.com/' || artifact_namespace || '/' || artifact_name
+    AS artifact_url
 FROM oso.int_first_last_commit_to_github_repository
 GROUP BY
   artifact_source_id,
