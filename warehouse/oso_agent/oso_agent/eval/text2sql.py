@@ -22,9 +22,12 @@ except ValueError:
 
 async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):
     print("Running text2sql experiment with:", config)
+    api_key = config.arize_phoenix_api_key.get_secret_value()
     phoenix_client = px.Client(
         endpoint=config.arize_phoenix_base_url,
-        api_key=config.arize_phoenix_api_key.get_secret_value(),
+        headers={
+            "api_key": api_key,
+        }
     )
     dataset = upload_dataset(phoenix_client, config.eval_dataset_text2sql, TEXT2SQL_DATASET)
 
