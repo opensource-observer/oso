@@ -13,7 +13,6 @@ module.exports = {
   ignorePatterns: [
     "**/vendor/*.js",
     "vendor/**/*.js",
-    "**/jest.config.ts",
     "**/test.only/**",
     "**/utilities/**",
     "**/.eslintrc.js",

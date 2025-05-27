@@ -1,6 +1,9 @@
+import copy
+
 import dagster as dg
 from dagster import AssetExecutionContext, AssetSelection, RunConfig, define_asset_job
 from dagster_sqlmesh import (
+    PlanOptions,
     SQLMeshContextConfig,
     SQLMeshDagsterTranslator,
     SQLMeshResource,
@@ -21,6 +24,10 @@ class SQLMeshRunConfig(dg.Config):
     restate_by_entity_category: bool = False
     # List of entity categories to restate (e.g., ["project", "collection"])
     restate_entity_categories: list[str] | None = None
+
+    allow_destructive_models: list[str] | None = None
+
+    skip_tests: bool = False
 
     start: str | None = None
     end: str | None = None
@@ -91,6 +98,10 @@ def sqlmesh_factory(
 
                 for category in entity_categories:
                     restate_models.append(f"tag:entity_category={category}")
+
+            plan_options: PlanOptions = {"skip_tests": config.skip_tests}
+            if config.allow_destructive_models:
+                plan_options["allow_destructive_models"] = config.allow_destructive_models
             
             # If we specify a dev_environment, we will first plan it for safety
             if dev_environment:
@@ -99,7 +110,7 @@ def sqlmesh_factory(
                     sqlmesh.run(
                         context,
                         environment=dev_environment,
-                        plan_options={"skip_tests": True},
+                        plan_options=copy.deepcopy(plan_options),
                         start=config.start,
                         end=config.end,
                         restate_models=restate_models,
@@ -111,7 +122,7 @@ def sqlmesh_factory(
             for result in sqlmesh.run(
                 context,
                 environment=environment,
-                plan_options={"skip_tests": True},
+                plan_options=copy.deepcopy(plan_options),
                 start=config.start,
                 end=config.end,
                 restate_models=restate_models,
