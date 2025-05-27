@@ -2,6 +2,7 @@
 const EVENTS = {
   API_CALL: "api_call",
   DB_WRITE: "supabase_write",
+  STRIPE_CHECKOUT: "stripe_checkout",
 };
 
 export { EVENTS };
