@@ -4,7 +4,7 @@ import {
   createPrivilegedSupabaseClient,
   createNormalSupabaseClient,
 } from "../clients/supabase";
-import { User as SupabaseUser } from "@supabase/supabase-js";
+import { SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js";
 import {
   AnonUser,
   NormalUser,
@@ -14,6 +14,7 @@ import {
   OrganizationDetails,
   OrgRole,
 } from "../types/user";
+import { Database } from "../types/supabase";
 
 // Constants
 const DEFAULT_KEY_NAME = "login";
@@ -349,4 +350,23 @@ function getHost(req: NextRequest) {
   return forwardedHost ?? host;
 }
 
-export { getUser };
+async function setSupabaseSession(
+  supabaseClient: SupabaseClient<Database>,
+  request: NextRequest,
+) {
+  const authHeader = request.headers.get("X-Supabase-Auth")?.split(":");
+  if (!authHeader || authHeader.length !== 2) {
+    return { error: "Invalid header" };
+  }
+  const [accessToken, refreshToken] = authHeader;
+  const { data, error } = await supabaseClient.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+  if (error) {
+    return { error: error.message };
+  }
+  return { data, error: null };
+}
+
+export { getUser, setSupabaseSession };
