@@ -14,7 +14,10 @@ from ..util.config import AgentConfig
 from ..util.jaccard import jaccard_similarity_str
 
 EXPERIMENT_NAME = "text2sql-experiment"
-nest_asyncio.apply()
+try:
+    nest_asyncio.apply()
+except ValueError:
+    pass
 
 async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):
   print("Running text2sql experiment with:", config)
