@@ -36,7 +36,6 @@ WITH raw_events AS (
     repository_id,
     COALESCE(actor_login, author_email) AS actor_name,
     CASE WHEN NOT actor_login IS NULL THEN actor_id::TEXT ELSE author_email END AS actor_id,
-    CASE WHEN NOT actor_login IS NULL THEN 'GIT_USER' ELSE 'GIT_EMAIL' END AS actor_type
   FROM oso.stg_github__distinct_commits_resolved_mergebot
   WHERE created_at BETWEEN @start_dt AND @end_dt
 
@@ -50,8 +49,7 @@ WITH raw_events AS (
     repository_name,
     repository_id,
     actor_login AS actor_name,
-    actor_id::TEXT AS actor_id,
-    'GIT_USER' AS actor_type
+    actor_id::TEXT AS actor_id
   FROM oso.stg_github__releases
   WHERE created_at BETWEEN @start_dt AND @end_dt
 
@@ -65,8 +63,7 @@ WITH raw_events AS (
     repository_name,
     repository_id,
     actor_login AS actor_name,
-    actor_id::TEXT AS actor_id,
-    'GIT_USER' AS actor_type
+    actor_id::TEXT AS actor_id
   FROM oso.stg_github__comments
   WHERE event_time BETWEEN @start_dt AND @end_dt
 
@@ -79,8 +76,7 @@ WITH raw_events AS (
     repository_name,
     repository_id,
     actor_login AS actor_name,
-    actor_id::TEXT AS actor_id,
-    'GIT_USER' AS actor_type
+    actor_id::TEXT AS actor_id
   FROM oso.stg_github__issues
   WHERE event_time BETWEEN @start_dt AND @end_dt
 
@@ -93,8 +89,7 @@ WITH raw_events AS (
     repository_name,
     repository_id,
     actor_login AS actor_name,
-    actor_id::TEXT AS actor_id,
-    'GIT_USER' AS actor_type
+    actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_requests
   WHERE event_time BETWEEN @start_dt AND @end_dt
 
@@ -107,8 +102,7 @@ WITH raw_events AS (
     repository_name,
     repository_id,
     actor_login AS actor_name,
-    actor_id::TEXT AS actor_id,
-    'GIT_USER' AS actor_type
+    actor_id::TEXT AS actor_id
   FROM oso.stg_github__pull_request_merge_events
   WHERE event_time BETWEEN @start_dt AND @end_dt
 
@@ -122,8 +116,7 @@ WITH raw_events AS (
     repository_name,
     repository_id,
     actor_login AS actor_name,
-    actor_id::TEXT AS actor_id,
-    'GIT_USER' AS actor_type
+    actor_id::TEXT AS actor_id
   FROM oso.stg_github__stars_and_forks
   WHERE created_at BETWEEN @start_dt AND @end_dt
 ), 
@@ -138,11 +131,9 @@ parsed_events AS (
       AS to_artifact_name,
     LOWER(SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)])
       AS to_artifact_namespace,
-    'REPOSITORY' AS to_artifact_type,
     repository_id::TEXT AS to_artifact_source_id,
-    actor_name AS from_artifact_name,
-    actor_name AS from_artifact_namespace,
-    actor_type AS from_artifact_type,
+    LOWER(actor_name) AS from_artifact_name,
+    LOWER(actor_name) AS from_artifact_namespace,
     actor_id::TEXT AS from_artifact_source_id,
     1::DOUBLE AS amount
   FROM raw_events
@@ -159,11 +150,9 @@ SELECT
   event_source,
   to_artifact_name,
   to_artifact_namespace,
-  to_artifact_type,
   to_artifact_source_id,
   from_artifact_name,
   from_artifact_namespace,
-  from_artifact_type,
   from_artifact_source_id,
   amount
 FROM parsed_events
