@@ -1,6 +1,6 @@
 import typing as t
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -72,8 +72,13 @@ class AgentConfig(BaseSettings):
         default=True, description="Whether to enable OpenTelemetry instrumentation"
     )
 
+    arize_phoenix_base_url: str = Field(
+        default="http://localhost:6006",
+        description="Base URL for the Arize Phoenix API",
+    )
+
     arize_phoenix_traces_url: str = Field(
-        default="http://localhost:6006/v1/traces",
+        default="",
         description="URL for the Arize Phoenix traces API",
     )
 
@@ -91,6 +96,19 @@ class AgentConfig(BaseSettings):
         default="text2sql",
         description="Arize Phoenix dataset for text2sql evaluations",
     )
+
+    @model_validator(mode="after")
+    def validate_urls(self) -> "AgentConfig":
+        """Ensure URLs are properly formatted."""
+        if self.arize_phoenix_use_cloud:
+            if not self.arize_phoenix_api_key.get_secret_value():
+                raise ValueError("Arize Phoenix API key must be set when using cloud mode")
+            self.arize_phoenix_base_url = "https://app.phoenix.arize.com"
+        if not self.arize_phoenix_traces_url:
+            self.arize_phoenix_traces_url = f"{self.arize_phoenix_base_url}/v1/traces"
+        if not self.arize_phoenix_traces_url.endswith("/"):
+            self.arize_phoenix_traces_url += "/"
+        return self
 
     def update(self, **kwargs) -> "AgentConfig":
         """Create a new config with updates applied."""

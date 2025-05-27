@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
-import type { QueryResult, Iterator, Trino } from "trino-client";
+import type { QueryResult, Iterator } from "trino-client";
+import { getTableNamesFromSql } from "../../../../lib/parsing";
 import { getUser } from "../../../../lib/auth/auth";
 import {
   CreditsService,
   TransactionType,
 } from "../../../../lib/services/credits";
-import { getTableNamesFromSql } from "../../../../lib/parsing";
 import { trackServerEvent } from "../../../../lib/analytics/track";
 import { logger } from "../../../../lib/logger";
 import * as jsonwebtoken from "jsonwebtoken";
@@ -22,20 +22,6 @@ const FORMAT = "format";
 
 const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
-
-async function doQuery(
-  client: Trino,
-  query: string,
-): Promise<[QueryResult, Iterator<QueryResult>]> {
-  logger.log(`Running query: ${query}`);
-  const rows = await client.query(query);
-  // We check the first row of the returned data to see if there was an error in the query
-  const firstRow = await rows.next();
-  if (firstRow.value.error) {
-    throw new TrinoError(firstRow.value.error);
-  }
-  return [firstRow.value, rows];
-}
 
 function signJWT(user: AuthUser) {
   const secret = process.env.TRINO_JWT_SECRET;
@@ -106,7 +92,7 @@ export async function POST(request: NextRequest) {
     });
 
     const client = getTrinoClient(jwt);
-    const [firstRow, rows] = await doQuery(client, query);
+    const [firstRow, rows] = await client.query(query);
     const readableStream = mapToReadableStream(firstRow, rows, format);
     return new NextResponse(readableStream, {
       headers: {
