@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTrinoAdminClient } from "../../../../lib/clients/trino";
 import { createNormalSupabaseClient } from "../../../../lib/clients/supabase";
 import { ALLOWED_CONNECTORS } from "../../../../lib/types/dynamic-connector";
-import { publicDynamicConnectorsInsertSchemaSchema } from "../../../../lib/types/schema";
-import { z } from "zod";
+import { dynamicConnectorsInsertSchema } from "../../../../lib/types/schema";
+import type { DynamicConnectorsInsert } from "../../../../lib/types/schema-types";
 import { ensure } from "@opensource-observer/utils";
 import { setSupabaseSession } from "../../../../lib/auth/auth";
 import { Tables } from "../../../../lib/types/supabase";
@@ -12,7 +12,7 @@ export const revalidate = 0;
 export const maxDuration = 300;
 
 function validateDynamicConnectorParams(
-  params: z.infer<typeof publicDynamicConnectorsInsertSchemaSchema>,
+  params: DynamicConnectorsInsert,
   credentials: Record<string, string>,
   org: Tables<"organizations">,
 ) {
@@ -57,9 +57,7 @@ export async function POST(request: NextRequest) {
     );
   }
   const body = await request.json();
-  const dynamicConnector = publicDynamicConnectorsInsertSchemaSchema.parse(
-    body.data,
-  );
+  const dynamicConnector = dynamicConnectorsInsertSchema.parse(body.data);
   const credentials = ensure(body.credentials, "credentials are required");
 
   const { data: org, error } = await supabaseClient
