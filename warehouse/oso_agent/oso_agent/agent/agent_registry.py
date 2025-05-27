@@ -2,6 +2,7 @@ import logging
 import typing as t
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from oso_agent.agent.semantic_agent import create_semantic_agent
 
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentMissingError
@@ -22,6 +23,7 @@ async def _create_agents(config: AgentConfig) -> AgentDict:
         logger.info("Creating all agents...")
         registry["react"] = await create_react_agent(config)
         registry["sql"] = await create_sql_agent(config)
+        registry["semantic"] = await create_semantic_agent(config)
         return registry
     except Exception as e:
         logger.error(f"Failed to create agent: {e}")
