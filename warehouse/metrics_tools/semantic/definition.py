@@ -3,6 +3,8 @@ import typing as t
 from enum import Enum
 from graphlib import TopologicalSorter
 
+from metrics_tools.semantic.errors import InvalidAttributeReferenceError
+from metrics_tools.utils.glot import exp_to_str
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
@@ -147,6 +149,30 @@ class RegistryDAG:
                 if model == join_point:
                     break
         return from_path, to_path
+    
+
+class BoundModelAttribute(t.Protocol):
+    def to_query_part(
+        self,
+        traverser: "AttributePathTraverser",
+        original: "AttributePath | str",
+        registry: "Registry",
+    ) -> "QueryPart":
+        """Returns the QueryPart for the bound query part"""
+        ...
+
+    def validate(self):
+        ...
+
+
+class UnboundModelAttribute(t.Protocol):
+    def bind(self, model: "Model", dependencies: dict[str, "AttributePath"]) -> "BoundModelAttribute":
+        """Binds the query part to the given model and returns a attribute"""
+        ...
+
+    def attribute_references(self) -> t.List["AttributePath"]:
+        """Returns the references for model attributes"""
+        ...
 
 
 class Registry:
@@ -234,45 +260,199 @@ class Registry:
         return query.sql(self)
 
 
-class BoundMetric(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+class MetricOperationType(str, Enum):
+    """The type of operation to perform on the metric.
 
-    model_name: str
-    name: str
-    description: str = ""
-    query: exp.Expression
-    filters: t.List[exp.Expression] = Field(default_factory=lambda: [])
+    This is used to determine how to aggregate the metric.
+    """
+
+    SUM = "sum"
+    AVG = "avg"
+    COUNT = "count"
+    COUNT_DISTINCT = "count_distinct"
+    MAX = "max"
+    MIN = "min"
+    FIRST = "first"
+    LAST = "last"
+    PERCENTILE = "percentile"
+    PERCENTILE_CONT = "percentile_cont"
+    PERCENTILE_DISC = "percentile_disc"
 
 
 class Metric(BaseModel):
     name: str
     description: str = ""
-    query: str
-    filters: str | None = None
+    query: str = ""
 
-    def query_as_expression(self, model_name: str) -> exp.Expression:
+    @model_validator(mode="after")
+    def process_metric(self):
+        expression = parse_one(self.query)
+        result = AttributePathTransformer.transform(expression, self_model_name="self")
+        self._expression = expression
+
+        self._attribute_references = result.references
+        return self
+
+    def query_as_expression(self) -> exp.Expression:
         """Returns the SQL expression for the metric"""
-        return parse_one(self.query)
+        return self._expression
+    
+    def attribute_references(self) -> t.List["AttributePath"]:
+        """Returns the references for model attributes"""
+        return self._attribute_references
 
-    def as_bound_metric(self, model_name: str) -> "BoundMetric":
+    def bind(self, model: "Model") -> "BoundMetric":
         """Returns the bound metric for the given model"""
 
         return BoundMetric(
-            model_name=model_name,
-            name=self.name,
-            description=self.description,
-            query=self.query_as_expression(model_name),
-            filters=[parse_one(f) for f in self.filters] if self.filters else [],
+            model=model,
+            metric=self,
         )
 
 
-class BoundDimension(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+class BoundMetric:
+    model: "Model"
+    metric: Metric
 
-    model_name: str
+    def __init__(self, model: "Model", metric: Metric):
+        self.model = model
+        self.metric = metric
+
+    def to_query_part(
+        self,
+        traverser: "AttributePathTraverser",
+        original: "AttributePath | str",
+        registry: Registry,
+    ) -> "QueryPart":
+        """Returns the SQL expression for the metric"""
+
+        query = self.metric.query_as_expression()
+        result = AttributePathTransformer.transform(
+            query, traverser.copy(), self_model_name=self.model.name
+        )
+
+        return QueryPart(
+            registry=registry,
+            original=original,
+            expression=result.node,
+            is_aggregate=True,
+            resolved_references=result.references,
+        )
+
+
+class Filter(BaseModel):
+    query: str
+
+    def as_expression(self) -> exp.Expression:
+        """Returns the SQL expression for the filter"""
+        return parse_one(self.query)
+
+    def to_query_part(
+        self,
+        traverser: "AttributePathTraverser",
+        original: "AttributePath | str",
+        registry: Registry,
+    ) -> "QueryPart":
+        result = AttributePathTransformer.transform(
+            self.as_expression(), traverser=traverser, registry=registry
+        )
+
+        # Resolve the references to model attributes. If the attribute is a
+        # metric then this is an aggregation.
+        for reference in result.references:
+            attribute = reference.final_attribute()
+            model_name = exp_to_str(attribute.table)
+            attribute_name = exp_to_str(attribute.this)
+            model = registry.get_model(model_name)
+
+            try:
+                if isinstance(model.get_attribute(attribute_name), BoundMetric):
+                    # If the attribute is a metric, we need to treat it as an aggregate
+                    # function. This means we need to use a subquery to calculate the
+                    # metric before applying the filter.
+                    return QueryPart(
+                        registry=registry,
+                        original=original,
+                        expression=result.node,
+                        is_aggregate=True,
+                        resolved_references=result.references,
+                    )
+            except ValueError:
+                # HACK. This means the attribute is a column... hopefully
+                pass
+
+        return QueryPart(
+            registry=registry,
+            original=original,
+            expression=result.node,
+            is_aggregate=False,
+            resolved_references=result.references,
+        )
+
+
+class Dimension(BaseModel):
+    """A dimension is a column or expression that must resolve to a column in
+    the table.
+
+    The dimension can either be a simple column reference or a non-aggregating
+    expression.
+    """
+
     name: str
     description: str = ""
-    query: exp.Expression
+    query: str = ""
+    column_name: str = ""
+
+    @model_validator(mode="after")
+    def process_dimension(self):
+        if self.query and self.column_name:
+            raise ValueError("Cannot specify both query and column_name for dimension")
+        if not self.query and not self.column_name:
+            self.column_name = self.name
+
+        if self.query:
+            expression = parse_one(self.query)
+        else:
+            expression = exp.Column(
+                table=exp.to_identifier("self"), this=exp.to_identifier(self.column_name)
+            )
+        
+        # find all references in the expression
+        result = AttributePathTransformer.transform(expression, self_model_name="self")
+        self._expression = expression
+
+        # Ensure all references point to self
+        for ref in result.references:
+            if ref.base_model != "self":
+                raise ValueError(
+                    f"Dimension {self.name} cannot reference another model. Found reference to {ref.base_model}. Only use `self`"
+                )
+        self._attribute_references = result.references
+
+        return self
+
+    def as_expression(self) -> exp.Expression:
+        return self._expression
+    
+    def attribute_references(self) -> t.List["AttributePath"]:
+        return self._attribute_references
+
+    def bind(self, model: "Model") -> "BoundDimension":
+        return BoundDimension(
+            model=model,
+            dimension=self,
+        )
+
+
+class BoundDimension:
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    model: "Model"
+    dimension: Dimension
+
+    def __init__(self, model: "Model", dimension: Dimension):
+        self.model = model
+        self.dimension = dimension
 
     def with_alias(self, alias: str) -> exp.Expression:
         """Returns the SQL expression for the dimension with the given alias"""
@@ -292,34 +472,32 @@ class BoundDimension(BaseModel):
 
         return query.transform(transform_columns)
 
+    @property
+    def query(self) -> exp.Expression:
+        """Returns the SQL expression for the dimension"""
+        return self.dimension.as_expression()
 
-class Dimension(BaseModel):
-    name: str
-    description: str = ""
-    query: str = ""
-    column_name: str = ""
+    def to_query_part(
+        self,
+        traverser: "AttributePathTraverser",
+        original: "AttributePath | str",
+        registry: Registry,
+    ) -> "QueryPart":
+        """Returns the QueryPart"""
 
-    @model_validator(mode="after")
-    def process_dimension(self):
-        if self.query and self.column_name:
-            raise ValueError("Cannot specify both query and column_name for dimension")
-        if not self.query and not self.column_name:
-            self.column_name = self.name
-        return self
+        # table_alias = traverser.alias(self.model.name)
 
-    def as_expression(self) -> exp.Expression:
-        if self.query:
-            return parse_one(self.query)
-        return exp.Column(
-            table=exp.to_identifier("self"), this=exp.to_identifier(self.column_name)
+        query = self.dimension.as_expression()
+        result = AttributePathTransformer.transform(
+            query, traverser=traverser, self_model_name=self.model.name
         )
 
-    def as_bound_dimension(self, model_name: str) -> "BoundDimension":
-        return BoundDimension(
-            model_name=model_name,
-            name=self.name,
-            description=self.description,
-            query=self.as_expression(),
+        return QueryPart(
+            registry=registry,
+            original=original,
+            expression=result.node,
+            is_aggregate=False,
+            resolved_references=result.references,
         )
 
 
@@ -344,7 +522,7 @@ class Relationship(BaseModel):
     foreign_key_column: t.Optional[str] = None
 
 
-class BoundRelationship(BaseModel):
+class BoundRelationship:
     model: str
     name: str = ""
     model_ref: str
@@ -352,6 +530,24 @@ class BoundRelationship(BaseModel):
     join_table: t.Optional[str] = None
     self_key_column: t.Optional[str] = None
     foreign_key_column: t.Optional[str] = None
+
+    def __init__(
+        self,
+        model: str,
+        name: str,
+        model_ref: str,
+        type: RelationshipType,
+        self_key_column: t.Optional[str] = None,
+        foreign_key_column: t.Optional[str] = None,
+        join_table: t.Optional[str] = None,
+    ):
+        self.model = model
+        self.name = name
+        self.model_ref = model_ref
+        self.type = type
+        self.self_key_column = self_key_column
+        self.foreign_key_column = foreign_key_column
+        self.join_table = join_table
 
 
 class ViewConnector(BaseModel):
@@ -392,18 +588,61 @@ class Model(BaseModel):
     references: t.List[Relationship] = Field(default_factory=lambda: [])
 
     @model_validator(mode="after")
-    def build_reference_lookup(self):
+    def build_attribute_lookup(self):
         """Builds a lookup of the references in the model"""
-
         attributes: dict[str, BoundDimension | BoundMetric | BoundRelationship] = {}
 
+        # Topologically sort the dimensions
+        attribute_graph: t.Dict[str, t.Set[str]] = {}
         for dimension in self.dimensions:
-            # Ensure we don't have duplicate names
-            if dimension.name in attributes:
+            if dimension.name in attribute_graph:
                 raise ValueError(
                     f"Dimension {dimension.name} already exists in model {self.name}"
                 )
-            attributes[dimension.name] = dimension.as_bound_dimension(self.name)
+            references = dimension.attribute_references()
+
+            attribute_graph[dimension.name] = set()
+
+            for reference in references:
+                if reference.is_relationship() or reference.base_model != "self":
+                    raise ValueError(
+                        "Cannot reference a relationship in a dimension"
+                    )
+                # Attribute/Column name
+                attribute_name = exp_to_str(reference.final_attribute().this)
+
+                if attribute_name == dimension.name:
+                    # If the attribute name is the same as the dimension name, we can skip it.
+                    # For a dimension this just means that the dimension is a column in the table
+                    continue
+
+                attribute_graph[dimension.name].add(exp_to_str(reference.final_attribute().this))
+
+            attributes[dimension.name] = dimension.bind(self)
+
+        # Check for cycles in the dimensions
+        dimensions_sorter = TopologicalSorter(attribute_graph)
+        dimensions_sorter.prepare()
+
+        # Check for cycles in the metrics and dimensions
+        # For now this only checks for cycles in the current model. 
+        for metric in self.metrics:
+            # Ensure we don't have duplicate names
+            if metric.name in attributes or metric.name in attribute_graph:
+                raise ValueError(
+                    f"Metric {metric.name} already exists in model {self.name}"
+                )
+            attribute_graph[metric.name] = set()
+            for reference in metric.attribute_references():
+                if reference.is_relationship() or reference.base_model != "self":
+                    continue # Relationships are handled at query time (for now)
+                attribute_graph[metric.name].add(exp_to_str(reference.final_attribute().this))
+
+            attributes[metric.name] = metric.bind(self)
+
+        # Ensure we have no cycles
+        attribute_sorter = TopologicalSorter(attribute_graph)
+        attribute_sorter.prepare()
 
         self._model_ref_lookup_by_model_name: dict[str, list[Relationship]] = {}
         for reference in self.references:
@@ -430,13 +669,18 @@ class Model(BaseModel):
 
         return self
 
+    @property
+    def attribute_names(self) -> t.List[str]:
+        """Returns the names of all attributes in the model"""
+        return list(self._all_attributes.keys())
+
     def get_dimension(self, name: str) -> BoundDimension:
         """Returns the dimension with the given name"""
         dimension = self.get_attribute(name)
         if not isinstance(dimension, BoundDimension):
             raise ValueError(f"{name} is not a dimension in model {self.name}")
         return dimension
-    
+
     def get_relationship(self, name: str) -> BoundRelationship:
         """Returns the relationship with the given name"""
         relationship = self.get_attribute(name)
@@ -480,12 +724,14 @@ class Model(BaseModel):
         """Returns the table for the model"""
         return exp.to_table(self.table)
 
-    def get_attribute(self, name: str) -> BoundDimension | BoundMetric | BoundRelationship:
+    def get_attribute(
+        self, name: str
+    ) -> BoundDimension | BoundMetric | BoundRelationship:
         """Resolves the attribute to a column in the model"""
         if name not in self._all_attributes:
             raise ValueError(f"Attribute {name} not found in model {self.name}")
         return self._all_attributes[name]
-    
+
     def resolve_dimension_with_alias(self, name: str, alias: str):
         """Returns the dimension with the given name and alias"""
         dimension = self.get_dimension(name)
@@ -513,20 +759,26 @@ class Join(BaseModel):
     via: str | None = None
 
 
-class AttributeReference(BaseModel):
-    ref: list[str]
+class AttributePath(BaseModel):
+    path: list[str]
 
     @model_validator(mode="after")
     def process_ref(self):
-        self._columns = [exp.to_column(r) for r in self.ref]
+        self._columns = [exp.to_column(r.strip()) for r in self.path]
+
+        # Write out normalized path
+        self.path = [
+            f"{exp_to_str(column.table)}.{exp_to_str(column.this)}"
+            for column in self._columns
+        ]
         return self
 
     @classmethod
-    def from_string(cls, ref: str) -> "AttributeReference":
-        return cls(ref=ref.split("->"))
+    def from_string(cls, path: str) -> "AttributePath":
+        return cls(path=path.split("->"))
 
     def traverser(self, initial_value: str = ""):
-        return ReferenceTraverser(self, initial_value=initial_value)
+        return AttributePathTraverser(self, initial_value=initial_value)
 
     @property
     def base_model(self):
@@ -536,36 +788,297 @@ class AttributeReference(BaseModel):
     def columns(self):
         return self._columns
 
-    def as_column(self, registry: Registry):
+    def resolve(self, registry: Registry, parent_traverser: "AttributePathTraverser | None" = None):
         traverser = self.traverser()
         while traverser.next():
             pass
-        return traverser.current_column(registry)
+        current_model = registry.get_model(traverser.current_model_name)
+        current_attribute = current_model.get_attribute(
+            traverser.current_attribute_name
+        )
+        match current_attribute:
+            case BoundDimension():
+                part = current_attribute.to_query_part(traverser.copy(), self, registry)
+            case BoundMetric():
+                part = current_attribute.to_query_part(traverser.copy(), self, registry)
+            case BoundRelationship():
+                raise InvalidAttributeReferenceError(
+                    self, "final attribute cannot be a relationship"
+                )
+        if parent_traverser:
+            part = part.scope(parent_traverser)
+        return part
+
+    def resolve_child_references(
+        self, registry: Registry, depth: int = 0
+    ) -> list["AttributePath"]:
+        """Resolves the child references for the given registry
+
+        Metrics can reference dimensions in related models. This resolves
+        those references to the actual attributes in that other model.
+
+        The depth is used to limit the number of levels to traverse. This is
+        used to prevent infinite loops in the case of circular references.
+        """
+        traverser = self.traverser()
+        while traverser.next():
+            pass
+        current_model = registry.get_model(traverser.current_model_name)
+        current_attribute = current_model.get_attribute(
+            traverser.current_attribute_name
+        )
+        match current_attribute:
+            case BoundDimension():
+                return [self]
+            case BoundMetric():
+                # Recurse
+                return [self]
+            case BoundRelationship():
+                raise InvalidAttributeReferenceError(
+                    self, "final attribute cannot be a relationship"
+                )
+            case _:
+                raise ValueError(
+                    f"FATAL: unexpected attribute type {current_attribute} in model {current_model.name}"
+                )
+
+    def is_valid_for_registry(self, registry: Registry):
+        """Checks if the reference is valid for the given registry"""
+        return self.traverser().is_valid_for_registry(registry)
+
+    def __str__(self) -> str:
+        """Returns the string representation of the reference"""
+        columns_as_strs = [
+            f"{exp_to_str(column.table)}.{exp_to_str(column.this)}"
+            for column in self._columns
+        ]
+        return "->".join(columns_as_strs)
+    
+    def to_select_alias(self) -> str:
+        """Returns the string representation of the reference as a select alias"""
+        columns_as_strs = [
+            f"{exp_to_str(column.table)}_{exp_to_str(column.this)}"
+            for column in self._columns
+        ]
+        return "__".join(columns_as_strs)
+
+    def __eq__(self, other: object) -> bool:
+        """Checks if the reference is equal to another reference"""
+        if not isinstance(other, AttributePath):
+            return False
+        return self.path == other.path
+    
+    def final_attribute(self) -> exp.Column:
+        """Returns the final column in the reference"""
+        return self._columns[-1]
+    
+    def is_relationship(self) -> bool:
+        """Checks if the reference is a relationship"""
+        return len(self._columns) > 1
+    
+class AttributeTransformerResult(BaseModel):
+    """Internal result only used for the attribute reference transformer"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    node: exp.Expression
+    references: list[AttributePath]
 
 
-class ReferenceTraverser:
+def is_expression_attribute_reference(node: exp.Expression) -> bool:
+    if isinstance(node, exp.Column):
+        return True
+
+    if not isinstance(node, exp.JSONExtract):
+        return False
+
+    base = node.this
+    to = node.expression
+    if not isinstance(base, (exp.Column, exp.Dot)):
+        return False
+
+    if not isinstance(to, (exp.Column, exp.JSONExtract)):
+        return False
+
+    if isinstance(to, exp.JSONExtract):
+        return is_expression_attribute_reference(to)
+    return True
+
+
+class AttributePathTransformer:
+    """Provides a transformer that tracks attribute references in an expression
+    and replaces them with macro functions that can be resolved at sql
+    generation time
+
+    Should be called with the `transform` class method.
+    """
+
+    @classmethod
+    def transform(
+        cls,
+        node: exp.Expression,
+        traverser: "AttributePathTraverser | None" = None,
+        self_model_name: str = "",
+        registry: Registry | None = None,
+    ):
+        """Transform an expression and return a result that also contains the
+        attribute references found in the expression"""
+
+        transformer = cls(traverser=traverser, self_model_name=self_model_name, registry=registry)
+        transformed_node = node.transform(transformer)
+
+        return AttributeTransformerResult(
+            node=transformed_node, references=transformer.references
+        )
+
+    def __init__(
+        self, traverser: "AttributePathTraverser | None" = None, self_model_name: str = "", registry: Registry | None = None
+    ):
+        self.references: list[AttributePath] = []
+        self.self_model_name = self_model_name
+        if traverser:
+            self.traverser = traverser
+        else:
+            self.traverser = AttributePathTraverser(reference=AttributePath(path=[]))
+        self.registry = registry
+
+    def __call__(self, node: exp.Expression):
+        if is_expression_attribute_reference(node):
+            if isinstance(node, exp.Column):
+                model_name = exp_to_str(node.table)
+                column_name = exp_to_str(node.this)
+                if model_name == "self":
+                    # We have a self reference
+                    if not self.self_model_name:
+                        # TODO ... improve this error message
+                        raise ValueError("Cannot use self reference in this expression")
+                    model_name = self.self_model_name
+                reference = AttributePath.from_string(
+                    f"{model_name}.{column_name}"
+                )
+            else:
+                # Check for self in reference path
+                reference_path = node.sql(dialect="duckdb").split("->")
+                for i in range(len(reference_path)):
+                    ref = reference_path[i]
+                    as_column = exp.to_column(ref)
+                    model_name = exp_to_str(as_column.table)
+
+                    if model_name == "self":
+                        if not self.self_model_name:
+                            # TODO ... improve this error message
+                            raise ValueError(
+                                "Cannot use self reference in this expression"
+                            )
+                        model_name = self.self_model_name
+                        reference_path[i] = f"{model_name}.{exp_to_str(as_column.this)}"
+                reference = AttributePath(path=reference_path)
+
+            appended_reference = self.append_scoped_reference(reference)
+            refs_as_literals = exp.Literal.string(str(appended_reference))
+
+            # Check if the reference is to a model's attribute or to an actual column
+            if self.registry:
+                part = appended_reference.resolve(self.registry, parent_traverser=self.traverser.copy())
+                for references in part.resolved_references:
+                    self.references.append(references)
+                return part.expression
+
+            return exp.Anonymous(this="$semantic_ref", expressions=[refs_as_literals])
+        return node
+
+    def append_scoped_reference(self, reference: AttributePath):
+        """Appends a reference to the transformer"""
+        scoped_reference = self.traverser.create_scoped_reference(reference)
+        self.references.append(scoped_reference)
+        return scoped_reference
+    
+
+class QueryPart(BaseModel):
+    """The most basic representation of a part of a query.
+
+    This is used to represent dimensions, metrics, and filters in a query.
+
+    Each of those parts of a query should have the following properties:
+
+    * An expression that can be used to generate the SQL
+    * 1 or more references related to the expression. We need to know all of
+      these to understand how to generate the right joins
+    * If the expression is an aggregate function, we need to know if it is
+        additive or not. This is used to determine if we need to use ctes or
+        not. If the expression is not an aggregate function, we can group by
+        this expression.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    registry: Registry
+
+    original: AttributePath | str
+
+    expression: exp.Expression = Field(description="The final sql expression")
+
+    is_aggregate: bool = Field(
+        description="Whether the column is an aggregate function"
+    )
+
+    resolved_references: t.List[AttributePath] = Field(
+        description="All of the resolved references for the attribute resolved for the current registry"
+    )
+
+    @property
+    def is_additive(self):
+        """Whether the column is additive"""
+        return self.is_aggregate
+    
+    def scope(self, traverser: "AttributePathTraverser") -> "QueryPart":
+        """Scopes the query part to the given traverser"""
+        scoped_references: list[AttributePath] = []
+
+        def scope_semantic_refs(node: exp.Expression):
+            if isinstance(node, exp.Anonymous) and exp_to_str(node.this).lower() == "$semantic_ref":
+                # Replace the reference with the scoped reference
+                current_reference = AttributePath.from_string(exp_to_str(node.expressions[0]))
+                scoped_reference = traverser.create_scoped_reference(current_reference)
+                scoped_references.append(scoped_reference)
+                return exp.Anonymous(
+                    this="$semantic_ref",
+                    expressions=[exp.Literal.string(str(scoped_reference))],
+                )
+            return node
+        
+        scoped_expression = self.expression.transform(scope_semantic_refs)
+        
+        return QueryPart(
+            registry=self.registry,
+            original=self.original,
+            expression=scoped_expression,
+            is_aggregate=self.is_aggregate,
+            resolved_references=scoped_references,
+        )
+
+
+class AttributePathTraverser:
     """AttributeReferences are used to reference a dimension or metric in a
     model.
 
     Because some models may reference another model more than once. The way this
-    would be distinguished would be through different foreign key columns.
-    Reference traversal, tracks the joins through these columns. We do this by
-    enabling joins through a specific column.
+    would be distinguished would be through different model relationship
+    attributes. Path traversal, tracks the joins through these attributes.
 
-    The following table shows how a traverser works, given a reference
-    `a.b->c.d->e.f`
+    The following table shows how a traverser works, given a path 
+    `a.b->c.d->e.f`:
 
-    Index             | 0      | 1               | 2                         |
-    --------------------------------------------------------------------------
-    Through Column    | a.b    | c.d             | e.f                       |
-    Alias for table g | md5(g) | md5(md5(a.b)+g) | md5(md5(md5(a.b)+c.d)+g)  |
+    | Index             | 0      | 1               | 2                        |
+    |-------------------|--------|-----------------|--------------------------|
+    | Through Column    |        | a.b             | c.d                      |
+    | Alias for table g | md5(g) | md5(md5(a.b)+g) | md5(md5(md5(a.b)+c.d)+g) |
 
     This allows us to ensure that we don't duplicate joins by ensuring that each
     level through a given column reference uses the same table alias.
-
     """
 
-    def __init__(self, reference: AttributeReference, initial_value=""):
+    def __init__(self, reference: AttributePath, initial_value=""):
         self.reference = reference
         self.index = 0
         self.alias_stack: list[str] = [initial_value]
@@ -573,6 +1086,7 @@ class ReferenceTraverser:
     def next(self):
         if self.index >= len(self.reference.columns) - 1:
             return False
+
         self.alias_stack.append(
             self._generate_alias(
                 self.alias_stack[-1],
@@ -602,6 +1116,27 @@ class ReferenceTraverser:
         """Creates an alias at the given traverser position"""
         return self._generate_alias(self.alias_stack[-1], model_name)
 
+    def copy(self):
+        """Creates a copy of the traverser"""
+        traverser = AttributePathTraverser(
+            reference=self.reference,
+            initial_value=self.alias_stack[-1],
+        )
+        traverser.index = self.index
+        traverser.alias_stack = self.alias_stack[:]
+        return traverser
+
+    def create_scoped_reference(
+        self, reference: AttributePath
+    ) -> AttributePath:
+        """Creates a scoped reference for the given model and column"""
+        if self.index == 0:
+            return reference
+        else:
+            new_ref = self.reference.path[: self.index]
+            new_ref.extend(reference.path)
+            return AttributePath(path=new_ref)
+
     @property
     def current_table_alias(self):
         return self.alias(self.current_model_name)
@@ -624,13 +1159,31 @@ class ReferenceTraverser:
             case BoundDimension():
                 return attribute.with_alias(self.current_table_alias)
             case BoundMetric():
-                raise NotImplementedError(
-                    "Cannot use metrics in traverser yet"
-                )
+                raise NotImplementedError("Cannot resolve a metric to a column")
             case BoundRelationship():
                 raise ValueError(
                     f"Cannot use relationship {self.current_attribute_name} in traverser"
                 )
+
+    def is_valid_for_registry(self, registry: Registry):
+        """Checks if the reference is valid for the given registry"""
+
+        # The final attribute must be a dimension or metric so we only iterate
+        # through the relationships if we are not at the end of the reference
+        if len(self.reference.columns) > 1:
+            current_model = registry.get_model(self.current_model_name)
+            current_attribute = current_model.get_attribute(self.current_attribute_name)
+            # Only relationships can be traversed any other kind of attribute is
+            # invalid
+            if not isinstance(current_attribute, BoundRelationship):
+                raise InvalidAttributeReferenceError(self.reference)
+            while self.next():
+                pass
+        current_model = registry.get_model(self.current_model_name)
+        current_attribute = current_model.get_attribute(self.current_attribute_name)
+        if isinstance(current_attribute, BoundRelationship):
+            raise InvalidAttributeReferenceError(self.reference)
+        return True
 
 
 class SemanticQuery(BaseModel):
@@ -643,11 +1196,25 @@ class SemanticQuery(BaseModel):
 
     @model_validator(mode="after")
     def process_columns(self):
-        # Bit of a circular dependency but makes this easier to work with
-        self._processed_columns = [
-            AttributeReference.from_string(col) for col in self.columns
-        ]
-        self._processed_filters = [parse_one(f) for f in self.filters]
+        self._processed_columns: t.List[t.Tuple[AttributePath, str]] = []
+        for col in self.columns:
+            result = AttributePathTransformer.transform(parse_one(col))
+            if len(result.references) != 1:
+                raise ValueError(
+                    f"Invalid column reference {col}. Must be a single reference with an optional alias"
+                )
+            if not isinstance(result.node, (exp.Anonymous, exp.Alias)):
+                raise ValueError(
+                    f"Invalid column reference {col}. Must be a single reference with an optional alias"
+                )
+            column_path = result.references[0]
+            alias = column_path.to_select_alias()
+            if isinstance(result.node, exp.Alias):
+                alias = exp_to_str(result.node.alias)
+
+            self._processed_columns.append((column_path, alias))
+            
+        self._processed_filters = [Filter(query=f) for f in self.filters]
 
         return self
 
@@ -655,8 +1222,8 @@ class SemanticQuery(BaseModel):
         from metrics_tools.semantic.query import QueryBuilder
 
         query = QueryBuilder(registry)
-        for column in self._processed_columns:
-            query.add_select(column)
+        for column, alias in self._processed_columns:
+            query.add_select(column, alias)
         for filter in self._processed_filters:
             query.add_filter(filter)
         query.add_limit(self.limit)

@@ -1,109 +1,28 @@
+import logging
 import typing as t
-from dataclasses import dataclass
 
+from metrics_tools.utils.glot import exp_to_str
 from sqlglot import exp
-from sqlmesh.core.dialect import MacroFunc
 
-from .definition import AttributeReference, Model, Registry
+from .definition import AttributePath, Filter, Model, QueryPart, Registry
 
-
-def is_expression_attribute_reference(node: exp.Expression) -> bool:
-    if isinstance(node, exp.Column):
-        return True
-
-    if not isinstance(node, exp.JSONExtract):
-        return False
-
-    base = node.this
-    to = node.expression
-    if not isinstance(base, (exp.Column, exp.Dot)):
-        return False
-
-    if not isinstance(to, (exp.Column, exp.JSONExtract)):
-        return False
-
-    if isinstance(to, exp.JSONExtract):
-        return is_expression_attribute_reference(to)
-    return True
-
-
-@dataclass
-class AttributeTransformerResult:
-    """Internal result only used for the attribute reference transformer"""
-    node: exp.Expression
-    references: list[AttributeReference]
-
-
-class AttributeReferenceTransformer:
-    """Provides a transformer that tracks attribute references in an expression
-    and replaces them with macro functions that can be resolved at sql
-    generation time
-
-    Should be called with the `transform` class method.
-    """
-
-    @classmethod
-    def transform(cls, node: exp.Expression):
-        """Transform an expression and return a result that also contains the
-        attribute references found in the expression"""
-
-        transformer = cls()
-        transformed_node = node.transform(transformer)
-        return AttributeTransformerResult(
-            node=transformed_node, references=transformer.references
-        )
-
-    def __init__(self):
-        self.references: list[AttributeReference] = []
-
-    def __call__(self, node: exp.Expression):
-        if is_expression_attribute_reference(node):
-            if isinstance(node, exp.Column):
-                raw_refs = [node.sql(dialect="duckdb")]
-            else:
-                raw_refs = [r for r in node.sql(dialect="duckdb").split("->")]
-
-            self.references.append(AttributeReference(ref=raw_refs))
-            refs_as_literals = [exp.Literal.string(r) for r in raw_refs]
-            return MacroFunc(
-                this=exp.Anonymous(
-                    this="semantic_column_resolve", expressions=refs_as_literals
-                )
-            )
-        return node
-
-
-class FilterNode:
-    @classmethod
-    def from_expression(cls, node: exp.Expression):
-        # We replace all attribute references with macro functions to lazily
-        # evaluate the correct column name at sql generation time
-        result = AttributeReferenceTransformer.transform(node)
-        return cls(result.node, result.references)
-
-    def __init__(
-        self, expression: exp.Expression, references: list[AttributeReference]
-    ):
-        self.expression = expression
-        self.references = references
-
-    def resolve(self, registry: Registry):
-        # We need to figure out if the reference is a dimension or metric
-        # If it's a dimension it's a "where" clause
-        # If it's a metrics we need it to be a "having" clause
-        pass
+logger = logging.getLogger(__name__)
 
 
 class QueryBuilder:
     def __init__(self, registry: Registry):
         self._registry = registry
-        self._select_refs: list[AttributeReference] = []
-        self._references: list[AttributeReference] = []
-        self._filter_nodes: list[FilterNode] = []
-        self._deepest_reference: AttributeReference | None = None
+        self._select_refs: list[AttributePath] = []
+        self._references: list[AttributePath] = []
+        self._deepest_reference: AttributePath | None = None
+
+        self._select_parts: list[QueryPart] = []
+        self._select_aliases: list[str] = []
+        self._filter_parts: list[QueryPart] = []
+
         self._limit = 0
 
-    def add_reference(self, reference: AttributeReference):
+    def add_reference(self, reference: AttributePath):
         """Adds an attribute reference to the query
 
         Every reference adds 0 or more joins to the query
@@ -122,26 +41,38 @@ class QueryBuilder:
 
         return self
 
-    def add_select(self, select: AttributeReference):
+    def add_select(self, reference: AttributePath, alias: str):
         """Add a model attribute to the select clause"""
-        self.add_reference(select)
+        # validate the select by checking the attribute references
+
+        if not reference.is_valid_for_registry(self._registry):
+            raise ValueError(f"Invalid reference {reference} for registry")
+        part = reference.resolve(self._registry)
+
+        for resolved_reference in part.resolved_references:
+            if resolved_reference not in self._references:
+                self.add_reference(resolved_reference)
+        self._select_parts.append(part)
+        self._select_aliases.append(alias)
         return self
 
-    def add_filter(self, filter: exp.Expression):
+    def add_filter(self, filter: Filter):
         """Add a filter to the query"""
 
-        filter_node = FilterNode.from_expression(filter)
-        self._filter_nodes.append(filter_node)
+        traverser = AttributePath(path=[]).traverser()
+        filter_part = filter.to_query_part(traverser, filter.query, self._registry)
 
-        for ref in filter_node.references:
+        for ref in filter_part.resolved_references:
             self.add_reference(ref)
+
+        self._filter_parts.append(filter_part)
         return self
-    
+
     def add_limit(self, limit: int):
         """Add a limit to the query"""
         self._limit = limit
         return self
-    
+
     @property
     def base_model(self):
         """Get the base model of the query"""
@@ -159,13 +90,24 @@ class QueryBuilder:
         deepest_reference = self._deepest_reference
 
         # Turn references into actual expressions
-        columns = [ref.as_column(self._registry) for ref in self._references]
+        select_parts = self._select_parts
+        select_expressions: list[exp.Expression] = []
+        group_by_expressions: list[str] = []
+
+        for i in range(len(select_parts)):
+            part = select_parts[i]
+            select_expressions.append(part.expression.as_(self._select_aliases[i]))
+
+            if not part.is_aggregate:
+                group_by_expressions.append(str(i + 1))
 
         # Establish base query
-        query = exp.select(*columns)
+        query = exp.select(*select_expressions)
 
         base_table = base_model.table_exp
-        base_table_with_alias = base_table.as_(deepest_reference.traverser().alias(base_model.name))
+        base_table_with_alias = base_table.as_(
+            deepest_reference.traverser().alias(base_model.name)
+        )
         query = query.from_(base_table_with_alias)
 
         # Add joins
@@ -176,14 +118,36 @@ class QueryBuilder:
         query = joiner.joined_query
 
         # Add filters
-        for filter_node in self._filter_nodes:
-            filter_node.resolve(self._registry)
+        for part in self._filter_parts:
+            part_expression = part.expression
+
+            query = query.where(part_expression)
 
         # Apply appropriate group by
-        query = query.group_by(*columns)
+        if group_by_expressions:
+            query = query.group_by(*group_by_expressions)
 
         if self._limit:
             query = query.limit(self._limit)
+
+        # Replace $SEMANTIC_REF anonymous functions. The reason we do this here
+        # right now is because it seems we will likely need to split the query
+        # into multiple queries depending on the models joined. Doing a late
+        # resolution of the actual column names allows us to do this on a per
+        # subquery basis. For now, this isn't implemeneted.
+        def transform_semantic_ref(node: exp.Expression):
+            if isinstance(node, exp.Anonymous) and exp_to_str(node.this).lower() == "$semantic_ref":
+                # We need to replace the function with the actual column name
+                # from the registry
+                semantic_ref = exp_to_str(node.expressions[0])
+                ref = AttributePath.from_string(semantic_ref)
+                # Hack for now we should replace with a lookup in this instance
+                traverser = ref.traverser()
+                while traverser.next():
+                    pass
+                return exp.to_column(f"{traverser.current_table_alias}.{traverser.current_attribute_name}")
+            return node
+        query = query.transform(transform_semantic_ref)
 
         return query
 
@@ -196,7 +160,7 @@ class QueryJoiner:
         self._already_joined: set[str] = set()
         self._already_joined.add(base_model.name)
 
-    def join_reference(self, reference: AttributeReference):
+    def join_reference(self, reference: AttributePath):
         """Join the reference to the current base model"""
         traverser = reference.traverser()
 
@@ -235,7 +199,9 @@ class QueryJoiner:
         create_alias: t.Callable[[str], str] = lambda x: x,
         through_attribute: str = "",
     ):
-        print(f"Joining `{from_model_name}` to `{to_model_name}` through `{through_attribute}`")
+        logger.debug(
+            f"Joining `{from_model_name}` to `{to_model_name}` through `{through_attribute}`"
+        )
         registry = self._registry
         query = self._select
 
@@ -244,13 +210,15 @@ class QueryJoiner:
         )
         from_model = registry.get_model(from_model_name)
 
-        print(f"Join path: {join_path}")
+        logger.debug(f"Join path: {join_path}")
 
         for relationship in join_path:
             referenced_model = registry.get_model(relationship.model_ref)
             referenced_model_alias = create_alias(relationship.model_ref)
 
-            referenced_model_table = referenced_model.table_exp.as_(referenced_model_alias)
+            referenced_model_table = referenced_model.table_exp.as_(
+                referenced_model_alias
+            )
 
             if referenced_model_alias in self._already_joined:
                 continue

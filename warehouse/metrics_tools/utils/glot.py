@@ -58,3 +58,13 @@ def str_or_expressions(query: str | t.List[exp.Expression]) -> t.List[exp.Expres
     if not isinstance(query, list):
         return parse(query)
     return query
+
+def exp_to_str(expression: exp.Expression | str) -> str:
+    if isinstance(expression, str):
+        return expression
+    if isinstance(expression, exp.Literal):
+        return str(expression.this)
+    elif isinstance(expression, exp.Identifier):
+        return str(expression.this)
+    else:
+        return str(expression)

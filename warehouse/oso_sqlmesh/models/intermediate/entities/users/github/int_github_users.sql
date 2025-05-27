@@ -11,11 +11,8 @@ MODEL (
 SELECT
   artifact_source_id,
   artifact_id,
+  artifact_namespace,
   artifact_name,
-  MIN(first_commit_time) AS first_commit_time,
-  MAX(last_commit_time) AS last_commit_time
+  'GIT_USER' AS artifact_type,
+  'https://github.com/' || artifact_name AS artifact_url
 FROM oso.int_first_last_commit_from_github_user
-GROUP BY
-  artifact_source_id,
-  artifact_id,
-  artifact_name

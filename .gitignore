@@ -81,3 +81,6 @@ supabase/.temp/
 # cube.dev
 core.1
 .cubecloud
+
+# opa
+opa/**/bundle.tar.gz

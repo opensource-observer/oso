@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - ../../base/trino
   - trino-catalog-volume.yaml
+  - trino-access-control.yaml
 namespace: production-consumer-trino
 patches:
   - path: ./custom-helm-values.yaml
