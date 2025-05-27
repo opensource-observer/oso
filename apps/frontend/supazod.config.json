@@ -1,0 +1,8 @@
+{
+  "namingConfig": {
+    "tableOperationPattern": "{table}{operation}",
+    "enumPattern": "{name}Enum",
+    "functionArgsPattern": "{function}Args",
+    "functionReturnsPattern": "{function}Returns"
+  }
+}
