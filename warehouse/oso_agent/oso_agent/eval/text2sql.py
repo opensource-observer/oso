@@ -17,11 +17,11 @@ EXPERIMENT_NAME = "text2sql-experiment"
 nest_asyncio.apply()
 
 async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):
+  print("Running text2sql experiment with:", config)
   phoenix_client = px.Client()
   dataset = phoenix_client.get_dataset(
     name=config.eval_dataset_text2sql,
   )
-
 
   async def task(example: Example) -> str:
     #print(f"Example: {example}")
