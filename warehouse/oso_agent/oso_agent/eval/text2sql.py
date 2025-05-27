@@ -12,7 +12,10 @@ from ..util.config import AgentConfig
 
 EXPERIMENT_NAME = "text2sql-experiment"
 
-nest_asyncio.apply()
+try:
+    nest_asyncio.apply()
+except ValueError:
+    pass
 contains_keyword = ContainsAnyKeyword(keywords=["SELECT"])
 
 async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):

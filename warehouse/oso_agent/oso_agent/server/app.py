@@ -89,7 +89,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         """Get the status of a job"""
         agent = get_agent(request, config)
         response = await agent.run(
-            query=chat_request.current_message.content,
+            chat_request.current_message.content,
             chat_history=chat_request.to_llama_index_chat_history(),
         )
 
@@ -98,7 +98,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
 
         lines.append(f'f:{{"messageId":"{message_id}"}}\n')
 
-        for line in response.split("\n"):
+        for line in json.loads(str(response))["query"].split("\n"):
             escaped_line = json.dumps(line)
             lines.append(f"0:{escaped_line}\n")
 
