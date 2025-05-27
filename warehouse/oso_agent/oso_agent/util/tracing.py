@@ -25,7 +25,7 @@ def setup_telemetry(config: AgentConfig) -> Optional[trace_sdk.TracerProvider]:
                     "Arize Phoenix API key is empty but cloud mode is enabled"
                 )
                 return None
-
+            
             logger.info("Setting up telemetry with Arize Phoenix Cloud")
 
             tracer_provider = register(

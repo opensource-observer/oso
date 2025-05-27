@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "OSO Team", email = "opensource-observer@googlegroups.com" }]
 dependencies = [
-    "arize-phoenix-otel>=0.9.1",
-    "arize-phoenix[evals]>=10.0.1",
+    "arize-phoenix-otel==0.9.2",
+    "arize-phoenix[evals]==9.6.1",
     "discord-py>=2.5.2",
     "dotenv>=0.9.9",
     "llama-index>=0.12.29",
