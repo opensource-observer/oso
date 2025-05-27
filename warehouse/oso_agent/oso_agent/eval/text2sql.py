@@ -18,7 +18,7 @@ nest_asyncio.apply()
 
 async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):
   print("Running text2sql experiment with:", config)
-  phoenix_client = px.Client()
+  phoenix_client = px.Client(endpoint=config.arize_phoenix_base_url)
   dataset = phoenix_client.get_dataset(
     name=config.eval_dataset_text2sql,
   )
