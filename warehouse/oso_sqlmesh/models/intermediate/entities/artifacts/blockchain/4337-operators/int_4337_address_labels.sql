@@ -3106,23 +3106,24 @@ unioned AS (
   SELECT
     lower(address) as address,
     lower(name) as project_label,
-    'BUNDLER' as label_type
+    '4337_BUNDLER' as label_type
   FROM bundlers
   UNION ALL
   SELECT
     lower(address) as address,
     lower(name) as project_label,
-    'FACTORY' as label_type
+    '4337_ACCOUNT_FACTORY' as label_type
   FROM factories
   UNION ALL
   SELECT
     lower(address) as address,
     lower(name) as project_label,
-    'PAYMASTER' as label_type
+    '4337_PAYMASTER' as label_type
   FROM paymasters
 )
 
 SELECT
+  UPPER(chains.chain) AS chain,
   unioned.address,
   unioned.project_label,
   unioned.label_type,
@@ -3130,4 +3131,5 @@ SELECT
 FROM unioned
 LEFT JOIN project_mappings
   ON unioned.project_label = project_mappings.project_label
+CROSS JOIN oso.int_superchain_chain_names AS chains
 WHERE project_label IS NOT NULL
