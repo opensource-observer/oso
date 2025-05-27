@@ -204,6 +204,45 @@ export type Database = {
           },
         ];
       };
+      purchase_intents: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          credits_amount: number;
+          id: string;
+          metadata: Json | null;
+          package_id: string;
+          price_cents: number;
+          status: string;
+          stripe_session_id: string;
+          user_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          credits_amount: number;
+          id?: string;
+          metadata?: Json | null;
+          package_id: string;
+          price_cents: number;
+          status?: string;
+          stripe_session_id: string;
+          user_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          credits_amount?: number;
+          id?: string;
+          metadata?: Json | null;
+          package_id?: string;
+          price_cents?: number;
+          status?: string;
+          stripe_session_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       user_credits: {
         Row: {
           created_at: string;
