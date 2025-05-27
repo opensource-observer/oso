@@ -1,0 +1,402 @@
+---
+title: Causal Inference with Synthetic Controls
+sidebar_position: 9
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Measure the causal impact of events or interventions on open source projects.
+New to OSO? Check out our [Getting Started guide](../get-started/index.md)
+to set up your API access.
+
+This tutorial will guide you through the process of using synthetic control methods to analyze the causal impact of events or interventions (like receiving funding) on open source projects using data from OSO.
+
+## Introduction to Causal Inference
+
+Causal inference goes beyond correlation to understand cause-and-effect relationships. While randomized experiments are the gold standard for establishing causation, they aren't always possible in the context of open source software development. This is where observational causal inference methods become valuable.
+
+In open source metrics, we might want to answer questions like:
+
+- Did receiving a grant increase the number of active developers contributing to a project?
+- Does a specific contribution behavior lead to increased long-term engagement?
+- What impact did a specific event (like a hackathon) have on project activity?
+
+These questions are inherently causal. Simple correlational analysis might lead to misleading conclusions because of confounding factors - variables that affect both the treatment and the outcome.
+
+## Getting Started
+
+Before running any analysis, you'll need to set up your environment:
+
+<Tabs>
+<TabItem value="python" label="Python">
+
+Start your Python notebook with the following:
+
+```python
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime, timedelta
+from pyoso import Client
+
+# Install pysyncon if you haven't already
+# !pip install pysyncon
+import pysyncon as psc
+
+# Set plotting style
+sns.set(style="whitegrid")
+plt.rcParams['figure.figsize'] = (14, 8)
+
+# Connect to OSO with your API key
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
+```
+
+For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
+
+</TabItem>
+<TabItem value="colab" label="Google Colab">
+
+For Google Colab, use the following setup:
+
+```python
+!pip install pyoso pysyncon
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime, timedelta
+from pyoso import Client
+import pysyncon as psc
+
+# Set plotting style
+sns.set(style="whitegrid")
+plt.rcParams['figure.figsize'] = (14, 8)
+
+# For Colab, you'll need to store your API key as a secret
+from google.colab import userdata
+OSO_API_KEY = userdata.get('OSO_API_KEY')
+client = Client(api_key=OSO_API_KEY)
+```
+
+</TabItem>
+</Tabs>
+
+## Understanding Synthetic Control Methods
+
+The synthetic control method is a statistical technique used to evaluate the effect of an intervention in comparative case studies. It creates a weighted combination of control units (the "synthetic control") that best resembles the characteristics of the treated unit before the intervention.
+
+The key idea is to use data from before the intervention to create a synthetic version of the treated unit, and then compare the post-intervention outcomes between the actual treated unit and its synthetic counterpart. The difference between these two represents the causal effect of the intervention.
+
+### When to Use Synthetic Control Methods
+
+Synthetic control methods are particularly useful when:
+
+1. You have a small number of treated units (often just one)
+2. You have several potential control units
+3. You have data for time periods before and after the intervention
+4. Randomized experiments are not feasible
+
+This makes them perfect for analyzing the impact of events or interventions on open source projects.
+
+## Implementing a Synthetic Control Analysis
+
+Let's analyze the impact of receiving a grant on the number of active developers contributing to a project.
+
+### Step 1: Define the research question
+
+We want to know: **Did receiving a grant increase the number of active developers for a project?**
+
+### Step 2: Identify the treated and potential control units
+
+- Treated unit: A project that received a grant at a specific point in time
+- Potential control units: Similar projects that did not receive grants
+
+### Step 3: Collect data on the outcome variable and predictors
+
+First, let's define our helper function for formatting arrays in SQL:
+
+```python
+def stringify(arr):
+    return "'" + "','".join(arr) + "'"
+```
+
+Now, let's query the data:
+
+```python
+# For this example, let's assume a project called 'project-xyz' received a grant in January 2024
+# We'll compare it with other similar projects that didn't receive grants
+treated_project = 'project-xyz'  # Replace with an actual project from OSO
+potential_control_projects = ['project-a', 'project-b', 'project-c', 'project-d', 'project-e']
+
+# Let's get active developer data for these projects
+query = f"""
+SELECT
+  p.project_name,
+  tm.sample_date,
+  tm.amount as active_devs_90d
+FROM timeseries_metrics_by_project_v0 AS tm
+JOIN metrics_v0 AS m ON m.metric_id = tm.metric_id
+JOIN projects_v1 AS p ON p.project_id = tm.project_id
+WHERE
+  p.project_name IN ({stringify([treated_project] + potential_control_projects)})
+  AND m.metric_name = 'active_developers_over_90_day'
+  AND tm.sample_date BETWEEN '2023-01-01' AND '2024-06-30'
+ORDER BY p.project_name, tm.sample_date
+"""
+
+df_devs = client.to_pandas(query)
+```
+
+Let's also get other metrics that might be good predictors:
+
+```python
+# Let's also get other metrics that might be good predictors
+predictors = ['commits_over_90_day', 'issues_opened_over_90_day', 'new_contributors_over_90_day']
+
+query = f"""
+SELECT
+  p.project_name,
+  m.metric_name,
+  tm.sample_date,
+  tm.amount
+FROM timeseries_metrics_by_project_v0 AS tm
+JOIN metrics_v0 AS m ON m.metric_id = tm.metric_id
+JOIN projects_v1 AS p ON p.project_id = tm.project_id
+WHERE
+  p.project_name IN ({stringify([treated_project] + potential_control_projects)})
+  AND m.metric_name IN ({stringify(predictors)})
+  AND tm.sample_date BETWEEN '2023-01-01' AND '2024-06-30'
+ORDER BY p.project_name, m.metric_name, tm.sample_date
+"""
+
+df_predictors = client.to_pandas(query)
+
+# Reshape the predictor data from long to wide format
+df_predictors_wide = df_predictors.pivot_table(
+    index=['project_name', 'sample_date'],
+    columns='metric_name',
+    values='amount'
+).reset_index()
+
+# Merge with our active developer data
+df_combined = pd.merge(
+    df_devs,
+    df_predictors_wide,
+    on=['project_name', 'sample_date'],
+    how='inner'
+)
+```
+
+### Step 4: Define the pre-intervention and post-intervention periods
+
+For our example, let's assume the project received a grant on January 1, 2024:
+
+```python
+# Define intervention date
+intervention_date = '2024-01-01'
+
+# Plot the data for the treated project with a vertical line at the intervention date
+plt.figure(figsize=(14, 8))
+for project in [treated_project] + potential_control_projects:
+    project_data = df_combined[df_combined['project_name'] == project]
+    plt.plot(project_data['sample_date'], project_data['active_devs_90d'], label=project)
+
+plt.axvline(x=pd.to_datetime(intervention_date), color='r', linestyle='--', alpha=0.7, label='Intervention (Grant)')
+plt.title('Active Developers (90-day) Over Time')
+plt.xlabel('Date')
+plt.ylabel('Number of Active Developers')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+```
+
+### Step 5: Prepare the data for pysyncon
+
+```python
+# Prepare data for pysyncon
+# First, reshape the data to have dates as rows and projects as columns
+pivot_df = df_combined.pivot(index='sample_date', columns='project_name', values='active_devs_90d')
+pivot_df.index = pd.to_datetime(pivot_df.index)
+pivot_df = pivot_df.sort_index()
+
+# Prepare predictor variables similarly
+predictor_dfs = {}
+for predictor in predictors:
+    pred_pivot = df_combined.pivot(index='sample_date', columns='project_name', values=predictor)
+    pred_pivot.index = pd.to_datetime(pred_pivot.index)
+    pred_pivot = pred_pivot.sort_index()
+    predictor_dfs[predictor] = pred_pivot
+
+# Convert to numpy arrays for pysyncon
+treated_outcome = pivot_df[treated_project].values
+control_outcomes = pivot_df.drop(columns=[treated_project]).values
+control_names = pivot_df.drop(columns=[treated_project]).columns.tolist()
+
+# Find the index of the intervention date
+intervention_idx = pivot_df.index.get_loc(pd.to_datetime(intervention_date))
+
+# Extract pre-intervention and post-intervention periods
+pre_period = (0, intervention_idx - 1)  # Index 0 to the day before intervention
+post_period = (intervention_idx, len(pivot_df) - 1)  # Intervention day to the end
+
+# Prepare predictor matrices
+predictor_matrices = []
+for predictor in predictors:
+    pred_treated = predictor_dfs[predictor][treated_project].values
+    pred_controls = predictor_dfs[predictor].drop(columns=[treated_project]).values
+    predictor_matrices.append((pred_treated, pred_controls))
+```
+
+### Step 6: Run the synthetic control analysis
+
+```python
+# Create and fit the synthetic control model
+synth = psc.psc.Synth()
+synth.fit(
+    X1=treated_outcome[pre_period[0]:pre_period[1]+1],  # Pre-intervention treated outcome
+    X0=control_outcomes[pre_period[0]:pre_period[1]+1],  # Pre-intervention control outcomes
+    Z1=[p[0][pre_period[0]:pre_period[1]+1] for p in predictor_matrices],  # Pre-intervention treated predictors
+    Z0=[p[1][pre_period[0]:pre_period[1]+1] for p in predictor_matrices],  # Pre-intervention control predictors
+)
+
+# Get the weights assigned to each control unit
+synth_weights = synth.weights
+synth_control_weights = pd.DataFrame({'Project': control_names, 'Weight': synth_weights})
+synth_control_weights = synth_control_weights.sort_values('Weight', ascending=False)
+
+# Display the weights
+print("Synthetic Control Weights:")
+print(synth_control_weights)
+
+# Plot the weights
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Weight', y='Project', data=synth_control_weights, palette='viridis')
+plt.title('Synthetic Control Weights by Project')
+plt.tight_layout()
+plt.show()
+```
+
+Now let's calculate the synthetic control series and visualize the results:
+
+```python
+# Calculate the synthetic control series
+synthetic_outcome = np.dot(control_outcomes, synth_weights)
+
+# Create a DataFrame for plotting
+results_df = pd.DataFrame({
+    'Date': pivot_df.index,
+    'Actual': treated_outcome,
+    'Synthetic': synthetic_outcome,
+    'Gap': treated_outcome - synthetic_outcome
+})
+
+# Mark pre and post intervention periods
+results_df['Period'] = 'Pre-intervention'
+results_df.loc[results_df['Date'] >= pd.to_datetime(intervention_date), 'Period'] = 'Post-intervention'
+
+# Plot the results
+plt.figure(figsize=(14, 8))
+plt.subplot(2, 1, 1)
+plt.plot(results_df['Date'], results_df['Actual'], 'b-', label='Actual')
+plt.plot(results_df['Date'], results_df['Synthetic'], 'r--', label='Synthetic Control')
+plt.axvline(x=pd.to_datetime(intervention_date), color='green', linestyle='--', alpha=0.7, label='Intervention (Grant)')
+plt.title(f'Synthetic Control Analysis: Impact of Grant on {treated_project}')
+plt.ylabel('Active Developers (90-day)')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+# Plot the gap (treatment effect)
+plt.subplot(2, 1, 2)
+plt.bar(results_df['Date'], results_df['Gap'], alpha=0.7, label='Treatment Effect (Gap)')
+plt.axvline(x=pd.to_datetime(intervention_date), color='green', linestyle='--', alpha=0.7, label='Intervention (Grant)')
+plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+plt.title('Estimated Treatment Effect (Gap between Actual and Synthetic Control)')
+plt.ylabel('Effect Size')
+plt.xlabel('Date')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+### Step 7: Evaluate the fit and calculate the treatment effect
+
+```python
+# Calculate the mean pre-intervention fit
+pre_MSE = np.mean((results_df[results_df['Period'] == 'Pre-intervention']['Actual'] - 
+                   results_df[results_df['Period'] == 'Pre-intervention']['Synthetic']) ** 2)
+pre_RMSE = np.sqrt(pre_MSE)
+print(f"Pre-intervention RMSE: {pre_RMSE:.4f}")
+
+# Calculate the average treatment effect in the post-intervention period
+average_treatment_effect = np.mean(results_df[results_df['Period'] == 'Post-intervention']['Gap'])
+print(f"Average Treatment Effect: {average_treatment_effect:.4f} additional active developers")
+
+# Calculate the percentage change
+average_synthetic = np.mean(results_df[results_df['Period'] == 'Post-intervention']['Synthetic'])
+percentage_change = (average_treatment_effect / average_synthetic) * 100
+print(f"Percentage Change: {percentage_change:.2f}%")
+```
+
+### Step 8: Conduct placebo tests to assess the significance
+
+To evaluate whether our results could have occurred by chance, we can conduct placebo tests by applying the same analysis to each control unit as if it had received the treatment.
+
+This involves running the same synthetic control analysis multiple times, each time treating one of the control units as if it were the treated unit. The resulting gaps (treatment effects) for these placebo tests can then be compared to the gap for the actual treated unit.
+
+If the gap for the actual treated unit is consistently larger than the placebo gaps, it supports the conclusion that the intervention had a causal effect.
+
+## Interpreting the Results
+
+Let's interpret what the results tell us:
+
+1. **Pre-intervention fit**: The RMSE in the pre-intervention period tells us how well our synthetic control matches the treated unit before the intervention. A low RMSE indicates a good fit.
+
+2. **Average Treatment Effect**: This represents the average difference between the actual outcome and the synthetic control in the post-intervention period. If positive, it suggests the intervention had a positive effect.
+
+3. **Percentage Change**: This gives us the relative size of the effect compared to what would have happened without the intervention.
+
+4. **Placebo Tests**: By comparing the gap for our treated unit with placebo gaps for control units, we can assess whether the observed effect is significantly different from what we might observe by chance.
+
+## Best Practices and Limitations
+
+### Best Practices
+
+1. **Choose predictors wisely**: Select predictors that are likely to influence the outcome variable but aren't affected by the intervention.
+
+2. **Check the pre-intervention fit**: A good synthetic control should closely match the treated unit in the pre-intervention period.
+
+3. **Conduct placebo tests**: These help assess whether the observed effect could have occurred by chance.
+
+4. **Consider multiple periods**: If possible, examine the effect over different time horizons to see if it's stable.
+
+5. **Be transparent about limitations**: Acknowledge the assumptions and potential confounders in your analysis.
+
+### Limitations
+
+1. **Cannot handle multiple treated units easily**: The standard synthetic control method is designed for a single treated unit.
+
+2. **Requires a reasonable number of pre-intervention periods**: Without sufficient pre-intervention data, it's hard to create a good synthetic control.
+
+3. **Assumes no spillover effects**: The method assumes the intervention doesn't affect the control units.
+
+4. **Selection of control units is crucial**: The quality of the synthetic control depends on having suitable control units.
+
+## Summary
+
+In this tutorial, we've learned how to use synthetic control methods to analyze the causal impact of interventions on open source projects. We've seen how to:
+
+1. Connect to OSO data using pyoso
+2. Prepare data for a synthetic control analysis
+3. Implement a synthetic control analysis using pysyncon
+4. Interpret and visualize the results
+5. Evaluate the robustness of our findings through placebo tests
+
+For more examples of synthetic control models, check out our [insights repo](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/syncon). If you'd like to collaborate on more advanced causal inference analyses, reach out on [Discord](https://www.opensource.observer/discord)! 
