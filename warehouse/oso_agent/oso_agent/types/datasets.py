@@ -26,6 +26,8 @@ class Example(BaseModel):
     output: ExampleOutput
     metadata: ExampleMetadata
 
+ExampleList = List[Example]
+
 def create_example(question: str, answer: str, priority: ExamplePriority, difficulty: ExampleDifficulty, query_type: List[ExampleQueryType], query_domain: List[ExampleQueryDomain]) -> Example:
     return Example(
         input=ExampleInput(question=question),
