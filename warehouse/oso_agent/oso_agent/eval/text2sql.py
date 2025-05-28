@@ -8,6 +8,7 @@ from phoenix.experiments import run_experiment
 from phoenix.experiments.evaluators import ContainsAnyKeyword
 from phoenix.experiments.types import Example
 
+from ..datasets.text2sql import TEXT2SQL_DATASET, TEXT2SQL_DATASET_DESCRIPTION
 from ..tool.oso_mcp import create_oso_mcp_tools
 from ..util.config import AgentConfig
 from ..util.jaccard import jaccard_similarity_str
@@ -18,6 +19,9 @@ try:
 except ValueError:
     pass
 
+DATASET_INPUTS = list(map(lambda x: x.input, TEXT2SQL_DATASET))
+DATASET_OUTPUTS = list(map(lambda x: x.output, TEXT2SQL_DATASET))
+DATASET_METADATAS = list(map(lambda x: x.metadata, TEXT2SQL_DATASET))
 
 async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):
     print("Running text2sql experiment with:", config)
@@ -28,6 +32,15 @@ async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):
     dataset = phoenix_client.get_dataset(
         name=config.eval_dataset_text2sql,
     )
+    # TODO: We need a better way to track changes to the dataset
+    if len(dataset.examples) != len(TEXT2SQL_DATASET):
+        dataset = phoenix_client.upload_dataset(
+            dataset_name=config.eval_dataset_text2sql,
+            inputs=DATASET_INPUTS,
+            outputs=DATASET_OUTPUTS,
+            metadata=DATASET_METADATAS,
+            dataset_description=TEXT2SQL_DATASET_DESCRIPTION,
+        )
 
     async def task(example: Example) -> str:
         # print(f"Example: {example}")
