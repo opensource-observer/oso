@@ -1,3 +1,5 @@
+import copy
+
 import dagster as dg
 from dagster import AssetExecutionContext, AssetSelection, RunConfig, define_asset_job
 from dagster_sqlmesh import (
@@ -108,7 +110,7 @@ def sqlmesh_factory(
                     sqlmesh.run(
                         context,
                         environment=dev_environment,
-                        plan_options=plan_options,
+                        plan_options=copy.deepcopy(plan_options),
                         start=config.start,
                         end=config.end,
                         restate_models=restate_models,
@@ -120,7 +122,7 @@ def sqlmesh_factory(
             for result in sqlmesh.run(
                 context,
                 environment=environment,
-                plan_options=plan_options,
+                plan_options=copy.deepcopy(plan_options),
                 start=config.start,
                 end=config.end,
                 restate_models=restate_models,
