@@ -59,6 +59,11 @@ class AgentConfig(BaseSettings):
 
     model_config = agent_config_dict()
 
+    eagerly_load_all_agents: bool = Field(
+        default=False,
+        description="Whether to eagerly load all agents in the registry"
+    )
+
     agent_name: str = Field(default="react", description="Name of the agent to use")
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())

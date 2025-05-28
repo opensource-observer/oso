@@ -30,7 +30,7 @@ def default_lifecycle(config: AgentServerConfig):
     @asynccontextmanager
     async def initialize_app(app: FastAPI):
         setup_telemetry(config)
-        registry = setup_default_agent_registry(config)
+        registry = await setup_default_agent_registry(config)
         agent = await registry.get_agent(config.agent_name)
 
         bot_config = BotConfig()

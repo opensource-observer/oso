@@ -22,7 +22,7 @@ load_dotenv()
 logger = logging.getLogger("oso-agent")
 
 async def create_agent(config: AgentConfig):
-    registry = setup_default_agent_registry(config)
+    registry = await setup_default_agent_registry(config)
     agent = await registry.get_agent(config.agent_name)
     return agent
 
