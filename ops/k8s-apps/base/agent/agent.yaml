@@ -40,3 +40,5 @@ spec:
         - "8000"
       hostEnvVar: "AGENT_HOST"
       portEnvVar: "AGENT_PORT"
+      envVars:
+        AGENT_EAGERLY_LOAD_ALL_AGENTS: "1"
