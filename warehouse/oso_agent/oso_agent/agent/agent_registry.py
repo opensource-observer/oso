@@ -44,3 +44,10 @@ class AgentRegistry:
             self.agents[name] = agent
             logger.info(f"Agent '{name}' lazily created and added to the registry.")
         return self.agents[name]
+    
+    async def eager_load_all_agents(self):
+        """Eagerly load all agents in the registry."""
+        logger.info("Eagerly loading all agents in the registry...")
+        for name in self.agent_factories.keys():
+            await self.get_agent(name)
+        logger.info("All agents have been eagerly loaded.")
