@@ -6,7 +6,6 @@ MODEL (
     batch_concurrency 2,
     lookback 31,
     forward_only true,
-    on_destructive_change 'allow',
   ),
   start @github_incremental_start,
   cron '@daily',
@@ -17,6 +16,8 @@ MODEL (
     no_gaps(
       time_column := bucket_week,
       no_gap_date_part := 'week',
+      ignore_before := DATE('2020-01-01'),
+      missing_rate_min_threshold := 0.95,
     ),
   ),
   tags (
