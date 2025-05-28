@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, Field, ValidationError
 from sqlglot import parse_one
@@ -16,6 +16,3 @@ def is_valid_sql(text: str, dialect: str = DEFAULT_SQL_DIALECT) -> str:
 
 class SqlQuery(BaseModel):
     query: Annotated[str, Field(description="A valid SQL query that will be executed on a query engine."), AfterValidator(is_valid_sql)]
-
-class SqlQueryResponse(SqlQuery):
-    response: Optional[List[Dict[str, Any]]] = Field(description="The response from the SQL query engine")
