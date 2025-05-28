@@ -2,9 +2,9 @@ import logging
 import typing as t
 from typing import Awaitable, Callable
 
-from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from phoenix.experiments.types import RanExperiment
 
+from ..types import WrappedResponseAgent
 from ..util.config import AgentConfig
 from .text2sql import text2sql_experiment
 
@@ -12,7 +12,7 @@ from .text2sql import text2sql_experiment
 logger = logging.getLogger(__name__)
 
 # Type alias for a dictionary of agents
-ExperimentDict = t.Dict[str, Callable[[AgentConfig, BaseWorkflowAgent], Awaitable[RanExperiment]]]
+ExperimentDict = t.Dict[str, Callable[[AgentConfig, WrappedResponseAgent], Awaitable[RanExperiment]]]
 
 def get_experiments() -> ExperimentDict:
     """Create and configure the ReAct agent."""
