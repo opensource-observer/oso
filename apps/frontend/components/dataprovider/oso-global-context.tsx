@@ -33,6 +33,9 @@ const OsoGlobalActions: any = {
     parameters: [{ name: "args", type: "object" }],
   },
   deleteOrganization: { parameters: [{ name: "args", type: "object" }] },
+  getConnectors: { parameters: [{ name: "args", type: "object" }] },
+  createConnector: { parameters: [{ name: "args", type: "object" }] },
+  deleteConnector: { parameters: [{ name: "args", type: "object" }] },
 };
 
 // Users will be able to set these props in Studio.
@@ -112,6 +115,12 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
           .catch(handleError),
       deleteOrganization: (args: any) =>
         client!.deleteOrganization(args).then(handleSuccess).catch(handleError),
+      getConnectors: (args: any) =>
+        client!.getConnectors(args).then(handleSuccess).catch(handleError),
+      createConnector: (args: any) =>
+        client!.createConnector(args).then(handleSuccess).catch(handleError),
+      deleteConnector: (args: any) =>
+        client!.deleteConnector(args).then(handleSuccess).catch(handleError),
     }),
     [client],
   );
