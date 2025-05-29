@@ -1,4 +1,4 @@
-# oso [![License: Apache 2.0][license-badge]][license] [![Github Actions][gha-badge]][gha]
+# oso [![License: Apache 2.0][license-badge]][license] [![Github Actions][gha-badge]][gha] [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/opensource-observer/oso)
 
 [license]: https://opensource.org/license/apache-2-0/
 [license-badge]: https://img.shields.io/badge/License-Apache2.0-blue.svg
