@@ -50,7 +50,6 @@ spec:
         app: opa
       name: opa
     spec:
-      serviceAccountName: production-opa
       containers:
         - name: opa
           image: openpolicyagent/opa:1.4.2
