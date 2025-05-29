@@ -38,14 +38,13 @@ factories AS (
   FROM oso.int_factories
 ),
 
-/* TODO: Need better handling for EOA bridges */
 bridges AS (
   SELECT DISTINCT
-    artifact_source,
+    UPPER(chain) AS artifact_source,
     '' AS artifact_namespace,
-    LOWER(artifact_name) AS artifact_name,
+    LOWER(bridge_address) AS artifact_name,
     'BRIDGE' AS artifact_type
-  FROM oso.int_bridges_by_project
+  FROM oso.int_bridges
 ),
 
 operators_4337 AS (
