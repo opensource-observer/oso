@@ -1,14 +1,23 @@
-import json
+import logging
 from typing import Any, Dict
 
 import nest_asyncio
 import phoenix as px
-from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from metrics_tools.semantic.testing import setup_registry
 from phoenix.experiments import run_experiment
 from phoenix.experiments.evaluators import ContainsAnyKeyword
 from phoenix.experiments.types import Example
 
+from ..datasets.text2sql import TEXT2SQL_DATASET
+from ..datasets.uploader import upload_dataset
 from ..tool.oso_mcp import create_oso_mcp_tools
+from ..types import (
+    ErrorResponse,
+    SemanticResponse,
+    SqlResponse,
+    StrResponse,
+    WrappedResponseAgent,
+)
 from ..util.config import AgentConfig
 from ..util.jaccard import jaccard_similarity_str
 
@@ -18,16 +27,22 @@ try:
 except ValueError:
     pass
 
+logger = logging.getLogger(__name__)
 
-async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):
-    print("Running text2sql experiment with:", config)
+
+async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
+    logger.info("Running text2sql experiment with:", config)
+    api_key = config.arize_phoenix_api_key.get_secret_value()
+
+    # We pass in the API key directly to the Phoenix client but it's likely 
+    # ignored. See oso_agent/util/config.py
     phoenix_client = px.Client(
         endpoint=config.arize_phoenix_base_url,
-        api_key=config.arize_phoenix_api_key.get_secret_value(),
+        headers={
+            "api_key": api_key,
+        }
     )
-    dataset = phoenix_client.get_dataset(
-        name=config.eval_dataset_text2sql,
-    )
+    dataset = upload_dataset(phoenix_client, config.eval_dataset_text2sql, TEXT2SQL_DATASET)
 
     async def task(example: Example) -> str:
         # print(f"Example: {example}")
@@ -35,27 +50,48 @@ async def text2sql_experiment(config: AgentConfig, agent: BaseWorkflowAgent):
         # print(f"Question: {question}")
         # expected = str(example.output["answer"])
         # print(f"Expected: {expected}")
-        response = await agent.run(question)
-        response_dict = json.loads(str(response))
-        # print(f"Response: {response_dict}")
-        response_query = response_dict["query"]
-        # print(f"Response Query: {response_query}")
-        return response_query
+        agent_response = await agent.run_safe(question)
+        logger.debug(f"Agent response: {agent_response}")
+
+        match agent_response.response:
+            case StrResponse(blob=blob):
+                return blob
+            case SemanticResponse(query=query):
+                # hacky way for now to load the semantic registry
+                semantic_registry = setup_registry()
+                try:
+                    return semantic_registry.query(query).sql(dialect="trino", pretty=True)
+                except Exception as e:
+                    return f"Error rendering semantic query: {e}"
+            case SqlResponse(query=query):
+                return query.query
+            case ErrorResponse(message=message):
+                return message
 
     contains_select = ContainsAnyKeyword(keywords=["SELECT"])
+
+    def load_expected_sql_answer(expected: Dict[str, Any]) -> str:
+        """Load the expected answer from the example."""
+        expected_answer = expected.get("answer")
+        if not expected_answer:
+            logger.warning("No expected answer provided, defaulting to 'SELECT 1'")
+            expected_answer = "SELECT 1"
+        return expected_answer
 
     def sql_query_similarity(output: str, expected: Dict[str, Any]) -> float:
         """Evaluate the similarity between the output and expected SQL query using Jaccard similarity."""
         # print(f"Output: {output}")
         # print(f"Expected: {expected["answer"]}")
-        return jaccard_similarity_str(output, expected["answer"])
+        expected_answer = load_expected_sql_answer(expected)
+        return jaccard_similarity_str(output, expected_answer)
 
     mcp_tools = await create_oso_mcp_tools(config, ["query_oso"])
     query_tool = mcp_tools[0]
 
     def sql_result_similarity(output: str, expected: Dict[str, Any]) -> float:
         """Evaluate the similarity between results post-query"""
-        expected_response = query_tool.call(sql=expected["answer"])
+        expected_answer = load_expected_sql_answer(expected)
+        expected_response = query_tool.call(sql=expected_answer)
         expected_str = expected_response.content
         # print(f"Expected Str: {expected_str}")
 

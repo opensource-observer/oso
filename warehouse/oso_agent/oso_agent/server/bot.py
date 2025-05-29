@@ -3,16 +3,16 @@ from typing import Optional
 
 from discord import Intents, Member
 from discord.ext.commands import Bot
-from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 
 from ..eval.experiment_registry import get_experiments
+from ..types import WrappedResponseAgent
 from .definition import BotConfig
 
 logger = logging.getLogger(__name__)
 
 COMMAND_PREFIX = "!"
 
-async def setup_bot(config: BotConfig, agent: BaseWorkflowAgent):
+async def setup_bot(config: BotConfig, agent: WrappedResponseAgent):
     intents = Intents.default()
     intents.message_content = True
 

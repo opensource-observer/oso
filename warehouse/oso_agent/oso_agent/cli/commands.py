@@ -6,10 +6,11 @@ import click
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
 
-from ..agent.agent_registry import AgentRegistry
+from ..agent import setup_default_agent_registry
 from ..eval.experiment_registry import get_experiments
 from ..server.bot import setup_bot
 from ..server.definition import BotConfig
+from ..types import ErrorResponse, SemanticResponse, SqlResponse, StrResponse
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentError, AgentRuntimeError
 from ..util.log import setup_logging
@@ -21,8 +22,8 @@ load_dotenv()
 logger = logging.getLogger("oso-agent")
 
 async def create_agent(config: AgentConfig):
-    registry = await AgentRegistry.create(config)
-    agent = registry.get_agent(config.agent_name)
+    registry = await setup_default_agent_registry(config)
+    agent = await registry.get_agent(config.agent_name)
     return agent
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -85,11 +86,27 @@ def query(config, query, agent_name, ollama_model, ollama_url):
 
 async def _run_query(query: str, config: AgentConfig) -> str:
     """Run a query through the agent asynchronously."""
+
     agent = await create_agent(config)
     click.echo(
         f"Query started with agent={config.agent_name} and model={config.llm.type}"
     )
-    return await agent.run(query)
+    wrapped_response = await agent.run(query)
+    match wrapped_response.response:
+        case StrResponse(blob=blob):
+            return blob
+        case SemanticResponse(query=semantic_query):
+            return str(semantic_query)
+        case SqlResponse(query=sql_query):
+            return str(sql_query)
+        case ErrorResponse(message=message, details=details):
+            raise AgentRuntimeError(
+                f"Error from agent: {message}. Details: {details}"
+            )
+        case _:
+            raise AgentRuntimeError(
+                f"Unexpected response type from agent: {wrapped_response.response.type}"
+            )
 
 @cli.command()
 @click.argument("experiment_name", required=True)

@@ -1,53 +1,53 @@
 import logging
 import typing as t
 
-from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from oso_agent.types.response import WrappedResponse
 
+from ..types import WrappedResponseAgent
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentMissingError
-from .react_agent import create_react_agent
-from .sql_agent import create_sql_agent
 
 # Setup logging
 logger = logging.getLogger(__name__)
 
 # Type alias for a dictionary of agents
-AgentDict = t.Dict[str, BaseWorkflowAgent]
+AgentDict = t.Dict[str, WrappedResponseAgent]
 
-async def _create_agents(config: AgentConfig) -> AgentDict:
-    """Create and configure the ReAct agent."""
-    registry: AgentDict = {}
-
-    try:
-        logger.info("Creating all agents...")
-        registry["react"] = await create_react_agent(config)
-        registry["sql"] = await create_sql_agent(config)
-        return registry
-    except Exception as e:
-        logger.error(f"Failed to create agent: {e}")
-        raise AgentConfigError(f"Failed to create agent: {e}") from e
+AgentFactory = t.Callable[[AgentConfig], t.Awaitable[WrappedResponseAgent]]
+ResponseWrapper = t.Callable[[t.Any], WrappedResponse]
 
 class AgentRegistry:
     """Registry of all agents."""
     def __init__(
         self,
         config: AgentConfig,
-        agents: AgentDict = {},
     ):
         """Initialize registry."""
         self.config = config
-        self.agents  = agents
+        self.agent_factories: dict[str, AgentFactory] = {}
+        self.agents: AgentDict = {}
 
-    @classmethod
-    async def create(cls, config: AgentConfig):
-        logger.info("Initializing the OSO agent registry...")
-        agents = await _create_agents(config)
-        registry = cls(config, agents)
-        logger.info("... agent registry ready")
-        return registry
+    def add_agent(self, name: str, factory: AgentFactory):
+        """Add an agent to the registry."""
+        if name in self.agent_factories:
+            raise AgentConfigError(f"Agent '{name}' already exists in the registry.")
+        self.agent_factories[name] = factory
+        logger.info(f"Agent factory '{name}' added to the registry.")
 
-    def get_agent(self, name: str) -> BaseWorkflowAgent:
+    async def get_agent(self, name: str) -> WrappedResponseAgent:
         agent = self.agents.get(name)
-        if agent is None:
+        if agent is None and name not in self.agent_factories:
             raise AgentMissingError(f"Agent '{name}' not found in the registry.")
+        if agent is None:
+            factory = self.agent_factories[name]
+            agent = await factory(self.config)
+            self.agents[name] = agent
+            logger.info(f"Agent '{name}' lazily created and added to the registry.")
         return self.agents[name]
+    
+    async def eager_load_all_agents(self):
+        """Eagerly load all agents in the registry."""
+        logger.info("Eagerly loading all agents in the registry...")
+        for name in self.agent_factories.keys():
+            await self.get_agent(name)
+        logger.info("All agents have been eagerly loaded.")

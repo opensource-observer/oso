@@ -96,3 +96,4 @@ class BasicAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         await ctx.set(self.scratchpad_key, [])
 
         return output
+    

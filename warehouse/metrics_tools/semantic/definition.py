@@ -1,4 +1,5 @@
 import hashlib
+import textwrap
 import typing as t
 from enum import Enum
 from graphlib import TopologicalSorter
@@ -258,6 +259,17 @@ class Registry:
         """Returns the SQL query for the given query"""
         # Get the columns and filters from the query
         return query.sql(self)
+    
+    def describe(self) -> str:
+        """Returns a description of the registry used for an LLM prompt"""
+
+        description = "This is the semantic model available to query\n"
+
+        description += "# All Available Models\n"
+        for model in self.models.values():
+            description += model.describe() + "\n"
+
+        return description
 
 
 class MetricOperationType(str, Enum):
@@ -516,6 +528,7 @@ class RelationshipType(str, Enum):
 class Relationship(BaseModel):
     name: str = ""
     model_ref: str
+    description: str = ""
     type: RelationshipType
     join_table: t.Optional[str] = None
     self_key_column: t.Optional[str] = None
@@ -731,12 +744,51 @@ class Model(BaseModel):
         if name not in self._all_attributes:
             raise ValueError(f"Attribute {name} not found in model {self.name}")
         return self._all_attributes[name]
+    
+    def attributes(self):
+        """Returns all attributes in the model"""
+        return self._all_attributes.values()
 
     def resolve_dimension_with_alias(self, name: str, alias: str):
         """Returns the dimension with the given name and alias"""
         dimension = self.get_dimension(name)
 
         return dimension.with_alias(alias)
+    
+    def describe(self):
+        """Returns a description of the model used for an LLM prompt"""
+
+        description = f"## Model: {self.name}\n\n"
+        description += f"{self.description}\n"
+        description += "\n### Dimensions:\n"
+        for dimension in self.dimensions:
+            description += f"- `{self.name}.{dimension.name}`: {dimension.description}\n"
+
+        description += "\n### Metrics:\n"
+        for metric in self.metrics:
+            description += f"- `{self.name}.{metric.name}`: {metric.description}\n"
+
+        description += "\n### Relationships:\n"
+        for relationship in self.references:
+            description += (
+                f"- `{self.name}.{relationship.name}`: "
+                f"{relationship.description}. This is a {relationship.type.value} relationship\n"
+            )
+        ambiguous_rels_descriptions = ""
+        include_ambiguous = False
+        for model_ref, model_relationships in self._model_ref_lookup_by_model_name.items():
+            if len(model_relationships) > 1:
+                include_ambiguous = True
+                ambiguous_rels_descriptions += (
+                    f"- `{model_ref}`:"
+                    f" Any relationships to this model or anything derived from it"
+                    f" must use the `->` through syntax to prevent ambiguous joins in the query\n"
+                )
+        if include_ambiguous:
+            description += "\n### Ambiguous Relationships:\n"
+            description += ambiguous_rels_descriptions
+        description += "\n"
+        return description
 
 
 class RollingWindow(BaseModel):
@@ -1189,10 +1241,29 @@ class AttributePathTraverser:
 class SemanticQuery(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    columns: t.List[str]
-    filters: t.List[str] = Field(default_factory=lambda: [])
+    columns: t.List[str] = Field(description=textwrap.dedent("""
+        A list of model attributes to select in the query. These should only be
+        valid dimensions or metrics from the available models in the registry.
+        Joins are automatically handled by the query builder based on the
+        provided attributes and the relationships defined in the models. If any
+        ambiguous relationships between models should use the `->` syntax to
+        specify the path through the relationships.
+    """))
+    filters: t.List[str] = Field(description=textwrap.dedent("""
+        A list of filters to apply to the query. These should be valid
+        expressions that can be used to filter the results. The expressions can
+        reference model attributes just like the columns. If any ambiguous
+        relationships between models should use the `->` syntax to specify the
+        path through the relationships.
+    """), default_factory=lambda: [])
 
-    limit: int = 0
+    limit: int = Field(
+        default=0,
+        description=textwrap.dedent("""
+            The maximum number of rows to return in the query. If set to 0, no
+            limit is applied.
+        """),
+    )
 
     @model_validator(mode="after")
     def process_columns(self):

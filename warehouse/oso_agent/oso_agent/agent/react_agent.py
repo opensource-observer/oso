@@ -12,6 +12,7 @@ from ..types.sql_query import SqlQuery
 #from llama_index.core.tools import BaseTool, FunctionTool
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError
+from .decorator import wrapped_agent
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ Do not include any other text or explanation.
 Make sure that any tables or columns you reference in your SQL query actually exist in the database.
 """
 
+@wrapped_agent()
 async def create_react_agent(config: AgentConfig) -> BaseWorkflowAgent:
     """Create and configure the ReAct agent."""
 

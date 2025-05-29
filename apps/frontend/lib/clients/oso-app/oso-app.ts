@@ -3,6 +3,11 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "../../types/supabase";
 import { MissingDataError, AuthError } from "../../types/errors";
+import {
+  dynamicConnectorsInsertSchema,
+  dynamicConnectorsRowSchema,
+} from "../../types/schema";
+import type { DynamicConnectorsInsert } from "../../types/schema-types";
 
 /**
  * OsoAppClient is the client library for the OSO app.
@@ -476,6 +481,111 @@ class OsoAppClient {
       );
     }
     return data;
+  }
+
+  /**
+   * Gets the dynamic connector client for the current organization.
+   * @param orgId
+   */
+  async getConnectors(
+    args: Partial<{ orgId: string }>,
+  ): Promise<Tables<"dynamic_connectors">[]> {
+    const orgId = ensure(args.orgId, "org_id is required");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_connectors")
+      .select("*")
+      .eq("org_id", orgId);
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
+  /**
+   * Creates a new dynamic connector.
+   * @param args - Contains data for the new connector and credentials
+   * @returns Promise<Tables<"dynamic_connectors">> - The created connector
+   */
+  async createConnector(
+    args: Partial<{
+      data: DynamicConnectorsInsert;
+      credentials: Record<string, string>;
+    }>,
+  ): Promise<Tables<"dynamic_connectors">> {
+    const data = dynamicConnectorsInsertSchema.parse(args.data);
+    const credentials = ensure(args.credentials, "credentials are required");
+
+    const customHeaders = await this.createSupabaseAuthHeaders();
+
+    const response = await fetch("/api/v1/connector", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...customHeaders,
+      },
+      body: JSON.stringify({
+        data,
+        credentials,
+      }),
+    });
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      throw new Error("Error creating connector: " + json.error);
+    }
+
+    return dynamicConnectorsRowSchema.parse(json);
+  }
+
+  /**
+   * Deletes a dynamic connector by its ID.
+   * @param args - Contains the ID of the connector to delete
+   * @returns Promise<void>
+   */
+  async deleteConnector(args: Partial<{ id: string }>): Promise<void> {
+    const id = ensure(
+      args.id,
+      "id is required for deleting a dynamic connector",
+    );
+
+    const customHeaders = await this.createSupabaseAuthHeaders();
+    const searchParams = new URLSearchParams({ id });
+
+    const response = await fetch(
+      `/api/v1/connector?${searchParams.toString()}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...customHeaders,
+        },
+      },
+    );
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      throw new Error("Error deleting connector: " + json.error);
+    }
+  }
+
+  private async createSupabaseAuthHeaders() {
+    const { data: sessionData, error } =
+      await this.supabaseClient.auth.getSession();
+    if (error) {
+      throw error;
+    } else if (!sessionData.session) {
+      throw new AuthError("Not logged in");
+    }
+
+    return {
+      Authorization: `Bearer ${sessionData.session.access_token}`,
+      "X-Supabase-Auth": `${sessionData.session.access_token}:${sessionData.session.refresh_token}`,
+    };
   }
 }
 

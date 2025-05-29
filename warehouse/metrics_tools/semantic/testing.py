@@ -1,4 +1,6 @@
 # An example semantic model for testing
+import textwrap
+
 from .definition import (
     Dimension,
     Metric,
@@ -16,10 +18,23 @@ def setup_registry():
         Model(
             name="collection",
             table="oso.collections_v1",
-            description="A collection of projects",
+            description=textwrap.dedent("""
+                A collection is a group of related projects. A collection is an
+                arbitrary grouping of projects. Sometimes these groupings are
+                used to group things together by some common dependency tree or
+                some specific community known to OSO.
+            """),
             dimensions=[
-                Dimension(name="id", column_name="collection_id"),
-                Dimension(name="name", column_name="collection_name"),
+                Dimension(
+                    name="id",
+                    description="The unique identifier of the collection",
+                    column_name="collection_id",
+                ),
+                Dimension(
+                    name="name",
+                    description="The name of the collection",
+                    column_name="collection_name",
+                ),
             ],
             primary_key="collection_id",
             metrics=[
@@ -33,7 +48,7 @@ def setup_registry():
                 #     description="The number of related projects in the collection",
                 #     query="COUNT(project.id)",
                 # )
-            ]
+            ],
         )
     )
 
@@ -41,17 +56,21 @@ def setup_registry():
         Model(
             name="project",
             table="oso.projects_v1",
-            description="A project",
+            description=textwrap.dedent("""
+                A project is a collection of related artifacts. A project is
+                usually, but not limited to, some kind of organization, company,
+                or group that controls a set of artifacts.
+            """),
             dimensions=[
                 Dimension(
-                    name="id", 
+                    name="id",
                     description="The unique identifier of the project",
-                    column_name="project_id"
+                    column_name="project_id",
                 ),
                 Dimension(
                     name="name",
                     description="The name of the project",
-                    column_name="project_name"
+                    column_name="project_name",
                 ),
             ],
             primary_key="project_id",
@@ -75,7 +94,7 @@ def setup_registry():
                 #     description="The number of related artifacts in the project",
                 #     query="COUNT(artifact.id)",
                 # )
-            ]
+            ],
         )
     )
 
@@ -83,22 +102,27 @@ def setup_registry():
         Model(
             name="artifact",
             table="oso.artifacts_v1",
-            description="An artifact",
+            description=textwrap.dedent("""
+                An artifact. This is the smallest atom of an acting entity in
+                OSO. Artifacts are usually repositories, blockchain addresses,
+                or some representation of a user. Artifacts do not generally
+                represent a group of any kind, but rather a single entity.
+            """),
             dimensions=[
                 Dimension(
-                    name="id", 
+                    name="id",
                     description="The unique identifier of the artifact",
                     column_name="artifact_id",
                 ),
                 Dimension(
                     name="name",
                     description="The name of the artifact",
-                    column_name="artifact_name"
+                    column_name="artifact_name",
                 ),
                 Dimension(
                     name="url",
                     description="The URL of the artifact",
-                    column_name="artifact_url"
+                    column_name="artifact_url",
                 ),
             ],
             primary_key="artifact_id",
@@ -117,7 +141,7 @@ def setup_registry():
                     description="The number of artifacts",
                     query="COUNT(self.id)",
                 ),
-            ]
+            ],
         )
     )
 
@@ -125,7 +149,9 @@ def setup_registry():
         Model(
             name="github_event",
             table="oso.int_events__github",
-            description="An event",
+            description=textwrap.dedent("""
+                A github event. This could be any event that occurs on github.
+            """),
             dimensions=[
                 Dimension(
                     name="time",
@@ -166,7 +192,7 @@ def setup_registry():
                     name="event_type_classification",
                     description="The classification of the event type",
                     query="CASE WHEN self.event_type = 'COMMIT' THEN 'COMMIT' ELSE 'OTHER' END",
-                )
+                ),
             ],
             metrics=[
                 Metric(
@@ -185,12 +211,14 @@ def setup_registry():
             references=[
                 Relationship(
                     name="to",
+                    description="The artifact to which the event occurred",
                     model_ref="artifact",
                     type=RelationshipType.MANY_TO_ONE,
                     foreign_key_column="to_artifact_id",
                 ),
                 Relationship(
                     name="from",
+                    description="The artifact from which the event occurred",
                     model_ref="artifact",
                     type=RelationshipType.MANY_TO_ONE,
                     foreign_key_column="from_artifact_id",
@@ -198,5 +226,32 @@ def setup_registry():
             ],
         )
     )
+
+    # registry.register(
+    #     Model(
+    #         name="timeseries_metrics_by_artifact",
+    #         table="oso.timeseries_metrics_by_artifact_v0",
+    #         description="Time series metrics by artifact",
+    #         dimensions=[
+    #             Dimension(name="metric_id", column_name="metric_id"),
+    #             Dimension(name="artifact_id", column_name="artifact_id"),
+    #             Dimension(name="month", column_name="month"),
+    #             Dimension(name="year", column_name="year"),
+    #         ],
+    #         primary_key="collection_id",
+    #         metrics=[
+    #             Metric(
+    #                 name="count",
+    #                 description="The number of collections",
+    #                 query="COUNT(self.id)",
+    #             ),
+    #             # Metric(
+    #             #     name="number_of_projects",
+    #             #     description="The number of related projects in the collection",
+    #             #     query="COUNT(project.id)",
+    #             # )
+    #         ]
+    #     )
+    # )
     registry.complete()
     return registry

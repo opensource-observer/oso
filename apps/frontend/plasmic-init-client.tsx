@@ -44,6 +44,10 @@ import {
   OsoGlobalActions,
   OsoGlobalContextPropsRegistration,
 } from "./components/dataprovider/oso-global-context";
+import {
+  DynamicConnectorForm,
+  DynamicConnectorFormRegistration,
+} from "./components/widgets/connectors/dynamic-connector-form";
 
 /**
  * Plasmic global context
@@ -302,6 +306,14 @@ PLASMIC.registerComponent(AuthActions, {
   description: "Series of authentication-related click handlers",
   props: { ...AuthActionsRegistration },
   importPath: "./components/widgets/auth-actions",
+});
+
+PLASMIC.registerComponent(DynamicConnectorForm, {
+  name: "DynamicConnectorForm",
+  props: {
+    ...DynamicConnectorFormRegistration,
+  },
+  importPath: "./components/widgets/connectors/dynamic-connector-form",
 });
 
 /**
