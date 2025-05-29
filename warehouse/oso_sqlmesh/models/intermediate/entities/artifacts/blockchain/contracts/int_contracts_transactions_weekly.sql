@@ -9,7 +9,10 @@ MODEL (
     forward_only true,
     on_destructive_change warn,
   ),
-  cron '@weekly',
+  -- Despite being a "weekly", this model is actually relied upon 
+  -- on a daily basis. Also this alleviates issues with sql and @weekly
+  -- being very different (@weekly is sunday and sql uses monday)
+  cron '@daily',
   partitioned_by (DAY(week), chain),
   start '2024-08-01',
   audits (
