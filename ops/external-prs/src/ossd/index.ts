@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Argv } from "yargs";
 import { handleError } from "../utils/error.js";
 import { logger } from "../utils/logger.js";
-import { BaseArgs, CommmentCommandHandler } from "../base.js";
+import { BaseArgs, CommentCommandHandler } from "../base.js";
 import {
   loadData,
   Project,
@@ -772,7 +772,7 @@ async function validatePR(args: ValidatePRArgs) {
  * based on whether a valid command was called.
  **/
 async function parseOSSDirectoryComments(args: ParseCommentArgs) {
-  const enableValidation: CommmentCommandHandler<GithubOutput> = async (
+  const enableValidation: CommentCommandHandler<GithubOutput> = async (
     command,
   ) => {
     if (command.args.splitArgs.length < 1) {

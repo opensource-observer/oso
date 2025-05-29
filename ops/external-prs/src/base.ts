@@ -44,7 +44,7 @@ export class NoUserError extends Error {}
 
 export class NoCommandError extends Error {}
 
-export type CommmentCommandHandler<T> = (command: CommentCommand) => Promise<T>;
+export type CommentCommandHandler<T> = (command: CommentCommand) => Promise<T>;
 
 /**
  * Convenience utilities for external PRs
@@ -197,7 +197,7 @@ export class GHAppUtils {
 
   async parseCommentForCommand<T>(
     commentId: number,
-    handlers: Record<string, CommmentCommandHandler<T>>,
+    handlers: Record<string, CommentCommandHandler<T>>,
   ): Promise<T> {
     const comment = await this.octo.rest.issues.getComment({
       repo: this.repo.name,
