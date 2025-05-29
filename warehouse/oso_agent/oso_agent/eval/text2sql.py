@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
-    logger.info("Running text2sql experiment with:", config)
+    logger.info(f"Running text2sql experiment with: {config.model_dump_json()}")
     api_key = config.arize_phoenix_api_key.get_secret_value()
 
     # We pass in the API key directly to the Phoenix client but it's likely 

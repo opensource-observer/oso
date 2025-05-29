@@ -93,4 +93,18 @@ WHERE
     expect(names).toContain("collection_projects_project");
     expect(names).toContain("collection");
   });
+
+  it("handle trino syntax", () => {
+    const names = getTableNamesFromSql(`
+      SHOW CATALOGS
+    `);
+    expect(names.length).toBe(0);
+  });
+
+  it("doesn't break when failing to parse", () => {
+    const names = getTableNamesFromSql(`
+      SHOW SCHEMAS FROM iceberg
+    `);
+    expect(names.length).toBe(0);
+  });
 });
