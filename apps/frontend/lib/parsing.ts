@@ -70,13 +70,17 @@ function getTableNamesFromAst(ast: AST): string[] {
  */
 function getTableNamesFromSql(query: string): string[] {
   const parser = new Parser();
-  const ast = parser.astify(query);
-  const tableNames = Array.isArray(ast)
-    ? _.flatMap(ast, (x) => getTableNamesFromAst(x))
-    : getTableNamesFromAst(ast);
+  try {
+    const ast = parser.astify(query, { database: "trino" });
+    const tableNames = Array.isArray(ast)
+      ? _.flatMap(ast, (x) => getTableNamesFromAst(x))
+      : getTableNamesFromAst(ast);
 
-  // De-duplicate
-  return _.uniq(tableNames);
+    // De-duplicate
+    return _.uniq(tableNames);
+  } catch {
+    return [];
+  }
 }
 
 export {
