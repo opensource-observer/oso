@@ -59,6 +59,11 @@ class AgentConfig(BaseSettings):
 
     model_config = agent_config_dict()
 
+    eagerly_load_all_agents: bool = Field(
+        default=False,
+        description="Whether to eagerly load all agents in the registry"
+    )
+
     agent_name: str = Field(default="react", description="Name of the agent to use")
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
@@ -108,6 +113,16 @@ class AgentConfig(BaseSettings):
             self.arize_phoenix_traces_url = f"{self.arize_phoenix_base_url}/v1/traces"
         if not self.arize_phoenix_traces_url.endswith("/"):
             self.arize_phoenix_traces_url += "/"
+
+        # This is a terrible hack because arize phoenix's libraries don't 
+        # consistently handle passing in api key or endpoint so we need to 
+        # inject it into the environment
+        if self.arize_phoenix_api_key.get_secret_value():
+            import os
+            os.environ["PHOENIX_CLIENT_HEADERS"] = f"api_key={self.arize_phoenix_api_key.get_secret_value()}"
+            os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = self.arize_phoenix_base_url
+            os.environ["OTEL_EXPORTER_OTLP_HEADER"] = f"api_key={self.arize_phoenix_api_key.get_secret_value()}"
+
         return self
 
     def update(self, **kwargs) -> "AgentConfig":

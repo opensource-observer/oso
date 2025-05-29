@@ -1,15 +1,18 @@
 import logging
+import typing as t
 
 #from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 
 from ..tool.llm import create_llm
+from ..types.response import SqlResponse, WrappedResponse
 
 #from ..tool.oso_mcp import create_oso_mcp_tools
 from ..types.sql_query import SqlQuery
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError
 from .basic_agent import BasicAgent
+from .decorator import wrapped_agent
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,14 @@ Make sure that your response only contains a single valid SQL query.
 Do not include any other text or explanation.
 """
 
+    
+def as_sql_response(raw_response: t.Any) -> WrappedResponse:
+    query = SqlQuery.model_validate_json(raw_response)
+    response = SqlResponse(query=query)
+    return WrappedResponse(response=response)
+
+
+@wrapped_agent(as_sql_response)
 async def create_sql_agent(config: AgentConfig) -> BaseWorkflowAgent:
     """Create and configure the SQL agent."""
 
