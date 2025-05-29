@@ -1,3 +1,4 @@
+import os
 import typing as t
 
 from pydantic import BaseModel, Field, SecretStr, model_validator
@@ -87,6 +88,11 @@ class AgentConfig(BaseSettings):
         description="URL for the Arize Phoenix traces API",
     )
 
+    arize_phoenix_project_name: str = Field(
+        default="oso-agent",
+        description="Project name for Arize Phoenix telemetry",
+    )
+
     arize_phoenix_use_cloud: bool = Field(
         default=False,
         description="Whether to use the Arize Phoenix cloud API",
@@ -111,16 +117,13 @@ class AgentConfig(BaseSettings):
             self.arize_phoenix_base_url = "https://app.phoenix.arize.com"
         if not self.arize_phoenix_traces_url:
             self.arize_phoenix_traces_url = f"{self.arize_phoenix_base_url}/v1/traces"
-        if not self.arize_phoenix_traces_url.endswith("/"):
-            self.arize_phoenix_traces_url += "/"
 
         # This is a terrible hack because arize phoenix's libraries don't 
         # consistently handle passing in api key or endpoint so we need to 
         # inject it into the environment
+        os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = self.arize_phoenix_base_url
         if self.arize_phoenix_api_key.get_secret_value():
-            import os
             os.environ["PHOENIX_CLIENT_HEADERS"] = f"api_key={self.arize_phoenix_api_key.get_secret_value()}"
-            os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = self.arize_phoenix_base_url
             os.environ["OTEL_EXPORTER_OTLP_HEADER"] = f"api_key={self.arize_phoenix_api_key.get_secret_value()}"
 
         return self
