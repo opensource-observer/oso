@@ -1,9 +1,5 @@
 from typing import List
-
 from ..types.datasets import Example, create_example
-
-# proposing a p0, p1, p2 priority system, where: 
-# p0 = critical, p1 = important, p2 = nice to have
 
 TEXT2SQL_DATASET: List[Example] = [
     create_example(
@@ -35,7 +31,7 @@ TEXT2SQL_DATASET: List[Example] = [
         answer="SELECT DISTINCT p.project_name FROM projects_by_collection_v1 AS pc JOIN projects_v1 AS p ON pc.project_id = p.project_id WHERE collection_name = 'ethereum-crypto-ecosystems' ORDER BY p.project_name",
         priority="P0",
         difficulty="easy",
-        query_type=["filter", "sort", "join"],
+        query_type=["filter", "sort / limit", "join"],
         query_domain=["directory"]
     ),
     create_example(
@@ -51,7 +47,7 @@ TEXT2SQL_DATASET: List[Example] = [
         answer="SELECT sample_date, SUM(tm.amount) AS total_transactions FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE m.metric_name LIKE 'BASE_gas_fees_daily' AND tm.sample_date BETWEEN DATE '2024-01-01' AND DATE '2024-01-31' GROUP BY sample_date ORDER BY sample_date",
         priority="P1",
         difficulty="medium",
-        query_type=["time-series", "aggregation", "filter", "join", "sort"],
+        query_type=["time-series", "aggregation", "filter", "join", "sort / limit"],
         query_domain=["blockchain", "timeseries", "metrics"]
     ),
     create_example(
@@ -91,7 +87,7 @@ TEXT2SQL_DATASET: List[Example] = [
         answer="SELECT DISTINCT SPLIT_PART(m.metric_name, '_active_contracts_over_all_time', 1) AS chain FROM key_metrics_by_collection_v0 AS km JOIN metrics_v0 AS m ON km.metric_id = m.metric_id WHERE m.metric_name LIKE '%_active_contracts_over_all_time' ORDER BY chain",
         priority="P0",
         difficulty="medium",
-        query_type=["filter", "sort", "join", "derived metric"],
+        query_type=["filter", "sort / limit", "join", "derived metric"],
         query_domain=["metrics"]
     ),
     create_example(
@@ -99,7 +95,7 @@ TEXT2SQL_DATASET: List[Example] = [
         answer="WITH cte_defillama_tvl_metrics AS (SELECT metric_id, metric_name FROM metrics_v0 WHERE LOWER(metric_name) LIKE '%defillama%' AND LOWER(metric_name) LIKE '%tvl%'), cte_tvl_q1_2025 AS (SELECT ts.project_id, ts.metric_id, ts.sample_date, ts.amount FROM timeseries_metrics_by_project_v0 ts JOIN cte_defillama_tvl_metrics m ON ts.metric_id = m.metric_id WHERE ts.sample_date BETWEEN DATE '2025-01-01' AND DATE '2025-03-31'), cte_tvl_start_end AS (SELECT DISTINCT project_id, metric_id, FIRST_VALUE(amount) OVER (PARTITION BY project_id, metric_id ORDER BY sample_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS start_amount, LAST_VALUE(amount) OVER (PARTITION BY project_id, metric_id ORDER BY sample_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS end_amount FROM cte_tvl_q1_2025), cte_tvl_increase AS (SELECT project_id, metric_id, COALESCE(end_amount, 0) - COALESCE(start_amount, 0) AS absolute_tvl_increase FROM cte_tvl_start_end) SELECT p.display_name AS project_name, m.metric_name AS defillama_tvl_metric, ROUND(i.absolute_tvl_increase, 2) AS absolute_tvl_increase_q1_2025_usd FROM cte_tvl_increase i JOIN projects_v1 p ON i.project_id = p.project_id JOIN cte_defillama_tvl_metrics m ON i.metric_id = m.metric_id WHERE i.absolute_tvl_increase > 0 ORDER BY absolute_tvl_increase_q1_2025_usd DESC LIMIT 1",
         priority="P2",
         difficulty="hard",
-        query_type=["derived metric", "subquery / cte", "filter", "join", "window function", "sort"],
+        query_type=["derived metric", "subquery / cte", "filter", "join", "window function", "sort / limit"],
         query_domain=["timeseries", "metrics"]
     ),
     create_example(
