@@ -495,7 +495,8 @@ class OsoAppClient {
     const { data, error } = await this.supabaseClient
       .from("dynamic_connectors")
       .select("*")
-      .eq("org_id", orgId);
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
 
     if (error) {
       throw error;
