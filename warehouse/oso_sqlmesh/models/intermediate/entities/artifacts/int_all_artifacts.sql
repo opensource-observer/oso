@@ -37,17 +37,6 @@ WITH onchain_artifacts AS (
     artifact_name,
     artifact_name AS artifact_url
   FROM oso.int_contracts_by_project
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    'BRIDGE' AS artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_name AS artifact_url
-  FROM oso.int_bridges_by_project
 ), all_normalized_artifacts AS (
   SELECT
     project_id,

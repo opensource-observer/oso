@@ -1,41 +1,43 @@
 MODEL (
-  name oso.int_bridges_by_project,
+  name oso.int_deployers_by_project,
   kind FULL,
-  dialect trino,
   partitioned_by "artifact_source",
-  grain (project_id, artifact_source, artifact_id),
-  description "Combines bridges with the ANY_EVM source",
+  description "Combines deployers from any EVM chain and chain-specific deployers",
   audits (
     has_at_least_n_rows(threshold := 0)
   )
 );
 
-WITH base_bridges AS (
+WITH base_deployers AS (
   SELECT DISTINCT
     project_id,
     artifact_source,
     artifact_name
   FROM oso.int_artifacts_by_project_all_sources
   WHERE
-    artifact_type = 'BRIDGE'
+    artifact_type = 'DEPLOYER'
 ), any_evm_matches AS (
   SELECT DISTINCT
     base.project_id,
-    chains.chain AS artifact_source,
-    base.artifact_name
-  FROM base_bridges AS base
-  CROSS JOIN oso.int_superchain_chain_names AS chains
+    deployers.chain AS artifact_source,
+    deployers.deployer_address AS artifact_name
+  FROM oso.int_deployers AS deployers
+  INNER JOIN base_deployers AS base
+    ON deployers.deployer_address = base.artifact_name
   WHERE
     base.artifact_source = 'ANY_EVM'
 ), chain_specific_matches AS (
   SELECT DISTINCT
     base.project_id,
-    base.artifact_source,
-    base.artifact_name
-  FROM base_bridges AS base
+    deployers.chain AS artifact_source,
+    deployers.deployer_address AS artifact_name
+  FROM oso.int_deployers AS deployers
+  INNER JOIN base_deployers AS base
+    ON deployers.deployer_address = base.artifact_name
+    AND deployers.chain = base.artifact_source
   WHERE
     base.artifact_source <> 'ANY_EVM'
-), all_bridges AS (
+), all_deployers AS (
   SELECT
     *
   FROM any_evm_matches
@@ -51,4 +53,4 @@ SELECT DISTINCT
   artifact_name AS artifact_source_id,
   '' AS artifact_namespace,
   artifact_name
-FROM all_bridges
+FROM all_deployers
