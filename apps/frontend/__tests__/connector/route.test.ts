@@ -127,7 +127,7 @@ describe("API /api/v1/connector", () => {
       expect(json.connector_type).toBe("postgresql");
       expect(mockTrinoClient.query).toHaveBeenCalledWith(
         expect.stringContaining(
-          `CREATE CATALOG ${connectorName} USING postgres WITH`,
+          `CREATE CATALOG ${connectorName} USING postgresql WITH`,
         ),
       );
 
