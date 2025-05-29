@@ -33,7 +33,7 @@ interface BaseFormState {
 }
 
 interface PostgresFormState extends BaseFormState {
-  connector_type: "postgres";
+  connector_type: "postgresql";
   config: PostgresConnectorConfig;
 }
 
@@ -87,10 +87,10 @@ export function DynamicConnectorForm(props: DynamicConnectorFormProps) {
     event: SelectChangeEvent<ConnectorType>,
   ) => {
     const newConnectorType = event.target.value as ConnectorType;
-    if (newConnectorType === "postgres") {
+    if (newConnectorType === "postgresql") {
       setFormState({
         connector_name: formState?.connector_name ?? "",
-        connector_type: "postgres",
+        connector_type: "postgresql",
         config: {
           "connection-url": "",
           "connection-user": "",
@@ -165,11 +165,14 @@ export function DynamicConnectorForm(props: DynamicConnectorFormProps) {
           value={formState?.connector_type ?? ""}
           label="Connector Type"
           onChange={handleConnectorTypeChange}
+          MenuProps={{
+            disablePortal: true,
+          }}
           size="small"
           fullWidth
           sx={{ mb: 2 }}
         >
-          <MenuItem value="postgres">PostgreSQL</MenuItem>
+          <MenuItem value="postgresql">PostgreSQL</MenuItem>
           <MenuItem value="gsheets">Google Sheets</MenuItem>
         </Select>
       </FormControl>
@@ -185,9 +188,8 @@ export function DynamicConnectorForm(props: DynamicConnectorFormProps) {
           helperText={
             <span>
               Valid characters are a-z 0-9 _ -
-              <p>
-                The organization name will be automatically added as a prefix
-              </p>
+              <br />
+              The organization name will be automatically added as a prefix
             </span>
           }
           value={formState.connector_name ?? ""}
@@ -200,7 +202,7 @@ export function DynamicConnectorForm(props: DynamicConnectorFormProps) {
           size="small"
         />
       )}
-      {formState?.connector_type === "postgres" && (
+      {formState?.connector_type === "postgresql" && (
         <>
           <div style={{ marginBottom: "16px" }}>
             Learn more about the postgres connector{" "}
