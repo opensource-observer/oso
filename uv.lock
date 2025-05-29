@@ -265,7 +265,7 @@ wheels = [
 
 [[package]]
 name = "arize-phoenix"
-version = "10.0.4"
+version = "10.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioitertools" },
@@ -306,9 +306,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/2e/dc49124a6a8a708f85bcab4f43393f919573834706b2ea34e3e6457530db/arize_phoenix-10.0.4.tar.gz", hash = "sha256:852a2d0188f3b19741097cf1d79f3c37849bc7d7e886d7f998c5112e5c6d63e5", size = 3816298 }
+sdist = { url = "https://files.pythonhosted.org/packages/23/e0/14f41461dd062f7f28829ee09b9256a8a39b0ea4b49cdf07e33ad117365c/arize_phoenix-10.1.0.tar.gz", hash = "sha256:c51fd517c61f2a5469778ddcd600869f9e444bd90b1d55bd6e1b3fdfc14cd1d1", size = 3821595 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/73/4492ab303f236a54668a64950a0b9539f87e335bc4af8c4ade10fddd37a0/arize_phoenix-10.0.4-py3-none-any.whl", hash = "sha256:6443ec7b60eb4cc4721204546745b10da4d5dab50a9f83c0cc81cbbf525e1c19", size = 4003370 },
+    { url = "https://files.pythonhosted.org/packages/6f/2c/31aacff0f34b4b7366e3ec8442017e0603d8dd505929ce70a010fa4fc631/arize_phoenix-10.1.0-py3-none-any.whl", hash = "sha256:b185e8ce9a97995b968e035d4c87a9082b609c85ba422c008b462aaea7e4ff07", size = 4009542 },
 ]
 
 [[package]]
@@ -340,7 +340,7 @@ wheels = [
 
 [[package]]
 name = "arize-phoenix-otel"
-version = "0.9.2"
+version = "0.10.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "openinference-instrumentation" },
@@ -351,9 +351,9 @@ dependencies = [
     { name = "opentelemetry-semantic-conventions" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/27/b9/8c89191eb46915e9ba7bdb473e2fb1c510b7db3635ae5ede5e65b2176b9d/arize_phoenix_otel-0.9.2.tar.gz", hash = "sha256:a48c7d41f3ac60dc75b037f036bf3306d2af4af371cdb55e247e67957749bc31", size = 11599 }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/89/08fc6a2dda59e1ce51dd43421905ba9d059144cbf2e8027eccd5a71e19f4/arize_phoenix_otel-0.10.1.tar.gz", hash = "sha256:0d116ced68cff792f88afd13f8dbb13b02b7d4458fab9fe912b5a18dc67675c1", size = 11842 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/3d/f64136a758c649e883315939f30fe51ad0747024b0db05fd78450801a78d/arize_phoenix_otel-0.9.2-py3-none-any.whl", hash = "sha256:5286b33c58b596ef8edd9a4255ee00fd74f774b1e5dbd9393e77e87870a14d76", size = 12560 },
+    { url = "https://files.pythonhosted.org/packages/dd/b7/1e28ddf95fe2e355bc8156ae58f45b57fc28ef32d874230ba56f0a379e23/arize_phoenix_otel-0.10.1-py3-none-any.whl", hash = "sha256:4cc2333fd7fc5cbff976e4ca0e92679fddda5c472065273cbac86a54c2c19363", size = 12796 },
 ]
 
 [[package]]
@@ -3676,7 +3676,7 @@ wheels = [
 
 [[package]]
 name = "openinference-instrumentation-llama-index"
-version = "4.2.1"
+version = "4.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "openinference-instrumentation" },
@@ -3687,9 +3687,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/ef/ec75993016edb1bd7c7b9de50c3a6db039da0ab5da1d3aaa1216a92cb360/openinference_instrumentation_llama_index-4.2.1.tar.gz", hash = "sha256:615603bd9bcc6bbf24e5ea2d2cfcd11e484102b8d8d131f7777543eca1f4d2b7", size = 58578 }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/10/57179fb827705b957921c9a1060143b89dc26025db7b7918ae53711f6833/openinference_instrumentation_llama_index-4.3.0.tar.gz", hash = "sha256:92107bcd61131fd41abf9407a0f6d25d6be692e04987b54de2aa4ecbd098b86c", size = 59253 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/06/aaca472113b499924cbc0b7ea2dd18d61d1f4ad7120f9fb0fd30bb4d8eec/openinference_instrumentation_llama_index-4.2.1-py3-none-any.whl", hash = "sha256:74102a2f1532dfac069ff8e241d498695f481bc3fa6c017d4df6c285fbc7d6cd", size = 27663 },
+    { url = "https://files.pythonhosted.org/packages/56/a9/1c4d10ef2a9cf12b0e1446eb21d6ca04c4dfaba417999a895928afcdd5d2/openinference_instrumentation_llama_index-4.3.0-py3-none-any.whl", hash = "sha256:c1559d397f8ed98f420ce0ebe0f5246d33aadd67f144d59c6f66f3258f73e854", size = 28311 },
 ]
 
 [[package]]
@@ -3884,7 +3884,6 @@ version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiotrino" },
-    { name = "arize-phoenix" },
     { name = "arrow" },
     { name = "bokeh" },
     { name = "boltons" },
@@ -3970,7 +3969,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiotrino", specifier = ">=0.2.3,<1.0.0" },
-    { name = "arize-phoenix", extras = ["evals"], specifier = "==10.0.4" },
     { name = "arrow", specifier = ">=1.3.0,<2.0.0" },
     { name = "bokeh", specifier = ">=3.6.1,<4.0.0" },
     { name = "boltons", specifier = ">=24.0.0,<25.0.0" },
@@ -4076,8 +4074,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "arize-phoenix", extras = ["evals"], specifier = "==10.0.4" },
-    { name = "arize-phoenix-otel", specifier = "==0.9.2" },
+    { name = "arize-phoenix", extras = ["evals"], specifier = "==10.1.0" },
+    { name = "arize-phoenix-otel", specifier = "==0.10.1" },
     { name = "discord-py", specifier = ">=2.5.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "llama-index", specifier = ">=0.12.29" },
@@ -4085,7 +4083,7 @@ requires-dist = [
     { name = "llama-index-llms-google-genai", specifier = ">=0.1.12" },
     { name = "llama-index-llms-ollama", specifier = ">=0.5.4" },
     { name = "llama-index-tools-mcp", specifier = ">=0.1.1" },
-    { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.0" },
+    { name = "openinference-instrumentation-llama-index", specifier = ">=4.3.0" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-asyncio", specifier = ">=0.26.0" },
     { name = "sqlglot", extras = ["rs"], specifier = ">=26.16.4" },
