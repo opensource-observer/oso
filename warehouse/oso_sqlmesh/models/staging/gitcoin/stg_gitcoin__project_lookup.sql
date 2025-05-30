@@ -10,7 +10,7 @@ MODEL (
   )
 );
 
-SELECT
+SELECT DISTINCT
   UPPER(source)::VARCHAR AS source,
   LOWER(group_id)::VARCHAR AS group_id,
   LOWER(project_id)::VARCHAR AS project_id

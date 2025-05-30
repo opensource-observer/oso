@@ -16,7 +16,7 @@ WITH projects AS (
   WHERE total_amount_donated_in_usd > 0
 )
 
-SELECT
+SELECT DISTINCT
   @oso_entity_id('GITCOIN', '', group_id) AS project_id,
   'GITCOIN' AS project_source,
   '' AS project_namespace,

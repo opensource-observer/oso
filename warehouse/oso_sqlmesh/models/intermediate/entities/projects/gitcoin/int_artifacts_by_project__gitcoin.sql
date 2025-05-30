@@ -95,23 +95,7 @@ project_addresses AS (
   SELECT
     project_id,
     recipient_address AS address,
-    CASE
-      WHEN chain_id = '1' THEN 'MAINNET'
-      WHEN chain_id = '137' THEN 'POLYGON'
-      WHEN chain_id = '42161' THEN 'ARBITRUM_ONE'
-      WHEN chain_id = '1329' THEN 'BASE'
-      WHEN chain_id = '424' THEN 'AVALANCHE'
-      WHEN chain_id = '10' THEN 'OPTIMISM'
-      WHEN chain_id = '42220' THEN 'CELO'
-      WHEN chain_id = '43114' THEN 'AVALANCHE'
-      WHEN chain_id = '42' THEN 'KOVAN'
-      WHEN chain_id = '1088' THEN 'METIS'
-      WHEN chain_id = '324' THEN 'ZKSYNC_ERA'
-      WHEN chain_id = '250' THEN 'FANTOM'
-      WHEN chain_id = '534352' THEN 'SCROLL'
-      WHEN chain_id = '8453' THEN 'BASE'
-      ELSE 'UNKNOWN'
-    END AS chain
+    @chain_id_to_chain_name(chain_id) AS chain
   FROM oso.stg_gitcoin__all_matching
   WHERE match_amount_in_usd > 0
 ),
@@ -172,7 +156,7 @@ all_normalized_artifacts AS (
   FROM address_artifacts
 )
 
-SELECT
+SELECT DISTINCT
   @oso_entity_id('GITCOIN', '', group_id) AS project_id,
   @oso_entity_id(artifact_source, artifact_namespace, artifact_name)
    AS artifact_id,
