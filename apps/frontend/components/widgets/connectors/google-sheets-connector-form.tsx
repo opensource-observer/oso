@@ -4,8 +4,8 @@ import React from "react";
 import { TextField } from "@mui/material";
 
 export interface GoogleSheetsConnectorConfig {
-  "credentials-key": string;
-  "metadata-sheet-id": string;
+  "gsheets.credentials-key": string;
+  "gsheets.metadata-sheet-id": string;
 }
 
 interface GoogleSheetsConnectorFormProps {
@@ -23,9 +23,9 @@ export function GoogleSheetsConnectorForm(
       <TextField
         fullWidth
         required
-        name="credentials-key"
+        name="gsheets.credentials-key"
         label="Credentials Key (base64)"
-        value={formState["credentials-key"]}
+        value={formState["gsheets.credentials-key"]}
         onChange={onChange}
         size="small"
         sx={{ mb: 2 }}
@@ -33,9 +33,9 @@ export function GoogleSheetsConnectorForm(
       <TextField
         fullWidth
         required
-        name="metadata-sheet-id"
+        name="gsheets.metadata-sheet-id"
         label="Metadata Sheet ID"
-        value={formState["metadata-sheet-id"]}
+        value={formState["gsheets.metadata-sheet-id"]}
         onChange={onChange}
         size="small"
         placeholder="Enter Google Sheet ID"
