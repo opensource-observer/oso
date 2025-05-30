@@ -18,24 +18,16 @@ class LocalLLMConfig(BaseModel):
     ollama_model: str = Field(
         default="llama3.2:3b", description="Ollama model to use for the agent"
     )
+
+    ollama_embedding: str = Field(
+        default="llama3.2:3b", description="Ollama embedding model"
+    )
     ollama_url: str = Field(
         default="http://localhost:11434", description="URL for the Ollama API"
     )
     ollama_timeout: float = Field(
         default=60.0, description="Timeout in seconds for Ollama API requests", gt=0
     )
-
-class GeminiLLMConfig(BaseModel):
-    type: t.Literal["google_gemini"] = "google_gemini"
-
-    google_api_key: SecretStr
-
-    model: str = Field(default="models/gemini-2.0-flash")
-
-    @property
-    def api_key(self) -> str:
-        """Return the API key for the Gemini model."""
-        return self.google_api_key.get_secret_value()
 
 class GoogleGenAILLMConfig(BaseModel):
     type: t.Literal["google_genai"] = "google_genai"
@@ -44,6 +36,8 @@ class GoogleGenAILLMConfig(BaseModel):
     
     model: str = Field(default="gemini-2.0-flash")
 
+    embedding: str = Field(default="text-embedding-004")
+
     @property
     def api_key(self) -> str:
         """Return the API key for the Gemini model."""
@@ -51,7 +45,6 @@ class GoogleGenAILLMConfig(BaseModel):
 
 LLMConfig = t.Union[
     LocalLLMConfig,
-    GeminiLLMConfig,
     GoogleGenAILLMConfig,
 ]
 
