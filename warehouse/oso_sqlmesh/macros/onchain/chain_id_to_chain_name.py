@@ -29,8 +29,41 @@ def chain_id_to_chain_name(
         exp.EQ(this=chain_id, expression=exp.Literal.number(10)),
         exp.Literal.string("optimism"),
     ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(324)),
+        exp.Literal.string("zksync_era"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(43114)),
+        exp.Literal.string("avalanche"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(42220)),
+        exp.Literal.string("celo"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(424)),
+        exp.Literal.string("pgn"),
+    ).when(
         exp.EQ(this=chain_id, expression=exp.Literal.number(8453)),
         exp.Literal.string("base"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(534352)),
+        exp.Literal.string("scroll"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(1329)),
+        exp.Literal.string("sei"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(250)),
+        exp.Literal.string("fantom"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(42)),
+        exp.Literal.string("kovan"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(42161)),
+        exp.Literal.string("arbitrum_one"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(137)),
+        exp.Literal.string("matic"),
+    ).when(
+        exp.EQ(this=chain_id, expression=exp.Literal.number(1088)),
+        exp.Literal.string("metis"),
     ).when(
         exp.EQ(this=chain_id, expression=exp.Literal.number(34443)),
         exp.Literal.string("mode"),

@@ -94,29 +94,6 @@ unioned_events AS (
   FROM matching
 ),
 
-chain_mappings AS (
-  SELECT DISTINCT
-    chain_id,
-    CASE
-      WHEN chain_id = '1' THEN 'MAINNET'
-      WHEN chain_id = '137' THEN 'POLYGON'
-      WHEN chain_id = '42161' THEN 'ARBITRUM_ONE'
-      WHEN chain_id = '1329' THEN 'BASE'
-      WHEN chain_id = '424' THEN 'AVALANCHE'
-      WHEN chain_id = '10' THEN 'OPTIMISM'
-      WHEN chain_id = '42220' THEN 'CELO'
-      WHEN chain_id = '43114' THEN 'AVALANCHE'
-      WHEN chain_id = '42' THEN 'KOVAN'
-      WHEN chain_id = '1088' THEN 'METIS'
-      WHEN chain_id = '324' THEN 'ZKSYNC_ERA'
-      WHEN chain_id = '250' THEN 'FANTOM'
-      WHEN chain_id = '534352' THEN 'SCROLL'
-      WHEN chain_id = '8453' THEN 'BASE'
-      ELSE 'UNKNOWN'
-    END AS chain
-  FROM unioned_events
-),
-
 mapped_events AS (
   SELECT
     events.time,
@@ -124,7 +101,7 @@ mapped_events AS (
     events.round_id,
     events.round_number,
     events.chain_id,
-    chain_mappings.chain AS chain,
+    @chain_id_to_chain_name(events.chain_id) AS chain,
     events.round_name,
     events.gitcoin_project_id,
     events.gitcoin_project_name,
@@ -135,8 +112,6 @@ mapped_events AS (
     events.transaction_hash,
     events.amount_in_usd
   FROM unioned_events AS events
-  JOIN chain_mappings
-    ON events.chain_id = chain_mappings.chain_id
   JOIN oso.stg_gitcoin__project_lookup AS project_lookup
     ON events.gitcoin_project_id = project_lookup.project_id
   JOIN oso.stg_gitcoin__project_groups_summary AS project_summary
