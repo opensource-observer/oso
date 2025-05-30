@@ -2,9 +2,8 @@ MODEL (
   name oso.stg_gitcoin__project_groups_summary,
   description "Staging table for data on Gitcoin project groups",
   kind full,
-  cron '@daily',
   dialect trino,
-  grain (latest_project_application_timestamp, gitcoin_group_id, latest_gitcoin_project_id),
+  grain (updated_at, group_id, project_id),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
