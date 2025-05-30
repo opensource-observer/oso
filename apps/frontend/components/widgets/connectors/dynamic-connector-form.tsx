@@ -43,7 +43,7 @@ interface GoogleSheetsFormState extends BaseFormState {
 }
 
 const credentialsKeys: Set<string> = new Set([
-  "credentials-key",
+  "gsheets.credentials-key",
   "connection-password",
 ]);
 
@@ -102,8 +102,8 @@ export function DynamicConnectorForm(props: DynamicConnectorFormProps) {
         connector_name: formState?.connector_name ?? "",
         connector_type: "gsheets",
         config: {
-          "credentials-key": "",
-          "metadata-sheet-id": "",
+          "gsheets.credentials-key": "",
+          "gsheets.metadata-sheet-id": "",
         },
       });
     } else {
