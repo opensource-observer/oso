@@ -112,5 +112,6 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
         task,
         experiment_name=EXPERIMENT_NAME,
         evaluators=evaluators,
+        experiment_metadata={ "agent_name": config.agent_name }
     )
     return experiment

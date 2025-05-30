@@ -1,41 +1,34 @@
 import logging
-import typing as t
 
-#from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.agent.workflow import ReActAgent
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 
-#from ..tool.oso_mcp import create_oso_mcp_tools
 from ..prompts.system import SYSTEM_PROMPT
 from ..tool.llm import create_llm
-from ..types.response import SqlResponse, WrappedResponse
-from ..types.sql_query import SqlQuery
+from ..tool.oso_mcp_tools import create_oso_mcp_tools
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError
-from .basic_agent import BasicAgent
 from .decorator import wrapped_agent
 
 logger = logging.getLogger(__name__)
+#SYSTEM_PROMPT: str = "You are a helpful assistant that can query the Open Source Observer data lake."
 
-    
-def as_sql_response(raw_response: t.Any) -> WrappedResponse:
-    query = SqlQuery.model_validate_json(str(raw_response))
-    response = SqlResponse(query=query)
-    return WrappedResponse(response=response)
-
-@wrapped_agent(as_sql_response)
-async def create_sql_agent(config: AgentConfig) -> BaseWorkflowAgent:
-    """Create and configure the SQL agent."""
+@wrapped_agent()
+async def create_react_mcp_agent(config: AgentConfig) -> BaseWorkflowAgent:
+    """Create and configure the ReAct agent."""
 
     try:
-        # Create a structured LLM for generating SQL queries
+        logger.info("Creating react_mcp agent")
         llm = create_llm(config)
-        sllm = llm.as_structured_llm(SqlQuery)
-        tools = []
+        # local_tools = _create_local_tools()
+        mcp_tools = await create_oso_mcp_tools(config)
+        tools = mcp_tools
+        logger.info(f"Created {len(tools)} total tools")
 
-        logger.info("Initializing SQL agent")
-        return BasicAgent(
+        logger.info("Initializing ReAct agent")
+        return ReActAgent(
             tools=tools,
-            llm=sllm,
+            llm=llm,
             system_prompt=SYSTEM_PROMPT,
         )
     except Exception as e:
