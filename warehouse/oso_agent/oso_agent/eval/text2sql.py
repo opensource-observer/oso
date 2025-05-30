@@ -10,7 +10,7 @@ from phoenix.experiments.types import Example
 
 from ..datasets.text2sql import TEXT2SQL_DATASET
 from ..datasets.uploader import upload_dataset
-from ..tool.oso_mcp import create_oso_mcp_tools
+from ..tool.oso_mcp_tools import create_oso_mcp_tools
 from ..types import (
     ErrorResponse,
     SemanticResponse,

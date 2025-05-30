@@ -4,7 +4,7 @@ from llama_index.core.agent.workflow import ReActAgent
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 
 from ..tool.llm import create_llm
-from ..tool.oso_mcp import create_oso_mcp_tools
+from ..tool.oso_mcp_tools import create_oso_mcp_tools
 from ..types.sql_query import SqlQuery
 
 #from llama_index.core.llms import ChatMessage
