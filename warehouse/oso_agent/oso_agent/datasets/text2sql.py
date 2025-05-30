@@ -4,10 +4,10 @@ from ..types.datasets import Example, create_example
 TEXT2SQL_DATASET: List[Example] = [
     create_example(
         question="What's the total number of stars for each GitHub repo owned by opensource-observer?",
-        answer="SELECT artifact_name AS repo_name, SUM(star_count) AS total_stars FROM repositories_v0 WHERE artifact_namespace = 'opensource-observer' GROUP BY 1",
-        priority="P0",
-        difficulty="easy",
-        query_type=["filter", "aggregation"],
+        answer="SELECT a.artifact_name AS repo_name, km.amount AS total_stars FROM key_metrics_by_artifact_v0 AS km JOIN metrics_v0 AS m ON km.metric_id = m.metric_id JOIN artifacts_v1 AS a ON km.artifact_id = a.artifact_id WHERE a.artifact_namespace = 'opensource-observer' AND m.metric_name = 'GITHUB_stars_over_all_time'",
+        priority="P1",
+        difficulty="medium",
+        query_type=["filter", "aggregation", "join"],
         query_domain=["github"]
     ),
     create_example(
@@ -76,7 +76,7 @@ TEXT2SQL_DATASET: List[Example] = [
     ),
     create_example(
         question="List the names of GitHub repositories that are owned by opensource-observer.",
-        answer="SELECT artifact_name AS repo_name FROM repositories_v0 WHERE artifact_namespace = 'opensource-observer'",
+        answer="SELECT DISTINCT artifact_name AS repo_name FROM artifacts_by_project_v1 WHERE artifact_namespace = 'opensource-observer' AND artifact_source = 'GITHUB'",
         priority="P0",
         difficulty="easy",
         query_type=["filter"],
