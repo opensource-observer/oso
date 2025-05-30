@@ -2,7 +2,7 @@ import textwrap
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Generic, List, Optional, TypeVar, Union
 
 from mcp.server.fastmcp import Context, FastMCP
 from pyoso import Client
@@ -10,6 +10,25 @@ from pyoso import Client
 from .config import MCPConfig
 
 MCP_SSE_PORT = 8000
+
+P = TypeVar("P")
+R = TypeVar("R")
+
+@dataclass
+class McpErrorResponse(Generic[P]):
+    tool_name: str
+    error: str
+    success: bool = False
+    parameters: Optional[List[P]] = None
+
+@dataclass
+class McpSuccessResponse(Generic[P, R]):
+    tool_name: str
+    results: List[R]
+    success: bool = True
+    parameters: Optional[List[P]] = None
+
+McpResponse = Union[McpErrorResponse[P], McpSuccessResponse[P, R]]
 
 @dataclass
 class AppContext:
@@ -41,12 +60,14 @@ def setup_mcp_app(config: MCPConfig):
         lifespan=default_lifespan(config),
     )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Run a SQL query against the OSO data lake",
+    )
     async def query_oso(
         sql: str,
         ctx: Context,
         limit: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> McpResponse:
         """
         Run a SQL query against the OSO data lake.
 
@@ -79,13 +100,11 @@ def setup_mcp_app(config: MCPConfig):
 
             results = df.to_dict(orient="records")
 
-            response = {
-                "success": True,
-                "query": sql,
-                "row_count": len(results),
-                "columns": list(df.columns),
-                "results": results,
-            }
+            response = McpSuccessResponse(
+                tool_name="query_oso",
+                parameters=[sql],
+                results=results,
+            )
 
             return response
         except Exception as e:
@@ -93,11 +112,19 @@ def setup_mcp_app(config: MCPConfig):
             if ctx:
                 await ctx.error(f"Query failed: {error_msg}")
 
-            return {"success": False, "query": sql, "error": error_msg}
+            response = McpErrorResponse(
+                tool_name="query_oso",
+                parameters=[sql],
+                error=error_msg,
+            )
+            #return {"success": False, "query": sql, "error": error_msg}
+            return response
 
 
-    @mcp.tool()
-    async def list_tables(ctx: Context) -> Dict[str, Any]:
+    @mcp.tool(
+        description="List all available tables in the OSO data lake",
+    )
+    async def list_tables(ctx: Context) -> McpResponse:
         """
         List all available tables in the OSO data lake.
 
@@ -113,20 +140,32 @@ def setup_mcp_app(config: MCPConfig):
 
             tables = df.to_dict(orient="records")
 
-            return {"success": True, "tables": tables}
+            response = McpSuccessResponse(
+                tool_name="list_tables",
+                results=tables,
+            )
+            return response
+            #return {"success": True, "tables": tables}
         except Exception as e:
             error_msg = str(e)
             if ctx:
                 await ctx.error(f"Failed to list tables: {error_msg}")
 
-            return {"success": False, "error": error_msg}
+            response = McpErrorResponse(
+                tool_name="list_tables",
+                error=error_msg,
+            )
+            return response
+            #return {"success": False, "error": error_msg}
 
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get the schema for a specific table in the OSO data lake",
+    )
     async def get_table_schema(
         table_name: str,
         ctx: Context,
-    ) -> Dict[str, Any]:
+    ) -> McpResponse:
         """
         Get the schema for a specific table in the OSO data lake.
 
@@ -143,140 +182,155 @@ def setup_mcp_app(config: MCPConfig):
 
             schema_query = f"DESCRIBE {table_name}"
             df = oso_client.to_pandas(schema_query)
-
             schema = df.to_dict(orient="records")
 
-            return {"success": True, "table": table_name, "schema": schema}
+            response = McpSuccessResponse(
+                tool_name="get_table_schema",
+                parameters=[table_name],
+                results=schema,
+            )
+            return response
+            #return {"success": True, "table": table_name, "schema": schema}
         except Exception as e:
             error_msg = str(e)
             if ctx:
                 await ctx.error(f"Failed to get schema for {table_name}: {error_msg}")
 
-            return {"success": False, "table": table_name, "error": error_msg}
+            response = McpErrorResponse(
+                tool_name="get_table_schema",
+                parameters=[table_name],
+                error=error_msg,
+            )
+            return response
+            #return {"success": False, "table": table_name, "error": error_msg}
 
 
-    @mcp.tool()
-    async def get_sample_queries(ctx: Context) -> Dict[str, Any]:
+    @mcp.tool(
+        description="Get a set of sample queries to help users get started with the OSO data lake",
+    )
+    async def get_sample_queries(ctx: Context) -> McpResponse:
         """
         Get a set of sample queries to help users get started with the OSO data lake.
 
         Returns:
             Dict containing sample queries with descriptions
         """
-        return {
-            "success": True,
-            "samples": [
-                {
-                    "name": "All Collections",
-                    "description": "Get the names of all collections on OSO",
-                    "query": """
-                    SELECT
-                    collection_name,
-                    display_name
-                    FROM collections_v1
-                    ORDER BY collection_name
-                    """,
-                },
-                {
-                    "name": "Projects in Collection",
-                    "description": "Get the names of all projects in the Ethereum GitHub collection",
-                    "query": """
-                    SELECT
-                    project_id,
-                    project_name
-                    FROM projects_by_collection_v1
-                    WHERE collection_name = 'ethereum-github'
-                    """,
-                },
-                {
-                    "name": "Collection Code Metrics",
-                    "description": "Get GitHub commit metrics for the Ethereum GitHub collection",
-                    "query": """
-                    SELECT
-                    tm.sample_date,
-                    tm.amount
-                    FROM timeseries_metrics_by_collection_v0 AS tm
-                    JOIN collections_v1 AS c ON tm.collection_id = c.collection_id
-                    JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id
-                    WHERE
-                        c.collection_name = 'ethereum-github'
-                        AND m.metric_name = 'GITHUB_commits_daily'
-                    ORDER BY 1
-                    """,
-                },
-                {
-                    "name": "Collection Onchain Metrics",
-                    "description": "Get onchain metrics for projects in a collection",
-                    "query": """
-                    SELECT
-                    tm.sample_date,
-                    tm.amount
-                    FROM timeseries_metrics_by_collection_v0 AS tm
-                    JOIN collections_v1 AS c ON tm.collection_id = c.collection_id
-                    JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id
-                    WHERE
-                        c.collection_name = 'op-retrofunding-4'
-                        AND m.metric_name = 'BASE_gas_fees_weekly'
-                    ORDER BY 1
-                    """,
-                },
-                {
-                    "name": "Project Funding History",
-                    "description": "Get the complete funding history for Uniswap",
-                    "query": """
-                    SELECT
-                    time,
-                    event_source,
-                    from_project_name as funder,
-                    amount,
-                    grant_pool_name
-                    FROM oss_funding_v0
-                    WHERE to_project_name = 'uniswap'
-                    ORDER BY time DESC
-                    """,
-                },
-                {
-                    "name": "Top Funded Projects",
-                    "description": "Find the projects that have received the most funding",
-                    "query": """
-                    SELECT
-                    to_project_name,
-                    COUNT(DISTINCT event_source) as funding_sources,
-                    COUNT(*) as number_of_grants,
-                    SUM(amount) as total_funding
-                    FROM oss_funding_v0
-                    GROUP BY to_project_name
-                    HAVING total_funding > 0
-                    ORDER BY total_funding DESC
-                    LIMIT 20
-                    """,
-                },
-                {
-                    "name": "Repository Dependencies",
-                    "description": "Get package dependencies for Ethereum Go implementation",
-                    "query": """
-                    SELECT *
-                    FROM sboms_v0
-                    WHERE from_artifact_id = '0mjl8VhWsui_6TEZZnbQzyf8h1A9bOioIlK17p0D5hI='
-                    """,
-                },
-                {
-                    "name": "Package Maintainers",
-                    "description": "Find the repository that maintains a specific package",
-                    "query": """
-                    SELECT
-                    package_artifact_source,
-                    package_artifact_name,
-                    package_owner_project_id,
-                    package_owner_artifact_namespace,
-                    package_owner_artifact_name
-                    FROM package_owners_v0
-                    WHERE package_artifact_name = '@libp2p/echo'
-                    """,
-                },
-            ],
-        }
-
+        samples = [
+            {
+                "name": "All Collections",
+                "description": "Get the names of all collections on OSO",
+                "query": """
+                SELECT
+                collection_name,
+                display_name
+                FROM collections_v1
+                ORDER BY collection_name
+                """,
+            },
+            {
+                "name": "Projects in Collection",
+                "description": "Get the names of all projects in the Ethereum GitHub collection",
+                "query": """
+                SELECT
+                project_id,
+                project_name
+                FROM projects_by_collection_v1
+                WHERE collection_name = 'ethereum-github'
+                """,
+            },
+            {
+                "name": "Collection Code Metrics",
+                "description": "Get GitHub commit metrics for the Ethereum GitHub collection",
+                "query": """
+                SELECT
+                tm.sample_date,
+                tm.amount
+                FROM timeseries_metrics_by_collection_v0 AS tm
+                JOIN collections_v1 AS c ON tm.collection_id = c.collection_id
+                JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id
+                WHERE
+                    c.collection_name = 'ethereum-github'
+                    AND m.metric_name = 'GITHUB_commits_daily'
+                ORDER BY 1
+                """,
+            },
+            {
+                "name": "Collection Onchain Metrics",
+                "description": "Get onchain metrics for projects in a collection",
+                "query": """
+                SELECT
+                tm.sample_date,
+                tm.amount
+                FROM timeseries_metrics_by_collection_v0 AS tm
+                JOIN collections_v1 AS c ON tm.collection_id = c.collection_id
+                JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id
+                WHERE
+                    c.collection_name = 'op-retrofunding-4'
+                    AND m.metric_name = 'BASE_gas_fees_weekly'
+                ORDER BY 1
+                """,
+            },
+            {
+                "name": "Project Funding History",
+                "description": "Get the complete funding history for Uniswap",
+                "query": """
+                SELECT
+                time,
+                event_source,
+                from_project_name as funder,
+                amount,
+                grant_pool_name
+                FROM oss_funding_v0
+                WHERE to_project_name = 'uniswap'
+                ORDER BY time DESC
+                """,
+            },
+            {
+                "name": "Top Funded Projects",
+                "description": "Find the projects that have received the most funding",
+                "query": """
+                SELECT
+                to_project_name,
+                COUNT(DISTINCT event_source) as funding_sources,
+                COUNT(*) as number_of_grants,
+                SUM(amount) as total_funding
+                FROM oss_funding_v0
+                GROUP BY to_project_name
+                HAVING total_funding > 0
+                ORDER BY total_funding DESC
+                LIMIT 20
+                """,
+            },
+            {
+                "name": "Repository Dependencies",
+                "description": "Get package dependencies for Ethereum Go implementation",
+                "query": """
+                SELECT *
+                FROM sboms_v0
+                WHERE from_artifact_id = '0mjl8VhWsui_6TEZZnbQzyf8h1A9bOioIlK17p0D5hI='
+                """,
+            },
+            {
+                "name": "Package Maintainers",
+                "description": "Find the repository that maintains a specific package",
+                "query": """
+                SELECT
+                package_artifact_source,
+                package_artifact_name,
+                package_owner_project_id,
+                package_owner_artifact_namespace,
+                package_owner_artifact_name
+                FROM package_owners_v0
+                WHERE package_artifact_name = '@libp2p/echo'
+                """,
+            },
+        ]
+        response = McpSuccessResponse(
+            tool_name="get_sample_queries",
+            results=samples,
+        )
+        return response
+        #return { "success": True, "samples": samples }
 
     @mcp.resource("help://getting-started")
     def get_help_guide() -> str:
