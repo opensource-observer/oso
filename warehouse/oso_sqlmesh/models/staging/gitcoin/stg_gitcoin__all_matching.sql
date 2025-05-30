@@ -4,7 +4,7 @@ MODEL (
   kind full,
   cron '@monthly',
   dialect trino,
-  grain (time, project_recipient_address, gitcoin_project_id, gitcoin_round_id, chain_id),
+  grain (timestamp, recipient_address, project_id, round_id, chain_id),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
