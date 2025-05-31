@@ -139,18 +139,15 @@ WITH projects AS (
 ), ossd_funding AS (
   SELECT
     projects.project_id,
-    funding.to_project_name AS artifact_source_id,
-    funding.funding_source AS artifact_source,
-    funding.funding_namespace AS artifact_namespace,
-    funding.to_project_name AS artifact_name,
-    CONCAT(
-      'https://www.opensource.observer/projects/',
-      funding.to_project_name
-    ) AS artifact_url,
+    projects.project_name AS artifact_source_id,
+    'OSS_DIRECTORY' AS artifact_source,
+    'oso' AS artifact_namespace,
+    projects.project_name AS artifact_name,
+    CONCAT('https://www.opensource.observer/projects/', projects.project_name)
+      AS artifact_url,
     'WALLET' AS artifact_type
-  FROM oso.stg_ossd__current_funding AS funding
-  JOIN oso.int_projects AS projects
-    ON funding.to_project_name = projects.project_name
+  FROM oso.int_projects AS projects
+  WHERE projects.project_source = 'OSS_DIRECTORY'
 ), all_artifacts AS (
   SELECT
     project_id,
