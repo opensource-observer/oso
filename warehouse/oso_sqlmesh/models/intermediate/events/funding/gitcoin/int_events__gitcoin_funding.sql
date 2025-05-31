@@ -22,9 +22,8 @@ WITH donations AS (
     round_name,
     project_id AS gitcoin_project_id,
     project_name AS gitcoin_project_name,
-    recipient_address AS to_artifact_name,
-    donor_address AS from_artifact_name,
-    transaction_hash,
+    recipient_address,
+    donor_address,
     amount_in_usd
   FROM oso.stg_gitcoin__all_donations
   WHERE amount_in_usd > 0
@@ -51,9 +50,8 @@ matching AS (
     rounds.round_name,
     matching.project_id AS gitcoin_project_id,
     matching.title AS gitcoin_project_name,    
-    matching.recipient_address AS to_artifact_name,
-    'gitcoin' AS from_artifact_name,
-    NULL AS transaction_hash,
+    matching.recipient_address,
+    NULL::VARCHAR AS donor_address,
     matching.match_amount_in_usd AS amount_in_usd
   FROM oso.stg_gitcoin__all_matching AS matching
   JOIN rounds AS rounds
@@ -72,9 +70,8 @@ unioned_events AS (
     round_name,
     gitcoin_project_id,
     gitcoin_project_name,
-    to_artifact_name,
-    from_artifact_name,
-    transaction_hash,
+    recipient_address,
+    donor_address,
     amount_in_usd
   FROM donations
   UNION ALL
@@ -87,14 +84,22 @@ unioned_events AS (
     round_name,
     gitcoin_project_id,
     gitcoin_project_name,
-    to_artifact_name,
-    from_artifact_name,
-    transaction_hash,
+    recipient_address,
+    donor_address,
     amount_in_usd
   FROM matching
 ),
 
-mapped_events AS (
+project_to_projects AS (
+  SELECT DISTINCT
+    gitcoin_project_id,
+    oso_project_id,
+    oso_project_name
+  FROM oso.int_project_to_projects__gitcoin
+  WHERE is_best_match = TRUE
+),
+
+enriched_events AS (
   SELECT
     events.time,
     events.event_source,
@@ -107,15 +112,18 @@ mapped_events AS (
     events.gitcoin_project_name,
     project_lookup.group_id AS gitcoin_group_id,
     project_summary.project_application_title AS gitcoin_group_project_name,
-    events.to_artifact_name,
-    events.from_artifact_name,
-    events.transaction_hash,
-    events.amount_in_usd
+    events.recipient_address,
+    events.donor_address,
+    events.amount_in_usd,
+    project_to_projects.oso_project_id,
+    project_to_projects.oso_project_name
   FROM unioned_events AS events
   JOIN oso.stg_gitcoin__project_lookup AS project_lookup
     ON events.gitcoin_project_id = project_lookup.project_id
   JOIN oso.stg_gitcoin__project_groups_summary AS project_summary
     ON project_lookup.group_id = project_summary.group_id
+  LEFT JOIN project_to_projects
+    ON events.gitcoin_project_id = project_to_projects.gitcoin_project_id
 )
 
 SELECT
@@ -123,17 +131,16 @@ SELECT
   event_source,
   gitcoin_group_project_name,
   gitcoin_project_name,
-  chain,
+  recipient_address,
+  donor_address,
+  amount_in_usd,
   round_number,
   round_name,
-  to_artifact_name,
-  from_artifact_name,
-  amount_in_usd,
-  transaction_hash,
-  round_id,
+  chain,
   chain_id,
-  @oso_entity_id(chain, '', to_artifact_name) AS to_artifact_id,
-  @oso_entity_id(chain, '', from_artifact_name) AS from_artifact_id,
+  round_id,
   gitcoin_group_id,
-  gitcoin_project_id
-FROM mapped_events
+  gitcoin_project_id,
+  oso_project_id,
+  oso_project_name
+FROM enriched_events
