@@ -25,11 +25,6 @@ load_dotenv()
 
 logger = logging.getLogger("oso-agent")
 
-async def create_agent(config: AgentConfig):
-    registry = await setup_default_agent_registry(config)
-    agent = await registry.get_agent(config.agent_name)
-    return agent
-
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "--verbose",
@@ -91,7 +86,8 @@ def query(config, query, agent_name, ollama_model, ollama_url):
 async def _run_query(query: str, config: AgentConfig) -> str:
     """Run a query through the agent asynchronously."""
 
-    agent = await create_agent(config)
+    registry = await setup_default_agent_registry(config)
+    agent = await registry.get_agent(config.agent_name)
     click.echo(
         f"Query started with agent={config.agent_name} and model={config.llm.type}"
     )
@@ -153,7 +149,8 @@ def experiment(config, experiment_name, agent_name, ollama_model, ollama_url):
 
 async def _run_experiment(experiment_name: str, config: AgentConfig) -> str:
     """Run an experiment through the agent asynchronously."""
-    agent = await create_agent(config)
+    registry = await setup_default_agent_registry(config)
+    agent = await registry.get_agent(config.agent_name)
     click.echo(
         f"Experiment {experiment_name} started with agent={config.agent_name} and model={config.llm.type}"
     )
@@ -203,7 +200,8 @@ def shell(config, agent_name, ollama_model, ollama_url):
 async def _run_interactive_session(config: AgentConfig):
     """Run an interactive session with the agent asynchronously."""
     try:
-        agent = await create_agent(config)
+        registry = await setup_default_agent_registry(config)
+        agent = await registry.get_agent(config.agent_name)
         click.echo(
             f"Interactive agent session started with agent={config.agent_name} and model={config.llm.type}"
         )
@@ -300,7 +298,8 @@ async def _run_demo(config: AgentConfig):
         print("─" * 80)
 
         # Demo queries with agent
-        agent = await create_agent(config)
+        registry = await setup_default_agent_registry(config)
+        agent = await registry.get_agent(config.agent_name)
         click.echo(
             f"Demo started with agent={config.agent_name} and model={config.llm.type}"
         )
@@ -345,8 +344,8 @@ def discord(config):
 
 async def _discord_bot_main(config: BotConfig) -> None:
     """Testing function to run the bot manually"""
-    agent = await create_agent(config)
-    bot = await setup_bot(config, agent)
+    registry = await setup_default_agent_registry(config)
+    bot = await setup_bot(config, registry)
     await bot.login(config.discord_bot_token.get_secret_value())
     task = asyncio.create_task(bot.connect())
     try:
