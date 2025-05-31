@@ -58,7 +58,7 @@ class AgentConfig(BaseSettings):
         description="Whether to eagerly load all agents in the registry"
     )
 
-    agent_name: str = Field(default="react", description="Name of the agent to use")
+    agent_name: str = Field(default="react_mcp", description="Name of the agent to use")
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
 

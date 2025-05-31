@@ -3,7 +3,7 @@ import asyncio
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.interfaces import ReflectedColumn
 
@@ -37,7 +37,7 @@ class OsoSqlDatabase(SQLDatabase):
         sample_rows_in_table_info: int,
         max_string_length: int,
     ):
-        super().__init__(engine=create_engine("")) 
+        #super().__init__(engine=create_engine("")) 
         self._oso_client = oso_client
         self._tables = tables
         self._sample_rows_in_table_info = sample_rows_in_table_info
