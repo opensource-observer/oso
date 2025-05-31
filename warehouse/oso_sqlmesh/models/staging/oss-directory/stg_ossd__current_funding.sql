@@ -9,17 +9,6 @@ MODEL (
 );
 
 SELECT
-  @oso_id(
-    'OSS_FUNDING',
-    'oso',
-    CONCAT(
-      COALESCE(funding.to_project_name, ''),
-      COALESCE(funding.from_funder_name, ''),
-      COALESCE(CAST(funding.funding_date AS VARCHAR), '')
-    )
-  ) AS funding_id,
-  'OSS_FUNDING' AS funding_source,
-  'oso' AS funding_namespace,
   LOWER(funding.to_project_name) AS to_project_name,
   COALESCE(
     TRY_CAST(funding.amount AS DOUBLE),

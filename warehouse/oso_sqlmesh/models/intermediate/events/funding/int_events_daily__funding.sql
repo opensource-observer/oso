@@ -1,40 +1,51 @@
 MODEL (
   name oso.int_events_daily__funding,
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column bucket_day,
-    batch_size 365,
-    batch_concurrency 2,
-    lookback 31,
-    forward_only true,
-  ),
-  start @github_incremental_start,
-  cron '@daily',
-  partitioned_by (DAY("bucket_day"), "event_type"),
-  grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
+  description 'Intermediate table for funding events',
+  dialect trino,
+  kind full,
   audits (
-    has_at_least_n_rows(threshold := 0),
-  ),
-  ignored_rules (
-    "incrementalmustdefinenogapsaudit",
+    HAS_AT_LEAST_N_ROWS(threshold := 0)
   ),
   tags (
-    "github",
-    "incremental",
+    "funding",
   ),
 );
 
+
+WITH events AS (
+  SELECT
+    bucket_day,
+    event_source,
+    event_type,
+    from_artifact_id,
+    to_artifact_id,
+    amount
+  FROM oso.int_events_daily__gitcoin_funding
+  UNION ALL
+  SELECT
+    bucket_day,
+    event_source,
+    event_type,
+    from_artifact_id,
+    to_artifact_id,
+    amount
+  FROM oso.int_events_daily__ossd_funding
+  UNION ALL
+  SELECT
+    bucket_day,
+    event_source,
+    event_type,
+    from_artifact_id,
+    to_artifact_id,
+    amount
+  FROM oso.int_events_daily__open_collective_funding
+)
+
 SELECT
-  DATE_TRUNC('DAY', time::DATE) AS bucket_day,
-  from_artifact_id::VARCHAR AS from_artifact_id,
-  to_artifact_id::VARCHAR AS to_artifact_id,
-  event_source::VARCHAR,
-  event_type::VARCHAR,
-  SUM(amount::DOUBLE)::DOUBLE AS amount
-FROM oso.int_events__funding as events
-WHERE time BETWEEN @start_dt AND @end_dt
-GROUP BY
-  DATE_TRUNC('DAY', time::DATE),
+  bucket_day,
+  event_source,
+  event_type,
   from_artifact_id,
   to_artifact_id,
-  event_source,
-  event_type
+  amount
+FROM events
