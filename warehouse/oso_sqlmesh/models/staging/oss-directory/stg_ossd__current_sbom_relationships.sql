@@ -3,6 +3,7 @@ MODEL (
   description 'The most recent view of sbom relationships from the ossd dagster source',
   dialect trino,
   kind FULL,
+  enabled FALSE,
   audits (
     has_at_least_n_rows(threshold := 0)
   )
