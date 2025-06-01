@@ -92,7 +92,7 @@ unioned_events AS (
 
 project_to_projects AS (
   SELECT DISTINCT
-    gitcoin_project_id,
+    gitcoin_group_id,
     oso_project_id,
     oso_project_name
   FROM oso.int_project_to_projects__gitcoin
@@ -123,7 +123,7 @@ enriched_events AS (
   JOIN oso.stg_gitcoin__project_groups_summary AS project_summary
     ON project_lookup.group_id = project_summary.group_id
   LEFT JOIN project_to_projects
-    ON events.gitcoin_project_id = project_to_projects.gitcoin_project_id
+    ON project_lookup.group_id = project_to_projects.gitcoin_group_id
 )
 
 SELECT
