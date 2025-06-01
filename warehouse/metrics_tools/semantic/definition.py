@@ -39,7 +39,7 @@ class RegistryDAG:
         self.adjacency_map[model.name] = set()
 
         # Gets all the names of related models
-        reference_names = list(map(lambda x: x.model_ref, model.references))
+        reference_names = list(map(lambda x: x.model_ref, model.relationships))
 
         self.sorter.add(model.name, *reference_names)
 
@@ -272,10 +272,10 @@ class Registry:
         return description
 
 
-class MetricOperationType(str, Enum):
-    """The type of operation to perform on the metric.
+class MeasureOperationType(str, Enum):
+    """The type of operation to perform on the measure.
 
-    This is used to determine how to aggregate the metric.
+    This is used to determine how to aggregate the measure.
     """
 
     SUM = "sum"
@@ -291,7 +291,7 @@ class MetricOperationType(str, Enum):
     PERCENTILE_DISC = "percentile_disc"
 
 
-class Metric(BaseModel):
+class Measure(BaseModel):
     name: str
     description: str = ""
     query: str = ""
@@ -313,22 +313,22 @@ class Metric(BaseModel):
         """Returns the references for model attributes"""
         return self._attribute_references
 
-    def bind(self, model: "Model") -> "BoundMetric":
+    def bind(self, model: "Model") -> "BoundMeasure":
         """Returns the bound metric for the given model"""
 
-        return BoundMetric(
+        return BoundMeasure(
             model=model,
-            metric=self,
+            measure=self,
         )
 
 
-class BoundMetric:
+class BoundMeasure:
     model: "Model"
-    metric: Metric
+    measure: Measure
 
-    def __init__(self, model: "Model", metric: Metric):
+    def __init__(self, model: "Model", measure: Measure):
         self.model = model
-        self.metric = metric
+        self.measure = measure
 
     def to_query_part(
         self,
@@ -336,9 +336,9 @@ class BoundMetric:
         original: "AttributePath | str",
         registry: Registry,
     ) -> "QueryPart":
-        """Returns the SQL expression for the metric"""
+        """Returns the SQL expression for the measure"""
 
-        query = self.metric.query_as_expression()
+        query = self.measure.query_as_expression()
         result = AttributePathTransformer.transform(
             query, traverser.copy(), self_model_name=self.model.name
         )
@@ -370,7 +370,7 @@ class Filter(BaseModel):
         )
 
         # Resolve the references to model attributes. If the attribute is a
-        # metric then this is an aggregation.
+        # measure then this is an aggregation.
         for reference in result.references:
             attribute = reference.final_attribute()
             model_name = exp_to_str(attribute.table)
@@ -378,10 +378,10 @@ class Filter(BaseModel):
             model = registry.get_model(model_name)
 
             try:
-                if isinstance(model.get_attribute(attribute_name), BoundMetric):
-                    # If the attribute is a metric, we need to treat it as an aggregate
+                if isinstance(model.get_attribute(attribute_name), BoundMeasure):
+                    # If the attribute is a measure, we need to treat it as an aggregate
                     # function. This means we need to use a subquery to calculate the
-                    # metric before applying the filter.
+                    # measure before applying the filter.
                     return QueryPart(
                         registry=registry,
                         original=original,
@@ -534,9 +534,39 @@ class Relationship(BaseModel):
     self_key_column: t.Optional[str] = None
     foreign_key_column: t.Optional[str] = None
 
+    @model_validator(mode="after")
+    def process_relationship(self):
+        if not self.name:
+            # If no name is provided, use the model_ref as the name
+            self.name = self.model_ref
+
+        if self.type == RelationshipType.MANY_TO_MANY and not self.join_table:
+            raise ValueError(
+                "Many-to-many relationships must have a join table specified"
+            )
+
+        if self.type != RelationshipType.MANY_TO_MANY and self.join_table:
+            raise ValueError(
+                "Join table can only be specified for many-to-many relationships"
+            )
+
+        return self
+    
+    def bind(self, model: "Model") -> "BoundRelationship":
+        """Binds the relationship to a model and returns a BoundRelationship"""
+        return BoundRelationship(
+            model=model,
+            name=self.name,
+            model_ref=self.model_ref,
+            type=self.type,
+            self_key_column=self.self_key_column,
+            foreign_key_column=self.foreign_key_column,
+            join_table=self.join_table,
+        )
+    
 
 class BoundRelationship:
-    model: str
+    model: "Model"
     name: str = ""
     model_ref: str
     type: RelationshipType
@@ -546,7 +576,7 @@ class BoundRelationship:
 
     def __init__(
         self,
-        model: str,
+        model: "Model",
         name: str,
         model_ref: str,
         type: RelationshipType,
@@ -573,12 +603,12 @@ class ViewConnector(BaseModel):
     def dimensions(self, model_name) -> t.List[Dimension]:
         return []
 
-    def metrics(self, model_name) -> t.List[Metric]:
+    def measures(self, model_name) -> t.List[Measure]:
         return []
 
 
 class View(BaseModel):
-    """A generic set of dimensions and metrics that can be queried together."""
+    """A generic set of dimensions and measures that can be queried together."""
 
     name: str
     description: str = ""
@@ -597,13 +627,13 @@ class Model(BaseModel):
     views: t.List[View | str] = Field(default_factory=lambda: [])
 
     dimensions: t.List[Dimension] = Field(default_factory=lambda: [])
-    metrics: t.List[Metric] = Field(default_factory=lambda: [])
-    references: t.List[Relationship] = Field(default_factory=lambda: [])
+    measures: t.List[Measure] = Field(default_factory=lambda: [])
+    relationships: t.List[Relationship] = Field(default_factory=lambda: [])
 
     @model_validator(mode="after")
     def build_attribute_lookup(self):
         """Builds a lookup of the references in the model"""
-        attributes: dict[str, BoundDimension | BoundMetric | BoundRelationship] = {}
+        attributes: dict[str, BoundDimension | BoundMeasure | BoundRelationship] = {}
 
         # Topologically sort the dimensions
         attribute_graph: t.Dict[str, t.Set[str]] = {}
@@ -616,20 +646,20 @@ class Model(BaseModel):
 
             attribute_graph[dimension.name] = set()
 
-            for reference in references:
-                if reference.is_relationship() or reference.base_model != "self":
+            for relationship in references:
+                if relationship.is_relationship() or relationship.base_model != "self":
                     raise ValueError(
                         "Cannot reference a relationship in a dimension"
                     )
                 # Attribute/Column name
-                attribute_name = exp_to_str(reference.final_attribute().this)
+                attribute_name = exp_to_str(relationship.final_attribute().this)
 
                 if attribute_name == dimension.name:
                     # If the attribute name is the same as the dimension name, we can skip it.
                     # For a dimension this just means that the dimension is a column in the table
                     continue
 
-                attribute_graph[dimension.name].add(exp_to_str(reference.final_attribute().this))
+                attribute_graph[dimension.name].add(exp_to_str(relationship.final_attribute().this))
 
             attributes[dimension.name] = dimension.bind(self)
 
@@ -637,19 +667,19 @@ class Model(BaseModel):
         dimensions_sorter = TopologicalSorter(attribute_graph)
         dimensions_sorter.prepare()
 
-        # Check for cycles in the metrics and dimensions
+        # Check for cycles in the measures and dimensions
         # For now this only checks for cycles in the current model. 
-        for metric in self.metrics:
+        for metric in self.measures:
             # Ensure we don't have duplicate names
             if metric.name in attributes or metric.name in attribute_graph:
                 raise ValueError(
-                    f"Metric {metric.name} already exists in model {self.name}"
+                    f"Measure {metric.name} already exists in model {self.name}"
                 )
             attribute_graph[metric.name] = set()
-            for reference in metric.attribute_references():
-                if reference.is_relationship() or reference.base_model != "self":
+            for relationship in metric.attribute_references():
+                if relationship.is_relationship() or relationship.base_model != "self":
                     continue # Relationships are handled at query time (for now)
-                attribute_graph[metric.name].add(exp_to_str(reference.final_attribute().this))
+                attribute_graph[metric.name].add(exp_to_str(relationship.final_attribute().this))
 
             attributes[metric.name] = metric.bind(self)
 
@@ -658,25 +688,17 @@ class Model(BaseModel):
         attribute_sorter.prepare()
 
         self._model_ref_lookup_by_model_name: dict[str, list[Relationship]] = {}
-        for reference in self.references:
-            if reference.name in attributes:
+        for relationship in self.relationships:
+            if relationship.name in attributes:
                 raise ValueError(
-                    f"{reference.name} already exists in model {self.name}. Must be unique"
+                    f"{relationship.name} already exists in model {self.name}. Must be unique"
                 )
 
-            attributes[reference.name] = BoundRelationship(
-                model=self.name,
-                name=reference.name,
-                model_ref=reference.model_ref,
-                type=reference.type,
-                self_key_column=reference.self_key_column,
-                foreign_key_column=reference.foreign_key_column,
-                join_table=reference.join_table,
-            )
+            attributes[relationship.name] = relationship.bind(self)
 
-            if reference.model_ref not in self._model_ref_lookup_by_model_name:
-                self._model_ref_lookup_by_model_name[reference.model_ref] = []
-            self._model_ref_lookup_by_model_name[reference.model_ref].append(reference)
+            if relationship.model_ref not in self._model_ref_lookup_by_model_name:
+                self._model_ref_lookup_by_model_name[relationship.model_ref] = []
+            self._model_ref_lookup_by_model_name[relationship.model_ref].append(relationship)
 
         self._all_attributes = attributes
 
@@ -709,7 +731,7 @@ class Model(BaseModel):
             raise ValueError("Must provide either name or model_ref to get reference")
 
         if name:
-            for reference in self.references:
+            for reference in self.relationships:
                 if reference.name == name:
                     if reference.model_ref != model_ref:
                         raise ValueError(
@@ -717,7 +739,7 @@ class Model(BaseModel):
                         )
                     return self.get_relationship(name)
 
-        for reference in self.references:
+        for reference in self.relationships:
             references = self._model_ref_lookup_by_model_name[reference.model_ref]
             if len(references) > 1:
                 raise ModelHasAmbiguousJoinPath(
@@ -739,7 +761,7 @@ class Model(BaseModel):
 
     def get_attribute(
         self, name: str
-    ) -> BoundDimension | BoundMetric | BoundRelationship:
+    ) -> BoundDimension | BoundMeasure | BoundRelationship:
         """Resolves the attribute to a column in the model"""
         if name not in self._all_attributes:
             raise ValueError(f"Attribute {name} not found in model {self.name}")
@@ -764,12 +786,12 @@ class Model(BaseModel):
         for dimension in self.dimensions:
             description += f"- `{self.name}.{dimension.name}`: {dimension.description}\n"
 
-        description += "\n### Metrics:\n"
-        for metric in self.metrics:
-            description += f"- `{self.name}.{metric.name}`: {metric.description}\n"
+        description += "\n### Measures:\n"
+        for measure in self.measures:
+            description += f"- `{self.name}.{measure.name}`: {measure.description}\n"
 
         description += "\n### Relationships:\n"
-        for relationship in self.references:
+        for relationship in self.relationships:
             description += (
                 f"- `{self.name}.{relationship.name}`: "
                 f"{relationship.description}. This is a {relationship.type.value} relationship\n"
@@ -851,7 +873,7 @@ class AttributePath(BaseModel):
         match current_attribute:
             case BoundDimension():
                 part = current_attribute.to_query_part(traverser.copy(), self, registry)
-            case BoundMetric():
+            case BoundMeasure():
                 part = current_attribute.to_query_part(traverser.copy(), self, registry)
             case BoundRelationship():
                 raise InvalidAttributeReferenceError(
@@ -866,7 +888,7 @@ class AttributePath(BaseModel):
     ) -> list["AttributePath"]:
         """Resolves the child references for the given registry
 
-        Metrics can reference dimensions in related models. This resolves
+        Measures can reference dimensions in related models. This resolves
         those references to the actual attributes in that other model.
 
         The depth is used to limit the number of levels to traverse. This is
@@ -882,7 +904,7 @@ class AttributePath(BaseModel):
         match current_attribute:
             case BoundDimension():
                 return [self]
-            case BoundMetric():
+            case BoundMeasure():
                 # Recurse
                 return [self]
             case BoundRelationship():
@@ -1049,7 +1071,7 @@ class AttributePathTransformer:
 class QueryPart(BaseModel):
     """The most basic representation of a part of a query.
 
-    This is used to represent dimensions, metrics, and filters in a query.
+    This is used to represent dimensions, measures, and filters in a query.
 
     Each of those parts of a query should have the following properties:
 
@@ -1210,7 +1232,7 @@ class AttributePathTraverser:
         match attribute:
             case BoundDimension():
                 return attribute.with_alias(self.current_table_alias)
-            case BoundMetric():
+            case BoundMeasure():
                 raise NotImplementedError("Cannot resolve a metric to a column")
             case BoundRelationship():
                 raise ValueError(
@@ -1241,9 +1263,16 @@ class AttributePathTraverser:
 class SemanticQuery(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    columns: t.List[str] = Field(description=textwrap.dedent("""
+    name: str = Field(default="", description="Optional name used to identify the query")
+
+    description: str = Field(
+        default="",
+        description="A description of the query's intent and purpose."
+    )
+
+    selects: t.List[str] = Field(description=textwrap.dedent("""
         A list of model attributes to select in the query. These should only be
-        valid dimensions or metrics from the available models in the registry.
+        valid dimensions or measures from the available models in the registry.
         Joins are automatically handled by the query builder based on the
         provided attributes and the relationships defined in the models. If any
         ambiguous relationships between models should use the `->` syntax to
@@ -1266,24 +1295,24 @@ class SemanticQuery(BaseModel):
     )
 
     @model_validator(mode="after")
-    def process_columns(self):
-        self._processed_columns: t.List[t.Tuple[AttributePath, str]] = []
-        for col in self.columns:
-            result = AttributePathTransformer.transform(parse_one(col))
+    def process_selects(self):
+        self._processed_selects: t.List[t.Tuple[AttributePath, str]] = []
+        for select in self.selects:
+            result = AttributePathTransformer.transform(parse_one(select))
             if len(result.references) != 1:
                 raise ValueError(
-                    f"Invalid column reference {col}. Must be a single reference with an optional alias"
+                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
                 )
             if not isinstance(result.node, (exp.Anonymous, exp.Alias)):
                 raise ValueError(
-                    f"Invalid column reference {col}. Must be a single reference with an optional alias"
+                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
                 )
             column_path = result.references[0]
             alias = column_path.to_select_alias()
             if isinstance(result.node, exp.Alias):
                 alias = exp_to_str(result.node.alias)
 
-            self._processed_columns.append((column_path, alias))
+            self._processed_selects.append((column_path, alias))
             
         self._processed_filters = [Filter(query=f) for f in self.filters]
 
@@ -1293,12 +1322,19 @@ class SemanticQuery(BaseModel):
         from metrics_tools.semantic.query import QueryBuilder
 
         query = QueryBuilder(registry)
-        for column, alias in self._processed_columns:
-            query.add_select(column, alias)
+        for select, alias in self._processed_selects:
+            query.add_select(select, alias)
         for filter in self._processed_filters:
             query.add_filter(filter)
         query.add_limit(self.limit)
         return query.build()
+    
+    def analyze(self, registry: Registry):
+        """Validates the query against the registry to ensure the query can be executed
+        
+        Returns a set of suggestions to the user on how to fix the query
+        """
+        pass
 
 
 # class ParameterizedSemanticQuery(BaseModel):
