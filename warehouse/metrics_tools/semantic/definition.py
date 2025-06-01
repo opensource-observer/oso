@@ -39,7 +39,7 @@ class RegistryDAG:
         self.adjacency_map[model.name] = set()
 
         # Gets all the names of related models
-        reference_names = list(map(lambda x: x.model_ref, model.references))
+        reference_names = list(map(lambda x: x.model_ref, model.relationships))
 
         self.sorter.add(model.name, *reference_names)
 
@@ -534,9 +534,39 @@ class Relationship(BaseModel):
     self_key_column: t.Optional[str] = None
     foreign_key_column: t.Optional[str] = None
 
+    @model_validator(mode="after")
+    def process_relationship(self):
+        if not self.name:
+            # If no name is provided, use the model_ref as the name
+            self.name = self.model_ref
+
+        if self.type == RelationshipType.MANY_TO_MANY and not self.join_table:
+            raise ValueError(
+                "Many-to-many relationships must have a join table specified"
+            )
+
+        if self.type != RelationshipType.MANY_TO_MANY and self.join_table:
+            raise ValueError(
+                "Join table can only be specified for many-to-many relationships"
+            )
+
+        return self
+    
+    def bind(self, model: "Model") -> "BoundRelationship":
+        """Binds the relationship to a model and returns a BoundRelationship"""
+        return BoundRelationship(
+            model=model,
+            name=self.name,
+            model_ref=self.model_ref,
+            type=self.type,
+            self_key_column=self.self_key_column,
+            foreign_key_column=self.foreign_key_column,
+            join_table=self.join_table,
+        )
+    
 
 class BoundRelationship:
-    model: str
+    model: "Model"
     name: str = ""
     model_ref: str
     type: RelationshipType
@@ -546,7 +576,7 @@ class BoundRelationship:
 
     def __init__(
         self,
-        model: str,
+        model: "Model",
         name: str,
         model_ref: str,
         type: RelationshipType,
@@ -598,7 +628,7 @@ class Model(BaseModel):
 
     dimensions: t.List[Dimension] = Field(default_factory=lambda: [])
     measures: t.List[Measure] = Field(default_factory=lambda: [])
-    references: t.List[Relationship] = Field(default_factory=lambda: [])
+    relationships: t.List[Relationship] = Field(default_factory=lambda: [])
 
     @model_validator(mode="after")
     def build_attribute_lookup(self):
@@ -616,20 +646,20 @@ class Model(BaseModel):
 
             attribute_graph[dimension.name] = set()
 
-            for reference in references:
-                if reference.is_relationship() or reference.base_model != "self":
+            for relationship in references:
+                if relationship.is_relationship() or relationship.base_model != "self":
                     raise ValueError(
                         "Cannot reference a relationship in a dimension"
                     )
                 # Attribute/Column name
-                attribute_name = exp_to_str(reference.final_attribute().this)
+                attribute_name = exp_to_str(relationship.final_attribute().this)
 
                 if attribute_name == dimension.name:
                     # If the attribute name is the same as the dimension name, we can skip it.
                     # For a dimension this just means that the dimension is a column in the table
                     continue
 
-                attribute_graph[dimension.name].add(exp_to_str(reference.final_attribute().this))
+                attribute_graph[dimension.name].add(exp_to_str(relationship.final_attribute().this))
 
             attributes[dimension.name] = dimension.bind(self)
 
@@ -646,10 +676,10 @@ class Model(BaseModel):
                     f"Measure {metric.name} already exists in model {self.name}"
                 )
             attribute_graph[metric.name] = set()
-            for reference in metric.attribute_references():
-                if reference.is_relationship() or reference.base_model != "self":
+            for relationship in metric.attribute_references():
+                if relationship.is_relationship() or relationship.base_model != "self":
                     continue # Relationships are handled at query time (for now)
-                attribute_graph[metric.name].add(exp_to_str(reference.final_attribute().this))
+                attribute_graph[metric.name].add(exp_to_str(relationship.final_attribute().this))
 
             attributes[metric.name] = metric.bind(self)
 
@@ -658,25 +688,17 @@ class Model(BaseModel):
         attribute_sorter.prepare()
 
         self._model_ref_lookup_by_model_name: dict[str, list[Relationship]] = {}
-        for reference in self.references:
-            if reference.name in attributes:
+        for relationship in self.relationships:
+            if relationship.name in attributes:
                 raise ValueError(
-                    f"{reference.name} already exists in model {self.name}. Must be unique"
+                    f"{relationship.name} already exists in model {self.name}. Must be unique"
                 )
 
-            attributes[reference.name] = BoundRelationship(
-                model=self.name,
-                name=reference.name,
-                model_ref=reference.model_ref,
-                type=reference.type,
-                self_key_column=reference.self_key_column,
-                foreign_key_column=reference.foreign_key_column,
-                join_table=reference.join_table,
-            )
+            attributes[relationship.name] = relationship.bind(self)
 
-            if reference.model_ref not in self._model_ref_lookup_by_model_name:
-                self._model_ref_lookup_by_model_name[reference.model_ref] = []
-            self._model_ref_lookup_by_model_name[reference.model_ref].append(reference)
+            if relationship.model_ref not in self._model_ref_lookup_by_model_name:
+                self._model_ref_lookup_by_model_name[relationship.model_ref] = []
+            self._model_ref_lookup_by_model_name[relationship.model_ref].append(relationship)
 
         self._all_attributes = attributes
 
@@ -709,7 +731,7 @@ class Model(BaseModel):
             raise ValueError("Must provide either name or model_ref to get reference")
 
         if name:
-            for reference in self.references:
+            for reference in self.relationships:
                 if reference.name == name:
                     if reference.model_ref != model_ref:
                         raise ValueError(
@@ -717,7 +739,7 @@ class Model(BaseModel):
                         )
                     return self.get_relationship(name)
 
-        for reference in self.references:
+        for reference in self.relationships:
             references = self._model_ref_lookup_by_model_name[reference.model_ref]
             if len(references) > 1:
                 raise ModelHasAmbiguousJoinPath(
@@ -769,7 +791,7 @@ class Model(BaseModel):
             description += f"- `{self.name}.{measure.name}`: {measure.description}\n"
 
         description += "\n### Relationships:\n"
-        for relationship in self.references:
+        for relationship in self.relationships:
             description += (
                 f"- `{self.name}.{relationship.name}`: "
                 f"{relationship.description}. This is a {relationship.type.value} relationship\n"

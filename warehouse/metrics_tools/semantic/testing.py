@@ -79,7 +79,7 @@ def setup_registry():
                 ),
             ],
             primary_key="project_id",
-            references=[
+            relationships=[
                 Relationship(
                     model_ref="collection",
                     type=RelationshipType.MANY_TO_MANY,
@@ -136,7 +136,7 @@ def setup_registry():
                 ),
             ],
             primary_key="artifact_id",
-            references=[
+            relationships=[
                 Relationship(
                     model_ref="project",
                     type=RelationshipType.MANY_TO_MANY,
@@ -223,7 +223,7 @@ def setup_registry():
             ],
             time_column="time",
             primary_key="event_id",
-            references=[
+            relationships=[
                 Relationship(
                     name="to",
                     description="The artifact to which the event occurred",
@@ -327,7 +327,7 @@ def setup_registry():
                     query="AVG(self.amount)",
                 ),
             ],
-            references=[
+            relationships=[
                 Relationship(
                     model_ref="artifact",
                     type=RelationshipType.MANY_TO_ONE,
@@ -387,7 +387,7 @@ def setup_registry():
                     query="AVG(self.amount)",
                 ),
             ],
-            references=[
+            relationships=[
                 Relationship(
                     model_ref="artifact",
                     type=RelationshipType.MANY_TO_ONE,
@@ -446,7 +446,7 @@ def setup_registry():
                     query="AVG(self.amount)",
                 ),
             ],
-            references=[
+            relationships=[
                 Relationship(
                     model_ref="artifact",
                     type=RelationshipType.MANY_TO_ONE,
