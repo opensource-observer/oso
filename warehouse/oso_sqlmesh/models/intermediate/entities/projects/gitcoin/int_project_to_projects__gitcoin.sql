@@ -63,6 +63,7 @@ chosen AS (
 
 all_pairs AS (
   SELECT
+    p_gitcoin.project_name AS gitcoin_group_id,
     abp_gitcoin.project_id AS gitcoin_project_id,
     abp_ossd.project_id AS oso_project_id,
     p_gitcoin.display_name AS gitcoin_project_name,
@@ -79,6 +80,7 @@ all_pairs AS (
   JOIN oso.projects_v1 AS p_oso
     ON abp_ossd.project_id = p_oso.project_id
   GROUP BY
+    p_gitcoin.project_name,
     abp_gitcoin.project_id,
     abp_ossd.project_id,
     p_gitcoin.display_name,
@@ -87,6 +89,7 @@ all_pairs AS (
 )
 
 SELECT
+  ap.gitcoin_group_id,
   ap.gitcoin_project_id,
   ap.gitcoin_project_name,
   ap.oso_project_id,
