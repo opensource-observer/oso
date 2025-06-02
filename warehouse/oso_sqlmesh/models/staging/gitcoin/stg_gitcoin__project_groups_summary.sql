@@ -3,13 +3,12 @@ MODEL (
   description "Staging table for data on Gitcoin project groups",
   kind full,
   dialect trino,
-  grain (updated_at, group_id, project_id),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
 );
 
-SELECT
+SELECT DISTINCT
   CONCAT('GITCOIN_', UPPER(latest_source))::VARCHAR AS source,
   latest_created_application::TIMESTAMP AS updated_at,
   LOWER(group_id)::VARCHAR AS group_id,
