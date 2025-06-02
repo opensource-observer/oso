@@ -36,7 +36,6 @@ rounds AS (
     round_name,
     MAX(time) AS end_time
   FROM donations
-  WHERE round_id IS NOT NULL
   GROUP BY 1, 2, 3
 ),
 
@@ -54,7 +53,7 @@ matching AS (
     NULL::VARCHAR AS donor_address,
     matching.match_amount_in_usd AS amount_in_usd
   FROM oso.stg_gitcoin__all_matching AS matching
-  JOIN rounds AS rounds
+  LEFT JOIN rounds AS rounds
     ON matching.round_id = rounds.round_id
     AND matching.chain_id = rounds.chain_id
   WHERE matching.match_amount_in_usd > 0
@@ -124,7 +123,7 @@ enriched_events AS (
     project_lookup.oso_project_id,
     project_lookup.oso_project_name
   FROM unioned_events AS events
-  JOIN project_lookup
+  LEFT JOIN project_lookup
     ON events.gitcoin_project_id = project_lookup.gitcoin_project_id
 )
 
