@@ -36,7 +36,7 @@ function signJWT(user: AuthUser) {
     secret,
     {
       algorithm: "HS256",
-      subject: `jwt-${user.email}`,
+      subject: `jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`,
       audience: "consumer-trino",
       issuer: "opensource-observer",
     },
