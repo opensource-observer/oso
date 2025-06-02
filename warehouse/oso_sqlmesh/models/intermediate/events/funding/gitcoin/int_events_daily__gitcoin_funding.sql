@@ -20,7 +20,8 @@ WITH events AS (
     CASE
       WHEN oso_project_name IS NOT NULL
       THEN @oso_entity_id('OSS_DIRECTORY', 'oso', oso_project_name)
-      ELSE @oso_entity_id(chain, '', recipient_address)
+      /* TODO: Need a way to prevent collisions with Safe the project */
+      ELSE @oso_entity_id('GITCOIN', '', recipient_address)
     END AS to_artifact_id,
     amount_in_usd
   FROM oso.int_events__gitcoin_funding
