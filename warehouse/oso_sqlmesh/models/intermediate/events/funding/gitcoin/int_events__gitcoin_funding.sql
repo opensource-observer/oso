@@ -97,7 +97,7 @@ project_lookup AS (
     project_summary.project_application_title AS gitcoin_group_project_name,
     project_to_projects.oso_project_id,
     project_to_projects.oso_project_name
-  FROM stg_gitcoin__project_lookup AS project_lookup
+  FROM oso.stg_gitcoin__project_lookup AS project_lookup
   JOIN oso.stg_gitcoin__project_groups_summary AS project_summary
     ON project_summary.group_id = project_lookup.group_id
   LEFT JOIN oso.int_project_to_projects__gitcoin AS project_to_projects
