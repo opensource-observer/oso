@@ -1,16 +1,14 @@
 MODEL (
   name oso.stg_gitcoin__all_matching,
   description "Staging table for Gitcoin matching data",
-  kind full,
-  cron '@monthly',
+  kind FULL,
   dialect trino,
-  grain (timestamp, recipient_address, project_id, round_id, chain_id),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
 );
 
-SELECT distinct
+SELECT DISTINCT
   timestamp::TIMESTAMP AS timestamp,
   LOWER(round_id)::VARCHAR AS round_id,
   round_num::INTEGER AS round_number,

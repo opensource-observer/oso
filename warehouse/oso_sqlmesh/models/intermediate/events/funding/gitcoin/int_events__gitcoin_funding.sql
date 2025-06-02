@@ -90,13 +90,19 @@ unioned_events AS (
   FROM matching
 ),
 
-project_to_projects AS (
+project_lookup AS (
   SELECT DISTINCT
-    gitcoin_group_id,
-    oso_project_id,
-    oso_project_name
-  FROM oso.int_project_to_projects__gitcoin
-  WHERE is_best_match = TRUE
+    project_lookup.project_id AS gitcoin_project_id,
+    project_lookup.group_id AS gitcoin_group_id,
+    project_summary.project_application_title AS gitcoin_group_project_name,
+    project_to_projects.oso_project_id,
+    project_to_projects.oso_project_name
+  FROM oso.stg_gitcoin__project_lookup AS project_lookup
+  JOIN oso.stg_gitcoin__project_groups_summary AS project_summary
+    ON project_summary.group_id = project_lookup.group_id
+  LEFT JOIN oso.int_project_to_projects__gitcoin AS project_to_projects
+    ON project_summary.group_id = project_to_projects.gitcoin_group_id
+    AND project_to_projects.is_best_match = TRUE
 ),
 
 enriched_events AS (
@@ -110,20 +116,16 @@ enriched_events AS (
     events.round_name,
     events.gitcoin_project_id,
     events.gitcoin_project_name,
-    project_lookup.group_id AS gitcoin_group_id,
-    project_summary.project_application_title AS gitcoin_group_project_name,
+    project_lookup.gitcoin_group_id,
+    project_lookup.gitcoin_group_project_name,
     events.recipient_address,
     events.donor_address,
     events.amount_in_usd,
-    project_to_projects.oso_project_id,
-    project_to_projects.oso_project_name
+    project_lookup.oso_project_id,
+    project_lookup.oso_project_name
   FROM unioned_events AS events
-  JOIN oso.stg_gitcoin__project_lookup AS project_lookup
-    ON events.gitcoin_project_id = project_lookup.project_id
-  JOIN oso.stg_gitcoin__project_groups_summary AS project_summary
-    ON project_lookup.group_id = project_summary.group_id
-  LEFT JOIN project_to_projects
-    ON project_lookup.group_id = project_to_projects.gitcoin_group_id
+  JOIN project_lookup
+    ON events.gitcoin_project_id = project_lookup.gitcoin_project_id
 )
 
 SELECT
