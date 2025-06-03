@@ -137,7 +137,8 @@ class OsoAppClient {
     const { data, error } = await this.supabaseClient
       .from("api_keys")
       .select("id, name, user_id, created_at, org_id")
-      .eq("org_id", orgId);
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
     if (error) {
       throw error;
     } else if (!data) {
