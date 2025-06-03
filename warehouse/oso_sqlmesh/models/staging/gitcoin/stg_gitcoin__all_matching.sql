@@ -1,16 +1,14 @@
 MODEL (
   name oso.stg_gitcoin__all_matching,
   description "Staging table for Gitcoin matching data",
-  kind full,
-  cron '@monthly',
+  kind FULL,
   dialect trino,
-  grain (time, project_recipient_address, gitcoin_project_id, gitcoin_round_id, chain_id),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
 );
 
-SELECT distinct
+SELECT DISTINCT
   timestamp::TIMESTAMP AS timestamp,
   LOWER(round_id)::VARCHAR AS round_id,
   round_num::INTEGER AS round_number,
@@ -20,4 +18,3 @@ SELECT distinct
   LOWER(recipient_address)::VARCHAR AS recipient_address,
   match_amount_in_usd::DOUBLE AS match_amount_in_usd
 FROM @oso_source('bigquery.gitcoin.all_matching')
-WHERE match_amount_in_usd > 0

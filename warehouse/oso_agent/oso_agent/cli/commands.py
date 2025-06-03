@@ -10,6 +10,10 @@ from ..agent import setup_default_agent_registry
 from ..eval.experiment_registry import get_experiments
 from ..server.bot import setup_bot
 from ..server.definition import BotConfig
+from ..tool.embedding import create_embedding
+from ..tool.llm import create_llm
+from ..tool.oso_mcp_client import OsoMcpClient
+from ..tool.oso_text2sql import create_oso_query_engine
 from ..types import ErrorResponse, SemanticResponse, SqlResponse, StrResponse
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentError, AgentRuntimeError
@@ -20,11 +24,6 @@ from .utils import common_options, pass_config
 load_dotenv()
 
 logger = logging.getLogger("oso-agent")
-
-async def create_agent(config: AgentConfig):
-    registry = await setup_default_agent_registry(config)
-    agent = await registry.get_agent(config.agent_name)
-    return agent
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
@@ -87,7 +86,8 @@ def query(config, query, agent_name, ollama_model, ollama_url):
 async def _run_query(query: str, config: AgentConfig) -> str:
     """Run a query through the agent asynchronously."""
 
-    agent = await create_agent(config)
+    registry = await setup_default_agent_registry(config)
+    agent = await registry.get_agent(config.agent_name)
     click.echo(
         f"Query started with agent={config.agent_name} and model={config.llm.type}"
     )
@@ -149,7 +149,8 @@ def experiment(config, experiment_name, agent_name, ollama_model, ollama_url):
 
 async def _run_experiment(experiment_name: str, config: AgentConfig) -> str:
     """Run an experiment through the agent asynchronously."""
-    agent = await create_agent(config)
+    registry = await setup_default_agent_registry(config)
+    agent = await registry.get_agent(config.agent_name)
     click.echo(
         f"Experiment {experiment_name} started with agent={config.agent_name} and model={config.llm.type}"
     )
@@ -199,7 +200,8 @@ def shell(config, agent_name, ollama_model, ollama_url):
 async def _run_interactive_session(config: AgentConfig):
     """Run an interactive session with the agent asynchronously."""
     try:
-        agent = await create_agent(config)
+        registry = await setup_default_agent_registry(config)
+        agent = await registry.get_agent(config.agent_name)
         click.echo(
             f"Interactive agent session started with agent={config.agent_name} and model={config.llm.type}"
         )
@@ -275,7 +277,29 @@ def demo(config, agent_name, ollama_model, ollama_url):
 async def _run_demo(config: AgentConfig):
     """Run demo queries asynchronously."""
     try:
-        agent = await create_agent(config)
+        # Example of using the OsoMcpClient to get table schema
+        client = OsoMcpClient(config.oso_mcp_url)
+        result = await client.get_table_schema("projects_v1")
+        print("Table schema for 'projects_v1':")
+        print(result)
+        print("─" * 80)
+        result = await client.query_oso("SELECT * FROM projects_v1 LIMIT 10")
+        print("Sample data from 'projects_v1':")
+        print(result)
+        print("─" * 80)
+
+        # Example of using the OSO query engine
+        llm = create_llm(config)
+        embed = create_embedding(config)
+        query_engine = await create_oso_query_engine(config, llm, embed)
+        response = query_engine.query("Get the first 10 projects in 'optimism' collection")
+        print("Response from OSO query engine:")
+        print(response)
+        print("─" * 80)
+
+        # Demo queries with agent
+        registry = await setup_default_agent_registry(config)
+        agent = await registry.get_agent(config.agent_name)
         click.echo(
             f"Demo started with agent={config.agent_name} and model={config.llm.type}"
         )
@@ -320,8 +344,8 @@ def discord(config):
 
 async def _discord_bot_main(config: BotConfig) -> None:
     """Testing function to run the bot manually"""
-    agent = await create_agent(config)
-    bot = await setup_bot(config, agent)
+    registry = await setup_default_agent_registry(config)
+    bot = await setup_bot(config, registry)
     await bot.login(config.discord_bot_token.get_secret_value())
     task = asyncio.create_task(bot.connect())
     try:

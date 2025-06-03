@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, Dict
 
@@ -10,7 +11,7 @@ from phoenix.experiments.types import Example
 
 from ..datasets.text2sql import TEXT2SQL_DATASET
 from ..datasets.uploader import upload_dataset
-from ..tool.oso_mcp import create_oso_mcp_tools
+from ..tool.oso_mcp_client import OsoMcpClient
 from ..types import (
     ErrorResponse,
     SemanticResponse,
@@ -20,6 +21,7 @@ from ..types import (
 )
 from ..util.config import AgentConfig
 from ..util.jaccard import jaccard_similarity_str
+from .valid_sql import is_valid_sql
 
 EXPERIMENT_NAME = "text2sql-experiment"
 try:
@@ -80,26 +82,28 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
 
     def sql_query_similarity(output: str, expected: Dict[str, Any]) -> float:
         """Evaluate the similarity between the output and expected SQL query using Jaccard similarity."""
-        # print(f"Output: {output}")
-        # print(f"Expected: {expected["answer"]}")
         expected_answer = load_expected_sql_answer(expected)
+        # print(f"Output: {output}, expected: {expected_answer}")
         return jaccard_similarity_str(output, expected_answer)
 
-    mcp_tools = await create_oso_mcp_tools(config, ["query_oso"])
-    query_tool = mcp_tools[0]
-
+    oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
     def sql_result_similarity(output: str, expected: Dict[str, Any]) -> float:
         """Evaluate the similarity between results post-query"""
         expected_answer = load_expected_sql_answer(expected)
-        expected_response = query_tool.call(sql=expected_answer)
-        expected_str = expected_response.content
+        expected_response = oso_mcp_client.query_oso(expected_answer)
+        expected_str = json.dumps(expected_response)
         # print(f"Expected Str: {expected_str}")
 
-        output_response = query_tool.call(sql=output)
-        output_str = output_response.content
-        # print(f"Output Response: {output_str}")
-
-        return jaccard_similarity_str(output_str, expected_str)
+        # We might be testing agents that produce SQL or text results
+        if is_valid_sql(output, dialect="trino"):
+            # If the output is a valid SQL query, we can run it against the OSO MCP client and compare results
+            output_response = oso_mcp_client.query_oso(output)
+            output_str = json.dumps(output_response)
+            return jaccard_similarity_str(output_str, expected_str)
+            # print(f"Output Response: {output_str}")
+        else:
+            # Otherwise, just try to compare the output directly
+            return jaccard_similarity_str(output, expected_str)
 
     evaluators = [
         contains_select,
@@ -112,5 +116,6 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
         task,
         experiment_name=EXPERIMENT_NAME,
         evaluators=evaluators,
+        experiment_metadata={ "agent_name": config.agent_name }
     )
     return experiment

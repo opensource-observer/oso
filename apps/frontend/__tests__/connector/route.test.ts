@@ -103,7 +103,7 @@ describe("API /api/v1/connector", () => {
         data: {
           org_id: testOrg.id,
           connector_name: connectorName,
-          connector_type: "postgres",
+          connector_type: "postgresql",
           config: { host: "localhost" },
           created_by: testUser.id,
         },
@@ -124,10 +124,10 @@ describe("API /api/v1/connector", () => {
       expect(response.status).toBe(200);
       expect(json.connector_name).toBe(connectorName);
       expect(json.org_id).toBe(testOrg.id);
-      expect(json.connector_type).toBe("postgres");
+      expect(json.connector_type).toBe("postgresql");
       expect(mockTrinoClient.query).toHaveBeenCalledWith(
         expect.stringContaining(
-          `CREATE CATALOG ${connectorName} USING postgres WITH`,
+          `CREATE CATALOG ${connectorName} USING postgresql WITH`,
         ),
       );
 
@@ -179,7 +179,7 @@ describe("API /api/v1/connector", () => {
         data: {
           org_id: testOrg.id,
           connector_name: "wrongprefix_postgres",
-          connector_type: "postgres",
+          connector_type: "postgresql",
           created_by: testUser.id,
         },
         credentials: { token: "abc" },
@@ -206,7 +206,7 @@ describe("API /api/v1/connector", () => {
         data: {
           org_id: invalidOrgId,
           connector_name: "testorg_pg",
-          connector_type: "postgres",
+          connector_type: "postgresql",
           created_by: testUser.id,
         },
         credentials: { token: "abc" },
@@ -233,7 +233,7 @@ describe("API /api/v1/connector", () => {
         data: {
           org_id: testOrg.id,
           connector_name: connectorName,
-          connector_type: "postgres",
+          connector_type: "postgresql",
           created_by: testUser.id,
         },
         credentials: { password: "secure" },
@@ -277,7 +277,7 @@ describe("API /api/v1/connector", () => {
         .insert({
           connector_name: connectorName,
           org_id: testOrg.id,
-          connector_type: "postgres",
+          connector_type: "postgresql",
           created_by: testUser.id,
           config: { host: "delete-test" }, // Ensure config is not null if required by schema
           is_public: false,

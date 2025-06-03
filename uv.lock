@@ -265,7 +265,7 @@ wheels = [
 
 [[package]]
 name = "arize-phoenix"
-version = "10.0.4"
+version = "10.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioitertools" },
@@ -306,9 +306,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/2e/dc49124a6a8a708f85bcab4f43393f919573834706b2ea34e3e6457530db/arize_phoenix-10.0.4.tar.gz", hash = "sha256:852a2d0188f3b19741097cf1d79f3c37849bc7d7e886d7f998c5112e5c6d63e5", size = 3816298 }
+sdist = { url = "https://files.pythonhosted.org/packages/23/e0/14f41461dd062f7f28829ee09b9256a8a39b0ea4b49cdf07e33ad117365c/arize_phoenix-10.1.0.tar.gz", hash = "sha256:c51fd517c61f2a5469778ddcd600869f9e444bd90b1d55bd6e1b3fdfc14cd1d1", size = 3821595 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/73/4492ab303f236a54668a64950a0b9539f87e335bc4af8c4ade10fddd37a0/arize_phoenix-10.0.4-py3-none-any.whl", hash = "sha256:6443ec7b60eb4cc4721204546745b10da4d5dab50a9f83c0cc81cbbf525e1c19", size = 4003370 },
+    { url = "https://files.pythonhosted.org/packages/6f/2c/31aacff0f34b4b7366e3ec8442017e0603d8dd505929ce70a010fa4fc631/arize_phoenix-10.1.0-py3-none-any.whl", hash = "sha256:b185e8ce9a97995b968e035d4c87a9082b609c85ba422c008b462aaea7e4ff07", size = 4009542 },
 ]
 
 [[package]]
@@ -340,7 +340,7 @@ wheels = [
 
 [[package]]
 name = "arize-phoenix-otel"
-version = "0.9.2"
+version = "0.10.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "openinference-instrumentation" },
@@ -351,9 +351,9 @@ dependencies = [
     { name = "opentelemetry-semantic-conventions" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/27/b9/8c89191eb46915e9ba7bdb473e2fb1c510b7db3635ae5ede5e65b2176b9d/arize_phoenix_otel-0.9.2.tar.gz", hash = "sha256:a48c7d41f3ac60dc75b037f036bf3306d2af4af371cdb55e247e67957749bc31", size = 11599 }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/89/08fc6a2dda59e1ce51dd43421905ba9d059144cbf2e8027eccd5a71e19f4/arize_phoenix_otel-0.10.1.tar.gz", hash = "sha256:0d116ced68cff792f88afd13f8dbb13b02b7d4458fab9fe912b5a18dc67675c1", size = 11842 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/3d/f64136a758c649e883315939f30fe51ad0747024b0db05fd78450801a78d/arize_phoenix_otel-0.9.2-py3-none-any.whl", hash = "sha256:5286b33c58b596ef8edd9a4255ee00fd74f774b1e5dbd9393e77e87870a14d76", size = 12560 },
+    { url = "https://files.pythonhosted.org/packages/dd/b7/1e28ddf95fe2e355bc8156ae58f45b57fc28ef32d874230ba56f0a379e23/arize_phoenix_otel-0.10.1-py3-none-any.whl", hash = "sha256:4cc2333fd7fc5cbff976e4ca0e92679fddda5c472065273cbac86a54c2c19363", size = 12796 },
 ]
 
 [[package]]
@@ -1753,7 +1753,7 @@ wheels = [
 
 [[package]]
 name = "githubkit"
-version = "0.12.12"
+version = "0.12.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1762,9 +1762,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/55/8af7b60977bb23ea8573c5783fe0efe25d92d8ed2a1b4625aa550904831b/githubkit-0.12.12.tar.gz", hash = "sha256:638d736728457d3412c60d82541709e323e2f2beeab0eb256e87ce5f1024d2e8", size = 2109399 }
+sdist = { url = "https://files.pythonhosted.org/packages/ab/6b/d825aaceeea94ed3032bc21f946dcd27bcddc97c2add870d87ad59e1542e/githubkit-0.12.13.tar.gz", hash = "sha256:6ac861257c1aa5273c872ea1cbe9693f933e50efa7a48c3f9f1ede6b94dd195f", size = 2116892 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/26/eb92391004efcdd9bc2a2349bbd37b5fba4974fb39f98655bfb5c4690284/githubkit-0.12.12-py3-none-any.whl", hash = "sha256:c505019ae4e4b30365c628941d03e1fcb0c0636e0ef9aa039a649246e3de1670", size = 5697349 },
+    { url = "https://files.pythonhosted.org/packages/a5/75/cdb2f777e4ad5f1364045047b7df350340e96dc5bc6eae1453c21432f673/githubkit-0.12.13-py3-none-any.whl", hash = "sha256:0064a662100aad9983066a5102396d98af5cfa2230e4f6f7845715a9e4d81e02", size = 5713932 },
 ]
 
 [[package]]
@@ -1786,21 +1786,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/37/5f/543dc54c82842376139748226e5aa61eb95093992f63dd495af9c6b4f076/giturlparse-0.12.0.tar.gz", hash = "sha256:c0fff7c21acc435491b1779566e038757a205c1ffdcb47e4f81ea52ad8c3859a", size = 14907 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dd/94/c6ff3388b8e3225a014e55aed957188639aa0966443e0408d38f0c9614a7/giturlparse-0.12.0-py2.py3-none-any.whl", hash = "sha256:412b74f2855f1da2fefa89fd8dde62df48476077a72fc19b62039554d27360eb", size = 15752 },
-]
-
-[[package]]
-name = "google-ai-generativelanguage"
-version = "0.6.15"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "google-api-core", extra = ["grpc"] },
-    { name = "google-auth" },
-    { name = "proto-plus" },
-    { name = "protobuf" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/11/d1/48fe5d7a43d278e9f6b5ada810b0a3530bbeac7ed7fcbcd366f932f05316/google_ai_generativelanguage-0.6.15.tar.gz", hash = "sha256:8f6d9dc4c12b065fe2d0289026171acea5183ebf2d0b11cefe12f3821e159ec3", size = 1375443 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/a3/67b8a6ff5001a1d8864922f2d6488dc2a14367ceb651bc3f09a947f2f306/google_ai_generativelanguage-0.6.15-py3-none-any.whl", hash = "sha256:5a03ef86377aa184ffef3662ca28f19eeee158733e45d7947982eb953c6ebb6c", size = 1327356 },
 ]
 
 [[package]]
@@ -2076,24 +2061,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5e/1f/0861dad47febbb391123a529f3655582e2a7ce14aadb6ddc527dd7dea470/google_genai-1.13.0.tar.gz", hash = "sha256:de7b4960d361c7ea85b715ce0e07fe34903d94affa82d566d9eb04e8f92512b9", size = 165727 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c5/2c/1833fa15311fa4f0790e9c8ea3488382fe428c3eca62b329d6aa355871ae/google_genai-1.13.0-py3-none-any.whl", hash = "sha256:e88417c95f333827ed051282803db627192fd8e5fdf5b49b6f26644a67775d1a", size = 164405 },
-]
-
-[[package]]
-name = "google-generativeai"
-version = "0.8.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "google-ai-generativelanguage" },
-    { name = "google-api-core" },
-    { name = "google-api-python-client" },
-    { name = "google-auth" },
-    { name = "protobuf" },
-    { name = "pydantic" },
-    { name = "tqdm" },
-    { name = "typing-extensions" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6e/40/c42ff9ded9f09ec9392879a8e6538a00b2dc185e834a3392917626255419/google_generativeai-0.8.5-py3-none-any.whl", hash = "sha256:22b420817fb263f8ed520b33285f45976d5b21e904da32b80d4fd20c055123a2", size = 155427 },
 ]
 
 [[package]]
@@ -2944,6 +2911,32 @@ wheels = [
 ]
 
 [[package]]
+name = "llama-index-embeddings-google-genai"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-genai" },
+    { name = "llama-index-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/91/e6f721aa757fdecbf9a3e58a360e4b34ecd162e8fcf3c168460f616c387f/llama_index_embeddings_google_genai-0.2.0.tar.gz", hash = "sha256:aa579eb0cd874cf4c783e1e06b924c40f5a83409eac6aab27374dd67edcd836d", size = 5762 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/0c/60d3248f1467c5630de8e419ff47a5726a37845884a06bc2753be7b7ee38/llama_index_embeddings_google_genai-0.2.0-py3-none-any.whl", hash = "sha256:cfaca111b103bb92a32946434a67b986baace4c7d9e1a2db2e123cb1c42eca7c", size = 5520 },
+]
+
+[[package]]
+name = "llama-index-embeddings-ollama"
+version = "0.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "llama-index-core" },
+    { name = "ollama" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e5/e4/2faadcebae79a5a795938801a5ae0b0d26d5fa6c3cd22079822b97b4a1a2/llama_index_embeddings_ollama-0.6.0.tar.gz", hash = "sha256:ec62fabf298aceb34d205a5098a2dc2bd7924d3d9b566c24ca1ebd64bc3dfe90", size = 2966 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/78/6c/13a556d33b9cf1b00bad3daa6c4a13172f5f79f166476a49a6a69a3a5818/llama_index_embeddings_ollama-0.6.0-py3-none-any.whl", hash = "sha256:c52997a6be71da4f242109990ff7db179420c5ff1534404801995fb30bdc822a", size = 3449 },
+]
+
+[[package]]
 name = "llama-index-embeddings-openai"
 version = "0.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2967,20 +2960,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/75/bc/d1a9013b117005a782a253bce16a1d1022349b85fe6206395376477ce6c6/llama_index_indices_managed_llama_cloud-0.6.11.tar.gz", hash = "sha256:925532f760cd2ebb2594828da311adac3d54cd2cae3dff2908491eebb2b8bd0f", size = 12703 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7e/f4/5decd79fd7f2f0e44c5689af62497447e86832e876b7dad11903259de5f9/llama_index_indices_managed_llama_cloud-0.6.11-py3-none-any.whl", hash = "sha256:64e82e2ac178cd3721b76c0817edd57e05a3bd877c412b4148d3abbdeea62d59", size = 14272 },
-]
-
-[[package]]
-name = "llama-index-llms-gemini"
-version = "0.4.14"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "google-generativeai" },
-    { name = "llama-index-core" },
-    { name = "pillow" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/97/cc/1f65b7ec2318a9bd69c013ee7aad3ad9563f1475eb47ac65c91a388aca6e/llama_index_llms_gemini-0.4.14.tar.gz", hash = "sha256:ea53a5be7fad63f7e3c69cca2b759ccc2d8c36b33596daa38b9e91793f674074", size = 9108 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/28/61/b5234c977c5c4fdcd91f7759ec0947dac818003e13ee14b3f589390e988b/llama_index_llms_gemini-0.4.14-py3-none-any.whl", hash = "sha256:e094037e80c2f97e66dc5ecb5701237e1dde330a8368ad180cca7ebcb60f8319", size = 9581 },
 ]
 
 [[package]]
@@ -3676,7 +3655,7 @@ wheels = [
 
 [[package]]
 name = "openinference-instrumentation-llama-index"
-version = "4.2.1"
+version = "4.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "openinference-instrumentation" },
@@ -3687,9 +3666,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/ef/ec75993016edb1bd7c7b9de50c3a6db039da0ab5da1d3aaa1216a92cb360/openinference_instrumentation_llama_index-4.2.1.tar.gz", hash = "sha256:615603bd9bcc6bbf24e5ea2d2cfcd11e484102b8d8d131f7777543eca1f4d2b7", size = 58578 }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/10/57179fb827705b957921c9a1060143b89dc26025db7b7918ae53711f6833/openinference_instrumentation_llama_index-4.3.0.tar.gz", hash = "sha256:92107bcd61131fd41abf9407a0f6d25d6be692e04987b54de2aa4ecbd098b86c", size = 59253 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/06/aaca472113b499924cbc0b7ea2dd18d61d1f4ad7120f9fb0fd30bb4d8eec/openinference_instrumentation_llama_index-4.2.1-py3-none-any.whl", hash = "sha256:74102a2f1532dfac069ff8e241d498695f481bc3fa6c017d4df6c285fbc7d6cd", size = 27663 },
+    { url = "https://files.pythonhosted.org/packages/56/a9/1c4d10ef2a9cf12b0e1446eb21d6ca04c4dfaba417999a895928afcdd5d2/openinference_instrumentation_llama_index-4.3.0-py3-none-any.whl", hash = "sha256:c1559d397f8ed98f420ce0ebe0f5246d33aadd67f144d59c6f66f3258f73e854", size = 28311 },
 ]
 
 [[package]]
@@ -3884,7 +3863,6 @@ version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiotrino" },
-    { name = "arize-phoenix" },
     { name = "arrow" },
     { name = "bokeh" },
     { name = "boltons" },
@@ -3970,7 +3948,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiotrino", specifier = ">=0.2.3,<1.0.0" },
-    { name = "arize-phoenix", extras = ["evals"], specifier = "==10.0.4" },
     { name = "arrow", specifier = ">=1.3.0,<2.0.0" },
     { name = "bokeh", specifier = ">=3.6.1,<4.0.0" },
     { name = "boltons", specifier = ">=24.0.0,<25.0.0" },
@@ -4001,7 +3978,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.6,<1.0.0" },
     { name = "gcloud-aio-storage", specifier = ">=9.3.0,<10.0.0" },
     { name = "gcsfs", specifier = ">=2024.6.1,<2025.0.0" },
-    { name = "githubkit", specifier = ">=0.12.4,<1.0.0" },
+    { name = "githubkit", specifier = ">=0.12.13,<1.0.0" },
     { name = "gitpython", specifier = ">=3.1.44,<4.0.0" },
     { name = "google-api-python-client", specifier = ">=2.116.0,<3.0.0" },
     { name = "google-auth", specifier = ">=2.34.0,<3.0.0" },
@@ -4063,7 +4040,8 @@ dependencies = [
     { name = "discord-py" },
     { name = "dotenv" },
     { name = "llama-index" },
-    { name = "llama-index-llms-gemini" },
+    { name = "llama-index-embeddings-google-genai" },
+    { name = "llama-index-embeddings-ollama" },
     { name = "llama-index-llms-google-genai" },
     { name = "llama-index-llms-ollama" },
     { name = "llama-index-tools-mcp" },
@@ -4076,16 +4054,17 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "arize-phoenix", extras = ["evals"], specifier = "==10.0.4" },
-    { name = "arize-phoenix-otel", specifier = "==0.9.2" },
+    { name = "arize-phoenix", extras = ["evals"], specifier = "==10.1.0" },
+    { name = "arize-phoenix-otel", specifier = "==0.10.1" },
     { name = "discord-py", specifier = ">=2.5.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "llama-index", specifier = ">=0.12.29" },
-    { name = "llama-index-llms-gemini", specifier = ">=0.4.14" },
+    { name = "llama-index-embeddings-google-genai", specifier = ">=0.2.0" },
+    { name = "llama-index-embeddings-ollama", specifier = ">=0.6.0" },
     { name = "llama-index-llms-google-genai", specifier = ">=0.1.12" },
     { name = "llama-index-llms-ollama", specifier = ">=0.5.4" },
     { name = "llama-index-tools-mcp", specifier = ">=0.1.1" },
-    { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.0" },
+    { name = "openinference-instrumentation-llama-index", specifier = ">=4.3.0" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-asyncio", specifier = ">=0.26.0" },
     { name = "sqlglot", extras = ["rs"], specifier = ">=26.16.4" },

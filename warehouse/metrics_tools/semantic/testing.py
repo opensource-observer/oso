@@ -3,7 +3,7 @@ import textwrap
 
 from .definition import (
     Dimension,
-    Metric,
+    Measure,
     Model,
     Registry,
     Relationship,
@@ -37,11 +37,16 @@ def setup_registry():
                 ),
             ],
             primary_key="collection_id",
-            metrics=[
-                Metric(
+            measures=[
+                Measure(
                     name="count",
                     description="The number of collections",
                     query="COUNT(self.id)",
+                ),
+                Measure(
+                    name="distinct_count",
+                    description="The number of distinct collections",
+                    query="COUNT(DISTINCT self.id)",
                 ),
                 # Metric(
                 #     name="number_of_projects",
@@ -74,7 +79,7 @@ def setup_registry():
                 ),
             ],
             primary_key="project_id",
-            references=[
+            relationships=[
                 Relationship(
                     model_ref="collection",
                     type=RelationshipType.MANY_TO_MANY,
@@ -83,11 +88,16 @@ def setup_registry():
                     foreign_key_column="collection_id",
                 ),
             ],
-            metrics=[
-                Metric(
+            measures=[
+                Measure(
                     name="count",
                     description="The number of projects",
                     query="COUNT(self.id)",
+                ),
+                Measure(
+                    name="distinct_count",
+                    description="The number of distinct projects",
+                    query="COUNT(DISTINCT self.id)",
                 ),
                 # Metric(
                 #     name="number_of_artifacts",
@@ -126,7 +136,7 @@ def setup_registry():
                 ),
             ],
             primary_key="artifact_id",
-            references=[
+            relationships=[
                 Relationship(
                     model_ref="project",
                     type=RelationshipType.MANY_TO_MANY,
@@ -135,11 +145,16 @@ def setup_registry():
                     foreign_key_column="project_id",
                 ),
             ],
-            metrics=[
-                Metric(
+            measures=[
+                Measure(
                     name="count",
                     description="The number of artifacts",
                     query="COUNT(self.id)",
+                ),
+                Measure(
+                    name="distinct_count",
+                    description="The number of distinct artifacts",
+                    query="COUNT(DISTINCT self.id)",
                 ),
             ],
         )
@@ -194,13 +209,13 @@ def setup_registry():
                     query="CASE WHEN self.event_type = 'COMMIT' THEN 'COMMIT' ELSE 'OTHER' END",
                 ),
             ],
-            metrics=[
-                Metric(
+            measures=[
+                Measure(
                     name="count",
                     description="The number of events",
                     query="COUNT(self.id)",
                 ),
-                Metric(
+                Measure(
                     name="total_amount",
                     description="The total amount of events",
                     query="SUM(self.amount)",
@@ -208,7 +223,7 @@ def setup_registry():
             ],
             time_column="time",
             primary_key="event_id",
-            references=[
+            relationships=[
                 Relationship(
                     name="to",
                     description="The artifact to which the event occurred",
@@ -227,31 +242,225 @@ def setup_registry():
         )
     )
 
-    # registry.register(
-    #     Model(
-    #         name="timeseries_metrics_by_artifact",
-    #         table="oso.timeseries_metrics_by_artifact_v0",
-    #         description="Time series metrics by artifact",
-    #         dimensions=[
-    #             Dimension(name="metric_id", column_name="metric_id"),
-    #             Dimension(name="artifact_id", column_name="artifact_id"),
-    #             Dimension(name="month", column_name="month"),
-    #             Dimension(name="year", column_name="year"),
-    #         ],
-    #         primary_key="collection_id",
-    #         metrics=[
-    #             Metric(
-    #                 name="count",
-    #                 description="The number of collections",
-    #                 query="COUNT(self.id)",
-    #             ),
-    #             # Metric(
-    #             #     name="number_of_projects",
-    #             #     description="The number of related projects in the collection",
-    #             #     query="COUNT(project.id)",
-    #             # )
-    #         ]
-    #     )
-    # )
+    registry.register(
+        Model(
+            name="metrics",
+            table="oso.metrics_v0",
+            description=textwrap.dedent("""
+                Each row represents metadata about a unique metric. This data can be
+                used to analyze trends and performance indicators across various
+                open source projects, supporting business decisions around developer
+                engagement, funding, and project health. This table is necessary for
+                doing keyword searches to discover relevant metrics ids, and joining
+                on the other metrics tables (eg, key_metrics_by_project and
+                timeseries_metrics_by_project). Business questions that can be
+                answered include: Which daily metrics are available for "BASE"? What
+                are the available metric ids for GITHUB_stars? Which metrics are
+                relevant to contract artifacts on "OPTIMISM"?'
+            """),
+            dimensions=[
+                Dimension(
+                    name="id",
+                    description="The unique identifier of the metric",
+                    column_name="metric_id",
+                ),
+                Dimension(
+                    name="name",
+                    description="The name of the metric",
+                    column_name="metric_name",
+                ),
+                Dimension(
+                    name="description",
+                    description="A description of the metric",
+                    column_name="metric_description",
+                ),
+                Dimension(
+                    name="source",
+                    description="The source of the metric",
+                    column_name="metric_source",
+                ),
+            ],
+        )
+    )
+
+    registry.register(
+        Model(
+            name="timeseries_metrics_by_artifact",
+            table="oso.timeseries_metrics_by_artifact_v0",
+            description=textwrap.dedent("""
+                Many-to-many table between metrics, artifacts, and dates. Each row
+                represents the value of a specific metric for a given artifact on a
+                particular date, capturing how that metric changes over time. This
+                is one of the most important models for OSO and should be used
+                frequently in analysis. However, in order to use this table
+                correctly, it is necessary to join on metrics and artifacts
+                (or other artifact-related tables). Business questions that can be
+                answered include: Which artifacts have the most active developers?
+                How many forks does this artifact have?
+            """),
+            dimensions=[
+                Dimension(
+                    name="sample_date", 
+                    column_name="month",
+                ),
+                Dimension(
+                    name="amount", 
+                    column_name="amount",
+                ),
+                Dimension(
+                    name="unit",
+                    description="The unit of the metric",
+                    column_name="unit",
+                )
+            ],
+            # Need to support composite primary keys
+            primary_key="",
+            measures=[
+                Measure(
+                    name="sum",
+                    description="The total sum of artifact metrics",
+                    query="SUM(self.amount)",
+                ),
+                Measure(
+                    name="avg",
+                    description="The average of artifact metrics",
+                    query="AVG(self.amount)",
+                ),
+            ],
+            relationships=[
+                Relationship(
+                    model_ref="artifact",
+                    type=RelationshipType.MANY_TO_ONE,
+                    foreign_key_column="artifact_id",
+                ),
+                Relationship(
+                    model_ref="metric",
+                    type=RelationshipType.MANY_TO_ONE,
+                    foreign_key_column="metric_id",
+                ),
+            ],
+        )
+    )
+
+
+    registry.register(
+        Model(
+            name="timeseries_metrics_by_project",
+            table="oso.timeseries_metrics_by_project_v0",
+            description=textwrap.dedent("""
+                Many-to-many table between metrics, projects, and dates. Each row
+                represents the value of a specific metric for a given project on a
+                particular date, capturing how that metric changes over time. This
+                is one of the most important models for OSO and should be used
+                frequently in analysis. However, in order to use this table
+                correctly, it is necessary to join on metrics and projects
+                (or other project-related tables). Business questions that can be
+                answered include: Which projects have the most active developers?
+                How many forks does this project have?
+            """),
+            dimensions=[
+                Dimension(
+                    name="sample_date", 
+                    column_name="month",
+                ),
+                Dimension(
+                    name="amount", 
+                    column_name="amount",
+                ),
+                Dimension(
+                    name="unit",
+                    description="The unit of the metric",
+                    column_name="unit",
+                )
+            ],
+            # Need to support composite primary keys
+            primary_key="",
+            measures=[
+                Measure(
+                    name="sum",
+                    description="The total sum of project metrics",
+                    query="SUM(self.amount)",
+                ),
+                Measure(
+                    name="avg",
+                    description="The average of project metrics",
+                    query="AVG(self.amount)",
+                ),
+            ],
+            relationships=[
+                Relationship(
+                    model_ref="artifact",
+                    type=RelationshipType.MANY_TO_ONE,
+                    foreign_key_column="artifact_id",
+                ),
+                Relationship(
+                    model_ref="metric",
+                    type=RelationshipType.MANY_TO_ONE,
+                    foreign_key_column="metric_id",
+                ),
+            ],
+        )
+    )
+
+    registry.register(
+        Model(
+            name="timeseries_metrics_by_collection",
+            table="oso.timeseries_metrics_by_collection_v0",
+            description=textwrap.dedent("""
+                Many-to-many table between metrics, collections, and dates. Each row
+                represents the value of a specific metric for a given collection on a
+                particular date, capturing how that metric changes over time. This
+                is one of the most important models for OSO and should be used
+                frequently in analysis. However, in order to use this table
+                correctly, it is necessary to join on metrics and collections
+                (or other collection-related tables). Business questions that can be
+                answered include: Which collections have the most active developers?
+                How many forks does this collection have?
+            """),
+            dimensions=[
+                Dimension(
+                    name="sample_date", 
+                    column_name="month",
+                ),
+                Dimension(
+                    name="amount", 
+                    column_name="amount",
+                ),
+                Dimension(
+                    name="unit",
+                    description="The unit of the metric",
+                    column_name="unit",
+                )
+            ],
+            # Need to support composite primary keys
+            primary_key="",
+            measures=[
+                Measure(
+                    name="sum",
+                    description="The total sum of collection metrics",
+                    query="SUM(self.amount)",
+                ),
+                Measure(
+                    name="avg",
+                    description="The average of collection metrics",
+                    query="AVG(self.amount)",
+                ),
+            ],
+            relationships=[
+                Relationship(
+                    model_ref="artifact",
+                    type=RelationshipType.MANY_TO_ONE,
+                    foreign_key_column="artifact_id",
+                ),
+                Relationship(
+                    model_ref="metric",
+                    type=RelationshipType.MANY_TO_ONE,
+                    foreign_key_column="metric_id",
+                ),
+            ],
+        )
+    )
+
+
     registry.complete()
     return registry

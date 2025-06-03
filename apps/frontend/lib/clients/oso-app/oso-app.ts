@@ -132,6 +132,21 @@ class OsoAppClient {
     return data;
   }
 
+  async getApiKeysByOrgId(args: { orgId: string }) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("api_keys")
+      .select("id, name, user_id, created_at, org_id")
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find API keys for org_id=${orgId}`);
+    }
+    return data;
+  }
+
   /**
    * Removes an API Key
    * - We use `deleted_at` to mark the key as removed instead of deleting the row
@@ -495,7 +510,8 @@ class OsoAppClient {
     const { data, error } = await this.supabaseClient
       .from("dynamic_connectors")
       .select("*")
-      .eq("org_id", orgId);
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
 
     if (error) {
       throw error;

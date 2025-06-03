@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_events__funding,
+  name oso.int_events__open_collective_funding,
   dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,

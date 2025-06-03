@@ -1,4 +1,4 @@
-export const ALLOWED_CONNECTORS = ["postgres", "gsheets"];
+export const ALLOWED_CONNECTORS = ["postgresql", "gsheets"];
 
 export type ConnectorType = (typeof ALLOWED_CONNECTORS)[number];
 

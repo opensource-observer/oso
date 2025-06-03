@@ -7,6 +7,13 @@ from llama_index.core.prompts.mixin import PromptDictType
 from sqlglot import parse_one
 
 
+def is_valid_sql(query: str, dialect: str = "trino") -> bool:
+    try:
+        parse_one(query, dialect=dialect)
+        return True
+    except Exception:
+        return False
+
 class ValidSqlEvaluator(BaseEvaluator):
     """
     Valid SQL evaluator.
