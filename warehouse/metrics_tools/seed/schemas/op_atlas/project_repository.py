@@ -18,8 +18,8 @@ class ProjectRepository(BaseModel):
     name: str | None = Column("VARCHAR")
     crate: bool = Column("BOOLEAN")
     npm_package: bool = Column("BOOLEAN")
-    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_load_id: str = Column("VARCHAR", column_name="_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
 
 
 seed = SeedConfig(

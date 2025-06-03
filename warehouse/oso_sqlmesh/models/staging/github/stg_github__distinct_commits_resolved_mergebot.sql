@@ -5,11 +5,19 @@ MODEL (
     time_column created_at,
     batch_size 90,
     batch_concurrency 3,
-    lookback 7
+    lookback 31,
+    forward_only true,
   ),
   start @github_incremental_start,
   dialect duckdb,
-  partitioned_by DAY(created_at)
+  partitioned_by DAY(created_at),
+  audits (
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := created_at,
+      no_gap_date_part := 'day',
+    ),
+  )
 );
 
 @DEF(merge_lead_window, 90);

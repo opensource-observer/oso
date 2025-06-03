@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 
 from aiotrino.dbapi import Connection
-from metrics_tools.compute.types import (
+from metrics_service.types import (
     ColumnsDefinition,
     ExportReference,
     ExportType,

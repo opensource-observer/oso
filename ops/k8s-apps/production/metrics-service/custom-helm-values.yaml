@@ -1,0 +1,55 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-mcs
+spec:
+  postRenderers:
+    - kustomize:
+        images:
+          - name: ghcr.io/opensource-observer/oso
+            newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+            newTag: deploy-20250602201735-9cbe2ba # {"$imagepolicy": "flux-system:oso:tag"}
+  values:
+    mcs:
+      frontend:
+        service:
+          annotations:
+            tailscale.com/expose: "true"
+        resources:
+          requests:
+            cpu: "3000m"
+            memory: "8Gi"
+        tolerations:
+          - key: pool_type
+            operator: Equal
+            value: standard
+            effect: NoSchedule
+        nodeSelector:
+          pool_type: standard
+      cluster:
+        name: mcs-worker
+        namespace: production-mcs
+        serviceAccount: production-mcs
+        image:
+          repo: "ghcr.io/opensource-observer/oso"
+          tag: "latest"
+        scheduler:
+          memory:
+            limit: "23Gi"
+            request: "20Gi"
+          poolType: "mcs-scheduler"
+        worker:
+          threads: "5"
+          memory:
+            limit: "390Gi"
+            request: "375Gi"
+          poolType: "mcs-worker"
+          duckdb_path: "/scratch/mcs-local.db"
+      trino:
+        host: production-trino-trino.production-trino.svc.cluster.local
+        port: 8080
+        user: sqlmesh
+      gcs:
+        bucket: oso-dataset-transfer-bucket
+        key_id: gcp:secretmanager:production-mcs-gcs-key-id/versions/latest
+        secret: gcp:secretmanager:production-mcs-gcs-secret/versions/latest

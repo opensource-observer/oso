@@ -9,7 +9,7 @@ from datetime import datetime
 import arrow
 import duckdb
 import pandas as pd
-from metrics_tools.definition import PeerMetricDependencyRef, RollingCronOptions
+from metrics_tools.definition import MetricModelDefinition, RollingCronOptions
 from metrics_tools.intermediate import run_macro_evaluator
 from metrics_tools.macros import (
     metrics_end,
@@ -98,7 +98,7 @@ ROLLING_CRON_TO_ARROW_UNIT: t.Dict[
 
 def render_metrics_query(
     query: str | t.List[exp.Expression] | exp.Expression,
-    ref: PeerMetricDependencyRef,
+    ref: MetricModelDefinition,
     variables: t.Optional[t.Dict[str, t.Any]] = None,
     engine_adapter: t.Optional[EngineAdapter] = None,
     additional_macros: t.Optional[MacroRegistry] = None,
@@ -144,7 +144,7 @@ class MetricsRunner:
         cls,
         conn: duckdb.DuckDBPyConnection,
         query: str | t.List[exp.Expression],
-        ref: PeerMetricDependencyRef,
+        ref: MetricModelDefinition,
         locals: t.Optional[t.Dict[str, t.Any]],
     ):
         def connection_factory():
@@ -159,7 +159,7 @@ class MetricsRunner:
         cls,
         engine_adapter: EngineAdapter,
         query: str | t.List[exp.Expression],
-        ref: PeerMetricDependencyRef,
+        ref: MetricModelDefinition,
         locals: t.Optional[t.Dict[str, t.Any]],
     ):
         context = ExecutionContext(engine_adapter, {})
@@ -170,7 +170,7 @@ class MetricsRunner:
         cls,
         context: ExecutionContext,
         query: str | t.List[exp.Expression],
-        ref: PeerMetricDependencyRef,
+        ref: MetricModelDefinition,
         locals: t.Optional[t.Dict[str, t.Any]] = None,
     ):
         return cls(context, str_or_expressions(query), ref, locals)
@@ -179,7 +179,7 @@ class MetricsRunner:
         self,
         context: ExecutionContext,
         query: t.List[exp.Expression],
-        ref: PeerMetricDependencyRef,
+        ref: MetricModelDefinition,
         locals: t.Optional[t.Dict[str, t.Any]] = None,
     ):
         self._context = context

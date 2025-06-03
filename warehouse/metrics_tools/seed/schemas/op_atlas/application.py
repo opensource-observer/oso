@@ -13,8 +13,8 @@ class Application(BaseModel):
     round_id: str = Column("VARCHAR")
     project_id: str = Column("VARCHAR")
     category_id: str | None = Column("VARCHAR")
-    dlt_load_id: str = Column("VARCHAR", "_dlt_load_id")
-    dlt_id: str = Column("VARCHAR", "_dlt_id")
+    dlt_load_id: str = Column("VARCHAR", column_name="_dlt_load_id")
+    dlt_id: str = Column("VARCHAR", column_name="_dlt_id")
 
 
 seed = SeedConfig(

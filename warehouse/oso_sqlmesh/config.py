@@ -1,4 +1,5 @@
 import os
+import sys
 
 import dotenv
 from metrics_tools.models import constants
@@ -10,16 +11,34 @@ from sqlmesh.core.config import (
     Config,
     DuckDBConnectionConfig,
     GatewayConfig,
+    LinterConfig,
     ModelDefaultsConfig,
 )
 from sqlmesh.core.config.connection import (
     GCPPostgresConnectionConfig,
+    PostgresConnectionConfig,
     TrinoConnectionConfig,
 )
 
 dotenv.load_dotenv()
 
+# SOMETHING broke with the executable path for the sqlmesh package
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CURR_DIR))
+
 config = Config(
+    linter=LinterConfig(
+        enabled=True,
+        rules={
+            "incrementalmusthavetimepartition",
+            "incrementalmustdefinenogapsaudit",
+            "incrementalmusthavelookback",
+            "incrementalmusthaveforwardonly",
+            "timepartitionsmustbebucketed",
+            "nomissingaudits",
+            "entitycategorytagrequired",
+        },
+    ),
     default_test_connection=(
         DuckDBConnectionConfig(
             concurrent_tasks=1,
@@ -71,9 +90,12 @@ config = Config(
                 ),
                 retries=int(os.environ.get("SQLMESH_TRINO_RETRIES", "5")),
             ),
-            state_connection=DuckDBConnectionConfig(
-                concurrent_tasks=1,
-                database=os.environ.get("SQLMESH_DUCKDB_LOCAL_PATH"),
+            state_connection=PostgresConnectionConfig(
+                host=os.environ.get("SQLMESH_POSTGRES_HOST", "localhost"),
+                port=int(os.environ.get("SQLMESH_POSTGRES_PORT", "5432")),
+                user=os.environ.get("SQLMESH_POSTGRES_USER", "postgres"),
+                password=os.environ.get("SQLMESH_POSTGRES_PASSWORD", "postgres"),
+                database=os.environ.get("SQLMESH_POSTGRES_DB", "postgres"),
             ),
             variables={
                 "oso_source_rewrite": LOCAL_TRINO_DOCKER_REWRITE_RULES,
@@ -106,8 +128,11 @@ config = Config(
         "fulltime_dev_days": 10,
         "activity_window": 30,
         "blockchain_incremental_start": constants.blockchain_incremental_start,
+        "deps_dev_incremental_start": constants.deps_dev_incremental_start,
         "github_incremental_start": constants.github_incremental_start,
         "funding_incremental_start": constants.funding_incremental_start,
         "defillama_incremental_start": constants.defillama_incremental_start,
+        "testing_enabled": constants.testing_enabled,
+        "superchain_audit_start": constants.superchain_audit_start,
     },
 )

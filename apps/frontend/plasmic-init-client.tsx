@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { ALGOLIA_INDEX } from "./lib/config";
 import { PLASMIC } from "./plasmic-init";
+import { format } from "sql-formatter";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
@@ -31,7 +32,34 @@ import {
   AuthActions,
   AuthActionsRegistration,
 } from "./components/widgets/auth-actions";
+import { MonacoEditor } from "./components/widgets/monaco-editor";
+import { OSOChat } from "./components/widgets/oso-chat";
 import { register as registerMetricsUtils } from "./lib/metrics-utils";
+import {
+  OsoDataProvider,
+  OsoDataProviderRegistration,
+} from "./components/dataprovider/oso-data-provider";
+import {
+  OsoGlobalContext,
+  OsoGlobalActions,
+  OsoGlobalContextPropsRegistration,
+} from "./components/dataprovider/oso-global-context";
+import {
+  DynamicConnectorForm,
+  DynamicConnectorFormRegistration,
+} from "./components/widgets/connectors/dynamic-connector-form";
+
+/**
+ * Plasmic global context
+ */
+
+PLASMIC.registerGlobalContext(OsoGlobalContext, {
+  name: "OsoGlobalContext",
+  props: { ...OsoGlobalContextPropsRegistration },
+  providesData: true,
+  globalActions: { ...OsoGlobalActions },
+  importPath: "./components/dataprovider/oso-global-context",
+});
 
 /**
  * Plasmic component registration
@@ -39,6 +67,27 @@ import { register as registerMetricsUtils } from "./lib/metrics-utils";
  * For more details see:
  * https://docs.plasmic.app/learn/code-components-ref/
  */
+
+PLASMIC.registerFunction(format, {
+  name: "formatSql",
+  params: [
+    {
+      name: "query",
+      type: "string",
+      description: "the SQL query to format",
+    },
+    {
+      name: "options",
+      type: "object",
+      description: "options to pass to sql-formatter",
+    },
+  ],
+  returnValue: {
+    type: "string",
+    description: "the formatted SQL",
+  },
+  importPath: "sql-formatter",
+});
 
 PLASMIC.registerFunction(generateApiKey, {
   name: "generateApiKey",
@@ -155,6 +204,59 @@ PLASMIC.registerComponent(
   },
 );
 
+PLASMIC.registerComponent(OSOChat, {
+  name: "OSOChat",
+  description: "LLM-powered chat overlay",
+  props: {
+    children: "slot",
+  },
+  importPath: "./components/widgets/oso-chat",
+});
+
+PLASMIC.registerComponent(MonacoEditor, {
+  name: "MonacoEditor",
+  description: "Monaco editor",
+  props: {
+    value: {
+      type: "string",
+    },
+    onChange: {
+      type: "eventHandler",
+      argTypes: [
+        {
+          name: "value",
+          type: "string",
+        },
+      ],
+    },
+    height: {
+      type: "string",
+      defaultValue: "200px",
+    },
+    language: {
+      type: "string",
+      defaultValue: "sql",
+    },
+    theme: {
+      type: "string",
+      defaultValue: "vs-light",
+    },
+    options: {
+      type: "object",
+      defaultValue: {},
+    },
+  },
+  states: {
+    value: {
+      type: "writable",
+      variableType: "text",
+      valueProp: "value",
+      onChangeProp: "onChange",
+    },
+  },
+  importPath: "./components/widgets/monaco-editor",
+});
+
 PLASMIC.registerComponent(FeedbackWrapper, {
   name: "FeedbackWrapper",
   description: "Feedback Farm click handler",
@@ -169,6 +271,14 @@ PLASMIC.registerComponent(SupabaseQuery, {
   props: { ...SupabaseQueryRegistration },
   providesData: true,
   importPath: "./components/dataprovider/supabase-query",
+});
+
+PLASMIC.registerComponent(OsoDataProvider, {
+  name: "OsoDataProvider",
+  description: "OSO data provider",
+  props: { ...OsoDataProviderRegistration },
+  providesData: true,
+  importPath: "./components/dataprovider/oso-data-provider",
 });
 
 PLASMIC.registerComponent(SupabaseWrite, {
@@ -196,6 +306,14 @@ PLASMIC.registerComponent(AuthActions, {
   description: "Series of authentication-related click handlers",
   props: { ...AuthActionsRegistration },
   importPath: "./components/widgets/auth-actions",
+});
+
+PLASMIC.registerComponent(DynamicConnectorForm, {
+  name: "DynamicConnectorForm",
+  props: {
+    ...DynamicConnectorFormRegistration,
+  },
+  importPath: "./components/widgets/connectors/dynamic-connector-form",
 });
 
 /**

@@ -13,3 +13,4 @@ The OSO architecture runs on the following platforms:
 - [Google Cloud](./gcloud): self-managed k8s for Trino, Iceberg and Dagster
 - [Hasura](./hasura): GraphQL API service
 - [Supabase](./supabase): user authentication and user database
+- [Ops Video Guides](./video-guides.md): Ops video guides for managing the infrastructure

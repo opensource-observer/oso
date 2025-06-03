@@ -1,9 +1,0 @@
-sources:
-  - name: pypi
-    database: bigquery-public-data
-    schema: pypi
-    tables:
-      - name: distribution_metadata
-        identifier: distribution_metadata        
-      - name: file_downloads
-        identifier: file_downloads

@@ -1,0 +1,24 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-agent
+spec:
+  postRenderers:
+    - kustomize:
+        images:
+          - name: ghcr.io/opensource-observer/oso
+            newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+            newTag: deploy-20250602201735-9cbe2ba # {"$imagepolicy": "flux-system:oso:tag"}
+  values:
+    app:
+      ingress:
+        enabled: true
+        className: ingress-internal-cloudflare
+      envVars:
+        AGENT_LLM__GOOGLE_API_KEY: gcp:secretmanager:production-agent-google-api-secret/versions/latest
+        AGENT_LLM__TYPE: "google_genai"
+        AGENT_OSO_MCP_URL: "http://production-mcp-app.production-mcp.svc.cluster.local:8000/sse"
+        AGENT_ARIZE_PHOENIX_API_KEY: gcp:secretmanager:production-agent-arize-phoenix-api-key/versions/latest
+        AGENT_ARIZE_PHOENIX_USE_CLOUD: "1"
+        AGENT_DISCORD_BOT_TOKEN: gcp:secretmanager:production-agent-discord-bot-token/versions/latest
+        AGENT_DISCORD_CHANNEL_ID: gcp:secretmanager:production-agent-discord-channel-id/versions/latest

@@ -1,0 +1,9 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: local-mcp
+spec:
+  values:
+    app:
+      envVars:
+        "MCP_OSO_API_KEY": local

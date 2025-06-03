@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trino-access-control
+data:
+  rules.json: |
+    {
+      "catalogs": [
+        {
+          "user": "admin",
+          "allow": "owner"
+        },
+        {
+          "catalog": "system",
+          "allow": "none"
+        },
+        {
+          "user": "jwt-.*",
+          "allow": "read-only"
+        },
+        {
+          "user": "user",
+          "allow": "read-only"
+        },
+        {
+          "allow": "all"
+        }
+      ]
+    }

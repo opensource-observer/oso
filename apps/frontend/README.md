@@ -19,6 +19,23 @@ We typically use `pnpm` for package management.
 pnpm install
 ```
 
+In order to properly install `supabase`, you'll need to explicitly approve post-installation scripts:
+
+```bash
+pnpm approve-builds
+```
+
+## Log into Supabase and start the dev server
+
+```bash
+pnpm supabase login
+pnpm supabase start
+```
+
+Remember to update your `.env.local` with the generated local Supabase settings.
+We recommend that you **DO NOT** use the production Supabase server locally,
+as tests and migrations can be dangerous/destructive.
+
 ## Run the dev server
 
 To run the dev server, which will also automatically watch for changes from Plasmic and the GraphQL schema:
@@ -46,20 +63,33 @@ You can serve built files with:
 pnpm start
 ```
 
-### GraphQL queries
+### Codegen
 
-We codegen types for all GraphQL queries. If you make changes to the GraphQL schema (e.g. on Hasura), make sure to run
+:::tip
+The default `pnpm build` will handle all of this.
+:::
+
+We self-host an Apollo gateway in Next.js/Vercel, which routes all requests to Hasura.
+If the Hasura schema changes, we need to regenerate the supergraph schema for Apollo:
 
 ```bash
-pnpm graphql:compile
+pnpm graphql:schema
+```
+
+We codegen TypeScript types for all GraphQL queries.
+If you make changes to the GraphQL schema (e.g. on Hasura), make sure to run:
+
+```bash
+pnpm graphql:codegen
+```
+
+We also codegen TypeScript types for all Supabase queries.
+If you make changes to the Supabase schema, make sure to run:
+
+```bash
+pnpm supabase:gentypes
 ```
 
 ## Deploy
 
 Currently, all deployments are automatically handled by Vercel's GitHub app.
-
-## Architecture
-
-More coming...
-
-All data is accessed through a Hasura GraphQL engine. In the future, we may be able to run this on Cloudflare workers/pages in the edge runtime due to this architecture decision.

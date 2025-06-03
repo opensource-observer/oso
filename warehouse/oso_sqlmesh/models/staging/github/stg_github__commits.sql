@@ -5,13 +5,21 @@ MODEL (
     time_column created_at,
     batch_size 90,
     batch_concurrency 3,
-    lookback 7
+    lookback 31,
+    forward_only true,
   ),
   start @github_incremental_start,
   partitioned_by DAY(created_at),
   dialect trino,
   audits (
-    not_null(columns := (sha,))
+    not_null(columns := (sha,)),
+    no_gaps(
+      time_column := created_at,
+      no_gap_date_part := 'day',
+    ),
+  ),
+  tags (
+    "incremental"
   )
 );
 

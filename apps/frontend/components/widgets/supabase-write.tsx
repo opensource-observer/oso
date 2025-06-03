@@ -4,8 +4,10 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
 import { HttpError, assertNever, spawn } from "@opensource-observer/utils";
+import { usePostHog } from "posthog-js/react";
+import { EVENTS } from "../../lib/types/posthog";
 import { RegistrationProps } from "../../lib/types/plasmic";
-import { supabaseClient } from "../../lib/clients/supabase";
+import { useSupabaseState } from "../hooks/supabase";
 
 type SnackbarState = ADT<{
   closed: Record<string, unknown>;
@@ -81,6 +83,8 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     redirectOnComplete,
     errorCodeMap,
   } = props;
+  const posthog = usePostHog();
+  const supabaseState = useSupabaseState();
   const router = useRouter();
   const [snackbarState, setSnackbarState] = React.useState<SnackbarState>({
     _type: "closed",
@@ -96,7 +100,9 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     setSnackbarState({ _type: "closed" });
   };
   const clickHandler = async () => {
-    if (!actionType) {
+    if (!supabaseState?.supabaseClient) {
+      return console.warn("SupabaseWrite: Supabase client not initialized yet");
+    } else if (!actionType) {
       return console.warn("SupabaseWrite: Select an actionType first");
     } else if (!tableName) {
       return console.warn("SupabaseWrite: Enter a tableName first");
@@ -107,16 +113,17 @@ function SupabaseWrite(props: SupabaseWriteProps) {
         "SupabaseWrite: This actionType requires valid filters",
       );
     }
+    const supabaseClient = supabaseState.supabaseClient;
 
     let query =
       actionType === "insert"
-        ? supabaseClient.from(tableName).insert(data)
+        ? supabaseClient.from(tableName as any).insert(data)
         : actionType === "update"
-          ? supabaseClient.from(tableName).update(data)
+          ? supabaseClient.from(tableName as any).update(data)
           : actionType === "upsert"
-            ? supabaseClient.from(tableName).upsert(data)
+            ? supabaseClient.from(tableName as any).upsert(data)
             : actionType === "delete"
-              ? supabaseClient.from(tableName).delete()
+              ? supabaseClient.from(tableName as any).delete()
               : assertNever(actionType);
 
     // Iterate over the filters
@@ -133,6 +140,11 @@ function SupabaseWrite(props: SupabaseWriteProps) {
 
     // Execute query
     const { error, status } = await query;
+    posthog.capture(EVENTS.DB_WRITE, {
+      tableName,
+      actionType,
+      status,
+    });
     if (error) {
       console.warn("SupabaseWrite error: ", error);
       setSnackbarState({ _type: "error", ...error });

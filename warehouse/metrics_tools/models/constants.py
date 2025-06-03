@@ -1,6 +1,6 @@
 """Constants used to determine the start date for incremental data collection."""
 
-from metrics_tools.utils.env import coalesce_str
+from metrics_tools.utils.env import coalesce_str, ensure_bool
 
 
 def coalesce_start_value(var_name: str, default: str) -> str:
@@ -9,7 +9,10 @@ def coalesce_start_value(var_name: str, default: str) -> str:
     )
 
 
+superchain_audit_start = coalesce_str(["SQLMESH_DEBUG_START", "SQLMESH_DEBUG_SUPERCHAIN_AUDIT"], "2021-12-01")
 blockchain_incremental_start = coalesce_start_value("BLOCKCHAIN", "2021-10-01")
+deps_dev_incremental_start = coalesce_start_value("DEPS_DEV", "2015-01-01")
 github_incremental_start = coalesce_start_value("GITHUB", "2015-01-01")
 funding_incremental_start = coalesce_start_value("FUNDING", "2015-01-01")
 defillama_incremental_start = coalesce_start_value("DEFILLAMA", "2021-10-01")
+testing_enabled = ensure_bool("SQLMESH_TESTING_ENABLED", False)

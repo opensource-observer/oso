@@ -1,4 +1,6 @@
+import time
 from dataclasses import dataclass
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -87,6 +89,91 @@ INTROSPECTION_QUERY = """
 """
 
 
+class PaginationType(Enum):
+    """Supported pagination types."""
+
+    OFFSET = "offset"
+    CURSOR = "cursor"
+    RELAY = "relay"
+
+
+@dataclass
+class PaginationConfig:
+    """
+    Configuration for pagination in GraphQL queries.
+
+    Args:
+        type: The type of pagination (offset, cursor, or relay).
+        page_size: Number of items per page.
+        max_pages: Maximum number of pages to fetch (None for unlimited).
+        rate_limit_seconds: Seconds to wait between page requests.
+
+        For offset-based pagination:
+        offset_field: Name of the offset field (default: "offset").
+        limit_field: Name of the limit field (default: "limit").
+        total_count_path: Path to total count field (e.g., "totalCount").
+
+        For cursor-based pagination:
+        cursor_field: Name of the cursor field (default: "after").
+        page_size_field: Name of the page size field (default: "first").
+        next_cursor_path: Path to next cursor value (e.g., "pageInfo.endCursor").
+        has_next_path: Path to hasNext field (e.g., "pageInfo.hasNextPage").
+
+        For relay-style pagination:
+        Uses cursor-based fields but expects standard Relay connection structure.
+        edge_path: Path to edges array (default: "edges").
+        node_path: Path to node within edge (default: "node").
+    """
+
+    type: PaginationType
+    page_size: int = 50
+    max_pages: Optional[int] = None
+    rate_limit_seconds: float = 0.0
+
+    offset_field: str = "offset"
+    limit_field: str = "limit"
+    total_count_path: Optional[str] = None
+
+    cursor_field: str = "after"
+    page_size_field: str = "first"
+    next_cursor_path: str = "pageInfo.endCursor"
+    has_next_path: str = "pageInfo.hasNextPage"
+
+    edge_path: str = "edges"
+    node_path: str = "node"
+
+    stop_condition: Optional[Callable[[Dict[str, Any], int], bool]] = None
+
+
+@dataclass
+class GraphQLResourceConfig:
+    """
+    Configuration for a GraphQL resource.
+
+    Args:
+        name: The name of the GraphQL resource.
+        endpoint: The endpoint of the GraphQL resource.
+        target_type: The type to target in the introspection query.
+        target_query: The query to target in the main query.
+        max_depth: The maximum depth of the GraphQL query.
+        headers: The headers to include in the introspection query.
+        transform_fn: The function to transform the result of the query.
+        parameters: The parameters to include in the introspection query.
+        pagination: The pagination configuration.
+    """
+
+    # TODO(jabolo): Add ability to pass secrets
+    name: str
+    endpoint: str
+    target_type: str
+    target_query: str
+    max_depth: int = 5
+    headers: Optional[Dict[str, str]] = None
+    transform_fn: Optional[Callable[[Any], Any]] = None
+    parameters: Optional[Dict[str, Dict[str, Any]]] = None
+    pagination: Optional[PaginationConfig] = None
+
+
 def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
     """
     Create a fragment for the GraphQL introspection query
@@ -107,33 +194,6 @@ def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
         return "kind name"
 
     return f"kind name ofType {{ {create_fragment(depth - 1)} }}"
-
-
-@dataclass
-class GraphQLResourceConfig:
-    """
-    Configuration for a GraphQL resource.
-
-    Args:
-        name: The name of the GraphQL resource.
-        endpoint: The endpoint of the GraphQL resource.
-        target_type: The type to target in the introspection query.
-        target_query: The query to target in the main query.
-        max_depth: The maximum depth of the GraphQL query.
-        headers: The headers to include in the introspection query.
-        transform_fn: The function to transform the result of the query.
-        parameters: The parameters to include in the introspection query.
-    """
-
-    # TODO(jabolo): Add ability to pass secrets
-    name: str
-    endpoint: str
-    target_type: str
-    target_query: str
-    max_depth: int = 5
-    headers: Optional[Dict[str, str]] = None
-    transform_fn: Optional[Callable[[Any], Any]] = None
-    parameters: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 def get_graphql_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
@@ -316,11 +376,42 @@ class FieldExpander:
         context: AssetExecutionContext,
         types_dict: Dict[str, Dict[str, Any]],
         max_depth: int,
+        pagination_config: Optional[PaginationConfig] = None,
     ):
         self.context = context
         self.types_dict = types_dict
         self.max_depth = max_depth
         self.visited_paths: Set[str] = set()
+        self.pagination_config = pagination_config
+
+    def should_expand_pagination_field(self, field_path: str) -> bool:
+        """Check if a field is needed for pagination."""
+        if not self.pagination_config:
+            return False
+
+        pagination_fields = []
+
+        if self.pagination_config.type == PaginationType.OFFSET:
+            if self.pagination_config.total_count_path:
+                pagination_fields.append(self.pagination_config.total_count_path)
+
+        elif self.pagination_config.type in (
+            PaginationType.CURSOR,
+            PaginationType.RELAY,
+        ):
+            pagination_fields.extend(
+                [
+                    self.pagination_config.next_cursor_path,
+                    self.pagination_config.has_next_path,
+                ]
+            )
+
+        for pagination_field in pagination_fields:
+            parts = pagination_field.split(".")
+            if field_path.endswith(parts[0]):
+                return True
+
+        return False
 
     def expand_field(
         self, field: Dict[str, Any], current_path: str = "", depth: int = 0
@@ -372,7 +463,9 @@ class FieldExpander:
 
         self.visited_paths.add(new_path)
 
-        if depth >= self.max_depth:
+        is_pagination_field = self.should_expand_pagination_field(field_name)
+
+        if depth >= self.max_depth and not is_pagination_field:
             if needs_expansion:
                 self.context.log.warning(
                     f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' because it "
@@ -383,7 +476,8 @@ class FieldExpander:
 
         expanded_fields = []
         for subfield in type_fields:
-            expanded = self.expand_field(subfield, new_path, depth + 1)
+            next_depth = depth + 1 if not is_pagination_field else depth
+            expanded = self.expand_field(subfield, new_path, next_depth)
             if expanded:
                 expanded_fields.append(expanded)
 
@@ -402,25 +496,116 @@ class FieldExpander:
 
 def get_query_parameters(
     parameters: Optional[Dict[str, Dict[str, Any]]],
+    pagination_config: Optional[PaginationConfig] = None,
 ) -> tuple[str, str]:
     """
     Get the parameters for the GraphQL query.
 
     Args:
         parameters: The parameters for the query.
+        pagination_config: The pagination configuration.
 
     Returns:
         A tuple with the parameter definitions and variable references.
     """
-    if not parameters:
+    all_params = {}
+
+    if parameters:
+        all_params.update(parameters)
+
+    if pagination_config:
+        if pagination_config.type == PaginationType.OFFSET:
+            all_params[pagination_config.offset_field] = {
+                "type": "Int",
+                "value": 0,
+            }
+            all_params[pagination_config.limit_field] = {
+                "type": "Int!",
+                "value": pagination_config.page_size,
+            }
+        elif pagination_config.type in (PaginationType.CURSOR, PaginationType.RELAY):
+            all_params[pagination_config.cursor_field] = {
+                "type": "String",
+                "value": None,
+            }
+            all_params[pagination_config.page_size_field] = {
+                "type": "Int!",
+                "value": pagination_config.page_size,
+            }
+
+    if not all_params:
         return "", ""
 
     param_defs = ", ".join(
-        [f'${key}: {value["type"]}' for key, value in parameters.items()]
+        [f'${key}: {value["type"]}' for key, value in all_params.items()]
     )
-    param_refs = ", ".join([f"{key}: ${key}" for key in parameters.keys()])
+    param_refs = ", ".join([f"{key}: ${key}" for key in all_params.keys()])
 
     return f"({param_defs})", f"({param_refs})"
+
+
+def get_nested_value(data: Dict[str, Any], path: str) -> Any:
+    """Get a value from nested dictionary using dot notation path."""
+    keys = path.split(".")
+    value = data
+
+    for key in keys:
+        if isinstance(value, dict) and key in value:
+            value = value[key]
+        else:
+            return None
+
+    return value
+
+
+def extract_data_for_pagination(
+    result: Dict[str, Any],
+    config: GraphQLResourceConfig,
+) -> tuple[List[Any], Optional[Dict[str, Any]]]:
+    """
+    Extract data and pagination info from the result.
+
+    Returns:
+        A tuple of (data_items, pagination_info)
+    """
+    if config.transform_fn:
+        data = config.transform_fn(result)
+    else:
+        data = result.get(config.target_query, [])
+
+    if not isinstance(data, list):
+        if config.pagination and config.pagination.type == PaginationType.RELAY:
+            edges = get_nested_value(data, config.pagination.edge_path) or []
+            data = [
+                get_nested_value(edge, config.pagination.node_path) for edge in edges
+            ]
+        else:
+            data = [data] if data else []
+
+    pagination_info = None
+    if config.pagination:
+        if config.pagination.type == PaginationType.OFFSET:
+            total_count = None
+            if config.pagination.total_count_path:
+                total_count = get_nested_value(
+                    result.get(config.target_query, {}),
+                    config.pagination.total_count_path,
+                )
+            pagination_info = {"total_count": total_count}
+
+        elif config.pagination.type in (PaginationType.CURSOR, PaginationType.RELAY):
+            target_data = result.get(config.target_query, {})
+            next_cursor = get_nested_value(
+                target_data, config.pagination.next_cursor_path
+            )
+            has_next = get_nested_value(target_data, config.pagination.has_next_path)
+
+            pagination_info = {
+                "next_cursor": next_cursor,
+                "has_next": has_next,
+            }
+
+    return data, pagination_info
 
 
 Q = ParamSpec("Q")
@@ -491,7 +676,9 @@ def _graphql_factory(
 
             type_to_python = TypeToPython(available_types)
 
-            field_expander = FieldExpander(context, dictionary_types, config.max_depth)
+            field_expander = FieldExpander(
+                context, dictionary_types, config.max_depth, config.pagination
+            )
 
             expanded_fields = []
             field_types = []
@@ -517,15 +704,15 @@ def _graphql_factory(
                         f"GraphQLFactory: Field '{field_name}' was skipped in the query."
                     )
 
-            query_parameters, query_variables = get_query_parameters(config.parameters)
+            query_parameters, query_variables = get_query_parameters(
+                config.parameters, config.pagination
+            )
 
-            generated_body = f"{{ {config.target_query} {query_variables} {{ {" ".join(expanded_fields)} }} }}"
+            generated_body = f"{{ {config.target_query} {query_variables} {{ {' '.join(expanded_fields)} }} }}"
             generated_query = f"query {query_parameters} {generated_body}"
 
             # TODO(jabolo): Pass dynamic DLT config
-            @dlt.resource(
-                name=config.name,
-            )
+            @dlt.resource(name=config.name, max_table_nesting=0)
             def _execute_query():
                 """
                 Execute the GraphQL query.
@@ -548,29 +735,124 @@ def _graphql_factory(
                     f"GraphQLFactory: generated query:\n\n{generated_query}"
                 )
 
-                try:
-                    result = client.execute(
-                        gql(generated_query),
-                        variable_values={
-                            key: param["value"]
-                            for key, param in (config.parameters or {}).items()
-                        },
-                    )
+                variables = {
+                    key: param["value"]
+                    for key, param in (config.parameters or {}).items()
+                }
 
-                    processed_result = (
-                        config.transform_fn(result) if config.transform_fn else result
-                    )
+                page_count = 0
+                total_items = 0
+                has_more = True
 
-                    if isinstance(processed_result, list):
-                        yield from processed_result
-                    else:
-                        yield processed_result
+                while has_more:
+                    try:
+                        if config.pagination:
+                            if config.pagination.type == PaginationType.OFFSET:
+                                variables[config.pagination.offset_field] = (
+                                    page_count * config.pagination.page_size
+                                )
+                                variables[config.pagination.limit_field] = (
+                                    config.pagination.page_size
+                                )
+                            elif config.pagination.type in (
+                                PaginationType.CURSOR,
+                                PaginationType.RELAY,
+                            ):
+                                if page_count > 0 or variables.get(
+                                    config.pagination.cursor_field
+                                ):
+                                    pass
+                                else:
+                                    variables[config.pagination.cursor_field] = None
+                                variables[config.pagination.page_size_field] = (
+                                    config.pagination.page_size
+                                )
 
-                except TransportError as e:
-                    context.log.error(f"GraphQL query execution failed: {str(e)}")
-                    raise ValueError(
-                        f"Failed to execute GraphQL query: {str(e)}"
-                    ) from e
+                        result = client.execute(
+                            gql(generated_query),
+                            variable_values=variables,
+                        )
+
+                        data_items, pagination_info = extract_data_for_pagination(
+                            result, config
+                        )
+
+                        if isinstance(data_items, list):
+                            for item in data_items:
+                                total_items += 1
+                                yield item
+                        else:
+                            total_items += 1
+                            yield data_items
+
+                        page_count += 1
+
+                        if not config.pagination:
+                            has_more = False
+                        elif config.pagination.stop_condition:
+                            has_more = not config.pagination.stop_condition(
+                                result, page_count
+                            )
+                        elif (
+                            config.pagination.max_pages
+                            and page_count >= config.pagination.max_pages
+                        ):
+                            has_more = False
+                            context.log.info(
+                                f"GraphQLFactory: Reached max pages limit ({config.pagination.max_pages})"
+                            )
+                        elif config.pagination.type == PaginationType.OFFSET:
+                            if (
+                                pagination_info
+                                and pagination_info.get("total_count") is not None
+                            ):
+                                current_offset = (
+                                    page_count * config.pagination.page_size
+                                )
+                                has_more = (
+                                    current_offset < pagination_info["total_count"]
+                                )
+                            else:
+                                has_more = (
+                                    len(data_items) == config.pagination.page_size
+                                )
+                        elif config.pagination.type in (
+                            PaginationType.CURSOR,
+                            PaginationType.RELAY,
+                        ):
+                            if pagination_info:
+                                has_more = bool(
+                                    pagination_info.get("has_next", False)
+                                    and pagination_info.get("next_cursor")
+                                )
+                                if has_more:
+                                    variables[config.pagination.cursor_field] = (
+                                        pagination_info["next_cursor"]
+                                    )
+                            else:
+                                has_more = False
+
+                        if (
+                            has_more
+                            and config.pagination
+                            and config.pagination.rate_limit_seconds > 0
+                        ):
+                            time.sleep(config.pagination.rate_limit_seconds)
+
+                        context.log.info(
+                            f"GraphQLFactory: Fetched page {page_count} with {len(data_items)} items "
+                            f"(total: {total_items})"
+                        )
+
+                    except TransportError as e:
+                        context.log.error(f"GraphQL query execution failed: {str(e)}")
+                        raise ValueError(
+                            f"Failed to execute GraphQL query: {str(e)}"
+                        ) from e
+
+                context.log.info(
+                    f"GraphQLFactory: Completed fetching {total_items} total items"
+                )
 
             yield _execute_query
 

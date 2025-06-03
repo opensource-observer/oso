@@ -31,7 +31,13 @@ const CommonDataProviderRegistration: RegistrationProps<CommonDataProviderProps>
       helpText: "Name to use in Plasmic data picker. Must be unique per query.",
     },
     // Plasmic elements
-    children: "slot",
+    children: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
     loadingChildren: {
       type: "slot",
       defaultValue: {

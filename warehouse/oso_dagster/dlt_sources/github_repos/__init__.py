@@ -1,9 +1,12 @@
+import csv
 import logging
 import typing as t
+from base64 import b64decode
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from functools import partial, wraps
+from io import StringIO
 from urllib.parse import ParseResult, urlparse
 
 import arrow
@@ -15,6 +18,7 @@ from githubkit import GitHub
 from githubkit.exception import RequestFailed
 from githubkit.retry import RetryChainDecision, RetryRateLimit, RetryServerError
 from githubkit.versions.latest.models import (
+    ContentFile,
     FullRepository,
     MinimalRepository,
     MinimalRepositoryPropLicense,
@@ -80,6 +84,16 @@ class GithubClientConfig(BaseModel):
     rate_limit_max_retry: int = 5
     server_error_max_rety: int = 3
     http_cache: t.Optional[str] = None
+
+
+class GithubRepositorySBOMRelationship(BaseModel):
+    artifact_namespace: str
+    artifact_name: str
+    artifact_source: str
+    relationship_type: t.Optional[str]
+    spdx_element_id: t.Optional[str]
+    related_spdx_element: t.Optional[str]
+    snapshot_at: datetime
 
 
 class InvalidGithubURL(Exception):
@@ -326,6 +340,60 @@ class GithubRepositoryResolver:
             )
             return []
 
+    async def get_sbom_relationships_for_repo(
+        self, owner: str, name: str
+    ) -> t.List[GithubRepositorySBOMRelationship]:
+        try:
+            sbom = await self._gh.rest.dependency_graph.async_export_sbom(
+                owner,
+                name,
+            )
+            logger.debug("Got SBOM for %s", f"{owner}/{name}")
+            graph = sbom.parsed_data.sbom
+            relationship_list: t.List[GithubRepositorySBOMRelationship] = []
+
+            if not graph.relationships:
+                logger.warning(
+                    "Skipping sbom %s, no relationships found",
+                    f"{owner}/{name}",
+                )
+                return []
+
+            for relationship in graph.relationships:
+                relationship_list.append(
+                    GithubRepositorySBOMRelationship(
+                        artifact_namespace=owner,
+                        artifact_name=name,
+                        artifact_source="GITHUB",
+                        relationship_type=getattr(
+                            relationship, "relationship_type", None
+                        ),
+                        spdx_element_id=getattr(relationship, "spdx_element_id", None),
+                        related_spdx_element=getattr(
+                            relationship, "related_spdx_element", None
+                        ),
+                        snapshot_at=arrow.get(graph.creation_info.created).datetime,
+                    )
+                )
+
+            return relationship_list
+        except RequestFailed as exception:
+            if exception.response.status_code == 404:
+                logger.warning("Skipping %s, no SBOM found", f"{owner}/{name}")
+            else:
+                logger.error("Error getting SBOM: %s", exception)
+            return []
+        except ValidationError as exception:
+            validation_errors = [
+                f"{error['loc'][0]}: {error['msg']}" for error in exception.errors()
+            ]
+            logger.warning(
+                "Skipping %s, SBOM is malformed: %s",
+                f"{owner}/{name}",
+                ", ".join(validation_errors),
+            )
+            return []
+
     @staticmethod
     def get_github_client(config: GithubClientConfig) -> GitHub:
         if config.http_cache:
@@ -470,6 +538,90 @@ def oss_directory_github_sbom_resource(
 
     funcs = (
         partial(resolver.get_sbom_for_repo, owner, repo)
+        for owner, repo in all_repo_urls
+    )
+
+    yield from with_progress_logger(funcs)
+
+
+@dlt.resource(
+    name="funding",
+    table_name="funding",
+    write_disposition="replace",
+)
+async def oss_directory_github_funding_resource(
+    owner: str,
+    repo: str,
+    path: str,
+    /,
+    gh_token: str = dlt.secrets.value,
+    rate_limit_max_retry: int = 5,
+    server_error_max_rety: int = 3,
+):
+    config = GithubClientConfig(
+        gh_token=gh_token,
+        rate_limit_max_retry=rate_limit_max_retry,
+        server_error_max_rety=server_error_max_rety,
+    )
+
+    gh = GithubRepositoryResolver.get_github_client(config)
+    request = await gh.rest.repos.async_get_content(
+        owner=owner,
+        repo=repo,
+        path=path,
+        headers={
+            "Accept": "application/vnd.github.object+json",
+        },
+    )
+    request.raise_for_status()
+
+    if not isinstance(request.parsed_data, ContentFile):
+        raise ValueError(f"Expected ContentFile, got {type(request.parsed_data)}")
+
+    src = StringIO(
+        b64decode(request.parsed_data.content).decode("utf-8")
+        if request.parsed_data.encoding == "base64"
+        else request.parsed_data.content
+    )
+    reader = csv.DictReader(src)
+
+    for row in reader:
+        yield row
+
+
+@dlt.resource(
+    name="sbom_relationships",
+    table_name="sbom_relationships",
+    columns=pydantic_to_dlt_nullable_columns(GithubRepositorySBOMRelationship),
+    write_disposition="append",
+)
+@dlt_parallelize(
+    ParallelizeConfig(
+        chunk_size=16,
+        parallel_batches=5,
+        wait_interval=45,
+    )
+)
+def oss_directory_github_sbom_relationships_resource(
+    all_repo_urls: t.List[t.Tuple[str, str]],
+    /,
+    gh_token: str = dlt.secrets.value,
+    rate_limit_max_retry: int = 5,
+    server_error_max_rety: int = 3,
+):
+    """Retrieve SBOM relationship information for GitHub repositories"""
+
+    config = GithubClientConfig(
+        gh_token=gh_token,
+        rate_limit_max_retry=rate_limit_max_retry,
+        server_error_max_rety=server_error_max_rety,
+    )
+
+    gh = GithubRepositoryResolver.get_github_client(config)
+    resolver = GithubRepositoryResolver(gh)
+
+    funcs = (
+        partial(resolver.get_sbom_relationships_for_repo, owner, repo)
         for owner, repo in all_repo_urls
     )
 

@@ -1,4 +1,4 @@
-# oso [![License: Apache 2.0][license-badge]][license] [![Github Actions][gha-badge]][gha]
+# oso [![License: Apache 2.0][license-badge]][license] [![Github Actions][gha-badge]][gha] [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/opensource-observer/oso)
 
 [license]: https://opensource.org/license/apache-2-0/
 [license-badge]: https://img.shields.io/badge/License-Apache2.0-blue.svg
@@ -33,6 +33,7 @@ Open Source Observer is a free analytics suite that helps funders measure the im
   - `/dbt`: dbt configuration
   - `/docker`: Docker configuration
   - `/metrics_tools`: Python utilities for managing data
+  - `/oso_agent`: OSO agent
   - `/oso_dagster`: Dagster configuration for orchestrating software-defined assets
   - `/oso_sqlmesh`: sqlmesh configuration
   - `/pyoso`: Python package for `pyoso`
@@ -61,7 +62,7 @@ pnpm install
 Also install the python dependencies
 
 ```
-uv sync
+uv sync --all-packages
 ```
 
 ## Reference Playbooks

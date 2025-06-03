@@ -21,7 +21,6 @@ import {
   CommonDataProviderRegistration,
 } from "./provider-view";
 import type { CommonDataProviderProps } from "./provider-view";
-import { useEnsureAuth } from "./apollo-wrapper";
 
 // Types used in the Plasmic registration
 type ChartType = "areaChart" | "barList";
@@ -335,7 +334,6 @@ function MetricsDataProvider(props: MetricsDataProviderProps) {
 }
 
 function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
-  useEnsureAuth();
   const {
     data: rawData,
     error: dataError,
@@ -396,7 +394,6 @@ function ArtifactMetricsDataProvider(props: MetricsDataProviderProps) {
 }
 
 function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
-  useEnsureAuth();
   const {
     data: rawData,
     error: dataError,
@@ -457,7 +454,6 @@ function ProjectMetricsDataProvider(props: MetricsDataProviderProps) {
 }
 
 function CollectionMetricsDataProvider(props: MetricsDataProviderProps) {
-  useEnsureAuth();
   const {
     data: rawData,
     error: dataError,

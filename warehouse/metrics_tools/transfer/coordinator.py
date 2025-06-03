@@ -9,7 +9,7 @@ import logging
 import typing as t
 from dataclasses import dataclass
 
-from metrics_tools.compute.types import ExportType, TableReference
+from metrics_service.types import ExportType, TableReference
 from metrics_tools.transfer.base import ExporterInterface, ImporterInterface
 
 module_logger = logging.getLogger(__name__)

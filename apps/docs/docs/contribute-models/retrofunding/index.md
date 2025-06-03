@@ -56,7 +56,7 @@ There are several ways to contribute impact metrics:
 
 ## Getting Started
 
-1. Review our [blog](https://docs.opensource.observer/blog/tags/optimism) to learn more about metrics we've tried and the lessons learned from past rounds
+1. Review our [blog](../../../blog/tags/optimism) to learn more about metrics we've tried and the lessons learned from past rounds.
 
 2. Fork one of the notebooks in our [Insights Repo](https://github.com/opensource-observer/insights) to start exploring the data.
 

@@ -1,8 +1,9 @@
 import React, { ReactNode } from "react";
 import { Provider } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
-import { assertNever, spawn } from "@opensource-observer/utils";
-import { supabaseClient } from "../../lib/clients/supabase";
+import { usePostHog } from "posthog-js/react";
+import { assertNever, ensure, spawn } from "@opensource-observer/utils";
+import { useSupabaseState } from "../hooks/supabase";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { NODE_ENV, DOMAIN } from "../../lib/config";
 
@@ -53,27 +54,55 @@ function AuthActions(props: AuthActionsProps) {
     scopes,
     redirectOnComplete,
   } = props;
+  const posthog = usePostHog();
   const router = useRouter();
   const path = usePathname();
+  const supabaseState = useSupabaseState();
+  const rawRedirectPath = redirectOnComplete ?? path;
+  const redirectPath = rawRedirectPath.startsWith("/")
+    ? rawRedirectPath
+    : `/${rawRedirectPath}`;
+  const redirect = `${PROTOCOL}://${DOMAIN}${redirectPath}`;
+  console.log(redirect);
   const signInWithOAuth = async () => {
-    const redirect = `${PROTOCOL}://${DOMAIN}/${redirectOnComplete ?? path}`;
     const ensureProvider = provider ?? DEFAULT_PROVIDER;
-    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+    const ensureScopes = scopes ?? DEFAULT_SCOPES[ensureProvider];
+    const ensureSupabaseClient = ensure(
+      supabaseState?.supabaseClient,
+      "Supabase client not initialized yet",
+    );
+    posthog.capture("user_login", {
+      redirect,
+      scopes: ensureScopes,
+      provider: ensureProvider,
+    });
+    const { data, error } = await ensureSupabaseClient.auth.signInWithOAuth({
       provider: ensureProvider,
       options: {
         redirectTo: redirect,
-        scopes: scopes ?? DEFAULT_SCOPES[ensureProvider],
+        scopes: ensureScopes,
         queryParams: {
           access_type: "offline",
           prompt: "consent",
         },
       },
     });
+    await supabaseState?.revalidate();
     console.log("Supabase signin:", data, error);
   };
 
   const signOut = async () => {
-    const { error } = await supabaseClient.auth.signOut();
+    const ensureSupabaseClient = ensure(
+      supabaseState?.supabaseClient,
+      "Supabase client not initialized yet",
+    );
+    const { error } = await ensureSupabaseClient.auth.signOut();
+    // Make sure we dis-associate the logged in user
+    posthog.capture("user_logout", {
+      redirect: redirectOnComplete,
+    });
+    posthog.reset();
+    await supabaseState?.revalidate();
     console.log("Supabase signout: ", error);
     if (redirectOnComplete) {
       router.push(redirectOnComplete);

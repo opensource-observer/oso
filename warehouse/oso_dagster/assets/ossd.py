@@ -25,7 +25,9 @@ from oso_dagster.dlt_sources.github_repos import (
     GithubClientConfig,
     GithubRepositoryResolver,
     GithubURLType,
+    oss_directory_github_funding_resource,
     oss_directory_github_repositories_resource,
+    oss_directory_github_sbom_relationships_resource,
     oss_directory_github_sbom_resource,
 )
 from oso_dagster.factories import dlt_factory
@@ -112,6 +114,94 @@ def oss_directory_to_dataframe(output: str, data: t.Optional[OSSDirectory] = Non
         ),
     )
     return df
+
+
+def create_sbom_fetch_function(
+    context: AssetExecutionContext,
+    cbt: CBTResource,
+    gh_token: str,
+    max_sbom_age_days: int,
+    table_name: str,
+    data_type: str = "SBOMs",
+) -> t.Callable[[], t.List[t.Tuple[str, str]]]:
+    """
+    Creates a fetch function for SBOM-related data that queries BigQuery to find
+    repositories that need data fetched.
+
+    Args:
+        context: Dagster execution context
+        cbt: CBT resource for BigQuery access
+        gh_token: GitHub token for API access
+        max_sbom_age_days: Maximum age in days before refetching data
+        table_name: Name of the table to check for existing data
+        data_type: Description of the data type for logging
+
+    Returns:
+        A function that returns a list of (owner, repo) tuples
+    """
+
+    def fetch_fn() -> t.List[t.Tuple[str, str]]:
+        table_suffix = table_name.split(".")[-1]
+
+        all_repositories_query = f"""
+            WITH
+              latest_{table_suffix} AS (
+              SELECT
+                artifact_namespace,
+                artifact_name,
+                MAX(snapshot_at) AS latest_snapshot
+              FROM
+                `{table_name}`
+              GROUP BY
+                artifact_namespace,
+                artifact_name ),
+              repos_needing_{table_suffix} AS (
+              SELECT
+                r.url,
+                r.owner,
+                r.name
+              FROM
+                `ossd.repositories` r
+              LEFT JOIN
+                latest_{table_suffix} s
+              ON
+                r.owner = s.artifact_namespace
+                AND r.name = s.artifact_name
+              WHERE
+                LOWER(r.url) LIKE '%github.com%'
+                AND (
+                  s.latest_snapshot IS NULL
+                  OR s.latest_snapshot < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {max_sbom_age_days} DAY) ) )
+            SELECT
+              DISTINCT url
+            FROM
+              repos_needing_{table_suffix};
+        """
+
+        config = GithubClientConfig(
+            gh_token=gh_token,
+        )
+
+        gh = GithubRepositoryResolver.get_github_client(config)
+        resolver = GithubRepositoryResolver(gh)
+
+        client = cbt.get(context.log)
+
+        all_repo_urls: t.Set[str] = {
+            row["url"] for row in client.query_with_string(all_repositories_query)
+        }
+
+        clean_repos = [
+            (repo.owner, repo.repository)
+            for repo in (resolver.safe_parse_url(url) for url in all_repo_urls)
+            if repo and repo.type == GithubURLType.REPOSITORY and repo.repository
+        ]
+
+        context.log.info(f"Fetching {data_type} for {len(clean_repos)} repositories")
+
+        return clean_repos
+
+    return fetch_fn
 
 
 @multi_asset(
@@ -250,66 +340,16 @@ def sbom(
         context.log.error(
             f"Invalid value for `max-sbom-age-days`: {max_sbom_age_days}. Using default value of 7 days"
         )
-        max_sbom_age_days = "7"
+        max_sbom_age_days = 7
 
-    def fetch_fn():
-        all_repositories_query = f"""
-            WITH
-              latest_sboms AS (
-              SELECT
-                artifact_namespace,
-                artifact_name,
-                MAX(snapshot_at) AS latest_snapshot
-              FROM
-                `ossd.sbom`
-              GROUP BY
-                artifact_namespace,
-                artifact_name ),
-              repos_needing_sbom AS (
-              SELECT
-                r.url,
-                r.owner,
-                r.name
-              FROM
-                `ossd.repositories` r
-              LEFT JOIN
-                latest_sboms s
-              ON
-                r.owner = s.artifact_namespace
-                AND r.name = s.artifact_name
-              WHERE
-                LOWER(r.url) LIKE '%github.com%'
-                AND (
-                  s.latest_snapshot IS NULL
-                  OR s.latest_snapshot < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {max_sbom_age_days} DAY) ) )
-            SELECT
-              DISTINCT url
-            FROM
-              repos_needing_sbom;
-        """
-
-        config = GithubClientConfig(
-            gh_token=gh_token,
-        )
-
-        gh = GithubRepositoryResolver.get_github_client(config)
-        resolver = GithubRepositoryResolver(gh)
-
-        client = cbt.get(context.log)
-
-        all_repo_urls: t.Set[str] = {
-            row["url"] for row in client.query_with_string(all_repositories_query)
-        }
-
-        clean_repos = [
-            (repo.owner, repo.repository)
-            for repo in (resolver.safe_parse_url(url) for url in all_repo_urls)
-            if repo and repo.type == GithubURLType.REPOSITORY and repo.repository
-        ]
-
-        context.log.info(f"Fecthing SBOMs for {len(clean_repos)} repositories")
-
-        return clean_repos
+    fetch_fn = create_sbom_fetch_function(
+        context=context,
+        cbt=cbt,
+        gh_token=gh_token,
+        max_sbom_age_days=max_sbom_age_days,
+        table_name="ossd.sbom",
+        data_type="SBOMs",
+    )
 
     return process_chunked_resource(
         ChunkedResourceConfig(
@@ -320,6 +360,67 @@ def sbom(
             context=context,
         ),
         gh_token,
+    )
+
+
+@dlt_factory(
+    key_prefix="ossd",
+    deps=[AssetKey(["ossd", "repositories"])],
+    tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
+    op_tags={"dagster-k8s/config": K8S_CONFIG},
+    retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
+)
+def sbom_relationships(
+    global_config: ResourceParam[DagsterConfig],
+    context: AssetExecutionContext,
+    cbt: CBTResource,
+    gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
+):
+    max_sbom_age_days = context.get_tag("max-sbom-age-days") or "7"
+
+    try:
+        max_sbom_age_days = int(max_sbom_age_days)
+    except ValueError:
+        context.log.error(
+            f"Invalid value for `max-sbom-age-days`: {max_sbom_age_days}. Using default value of 7 days"
+        )
+        max_sbom_age_days = 7
+
+    fetch_fn = create_sbom_fetch_function(
+        context=context,
+        cbt=cbt,
+        gh_token=gh_token,
+        max_sbom_age_days=max_sbom_age_days,
+        table_name="ossd.sbom",
+        data_type="SBOM relationships",
+    )
+
+    return process_chunked_resource(
+        ChunkedResourceConfig(
+            fetch_data_fn=fetch_fn,
+            resource=oss_directory_github_sbom_relationships_resource,
+            to_serializable_fn=methodcaller("model_dump"),
+            gcs_bucket_name=global_config.gcs_bucket,
+            context=context,
+        ),
+        gh_token,
+    )
+
+
+@dlt_factory(
+    key_prefix="ossd",
+    tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
+    op_tags={"dagster-k8s/config": K8S_CONFIG},
+    retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
+)
+def funding(
+    gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
+):
+    yield oss_directory_github_funding_resource(
+        "opensource-observer",
+        "oss-funding",
+        "data/funding_data.csv",
+        gh_token=gh_token,
     )
 
 

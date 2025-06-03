@@ -3,8 +3,9 @@ MODEL (
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
     batch_size 90,
-    batch_concurrency 1,
-    lookback 7
+    batch_concurrency 3,
+    lookback 31,
+    forward_only true,
   ),
   dialect trino,
   start @blockchain_incremental_start,
@@ -20,7 +21,17 @@ MODEL (
     bundler_address,
     userop_paymaster,
     method_id
-  )
+  ),
+  audits (
+    has_at_least_n_rows(threshold := 0),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+  ),
+  tags (
+    "superchain",
+    "incremental",
+  ),
 );
 
 SELECT
@@ -33,8 +44,8 @@ SELECT
   to_address,
   bundler_address AS bundler_address,
   userop_paymaster AS paymaster_address,
-  useropevent_actualgascost::BIGINT AS userop_gas_price,
-  useropevent_actualgasused::BIGINT AS userop_gas_used,
+  useropevent_actualgascost::DOUBLE AS userop_gas_cost,
+  useropevent_actualgasused::DOUBLE AS userop_gas_used,
   CAST(
     CASE WHEN input != '0x' 
       THEN 0 

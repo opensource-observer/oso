@@ -12,24 +12,26 @@ OSO maintains a large repository of open source projects called
 
 ## Check If Your Project is Already Listed
 
+:::tip
+You can also check if your project is listed from [pyoso](../get-started/python.md) or using our [GraphQL API](../get-started/api.mdx).
+:::
+
 Before adding your project, check if it's already listed in [oss-directory](https://github.com/opensource-observer/oss-directory/tree/main/data/projects). Most projects are instantiated with the GitHub organization name as the project `name`. For example, Open Source Observer's project file is located at `./data/projects/o/opensource-observer.yaml`.
 
 Alternatively, you can search for projects directly in our [project explorer](https://www.opensource.observer/projects). If you locate it, then the slug in the URL is the project name. For example, `opensource-observer` is at `https://www.opensource.observer/projects/opensource-observer`.
 
 If you're a developer, you can also lookup a project directly from [our GraphQL API](https://www.opensource.observer/graphql). Here's an example query to find the project that owns the _artifact_ `github.com/opensource-observer/oso`:
 
-```graphql
-query findProject {
-  oso_artifactsByProjectV1(
-    where: {
-      artifactSource: { _eq: "GITHUB" }
-      artifactNamespace: { _eq: "opensource-observer" }
-      artifactName: { _eq: "oso" }
-    }
-  ) {
-    projectName
-  }
-}
+```python
+query = """
+SELECT
+  project_name
+FROM artifacts_by_project_v1
+WHERE artifact_source = 'GITHUB'
+  AND artifact_namespace = 'opensource-observer'
+  AND artifact_name = 'oso'
+"""
+df = client.to_pandas(query)
 ```
 
 If you can't find your project, you can add it by following the steps below.

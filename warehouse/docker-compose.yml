@@ -2,10 +2,9 @@ services:
   trino:
     ports:
       - "${SQLMESH_TRINO_PORT:-8080}:8080"
-    image: "trinodb/trino:472"
+    image: "trinodb/trino:474"
     volumes:
-      - ./docker/trino/etc:/usr/lib/trino/etc:ro
-      - ./docker/trino/catalog:/etc/trino/catalog
+      - ./docker/trino/etc:/etc/trino/
 
   nessie:
     hostname: nessie
@@ -24,9 +23,23 @@ services:
       # MinIO endpoint for clients (on the Podman/Docker host)
       nessie.catalog.service.s3.default-options.external-endpoint: http://127.0.0.1:9000/
 
+  postgres:
+    hostname: postgres
+    image: postgres:15
+    ports: 
+      - "${SQLMESH_POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   minio:
     hostname: minio
-    image: 'minio/minio'
+    image: 'minio/minio:RELEASE.2025-04-08T15-41-24Z'
     container_name: minio
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -37,7 +50,7 @@ services:
 
   # This job will create the "iceberg" bucket on Minio
   mc-job:
-    image: 'minio/mc'
+    image: 'minio/mc:RELEASE.2025-04-16T18-13-26Z'
     entrypoint: |
       /bin/bash -c "
       sleep 5;

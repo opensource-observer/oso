@@ -30,13 +30,12 @@ TABLE_MAPPING: TableMappingConfig = {
         row_restriction=RowRestriction(time_column="created_at"),
         table="bigquery.open_collective.expenses",
     ),
-    ### TODO start: remove oso_playground dependency
-    "opensource-observer.oso_playground.stg_deps_dev__packages": "bigquery.oso.stg_deps_dev__packages",
-    ### TODO end
     "opensource-observer.ossd.collections": "bigquery.ossd.collections",
     "opensource-observer.ossd.projects": "bigquery.ossd.projects",
     "opensource-observer.ossd.repositories": "bigquery.ossd.repositories",
     "opensource-observer.ossd.sbom": "bigquery.ossd.sbom",
+    "bigquery.ossd.sbom_relationships": "bigquery.ossd.sbom_relationships",
+    "opensource-observer.ossd.funding": "bigquery.ossd.funding",
     # Only grab some data from frax for local testing
     "opensource-observer.optimism_superchain_raw_onchain_data.blocks": TableMappingDestination(
         # row_restriction=f"dt >= '{start_date.strftime("%Y-%m-%d")}' AND dt < '{end_date.strftime("%Y-%m-%d")}' AND chain_id = 252",

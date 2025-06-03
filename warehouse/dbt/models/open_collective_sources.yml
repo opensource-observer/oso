@@ -1,9 +1,0 @@
-sources:
-  - name: open_collective
-    database: opensource-observer
-    schema: open_collective
-    tables:
-      - name: expenses
-        identifier: expenses
-      - name: deposits
-        identifier: deposits

@@ -78,7 +78,7 @@ spec:
     server:
       exchangeManager:
         name: filesystem
-        baseDir: gs://oso-iceberg-exchange-usc1
+        baseDir: gs://oso-iceberg-exchange-usc1/trino-exchange
       config:
         query:
           maxMemory: "1400GB"
@@ -115,6 +115,7 @@ spec:
         iceberg.max-partitions-per-writer=1000
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
+        parquet.max-buffer-size=32768MB
       source: |
         connector.name=hive
         hive.metastore.uri=thrift://10.145.192.30:9083
@@ -124,16 +125,20 @@ spec:
       bigquery: |
         connector.name=bigquery
         bigquery.project-id=opensource-observer
+        bigquery.arrow-serialization.max-allocation=65536MB
       bigquery_public_data: |
         connector.name=bigquery
         bigquery.parent-project-id=opensource-observer
         bigquery.project-id=bigquery-public-data
         bigquery.credentials-key=${ENV:TRINO_GCP_CREDENTIALS_JSON}
+        bigquery.case-insensitive-name-matching=true
+        bigquery.arrow-serialization.max-allocation=65536MB
       github_archive: |
         connector.name=bigquery
         bigquery.parent-project-id=opensource-observer
         bigquery.project-id=githubarchive
         bigquery.credentials-key=${ENV:TRINO_GCP_CREDENTIALS_JSON}
+        bigquery.arrow-serialization.max-allocation=65536MB
       clickhouse: |
         connector.name=clickhouse
         connection-url=${ENV:CLICKHOUSE_URL}

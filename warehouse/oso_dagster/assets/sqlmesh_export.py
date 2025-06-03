@@ -7,6 +7,7 @@ from dagster_sqlmesh import (
     SQLMeshContextConfig,
     SQLMeshDagsterTranslator,
 )
+from dagster_sqlmesh.controller.base import DEFAULT_CONTEXT_FACTORY
 from sqlmesh.core.model import Model
 
 from ..factories import AssetFactoryResponse, early_resources_asset_factory
@@ -24,7 +25,10 @@ def sqlmesh_export_factory(
 ):
     environment = sqlmesh_infra_config["environment"]
 
-    controller = DagsterSQLMeshController.setup_with_config(sqlmesh_config)
+    controller = DagsterSQLMeshController.setup_with_config(
+        config=sqlmesh_config,
+        context_factory=DEFAULT_CONTEXT_FACTORY,
+    )
     assets = []
 
     with controller.instance(environment) as mesh:

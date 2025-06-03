@@ -4,11 +4,22 @@ MODEL (
     time_column event_time,
     batch_size 90,
     batch_concurrency 3,
-    lookback 7
+    lookback 31,
+    forward_only true,
   ),
   start @github_incremental_start,
   partitioned_by DAY(event_time),
   dialect duckdb,
+  audits (
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := event_time,
+      no_gap_date_part := 'day',
+    ),
+  ),
+  tags (
+    "incremental"
+  )
 );
 
 WITH issue_events AS (

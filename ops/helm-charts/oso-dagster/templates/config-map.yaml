@@ -5,7 +5,7 @@ metadata:
 data:
   DAGSTER_PG_USER: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbUser }}"
   DAGSTER_PG_DB_NAME: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.dbName }}"
-  DAGSTER_DBT_IMPERSONATE_SERVICE_ACCOUNT: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.impersonateServiceAccount }}"
+  DAGSTER_GCP_IMPERSONATE_SERVICE_ACCOUNT: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.impersonateServiceAccount }}"
   DAGSTER_PG_PORT: "{{ .Values.pg.port }}"
   DAGSTER_PG_HOST: "{{ .Values.pg.host }}"
   DAGSTER_USE_LOCAL_SECRETS: "False"

@@ -1,0 +1,15 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-mcp
+spec:
+  postRenderers:
+    - kustomize:
+        images:
+          - name: ghcr.io/opensource-observer/oso
+            newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+            newTag: deploy-20250602201735-9cbe2ba # {"$imagepolicy": "flux-system:oso:tag"}
+  values:
+    app:
+      envVars:
+        "MCP_OSO_API_KEY": gcp:secretmanager:production-oso-api-key/versions/latest

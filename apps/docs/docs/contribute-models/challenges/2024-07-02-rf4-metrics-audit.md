@@ -13,7 +13,7 @@ The intended business logic of impact metrics will not change. The purpose of th
 
 ## Context
 
-A full write-up on the process OSO employed is available [here](https://mirror.xyz/cerv1.eth/0s05D8YqJwezhJpOn9PEx_jLihvTqtFxw0R4_6nFl5I) and in a more distilled format [here](https://docs.opensource.observer/blog/impact-metrics-rf4-deep-dive). All SQL models are available in interactive format [here](https://models.opensource.observer/#!/overview) and from our [GitHub](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models).
+A full write-up on the process OSO employed is available [here](https://mirror.xyz/cerv1.eth/0s05D8YqJwezhJpOn9PEx_jLihvTqtFxw0R4_6nFl5I) and in a more distilled format [here](../../../blog/impact-metrics-rf4-deep-dive/). All SQL models are available in interactive format [here](https://models.opensource.observer/#!/overview) and from our [GitHub](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models).
 
 The downstream models most relevant to this audit are available in interactive format [here](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project) and in our GitHub [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain.)
 
@@ -35,15 +35,15 @@ The auditor is expected to audit the following components of the impact metrics 
       1. Completeness and accuracy of underlying transaction and trace data for the six relevant chains
       2. Correct and consistent implementation of the RF4 transaction window (2023-10-01 to 2024-06-01)
       3. Correct and consistent implementation of the relevant RF4 onchain event types (eg, gas fees, contract interactions, etc.)
-      4. Implementation of “special cases” for 4337 interactions (see [here](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/marts/superchain/rf4_4337_events.sql)) and EOA bridges (see [here](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/macros/models/contract_invocation_events_with_l1.sql#L5))
+      4. Implementation of "special cases" for 4337 interactions (see [here](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/marts/superchain/rf4_4337_events.sql)) and EOA bridges (see [here](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/macros/models/contract_invocation_events_with_l1.sql#L5))
 
 2. Contract discovery and attribution model
 
    1. Audit the contract discovery logic (eg, [Derived Contracts](https://models.opensource.observer/#!/model/model.opensource_observer.int_derived_contracts), [Contracts by Project](https://models.opensource.observer/#!/model/model.opensource_observer.int_contracts_by_project)) and upstream logic for identifying factories, deployers, and deterministic deployments
    2. Comment on the following aspects:
 
-      1. Completeness and accuracy of the [Contract by Project](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/retrofunding4/data/op_rf4_contracts_by_project.parquet) database, including efforts to de-dupe contracts deployed by creator factories such as Zora’s and pool factories such as Aerodrome’s
-      2. Correct attribution of all contract artifacts included in approved project’s applications (see [here](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/retrofunding4/data/op_rf4_contracts_by_application.csv))
+      1. Completeness and accuracy of the [Contract by Project](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/retrofunding4/data/op_rf4_contracts_by_project.parquet) database, including efforts to de-dupe contracts deployed by creator factories such as Zora's and pool factories such as Aerodrome's
+      2. Correct attribution of all contract artifacts included in approved project's applications (see [here](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/retrofunding4/data/op_rf4_contracts_by_application.csv))
 
 3. Trusted user model
 

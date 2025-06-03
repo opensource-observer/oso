@@ -1,12 +1,61 @@
 import os
+import typing as t
 
 from dotenv import load_dotenv
 from metrics_tools.definition import MetricMetadata
-from metrics_tools.factory import MetricQueryDef, timeseries_metrics
+from metrics_tools.factory import MetricQueryConfig, MetricQueryDef, timeseries_metrics
+from metrics_tools.models import constants
+from sqlglot import exp
 
 # Annoyingly sqlmesh doesn't load things in an expected order but we want to be
 # able to override the start date for local testing and things
 load_dotenv()
+
+
+TRANSLATE_TIME_AGGREGATION = {
+    "daily": "day",
+    "weekly": "week",
+    "monthly": "month",
+    "quarterly": "quarter",
+    "biannually": "biannual",
+    "yearly": "year",
+}
+
+
+def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
+    if not config["incremental"]:
+        return None
+
+    time_aggregation = config["ref"].get("time_aggregation")
+    if time_aggregation is None:
+        return None
+
+    options: t.Dict[str, t.Any] = {
+        "no_gap_date_part": TRANSLATE_TIME_AGGREGATION[time_aggregation],
+        "time_column": exp.to_column(
+            "metrics_sample_date",
+        ),
+    }
+    if time_aggregation in ["biannually", "weekly", "quarterly"]:
+        # Hack for now, ignore these until we fix the audit
+        return None
+
+    if "funding" in config["table_name"]:
+        # Hack for now, ignore these until we fix the audit
+        return None
+    
+    if "releases" in config["table_name"]:
+        return None
+    
+    if "data_category=blockchain" in config["additional_tags"]:
+        options["ignore_before"] = constants.superchain_audit_start
+        options["missing_rate_min_threshold"] = 0.95
+
+    return (
+        "no_gaps",
+        options,
+    )
+
 
 timeseries_metrics(
     default_dialect="trino",
@@ -17,12 +66,17 @@ timeseries_metrics(
         "int_issue_event_time_deltas",
         "int_first_of_event_from_artifact__github",
         "int_events_daily__blockchain",
+        "int_events_daily__blockchain_token_transfers",
         "int_events_daily__4337",
         "int_events_daily__defillama_tvl",
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
     ],
+    audits=[
+        ("has_at_least_n_rows", {"threshold": 0}),
+    ],
+    audit_factories=[no_gaps_audit_factory],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
         # A time_aggregation is just a simple addition of the aggregation. So basically we
@@ -38,8 +92,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -56,8 +110,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             over_all_time=True,
@@ -83,8 +137,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             over_all_time=True,
@@ -100,8 +154,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             over_all_time=True,
@@ -117,8 +171,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             over_all_time=True,
@@ -134,8 +188,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             over_all_time=True,
@@ -151,31 +205,14 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Contributors",
                 description="Metrics related to GitHub contributors",
-            ),
-            additional_tags=["data_category=code"],
-        ),
-        "active_developers": MetricQueryDef(
-            ref="code/active_developers.sql",
-            time_aggregations=[
-                "daily",
-                "weekly",
-                "monthly",
-                "quarterly",
-                "biannually",
-                "yearly",
-            ],
-            over_all_time=True,
-            metadata=MetricMetadata(
-                display_name="Active Developers",
-                description="Metrics related to active GitHub developers",
             ),
             additional_tags=["data_category=code"],
         ),
@@ -192,8 +229,8 @@ timeseries_metrics(
             },
             time_aggregations=[
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -212,8 +249,8 @@ timeseries_metrics(
             },
             time_aggregations=[
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -227,8 +264,8 @@ timeseries_metrics(
             },
             time_aggregations=[
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             metadata=MetricMetadata(
@@ -250,8 +287,8 @@ timeseries_metrics(
             },
             time_aggregations=[
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             metadata=MetricMetadata(
@@ -273,28 +310,28 @@ timeseries_metrics(
         #     ),
         #     entity_types=["artifact", "project", "collection"],
         # ),
-        "change_in_developer_activity": MetricQueryDef(
-            ref="code/change_in_developers.sql",
-            time_aggregations=[
-                "monthly",
-                "quarterly",
-                "biannually",
-                "yearly",
-            ],
-            metadata=MetricMetadata(
-                display_name="Change in Developer Activity",
-                description="Metrics related to change in developer activity",
-            ),
-            additional_tags=["data_category=code"],
-        ),
+        # "change_in_developer_activity": MetricQueryDef(
+        #     ref="code/change_in_developers.sql",
+        #     time_aggregations=[
+        #         "monthly",
+        #         "quarterly",
+        #         "biannually",
+        #         "yearly",
+        #     ],
+        #     metadata=MetricMetadata(
+        #         display_name="Change in Developer Activity",
+        #         description="Metrics related to change in developer activity",
+        #     ),
+        #     additional_tags=["data_category=code"],
+        # ),
         "opened_pull_requests": MetricQueryDef(
             ref="code/prs_opened.sql",
             time_aggregations=[
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -311,8 +348,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -329,8 +366,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -347,8 +384,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -359,34 +396,34 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
-        "avg_prs_time_to_merge": MetricQueryDef(
-            ref="code/prs_time_to_merge.sql",
-            time_aggregations=[
-                "quarterly",
-                "biannually",
-            ],
-            entity_types=["artifact", "project", "collection"],
-            over_all_time=True,
-            metadata=MetricMetadata(
-                display_name="Average PR Time to Merge",
-                description="Metrics related to average GitHub PR time to merge",
-            ),
-            additional_tags=["data_category=code"],
-        ),
-        "avg_time_to_first_response": MetricQueryDef(
-            ref="code/time_to_first_response.sql",
-            time_aggregations=[
-                "quarterly",
-                "biannually",
-            ],
-            entity_types=["artifact", "project", "collection"],
-            over_all_time=True,
-            metadata=MetricMetadata(
-                display_name="Average Time to First Response",
-                description="Metrics related to average time to first response",
-            ),
-            additional_tags=["data_category=code"],
-        ),
+        # "avg_prs_time_to_merge": MetricQueryDef(
+        #     ref="code/prs_time_to_merge.sql",
+        #     time_aggregations=[
+        #         "quarterly",
+        #         "biannually",
+        #     ],
+        #     entity_types=["artifact", "project", "collection"],
+        #     over_all_time=True,
+        #     metadata=MetricMetadata(
+        #         display_name="Average PR Time to Merge",
+        #         description="Metrics related to average GitHub PR time to merge",
+        #     ),
+        #     additional_tags=["data_category=code"],
+        # ),
+        # "avg_time_to_first_response": MetricQueryDef(
+        #     ref="code/time_to_first_response.sql",
+        #     time_aggregations=[
+        #         "quarterly",
+        #         "biannually",
+        #     ],
+        #     entity_types=["artifact", "project", "collection"],
+        #     over_all_time=True,
+        #     metadata=MetricMetadata(
+        #         display_name="Average Time to First Response",
+        #         description="Metrics related to average time to first response",
+        #     ),
+        #     additional_tags=["data_category=code"],
+        # ),
         "active_addresses_aggregation": MetricQueryDef(
             ref="blockchain/active_addresses.sql",
             vars={
@@ -396,8 +433,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             over_all_time=True,
@@ -413,8 +450,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -431,8 +468,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -443,14 +480,32 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=blockchain"],
         ),
+        # "token_transfers": MetricQueryDef(
+        #     ref="blockchain/token_transfers.sql",
+        #     time_aggregations=[
+        #         "daily",
+        #         "weekly",
+        #         "monthly",
+        #         "quarterly",
+        #         "biannually",
+        #         "yearly",
+        #     ],
+        #     entity_types=["artifact", "project", "collection"],
+        #     over_all_time=True,
+        #     metadata=MetricMetadata(
+        #         display_name="Token Transfers",
+        #         description="Metrics related to volume of blockchain token transfers",
+        #     ),
+        #     additional_tags=["data_category=blockchain"],
+        # ),
         "contract_invocations": MetricQueryDef(
             ref="blockchain/contract_invocations.sql",
             time_aggregations=[
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -467,8 +522,8 @@ timeseries_metrics(
                 "daily",
                 "weekly",
                 "monthly",
-                "quarterly",
-                "biannually",
+                # "quarterly",
+                # "biannually",
                 "yearly",
             ],
             incremental=False,
@@ -480,24 +535,24 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=defillama"],
         ),
-        "contributors_lifecycle": MetricQueryDef(
-            ref="code/lifecycle.sql",
-            vars={
-                "activity_event_types": [
-                    "COMMIT_CODE",
-                    "ISSUE_OPENED",
-                    "PULL_REQUEST_OPENED",
-                    "PULL_REQUEST_MERGED",
-                ],
-            },
-            time_aggregations=["monthly", "quarterly", "biannually", "yearly"],
-            entity_types=["artifact", "project", "collection"],
-            metadata=MetricMetadata(
-                display_name="Contributors Lifecycle",
-                description="Metrics related to contributor lifecycle",
-            ),
-            additional_tags=["data_category=code"],
-        ),
+        # "contributors_lifecycle": MetricQueryDef(
+        #     ref="code/lifecycle.sql",
+        #     vars={
+        #         "activity_event_types": [
+        #             "COMMIT_CODE",
+        #             "ISSUE_OPENED",
+        #             "PULL_REQUEST_OPENED",
+        #             "PULL_REQUEST_MERGED",
+        #         ],
+        #     },
+        #     time_aggregations=["monthly", "quarterly", "biannually", "yearly"],
+        #     entity_types=["artifact", "project", "collection"],
+        #     metadata=MetricMetadata(
+        #         display_name="Contributors Lifecycle",
+        #         description="Metrics related to contributor lifecycle",
+        #     ),
+        #     additional_tags=["data_category=code"],
+        # ),
         "funding_received": MetricQueryDef(
             ref="funding/funding_received.sql",
             time_aggregations=[
@@ -513,6 +568,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Funding Received",
                 description="Metrics related to funding received",
+            ),
+            additional_tags=["data_category=funding"],
+        ),
+        "funding_awarded": MetricQueryDef(
+            ref="funding/funding_awarded.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Funding Awarded",
+                description="Metrics related to funding awarded",
             ),
             additional_tags=["data_category=funding"],
         ),

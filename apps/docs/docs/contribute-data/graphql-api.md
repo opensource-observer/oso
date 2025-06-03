@@ -4,13 +4,14 @@ sidebar_position: 4
 ---
 
 This guide will explain how to use the
-[`graphql_factory`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/graphql.py) factory function to automatically
-introspect, build queries, and scrape GraphQL APIs.
+[`graphql_factory`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/graphql.py)
+factory function to automatically introspect, build queries, and scrape GraphQL
+APIs, including support for pagination.
 
 ## Defining Your GraphQL Resource
 
-In this example, we will create a GraphQL asset that fetches
-transactions from the
+In this example, we will create a GraphQL asset that fetches transactions from
+the
 [Open Collective API](https://docs.opencollective.com/help/contributing/development/api).
 The API has a `transactions` query that returns a list of transactions.
 
@@ -34,16 +35,22 @@ data for our asset.
 
 ```python
 from ..factories.graphql import GraphQLResourceConfig
+from ..factories.pagination import PaginationConfig, PaginationType
 
 config = GraphQLResourceConfig(
     name="transactions",
     endpoint="https://api.opencollective.com/graphql/v2",
-    max_depth=3, # Limit the introspection depth
+    max_depth=3, # Limit the introspection depth
+    pagination=PaginationConfig(
+        type=PaginationType.OFFSET,
+        page_size=100,
+        max_pages=5,
+        rate_limit_seconds=0.5,
+        offset_field="offset",
+        limit_field="limit",
+        total_count_path="totalCount",
+    ),
     parameters={
-        "limit": {
-            "type": "Int!",
-            "value": 10,
-        },
         "type": {
             "type": "TransactionType!",
             "value": "CREDIT",
@@ -73,6 +80,9 @@ In this configuration, we define the following fields:
 - **endpoint**: The URL of the GraphQL API.
 - **max_depth**: The maximum depth of the introspection query. This will
   generate a query that explores all fields recursively up to this depth.
+- **pagination**: A configuration object that defines how to handle pagination.
+  It includes the pagination type, page size, maximum number of pages to
+  fetch, rate limit in seconds, and the fields used for offset and limit.
 - **parameters**: A dictionary of query parameters. The keys are the parameter
   names, and the values are dictionaries with the parameter type and value.
 - **transform_fn**: A function that processes the raw GraphQL response and
@@ -86,16 +96,18 @@ introspecting all the fields up to the specified depth:
 
 ```graphql
 query (
-  $limit: Int!
   $type: TransactionType!
   $dateFrom: DateTime!
   $dateTo: DateTime!
+  $offset: Int
+  $limit: Int!
 ) {
   transactions(
-    limit: $limit
     type: $type
     dateFrom: $dateFrom
     dateTo: $dateTo
+    offset: $offset
+    limit: $limit
   ) {
     offset
     limit
@@ -107,6 +119,7 @@ query (
       group
       type
       kind
+      refundKind
       amount {
         value
         currency
@@ -129,6 +142,7 @@ query (
       invoiceTemplate
     }
     kinds
+    paymentMethodTypes
   }
 }
 ```
@@ -174,8 +188,10 @@ Our example assets are located under `assets/open_collective/transactions`.
 
 ![Dagster Open Collective Asset List](crawl-api-graphql-pipeline.png)
 
-Running the pipeline will fetch the `10` transactions from the Open Collective
-API and store them in BigQuery:
+Running the pipeline will fetch the transactions from the Open Collective API
+following the configuration we defined. The factory will handle pagination
+automatically, fetching the data in chunks and combining them into a single
+result.
 
 ![Dagster Open Collective Result](crawl-api-example-opencollective.png)
 

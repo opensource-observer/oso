@@ -16,9 +16,8 @@ spec:
     cache:
       uri: "redis://redis.production-redis.svc.cluster.local:6379?ttl=3600"
     dagster:
-      global: 
+      global:
         serviceAccountName: production-dagster
-
       ingress:
         enabled: true
         ingressClassName: ingress-internal-cloudflare
@@ -26,7 +25,6 @@ spec:
           host: admin-dagster.opensource.observer
         readOnlyDagsterWebserver:
           host: dagster.opensource.observer
-
       dagsterDaemon:
         runRetries:
           enabled: true
@@ -40,7 +38,6 @@ spec:
           requests:
             cpu: 100m
             memory: 512Mi
-
       dagsterWebserver:
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
@@ -51,7 +48,6 @@ spec:
           requests:
             cpu: 100m
             memory: 512Mi
-
       runLauncher:
         config:
           k8sRunLauncher:
@@ -70,8 +66,22 @@ spec:
                     memory: 2048Mi
                   requests:
                     cpu: 100m
-                    memory: 512Mi
-        
+                    memory: 1024Mi
+      dagster-user-deployments:
+        deployments:
+          - name: "oso-dagster"
+            image:
+              repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+              tag: deploy-20250602201735-9cbe2ba # {"$imagepolicy": "flux-system:oso:tag"}
+              pullPolicy: IfNotPresent
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions"
+            includeConfigInLaunchedRuns:
+              enabled: false
     sqlmesh:
       gateway: "trino"
       trino:

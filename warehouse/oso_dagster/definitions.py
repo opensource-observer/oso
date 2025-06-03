@@ -2,7 +2,6 @@ import logging
 import os
 
 from dagster import Definitions
-from dagster_dbt import DbtCliResource
 from dagster_embedded_elt.dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_k8s import k8s_job_executor
@@ -21,7 +20,6 @@ from oso_dagster.resources.storage import (
     TimeOrderedStorageResource,
 )
 from oso_dagster.resources.trino import TrinoExporterResource
-from oso_dagster.utils.dbt import support_home_dir_profiles
 
 from . import assets
 from .cbt import CBTResource
@@ -111,14 +109,14 @@ def load_definitions():
 
     sqlmesh_exporter = [
         Trino2ClickhouseSQLMeshExporter(
-            ["clickhouse_metrics"],
+            ["clickhouse_export"],
             destination_catalog="clickhouse",
             destination_schema="default",
             source_catalog=sqlmesh_catalog,
             source_schema=sqlmesh_schema,
         ),
         Trino2BigQuerySQLMeshExporter(
-            ["bigquery_metrics"],
+            ["bigquery_export"],
             project_id=project_id,
             dataset_id=sqlmesh_bq_export_dataset_id,
             source_catalog=sqlmesh_catalog,
@@ -194,6 +192,7 @@ def load_definitions():
     )
 
     sqlmesh_infra_config = {
+        "dev_environment": "dev",
         "environment": "prod",
         "mcs_deployment_name": "production-mcs",
         "mcs_deployment_namespace": "production-mcs",
@@ -250,8 +249,6 @@ def load_definitions():
 
     all_schedules = schedules + get_partitioned_schedules(asset_factories)
 
-    # Each of the dbt environments needs to be setup as a resource to be used in
-    # the dbt assets
     resources = {
         "gcs": gcs,
         "cbt": cbt,
@@ -281,12 +278,6 @@ def load_definitions():
         "duckdb_importer": duckdb_importer,
         "time_ordered_storage": time_ordered_storage,
     }
-    for target in global_config.dbt_manifests:
-        resources[f"{target}_dbt"] = DbtCliResource(
-            project_dir=os.fspath(global_config.main_dbt_project_dir),
-            target=target,
-            profiles_dir=support_home_dir_profiles(),
-        )
 
     extra_kwargs = {}
     if global_config.enable_k8s_executor:

@@ -13,13 +13,15 @@ import warnings
 from ast import parse
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+from urllib.parse import urljoin
 
 import aiotrino
 import dotenv
 import git
+import httpx
 import kr8s
 from kr8s.objects import Job, Namespace, Service
-from metrics_tools.definition import PeerMetricDependencyRef
+from metrics_tools.definition import MetricModelDefinition
 from metrics_tools.factory.constants import METRICS_COLUMNS_BY_ENTITY
 from metrics_tools.factory.factory import MetricQueryConfig, timeseries_metrics
 from metrics_tools.intermediate import run_macro_evaluator
@@ -300,6 +302,29 @@ def clean_expired_trino_hive_files(
         )
     )
 
+@production.command()
+@click.option("--service-name", default="receiver")
+@click.option("--namespace", default="flux-system")
+@click.option("--endpoint", required=True)
+@click.option("--remote-port", type=int, default=9292)
+def trigger_image_update(service_name: str, namespace: str, endpoint: str, remote_port: int):
+    flux_service = Service.get(
+        service_name,
+        namespace,
+    )
+    # Turns out the remote port should be 9292 for the flux service and not 8080
+    # as the service has listed. Not sure why but this is the port that the service
+    # forwards to.
+    with flux_service.portforward(remote_port=remote_port, local_port=None) as local_port:
+        logger.info(f"Port forwarded to localhost:{local_port}")
+
+        url = urljoin(f"http://localhost:{local_port}", endpoint)
+        res = httpx.get(url)
+        if res.status_code != 200:
+            logger.error(f"Failed to trigger image update: {res.status_code} {res.text}")
+        else:
+            logger.info(f"Image update webhook triggered for {service_name} in {namespace}")
+
 
 @production.command()
 @click.option("--namespace", default="production-dagster")
@@ -487,14 +512,14 @@ def call_mcs(
     with get_mcs_url(
         mcs_url, mcs_k8s_service_name, mcs_k8s_namespace, use_port_forward
     ) as mcs_url:
-        from metrics_tools.compute.client import Client as MCSClient
+        from metrics_service.client import Client as MCSClient
 
         if metric_name == "noop":
             # This is a special case for triggering essentially a noop job
             logger.info("Running a noop job")
             rendered_query_str = "SELECT 1 as result"
             columns = [("result", "int")]
-            ref = PeerMetricDependencyRef(
+            ref = MetricModelDefinition(
                 name="noop",
                 entity_type="artifact",
                 window=1,
@@ -649,7 +674,7 @@ def local_sqlmesh(
         )
         with trino_service.portforward(remote_port="8080") as local_port:
             # TODO Open up a port to the mcs deployment on the kind cluster
-            process = subprocess.Popen(
+            subprocess.run(
                 ["sqlmesh", "--gateway", "local-trino", *extra_args],
                 # shell=True,
                 cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
@@ -666,18 +691,18 @@ def local_sqlmesh(
                     # set for trino but must be explicitly set for duckdb
                     "SQLMESH_TIMESERIES_METRICS_START": timeseries_start,
                 },
+                check=True,
             )
-            process.communicate()
     else:
-        process = subprocess.Popen(
+        subprocess.run(
             ["sqlmesh", *ctx.args],
             cwd=os.path.join(repo_dir, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
             },
+            check=True,
         )
-        process.communicate()
 
 
 @local.command()
@@ -752,15 +777,16 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
     if duckdb:
         asyncio.run(db_seed("duckdb"))
 
-        process = subprocess.Popen(
+        subprocess.run(
             ["sqlmesh", *extra_args],
             cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
             env={
                 **os.environ,
                 "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_duckdb_path"],
+                "SQLMESH_TESTING_ENABLED": "1",
             },
+            check=True,
         )
-        process.communicate()
     else:
         docker_client = DockerClient(
             compose_files=[os.path.join(REPO_DIR, "warehouse/docker-compose.yml")]
@@ -770,7 +796,7 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
 
             asyncio.run(db_seed("trino"))
 
-            process = subprocess.Popen(
+            subprocess.run(
                 ["sqlmesh", "--gateway", "local-trino-docker", *extra_args],
                 # shell=True,
                 cwd=os.path.join(REPO_DIR, "warehouse/oso_sqlmesh"),
@@ -779,9 +805,10 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
                     "SQLMESH_DUCKDB_LOCAL_PATH": ctx.obj["local_trino_duckdb_path"],
                     "SQLMESH_TRINO_HOST": "localhost",
                     "SQLMESH_TRINO_PORT": os.environ.get("SQLMESH_TRINO_PORT", "8080"),
+                    "SQLMESH_TESTING_ENABLED": "1",
                 },
+                check=True,
             )
-            process.communicate()
 
         finally:
             docker_client.compose.down()

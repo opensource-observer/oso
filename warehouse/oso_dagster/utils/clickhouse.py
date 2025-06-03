@@ -1,11 +1,13 @@
 import logging
 from typing import Dict, List, Optional, Tuple
 
+from clickhouse_connect.driver.client import Client
+
 logger = logging.getLogger(__name__)
 
 
 def create_table(
-    client,
+    client: Client,
     table_name: str,
     columns: List[Tuple[str, str]],
     index: Optional[Dict[str, List[str]]] = None,
@@ -62,15 +64,15 @@ def create_table(
             if index
             else ""
         ),
-        "order_by": ", ".join(order_by) if order_by else "",
+        # Use the first column as default ORDER BY if none provided
+        "order_by": ", ".join(order_by) if order_by else columns[0][0] if columns else "tuple()",
     }
 
     # return command % params
-    result = client.command(command % params)
-    return result
+    return execute_command(client, command % params)
 
 
-def drop_table(client, table_name: str):
+def drop_table(client: Client, table_name: str):
     """
     Drops a Clickhouse table
 
@@ -86,10 +88,10 @@ def drop_table(client, table_name: str):
     Any
         See https://clickhouse.com/docs/en/integrations/python#client-command-method
     """
-    return client.command(f"DROP TABLE IF EXISTS {table_name}")
+    return execute_command(client, f"DROP TABLE IF EXISTS {table_name}")
 
 
-def rename_table(client, from_name: str, to_name: str):
+def rename_table(client: Client, from_name: str, to_name: str):
     """
     Renames a Clickhouse table
 
@@ -107,11 +109,11 @@ def rename_table(client, from_name: str, to_name: str):
     Any
         See https://clickhouse.com/docs/en/integrations/python#client-command-method
     """
-    return client.command(f"RENAME TABLE {from_name} TO {to_name}")
+    return execute_command(client, f"RENAME TABLE {from_name} TO {to_name}")
 
 
 def import_data(
-    client,
+    client: Client,
     table_name: str,
     s3_uri: str,
     format: str = "",
@@ -145,8 +147,8 @@ def import_data(
     Any
         See https://clickhouse.com/docs/en/integrations/python#client-command-method
     """
-    client.command("SET input_format_parquet_import_nested = 1;")
-    client.command("SET parallel_distributed_insert_select = 1;")
+    execute_command(client, "SET input_format_parquet_import_nested = 1;")
+    execute_command(client, "SET parallel_distributed_insert_select = 1;")
     command_options = ["default", s3_uri]
     if access_key and secret_key:
         command_options.extend([access_key, secret_key])
@@ -163,5 +165,12 @@ def import_data(
     # query = command % params
     # just to be safe let's not log while we're passing in the access key
     # logger.debug(f"Running query: {query}")
-    result = client.command(command)
-    return result
+    return execute_command(client, command)
+
+
+def execute_command(client: Client, command: str):
+    try:
+        return client.command(command)
+    except Exception as e:
+        logger.error(f"Error executing command: {command}")
+        raise Exception(f"Error executing command: {command}") from e

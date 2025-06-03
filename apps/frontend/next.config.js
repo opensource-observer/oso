@@ -39,6 +39,18 @@ const nextConfig = {
               source: "/api/auth",
               destination: "/api/v1/auth",
             },
+            {
+              source: "/ingest/static/:path*",
+              destination: "https://us-assets.i.posthog.com/static/:path*",
+            },
+            {
+              source: "/ingest/:path*",
+              destination: "https://us.i.posthog.com/:path*",
+            },
+            {
+              source: "/ingest/decide",
+              destination: "https://us.i.posthog.com/decide",
+            },
           ];
         },
         async redirects() {
@@ -71,12 +83,12 @@ const nextConfig = {
             {
               source: "/gather",
               destination:
-                "https://app.gather.town/invite?token=o8uSbZC4S_CokNYto7sM",
+                "https://app.v2.gather.town/app/c6afa3c8-f374-4fc5-af79-a0a7a45498cb/join?guest=true",
               permanent: false,
             },
             {
               source: "/status",
-              destination: "https://stats.uptimerobot.com/uFqxl2jxGA",
+              destination: "https://status.opensource.observer",
               permanent: false,
             },
             {
@@ -96,6 +108,8 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ["typeorm", "graphql"],
   },
+  // This is required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.plugins = [...config.plugins];
