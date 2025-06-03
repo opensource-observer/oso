@@ -8,7 +8,7 @@ from typing_extensions import TypedDict
 
 ExamplePriority = Literal["P0", "P1", "P2"]
 ExampleDifficulty = Literal["easy", "medium", "hard"]
-ExampleQueryType = Literal["filter", "aggregation", "join", "time-series", "derived metric", "sort / limit",  "subquery / cte", "window function"]
+ExampleQueryType = Literal["filter", "aggregation", "join", "timeseries", "derived metric", "sort / limit",  "subquery / cte", "window function"]
 ExampleQueryDomain = Literal["github", "timeseries", "metrics", "directory", "blockchain", "funding"]
 
 class ExampleInput(TypedDict):

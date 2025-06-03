@@ -15,7 +15,7 @@ TEXT2SQL_DATASET: List[Example] = [
         answer="SELECT CASE WHEN m.metric_name = 'GITHUB_opened_issues_yearly' THEN 'Issues Opened' WHEN m.metric_name = 'GITHUB_closed_issues_yearly' THEN 'Issues Closed' END AS issue_status, SUM(COALESCE(ts.amount, 0)) AS total_count FROM timeseries_metrics_by_project_v0 ts JOIN projects_v1 p ON ts.project_id = p.project_id AND p.project_name = 'hypercerts' JOIN metrics_v0 m ON ts.metric_id = m.metric_id AND m.metric_name IN ('GITHUB_opened_issues_yearly','GITHUB_closed_issues_yearly') WHERE EXTRACT(YEAR FROM ts.sample_date) = 2023 GROUP BY 1",
         priority="P1",
         difficulty="medium",
-        query_type=["filter", "aggregation", "join", "time-series", "derived metric"],
+        query_type=["filter", "aggregation", "join", "timeseries", "derived metric"],
         query_domain=["github", "timeseries", "metrics"]
     ),
     create_example(
@@ -47,7 +47,7 @@ TEXT2SQL_DATASET: List[Example] = [
         answer="SELECT sample_date, SUM(tm.amount) AS total_transactions FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE m.metric_name LIKE 'BASE_gas_fees_daily' AND tm.sample_date BETWEEN DATE '2024-01-01' AND DATE '2024-01-31' GROUP BY sample_date ORDER BY sample_date",
         priority="P1",
         difficulty="medium",
-        query_type=["time-series", "aggregation", "filter", "join", "sort / limit"],
+        query_type=["timeseries", "aggregation", "filter", "join", "sort / limit"],
         query_domain=["blockchain", "timeseries", "metrics"]
     ),
     create_example(
@@ -63,7 +63,7 @@ TEXT2SQL_DATASET: List[Example] = [
         answer="SELECT tm.project_id, SUM(tm.amount) AS total_transactions FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE m.metric_name LIKE 'CYBER_transactions_monthly' AND tm.sample_date BETWEEN DATE '2025-01-01' AND DATE '2025-03-31' GROUP BY tm.project_id",
         priority="P0",
         difficulty="medium",
-        query_type=["filter", "aggregation", "join", "time-series"],
+        query_type=["filter", "aggregation", "join", "timeseries"],
         query_domain=["timeseries", "metrics"]
     ),
     create_example(
@@ -71,7 +71,7 @@ TEXT2SQL_DATASET: List[Example] = [
         answer="SELECT tm.sample_date, SUM(tm.amount) AS daily_commit_count FROM timeseries_metrics_by_project_v0 AS tm JOIN projects_v1 AS p ON tm.project_id = p.project_id JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE p.project_name LIKE 'hypercerts' AND tm.sample_date BETWEEN DATE '2024-01-01' AND DATE '2024-01-14' AND m.metric_name LIKE '%commits_daily' GROUP BY tm.sample_date",
         priority="P1",
         difficulty="medium",
-        query_type=["time-series", "aggregation", "filter", "join"],
+        query_type=["timeseries", "aggregation", "filter", "join"],
         query_domain=["timeseries", "metrics"]
     ),
     create_example(
@@ -114,4 +114,180 @@ TEXT2SQL_DATASET: List[Example] = [
         query_type=["filter", "aggregation"],
         query_domain=["directory"]
     ),
+    create_example(
+        question="What’s the pull-request merge rate (merged vs total) for project “zora” the first quarter this year?",
+        answer="SELECT SUM(CASE WHEN m.metric_name LIKE '%_merged_pull_requests_monthly' THEN tm.amount END) / SUM(CASE WHEN m.metric_name LIKE '%_opened_pull_requests_monthly' THEN tm.amount END) AS merge_rate FROM timeseries_metrics_by_project_v0 AS tm JOIN projects_v1 AS p ON tm.project_id = p.project_id JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE LOWER(p.display_name) LIKE 'zora' AND tm.sample_date BETWEEN DATE '2025-01-01' AND DATE '2025-03-31'",
+        priority="P1",
+        difficulty="medium",
+        query_type=["aggregation", "join", "filter", "timeseries", "derived metric"],
+        query_domain=["metrics"]
+    ),
+    create_example(
+        question="How many funding transactions did each project receive in Q1 2025? I want the projects with the most transactions shown first.",
+        answer="SELECT tm.project_id, COUNT(*) AS funding_transactions FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id AND m.metric_name LIKE '%funding_awarded_quarterly' WHERE tm.sample_date BETWEEN DATE '2025-01-01' AND DATE '2025-03-31' GROUP BY tm.project_id ORDER BY funding_transactions DESC",
+        priority="P1",
+        difficulty="medium",
+        query_type=["aggregation", "join", "filter", "timeseries", "sort / limit"],
+        query_domain=["metrics", "funding"]
+    ),
+    create_example(
+        question="Which projects have at least 100 GitHub stars and have received over $1M in funding?",
+        answer="SELECT project_id FROM key_metrics_by_project_v0 AS km JOIN metrics_v0 AS m ON km.metric_id = m.metric_id GROUP BY project_id HAVING SUM(CASE WHEN m.metric_name = 'GITHUB_stars_over_all_time' THEN km.amount END) >= 100 AND SUM(CASE WHEN m.metric_name LIKE '%funding_awarded%' THEN km.amount END) > 1000000",
+        priority="P1",
+        difficulty="medium",
+        query_type=["aggregation", "join", "filter"],
+        query_domain=["github", "funding"]
+    ),
+    create_example(
+        question="What projects saw their TVL exceed $10 M on both Optimism and Arbitrum in Q4 2024?",
+        answer="SELECT tm.project_id FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id AND m.metric_name LIKE '%defillama_tvl_monthly' WHERE tm.sample_date BETWEEN DATE '2024-10-01' AND DATE '2024-12-31' GROUP BY tm.project_id HAVING MAX(CASE WHEN m.metric_name LIKE 'OPTIMISM_%' THEN tm.amount ELSE 0 END) > 10000000 AND MAX(CASE WHEN m.metric_name LIKE 'ARBITRUM_ONE%' THEN tm.amount ELSE 0 END) > 10000000",
+        priority="P1",
+        difficulty="medium",
+        query_type=["aggregation", "join", "filter", "timeseries", "derived metric"],
+        query_domain=["timeseries", "metrics"]
+    ),
+    create_example(
+        question="How many full-time active developers were in the Filecoin and/or PL Network in 2022? How about in 2024? Tell me both the absolute numbers and the net increase / decrease between the two years.",
+        answer="SELECT SUM(CASE WHEN EXTRACT(YEAR FROM tm.sample_date) = 2022 THEN tm.amount ELSE 0 END) AS full_time_developers_2022, SUM(CASE WHEN EXTRACT(YEAR FROM tm.sample_date) = 2024 THEN tm.amount ELSE 0 END) AS full_time_developers_2024, SUM(CASE WHEN EXTRACT(YEAR FROM tm.sample_date) = 2024 THEN tm.amount ELSE 0 END) - SUM(CASE WHEN EXTRACT(YEAR FROM tm.sample_date) = 2022 THEN tm.amount ELSE 0 END) AS full_time_developers_increase_decrease_2022_to_2024 FROM timeseries_metrics_by_collection_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id AND m.metric_name LIKE 'GITHUB_full_time_developers_yearly' JOIN collections_v1 AS c ON tm.collection_id = c.collection_id AND (c.collection_name LIKE '%filecoin%' OR c.collection_name LIKE '%protocol-labs%')",
+        priority="P1",
+        difficulty="medium",
+        query_type=["aggregation", "join", "filter", "derived metric"],
+        query_domain=["timeseries", "metrics"]
+    ),
+    create_example(
+        question="What collection is responsible for projects with the most PRs made ever?",
+        answer="SELECT collection_name FROM key_metrics_by_collection_v0 AS km JOIN metrics_v0 AS m ON km.metric_id = m.metric_id JOIN collections_v1 AS c ON km.collection_id = c.collection_id WHERE m.metric_name LIKE '%opened_pull_requests%' ORDER BY km.amount DESC LIMIT 1",
+        priority="P0",
+        difficulty="medium",
+        query_type=["join", "filter", "sort / limit"],
+        query_domain=["metrics"]
+    ),
+    create_example(
+        question="Which NPM packages are associated with projects that merged at least 50 pull requests this month?",
+        answer="WITH projects AS (SELECT project_id FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id AND m.metric_name = 'GITHUB_merged_pull_requests_weekly' WHERE tm.sample_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1' MONTH AND tm.sample_date < DATE_TRUNC('month', CURRENT_DATE) GROUP BY project_id HAVING SUM(tm.amount) >= 50) SELECT DISTINCT s.to_package_artifact_name FROM projects AS p JOIN sboms_v0 AS s ON s.from_project_id = p.project_id WHERE s.to_package_artifact_source = 'NPM'",
+        priority="P1",
+        difficulty="medium",
+        query_type=["subquery / cte", "join", "filter", "aggregation"],
+        query_domain=["metrics", "sboms"]
+    ),
+    create_example(
+        question="Give me projects that received a grant in the last year and published at least one GitHub release.",
+        answer="SELECT project_id FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE tm.sample_date >= current_date - INTERVAL '1' YEAR GROUP BY project_id HAVING SUM(CASE WHEN m.metric_name LIKE '%_funding_awarded_monthly' THEN tm.amount ELSE 0 END) > 0 AND SUM(CASE WHEN m.metric_name LIKE 'GITHUB_releases_monthly' THEN tm.amount ELSE 0 END) > 0",
+        priority="P1",
+        difficulty="medium",
+        query_type=["join", "filter", "aggregation", "timeseries", "derived metric"],
+        query_domain=["metrics", "funding", "github"]
+    ),
+    create_example(
+        question="Which collections include projects that generated more than 1000 pull requests and over 10000 blockchain transactions all-time?",
+        answer="SELECT collection_id FROM key_metrics_by_collection_v0 AS km JOIN metrics_v0 AS m ON km.metric_id = m.metric_id GROUP BY collection_id HAVING SUM(CASE WHEN m.metric_name LIKE '%opened_pull_requests%' THEN km.amount ELSE 0 END) > 1000 AND SUM(CASE WHEN m.metric_name LIKE '%transactions%' THEN km.amount ELSE 0 END) > 10000",
+        priority="P1",
+        difficulty="medium",
+        query_type=["aggregation", "join", "filter", "derived metric"],
+        query_domain=["metrics"]
+    ),
+    create_example(
+        question="Find projects with more than 5 dependencies and fewer than 100 GitHub commits in the past 30 days.",
+        answer="WITH fewer_commits AS (SELECT project_id FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE tm.sample_date >= current_date - INTERVAL '30' DAY GROUP BY project_id HAVING SUM(CASE WHEN m.metric_name LIKE '%commits_daily' THEN tm.amount ELSE 0 END) < 100) SELECT project_id FROM sboms_v0 AS s JOIN fewer_commits AS fc ON s.from_project_id = fc.project_id GROUP BY project_id HAVING COUNT(DISTINCT to_package_artifact_id) > 5",
+        priority="P1",
+        difficulty="medium",
+        query_type=["subquery / cte", "join", "filter", "aggregation"],
+        query_domain=["timeseries", "metrics"]
+    ),
+    create_example(
+        question="List projects that had over $50K in funding and recorded at least 1000 contract invocations on Base in the last 6 months.",
+        answer="SELECT project_id FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE tm.sample_date >= current_date - INTERVAL '6' MONTH GROUP BY project_id HAVING SUM(CASE WHEN m.metric_name LIKE '%funding_awarded_monthly' THEN tm.amount ELSE 0 END) > 50000 AND SUM(CASE WHEN m.metric_name LIKE 'BASE_contract_invocations_monthly' THEN tm.amount ELSE 0 END) > 1000",
+        priority="P1",
+        difficulty="medium",
+        query_type=["join", "filter", "aggregation", "timeseries", "derived metric"],
+        query_domain=["metrics", "funding", "blockchain"]
+    ),
+    create_example(
+        question="Show me all projects in the “gitcoin-oss” collection along with their total forks and total Ethereum gas used.",
+        answer="SELECT km.project_id, SUM(CASE WHEN m.metric_name LIKE 'GITHUB_forks_over_all_time' THEN km.amount ELSE 0 END) AS total_forks, SUM(CASE WHEN m.metric_name LIKE '%gas_fees%' THEN km.amount ELSE 0 END) AS total_ethereum_gas_used FROM key_metrics_by_project_v0 AS km JOIN metrics_v0 AS m ON km.metric_id = m.metric_id JOIN projects_by_collection_v1 AS pbc ON km.project_id = pbc.project_id JOIN collections_v1 AS c ON pbc.collection_id = c.collection_id WHERE c.collection_name LIKE 'gitcoin-oss' GROUP BY km.project_id",
+        priority="P1",
+        difficulty="medium",
+        query_type=["join", "aggregation", "filter"],
+        query_domain=["directory", "metrics"]
+    ),
+    create_example(
+        question="List projects that published at least one new release in the last 6 months and had a user operation via paymaster in ERC-4337.",
+        answer="WITH recieved_grants AS (SELECT project_id FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE tm.sample_date >= current_date - INTERVAL '6' MONTH GROUP BY project_id HAVING SUM(CASE WHEN m.metric_name LIKE 'GITHUB_releases_monthly' THEN tm.amount ELSE 0 END) > 0), paymaster_projects AS (SELECT DISTINCT a.project_id FROM int_events_daily__4337 AS e JOIN artifacts_by_project_v1 AS a ON e.to_artifact_id = a.artifact_id WHERE e.event_type LIKE 'CONTRACT_INVOCATION_VIA_PAYMASTER') SELECT DISTINCT rg.project_id FROM recieved_grants AS rg JOIN paymaster_projects AS pp ON rg.project_id = pp.project_id",
+        priority="P1",
+        difficulty="medium",
+        query_type=["subquery / cte", "join", "filter", "aggregation"],
+        query_domain=["blockchain", "timeseries", "metrics"]
+    ),
+    create_example(
+        question="Which collection has seen the most TVL growth over the last year to now?",
+        answer="WITH tvl_data AS (SELECT pc.collection_name, SPLIT_PART(m.metric_name, '_', 1) AS chain, tm.sample_date AS bucket_day, tm.amount AS tvl FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id AND m.metric_name LIKE '%defillama_tvl_daily' JOIN projects_by_collection_v1 AS pc ON tm.project_id = pc.project_id WHERE tm.sample_date BETWEEN current_date - INTERVAL '1' YEAR AND current_date), year_window AS (SELECT collection_name, chain, max_by(tvl, bucket_day) - min_by(tvl, bucket_day) AS tvl_growth FROM tvl_data GROUP BY collection_name, chain) SELECT collection_name, MAX(tvl_growth) AS max_tvl_growth FROM year_window GROUP BY collection_name ORDER BY max_tvl_growth DESC LIMIT 1",
+        priority="P2",
+        difficulty="hard",
+        query_type=["subquery / cte", "join", "filter", "aggregation", "derived metric"],
+        query_domain=["timeseries", "metrics"]
+    ),
+    create_example(
+        question="Give me all of the collections that are in the top 10% for projects associated with them.",
+        answer="WITH collection_counts AS (SELECT collection_id, COUNT(DISTINCT project_id) AS project_count FROM projects_by_collection_v1 GROUP BY collection_id), ranked AS (SELECT collection_id, project_count, CUME_DIST() OVER (ORDER BY project_count) AS cume_dist FROM collection_counts) SELECT collection_id FROM ranked WHERE cume_dist >= 0.90",
+        priority="P1",
+        difficulty="medium",
+        query_type=["subquery / cte", "window function", "aggregation", "filter"],
+        query_domain=["directory"]
+    ),
+    create_example(
+        question="What 5 projects have the most open issues over the last month? Compare this with the 5 projects with the most open issues over the last 3 months. Return them as one table side by side so I can compare the projects and their counts",
+        answer="WITH pastmonth_issues AS (SELECT tm.project_id, SUM(tm.amount) AS open_issues, ROW_NUMBER() OVER (ORDER BY SUM(tm.amount) DESC) AS rn FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE m.metric_name = 'GITHUB_opened_issues_weekly' AND tm.sample_date >= CURRENT_DATE - INTERVAL '1' MONTH GROUP BY tm.project_id), pastthreemonths_issues AS (SELECT tm.project_id, SUM(tm.amount) AS open_issues, ROW_NUMBER() OVER (ORDER BY SUM(tm.amount) DESC) AS rn FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE m.metric_name = 'GITHUB_opened_issues_monthly' AND tm.sample_date >= CURRENT_DATE - INTERVAL '4' MONTH AND tm.sample_date < CURRENT_DATE - INTERVAL '1' MONTH GROUP BY tm.project_id) SELECT c.project_id AS pastmonth_project_id, c.open_issues AS pastmonth_open_issues, l.project_id AS pastthreemonths_project_id, l.open_issues AS pastthreemonths_open_issues FROM pastmonth_issues AS c FULL OUTER JOIN pastthreemonths_issues AS l ON c.rn = l.rn WHERE (c.rn <= 5 OR l.rn <= 5) ORDER BY coalesce(c.rn, l.rn)",
+        priority="P1",
+        difficulty="hard",
+        query_type=["subquery / cte", "aggregation", "join", "timeseries", "window function", "filter", "sort"],
+        query_domain=["github", "timeseries", "metrics"]
+    ),
+    create_example(
+        question="What projects saw any growth in their TVL from 2025 so far compared with the end of 2024?",
+        answer="WITH tvl_data AS (SELECT tm.project_id, SPLIT_PART(m.metric_name, '_', 1) AS chain, tm.sample_date AS bucket_day, tm.amount AS tvl FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id AND m.metric_name LIKE '%defillama_tvl_daily' JOIN projects_by_collection_v1 AS pc ON tm.project_id = pc.project_id WHERE tm.sample_date BETWEEN DATE '2024-12-31' AND current_date), tvl_end_2024 AS (SELECT project_id, chain, SUM(tvl) AS tvl_end_2024 FROM tvl_data WHERE bucket_day = DATE '2024-12-31' GROUP BY project_id, chain), tvl_latest_2025 AS (SELECT project_id, chain, max_by(tvl, bucket_day) AS tvl_latest_2025 FROM tvl_data WHERE bucket_day BETWEEN DATE '2025-01-01' AND current_date GROUP BY project_id, chain) SELECT DISTINCT e.project_id FROM tvl_end_2024 AS e JOIN tvl_latest_2025 AS l ON e.project_id = l.project_id AND e.chain = l.chain WHERE (l.tvl_latest_2025 - e.tvl_end_2024) > 0",
+        priority="P1",
+        difficulty="medium",
+        query_type=["subquery / cte", "join", "filter", "derived metric"],
+        query_domain=["timeseries", "metrics"]
+    ),
+    create_example(
+        question="List projects that have increased forks year over year for the past 3 years and are in the top 20% for GitHub stars (all time).",
+        answer="WITH forks_2022 AS (SELECT tm.project_id, max_by(tm.amount, tm.sample_date) AS forks_2022 FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE m.metric_name LIKE '%forks_daily' AND tm.sample_date BETWEEN DATE '2022-01-01' AND DATE '2022-12-31' GROUP BY tm.project_id), forks_2023 AS (SELECT tm.project_id, max_by(tm.amount, tm.sample_date) AS forks_2023 FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE m.metric_name LIKE '%forks_daily' AND tm.sample_date BETWEEN DATE '2023-01-01' AND DATE '2023-12-31' GROUP BY tm.project_id), forks_2024 AS (SELECT tm.project_id, max_by(tm.amount, tm.sample_date) AS forks_2024 FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE m.metric_name LIKE '%forks_daily' AND tm.sample_date BETWEEN DATE '2024-01-01' AND DATE '2024-12-31' GROUP BY tm.project_id), forks_growth AS (SELECT f22.project_id, f22.forks_2022, f23.forks_2023, f24.forks_2024 FROM forks_2022 AS f22 JOIN forks_2023 AS f23 ON f22.project_id = f23.project_id JOIN forks_2024 AS f24 ON f22.project_id = f24.project_id), stars AS (SELECT km.project_id, max(km.amount) AS stars_alltime FROM key_metrics_by_project_v0 AS km JOIN metrics_v0 AS m ON km.metric_id = m.metric_id WHERE m.metric_name LIKE '%stars_over_all_time' GROUP BY km.project_id), stars_ranked AS (SELECT project_id, stars_alltime, CUME_DIST() OVER (ORDER BY stars_alltime) AS cume_dist FROM stars) SELECT fg.project_id FROM forks_growth AS fg JOIN stars_ranked AS s ON fg.project_id = s.project_id WHERE fg.forks_2022 < fg.forks_2023 AND fg.forks_2023 < fg.forks_2024 AND s.cume_dist >= 0.80",
+        priority="P2",
+        difficulty="hard",
+        query_type=["subquery / cte", "join", "filter", "aggregation", "window function"],
+        query_domain=["timeseries", "metrics", "github"]
+    ),
+    create_example(
+        question="Show me projects where last week's opened-issue count was higher than their transaction count for the same period.",
+        answer="WITH weekly_counts AS (SELECT tm.project_id, SUM(CASE WHEN m.metric_name LIKE '%opened_issues_daily' THEN tm.amount ELSE 0 END) AS opened_issues_count, SUM(CASE WHEN m.metric_name = '%transactions_daily' THEN tm.amount ELSE 0 END) AS transactions_count FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id WHERE tm.sample_date BETWEEN (current_date - INTERVAL '7' DAY) AND (current_date - INTERVAL '1' DAY) GROUP BY tm.project_id) SELECT project_id, opened_issues_count, transactions_count FROM weekly_counts WHERE opened_issues_count > transactions_count",
+        priority="P1",
+        difficulty="medium",
+        query_type=["subquery / cte", "join", "aggregation", "filter"],
+        query_domain=["timeseries", "metrics"]
+    ),
+    create_example(
+        question="Which projects have a dependency count above the overall average and average daily TVL growth for the last year above 5%?",
+        answer="WITH dependency_counts AS (SELECT from_project_id AS project_id, COUNT(DISTINCT to_package_artifact_id) AS dependency_count FROM sboms_v0 GROUP BY from_project_id), avg_dep AS (SELECT AVG(dependency_count) AS avg_dependency FROM dependency_counts), tvl_lag AS (SELECT project_id, bucket_day, amount AS tvl, LAG(amount) OVER (PARTITION BY project_id ORDER BY bucket_day) AS prev_tvl FROM int_events_daily_to_project__defillama_tvl WHERE bucket_day >= current_date - INTERVAL '1' YEAR), daily_pct AS (SELECT project_id, (tvl - prev_tvl) / prev_tvl AS daily_pct_change FROM tvl_lag WHERE prev_tvl > 0), avg_daily_growth AS (SELECT project_id, AVG(daily_pct_change) AS avg_daily_growth FROM daily_pct GROUP BY project_id) SELECT dc.project_id, dc.dependency_count, ag.avg_daily_growth FROM dependency_counts AS dc JOIN avg_dep AS ad ON dc.dependency_count > ad.avg_dependency JOIN avg_daily_growth AS ag ON dc.project_id = ag.project_id WHERE ag.avg_daily_growth > 0.05",
+        priority="P1",
+        difficulty="hard",
+        query_type=["subquery / cte", "aggregation", "window function", "filter", "join", "derived metric"],
+        query_domain=["timeseries", "metrics", "sboms"]
+    ),
+    create_example(
+        question="Has the DeFi project Compound Finance had a significant increase in TVL on Base between October 2024 and March 2025?",
+        answer="WITH tvl_data AS (SELECT tm.sample_date AS bucket_day, tm.amount AS tvl FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id AND m.metric_name LIKE 'BASE_defillama_tvl_daily' JOIN projects_v1 AS p ON tm.project_id = p.project_id WHERE LOWER(p.display_name) LIKE '%compound finance%' AND tm.sample_date BETWEEN DATE '2024-10-01' AND DATE '2025-03-31'), tvl_snapshots AS (SELECT min_by(tvl, bucket_day) AS tvl_oct2024, max_by(tvl, bucket_day) AS tvl_mar2025 FROM tvl_data) SELECT tvl_oct2024, tvl_mar2025, (tvl_mar2025 - tvl_oct2024) AS absolute_change, CASE WHEN tvl_oct2024 = 0 THEN NULL ELSE 100.0 * (tvl_mar2025 - tvl_oct2024) / tvl_oct2024 END AS pct_change FROM tvl_snapshots",
+        priority="P1",
+        difficulty="medium",
+        query_type=["subquery / cte", "aggregation", "filter", "join", "derived metric"],
+        query_domain=["timeseries", "metrics", "blockchain"]
+    ),
+    create_example(
+        question="Show me the projects (sorted by the number of stars they've received) that are active in both the Solana and Arbitrum ecosystems.",
+        answer="SELECT tm.project_id FROM timeseries_metrics_by_project_v0 AS tm JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id AND m.metric_name LIKE 'GITHUB_full_time_developers_monthly' JOIN projects_by_collection_v1 AS pbc ON tm.project_id = pbc.project_id WHERE tm.sample_date >= current_date - INTERVAL '3' MONTH GROUP BY tm.project_id HAVING SUM(tm.amount) > 0",
+        priority="P1",
+        difficulty="medium",
+        query_type=["join", "filter", "aggregation", "timeseries", "sort / limit"],
+        query_domain=["metrics"]
+    )
 ]
