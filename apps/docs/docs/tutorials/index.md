@@ -16,6 +16,7 @@ Examples of applications and data science built on OSO's data platform. Each exa
 - 👥 [Cohort Analysis](./cohort-analysis.mdx) - Track a cohort of projects across a set of metrics over time
 - 🪝 [Uniswap Hooks](./uniswap-hooks.mdx) - Join OSO data with Dune stats to analyze Uniswap v4 hooks
 - 🔴 [Superchain Activity](./superchain-activity.md) - Explore OP Atlas project activity on the Superchain.
+- ✅ [Eligible Projects](./20250603_EligibleProjects.mdx) - Learn how to identify and analyze projects that meet specific eligibility criteria.
 - 🤝 Developer Retention (coming soon) - View developer churn and retention patterns over time
 - ⭐ OpenRank (coming soon) - Run OpenRank on top of any network graph with your own trust seed assumptions
 - 🛡️ Trusted Users (coming soon) - Classify users on the basis of different trust signals
