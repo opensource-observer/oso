@@ -3,6 +3,7 @@ import logging
 import sys
 
 import click
+import uvicorn
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
 
@@ -15,6 +16,7 @@ from ..tool.llm import create_llm
 from ..tool.oso_mcp_client import OsoMcpClient
 from ..tool.oso_text2sql import create_oso_query_engine
 from ..types import ErrorResponse, SemanticResponse, SqlResponse, StrResponse
+from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentError, AgentRuntimeError
 from ..util.log import setup_logging
@@ -22,6 +24,7 @@ from ..util.tracing import setup_telemetry
 from .utils import common_options, pass_config
 
 load_dotenv()
+setup_nest_asyncio()
 
 logger = logging.getLogger("oso-agent")
 
@@ -43,6 +46,31 @@ def cli(ctx, verbose):
     setup_logging(verbose)
     setup_telemetry(config)
     ctx.obj = config
+
+
+@cli.command()
+@click.option(
+    "--port", 
+    "-p",
+    default=8888,
+    help="Port to run the OSO Agent server on",
+)
+@click.option(
+    "--host",
+    "-H",
+    default="localhost",
+    help="Host to run the OSO Agent server on",
+)
+def serve(port: int, host: str):
+    """Run the OSO Agent server."""
+    uvicorn_config = uvicorn.Config("oso_agent.server.server:app", host=host, port=port)
+    server = uvicorn.Server(uvicorn_config)
+    try:
+        logger.info(f"Starting OSO Agent server on {host}:{port}")
+        asyncio.run(server.serve())
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+
 
 @cli.command()
 @click.argument("query", required=True)

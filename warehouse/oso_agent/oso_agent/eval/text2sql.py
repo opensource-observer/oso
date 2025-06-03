@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Any, Dict
 
-import nest_asyncio
 import phoenix as px
 from metrics_tools.semantic.testing import setup_registry
 from phoenix.experiments import run_experiment
@@ -19,15 +18,14 @@ from ..types import (
     StrResponse,
     WrappedResponseAgent,
 )
+from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
 from ..util.jaccard import jaccard_similarity_str
 from .valid_sql import is_valid_sql
 
+setup_nest_asyncio()
+
 EXPERIMENT_NAME = "text2sql-experiment"
-try:
-    nest_asyncio.apply()
-except ValueError:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +33,8 @@ logger = logging.getLogger(__name__)
 async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
     logger.info(f"Running text2sql experiment with: {config.model_dump_json()}")
     api_key = config.arize_phoenix_api_key.get_secret_value()
+
+    logger.debug("Loading client")
 
     # We pass in the API key directly to the Phoenix client but it's likely 
     # ignored. See oso_agent/util/config.py
@@ -44,6 +44,7 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
             "api_key": api_key,
         }
     )
+    logger.debug("Uploading dataset")
     dataset = upload_dataset(phoenix_client, config.eval_dataset_text2sql, TEXT2SQL_DATASET)
 
     async def task(example: Example) -> str:
@@ -86,6 +87,7 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
         # print(f"Output: {output}, expected: {expected_answer}")
         return jaccard_similarity_str(output, expected_answer)
 
+    logger.debug("Creating Oso MCP client")
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
     def sql_result_similarity(output: str, expected: Dict[str, Any]) -> float:
         """Evaluate the similarity between results post-query"""
@@ -111,6 +113,7 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
         sql_result_similarity,
     ]
 
+    logger.debug("Running experiment")
     experiment = run_experiment(
         dataset,
         task,

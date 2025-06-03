@@ -20,7 +20,10 @@ from oso_agent.server.definition import (
 )
 from oso_agent.util.log import setup_logging
 
+from ..util.asyncbase import setup_nest_asyncio
 from ..util.tracing import setup_telemetry
+
+setup_nest_asyncio()
 
 load_dotenv()
 logger = logging.getLogger(__name__)
