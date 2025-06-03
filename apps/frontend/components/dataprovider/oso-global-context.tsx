@@ -24,6 +24,9 @@ const OsoGlobalActions: any = {
   updateMyUserProfile: { parameters: [{ name: "args", type: "object" }] },
   createApiKey: { parameters: [{ name: "args", type: "object" }] },
   deleteApiKey: { parameters: [{ name: "args", type: "object" }] },
+  getApiKeysByOrgId: {
+    parameters: [{ name: "args", type: "object" }],
+  },
   createOrganization: { parameters: [{ name: "args", type: "object" }] },
   addUserToOrganizationByEmail: {
     parameters: [{ name: "args", type: "object" }],
@@ -99,6 +102,8 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
         client!.createApiKey(args).then(handleSuccess).catch(handleError),
       deleteApiKey: (args: any) =>
         client!.deleteApiKey(args).then(handleSuccess).catch(handleError),
+      getApiKeysByOrgId: (args: any) =>
+        client!.getApiKeysByOrgId(args).then(handleSuccess).catch(handleError),
       createOrganization: (args: any) =>
         client!.createOrganization(args).then(handleSuccess).catch(handleError),
       addUserToOrganizationByEmail: (args: any) =>
