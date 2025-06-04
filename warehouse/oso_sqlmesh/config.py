@@ -134,5 +134,11 @@ config = Config(
         "defillama_incremental_start": constants.defillama_incremental_start,
         "testing_enabled": constants.testing_enabled,
         "superchain_audit_start": constants.superchain_audit_start,
+        # Generally this should always be set to now but if there are issues
+        # with the superchain data then this can be set to a specific date to
+        # avoid breaking the entire pipeline. That should only be used in
+        # extenuating circumstances.
+        #"superchain_audit_end": "now",
+        "superchain_audit_end": "2025-05-26 00:00:00",
     },
 )
