@@ -609,5 +609,23 @@ timeseries_metrics(
         #         "data_category=dependencies",
         #     ],
         # ),
-    },
+        "bot_activity": MetricQueryDef(
+            ref="code/bot_activity.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Bot Activity",
+                description="Metrics related to bot activity on GitHub",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+    }, 
 )
