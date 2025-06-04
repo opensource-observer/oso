@@ -1,32 +1,39 @@
 ---
-title: Paid Tiers for API Access
+title: Pricing
 sidebar_position: 99
 draft: true
 ---
 
-Pyoso is a powerful API wrapper that brings the full capabilities of the OSO data lake to your fingertips—now with LLM integration. Whether you're a casual explorer or building data-driven apps, we offer flexible pricing that scales with your usage and your needs.
+OSO offers flexible usage-based pricing for our APIs.
+Each API endpoint (e.g. GraphQL queries, pyoso, and chat)
+will have a different unit crecost.
 
-## Monthly Subscription Tiers
+## Subscription Tiers
 
-Users can purchase a monthly subscription to get a certain number of OSO Query Tokens.
+Users can purchase a monthly subscription to get a certain number of OSO tokens
+across all of our APIs. Unused tokens roll over to the next month,
+up to a maximum balance of 2x your monthly token allowance.
 
-Unused tokens roll over to the next month.
-
-The pricing is as follows:
+The monthly pricing is as follows:
 
 | Tier           | Monthly Fee | Token Allowance | Additional Tokens |
 | -------------- | ----------- | --------------- | ----------------- |
 | **Free**       | $0          | 100             | $0.0400 per token |
 | **Hobbyist**   | $20         | 1,000           | $0.0200 per token |
 | **Pro**        | $400        | 25,000          | $0.0150 per token |
-| **Enterprise** | $1000       | 100,000         | $0.0075 per token |
+| **Enterprise** | Custom      | Unlimited       | $0.0075 per token |
 
-## OSO Query Tokens
+Annual subscriptions save 20% when prepaid at the beginning of your term.
 
-OSO charges queries in terms of "OSO Query Tokens". The formula for computing the number of tokens is as follows:
+## OSO API costs
+
+OSO charges API calls in terms of "OSO tokens".
+The formula for computing the number of tokens is as follows:
 
 ```
-tokens = wall_time * model_multiplier + data_volume + num_tokens_llm * llm_multiplier
+tokens = wall_time * model_multiplier
+    + data_volume
+    + num_tokens_llm * llm_multiplier
 ```
 
 Where:
