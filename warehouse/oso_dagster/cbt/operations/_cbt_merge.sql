@@ -1,5 +1,5 @@
 {# 
-  source_table_fqn is optional and allows for the the the 
+  source_table_fqn is optional and allows for the 
   destination to compare columns to the source to ensure compatibility 
 #}
 {% if not source_table_fqn %}

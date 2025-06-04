@@ -612,7 +612,7 @@ class GoldskyAsset:
                 context.log.info(f"Worker[{worker.name}] completed latest data load")
         else:
             # Check if there are existing worker table. If so we continue from
-            # there because likely some failures occured but new data isn't
+            # there because likely some failures occurred but new data isn't
             # coming in.
             with self.bigquery.get_client() as client:
                 # WARNING hardcoded for now to 8 workers as this seems to be the standard
