@@ -2,6 +2,8 @@
 
 ## Setup
 
+Make sure you have [setup workspace](../../README.md#Quickstart) before proceeding.
+
 You will need [DuckDB](https://duckdb.org/) on your machine.
 
 Install using Homebrew (macOS/Linux):
@@ -63,7 +65,7 @@ SHOW ALL TABLES;
 Execute a sample query:
 
 ```sql
-SELECT * FROM metrics__dev.metrics_v0 LIMIT 5;
+SELECT * FROM oso__dev.metrics_v0 LIMIT 5;
 ```
 
 ## Testing
@@ -133,7 +135,7 @@ cd warehouse/oso_sqlmesh
 sqlmesh plan
 ```
 
-## Running sqlmesh on a local Trino with docker-compose
+## Running sqlmesh on a local Trino with docker-compose (deprecated)
 
 This is the recommended way to test on Trino.
 This does take more resources than simply running with duckdb.
