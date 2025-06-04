@@ -55,6 +55,8 @@ class ClickhouseImporter(ImporterInterface):
             self.ch,
             loading_table_fqn,
             export_reference.columns.columns_as("clickhouse"),
+            destination_table.metadata.index,
+            destination_table.metadata.order_by,
         )
         # We need the `2*` to match the files that are created by the export
         # this is a bit of a hack due to some weird behavior in clickhouse that
