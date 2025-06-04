@@ -1,7 +1,7 @@
 select
     @metrics_sample_date(events.bucket_day) as metrics_sample_date,
     events.event_source,
-    events.to_artifact_id,
+    events.to_artifact_id as to_artifact_id,
     '' as from_artifact_id,
     @metric_name() as metric,
     sum(events.amount) as amount
