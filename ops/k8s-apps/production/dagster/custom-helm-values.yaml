@@ -34,17 +34,17 @@ spec:
             value: "1"
         resources:
           limits:
-            memory: 768Mi
+            memory: 1280Mi
           requests:
-            cpu: 100m
-            memory: 512Mi
+            cpu: 200m
+            memory: 640Mi
       dagsterWebserver:
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
             value: "1"
         resources:
           limits:
-            memory: 768Mi
+            memory: 1024Mi
           requests:
             cpu: 100m
             memory: 512Mi
