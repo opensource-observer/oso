@@ -67,15 +67,24 @@ async def setup_bot(config: BotConfig, registry: AgentRegistry):
         await ctx.send(response_to_str(response))
 
     @bot.command()
+    async def noice(ctx):
+        """noice"""
+        await ctx.send("https://tenor.com/view/nice-nooice-bling-key-and-peele-gif-4294979")
+
+    @bot.command()
     async def run_eval(ctx, experiment_name: str, agent_name: Optional[str] = config.agent_name):
         logger.info(
             f"Experiment {experiment_name} started with agent={agent_name} and model={config.llm.type}"
         )
 
+        await ctx.send("Running the experiment now! This might take a while...")
+
         try:
             agent = await registry.get_agent(agent_name) if agent_name else default_agent
+            logger.debug("loading experiment registry")
             experiments = get_experiments()
             if experiment_name in experiments:
+                logger.debug(f"Running experiment: {experiment_name} with agent: {agent_name}")
                 # Run the experiment
                 experiment_func = experiments[experiment_name]
                 updated_config = config.model_copy(update={"agent_name": agent_name})
