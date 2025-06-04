@@ -5,10 +5,22 @@ from enum import Enum
 from graphlib import TopologicalSorter
 
 from metrics_tools.semantic.errors import InvalidAttributeReferenceError
-from metrics_tools.utils.glot import exp_to_str
+from metrics_tools.utils.glot import exp_to_str, hash_expressions
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
+
+
+def coerce_to_tables_column(ref: str, expected_table: str = "self") -> exp.Expression:
+    """Coerces a string reference to a column in a specific table."""
+    column = exp.to_column(ref)
+
+    if column.table == expected_table:
+        return column
+    if column.table == '':
+        return exp.to_column(f"{expected_table}.{ref}")
+
+    raise ValueError(f"{ref} is not a valid {expected_table} reference")
 
 
 class RegistryDAG:
@@ -529,10 +541,10 @@ class Relationship(BaseModel):
     name: str = ""
     model_ref: str
     description: str = ""
+    foreign_key_column: str 
     type: RelationshipType
     join_table: t.Optional[str] = None
     self_key_column: t.Optional[str] = None
-    foreign_key_column: t.Optional[str] = None
 
     @model_validator(mode="after")
     def process_relationship(self):
@@ -549,11 +561,24 @@ class Relationship(BaseModel):
             raise ValueError(
                 "Join table can only be specified for many-to-many relationships"
             )
+        
+        self._self_key_expression = None
+        if self.type == RelationshipType.MANY_TO_MANY:
+            assert self.self_key_column, "Self key column must be specified for many-to-many relationships"
+            self_key_result = AttributePathTransformer.parse_to_self_expression(
+                f"Relationship {self.name}'s self_key_column", self.self_key_column
+            )
+            self._self_key_expression = self_key_result.node
+        foreign_key_result = AttributePathTransformer.parse_to_self_expression(
+            f"Relationship {self.name}'s foreign_key_column", self.foreign_key_column
+        )
+        self._foreign_key_expression = foreign_key_result.node
 
         return self
     
     def bind(self, model: "Model") -> "BoundRelationship":
         """Binds the relationship to a model and returns a BoundRelationship"""
+
         return BoundRelationship(
             model=model,
             name=self.name,
@@ -561,6 +586,8 @@ class Relationship(BaseModel):
             type=self.type,
             self_key_column=self.self_key_column,
             foreign_key_column=self.foreign_key_column,
+            foreign_key_expression=self._foreign_key_expression,
+            self_key_expression=self._self_key_expression,
             join_table=self.join_table,
         )
     
@@ -570,18 +597,23 @@ class BoundRelationship:
     name: str = ""
     model_ref: str
     type: RelationshipType
+    foreign_key_column: str
+    foreign_key_expression: exp.Expression
     join_table: t.Optional[str] = None
     self_key_column: t.Optional[str] = None
-    foreign_key_column: t.Optional[str] = None
+    self_key_expression: t.Optional[exp.Expression] = None
 
     def __init__(
         self,
+        *,
         model: "Model",
         name: str,
         model_ref: str,
         type: RelationshipType,
+        foreign_key_column: str,
+        foreign_key_expression: exp.Expression,
         self_key_column: t.Optional[str] = None,
-        foreign_key_column: t.Optional[str] = None,
+        self_key_expression: t.Optional[exp.Expression] = None,
         join_table: t.Optional[str] = None,
     ):
         self.model = model
@@ -590,7 +622,46 @@ class BoundRelationship:
         self.type = type
         self.self_key_column = self_key_column
         self.foreign_key_column = foreign_key_column
+        self.self_key_expression = self_key_expression
+        self.foreign_key_expression = foreign_key_expression
         self.join_table = join_table
+
+    def self_key_with_alias(self, alias: str) -> exp.Expression:
+        """Returns the self key column with the given alias"""
+
+        assert self.type == RelationshipType.MANY_TO_MANY, "self key only applies to many-to-many relationships"
+
+        assert self.self_key_expression is not None, "self key not specified"
+
+        def transform_columns(node: exp.Expression):
+            if isinstance(node, exp.Column):
+                if isinstance(node.table, exp.Identifier) and node.table.this != "self":
+                    raise ValueError(
+                        "Cannot reference another model in a relationship. Use `self` as the table alias for the model"
+                    )
+                return exp.Column(
+                    table=exp.to_identifier(alias),
+                    this=node.this,
+                )
+            return node
+
+        return self.self_key_expression.transform(transform_columns)
+    
+    def foreign_key_with_alias(self, alias: str) -> exp.Expression:
+        assert self.foreign_key_expression is not None, "foreign key not specified"
+
+        def transform_columns(node: exp.Expression):
+            if isinstance(node, exp.Column):
+                if isinstance(node.table, exp.Identifier) and node.table.this != "self":
+                    raise ValueError(
+                        "Cannot reference another model in a relationship. Use `self` as the table alias for the model"
+                    )
+                return exp.Column(
+                    table=exp.to_identifier(alias),
+                    this=node.this,
+                )
+            return node
+        return self.foreign_key_expression.transform(transform_columns)
 
 
 class ViewConnector(BaseModel):
@@ -620,7 +691,7 @@ class Model(BaseModel):
     description: str = ""
     table: str
 
-    primary_key: str = ""
+    primary_key: str | t.List[str] = ""
     time_column: t.Optional[str] = None
 
     # These are additional interfaces to the model
@@ -700,9 +771,38 @@ class Model(BaseModel):
                 self._model_ref_lookup_by_model_name[relationship.model_ref] = []
             self._model_ref_lookup_by_model_name[relationship.model_ref].append(relationship)
 
-        self._all_attributes = attributes
+        self._all_attributes = attributes 
+
+        if isinstance(self.primary_key, str):
+            self._primary_key_expression = coerce_to_tables_column(self.primary_key)
+        elif isinstance(self.primary_key, list):
+            self._primary_key_expression = hash_expressions(*[
+                coerce_to_tables_column(pk) for pk in self.primary_key
+            ])
 
         return self
+
+    def primary_key_expression(self, table_alias: str) -> exp.Expression:
+        """Returns the primary key expression for the model given the table alias."""
+
+        def transform_columns(node: exp.Expression):
+            if isinstance(node, exp.Column):
+                node_table = exp_to_str(node.table)
+                if node_table != "self": 
+                    # Do a check here but this is pretty fatal and should have
+                    # been caught at validation time
+                    raise ValueError(
+                        f"Primary key column {node_table}.{node.this} must be a self reference"
+                    )
+                return exp.Column(
+                    table=exp.to_identifier(table_alias),
+                    this=node.this,
+                )
+            return node
+        primary_key_expression = self._primary_key_expression.transform(
+            transform_columns
+        )
+        return primary_key_expression
 
     @property
     def attribute_names(self) -> t.List[str]:
@@ -986,6 +1086,31 @@ class AttributePathTransformer:
 
     Should be called with the `transform` class method.
     """
+
+    @classmethod
+    def parse_to_self_expression(cls, context: str, expression_str: str) -> AttributeTransformerResult:
+        """Parses an expression string to a SQL expression that references the self table."""
+        expression = parse_one(expression_str)
+        result = cls.transform(expression, self_model_name="self")
+
+        # Ensure all references point to self
+        for ref in result.references:
+            if ref.base_model not in ["self", ""]:
+                raise ValueError(
+                    f"{context} cannot reference another model. Found reference to {ref.base_model}. Only use `self`"
+                )
+
+        # Remove $semantic_ref
+        def transform_semantic_ref(node: exp.Expression):
+            if isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$semantic_ref":
+                return exp.to_column(exp_to_str(node.expressions[0]))
+
+            return node
+
+        return AttributeTransformerResult(
+            node=result.node.transform(transform_semantic_ref),
+            references=result.references,
+        )
 
     @classmethod
     def transform(

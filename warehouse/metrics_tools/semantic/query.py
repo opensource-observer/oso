@@ -153,12 +153,13 @@ class QueryBuilder:
 
 
 class QueryJoiner:
-    def __init__(self, select: exp.Select, base_model: Model, registry: Registry):
+    def __init__(self, select: exp.Select, base_model: Model, registry: Registry, dialect: str = "duckdb"):
         self._select = select
         self._base_model = base_model
         self._registry = registry
         self._already_joined: set[str] = set()
         self._already_joined.add(base_model.name)
+        self._dialect = dialect
 
     def join_reference(self, reference: AttributePath):
         """Join the reference to the current base model"""
@@ -228,14 +229,20 @@ class QueryJoiner:
                 join_table_alias = create_alias(join_table.name)
                 join_table = join_table.as_(join_table_alias)
 
+                from_model_primary_key = from_model.primary_key_expression(from_table_alias)
+                join_table_self_key = relationship.self_key_with_alias(join_table_alias)
+                join_table_foreign_key = relationship.foreign_key_with_alias(join_table_alias)
+                referenced_model_primary_key = referenced_model.primary_key_expression(referenced_model_alias)
+
+
                 query = query.join(
                     join_table,
-                    on=f"{from_table_alias}.{from_model.primary_key} = {join_table_alias}.{relationship.self_key_column}",
+                    on=f"{from_model_primary_key.sql(dialect=self._dialect)} = {join_table_self_key.sql(dialect=self._dialect)}",
                     join_type="left",
                 )
                 query = query.join(
                     referenced_model_table,
-                    on=f"{join_table_alias}.{relationship.foreign_key_column} = {referenced_model_alias}.{referenced_model.primary_key}",
+                    on=f"{join_table_foreign_key.sql(dialect=self._dialect)} = {referenced_model_primary_key.sql(dialect=self._dialect)}",
                     join_type="left",
                 )
             else:
