@@ -6,7 +6,9 @@ MODEL (
     'export',
     'model_type=full',
     'model_category=metrics',
-    'model_stage=mart'
+    'model_stage=mart',
+    'index={"idx_artifact_id": ["artifact_id"]}',
+    'order_by=["artifact_id"]'
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
