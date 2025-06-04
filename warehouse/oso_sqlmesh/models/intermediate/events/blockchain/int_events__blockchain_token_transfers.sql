@@ -19,6 +19,7 @@ MODEL (
       time_column := time,
       no_gap_date_part := 'day',
       ignore_before := @superchain_audit_start,
+      ignore_after := @superchain_audit_end,
       missing_rate_min_threshold := 0.95,
     ),
   ),
