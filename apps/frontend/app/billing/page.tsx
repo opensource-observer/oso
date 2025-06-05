@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSupabaseState } from "../../components/hooks/supabase";
 import { OsoAppClient } from "../../lib/clients/oso-app/oso-app";
@@ -462,7 +462,7 @@ const TestPaymentInfo: React.FC = () => {
   );
 };
 
-export default function TestCreditsPage() {
+function TestCreditsPageContent() {
   const supabaseState = useSupabaseState();
   const searchParams = useSearchParams();
   const [client, setClient] = useState<OsoAppClient | null>(null);
@@ -602,5 +602,13 @@ export default function TestCreditsPage() {
 
       <TestPaymentInfo />
     </div>
+  );
+}
+
+export default function TestCreditsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner message="Loading..." />}>
+      <TestCreditsPageContent />
+    </Suspense>
   );
 }
