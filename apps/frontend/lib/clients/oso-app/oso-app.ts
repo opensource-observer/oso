@@ -101,12 +101,13 @@ class OsoAppClient {
     console.log("createApiKey: ", args.name);
     const name = ensure(args.name, "Missing name argument");
     const apiKey = ensure(args.apiKey, "Missing apiKey argument");
+    const orgId = ensure(args.orgId, "Missing orgId argument");
     const user = await this.getUser();
     const { error } = await this.supabaseClient.from("api_keys").insert({
       name,
       api_key: apiKey,
       user_id: user.id,
-      org_id: args.orgId,
+      org_id: orgId,
     });
     if (error) {
       throw error;
