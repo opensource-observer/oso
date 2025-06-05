@@ -3,6 +3,7 @@ import logging
 import sys
 
 import click
+import opentelemetry.trace as trace
 import uvicorn
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
@@ -26,7 +27,8 @@ from .utils import common_options, pass_config
 load_dotenv()
 setup_nest_asyncio()
 
-logger = logging.getLogger("oso-agent")
+logger = logging.getLogger(__name__)
+tracer = trace.get_tracer(__name__)
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
@@ -97,7 +99,7 @@ def query(config, query, agent_name, ollama_model, ollama_url):
 
     try:
         with click.progressbar(
-            length=1, label="Processing query", show_eta=False, show_percent=False
+            length=1, label=f"Processing query \"{query}\"", show_eta=False, show_percent=False
         ) as b:
             response = asyncio.run(_run_query(query, updated_config))
             b.update(1)
@@ -114,27 +116,28 @@ def query(config, query, agent_name, ollama_model, ollama_url):
 async def _run_query(query: str, config: AgentConfig) -> str:
     """Run a query through the agent asynchronously."""
 
-    registry = await setup_default_agent_registry(config)
-    agent = await registry.get_agent(config.agent_name)
-    click.echo(
-        f"Query started with agent={config.agent_name} and model={config.llm.type}"
-    )
-    wrapped_response = await agent.run(query)
-    match wrapped_response.response:
-        case StrResponse(blob=blob):
-            return blob
-        case SemanticResponse(query=semantic_query):
-            return str(semantic_query)
-        case SqlResponse(query=sql_query):
-            return str(sql_query)
-        case ErrorResponse(message=message, details=details):
-            raise AgentRuntimeError(
-                f"Error from agent: {message}. Details: {details}"
-            )
-        case _:
-            raise AgentRuntimeError(
-                f"Unexpected response type from agent: {wrapped_response.response.type}"
-            )
+    with tracer.start_as_current_span("cli#run_query", kind=trace.SpanKind.CLIENT):
+        registry = await setup_default_agent_registry(config)
+        agent = await registry.get_agent(config.agent_name)
+        click.echo(
+            f"Query started with agent={config.agent_name} and model={config.llm.type}"
+        )
+        wrapped_response = await agent.run(query)
+        match wrapped_response.response:
+            case StrResponse(blob=blob):
+                return blob
+            case SemanticResponse(query=semantic_query):
+                return str(semantic_query)
+            case SqlResponse(query=sql_query):
+                return str(sql_query)
+            case ErrorResponse(message=message, details=details):
+                raise AgentRuntimeError(
+                    f"Error from agent: {message}. Details: {details}"
+                )
+            case _:
+                raise AgentRuntimeError(
+                    f"Unexpected response type from agent: {wrapped_response.response.type}"
+                )
 
 @cli.command()
 @click.argument("experiment_name", required=True)

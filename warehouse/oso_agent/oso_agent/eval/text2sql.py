@@ -58,6 +58,7 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
 
         match agent_response.response:
             case StrResponse(blob=blob):
+                logger.debug(f"Agent Response blob: {blob}")
                 return blob
             case SemanticResponse(query=query):
                 # hacky way for now to load the semantic registry

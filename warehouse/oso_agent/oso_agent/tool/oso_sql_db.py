@@ -158,9 +158,7 @@ class OsoSqlDatabase(SQLDatabase):
         If the statement returns no rows, an empty string is returned.
         """
         logger.debug("Running SQL command: %s", command)
-        loop = asyncio.get_event_loop()
-        coroutine = self._oso_client.query_oso(command)
-        query_results = loop.run_until_complete(coroutine)
+        query_results = asyncio.run(self._oso_client.query_oso(command))
         truncated_results = []
         col_keys = []
         for row in query_results:
