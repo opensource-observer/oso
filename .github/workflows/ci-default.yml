@@ -3,21 +3,21 @@ name: ci-default
 env:
   # CI variables
   DOCKER_PLATFORM: "amd64"
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  #TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  #TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   # Frontend variables
-  NODE_ENV: "test"
+  NODE_ENV: ${{ vars.NODE_ENV }}
   PLASMIC_PROJECT_ID: ${{ vars.PLASMIC_PROJECT_ID }}
   PLASMIC_PROJECT_API_TOKEN: ${{ vars.PLASMIC_PROJECT_API_TOKEN }}
-  NEXT_PUBLIC_DOMAIN: "www.opensource.observer"
-  NEXT_PUBLIC_DB_GRAPHQL_URL: "https://www.opensource.observer/api/v1/graphql"
+  NEXT_PUBLIC_DOMAIN: ${{ vars.NEXT_PUBLIC_DOMAIN }}
+  NEXT_PUBLIC_DB_GRAPHQL_URL: ${{ vars.NEXT_PUBLIC_DB_GRAPHQL_URL }}
   HASURA_URL: ${{ vars.HASURA_URL }}
   OSO_API_KEY: "test"
   NEXT_PUBLIC_ALGOLIA_APPLICATION_ID: "test"
   NEXT_PUBLIC_ALGOLIA_API_KEY: "test"
   NEXT_PUBLIC_ALGOLIA_INDEX: "test"
   # Docs variables
-  DOCS_URL: "https://docs.opensource.observer"
+  DOCS_URL: ${{ vars.DOCS_URL }}
   DOCS_ALGOLIA_APP_ID: "test"
   DOCS_ALGOLIA_API_KEY: "test"
   DOCS_ALGOLIA_INDEX: "test"
