@@ -13,7 +13,7 @@ class TradingVolumeEvents(BaseModel):
     parent_protocol: str | None = Column("VARCHAR", description="The name of the parent protocol")
     chain: str | None = Column("VARCHAR", description="The name of the chain for the current volume")
     token: str | None = Column("VARCHAR", description="The token symbol of the volume value (typically USD)")
-    volume_usd: float | None = Column("DOUBLE", description="The magnitude of the trading volume in USD")
+    amount: float | None = Column("DOUBLE", description="The magnitude of the trading volume in USD")
     event_type: str | None = Column("VARCHAR", description="The type of event, always 'TRADING_VOLUME' for this seed")
     dlt_load_id: str | None = Column("VARCHAR", column_name="_dlt_load_id", description="Internal value used by DLT indicating when the row was loaded")
     dlt_id: str | None = Column("VARCHAR", column_name="_dlt_id", description="Internal unique value for the row")
@@ -32,7 +32,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            volume_usd=20447576.0,
+            amount=20447576.0,
             event_type="TRADING_VOLUME",
             dlt_load_id="1743009053.36983",
             dlt_id="vol001",
@@ -44,7 +44,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            volume_usd=17609817.0,
+            amount=17609817.0,
             event_type="TRADING_VOLUME",
             dlt_load_id="1743009053.36983",
             dlt_id="vol002",
@@ -56,7 +56,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            volume_usd=6649231.0,
+            amount=6649231.0,
             event_type="TRADING_VOLUME",
             dlt_load_id="1743009053.36983",
             dlt_id="vol003",
@@ -68,7 +68,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            volume_usd=9976414.0,
+            amount=9976414.0,
             event_type="TRADING_VOLUME",
             dlt_load_id="1743009053.36983",
             dlt_id="vol004",
@@ -80,7 +80,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            volume_usd=12023455.0,
+            amount=12023455.0,
             event_type="TRADING_VOLUME",
             dlt_load_id="1743009053.36983",
             dlt_id="vol005",
