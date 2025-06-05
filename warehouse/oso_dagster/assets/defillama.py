@@ -297,6 +297,8 @@ def parse_chain_tvl(
         for entry in tvl_history:
             try:
                 timestamp = pd.Timestamp(entry["date"], unit="s")
+                if not isinstance(timestamp, pd.Timestamp) or pd.isna(timestamp):
+                    continue
                 amount = float(entry["totalLiquidityUSD"])
 
                 event = {
@@ -403,4 +405,228 @@ def defillama_tvl_assets(
             ],
         )
 
+    yield resource
+
+
+def parse_timeseries_events(
+    *,
+    slug: str,
+    parent_protocol: str,
+    raw: list,                       
+    event_type: str,                 
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Parse and yield time series events from raw DefiLlama chart data.
+
+    Args:
+        slug (str): The slug identifying the protocol (e.g., "velodrome-v1").
+        parent_protocol (str): The parent protocol name, if available.
+        raw (list): A list of entries from a DefiLlama time series chart.
+            Each entry is [timestamp, value], where `value` is either a number
+            (for aggregated metrics) or a breakdown dict (by chain and source).
+        event_type (str): A string label indicating the type of metric
+            (e.g., "TRADING_VOLUME" or "LP_FEES").
+
+    Yields:
+        Dict[str, Any]: One parsed time series event per row with fields:
+            - time (ISO string)
+            - slug, protocol, parent_protocol
+            - chain (if available)
+            - token ("USD")
+            - event_type
+            - amount (float)
+    """
+
+    for ts, val in raw:
+        try:
+            dt = pd.Timestamp(ts, unit="s")
+            if not isinstance(dt, pd.Timestamp) or pd.isna(dt):
+                continue
+
+            if isinstance(val, (int, float)):
+                yield {
+                    "time": dt.isoformat(),
+                    "slug": slug,
+                    "protocol": slug,
+                    "parent_protocol": parent_protocol,
+                    "chain": "",                      
+                    "token": "USD",
+                    "event_type": event_type,
+                    "amount": float(val),
+                }
+
+            elif isinstance(val, dict):
+                for ch, nested in val.items():
+                    num = next(iter(nested.values()))
+                    yield {
+                        "time": dt.isoformat(),
+                        "slug": slug,
+                        "protocol": slug,
+                        "parent_protocol": parent_protocol,
+                        "chain": defillama_chain_mappings(ch),
+                        "token": "USD",
+                        "event_type": event_type,
+                        "amount": float(num),
+                    }
+
+        except Exception as e:
+            logger.warning(f"{event_type}: could not parse {slug} entry {val}: {e}")
+
+
+def get_defillama_volume_events(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch and yield daily trading volume events for all valid DefiLlama protocols.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Parsed trading volume entries with slug, time, amount,
+        and other metadata fields.
+    """
+    
+    session = Session(timeout=300)
+    valid_slugs = get_valid_defillama_slugs()
+
+    for i, slug in enumerate(valid_slugs):
+        url = (
+            f"https://api.llama.fi/summary/dexs/{slug}"
+            "?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=false"
+        )
+        try:
+            context.log.info(f"[Volumes] {i+1}/{len(valid_slugs)} {slug}")
+            r = session.get(url)
+            r.raise_for_status()
+            data = r.json()
+
+            parent = data.get("parentProtocol", "")
+            chart = data.get("totalDataChartBreakdown", data.get("totalDataChart", []))
+
+            yield from parse_timeseries_events(
+                slug=slug,
+                parent_protocol=parent,
+                raw=chart,
+                event_type="TRADING_VOLUME",
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                continue
+            context.log.warning(f"Volumes: {slug}: {e}")
+        except Exception as e:
+            context.log.error(f"Volumes: {slug}: {e}")
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="trading_volume_events",
+    op_tags={
+        "dagster/concurrency_key": "defillama_volume",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_volume_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads daily trading volume data
+    from DefiLlama into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes trading volume rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_volume_events(context),
+        name="trading_volume_events",
+        primary_key=["slug", "chain", "time"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, partition="time", cluster=["slug", "chain"])
+    yield resource
+
+
+def get_defillama_fee_events(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch and yield daily liquidity provider (LP) fee events for all valid DefiLlama protocols.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Parsed LP fee entries with slug, time, amount,
+        and other metadata fields.
+    """
+
+    session = Session(timeout=300)
+    valid_slugs = get_valid_defillama_slugs()
+
+    for i, slug in enumerate(valid_slugs):
+        url = f"https://api.llama.fi/summary/fees/{slug}?dataType=dailyFees"
+        try:
+            context.log.info(f"[Fees] {i+1}/{len(valid_slugs)} {slug}")
+            r = session.get(url)
+            r.raise_for_status()
+            data = r.json()
+
+            parent = data.get("parentProtocol", "")
+            chart = data.get("totalDataChartBreakdown", data.get("totalDataChart", []))
+
+            yield from parse_timeseries_events(
+                slug=slug,
+                parent_protocol=parent,
+                raw=chart,
+                event_type="LP_FEES",
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                continue
+            context.log.warning(f"LP Fees: {slug}: {e}")
+        except Exception as e:
+            context.log.error(f"LP Fees: {slug}: {e}")
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="lp_fee_events",
+    op_tags={
+        "dagster/concurrency_key": "defillama_fees",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_fee_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads daily LP fee data
+    from DefiLlama into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes LP fee rows
+        to the configured destination (e.g., BigQuery).
+    """
+
+    resource = dlt.resource(
+        get_defillama_fee_events(context),
+        name="lp_fee_events",
+        primary_key=["slug", "chain", "time"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, partition="time", cluster=["slug", "chain"])
     yield resource
