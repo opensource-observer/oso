@@ -13,7 +13,7 @@ class LpFeeEvents(BaseModel):
     parent_protocol: str | None = Column("VARCHAR", description="The name of the parent protocol")
     chain: str | None = Column("VARCHAR", description="The name of the chain for the current fee")
     token: str | None = Column("VARCHAR", description="The token symbol of the fee value (typically USD)")
-    fees_usd: float | None = Column("DOUBLE", description="The magnitude of the LP fees in USD")
+    amount: float | None = Column("DOUBLE", description="The magnitude of the LP fees in USD")
     event_type: str | None = Column("VARCHAR", description="The type of event, always 'LP_FEES' for this seed")
     dlt_load_id: str | None = Column("VARCHAR", column_name="_dlt_load_id", description="Internal value used by DLT indicating when the row was loaded")
     dlt_id: str | None = Column("VARCHAR", column_name="_dlt_id", description="Internal unique value for the row")
@@ -32,7 +32,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            fees_usd=31.0,
+            amount=31.0,
             event_type="LP_FEES",
             dlt_load_id="1743009053.36983",
             dlt_id="fee001",
@@ -44,7 +44,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            fees_usd=96.0,
+            amount=96.0,
             event_type="LP_FEES",
             dlt_load_id="1743009053.36983",
             dlt_id="fee002",
@@ -56,7 +56,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            fees_usd=143.0,
+            amount=143.0,
             event_type="LP_FEES",
             dlt_load_id="1743009053.36983",
             dlt_id="fee003",
@@ -68,7 +68,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            fees_usd=238.0,
+            amount=238.0,
             event_type="LP_FEES",
             dlt_load_id="1743009053.36983",
             dlt_id="fee004",
@@ -80,7 +80,7 @@ seed = SeedConfig(
             parent_protocol="velodrome",
             chain="optimism",
             token="USD",
-            fees_usd=338.0,
+            amount=338.0,
             event_type="LP_FEES",
             dlt_load_id="1743009053.36983",
             dlt_id="fee005",

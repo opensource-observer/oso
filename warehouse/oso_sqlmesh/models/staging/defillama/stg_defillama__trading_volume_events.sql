@@ -13,5 +13,6 @@ SELECT
   parent_protocol::VARCHAR AS parent_protocol,
   chain::VARCHAR AS chain,
   token::VARCHAR AS token,
-  volume_usd::DOUBLE AS volume_usd
+  event_type::VARCHAR AS event_type,
+  amount::DOUBLE AS amount
 FROM @oso_source('bigquery.defillama.trading_volume_events')

@@ -13,5 +13,6 @@ SELECT
   parent_protocol::VARCHAR AS parent_protocol,
   chain::VARCHAR AS chain,
   token::VARCHAR AS token,
-  fees_usd::DOUBLE AS fees_usd
+  event_type::VARCHAR AS event_type,
+  amount::DOUBLE AS amount
 FROM @oso_source('bigquery.defillama.lp_fee_events')
