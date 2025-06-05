@@ -1,7 +1,7 @@
 MODEL (
   name oso.key_metrics_by_artifact_v0,
   kind FULL,
-  partitioned_by year(sample_date),
+  partitioned_by bucket(artifact_id, 256),
   tags (
     'export',
     'model_type=full',
@@ -20,6 +20,10 @@ MODEL (
     sample_date = 'The date when the metric was sampled, truncated to the day. This is typically a recent date.',
     amount = 'The value of the metric for the artifact on the sample date.',
     unit = 'The unit of measurement for the metric, if applicable.'
+  ),
+  physical_properties (
+    parquet_bloom_filter_columns = ['artifact_id'],
+    sorted_by = ['artifact_id']
   )
 );
 

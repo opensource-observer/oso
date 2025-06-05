@@ -42,17 +42,17 @@ on:
       - main
   # Or when a pull request event occurs for a pull request against one of the
   # matched branches.
-  pull_request:
+  #pull_request:
+  pull_request_target:
     branches:
       - main
-  #pull_request_target:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   merge_group:
 
 # Cancel in progress jobs on new pushes.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
