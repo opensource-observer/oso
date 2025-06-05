@@ -8,6 +8,7 @@ import { format } from "sql-formatter";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
+import { Markdown } from "./components/widgets/markdown";
 import {
   MetricsDataProvider,
   MetricsDataProviderRegistration,
@@ -112,6 +113,19 @@ PLASMIC.registerComponent(CircularProgress, {
   description: "Circular loading widget",
   props: {},
   importPath: "@mui/material/CircularProgress",
+});
+
+PLASMIC.registerComponent(Markdown, {
+  name: "Markdown",
+  description: "Render Markdown",
+  props: {
+    content: {
+      type: "string",
+      defaultValue: "Hello World",
+      helpText: "Markdown string",
+    },
+  },
+  importPath: "react-markdown",
 });
 
 PLASMIC.registerComponent(MetricsDataProvider, {
