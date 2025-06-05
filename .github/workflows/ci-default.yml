@@ -43,16 +43,16 @@ on:
   # Or when a pull request event occurs for a pull request against one of the
   # matched branches.
   #pull_request:
-  #  branches:
-  #    - main
   pull_request_target:
+    branches:
+      - main
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   merge_group:
 
 # Cancel in progress jobs on new pushes.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -67,7 +67,7 @@ jobs:
 
   build-lint-test:
     # NOTE: This name appears in GitHub's Checks API.
-    name: build-lint-test
+    name: test
     environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'public' || 'testing' }}
     needs: authorize
     runs-on: ubuntu-latest
