@@ -51,7 +51,7 @@ export type Database = {
           deleted_at: string | null;
           id: string;
           name: string;
-          org_id: string | null;
+          org_id: string;
           updated_at: string;
           user_id: string;
         };
@@ -61,7 +61,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           name: string;
-          org_id?: string | null;
+          org_id: string;
           updated_at?: string;
           user_id: string;
         };
@@ -71,7 +71,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           name?: string;
-          org_id?: string | null;
+          org_id?: string;
           updated_at?: string;
           user_id?: string;
         };
