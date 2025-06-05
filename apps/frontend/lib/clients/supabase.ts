@@ -11,6 +11,7 @@ import { Database } from "../types/supabase";
 function createNormalSupabaseClient() {
   return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
+
 function createPrivilegedSupabaseClient() {
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 }

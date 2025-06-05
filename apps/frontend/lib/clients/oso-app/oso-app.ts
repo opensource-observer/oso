@@ -8,6 +8,7 @@ import {
   dynamicConnectorsRowSchema,
 } from "../../types/schema";
 import type { DynamicConnectorsInsert } from "../../types/schema-types";
+import { CREDIT_PACKAGES } from "../stripe";
 
 /**
  * OsoAppClient is the client library for the OSO app.
@@ -588,6 +589,82 @@ class OsoAppClient {
     if (!response.ok) {
       throw new Error("Error deleting connector: " + json.error);
     }
+  }
+
+  /**
+   * Initiates a Stripe checkout session to buy credits.
+   * @param args - Contains the packageId to purchase
+   * @returns Promise<{ sessionId: string; url: string }> - Stripe checkout session info
+   */
+  async buyCredits(
+    args: Partial<{
+      packageId: string;
+    }>,
+  ): Promise<{ sessionId: string; url: string; publishableKey: string }> {
+    console.log("buyCredits: ", args);
+    const packageId = ensure(args.packageId, "Missing packageId argument");
+
+    const {
+      data: { session },
+    } = await this.supabaseClient.auth.getSession();
+    if (!session) {
+      throw new AuthError("No active session");
+    }
+
+    const response = await fetch("/api/v1/stripe/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ packageId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create checkout session");
+    }
+
+    const data = await response.json();
+    return {
+      sessionId: data.sessionId,
+      url: data.url,
+      publishableKey: data.publishableKey,
+    };
+  }
+
+  /**
+   * Gets available credit packages for purchase.
+   * @returns Array of credit packages with pricing
+   */
+  async getCreditPackages() {
+    console.log("getCreditPackages");
+    return CREDIT_PACKAGES.map((pkg) => ({
+      id: pkg.id,
+      name: pkg.name,
+      credits: pkg.credits,
+      price: pkg.price,
+      displayPrice: `$${(pkg.price / 100).toFixed(2)}`,
+    }));
+  }
+
+  /**
+   * Gets the user's purchase history.
+   * @returns Promise<Array> - Array of purchase intents
+   */
+  async getMyPurchaseHistory() {
+    console.log("getMyPurchaseHistory");
+    const user = await this.getUser();
+    const { data, error } = await this.supabaseClient
+      .from("purchase_intents")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+    return data || [];
   }
 
   private async createSupabaseAuthHeaders() {
