@@ -4844,6 +4844,7 @@ version = "0.4.0"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
+    { name = "sqlglot" },
 ]
 
 [package.dev-dependencies]
@@ -4852,7 +4853,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pandas", specifier = ">=1.2.0" }]
+requires-dist = [
+    { name = "pandas", specifier = ">=1.2.0" },
+    { name = "sqlglot", specifier = ">=26.16.4" },
+]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pandas-stubs", specifier = ">=2.2.3.250308" }]
