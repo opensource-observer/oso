@@ -10,9 +10,9 @@ Examples of applications and data science built on OSO's data platform. Each exa
 - 🌱 [Quickstart](./quickstart.md) - Learn the basics of pyoso and common query patterns for our most popular models
 - 📊 [Collection View](./collection-view.mdx) - Get a high level view of key metrics for a collection of projects
 - 🔬 [Project Deepdive](./project-deepdive.mdx) - Do a deep dive into a specific project
+- 💸 [Analyze Funding](./funding-data.mdx) - Track funding flows and analyze grant program impact
 - 📦 [Map Dependencies](./dependencies.mdx) - Map software supply chains and package dependencies
 - 🕸️ [Network Graphs](./network-graph.md) - Analyze collaboration patterns and community connections
-- 💸 [Analyze Funding](./funding-data.mdx) - Track funding flows and analyze grant program impact
 - 👥 [Cohort Analysis](./cohort-analysis.mdx) - Track a cohort of projects across a set of metrics over time
 - 🪝 [Uniswap Hooks](./uniswap-hooks.mdx) - Join OSO data with Dune stats to analyze Uniswap v4 hooks
 - 🔴 [Superchain Activity](./superchain-activity.md) - Explore OP Atlas project activity on the Superchain.

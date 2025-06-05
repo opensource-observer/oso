@@ -14,7 +14,7 @@
 
 # production
 /build
-/lib/__generated__
+#/lib/__generated__
 
 # misc
 .DS_Store

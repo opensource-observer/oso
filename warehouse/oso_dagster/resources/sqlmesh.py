@@ -2,6 +2,7 @@
 Auxiliary resources for sqlmesh
 """
 
+import json
 import logging
 import math
 import typing as t
@@ -17,7 +18,7 @@ from dagster import (
 )
 from dagster_sqlmesh import SQLMeshDagsterTranslator
 from dagster_sqlmesh.controller.base import SQLMeshInstance
-from metrics_service.types import TableReference
+from metrics_service.types import TableMetadata, TableReference
 from metrics_tools.transfer.coordinator import Destination, Source, transfer
 from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
@@ -31,15 +32,6 @@ from sqlmesh.core.model import Model
 logger = logging.getLogger(__name__)
 
 BIGQUERY_BATCH_SIZE = 10000
-
-
-class SQLMeshExporter:
-    name: str
-
-    def create_export_asset(
-        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
-    ) -> AssetsDefinition:
-        raise NotImplementedError("Not implemented")
 
 
 class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
@@ -62,6 +54,19 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
 
         If the tag is a string with a `:` it will be split on the `:` and the
         key will be the left side the value will be the right side.
+
+        Skipped tags: index, order_by
+        """
+        tags: t.Dict[str, str] = self.get_unfiltered_tags(context, model)
+        for blocked_tag in ["index", "order_by"]:
+            if blocked_tag in tags:
+                del tags[blocked_tag]
+        return tags
+
+    def get_unfiltered_tags(self, context: Context, model: Model) -> t.Dict[str, str]:
+        """Loads unfiltered tags for a model.
+
+        This is similar to get_tags but does not filter out the index and order_by tags.
         """
         tags: t.Dict[str, str] = {}
         for tag in model.tags:
@@ -71,6 +76,18 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
             else:
                 tags[tag] = "true"
         return tags
+
+
+class SQLMeshExporter:
+    name: str
+
+    def create_export_asset(
+        self,
+        mesh: SQLMeshInstance,
+        translator: PrefixedSQLMeshTranslator,
+        to_export: t.List[t.Tuple[Model, AssetKey]],
+    ) -> AssetsDefinition:
+        raise NotImplementedError("Not implemented")
 
 
 class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
@@ -107,7 +124,10 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
         )
 
     def create_export_asset(
-        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
+        self,
+        mesh: SQLMeshInstance,
+        translator: PrefixedSQLMeshTranslator,
+        to_export: t.List[t.Tuple[Model, AssetKey]],
     ) -> AssetsDefinition:
         clickhouse_outs = {
             key.path[-1]: self.convert_model_key_to_clickhouse_out(key)
@@ -117,6 +137,15 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             key.path[-1]: {key} for _, key in to_export
         }
         deps = [key for _, key in to_export]
+        table_metadata: dict[str, TableMetadata] = {}
+        for model, asset_key in to_export:
+            tags = translator.get_unfiltered_tags(mesh.context, model)
+            index = "index" in tags and json.loads(tags["index"]) or None
+            order_by = "order_by" in tags and json.loads(tags["order_by"]) or None
+            table_metadata[asset_key.path[-1]] = TableMetadata(
+                index=index,
+                order_by=order_by,
+            )
 
         @multi_asset(
             outs=clickhouse_outs,
@@ -139,6 +168,10 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                         context.op_execution_context.selected_output_names
                     )
                     for table_name in selected_output_names:
+                        metadata = table_metadata.get(table_name, TableMetadata())
+                        logger.info(
+                            f"Exporting table {table_name} with metadata: {metadata}"
+                        )
                         await transfer(
                             Source(
                                 exporter=exporter,
@@ -153,6 +186,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                                 table=TableReference(
                                     schema_name=self._destination_schema,
                                     table_name=table_name,
+                                    metadata=metadata,
                                 ),
                             ),
                             log_override=context.log,
@@ -251,7 +285,10 @@ class Trino2BigQuerySQLMeshExporter(SQLMeshExporter):
         )
 
     def create_export_asset(
-        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
+        self,
+        mesh: SQLMeshInstance,
+        translator: SQLMeshDagsterTranslator,
+        to_export: t.List[t.Tuple[Model, AssetKey]],  # Added translator parameter
     ) -> AssetsDefinition:
         bigquery_outs = {
             key.path[-1]: self.convert_model_key_to_bigquery_out(key)
@@ -415,7 +452,10 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
         )
 
     def create_export_asset(
-        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
+        self,
+        mesh: SQLMeshInstance,
+        translator: SQLMeshDagsterTranslator,
+        to_export: t.List[t.Tuple[Model, AssetKey]],  # Added translator parameter
     ) -> AssetsDefinition:
         bigquery_outs = {
             key.path[-1]: self.convert_model_key_to_bigquery_out(key)
@@ -581,6 +621,7 @@ class Trino2DuckDBSQLMeshExporter(SQLMeshExporter):
     def create_export_asset(
         self,
         mesh: SQLMeshInstance,
+        translator: SQLMeshDagsterTranslator,  # Added translator parameter
         to_export: t.List[t.Tuple[Model, AssetKey]],
     ) -> AssetsDefinition:
         duckdb_outs = {
