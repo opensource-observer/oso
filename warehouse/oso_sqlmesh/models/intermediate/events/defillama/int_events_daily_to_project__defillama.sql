@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_events_daily_to_project__defillama_lp_fee,
-  description 'Daily LP fee events from DefiLlama, filtered to only include events to projects',
+  name oso.int_events_daily_to_project__defillama,
+  description 'Unified DefiLlama events, filtered to only include events to projects',
   kind full,
   dialect trino,
   partitioned_by (DAY("bucket_day"), "event_type"),
@@ -26,6 +26,6 @@ SELECT
   events.from_artifact_namespace,
   events.from_artifact_name,
   events.amount
-FROM oso.int_events_daily__defillama_lp_fee AS events
+FROM oso.int_events_daily__defillama AS events
 INNER JOIN oso.artifacts_by_project_v1 AS abp
   ON events.to_artifact_id = abp.artifact_id

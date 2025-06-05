@@ -7,6 +7,6 @@ SELECT
     SUM(events.amount) / @metrics_sample_interval_length(events.bucket_day, 'day') AS amount
 FROM oso.int_events_daily__defillama AS events
 WHERE
-    events.event_type = 'DEFILLAMA_TVL'
+    events.event_type = 'DEFILLAMA_TRADING_VOLUME'
     AND events.bucket_day BETWEEN @metrics_start('DATE') AND @metrics_end('DATE')
-GROUP BY 1, 2, 3, 4, 5
+GROUP BY 1, 2, 3, 4, 5;
