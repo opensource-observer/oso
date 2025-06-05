@@ -17,7 +17,7 @@ const config: CodegenConfig = {
     "lib/**/*.{ts,tsx}",
   ],
   generates: {
-    "./lib/__generated__/": {
+    "./lib/graphql/generated/": {
       preset: "client",
       plugins: [],
       presetConfig: {
