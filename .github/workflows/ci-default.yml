@@ -68,6 +68,7 @@ jobs:
   build-lint-test:
     # NOTE: This name appears in GitHub's Checks API.
     name: build-lint-test
+    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'public' || 'testing' }}
     needs: authorize
     runs-on: ubuntu-latest
     strategy:
