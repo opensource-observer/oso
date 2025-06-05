@@ -8,9 +8,9 @@ import {
 import { Database } from "../types/supabase";
 
 // Supabase unprivileged client
-const normalClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-const createNormalSupabaseClient = () => normalClient;
+function createNormalSupabaseClient() {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
 function createPrivilegedSupabaseClient() {
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
