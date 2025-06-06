@@ -22,25 +22,31 @@ logger = logging.getLogger(__name__)
 #    response = SqlResponse(query=query)
 #    return WrappedResponse(response=response)
 
-@wrapped_agent()
-async def create_function_text2sql_agent(config: AgentConfig) -> BaseWorkflowAgent:
-    """Create and configure the agent."""
+def create_function_text2sql_agent_factory(synthesize_response: bool = True):   
+    @wrapped_agent()
+    async def _create_function_text2sql_agent(config: AgentConfig) -> BaseWorkflowAgent:
+        """Create and configure the agent."""
 
-    try:
-        # Create a structured LLM for generating SQL queries
-        logger.info("Initializing function_text2sql agent")
-        llm = create_llm(config)
-        embedding = create_embedding(config)
-        query_engine = await create_oso_query_engine(config, llm, embedding)
-        tools = [
-            QueryEngineTool.from_defaults(query_engine, name="oso_query_engine", description="Query the OSO data lake for structured data."),
-        ]
+        try:
+            # Create a structured LLM for generating SQL queries
+            logger.info("Initializing function_text2sql agent")
+            if synthesize_response:
+                logger.info("function_text2sql: Response synthesis is enabled")
+            else:
+                logger.info("function_text2sql: Response synthesis is disabled")
+            llm = create_llm(config)
+            embedding = create_embedding(config)
+            query_engine = await create_oso_query_engine(config, llm, embedding, synthesize_response=synthesize_response)
+            tools = [
+                QueryEngineTool.from_defaults(query_engine, name="oso_query_engine", description="Query the OSO data lake for structured data."),
+            ]
 
-        return FunctionAgent(
-            tools=tools,
-            llm=llm,
-            system_prompt=SYSTEM_PROMPT,
-        )
-    except Exception as e:
-        logger.error(f"Failed to create agent: {e}")
-        raise AgentConfigError(f"Failed to create agent: {e}") from e
+            return FunctionAgent(
+                tools=tools,
+                llm=llm,
+                system_prompt=SYSTEM_PROMPT,
+            )
+        except Exception as e:
+            logger.error(f"Failed to create agent: {e}")
+            raise AgentConfigError(f"Failed to create agent: {e}") from e
+    return _create_function_text2sql_agent
