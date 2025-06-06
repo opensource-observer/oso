@@ -4,8 +4,9 @@ import {
   CommonDataProviderRegistration,
   DataProviderView,
 } from "./provider-view";
+import { RegistrationProps } from "../../lib/types/plasmic";
 import { useSupabaseState } from "../hooks/supabase";
-import { useChat, Message } from "@ai-sdk/react";
+import { useChat } from "@ai-sdk/react";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_PLASMIC_KEY = "osoChat";
@@ -19,7 +20,7 @@ type OsoChatProviderProps = CommonDataProviderProps & {
   agentName?: string;
 };
 
-const OsoChatProviderRegistration: any = {
+const OsoChatProviderRegistration: RegistrationProps<OsoChatProviderProps> = {
   ...CommonDataProviderRegistration,
   agentName: {
     type: "string",
@@ -27,81 +28,42 @@ const OsoChatProviderRegistration: any = {
   },
 };
 
-interface OsoChatActions {
-  handleInputChange(
-    event:
-      | React.ChangeEvent<HTMLInputElement>
-      | React.ChangeEvent<HTMLTextAreaElement>,
-  ): void;
-  handleSubmit(event?: { preventDefault?: () => void }): void;
-  setMessages(messages: Message[]): void;
+function OsoChatProvider(props: OsoChatProviderProps) {
+  const { agentName, variableName, testData, useTestData } = props;
+  const supabaseState = useSupabaseState();
+  const session = supabaseState?.session;
+  const headers: Record<string, string> = {};
+
+  if (session) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+  }
+  if (agentName) {
+    headers["X-AgentName"] = agentName;
+  }
+
+  const chatData = useChat({
+    api: CHAT_PATH,
+    headers: headers,
+  });
+
+  const key = variableName ?? DEFAULT_PLASMIC_KEY;
+  const displayMessages = useTestData ? testData : chatData.messages;
+  //console.log(data);
+  //console.log(JSON.stringify(data, null, 2));
+  //console.log(error);
+
+  return (
+    <DataProviderView
+      {...props}
+      variableName={key}
+      formattedData={{
+        ...chatData,
+        messages: displayMessages,
+      }}
+      loading={false}
+    />
+  );
 }
-
-const OsoChatProvider = React.forwardRef<OsoChatActions>(
-  function OsoChatProvider(props: OsoChatProviderProps, ref) {
-    const { agentName, variableName, testData, useTestData } = props;
-    const supabaseState = useSupabaseState();
-    const session = supabaseState?.session;
-    const headers: Record<string, string> = {};
-
-    if (session) {
-      headers["Authorization"] = `Bearer ${session.access_token}`;
-    }
-    if (agentName) {
-      headers["X-AgentName"] = agentName;
-    }
-
-    const {
-      messages,
-      input,
-      status,
-      handleInputChange,
-      handleSubmit,
-      setMessages,
-    } = useChat({
-      api: CHAT_PATH,
-      headers: headers,
-    });
-    React.useImperativeHandle(
-      ref,
-      () => ({
-        handleInputChange(
-          event:
-            | React.ChangeEvent<HTMLInputElement>
-            | React.ChangeEvent<HTMLTextAreaElement>,
-        ) {
-          handleInputChange(event);
-        },
-        handleSubmit(event?: { preventDefault?: () => void }) {
-          handleSubmit(event);
-        },
-        setMessages(messages: Message[]) {
-          setMessages(messages);
-        },
-      }),
-      [session],
-    );
-
-    const key = variableName ?? DEFAULT_PLASMIC_KEY;
-    const displayMessages = useTestData ? testData : messages;
-    //console.log(data);
-    //console.log(JSON.stringify(data, null, 2));
-    //console.log(error);
-
-    return (
-      <DataProviderView
-        {...props}
-        variableName={key}
-        formattedData={{
-          input,
-          status,
-          messages: displayMessages,
-        }}
-        loading={false}
-      />
-    );
-  },
-);
 
 export { OsoChatProviderRegistration, OsoChatProvider };
 export type { OsoChatProviderProps };
