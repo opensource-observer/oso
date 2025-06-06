@@ -1,0 +1,107 @@
+test_burstiness_to_project_daily:
+  model: oso.burstiness_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-31
+  inputs:
+    oso.int_events_daily__github_with_zero_filling:
+      rows:
+      - to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-01
+        amount: 10
+      - to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-02
+        amount: 12
+      - to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-03
+        amount: 8
+      - to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-04
+        amount: 10
+      - to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-01
+        amount: 5
+      - to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-02
+        amount: 7
+      - to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-03
+        amount: 6
+      - to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-04
+        amount: 4
+      - to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-01-05
+        amount: 5
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.09090909091
+      - metrics_sample_date: 2024-01-03
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.7111111111
+      - metrics_sample_date: 2024-01-04
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.4
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.1666666667
+      - metrics_sample_date: 2024-01-03
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.07407407407
+      - metrics_sample_date: 2024-01-04
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily 
+        amount: 0.2840909091
+      - metrics_sample_date: 2024-01-05
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.2002962963
