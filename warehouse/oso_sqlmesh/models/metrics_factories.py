@@ -72,6 +72,7 @@ timeseries_metrics(
         "int_events_daily__defillama_tvl",
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
+        "int_events_daily__github_with_zero_filling",
         "int_events_daily__funding",
     ],
     audits=[
@@ -625,6 +626,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Bot Activity",
                 description="Metrics related to bot activity on GitHub",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "burstiness": MetricQueryDef(
+            ref="code/burstiness.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Burstiness",
+                description="Metrics related to GitHub repository burstiness",
             ),
             additional_tags=["data_category=code"],
         ),
