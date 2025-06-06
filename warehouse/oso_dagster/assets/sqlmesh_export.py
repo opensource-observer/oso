@@ -37,7 +37,7 @@ def sqlmesh_export_factory(
             models_to_export.append(
                 (
                     model,
-                    sqlmesh_translator.get_asset_key_from_model(mesh.context, model),
+                    sqlmesh_translator.get_asset_key(mesh.context, model.fqn),
                 )
             )
 
