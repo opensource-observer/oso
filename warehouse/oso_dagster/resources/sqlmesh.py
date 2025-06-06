@@ -39,8 +39,14 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
         self._prefix = prefix
 
     def get_asset_key(self, context: Context, fqn: str) -> AssetKey:
-        path = self.get_asset_key_name(fqn)
-        return AssetKey(path[0]).with_prefix(self._prefix)
+        table = exp.to_table(fqn)  # Ensure fqn is a valid table expression
+        if table.catalog in ["bigquery", "iceberg", ""]:
+            # For BigQuery and Iceberg, we use the db and table name
+            path = [table.db, table.name]
+        else:
+            # For other catalogs, we use catalog, db, and table name (these are likely external things)
+            path = [table.catalog, table.db, table.name]
+        return AssetKey(path)
 
     def get_group_name(self, context, model):
         return "sqlmesh"
