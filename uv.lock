@@ -1082,7 +1082,7 @@ wheels = [
 
 [[package]]
 name = "dagster-sqlmesh"
-version = "0.16.0"
+version = "0.17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dagster" },
@@ -1090,9 +1090,9 @@ dependencies = [
     { name = "pytest" },
     { name = "sqlmesh" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/81/ce/999aea03485077a85de19fe5c5ba3d4a74b4205e87d2d34e62d49183765d/dagster_sqlmesh-0.16.0.tar.gz", hash = "sha256:30cff54abd5e348a43d8b90e175f8e2ce6bd2787aac9b03800dc7671bb24c5c1", size = 209287 }
+sdist = { url = "https://files.pythonhosted.org/packages/38/5e/4e13c17a124fb1d4bd1cb96bc8d59bdaeac004524a3219d5d257d1fc2224/dagster_sqlmesh-0.17.0.tar.gz", hash = "sha256:18599a3887f5255049ca800c19a565407d11786473164cbf51114cbfb5c33625", size = 210466 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/84/cf/672b3dac15031a3337e7a6bc1dd31a7ac73ed208de7d516371819d443511/dagster_sqlmesh-0.16.0-py3-none-any.whl", hash = "sha256:f467e00438649c0373fbff95131fb2b7a2a28652d1d95f4a89f0ffebca74e17d", size = 30726 },
+    { url = "https://files.pythonhosted.org/packages/22/70/fd3569d054d1d211cf3c074cd68c10c0e7f0800662e0fe1f5ba587fa2b7d/dagster_sqlmesh-0.17.0-py3-none-any.whl", hash = "sha256:6c1c42fd2766b7cc1622f529c3b3eeff9f5a33bd32638bcb01e410101ccc0348", size = 31969 },
 ]
 
 [[package]]
@@ -3293,7 +3293,6 @@ dependencies = [
     { name = "dagster-k8s" },
     { name = "dagster-polars" },
     { name = "dagster-postgres" },
-    { name = "dagster-sqlmesh" },
     { name = "dagster-webserver" },
     { name = "dask", extra = ["distributed"] },
     { name = "dask-kubernetes" },
@@ -3366,7 +3365,6 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = "==0.16.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.5.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.5.0" },
@@ -3965,7 +3963,7 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = "==0.16.0" },
+    { name = "dagster-sqlmesh", specifier = "==0.17.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.5.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.5.0" },
@@ -4094,7 +4092,6 @@ dependencies = [
     { name = "dagster-k8s" },
     { name = "dagster-polars" },
     { name = "dagster-postgres" },
-    { name = "dagster-sqlmesh" },
     { name = "dagster-webserver" },
     { name = "dask", extra = ["distributed"] },
     { name = "dask-kubernetes" },
@@ -4166,7 +4163,6 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = "==0.16.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.5.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.5.0" },
