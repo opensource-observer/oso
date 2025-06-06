@@ -7,7 +7,12 @@ import {
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
 } from "../../types/schema";
-import type { DynamicConnectorsInsert } from "../../types/schema-types";
+import type {
+  DynamicColumnContextsRow,
+  DynamicConnectorsInsert,
+  DynamicConnectorsRow,
+  DynamicTableContextsRow,
+} from "../../types/schema-types";
 import { CREDIT_PACKAGES } from "../stripe";
 
 /**
@@ -523,6 +528,32 @@ class OsoAppClient {
   }
 
   /**
+   * Gets a specific dynamic connector by ID.
+   * @param args - Contains the connector ID
+   * @returns Promise<DynamicConnectorsRow> - The connector data
+   */
+  async getConnectorById(
+    args: Partial<{ id: string }>,
+  ): Promise<DynamicConnectorsRow> {
+    const id = ensure(args.id, "id is required");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_connectors")
+      .select("*")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .single();
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find connector with id=${id}`);
+    }
+
+    return data;
+  }
+
+  /**
    * Creates a new dynamic connector.
    * @param args - Contains data for the new connector and credentials
    * @returns Promise<Tables<"dynamic_connectors">> - The created connector
@@ -589,6 +620,67 @@ class OsoAppClient {
     if (!response.ok) {
       throw new Error("Error deleting connector: " + json.error);
     }
+  }
+
+  /**
+   * Syncs a dynamic connector to refresh its schema and metadata.
+   * @param id
+   */
+  async syncConnector(args: Partial<{ id: string }>): Promise<void> {
+    const id = ensure(args.id, "id is required to sync connector");
+
+    const customHeaders = await this.createSupabaseAuthHeaders();
+    const searchParams = new URLSearchParams({ id });
+
+    const response = await fetch(
+      `/api/v1/connector/sync?${searchParams.toString()}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...customHeaders,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Error syncing connector: ${error.error}`);
+    }
+
+    return;
+  }
+
+  /**
+   * Gets contextual information for a dynamic connector's tables and columns.
+   * @param id
+   * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
+   * - Returns the tables context and an array of column contexts for the connector
+   */
+  async getDynamicConnectorContexts(args: { id: string }): Promise<
+    {
+      table: DynamicTableContextsRow;
+      columns: DynamicColumnContextsRow[];
+    }[]
+  > {
+    const id = ensure(args.id, "id is required to get contexts");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_table_contexts")
+      .select("*, dynamic_column_contexts(*)")
+      .eq("connector_id", id);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find contexts for connector id=${id}`,
+      );
+    }
+    return data.map((row) => {
+      const { dynamic_column_contexts: columns, ...table } = row;
+      return { table, columns };
+    });
   }
 
   /**
