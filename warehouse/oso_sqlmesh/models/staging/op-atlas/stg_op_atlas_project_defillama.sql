@@ -9,7 +9,8 @@ MODEL (
 
 WITH manual_mappings AS (
   SELECT project_id, defillama_slug FROM (VALUES
-    ('0xd4f0252e6ac2408099cd40d213fb6f42e8fa129b446d6e8da55e673598ef14c0', 'moonwell'), -- missing from app
+    ('0xd4f0252e6ac2408099cd40d213fb6f42e8fa129b446d6e8da55e673598ef14c0', 'moonwell-lending'), -- missing from app
+    ('0xd4f0252e6ac2408099cd40d213fb6f42e8fa129b446d6e8da55e673598ef14c0', 'moonwell-vaults'), -- missing from app
     ('0xfd9f98de666c5b0a5ce96d4a4b8d4ceee9f8c2156734d57bf6c23d0cff183e90', 'kim-exchange'), -- missing from app
     ('0x96767e87a27cdb9798f40c3a6fd78e70da611afe53a5e45cbaafc50cae4ad0e7', 'sonus'), -- legacy parent protocol name
     ('0x7262ed9c020b3b41ac7ba405aab4ff37575f8b6f975ebed2e65554a08419f8f4', 'sablier-finance'), -- legacy parent protocol name
