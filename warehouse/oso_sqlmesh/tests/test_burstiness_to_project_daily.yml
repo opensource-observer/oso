@@ -4,7 +4,7 @@ test_burstiness_to_project_daily:
     start: 2024-01-01
     end: 2024-01-31
   inputs:
-    oso.int_events_daily__github_with_zero_filling:
+    oso.int_events_daily__github:
       rows:
       - to_artifact_id: repo_1
         event_source: SOURCE_PROVIDER
@@ -42,6 +42,20 @@ test_burstiness_to_project_daily:
         event_source: SOURCE_PROVIDER
         bucket_day: 2024-01-05
         amount: 5
+    oso.int_first_last_commit_to_github_repository:
+      rows:
+      - artifact_id: repo_1
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_1
+        first_commit_time: 2024-01-01 00:00:00
+        last_commit_time: 2024-01-04 00:00:00
+      - artifact_id: repo_2
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_2
+        first_commit_time: 2024-01-01 00:00:00
+        last_commit_time: 2024-01-05 00:00:00
     oso.artifacts_by_project_v1:
       rows:
       - artifact_id: repo_1
@@ -105,3 +119,56 @@ test_burstiness_to_project_daily:
         from_artifact_id: ''
         metric: burstiness_daily
         amount: 0.2002962963
+test_burstiness_to_project_daily_with_gaps:
+  model: oso.burstiness_to_project_daily
+  vars:
+    start: 2024-02-01
+    end: 2024-02-10
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_3
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-02-01
+        amount: 15
+      - to_artifact_id: repo_3
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-02-04
+        amount: 20
+      - to_artifact_id: repo_3
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-02-07
+        amount: 10
+    oso.int_first_last_commit_to_github_repository:
+      rows:
+      - artifact_id: repo_3
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_3
+        first_commit_time: 2024-02-01 00:00:00
+        last_commit_time: 2024-02-07 00:00:00
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_3
+        project_id: project_3
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-02-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-02-04
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 725.7254464
+      - metrics_sample_date: 2024-02-07
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 602.6886945
