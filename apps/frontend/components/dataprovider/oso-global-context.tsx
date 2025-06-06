@@ -37,8 +37,17 @@ const OsoGlobalActions: any = {
   },
   deleteOrganization: { parameters: [{ name: "args", type: "object" }] },
   getConnectors: { parameters: [{ name: "args", type: "object" }] },
+  getConnectorById: {
+    parameters: [{ name: "args", type: "object" }],
+  },
   createConnector: { parameters: [{ name: "args", type: "object" }] },
   deleteConnector: { parameters: [{ name: "args", type: "object" }] },
+  syncConnector: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  getDynamicConnectorContexts: {
+    parameters: [{ name: "args", type: "object" }],
+  },
 };
 
 // Users will be able to set these props in Studio.
@@ -122,10 +131,19 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
         client!.deleteOrganization(args).then(handleSuccess).catch(handleError),
       getConnectors: (args: any) =>
         client!.getConnectors(args).then(handleSuccess).catch(handleError),
+      getConnectorById: (args: any) =>
+        client!.getConnectorById(args).then(handleSuccess).catch(handleError),
       createConnector: (args: any) =>
         client!.createConnector(args).then(handleSuccess).catch(handleError),
       deleteConnector: (args: any) =>
         client!.deleteConnector(args).then(handleSuccess).catch(handleError),
+      syncConnector: (args: any) =>
+        client!.syncConnector(args).then(handleSuccess).catch(handleError),
+      getDynamicConnectorContexts: (args: any) =>
+        client!
+          .getDynamicConnectorContexts(args)
+          .then(handleSuccess)
+          .catch(handleError),
     }),
     [client],
   );
