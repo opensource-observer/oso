@@ -150,6 +150,7 @@ class OsoSqlDatabase(SQLDatabase):
             return content
 
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
+    
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
@@ -158,6 +159,12 @@ class OsoSqlDatabase(SQLDatabase):
         If the statement returns no rows, an empty string is returned.
         """
         logger.debug("Running SQL command: %s", command)
+
+        line_split = [ line.lower() for line in command.strip().split('\n')]
+        if self.dialect.lower() in line_split:
+            if line_split[0] == self.dialect.lower():
+                command = "\n".join(line_split[1:])
+
         query_results = asyncio.run(self._oso_client.query_oso(command))
         truncated_results = []
         col_keys = []
