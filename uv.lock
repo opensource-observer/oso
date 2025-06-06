@@ -4046,6 +4046,7 @@ dependencies = [
     { name = "openinference-instrumentation-llama-index" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "scikit-learn" },
     { name = "sqlglot", extra = ["rs"] },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -4065,6 +4066,7 @@ requires-dist = [
     { name = "openinference-instrumentation-llama-index", specifier = ">=4.3.0" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest-asyncio", specifier = ">=0.26.0" },
+    { name = "scikit-learn", specifier = ">=1.6.1" },
     { name = "sqlglot", extras = ["rs"], specifier = ">=26.16.4" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.2" },
 ]

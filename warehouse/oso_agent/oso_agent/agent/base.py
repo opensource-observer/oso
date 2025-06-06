@@ -1,10 +1,13 @@
 import typing as t
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from opentelemetry import trace
 
 from ..types import ErrorResponse, WrappedResponse
 
 ResponseWrapper = t.Callable[[t.Any], WrappedResponse]
+
+tracer = trace.get_tracer(__name__)
 
 class GenericWrappedAgent:
     def __init__(self, agent: BaseWorkflowAgent, response_wrapper: ResponseWrapper):
@@ -16,9 +19,10 @@ class GenericWrappedAgent:
     
     async def run(self, *args, **kwargs) -> WrappedResponse:
         """Run the agent with the given arguments and return the response."""
-        raw_response = await self._agent.run(*args, **kwargs)
-        return self._response_wrapper(raw_response)
-    
+        with tracer.start_as_current_span("run"):
+            raw_response = await self._agent.run(*args, **kwargs)
+            return self._response_wrapper(raw_response)
+
     async def run_safe(self, *args, **kwargs) -> WrappedResponse:
         """Run the agent with the given arguments and return the response,
         handling errors and returning a wrapped error response."""
