@@ -48,6 +48,10 @@ import {
   DynamicConnectorForm,
   DynamicConnectorFormRegistration,
 } from "./components/widgets/connectors/dynamic-connector-form";
+import {
+  OsoChatProvider,
+  OsoChatProviderRegistration,
+} from "./components/dataprovider/oso-chat-provider";
 
 /**
  * Plasmic global context
@@ -314,6 +318,15 @@ PLASMIC.registerComponent(DynamicConnectorForm, {
     ...DynamicConnectorFormRegistration,
   },
   importPath: "./components/widgets/connectors/dynamic-connector-form",
+});
+
+PLASMIC.registerComponent(OsoChatProvider, {
+  name: "OsoChatProvider",
+  props: {
+    ...OsoChatProviderRegistration,
+  },
+  providesData: true,
+  importPath: "./components/dataprovider/oso-chat-provider",
 });
 
 /**
