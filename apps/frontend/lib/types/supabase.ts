@@ -122,6 +122,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      dynamic_column_contexts: {
+        Row: {
+          column_name: string;
+          data_type: string;
+          description: string | null;
+          foreign_keys: Json | null;
+          id: string;
+          sample_data: string | null;
+          table_id: string;
+        };
+        Insert: {
+          column_name: string;
+          data_type: string;
+          description?: string | null;
+          foreign_keys?: Json | null;
+          id?: string;
+          sample_data?: string | null;
+          table_id: string;
+        };
+        Update: {
+          column_name?: string;
+          data_type?: string;
+          description?: string | null;
+          foreign_keys?: Json | null;
+          id?: string;
+          sample_data?: string | null;
+          table_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_table_context";
+            columns: ["table_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_table_contexts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       dynamic_connectors: {
         Row: {
           config: Json | null;
@@ -165,6 +203,35 @@ export type Database = {
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      dynamic_table_contexts: {
+        Row: {
+          connector_id: string;
+          description: string | null;
+          id: string;
+          table_name: string;
+        };
+        Insert: {
+          connector_id: string;
+          description?: string | null;
+          id?: string;
+          table_name: string;
+        };
+        Update: {
+          connector_id?: string;
+          description?: string | null;
+          id?: string;
+          table_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_connector_id";
+            columns: ["connector_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_connectors";
             referencedColumns: ["id"];
           },
         ];
