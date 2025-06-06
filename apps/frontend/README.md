@@ -46,14 +46,19 @@ pnpm dev
 
 Remember to set `preview: true` in `plasmic-init.ts` if you want to see unpublished changes from Plasmic Studio without publishing the Plasmic project.
 
-## Build, lint, test
+## Build
 
-To build, lint, and test, run the following
+To create a production build (code+build):
 
 ```bash
-pnpm build
-pnpm lint
-pnpm test
+pnpm build:prod
+```
+
+You can also run codegen and the Next.js build separately:
+
+```bash
+pnpm codegen
+pnpm build:next
 ```
 
 The resulting static site can be found in `./build/`.
@@ -63,10 +68,17 @@ You can serve built files with:
 pnpm start
 ```
 
+## Lint and test
+
+```bash
+pnpm lint
+pnpm test
+```
+
 ### Codegen
 
 :::tip
-The default `pnpm build` will handle all of this.
+You can run `pnpm codegen` to run all of these codegen stages at once.
 :::
 
 We self-host an Apollo gateway in Next.js/Vercel, which routes all requests to Hasura.

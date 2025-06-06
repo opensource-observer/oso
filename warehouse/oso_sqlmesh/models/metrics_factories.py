@@ -49,6 +49,7 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     
     if "data_category=blockchain" in config["additional_tags"]:
         options["ignore_before"] = constants.superchain_audit_start
+        options["ignore_after"] = constants.superchain_audit_end
         options["missing_rate_min_threshold"] = 0.95
 
     return (

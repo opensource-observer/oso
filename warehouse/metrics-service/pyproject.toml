@@ -51,7 +51,6 @@ dependencies = [
     "dagster-duckdb<1.0.0,>=0.24.0",
     "dagster-duckdb-polars<1.0.0,>=0.24.0",
     "google-cloud-bigquery-storage<3.0.0,>=2.25.0",
-    "dagster-sqlmesh==0.16.0",
     "google-auth<3.0.0,>=2.34.0",
     "pillow<11.0.0,>=10.4.0",
     "dagster-k8s<1.0.0,>=0.24.6",

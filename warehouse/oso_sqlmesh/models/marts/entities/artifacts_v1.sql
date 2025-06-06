@@ -1,8 +1,11 @@
 MODEL (
   name oso.artifacts_v1,
   kind FULL,
+  partitioned_by bucket(artifact_id, 256),
   tags (
-    'export'
+    'export',
+    'index={"idx_artifact_id": ["artifact_id"], "idx_artifact_name": ["artifact_name"]}',
+    'order_by=["artifact_id"]'
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
@@ -14,6 +17,10 @@ MODEL (
     artifact_source = 'The original source of the artifact, such as "GITHUB", "NPM", or "DEFILLAMA".',
     artifact_namespace = 'The grouping or namespace of the artifact, such as the GitHub organization or NPM scope. It will will be empty if the artifact source does not have its own namespacing conventions',
     artifact_name = 'The name of the artifact, such as the GitHub repository name, NPM package name, or blockchain address.'
+  ),
+  physical_properties (
+    parquet_bloom_filter_columns = ['artifact_id'],
+    sorted_by = ['artifact_id']
   )
 );
 

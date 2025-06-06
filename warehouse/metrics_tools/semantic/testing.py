@@ -314,7 +314,7 @@ def setup_registry():
                 )
             ],
             # Need to support composite primary keys
-            primary_key="",
+            primary_key=["metric_id", "artifact_id", "sample_date"],
             measures=[
                 Measure(
                     name="sum",
@@ -374,7 +374,7 @@ def setup_registry():
                 )
             ],
             # Need to support composite primary keys
-            primary_key="",
+            primary_key=["metric_id", "project_id", "sample_date"],
             measures=[
                 Measure(
                     name="sum",
@@ -433,7 +433,7 @@ def setup_registry():
                 )
             ],
             # Need to support composite primary keys
-            primary_key="",
+            primary_key=["metric_id", "collection_id", "sample_date"],
             measures=[
                 Measure(
                     name="sum",

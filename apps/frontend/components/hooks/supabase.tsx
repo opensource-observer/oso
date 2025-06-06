@@ -19,13 +19,6 @@ function useSupabaseState() {
   return useContext<SupabaseState>(SupabaseContext);
 }
 
-function useSupabaseClient() {
-  const supabaseClient = createNormalSupabaseClient();
-  return {
-    supabaseClient,
-  };
-}
-
 function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SupabaseState | null>(null);
   const revalidate = async () => {
@@ -51,9 +44,4 @@ function SupabaseProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export {
-  useSupabaseClient,
-  SupabaseContext,
-  useSupabaseState,
-  SupabaseProvider,
-};
+export { SupabaseContext, useSupabaseState, SupabaseProvider };
