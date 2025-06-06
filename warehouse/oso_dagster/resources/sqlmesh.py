@@ -38,13 +38,12 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
     def __init__(self, prefix: str):
         self._prefix = prefix
 
-    def get_asset_key_fqn(self, context: Context, fqn: str) -> AssetKey:
-        key = super().get_asset_key_fqn(context, fqn)
-        return key.with_prefix("production").with_prefix("dbt")
+    def get_asset_key(self, context: Context, fqn: str) -> AssetKey:
+        path = self.get_asset_key_name(fqn)
+        return AssetKey(path[0]).with_prefix(self._prefix)
 
-    def get_asset_key_from_model(self, context: Context, model: Model) -> AssetKey:
-        key = super().get_asset_key_from_model(context, model)
-        return key.with_prefix(self._prefix)
+    def get_group_name(self, context, model):
+        return "sqlmesh"
 
     def get_tags(self, context: Context, model: Model) -> t.Dict[str, str]:
         """Loads tags for a model.
