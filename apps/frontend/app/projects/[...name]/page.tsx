@@ -1,28 +1,18 @@
 import { notFound } from "next/navigation";
-import _ from "lodash";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "../../../plasmic-init";
 import { PlasmicClientRootProvider } from "../../../plasmic-init-client";
-import {
-  cachedGetProjectByName,
-  cachedGetKeyMetricsByProject,
-  cachedGetMetricsByIds,
-} from "../../../lib/clickhouse/cached-queries";
-import { PROJECT_PAGE_METRIC_IDS } from "../../../lib/clickhouse/metrics-config";
+import { cachedGetProjectByName } from "../../../lib/clickhouse/cached-queries";
 import { logger } from "../../../lib/logger";
 import { catchallPathToString } from "../../../lib/paths";
 
 const PROJECT_SOURCE = "OSS_DIRECTORY";
 const PROJECT_NAMESPACE = "oso";
 const PLASMIC_COMPONENT = "ProjectPage";
-//export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";
-//export const dynamic = "force-static";
-export const dynamic = "force-dynamic";
 export const dynamicParams = true;
-export const revalidate = false; // 3600 = 1 hour
-// TODO: This cannot be empty due to this bug
-// https://github.com/vercel/next.js/issues/61213
+export const revalidate = 3600;
+
 const STATIC_EXPORT_SLUGS: string[] = ["opensource-observer"];
 export async function generateStaticParams() {
   return STATIC_EXPORT_SLUGS.map((s) => ({
@@ -72,29 +62,26 @@ export default async function ProjectPage(props: ProjectPageProps) {
     notFound();
   }
   const project = projectArray[0];
-  const projectId = project.project_id;
-  //console.log("project", project);
+  // TODO: Need to make Plasmic work with keyMetrics props before doing this
+  // const projectId = project.project_id;
 
-  // Parallelize getting things related to the project
-  const metricIds = [...PROJECT_PAGE_METRIC_IDS];
-  const data = await Promise.all([
-    cachedGetMetricsByIds({ metricIds }),
-    cachedGetKeyMetricsByProject({
-      projectIds: [projectId],
-      metricIds,
-    }),
-  ]);
-  const allMetrics = data[0];
-  const metricsMap = _.keyBy(allMetrics, (x) => x.metric_id);
-  const keyMetricsData = data[1];
-  const keyMetrics = keyMetricsData.map((x) => ({
-    ...x,
-    display_name: metricsMap[x.metric_id]?.display_name,
-    description: metricsMap[x.metric_id]?.description,
-  }));
-  //console.log("!!!");
-  //console.log(project);
-  //console.log(keyMetrics);
+  // // Parallelize getting things related to the project
+  // const metricIds = [...PROJECT_PAGE_METRIC_IDS];
+  // const data = await Promise.all([
+  //   cachedGetMetricsByIds({ metricIds }),
+  //   cachedGetKeyMetricsByProject({
+  //     projectIds: [projectId],
+  //     metricIds,
+  //   }),
+  // ]);
+  // const allMetrics = data[0];
+  // const metricsMap = _.keyBy(allMetrics, (x) => x.metric_id);
+  // const keyMetricsData = data[1];
+  // const keyMetrics = keyMetricsData.map((x) => ({
+  //   ...x,
+  //   display_name: metricsMap[x.metric_id]?.display_name,
+  //   description: metricsMap[x.metric_id]?.description,
+  // }));
 
   // Get Plasmic component
   const plasmicData = await cachedFetchComponent(PLASMIC_COMPONENT);
@@ -113,7 +100,6 @@ export default async function ProjectPage(props: ProjectPageProps) {
         component={compMeta.displayName}
         componentProps={{
           metadata: project,
-          keyMetrics,
         }}
       />
     </PlasmicClientRootProvider>
