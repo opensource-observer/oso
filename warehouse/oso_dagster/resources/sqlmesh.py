@@ -38,13 +38,18 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
     def __init__(self, prefix: str):
         self._prefix = prefix
 
-    def get_asset_key_fqn(self, context: Context, fqn: str) -> AssetKey:
-        key = super().get_asset_key_fqn(context, fqn)
-        return key.with_prefix("production").with_prefix("dbt")
+    def get_asset_key(self, context: Context, fqn: str) -> AssetKey:
+        table = exp.to_table(fqn)  # Ensure fqn is a valid table expression
+        if table.catalog in ["bigquery", "iceberg", ""]:
+            # For BigQuery and Iceberg, we use the db and table name
+            path = [table.db, table.name]
+        else:
+            # For other catalogs, we use catalog, db, and table name (these are likely external things)
+            path = [table.catalog, table.db, table.name]
+        return AssetKey(path)
 
-    def get_asset_key_from_model(self, context: Context, model: Model) -> AssetKey:
-        key = super().get_asset_key_from_model(context, model)
-        return key.with_prefix(self._prefix)
+    def get_group_name(self, context, model):
+        return "sqlmesh"
 
     def get_tags(self, context: Context, model: Model) -> t.Dict[str, str]:
         """Loads tags for a model.

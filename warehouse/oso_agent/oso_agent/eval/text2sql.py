@@ -1,23 +1,19 @@
 import json
 import logging
-from typing import Any, Dict
+import typing as t
 
 import phoenix as px
-from metrics_tools.semantic.testing import setup_registry
+from llama_index.core.base.response.schema import Response as ToolResponse
+from oso_agent.agent.agent_registry import AgentRegistry
+from oso_agent.tool.query_engine_tool import create_default_query_engine_tool
 from phoenix.experiments import run_experiment
 from phoenix.experiments.evaluators import ContainsAnyKeyword
 from phoenix.experiments.types import Example
+from pydantic import BaseModel, Field
 
 from ..datasets.text2sql import TEXT2SQL_DATASET
 from ..datasets.uploader import upload_dataset
 from ..tool.oso_mcp_client import OsoMcpClient
-from ..types import (
-    ErrorResponse,
-    SemanticResponse,
-    SqlResponse,
-    StrResponse,
-    WrappedResponseAgent,
-)
 from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
 from ..util.jaccard import jaccard_similarity_str
@@ -30,8 +26,22 @@ EXPERIMENT_NAME = "text2sql-experiment"
 logger = logging.getLogger(__name__)
 
 
-async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
+class Text2SqlExperimentOptions(BaseModel):
+    """Options for the text2sql experiment."""
+    strategy: str = Field(
+        default="default",
+        description="The strategy to use for the text2sql experiment. "
+                    "Currently only 'default' is supported.",
+    )
+
+
+
+async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _raw_options: dict[str, t.Any]):
     logger.info(f"Running text2sql experiment with: {config.model_dump_json()}")
+
+    # Load the query engine tool
+    query_engine_tool = await create_default_query_engine_tool(config)
+
     api_key = config.arize_phoenix_api_key.get_secret_value()
 
     logger.debug("Loading client")
@@ -53,27 +63,22 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
         # print(f"Question: {question}")
         # expected = str(example.output["answer"])
         # print(f"Expected: {expected}")
-        agent_response = await agent.run_safe(question)
-        logger.debug(f"Agent response: {agent_response}")
+        tool_output = await query_engine_tool.acall(input=question)
+        logger.debug(f"Query engine response: {tool_output}")
 
-        match agent_response.response:
-            case StrResponse(blob=blob):
-                return blob
-            case SemanticResponse(query=query):
-                # hacky way for now to load the semantic registry
-                semantic_registry = setup_registry()
-                try:
-                    return semantic_registry.query(query).sql(dialect="trino", pretty=True)
-                except Exception as e:
-                    return f"Error rendering semantic query: {e}"
-            case SqlResponse(query=query):
-                return query.query
-            case ErrorResponse(message=message):
-                return message
+        raw_output = tool_output.raw_output
+        if not isinstance(raw_output, ToolResponse):
+            return f"Unexpected tool output type: {type(raw_output)}"
+        
+
+        if raw_output.metadata is None:
+            return "No metadata in query engine tool output"
+        
+        return raw_output.metadata.get("sql_query", "No SQL query in metadata")
 
     contains_select = ContainsAnyKeyword(keywords=["SELECT"])
 
-    def load_expected_sql_answer(expected: Dict[str, Any]) -> str:
+    def load_expected_sql_answer(expected: dict[str, t.Any]) -> str:
         """Load the expected answer from the example."""
         expected_answer = expected.get("answer")
         if not expected_answer:
@@ -81,7 +86,7 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
             expected_answer = "SELECT 1"
         return expected_answer
 
-    def sql_query_similarity(output: str, expected: Dict[str, Any]) -> float:
+    def sql_query_similarity(output: str, expected: dict[str, t.Any]) -> float:
         """Evaluate the similarity between the output and expected SQL query using Jaccard similarity."""
         expected_answer = load_expected_sql_answer(expected)
         # print(f"Output: {output}, expected: {expected_answer}")
@@ -89,17 +94,17 @@ async def text2sql_experiment(config: AgentConfig, agent: WrappedResponseAgent):
 
     logger.debug("Creating Oso MCP client")
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
-    def sql_result_similarity(output: str, expected: Dict[str, Any]) -> float:
+    async def sql_result_similarity(output: str, expected: dict[str, t.Any]) -> float:
         """Evaluate the similarity between results post-query"""
         expected_answer = load_expected_sql_answer(expected)
-        expected_response = oso_mcp_client.query_oso(expected_answer)
+        expected_response = await oso_mcp_client.query_oso(expected_answer)
         expected_str = json.dumps(expected_response)
         # print(f"Expected Str: {expected_str}")
 
         # We might be testing agents that produce SQL or text results
         if is_valid_sql(output, dialect="trino"):
             # If the output is a valid SQL query, we can run it against the OSO MCP client and compare results
-            output_response = oso_mcp_client.query_oso(output)
+            output_response = await oso_mcp_client.query_oso(output)
             output_str = json.dumps(output_response)
             return jaccard_similarity_str(output_str, expected_str)
             # print(f"Output Response: {output_str}")

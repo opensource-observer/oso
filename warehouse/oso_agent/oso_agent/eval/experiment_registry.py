@@ -4,15 +4,15 @@ from typing import Awaitable, Callable
 
 from phoenix.experiments.types import RanExperiment
 
-from ..types import WrappedResponseAgent
 from ..util.config import AgentConfig
+from ..agent.agent_registry import AgentRegistry
 from .text2sql import text2sql_experiment
 
 # Setup logging
 logger = logging.getLogger(__name__)
 
 # Type alias for a dictionary of agents
-ExperimentDict = t.Dict[str, Callable[[AgentConfig, WrappedResponseAgent], Awaitable[RanExperiment]]]
+ExperimentDict = t.Dict[str, Callable[[AgentConfig, AgentRegistry, dict[str, t.Any]], Awaitable[RanExperiment]]]
 
 def get_experiments() -> ExperimentDict:
     """Create and configure the ReAct agent."""

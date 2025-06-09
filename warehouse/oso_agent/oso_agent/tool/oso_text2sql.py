@@ -18,7 +18,7 @@ DEFAULT_INCLUDE_TABLES = [
     "models_v0",
 ]
 
-async def create_oso_query_engine(config: AgentConfig, llm: FunctionCallingLLM, embedding: BaseEmbedding, include_tables: List[str] = DEFAULT_INCLUDE_TABLES):
+async def create_oso_query_engine(config: AgentConfig, llm: FunctionCallingLLM, embedding: BaseEmbedding, synthesize_response: bool = True, include_tables: List[str] = DEFAULT_INCLUDE_TABLES):
     oso_db = await OsoSqlDatabase.create(
         oso_mcp_url=config.oso_mcp_url,
         include_tables=include_tables,
@@ -26,6 +26,7 @@ async def create_oso_query_engine(config: AgentConfig, llm: FunctionCallingLLM, 
 
     query_engine = NLSQLTableQueryEngine(
         sql_database=oso_db, tables=include_tables, llm=llm, embed_model=embedding,
+        synthesize_response=synthesize_response,
     )
 
     return query_engine

@@ -8,6 +8,7 @@ import { format } from "sql-formatter";
 import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
+import { Markdown } from "./components/widgets/markdown";
 import {
   MetricsDataProvider,
   MetricsDataProviderRegistration,
@@ -48,6 +49,10 @@ import {
   DynamicConnectorForm,
   DynamicConnectorFormRegistration,
 } from "./components/widgets/connectors/dynamic-connector-form";
+import {
+  OsoChatProvider,
+  OsoChatProviderRegistration,
+} from "./components/dataprovider/oso-chat-provider";
 
 /**
  * Plasmic global context
@@ -112,6 +117,19 @@ PLASMIC.registerComponent(CircularProgress, {
   description: "Circular loading widget",
   props: {},
   importPath: "@mui/material/CircularProgress",
+});
+
+PLASMIC.registerComponent(Markdown, {
+  name: "Markdown",
+  description: "Render Markdown",
+  props: {
+    content: {
+      type: "string",
+      defaultValue: "Hello World",
+      helpText: "Markdown string",
+    },
+  },
+  importPath: "react-markdown",
 });
 
 PLASMIC.registerComponent(MetricsDataProvider, {
@@ -314,6 +332,15 @@ PLASMIC.registerComponent(DynamicConnectorForm, {
     ...DynamicConnectorFormRegistration,
   },
   importPath: "./components/widgets/connectors/dynamic-connector-form",
+});
+
+PLASMIC.registerComponent(OsoChatProvider, {
+  name: "OsoChatProvider",
+  props: {
+    ...OsoChatProviderRegistration,
+  },
+  providesData: true,
+  importPath: "./components/dataprovider/oso-chat-provider",
 });
 
 /**

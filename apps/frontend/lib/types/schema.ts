@@ -62,7 +62,7 @@ export const apiKeysRowSchema = z.object({
   deleted_at: z.string().nullable(),
   id: z.string(),
   name: z.string(),
-  org_id: z.string().nullable(),
+  org_id: z.string(),
   updated_at: z.string(),
   user_id: z.string(),
 });
@@ -73,7 +73,7 @@ export const apiKeysInsertSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   name: z.string(),
-  org_id: z.string().optional().nullable(),
+  org_id: z.string(),
   updated_at: z.string().optional(),
   user_id: z.string(),
 });
@@ -84,7 +84,7 @@ export const apiKeysUpdateSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   name: z.string().optional(),
-  org_id: z.string().optional().nullable(),
+  org_id: z.string().optional(),
   updated_at: z.string().optional(),
   user_id: z.string().optional(),
 });
@@ -221,6 +221,45 @@ export const organizationsRelationshipsSchema = z.tuple([
     referencedColumns: z.tuple([z.literal("id")]),
   }),
 ]);
+
+export const purchaseIntentsRowSchema = z.object({
+  completed_at: z.string().nullable(),
+  created_at: z.string(),
+  credits_amount: z.number(),
+  id: z.string(),
+  metadata: jsonSchema.nullable(),
+  package_id: z.string(),
+  price_cents: z.number(),
+  status: z.string(),
+  stripe_session_id: z.string(),
+  user_id: z.string(),
+});
+
+export const purchaseIntentsInsertSchema = z.object({
+  completed_at: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  credits_amount: z.number(),
+  id: z.string().optional(),
+  metadata: jsonSchema.optional().nullable(),
+  package_id: z.string(),
+  price_cents: z.number(),
+  status: z.string().optional(),
+  stripe_session_id: z.string(),
+  user_id: z.string(),
+});
+
+export const purchaseIntentsUpdateSchema = z.object({
+  completed_at: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  credits_amount: z.number().optional(),
+  id: z.string().optional(),
+  metadata: jsonSchema.optional().nullable(),
+  package_id: z.string().optional(),
+  price_cents: z.number().optional(),
+  status: z.string().optional(),
+  stripe_session_id: z.string().optional(),
+  user_id: z.string().optional(),
+});
 
 export const userCreditsRowSchema = z.object({
   created_at: z.string(),
