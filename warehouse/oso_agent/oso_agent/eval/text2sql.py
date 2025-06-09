@@ -16,7 +16,8 @@ from ..datasets.uploader import upload_dataset
 from ..tool.oso_mcp_client import OsoMcpClient
 from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
-from ..util.jaccard import jaccard_similarity_str
+from ..util.jaccard import jaccard_similarity_set, jaccard_similarity_str
+from ..util.query import determine_query_type, determine_sql_models_used
 from .valid_sql import is_valid_sql
 
 setup_nest_asyncio()
@@ -86,11 +87,19 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
             expected_answer = "SELECT 1"
         return expected_answer
 
-    def sql_query_similarity(output: str, expected: dict[str, t.Any]) -> float:
-        """Evaluate the similarity between the output and expected SQL query using Jaccard similarity."""
-        expected_answer = load_expected_sql_answer(expected)
-        # print(f"Output: {output}, expected: {expected_answer}")
-        return jaccard_similarity_str(output, expected_answer)
+    def sql_query_type_similarity(output: str, expected: dict[str, t.Any]) -> float:
+        """Evaluate the similarity between the output and expected SQL query types using Jaccard similarity."""
+        output_query_types = determine_query_type(output)
+        expected_query_types = expected.get('query_type') or []
+
+        return jaccard_similarity_set(set(output_query_types), set(expected_query_types))
+
+    def sql_oso_models_used_similarity(output: str, expected: dict[str, t.Any]) -> float:
+        """Evaluate the similarity between the output and expected oso models used using Jaccard similarity."""
+        output_oso_models_used = determine_sql_models_used(output)
+        expected_oso_models_used = expected.get('sql_models_used') or []
+
+        return jaccard_similarity_set(set(output_oso_models_used), set(expected_oso_models_used))
 
     logger.debug("Creating Oso MCP client")
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
@@ -114,7 +123,8 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
 
     evaluators = [
         contains_select,
-        sql_query_similarity,
+        sql_query_type_similarity,
+        sql_oso_models_used_similarity,
         sql_result_similarity,
     ]
 
