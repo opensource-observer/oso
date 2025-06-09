@@ -24,7 +24,50 @@ def factory_deployments(
     traces_status_column: exp.ExpOrStr = "traces.status",
     traces_time_partition_column: exp.ExpOrStr = "traces.block_timestamp",
 ) -> exp.Expression:
-    """Get the SQL for the transactions_with_receipts_deployers macro."""
+    """Get the SQL for the transactions_with_receipts_deployers macro.
+
+    This macro generates a sql query that retrieves factory deployments from the
+    transactions and traces tables within a specified time range. It filters for
+    'create' and 'create2' trace types, excludes a the create2 EOA
+    0x3fab184622dc19b6109349b94811493bf2a45362 see:
+
+    https://github.com/Arachnid/deterministic-deployment-proxy
+    
+    Args:
+        evaluator (MacroEvaluator): The macro evaluator instance.
+        start (exp.Expression): The start of the time range for filtering.
+        end (exp.Expression): The end of the time range for filtering.
+        transactions_table (exp.Expression): The transactions table expression.
+        traces_tables (exp.Expression): The traces table expression.
+        additional_column_defs (exp.ExpOrStr): Additional column definitions to include in the result.
+        transactions_transaction_hash_column (exp.ExpOrStr): Column for transaction hash in the transactions table.
+        transactions_originating_address_column (exp.ExpOrStr): Column for originating address in the transactions table.
+        transactions_originating_contract_column (exp.ExpOrStr): Column for originating contract in the transactions table.
+        transactions_time_partition_column (exp.ExpOrStr): Column for time partition in the transactions table.
+        traces_transaction_hash_column (exp.ExpOrStr): Column for transaction hash in the traces table.
+        traces_block_timestamp_column (exp.ExpOrStr): Column for block timestamp in the traces table.
+        traces_factory_address_column (exp.ExpOrStr): Column for factory address in the traces table.
+        traces_contract_address_column (exp.ExpOrStr): Column for contract address in the traces table.
+        traces_trace_type_column (exp.ExpOrStr): Column for trace type in the traces table.
+        traces_status_column (exp.ExpOrStr): Column for trace status in the traces table.
+        traces_time_partition_column (exp.ExpOrStr): Column for time partition in the traces table.
+
+    Returns:
+        exp.Expression: The SQL expression for the factory deployments query.
+            The generated results for this sql query include the following columns:
+
+            - block_timestamp: The timestamp of the block in which the transaction was included.
+            - transaction_hash: The hash of the transaction.
+            - originating_address: The address that initiated the transaction
+            - originating_contract: The contract address that initiated the transaction 
+                if this is null then this a contract deployment by an EOA
+            - factory_address: The address of the factory contract that deployed the new contract 
+                if this is the same as the originating address then this is a contract deployment 
+                by an EOA
+            - contract_address: The address of the newly deployed contract.
+            - create_type: The type of creation, either 'create' or 'create2'.
+            - Finally, we append any additional columns defined in the macro call
+    """
     transactions_transaction_hash = coerce_to_column(
         transactions_transaction_hash_column
     )
