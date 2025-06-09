@@ -4,25 +4,28 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
+import sqlglot
+from sqlglot import expressions as exp
+_DIALECT = "trino"
+
 ##### Text2SQL #####
 
 ExamplePriority = Literal["P0", "P1", "P2"] # P0 = critical, P1 = important, P2 = nice to have
 ExampleDifficulty = Literal["easy", "medium", "hard"]
 ExampleQueryType = Literal[
-    "aggregation",     # COUNT, SUM, AVG, MIN, MAX, etc.
-    "filter",          # WHERE clauses
-    "join",            # JOINs between tables
-    "group_by",        # GROUP BY
-    "order_by",        # ORDER BY, sorting
-    "subquery",        # Subquery usage
-    "window_function", # OVER(), ROW_NUMBER(), etc.
-    "time_series",     # Date filtering, time bucketing
-    "limit",           # LIMIT clauses
-    "union",           # UNION, UNION ALL
-    "case_when",       # CASE WHEN logic
-    "array",           # ARRAY_AGG, etc.
-    "cte",             # WITH ... AS (...)
-    "other"            # Catch-all
+    "aggregation",     
+    "filter",         
+    "join",            
+    "group_by",        
+    "order_by",        
+    "window_function",
+    "time_series",    
+    "limit",         
+    "union",           
+    "case_when",      
+    "array",           
+    "cte",             
+    "other"            
 ]
 ExampleSQLModelsUsed = [] # if this is something we want to enforce we can call models_v0 and ensure that the models used in the example are in this list
 ExampleQuestionCategories = Literal[
@@ -58,41 +61,72 @@ class Example(BaseModel):
 
 ExampleList = List[Example]
 
-def determine_query_type(query: str) -> List[ExampleQueryType]:
-    types = []
-    q = query.lower()
-    if re.search(r"\b(sum|count|avg|min|max)\b", q):
+def determine_query_type(query: str, dialect: str = _DIALECT) -> List[ExampleQueryType]:
+    try:
+        tree = sqlglot.parse_one(query, dialect=dialect)
+    except sqlglot.errors.ParseError:
+        # if the sql cannot be parsed fall back to 'other'
+        return ["other"]
+
+    types: List[ExampleQueryType] = []
+
+    if any(node.is_aggregate for node in tree.walk()):
         types.append("aggregation")
-    if "where" in q:
+
+    if tree.find(exp.Where):
         types.append("filter")
-    if "join" in q:
+
+    if tree.find(exp.Join):
         types.append("join")
-    if "group by" in q:
+
+    if tree.find(exp.Group):
         types.append("group_by")
-    if "order by" in q:
+
+    if tree.find(exp.Order):
         types.append("order_by")
-    if "limit" in q:
+
+    if tree.find(exp.Limit):
         types.append("limit")
-    if "with " in q:
+
+    if tree.find(exp.With):
         types.append("cte")
-    if "union" in q:
+
+    if tree.find(exp.Union):
         types.append("union")
-    if "case when" in q or "case\nwhen" in q:
-        types.append("case_when")
-    if "array_" in q:
-        types.append("array")
-    if re.search(r"\b(row_number|over\s*\()", q):
+
+    if tree.find(exp.Window):
         types.append("window_function")
-    if re.search(r"\bdate|extract|interval|bucket|time\b", q):
-        types.append("time_series")
+
+    if tree.find(exp.Case):
+        types.append("case_when")
+
+    if tree.find(exp.ArrayAgg) or tree.find(exp.Array):
+        types.append("array")
+
+    time_funcs = {
+        "date", "date_add", "date_diff", "date_trunc", "extract",
+        "time", "timestamp", "to_unixtime", "from_unixtime", "interval"
+    }
+    for func in tree.find_all(exp.Func):
+        if func.name.lower() in time_funcs:
+            types.append("time_series")
+            break
+
     if not types:
         types.append("other")
+
     return types
 
-def determine_sql_models_used(query: str) -> List[str]:
-    tables = re.findall(r'(?:from|join)\s+([a-zA-Z0-9_.]+)', query, flags=re.IGNORECASE)
-    oso_tables = [t[4:] for t in tables if t.startswith("oso.")]
-    return sorted(set(oso_tables))
+
+def determine_sql_models_used(query: str, dialect: str = _DIALECT) -> List[str]:
+    try:
+        tree = sqlglot.parse_one(query, dialect=dialect)
+    except sqlglot.errors.ParseError:
+        return []
+
+    tables = list(set([tbl.name for tbl in tree.find_all(exp.Table)]))
+    return tables
+
 
 def create_text2sql_example(question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:
     return Example(
