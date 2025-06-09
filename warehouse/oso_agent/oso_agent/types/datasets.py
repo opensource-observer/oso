@@ -3,29 +3,16 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-import sqlglot
-from sqlglot import expressions as exp
-_DIALECT = "trino"
+from ..util.query import (
+    ExampleQueryType,
+    determine_query_type,
+    determine_sql_models_used,
+)
 
 ##### Text2SQL #####
 
 ExamplePriority = Literal["P0", "P1", "P2"] # P0 = critical, P1 = important, P2 = nice to have
 ExampleDifficulty = Literal["easy", "medium", "hard"]
-ExampleQueryType = Literal[
-    "aggregation",     
-    "filter",         
-    "join",            
-    "group_by",        
-    "order_by",        
-    "window_function",
-    "time_series",    
-    "limit",         
-    "union",           
-    "case_when",      
-    "array",           
-    "cte",             
-    "other"            
-]
 ExampleSQLModelsUsed = [] # if this is something we want to enforce we can call models_v0 and ensure that the models used in the example are in this list
 ExampleQuestionCategories = Literal[
     "project_or_collection",        # Project or collection membership, counts, or listing
@@ -37,7 +24,6 @@ ExampleQuestionCategories = Literal[
     "pr_and_issue_tracking",        # Pull requests, issues, merge rates, or related comparisons
     "comparative_or_trend_analysis" # Rankings, temporal trends, cross-metric or composite conditions
 ]
-
 
 class ExampleInput(TypedDict):
     question: str
@@ -59,67 +45,6 @@ class Example(BaseModel):
     metadata: ExampleMetadata
 
 ExampleList = List[Example]
-
-def determine_query_type(query: str, dialect: str = _DIALECT) -> List[ExampleQueryType]:
-    tree = sqlglot.parse_one(query, dialect=dialect)
-
-    types: List[ExampleQueryType] = []
-
-    AGG_FUNCS = {"count", "sum", "avg", "min", "max"}
-    for func in tree.find_all(exp.Func):
-        if func.name.lower() in AGG_FUNCS:
-            types.append("aggregation")
-            break
-
-    if tree.find(exp.Where):
-        types.append("filter")
-
-    if tree.find(exp.Join):
-        types.append("join")
-
-    if tree.find(exp.Group):
-        types.append("group_by")
-
-    if tree.find(exp.Order):
-        types.append("order_by")
-
-    if tree.find(exp.Limit):
-        types.append("limit")
-
-    if tree.find(exp.With):
-        types.append("cte")
-
-    if tree.find(exp.Union):
-        types.append("union")
-
-    if tree.find(exp.Window):
-        types.append("window_function")
-
-    if tree.find(exp.Case):
-        types.append("case_when")
-
-    if tree.find(exp.ArrayAgg) or tree.find(exp.Array):
-        types.append("array")
-
-    time_funcs = {
-        "date", "date_add", "date_diff", "date_trunc", "extract",
-        "time", "timestamp", "to_unixtime", "from_unixtime", "interval"
-    }
-    for func in tree.find_all(exp.Func):
-        if func.name.lower() in time_funcs:
-            types.append("time_series")
-            break
-
-    if not types:
-        types.append("other")
-
-    return types
-
-
-def determine_sql_models_used(query: str, dialect: str = _DIALECT) -> List[str]:
-    tree = sqlglot.parse_one(query, dialect=dialect)
-    tables = list(set([tbl.name for tbl in tree.find_all(exp.Table)]))
-    return tables
 
 
 def create_text2sql_example(question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:
