@@ -28,6 +28,18 @@ export type CreditTransactionsInsert = z.infer<
 export type CreditTransactionsUpdate = z.infer<
   typeof generated.creditTransactionsUpdateSchema
 >;
+export type DynamicColumnContextsRow = z.infer<
+  typeof generated.dynamicColumnContextsRowSchema
+>;
+export type DynamicColumnContextsInsert = z.infer<
+  typeof generated.dynamicColumnContextsInsertSchema
+>;
+export type DynamicColumnContextsUpdate = z.infer<
+  typeof generated.dynamicColumnContextsUpdateSchema
+>;
+export type DynamicColumnContextsRelationships = z.infer<
+  typeof generated.dynamicColumnContextsRelationshipsSchema
+>;
 export type DynamicConnectorsRow = z.infer<
   typeof generated.dynamicConnectorsRowSchema
 >;
@@ -39,6 +51,18 @@ export type DynamicConnectorsUpdate = z.infer<
 >;
 export type DynamicConnectorsRelationships = z.infer<
   typeof generated.dynamicConnectorsRelationshipsSchema
+>;
+export type DynamicTableContextsRow = z.infer<
+  typeof generated.dynamicTableContextsRowSchema
+>;
+export type DynamicTableContextsInsert = z.infer<
+  typeof generated.dynamicTableContextsInsertSchema
+>;
+export type DynamicTableContextsUpdate = z.infer<
+  typeof generated.dynamicTableContextsUpdateSchema
+>;
+export type DynamicTableContextsRelationships = z.infer<
+  typeof generated.dynamicTableContextsRelationshipsSchema
 >;
 export type OrganizationsRow = z.infer<typeof generated.organizationsRowSchema>;
 export type OrganizationsInsert = z.infer<
