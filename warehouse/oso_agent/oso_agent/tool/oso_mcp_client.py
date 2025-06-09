@@ -41,6 +41,11 @@ class OsoMcpClient:
 
     async def query_oso(self, query: str) -> List[Dict[str, Any]]:
         """Query the OSO MCP server with a SQL query."""
+
+        # Remove any trailing semicolon from the query
+        if query.strip().endswith(";"):
+            query = query.strip()[:-1]
+
         results = await self.call_tool("query_oso", {"sql": query})
         return results
 

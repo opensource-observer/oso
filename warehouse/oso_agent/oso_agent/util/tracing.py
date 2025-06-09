@@ -30,7 +30,7 @@ def setup_telemetry(config: AgentConfig) -> Optional[trace_sdk.TracerProvider]:
             headers={
                 "api_key": config.arize_phoenix_api_key.get_secret_value(),
             },
-            set_global_tracer_provider=False,
+            set_global_tracer_provider=True,
             verbose=False,
         )
 
