@@ -61,16 +61,15 @@ class Example(BaseModel):
 ExampleList = List[Example]
 
 def determine_query_type(query: str, dialect: str = _DIALECT) -> List[ExampleQueryType]:
-    try:
-        tree = sqlglot.parse_one(query, dialect=dialect)
-    except sqlglot.errors.ParseError:
-        # if the sql cannot be parsed fall back to 'other'
-        return ["other"]
+    tree = sqlglot.parse_one(query, dialect=dialect)
 
     types: List[ExampleQueryType] = []
 
-    if any(node.is_aggregate for node in tree.walk()):
-        types.append("aggregation")
+    AGG_FUNCS = {"count", "sum", "avg", "min", "max"}
+    for func in tree.find_all(exp.Func):
+        if func.name.lower() in AGG_FUNCS:
+            types.append("aggregation")
+            break
 
     if tree.find(exp.Where):
         types.append("filter")
@@ -118,11 +117,7 @@ def determine_query_type(query: str, dialect: str = _DIALECT) -> List[ExampleQue
 
 
 def determine_sql_models_used(query: str, dialect: str = _DIALECT) -> List[str]:
-    try:
-        tree = sqlglot.parse_one(query, dialect=dialect)
-    except sqlglot.errors.ParseError:
-        return []
-
+    tree = sqlglot.parse_one(query, dialect=dialect)
     tables = list(set([tbl.name for tbl in tree.find_all(exp.Table)]))
     return tables
 
