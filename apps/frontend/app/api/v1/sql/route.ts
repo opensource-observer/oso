@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
+import { getTrinoClient } from "../../../../lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
 import { getTableNamesFromSql } from "../../../../lib/parsing";
 import { getUser } from "../../../../lib/auth/auth";
@@ -92,17 +92,21 @@ export async function POST(request: NextRequest) {
     });
 
     const client = getTrinoClient(jwt);
-    const [firstRow, rows] = await client.query(query);
-    const readableStream = mapToReadableStream(firstRow, rows, format);
+    const { data, error } = await client.query(query);
+    if (error) {
+      return makeErrorResponse(error.message, 400);
+    }
+    const readableStream = mapToReadableStream(
+      data.firstRow,
+      data.iterator,
+      format,
+    );
     return new NextResponse(readableStream, {
       headers: {
         "Content-Type": "application/x-ndjson",
       },
     });
   } catch (e) {
-    if (e instanceof TrinoError) {
-      return makeErrorResponse(e.message, 400);
-    }
     logger.log(e);
     return makeErrorResponse("Unknown error", 500);
   }
