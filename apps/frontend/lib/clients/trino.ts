@@ -1,9 +1,5 @@
 import { BasicAuth, QueryResult, Iterator, Trino } from "trino-client";
-import {
-  TRINO_ADMIN_PASSWORD,
-  TRINO_ADMIN_USER,
-  TRINO_URL,
-} from "@/lib/config";
+import { TRINO_ADMIN_PASSWORD, TRINO_ADMIN_USER, TRINO_URL } from "../config";
 
 // Result type for error handling
 export type TrinoResult<T> =

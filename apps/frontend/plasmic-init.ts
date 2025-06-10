@@ -1,7 +1,7 @@
 import { initPlasmicLoader } from "@plasmicapp/loader-nextjs/react-server-conditional";
 import _ from "lodash";
 import { assert, ensure } from "@opensource-observer/utils";
-import { PLASMIC_PROJECT_ID, PLASMIC_PROJECT_API_TOKEN } from "@/lib/config";
+import { PLASMIC_PROJECT_ID, PLASMIC_PROJECT_API_TOKEN } from "./lib/config";
 
 const DELIMITER = ",";
 const ids = _.compact(PLASMIC_PROJECT_ID.split(DELIMITER));

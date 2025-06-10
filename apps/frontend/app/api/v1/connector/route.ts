@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTrinoAdminClient } from "@/lib/clients/trino";
-import { createNormalSupabaseClient } from "@/lib/clients/supabase";
-import { ALLOWED_CONNECTORS } from "@/lib/types/dynamic-connector";
-import { dynamicConnectorsInsertSchema } from "@/lib/types/schema";
-import type { DynamicConnectorsInsert } from "@/lib/types/schema-types";
+import { getTrinoAdminClient } from "../../../../lib/clients/trino";
+import { createNormalSupabaseClient } from "../../../../lib/clients/supabase";
+import { ALLOWED_CONNECTORS } from "../../../../lib/types/dynamic-connector";
+import { dynamicConnectorsInsertSchema } from "../../../../lib/types/schema";
+import type { DynamicConnectorsInsert } from "../../../../lib/types/schema-types";
 import { ensure } from "@opensource-observer/utils";
-import { setSupabaseSession } from "@/lib/auth/auth";
-import { Tables } from "@/lib/types/supabase";
-import { getCatalogName } from "@/lib/dynamic-connectors";
+import { setSupabaseSession } from "../../../../lib/auth/auth";
+import { Tables } from "../../../../lib/types/supabase";
+import { getCatalogName } from "../../../../lib/dynamic-connectors";
 
 export const revalidate = 0;
 export const maxDuration = 300;

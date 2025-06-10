@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { createNormalSupabaseClient } from "../../lib/clients/supabase";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/lib/types/supabase";
+import { Database } from "../../lib/types/supabase";
 import { spawn } from "@opensource-observer/utils";
 
 type SupabaseState = {

@@ -9,11 +9,14 @@ import { OperationDefinitionNode } from "graphql";
 import { readFileSync } from "fs";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { EVENTS } from "@/lib/types/posthog";
-import { getUser } from "@/lib/auth/auth";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
-import { trackServerEvent } from "@/lib/analytics/track";
-import { logger } from "@/lib/logger";
+import { EVENTS } from "../../../../lib/types/posthog";
+import { getUser } from "../../../../lib/auth/auth";
+import {
+  CreditsService,
+  TransactionType,
+} from "../../../../lib/services/credits";
+import { trackServerEvent } from "../../../../lib/analytics/track";
+import { logger } from "../../../../lib/logger";
 
 // https://vercel.com/guides/loading-static-file-nextjs-api-route
 const supergraphPath = path.join(

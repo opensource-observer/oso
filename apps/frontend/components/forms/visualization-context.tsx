@@ -5,7 +5,7 @@ import React, { ReactNode } from "react";
 import qs from "qs";
 import * as Yup from "yup";
 import { DataProvider } from "@plasmicapp/loader-nextjs";
-import { FormContext } from "@/components/forms/form-elements";
+import { FormContext } from "./form-elements";
 
 const DEFAULT_START_TIME = dayjs().subtract(1, "year");
 const DEFAULT_END_TIME = dayjs();

@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { GOOGLE_ANALYTICS_KEY } from "@/lib/config";
+import { GOOGLE_ANALYTICS_KEY } from "../../lib/config";
 
 function GoogleAnalytics() {
   return (

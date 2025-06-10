@@ -2,7 +2,7 @@
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { useSupabaseState } from "@/components/hooks/supabase";
+import { useSupabaseState } from "../hooks/supabase";
 
 const REDIRECT_URL = "http://localhost:3000/";
 

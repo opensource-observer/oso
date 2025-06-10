@@ -1,10 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { getStripeClient, extractIntentString } from "@/lib/clients/stripe";
-import { createPrivilegedSupabaseClient } from "@/lib/clients/supabase";
-import { logger } from "@/lib/logger";
-import { STRIPE_WEBHOOK_SECRET } from "@/lib/config";
+import {
+  getStripeClient,
+  extractIntentString,
+} from "../../../../../lib/clients/stripe";
+import { createPrivilegedSupabaseClient } from "../../../../../lib/clients/supabase";
+import { logger } from "../../../../../lib/logger";
+import { STRIPE_WEBHOOK_SECRET } from "../../../../../lib/config";
 
 const stripe = getStripeClient();
 const supabase = createPrivilegedSupabaseClient();

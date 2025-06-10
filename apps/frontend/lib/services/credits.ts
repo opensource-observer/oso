@@ -1,7 +1,7 @@
-import { createNormalSupabaseClient } from "@/lib/clients/supabase";
-import { logger } from "@/lib/logger";
-import type { AnonUser, User } from "@/lib/types/user";
-import type { Json } from "@/lib/types/supabase";
+import { createNormalSupabaseClient } from "../clients/supabase";
+import { logger } from "../logger";
+import type { AnonUser, User } from "../types/user";
+import type { Json } from "../types/supabase";
 
 // TODO(jabolo): Disable this once we transition to the new credits system
 const CREDITS_PREVIEW_MODE = true;

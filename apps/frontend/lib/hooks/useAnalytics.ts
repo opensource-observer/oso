@@ -1,8 +1,8 @@
 import { usePostHog } from "posthog-js/react";
 import { useState, useCallback } from "react";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
-import { useAuth } from "@/lib/hooks/useAuth";
-import { logger } from "@/lib/logger";
+import { CreditsService, TransactionType } from "../services/credits";
+import { useAuth } from "./useAuth";
+import { logger } from "../logger";
 
 interface AnalyticsOptions {
   properties?: Record<string, any>;

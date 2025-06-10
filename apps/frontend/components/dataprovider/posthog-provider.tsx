@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
-import { POSTHOG_HOST, POSTHOG_KEY } from "@/lib/config";
+import { POSTHOG_HOST, POSTHOG_KEY } from "../../lib/config";
 
 const PostHogPageView = dynamic(() => import("../widgets/posthog-pageview"), {
   ssr: false,

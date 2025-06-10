@@ -7,8 +7,8 @@ import {
   ApolloClient,
   SSRMultipartLink,
 } from "@apollo/experimental-nextjs-app-support";
-import { useSupabaseState } from "@/components/hooks/supabase";
-import { DB_GRAPHQL_URL } from "@/lib/config";
+import { useSupabaseState } from "../hooks/supabase";
+import { DB_GRAPHQL_URL } from "../../lib/config";
 
 function ApolloWrapper({ children }: React.PropsWithChildren) {
   const supabaseState = useSupabaseState();

@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { STRIPE_SECRET_KEY } from "@/lib/config";
+import { STRIPE_SECRET_KEY } from "../config";
 
 let stripeClient: Stripe | null = null;
 

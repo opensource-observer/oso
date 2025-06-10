@@ -4,8 +4,8 @@ import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_KEY,
-} from "@/lib/config";
-import { Database } from "@/lib/types/supabase";
+} from "../config";
+import { Database } from "../types/supabase";
 
 // Supabase unprivileged client
 function createNormalSupabaseClient() {

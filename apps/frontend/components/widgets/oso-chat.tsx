@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { ReactElement, useEffect, useRef, useState } from "react";
-import { useSupabaseState } from "@/components/hooks/supabase";
+import { useSupabaseState } from "../hooks/supabase";
 import ReactMarkdown from "react-markdown";
 
 const CHAT_PATH = "/api/v1/chat";

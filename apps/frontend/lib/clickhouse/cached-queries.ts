@@ -18,8 +18,8 @@ import {
   GET_KEY_METRICS_BY_PROJECT,
   GET_KEY_METRICS_BY_COLLECTION,
   GET_ALL_EVENT_TYPES,
-} from "@/lib/clickhouse/queries";
-import { getClickhouseClient } from "@/lib/clients/clickhouse";
+} from "./queries";
+import { getClickhouseClient } from "../clients/clickhouse";
 
 interface QueryOptions<T> {
   query: {

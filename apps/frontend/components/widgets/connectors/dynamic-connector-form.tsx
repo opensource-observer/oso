@@ -14,18 +14,18 @@ import {
 import {
   PostgresConnectorConfig,
   PostgresConnectorForm,
-} from "@/components/widgets/connectors/postgres-connector-form";
+} from "./postgres-connector-form";
 import {
   GoogleSheetsConnectorConfig,
   GoogleSheetsConnectorForm,
-} from "@/components/widgets/connectors/google-sheets-connector-form";
+} from "./google-sheets-connector-form";
 import {
   ALLOWED_CONNECTORS,
   ConnectorType,
   DYNAMIC_CONNECTOR_NAME_REGEX,
-} from "@/lib/types/dynamic-connector";
+} from "../../../lib/types/dynamic-connector";
 import Link from "next/link";
-import { RegistrationProps } from "@/lib/types/plasmic";
+import { RegistrationProps } from "../../../lib/types/plasmic";
 
 interface BaseFormState {
   connector_name: string;

@@ -4,11 +4,11 @@ import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
-} from "@/components/dataprovider/provider-view";
-import { RegistrationProps } from "@/lib/types/plasmic";
-import { useSupabaseState } from "@/components/hooks/supabase";
-import { useOsoAppClient } from "@/components/hooks/oso-app";
-import { logger } from "@/lib/logger";
+} from "./provider-view";
+import { RegistrationProps } from "../../lib/types/plasmic";
+import { useSupabaseState } from "../hooks/supabase";
+import { useOsoAppClient } from "../hooks/oso-app";
+import { logger } from "../../lib/logger";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_PLASMIC_KEY = "osoChat";

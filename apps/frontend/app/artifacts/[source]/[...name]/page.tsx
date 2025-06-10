@@ -2,15 +2,15 @@ import { notFound } from "next/navigation";
 import _ from "lodash";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
-import { PLASMIC } from "@/plasmic-init";
-import { PlasmicClientRootProvider } from "@/plasmic-init-client";
+import { PLASMIC } from "../../../../plasmic-init";
+import { PlasmicClientRootProvider } from "../../../../plasmic-init-client";
 import {
   cachedGetArtifactByName,
   cachedGetMetricsByIds,
   cachedGetKeyMetricsByArtifact,
-} from "@/lib/clickhouse/cached-queries";
-import { ARTIFACT_PAGE_CODE_METRIC_IDS } from "@/lib/clickhouse/metrics-config";
-import { logger } from "@/lib/logger";
+} from "../../../../lib/clickhouse/cached-queries";
+import { ARTIFACT_PAGE_CODE_METRIC_IDS } from "../../../../lib/clickhouse/metrics-config";
+import { logger } from "../../../../lib/logger";
 
 const PLASMIC_COMPONENT = "ArtifactPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";

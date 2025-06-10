@@ -10,7 +10,7 @@ import {
   ALGOLIA_APPLICATION_ID,
   ALGOLIA_API_KEY,
   ALGOLIA_INDEX,
-} from "@/lib/config";
+} from "../../lib/config";
 
 const searchClient = liteClient(ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY);
 const PLASMIC_KEY = "searchItem";

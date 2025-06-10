@@ -1,5 +1,5 @@
-import { DataTableCellComponentProps } from "@/lib/data-table";
-import { ProjectStatus } from "@/lib/projects";
+import { DataTableCellComponentProps } from "../../../lib/data-table";
+import { ProjectStatus } from "../../../lib/projects";
 
 export function DataTableFieldStatus(props: DataTableCellComponentProps) {
   const status = ProjectStatus[props.value];

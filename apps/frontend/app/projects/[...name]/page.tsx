@@ -2,16 +2,16 @@ import { notFound } from "next/navigation";
 import _ from "lodash";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
-import { PLASMIC } from "@/plasmic-init";
-import { PlasmicClientRootProvider } from "@/plasmic-init-client";
+import { PLASMIC } from "../../../plasmic-init";
+import { PlasmicClientRootProvider } from "../../../plasmic-init-client";
 import {
   cachedGetProjectByName,
   cachedGetKeyMetricsByProject,
   cachedGetMetricsByIds,
-} from "@/lib/clickhouse/cached-queries";
-import { PROJECT_PAGE_METRIC_IDS } from "@/lib/clickhouse/metrics-config";
-import { logger } from "@/lib/logger";
-import { catchallPathToString } from "@/lib/paths";
+} from "../../../lib/clickhouse/cached-queries";
+import { PROJECT_PAGE_METRIC_IDS } from "../../../lib/clickhouse/metrics-config";
+import { logger } from "../../../lib/logger";
+import { catchallPathToString } from "../../../lib/paths";
 
 const PROJECT_SOURCE = "OSS_DIRECTORY";
 const PROJECT_NAMESPACE = "oso";

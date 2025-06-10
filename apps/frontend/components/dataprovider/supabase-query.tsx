@@ -1,14 +1,14 @@
 import React from "react";
 import useSWR from "swr";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseQueryArgs, supabaseQuery } from "@/lib/clients/supabase";
-import { useSupabaseState } from "@/components/hooks/supabase";
-import { RegistrationProps } from "@/lib/types/plasmic";
+import { SupabaseQueryArgs, supabaseQuery } from "../../lib/clients/supabase";
+import { useSupabaseState } from "../hooks/supabase";
+import { RegistrationProps } from "../../lib/types/plasmic";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
-} from "@/components/dataprovider/provider-view";
+} from "./provider-view";
 
 // The name used to pass data into the Plasmic DataProvider
 const KEY_PREFIX = "db";

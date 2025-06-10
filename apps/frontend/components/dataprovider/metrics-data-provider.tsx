@@ -12,15 +12,15 @@ import {
   GET_TIMESERIES_METRICS_BY_ARTIFACT,
   GET_TIMESERIES_METRICS_BY_PROJECT,
   GET_TIMESERIES_METRICS_BY_COLLECTION,
-} from "@/lib/graphql/queries";
-import { eventTimeToLabel } from "@/lib/parsing";
-import { RegistrationProps } from "@/lib/types/plasmic";
-import type { EventData } from "@/lib/types/db";
+} from "../../lib/graphql/queries";
+import { eventTimeToLabel } from "../../lib/parsing";
+import { RegistrationProps } from "../../lib/types/plasmic";
+import type { EventData } from "../../lib/types/db";
 import {
   DataProviderView,
   CommonDataProviderRegistration,
-} from "@/components/dataprovider/provider-view";
-import type { CommonDataProviderProps } from "@/components/dataprovider/provider-view";
+} from "./provider-view";
+import type { CommonDataProviderProps } from "./provider-view";
 
 // Types used in the Plasmic registration
 type ChartType = "areaChart" | "barList";

@@ -1,6 +1,6 @@
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
-import { PLASMIC } from "@/plasmic-init";
-import { PlasmicClientRootProvider } from "@/plasmic-init-client";
+import { PLASMIC } from "../plasmic-init";
+import { PlasmicClientRootProvider } from "../plasmic-init-client";
 
 // Using incremental static regeneration, will invalidate this page
 // after this (no deploy webhooks needed)

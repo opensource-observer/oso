@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSupabaseState } from "@/components/hooks/supabase";
-import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
-import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
-import { logger } from "@/lib/logger";
+import { useSupabaseState } from "../../components/hooks/supabase";
+import { OsoAppClient } from "../../lib/clients/oso-app/oso-app";
+import { CREDIT_PACKAGES } from "../../lib/clients/stripe";
+import { logger } from "../../lib/logger";
 
 interface LoadingSpinnerProps {
   message?: string;

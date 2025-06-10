@@ -1,6 +1,6 @@
 import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
 import { registerApolloClient } from "@apollo/experimental-nextjs-app-support/rsc";
-import { DB_GRAPHQL_URL, OSO_API_KEY } from "@/lib/config";
+import { DB_GRAPHQL_URL, OSO_API_KEY } from "../config";
 
 const { getClient: getApolloClient } = registerApolloClient(() => {
   return new ApolloClient({

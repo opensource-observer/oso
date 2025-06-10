@@ -1,13 +1,13 @@
 import React from "react";
 import _ from "lodash";
 import useSWR from "swr";
-import { RegistrationProps } from "@/lib/types/plasmic";
+import { RegistrationProps } from "../../lib/types/plasmic";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
-} from "@/components/dataprovider/provider-view";
-import { useOsoAppClient } from "@/components/hooks/oso-app";
+} from "./provider-view";
+import { useOsoAppClient } from "../hooks/oso-app";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_PLASMIC_KEY = "osoData";

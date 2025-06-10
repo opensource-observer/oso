@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { DataProvider } from "@plasmicapp/loader-nextjs";
-import { RawCollection } from "@/lib/data-table";
+import { RawCollection } from "../../lib/data-table";
 import {
   fakeDataGenerator,
   FakeProjectsClient,
@@ -9,8 +9,8 @@ import {
   ProjectFilters,
   ProjectViewsCollection,
   RandomTestProjectsClient,
-} from "@/lib/projects";
-import { ProjectsClientContext } from "@/components/project-browser/project-contexts";
+} from "../../lib/projects";
+import { ProjectsClientContext } from "./project-contexts";
 
 export type ProjectsClientProviderTestData = {
   filterOptions: ProjectFilters;

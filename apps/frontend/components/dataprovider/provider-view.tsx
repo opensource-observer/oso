@@ -1,6 +1,6 @@
 import { DataProvider } from "@plasmicapp/loader-nextjs";
 import { ReactNode } from "react";
-import { RegistrationProps } from "@/lib/types/plasmic";
+import { RegistrationProps } from "../../lib/types/plasmic";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_VARIABLE_NAME = "data";

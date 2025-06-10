@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
-import { PLASMIC } from "@/plasmic-init";
-import { PlasmicClientRootProvider } from "@/plasmic-init-client";
-import { cachedGetModelByName } from "@/lib/clickhouse/cached-queries";
-import { logger } from "@/lib/logger";
-import { catchallPathToString } from "@/lib/paths";
+import { PLASMIC } from "../../../plasmic-init";
+import { PlasmicClientRootProvider } from "../../../plasmic-init-client";
+import { cachedGetModelByName } from "../../../lib/clickhouse/cached-queries";
+import { logger } from "../../../lib/logger";
+import { catchallPathToString } from "../../../lib/paths";
 
 const PLASMIC_COMPONENT = "ModelPage";
 //export const dynamic = STATIC_EXPORT ? "force-static" : "force-dynamic";

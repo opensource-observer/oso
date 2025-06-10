@@ -1,14 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getTrinoClient } from "@/lib/clients/trino";
+import { getTrinoClient } from "../../../../lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
-import { getTableNamesFromSql } from "@/lib/parsing";
-import { getUser } from "@/lib/auth/auth";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
-import { trackServerEvent } from "@/lib/analytics/track";
-import { logger } from "@/lib/logger";
+import { getTableNamesFromSql } from "../../../../lib/parsing";
+import { getUser } from "../../../../lib/auth/auth";
+import {
+  CreditsService,
+  TransactionType,
+} from "../../../../lib/services/credits";
+import { trackServerEvent } from "../../../../lib/analytics/track";
+import { logger } from "../../../../lib/logger";
 import * as jsonwebtoken from "jsonwebtoken";
-import { AuthUser } from "@/lib/types/user";
-import { EVENTS } from "@/lib/types/posthog";
+import { AuthUser } from "../../../../lib/types/user";
+import { EVENTS } from "../../../../lib/types/posthog";
 
 // Next.js route control
 export const revalidate = 0;

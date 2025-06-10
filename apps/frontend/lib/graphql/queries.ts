@@ -1,4 +1,4 @@
-import { gql } from "@/lib/graphql/generated/gql";
+import { gql } from "./generated/gql";
 
 // Max TTL on Hasura is 300 seconds
 // https://hasura.io/docs/latest/caching/caching-config/#controlling-cache-lifetime/

@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import * as generated from "@/lib/types/schema";
+import * as generated from "./schema";
 export type Json = z.infer<typeof generated.jsonSchema>;
 export type AdminUsersRow = z.infer<typeof generated.adminUsersRowSchema>;
 export type AdminUsersInsert = z.infer<typeof generated.adminUsersInsertSchema>;
