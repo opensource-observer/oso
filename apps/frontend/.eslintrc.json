@@ -5,6 +5,7 @@
   "parserOptions": {
     "project": ["./apps/frontend/tsconfig.json"]
   },
+  "plugins": ["eslint-plugin-no-relative-import-paths"],
   "rules": {
     "react-hooks/exhaustive-deps": "off",
     "no-restricted-syntax": [
@@ -12,6 +13,13 @@
       {
         "selector": "Property[key.name='preview'][value.value=true]",
         "message": "Make sure to turn 'preview' off before committing."
+      }
+    ],
+    "no-relative-import-paths/no-relative-import-paths": [
+      "error",
+      {
+        "rootDir": ".",
+        "prefix": "@"
       }
     ]
   }
