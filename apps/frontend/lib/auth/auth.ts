@@ -3,7 +3,7 @@ import { type NextRequest } from "next/server";
 import {
   createPrivilegedSupabaseClient,
   createNormalSupabaseClient,
-} from "../clients/supabase";
+} from "@/lib/clients/supabase";
 import { SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js";
 import {
   AnonUser,
@@ -13,8 +13,8 @@ import {
   User,
   OrganizationDetails,
   OrgRole,
-} from "../types/user";
-import { Database } from "../types/supabase";
+} from "@/lib/types/user";
+import { Database } from "@/lib/types/supabase";
 
 // Constants
 const DEFAULT_KEY_NAME = "login";

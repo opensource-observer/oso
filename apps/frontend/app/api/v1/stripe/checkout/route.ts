@@ -4,13 +4,13 @@ import {
   CREDIT_PACKAGES,
   CreditPackageId,
   extractIntentString,
-} from "../../../../../lib/clients/stripe";
-import { getUser } from "../../../../../lib/auth/auth";
-import { createPrivilegedSupabaseClient } from "../../../../../lib/clients/supabase";
-import { logger } from "../../../../../lib/logger";
-import { trackServerEvent } from "../../../../../lib/analytics/track";
-import { EVENTS } from "../../../../../lib/types/posthog";
-import { DOMAIN, STRIPE_PUBLISHABLE_KEY } from "../../../../../lib/config";
+} from "@/lib/clients/stripe";
+import { getUser } from "@/lib/auth/auth";
+import { createPrivilegedSupabaseClient } from "@/lib/clients/supabase";
+import { logger } from "@/lib/logger";
+import { trackServerEvent } from "@/lib/analytics/track";
+import { EVENTS } from "@/lib/types/posthog";
+import { DOMAIN, STRIPE_PUBLISHABLE_KEY } from "@/lib/config";
 
 const stripe = getStripeClient();
 const supabase = createPrivilegedSupabaseClient();

@@ -5,9 +5,9 @@ import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
 import { HttpError, assertNever, spawn } from "@opensource-observer/utils";
 import { usePostHog } from "posthog-js/react";
-import { EVENTS } from "../../lib/types/posthog";
-import { RegistrationProps } from "../../lib/types/plasmic";
-import { useSupabaseState } from "../hooks/supabase";
+import { EVENTS } from "@/lib/types/posthog";
+import { RegistrationProps } from "@/lib/types/plasmic";
+import { useSupabaseState } from "@/components/hooks/supabase";
 
 type SnackbarState = ADT<{
   closed: Record<string, unknown>;

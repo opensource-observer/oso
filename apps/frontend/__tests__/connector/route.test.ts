@@ -1,9 +1,9 @@
-import { POST, DELETE } from "../../app/api/v1/connector/route";
+import { POST, DELETE } from "@/app/api/v1/connector/route";
 import { NextRequest } from "next/server";
-import { getTrinoAdminClient } from "../../lib/clients/trino";
-import { createPrivilegedSupabaseClient } from "../../lib/clients/supabase";
+import { getTrinoAdminClient } from "@/lib/clients/trino";
+import { createPrivilegedSupabaseClient } from "@/lib/clients/supabase";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "../../lib/types/supabase"; // Assuming Database types are here
+import { Database } from "@/lib/types/supabase"; // Assuming Database types are here
 import { randomUUID } from "crypto";
 
 // Mock dependencies

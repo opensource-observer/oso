@@ -3,8 +3,8 @@ import { DataProvider, GlobalActionsProvider } from "@plasmicapp/loader-nextjs";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
-import * as config from "../../lib/config";
-import { useOsoAppClient } from "../hooks/oso-app";
+import * as config from "@/lib/config";
+import { useOsoAppClient } from "@/components/hooks/oso-app";
 
 const PLASMIC_KEY = "globals";
 const PLASMIC_CONTEXT_NAME = "OsoGlobalContext";

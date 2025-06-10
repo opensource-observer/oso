@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
-import { PLASMIC } from "../../../plasmic-init";
-import { PlasmicClientRootProvider } from "../../../plasmic-init-client";
-import { cachedGetMetricByName } from "../../../lib/clickhouse/cached-queries";
-import { logger } from "../../../lib/logger";
-import { catchallPathToString } from "../../../lib/paths";
+import { PLASMIC } from "@/plasmic-init";
+import { PlasmicClientRootProvider } from "@/plasmic-init-client";
+import { cachedGetMetricByName } from "@/lib/clickhouse/cached-queries";
+import { logger } from "@/lib/logger";
+import { catchallPathToString } from "@/lib/paths";
 
 const METRIC_SOURCE = "OSO";
 const METRIC_NAMESPACE = "oso";

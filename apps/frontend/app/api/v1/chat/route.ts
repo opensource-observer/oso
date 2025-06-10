@@ -1,13 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { logger } from "../../../../lib/logger";
-import { getUser } from "../../../../lib/auth/auth";
-import { OSO_AGENT_URL } from "../../../../lib/config";
-import {
-  CreditsService,
-  TransactionType,
-} from "../../../../lib/services/credits";
-import { trackServerEvent } from "../../../../lib/analytics/track";
-import { EVENTS } from "../../../../lib/types/posthog";
+import { logger } from "@/lib/logger";
+import { getUser } from "@/lib/auth/auth";
+import { OSO_AGENT_URL } from "@/lib/config";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
+import { trackServerEvent } from "@/lib/analytics/track";
+import { EVENTS } from "@/lib/types/posthog";
 
 export const maxDuration = 60;
 
