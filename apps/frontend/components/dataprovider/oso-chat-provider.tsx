@@ -91,7 +91,7 @@ function OsoChatProvider(props: OsoChatProviderProps) {
           logger.error(`Error saving chat: ${e}`);
         });
     }
-  }, [chatId, chatData.messages]);
+  }, [firstLoad, client, useTestData, chatId, chatData.messages]);
 
   const key = variableName ?? DEFAULT_PLASMIC_KEY;
   const displayMessages = useTestData ? testData : chatData.messages;
