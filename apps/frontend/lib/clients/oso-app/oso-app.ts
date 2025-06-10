@@ -1,19 +1,19 @@
 import _ from "lodash";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { ensure } from "@opensource-observer/utils";
-import { Database, Tables } from "../../types/supabase";
-import { MissingDataError, AuthError } from "../../types/errors";
+import { Database, Tables } from "@/lib/types/supabase";
+import { MissingDataError, AuthError } from "@/lib/types/errors";
 import {
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
-} from "../../types/schema";
+} from "@/lib/types/schema";
 import type {
   DynamicColumnContextsRow,
   DynamicConnectorsInsert,
   DynamicConnectorsRow,
   DynamicTableContextsRow,
-} from "../../types/schema-types";
-import { CREDIT_PACKAGES } from "../stripe";
+} from "@/lib/types/schema-types";
+import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
 
 /**
  * OsoAppClient is the client library for the OSO app.

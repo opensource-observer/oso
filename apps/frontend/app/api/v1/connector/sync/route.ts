@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createNormalSupabaseClient } from "../../../../../lib/clients/supabase";
-import {
-  getTrinoAdminClient,
-  TrinoClient,
-} from "../../../../../lib/clients/trino";
-import { setSupabaseSession } from "../../../../../lib/auth/auth";
-import { getCatalogName } from "../../../../../lib/dynamic-connectors";
+import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { getTrinoAdminClient, TrinoClient } from "@/lib/clients/trino";
+import { setSupabaseSession } from "@/lib/auth/auth";
+import { getCatalogName } from "@/lib/dynamic-connectors";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "../../../../../lib/types/supabase";
-import { logger } from "../../../../../lib/logger";
+import { Database } from "@/lib/types/supabase";
+import { logger } from "@/lib/logger";
 
 const IGNORED_SCHEMAS = new Set(["information_schema", "system"]);
 

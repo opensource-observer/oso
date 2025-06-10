@@ -8,7 +8,7 @@ import {
   RawCollection,
   SortingDirection,
   SortState,
-} from "./data-table";
+} from "@/lib/data-table";
 
 export type GrowthMetric = {
   current: number;

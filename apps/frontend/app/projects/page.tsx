@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
-import { PLASMIC } from "../../plasmic-init";
-import { PlasmicClientRootProvider } from "../../plasmic-init-client";
-import { logger } from "../../lib/logger";
+import { PLASMIC } from "@/plasmic-init";
+import { PlasmicClientRootProvider } from "@/plasmic-init-client";
+import { logger } from "@/lib/logger";
 
 const PLASMIC_COMPONENT = "ProjectPage";
 export const dynamic = "force-static";

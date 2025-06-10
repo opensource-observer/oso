@@ -1,4 +1,4 @@
-import { DataTableCellComponentProps } from "../../../lib/data-table";
+import { DataTableCellComponentProps } from "@/lib/data-table";
 
 export function DataTableFieldDefault(props: DataTableCellComponentProps) {
   let value = props.value;

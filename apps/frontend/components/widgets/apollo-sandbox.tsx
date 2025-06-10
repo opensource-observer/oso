@@ -1,8 +1,8 @@
 "use client";
 
 import { ApolloSandbox } from "@apollo/sandbox/react";
-import { useSupabaseState } from "../hooks/supabase";
-import { DOMAIN } from "../../lib/config";
+import { useSupabaseState } from "@/components/hooks/supabase";
+import { DOMAIN } from "@/lib/config";
 
 const API_PROTOCOL = "https://";
 const API_BASE = API_PROTOCOL + DOMAIN;

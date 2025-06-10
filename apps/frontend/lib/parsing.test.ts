@@ -1,4 +1,4 @@
-import { getTableNamesFromSql } from "./parsing";
+import { getTableNamesFromSql } from "@/lib/parsing";
 
 describe("parses SQL", () => {
   it("handles simple retrieval", () => {

@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createNormalSupabaseClient } from "../clients/supabase";
-import { User } from "../types/user";
+import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { User } from "@/lib/types/user";
 import { useRouter } from "next/navigation";
-import { logger } from "../logger";
+import { logger } from "@/lib/logger";
 
 const supabaseClient = createNormalSupabaseClient();
 

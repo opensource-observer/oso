@@ -4,9 +4,9 @@ import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
-} from "./provider-view";
-import { RegistrationProps } from "../../lib/types/plasmic";
-import { useSupabaseState } from "../hooks/supabase";
+} from "@/components/dataprovider/provider-view";
+import { RegistrationProps } from "@/lib/types/plasmic";
+import { useSupabaseState } from "@/components/hooks/supabase";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
 
