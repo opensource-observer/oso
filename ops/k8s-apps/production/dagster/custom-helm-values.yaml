@@ -72,7 +72,7 @@ spec:
           - name: "oso-dagster"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250610040336-a8c8a7f # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250610085232-9a0183b # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
