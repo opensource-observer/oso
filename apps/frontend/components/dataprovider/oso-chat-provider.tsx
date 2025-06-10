@@ -1,4 +1,5 @@
 import React from "react";
+import { useChat } from "@ai-sdk/react";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
@@ -6,7 +7,8 @@ import {
 } from "./provider-view";
 import { RegistrationProps } from "../../lib/types/plasmic";
 import { useSupabaseState } from "../hooks/supabase";
-import { useChat } from "@ai-sdk/react";
+import { useOsoAppClient } from "../hooks/oso-app";
+import { logger } from "../../lib/logger";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_PLASMIC_KEY = "osoChat";
@@ -18,6 +20,8 @@ const CHAT_PATH = "/api/v1/chat";
 type OsoChatProviderProps = CommonDataProviderProps & {
   // The agent that we want to talk to
   agentName?: string;
+  // The chat_history row to save to
+  chatId?: string;
 };
 
 const OsoChatProviderRegistration: RegistrationProps<OsoChatProviderProps> = {
@@ -26,11 +30,16 @@ const OsoChatProviderRegistration: RegistrationProps<OsoChatProviderProps> = {
     type: "string",
     helpText: "The agent's name (e.g. function_text2sql)",
   },
+  chatId: {
+    type: "string",
+    helpText: "The chat 'id' to save to in Supabase",
+  },
 };
 
 function OsoChatProvider(props: OsoChatProviderProps) {
-  const { agentName, variableName, testData, useTestData } = props;
+  const { agentName, chatId, variableName, testData, useTestData } = props;
   const supabaseState = useSupabaseState();
+  const { client } = useOsoAppClient();
   const session = supabaseState?.session;
   const headers: Record<string, string> = {};
 
@@ -45,6 +54,27 @@ function OsoChatProvider(props: OsoChatProviderProps) {
     api: CHAT_PATH,
     headers: headers,
   });
+
+  React.useEffect(() => {
+    if (useTestData || !chatId || !client) {
+      // Short circuit if not saving data
+      return;
+    }
+
+    // Save the chat messages if they change
+    client
+      .updateChat({
+        id: chatId,
+        updated_at: new Date().toISOString(),
+        data: chatData.messages as any,
+      })
+      .then(() => {
+        console.log(`Saved chat ${chatId} to 'chat_history'`);
+      })
+      .catch((e) => {
+        logger.error(`Error saving chat: ${e}`);
+      });
+  }, [chatId, chatData.messages]);
 
   const key = variableName ?? DEFAULT_PLASMIC_KEY;
   const displayMessages = useTestData ? testData : chatData.messages;
