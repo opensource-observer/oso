@@ -9,6 +9,7 @@ import opentelemetry.trace as trace
 import uvicorn
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
+from pyoso import Client
 
 from ..agent import setup_default_agent_registry
 from ..eval.experiment_registry import get_experiments
@@ -145,6 +146,7 @@ async def _run_query(query: str, config: AgentConfig) -> str:
                     f"Unexpected response type from agent: {wrapped_response.response.type}"
                 )
 
+
 class JsonType(click.ParamType):
     name = "json"
 
@@ -157,6 +159,7 @@ class JsonType(click.ParamType):
         except json.JSONDecodeError:
             self.fail(f"{value!r} is not valid JSON", param, ctx)
 
+
 @cli.command()
 @click.argument("experiment_name", required=True)
 @click.option(
@@ -167,7 +170,9 @@ class JsonType(click.ParamType):
     help="JSON-encoded options for the experiment",
 )
 @pass_config
-def experiment(config: AgentConfig, experiment_name: str, experiment_options: dict[str, t.Any]):
+def experiment(
+    config: AgentConfig, experiment_name: str, experiment_options: dict[str, t.Any]
+):
     """Run a single experiment through the agent.
 
     experiment_name is the name of the experiment to run.
@@ -176,7 +181,9 @@ def experiment(config: AgentConfig, experiment_name: str, experiment_options: di
         with click.progressbar(
             length=1, label="Processing experiment", show_eta=False, show_percent=False
         ) as b:
-            response = asyncio.run(_run_experiment(experiment_name, config, experiment_options))
+            response = asyncio.run(
+                _run_experiment(experiment_name, config, experiment_options)
+            )
             b.update(1)
 
         click.echo("\nResponse:")
@@ -188,7 +195,9 @@ def experiment(config: AgentConfig, experiment_name: str, experiment_options: di
         sys.exit(1)
 
 
-async def _run_experiment(experiment_name: str, config: AgentConfig, experiment_options: dict[str, t.Any]) -> str:
+async def _run_experiment(
+    experiment_name: str, config: AgentConfig, experiment_options: dict[str, t.Any]
+) -> str:
     """Run an experiment through the agent asynchronously."""
     registry = await setup_default_agent_registry(config)
     click.echo(
@@ -338,7 +347,16 @@ async def _run_demo(config: AgentConfig):
         # Example of using the OSO query engine
         llm = create_llm(config)
         embed = create_embedding(config)
-        query_engine = await create_oso_query_engine(config, llm, embed)
+
+        oso_client = Client(
+            api_key=config.oso_api_key.get_secret_value(),
+        )
+        query_engine = await create_oso_query_engine(
+            config,
+            oso_client,
+            llm,
+            embed,
+        )
         response = query_engine.query(
             "Get the first 10 projects in 'optimism' collection"
         )

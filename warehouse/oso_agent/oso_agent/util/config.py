@@ -62,7 +62,7 @@ class AgentConfig(BaseSettings):
         default=SecretStr(""), description="API key for the OSO API"
     )
 
-    vector_storage_dir: str = Field(description="Directory for vector storage")
+    vector_storage_dir: str = Field(default="", description="Directory for vector storage")
 
     agent_name: str = Field(default="function_text2sql", description="Name of the agent to use")
 

@@ -78,6 +78,9 @@ def index_oso_tables(
 ) -> dict[str, VectorStoreIndex]:
     """Index the given tables"""
 
+    if not table_index_dir:
+        raise ValueError("table_index_dir must be specified")
+
     logger.info("Indexing OSO tables...")
 
     if not Path(table_index_dir).exists():
