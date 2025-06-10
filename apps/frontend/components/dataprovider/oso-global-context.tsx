@@ -36,6 +36,9 @@ const OsoGlobalActions: any = {
     parameters: [{ name: "args", type: "object" }],
   },
   deleteOrganization: { parameters: [{ name: "args", type: "object" }] },
+  createChat: { parameters: [{ name: "args", type: "object" }] },
+  updateChat: { parameters: [{ name: "args", type: "object" }] },
+  deleteChat: { parameters: [{ name: "args", type: "object" }] },
   getConnectors: { parameters: [{ name: "args", type: "object" }] },
   getConnectorById: {
     parameters: [{ name: "args", type: "object" }],
@@ -129,6 +132,12 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
           .catch(handleError),
       deleteOrganization: (args: any) =>
         client!.deleteOrganization(args).then(handleSuccess).catch(handleError),
+      createChat: (args: any) =>
+        client!.createChat(args).then(handleSuccess).catch(handleError),
+      updateChat: (args: any) =>
+        client!.updateChat(args).then(handleSuccess).catch(handleError),
+      deleteChat: (args: any) =>
+        client!.deleteChat(args).then(handleSuccess).catch(handleError),
       getConnectors: (args: any) =>
         client!.getConnectors(args).then(handleSuccess).catch(handleError),
       getConnectorById: (args: any) =>

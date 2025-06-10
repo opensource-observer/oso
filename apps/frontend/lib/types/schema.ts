@@ -106,6 +106,56 @@ export const apiKeysRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const chatHistoryRowSchema = z.object({
+  created_at: z.string(),
+  created_by: z.string(),
+  data: jsonSchema.nullable(),
+  deleted_at: z.string().nullable(),
+  display_name: z.string(),
+  id: z.string(),
+  org_id: z.string(),
+  updated_at: z.string(),
+});
+
+export const chatHistoryInsertSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string(),
+  data: jsonSchema.optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  display_name: z.string(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const chatHistoryUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string().optional(),
+  data: jsonSchema.optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  display_name: z.string().optional(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const chatHistoryRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("chat_history_created_by_fkey"),
+    columns: z.tuple([z.literal("created_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("chat_history_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const creditTransactionsRowSchema = z.object({
   amount: z.number(),
   api_endpoint: z.string().nullable(),

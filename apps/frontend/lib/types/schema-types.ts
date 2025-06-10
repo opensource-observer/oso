@@ -19,6 +19,16 @@ export type ApiKeysUpdate = z.infer<typeof generated.apiKeysUpdateSchema>;
 export type ApiKeysRelationships = z.infer<
   typeof generated.apiKeysRelationshipsSchema
 >;
+export type ChatHistoryRow = z.infer<typeof generated.chatHistoryRowSchema>;
+export type ChatHistoryInsert = z.infer<
+  typeof generated.chatHistoryInsertSchema
+>;
+export type ChatHistoryUpdate = z.infer<
+  typeof generated.chatHistoryUpdateSchema
+>;
+export type ChatHistoryRelationships = z.infer<
+  typeof generated.chatHistoryRelationshipsSchema
+>;
 export type CreditTransactionsRow = z.infer<
   typeof generated.creditTransactionsRowSchema
 >;

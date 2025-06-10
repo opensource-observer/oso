@@ -92,6 +92,54 @@ export type Database = {
           },
         ];
       };
+      chat_history: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          data: Json | null;
+          deleted_at: string | null;
+          display_name: string;
+          id: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          data?: Json | null;
+          deleted_at?: string | null;
+          display_name: string;
+          id?: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          data?: Json | null;
+          deleted_at?: string | null;
+          display_name?: string;
+          id?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_history_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_history_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       credit_transactions: {
         Row: {
           amount: number;
