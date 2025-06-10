@@ -109,7 +109,7 @@ export const apiKeysRelationshipsSchema = z.tuple([
 export const chatHistoryRowSchema = z.object({
   created_at: z.string(),
   created_by: z.string(),
-  data: jsonSchema.nullable(),
+  data: z.string().nullable(),
   deleted_at: z.string().nullable(),
   display_name: z.string(),
   id: z.string(),
@@ -120,7 +120,7 @@ export const chatHistoryRowSchema = z.object({
 export const chatHistoryInsertSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string(),
-  data: jsonSchema.optional().nullable(),
+  data: z.string().optional().nullable(),
   deleted_at: z.string().optional().nullable(),
   display_name: z.string(),
   id: z.string().optional(),
@@ -131,7 +131,7 @@ export const chatHistoryInsertSchema = z.object({
 export const chatHistoryUpdateSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string().optional(),
-  data: jsonSchema.optional().nullable(),
+  data: z.string().optional().nullable(),
   deleted_at: z.string().optional().nullable(),
   display_name: z.string().optional(),
   id: z.string().optional(),

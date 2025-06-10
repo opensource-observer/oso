@@ -85,6 +85,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
     console.log("Success: ", result);
     setResult(result);
     setSnackbarState({ _type: "success" });
+    return result;
   };
   const handleError = (error: any) => {
     console.log("Error: ", error);
@@ -93,6 +94,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       _type: "error",
       ...error,
     });
+    return error;
   };
   const handleClose = (
     _event?: React.SyntheticEvent | Event,

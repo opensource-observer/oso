@@ -478,7 +478,9 @@ class OsoAppClient {
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const { data, error } = await this.supabaseClient
       .from("chat_history")
-      .select()
+      .select(
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+      )
       .eq("org_id", orgId)
       .is("deleted_at", null);
     if (error) {
