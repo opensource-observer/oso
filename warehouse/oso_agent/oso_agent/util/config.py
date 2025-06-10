@@ -58,6 +58,12 @@ class AgentConfig(BaseSettings):
         description="Whether to eagerly load all agents in the registry"
     )
 
+    oso_api_key: SecretStr = Field(
+        default=SecretStr(""), description="API key for the OSO API"
+    )
+
+    vector_storage_dir: str = Field(description="Directory for vector storage")
+
     agent_name: str = Field(default="function_text2sql", description="Name of the agent to use")
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
