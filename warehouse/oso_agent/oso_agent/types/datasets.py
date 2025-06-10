@@ -1,3 +1,4 @@
+import re
 from typing import List, Literal, Optional
 
 from pydantic import BaseModel
@@ -40,15 +41,34 @@ class ExampleMetadata(TypedDict):
     real_user_question: bool
 
 class Example(BaseModel):
+    id: str
     input: ExampleInput
     output: ExampleOutput
     metadata: ExampleMetadata
 
-ExampleList = List[Example]
+class ExampleList(BaseModel):
+    examples: List[Example]
+
+    def __init__(self, examples: List[Example]):
+        # validate ids
+        seen_ids = set()
+        for example in examples:
+            if example.id in seen_ids:
+                raise ValueError(f"Duplicate example ID found: {example.id!r}") # update this
+            seen_ids.add(example.id)
+        super().__init__(examples=examples)
+
+    def __len__(self) -> int:
+        return len(self.examples)
 
 
-def create_text2sql_example(question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:
+def create_text2sql_example(id: str, question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:
+    # validate passed id
+    if not re.fullmatch(r"[1-9]\d*", id):
+        raise ValueError(f"Invalid example id {id!r}: must be a string representing a positive integer.")
+    
     return Example(
+        id=id,
         input=ExampleInput(question=question),
         output=ExampleOutput(answer=answer_query),
         metadata=ExampleMetadata(
