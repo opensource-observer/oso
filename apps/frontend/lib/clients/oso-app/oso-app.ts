@@ -444,6 +444,104 @@ class OsoAppClient {
   }
 
   /**
+   * Creates a new chat session
+   * - Chats are stored under an organization
+   * @param args
+   * @returns
+   */
+  async createChat(args: Partial<{ orgId: string }>) {
+    console.log("createChat: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const user = await this.getUser();
+
+    const { data: chatData, error: chatError } = await this.supabaseClient
+      .from("chat_history")
+      .insert({
+        org_id: orgId,
+        display_name: new Date().toLocaleString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (chatError) {
+      throw chatError;
+    } else if (!chatData) {
+      throw new MissingDataError("Failed to create chat");
+    }
+
+    return chatData;
+  }
+
+  async getChatsByOrgId(args: Partial<{ orgId: string }>) {
+    console.log("getChatsByOrgId: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("chat_history")
+      .select()
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find chats for orgId=${orgId}`);
+    }
+    return data;
+  }
+
+  async getChatById(args: Partial<{ chatId: string }>) {
+    console.log("getChatById: ", args);
+    const chatId = ensure(args.chatId, "Missing chatId argument");
+    const { data, error } = await this.supabaseClient
+      .from("chat_history")
+      .select()
+      .eq("id", chatId)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find chat for chatId=${chatId}`);
+    }
+    return data;
+  }
+
+  /**
+   * Update chat data
+   * @param args
+   */
+  async updateChat(
+    args: Partial<Database["public"]["Tables"]["chat_history"]["Update"]>,
+  ) {
+    console.log("updateChat: ", args);
+    const chatId = ensure(args.id, "Missing chat 'id' argument");
+    const { error } = await this.supabaseClient
+      .from("chat_history")
+      .update({ ...args })
+      .eq("id", chatId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a chat
+   * - We use `deleted_at` to mark the chat as removed instead of deleting the row
+   * @param args
+   */
+  async deleteChat(args: Partial<{ chatId: string }>): Promise<void> {
+    console.log("deleteChat: ", args);
+    const chatId = ensure(args.chatId, "Missing chatId argument");
+    const { error } = await this.supabaseClient
+      .from("chat_history")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", chatId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Gets the current credit balance for the logged in user.
    * @returns Promise<number> - The current credit balance
    */
