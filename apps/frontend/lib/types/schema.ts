@@ -191,7 +191,6 @@ export const dynamicColumnContextsRowSchema = z.object({
   data_type: z.string(),
   description: z.string().nullable(),
   foreign_keys: jsonSchema.nullable(),
-  id: z.string(),
   sample_data: z.string().nullable(),
   table_id: z.string(),
 });
@@ -201,7 +200,6 @@ export const dynamicColumnContextsInsertSchema = z.object({
   data_type: z.string(),
   description: z.string().optional().nullable(),
   foreign_keys: jsonSchema.optional().nullable(),
-  id: z.string().optional(),
   sample_data: z.string().optional().nullable(),
   table_id: z.string(),
 });
@@ -211,7 +209,6 @@ export const dynamicColumnContextsUpdateSchema = z.object({
   data_type: z.string().optional(),
   description: z.string().optional().nullable(),
   foreign_keys: jsonSchema.optional().nullable(),
-  id: z.string().optional(),
   sample_data: z.string().optional().nullable(),
   table_id: z.string().optional(),
 });
