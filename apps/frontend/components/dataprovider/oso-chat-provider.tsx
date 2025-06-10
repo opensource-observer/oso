@@ -39,6 +39,7 @@ const OsoChatProviderRegistration: RegistrationProps<OsoChatProviderProps> = {
 function OsoChatProvider(props: OsoChatProviderProps) {
   const { agentName, chatId, variableName, testData, useTestData } = props;
   const supabaseState = useSupabaseState();
+  const [firstLoad, setFirstLoad] = React.useState<boolean>(true);
   const { client } = useOsoAppClient();
   const session = supabaseState?.session;
   const headers: Record<string, string> = {};
@@ -61,19 +62,35 @@ function OsoChatProvider(props: OsoChatProviderProps) {
       return;
     }
 
-    // Save the chat messages if they change
-    client
-      .updateChat({
-        id: chatId,
-        updated_at: new Date().toISOString(),
-        data: chatData.messages as any,
-      })
-      .then(() => {
-        console.log(`Saved chat ${chatId} to 'chat_history'`);
-      })
-      .catch((e) => {
-        logger.error(`Error saving chat: ${e}`);
-      });
+    // Load the history from Supabase on first load
+    if (firstLoad) {
+      client
+        .getChatById({ chatId })
+        .then((c) => {
+          setFirstLoad(false);
+          //console.log(c.data);
+          if (c.data) {
+            chatData.setMessages(JSON.parse(c.data));
+          }
+        })
+        .catch((e) => {
+          logger.error(`Error loading chat: ${e}`);
+        });
+    } else if (chatData.messages) {
+      // Save the chat messages if they change
+      client
+        .updateChat({
+          id: chatId,
+          updated_at: new Date().toISOString(),
+          data: JSON.stringify(chatData.messages),
+        })
+        .then(() => {
+          console.log(`Saved chat ${chatId} to 'chat_history'`);
+        })
+        .catch((e) => {
+          logger.error(`Error saving chat: ${e}`);
+        });
+    }
   }, [chatId, chatData.messages]);
 
   const key = variableName ?? DEFAULT_PLASMIC_KEY;

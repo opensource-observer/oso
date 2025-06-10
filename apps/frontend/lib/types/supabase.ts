@@ -96,7 +96,7 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string;
-          data: Json | null;
+          data: string | null;
           deleted_at: string | null;
           display_name: string;
           id: string;
@@ -106,7 +106,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           created_by: string;
-          data?: Json | null;
+          data?: string | null;
           deleted_at?: string | null;
           display_name: string;
           id?: string;
@@ -116,7 +116,7 @@ export type Database = {
         Update: {
           created_at?: string;
           created_by?: string;
-          data?: Json | null;
+          data?: string | null;
           deleted_at?: string | null;
           display_name?: string;
           id?: string;
