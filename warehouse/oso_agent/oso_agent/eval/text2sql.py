@@ -87,17 +87,18 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
             expected_answer = "SELECT 1"
         return expected_answer
 
-    def sql_query_type_similarity(output: str, expected: dict[str, t.Any]) -> float:
+    def sql_query_type_similarity(output: str, expected: dict[str, t.Any], metadata: dict[str, t.Any]) -> float:
         """Evaluate the similarity between the output and expected SQL query types using Jaccard similarity."""
+
         output_query_types = determine_query_type(output)
-        expected_query_types = expected.get('query_type') or []
+        expected_query_types = metadata.get('query_type') or []
 
         return jaccard_similarity_set(set(output_query_types), set(expected_query_types))
 
-    def sql_oso_models_used_similarity(output: str, expected: dict[str, t.Any]) -> float:
+    def sql_oso_models_used_similarity(output: str, expected: dict[str, t.Any], metadata: dict[str, t.Any]) -> float:
         """Evaluate the similarity between the output and expected oso models used using Jaccard similarity."""
         output_oso_models_used = determine_sql_models_used(output)
-        expected_oso_models_used = expected.get('sql_models_used') or []
+        expected_oso_models_used = metadata.get('sql_models_used') or []
 
         return jaccard_similarity_set(set(output_oso_models_used), set(expected_oso_models_used))
 
