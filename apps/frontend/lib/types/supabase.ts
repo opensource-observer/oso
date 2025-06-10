@@ -92,6 +92,54 @@ export type Database = {
           },
         ];
       };
+      chat_history: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          data: string | null;
+          deleted_at: string | null;
+          display_name: string;
+          id: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          data?: string | null;
+          deleted_at?: string | null;
+          display_name: string;
+          id?: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          data?: string | null;
+          deleted_at?: string | null;
+          display_name?: string;
+          id?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_history_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_history_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       credit_transactions: {
         Row: {
           amount: number;
@@ -121,6 +169,44 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [];
+      };
+      dynamic_column_contexts: {
+        Row: {
+          column_name: string;
+          data_type: string;
+          description: string | null;
+          foreign_keys: Json | null;
+          id: string;
+          sample_data: string | null;
+          table_id: string;
+        };
+        Insert: {
+          column_name: string;
+          data_type: string;
+          description?: string | null;
+          foreign_keys?: Json | null;
+          id?: string;
+          sample_data?: string | null;
+          table_id: string;
+        };
+        Update: {
+          column_name?: string;
+          data_type?: string;
+          description?: string | null;
+          foreign_keys?: Json | null;
+          id?: string;
+          sample_data?: string | null;
+          table_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_table_context";
+            columns: ["table_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_table_contexts";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       dynamic_connectors: {
         Row: {
@@ -165,6 +251,35 @@ export type Database = {
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      dynamic_table_contexts: {
+        Row: {
+          connector_id: string;
+          description: string | null;
+          id: string;
+          table_name: string;
+        };
+        Insert: {
+          connector_id: string;
+          description?: string | null;
+          id?: string;
+          table_name: string;
+        };
+        Update: {
+          connector_id?: string;
+          description?: string | null;
+          id?: string;
+          table_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_connector_id";
+            columns: ["connector_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_connectors";
             referencedColumns: ["id"];
           },
         ];

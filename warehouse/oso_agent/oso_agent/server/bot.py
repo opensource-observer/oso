@@ -1,4 +1,5 @@
 import logging
+import typing as t
 from typing import Optional
 
 from discord import Intents, Member
@@ -72,30 +73,28 @@ async def setup_bot(config: BotConfig, registry: AgentRegistry):
         await ctx.send("https://tenor.com/view/nice-nooice-bling-key-and-peele-gif-4294979")
 
     @bot.command()
-    async def run_eval(ctx, experiment_name: str, agent_name: Optional[str] = config.agent_name):
+    async def run_eval(ctx, experiment_name: str, agent_options: Optional[dict[str, t.Any]] = None):
         logger.info(
-            f"Experiment {experiment_name} started with agent={agent_name} and model={config.llm.type}"
+            f"Experiment {experiment_name} started with model={config.llm.type}"
         )
 
         await ctx.send("Running the experiment now! This might take a while...")
 
         try:
-            agent = await registry.get_agent(agent_name) if agent_name else default_agent
             logger.debug("loading experiment registry")
             experiments = get_experiments()
             if experiment_name in experiments:
-                logger.debug(f"Running experiment: {experiment_name} with agent: {agent_name}")
+                logger.debug(f"Running experiment: {experiment_name}")
                 # Run the experiment
                 experiment_func = experiments[experiment_name]
-                updated_config = config.model_copy(update={"agent_name": agent_name})
-                response = await experiment_func(updated_config, agent)
+                response = await experiment_func(config, registry, {})
                 logger.info(f"...{experiment_name} experiment completed.")
                 await ctx.send(str(response))
             else:
                 await ctx.send(f"Experiment {experiment_name} not found. Please check the experiment name.")
         except Exception as e:
-            logger.error(f"Error running {experiment_name} with agent {agent_name}: {e}")
-            await ctx.send(f"Error running {experiment_name} with agent {agent_name}: {e}")
+            logger.error(f"Error running {experiment_name}: {e}")
+            await ctx.send(f"Error running {experiment_name}: {e}")
         
 
     return bot

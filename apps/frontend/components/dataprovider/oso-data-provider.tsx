@@ -10,9 +10,10 @@ import {
 import { useOsoAppClient } from "../hooks/oso-app";
 
 // The name used to pass data into the Plasmic DataProvider
+const DEFAULT_PLASMIC_KEY = "osoData";
 const KEY_PREFIX = "oso";
 const genKey = (props: OsoDataProviderProps) =>
-  `${KEY_PREFIX}:${JSON.stringify(props)}`;
+  `${KEY_PREFIX}:${JSON.stringify(props.dataFetches)}`;
 
 type DataFetch = {
   method: string;
@@ -48,7 +49,7 @@ const OsoDataProviderRegistration: RegistrationProps<OsoDataProviderProps> = {
 
 function OsoDataProvider(props: OsoDataProviderProps) {
   const { dataFetches, variableName, testData, useTestData } = props;
-  const key = variableName ?? genKey(props);
+  const key = genKey(props);
   const { client } = useOsoAppClient();
   const { data, mutate, error, isLoading } = useSWR(key, async () => {
     if (useTestData) {
@@ -82,6 +83,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   return (
     <DataProviderView
       {...props}
+      variableName={variableName ?? DEFAULT_PLASMIC_KEY}
       formattedData={{ ...data, revalidate: mutate }}
       loading={isLoading}
       error={error}

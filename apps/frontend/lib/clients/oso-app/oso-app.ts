@@ -7,7 +7,12 @@ import {
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
 } from "../../types/schema";
-import type { DynamicConnectorsInsert } from "../../types/schema-types";
+import type {
+  DynamicColumnContextsRow,
+  DynamicConnectorsInsert,
+  DynamicConnectorsRow,
+  DynamicTableContextsRow,
+} from "../../types/schema-types";
 import { CREDIT_PACKAGES } from "../stripe";
 
 /**
@@ -439,6 +444,106 @@ class OsoAppClient {
   }
 
   /**
+   * Creates a new chat session
+   * - Chats are stored under an organization
+   * @param args
+   * @returns
+   */
+  async createChat(args: Partial<{ orgId: string }>) {
+    console.log("createChat: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const user = await this.getUser();
+
+    const { data: chatData, error: chatError } = await this.supabaseClient
+      .from("chat_history")
+      .insert({
+        org_id: orgId,
+        display_name: new Date().toLocaleString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (chatError) {
+      throw chatError;
+    } else if (!chatData) {
+      throw new MissingDataError("Failed to create chat");
+    }
+
+    return chatData;
+  }
+
+  async getChatsByOrgId(args: Partial<{ orgId: string }>) {
+    console.log("getChatsByOrgId: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("chat_history")
+      .select(
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+      )
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find chats for orgId=${orgId}`);
+    }
+    return data;
+  }
+
+  async getChatById(args: Partial<{ chatId: string }>) {
+    console.log("getChatById: ", args);
+    const chatId = ensure(args.chatId, "Missing chatId argument");
+    const { data, error } = await this.supabaseClient
+      .from("chat_history")
+      .select()
+      .eq("id", chatId)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find chat for chatId=${chatId}`);
+    }
+    return data;
+  }
+
+  /**
+   * Update chat data
+   * @param args
+   */
+  async updateChat(
+    args: Partial<Database["public"]["Tables"]["chat_history"]["Update"]>,
+  ) {
+    console.log("updateChat: ", args);
+    const chatId = ensure(args.id, "Missing chat 'id' argument");
+    const { error } = await this.supabaseClient
+      .from("chat_history")
+      .update({ ...args })
+      .eq("id", chatId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a chat
+   * - We use `deleted_at` to mark the chat as removed instead of deleting the row
+   * @param args
+   */
+  async deleteChat(args: Partial<{ chatId: string }>): Promise<void> {
+    console.log("deleteChat: ", args);
+    const chatId = ensure(args.chatId, "Missing chatId argument");
+    const { error } = await this.supabaseClient
+      .from("chat_history")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", chatId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Gets the current credit balance for the logged in user.
    * @returns Promise<number> - The current credit balance
    */
@@ -523,6 +628,32 @@ class OsoAppClient {
   }
 
   /**
+   * Gets a specific dynamic connector by ID.
+   * @param args - Contains the connector ID
+   * @returns Promise<DynamicConnectorsRow> - The connector data
+   */
+  async getConnectorById(
+    args: Partial<{ id: string }>,
+  ): Promise<DynamicConnectorsRow> {
+    const id = ensure(args.id, "id is required");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_connectors")
+      .select("*")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .single();
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find connector with id=${id}`);
+    }
+
+    return data;
+  }
+
+  /**
    * Creates a new dynamic connector.
    * @param args - Contains data for the new connector and credentials
    * @returns Promise<Tables<"dynamic_connectors">> - The created connector
@@ -589,6 +720,67 @@ class OsoAppClient {
     if (!response.ok) {
       throw new Error("Error deleting connector: " + json.error);
     }
+  }
+
+  /**
+   * Syncs a dynamic connector to refresh its schema and metadata.
+   * @param id
+   */
+  async syncConnector(args: Partial<{ id: string }>): Promise<void> {
+    const id = ensure(args.id, "id is required to sync connector");
+
+    const customHeaders = await this.createSupabaseAuthHeaders();
+    const searchParams = new URLSearchParams({ id });
+
+    const response = await fetch(
+      `/api/v1/connector/sync?${searchParams.toString()}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...customHeaders,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Error syncing connector: ${error.error}`);
+    }
+
+    return;
+  }
+
+  /**
+   * Gets contextual information for a dynamic connector's tables and columns.
+   * @param id
+   * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
+   * - Returns the tables context and an array of column contexts for the connector
+   */
+  async getDynamicConnectorContexts(args: { id: string }): Promise<
+    {
+      table: DynamicTableContextsRow;
+      columns: DynamicColumnContextsRow[];
+    }[]
+  > {
+    const id = ensure(args.id, "id is required to get contexts");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_table_contexts")
+      .select("*, dynamic_column_contexts(*)")
+      .eq("connector_id", id);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find contexts for connector id=${id}`,
+      );
+    }
+    return data.map((row) => {
+      const { dynamic_column_contexts: columns, ...table } = row;
+      return { table, columns };
+    });
   }
 
   /**

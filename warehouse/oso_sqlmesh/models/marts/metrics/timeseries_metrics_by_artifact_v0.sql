@@ -1,7 +1,7 @@
 MODEL (
   name oso.timeseries_metrics_by_artifact_v0,
   kind FULL,
-  partitioned_by (year(sample_date), bucket(artifact_id, 256)),
+  partitioned_by (month(sample_date), bucket(artifact_id, 64)),
   tags (
     'export',
     'model_type=full',
@@ -21,7 +21,7 @@ MODEL (
   ),
   physical_properties (
     parquet_bloom_filter_columns = ['artifact_id'],
-    sorted_by = ['artifact_id']
+    sorted_by = ['sample_date']
   )
 );
 

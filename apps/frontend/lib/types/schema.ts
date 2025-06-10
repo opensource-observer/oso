@@ -106,6 +106,56 @@ export const apiKeysRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const chatHistoryRowSchema = z.object({
+  created_at: z.string(),
+  created_by: z.string(),
+  data: z.string().nullable(),
+  deleted_at: z.string().nullable(),
+  display_name: z.string(),
+  id: z.string(),
+  org_id: z.string(),
+  updated_at: z.string(),
+});
+
+export const chatHistoryInsertSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string(),
+  data: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  display_name: z.string(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const chatHistoryUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string().optional(),
+  data: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  display_name: z.string().optional(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const chatHistoryRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("chat_history_created_by_fkey"),
+    columns: z.tuple([z.literal("created_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("chat_history_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const creditTransactionsRowSchema = z.object({
   amount: z.number(),
   api_endpoint: z.string().nullable(),
@@ -135,6 +185,46 @@ export const creditTransactionsUpdateSchema = z.object({
   transaction_type: z.string().optional(),
   user_id: z.string().optional(),
 });
+
+export const dynamicColumnContextsRowSchema = z.object({
+  column_name: z.string(),
+  data_type: z.string(),
+  description: z.string().nullable(),
+  foreign_keys: jsonSchema.nullable(),
+  id: z.string(),
+  sample_data: z.string().nullable(),
+  table_id: z.string(),
+});
+
+export const dynamicColumnContextsInsertSchema = z.object({
+  column_name: z.string(),
+  data_type: z.string(),
+  description: z.string().optional().nullable(),
+  foreign_keys: jsonSchema.optional().nullable(),
+  id: z.string().optional(),
+  sample_data: z.string().optional().nullable(),
+  table_id: z.string(),
+});
+
+export const dynamicColumnContextsUpdateSchema = z.object({
+  column_name: z.string().optional(),
+  data_type: z.string().optional(),
+  description: z.string().optional().nullable(),
+  foreign_keys: jsonSchema.optional().nullable(),
+  id: z.string().optional(),
+  sample_data: z.string().optional().nullable(),
+  table_id: z.string().optional(),
+});
+
+export const dynamicColumnContextsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("fk_table_context"),
+    columns: z.tuple([z.literal("table_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("dynamic_table_contexts"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
 
 export const dynamicConnectorsRowSchema = z.object({
   config: jsonSchema.nullable(),
@@ -181,6 +271,37 @@ export const dynamicConnectorsRelationshipsSchema = z.tuple([
     columns: z.tuple([z.literal("org_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const dynamicTableContextsRowSchema = z.object({
+  connector_id: z.string(),
+  description: z.string().nullable(),
+  id: z.string(),
+  table_name: z.string(),
+});
+
+export const dynamicTableContextsInsertSchema = z.object({
+  connector_id: z.string(),
+  description: z.string().optional().nullable(),
+  id: z.string().optional(),
+  table_name: z.string(),
+});
+
+export const dynamicTableContextsUpdateSchema = z.object({
+  connector_id: z.string().optional(),
+  description: z.string().optional().nullable(),
+  id: z.string().optional(),
+  table_name: z.string().optional(),
+});
+
+export const dynamicTableContextsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("fk_connector_id"),
+    columns: z.tuple([z.literal("connector_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("dynamic_connectors"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
 ]);

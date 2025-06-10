@@ -7,6 +7,14 @@ from sklearn.metrics import jaccard_score
 def similarity_str(output: str, expected: str) -> float:
     return SequenceMatcher(None, output.lower(), expected.lower()).ratio()
 
+def jaccard_similarity_set(output: set, expected: set) -> float:
+    if not output and not expected:
+        return 1.0
+
+    intersection = output.intersection(expected)
+    union = output.union(expected)
+    return len(intersection) / len(union)
+
 def jaccard_similarity_str(output: str, expected: str) -> float:
     # https://en.wikipedia.org/wiki/Jaccard_index
     actual_words = set(output.lower().split(" "))

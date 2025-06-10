@@ -36,9 +36,21 @@ const OsoGlobalActions: any = {
     parameters: [{ name: "args", type: "object" }],
   },
   deleteOrganization: { parameters: [{ name: "args", type: "object" }] },
+  createChat: { parameters: [{ name: "args", type: "object" }] },
+  updateChat: { parameters: [{ name: "args", type: "object" }] },
+  deleteChat: { parameters: [{ name: "args", type: "object" }] },
   getConnectors: { parameters: [{ name: "args", type: "object" }] },
+  getConnectorById: {
+    parameters: [{ name: "args", type: "object" }],
+  },
   createConnector: { parameters: [{ name: "args", type: "object" }] },
   deleteConnector: { parameters: [{ name: "args", type: "object" }] },
+  syncConnector: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  getDynamicConnectorContexts: {
+    parameters: [{ name: "args", type: "object" }],
+  },
 };
 
 // Users will be able to set these props in Studio.
@@ -73,6 +85,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
     console.log("Success: ", result);
     setResult(result);
     setSnackbarState({ _type: "success" });
+    return result;
   };
   const handleError = (error: any) => {
     console.log("Error: ", error);
@@ -81,6 +94,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       _type: "error",
       ...error,
     });
+    return error;
   };
   const handleClose = (
     _event?: React.SyntheticEvent | Event,
@@ -120,12 +134,27 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
           .catch(handleError),
       deleteOrganization: (args: any) =>
         client!.deleteOrganization(args).then(handleSuccess).catch(handleError),
+      createChat: (args: any) =>
+        client!.createChat(args).then(handleSuccess).catch(handleError),
+      updateChat: (args: any) =>
+        client!.updateChat(args).then(handleSuccess).catch(handleError),
+      deleteChat: (args: any) =>
+        client!.deleteChat(args).then(handleSuccess).catch(handleError),
       getConnectors: (args: any) =>
         client!.getConnectors(args).then(handleSuccess).catch(handleError),
+      getConnectorById: (args: any) =>
+        client!.getConnectorById(args).then(handleSuccess).catch(handleError),
       createConnector: (args: any) =>
         client!.createConnector(args).then(handleSuccess).catch(handleError),
       deleteConnector: (args: any) =>
         client!.deleteConnector(args).then(handleSuccess).catch(handleError),
+      syncConnector: (args: any) =>
+        client!.syncConnector(args).then(handleSuccess).catch(handleError),
+      getDynamicConnectorContexts: (args: any) =>
+        client!
+          .getDynamicConnectorContexts(args)
+          .then(handleSuccess)
+          .catch(handleError),
     }),
     [client],
   );
