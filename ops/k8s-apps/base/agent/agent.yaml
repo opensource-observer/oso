@@ -42,3 +42,4 @@ spec:
       portEnvVar: "AGENT_PORT"
       envVars:
         AGENT_EAGERLY_LOAD_ALL_AGENTS: "1"
+        AGENT_VECTOR_STORAGE_DIR: "/storage_index"
