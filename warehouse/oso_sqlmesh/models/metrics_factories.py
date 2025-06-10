@@ -647,5 +647,22 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
+        "contributor_absence_factor": MetricQueryDef(
+            ref="code/contributor_absence_factor.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Contributor Absence Factor",
+                description="Measures the minimum number of contributors responsible for 50% of total contributions. Lower values indicate higher risk if key contributors leave. Previously known as Bus Factor.",
+            ),
+            additional_tags=["data_category=code"],
+        ),
     }, 
 )
