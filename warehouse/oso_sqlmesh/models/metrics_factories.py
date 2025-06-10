@@ -72,7 +72,6 @@ timeseries_metrics(
         "int_events_daily__defillama",
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
-        "int_events_daily__github_with_zero_filling",
         "int_events_daily__funding",
     ],
     audits=[
