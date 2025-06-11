@@ -16,8 +16,6 @@ class Chainlist(BaseModel):
     native_currency_symbol: str | None = Column("VARCHAR", description="Symbol of the native currency")
     native_currency_decimals: int | None = Column("INTEGER", description="Decimals for the native currency")
     info_url: str | None = Column("VARCHAR", description="URL with more information about the chain")
-    dlt_load_id: str | None = Column("VARCHAR", column_name="_dlt_load_id", description="Internal only value used by DLT")
-    dlt_id: str | None = Column("VARCHAR", column_name="_dlt_id", description="Internal only unique value for the row")
 
 
 seed = SeedConfig(
@@ -37,8 +35,6 @@ seed = SeedConfig(
             native_currency_symbol="ETH",
             native_currency_decimals=18,
             info_url="https://ethereum.org",
-            dlt_load_id="1743009053.36983",
-            dlt_id="eth1_llamarpc",
         ),
         Chainlist(
             name="Base",
@@ -51,8 +47,6 @@ seed = SeedConfig(
             native_currency_symbol="ETH",
             native_currency_decimals=18,
             info_url="https://base.org",
-            dlt_load_id="1743009053.36983",
-            dlt_id="base_llamarpc",
         ),
     ],
 )
