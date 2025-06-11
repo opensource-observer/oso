@@ -1,20 +1,22 @@
-from ..factories import IntervalGCSAsset, interval_gcs_import_asset
-from ..utils.common import SourceMode, TimeInterval
+from google.cloud.bigquery import SourceFormat
+from oso_dagster.config import DagsterConfig
 
-openlabelsinitiative_data = interval_gcs_import_asset(
-    IntervalGCSAsset(
-        key_prefix="openlabelsinitiative",
-        name="oli",
-        project_id="opensource-observer",
-        bucket_name="oso-dataset-transfer-bucket",
-        path_base="openlabelsinitiative/oli",
-        file_match=r"oli_tag_mapping_(?P<interval_timestamp>\d\d\d\d-\d\d-\d\d).parquet",
-        destination_table="oli_tag_mapping",
-        raw_dataset_name="oso_raw_sources",
-        clean_dataset_name="openlabelsinitiative",
-        interval=TimeInterval.Daily,
-        mode=SourceMode.Overwrite,
-        retention_days=30,
-        format="PARQUET",
-    ),
-)
+from ..factories import AssetFactoryResponse, early_resources_asset_factory
+from ..factories.archive2bq import Archive2BqAssetConfig, create_archive2bq_asset
+
+
+@early_resources_asset_factory()
+def openlabelsinitiative_data(global_config: DagsterConfig) -> AssetFactoryResponse:
+    asset = create_archive2bq_asset(
+        Archive2BqAssetConfig(
+            key_prefix="openlabelsinitiative",
+            asset_name="labels_decoded",
+            source_url="https://api.growthepie.xyz/v1/oli/labels_decoded.parquet",
+            source_format=SourceFormat.PARQUET,
+            filter_fn=lambda file: file.endswith(".parquet"),
+            staging_bucket=global_config.staging_bucket_url,
+            dataset_id="labels_decoded",
+            deps=[],
+        )
+    )
+    return asset
