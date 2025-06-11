@@ -134,5 +134,6 @@ config = Config(
         "defillama_incremental_start": constants.defillama_incremental_start,
         "testing_enabled": constants.testing_enabled,
         "superchain_audit_start": constants.superchain_audit_start,
+        "superchain_audit_end": constants.superchain_audit_end,
     },
 )

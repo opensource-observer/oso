@@ -10,5 +10,5 @@ def multiply(a: float, b: float) -> float:
     logger.debug(f"Multiplying {a} and {b}")
     return a * b
 
-def create_multiple_tool() -> List[FunctionTool]:
+def create_multiply_tool() -> List[FunctionTool]:
     return [ FunctionTool.from_defaults(multiply) ]

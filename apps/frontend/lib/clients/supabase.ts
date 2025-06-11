@@ -4,13 +4,14 @@ import {
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_KEY,
-} from "../config";
-import { Database } from "../types/supabase";
+} from "@/lib/config";
+import { Database } from "@/lib/types/supabase";
 
 // Supabase unprivileged client
 function createNormalSupabaseClient() {
   return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
+
 function createPrivilegedSupabaseClient() {
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 }

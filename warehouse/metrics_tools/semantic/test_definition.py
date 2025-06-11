@@ -3,9 +3,9 @@ import pandas as pd
 from metrics_tools.semantic.definition import (
     AttributePath,
     AttributePathTransformer,
-    BoundMetric,
+    BoundMeasure,
     Dimension,
-    Metric,
+    Measure,
     Model,
     Registry,
     SemanticQuery,
@@ -109,7 +109,7 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
     registry = setup_registry()
 
     query = SemanticQuery(
-        columns=[
+        selects=[
             "github_event.event_type AS event_type",
             "github_event.to->collection.name AS collection_name",
             "github_event.total_amount AS total_amount",
@@ -200,8 +200,8 @@ def test_resolve_metrics():
             Dimension(name="id", column_name="artifact_id"),
         ],
         primary_key="artifact_id",
-        metrics=[
-            Metric(
+        measures=[
+            Measure(
                 name="count",
                 description="The number of artifacts",
                 query="COUNT(self.id)",
@@ -212,7 +212,7 @@ def test_resolve_metrics():
 
     metric = model.get_attribute("count")
 
-    assert isinstance(metric, BoundMetric), "count should be a BoundMetric"
+    assert isinstance(metric, BoundMeasure), "count should be a BoundMetric"
     assert metric is not None, "metric should not be None"
 
     ref = AttributePath.from_string("artifact.id")

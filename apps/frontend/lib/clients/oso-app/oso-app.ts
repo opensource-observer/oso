@@ -1,13 +1,21 @@
 import _ from "lodash";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { ensure } from "@opensource-observer/utils";
-import { Database, Tables } from "../../types/supabase";
-import { MissingDataError, AuthError } from "../../types/errors";
+import { Database, Tables } from "@/lib/types/supabase";
+import { MissingDataError, AuthError } from "@/lib/types/errors";
 import {
+  dynamicColumnContextsRowSchema,
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
-} from "../../types/schema";
-import type { DynamicConnectorsInsert } from "../../types/schema-types";
+  dynamicTableContextsRowSchema,
+} from "@/lib/types/schema";
+import type {
+  DynamicColumnContextsRow,
+  DynamicConnectorsInsert,
+  DynamicConnectorsRow,
+  DynamicTableContextsRow,
+} from "@/lib/types/schema-types";
+import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
 
 /**
  * OsoAppClient is the client library for the OSO app.
@@ -100,12 +108,13 @@ class OsoAppClient {
     console.log("createApiKey: ", args.name);
     const name = ensure(args.name, "Missing name argument");
     const apiKey = ensure(args.apiKey, "Missing apiKey argument");
+    const orgId = ensure(args.orgId, "Missing orgId argument");
     const user = await this.getUser();
     const { error } = await this.supabaseClient.from("api_keys").insert({
       name,
       api_key: apiKey,
       user_id: user.id,
-      org_id: args.orgId,
+      org_id: orgId,
     });
     if (error) {
       throw error;
@@ -128,6 +137,21 @@ class OsoAppClient {
       throw error;
     } else if (!data) {
       throw new MissingDataError(`Unable to find API keys for id=${user.id}`);
+    }
+    return data;
+  }
+
+  async getApiKeysByOrgId(args: { orgId: string }) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("api_keys")
+      .select("id, name, user_id, created_at, org_id")
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find API keys for org_id=${orgId}`);
     }
     return data;
   }
@@ -422,6 +446,106 @@ class OsoAppClient {
   }
 
   /**
+   * Creates a new chat session
+   * - Chats are stored under an organization
+   * @param args
+   * @returns
+   */
+  async createChat(args: Partial<{ orgId: string }>) {
+    console.log("createChat: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const user = await this.getUser();
+
+    const { data: chatData, error: chatError } = await this.supabaseClient
+      .from("chat_history")
+      .insert({
+        org_id: orgId,
+        display_name: new Date().toLocaleString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (chatError) {
+      throw chatError;
+    } else if (!chatData) {
+      throw new MissingDataError("Failed to create chat");
+    }
+
+    return chatData;
+  }
+
+  async getChatsByOrgId(args: Partial<{ orgId: string }>) {
+    console.log("getChatsByOrgId: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("chat_history")
+      .select(
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+      )
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find chats for orgId=${orgId}`);
+    }
+    return data;
+  }
+
+  async getChatById(args: Partial<{ chatId: string }>) {
+    console.log("getChatById: ", args);
+    const chatId = ensure(args.chatId, "Missing chatId argument");
+    const { data, error } = await this.supabaseClient
+      .from("chat_history")
+      .select()
+      .eq("id", chatId)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find chat for chatId=${chatId}`);
+    }
+    return data;
+  }
+
+  /**
+   * Update chat data
+   * @param args
+   */
+  async updateChat(
+    args: Partial<Database["public"]["Tables"]["chat_history"]["Update"]>,
+  ) {
+    console.log("updateChat: ", args);
+    const chatId = ensure(args.id, "Missing chat 'id' argument");
+    const { error } = await this.supabaseClient
+      .from("chat_history")
+      .update({ ...args })
+      .eq("id", chatId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a chat
+   * - We use `deleted_at` to mark the chat as removed instead of deleting the row
+   * @param args
+   */
+  async deleteChat(args: Partial<{ chatId: string }>): Promise<void> {
+    console.log("deleteChat: ", args);
+    const chatId = ensure(args.chatId, "Missing chatId argument");
+    const { error } = await this.supabaseClient
+      .from("chat_history")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", chatId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Gets the current credit balance for the logged in user.
    * @returns Promise<number> - The current credit balance
    */
@@ -495,10 +619,37 @@ class OsoAppClient {
     const { data, error } = await this.supabaseClient
       .from("dynamic_connectors")
       .select("*")
-      .eq("org_id", orgId);
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
 
     if (error) {
       throw error;
+    }
+
+    return data;
+  }
+
+  /**
+   * Gets a specific dynamic connector by ID.
+   * @param args - Contains the connector ID
+   * @returns Promise<DynamicConnectorsRow> - The connector data
+   */
+  async getConnectorById(
+    args: Partial<{ id: string }>,
+  ): Promise<DynamicConnectorsRow> {
+    const id = ensure(args.id, "id is required");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_connectors")
+      .select("*")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .single();
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find connector with id=${id}`);
     }
 
     return data;
@@ -571,6 +722,175 @@ class OsoAppClient {
     if (!response.ok) {
       throw new Error("Error deleting connector: " + json.error);
     }
+  }
+
+  /**
+   * Syncs a dynamic connector to refresh its schema and metadata.
+   * @param id
+   */
+  async syncConnector(args: Partial<{ id: string }>): Promise<void> {
+    const id = ensure(args.id, "id is required to sync connector");
+
+    const customHeaders = await this.createSupabaseAuthHeaders();
+    const searchParams = new URLSearchParams({ id });
+
+    const response = await fetch(
+      `/api/v1/connector/sync?${searchParams.toString()}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...customHeaders,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Error syncing connector: ${error.error}`);
+    }
+
+    return;
+  }
+
+  /**
+   * Gets contextual information for a dynamic connector's tables and columns.
+   * @param id
+   * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
+   * - Returns the tables context and an array of column contexts for the connector
+   */
+  async getDynamicConnectorContexts(args: { id: string }): Promise<
+    {
+      table: DynamicTableContextsRow;
+      columns: DynamicColumnContextsRow[];
+    }[]
+  > {
+    const id = ensure(args.id, "id is required to get contexts");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_table_contexts")
+      .select("*, dynamic_column_contexts(*)")
+      .eq("connector_id", id);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find contexts for connector id=${id}`,
+      );
+    }
+    return data.map((row) => {
+      const { dynamic_column_contexts: columns, ...table } = row;
+      return { table, columns };
+    });
+  }
+
+  async upsertDynamicConnectorContexts(
+    args: Partial<{
+      table: DynamicTableContextsRow | null;
+      columns: DynamicColumnContextsRow[] | null;
+    }>,
+  ) {
+    const table = args.table
+      ? dynamicTableContextsRowSchema.parse(args.table)
+      : null;
+    const columns = args.columns
+      ? args.columns.map((col) => {
+          return dynamicColumnContextsRowSchema.parse(col);
+        })
+      : null;
+    if (table) {
+      const { error: tableError } = await this.supabaseClient
+        .from("dynamic_table_contexts")
+        .upsert(table);
+      if (tableError) {
+        throw tableError;
+      }
+    }
+    if (columns && columns.length > 0) {
+      const { error: columnsError } = await this.supabaseClient
+        .from("dynamic_column_contexts")
+        .upsert(columns);
+      if (columnsError) {
+        throw columnsError;
+      }
+    }
+  }
+
+  /**
+   * Initiates a Stripe checkout session to buy credits.
+   * @param args - Contains the packageId to purchase
+   * @returns Promise<{ sessionId: string; url: string }> - Stripe checkout session info
+   */
+  async buyCredits(
+    args: Partial<{
+      packageId: string;
+    }>,
+  ): Promise<{ sessionId: string; url: string; publishableKey: string }> {
+    console.log("buyCredits: ", args);
+    const packageId = ensure(args.packageId, "Missing packageId argument");
+
+    const {
+      data: { session },
+    } = await this.supabaseClient.auth.getSession();
+    if (!session) {
+      throw new AuthError("No active session");
+    }
+
+    const response = await fetch("/api/v1/stripe/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ packageId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create checkout session");
+    }
+
+    const data = await response.json();
+    return {
+      sessionId: data.sessionId,
+      url: data.url,
+      publishableKey: data.publishableKey,
+    };
+  }
+
+  /**
+   * Gets available credit packages for purchase.
+   * @returns Array of credit packages with pricing
+   */
+  async getCreditPackages() {
+    console.log("getCreditPackages");
+    return CREDIT_PACKAGES.map((pkg) => ({
+      id: pkg.id,
+      name: pkg.name,
+      credits: pkg.credits,
+      price: pkg.price,
+      displayPrice: `$${(pkg.price / 100).toFixed(2)}`,
+    }));
+  }
+
+  /**
+   * Gets the user's purchase history.
+   * @returns Promise<Array> - Array of purchase intents
+   */
+  async getMyPurchaseHistory() {
+    console.log("getMyPurchaseHistory");
+    const user = await this.getUser();
+    const { data, error } = await this.supabaseClient
+      .from("purchase_intents")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+    return data || [];
   }
 
   private async createSupabaseAuthHeaders() {

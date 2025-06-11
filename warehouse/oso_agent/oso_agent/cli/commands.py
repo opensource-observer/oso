@@ -1,16 +1,26 @@
 import asyncio
+import json
 import logging
 import sys
+import typing as t
 
 import click
+import opentelemetry.trace as trace
+import uvicorn
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
+from pyoso import Client
 
 from ..agent import setup_default_agent_registry
 from ..eval.experiment_registry import get_experiments
 from ..server.bot import setup_bot
 from ..server.definition import BotConfig
+from ..tool.embedding import create_embedding
+from ..tool.llm import create_llm
+from ..tool.oso_mcp_client import OsoMcpClient
+from ..tool.oso_text2sql import create_oso_query_engine
 from ..types import ErrorResponse, SemanticResponse, SqlResponse, StrResponse
+from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentError, AgentRuntimeError
 from ..util.log import setup_logging
@@ -18,13 +28,11 @@ from ..util.tracing import setup_telemetry
 from .utils import common_options, pass_config
 
 load_dotenv()
+setup_nest_asyncio()
 
-logger = logging.getLogger("oso-agent")
+logger = logging.getLogger(__name__)
+tracer = trace.get_tracer(__name__)
 
-async def create_agent(config: AgentConfig):
-    registry = await setup_default_agent_registry(config)
-    agent = await registry.get_agent(config.agent_name)
-    return agent
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
@@ -44,6 +52,31 @@ def cli(ctx, verbose):
     setup_logging(verbose)
     setup_telemetry(config)
     ctx.obj = config
+
+
+@cli.command()
+@click.option(
+    "--port",
+    "-p",
+    default=8888,
+    help="Port to run the OSO Agent server on",
+)
+@click.option(
+    "--host",
+    "-H",
+    default="localhost",
+    help="Host to run the OSO Agent server on",
+)
+def serve(port: int, host: str):
+    """Run the OSO Agent server."""
+    uvicorn_config = uvicorn.Config("oso_agent.server.server:app", host=host, port=port)
+    server = uvicorn.Server(uvicorn_config)
+    try:
+        logger.info(f"Starting OSO Agent server on {host}:{port}")
+        asyncio.run(server.serve())
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+
 
 @cli.command()
 @click.argument("query", required=True)
@@ -70,7 +103,10 @@ def query(config, query, agent_name, ollama_model, ollama_url):
 
     try:
         with click.progressbar(
-            length=1, label="Processing query", show_eta=False, show_percent=False
+            length=1,
+            label=f'Processing query "{query}"',
+            show_eta=False,
+            show_percent=False,
         ) as b:
             response = asyncio.run(_run_query(query, updated_config))
             b.update(1)
@@ -87,55 +123,79 @@ def query(config, query, agent_name, ollama_model, ollama_url):
 async def _run_query(query: str, config: AgentConfig) -> str:
     """Run a query through the agent asynchronously."""
 
-    agent = await create_agent(config)
-    click.echo(
-        f"Query started with agent={config.agent_name} and model={config.llm.type}"
-    )
-    wrapped_response = await agent.run(query)
-    match wrapped_response.response:
-        case StrResponse(blob=blob):
-            return blob
-        case SemanticResponse(query=semantic_query):
-            return str(semantic_query)
-        case SqlResponse(query=sql_query):
-            return str(sql_query)
-        case ErrorResponse(message=message, details=details):
-            raise AgentRuntimeError(
-                f"Error from agent: {message}. Details: {details}"
-            )
-        case _:
-            raise AgentRuntimeError(
-                f"Unexpected response type from agent: {wrapped_response.response.type}"
-            )
+    with tracer.start_as_current_span("cli#run_query", kind=trace.SpanKind.CLIENT):
+        registry = await setup_default_agent_registry(config)
+        agent = await registry.get_agent(config.agent_name)
+        click.echo(
+            f"Query started with agent={config.agent_name} and model={config.llm.type}"
+        )
+        wrapped_response = await agent.run(query)
+        match wrapped_response.response:
+            case StrResponse(blob=blob):
+                return blob
+            case SemanticResponse(query=semantic_query):
+                return str(semantic_query)
+            case SqlResponse(query=sql_query):
+                return str(sql_query)
+            case ErrorResponse(message=message, details=details):
+                raise AgentRuntimeError(
+                    f"Error from agent: {message}. Details: {details}"
+                )
+            case _:
+                raise AgentRuntimeError(
+                    f"Unexpected response type from agent: {wrapped_response.response.type}"
+                )
+
+
+class JsonType(click.ParamType):
+    name = "json"
+
+    def convert(self, value, param, ctx) -> dict[t.Any, t.Any]:
+        if not isinstance(value, str):
+            return value
+
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            self.fail(f"{value!r} is not valid JSON", param, ctx)
+
 
 @cli.command()
 @click.argument("experiment_name", required=True)
-@common_options
 @click.option(
-    "--ollama-model",
-    "-m",
-    help="Ollama model to use",
+    "--experiment-options",
+    "-o",
+    type=JsonType(),
+    default="{}",
+    help="JSON-encoded options for the experiment",
 )
 @click.option(
-    "--ollama-url",
-    "-u",
-    help="URL for the Ollama API",
+    "--example-ids",
+    "-e",
+    type=str,
+    help="Comma-separated list of example IDs to run (e.g. 12,13,14).",
+    default="",
 )
 @pass_config
-def experiment(config, experiment_name, agent_name, ollama_model, ollama_url):
+def experiment(
+    config: AgentConfig, experiment_name: str, experiment_options: dict[str, t.Any], example_ids: str
+):
     """Run a single experiment through the agent.
 
     experiment_name is the name of the experiment to run.
     """
-    updated_config = config.update(
-        agent_name=agent_name, ollama_model=ollama_model, ollama_url=ollama_url
-    )
-
     try:
         with click.progressbar(
             length=1, label="Processing experiment", show_eta=False, show_percent=False
         ) as b:
-            response = asyncio.run(_run_experiment(experiment_name, updated_config))
+            experiment_options = {
+                **experiment_options,
+                "example_ids": [s.strip() for s in example_ids.split(",") if s.strip()]
+            }
+
+            response = asyncio.run(
+                _run_experiment(experiment_name, config, experiment_options)
+            )
             b.update(1)
 
         click.echo("\nResponse:")
@@ -147,9 +207,11 @@ def experiment(config, experiment_name, agent_name, ollama_model, ollama_url):
         sys.exit(1)
 
 
-async def _run_experiment(experiment_name: str, config: AgentConfig) -> str:
+async def _run_experiment(
+    experiment_name: str, config: AgentConfig, experiment_options: dict[str, t.Any]
+) -> str:
     """Run an experiment through the agent asynchronously."""
-    agent = await create_agent(config)
+    registry = await setup_default_agent_registry(config)
     click.echo(
         f"Experiment {experiment_name} started with agent={config.agent_name} and model={config.llm.type}"
     )
@@ -158,13 +220,14 @@ async def _run_experiment(experiment_name: str, config: AgentConfig) -> str:
     if experiment_name in experiments:
         experiment_func = experiments[experiment_name]
         # Run the text2sql experiment
-        response = await experiment_func(config, agent)
+        response = await experiment_func(config, registry, experiment_options)
         click.echo(f"...{experiment_name} experiment completed.")
         return str(response)
     else:
         raise AgentRuntimeError(
             f"Experiment {experiment_name} not found. Please check the experiment name."
         )
+
 
 @cli.command()
 @common_options
@@ -199,7 +262,8 @@ def shell(config, agent_name, ollama_model, ollama_url):
 async def _run_interactive_session(config: AgentConfig):
     """Run an interactive session with the agent asynchronously."""
     try:
-        agent = await create_agent(config)
+        registry = await setup_default_agent_registry(config)
+        agent = await registry.get_agent(config.agent_name)
         click.echo(
             f"Interactive agent session started with agent={config.agent_name} and model={config.llm.type}"
         )
@@ -218,12 +282,18 @@ async def _run_interactive_session(config: AgentConfig):
                         length=1, label="Thinking", show_eta=False, show_percent=False
                     ) as b:
                         response = await agent.run(query, chat_history=history)
-                        history.append(ChatMessage(
-                            role=MessageRole.USER, content=query,
-                        ))
-                        history.append(ChatMessage(
-                            role=MessageRole.ASSISTANT, content=response,
-                        ))
+                        history.append(
+                            ChatMessage(
+                                role=MessageRole.USER,
+                                content=query,
+                            )
+                        )
+                        history.append(
+                            ChatMessage(
+                                role=MessageRole.ASSISTANT,
+                                content=response,
+                            )
+                        )
                         print(history)
                         b.update(1)
 
@@ -275,7 +345,40 @@ def demo(config, agent_name, ollama_model, ollama_url):
 async def _run_demo(config: AgentConfig):
     """Run demo queries asynchronously."""
     try:
-        agent = await create_agent(config)
+        # Example of using the OsoMcpClient to get table schema
+        client = OsoMcpClient(config.oso_mcp_url)
+        result = await client.get_table_schema("projects_v1")
+        print("Table schema for 'projects_v1':")
+        print(result)
+        print("─" * 80)
+        result = await client.query_oso("SELECT * FROM projects_v1 LIMIT 10")
+        print("Sample data from 'projects_v1':")
+        print(result)
+        print("─" * 80)
+
+        # Example of using the OSO query engine
+        llm = create_llm(config)
+        embed = create_embedding(config)
+
+        oso_client = Client(
+            api_key=config.oso_api_key.get_secret_value(),
+        )
+        query_engine = await create_oso_query_engine(
+            config,
+            oso_client,
+            llm,
+            embed,
+        )
+        response = query_engine.query(
+            "Get the first 10 projects in 'optimism' collection"
+        )
+        print("Response from OSO query engine:")
+        print(response)
+        print("─" * 80)
+
+        # Demo queries with agent
+        registry = await setup_default_agent_registry(config)
+        agent = await registry.get_agent(config.agent_name)
         click.echo(
             f"Demo started with agent={config.agent_name} and model={config.llm.type}"
         )
@@ -304,6 +407,7 @@ async def _run_demo(config: AgentConfig):
     except Exception as e:
         click.echo(f"Error in demo: {e}", err=True)
 
+
 @cli.command()
 @pass_config
 def discord(config):
@@ -318,10 +422,11 @@ def discord(config):
         click.echo(f"Configuration error: {e}", err=True)
         sys.exit(1)
 
+
 async def _discord_bot_main(config: BotConfig) -> None:
     """Testing function to run the bot manually"""
-    agent = await create_agent(config)
-    bot = await setup_bot(config, agent)
+    registry = await setup_default_agent_registry(config)
+    bot = await setup_bot(config, registry)
     await bot.login(config.discord_bot_token.get_secret_value())
     task = asyncio.create_task(bot.connect())
     try:

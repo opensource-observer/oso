@@ -1,15 +1,9 @@
 import logging
 
-from llama_index.llms.gemini import Gemini
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.llms.ollama import Ollama
 
-from ..util.config import (
-    AgentConfig,
-    GeminiLLMConfig,
-    GoogleGenAILLMConfig,
-    LocalLLMConfig,
-)
+from ..util.config import AgentConfig, GoogleGenAILLMConfig, LocalLLMConfig
 from ..util.errors import AgentConfigError
 
 logger = logging.getLogger(__name__)
@@ -26,10 +20,6 @@ def create_llm(config: AgentConfig):
                 base_url=base_url,
                 request_timeout=timeout,
             )
-        case GeminiLLMConfig(api_key=api_key, model=model):
-            logger.info("Initializing Gemini LLM")
-            # Placeholder for Gemini LLM initialization
-            return Gemini(api_key=api_key, model=model)
         case GoogleGenAILLMConfig(api_key=api_key, model=model):
             logger.info("Initializing Google GenAI LLM")
             return GoogleGenAI(api_key=api_key, model=model)

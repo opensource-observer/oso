@@ -3,8 +3,8 @@ import { DataProvider, GlobalActionsProvider } from "@plasmicapp/loader-nextjs";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
-import * as config from "../../lib/config";
-import { useOsoAppClient } from "../hooks/oso-app";
+import * as config from "@/lib/config";
+import { useOsoAppClient } from "@/components/hooks/oso-app";
 
 const PLASMIC_KEY = "globals";
 const PLASMIC_CONTEXT_NAME = "OsoGlobalContext";
@@ -24,6 +24,9 @@ const OsoGlobalActions: any = {
   updateMyUserProfile: { parameters: [{ name: "args", type: "object" }] },
   createApiKey: { parameters: [{ name: "args", type: "object" }] },
   deleteApiKey: { parameters: [{ name: "args", type: "object" }] },
+  getApiKeysByOrgId: {
+    parameters: [{ name: "args", type: "object" }],
+  },
   createOrganization: { parameters: [{ name: "args", type: "object" }] },
   addUserToOrganizationByEmail: {
     parameters: [{ name: "args", type: "object" }],
@@ -33,9 +36,24 @@ const OsoGlobalActions: any = {
     parameters: [{ name: "args", type: "object" }],
   },
   deleteOrganization: { parameters: [{ name: "args", type: "object" }] },
+  createChat: { parameters: [{ name: "args", type: "object" }] },
+  updateChat: { parameters: [{ name: "args", type: "object" }] },
+  deleteChat: { parameters: [{ name: "args", type: "object" }] },
   getConnectors: { parameters: [{ name: "args", type: "object" }] },
+  getConnectorById: {
+    parameters: [{ name: "args", type: "object" }],
+  },
   createConnector: { parameters: [{ name: "args", type: "object" }] },
   deleteConnector: { parameters: [{ name: "args", type: "object" }] },
+  syncConnector: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  getDynamicConnectorContexts: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  upsertDynamicConnectorContexts: {
+    parameters: [{ name: "args", type: "object" }],
+  },
 };
 
 // Users will be able to set these props in Studio.
@@ -70,6 +88,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
     console.log("Success: ", result);
     setResult(result);
     setSnackbarState({ _type: "success" });
+    return result;
   };
   const handleError = (error: any) => {
     console.log("Error: ", error);
@@ -78,6 +97,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       _type: "error",
       ...error,
     });
+    return error;
   };
   const handleClose = (
     _event?: React.SyntheticEvent | Event,
@@ -99,6 +119,8 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
         client!.createApiKey(args).then(handleSuccess).catch(handleError),
       deleteApiKey: (args: any) =>
         client!.deleteApiKey(args).then(handleSuccess).catch(handleError),
+      getApiKeysByOrgId: (args: any) =>
+        client!.getApiKeysByOrgId(args).then(handleSuccess).catch(handleError),
       createOrganization: (args: any) =>
         client!.createOrganization(args).then(handleSuccess).catch(handleError),
       addUserToOrganizationByEmail: (args: any) =>
@@ -115,12 +137,32 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
           .catch(handleError),
       deleteOrganization: (args: any) =>
         client!.deleteOrganization(args).then(handleSuccess).catch(handleError),
+      createChat: (args: any) =>
+        client!.createChat(args).then(handleSuccess).catch(handleError),
+      updateChat: (args: any) =>
+        client!.updateChat(args).then(handleSuccess).catch(handleError),
+      deleteChat: (args: any) =>
+        client!.deleteChat(args).then(handleSuccess).catch(handleError),
       getConnectors: (args: any) =>
         client!.getConnectors(args).then(handleSuccess).catch(handleError),
+      getConnectorById: (args: any) =>
+        client!.getConnectorById(args).then(handleSuccess).catch(handleError),
       createConnector: (args: any) =>
         client!.createConnector(args).then(handleSuccess).catch(handleError),
       deleteConnector: (args: any) =>
         client!.deleteConnector(args).then(handleSuccess).catch(handleError),
+      syncConnector: (args: any) =>
+        client!.syncConnector(args).then(handleSuccess).catch(handleError),
+      getDynamicConnectorContexts: (args: any) =>
+        client!
+          .getDynamicConnectorContexts(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      upsertDynamicConnectorContexts: (args: any) =>
+        client!
+          .upsertDynamicConnectorContexts(args)
+          .then(handleSuccess)
+          .catch(handleError),
     }),
     [client],
   );

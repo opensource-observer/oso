@@ -1,16 +1,14 @@
 MODEL (
   name oso.stg_gitcoin__all_donations,
   description "Staging table for Gitcoin donations data",
-  kind full,
-  cron '@monthly',
+  kind FULL,
   dialect trino,
-  grain (time, project_recipient_address, gitcoin_project_id, gitcoin_round_id, chain_id),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
 );
 
-SELECT
+SELECT DISTINCT
   timestamp::TIMESTAMP AS timestamp,
   LOWER(round_id)::VARCHAR AS round_id,
   round_num::INTEGER AS round_number,  
@@ -23,4 +21,3 @@ SELECT
   LOWER(transaction_hash)::VARCHAR AS transaction_hash,
   amount_in_usd::DOUBLE AS amount_in_usd
 FROM @oso_source('bigquery.gitcoin.all_donations')
-WHERE amount_in_usd > 0

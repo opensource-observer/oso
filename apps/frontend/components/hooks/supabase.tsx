@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { createNormalSupabaseClient } from "../../lib/clients/supabase";
+import { createNormalSupabaseClient } from "@/lib/clients/supabase";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "../../lib/types/supabase";
+import { Database } from "@/lib/types/supabase";
 import { spawn } from "@opensource-observer/utils";
 
 type SupabaseState = {
@@ -17,13 +17,6 @@ type SupabaseState = {
 const SupabaseContext = createContext<SupabaseState>(null);
 function useSupabaseState() {
   return useContext<SupabaseState>(SupabaseContext);
-}
-
-function useSupabaseClient() {
-  const supabaseClient = createNormalSupabaseClient();
-  return {
-    supabaseClient,
-  };
 }
 
 function SupabaseProvider({ children }: { children: React.ReactNode }) {
@@ -51,9 +44,4 @@ function SupabaseProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export {
-  useSupabaseClient,
-  SupabaseContext,
-  useSupabaseState,
-  SupabaseProvider,
-};
+export { SupabaseContext, useSupabaseState, SupabaseProvider };

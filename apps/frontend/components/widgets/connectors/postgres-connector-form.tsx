@@ -25,7 +25,7 @@ export function PostgresConnectorForm(props: PostgresConnectorFormProps) {
         label="Connection URL"
         value={formState["connection-url"]}
         onChange={onChange}
-        placeholder="postgresql://host:port/database"
+        placeholder="jdbc:postgresql://host:port/database"
         size="small"
         sx={{ mb: 2 }}
       />

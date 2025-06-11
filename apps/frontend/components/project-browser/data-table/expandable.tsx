@@ -1,5 +1,5 @@
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { DataTableField } from "../../../lib/data-table";
+import { DataTableField } from "@/lib/data-table";
 
 export interface ExpandableProps {
   className?: string;

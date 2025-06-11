@@ -3,9 +3,9 @@ import { Provider } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { assertNever, ensure, spawn } from "@opensource-observer/utils";
-import { useSupabaseState } from "../hooks/supabase";
-import { RegistrationProps } from "../../lib/types/plasmic";
-import { NODE_ENV, DOMAIN } from "../../lib/config";
+import { useSupabaseState } from "@/components/hooks/supabase";
+import { RegistrationProps } from "@/lib/types/plasmic";
+import { NODE_ENV, DOMAIN } from "@/lib/config";
 
 type AuthActionType = "signInWithOAuth" | "signOut";
 const DEFAULT_PROVIDER: Provider = "google";

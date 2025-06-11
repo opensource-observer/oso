@@ -1,6 +1,6 @@
 import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
-import { PlasmicClientRootProvider } from "../plasmic-init-client";
-import { PLASMIC } from "../plasmic-init";
+import { PlasmicClientRootProvider } from "@/plasmic-init-client";
+import { PLASMIC } from "@/plasmic-init";
 
 const PLASMIC_COMPONENT = "404Page";
 export const dynamic = "force-static";

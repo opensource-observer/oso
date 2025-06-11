@@ -51,7 +51,7 @@ export type Database = {
           deleted_at: string | null;
           id: string;
           name: string;
-          org_id: string | null;
+          org_id: string;
           updated_at: string;
           user_id: string;
         };
@@ -61,7 +61,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           name: string;
-          org_id?: string | null;
+          org_id: string;
           updated_at?: string;
           user_id: string;
         };
@@ -71,7 +71,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           name?: string;
-          org_id?: string | null;
+          org_id?: string;
           updated_at?: string;
           user_id?: string;
         };
@@ -88,6 +88,54 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      chat_history: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          data: string | null;
+          deleted_at: string | null;
+          display_name: string;
+          id: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          data?: string | null;
+          deleted_at?: string | null;
+          display_name: string;
+          id?: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          data?: string | null;
+          deleted_at?: string | null;
+          display_name?: string;
+          id?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_history_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_history_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
         ];
@@ -121,6 +169,41 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [];
+      };
+      dynamic_column_contexts: {
+        Row: {
+          column_name: string;
+          data_type: string;
+          description: string | null;
+          foreign_keys: Json | null;
+          sample_data: string | null;
+          table_id: string;
+        };
+        Insert: {
+          column_name: string;
+          data_type: string;
+          description?: string | null;
+          foreign_keys?: Json | null;
+          sample_data?: string | null;
+          table_id: string;
+        };
+        Update: {
+          column_name?: string;
+          data_type?: string;
+          description?: string | null;
+          foreign_keys?: Json | null;
+          sample_data?: string | null;
+          table_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_table_context";
+            columns: ["table_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_table_contexts";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       dynamic_connectors: {
         Row: {
@@ -169,6 +252,35 @@ export type Database = {
           },
         ];
       };
+      dynamic_table_contexts: {
+        Row: {
+          connector_id: string;
+          description: string | null;
+          id: string;
+          table_name: string;
+        };
+        Insert: {
+          connector_id: string;
+          description?: string | null;
+          id?: string;
+          table_name: string;
+        };
+        Update: {
+          connector_id?: string;
+          description?: string | null;
+          id?: string;
+          table_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_connector_id";
+            columns: ["connector_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_connectors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       organizations: {
         Row: {
           created_at: string;
@@ -203,6 +315,45 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      purchase_intents: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          credits_amount: number;
+          id: string;
+          metadata: Json | null;
+          package_id: string;
+          price_cents: number;
+          status: string;
+          stripe_session_id: string;
+          user_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          credits_amount: number;
+          id?: string;
+          metadata?: Json | null;
+          package_id: string;
+          price_cents: number;
+          status?: string;
+          stripe_session_id: string;
+          user_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          credits_amount?: number;
+          id?: string;
+          metadata?: Json | null;
+          package_id?: string;
+          price_cents?: number;
+          status?: string;
+          stripe_session_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       user_credits: {
         Row: {

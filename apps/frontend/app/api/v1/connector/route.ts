@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTrinoAdminClient } from "../../../../lib/clients/trino";
-import { createNormalSupabaseClient } from "../../../../lib/clients/supabase";
-import { ALLOWED_CONNECTORS } from "../../../../lib/types/dynamic-connector";
-import { dynamicConnectorsInsertSchema } from "../../../../lib/types/schema";
-import type { DynamicConnectorsInsert } from "../../../../lib/types/schema-types";
+import { getTrinoAdminClient } from "@/lib/clients/trino";
+import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { ALLOWED_CONNECTORS } from "@/lib/types/dynamic-connector";
+import { dynamicConnectorsInsertSchema } from "@/lib/types/schema";
+import type { DynamicConnectorsInsert } from "@/lib/types/schema-types";
 import { ensure } from "@opensource-observer/utils";
-import { setSupabaseSession } from "../../../../lib/auth/auth";
-import { Tables } from "../../../../lib/types/supabase";
+import { setSupabaseSession } from "@/lib/auth/auth";
+import { Tables } from "@/lib/types/supabase";
+import { getCatalogName } from "@/lib/dynamic-connectors";
 
 export const revalidate = 0;
 export const maxDuration = 300;
@@ -40,10 +41,6 @@ function validateDynamicConnectorParams(
       { status: 400 },
     );
   }
-}
-
-function getCatalogName(connectorName: string, _?: boolean | null) {
-  return `${connectorName.trim().toLocaleLowerCase()}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -100,16 +97,15 @@ export async function POST(request: NextRequest) {
     ...Object.entries(credentials),
   ];
 
-  try {
-    const query = `CREATE CATALOG ${getCatalogName(dynamicConnector.connector_name, dynamicConnector.is_public)} USING ${dynamicConnector.connector_type} ${
-      additionalData.length > 0
-        ? `WITH (${additionalData
-            .map(([key, value]) => `"${key}" = '${value}'`)
-            .join(",\n")})`
-        : ""
-    }`;
-    await trinoClient.query(query);
-  } catch (e) {
+  const query = `CREATE CATALOG ${getCatalogName(dynamicConnector.connector_name, dynamicConnector.is_public)} USING ${dynamicConnector.connector_type} ${
+    additionalData.length > 0
+      ? `WITH (${additionalData
+          .map(([key, value]) => `"${key}" = '${value}'`)
+          .join(",\n")})`
+      : ""
+  }`;
+  const { error: trinoError } = await trinoClient.queryAll(query);
+  if (trinoError) {
     // Best effort try to cleanup the connector from supabase
     await supabaseClient
       .from("dynamic_connectors")
@@ -118,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: `Error creating catalog: ${e}`,
+        error: `Error creating catalog: ${trinoError}`,
       },
       { status: 500 },
     );
@@ -164,10 +160,10 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  try {
-    const query = `DROP CATALOG ${getCatalogName(deletedConnector.data.connector_name, deletedConnector.data.is_public)}`;
-    await trinoClient.query(query);
-  } catch (e) {
+  const query = `DROP CATALOG ${getCatalogName(deletedConnector.data.connector_name, deletedConnector.data.is_public)}`;
+  const { error } = await trinoClient.queryAll(query);
+
+  if (error) {
     // Best effort reverting operation
     await supabaseClient
       .from("dynamic_connectors")
@@ -178,7 +174,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: `Error creating catalog: ${e}`,
+        error: `Error dropping catalog: ${error}`,
       },
       { status: 500 },
     );

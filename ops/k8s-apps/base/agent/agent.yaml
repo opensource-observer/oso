@@ -32,8 +32,8 @@ spec:
         - run
         - --directory
         - warehouse/oso_agent
-        - uvicorn
-        - oso_agent.server.server:app
+        - agent
+        - serve
         - --host
         - "0.0.0.0"
         - --port
@@ -42,3 +42,4 @@ spec:
       portEnvVar: "AGENT_PORT"
       envVars:
         AGENT_EAGERLY_LOAD_ALL_AGENTS: "1"
+        AGENT_VECTOR_STORAGE_DIR: "/storage_index"

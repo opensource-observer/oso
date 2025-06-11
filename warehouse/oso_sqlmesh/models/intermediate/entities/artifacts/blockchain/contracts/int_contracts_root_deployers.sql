@@ -1,4 +1,17 @@
-/* Root deployers is an interesting problem. When a contract gets created we */ /* don't know if it's a factory based on our current processing. We can only */ /* know that a contract is a factory if it has deployed other contracts. This */ /* model is an attempt to identify the root deployer of a contract. The root */ /* deployer is discovered by looking backwards through contract creators. To */ /* prevent our warehouse from storing far too much data we only look back 365 */ /* days and incrementally update this model. If the contract is used as a */ /* factory within that time and was also deployed within that time a row will be */ /* created in this model. */
+/* 
+Root deployers is an interesting problem. When a contract gets created we don't
+know if it's a factory based on our current processing. We can only currently
+know that a contract is a factory if it has deployed other contracts. This model
+is an attempt to identify the root deployer of a contract. The root deployer is
+discovered by looking backwards through contract creators. To prevent our
+warehouse from storing far too much data we only look back 365 days and
+incrementally update this model. If the contract is used as a factory within
+that time and was also deployed within that time a row will be created in this
+model. 
+
+By the nature of our search, the root deployer is a best effort and may not
+always be accurate.
+*/
 MODEL (
   name oso.int_contracts_root_deployers,
   kind INCREMENTAL_BY_TIME_RANGE (

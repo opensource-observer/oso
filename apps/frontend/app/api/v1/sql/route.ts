@@ -1,17 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
+import { getTrinoClient } from "@/lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
-import { getTableNamesFromSql } from "../../../../lib/parsing";
-import { getUser } from "../../../../lib/auth/auth";
-import {
-  CreditsService,
-  TransactionType,
-} from "../../../../lib/services/credits";
-import { trackServerEvent } from "../../../../lib/analytics/track";
-import { logger } from "../../../../lib/logger";
+import { getTableNamesFromSql } from "@/lib/parsing";
+import { getUser } from "@/lib/auth/auth";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
+import { trackServerEvent } from "@/lib/analytics/track";
+import { logger } from "@/lib/logger";
 import * as jsonwebtoken from "jsonwebtoken";
-import { AuthUser } from "../../../../lib/types/user";
-import { EVENTS } from "../../../../lib/types/posthog";
+import { AuthUser } from "@/lib/types/user";
+import { EVENTS } from "@/lib/types/posthog";
 
 // Next.js route control
 export const revalidate = 0;
@@ -36,7 +33,7 @@ function signJWT(user: AuthUser) {
     secret,
     {
       algorithm: "HS256",
-      subject: `jwt-${user.email}`,
+      subject: `jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`,
       audience: "consumer-trino",
       issuer: "opensource-observer",
     },
@@ -92,17 +89,21 @@ export async function POST(request: NextRequest) {
     });
 
     const client = getTrinoClient(jwt);
-    const [firstRow, rows] = await client.query(query);
-    const readableStream = mapToReadableStream(firstRow, rows, format);
+    const { data, error } = await client.query(query);
+    if (error) {
+      return makeErrorResponse(error.message, 400);
+    }
+    const readableStream = mapToReadableStream(
+      data.firstRow,
+      data.iterator,
+      format,
+    );
     return new NextResponse(readableStream, {
       headers: {
         "Content-Type": "application/x-ndjson",
       },
     });
   } catch (e) {
-    if (e instanceof TrinoError) {
-      return makeErrorResponse(e.message, 400);
-    }
     logger.log(e);
     return makeErrorResponse("Unknown error", 500);
   }

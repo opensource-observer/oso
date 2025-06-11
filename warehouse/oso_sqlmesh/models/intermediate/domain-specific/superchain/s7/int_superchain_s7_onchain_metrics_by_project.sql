@@ -157,7 +157,7 @@ defillama_tvl_events AS (
     UPPER(dl.from_artifact_namespace) AS chain,
     DATE_TRUNC('MONTH', dl.bucket_day::DATE) AS sample_date,
     dl.amount
-  FROM oso.int_events_daily_to_project__defillama_tvl AS dl
+  FROM oso.int_events_daily_to_project__defillama AS dl
   WHERE
     dl.event_type = 'DEFILLAMA_TVL'
     AND dl.from_artifact_name = 'usd'

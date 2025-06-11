@@ -1,9 +1,9 @@
-import { POST, DELETE } from "../../app/api/v1/connector/route";
+import { POST, DELETE } from "@/app/api/v1/connector/route";
 import { NextRequest } from "next/server";
-import { getTrinoAdminClient } from "../../lib/clients/trino";
-import { createPrivilegedSupabaseClient } from "../../lib/clients/supabase";
+import { getTrinoAdminClient } from "@/lib/clients/trino";
+import { createPrivilegedSupabaseClient } from "@/lib/clients/supabase";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "../../lib/types/supabase"; // Assuming Database types are here
+import { Database } from "@/lib/types/supabase"; // Assuming Database types are here
 import { randomUUID } from "crypto";
 
 // Mock dependencies
@@ -11,7 +11,7 @@ jest.mock("server-only", () => {});
 jest.mock("../../lib/clients/trino");
 
 const mockTrinoClient = {
-  query: jest.fn(),
+  queryAll: jest.fn(),
 };
 
 const mockGetTrinoAdminClient = getTrinoAdminClient as jest.Mock;
@@ -96,14 +96,14 @@ describe("API /api/v1/connector", () => {
 
   describe("POST", () => {
     it("should create a dynamic connector successfully", async () => {
-      mockTrinoClient.query.mockResolvedValueOnce(undefined);
+      mockTrinoClient.queryAll.mockResolvedValueOnce({ error: null });
 
       const connectorName = `${testOrg.org_name}_postgres`;
       const requestBody = {
         data: {
           org_id: testOrg.id,
           connector_name: connectorName,
-          connector_type: "postgres",
+          connector_type: "postgresql",
           config: { host: "localhost" },
           created_by: testUser.id,
         },
@@ -124,10 +124,10 @@ describe("API /api/v1/connector", () => {
       expect(response.status).toBe(200);
       expect(json.connector_name).toBe(connectorName);
       expect(json.org_id).toBe(testOrg.id);
-      expect(json.connector_type).toBe("postgres");
-      expect(mockTrinoClient.query).toHaveBeenCalledWith(
+      expect(json.connector_type).toBe("postgresql");
+      expect(mockTrinoClient.queryAll).toHaveBeenCalledWith(
         expect.stringContaining(
-          `CREATE CATALOG ${connectorName} USING postgres WITH`,
+          `CREATE CATALOG ${connectorName} USING postgresql WITH`,
         ),
       );
 
@@ -179,7 +179,7 @@ describe("API /api/v1/connector", () => {
         data: {
           org_id: testOrg.id,
           connector_name: "wrongprefix_postgres",
-          connector_type: "postgres",
+          connector_type: "postgresql",
           created_by: testUser.id,
         },
         credentials: { token: "abc" },
@@ -206,7 +206,7 @@ describe("API /api/v1/connector", () => {
         data: {
           org_id: invalidOrgId,
           connector_name: "testorg_pg",
-          connector_type: "postgres",
+          connector_type: "postgresql",
           created_by: testUser.id,
         },
         credentials: { token: "abc" },
@@ -226,14 +226,16 @@ describe("API /api/v1/connector", () => {
     });
 
     it("should attempt to cleanup Supabase if Trino catalog creation fails", async () => {
-      mockTrinoClient.query.mockRejectedValueOnce(new Error("Trino error"));
+      mockTrinoClient.queryAll.mockResolvedValueOnce({
+        error: new Error("Trino error"),
+      });
 
       const connectorName = `${testOrg.org_name}_postgres_cleanup`;
       const requestBody = {
         data: {
           org_id: testOrg.id,
           connector_name: connectorName,
-          connector_type: "postgres",
+          connector_type: "postgresql",
           created_by: testUser.id,
         },
         credentials: { password: "secure" },
@@ -277,7 +279,7 @@ describe("API /api/v1/connector", () => {
         .insert({
           connector_name: connectorName,
           org_id: testOrg.id,
-          connector_type: "postgres",
+          connector_type: "postgresql",
           created_by: testUser.id,
           config: { host: "delete-test" }, // Ensure config is not null if required by schema
           is_public: false,
@@ -302,7 +304,7 @@ describe("API /api/v1/connector", () => {
     });
 
     it("should delete a dynamic connector successfully", async () => {
-      mockTrinoClient.query.mockResolvedValueOnce(undefined);
+      mockTrinoClient.queryAll.mockResolvedValueOnce({ error: null });
 
       const req = new NextRequest(
         `http://localhost/api/v1/connector?id=${connectorToDelete.id}`,
@@ -321,7 +323,7 @@ describe("API /api/v1/connector", () => {
       expect(response.status).toBe(200);
       expect(json.id).toBe(connectorToDelete.id);
       expect(json.connector_name).toBe(connectorToDelete.connector_name);
-      expect(mockTrinoClient.query).toHaveBeenCalledWith(
+      expect(mockTrinoClient.queryAll).toHaveBeenCalledWith(
         `DROP CATALOG ${connectorToDelete.connector_name}`,
       );
 
@@ -382,9 +384,9 @@ describe("API /api/v1/connector", () => {
     it("should attempt to revert Supabase deletion if Trino catalog drop fails", async () => {
       const originalConnectorData = { ...connectorToDelete }; // Clone for revert check
 
-      mockTrinoClient.query.mockRejectedValueOnce(
-        new Error("Trino drop error"),
-      );
+      mockTrinoClient.queryAll.mockResolvedValueOnce({
+        error: new Error("Trino drop error"),
+      });
 
       const req = new NextRequest(
         `http://localhost/api/v1/connector?id=${connectorToDelete.id}`,
@@ -401,7 +403,7 @@ describe("API /api/v1/connector", () => {
       expect(response.status).toBe(500);
       const json = await response.json();
       expect(json.error).toContain(
-        "Error creating catalog: Error: Trino drop error",
+        "Error dropping catalog: Error: Trino drop error",
       );
 
       const { data: revertedConnector, error: fetchError } =
