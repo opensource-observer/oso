@@ -1,7 +1,6 @@
-import re
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing_extensions import TypedDict
 
 from ..util.query import (
@@ -49,24 +48,21 @@ class Example(BaseModel):
 class ExampleList(BaseModel):
     examples: List[Example]
 
-    def __init__(self, examples: List[Example]):
-        # validate ids
-        seen_ids = set()
-        for example in examples:
-            if example.id in seen_ids:
-                raise ValueError(f"Duplicate example ID found: {example.id!r}") # update this
-            seen_ids.add(example.id)
-        super().__init__(examples=examples)
-
-    def __len__(self) -> int:
+    @field_validator("examples")
+    @classmethod
+    def unique_ids(cls, value: List[Example]) -> List[Example]:
+        ids = [ex.id for ex in value]
+        if len(ids) != len(set(ids)):
+            duplicates = {i for i in ids if ids.count(i) > 1}
+            raise ValueError(
+                f"Duplicate example ID(s) detected: {', '.join(map(str, duplicates))}"
+            )
+        return value
+    
+    def __len__(self) -> int:      
         return len(self.examples)
 
-
-def create_text2sql_example(id: str, question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:
-    # validate passed id
-    if not re.fullmatch(r"[1-9]\d*", id):
-        raise ValueError(f"Invalid example id {id!r}: must be a string representing a positive integer.")
-    
+def create_text2sql_example(id: str, question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:   
     return Example(
         id=id,
         input=ExampleInput(question=question),

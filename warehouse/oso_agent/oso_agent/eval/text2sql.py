@@ -12,7 +12,7 @@ from phoenix.experiments.types import Example
 from pydantic import BaseModel, Field
 
 from ..datasets.text2sql import TEXT2SQL_DATASET
-from ..datasets.uploader import upload_dataset, upload_specified_dataset
+from ..datasets.uploader import upload_dataset
 from ..tool.oso_mcp_client import OsoMcpClient
 from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
@@ -55,12 +55,10 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
     )
     logger.debug("Uploading dataset")
 
-    # stop here to check if specific evals have been defined
-    eval_ids = _raw_options.get('eval_ids')
-    if eval_ids:
-        dataset = upload_specified_dataset(phoenix_client, TEXT2SQL_DATASET, eval_ids, config, dataset_name="local_run_text2sql_experiment")
-    else:
-        dataset = upload_dataset(phoenix_client, config.eval_dataset_text2sql, TEXT2SQL_DATASET)
+    # check if specific evals have been defined
+    example_ids = _raw_options.get('example_ids')
+    dataset_name = "local_run_text2sql_experiment" if example_ids else config.eval_dataset_text2sql 
+    dataset = upload_dataset(phoenix_client, TEXT2SQL_DATASET, dataset_name, config, example_ids)
 
     async def task(example: Example) -> str:
         # print(f"Example: {example}")

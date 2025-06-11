@@ -1,6 +1,6 @@
 from ..types.datasets import ExampleList, create_text2sql_example
 
-TEXT2SQL_DATASET: ExampleList = ExampleList([
+TEXT2SQL_DATASET: ExampleList = ExampleList(examples=[
     create_text2sql_example(
         id="1",
         question="What's the total number of stars for each GitHub repo owned by opensource-observer?",
