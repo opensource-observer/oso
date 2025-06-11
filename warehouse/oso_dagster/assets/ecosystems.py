@@ -30,3 +30,15 @@ ecosystems_advisories = sql_assets(
     ],
     group_name="advisories",
 )
+
+ecosystems_ms = sql_assets(
+    "ecosystems",
+    SecretReference(group_name="ecosystems", key="commit_database"),
+    [
+        {"table": "commits"},
+        {"table": "committers"},
+        {"table": "contributions"},
+        {"table": "repositories"},
+    ],
+    group_name="ms",
+)
