@@ -45,6 +45,7 @@ const COLUMNS = {
     ID: "id",
     NAME: "org_name",
     CREATED_BY: "created_by",
+    DELETED_AT: "deleted_at",
   },
   USERS_BY_ORG: {
     USER_ID: "user_id",
@@ -130,6 +131,7 @@ async function fetchSpecificOrganization(
     `,
     )
     .eq(COLUMNS.ORGANIZATIONS.ID, orgId)
+    .is(COLUMNS.ORGANIZATIONS.DELETED_AT, null)
     .single();
 
   if (orgError || !org) {
