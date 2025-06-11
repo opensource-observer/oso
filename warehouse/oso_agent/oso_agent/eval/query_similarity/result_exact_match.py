@@ -31,8 +31,8 @@ async def exec_on_db(oso_mcp_client, query: str):
 
 
 
-def make_exec_match_evaluator(oso_mcp_client: OsoMcpClient, keep_distinct: bool = True) -> t.Callable[[str, dict[str, t.Any]], t.Awaitable[int]]:
-    async def _exec_match(output: str, expected: dict[str, t.Any]) -> int:
+def make_result_exact_match_evaluator(oso_mcp_client: OsoMcpClient, keep_distinct: bool = True) -> t.Callable[[str, dict[str, t.Any]], t.Awaitable[int]]:
+    async def result_exec_match(output: str, expected: dict[str, t.Any]) -> int:
         answer = load_expected_sql_answer(expected)
         output, answer = sanitize_query_from_agent(output), sanitize_query_from_agent(answer)
         output, answer = postprocess(output), postprocess(answer)
@@ -62,4 +62,4 @@ def make_exec_match_evaluator(oso_mcp_client: OsoMcpClient, keep_distinct: bool 
         except Exception as e:
             logger.exception(f"Result comparison failed: {e}")
             return -1
-    return _exec_match
+    return result_exec_match

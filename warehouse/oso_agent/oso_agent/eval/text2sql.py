@@ -20,7 +20,7 @@ from .query_similarity.naive_exact_set_match import (
     sql_query_type_similarity,
 )
 from .query_similarity.naive_result_exact_match import make_naive_exec_match_evaluator
-from .query_similarity.result_exact_match import make_exec_match_evaluator
+from .query_similarity.result_exact_match import make_result_exact_match_evaluator
 
 setup_nest_asyncio()
 
@@ -87,7 +87,7 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
 
     naive_exec_match = make_naive_exec_match_evaluator(oso_mcp_client)
-    exec_match = make_exec_match_evaluator(oso_mcp_client, keep_distinct=True)
+    exec_match = make_result_exact_match_evaluator(oso_mcp_client, keep_distinct=True)
         
     evaluators = [
         contains_select,
