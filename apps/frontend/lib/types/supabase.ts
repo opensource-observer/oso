@@ -176,7 +176,6 @@ export type Database = {
           data_type: string;
           description: string | null;
           foreign_keys: Json | null;
-          id: string;
           sample_data: string | null;
           table_id: string;
         };
@@ -185,7 +184,6 @@ export type Database = {
           data_type: string;
           description?: string | null;
           foreign_keys?: Json | null;
-          id?: string;
           sample_data?: string | null;
           table_id: string;
         };
@@ -194,7 +192,6 @@ export type Database = {
           data_type?: string;
           description?: string | null;
           foreign_keys?: Json | null;
-          id?: string;
           sample_data?: string | null;
           table_id?: string;
         };
