@@ -35,8 +35,6 @@ class Text2SqlExperimentOptions(BaseModel):
                     "Currently only 'default' is supported.",
     )
 
-
-
 async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _raw_options: dict[str, t.Any]):
     logger.info(f"Running text2sql experiment with: {config.model_dump_json()}")
 
@@ -56,7 +54,11 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
         }
     )
     logger.debug("Uploading dataset")
-    dataset = upload_dataset(phoenix_client, config.eval_dataset_text2sql, TEXT2SQL_DATASET)
+
+    # check if specific evals have been defined
+    example_ids = _raw_options.get('example_ids')
+    dataset_name = "local_run_text2sql_experiment" if example_ids else config.eval_dataset_text2sql 
+    dataset = upload_dataset(phoenix_client, TEXT2SQL_DATASET, dataset_name, config, example_ids)
 
     async def task(example: Example) -> str:
         # print(f"Example: {example}")
