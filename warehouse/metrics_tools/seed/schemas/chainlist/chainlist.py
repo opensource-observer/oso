@@ -3,8 +3,8 @@ from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
-class ChainlistRPCs(BaseModel):
-    """Stores RPC endpoints and chain information from Chainlist.org"""
+class Chainlist(BaseModel):
+    """Stores chain information from Chainlist.org"""
 
     name: str | None = Column("VARCHAR", description="The name of the chain")
     chain: str | None = Column("VARCHAR", description="The chain identifier")
@@ -28,10 +28,10 @@ class ChainlistRPCs(BaseModel):
 seed = SeedConfig(
     catalog="bigquery",
     schema="chainlist",
-    table="rpcs",
-    base=ChainlistRPCs,
+    table="chains",
+    base=Chainlist,
     rows=[
-        ChainlistRPCs(
+        Chainlist(
             name="Ethereum Mainnet",
             chain="ETH",
             chain_id=1,
@@ -50,7 +50,7 @@ seed = SeedConfig(
             dlt_load_id="1743009053.36983",
             dlt_id="eth1_llamarpc",
         ),
-        ChainlistRPCs(
+        Chainlist(
             name="Base",
             chain="ETH",
             chain_id=8453,
