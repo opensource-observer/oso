@@ -16,11 +16,6 @@ class Chainlist(BaseModel):
     native_currency_symbol: str | None = Column("VARCHAR", description="Symbol of the native currency")
     native_currency_decimals: int | None = Column("INTEGER", description="Decimals for the native currency")
     info_url: str | None = Column("VARCHAR", description="URL with more information about the chain")
-    rpc_url: str | None = Column("VARCHAR", description="The RPC endpoint URL")
-    rpc_tracking: str | None = Column("VARCHAR", description="Tracking information for the RPC endpoint")
-    rpc_is_open_source: bool | None = Column("BOOLEAN", description="Whether the RPC endpoint is open source")
-    explorer_url: str | None = Column("VARCHAR", description="URL of the chain explorer")
-    explorer_name: str | None = Column("VARCHAR", description="Name of the chain explorer")
     dlt_load_id: str | None = Column("VARCHAR", column_name="_dlt_load_id", description="Internal only value used by DLT")
     dlt_id: str | None = Column("VARCHAR", column_name="_dlt_id", description="Internal only unique value for the row")
 
@@ -42,11 +37,6 @@ seed = SeedConfig(
             native_currency_symbol="ETH",
             native_currency_decimals=18,
             info_url="https://ethereum.org",
-            rpc_url="https://eth.llamarpc.com",
-            rpc_tracking="none",
-            rpc_is_open_source=True,
-            explorer_url="https://etherscan.io",
-            explorer_name="etherscan",
             dlt_load_id="1743009053.36983",
             dlt_id="eth1_llamarpc",
         ),
@@ -61,11 +51,6 @@ seed = SeedConfig(
             native_currency_symbol="ETH",
             native_currency_decimals=18,
             info_url="https://base.org",
-            rpc_url="https://base.llamarpc.com",
-            rpc_tracking="none",
-            rpc_is_open_source=True,
-            explorer_url="https://basescan.org",
-            explorer_name="basescan",
             dlt_load_id="1743009053.36983",
             dlt_id="base_llamarpc",
         ),
