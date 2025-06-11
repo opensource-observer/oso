@@ -2,6 +2,7 @@ import { initPlasmicLoader } from "@plasmicapp/loader-nextjs/react-server-condit
 import _ from "lodash";
 import { assert, ensure } from "@opensource-observer/utils";
 import { PLASMIC_PROJECT_ID, PLASMIC_PROJECT_API_TOKEN } from "@/lib/config";
+import * as NextNavigation from "next/navigation";
 
 const DELIMITER = ",";
 const ids = _.compact(PLASMIC_PROJECT_ID.split(DELIMITER));
@@ -18,6 +19,7 @@ export const PLASMIC = initPlasmicLoader({
       token: ensure(token, "Plasmic Project API token is required"),
     };
   }),
+  nextNavigation: NextNavigation,
   // Fetches the latest revisions, whether or not they were unpublished!
   // Disable for production to ensure you render only published changes.
   preview: false,
