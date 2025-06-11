@@ -785,6 +785,11 @@ class OsoAppClient {
     });
   }
 
+  /**
+   * Upserts dynamic connector contexts for a given connector.
+   * - This will insert or update the table and column contexts
+   * @param args - Contains the table and columns data to upsert
+   */
   async upsertDynamicConnectorContexts(
     args: Partial<{
       table: DynamicTableContextsRow | null;
