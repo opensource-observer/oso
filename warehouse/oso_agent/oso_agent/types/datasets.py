@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing_extensions import TypedDict
 
 from ..util.query import (
@@ -40,15 +40,31 @@ class ExampleMetadata(TypedDict):
     real_user_question: bool
 
 class Example(BaseModel):
+    id: str
     input: ExampleInput
     output: ExampleOutput
     metadata: ExampleMetadata
 
-ExampleList = List[Example]
+class ExampleList(BaseModel):
+    examples: List[Example]
 
+    @field_validator("examples")
+    @classmethod
+    def unique_ids(cls, value: List[Example]) -> List[Example]:
+        ids = [ex.id for ex in value]
+        if len(ids) != len(set(ids)):
+            duplicates = {i for i in ids if ids.count(i) > 1}
+            raise ValueError(
+                f"Duplicate example ID(s) detected: {', '.join(map(str, duplicates))}"
+            )
+        return value
+    
+    def __len__(self) -> int:      
+        return len(self.examples)
 
-def create_text2sql_example(question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:
+def create_text2sql_example(id: str, question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:   
     return Example(
+        id=id,
         input=ExampleInput(question=question),
         output=ExampleOutput(answer=answer_query),
         metadata=ExampleMetadata(

@@ -1,9 +1,8 @@
-from typing import List
+from ..types.datasets import ExampleList, create_text2sql_example
 
-from ..types.datasets import Example, create_text2sql_example
-
-TEXT2SQL_DATASET: List[Example] = [
+TEXT2SQL_DATASET: ExampleList = ExampleList(examples=[
     create_text2sql_example(
+        id="1",
         question="What's the total number of stars for each GitHub repo owned by opensource-observer?",
         answer_query="""
             SELECT 
@@ -21,6 +20,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="2",
         question="How many issues were opened and closed by the project Hypercerts during the year 2023?",
         answer_query="""
             SELECT 
@@ -45,6 +45,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="3",
         question="How many projects are in one or more Optimism Retro Funding rounds?",
         answer_query="""
             SELECT 
@@ -62,6 +63,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="4",
         question="List all projects in the “ethereum-crypto-ecosystems” collection in alphabetical order",
         answer_query="""
             SELECT DISTINCT 
@@ -78,6 +80,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="5",
         question="List each project along with how many dependencies it's using.",
         answer_query="""
             SELECT 
@@ -94,6 +97,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="6",
         question="Show me the total gas used per day on Base over first month of 2024?",
         answer_query="""
             SELECT 
@@ -114,6 +118,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="7",
         question="How much funding does each project get on average?",
         answer_query="""
             SELECT 
@@ -128,6 +133,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="8",
         question="How many transactions did each project have on Cyber over the first quarter of 2025?",
         answer_query="""
             SELECT 
@@ -147,6 +153,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="9",
         question="Give me the daily commit count for the project \"Hypercerts\" over the first 2 weeks of 2024?",
         answer_query="""
             SELECT 
@@ -169,6 +176,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="10",
         question="List the names of GitHub repositories that are owned by opensource-observer.",
         answer_query="""
             SELECT DISTINCT 
@@ -184,6 +192,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="11",
         question="Which chains does OSO have \"active contract\" metrics for? List them in alphabetical order.",
         answer_query="""
             SELECT DISTINCT 
@@ -201,6 +210,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="12",
         question="Which project has increased DefiLlama TVL the most on any one chain (in absolute terms) in Q1 of 2025?",
         answer_query="""
             WITH cte_defillama_tvl_metrics AS (
@@ -264,6 +274,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="13",
         question="Give me a list of all projects that have had at least 1000 transactions on INK, SONEIUM, and UNICHAIN. Sort them by total transactions across all three chains in descending order.",
         answer_query="""
             WITH cte_relevant_metrics AS (
@@ -324,6 +335,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="14",
         question="How many projects are in the \"optimism\" collection?",
         answer_query="""
             SELECT 
@@ -337,7 +349,8 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
-        question="What’s the pull-request merge rate (merged vs total) for project “zora” the first quarter this year?",
+        id="15",
+        question="What's the pull-request merge rate (merged vs total) for project “zora” the first quarter this year?",
         answer_query="""
             SELECT 
                 SUM(CASE WHEN m.metric_name LIKE '%_merged_pull_requests_monthly' THEN tm.amount END) / 
@@ -357,6 +370,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="16",
         question="How many funding transactions did each project receive in Q1 2025? I want the projects with the most transactions shown first.",
         answer_query="""
             SELECT 
@@ -377,6 +391,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="17",
         question="Which projects have at least 100 GitHub stars and have received over $1M in funding?",
         answer_query="""
             SELECT 
@@ -395,6 +410,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="18",
         question="What projects saw their TVL exceed $10 M on both Optimism and Arbitrum in Q4 2024?",
         answer_query="""
             SELECT 
@@ -416,6 +432,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="19",
         question="How many full-time active developers were in the Filecoin and/or PL Network in 2022? How about in 2024? Tell me both the absolute numbers and the net increase / decrease between the two years.",
         answer_query="""
             SELECT 
@@ -441,6 +458,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="20",
         question="What collection is responsible for projects with the most PRs made ever?",
         answer_query="""
             SELECT 
@@ -460,6 +478,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="21",
         question="Which NPM packages are associated with projects that merged at least 50 pull requests this month?",
         answer_query="""
             WITH projects AS (
@@ -488,6 +507,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="22",
         question="Give me projects that received a grant in the last year and published at least one GitHub release.",
         answer_query="""
             SELECT 
@@ -508,6 +528,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="23",
         question="Which collections include projects that generated more than 1000 pull requests and over 10000 blockchain transactions all-time?",
         answer_query="""
             SELECT 
@@ -526,6 +547,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="24",
         question="Find projects with more than 5 dependencies and fewer than 100 GitHub commits in the past 30 days.",
         answer_query="""
             WITH fewer_commits AS (
@@ -554,6 +576,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="25",
         question="List projects that had over $50K in funding and recorded at least 1000 contract invocations on Base in the last 6 months.",
         answer_query="""
             SELECT 
@@ -574,6 +597,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="26",
         question="Show me all projects in the “gitcoin-oss” collection along with their total forks and total Ethereum gas used.",
         answer_query="""
             SELECT 
@@ -596,6 +620,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="27",
         question="List projects that published at least one new release in the last 6 months and had a user operation via paymaster in ERC-4337.",
         answer_query="""
             WITH recieved_grants AS (
@@ -628,6 +653,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="28",
         question="Which collection has seen the most TVL growth over the last year to now?",
         answer_query="""
             WITH tvl_data AS (
@@ -666,6 +692,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="29",
         question="Give me all of the collections that are in the top 10% for projects associated with them.",
         answer_query="""
             WITH collection_counts AS (
@@ -693,6 +720,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="30",
         question="What 5 projects have the most open issues over the last month? Compare this with the 5 projects with the most open issues over the last 3 months. Return them as one table side by side so I can compare the projects and their counts",
         answer_query="""
             WITH pastmonth_issues AS (
@@ -739,6 +767,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="31",
         question="What projects saw any growth in their TVL from 2025 so far compared with the end of 2024?",
         answer_query="""
             WITH tvl_data AS (
@@ -787,6 +816,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="32",
         question="List projects that have increased forks year over year for the past 3 years and are in the top 20% for GitHub stars (all time).",
         answer_query="""
             WITH forks_2022 AS (
@@ -870,6 +900,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="33",
         question="Show me projects where last week's opened-issue count was higher than their transaction count for the same period.",
         answer_query="""
             WITH weekly_counts AS (
@@ -897,6 +928,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="34",
         question="Which projects have a dependency count above the overall average and average daily TVL growth for the last year above 5%?",
         answer_query="""
             WITH dependency_counts AS (
@@ -949,6 +981,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=False
     ),
     create_text2sql_example(
+        id="35",
         question="Has the DeFi project Compound Finance had a significant increase in TVL on Base between October 2024 and March 2025?",
         answer_query="""
             WITH tvl_data AS (
@@ -987,6 +1020,7 @@ TEXT2SQL_DATASET: List[Example] = [
         real_user_question=True
     ),
     create_text2sql_example(
+        id="36",
         question="Show me the projects (sorted by the number of stars they've received) that are active in both the Solana and Arbitrum ecosystems.",
         answer_query="""
             SELECT tm.project_id
@@ -1005,4 +1039,4 @@ TEXT2SQL_DATASET: List[Example] = [
         question_categories=["developer_activity", "project_or_collection", "repo_or_package_metrics"],
         real_user_question=False
     )
-]
+])
