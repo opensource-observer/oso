@@ -11,7 +11,6 @@ from dagster import asset
 def chainlist() -> pl.DataFrame:
     """
     Fetches chain data from Chainlist.org and returns them as a Polars DataFrame.
-    Each row represents an RPC endpoint with its associated chain information.
     """
     url = "https://chainlist.org/rpcs.json"
     response = requests.get(url)
@@ -32,4 +31,6 @@ def chainlist() -> pl.DataFrame:
             "native_currency_decimals": chain.get("nativeCurrency", {}).get("decimals"),
             "info_url": chain.get("infoURL"),
         }
+        flattened_data.append(chain_info)
+        
     return pl.DataFrame(flattened_data)
