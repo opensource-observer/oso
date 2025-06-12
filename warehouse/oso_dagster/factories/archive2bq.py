@@ -2,11 +2,11 @@ import csv
 import os
 import shutil
 import tempfile
-import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, cast
 
+import pyarrow.parquet as pq
 from dagster import AssetExecutionContext, MaterializeResult, asset
 from dagster_gcp import BigQueryResource, GCSResource
 from google.api_core.exceptions import NotFound
@@ -52,7 +52,7 @@ class Archive2BqAssetConfig:
     # The source format of the archive file
     source_format: str
     # The function to retrieve the files from the archive
-    filter_fn: Callable[[str], bool]
+    filter_fn: Optional[Callable[[str], bool]] = None
     # The maximum depth of the files in the archive
     max_depth: int = 3
     # The schema overrides for the BigQuery table
@@ -61,6 +61,8 @@ class Archive2BqAssetConfig:
     staging_bucket: str
     # The dataset in BigQuery
     dataset_id: str
+    # Skip uncompression of archive files
+    skip_uncompression: bool = False
     # Dagster key prefix
     key_prefix: Optional[str | List[str]] = ""
     # Dagster asset name
@@ -84,12 +86,13 @@ def cleanup_tempdir(tempdir: str):
     shutil.rmtree(tempdir, ignore_errors=True)
 
 
-def extract_to_tempdir(source_url: str) -> str:
+def extract_to_tempdir(source_url: str, skip_uncompression: bool = False) -> str:
     """
     Extracts the source URL to the temporary directory using the extract function.
 
     Args:
         source_url (str): The URL of the archive file
+        skip_uncompression (bool): Whether to skip uncompression of the archive
 
     Returns:
         str: The path to the temporary directory
@@ -98,23 +101,25 @@ def extract_to_tempdir(source_url: str) -> str:
 
     with urllib.request.urlopen(source_url) as response:
         file_name = os.path.basename(source_url)
-        with open(os.path.join(tempdir, file_name), "wb") as f:
+        file_path = os.path.join(tempdir, file_name)
+        with open(file_path, "wb") as f:
             f.write(response.read())
 
-        shutil.unpack_archive(os.path.join(tempdir, file_name), tempdir)
+        if not skip_uncompression:
+            shutil.unpack_archive(file_path, tempdir)
 
     return tempdir
 
 
 def get_list_of_files(
-    tempdir: str, filter_fn: Callable[[str], bool], max_depth: int
+    tempdir: str, filter_fn: Optional[Callable[[str], bool]], max_depth: int
 ) -> List[str]:
     """
     Gets the list of files in the temporary directory, filtered by the filter function.
 
     Args:
         tempdir (str): The path to the temporary directory.
-        filter_fn (Callable[[str], bool]): A function that returns True for files to include.
+        filter_fn (Optional[Callable[[str], bool]]): A function that returns True for files to include. If None, all files are included.
         max_depth (int): The maximum depth of files to search.
 
     Returns:
@@ -130,7 +135,7 @@ def get_list_of_files(
 
         for filename in filenames:
             file_path = os.path.join(root, filename)
-            if filter_fn(file_path):
+            if filter_fn is None or filter_fn(file_path):
                 files.append(file_path)
 
     return files
@@ -174,6 +179,21 @@ def get_csv_schema(file_path: str) -> List[SchemaField]:
         header = next(reader)
 
     return [SchemaField(name, "STRING") for name in header]
+
+
+def get_parquet_schema(file_path: str) -> List[SchemaField]:
+    """
+    Gets the schema of the Parquet file.
+
+    Args:
+        file_path (str): The path to the Parquet file.
+
+    Returns:
+        List[SchemaField]: The schema of the Parquet file.
+    """
+    parquet_file = pq.ParquetFile(file_path)
+    schema = parquet_file.schema_arrow
+    return [SchemaField(field.name, "STRING") for field in schema]
 
 
 def upload_file_to_gcs(
@@ -265,22 +285,36 @@ def upload_file_to_bq(
 
     with bigquery.get_client() as bq_client:
         table_id = f"{asset_config.dataset_id}.{destination_table_name}"
-        job_config = LoadJobConfig(
-            schema=apply_schema_overrides(
-                get_csv_schema(file_path),
-                (
-                    asset_config.schema_overrides.get(destination_table_name, {})
-                    if asset_config.schema_overrides
-                    else {}
+        if asset_config.source_format == SourceFormat.CSV:
+            schema = get_csv_schema(file_path)
+        elif asset_config.source_format == SourceFormat.PARQUET:
+            schema = get_parquet_schema(file_path)
+        else:
+            raise ValueError(f"Unsupported source format: {asset_config.source_format}")
+
+        if asset_config.source_format == SourceFormat.CSV:
+            job_config = LoadJobConfig(
+                schema=apply_schema_overrides(
+                    schema,
+                    (
+                        asset_config.schema_overrides.get(destination_table_name, {})
+                        if asset_config.schema_overrides
+                        else {}
+                    ),
                 ),
-            ),
-            skip_leading_rows=(
-                1 if asset_config.source_format == SourceFormat.CSV else 0
-            ),
-            source_format=asset_config.source_format,
-            allow_quoted_newlines=True,
-            write_disposition=WriteDisposition.WRITE_TRUNCATE,
-        )
+                skip_leading_rows=1,
+                source_format=asset_config.source_format,
+                allow_quoted_newlines=True,
+                write_disposition=WriteDisposition.WRITE_TRUNCATE,
+            )
+        elif asset_config.source_format == SourceFormat.PARQUET:
+            job_config = LoadJobConfig(
+                autodetect=True,
+                source_format=asset_config.source_format,
+                write_disposition=WriteDisposition.WRITE_TRUNCATE,
+            )
+        else:
+            raise ValueError(f"Unsupported source format: {asset_config.source_format}")
 
         load_job = bq_client.load_table_from_uri(
             gcs_url, table_id, job_config=job_config
@@ -337,7 +371,7 @@ def create_archive2bq_asset(
         "opensource.observer/factory": "archive2bq",
     }
 
-    if asset_config.source_format not in [SourceFormat.CSV]:
+    if asset_config.source_format not in [SourceFormat.CSV, SourceFormat.PARQUET]:
         raise ValueError(f"Unsupported source format: {asset_config.source_format}")
 
     @asset(
@@ -356,7 +390,9 @@ def create_archive2bq_asset(
             f"Materializing asset {asset_config.key_prefix}/{asset_config.asset_name}"
         )
 
-        tempdir = extract_to_tempdir(asset_config.source_url)
+        tempdir = extract_to_tempdir(
+            asset_config.source_url, asset_config.skip_uncompression
+        )
 
         context.log.info(
             f"Archive2Bq: Extracted {asset_config.source_url} to {tempdir}"
