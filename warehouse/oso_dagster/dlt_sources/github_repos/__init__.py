@@ -84,6 +84,7 @@ class GithubClientConfig(BaseModel):
     rate_limit_max_retry: int = 5
     server_error_max_rety: int = 3
     http_cache: t.Optional[str] = None
+    rest_api_validate_body: bool = True
 
 
 class GithubRepositorySBOMRelationship(BaseModel):
@@ -406,6 +407,7 @@ class GithubRepositoryResolver:
                     RetryRateLimit(max_retry=config.rate_limit_max_retry),
                     RetryServerError(max_retry=config.server_error_max_rety),
                 ),
+                rest_api_validate_body=config.rest_api_validate_body,
             )
         logger.debug("Loading github client without a cache")
         return GitHub(
@@ -414,6 +416,7 @@ class GithubRepositoryResolver:
                 RetryRateLimit(max_retry=config.rate_limit_max_retry),
                 RetryServerError(max_retry=config.server_error_max_rety),
             ),
+            rest_api_validate_body=config.rest_api_validate_body,
         )
 
     def safe_parse_url(self, url: str) -> ParsedGithubURL | None:
@@ -562,6 +565,7 @@ async def oss_directory_github_funding_resource(
         gh_token=gh_token,
         rate_limit_max_retry=rate_limit_max_retry,
         server_error_max_rety=server_error_max_rety,
+        rest_api_validate_body=False,
     )
 
     gh = GithubRepositoryResolver.get_github_client(config)
@@ -570,20 +574,18 @@ async def oss_directory_github_funding_resource(
         repo=repo,
         path=path,
         headers={
-            "Accept": "application/vnd.github.object+json",
+            "Accept": "application/vnd.github.raw+json",
         },
     )
     request.raise_for_status()
 
-    if not isinstance(request.parsed_data, ContentFile):
-        raise ValueError(f"Expected ContentFile, got {type(request.parsed_data)}")
-
-    src = StringIO(
-        b64decode(request.parsed_data.content).decode("utf-8")
-        if request.parsed_data.encoding == "base64"
-        else request.parsed_data.content
-    )
+    src = StringIO(request.text)
     reader = csv.DictReader(src)
+
+    if not reader.fieldnames:
+        raise ValueError(
+            f"CSV file at {path} in {owner}/{repo} is empty or has no headers."
+        )
 
     for row in reader:
         yield row

@@ -4,8 +4,10 @@ import { ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "@/lib/types/supabase";
 import { MissingDataError, AuthError } from "@/lib/types/errors";
 import {
+  dynamicColumnContextsRowSchema,
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
+  dynamicTableContextsRowSchema,
 } from "@/lib/types/schema";
 import type {
   DynamicColumnContextsRow,
@@ -781,6 +783,43 @@ class OsoAppClient {
       const { dynamic_column_contexts: columns, ...table } = row;
       return { table, columns };
     });
+  }
+
+  /**
+   * Upserts dynamic connector contexts for a given connector.
+   * - This will insert or update the table and column contexts
+   * @param args - Contains the table and columns data to upsert
+   */
+  async upsertDynamicConnectorContexts(
+    args: Partial<{
+      table: DynamicTableContextsRow | null;
+      columns: DynamicColumnContextsRow[] | null;
+    }>,
+  ) {
+    const table = args.table
+      ? dynamicTableContextsRowSchema.parse(args.table)
+      : null;
+    const columns = args.columns
+      ? args.columns.map((col) => {
+          return dynamicColumnContextsRowSchema.parse(col);
+        })
+      : null;
+    if (table) {
+      const { error: tableError } = await this.supabaseClient
+        .from("dynamic_table_contexts")
+        .upsert(table);
+      if (tableError) {
+        throw tableError;
+      }
+    }
+    if (columns && columns.length > 0) {
+      const { error: columnsError } = await this.supabaseClient
+        .from("dynamic_column_contexts")
+        .upsert(columns);
+      if (columnsError) {
+        throw columnsError;
+      }
+    }
   }
 
   /**

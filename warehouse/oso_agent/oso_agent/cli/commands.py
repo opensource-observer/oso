@@ -169,9 +169,16 @@ class JsonType(click.ParamType):
     default="{}",
     help="JSON-encoded options for the experiment",
 )
+@click.option(
+    "--example-ids",
+    "-e",
+    type=str,
+    help="Comma-separated list of example IDs to run (e.g. 12,13,14).",
+    default="",
+)
 @pass_config
 def experiment(
-    config: AgentConfig, experiment_name: str, experiment_options: dict[str, t.Any]
+    config: AgentConfig, experiment_name: str, experiment_options: dict[str, t.Any], example_ids: str
 ):
     """Run a single experiment through the agent.
 
@@ -181,6 +188,11 @@ def experiment(
         with click.progressbar(
             length=1, label="Processing experiment", show_eta=False, show_percent=False
         ) as b:
+            experiment_options = {
+                **experiment_options,
+                "example_ids": [s.strip() for s in example_ids.split(",") if s.strip()]
+            }
+
             response = asyncio.run(
                 _run_experiment(experiment_name, config, experiment_options)
             )
