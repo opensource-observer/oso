@@ -140,6 +140,72 @@ export type Database = {
           },
         ];
       };
+      connector_relationships: {
+        Row: {
+          id: string;
+          org_id: string;
+          source_column_name: string;
+          source_table_id: string;
+          target_column_name: string | null;
+          target_oso_entity: string | null;
+          target_table_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          org_id: string;
+          source_column_name: string;
+          source_table_id: string;
+          target_column_name?: string | null;
+          target_oso_entity?: string | null;
+          target_table_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          org_id?: string;
+          source_column_name?: string;
+          source_table_id?: string;
+          target_column_name?: string | null;
+          target_oso_entity?: string | null;
+          target_table_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_org_id";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fk_source_column";
+            columns: ["source_table_id", "source_column_name"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_column_contexts";
+            referencedColumns: ["table_id", "column_name"];
+          },
+          {
+            foreignKeyName: "fk_source_table";
+            columns: ["source_table_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_table_contexts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fk_target_column";
+            columns: ["target_table_id", "target_column_name"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_column_contexts";
+            referencedColumns: ["table_id", "column_name"];
+          },
+          {
+            foreignKeyName: "fk_target_table";
+            columns: ["target_table_id"];
+            isOneToOne: false;
+            referencedRelation: "dynamic_table_contexts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       credit_transactions: {
         Row: {
           amount: number;
@@ -175,7 +241,6 @@ export type Database = {
           column_name: string;
           data_type: string;
           description: string | null;
-          foreign_keys: Json | null;
           sample_data: string | null;
           table_id: string;
         };
@@ -183,7 +248,6 @@ export type Database = {
           column_name: string;
           data_type: string;
           description?: string | null;
-          foreign_keys?: Json | null;
           sample_data?: string | null;
           table_id: string;
         };
@@ -191,7 +255,6 @@ export type Database = {
           column_name?: string;
           data_type?: string;
           description?: string | null;
-          foreign_keys?: Json | null;
           sample_data?: string | null;
           table_id?: string;
         };
