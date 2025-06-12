@@ -10,7 +10,7 @@ with activity_stats as (
       order by events.bucket_day 
       rows between unbounded preceding and current row
     ) as cumulative_sum,
-      events.bucket_day - date(first_last.first_commit_time) + 1 as total_days_count,
+    date_diff('day', date(first_last.first_commit_time), events.bucket_day) + 1 as total_days_count,
     sum(events.amount * events.amount) over (
       partition by events.event_source, events.to_artifact_id 
       order by events.bucket_day 
