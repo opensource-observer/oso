@@ -702,5 +702,23 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
+        "prs_comments": MetricQueryDef(
+            ref="code/prs_comments.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Pull Request Comments",
+                description="Metrics related to GitHub pull request review comments",
+            ),
+            additional_tags=["data_category=code"],
+        ),
     }, 
 )
