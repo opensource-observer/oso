@@ -41,7 +41,7 @@ def upload_dataset(phoenix_client: px.Client, code_examples: ExampleList, datase
 
     if example_ids and len(example_ids) > 0:
         selected_code_examples = ExampleList(
-            examples=[ex for ex in code_examples.examples if ex.id in example_ids]
+            examples=[ex for ex in code_examples.examples if ex.metadata['id'] in example_ids]
         )
         if not selected_code_examples.examples:
             raise ValueError(f"No examples matched IDs {example_ids}")
