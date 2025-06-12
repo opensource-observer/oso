@@ -13,14 +13,9 @@ from pydantic import BaseModel, Field
 from ..datasets.text2sql import TEXT2SQL_DATASET
 from ..datasets.uploader import upload_dataset
 from ..tool.oso_mcp_client import OsoMcpClient
+from ..types.eval import Text2SQLExperimentWorkflow
 from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
-from .query_similarity.naive_exact_set_match import (
-    sql_oso_models_used_similarity,
-    sql_query_type_similarity,
-)
-from .query_similarity.naive_result_exact_match import make_naive_exec_match_evaluator
-from .query_similarity.result_exact_match import make_result_exact_match_evaluator
 
 setup_nest_asyncio()
 
@@ -86,15 +81,16 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
     logger.debug("Creating Oso MCP client")
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
 
-    naive_exec_match = make_naive_exec_match_evaluator(oso_mcp_client)
-    exec_match = make_result_exact_match_evaluator(oso_mcp_client, keep_distinct=True)
-        
+    workflow = Text2SQLExperimentWorkflow(oso_mcp_client=oso_mcp_client, keep_distinct=True)
+
     evaluators = [
         contains_select,
-        sql_query_type_similarity,
-        sql_oso_models_used_similarity,
-        naive_exec_match,
-        exec_match
+        workflow.check_valid_SQL,
+        workflow.check_valid_SQL_result,
+        workflow.sql_query_type_similarity,
+        workflow.sql_oso_models_used_similarity,
+        workflow.result_exact_match,
+        workflow.result_fuzzy_match
     ]
 
     logger.debug("Running experiment")
