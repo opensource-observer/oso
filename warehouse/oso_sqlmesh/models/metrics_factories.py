@@ -720,5 +720,29 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
-    }, 
+        "project_velocity": MetricQueryDef(
+            ref="code/project_velocity.sql",
+            vars={
+                "weight_issues_closed": 1,
+                "weight_commits": 1,
+                "weight_pr_reviews": 1,
+                "weight_contributors": 2,
+            },
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Project Velocity",
+                description="Measures development speed through a weighted combination of issues closed, commits, pull request reviews, and contributors. Provides insight into project innovation and activity levels.",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+    },
 )
