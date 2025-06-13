@@ -10,11 +10,11 @@ def openlabelsinitiative_data(global_config: DagsterConfig) -> AssetFactoryRespo
     asset = create_archive2bq_asset(
         Archive2BqAssetConfig(
             key_prefix="openlabelsinitiative",
+            dataset_id="openlabelsinitiative",            
             asset_name="labels_decoded",
             source_url="https://api.growthepie.xyz/v1/oli/labels_decoded.parquet",
             source_format=SourceFormat.PARQUET,
             staging_bucket=global_config.staging_bucket_url,
-            dataset_id="labels_decoded",
             skip_uncompression=True,
             deps=[],
         )
