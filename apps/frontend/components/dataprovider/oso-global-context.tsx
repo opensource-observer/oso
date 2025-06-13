@@ -5,6 +5,7 @@ import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
 import * as config from "@/lib/config";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
+import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
 
 const PLASMIC_KEY = "globals";
 const PLASMIC_CONTEXT_NAME = "OsoGlobalContext";
@@ -20,7 +21,14 @@ type SnackbarState = ADT<{
   };
 }>;
 
-const OsoGlobalActions: any = {
+type ExtractMethodNames<T> = {
+  [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;
+}[keyof T];
+type ExtractMethods<T> = {
+  [K in ExtractMethodNames<T>]: any;
+};
+
+const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = {
   updateMyUserProfile: { parameters: [{ name: "args", type: "object" }] },
   createApiKey: { parameters: [{ name: "args", type: "object" }] },
   deleteApiKey: { parameters: [{ name: "args", type: "object" }] },
@@ -58,6 +66,12 @@ const OsoGlobalActions: any = {
     parameters: [{ name: "args", type: "object" }],
   },
   getConnectorRelationships: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  createConnectorRelationship: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  deleteConnectorRelationship: {
     parameters: [{ name: "args", type: "object" }],
   },
 };
@@ -177,6 +191,16 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       getConnectorRelationships: (args: any) =>
         client!
           .getConnectorRelationships(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      createConnectorRelationship: (args: any) =>
+        client!
+          .createConnectorRelationship(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      deleteConnectorRelationship: (args: any) =>
+        client!
+          .deleteConnectorRelationship(args)
           .then(handleSuccess)
           .catch(handleError),
     }),
