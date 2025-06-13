@@ -11,7 +11,8 @@ MODEL (
 SELECT
   cl.chain_id,
   cl.name AS chainlist_name,
-  UPPER(cid_to_name.chain_name) AS oso_chain_name
+  UPPER(cid_to_name.chain_name) AS oso_chain_name,
+  cid_to_name.display_name AS display_name
 FROM oso.stg_chainlist__chains AS cl
 JOIN oso.seed_chain_id_to_chain_name AS cid_to_name
   ON cl.chain_id = cid_to_name.chain_id

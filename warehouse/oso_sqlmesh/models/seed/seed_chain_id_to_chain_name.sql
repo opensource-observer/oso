@@ -6,7 +6,8 @@ MODEL (
   ),
   columns (
     chain_id INT64,
-    chain_name TEXT
+    chain_name TEXT,
+    display_name TEXT
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
