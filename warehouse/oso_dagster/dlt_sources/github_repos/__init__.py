@@ -85,16 +85,7 @@ class GithubClientConfig(BaseModel):
     server_error_max_rety: int = 3
     http_cache: t.Optional[str] = None
     rest_api_validate_body: bool = True
-
-
-class GithubRepositorySBOMRelationship(BaseModel):
-    artifact_namespace: str
-    artifact_name: str
-    artifact_source: str
-    relationship_type: t.Optional[str]
-    spdx_element_id: t.Optional[str]
-    related_spdx_element: t.Optional[str]
-    snapshot_at: datetime
+    timeout: t.Optional[int] = 60
 
 
 class InvalidGithubURL(Exception):
@@ -341,59 +332,23 @@ class GithubRepositoryResolver:
             )
             return []
 
-    async def get_sbom_relationships_for_repo(
-        self, owner: str, name: str
-    ) -> t.List[GithubRepositorySBOMRelationship]:
-        try:
-            sbom = await self._gh.rest.dependency_graph.async_export_sbom(
-                owner,
-                name,
-            )
-            logger.debug("Got SBOM for %s", f"{owner}/{name}")
-            graph = sbom.parsed_data.sbom
-            relationship_list: t.List[GithubRepositorySBOMRelationship] = []
+    async def execute_graphql_query(
+        self, query: str, variables: t.Dict[str, t.Any]
+    ) -> t.Dict[str, t.Any]:
+        """Execute a GraphQL query with the given variables."""
+        return await self._gh.async_graphql(query, variables)
 
-            if not graph.relationships:
-                logger.warning(
-                    "Skipping sbom %s, no relationships found",
-                    f"{owner}/{name}",
-                )
-                return []
+    def paginate_graphql_query(
+        self, query: str, variables: t.Dict[str, t.Any]
+    ) -> t.Iterator[t.Dict[str, t.Any]]:
+        """
+        Generic GraphQL pagination helper using githubkit's built-in pagination.
 
-            for relationship in graph.relationships:
-                relationship_list.append(
-                    GithubRepositorySBOMRelationship(
-                        artifact_namespace=owner,
-                        artifact_name=name,
-                        artifact_source="GITHUB",
-                        relationship_type=getattr(
-                            relationship, "relationship_type", None
-                        ),
-                        spdx_element_id=getattr(relationship, "spdx_element_id", None),
-                        related_spdx_element=getattr(
-                            relationship, "related_spdx_element", None
-                        ),
-                        snapshot_at=arrow.get(graph.creation_info.created).datetime,
-                    )
-                )
-
-            return relationship_list
-        except RequestFailed as exception:
-            if exception.response.status_code == 404:
-                logger.warning("Skipping %s, no SBOM found", f"{owner}/{name}")
-            else:
-                logger.error("Error getting SBOM: %s", exception)
-            return []
-        except ValidationError as exception:
-            validation_errors = [
-                f"{error['loc'][0]}: {error['msg']}" for error in exception.errors()
-            ]
-            logger.warning(
-                "Skipping %s, SBOM is malformed: %s",
-                f"{owner}/{name}",
-                ", ".join(validation_errors),
-            )
-            return []
+        Args:
+            query: The GraphQL query string with cursor and pageInfo
+            variables: Variables for the query
+        """
+        return self._gh.graphql.paginate(query, variables)
 
     @staticmethod
     def get_github_client(config: GithubClientConfig) -> GitHub:
@@ -408,6 +363,7 @@ class GithubRepositoryResolver:
                     RetryServerError(max_retry=config.server_error_max_rety),
                 ),
                 rest_api_validate_body=config.rest_api_validate_body,
+                timeout=config.timeout,
             )
         logger.debug("Loading github client without a cache")
         return GitHub(
@@ -417,6 +373,7 @@ class GithubRepositoryResolver:
                 RetryServerError(max_retry=config.server_error_max_rety),
             ),
             rest_api_validate_body=config.rest_api_validate_body,
+            timeout=config.timeout,
         )
 
     def safe_parse_url(self, url: str) -> ParsedGithubURL | None:
@@ -589,42 +546,3 @@ async def oss_directory_github_funding_resource(
 
     for row in reader:
         yield row
-
-
-@dlt.resource(
-    name="sbom_relationships",
-    table_name="sbom_relationships",
-    columns=pydantic_to_dlt_nullable_columns(GithubRepositorySBOMRelationship),
-    write_disposition="append",
-)
-@dlt_parallelize(
-    ParallelizeConfig(
-        chunk_size=16,
-        parallel_batches=5,
-        wait_interval=45,
-    )
-)
-def oss_directory_github_sbom_relationships_resource(
-    all_repo_urls: t.List[t.Tuple[str, str]],
-    /,
-    gh_token: str = dlt.secrets.value,
-    rate_limit_max_retry: int = 5,
-    server_error_max_rety: int = 3,
-):
-    """Retrieve SBOM relationship information for GitHub repositories"""
-
-    config = GithubClientConfig(
-        gh_token=gh_token,
-        rate_limit_max_retry=rate_limit_max_retry,
-        server_error_max_rety=server_error_max_rety,
-    )
-
-    gh = GithubRepositoryResolver.get_github_client(config)
-    resolver = GithubRepositoryResolver(gh)
-
-    funcs = (
-        partial(resolver.get_sbom_relationships_for_repo, owner, repo)
-        for owner, repo in all_repo_urls
-    )
-
-    yield from with_progress_logger(funcs)
