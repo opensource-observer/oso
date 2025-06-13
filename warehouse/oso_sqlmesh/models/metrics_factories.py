@@ -73,6 +73,7 @@ timeseries_metrics(
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
+        "int_events_aux_prs",
     ],
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
