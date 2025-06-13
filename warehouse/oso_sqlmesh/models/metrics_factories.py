@@ -745,5 +745,23 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
+        "self_merge_rates": MetricQueryDef(
+            ref="code/self_merge_rates.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Self Merge Rates",
+                description="Metrics related to self-merged pull requests without comments as a ratio of total merged pull requests",
+            ),
+            additional_tags=["data_category=code"],
+        ),
     },
 )
