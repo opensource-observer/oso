@@ -1,6 +1,4 @@
-import { Web3 } from "web3";
-import { BigQuery, BigQueryOptions } from "@google-cloud/bigquery";
-import _ from "lodash";
+import { ContractsValidator } from "./contracts.js";
 
 export interface EVMNetworkValidator {
   isEOA(addr: string): Promise<boolean>;
@@ -10,114 +8,75 @@ export interface EVMNetworkValidator {
 }
 
 interface GenericEVMNetworkValidatorOptions {
-  rpcUrl: string;
-  deployerTable: string;
-  bqOptions?: BigQueryOptions;
+  apiKey: string;
+  apiEndpoint?: string;
 }
 
 /**
  * In general most EVM networks should be able to inherit directly from this.
  */
 export class GenericEVMNetworkValidator implements EVMNetworkValidator {
-  private web3: Web3;
-  private bq: BigQuery;
-  private deployerTable: string;
+  private validator: ContractsValidator;
 
   static create(
     options: GenericEVMNetworkValidatorOptions,
   ): EVMNetworkValidator {
-    const web3 = new Web3(options.rpcUrl);
-    const bq = new BigQuery(options.bqOptions);
-    return new GenericEVMNetworkValidator(web3, bq, options.deployerTable);
+    return new GenericEVMNetworkValidator(options);
   }
 
-  constructor(web3: Web3, bq: BigQuery, deployerTable: string) {
-    this.web3 = web3;
-    this.bq = bq;
-    this.deployerTable = deployerTable;
+  constructor(options: GenericEVMNetworkValidatorOptions) {
+    this.validator = new ContractsValidator(
+      'ANY_EVM',
+      options.apiKey,
+      options.apiEndpoint
+    );
   }
 
   async isEOA(addr: string): Promise<boolean> {
-    const code = await this.web3.eth.getCode(addr);
-    return code === "0x";
+    return this.validator.isEOA(addr);
   }
 
   async isContract(addr: string): Promise<boolean> {
-    return !(await this.isEOA(addr));
+    return this.validator.isContract(addr);
   }
 
   async isFactory(addr: string): Promise<boolean> {
-    const isContract = await this.isContract(addr);
-    if (!isContract) {
-      return false;
-    }
-    return true;
+    return this.validator.isFactory(addr);
   }
 
   async isDeployer(addr: string): Promise<boolean> {
-    const query = `
-    SELECT * 
-    FROM ${this.deployerTable}
-    WHERE LOWER(deployer_address) = '${addr}'
-    `;
-    const [job] = await this.bq.createQueryJob(query);
-    const [results] = await job.getQueryResults();
-    if (results.length !== 0) {
-      return true;
-    } else {
-      return false;
-    }
+    return this.validator.isDeployer(addr);
   }
 }
 
-export type EthereumOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "deployerTable"
->;
+export type EthereumOptions = GenericEVMNetworkValidatorOptions;
 
 export function EthereumValidator(options: EthereumOptions) {
   return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_ethereum__deployers`",
-    }),
+    options
   );
 }
 
-export type ArbitrumOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "deployerTable"
->;
+export type ArbitrumOptions = GenericEVMNetworkValidatorOptions;
 
 export function ArbitrumValidator(options: ArbitrumOptions) {
   return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_arbitrum__deployers`",
-    }),
+    options
   );
 }
 
-export type BaseOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "deployerTable"
->;
+export type BaseOptions = GenericEVMNetworkValidatorOptions;
 
 export function BaseValidator(options: BaseOptions) {
   return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_base__deployers`",
-    }),
+    options
   );
 }
 
-export type OptimismOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "deployerTable"
->;
+export type OptimismOptions = GenericEVMNetworkValidatorOptions;
 
 export function OptimismValidator(options: OptimismOptions) {
   return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_optimism__deployers`",
-    }),
+    options
   );
 }
