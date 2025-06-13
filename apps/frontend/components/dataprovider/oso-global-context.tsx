@@ -48,6 +48,9 @@ const OsoGlobalActions: any = {
   syncConnector: {
     parameters: [{ name: "args", type: "object" }],
   },
+  getDynamicConnectorAndContextsByOrgId: {
+    parameters: [{ name: "args", type: "object" }],
+  },
   getDynamicConnectorContexts: {
     parameters: [{ name: "args", type: "object" }],
   },
@@ -153,6 +156,11 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
         client!.deleteConnector(args).then(handleSuccess).catch(handleError),
       syncConnector: (args: any) =>
         client!.syncConnector(args).then(handleSuccess).catch(handleError),
+      getDynamicConnectorAndContextsByOrgId: (args: any) =>
+        client!
+          .getDynamicConnectorAndContextsByOrgId(args)
+          .then(handleSuccess)
+          .catch(handleError),
       getDynamicConnectorContexts: (args: any) =>
         client!
           .getDynamicConnectorContexts(args)
