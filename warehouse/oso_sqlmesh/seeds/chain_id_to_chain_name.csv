@@ -9,15 +9,15 @@ chain_id,chain_name,display_name
 185,MINT,Mint
 250,FANTOM,Fantom
 252,FRAX,Fraxtal
-254,SWAN,Swan
+254,SWAN,Swan Chain
 255,KROMA,Kroma
 291,ORDERLY,Orderly
 324,ZKSYNC_ERA,ZkSync Era
 360,SHAPE,Shape
 424,PGN,PGN
-480,WORLDCHAIN,Worldchain
+480,WORLDCHAIN,World Chain
 5112,HAM,Ham
-60808,BOB,Bob
+60808,BOB,BOB
 65536,AUTOMATA,Automata
 6805,RACE,Race
 690,REDSTONE,Redstone
