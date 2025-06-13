@@ -1,0 +1,245 @@
+test_self_merge_rate_to_project_daily_basic:
+  model: oso.self_merge_rate_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-05
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # User 1 opens and merges their own PR - self merge
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 1
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 1
+      # User 2 opens PR, User 3 merges it - not self merge
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 1
+      - to_artifact_id: repo_1
+        from_artifact_id: user_3
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 1
+      # User 4 merges PR without opening (external contribution)
+      - to_artifact_id: repo_1
+        from_artifact_id: user_4
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 1
+      # Second repository with different patterns
+      - to_artifact_id: repo_2
+        from_artifact_id: user_5
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-02
+        amount: 2
+      - to_artifact_id: repo_2
+        from_artifact_id: user_5
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-02
+        amount: 1
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+  outputs:
+    query:
+      rows:
+      # repo_1: 1 self-merge out of 3 total merges = 33.33%
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: self_merge_rate_daily
+        amount: 33.333333333333336
+      # repo_2: 1 self-merge out of 1 total merge = 100%
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: self_merge_rate_daily
+        amount: 100.0
+
+test_self_merge_rate_to_project_daily_no_self_merges:
+  model: oso.self_merge_rate_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-02
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # All PRs opened by different users than who merge them
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: user_3
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 1
+      - to_artifact_id: repo_1
+        from_artifact_id: user_4
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 1
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      # 0 self-merges out of 3 total merges = 0%
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: self_merge_rate_daily
+        amount: 0.0
+
+test_self_merge_rate_to_project_daily_all_self_merges:
+  model: oso.self_merge_rate_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # All PRs are self-merged
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 1
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 1
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      # 3 self-merges out of 3 total merges = 100%
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: self_merge_rate_daily
+        amount: 100.0
+
+test_self_merge_rate_to_project_daily_no_merged_prs:
+  model: oso.self_merge_rate_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # Only opened PRs, no merges
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 3
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 2
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows: []
+
+test_self_merge_rate_to_project_daily_partial_self_merge:
+  model: oso.self_merge_rate_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # User opens 3 PRs but only merges 1 of them
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 3
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 1
+      # Other user merges remaining PRs
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 2
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      # 1 self-merge out of 3 total merges = 33.33%
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: self_merge_rate_daily
+        amount: 33.333333333333336
