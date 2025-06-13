@@ -754,6 +754,56 @@ class OsoAppClient {
   }
 
   /**
+   * Gets dynamic connectors and contextual information.
+   * @param id
+   * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
+   * - Returns the tables context and an array of column contexts for the connector
+   */
+  async getDynamicConnectorAndContextsByOrgId(args: { orgId: string }): Promise<
+    {
+      connector: DynamicConnectorsRow;
+      contexts: {
+        table: DynamicTableContextsRow;
+        columns: DynamicColumnContextsRow[];
+      }[];
+    }[]
+  > {
+    const orgId = ensure(args.orgId, "id is required to get contexts");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_connectors")
+      .select("*, dynamic_table_contexts(*, dynamic_column_contexts(*))")
+      .eq("org_id", orgId);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find connectors for org_id=${orgId}`,
+      );
+    }
+
+    const groupedData = _.groupBy(data, "dynamic_connectors.id");
+
+    return Object.entries(groupedData).map(([_key, rows]) => {
+      const { dynamic_table_contexts: _, ...unparsedConnector } = rows[0];
+      const connector = dynamicConnectorsRowSchema.parse(unparsedConnector);
+      const contexts = rows.flatMap((row) => {
+        return row.dynamic_table_contexts.flatMap((tableContexts) => {
+          const { dynamic_column_contexts: columns, ...table } = tableContexts;
+          return {
+            table: dynamicTableContextsRowSchema.parse(table),
+            columns: columns.map((c) =>
+              dynamicColumnContextsRowSchema.parse(c),
+            ),
+          };
+        });
+      });
+      return { connector, contexts };
+    });
+  }
+
+  /**
    * Gets contextual information for a dynamic connector's tables and columns.
    * @param id
    * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
