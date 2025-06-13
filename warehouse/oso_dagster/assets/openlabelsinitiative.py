@@ -13,9 +13,9 @@ def openlabelsinitiative_data(global_config: DagsterConfig) -> AssetFactoryRespo
             asset_name="labels_decoded",
             source_url="https://api.growthepie.xyz/v1/oli/labels_decoded.parquet",
             source_format=SourceFormat.PARQUET,
-            filter_fn=lambda file: file.endswith(".parquet"),
             staging_bucket=global_config.staging_bucket_url,
             dataset_id="labels_decoded",
+            skip_uncompression=True,
             deps=[],
         )
     )
