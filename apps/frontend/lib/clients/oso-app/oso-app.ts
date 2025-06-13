@@ -10,6 +10,7 @@ import {
   dynamicTableContextsRowSchema,
 } from "@/lib/types/schema";
 import type {
+  ConnectorRelationshipsRow,
   DynamicColumnContextsRow,
   DynamicConnectorsInsert,
   DynamicConnectorsRow,
@@ -870,6 +871,31 @@ class OsoAppClient {
         throw columnsError;
       }
     }
+  }
+
+  /**
+   * Gets connector relationships for an organization.
+   * @param orgId
+   */
+  async getConnectorRelationships(args: {
+    orgId: string;
+  }): Promise<ConnectorRelationshipsRow[]> {
+    const orgId = ensure(args.orgId, "orgId is required to get relationships");
+
+    const { data, error } = await this.supabaseClient
+      .from("connector_relationships")
+      .select("*")
+      .eq("org_id", orgId);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find connector relationships for org_id=${orgId}`,
+      );
+    }
+
+    return data;
   }
 
   /**

@@ -57,6 +57,9 @@ const OsoGlobalActions: any = {
   upsertDynamicConnectorContexts: {
     parameters: [{ name: "args", type: "object" }],
   },
+  getConnectorRelationships: {
+    parameters: [{ name: "args", type: "object" }],
+  },
 };
 
 // Users will be able to set these props in Studio.
@@ -169,6 +172,11 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       upsertDynamicConnectorContexts: (args: any) =>
         client!
           .upsertDynamicConnectorContexts(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      getConnectorRelationships: (args: any) =>
+        client!
+          .getConnectorRelationships(args)
           .then(handleSuccess)
           .catch(handleError),
     }),
