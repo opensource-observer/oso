@@ -32,6 +32,7 @@ class ExampleOutput(TypedDict):
     answer: str
 
 class ExampleMetadata(TypedDict):
+    id: str
     priority: ExamplePriority
     difficulty: ExampleDifficulty
     query_type: List[ExampleQueryType]
@@ -40,7 +41,6 @@ class ExampleMetadata(TypedDict):
     real_user_question: bool
 
 class Example(BaseModel):
-    id: str
     input: ExampleInput
     output: ExampleOutput
     metadata: ExampleMetadata
@@ -51,7 +51,7 @@ class ExampleList(BaseModel):
     @field_validator("examples")
     @classmethod
     def unique_ids(cls, value: List[Example]) -> List[Example]:
-        ids = [ex.id for ex in value]
+        ids = [ex.metadata['id'] for ex in value]
         if len(ids) != len(set(ids)):
             duplicates = {i for i in ids if ids.count(i) > 1}
             raise ValueError(
@@ -64,10 +64,10 @@ class ExampleList(BaseModel):
 
 def create_text2sql_example(id: str, question: str, answer_query: str, priority: ExamplePriority, difficulty: ExampleDifficulty, question_categories: List[ExampleQuestionCategories], real_user_question: bool) -> Example:   
     return Example(
-        id=id,
         input=ExampleInput(question=question),
         output=ExampleOutput(answer=answer_query),
         metadata=ExampleMetadata(
+            id=id,
             priority=priority,
             difficulty=difficulty,
             query_type=determine_query_type(answer_query),

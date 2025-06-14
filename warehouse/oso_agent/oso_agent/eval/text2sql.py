@@ -1,4 +1,3 @@
-import json
 import logging
 import typing as t
 
@@ -14,11 +13,9 @@ from pydantic import BaseModel, Field
 from ..datasets.text2sql import TEXT2SQL_DATASET
 from ..datasets.uploader import upload_dataset
 from ..tool.oso_mcp_client import OsoMcpClient
+from ..types.eval import Text2SQLExperimentWorkflow
 from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
-from ..util.jaccard import jaccard_similarity_set, jaccard_similarity_str
-from ..util.query import determine_query_type, determine_sql_models_used
-from .valid_sql import is_valid_sql
 
 setup_nest_asyncio()
 
@@ -81,54 +78,18 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
 
     contains_select = ContainsAnyKeyword(keywords=["SELECT"])
 
-    def load_expected_sql_answer(expected: dict[str, t.Any]) -> str:
-        """Load the expected answer from the example."""
-        expected_answer = expected.get("answer")
-        if not expected_answer:
-            logger.warning("No expected answer provided, defaulting to 'SELECT 1'")
-            expected_answer = "SELECT 1"
-        return expected_answer
-
-    def sql_query_type_similarity(output: str, expected: dict[str, t.Any], metadata: dict[str, t.Any]) -> float:
-        """Evaluate the similarity between the output and expected SQL query types using Jaccard similarity."""
-
-        output_query_types = determine_query_type(output)
-        expected_query_types = metadata.get('query_type') or []
-
-        return jaccard_similarity_set(set(output_query_types), set(expected_query_types))
-
-    def sql_oso_models_used_similarity(output: str, expected: dict[str, t.Any], metadata: dict[str, t.Any]) -> float:
-        """Evaluate the similarity between the output and expected oso models used using Jaccard similarity."""
-        output_oso_models_used = determine_sql_models_used(output)
-        expected_oso_models_used = metadata.get('sql_models_used') or []
-
-        return jaccard_similarity_set(set(output_oso_models_used), set(expected_oso_models_used))
-
     logger.debug("Creating Oso MCP client")
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
-    async def sql_result_similarity(output: str, expected: dict[str, t.Any]) -> float:
-        """Evaluate the similarity between results post-query"""
-        expected_answer = load_expected_sql_answer(expected)
-        expected_response = await oso_mcp_client.query_oso(expected_answer)
-        expected_str = json.dumps(expected_response)
-        # print(f"Expected Str: {expected_str}")
-
-        # We might be testing agents that produce SQL or text results
-        if is_valid_sql(output, dialect="trino"):
-            # If the output is a valid SQL query, we can run it against the OSO MCP client and compare results
-            output_response = await oso_mcp_client.query_oso(output)
-            output_str = json.dumps(output_response)
-            return jaccard_similarity_str(output_str, expected_str)
-            # print(f"Output Response: {output_str}")
-        else:
-            # Otherwise, just try to compare the output directly
-            return jaccard_similarity_str(output, expected_str)
+    workflow = Text2SQLExperimentWorkflow(oso_mcp_client=oso_mcp_client, keep_distinct=True)
 
     evaluators = [
         contains_select,
-        sql_query_type_similarity,
-        sql_oso_models_used_similarity,
-        sql_result_similarity,
+        workflow.check_valid_SQL,
+        workflow.check_valid_SQL_result,
+        workflow.sql_query_type_similarity,
+        workflow.sql_oso_models_used_similarity,
+        workflow.result_exact_match,
+        workflow.result_fuzzy_match
     ]
 
     logger.debug("Running experiment")
