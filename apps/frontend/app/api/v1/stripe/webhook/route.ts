@@ -2,12 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { getStripeClient, extractIntentString } from "@/lib/clients/stripe";
-import { createPrivilegedSupabaseClient } from "@/lib/clients/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { STRIPE_WEBHOOK_SECRET } from "@/lib/config";
 
 const stripe = getStripeClient();
-const supabase = createPrivilegedSupabaseClient();
+const supabase = createAdminClient();
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
