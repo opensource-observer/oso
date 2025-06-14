@@ -1,7 +1,7 @@
 import { POST, DELETE } from "@/app/api/v1/connector/route";
 import { NextRequest } from "next/server";
 import { getTrinoAdminClient } from "@/lib/clients/trino";
-import { createPrivilegedSupabaseClient } from "@/lib/clients/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/lib/types/supabase"; // Assuming Database types are here
 import { randomUUID } from "crypto";
@@ -16,8 +16,7 @@ const mockTrinoClient = {
 
 const mockGetTrinoAdminClient = getTrinoAdminClient as jest.Mock;
 
-const supabaseAdminClient: SupabaseClient<Database> =
-  createPrivilegedSupabaseClient();
+const supabaseAdminClient: SupabaseClient<Database> = createAdminClient();
 
 describe("API /api/v1/connector", () => {
   let testUser: any;

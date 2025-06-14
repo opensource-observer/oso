@@ -12,7 +12,12 @@ WITH pivoted AS (
   SELECT
     CASE WHEN tag_id = 'deployer_address' THEN tag_value ELSE address END
       AS address,
-    CAST(SPLIT_PART(chain_id, ':', 2) AS INTEGER) AS chain_id,  
+    CASE 
+      WHEN chain_id = 'eip155:any' THEN 1
+      WHEN chain_id LIKE 'eip155:%'
+        THEN CAST(SPLIT_PART(chain_id, ':', 2) AS INTEGER)
+      ELSE NULL
+    END AS chain_id,
     MAX(CASE WHEN tag_id = 'owner_project' THEN tag_value ELSE NULL END)
       AS owner_project,
     FLATTEN(ARRAY_AGG(
@@ -42,9 +47,11 @@ normalized AS (
 )
 
 SELECT
-  address,
-  chain_id,
-  @chain_id_to_chain_name(chain_id) AS chain,
-  owner_project,
-  address_type
-FROM normalized
+  n.address,
+  n.chain_id,
+  cl.oso_chain_name AS chain,
+  n.owner_project,
+  n.address_type
+FROM normalized AS n
+JOIN oso.int_chainlist AS cl
+  ON n.chain_id = cl.chain_id

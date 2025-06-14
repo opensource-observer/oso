@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { createBrowserClient } from "@/lib/supabase/browser";
 import { User } from "@/lib/types/user";
 import { useRouter } from "next/navigation";
 import { logger } from "@/lib/logger";
 
-const supabaseClient = createNormalSupabaseClient();
+const supabaseClient = createBrowserClient();
 
 export function useAuth() {
   const [user, setUser] = useState<User>({
