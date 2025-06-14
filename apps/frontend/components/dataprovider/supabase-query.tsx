@@ -1,7 +1,7 @@
 import React from "react";
 import useSWR from "swr";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseQueryArgs, supabaseQuery } from "@/lib/clients/supabase";
+import { SupabaseQueryArgs, supabaseQuery } from "@/lib/supabase/query";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { RegistrationProps } from "@/lib/types/plasmic";
 import {

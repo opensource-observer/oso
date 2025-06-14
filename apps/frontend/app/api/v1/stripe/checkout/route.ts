@@ -6,14 +6,14 @@ import {
   extractIntentString,
 } from "@/lib/clients/stripe";
 import { getUser } from "@/lib/auth/auth";
-import { createPrivilegedSupabaseClient } from "@/lib/clients/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
 import { DOMAIN, STRIPE_PUBLISHABLE_KEY } from "@/lib/config";
 
 const stripe = getStripeClient();
-const supabase = createPrivilegedSupabaseClient();
+const supabase = createAdminClient();
 
 export async function POST(req: NextRequest) {
   try {

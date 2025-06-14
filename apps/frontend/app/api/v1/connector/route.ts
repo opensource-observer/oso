@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTrinoAdminClient } from "@/lib/clients/trino";
-import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { createServerClient } from "@/lib/supabase/server";
 import { ALLOWED_CONNECTORS } from "@/lib/types/dynamic-connector";
 import { dynamicConnectorsInsertSchema } from "@/lib/types/schema";
 import type { DynamicConnectorsInsert } from "@/lib/types/schema-types";
@@ -44,7 +44,7 @@ function validateDynamicConnectorParams(
 }
 
 export async function POST(request: NextRequest) {
-  const supabaseClient = createNormalSupabaseClient();
+  const supabaseClient = await createServerClient();
   const trinoClient = getTrinoAdminClient();
   const auth = await setSupabaseSession(supabaseClient, request);
   if (auth.error) {
@@ -64,7 +64,9 @@ export async function POST(request: NextRequest) {
     .single();
   if (error || !org) {
     return NextResponse.json(
-      { error: `Error fetching organization: ${error.message}` },
+      {
+        error: `Error fetching organization: ${error?.message || "Organization not found"}`,
+      },
       { status: 500 },
     );
   }
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const supabaseClient = createNormalSupabaseClient();
+  const supabaseClient = await createServerClient();
   const trinoClient = getTrinoAdminClient();
   const auth = await setSupabaseSession(supabaseClient, request);
   if (auth.error) {
