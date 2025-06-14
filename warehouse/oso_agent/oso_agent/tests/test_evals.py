@@ -307,6 +307,7 @@ async def test_result_fuzzy_match_not_valid(workflow):
     assert out["score"] == -1
 
 @pytest.mark.asyncio
+# note that we are using jaccards similarity here so while intuitively we might think that this should be 1/2, its actually 3/9
 async def test_result_fuzzy_match_three_match_three_diff(workflow):
     eid = "fuzzy1"
     result = workflow._get_example_result_from_id(eid)
@@ -316,7 +317,7 @@ async def test_result_fuzzy_match_three_match_three_diff(workflow):
     result.order_matters = False
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_three_match_three_diff]", out)
-    assert 0 < out["score"] < 1.0
+    assert out["score"] == 1/3
 
 @pytest.mark.asyncio
 async def test_result_fuzzy_match_all_same_extra_col(workflow):

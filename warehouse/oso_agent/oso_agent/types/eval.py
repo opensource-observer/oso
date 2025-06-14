@@ -4,7 +4,8 @@ from io import StringIO
 
 import pandas as pd
 from oso_agent.util.errors import AgentRuntimeError
-from pydantic import BaseModel
+from phoenix.experiments.types import EvaluationResult
+from pydantic import BaseModel, Field
 
 from ..eval.valid_sql import is_valid_sql
 from ..tool.oso_mcp_client import OsoMcpClient
@@ -27,9 +28,9 @@ class ExampleResult(BaseModel):
     is_valid_sql_query: bool = False
     order_matters: bool = False
     expected_query: str = ""
-    agent_sql_result: t.List[t.Tuple[t.Any, ...]] = []
+    agent_sql_result: list[tuple] = Field(default_factory=list)
     is_valid_sql_result: bool = False
-    expected_sql_result: t.List[t.Tuple[t.Any, ...]] = []
+    expected_sql_result: list[tuple] = Field(default_factory=list)
 
 
 class Text2SQLExperimentWorkflow():
@@ -66,9 +67,12 @@ class Text2SQLExperimentWorkflow():
     # query the db and prepare the result
     async def exec_on_db(self, query: str) -> t.Tuple[t.List[t.Tuple[t.Any, ...]], bool]:
         valid_result, rows, tuples = True, None, []
+
+        print("querying with:", query)
         
         try:
             rows = await self.oso_mcp_client.query_oso(query)
+            print("rows:", rows)
         except AgentRuntimeError as e:
             logger.warning(f"Oso MCP client query failed: {e}")
             valid_result = False
@@ -80,7 +84,8 @@ class Text2SQLExperimentWorkflow():
             columns = list(rows[0].keys())
             # treat the top row as column names
             tuples = [tuple(columns)] + [tuple(row[col] for col in columns) for row in rows]
-
+            print("columns:", columns)
+            print("tuples:", tuples)
         return tuples, valid_result    
     
 
@@ -105,7 +110,7 @@ class Text2SQLExperimentWorkflow():
     
 
     # eval 1: check valid SQL (this will populate ExampleResult, clean and prepare SQL, and return if valid SQL has passed)
-    def check_valid_SQL(self, output: str, expected: dict[str, t.Any], metadata: dict[str, t.Any]) -> dict[str, t.Any]:
+    def check_valid_SQL(self, output: str, expected: dict[str, t.Any], metadata: dict[str, t.Any]) -> EvaluationResult:
         example_result = self._get_example_result_from_id(metadata["id"])
         example_result.raw_agent_response = output
         expected_answer = load_expected_sql_answer(expected)
@@ -126,17 +131,18 @@ class Text2SQLExperimentWorkflow():
         example_result.expected_query = expected_answer_clean
         example_result.order_matters = 'order by' in expected_answer_clean.lower()
 
-        return {
-            "score": int(example_result.is_valid_sql_query),
-            "label": "is_agent_response_valid_sql",
-            "metadata": {
+        return EvaluationResult(
+            score=int(example_result.is_valid_sql_query),
+            label="is_agent_response_valid_sql",
+            explanation="Returns a boolean for if the agent's output query is valid (can be parsed by sqlglot)",
+            metadata={
                 "cleaned_agent_query": example_result.cleaned_agent_query,
             }
-        }
+        )
     
 
     # eval 2: if the above works then we will run check valid result (as metadata maybe print a .info())
-    async def check_valid_SQL_result(self, metadata: dict[str, t.Any]) -> dict[str, t.Any]:
+    async def check_valid_SQL_result(self, metadata: dict[str, t.Any]) -> EvaluationResult:
         example_result = self._get_example_result_from_id(metadata["id"])
         agent_sql_result, example_result.is_valid_sql_result = await self.exec_on_db(example_result.cleaned_agent_query)
 
@@ -150,51 +156,54 @@ class Text2SQLExperimentWorkflow():
         else:
             # empty tables should at least have 1 row (column names) so if we get here then something failed
             info_str = "Query execution failed or table does not exist."
-        return {
-            "score": int(example_result.is_valid_sql_result),
-            "label": "does_agent_query_return_valid_result",
-            "metadata": {
+        return EvaluationResult(
+            score=int(example_result.is_valid_sql_result),
+            label="does_agent_query_return_valid_result",
+            explanation="Returns a boolean for if the agent's query returns a valid SQL table (empty table is considered equal)",
+            metadata={
                 "agent_sql_result_info": info_str
             }
-        }
+        )
 
 
     # eval 3: query type comparison (metadata should be each set printed)
-    def sql_query_type_similarity(self, metadata: dict[str, t.Any]) -> dict[str, t.Any]:
+    def sql_query_type_similarity(self, metadata: dict[str, t.Any]) -> EvaluationResult:
         example_result = self._get_example_result_from_id(metadata["id"])
         
         output_query_types = set(determine_query_type(example_result.cleaned_agent_query))
         expected_query_types = set(metadata.get('query_type') or [])
 
-        return {
-            "score": jaccard_similarity_set(output_query_types, expected_query_types),
-            "label": "query_type_similarity",
-            "metadata": {
+        return EvaluationResult(
+            score=jaccard_similarity_set(output_query_types, expected_query_types),
+            label="query_type_similarity",
+            explanation="Jaccard's similarity over the types of functions present in each SQL query",
+            metadata={
                 "output_query_types": sorted(output_query_types),
                 "expected_query_types": sorted(expected_query_types),
             }
-        }
+        )
 
 
     # eval 4: oso models used (metadata should be each set printed)
-    def sql_oso_models_used_similarity(self, metadata: dict[str, t.Any]) -> dict[str, t.Any]:
+    def sql_oso_models_used_similarity(self, metadata: dict[str, t.Any]) -> EvaluationResult:
         example_result = self._get_example_result_from_id(metadata["id"])
 
         output_oso_models_used = set(determine_sql_models_used(example_result.cleaned_agent_query))
         expected_oso_models_used = set(metadata.get('sql_models_used') or [])
 
-        return {
-            "score": jaccard_similarity_set(output_oso_models_used, expected_oso_models_used),
-            "label": "sql_models_used_similarity",
-            "metadata": {
+        return EvaluationResult(
+            score=jaccard_similarity_set(output_oso_models_used, expected_oso_models_used),
+            label="sql_models_used_similarity",
+            explanation="Jaccard's similarity over the tables each query uses",
+            metadata={
                 "output_oso_models_used": sorted(output_oso_models_used),
                 "expected_oso_models_used": sorted(expected_oso_models_used),
             }
-        }
+        )
 
 
     # eval 5: result exact match (.info() of each df?)
-    async def result_exact_match(self, metadata: dict[str, t.Any]) -> dict[str, t.Any]:
+    async def result_exact_match(self, metadata: dict[str, t.Any]) -> EvaluationResult:
         example_result = self._get_example_result_from_id(metadata["id"])
         
         if example_result.is_valid_sql_result:
@@ -206,18 +215,19 @@ class Text2SQLExperimentWorkflow():
         else:
             score = -1
 
-        return {
-            "score": score,
-            "label": "sql_result_exact_match",
-            "metadata": {
+        return EvaluationResult(
+            score=score,
+            label="sql_result_exact_match",
+            explanation="A boolean that reflects if the pandas result of the agent's query EXACTLY matches the expected result",
+            metadata={
                 "agent_result_info": self.df_info_str(example_result.agent_sql_result),
                 "expected_result_info": self.df_info_str(example_result.expected_sql_result)
             }
-        }
+        )
 
 
     # eval 6: result fuzzy match (.info() of each df?, maybe some info on why it's fuzzy)
-    async def result_fuzzy_match(self, metadata: dict[str, t.Any]) -> dict[str, t.Any]:
+    async def result_fuzzy_match(self, metadata: dict[str, t.Any]) -> EvaluationResult:
         example_result = self._get_example_result_from_id(metadata["id"])
         fuzzy_metadata = {}
 
@@ -232,13 +242,14 @@ class Text2SQLExperimentWorkflow():
         else:
             score = -1
 
-        return {
-            "score": score,
-            "label": "sql_result_fuzzy_match",
-            "metadata": {
+        return EvaluationResult(
+            score=score,
+            label="sql_result_fuzzy_match",
+            explanation="A float value that reflects how similar the result of the agent's query is to the expected result | 0 = no similarities, 1 = exact match",
+            metadata={
                 "agent_result_info": self.df_info_str(example_result.agent_sql_result),
                 "expected_result_info": self.df_info_str(example_result.expected_sql_result),
                 "fuzzy_match_info": fuzzy_metadata
             }
-        }
+        )
     

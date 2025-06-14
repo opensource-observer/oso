@@ -80,7 +80,6 @@ async def text2sql_experiment(config: AgentConfig, _registry: AgentRegistry, _ra
 
     logger.debug("Creating Oso MCP client")
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
-
     workflow = Text2SQLExperimentWorkflow(oso_mcp_client=oso_mcp_client, keep_distinct=True)
 
     evaluators = [
