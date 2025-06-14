@@ -51,7 +51,7 @@ seed = SeedConfig(
         # EOA address
         LabelsDecoded(
             id="0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-            chain_id="eip155:1",
+            chain_id="eip155:any",
             address="0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
             tag_id="is_eoa",
             tag_value="true",
