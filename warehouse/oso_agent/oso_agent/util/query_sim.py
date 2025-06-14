@@ -146,9 +146,9 @@ def result_eq_float(result1: t.List[t.Tuple], result2: t.List[t.Tuple], order_ma
     if len(result2[0]) != num_cols:
         return 0
 
-    quick_check = quick_rej_float(result1, result2, order_matters)
-    if quick_check < 1:
-        return quick_check
+    #quick_check = quick_rej_float(result1, result2, order_matters)
+    #if quick_check < 1:
+    #    return quick_check
 
     tab1_sets_by_columns = [{row[i] for row in result1} for i in range(num_cols)]
 
