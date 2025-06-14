@@ -65,12 +65,13 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.SQL_QUERY,
-    "/api/v1/sql",
-    { query },
-  );
+  const creditsDeducted =
+    await CreditsService.checkAndDeductCreditsWithOrgFallback(
+      user,
+      TransactionType.SQL_QUERY,
+      "/api/v1/sql",
+      { query },
+    );
 
   if (!creditsDeducted) {
     logger.log(`/api/sql: Insufficient credits for user ${user.userId}`);

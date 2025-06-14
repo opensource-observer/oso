@@ -108,12 +108,13 @@ const customHandler = async (req: NextRequest) => {
     logger.error("Error parsing GraphQL request body:", error);
   }
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.GRAPHQL_QUERY,
-    "/api/v1/graphql",
-    { operation, query },
-  );
+  const creditsDeducted =
+    await CreditsService.checkAndDeductCreditsWithOrgFallback(
+      user,
+      TransactionType.GRAPHQL_QUERY,
+      "/api/v1/graphql",
+      { operation, query },
+    );
 
   if (!creditsDeducted) {
     logger.log(
