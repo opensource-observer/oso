@@ -28,7 +28,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { packageId } = body as { packageId: CreditPackageId };
+    const { packageId, orgId } = body as {
+      packageId: CreditPackageId;
+      orgId?: string;
+    };
 
     const creditPackage = CREDIT_PACKAGES.find((p) => p.id === packageId);
     if (!creditPackage) {
@@ -61,6 +64,7 @@ export async function POST(req: NextRequest) {
       client_reference_id: user.userId,
       metadata: {
         userId: user.userId,
+        orgId: orgId || "",
         packageId: creditPackage.id,
         credits: creditPackage.credits.toString(),
       },
@@ -68,6 +72,7 @@ export async function POST(req: NextRequest) {
 
     const { error: dbError } = await supabase.from("purchase_intents").insert({
       user_id: user.userId,
+      org_id: orgId || null,
       stripe_session_id: session.id,
       package_id: creditPackage.id,
       credits_amount: creditPackage.credits,
@@ -76,6 +81,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         stripe_payment_intent: extractIntentString(session.payment_intent),
         user_email: user.email,
+        org_id: orgId || null,
       },
     });
 
