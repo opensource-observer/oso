@@ -55,8 +55,8 @@ all_events AS (
     e.amount,
     e.event_type
   FROM unioned_events AS e
-  JOIN oso.int_chainlist AS cl
-    ON e.chain = cl.chainlist_name
+  LEFT JOIN oso.seed_chain_alias_to_chain_name AS cl
+    ON e.chain = cl.chain_alias
 ),
 
 ranked_events AS (
