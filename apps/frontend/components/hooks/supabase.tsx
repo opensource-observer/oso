@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { createBrowserClient } from "@/lib/supabase/browser";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/lib/types/supabase";
 import { spawn } from "@opensource-observer/utils";
@@ -21,20 +21,35 @@ function useSupabaseState() {
 
 function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SupabaseState | null>(null);
-  const revalidate = async () => {
-    const supabaseClient = createNormalSupabaseClient();
-    const { data, error } = await supabaseClient.auth.getSession();
-    if (error) {
-      console.warn("Failed to get Supabase session, ", error);
-    }
-    setState({
-      supabaseClient: supabaseClient,
-      session: data.session,
-      revalidate,
-    });
-  };
+
   useEffect(() => {
+    const supabaseClient = createBrowserClient();
+
+    const revalidate = async () => {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        console.warn("Failed to get Supabase session, ", error);
+      }
+      setState({
+        supabaseClient: supabaseClient,
+        session: data.session,
+        revalidate,
+      });
+    };
+
     spawn(revalidate());
+
+    const {
+      data: { subscription },
+    } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      setState({
+        supabaseClient,
+        session,
+        revalidate,
+      });
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return (
