@@ -344,6 +344,79 @@ export type Database = {
           },
         ];
       };
+      organization_credits: {
+        Row: {
+          created_at: string;
+          credits_balance: number;
+          id: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          credits_balance?: number;
+          id?: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          credits_balance?: number;
+          id?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_credits_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_credit_transactions: {
+        Row: {
+          amount: number;
+          api_endpoint: string | null;
+          created_at: string;
+          id: string;
+          metadata: Json | null;
+          org_id: string;
+          transaction_type: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          api_endpoint?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: Json | null;
+          org_id: string;
+          transaction_type: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          api_endpoint?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: Json | null;
+          org_id?: string;
+          transaction_type?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_credit_transactions_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       organizations: {
         Row: {
           created_at: string;
@@ -386,6 +459,7 @@ export type Database = {
           credits_amount: number;
           id: string;
           metadata: Json | null;
+          org_id: string | null;
           package_id: string;
           price_cents: number;
           status: string;
@@ -398,6 +472,7 @@ export type Database = {
           credits_amount: number;
           id?: string;
           metadata?: Json | null;
+          org_id?: string | null;
           package_id: string;
           price_cents: number;
           status?: string;
@@ -410,13 +485,22 @@ export type Database = {
           credits_amount?: number;
           id?: string;
           metadata?: Json | null;
+          org_id?: string | null;
           package_id?: string;
           price_cents?: number;
           status?: string;
           stripe_session_id?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "purchase_intents_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       user_credits: {
         Row: {
@@ -531,6 +615,16 @@ export type Database = {
         };
         Returns: boolean;
       };
+      add_organization_credits: {
+        Args: {
+          p_org_id: string;
+          p_user_id: string;
+          p_amount: number;
+          p_transaction_type: string;
+          p_metadata?: Json;
+        };
+        Returns: boolean;
+      };
       deduct_credits: {
         Args: {
           p_user_id: string;
@@ -540,6 +634,21 @@ export type Database = {
           p_metadata?: Json;
         };
         Returns: boolean;
+      };
+      deduct_organization_credits: {
+        Args: {
+          p_org_id: string;
+          p_user_id: string;
+          p_amount: number;
+          p_transaction_type: string;
+          p_api_endpoint?: string;
+          p_metadata?: Json;
+        };
+        Returns: boolean;
+      };
+      get_organization_credits: {
+        Args: { p_org_id: string };
+        Returns: number;
       };
       get_user_credits: {
         Args: { p_user_id: string };
@@ -551,6 +660,17 @@ export type Database = {
       };
       preview_deduct_credits: {
         Args: {
+          p_user_id: string;
+          p_amount: number;
+          p_transaction_type: string;
+          p_api_endpoint?: string;
+          p_metadata?: Json;
+        };
+        Returns: boolean;
+      };
+      preview_deduct_organization_credits: {
+        Args: {
+          p_org_id: string;
           p_user_id: string;
           p_amount: number;
           p_transaction_type: string;

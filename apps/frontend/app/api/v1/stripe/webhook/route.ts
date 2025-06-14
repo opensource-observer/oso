@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
 
         if (fetchError || !purchaseIntent) {
           const userId = session.client_reference_id;
+          const orgId = session.metadata?.orgId;
           const packageId = session.metadata?.packageId;
           const credits = parseInt(session.metadata?.credits || "0");
 
@@ -58,19 +59,42 @@ export async function POST(req: NextRequest) {
             );
           }
 
-          const { error: creditError } = await supabase.rpc("add_credits", {
-            p_user_id: userId,
-            p_amount: credits,
-            p_transaction_type: "purchase",
-            p_metadata: {
-              stripe_session_id: session.id,
-              stripe_payment_intent: extractIntentString(
-                session.payment_intent,
-              ),
-              package_id: packageId,
-              recovered: true,
-            },
-          });
+          const rpcFunction = orgId
+            ? "add_organization_credits"
+            : "add_credits";
+          const rpcParams = orgId
+            ? {
+                p_org_id: orgId,
+                p_user_id: userId,
+                p_amount: credits,
+                p_transaction_type: "purchase",
+                p_metadata: {
+                  stripe_session_id: session.id,
+                  stripe_payment_intent: extractIntentString(
+                    session.payment_intent,
+                  ),
+                  package_id: packageId,
+                  recovered: true,
+                },
+              }
+            : {
+                p_user_id: userId,
+                p_amount: credits,
+                p_transaction_type: "purchase",
+                p_metadata: {
+                  stripe_session_id: session.id,
+                  stripe_payment_intent: extractIntentString(
+                    session.payment_intent,
+                  ),
+                  package_id: packageId,
+                  recovered: true,
+                },
+              };
+
+          const { error: creditError } = await supabase.rpc(
+            rpcFunction,
+            rpcParams,
+          );
 
           if (creditError) {
             logger.error("Failed to add credits (recovery):", creditError);
@@ -81,7 +105,7 @@ export async function POST(req: NextRequest) {
           }
 
           logger.info(
-            `Credits added via recovery: ${credits} for user ${userId}`,
+            `Credits added via recovery: ${credits} for ${orgId ? `org ${orgId}` : `user ${userId}`}`,
           );
         } else {
           const { error: updateError } = await supabase
@@ -103,19 +127,42 @@ export async function POST(req: NextRequest) {
             logger.error("Failed to update purchase intent:", updateError);
           }
 
-          const { error: creditError } = await supabase.rpc("add_credits", {
-            p_user_id: purchaseIntent.user_id,
-            p_amount: purchaseIntent.credits_amount,
-            p_transaction_type: "purchase",
-            p_metadata: {
-              stripe_session_id: session.id,
-              stripe_payment_intent: extractIntentString(
-                session.payment_intent,
-              ),
-              purchase_intent_id: purchaseIntent.id,
-              package_id: purchaseIntent.package_id,
-            },
-          });
+          const rpcFunction = purchaseIntent.org_id
+            ? "add_organization_credits"
+            : "add_credits";
+          const rpcParams = purchaseIntent.org_id
+            ? {
+                p_org_id: purchaseIntent.org_id,
+                p_user_id: purchaseIntent.user_id,
+                p_amount: purchaseIntent.credits_amount,
+                p_transaction_type: "purchase",
+                p_metadata: {
+                  stripe_session_id: session.id,
+                  stripe_payment_intent: extractIntentString(
+                    session.payment_intent,
+                  ),
+                  purchase_intent_id: purchaseIntent.id,
+                  package_id: purchaseIntent.package_id,
+                },
+              }
+            : {
+                p_user_id: purchaseIntent.user_id,
+                p_amount: purchaseIntent.credits_amount,
+                p_transaction_type: "purchase",
+                p_metadata: {
+                  stripe_session_id: session.id,
+                  stripe_payment_intent: extractIntentString(
+                    session.payment_intent,
+                  ),
+                  purchase_intent_id: purchaseIntent.id,
+                  package_id: purchaseIntent.package_id,
+                },
+              };
+
+          const { error: creditError } = await supabase.rpc(
+            rpcFunction,
+            rpcParams,
+          );
 
           if (creditError) {
             logger.error("Failed to add credits:", creditError);
@@ -126,7 +173,7 @@ export async function POST(req: NextRequest) {
           }
 
           logger.info(
-            `Credits added: ${purchaseIntent.credits_amount} for user ${purchaseIntent.user_id}`,
+            `Credits added: ${purchaseIntent.credits_amount} for ${purchaseIntent.org_id ? `org ${purchaseIntent.org_id}` : `user ${purchaseIntent.user_id}`}`,
           );
         }
 

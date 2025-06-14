@@ -22,12 +22,13 @@ export async function POST(req: NextRequest) {
   const prompt = await req.json();
   await using tracker = trackServerEvent(user);
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.CHAT_QUERY,
-    "/api/v1/chat",
-    { message: getLatestMessage(prompt.messages) },
-  );
+  const creditsDeducted =
+    await CreditsService.checkAndDeductCreditsWithOrgFallback(
+      user,
+      TransactionType.CHAT_QUERY,
+      "/api/v1/chat",
+      { message: getLatestMessage(prompt.messages) },
+    );
 
   if (!creditsDeducted) {
     logger.log(

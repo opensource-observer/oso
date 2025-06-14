@@ -24,9 +24,28 @@ export interface CreditTransaction {
   metadata?: Json | null;
 }
 
+export interface OrganizationCreditTransaction {
+  id: string;
+  org_id: string;
+  user_id: string;
+  amount: number;
+  transaction_type: string;
+  api_endpoint?: string | null;
+  created_at: string;
+  metadata?: Json | null;
+}
+
 export interface UserCredits {
   id: string;
   user_id: string;
+  credits_balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganizationCredits {
+  id: string;
+  org_id: string;
   credits_balance: number;
   created_at: string;
   updated_at: string;
@@ -56,6 +75,23 @@ export class CreditsService {
     return data;
   }
 
+  static async getOrganizationCredits(
+    orgId: string,
+  ): Promise<OrganizationCredits | null> {
+    const { data, error } = await supabaseClient
+      .from("organization_credits")
+      .select("*")
+      .eq("org_id", orgId)
+      .single();
+
+    if (error) {
+      logger.error("Error fetching organization credits:", error);
+      return null;
+    }
+
+    return data;
+  }
+
   static async getCreditTransactions(
     userId: string,
     limit = 50,
@@ -70,6 +106,26 @@ export class CreditsService {
 
     if (error) {
       logger.error("Error fetching credit transactions:", error);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  static async getOrganizationCreditTransactions(
+    orgId: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<OrganizationCreditTransaction[]> {
+    const { data, error } = await supabaseClient
+      .from("organization_credit_transactions")
+      .select("*")
+      .eq("org_id", orgId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      logger.error("Error fetching organization credit transactions:", error);
       return [];
     }
 
@@ -113,5 +169,95 @@ export class CreditsService {
     }
 
     return data;
+  }
+
+  static async checkAndDeductOrganizationCredits(
+    user: User,
+    orgId: string,
+    transactionType: TransactionType,
+    apiEndpoint?: string,
+    metadata?: Record<string, any>,
+  ): Promise<boolean> {
+    if (CreditsService.isAnonymousUser(user)) {
+      return CREDITS_PREVIEW_MODE;
+    }
+
+    const rpcFunction = CREDITS_PREVIEW_MODE
+      ? "preview_deduct_organization_credits"
+      : "deduct_organization_credits";
+
+    const { data, error } = await supabaseClient.rpc(rpcFunction, {
+      p_org_id: orgId,
+      p_user_id: user.userId,
+      p_amount: COST_PER_API_CALL,
+      p_transaction_type: transactionType,
+      p_api_endpoint: apiEndpoint,
+      p_metadata: metadata,
+    });
+
+    if (error) {
+      logger.error(
+        `Error ${CREDITS_PREVIEW_MODE ? "previewing" : "deducting"} organization credits:`,
+        error,
+      );
+      return false;
+    }
+
+    if (CREDITS_PREVIEW_MODE) {
+      logger.log(
+        `Preview organization credit usage tracked for user ${user.userId} in org ${orgId} on ${transactionType} at ${apiEndpoint}`,
+      );
+    }
+
+    return data;
+  }
+
+  static async getUserPrimaryOrganization(
+    userId: string,
+  ): Promise<string | null> {
+    const { data, error } = await supabaseClient
+      .from("users_by_organization")
+      .select("org_id")
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .single();
+
+    if (error) {
+      logger.error("Error fetching user primary organization:", error);
+      return null;
+    }
+
+    return data?.org_id || null;
+  }
+
+  static async checkAndDeductCreditsWithOrgFallback(
+    user: User,
+    transactionType: TransactionType,
+    apiEndpoint?: string,
+    metadata?: Record<string, any>,
+  ): Promise<boolean> {
+    if (CreditsService.isAnonymousUser(user)) {
+      return CREDITS_PREVIEW_MODE;
+    }
+
+    const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
+    if (orgId) {
+      return CreditsService.checkAndDeductOrganizationCredits(
+        user,
+        orgId,
+        transactionType,
+        apiEndpoint,
+        metadata,
+      );
+    }
+
+    return CreditsService.checkAndDeductCredits(
+      user,
+      transactionType,
+      apiEndpoint,
+      metadata,
+    );
   }
 }
