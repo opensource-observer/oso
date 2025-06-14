@@ -12,7 +12,11 @@ WITH pivoted AS (
   SELECT
     CASE WHEN tag_id = 'deployer_address' THEN tag_value ELSE address END
       AS address,
-    CAST(SPLIT_PART(chain_id, ':', 2) AS INTEGER) AS chain_id,  
+    CASE 
+  WHEN regexp_like(SPLIT_PART(chain_id, ':', 2), '^\d+$') 
+    THEN CAST(SPLIT_PART(chain_id, ':', 2) AS INTEGER)
+  ELSE NULL
+END AS chain_id,
     MAX(CASE WHEN tag_id = 'owner_project' THEN tag_value ELSE NULL END)
       AS owner_project,
     FLATTEN(ARRAY_AGG(
