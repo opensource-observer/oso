@@ -496,7 +496,6 @@ def get_defillama_protocol_metadata(
         parentProtocol, and slug.
     """
     session = Session(timeout=300)
-    valid_slugs = get_valid_defillama_slugs()
 
     try:
         context.log.info("Fetching protocol metadata from DefiLlama")
@@ -505,9 +504,6 @@ def get_defillama_protocol_metadata(
         protocols = response.json()
 
         for protocol in protocols:
-            if protocol["slug"] not in valid_slugs:
-                continue
-
             yield {
                 "id": str(protocol.get("id", "")),
                 "slug": str(protocol.get("slug", "")),
