@@ -1613,7 +1613,7 @@ spec:
                       unixSocketPath:
                         description: |-
                           UnixSocketPath is the path to the unix socket where the proxy will listen
-                          for connnections. This will be mounted to all containers in the pod.
+                          for connections. This will be mounted to all containers in the pod.
                         type: string
                       unixSocketPathEnvName:
                         description: |-
