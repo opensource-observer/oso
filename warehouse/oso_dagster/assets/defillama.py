@@ -478,3 +478,86 @@ def defillama_fee_assets(
     if global_config.enable_bigquery:
         bigquery_adapter(resource, partition="time", cluster=["slug", "chain"])
     yield resource
+
+
+def get_defillama_protocol_metadata(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch protocol metadata from the DefiLlama API.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Protocol metadata entries with fields like id, name,
+        address, symbol, url, description, logo, chain, category, twitter,
+        parentProtocol, and slug.
+    """
+    session = Session(timeout=300)
+    valid_slugs = get_valid_defillama_slugs()
+
+    try:
+        context.log.info("Fetching protocol metadata from DefiLlama")
+        response = session.get("https://api.llama.fi/protocols")
+        response.raise_for_status()
+        protocols = response.json()
+
+        for protocol in protocols:
+            if protocol["slug"] not in valid_slugs:
+                continue
+
+            yield {
+                "id": str(protocol.get("id", "")),
+                "slug": str(protocol.get("slug", "")),
+                "name": str(protocol.get("name", "")),
+                "address": str(protocol.get("address", "")),
+                "symbol": str(protocol.get("symbol", "")),
+                "url": str(protocol.get("url", "")),
+                "description": str(protocol.get("description", "")),
+                "logo": str(protocol.get("logo", "")),
+                "chain": str(protocol.get("chain", "")),
+                "category": str(protocol.get("category", "")),
+                "twitter": str(protocol.get("twitter", "")),
+                "parent_protocol": str(protocol.get("parentProtocol", "")),
+            }
+
+    except requests.exceptions.RequestException as e:
+        context.log.error(f"Failed to fetch protocol metadata: {e}")
+        raise
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="protocol_metadata",
+    op_tags={
+        "dagster/concurrency_key": "defillama_metadata",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_protocol_metadata_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads protocol metadata from DefiLlama
+    into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes protocol metadata rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_protocol_metadata(context),
+        name="protocol_metadata",
+        primary_key=["slug"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, cluster=["slug"])
+    yield resource
