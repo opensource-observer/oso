@@ -17,37 +17,15 @@ MODEL (
 */
 WITH onchain_artifacts AS (
   SELECT
-    project_id,
+    '' AS project_id,
     artifact_id,
     artifact_source_id,
     artifact_source,
-    'DEPLOYER' AS artifact_type,
+    artifact_type,
     artifact_namespace,
     artifact_name,
     artifact_name AS artifact_url
-  FROM oso.int_deployers_by_project
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    'CONTRACT' AS artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_name AS artifact_url
-  FROM oso.int_contracts_by_project
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    'BRIDGE' AS artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_name AS artifact_url
-  FROM oso.int_bridges_by_project
+  FROM oso.int_artifacts__blockchain
 ), all_normalized_artifacts AS (
   SELECT
     project_id,
