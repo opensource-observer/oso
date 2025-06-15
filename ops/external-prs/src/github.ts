@@ -79,7 +79,7 @@ export class GithubOutput {
 }
 
 /**
- * StatusPRComment continously updates a single comment with the status of a PR.
+ * StatusPRComment continuously updates a single comment with the status of a PR.
  */
 export class StatusPRComment {
   private app: App;
