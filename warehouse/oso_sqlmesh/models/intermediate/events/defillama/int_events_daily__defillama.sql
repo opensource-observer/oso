@@ -13,12 +13,50 @@ MODEL (
   )
 );
 
-WITH all_events AS (
-  SELECT time, slug, protocol, parent_protocol, chain, token, tvl AS amount, 'DEFILLAMA_TVL' AS event_type FROM oso.stg_defillama__tvl_events
+WITH unioned_events AS (
+  SELECT
+    time,
+    slug,
+    protocol,
+    chain,
+    token,
+    tvl AS amount,
+    'DEFILLAMA_TVL' AS event_type
+  FROM oso.stg_defillama__tvl_events
   UNION ALL
-  SELECT time, slug, protocol, parent_protocol, chain, token, amount, 'DEFILLAMA_TRADING_VOLUME' AS event_type FROM oso.stg_defillama__trading_volume_events
+  SELECT
+    time,
+    slug,
+    protocol,
+    chain,
+    token,
+    amount,
+    'DEFILLAMA_TRADING_VOLUME' AS event_type
+  FROM oso.stg_defillama__trading_volume_events
   UNION ALL
-  SELECT time, slug, protocol, parent_protocol, chain, token, amount, 'DEFILLAMA_LP_FEES' AS event_type FROM oso.stg_defillama__lp_fee_events
+  SELECT
+    time,
+    slug,
+    protocol,
+    chain,
+    token,
+    amount,
+    'DEFILLAMA_LP_FEES' AS event_type
+  FROM oso.stg_defillama__lp_fee_events
+),
+
+all_events AS (
+  SELECT
+    e.time,
+    LOWER(e.slug) AS slug,
+    e.protocol,
+    LOWER(COALESCE(cl.oso_chain_name, REPLACE(e.chain, ' ', '_'))) AS chain,
+    LOWER(e.token) AS token,
+    e.amount,
+    e.event_type
+  FROM unioned_events AS e
+  LEFT JOIN oso.seed_chain_alias_to_chain_name AS cl
+    ON e.chain = cl.chain_alias
 ),
 
 ranked_events AS (
@@ -41,21 +79,21 @@ filtered_events AS (
     bucket_day,
     event_type,
     chain,
-    LOWER(slug) AS slug,
-    LOWER(token) AS token,
+    slug,
+    token,
     amount
   FROM ranked_events
   WHERE
     rn = 1
     AND NOT (
-      LOWER(chain) LIKE '%-borrowed'
-      OR LOWER(chain) LIKE '%-vesting'
-      OR LOWER(chain) LIKE '%-staking'
-      OR LOWER(chain) LIKE '%-pool2'
-      OR LOWER(chain) LIKE '%-treasury'
-      OR LOWER(chain) LIKE '%-cex'
+      chain LIKE '%-borrowed'
+      OR chain LIKE '%-vesting'
+      OR chain LIKE '%-staking'
+      OR chain LIKE '%-pool2'
+      OR chain LIKE '%-treasury'
+      OR chain LIKE '%-cex'
     )
-    AND LOWER(chain) NOT IN (
+    AND chain NOT IN (
       'treasury',
       'borrowed',
       'staking',
@@ -74,14 +112,14 @@ final_events_with_ids AS (
       'DEFILLAMA', 
       '',              -- to_artifact_namespace
       slug,            -- to_artifact_name
-      LOWER(chain),    -- from_artifact_namespace
+      chain,           -- from_artifact_namespace
       token            -- from_artifact_name
     ) AS event_source_id,
     @oso_entity_id('DEFILLAMA', '', slug) AS to_artifact_id,
     '' AS to_artifact_namespace,
     slug AS to_artifact_name,
-    @oso_entity_id('DEFILLAMA', LOWER(chain), token) AS from_artifact_id,
-    LOWER(chain) AS from_artifact_namespace,
+    @oso_entity_id('DEFILLAMA', chain, token) AS from_artifact_id,
+    chain AS from_artifact_namespace,
     token AS from_artifact_name,
     amount::DOUBLE AS amount
   FROM filtered_events

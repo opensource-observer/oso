@@ -1,4 +1,4 @@
-import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { createServerClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import type { AnonUser, User } from "@/lib/types/user";
 import type { Json } from "@/lib/types/supabase";
@@ -34,14 +34,13 @@ export interface UserCredits {
 
 const COST_PER_API_CALL = 1;
 
-const supabaseClient = createNormalSupabaseClient();
-
 export class CreditsService {
   static isAnonymousUser(user: User): user is AnonUser {
     return user.role === "anonymous";
   }
 
   static async getUserCredits(userId: string): Promise<UserCredits | null> {
+    const supabaseClient = await createServerClient();
     const { data, error } = await supabaseClient
       .from("user_credits")
       .select("*")
@@ -61,6 +60,7 @@ export class CreditsService {
     limit = 50,
     offset = 0,
   ): Promise<CreditTransaction[]> {
+    const supabaseClient = await createServerClient();
     const { data, error } = await supabaseClient
       .from("credit_transactions")
       .select("*")
@@ -90,6 +90,7 @@ export class CreditsService {
       ? "preview_deduct_credits"
       : "deduct_credits";
 
+    const supabaseClient = await createServerClient();
     const { data, error } = await supabaseClient.rpc(rpcFunction, {
       p_user_id: user.userId,
       p_amount: COST_PER_API_CALL,

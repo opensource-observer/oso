@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { ensure } from "@opensource-observer/utils";
+import { assert, ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "@/lib/types/supabase";
 import { MissingDataError, AuthError } from "@/lib/types/errors";
 import {
@@ -8,14 +8,18 @@ import {
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
   dynamicTableContextsRowSchema,
+  connectorRelationshipsInsertSchema,
 } from "@/lib/types/schema";
 import type {
+  ConnectorRelationshipsRow,
+  ConnectorRelationshipsInsert,
   DynamicColumnContextsRow,
   DynamicConnectorsInsert,
   DynamicConnectorsRow,
   DynamicTableContextsRow,
 } from "@/lib/types/schema-types";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
+import { DEFAULT_OSO_TABLE_ID } from "@/lib/types/dynamic-connector";
 
 /**
  * OsoAppClient is the client library for the OSO app.
@@ -754,6 +758,56 @@ class OsoAppClient {
   }
 
   /**
+   * Gets dynamic connectors and contextual information.
+   * @param id
+   * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
+   * - Returns the tables context and an array of column contexts for the connector
+   */
+  async getDynamicConnectorAndContextsByOrgId(args: { orgId: string }): Promise<
+    {
+      connector: DynamicConnectorsRow;
+      contexts: {
+        table: DynamicTableContextsRow;
+        columns: DynamicColumnContextsRow[];
+      }[];
+    }[]
+  > {
+    const orgId = ensure(args.orgId, "id is required to get contexts");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_connectors")
+      .select("*, dynamic_table_contexts(*, dynamic_column_contexts(*))")
+      .eq("org_id", orgId);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find connectors for org_id=${orgId}`,
+      );
+    }
+
+    const groupedData = _.groupBy(data, "dynamic_connectors.id");
+
+    return Object.entries(groupedData).map(([_key, rows]) => {
+      const { dynamic_table_contexts: _, ...unparsedConnector } = rows[0];
+      const connector = dynamicConnectorsRowSchema.parse(unparsedConnector);
+      const contexts = rows.flatMap((row) => {
+        return row.dynamic_table_contexts.flatMap((tableContexts) => {
+          const { dynamic_column_contexts: columns, ...table } = tableContexts;
+          return {
+            table: dynamicTableContextsRowSchema.parse(table),
+            columns: columns.map((c) =>
+              dynamicColumnContextsRowSchema.parse(c),
+            ),
+          };
+        });
+      });
+      return { connector, contexts };
+    });
+  }
+
+  /**
    * Gets contextual information for a dynamic connector's tables and columns.
    * @param id
    * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
@@ -819,6 +873,93 @@ class OsoAppClient {
       if (columnsError) {
         throw columnsError;
       }
+    }
+  }
+
+  /**
+   * Gets connector relationships for an organization.
+   * @param orgId
+   */
+  async getConnectorRelationships(args: {
+    orgId: string;
+  }): Promise<ConnectorRelationshipsRow[]> {
+    const orgId = ensure(args.orgId, "orgId is required to get relationships");
+
+    const { data, error } = await this.supabaseClient
+      .from("connector_relationships")
+      .select("*")
+      .eq("org_id", orgId);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find connector relationships for org_id=${orgId}`,
+      );
+    }
+
+    return data;
+  }
+
+  /**
+   * Creates a new connector relationship.
+   * @param args
+   */
+  async createConnectorRelationship(
+    args: Partial<{
+      data: ConnectorRelationshipsInsert;
+    }>,
+  ): Promise<ConnectorRelationshipsRow> {
+    const data = connectorRelationshipsInsertSchema.parse(args.data);
+
+    // For OSO default entities, we store it in the target_oso_entity field,
+    // e.g: artifact_id, project_id, etc.
+    if (data.target_table_id === DEFAULT_OSO_TABLE_ID) {
+      data.target_oso_entity = data.target_column_name;
+      data.target_table_id = null;
+      data.target_column_name = null;
+    }
+
+    assert(
+      (data.source_table_id && data.source_column_name) ||
+        data.target_oso_entity,
+      "Either source_table_id and source_column_name or target_oso_entity must be provided",
+    );
+
+    const { data: relationshipData, error } = await this.supabaseClient
+      .from("connector_relationships")
+      .insert(data)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    } else if (!relationshipData) {
+      throw new MissingDataError("Failed to create connector relationship");
+    }
+
+    return relationshipData;
+  }
+
+  /**
+   * Deletes a connector relationship by its ID.
+   * @param args
+   */
+  async deleteConnectorRelationship(
+    args: Partial<{ id: string }>,
+  ): Promise<void> {
+    const id = ensure(
+      args.id,
+      "id is required to delete connector relationship",
+    );
+
+    const { error } = await this.supabaseClient
+      .from("connector_relationships")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw error;
     }
   }
 

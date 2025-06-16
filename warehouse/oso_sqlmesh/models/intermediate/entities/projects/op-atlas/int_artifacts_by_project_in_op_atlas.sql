@@ -97,15 +97,16 @@ all_defillama AS (
   UNION ALL
   SELECT
     op.project_id,
-    dl.artifact_source_id,
-    dl.artifact_source,
-    dl.artifact_namespace,
-    dl.artifact_name,
-    dl.artifact_url,
-    dl.artifact_type
+    dl.url AS artifact_source_id,
+    'DEFILLAMA' AS artifact_source,
+    '' AS artifact_namespace,
+    dl.protocol AS artifact_name,
+    dl.url AS artifact_url,
+    'DEFILLAMA_PROTOCOL' AS artifact_type
   FROM oso.stg_op_atlas_project_defillama AS op
-  JOIN oso.int_defillama_protocol_mapping AS dl
+  JOIN oso.int_defillama_protocols AS dl
     ON op.artifact_name = dl.parent_protocol
+    AND dl.parent_protocol IS NOT NULL
 ),
 all_artifacts AS (
   SELECT

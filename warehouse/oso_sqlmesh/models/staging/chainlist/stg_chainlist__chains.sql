@@ -11,8 +11,8 @@ MODEL (
 SELECT
   name::VARCHAR AS name,
   chain::VARCHAR AS chain,
-  chain_id::INTEGER AS chain_id,
-  network_id::INTEGER AS network_id,
+  chain_id::BIGINT AS chain_id,
+  network_id::BIGINT AS network_id,
   short_name::VARCHAR AS short_name,
   chain_slug::VARCHAR AS chain_slug,
   native_currency_name::VARCHAR AS native_currency_name,
