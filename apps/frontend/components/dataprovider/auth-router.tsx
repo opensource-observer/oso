@@ -61,7 +61,10 @@ function AuthRouter(props: AuthRouterProps) {
   //console.log("AuthRouter: ", data);
 
   // Show unauthenticated view
-  if (testNoAuth || (!ignoreNoAuth && supabaseState._type === "loggedOut")) {
+  if (
+    testNoAuth ||
+    (!useTestData && !ignoreNoAuth && supabaseState._type === "loggedOut")
+  ) {
     return <div className={className}>{noAuthChildren}</div>;
   }
 
