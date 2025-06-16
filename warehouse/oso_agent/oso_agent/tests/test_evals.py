@@ -54,27 +54,27 @@ def workflow():
 def test_check_valid_SQL_valid(workflow):
     out = workflow.check_valid_SQL("SELECT * FROM users", {"answer": "SELECT * FROM users"}, {"id": "test1"})
     vprint("[check_valid_SQL_valid]", out)
-    assert out["score"] == 1
+    assert out.score == 1
 
 def test_check_valid_SQL_invalid(workflow):
     out = workflow.check_valid_SQL("SELCT FROM", {"answer": "SELECT * FROM users"}, {"id": "test2"})
     vprint("[check_valid_SQL_invalid]", out)
-    assert out["score"] == 0
+    assert out.score == 0
 
 def test_check_valid_SQL_empty(workflow):
     out = workflow.check_valid_SQL("", {"answer": ""}, {"id": "test3"})
     vprint("[check_valid_SQL_empty]", out)
-    assert out["score"] == 0
+    assert out.score == 0
 
 def test_check_valid_SQL_case_insensitive(workflow):
     out = workflow.check_valid_SQL("select id from numbers", {"answer": "SELECT id FROM numbers"}, {"id": "test19"})
     vprint("[check_valid_SQL_case_insensitive]", out)
-    assert out["score"] == 1
+    assert out.score == 1
 
 def test_check_valid_SQL_bogus(workflow):
     out = workflow.check_valid_SQL("This is not SQL", {"answer": "SELECT * FROM numbers"}, {"id": "test20"})
     vprint("[check_valid_SQL_bogus]", out)
-    assert out["score"] == 0
+    assert out.score == 0
 
 ###########################
 # 2. check_valid_SQL_result
@@ -86,7 +86,7 @@ async def test_check_valid_SQL_result_success(workflow):
     result.cleaned_agent_query = "SELECT * FROM numbers"
     out = await workflow.check_valid_SQL_result({"id": eid})
     vprint("[check_valid_SQL_result_success]", out)
-    assert out["score"] == 1
+    assert out.score == 1
 
 @pytest.mark.asyncio
 async def test_check_valid_SQL_result_empty(workflow):
@@ -95,7 +95,7 @@ async def test_check_valid_SQL_result_empty(workflow):
     result.cleaned_agent_query = "SELECT * FROM empty"
     out = await workflow.check_valid_SQL_result({"id": eid})
     vprint("[check_valid_SQL_result_empty]", out)
-    assert out["score"] == 1
+    assert out.score == 1
 
 @pytest.mark.asyncio
 async def test_check_valid_SQL_result_fail(workflow):
@@ -104,7 +104,7 @@ async def test_check_valid_SQL_result_fail(workflow):
     result.cleaned_agent_query = "SELECT * FROM fail"
     out = await workflow.check_valid_SQL_result({"id": eid})
     vprint("[check_valid_SQL_result_fail]", out)
-    assert out["score"] == 0
+    assert out.score == 0
 
 @pytest.mark.asyncio
 async def test_check_valid_SQL_result_singlecol(workflow):
@@ -113,7 +113,7 @@ async def test_check_valid_SQL_result_singlecol(workflow):
     result.cleaned_agent_query = "SELECT * FROM singlecol"
     out = await workflow.check_valid_SQL_result({"id": eid})
     vprint("[check_valid_SQL_result_singlecol]", out)
-    assert out["score"] == 1
+    assert out.score == 1
 
 @pytest.mark.asyncio
 async def test_check_valid_SQL_result_join(workflow):
@@ -122,7 +122,7 @@ async def test_check_valid_SQL_result_join(workflow):
     result.cleaned_agent_query = "SELECT * FROM join"
     out = await workflow.check_valid_SQL_result({"id": eid})
     vprint("[check_valid_SQL_result_join]", out)
-    assert out["score"] == 1
+    assert out.score == 1
 
 ###########################
 # 3. sql_query_type_similarity
@@ -133,7 +133,7 @@ def test_sql_query_type_similarity_exact(workflow):
     result.cleaned_agent_query = "SELECT * FROM foo WHERE bar > 3"
     out = workflow.sql_query_type_similarity({"id": eid, "query_type": ["filter"]})
     vprint("[sql_query_type_similarity_exact]", out)
-    assert out["score"] == 1.0
+    assert out.score == 1.0
 
 def test_sql_query_type_similarity_partial(workflow):
     eid = "test8"
@@ -141,7 +141,7 @@ def test_sql_query_type_similarity_partial(workflow):
     result.cleaned_agent_query = "SELECT COUNT(*) FROM foo"
     out = workflow.sql_query_type_similarity({"id": eid, "query_type": ["aggregation", "limit"]})
     vprint("[sql_query_type_similarity_partial]", out)
-    assert 0 < out["score"] < 1.0
+    assert 0 < out.score < 1.0
 
 def test_sql_query_type_similarity_none(workflow):
     eid = "test9"
@@ -149,7 +149,7 @@ def test_sql_query_type_similarity_none(workflow):
     result.cleaned_agent_query = ""
     out = workflow.sql_query_type_similarity({"id": eid, "query_type": []})
     vprint("[sql_query_type_similarity_none]", out)
-    assert out["score"] == 1.0
+    assert out.score == 1.0
 
 def test_sql_query_type_similarity_extra(workflow):
     eid = "test9b"
@@ -157,7 +157,7 @@ def test_sql_query_type_similarity_extra(workflow):
     result.cleaned_agent_query = "SELECT * FROM users ORDER BY id"
     out = workflow.sql_query_type_similarity({"id": eid, "query_type": ["order_by"]})
     vprint("[sql_query_type_similarity_extra]", out)
-    assert out["score"] == 1.0
+    assert out.score == 1.0
 
 def test_sql_query_type_similarity_diff_sets(workflow):
     eid = "test9c"
@@ -165,7 +165,7 @@ def test_sql_query_type_similarity_diff_sets(workflow):
     result.cleaned_agent_query = "SELECT name FROM users WHERE age > 30"
     out = workflow.sql_query_type_similarity({"id": eid, "query_type": ["filter", "aggregation"]})
     vprint("[sql_query_type_similarity_diff_sets]", out)
-    assert 0 < out["score"] < 1.0
+    assert 0 < out.score < 1.0
 
 ###########################
 # 4. sql_oso_models_used_similarity
@@ -176,7 +176,7 @@ def test_sql_oso_models_used_similarity_exact(workflow):
     result.cleaned_agent_query = "SELECT * FROM users"
     out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": ["users"]})
     vprint("[sql_oso_models_used_similarity_exact]", out)
-    assert out["score"] == 1.0
+    assert out.score == 1.0
 
 def test_sql_oso_models_used_similarity_partial(workflow):
     eid = "test11"
@@ -184,7 +184,7 @@ def test_sql_oso_models_used_similarity_partial(workflow):
     result.cleaned_agent_query = "SELECT * FROM users JOIN orders ON users.id=orders.uid"
     out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": ["users", "payments"]})
     vprint("[sql_oso_models_used_similarity_partial]", out)
-    assert 0 < out["score"] < 1.0
+    assert 0 < out.score < 1.0
 
 def test_sql_oso_models_used_similarity_none(workflow):
     eid = "test12"
@@ -192,7 +192,7 @@ def test_sql_oso_models_used_similarity_none(workflow):
     result.cleaned_agent_query = ""
     out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": []})
     vprint("[sql_oso_models_used_similarity_none]", out)
-    assert out["score"] == 1.0
+    assert out.score == 1.0
 
 def test_sql_oso_models_used_similarity_multiple_tables(workflow):
     eid = "test12b"
@@ -200,7 +200,7 @@ def test_sql_oso_models_used_similarity_multiple_tables(workflow):
     result.cleaned_agent_query = "SELECT u.id, o.id FROM users u, orders o"
     out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": ["users", "orders"]})
     vprint("[sql_oso_models_used_similarity_multiple_tables]", out)
-    assert out["score"] == 1.0
+    assert out.score == 1.0
 
 def test_sql_oso_models_used_similarity_mismatch(workflow):
     eid = "test12c"
@@ -208,7 +208,7 @@ def test_sql_oso_models_used_similarity_mismatch(workflow):
     result.cleaned_agent_query = "SELECT u.id FROM users u"
     out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": ["orders"]})
     vprint("[sql_oso_models_used_similarity_mismatch]", out)
-    assert 0 <= out["score"] < 1.0
+    assert 0 <= out.score < 1.0
 
 ###########################
 # 5. result_exact_match
@@ -223,7 +223,7 @@ async def test_result_exact_match_success(workflow):
     result.order_matters = True
     out = await workflow.result_exact_match({"id": eid})
     vprint("[result_exact_match_success]", out)
-    assert out["score"] == 1
+    assert out.score == 1
 
 @pytest.mark.asyncio
 async def test_result_exact_match_fail(workflow):
@@ -235,7 +235,7 @@ async def test_result_exact_match_fail(workflow):
     result.order_matters = True
     out = await workflow.result_exact_match({"id": eid})
     vprint("[result_exact_match_fail]", out)
-    assert out["score"] == 0
+    assert out.score == 0
 
 @pytest.mark.asyncio
 async def test_result_exact_match_not_valid(workflow):
@@ -244,7 +244,7 @@ async def test_result_exact_match_not_valid(workflow):
     result.is_valid_sql_result = False
     out = await workflow.result_exact_match({"id": eid})
     vprint("[result_exact_match_not_valid]", out)
-    assert out["score"] == -1
+    assert out.score == -1
 
 @pytest.mark.asyncio
 async def test_result_exact_match_extra_row(workflow):
@@ -256,7 +256,7 @@ async def test_result_exact_match_extra_row(workflow):
     result.order_matters = True
     out = await workflow.result_exact_match({"id": eid})
     vprint("[result_exact_match_extra_row]", out)
-    assert out["score"] == 0
+    assert out.score == 0
 
 @pytest.mark.asyncio
 async def test_result_exact_match_extra_col(workflow):
@@ -268,7 +268,7 @@ async def test_result_exact_match_extra_col(workflow):
     result.order_matters = True
     out = await workflow.result_exact_match({"id": eid})
     vprint("[result_exact_match_extra_col]", out)
-    assert out["score"] == 0
+    assert out.score == 0
 
 ###########################
 # 6. result_fuzzy_match
@@ -283,7 +283,7 @@ async def test_result_fuzzy_match_perfect(workflow):
     result.order_matters = False
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_perfect]", out)
-    assert out["score"] == 1.0
+    assert out.score == 1.0
 
 @pytest.mark.asyncio
 async def test_result_fuzzy_match_partial(workflow):
@@ -295,7 +295,7 @@ async def test_result_fuzzy_match_partial(workflow):
     result.order_matters = False
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_partial]", out)
-    assert 0 < out["score"] < 1.0
+    assert 0 < out.score < 1.0
 
 @pytest.mark.asyncio
 async def test_result_fuzzy_match_not_valid(workflow):
@@ -304,7 +304,7 @@ async def test_result_fuzzy_match_not_valid(workflow):
     result.is_valid_sql_result = False
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_not_valid]", out)
-    assert out["score"] == -1
+    assert out.score == -1
 
 @pytest.mark.asyncio
 # note that we are using jaccards similarity here so while intuitively we might think that this should be 1/2, its actually 3/9
@@ -317,7 +317,7 @@ async def test_result_fuzzy_match_three_match_three_diff(workflow):
     result.order_matters = False
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_three_match_three_diff]", out)
-    assert out["score"] == 1/3
+    assert out.score == 1/3
 
 @pytest.mark.asyncio
 async def test_result_fuzzy_match_all_same_extra_col(workflow):
@@ -329,7 +329,7 @@ async def test_result_fuzzy_match_all_same_extra_col(workflow):
     result.order_matters = False
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_all_same_extra_col]", out)
-    assert out["score"] == 0
+    assert out.score == 0
 
 @pytest.mark.asyncio
 async def test_result_fuzzy_match_eight_rows_one_off(workflow):
@@ -344,7 +344,7 @@ async def test_result_fuzzy_match_eight_rows_one_off(workflow):
     result.order_matters = False
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_eight_rows_one_off]", out)
-    assert 0 < out["score"] < 1.0
+    assert 0 < out.score < 1.0
 
 @pytest.mark.asyncio
 async def test_result_fuzzy_match_column_order_change(workflow):
@@ -357,7 +357,7 @@ async def test_result_fuzzy_match_column_order_change(workflow):
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_column_order_change]", out)
     # Should be considered a match (score 1.0) if column permutation allowed
-    assert out["score"] == 1.0
+    assert out.score == 1.0
 
 @pytest.mark.asyncio
 async def test_result_fuzzy_match_all_empty(workflow):
@@ -369,4 +369,4 @@ async def test_result_fuzzy_match_all_empty(workflow):
     result.order_matters = False
     out = await workflow.result_fuzzy_match({"id": eid})
     vprint("[result_fuzzy_match_all_empty]", out)
-    assert out["score"] == 1.0
+    assert out.score == 1.0

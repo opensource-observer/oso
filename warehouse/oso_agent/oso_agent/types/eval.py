@@ -68,11 +68,11 @@ class Text2SQLExperimentWorkflow():
     async def exec_on_db(self, query: str) -> t.Tuple[t.List[t.Tuple[t.Any, ...]], bool]:
         valid_result, rows, tuples = True, None, []
 
-        print("querying with:", query)
+        logger.info("querying with:", query)
         
         try:
             rows = await self.oso_mcp_client.query_oso(query)
-            print("rows:", rows)
+            logger.info("rows:", rows)
         except AgentRuntimeError as e:
             logger.warning(f"Oso MCP client query failed: {e}")
             valid_result = False
@@ -84,10 +84,10 @@ class Text2SQLExperimentWorkflow():
             columns = list(rows[0].keys())
             # treat the top row as column names
             tuples = [tuple(columns)] + [tuple(row[col] for col in columns) for row in rows]
-            print("columns:", columns)
-            print("tuples:", tuples)
-        return tuples, valid_result    
-    
+            logger.info("columns:", columns)
+            logger.info("tuples:", tuples)
+        return tuples, valid_result
+
 
     def df_info_str(self, rows: t.List[t.Tuple]):
         if not rows or len(rows) <= 1 or not isinstance(rows[0], tuple):
