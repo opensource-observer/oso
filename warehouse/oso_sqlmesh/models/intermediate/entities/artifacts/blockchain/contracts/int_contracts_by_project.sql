@@ -5,7 +5,8 @@ MODEL (
   description "Combines directly associated contracts and derived contracts from factory deployments",
   audits (
     has_at_least_n_rows(threshold := 0)
-  )
+  ),
+  enabled false
 );
 
 WITH base_contracts AS (
