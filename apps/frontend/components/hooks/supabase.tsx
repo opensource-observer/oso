@@ -37,13 +37,19 @@ type SupabaseState = {
 } | null;
 */
 
-const SupabaseContext = createContext<SupabaseState>({ _type: "loading" });
+const SupabaseContext = createContext<SupabaseState>({
+  _type: "loading",
+  supabaseClient: null,
+});
 function useSupabaseState() {
   return useContext<SupabaseState>(SupabaseContext);
 }
 
 function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<SupabaseState>({ _type: "loading" });
+  const [state, setState] = useState<SupabaseState>({
+    _type: "loading",
+    supabaseClient: null,
+  });
 
   useEffect(() => {
     const supabaseClient = createBrowserClient();

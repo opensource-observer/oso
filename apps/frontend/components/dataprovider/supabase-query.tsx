@@ -77,7 +77,7 @@ function SupabaseQuery(props: SupabaseQueryProps) {
   const { data, error, isLoading } = useSWR(key, async () => {
     if (!tableName) {
       return;
-    } else if (!supabaseState) {
+    } else if (!supabaseState || supabaseState._type === "loading") {
       return console.warn("Supabase not initialized yet");
     }
     const supabaseClient = supabaseState.supabaseClient;

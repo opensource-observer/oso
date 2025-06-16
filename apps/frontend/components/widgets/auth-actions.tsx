@@ -87,7 +87,11 @@ function AuthActions(props: AuthActionsProps) {
         },
       },
     });
-    await supabaseState?.revalidate();
+    if (supabaseState._type !== "loading") {
+      await supabaseState.revalidate();
+    } else {
+      console.warn("Unable to revalidate Supabase state. Client never loaded");
+    }
     console.log("Supabase signin:", data, error);
   };
 
@@ -102,7 +106,11 @@ function AuthActions(props: AuthActionsProps) {
       redirect: redirectOnComplete,
     });
     posthog.reset();
-    await supabaseState?.revalidate();
+    if (supabaseState._type !== "loading") {
+      await supabaseState.revalidate();
+    } else {
+      console.warn("Unable to revalidate Supabase state. Client never loaded");
+    }
     console.log("Supabase signout: ", error);
     if (redirectOnComplete) {
       router.push(redirectOnComplete);

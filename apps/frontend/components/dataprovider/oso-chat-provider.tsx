@@ -41,7 +41,8 @@ function OsoChatProvider(props: OsoChatProviderProps) {
   const supabaseState = useSupabaseState();
   const [firstLoad, setFirstLoad] = React.useState<boolean>(true);
   const { client } = useOsoAppClient();
-  const session = supabaseState?.session;
+  const session =
+    supabaseState._type === "loggedIn" ? supabaseState.session : null;
   const headers: Record<string, string> = {};
 
   if (session) {
