@@ -1,5 +1,7 @@
 import typing as t
 
+from llama_index.core.workflow import Context
+from llama_index.core.workflow.handler import WorkflowHandler
 from metrics_tools.semantic.definition import SemanticQuery
 from pydantic import BaseModel, Field
 
@@ -35,15 +37,31 @@ class SqlResponse(BaseModel):
 
     query: SqlQuery
 
-ResponseTypes = t.Union[
+ResponseType = t.Union[
     StrResponse,
     SemanticResponse,
     SqlResponse,
     ErrorResponse
 ]
 
-class WrappedResponse(BaseModel):
+class WrappedResponse:
     """A wrapper for the response from an agent"""
+    _response: ResponseType
+    _handler: WorkflowHandler
 
-    response: ResponseTypes = Field(discriminator="type")
+    def __init__(self, *, handler: WorkflowHandler, response: ResponseType):
+        self._handler = handler
+        self._response = response
+
+    def ctx(self) -> Context:
+        """Get the context of the workflow handler."""
+
+        assert self._handler.ctx is not None, "Workflow handler context is not set."
+        return self._handler.ctx
+    
+    @property
+    def response(self) -> ResponseType:
+        """Get the response from the agent."""
+        return self._response
+
 
