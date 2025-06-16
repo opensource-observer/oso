@@ -1,11 +1,33 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
+import { ADT } from "ts-adt";
 import { createBrowserClient } from "@/lib/supabase/browser";
-import { Session, SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/lib/types/supabase";
+import { Session, AuthError, SupabaseClient } from "@supabase/supabase-js";
 import { spawn } from "@opensource-observer/utils";
+import { Database } from "@/lib/types/supabase";
 
+type SupabaseState = ADT<{
+  loading: {
+    supabaseClient: null;
+  };
+  loggedIn: {
+    supabaseClient: SupabaseClient<Database>;
+    session: Session;
+    revalidate: () => Promise<void>;
+  };
+  loggedOut: {
+    supabaseClient: SupabaseClient<Database>;
+    revalidate: () => Promise<void>;
+  };
+  error: {
+    error: AuthError;
+    supabaseClient: SupabaseClient<Database>;
+    revalidate: () => Promise<void>;
+  };
+}>;
+
+/**
 type SupabaseState = {
   supabaseClient?: SupabaseClient<Database> | null;
   session?: Session | null;
@@ -13,14 +35,21 @@ type SupabaseState = {
   //isLoading?: boolean;
   //error?: Error;
 } | null;
+*/
 
-const SupabaseContext = createContext<SupabaseState>(null);
+const SupabaseContext = createContext<SupabaseState>({
+  _type: "loading",
+  supabaseClient: null,
+});
 function useSupabaseState() {
   return useContext<SupabaseState>(SupabaseContext);
 }
 
 function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<SupabaseState | null>(null);
+  const [state, setState] = useState<SupabaseState>({
+    _type: "loading",
+    supabaseClient: null,
+  });
 
   useEffect(() => {
     const supabaseClient = createBrowserClient();
@@ -29,9 +58,13 @@ function SupabaseProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabaseClient.auth.getSession();
       if (error) {
         console.warn("Failed to get Supabase session, ", error);
+        return setState({ _type: "error", error, supabaseClient, revalidate });
+      } else if (!data.session) {
+        return setState({ _type: "loggedOut", supabaseClient, revalidate });
       }
       setState({
-        supabaseClient: supabaseClient,
+        _type: "loggedIn",
+        supabaseClient,
         session: data.session,
         revalidate,
       });
@@ -42,7 +75,11 @@ function SupabaseProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        return setState({ _type: "loggedOut", supabaseClient, revalidate });
+      }
       setState({
+        _type: "loggedIn",
         supabaseClient,
         session,
         revalidate,

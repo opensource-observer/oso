@@ -105,6 +105,16 @@ export type PurchaseIntentsInsert = z.infer<
 export type PurchaseIntentsUpdate = z.infer<
   typeof generated.purchaseIntentsUpdateSchema
 >;
+export type SavedQueriesRow = z.infer<typeof generated.savedQueriesRowSchema>;
+export type SavedQueriesInsert = z.infer<
+  typeof generated.savedQueriesInsertSchema
+>;
+export type SavedQueriesUpdate = z.infer<
+  typeof generated.savedQueriesUpdateSchema
+>;
+export type SavedQueriesRelationships = z.infer<
+  typeof generated.savedQueriesRelationshipsSchema
+>;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
   typeof generated.userCreditsInsertSchema

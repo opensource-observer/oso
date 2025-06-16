@@ -15,7 +15,10 @@ type EmbeddedSandboxProps = {
 
 function EmbeddedSandbox(props: EmbeddedSandboxProps) {
   const supabaseState = useSupabaseState();
-  const token = supabaseState?.session?.access_token;
+  const token =
+    supabaseState._type === "loggedIn"
+      ? supabaseState.session.access_token
+      : null;
   //console.log(session);
   //console.log("headers", headers);
 
@@ -24,12 +27,15 @@ function EmbeddedSandbox(props: EmbeddedSandboxProps) {
       className={props.className}
       initialEndpoint={API_URL.toString()}
       handleRequest={(endpointUrl, options) => {
+        const headers = token
+          ? {
+              ...options.headers,
+              authorization: `Bearer ${token}`,
+            }
+          : options.headers;
         return fetch(endpointUrl, {
           ...options,
-          headers: {
-            ...options.headers,
-            authorization: `Bearer ${token}`,
-          },
+          headers,
         });
       }}
     />
