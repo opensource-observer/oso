@@ -44,5 +44,6 @@ SELECT
   STRPTIME(pre.payload ->> '$.pull_request.merged_at', '%Y-%m-%dT%H:%M:%SZ') AS merged_at,
   STRPTIME(pre.payload ->> '$.pull_request.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
   pre.payload ->> '$.pull_request.state' AS "state",
-  CAST(pre.payload -> '$.pull_request.comments' AS DOUBLE) AS comments
+  CAST(pre.payload -> '$.pull_request.comments' AS DOUBLE) AS comments,
+  CAST(pre.payload ->> '$.pull_request.author_association' AS VARCHAR) AS author_association
 FROM pull_request_events AS pre
