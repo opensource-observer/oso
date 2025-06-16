@@ -3,6 +3,7 @@ MODEL(
   description 'All blockchain artifacts',
   dialect trino,
   kind FULL,
+  partitioned_by ("artifact_source", "artifact_type"),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
