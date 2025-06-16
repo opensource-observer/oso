@@ -15,7 +15,6 @@ async def test_mixable_workflow():
 
         @step
         async def handle_start(self, ev: StartEvent) -> CustomEvent:
-            print(self.resource1)
             return CustomEvent(test_value=self.resource1)
 
     class Resource2Workflow(MixableWorkflow):
@@ -48,7 +47,6 @@ async def test_mixable_workflow():
     while events:
         expected_event = expected_events.pop()
         for ev in events:
-            print(ev.__class__.__name__)
             assert handler.ctx is not None, "Context should be set in the handler"
             assert isinstance(
                 ev, expected_event
