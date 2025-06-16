@@ -926,6 +926,11 @@ class OsoAppClient {
       "Either source_table_id and source_column_name or target_oso_entity must be provided",
     );
 
+    assert(
+      data.source_table_id !== data.target_table_id,
+      "Source and target table IDs must be different",
+    );
+
     const { data: relationshipData, error } = await this.supabaseClient
       .from("connector_relationships")
       .insert(data)
