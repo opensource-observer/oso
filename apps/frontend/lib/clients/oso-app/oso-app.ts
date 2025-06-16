@@ -550,6 +550,110 @@ class OsoAppClient {
   }
 
   /**
+   * Creates a new saved query
+   * - Chats are stored under an organization
+   * @param args
+   * @returns
+   */
+  async createSqlQuery(args: Partial<{ orgId: string }>) {
+    console.log("createSqlQuery: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const user = await this.getUser();
+
+    const { data: queryData, error: queryError } = await this.supabaseClient
+      .from("saved_queries")
+      .insert({
+        org_id: orgId,
+        display_name: new Date().toLocaleString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (queryError) {
+      throw queryError;
+    } else if (!queryData) {
+      throw new MissingDataError("Failed to create SQL query");
+    }
+
+    return queryData;
+  }
+
+  async getSqlQueriesByOrgId(args: Partial<{ orgId: string }>) {
+    console.log("getSqlQueriesByOrgId: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("saved_queries")
+      .select(
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+      )
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find SQL queries for orgId=${orgId}`,
+      );
+    }
+    return data;
+  }
+
+  async getSqlQueryById(args: Partial<{ queryId: string }>) {
+    console.log("getSqlQueryById: ", args);
+    const queryId = ensure(args.queryId, "Missing queryId argument");
+    const { data, error } = await this.supabaseClient
+      .from("saved_queries")
+      .select()
+      .eq("id", queryId)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find SQL query for queryId=${queryId}`,
+      );
+    }
+    return data;
+  }
+
+  /**
+   * Update SQL query data
+   * @param args
+   */
+  async updateSqlQuery(
+    args: Partial<Database["public"]["Tables"]["saved_queries"]["Update"]>,
+  ) {
+    console.log("updateSqlQuery: ", args);
+    const queryId = ensure(args.id, "Missing SQL query 'id' argument");
+    const { error } = await this.supabaseClient
+      .from("saved_queries")
+      .update({ ...args })
+      .eq("id", queryId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a SQL query
+   * - We use `deleted_at` to mark the query as removed instead of deleting the row
+   * @param args
+   */
+  async deleteSqlQuery(args: Partial<{ queryId: string }>): Promise<void> {
+    console.log("deleteSqlQuery: ", args);
+    const queryId = ensure(args.queryId, "Missing queryId argument");
+    const { error } = await this.supabaseClient
+      .from("saved_queries")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", queryId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Gets the current credit balance for the logged in user.
    * @returns Promise<number> - The current credit balance
    */
