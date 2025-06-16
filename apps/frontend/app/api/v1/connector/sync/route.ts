@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createNormalSupabaseClient } from "@/lib/clients/supabase";
+import { createServerClient } from "@/lib/supabase/server";
 import { getTrinoAdminClient, TrinoClient } from "@/lib/clients/trino";
 import { setSupabaseSession } from "@/lib/auth/auth";
 import { getCatalogName } from "@/lib/dynamic-connectors";
@@ -139,7 +139,7 @@ async function syncSchema(
 }
 
 export async function POST(request: NextRequest) {
-  const supabaseClient = createNormalSupabaseClient();
+  const supabaseClient = await createServerClient();
   const trinoClient = getTrinoAdminClient();
   const auth = await setSupabaseSession(supabaseClient, request);
   if (auth.error) {

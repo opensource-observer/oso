@@ -11,7 +11,7 @@ SELECT
   slug::VARCHAR AS slug,
   protocol::VARCHAR AS protocol,
   parent_protocol::VARCHAR AS parent_protocol,
-  chain::VARCHAR AS chain,
+  LOWER(chain::VARCHAR) AS chain,
   token::VARCHAR AS token,
   event_type::VARCHAR AS event_type,
   amount::DOUBLE AS amount
