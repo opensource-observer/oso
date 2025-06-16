@@ -65,9 +65,16 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
+  const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
+  if (!orgId) {
+    logger.log(`/api/sql: User ${user.userId} has no organization`);
+    return makeErrorResponse("User must be part of an organization", 403);
+  }
+
   const creditsDeducted =
-    await CreditsService.checkAndDeductCreditsWithOrgFallback(
+    await CreditsService.checkAndDeductOrganizationCredits(
       user,
+      orgId,
       TransactionType.SQL_QUERY,
       "/api/v1/sql",
       { query },

@@ -294,13 +294,13 @@ LANGUAGE "plpgsql" SECURITY DEFINER
 AS $$
 BEGIN
     -- Create initial credits record for new organization
-    INSERT INTO organization_credits (org_id, credits_balance, created_at, updated_at)
+    INSERT INTO "public"."organization_credits" (org_id, credits_balance, created_at, updated_at)
     VALUES (NEW.id, 100, now(), now());
     
     -- Log initial credit grant
-    INSERT INTO organization_credit_transactions (org_id, user_id, amount, transaction_type, metadata, created_at)
-    VALUES (NEW.id, NEW.created_by, 100, 'admin_grant', 
-            jsonb_build_object('reason', 'initial_organization_credits', 'granted_by', 'system'), 
+    INSERT INTO "public"."organization_credit_transactions" (org_id, user_id, amount, transaction_type, metadata, created_at)
+    VALUES (NEW.id, NEW.created_by, 100, 'admin_grant',
+            jsonb_build_object('reason', 'initial_organization_credits', 'granted_by', 'system'),
             now());
     
     RETURN NEW;

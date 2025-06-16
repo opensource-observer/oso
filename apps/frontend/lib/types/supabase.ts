@@ -344,38 +344,6 @@ export type Database = {
           },
         ];
       };
-      organization_credits: {
-        Row: {
-          created_at: string;
-          credits_balance: number;
-          id: string;
-          org_id: string;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          credits_balance?: number;
-          id?: string;
-          org_id: string;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          credits_balance?: number;
-          id?: string;
-          org_id?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "organization_credits_org_id_fkey";
-            columns: ["org_id"];
-            isOneToOne: true;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       organization_credit_transactions: {
         Row: {
           amount: number;
@@ -412,6 +380,38 @@ export type Database = {
             foreignKeyName: "organization_credit_transactions_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      organization_credits: {
+        Row: {
+          created_at: string;
+          credits_balance: number;
+          id: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          credits_balance?: number;
+          id?: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          credits_balance?: number;
+          id?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "organization_credits_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: true;
             referencedRelation: "organizations";
             referencedColumns: ["id"];
           },

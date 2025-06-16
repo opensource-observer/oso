@@ -550,29 +550,6 @@ class OsoAppClient {
   }
 
   /**
-   * Gets the current credit balance for the logged in user.
-   * @returns Promise<number> - The current credit balance
-   */
-  async getMyCredits(): Promise<number> {
-    console.log("getMyCredits");
-    const user = await this.getUser();
-    const { data, error } = await this.supabaseClient
-      .from("user_credits")
-      .select("credits_balance")
-      .eq("user_id", user.id)
-      .single();
-
-    if (error) {
-      throw error;
-    } else if (!data) {
-      throw new MissingDataError(
-        `Unable to find credits for user id=${user.id}`,
-      );
-    }
-    return data.credits_balance;
-  }
-
-  /**
    * Gets the current credit balance for an organization.
    * @param orgId - The organization ID
    * @returns Promise<number> - The current credit balance
@@ -599,45 +576,6 @@ class OsoAppClient {
       );
     }
     return data.credits_balance;
-  }
-
-  /**
-   * Gets the credit transaction history for the logged in user.
-   * @param args - Optional parameters for pagination and filtering
-   * @returns Promise<Array> - Array of credit transactions
-   */
-  async getMyCreditTransactions(
-    args: Partial<{
-      limit: number;
-      offset: number;
-      transactionType?: string;
-    }> = {},
-  ) {
-    console.log("getMyCreditTransactions: ", args);
-    const user = await this.getUser();
-    const { limit = 50, offset = 0, transactionType } = args;
-
-    let query = this.supabaseClient
-      .from("credit_transactions")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (transactionType) {
-      query = query.eq("transaction_type", transactionType);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw error;
-    } else if (!data) {
-      throw new MissingDataError(
-        `Unable to find credit transactions for user id=${user.id}`,
-      );
-    }
-    return data;
   }
 
   /**
