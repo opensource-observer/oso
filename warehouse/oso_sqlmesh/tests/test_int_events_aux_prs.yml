@@ -19,6 +19,7 @@ test_int_events_aux_prs_basic:
         closed_at: null
         state: "open"
         comments: 0
+        author_association: "FIRST_TIME_CONTRIBUTOR"
       - id: "pr_event_2"
         event_time: "2024-01-02 10:00:00"
         repository_id: 12345
@@ -32,6 +33,7 @@ test_int_events_aux_prs_basic:
         closed_at: null
         state: "open"
         comments: 0
+        author_association: "MEMBER"
     oso.stg_github__pull_request_merge_events:
       rows:
       - id: "pr_merge_event_1"
@@ -93,6 +95,7 @@ test_int_events_aux_prs_basic:
         merged_at: null
         closed_at: null
         comments: 0
+        author_association: "FIRST_TIME_CONTRIBUTOR"
         event_type: "PULL_REQUEST_OPENED"
         event_source_id: "pr_event_1"
         event_source: "GITHUB"
@@ -105,6 +108,7 @@ test_int_events_aux_prs_basic:
         merged_at: null
         closed_at: null
         comments: 1
+        author_association: null
         event_type: "PULL_REQUEST_REVIEW_COMMENT"
         event_source_id: "pr_comment_event_1"
         event_source: "GITHUB"
@@ -117,6 +121,7 @@ test_int_events_aux_prs_basic:
         merged_at: null
         closed_at: null
         comments: 0
+        author_association: "MEMBER"
         event_type: "PULL_REQUEST_OPENED"
         event_source_id: "pr_event_2"
         event_source: "GITHUB"
@@ -129,6 +134,7 @@ test_int_events_aux_prs_basic:
         merged_at: null
         closed_at: null
         comments: 1
+        author_association: null
         event_type: "PULL_REQUEST_COMMENT"
         event_source_id: "pr_comment_event_2"
         event_source: "GITHUB"
@@ -141,6 +147,7 @@ test_int_events_aux_prs_basic:
         merged_at: "2024-01-03 16:00:00"
         closed_at: "2024-01-03 16:00:00"
         comments: 2
+        author_association: "CONTRIBUTOR"
         event_type: "PULL_REQUEST_MERGED"
         event_source_id: "pr_merge_event_1"
         event_source: "GITHUB"

@@ -43,7 +43,8 @@ WITH github_pull_requests AS (
     created_at,
     merged_at,
     closed_at,
-    comments
+    comments,
+    author_association
   FROM oso.stg_github__pull_requests
   WHERE
     event_time BETWEEN @start_dt AND @end_dt
@@ -66,7 +67,8 @@ WITH github_pull_requests AS (
     created_at,
     merged_at,
     closed_at,
-    comments
+    comments,
+    author_association
   FROM oso.stg_github__pull_request_merge_events
   WHERE
     event_time BETWEEN @start_dt AND @end_dt
@@ -89,7 +91,8 @@ WITH github_pull_requests AS (
     created_at,
     merged_at,
     closed_at,
-    comments
+    comments,
+    NULL AS author_association
   FROM oso.stg_github__comments
   WHERE
     event_time BETWEEN @start_dt AND @end_dt
@@ -106,7 +109,8 @@ WITH github_pull_requests AS (
     created_at,
     merged_at,
     closed_at,
-    comments
+    comments,
+    author_association
   FROM (
     SELECT
       *
@@ -131,6 +135,7 @@ SELECT
   merged_at,
   closed_at,
   comments,
+  author_association,
   UPPER(event_type) AS event_type,
   event_source_id::TEXT AS event_source_id,
   UPPER(event_source) AS event_source
