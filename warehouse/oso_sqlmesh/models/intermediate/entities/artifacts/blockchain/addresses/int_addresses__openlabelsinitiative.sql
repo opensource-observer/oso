@@ -13,8 +13,8 @@ WITH pivoted AS (
     CASE WHEN tag_id = 'deployer_address' THEN tag_value ELSE address END
       AS address,
     CASE 
-      WHEN chain_id = 'eip155:any' THEN 1
-      WHEN chain_id LIKE 'eip155:%'
+      WHEN chain_id LIKE '%:any' THEN 1
+      WHEN chain_id LIKE '%:%'
         THEN CAST(SPLIT_PART(chain_id, ':', 2) AS INTEGER)
       ELSE NULL
     END AS chain_id,
