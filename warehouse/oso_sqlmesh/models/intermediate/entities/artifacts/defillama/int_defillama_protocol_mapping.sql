@@ -10,12 +10,12 @@ MODEL(
 
 WITH parent_protocols AS (  
   SELECT DISTINCT
-    protocol,
+    slug AS protocol,
     CASE 
       WHEN parent_protocol LIKE '%#%' THEN SPLIT(parent_protocol, '#')[2]
       ELSE parent_protocol 
     END AS parent_protocol
-  FROM oso.stg_defillama__tvl_events
+  FROM oso.stg_defillama__protocol_metadata
   WHERE
     parent_protocol IS NOT NULL
     AND parent_protocol != ''

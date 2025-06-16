@@ -15,132 +15,6 @@ from ossdirectory import fetch_data
 
 logger = logging.getLogger(__name__)
 
-LEGACY_DEFILLAMA_PROTOCOLS = [
-    "aave",
-    "aave-v1",
-    "aave-v2",
-    "aave-v3",
-    "across",
-    "acryptos",
-    "aera",
-    "aerodrome-slipstream",
-    "aerodrome-v1",
-    "aktionariat",
-    "alchemix",
-    "alien-base-v2",
-    "alien-base-v3",
-    "amped-finance",
-    "arcadia-v2",
-    "aura",
-    "avantis",
-    "bakerfi",
-    "balancer-v2",
-    "balancer-v3",
-    "baseswap",
-    "baseswap-v2",
-    "bedrock-unibtc",
-    "bedrock-brbtc",
-    "bedrock-unieth",
-    "bedrock-uniiotx",
-    "beefy",
-    "blueshift",
-    "bmx",
-    "bmx-classic-perps",
-    "bmx-freestyle",
-    "bmx-classic-amm",
-    "bsx-exchange",
-    "clusters",
-    "compound-v3",
-    "contango-v2",
-    "curve-dex",
-    "dackieswap",
-    "derive-v1",
-    "derive-v2",
-    "dforce",
-    "dhedge",
-    "exactly",
-    "extra-finance-leverage-farming",
-    "gains-network",
-    "harvest-finance",
-    "hermes-v2",
-    "hop-protocol",
-    "idle",
-    "infinitypools",
-    "intentx",
-    "ionic-protocol",
-    "javsphere",
-    "jumper-exchange",
-    "kelp",
-    "kim-exchange-v3",
-    "kromatika",
-    "krystal",
-    "lets-get-hai",
-    "lombard-vault",
-    "meme-wallet",
-    "meson",
-    "mint-club",
-    "mint-club-v1",
-    "mint-club-v2",
-    "mintswap-finance",
-    "moonwell",
-    "morpho",
-    "morpho-blue",
-    "mux-perps",
-    "okx",
-    "optimism-bridge",
-    "origin-protocol",
-    "overnight-finance",
-    "pendle",
-    "perpetual-protocol",
-    "pinto",
-    "polynomial-trade",
-    "pooltogether-v5",
-    "pyth-network",
-    "rainbow",
-    "renzo",
-    "reserve-protocol",
-    "sablier",
-    "sablier-lockup",
-    "sablier-legacy",
-    "seamless-protocol",
-    "silo-v1",
-    "solidly-v3",
-    "sommelier",
-    "sonus-exchange",
-    "sonus-exchange-amm",
-    "sonus-exchange-clmm",
-    "stargate-v1",
-    "stargate-v2",
-    "superswap-ink",
-    "sushi",
-    "sushiswap",
-    "sushiswap-v3",
-    "swapbased",
-    "swapbased-amm",
-    "swapbased-concentrated-liquidity",
-    "swapbased-perp",
-    "swapmode",
-    "swapmode-v2",
-    "swapmode-v3",
-    "synapse",
-    "synfutures-v3",
-    "synthetix",
-    "synthetix-v3",
-    "tarot",
-    "team-finance",
-    "tlx-finance",
-    "toros",
-    "velodrome-v2",
-    "woo-x",
-    "woofi",
-    "woofi-earn",
-    "yearn-finance",
-    "zerolend",
-]
-
-DEFILLAMA_PROTOCOLS = ["aave", "sushiswap"]
-
-DEFILLAMA_TVL_EPOCH = "2021-10-01T00:00:00.000Z"
 
 K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
@@ -166,31 +40,6 @@ def defillama_slug_to_name(slug: str) -> str:
     """
 
     return f"{slug.replace('-', '_').replace(".", '__dot__')}_protocol"
-
-
-def defillama_chain_mappings(chain: str) -> str:
-    """
-    Map defillama chains to their canonical names.
-
-    Args:
-        chain (str): The chain to map.
-
-    Returns:
-        str: The mapped chain or the original chain if no mapping is found.
-    """
-
-    chain = chain.lower()
-    return {
-        "arbitrum": "arbitrum_one",
-        "ethereum": "mainnet",
-        "fraxtal": "frax",
-        "op mainnet": "optimism",
-        "polygon": "matic",
-        "polygon zkevm": "polygon_zkevm",
-        "swellchain": "swell",
-        "world chain": "worldchain",
-        "zksync era": "zksync_era",
-    }.get(chain, chain)
 
 
 def get_valid_defillama_slugs() -> Set[str]:
@@ -232,7 +81,6 @@ def get_valid_defillama_slugs() -> Set[str]:
     )
 
     ossd_defillama_parsed_urls.update(op_atlas_data)
-    ossd_defillama_parsed_urls.update(LEGACY_DEFILLAMA_PROTOCOLS)
 
     try:
         r = requests.get(
@@ -306,7 +154,7 @@ def parse_chain_tvl(
                     "slug": protocol,
                     "protocol": protocol,
                     "parent_protocol": parent_protocol,
-                    "chain": defillama_chain_mappings(chain),
+                    "chain": chain,
                     "token": "USD",
                     "tvl": amount,
                     "event_type": "TVL",
@@ -456,14 +304,14 @@ def parse_timeseries_events(
                 }
 
             elif isinstance(val, dict):
-                for ch, nested in val.items():
+                for chain, nested in val.items():
                     num = next(iter(nested.values()))
                     yield {
                         "time": dt.isoformat(),
                         "slug": slug,
                         "protocol": slug,
                         "parent_protocol": parent_protocol,
-                        "chain": defillama_chain_mappings(ch),
+                        "chain": chain,
                         "token": "USD",
                         "event_type": event_type,
                         "amount": float(num),
@@ -629,4 +477,83 @@ def defillama_fee_assets(
     )
     if global_config.enable_bigquery:
         bigquery_adapter(resource, partition="time", cluster=["slug", "chain"])
+    yield resource
+
+
+def get_defillama_protocol_metadata(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch protocol metadata from the DefiLlama API.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Protocol metadata entries with fields like id, name,
+        address, symbol, url, description, logo, chain, category, twitter,
+        parentProtocol, and slug.
+    """
+    session = Session(timeout=300)
+
+    try:
+        context.log.info("Fetching protocol metadata from DefiLlama")
+        response = session.get("https://api.llama.fi/protocols")
+        response.raise_for_status()
+        protocols = response.json()
+
+        for protocol in protocols:
+            yield {
+                "id": str(protocol.get("id", "")),
+                "slug": str(protocol.get("slug", "")),
+                "name": str(protocol.get("name", "")),
+                "address": str(protocol.get("address", "")),
+                "symbol": str(protocol.get("symbol", "")),
+                "url": str(protocol.get("url", "")),
+                "description": str(protocol.get("description", "")),
+                "logo": str(protocol.get("logo", "")),
+                "chain": str(protocol.get("chain", "")),
+                "category": str(protocol.get("category", "")),
+                "twitter": str(protocol.get("twitter", "")),
+                "parent_protocol": str(protocol.get("parentProtocol", "")),
+            }
+
+    except requests.exceptions.RequestException as e:
+        context.log.error(f"Failed to fetch protocol metadata: {e}")
+        raise
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="protocol_metadata",
+    op_tags={
+        "dagster/concurrency_key": "defillama_metadata",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_protocol_metadata_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads protocol metadata from DefiLlama
+    into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes protocol metadata rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_protocol_metadata(context),
+        name="protocol_metadata",
+        primary_key=["slug"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, cluster=["slug"])
     yield resource

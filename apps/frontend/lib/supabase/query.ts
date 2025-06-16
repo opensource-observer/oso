@@ -1,33 +1,5 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { HttpError } from "@opensource-observer/utils";
-import {
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  SUPABASE_SERVICE_KEY,
-} from "@/lib/config";
-import { Database } from "@/lib/types/supabase";
-
-// Supabase unprivileged client
-function createNormalSupabaseClient() {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-
-function createPrivilegedSupabaseClient() {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-}
-
-/**
-// Get the user session
-let userSession: Session | null | undefined;
-supabaseClient.auth
-  .getSession()
-  .then((data) => {
-    userSession = data.data.session;
-  })
-  .catch((e) => {
-    console.warn("Failed to get Supabase session, ", e);
-  });
-*/
 
 type SupabaseQueryArgs = {
   tableName: string; // table to query
@@ -76,9 +48,5 @@ async function supabaseQuery(
   return data;
 }
 
-export {
-  createNormalSupabaseClient,
-  createPrivilegedSupabaseClient,
-  supabaseQuery,
-};
+export { supabaseQuery };
 export type { SupabaseQueryArgs };

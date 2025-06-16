@@ -29,6 +29,18 @@ export type ChatHistoryUpdate = z.infer<
 export type ChatHistoryRelationships = z.infer<
   typeof generated.chatHistoryRelationshipsSchema
 >;
+export type ConnectorRelationshipsRow = z.infer<
+  typeof generated.connectorRelationshipsRowSchema
+>;
+export type ConnectorRelationshipsInsert = z.infer<
+  typeof generated.connectorRelationshipsInsertSchema
+>;
+export type ConnectorRelationshipsUpdate = z.infer<
+  typeof generated.connectorRelationshipsUpdateSchema
+>;
+export type ConnectorRelationshipsRelationships = z.infer<
+  typeof generated.connectorRelationshipsRelationshipsSchema
+>;
 export type CreditTransactionsRow = z.infer<
   typeof generated.creditTransactionsRowSchema
 >;
