@@ -1,8 +1,8 @@
 import typing as t
 
-from metrics_tools.semantic.definition import SemanticQuery
 from llama_index.core.workflow import Context
 from llama_index.core.workflow.handler import WorkflowHandler
+from metrics_tools.semantic.definition import SemanticQuery
 from pydantic import BaseModel, Field
 
 from .sql_query import SqlQuery
@@ -58,5 +58,10 @@ class WrappedResponse:
 
         assert self._handler.ctx is not None, "Workflow handler context is not set."
         return self._handler.ctx
+    
+    @property
+    def response(self) -> ResponseType:
+        """Get the response from the agent."""
+        return self._response
 
 

@@ -2,13 +2,6 @@ import pandas as pd
 from llama_index.core.workflow import Event
 
 
-class Mixin:
-    """A base mixin class for agent workflows.
-
-    """
-    pass
-
-
 class Text2SQLGenerationEvent(Event):
     """An event that represents a text-to-SQL operation.
 
