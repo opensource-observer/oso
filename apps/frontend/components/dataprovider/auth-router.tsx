@@ -43,7 +43,6 @@ function AuthRouter(props: AuthRouterProps) {
     className,
     variableName,
     useTestData,
-    testData,
     noAuthChildren,
     ignoreNoAuth,
     testNoAuth,
@@ -52,13 +51,11 @@ function AuthRouter(props: AuthRouterProps) {
   const supabaseState = useSupabaseState();
   const posthog = usePostHog();
 
-  const data = useTestData
-    ? testData
-    : {
-        user: supabaseState?.session?.user,
-        session: supabaseState?.session,
-        supabase: supabaseState?.supabaseClient,
-      };
+  const data = {
+    user: supabaseState?.session?.user,
+    session: supabaseState?.session,
+    supabase: supabaseState?.supabaseClient,
+  };
 
   if (!useTestData && data.user) {
     posthog?.identify(data.user.id, {
