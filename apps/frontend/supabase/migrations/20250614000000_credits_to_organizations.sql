@@ -52,14 +52,14 @@ CREATE INDEX IF NOT EXISTS "idx_purchase_intents_org_id" ON "public"."purchase_i
 INSERT INTO "public"."organization_credits" ("org_id", "credits_balance", "created_at", "updated_at")
 SELECT 
     o.id as org_id,
-    COALESCE(uc.credits_balance, 0) as credits_balance,
-    COALESCE(uc.created_at, now()) as created_at,
-    COALESCE(uc.updated_at, now()) as updated_at
+    COALESCE(SUM(uc.credits_balance), 0) as credits_balance,
+    MIN(COALESCE(uc.created_at, now())) as created_at,
+    now() as updated_at
 FROM "public"."organizations" o
 LEFT JOIN "public"."users_by_organization" ubo ON o.id = ubo.org_id AND ubo.deleted_at IS NULL
 LEFT JOIN "public"."user_credits" uc ON ubo.user_id = uc.user_id
 WHERE o.deleted_at IS NULL
-GROUP BY o.id, uc.credits_balance, uc.created_at, uc.updated_at
+GROUP BY o.id
 ON CONFLICT (org_id) DO UPDATE SET
     credits_balance = GREATEST(organization_credits.credits_balance, EXCLUDED.credits_balance),
     updated_at = now();
