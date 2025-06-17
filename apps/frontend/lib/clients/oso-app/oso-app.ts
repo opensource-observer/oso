@@ -1085,17 +1085,18 @@ class OsoAppClient {
 
   /**
    * Initiates a Stripe checkout session to buy credits.
-   * @param args - Contains the packageId to purchase and optional orgId
+   * @param args - Contains the packageId to purchase and required orgId
    * @returns Promise<{ sessionId: string; url: string }> - Stripe checkout session info
    */
   async buyCredits(
     args: Partial<{
       packageId: string;
-      orgId?: string;
+      orgId: string;
     }>,
   ): Promise<{ sessionId: string; url: string; publishableKey: string }> {
     console.log("buyCredits: ", args);
     const packageId = ensure(args.packageId, "Missing packageId argument");
+    const orgId = ensure(args.orgId, "Missing orgId argument");
 
     const {
       data: { session },
@@ -1104,10 +1105,7 @@ class OsoAppClient {
       throw new AuthError("No active session");
     }
 
-    const body: { packageId: string; orgId?: string } = { packageId };
-    if (args.orgId) {
-      body.orgId = args.orgId;
-    }
+    const body: { packageId: string; orgId: string } = { packageId, orgId };
 
     const response = await fetch("/api/v1/stripe/checkout", {
       method: "POST",

@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
           const packageId = session.metadata?.packageId;
           const credits = parseInt(session.metadata?.credits || "0");
 
-          if (!userId || !packageId || !credits) {
+          if (!userId || !orgId || !packageId || !credits) {
             logger.error("Missing required data in webhook:", { session });
             return NextResponse.json(
               { error: "Missing data" },
@@ -59,40 +59,23 @@ export async function POST(req: NextRequest) {
             );
           }
 
-          const rpcFunction = orgId
-            ? "add_organization_credits"
-            : "add_credits";
-          const rpcParams = orgId
-            ? {
-                p_org_id: orgId,
-                p_user_id: userId,
-                p_amount: credits,
-                p_transaction_type: "purchase",
-                p_metadata: {
-                  stripe_session_id: session.id,
-                  stripe_payment_intent: extractIntentString(
-                    session.payment_intent,
-                  ),
-                  package_id: packageId,
-                  recovered: true,
-                },
-              }
-            : {
-                p_user_id: userId,
-                p_amount: credits,
-                p_transaction_type: "purchase",
-                p_metadata: {
-                  stripe_session_id: session.id,
-                  stripe_payment_intent: extractIntentString(
-                    session.payment_intent,
-                  ),
-                  package_id: packageId,
-                  recovered: true,
-                },
-              };
+          const rpcParams = {
+            p_org_id: orgId,
+            p_user_id: userId,
+            p_amount: credits,
+            p_transaction_type: "purchase",
+            p_metadata: {
+              stripe_session_id: session.id,
+              stripe_payment_intent: extractIntentString(
+                session.payment_intent,
+              ),
+              package_id: packageId,
+              recovered: true,
+            },
+          };
 
           const { error: creditError } = await supabase.rpc(
-            rpcFunction,
+            "add_organization_credits",
             rpcParams,
           );
 
@@ -105,7 +88,7 @@ export async function POST(req: NextRequest) {
           }
 
           logger.info(
-            `Credits added via recovery: ${credits} for ${orgId ? `org ${orgId}` : `user ${userId}`}`,
+            `Credits added via recovery: ${credits} for org ${orgId}`,
           );
         } else {
           const { error: updateError } = await supabase
@@ -127,40 +110,31 @@ export async function POST(req: NextRequest) {
             logger.error("Failed to update purchase intent:", updateError);
           }
 
-          const rpcFunction = purchaseIntent.org_id
-            ? "add_organization_credits"
-            : "add_credits";
-          const rpcParams = purchaseIntent.org_id
-            ? {
-                p_org_id: purchaseIntent.org_id,
-                p_user_id: purchaseIntent.user_id,
-                p_amount: purchaseIntent.credits_amount,
-                p_transaction_type: "purchase",
-                p_metadata: {
-                  stripe_session_id: session.id,
-                  stripe_payment_intent: extractIntentString(
-                    session.payment_intent,
-                  ),
-                  purchase_intent_id: purchaseIntent.id,
-                  package_id: purchaseIntent.package_id,
-                },
-              }
-            : {
-                p_user_id: purchaseIntent.user_id,
-                p_amount: purchaseIntent.credits_amount,
-                p_transaction_type: "purchase",
-                p_metadata: {
-                  stripe_session_id: session.id,
-                  stripe_payment_intent: extractIntentString(
-                    session.payment_intent,
-                  ),
-                  purchase_intent_id: purchaseIntent.id,
-                  package_id: purchaseIntent.package_id,
-                },
-              };
+          if (!purchaseIntent.org_id) {
+            logger.error("Missing org_id in purchase intent:", purchaseIntent);
+            return NextResponse.json(
+              { error: "Missing org_id" },
+              { status: 400 },
+            );
+          }
+
+          const rpcParams = {
+            p_org_id: purchaseIntent.org_id,
+            p_user_id: purchaseIntent.user_id,
+            p_amount: purchaseIntent.credits_amount,
+            p_transaction_type: "purchase",
+            p_metadata: {
+              stripe_session_id: session.id,
+              stripe_payment_intent: extractIntentString(
+                session.payment_intent,
+              ),
+              purchase_intent_id: purchaseIntent.id,
+              package_id: purchaseIntent.package_id,
+            },
+          };
 
           const { error: creditError } = await supabase.rpc(
-            rpcFunction,
+            "add_organization_credits",
             rpcParams,
           );
 
@@ -173,7 +147,7 @@ export async function POST(req: NextRequest) {
           }
 
           logger.info(
-            `Credits added: ${purchaseIntent.credits_amount} for ${purchaseIntent.org_id ? `org ${purchaseIntent.org_id}` : `user ${purchaseIntent.user_id}`}`,
+            `Credits added: ${purchaseIntent.credits_amount} for org ${purchaseIntent.org_id}`,
           );
         }
 
