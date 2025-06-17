@@ -235,6 +235,9 @@ PLASMIC.registerComponent(MonacoEditor, {
   name: "MonacoEditor",
   description: "Monaco editor",
   props: {
+    defaultValue: {
+      type: "string",
+    },
     value: {
       type: "string",
     },
