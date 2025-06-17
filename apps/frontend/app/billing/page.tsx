@@ -655,6 +655,8 @@ function TestCreditsPageContent() {
     id: string;
     org_name: string;
   } | null>(null);
+  const session =
+    supabaseState._type === "loggedIn" ? supabaseState.session : null;
 
   useEffect(() => {
     if (supabaseState?.supabaseClient) {
@@ -673,11 +675,15 @@ function TestCreditsPageContent() {
         const isRedirectFromPurchase =
           searchParams.get("purchase") === "success";
 
-        if (isRedirectFromPurchase && !supabaseState?.session) {
-          await supabaseState?.revalidate?.();
+        if (
+          isRedirectFromPurchase &&
+          !session &&
+          supabaseState._type !== "loading"
+        ) {
+          await supabaseState.revalidate();
         }
 
-        if (!supabaseState?.session && !isRedirectFromPurchase) {
+        if (!session && !isRedirectFromPurchase) {
           setLoading(false);
           return;
         }
@@ -716,14 +722,14 @@ function TestCreditsPageContent() {
     };
 
     void loadData();
-  }, [client, supabaseState?.session, searchParams, supabaseState?.revalidate]);
+  }, [client, session, searchParams, supabaseState]);
 
   useEffect(() => {
     const purchase = searchParams.get("purchase");
     if (purchase === "success") {
       setSuccess("Payment successful! Your credits have been added.");
 
-      if (client && supabaseState?.session && orgId) {
+      if (client && session && orgId) {
         client
           .getOrganizationCredits({ orgId })
           .then(setCreditBalance)
@@ -732,7 +738,7 @@ function TestCreditsPageContent() {
     } else if (purchase === "cancelled") {
       setError("Payment cancelled. No charges were made.");
     }
-  }, [searchParams, client, supabaseState?.session, orgId]);
+  }, [searchParams, client, session, orgId]);
 
   const handleOrganizationChange = async (newOrgId: string) => {
     if (!client || newOrgId === orgId) return;
@@ -802,11 +808,7 @@ function TestCreditsPageContent() {
     return <LoadingSpinner message="Loading your credits..." />;
   }
 
-  if (
-    !supabaseState?.session &&
-    !authLoading &&
-    !searchParams.get("purchase")
-  ) {
+  if (!session && !authLoading && !searchParams.get("purchase")) {
     return <AuthWarning />;
   }
 

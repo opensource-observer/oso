@@ -241,6 +241,98 @@ like `fetch_defillama_protocols()` in our example. This lets you:
 - Filter or transform the list of endpoints before querying them
 - Implement custom logic for endpoint selection
 
+### Real-World Examples
+
+Here are some real-world examples from our codebase:
+
+#### DeFiLlama TVL and Trading Data
+
+The DeFiLlama asset demonstrates how to handle complex REST API data with multiple endpoints and data types:
+
+```python
+@dlt_factory(
+    key_prefix="defillama",
+    name="tvl_events",
+    op_tags={
+        "dagster/concurrency_key": "defillama_tvl",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_tvl_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Create and register a Dagster asset that materializes DeFiLlama TVL data.
+    """
+    resource = dlt.resource(
+        get_defillama_tvl_events(context),
+        name="tvl_events",
+        primary_key=["slug", "chain", "time"],
+        write_disposition="replace",
+    )
+
+    if global_config.enable_bigquery:
+        bigquery_adapter(
+            resource,
+            partition="time",
+            cluster=["slug", "chain"],
+        )
+
+    yield resource
+```
+
+This example shows:
+
+- Complex data processing with multiple endpoints
+- Error handling for API requests
+- Data validation and transformation
+- Partitioning and clustering for efficient querying
+- Support for multiple chains and protocols
+
+#### Chainlist Chain Data
+
+The Chainlist asset shows how to handle a simple JSON API:
+
+```python
+@dlt_factory(
+    key_prefix="chainlist",
+    name="chains",
+    op_tags={
+        "dagster/concurrency_key": "chainlist_chains",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def chainlist_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Create and register a Dagster asset that materializes Chainlist chain data.
+    """
+    resource = dlt.resource(
+        get_chainlist_data(context),
+        name="chains",
+        primary_key=["chain_id"],
+        write_disposition="replace",
+    )
+
+    if global_config.enable_bigquery:
+        bigquery_adapter(
+            resource,
+            cluster=["chain_id", "chain"],
+        )
+
+    yield resource
+```
+
+This example demonstrates:
+
+- Simple JSON API integration
+- Basic error handling
+- Efficient data loading with clustering
+- Clean data transformation
+
 ### Understanding Resource Dependencies
 
 In the advanced example above, we use several important concepts:

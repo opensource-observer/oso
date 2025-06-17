@@ -16,11 +16,12 @@ function ApolloWrapper({ children }: React.PropsWithChildren) {
     //console.log(userToken);
     const httpLink = new HttpLink({
       uri: DB_GRAPHQL_URL,
-      headers: supabaseState?.session?.access_token
-        ? {
-            Authorization: `Bearer ${supabaseState.session.access_token}`,
-          }
-        : {},
+      headers:
+        supabaseState._type === "loggedIn"
+          ? {
+              Authorization: `Bearer ${supabaseState.session.access_token}`,
+            }
+          : {},
     });
     return httpLink;
   };

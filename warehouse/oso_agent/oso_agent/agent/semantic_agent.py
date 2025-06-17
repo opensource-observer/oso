@@ -10,7 +10,7 @@ from metrics_tools.semantic.definition import SemanticQuery
 from metrics_tools.semantic.testing import setup_registry
 
 from ..tool.llm import create_llm
-from ..types.response import SemanticResponse, WrappedResponse
+from ..types.response import ResponseType, SemanticResponse
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError
 from .basic_agent import BasicAgent
@@ -30,11 +30,11 @@ The Semantic Model is as follows
 
 """
 
-def as_semantic_response(raw_response: t.Any) -> WrappedResponse:
+def as_semantic_response(raw_response: t.Any) -> ResponseType:
     """Wrap a SemanticQuery response in a WrappedAgentResponse."""
     query = SemanticQuery.model_validate_json(str(raw_response))
     response = SemanticResponse(query=query)
-    return WrappedResponse(response=response)
+    return response
 
 
 @wrapped_agent(as_semantic_response)

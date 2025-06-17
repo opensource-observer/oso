@@ -37,11 +37,12 @@ const OsoChatProviderRegistration: RegistrationProps<OsoChatProviderProps> = {
 };
 
 function OsoChatProvider(props: OsoChatProviderProps) {
-  const { agentName, chatId, variableName, testData, useTestData } = props;
+  const { agentName, chatId, variableName, useTestData } = props;
   const supabaseState = useSupabaseState();
   const [firstLoad, setFirstLoad] = React.useState<boolean>(true);
   const { client } = useOsoAppClient();
-  const session = supabaseState?.session;
+  const session =
+    supabaseState._type === "loggedIn" ? supabaseState.session : null;
   const headers: Record<string, string> = {};
 
   if (session) {
@@ -94,7 +95,6 @@ function OsoChatProvider(props: OsoChatProviderProps) {
   }, [firstLoad, client, useTestData, chatId, chatData.messages]);
 
   const key = variableName ?? DEFAULT_PLASMIC_KEY;
-  const displayMessages = useTestData ? testData : chatData.messages;
   //console.log(data);
   //console.log(JSON.stringify(data, null, 2));
   //console.log(error);
@@ -105,7 +105,7 @@ function OsoChatProvider(props: OsoChatProviderProps) {
       variableName={key}
       formattedData={{
         ...chatData,
-        messages: displayMessages,
+        messages: chatData.messages,
       }}
       loading={false}
     />

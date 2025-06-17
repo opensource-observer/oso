@@ -48,13 +48,11 @@ const OsoDataProviderRegistration: RegistrationProps<OsoDataProviderProps> = {
 };
 
 function OsoDataProvider(props: OsoDataProviderProps) {
-  const { dataFetches, variableName, testData, useTestData } = props;
+  const { dataFetches, variableName } = props;
   const key = genKey(props);
   const { client } = useOsoAppClient();
   const { data, mutate, error, isLoading } = useSWR(key, async () => {
-    if (useTestData) {
-      return testData;
-    } else if (!dataFetches || _.isEmpty(dataFetches)) {
+    if (!dataFetches || _.isEmpty(dataFetches)) {
       return;
     } else if (!client) {
       throw new Error("No Supabase client found");

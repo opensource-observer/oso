@@ -15,7 +15,8 @@ interface OSOChatProps {
 export function OSOChat(props: OSOChatProps) {
   const { className, children } = props;
   const supabaseState = useSupabaseState();
-  const session = supabaseState?.session;
+  const session =
+    supabaseState._type === "loggedIn" ? supabaseState.session : null;
   const {
     messages,
     input,

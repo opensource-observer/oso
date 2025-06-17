@@ -71,15 +71,13 @@ const SupabaseQueryRegistration: RegistrationProps<SupabaseQueryProps> = {
 
 function SupabaseQuery(props: SupabaseQueryProps) {
   // These props are set in the Plasmic Studio
-  const { variableName, tableName, useTestData, testData } = props;
+  const { variableName, tableName } = props;
   const key = variableName ?? genKey(props);
   const supabaseState = useSupabaseState();
   const { data, error, isLoading } = useSWR(key, async () => {
-    if (useTestData) {
-      return testData;
-    } else if (!tableName) {
+    if (!tableName) {
       return;
-    } else if (!supabaseState) {
+    } else if (!supabaseState || supabaseState._type === "loading") {
       return console.warn("Supabase not initialized yet");
     }
     const supabaseClient = supabaseState.supabaseClient;
