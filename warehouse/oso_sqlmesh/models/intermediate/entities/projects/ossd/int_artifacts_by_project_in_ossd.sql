@@ -2,6 +2,15 @@ MODEL (
   name oso.int_artifacts_by_project_in_ossd,
   kind FULL,
   dialect trino,
+  partitioned_by (
+    artifact_source,
+    artifact_type
+  ),
+  grain (project_id, artifact_id),
+  tags (
+    'entity_category=artifact',
+    'entity_category=project'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
@@ -241,7 +250,8 @@ WITH projects AS (
 )
 SELECT
   project_id,
-  @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
+  @oso_entity_id(artifact_source, artifact_namespace, artifact_name)
+    AS artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,

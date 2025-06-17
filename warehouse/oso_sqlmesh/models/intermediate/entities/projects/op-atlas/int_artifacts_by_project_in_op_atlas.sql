@@ -1,8 +1,17 @@
 MODEL (
   name oso.int_artifacts_by_project_in_op_atlas,
+  description "Unifies all artifacts from OP Atlas, including handling cases where contracts come in via OSO",
   kind FULL,
   dialect trino,
-  description "Unifies all artifacts from OP Atlas, including handling cases where contracts come in via OSO",
+  partitioned_by (
+    artifact_source,
+    artifact_type
+  ),
+  grain (project_id, artifact_id),
+  tags (
+    'entity_category=artifact',
+    'entity_category=project'
+  ),
   audits (
     not_null(columns := (artifact_id, project_id))
   )
