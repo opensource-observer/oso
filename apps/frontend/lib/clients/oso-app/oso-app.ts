@@ -654,48 +654,59 @@ class OsoAppClient {
   }
 
   /**
-   * Gets the current credit balance for the logged in user.
+   * Gets the current credit balance for an organization.
+   * @param orgId - The organization ID
    * @returns Promise<number> - The current credit balance
    */
-  async getMyCredits(): Promise<number> {
-    console.log("getMyCredits");
-    const user = await this.getUser();
+  async getOrganizationCredits(
+    args: Partial<{ orgId: string }>,
+  ): Promise<number> {
+    const id = ensure(
+      args.orgId,
+      "orgId is required to get organization credits",
+    );
+    console.log("getOrganizationCredits for org:", id);
     const { data, error } = await this.supabaseClient
-      .from("user_credits")
+      .from("organization_credits")
       .select("credits_balance")
-      .eq("user_id", user.id)
+      .eq("org_id", id)
       .single();
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credits for user id=${user.id}`,
+        `Unable to find credits for organization id=${id}`,
       );
     }
     return data.credits_balance;
   }
 
   /**
-   * Gets the credit transaction history for the logged in user.
+   * Gets the credit transaction history for an organization.
+   * @param orgId - The organization ID
    * @param args - Optional parameters for pagination and filtering
-   * @returns Promise<Array> - Array of credit transactions
+   * @returns Promise<Array> - Array of organization credit transactions
    */
-  async getMyCreditTransactions(
+  async getOrganizationCreditTransactions(
     args: Partial<{
+      orgId: string;
       limit: number;
       offset: number;
       transactionType?: string;
     }> = {},
   ) {
-    console.log("getMyCreditTransactions: ", args);
-    const user = await this.getUser();
+    const id = ensure(
+      args.orgId,
+      "orgId is required to get organization credit transactions",
+    );
+    console.log("getOrganizationCreditTransactions for org:", id, args);
     const { limit = 50, offset = 0, transactionType } = args;
 
     let query = this.supabaseClient
-      .from("credit_transactions")
+      .from("organization_credit_transactions")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("org_id", id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -709,7 +720,7 @@ class OsoAppClient {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credit transactions for user id=${user.id}`,
+        `Unable to find credit transactions for organization id=${id}`,
       );
     }
     return data;
@@ -1074,16 +1085,18 @@ class OsoAppClient {
 
   /**
    * Initiates a Stripe checkout session to buy credits.
-   * @param args - Contains the packageId to purchase
+   * @param args - Contains the packageId to purchase and required orgId
    * @returns Promise<{ sessionId: string; url: string }> - Stripe checkout session info
    */
   async buyCredits(
     args: Partial<{
       packageId: string;
+      orgId: string;
     }>,
   ): Promise<{ sessionId: string; url: string; publishableKey: string }> {
     console.log("buyCredits: ", args);
     const packageId = ensure(args.packageId, "Missing packageId argument");
+    const orgId = ensure(args.orgId, "Missing orgId argument");
 
     const {
       data: { session },
@@ -1092,13 +1105,15 @@ class OsoAppClient {
       throw new AuthError("No active session");
     }
 
+    const body: { packageId: string; orgId: string } = { packageId, orgId };
+
     const response = await fetch("/api/v1/stripe/checkout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ packageId }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

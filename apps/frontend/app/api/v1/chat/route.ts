@@ -22,19 +22,34 @@ export async function POST(req: NextRequest) {
   const prompt = await req.json();
   await using tracker = trackServerEvent(user);
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.CHAT_QUERY,
-    "/api/v1/chat",
-    { message: getLatestMessage(prompt.messages) },
-  );
+  if (user.role === "anonymous") {
+    logger.log(`/api/chat: User is anonymous`);
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
+  }
+
+  const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
+  if (!orgId) {
+    logger.log(`/api/chat: User ${user.userId} has no organization`);
+    return NextResponse.json(
+      { error: "User must be part of an organization" },
+      { status: 403 },
+    );
+  }
+
+  const creditsDeducted =
+    await CreditsService.checkAndDeductOrganizationCredits(
+      user,
+      orgId,
+      TransactionType.CHAT_QUERY,
+      "/api/v1/chat",
+      { message: getLatestMessage(prompt.messages) },
+    );
 
   if (!creditsDeducted) {
-    logger.log(
-      `/api/chat: Insufficient credits for user ${
-        user.role === "anonymous" ? "anonymous" : user.userId
-      }`,
-    );
+    logger.log(`/api/chat: Insufficient credits for user ${user.userId}`);
     return NextResponse.json(
       { error: "Insufficient credits" },
       { status: 402 },

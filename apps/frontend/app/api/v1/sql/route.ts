@@ -65,12 +65,20 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.SQL_QUERY,
-    "/api/v1/sql",
-    { query },
-  );
+  const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
+  if (!orgId) {
+    logger.log(`/api/sql: User ${user.userId} has no organization`);
+    return makeErrorResponse("User must be part of an organization", 403);
+  }
+
+  const creditsDeducted =
+    await CreditsService.checkAndDeductOrganizationCredits(
+      user,
+      orgId,
+      TransactionType.SQL_QUERY,
+      "/api/v1/sql",
+      { query },
+    );
 
   if (!creditsDeducted) {
     logger.log(`/api/sql: Insufficient credits for user ${user.userId}`);
