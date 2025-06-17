@@ -32,7 +32,7 @@ function validateDynamicConnectorParams(
     !connector_name
       .trim()
       .toLowerCase()
-      .startsWith(org.org_name.trim().toLowerCase())
+      .startsWith(`${org.org_name.trim().toLowerCase()}__`)
   ) {
     return NextResponse.json(
       {
