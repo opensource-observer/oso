@@ -1,7 +1,13 @@
 MODEL (
   name oso.int_artifacts_by_project_in_ossd_downstream,
+  description "Discovers all contracts downstream of project deployers and factories",
   kind FULL,
   dialect trino,
+  partitioned_by (
+    artifact_source,
+    artifact_type
+  ),
+  grain (project_id, artifact_id),
   tags (
     'entity_category=project'
   ),
@@ -10,6 +16,7 @@ MODEL (
   )
 );
 
+-- Get all deployers for a project
 WITH project_deployers AS (
   SELECT
     project_id,
@@ -18,6 +25,7 @@ WITH project_deployers AS (
   WHERE artifact_type = 'DEPLOYER'
 ),
 
+-- Get all factories for a project
 project_factories AS (
   SELECT
     project_id,
@@ -27,39 +35,36 @@ project_factories AS (
   WHERE artifact_type = 'FACTORY'
 ),
 
+-- Get all contracts downstream of project deployers
 contracts_from_deployers AS (
-  SELECT
-    project_deployers.project_id,
-    derived_contracts.chain AS artifact_source,
-    derived_contracts.contract_address AS artifact_name
-  FROM oso.int_derived_contracts AS derived_contracts
-  INNER JOIN project_deployers
-    ON derived_contracts.originating_address = project_deployers.artifact_name
+  SELECT DISTINCT
+    pd.project_id,
+    derived.chain AS artifact_source,
+    derived.contract_address AS artifact_name
+  FROM project_deployers AS pd
+  JOIN oso.int_derived_contracts AS derived
+    ON
+      -- Direct deployments
+      derived.originating_address = pd.artifact_name
+      OR 
+      -- Deployments through factories
+      derived.factory_address IN (
+        SELECT contract_address 
+        FROM oso.int_derived_contracts 
+        WHERE originating_address = pd.artifact_name
+      )
 ),
 
+-- Get all contracts downstream of project factories
 contracts_from_factories AS (
-  SELECT
-    project_factories.project_id,
-    factories.chain AS artifact_source,
-    factories.contract_address AS artifact_name
-  FROM oso.int_factories AS factories
-  INNER JOIN project_factories
-    ON factories.factory_address = project_factories.artifact_name
-    AND factories.chain = project_factories.artifact_source
-),
-
-all_contracts AS (
-  SELECT
-    project_id,
-    artifact_source,
-    artifact_name
-  FROM contracts_from_deployers
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_source,
-    artifact_name
-  FROM contracts_from_factories
+  SELECT DISTINCT
+    pf.project_id,
+    derived.chain AS artifact_source,
+    derived.contract_address AS artifact_name
+  FROM project_factories AS pf
+  JOIN oso.int_derived_contracts AS derived
+    ON derived.factory_address = pf.artifact_name
+    AND derived.chain = pf.artifact_source
 )
 
 SELECT DISTINCT
@@ -68,5 +73,11 @@ SELECT DISTINCT
   artifact_source,
   artifact_name AS artifact_source_id,
   '' AS artifact_namespace,
-  artifact_name
-FROM all_contracts
+  artifact_name,
+  'CONTRACT' AS artifact_type,
+  artifact_name AS artifact_url
+FROM (
+  SELECT * FROM contracts_from_deployers
+  UNION ALL
+  SELECT * FROM contracts_from_factories
+) all_contracts

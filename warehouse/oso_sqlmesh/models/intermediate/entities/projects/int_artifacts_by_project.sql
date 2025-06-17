@@ -2,8 +2,13 @@ MODEL (
   name oso.int_artifacts_by_project,
   kind FULL,
   dialect trino,
+  partitioned_by (
+    artifact_source,
+    project_source
+  ),
   grain (project_id, artifact_id),
   tags (
+    'entity_category=artifact',
     'entity_category=project'
   ),
   audits (
