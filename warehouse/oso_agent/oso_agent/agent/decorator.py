@@ -1,7 +1,7 @@
 import typing as t
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from oso_agent.types.response import StrResponse, ResponseType 
+from oso_agent.types.response import ResponseType, StrResponse
 
 from ..util.config import AgentConfig
 from .base import GenericWrappedAgent, ResponseWrapper

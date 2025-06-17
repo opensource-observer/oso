@@ -108,19 +108,34 @@ const customHandler = async (req: NextRequest) => {
     logger.error("Error parsing GraphQL request body:", error);
   }
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.GRAPHQL_QUERY,
-    "/api/v1/graphql",
-    { operation, query },
-  );
+  if (user.role === "anonymous") {
+    logger.log(`/api/graphql: User is anonymous`);
+    return NextResponse.json(
+      { errors: [{ message: "Authentication required" }] },
+      { status: 401 },
+    );
+  }
+
+  const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
+  if (!orgId) {
+    logger.log(`/api/graphql: User ${user.userId} has no organization`);
+    return NextResponse.json(
+      { errors: [{ message: "User must be part of an organization" }] },
+      { status: 403 },
+    );
+  }
+
+  const creditsDeducted =
+    await CreditsService.checkAndDeductOrganizationCredits(
+      user,
+      orgId,
+      TransactionType.GRAPHQL_QUERY,
+      "/api/v1/graphql",
+      { operation, query },
+    );
 
   if (!creditsDeducted) {
-    logger.log(
-      `/api/graphql: Insufficient credits for user ${
-        user.role === "anonymous" ? "anonymous" : user.userId
-      }`,
-    );
+    logger.log(`/api/graphql: Insufficient credits for user ${user.userId}`);
     return NextResponse.json(
       { errors: [{ message: "Insufficient credits" }] },
       { status: 402 },
