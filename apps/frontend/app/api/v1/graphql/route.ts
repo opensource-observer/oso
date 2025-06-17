@@ -13,6 +13,7 @@ import { EVENTS } from "@/lib/types/posthog";
 import { getUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 // https://vercel.com/guides/loading-static-file-nextjs-api-route
 const supergraphPath = path.join(
@@ -106,40 +107,27 @@ const customHandler = async (req: NextRequest) => {
   } catch (error) {
     logger.error("Error parsing GraphQL request body:", error);
   }
-  console.log(operation);
-  // if (user.role === "anonymous") {
-  //   logger.log(`/api/graphql: User is anonymous`);
-  //   return NextResponse.json(
-  //     { errors: [{ message: "Authentication required" }] },
-  //     { status: 401 },
-  //   );
-  // }
-  //
-  // const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
-  // if (!orgId) {
-  //   logger.log(`/api/graphql: User ${user.userId} has no organization`);
-  //   return NextResponse.json(
-  //     { errors: [{ message: "User must be part of an organization" }] },
-  //     { status: 403 },
-  //   );
-  // }
 
-  // const creditsDeducted =
-  //   await CreditsService.checkAndDeductOrganizationCredits(
-  //     user,
-  //     orgId,
-  //     TransactionType.GRAPHQL_QUERY,
-  //     "/api/v1/graphql",
-  //     { operation, query },
-  //   );
+  if (user.role !== "anonymous") {
+    const orgId = user.orgId;
 
-  // if (!creditsDeducted) {
-  //   logger.log(`/api/graphql: Insufficient credits for user ${user.userId}`);
-  //   return NextResponse.json(
-  //     { errors: [{ message: "Insufficient credits" }] },
-  //     { status: 402 },
-  //   );
-  // }
+    if (orgId) {
+      try {
+        await CreditsService.checkAndDeductOrganizationCredits(
+          user,
+          orgId,
+          TransactionType.GRAPHQL_QUERY,
+          "/api/v1/graphql",
+          { operation, query },
+        );
+      } catch (error) {
+        logger.error(
+          `/api/graphql: Error tracking usage for user ${user.userId}:`,
+          error,
+        );
+      }
+    }
+  }
 
   const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
     context: async () => {

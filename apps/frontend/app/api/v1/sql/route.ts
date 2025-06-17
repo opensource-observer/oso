@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import * as jsonwebtoken from "jsonwebtoken";
 import { AuthUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 // Next.js route control
 export const revalidate = 0;
@@ -64,25 +65,24 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  // const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
-  // if (!orgId) {
-  //   logger.log(`/api/sql: User ${user.userId} has no organization`);
-  //   return makeErrorResponse("User must be part of an organization", 403);
-  // }
+  const orgId = user.orgId;
 
-  // const creditsDeducted =
-  //   await CreditsService.checkAndDeductOrganizationCredits(
-  //     user,
-  //     orgId,
-  //     TransactionType.SQL_QUERY,
-  //     "/api/v1/sql",
-  //     { query },
-  //   );
-
-  // if (!creditsDeducted) {
-  //   logger.log(`/api/sql: Insufficient credits for user ${user.userId}`);
-  //   return makeErrorResponse("Insufficient credits", 402);
-  // }
+  if (orgId) {
+    try {
+      await CreditsService.checkAndDeductOrganizationCredits(
+        user,
+        orgId,
+        TransactionType.SQL_QUERY,
+        "/api/v1/sql",
+        { query },
+      );
+    } catch (error) {
+      logger.error(
+        `/api/sql: Error tracking usage for user ${user.userId}:`,
+        error,
+      );
+    }
+  }
 
   const jwt = signJWT(user);
 
