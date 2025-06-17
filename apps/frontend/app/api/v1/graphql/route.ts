@@ -11,7 +11,6 @@ import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { EVENTS } from "@/lib/types/posthog";
 import { getUser } from "@/lib/auth/auth";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
 
@@ -107,40 +106,40 @@ const customHandler = async (req: NextRequest) => {
   } catch (error) {
     logger.error("Error parsing GraphQL request body:", error);
   }
+  console.log(operation);
+  // if (user.role === "anonymous") {
+  //   logger.log(`/api/graphql: User is anonymous`);
+  //   return NextResponse.json(
+  //     { errors: [{ message: "Authentication required" }] },
+  //     { status: 401 },
+  //   );
+  // }
+  //
+  // const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
+  // if (!orgId) {
+  //   logger.log(`/api/graphql: User ${user.userId} has no organization`);
+  //   return NextResponse.json(
+  //     { errors: [{ message: "User must be part of an organization" }] },
+  //     { status: 403 },
+  //   );
+  // }
 
-  if (user.role === "anonymous") {
-    logger.log(`/api/graphql: User is anonymous`);
-    return NextResponse.json(
-      { errors: [{ message: "Authentication required" }] },
-      { status: 401 },
-    );
-  }
+  // const creditsDeducted =
+  //   await CreditsService.checkAndDeductOrganizationCredits(
+  //     user,
+  //     orgId,
+  //     TransactionType.GRAPHQL_QUERY,
+  //     "/api/v1/graphql",
+  //     { operation, query },
+  //   );
 
-  const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
-  if (!orgId) {
-    logger.log(`/api/graphql: User ${user.userId} has no organization`);
-    return NextResponse.json(
-      { errors: [{ message: "User must be part of an organization" }] },
-      { status: 403 },
-    );
-  }
-
-  const creditsDeducted =
-    await CreditsService.checkAndDeductOrganizationCredits(
-      user,
-      orgId,
-      TransactionType.GRAPHQL_QUERY,
-      "/api/v1/graphql",
-      { operation, query },
-    );
-
-  if (!creditsDeducted) {
-    logger.log(`/api/graphql: Insufficient credits for user ${user.userId}`);
-    return NextResponse.json(
-      { errors: [{ message: "Insufficient credits" }] },
-      { status: 402 },
-    );
-  }
+  // if (!creditsDeducted) {
+  //   logger.log(`/api/graphql: Insufficient credits for user ${user.userId}`);
+  //   return NextResponse.json(
+  //     { errors: [{ message: "Insufficient credits" }] },
+  //     { status: 402 },
+  //   );
+  // }
 
   const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
     context: async () => {

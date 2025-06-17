@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { getUser } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
 
@@ -30,31 +29,31 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
-  if (!orgId) {
-    logger.log(`/api/chat: User ${user.userId} has no organization`);
-    return NextResponse.json(
-      { error: "User must be part of an organization" },
-      { status: 403 },
-    );
-  }
+  // const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
+  // if (!orgId) {
+  //   logger.log(`/api/chat: User ${user.userId} has no organization`);
+  //   return NextResponse.json(
+  //     { error: "User must be part of an organization" },
+  //     { status: 403 },
+  //   );
+  // }
 
-  const creditsDeducted =
-    await CreditsService.checkAndDeductOrganizationCredits(
-      user,
-      orgId,
-      TransactionType.CHAT_QUERY,
-      "/api/v1/chat",
-      { message: getLatestMessage(prompt.messages) },
-    );
+  // const creditsDeducted =
+  //   await CreditsService.checkAndDeductOrganizationCredits(
+  //     user,
+  //     orgId,
+  //     TransactionType.CHAT_QUERY,
+  //     "/api/v1/chat",
+  //     { message: getLatestMessage(prompt.messages) },
+  //   );
 
-  if (!creditsDeducted) {
-    logger.log(`/api/chat: Insufficient credits for user ${user.userId}`);
-    return NextResponse.json(
-      { error: "Insufficient credits" },
-      { status: 402 },
-    );
-  }
+  // if (!creditsDeducted) {
+  //   logger.log(`/api/chat: Insufficient credits for user ${user.userId}`);
+  //   return NextResponse.json(
+  //     { error: "Insufficient credits" },
+  //     { status: 402 },
+  //   );
+  // }
 
   try {
     tracker.track(EVENTS.API_CALL, {
