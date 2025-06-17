@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import * as jsonwebtoken from "jsonwebtoken";
 import { AuthUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 // Next.js route control
 export const revalidate = 0;
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const query = body?.[QUERY];
   const format = body?.[FORMAT] ?? "json";
+  const orgId = body?.orgId;
   const user = await getUser(request);
   await using tracker = trackServerEvent(user);
 
@@ -64,25 +66,24 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  // const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
-  // if (!orgId) {
-  //   logger.log(`/api/sql: User ${user.userId} has no organization`);
-  //   return makeErrorResponse("User must be part of an organization", 403);
-  // }
+  if (!orgId) {
+    logger.log(`/api/sql: Missing orgId`);
+    return makeErrorResponse("Organization ID is required", 400);
+  }
 
-  // const creditsDeducted =
-  //   await CreditsService.checkAndDeductOrganizationCredits(
-  //     user,
-  //     orgId,
-  //     TransactionType.SQL_QUERY,
-  //     "/api/v1/sql",
-  //     { query },
-  //   );
+  const creditsDeducted =
+    await CreditsService.checkAndDeductOrganizationCredits(
+      user,
+      orgId,
+      TransactionType.SQL_QUERY,
+      "/api/v1/sql",
+      { query },
+    );
 
-  // if (!creditsDeducted) {
-  //   logger.log(`/api/sql: Insufficient credits for user ${user.userId}`);
-  //   return makeErrorResponse("Insufficient credits", 402);
-  // }
+  if (!creditsDeducted) {
+    logger.log(`/api/sql: Insufficient credits for user ${user.userId}`);
+    return makeErrorResponse("Insufficient credits", 402);
+  }
 
   const jwt = signJWT(user);
 
