@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 export const maxDuration = 60;
 
@@ -29,31 +30,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
-  // if (!orgId) {
-  //   logger.log(`/api/chat: User ${user.userId} has no organization`);
-  //   return NextResponse.json(
-  //     { error: "User must be part of an organization" },
-  //     { status: 403 },
-  //   );
-  // }
+  const orgId = user.orgId;
 
-  // const creditsDeducted =
-  //   await CreditsService.checkAndDeductOrganizationCredits(
-  //     user,
-  //     orgId,
-  //     TransactionType.CHAT_QUERY,
-  //     "/api/v1/chat",
-  //     { message: getLatestMessage(prompt.messages) },
-  //   );
-
-  // if (!creditsDeducted) {
-  //   logger.log(`/api/chat: Insufficient credits for user ${user.userId}`);
-  //   return NextResponse.json(
-  //     { error: "Insufficient credits" },
-  //     { status: 402 },
-  //   );
-  // }
+  if (orgId) {
+    try {
+      await CreditsService.checkAndDeductOrganizationCredits(
+        user,
+        orgId,
+        TransactionType.CHAT_QUERY,
+        "/api/v1/chat",
+        { message: getLatestMessage(prompt.messages) },
+      );
+    } catch (error) {
+      logger.error(
+        `/api/chat: Error tracking usage for user ${user.userId}:`,
+        error,
+      );
+    }
+  }
 
   try {
     tracker.track(EVENTS.API_CALL, {

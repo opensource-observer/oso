@@ -120,25 +120,4 @@ export class CreditsService {
 
     return data;
   }
-
-  static async getUserPrimaryOrganization(
-    userId: string,
-  ): Promise<string | null> {
-    const supabaseClient = await createServerClient();
-    const { data, error } = await supabaseClient
-      .from("users_by_organization")
-      .select("org_id")
-      .eq("user_id", userId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .single();
-
-    if (error) {
-      logger.error("Error fetching user primary organization:", error);
-      return null;
-    }
-
-    return data?.org_id || null;
-  }
 }
