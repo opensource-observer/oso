@@ -4,7 +4,6 @@ import { getUser } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 export const maxDuration = 60;
 
@@ -20,7 +19,6 @@ const getLatestMessage = (messages: any[]) => {
 export async function POST(req: NextRequest) {
   const user = await getUser(req);
   const prompt = await req.json();
-  const orgId = prompt.orgId;
   await using tracker = trackServerEvent(user);
 
   if (user.role === "anonymous") {
@@ -31,30 +29,31 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (!orgId) {
-    logger.log(`/api/chat: Missing orgId`);
-    return NextResponse.json(
-      { error: "Organization ID is required" },
-      { status: 400 },
-    );
-  }
+  // const orgId = await CreditsService.getUserPrimaryOrganization(user.userId);
+  // if (!orgId) {
+  //   logger.log(`/api/chat: User ${user.userId} has no organization`);
+  //   return NextResponse.json(
+  //     { error: "User must be part of an organization" },
+  //     { status: 403 },
+  //   );
+  // }
 
-  const creditsDeducted =
-    await CreditsService.checkAndDeductOrganizationCredits(
-      user,
-      orgId,
-      TransactionType.CHAT_QUERY,
-      "/api/v1/chat",
-      { message: getLatestMessage(prompt.messages) },
-    );
+  // const creditsDeducted =
+  //   await CreditsService.checkAndDeductOrganizationCredits(
+  //     user,
+  //     orgId,
+  //     TransactionType.CHAT_QUERY,
+  //     "/api/v1/chat",
+  //     { message: getLatestMessage(prompt.messages) },
+  //   );
 
-  if (!creditsDeducted) {
-    logger.log(`/api/chat: Insufficient credits for user ${user.userId}`);
-    return NextResponse.json(
-      { error: "Insufficient credits" },
-      { status: 402 },
-    );
-  }
+  // if (!creditsDeducted) {
+  //   logger.log(`/api/chat: Insufficient credits for user ${user.userId}`);
+  //   return NextResponse.json(
+  //     { error: "Insufficient credits" },
+  //     { status: 402 },
+  //   );
+  // }
 
   try {
     tracker.track(EVENTS.API_CALL, {
