@@ -1,156 +1,108 @@
 import { EVMNetworkValidator } from "./evm.js";
 
-export type ArtifactType = 'CONTRACT' | 'FACTORY' | 'DEPLOYER' | 'EOA' | 'WALLET' | 'SAFE' | 'BRIDGE';
-
-interface ContractResponse {
-  contractNamespace: string;
-  originatingAddress: string;
-  rootDeployerAddress: string;
-  deploymentDate: string;
+interface ContractsV0ValidatorOptions {
+  osoApiKey: string;
+  osoEndpoint: string;
+  namespace?: string;
 }
 
-export class ContractsValidator {
+/**
+ * Enhanced ContractsV0Validator using dynamic GraphQL variables
+ */
+export class ContractsV0Validator implements EVMNetworkValidator {
   private apiKey: string;
   private endpoint: string;
-  private network: string;
+  private namespace?: string;
 
-  constructor(network: string, apiKey: string, endpoint: string = 'https://www.opensource.observer/api/v1/graphql') {
-    this.network = network;
-    this.apiKey = apiKey;
-    this.endpoint = endpoint;
-
-    if (!apiKey) {
-      console.warn('Warning: No API key provided. Requests may fail.');
-    }
+  constructor(opts: ContractsV0ValidatorOptions) {
+    this.apiKey = opts.osoApiKey;
+    this.endpoint = opts.osoEndpoint;
+    this.namespace = opts.namespace;
   }
 
-  private async queryContracts(address: string): Promise<ContractResponse[]> {
+  private async queryContractsV0(query: string, variables?: any) {
     const response = await fetch(this.endpoint, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': this.apiKey
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
       },
-      body: JSON.stringify({
-        query: `
-          query Oso_contractsV0 {
-            oso_contractsV0(
-              where: {
-                contractAddress: {
-                  _eq: "${address.toLowerCase()}"
-                }
-              }
-            ) {
-              contractNamespace
-              originatingAddress
-              rootDeployerAddress
-              deploymentDate
-            }
-          }
-        `,
-        variables: {}
-      })
+      body: JSON.stringify({ query, variables }),
     });
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    if (data.errors) {
-      throw new Error(data.errors[0].message);
-    }
-
-    return data.data.oso_contractsV0;
+    const result = await response.json();
+    return result.data;
   }
 
-  async validateAddress(address: string) {
-    try {
-      const contracts = await this.queryContracts(address);
-      
-      if (!contracts || contracts.length === 0) {
-        return {
-          isValid: false,
-          artifactType: 'CONTRACT',
-          warnings: ['No contracts found for this address'],
-          networks: []
-        };
-      }
-
-      const networks = contracts.map((c: ContractResponse) => c.contractNamespace);
-      const isAnyEVM = this.network === 'ANY_EVM';
-      const isValid = isAnyEVM || networks.includes(this.network);
-
-      return {
-        isValid,
-        artifactType: 'CONTRACT',
-        networks,
-        deploymentCount: contracts.length
-      };
-    } catch (error) {
-      return {
-        isValid: false,
-        artifactType: 'CONTRACT',
-        warnings: [error instanceof Error ? error.message : 'Unknown error occurred'],
-        networks: []
-      };
-    }
+  async isEOA(addr: string): Promise<boolean> {
+    const query = `
+      query CheckEOA($addr: String!) {
+        oso_contractsV0(where: { contractAddress: { _eq: $addr } }) {
+          contractAddress
+        }
+      }`;
+    const result = await this.queryContractsV0(query, {
+      addr: addr.toLowerCase(),
+    });
+    return result.oso_contractsV0.length === 0;
   }
 
-  async isContract(address: string): Promise<boolean> {
-    try {
-      const contracts = await this.queryContracts(address);
-      return contracts && contracts.length > 0;
-    } catch (error) {
-      console.log(`error in validating contract addr:`, error)
-      return false;
-    }
+  async isContract(addr: string): Promise<boolean> {
+    return !(await this.isEOA(addr));
   }
 
-  async isFactory(address: string): Promise<boolean> {
-    try {
-      const contracts = await this.queryContracts(address);
-      return contracts && contracts.length > 0;
-    } catch (error) {
-      console.log(`error in validating factory addr:`, error)
-      return false;
-    }
+  async isFactory(addr: string): Promise<boolean> {
+    const query = `
+      query CheckFactory($addr: String!, $ns: String) {
+        oso_contractsV0(
+          where: {
+            factoryAddress: { _eq: $addr },
+            ${this.namespace ? "contractNamespace: { _eq: $ns }" : ""}
+          },
+          limit: 1
+        ) {
+          factoryAddress
+        }
+      }`;
+    const variables: any = { addr: addr.toLowerCase() };
+    if (this.namespace) variables.ns = this.namespace;
+    const result = await this.queryContractsV0(query, variables);
+    return result.oso_contractsV0.length > 0;
   }
 
-  async isDeployer(address: string): Promise<boolean> {
-    try {
-      const contracts = await this.queryContracts(address);
-      return contracts && contracts.length > 0;
-    } catch (error) {
-      console.log(`error in validating deployer addr:`, error)
-      return false;
-    }
-  }
-
-  async isEOA(address: string): Promise<boolean> {
-    try {
-      const contracts = await this.queryContracts(address);
-      return !contracts || contracts.length === 0;
-    } catch (error) {
-      console.log(`error in validating EOA addr:`, error)
-      return false;
-    }
+  async isDeployer(addr: string): Promise<boolean> {
+    const query = `
+      query CheckDeployer($addr: String!) {
+        oso_contractsV0(
+          where: { originatingAddress: { _eq: $addr } },
+          limit: 1
+        ) {
+          originatingAddress
+        }
+      }`;
+    const result = await this.queryContractsV0(query, {
+      addr: addr.toLowerCase(),
+    });
+    return result.oso_contractsV0.length > 0;
   }
 }
 
-// Network-specific validators
-export function EthereumValidator(apiKey?: string): EVMNetworkValidator {
-  return new ContractsValidator('ethereum', apiKey ?? '');
+export type EthereumValidatorOptions = Omit<ContractsV0ValidatorOptions, never>;
+export function EthereumValidator(options: EthereumValidatorOptions) {
+  return new ContractsV0Validator({ ...options });
 }
 
-export function ArbitrumValidator(apiKey?: string): EVMNetworkValidator {
-  return new ContractsValidator('arbitrum', apiKey ?? '');
+export type ArbitrumValidatorOptions = Omit<ContractsV0ValidatorOptions, never>;
+export function ArbitrumValidator(options: ArbitrumValidatorOptions) {
+  return new ContractsV0Validator({ ...options, namespace: "ARBITRUM" });
 }
 
-export function BaseValidator(apiKey?: string): EVMNetworkValidator {
-  return new ContractsValidator('base', apiKey ?? '');
+export type BaseValidatorOptions = Omit<ContractsV0ValidatorOptions, never>;
+export function BaseValidator(options: BaseValidatorOptions) {
+  return new ContractsV0Validator({ ...options, namespace: "BASE" });
 }
 
-export function OptimismValidator(apiKey?: string): EVMNetworkValidator {
-  return new ContractsValidator('optimism', apiKey ?? '');
-} 
+export type OptimismValidatorOptions = Omit<ContractsV0ValidatorOptions, never>;
+export function OptimismValidator(options: OptimismValidatorOptions) {
+  return new ContractsV0Validator({ ...options, namespace: "OPTIMISM" });
+}

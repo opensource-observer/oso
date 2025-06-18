@@ -14,9 +14,8 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "strictPropertyInitialization": false,
-    "types": ["jest", "node"]
+    "strictPropertyInitialization": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules"],
+  "include": ["./src/*.ts", "./src/**/*.ts", "./test"]
 }

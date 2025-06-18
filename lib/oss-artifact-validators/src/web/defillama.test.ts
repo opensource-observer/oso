@@ -1,5 +1,4 @@
 import { DefiLlamaValidator } from "./defillama.js";
-import { describe, test, expect, beforeEach} from '@jest/globals';
 
 const DEFILLAMA_API_TIMEOUT = 10000; // 10s
 
