@@ -1,6 +1,6 @@
 import { useContext } from "react";
-import { ProjectDataTableContext } from "../project-contexts";
-import { DataTableHeaderComponentProps } from "../../../lib/data-table";
+import { ProjectDataTableContext } from "@/components/project-browser/project-contexts";
+import { DataTableHeaderComponentProps } from "@/lib/data-table";
 
 export function DataTableFieldDefaultLabel(
   props: DataTableHeaderComponentProps,

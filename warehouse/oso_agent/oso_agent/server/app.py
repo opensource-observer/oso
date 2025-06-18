@@ -17,6 +17,7 @@ from oso_agent.server.definition import (
     BotConfig,
     ChatRequest,
 )
+from oso_agent.types.response import AnyResponse
 from oso_agent.util.log import setup_logging
 
 from ..types import (
@@ -88,6 +89,10 @@ def extract_wrapped_response(response: WrappedResponse) -> str:
             return query.query
         case ErrorResponse(message=message):
             return message
+        case AnyResponse(raw=raw):
+            return str(raw)
+        case _:
+            raise ValueError(f"Unsupported response type: {type(response.response)}")
 
 def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any]):
     # Dependency to get the cluster manager

@@ -1,14 +1,14 @@
 import React from "react";
 import useSWR from "swr";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseQueryArgs, supabaseQuery } from "../../lib/clients/supabase";
-import { useSupabaseState } from "../hooks/supabase";
-import { RegistrationProps } from "../../lib/types/plasmic";
+import { SupabaseQueryArgs, supabaseQuery } from "@/lib/supabase/query";
+import { useSupabaseState } from "@/components/hooks/supabase";
+import { RegistrationProps } from "@/lib/types/plasmic";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
-} from "./provider-view";
+} from "@/components/dataprovider/provider-view";
 
 // The name used to pass data into the Plasmic DataProvider
 const KEY_PREFIX = "db";
@@ -71,15 +71,13 @@ const SupabaseQueryRegistration: RegistrationProps<SupabaseQueryProps> = {
 
 function SupabaseQuery(props: SupabaseQueryProps) {
   // These props are set in the Plasmic Studio
-  const { variableName, tableName, useTestData, testData } = props;
+  const { variableName, tableName } = props;
   const key = variableName ?? genKey(props);
   const supabaseState = useSupabaseState();
   const { data, error, isLoading } = useSWR(key, async () => {
-    if (useTestData) {
-      return testData;
-    } else if (!tableName) {
+    if (!tableName) {
       return;
-    } else if (!supabaseState) {
+    } else if (!supabaseState || supabaseState._type === "loading") {
       return console.warn("Supabase not initialized yet");
     }
     const supabaseClient = supabaseState.supabaseClient;

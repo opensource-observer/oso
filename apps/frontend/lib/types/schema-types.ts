@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import * as generated from "./schema";
+import * as generated from "@/lib/types/schema";
 export type Json = z.infer<typeof generated.jsonSchema>;
 export type AdminUsersRow = z.infer<typeof generated.adminUsersRowSchema>;
 export type AdminUsersInsert = z.infer<typeof generated.adminUsersInsertSchema>;
@@ -19,6 +19,28 @@ export type ApiKeysUpdate = z.infer<typeof generated.apiKeysUpdateSchema>;
 export type ApiKeysRelationships = z.infer<
   typeof generated.apiKeysRelationshipsSchema
 >;
+export type ChatHistoryRow = z.infer<typeof generated.chatHistoryRowSchema>;
+export type ChatHistoryInsert = z.infer<
+  typeof generated.chatHistoryInsertSchema
+>;
+export type ChatHistoryUpdate = z.infer<
+  typeof generated.chatHistoryUpdateSchema
+>;
+export type ChatHistoryRelationships = z.infer<
+  typeof generated.chatHistoryRelationshipsSchema
+>;
+export type ConnectorRelationshipsRow = z.infer<
+  typeof generated.connectorRelationshipsRowSchema
+>;
+export type ConnectorRelationshipsInsert = z.infer<
+  typeof generated.connectorRelationshipsInsertSchema
+>;
+export type ConnectorRelationshipsUpdate = z.infer<
+  typeof generated.connectorRelationshipsUpdateSchema
+>;
+export type ConnectorRelationshipsRelationships = z.infer<
+  typeof generated.connectorRelationshipsRelationshipsSchema
+>;
 export type CreditTransactionsRow = z.infer<
   typeof generated.creditTransactionsRowSchema
 >;
@@ -27,6 +49,18 @@ export type CreditTransactionsInsert = z.infer<
 >;
 export type CreditTransactionsUpdate = z.infer<
   typeof generated.creditTransactionsUpdateSchema
+>;
+export type DynamicColumnContextsRow = z.infer<
+  typeof generated.dynamicColumnContextsRowSchema
+>;
+export type DynamicColumnContextsInsert = z.infer<
+  typeof generated.dynamicColumnContextsInsertSchema
+>;
+export type DynamicColumnContextsUpdate = z.infer<
+  typeof generated.dynamicColumnContextsUpdateSchema
+>;
+export type DynamicColumnContextsRelationships = z.infer<
+  typeof generated.dynamicColumnContextsRelationshipsSchema
 >;
 export type DynamicConnectorsRow = z.infer<
   typeof generated.dynamicConnectorsRowSchema
@@ -39,6 +73,18 @@ export type DynamicConnectorsUpdate = z.infer<
 >;
 export type DynamicConnectorsRelationships = z.infer<
   typeof generated.dynamicConnectorsRelationshipsSchema
+>;
+export type DynamicTableContextsRow = z.infer<
+  typeof generated.dynamicTableContextsRowSchema
+>;
+export type DynamicTableContextsInsert = z.infer<
+  typeof generated.dynamicTableContextsInsertSchema
+>;
+export type DynamicTableContextsUpdate = z.infer<
+  typeof generated.dynamicTableContextsUpdateSchema
+>;
+export type DynamicTableContextsRelationships = z.infer<
+  typeof generated.dynamicTableContextsRelationshipsSchema
 >;
 export type OrganizationsRow = z.infer<typeof generated.organizationsRowSchema>;
 export type OrganizationsInsert = z.infer<
@@ -58,6 +104,16 @@ export type PurchaseIntentsInsert = z.infer<
 >;
 export type PurchaseIntentsUpdate = z.infer<
   typeof generated.purchaseIntentsUpdateSchema
+>;
+export type SavedQueriesRow = z.infer<typeof generated.savedQueriesRowSchema>;
+export type SavedQueriesInsert = z.infer<
+  typeof generated.savedQueriesInsertSchema
+>;
+export type SavedQueriesUpdate = z.infer<
+  typeof generated.savedQueriesUpdateSchema
+>;
+export type SavedQueriesRelationships = z.infer<
+  typeof generated.savedQueriesRelationshipsSchema
 >;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<

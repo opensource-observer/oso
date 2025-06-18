@@ -4,6 +4,7 @@ import Editor from "@monaco-editor/react";
 
 interface MonacoEditorProps {
   className?: string;
+  defaultValue?: string;
   value?: string;
   onChange?: (value: string) => void;
   height?: string;
@@ -14,6 +15,7 @@ interface MonacoEditorProps {
 
 function MonacoEditor({
   className,
+  defaultValue,
   value,
   onChange,
   height,
@@ -38,6 +40,7 @@ function MonacoEditor({
       className={className}
       height={height}
       language={language}
+      defaultValue={defaultValue}
       value={value}
       theme={theme}
       options={defaultOptions}

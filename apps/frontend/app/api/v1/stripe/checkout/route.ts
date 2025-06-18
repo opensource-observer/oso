@@ -4,16 +4,16 @@ import {
   CREDIT_PACKAGES,
   CreditPackageId,
   extractIntentString,
-} from "../../../../../lib/clients/stripe";
-import { getUser } from "../../../../../lib/auth/auth";
-import { createPrivilegedSupabaseClient } from "../../../../../lib/clients/supabase";
-import { logger } from "../../../../../lib/logger";
-import { trackServerEvent } from "../../../../../lib/analytics/track";
-import { EVENTS } from "../../../../../lib/types/posthog";
-import { DOMAIN, STRIPE_PUBLISHABLE_KEY } from "../../../../../lib/config";
+} from "@/lib/clients/stripe";
+import { getUser } from "@/lib/auth/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
+import { trackServerEvent } from "@/lib/analytics/track";
+import { EVENTS } from "@/lib/types/posthog";
+import { DOMAIN, STRIPE_PUBLISHABLE_KEY } from "@/lib/config";
 
 const stripe = getStripeClient();
-const supabase = createPrivilegedSupabaseClient();
+const supabase = createAdminClient();
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +28,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { packageId } = body as { packageId: CreditPackageId };
+    const { packageId, orgId } = body as {
+      packageId: CreditPackageId;
+      orgId: string;
+    };
+
+    if (!orgId) {
+      return NextResponse.json(
+        { error: "Organization ID is required" },
+        { status: 400 },
+      );
+    }
 
     const creditPackage = CREDIT_PACKAGES.find((p) => p.id === packageId);
     if (!creditPackage) {
@@ -61,6 +71,7 @@ export async function POST(req: NextRequest) {
       client_reference_id: user.userId,
       metadata: {
         userId: user.userId,
+        orgId: orgId,
         packageId: creditPackage.id,
         credits: creditPackage.credits.toString(),
       },
@@ -68,6 +79,7 @@ export async function POST(req: NextRequest) {
 
     const { error: dbError } = await supabase.from("purchase_intents").insert({
       user_id: user.userId,
+      org_id: orgId,
       stripe_session_id: session.id,
       package_id: creditPackage.id,
       credits_amount: creditPackage.credits,
@@ -76,6 +88,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         stripe_payment_intent: extractIntentString(session.payment_intent),
         user_email: user.email,
+        org_id: orgId,
       },
     });
 

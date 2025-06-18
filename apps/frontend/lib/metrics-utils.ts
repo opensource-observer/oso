@@ -1,8 +1,8 @@
 /**
  * Various utilities for using metrics on the frontend
  */
-import { logger } from "./logger";
-import { groupRegistrations, registerFunction } from "./plasmic-register";
+import { logger } from "@/lib/logger";
+import { groupRegistrations, registerFunction } from "@/lib/plasmic-register";
 
 type ColumnReferenceFunc = (...args: any) => any;
 type ColumnReference = ColumnReferenceFunc | string;

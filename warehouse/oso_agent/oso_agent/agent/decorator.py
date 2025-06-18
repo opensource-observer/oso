@@ -1,15 +1,15 @@
 import typing as t
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from oso_agent.types.response import StrResponse, WrappedResponse
+from oso_agent.types.response import ResponseType, StrResponse
 
 from ..util.config import AgentConfig
 from .base import GenericWrappedAgent, ResponseWrapper
 
 
-def str_response_wrapper(response: t.Any) -> WrappedResponse:
+def str_response_wrapper(response: t.Any) -> ResponseType:
     """Wrap a string response in a WrappedAgentResponse."""
-    return WrappedResponse(response=StrResponse(blob=str(response)))
+    return StrResponse(blob=str(response))
     
 AgentFactory = t.Callable[[AgentConfig], t.Awaitable[BaseWorkflowAgent]]
 

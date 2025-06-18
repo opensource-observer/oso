@@ -1,11 +1,12 @@
-select
-    @metrics_sample_date(events.bucket_day) as metrics_sample_date,
-    UPPER(events.from_artifact_namespace) as event_source,
+SELECT
+    @metrics_sample_date(events.bucket_day) AS metrics_sample_date,
+    UPPER(events.from_artifact_namespace) AS event_source,
     events.to_artifact_id,
-    '' as from_artifact_id,
-    @metric_name() as metric,
-    sum(events.amount) / @metrics_sample_interval_length(events.bucket_day, 'day') as amount
-from oso.int_events_daily__defillama_tvl as events
-where
-    events.bucket_day between @metrics_start('DATE') and @metrics_end('DATE')
-group by 1, 2, 3, 4, 5
+    '' AS from_artifact_id,
+    @metric_name() AS metric,
+    SUM(events.amount) / @metrics_sample_interval_length(events.bucket_day, 'day') AS amount
+FROM oso.int_events_daily__defillama AS events
+WHERE
+    events.event_type = 'DEFILLAMA_TVL'
+    AND events.bucket_day BETWEEN @metrics_start('DATE') AND @metrics_end('DATE')
+GROUP BY 1, 2, 3, 4, 5
