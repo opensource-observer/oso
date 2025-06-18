@@ -43,8 +43,10 @@ spec:
         httpGet:
           path: /status
           port: 8000
-        initialDelaySeconds: 120
-        periodSeconds: 30
+        initialDelaySeconds: 300 
+        successThreshold: 1
+        failureThreshold: 12
+        periodSeconds: 10
       hostEnvVar: "AGENT_HOST"
       portEnvVar: "AGENT_PORT"
       envVars:
