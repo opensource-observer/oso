@@ -12,7 +12,9 @@ function Markdown(props: MarkdownProps) {
   const { className, content } = props;
   return (
     <div className={className}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <div className={"prose"}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      </div>
     </div>
   );
 }
