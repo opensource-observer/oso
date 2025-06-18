@@ -4,7 +4,7 @@ import typing as t
 import phoenix as px
 from llama_index.core.workflow import StartEvent, StopEvent, step
 from oso_agent.agent.agent_registry import AgentRegistry
-from oso_agent.eval.experiement_runner import ExperimentRunner
+from oso_agent.eval.experiment_runner import ExperimentRunner
 from oso_agent.tool.llm import create_llm
 from oso_agent.tool.query_engine_tool import create_default_query_engine_tool
 from oso_agent.types.eval import ExampleResult
