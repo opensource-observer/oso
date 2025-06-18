@@ -12,9 +12,11 @@ class CustomEvent(Event):
 async def test_mixable_workflow():
     class Resource1Workflow(MixableWorkflow):
         resource1: ResourceDependency[str]
+        with_default: ResourceDependency[str] = ResourceDependency(default_factory=lambda: "default_value")
 
         @step
         async def handle_start(self, ev: StartEvent) -> CustomEvent:
+            assert self.with_default == "default_value", "Default value should be set correctly"
             return CustomEvent(test_value=self.resource1)
 
     class Resource2Workflow(MixableWorkflow):
