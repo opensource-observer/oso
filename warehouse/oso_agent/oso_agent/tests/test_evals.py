@@ -1,272 +1,319 @@
-import pandas as pd
 import pytest
+from oso_agent.eval.text2sql.evals import (
+    check_valid_sql,
+    check_valid_sql_result,
+    result_exact_match,
+    result_fuzzy_match,
+    sql_oso_models_used_similarity,
+    sql_query_type_similarity,
+)
 
-from ..types.eval import ExampleResult, OsoMcpClient, Text2SQLExperimentWorkflow
+from ..types.eval import ExampleResult
 
 VERBOSE = True
 def vprint(*args, **kwargs):
     if VERBOSE:
         print(*args, **kwargs)
 
-# Dummy stub for local testing
-class DummyWorkflow(Text2SQLExperimentWorkflow):
-    def __init__(self):
-        self.oso_mcp_client = OsoMcpClient("")
-        self.keep_distinct = True
-        self.cache = {}
 
-    async def exec_on_db(self, query: str):
+# Dummy stub for local testing
+class ResultFixtures:
+    def fake_result(self, query: str):
         # Simulate SQL result: [columns tuple, ...rows]
         if "fail" in query.lower():
             return [], False
         elif "empty" in query.lower():
-            return [("id", "name")], True
+            return [], True
         elif "numbers" in query.lower():
-            return [("id", "val"), (1, 100), (2, 200)], True
+            return [{ "id": 1, "val": 100 }, { "id": 2, "val": 200 }], True
         elif "singlecol" in query.lower():
-            return [("num",), (42,), (13,)], True
+            return [{ "num": 42 }, { "num": 13 }], True
         elif "join" in query.lower():
-            return [("id", "name", "total"), (1, "Evan", 10), (2, "Kai", 99)], True
+            return [
+                {"id": 1, "name": "Evan", "total": 10},
+                {"id": 2, "name": "Kai", "total": 99}
+            ], True
         else:
-            return [("a", "b"), (1, 2), (3, 4)], True
-
-    def df_info_str(self, rows):
-        if not rows or len(rows) <= 1:
-            return "Empty table (0 rows)"
-        columns = rows[0]
-        data = rows[1:]
-        df = pd.DataFrame(data, columns=columns)
-        return f"{df.shape[0]} rows x {df.shape[1]} cols"
-
-    def _get_example_result_from_id(self, id: str):
-        if id not in self.cache:
-            self.cache[id] = ExampleResult()
-        return self.cache[id]
-
+            return [{"a": 1, "b": 2}, {"a": 3, "b": 4}], True
 
 @pytest.fixture
-def workflow():
-    return DummyWorkflow()
+def result_fixtures():
+    return ResultFixtures()
 
 ###########################
 # 1. check_valid_SQL
 ###########################
-def test_check_valid_SQL_valid(workflow):
-    out = workflow.check_valid_SQL("SELECT * FROM users", {"answer": "SELECT * FROM users"}, {"id": "test1"})
-    vprint("[check_valid_SQL_valid]", out)
+@pytest.mark.asyncio
+async def test_check_valid_sql_valid():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users",
+        expected_sql_query="SELECT * FROM users",
+    )
+    out = await check_valid_sql(result)
+    vprint("[check_valid_sql_valid]", out)
     assert out.score == 1
 
-def test_check_valid_SQL_invalid(workflow):
-    out = workflow.check_valid_SQL("SELCT FROM", {"answer": "SELECT * FROM users"}, {"id": "test2"})
-    vprint("[check_valid_SQL_invalid]", out)
+@pytest.mark.asyncio
+async def test_check_valid_sql_invalid():
+    result = ExampleResult(
+        actual_sql_query="SHOULD NOT BE VALID SQL",
+        expected_sql_query="SHOULD NOT BE VALID SQL",
+    )
+    out = await check_valid_sql(result)
+    vprint("[check_valid_sql_invalid]", out)
     assert out.score == 0
 
-def test_check_valid_SQL_empty(workflow):
-    out = workflow.check_valid_SQL("", {"answer": ""}, {"id": "test3"})
-    vprint("[check_valid_SQL_empty]", out)
+@pytest.mark.asyncio
+async def test_check_valid_sql_empty():
+    result = ExampleResult(
+        actual_sql_query="",
+        expected_sql_query="",
+    )
+    out = await check_valid_sql(result)
+    vprint("[check_valid_sql_empty]", out)
     assert out.score == 0
 
-def test_check_valid_SQL_case_insensitive(workflow):
-    out = workflow.check_valid_SQL("select id from numbers", {"answer": "SELECT id FROM numbers"}, {"id": "test19"})
-    vprint("[check_valid_SQL_case_insensitive]", out)
+@pytest.mark.asyncio
+async def test_check_valid_sql_case_insensitive():
+    result = ExampleResult(
+        actual_sql_query="select id from numbers",
+        expected_sql_query="SELECT id FROM numbers",
+    )
+    out = await check_valid_sql(result)
+    vprint("[check_valid_sql_case_insensitive]", out)
     assert out.score == 1
-
-def test_check_valid_SQL_bogus(workflow):
-    out = workflow.check_valid_SQL("This is not SQL", {"answer": "SELECT * FROM numbers"}, {"id": "test20"})
-    vprint("[check_valid_SQL_bogus]", out)
-    assert out.score == 0
 
 ###########################
-# 2. check_valid_SQL_result
+# 2. check_valid_sql_result
 ###########################
 @pytest.mark.asyncio
-async def test_check_valid_SQL_result_success(workflow):
-    eid = "test4"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM numbers"
-    out = await workflow.check_valid_SQL_result({"id": eid})
-    vprint("[check_valid_SQL_result_success]", out)
+async def test_check_valid_sql_result_success(result_fixtures):
+    query = "SELECT * FROM numbers"
+    actual_sql_result, is_valid_sql_result = result_fixtures.fake_result(query)
+    result = ExampleResult(
+        actual_sql_query=query,
+        expected_sql_query=query,
+        actual_sql_result=actual_sql_result,
+        is_valid_sql_result=is_valid_sql_result,
+    )
+
+    out = await check_valid_sql_result(result)
+    vprint("[check_valid_sql_result_success]", out)
     assert out.score == 1
 
 @pytest.mark.asyncio
-async def test_check_valid_SQL_result_empty(workflow):
-    eid = "test5"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM empty"
-    out = await workflow.check_valid_SQL_result({"id": eid})
-    vprint("[check_valid_SQL_result_empty]", out)
+async def test_check_valid_sql_result_empty(result_fixtures):
+    query = "SELECT * FROM empty"
+    actual_sql_result, is_valid_sql_result = result_fixtures.fake_result(query)
+    result = ExampleResult(
+        actual_sql_query=query,
+        expected_sql_query=query,
+        actual_sql_result=actual_sql_result,
+        is_valid_sql_result=is_valid_sql_result,
+    )
+    out = await check_valid_sql_result(result)
+    vprint("[check_valid_sql_result_empty]", out)
     assert out.score == 1
 
 @pytest.mark.asyncio
-async def test_check_valid_SQL_result_fail(workflow):
-    eid = "test6"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM fail"
-    out = await workflow.check_valid_SQL_result({"id": eid})
-    vprint("[check_valid_SQL_result_fail]", out)
+async def test_check_valid_sql_result_fail(result_fixtures):
+    query = "SELECT * FROM fail"
+    actual_sql_result, is_valid_sql_result = result_fixtures.fake_result(query)
+    result = ExampleResult(
+        actual_sql_query=query,
+        expected_sql_query=query,
+        actual_sql_result=actual_sql_result,
+        is_valid_sql_result=is_valid_sql_result,
+    )
+    out = await check_valid_sql_result(result)
+    vprint("[check_valid_sql_result_fail]", out)
     assert out.score == 0
 
 @pytest.mark.asyncio
-async def test_check_valid_SQL_result_singlecol(workflow):
-    eid = "test6b"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM singlecol"
-    out = await workflow.check_valid_SQL_result({"id": eid})
-    vprint("[check_valid_SQL_result_singlecol]", out)
+async def test_check_valid_sql_result_singlecol(result_fixtures):
+    query = "SELECT * FROM singlecol"
+    actual_sql_result, is_valid_sql_result = result_fixtures.fake_result(query)
+    result = ExampleResult(
+        actual_sql_query=query,
+        expected_sql_query=query,
+        actual_sql_result=actual_sql_result,
+        is_valid_sql_result=is_valid_sql_result,
+    )
+    out = await check_valid_sql_result(result)
+    vprint("[check_valid_sql_result_singlecol]", out)
     assert out.score == 1
 
 @pytest.mark.asyncio
-async def test_check_valid_SQL_result_join(workflow):
-    eid = "test6c"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM join"
-    out = await workflow.check_valid_SQL_result({"id": eid})
-    vprint("[check_valid_SQL_result_join]", out)
+async def test_check_valid_sql_result_join(result_fixtures):
+    query = "SELECT * FROM join"
+    actual_sql_result, is_valid_sql_result = result_fixtures.fake_result(query)
+    result = ExampleResult(
+        actual_sql_query=query,
+        expected_sql_query=query,
+        actual_sql_result=actual_sql_result,
+        is_valid_sql_result=is_valid_sql_result,
+    )
+    out = await check_valid_sql_result(result)
+    vprint("[check_valid_sql_result_join]", out)
     assert out.score == 1
 
 ###########################
 # 3. sql_query_type_similarity
 ###########################
-def test_sql_query_type_similarity_exact(workflow):
-    eid = "test7"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM foo WHERE bar > 3"
-    out = workflow.sql_query_type_similarity({"id": eid, "query_type": ["filter"]})
+@pytest.mark.asyncio
+async def test_sql_query_type_similarity_exact():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM foo WHERE bar > 3",
+    )
+    out = await sql_query_type_similarity(result, {"query_type": ["filter"]})
     vprint("[sql_query_type_similarity_exact]", out)
     assert out.score == 1.0
 
-def test_sql_query_type_similarity_partial(workflow):
-    eid = "test8"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT COUNT(*) FROM foo"
-    out = workflow.sql_query_type_similarity({"id": eid, "query_type": ["aggregation", "limit"]})
+@pytest.mark.asyncio
+async def test_sql_query_type_similarity_partial():
+    result = ExampleResult(
+        actual_sql_query="SELECT COUNT(*) FROM foo",
+    )
+    out = await sql_query_type_similarity(result, {"query_type": ["aggregation", "limit"]})
     vprint("[sql_query_type_similarity_partial]", out)
-    assert 0 < out.score < 1.0
+    assert 0 < (out.score or 0.0) < 1.0
 
-def test_sql_query_type_similarity_none(workflow):
-    eid = "test9"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = ""
-    out = workflow.sql_query_type_similarity({"id": eid, "query_type": []})
+@pytest.mark.asyncio
+async def test_sql_query_type_similarity_none():
+    result = ExampleResult(
+        actual_sql_query="",
+    )
+    out = await sql_query_type_similarity(result, {"query_type": []})
     vprint("[sql_query_type_similarity_none]", out)
     assert out.score == 1.0
 
-def test_sql_query_type_similarity_extra(workflow):
-    eid = "test9b"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM users ORDER BY id"
-    out = workflow.sql_query_type_similarity({"id": eid, "query_type": ["order_by"]})
+@pytest.mark.asyncio
+async def test_sql_query_type_similarity_extra():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users ORDER BY id",
+    )
+    out = await sql_query_type_similarity(result, {"query_type": ["order_by"]})
     vprint("[sql_query_type_similarity_extra]", out)
     assert out.score == 1.0
 
-def test_sql_query_type_similarity_diff_sets(workflow):
-    eid = "test9c"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT name FROM users WHERE age > 30"
-    out = workflow.sql_query_type_similarity({"id": eid, "query_type": ["filter", "aggregation"]})
+@pytest.mark.asyncio
+async def test_sql_query_type_similarity_diff_sets():
+    result = ExampleResult(
+        actual_sql_query="SELECT name FROM users WHERE age > 30",
+    )
+    out = await sql_query_type_similarity(result, {"query_type": ["filter", "aggregation"]})
     vprint("[sql_query_type_similarity_diff_sets]", out)
-    assert 0 < out.score < 1.0
+    assert 0 < (out.score or 0.0) < 1.0
 
 ###########################
 # 4. sql_oso_models_used_similarity
 ###########################
-def test_sql_oso_models_used_similarity_exact(workflow):
-    eid = "test10"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM users"
-    out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": ["users"]})
+@pytest.mark.asyncio
+async def test_sql_oso_models_used_similarity_exact():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users",
+    )
+    out = await sql_oso_models_used_similarity(result, {"sql_models_used": ["users"]})
     vprint("[sql_oso_models_used_similarity_exact]", out)
     assert out.score == 1.0
 
-def test_sql_oso_models_used_similarity_partial(workflow):
-    eid = "test11"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT * FROM users JOIN orders ON users.id=orders.uid"
-    out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": ["users", "payments"]})
+@pytest.mark.asyncio
+async def test_sql_oso_models_used_similarity_partial():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users JOIN orders ON users.id=orders.uid",
+    )
+    out = await sql_oso_models_used_similarity(result, {"sql_models_used": ["users", "payments"]})
     vprint("[sql_oso_models_used_similarity_partial]", out)
-    assert 0 < out.score < 1.0
+    assert 0 < (out.score or 0.0) < 1.0
 
-def test_sql_oso_models_used_similarity_none(workflow):
-    eid = "test12"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = ""
-    out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": []})
+@pytest.mark.asyncio
+async def test_sql_oso_models_used_similarity_none():
+    result = ExampleResult(
+        actual_sql_query="",
+    )
+    out = await sql_oso_models_used_similarity(result, {"sql_models_used": []})
     vprint("[sql_oso_models_used_similarity_none]", out)
     assert out.score == 1.0
 
-def test_sql_oso_models_used_similarity_multiple_tables(workflow):
-    eid = "test12b"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT u.id, o.id FROM users u, orders o"
-    out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": ["users", "orders"]})
+@pytest.mark.asyncio
+async def test_sql_oso_models_used_similarity_multiple_tables():
+    result = ExampleResult(
+        actual_sql_query="SELECT u.id, o.id FROM users u, orders o",
+    )
+    out = await sql_oso_models_used_similarity(result, {"sql_models_used": ["users", "orders"]})
     vprint("[sql_oso_models_used_similarity_multiple_tables]", out)
     assert out.score == 1.0
 
-def test_sql_oso_models_used_similarity_mismatch(workflow):
-    eid = "test12c"
-    result = workflow._get_example_result_from_id(eid)
-    result.cleaned_agent_query = "SELECT u.id FROM users u"
-    out = workflow.sql_oso_models_used_similarity({"id": eid, "sql_models_used": ["orders"]})
+@pytest.mark.asyncio
+async def test_sql_oso_models_used_similarity_mismatch():
+    result = ExampleResult(
+        actual_sql_query="SELECT u.id FROM users u",
+    )
+    out = await sql_oso_models_used_similarity(result, {"sql_models_used": ["orders"]})
     vprint("[sql_oso_models_used_similarity_mismatch]", out)
-    assert 0 <= out.score < 1.0
+    assert 0 <= (out.score or 0.0) < 1.0
 
 ###########################
 # 5. result_exact_match
 ###########################
 @pytest.mark.asyncio
-async def test_result_exact_match_success(workflow):
-    eid = "test13"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("a", "b"), (1, 2)]
-    result.expected_sql_result = [("a", "b"), (1, 2)]
-    result.order_matters = True
-    out = await workflow.result_exact_match({"id": eid})
+async def test_result_exact_match_success():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users",
+        actual_sql_result=[{"a": 1, "b": 2}],
+        expected_sql_result=[{"a": 1, "b": 2}],
+        is_valid_sql_result=True,
+        order_matters=True,
+    )
+    out = await result_exact_match(result)
     vprint("[result_exact_match_success]", out)
     assert out.score == 1
 
 @pytest.mark.asyncio
-async def test_result_exact_match_fail(workflow):
-    eid = "test14"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("a", "b"), (1, 3)]
-    result.expected_sql_result = [("a", "b"), (1, 2)]
-    result.order_matters = True
-    out = await workflow.result_exact_match({"id": eid})
+async def test_result_exact_match_fail():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users",
+        actual_sql_result=[{"a": 1, "b": 3}],
+        expected_sql_result=[{"a": 1, "b": 2}],
+        is_valid_sql_result=True,
+        order_matters=True,
+    )
+    out = await result_exact_match(result)
     vprint("[result_exact_match_fail]", out)
     assert out.score == 0
 
 @pytest.mark.asyncio
-async def test_result_exact_match_not_valid(workflow):
-    eid = "test15"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = False
-    out = await workflow.result_exact_match({"id": eid})
+async def test_result_exact_match_not_valid():
+    result = ExampleResult(
+        actual_sql_query="",
+    )
+    out = await result_exact_match(result)
     vprint("[result_exact_match_not_valid]", out)
     assert out.score == -1
 
 @pytest.mark.asyncio
-async def test_result_exact_match_extra_row(workflow):
-    eid = "test15b"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("col",), (1,), (2,)]
-    result.expected_sql_result = [("col",), (1,)]
-    result.order_matters = True
-    out = await workflow.result_exact_match({"id": eid})
+async def test_result_exact_match_extra_row():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users",
+        actual_sql_result=[{"col": 1}, {"col": 2}],
+        expected_sql_result=[{"col": 1}],
+        is_valid_sql_result=True,
+        order_matters=True,
+    )
+    out = await result_exact_match(result)
     vprint("[result_exact_match_extra_row]", out)
     assert out.score == 0
 
 @pytest.mark.asyncio
-async def test_result_exact_match_extra_col(workflow):
-    eid = "test15c"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("a", "b", "c"), (1, 2, 3)]
-    result.expected_sql_result = [("a", "b"), (1, 2)]
-    result.order_matters = True
-    out = await workflow.result_exact_match({"id": eid})
+async def test_result_exact_match_extra_col():
+    result = ExampleResult(
+        actual_sql_query="SELECT a, b FROM table",
+        actual_sql_result=[{"a": 1, "b": 2, "c": 3}],
+        expected_sql_result=[{"a": 1, "b": 2}],
+        is_valid_sql_result=True,
+        order_matters=True,
+    )
+    out = await result_exact_match(result)
     vprint("[result_exact_match_extra_col]", out)
     assert out.score == 0
 
@@ -274,99 +321,110 @@ async def test_result_exact_match_extra_col(workflow):
 # 6. result_fuzzy_match
 ###########################
 @pytest.mark.asyncio
-async def test_result_fuzzy_match_perfect(workflow):
-    eid = "test16"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("a",), (1,), (2,)]
-    result.expected_sql_result = [("a",), (1,), (2,)]
-    result.order_matters = False
-    out = await workflow.result_fuzzy_match({"id": eid})
+async def test_result_fuzzy_match_perfect():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users",
+        actual_sql_result=[{"a": 1}, {"a": 2}],
+        expected_sql_result=[{"a": 1}, {"a": 2}],
+        is_valid_sql_result=True,
+        order_matters=False,
+    )
+    out = await result_fuzzy_match(result)
     vprint("[result_fuzzy_match_perfect]", out)
     assert out.score == 1.0
 
 @pytest.mark.asyncio
-async def test_result_fuzzy_match_partial(workflow):
-    eid = "test17"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("a",), (1,), (3,)]
-    result.expected_sql_result = [("a",), (1,), (2,)]
-    result.order_matters = False
-    out = await workflow.result_fuzzy_match({"id": eid})
+async def test_result_fuzzy_match_partial():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM users",
+        actual_sql_result=[{"a": 1}, {"a": 3}],
+        expected_sql_result=[{"a": 1}, {"a": 2}],
+        is_valid_sql_result=True,
+        order_matters=False,
+    )
+    out = await result_fuzzy_match(result)
     vprint("[result_fuzzy_match_partial]", out)
-    assert 0 < out.score < 1.0
+    assert 0 < (out.score or 0.0) < 1.0
 
 @pytest.mark.asyncio
-async def test_result_fuzzy_match_not_valid(workflow):
-    eid = "test18"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = False
-    out = await workflow.result_fuzzy_match({"id": eid})
+async def test_result_fuzzy_match_not_valid():
+    result = ExampleResult(
+        actual_sql_query="select 1",
+        actual_sql_result=[],
+        expected_sql_result=[],
+        is_valid_sql_result=False,
+        order_matters=False,
+    )
+    out = await result_fuzzy_match(result)
     vprint("[result_fuzzy_match_not_valid]", out)
     assert out.score == -1
 
 @pytest.mark.asyncio
 # note that we are using jaccards similarity here so while intuitively we might think that this should be 1/2, its actually 3/9
-async def test_result_fuzzy_match_three_match_three_diff(workflow):
-    eid = "fuzzy1"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("a",), (1,), (2,), (3,), (99,), (100,), (101,)]
-    result.expected_sql_result = [("a",), (1,), (2,), (3,), (200,), (201,), (202,)]
-    result.order_matters = False
-    out = await workflow.result_fuzzy_match({"id": eid})
+async def test_result_fuzzy_match_three_match_three_diff():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM fuzzy1",
+        actual_sql_result=[{"a": 1}, {"a": 2}, {"a": 3}, {"a": 99}, {"a": 100}, {"a": 101}],
+        expected_sql_result=[{"a": 1}, {"a": 2}, {"a": 3}, {"a": 200}, {"a": 201}, {"a": 202}],
+        is_valid_sql_result=True,
+        order_matters=False,
+    )
+    out = await result_fuzzy_match(result)
     vprint("[result_fuzzy_match_three_match_three_diff]", out)
     assert out.score == 1/3
 
 @pytest.mark.asyncio
-async def test_result_fuzzy_match_all_same_extra_col(workflow):
-    eid = "fuzzy2"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("a", "b"), (1, 2), (2, 3)]
-    result.expected_sql_result = [("a",), (1,), (2,)]
+async def test_result_fuzzy_match_all_same_extra_col():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM fuzzy2",
+        actual_sql_result=[{"a": 1, "b": 2}, {"a": 2, "b": 3}],
+        expected_sql_result=[{"a": 1}, {"a": 2}],
+        is_valid_sql_result=True,
+        order_matters=False,
+    )
     result.order_matters = False
-    out = await workflow.result_fuzzy_match({"id": eid})
+    out = await result_fuzzy_match(result)
     vprint("[result_fuzzy_match_all_same_extra_col]", out)
     assert out.score == 0
 
 @pytest.mark.asyncio
-async def test_result_fuzzy_match_eight_rows_one_off(workflow):
-    eid = "fuzzy3"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    base_rows = [(i,) for i in range(1, 9)]
-    agent_rows = [("col",)] + base_rows
-    expected_rows = [("col",)] + base_rows[:-1] + [(42,)]
-    result.agent_sql_result = agent_rows
-    result.expected_sql_result = expected_rows
-    result.order_matters = False
-    out = await workflow.result_fuzzy_match({"id": eid})
+async def test_result_fuzzy_match_eight_rows_one_off():
+    base_rows = [{"col": i } for i in range(1, 9)]
+    expected_rows = base_rows[:-1] + [{ "col": 42 }]
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM fuzzy3",
+        actual_sql_result=base_rows,
+        expected_sql_result=expected_rows,
+        is_valid_sql_result=True,
+        order_matters=False,
+    )
+    out = await result_fuzzy_match(result)
     vprint("[result_fuzzy_match_eight_rows_one_off]", out)
-    assert 0 < out.score < 1.0
+    assert 0 < (out.score or 0.0) < 1.0
 
 @pytest.mark.asyncio
-async def test_result_fuzzy_match_column_order_change(workflow):
-    eid = "fuzzy4"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("x", "y"), (1, 2), (3, 4)]
-    result.expected_sql_result = [("y", "x"), (2, 1), (4, 3)]
-    result.order_matters = False
-    out = await workflow.result_fuzzy_match({"id": eid})
+async def test_result_fuzzy_match_column_order_change():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM fuzzy4",
+        actual_sql_result=[{"x": 1, "y": 2}, {"x": 3, "y": 4}],
+        expected_sql_result=[{"y": 2, "x": 1}, {"y": 4, "x": 3}],
+        is_valid_sql_result=True,
+        order_matters=False,
+    )
+    out = await result_fuzzy_match(result)
     vprint("[result_fuzzy_match_column_order_change]", out)
     # Should be considered a match (score 1.0) if column permutation allowed
     assert out.score == 1.0
 
 @pytest.mark.asyncio
-async def test_result_fuzzy_match_all_empty(workflow):
-    eid = "fuzzy5"
-    result = workflow._get_example_result_from_id(eid)
-    result.is_valid_sql_result = True
-    result.agent_sql_result = [("col",)]
-    result.expected_sql_result = [("col",)]
-    result.order_matters = False
-    out = await workflow.result_fuzzy_match({"id": eid})
+async def test_result_fuzzy_match_all_empty():
+    result = ExampleResult(
+        actual_sql_query="SELECT * FROM fuzzy5",
+        actual_sql_result=[],
+        expected_sql_result=[],
+        is_valid_sql_result=True,
+        order_matters=False,
+    )
+    out = await result_fuzzy_match(result)
     vprint("[result_fuzzy_match_all_empty]", out)
     assert out.score == 1.0

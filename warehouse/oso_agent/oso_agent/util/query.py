@@ -2,12 +2,25 @@ import logging
 import re
 import typing as t
 
+from oso_agent.util.parse import postprocess, remove_distinct, replace_cur_year
 import sqlglot
 from sqlglot import expressions as exp
 
 logger = logging.getLogger(__name__)
 _DIALECT = "trino"
 
+def clean_query_for_eval(query: str, keep_distinct: bool = True) -> str:
+    """Sanitize a sql query for evaluation"""
+    cleaned_query = sanitize_query_from_agent(query)
+    cleaned_query = postprocess(cleaned_query)
+
+    # Is this actually needed? It seems to replace current year with 2020
+    cleaned_query = replace_cur_year(cleaned_query)
+
+    if not keep_distinct:
+        cleaned_query = remove_distinct(cleaned_query)
+    return cleaned_query
+    
 
 def sanitize_query_from_agent(query: str, input_dialect: str = "trino") -> str:
     """

@@ -20,6 +20,10 @@ class ErrorResponse(BaseModel):
         description="Optional details about the error, if available."
     )
 
+    def __str__(self) -> str:
+        """Return the string representation of the error response."""
+        return f"Error: {self.message} | Details: {self.details}" if self.details else f"Error: {self.message}"
+
 class StrResponse(BaseModel):
     type: t.Literal["str"] = "str"
 
@@ -27,21 +31,42 @@ class StrResponse(BaseModel):
         description="A string response from the agent, typically used for simple text responses."
     )
 
+    def __str__(self) -> str:
+        """Return the string representation of the response."""
+        return self.blob
+
+class AnyResponse(BaseModel):
+    type: t.Literal["any"] = "any"
+
+    raw: t.Any = Field(
+        description="A response from the agent that can be of any type, this is a catch-all type for unexpected responses."
+    )
+
+    def __str__(self):
+        return str(self.raw)
+
 class SemanticResponse(BaseModel):
     type: t.Literal["semantic"] = "semantic"
 
     query: SemanticQuery
+
+    def __str__(self):
+        return self.query.model_dump_json()
 
 class SqlResponse(BaseModel):
     type: t.Literal["sql"] = "sql"
 
     query: SqlQuery
 
+    def __str__(self):
+        return self.query.query
+
 ResponseType = t.Union[
     StrResponse,
     SemanticResponse,
     SqlResponse,
-    ErrorResponse
+    ErrorResponse,
+    AnyResponse
 ]
 
 class WrappedResponse:

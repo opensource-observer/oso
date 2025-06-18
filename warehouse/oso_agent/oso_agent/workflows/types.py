@@ -1,5 +1,7 @@
+import typing as t
 import pandas as pd
 from llama_index.core.workflow import Event
+from llama_index.core.prompts import PromptTemplate
 
 
 class Text2SQLGenerationEvent(Event):
@@ -9,46 +11,52 @@ class Text2SQLGenerationEvent(Event):
     is the generated SQL query.
     """
 
-    text_input: str
-    generated_sql: str
+    id: str
+    input_text: str
+    output_sql: str
 
+class SQLResultEvent(Event):
+    """An event that represents a result of a SQL query.
 
-class SQLDataFrameResultEvent(Event):
-    """An event that represents a dataframe result
-
-    The `df` is a pandas DataFrame containing the results of the SQL query. The
-    `sql_query` is the SQL query that was executed.
+    The `output_sql` is the SQL query that was executed, and the `rows` is a list
+    of rows returned by the SQL query.
     """
 
-    sql_query: str
-    result: pd.DataFrame
+    id: str
+    input_text: str
+    output_sql: str
+    results: pd.DataFrame | list[dict[str, t.Any]]
     error: Exception | None = None
 
     def is_valid(self) -> bool:
-        """Check if the SQLDataFrameResult is valid."""
+        """Check if the SQLResult is valid."""
         return self.error is None
     
-    @property
-    def df(self):
-        """Alias for the result DataFrame."""
-        return self.result
-        
+    def result_to_str(self) -> str:
+        """Convert the SQL result to a string representation."""
+        if isinstance(self.results, pd.DataFrame):
+            return self.results.to_string(index=False)
+        else:
+            return str(self.results)
 
-class SQLDataFrameResultSummaryRequestEvent(Event):
-    """An event that represents a request for a summary of a SQL DataFrame result.
 
-    The `sql_query` is the SQL query that was executed, and the `df` is the
-    pandas DataFrame containing the results of the SQL query.
+class SQLResultSummaryRequestEvent(Event):
+    """An event that represents a request for a summary of SQL rows result.
+
+    The `sql_query` is the SQL query that was executed, and the `rows` is a list
+    of rows returned by the SQL query.
     """
 
-    prompt: str
-    result: SQLDataFrameResultEvent
+    id: str
+    override_prompt: PromptTemplate | None = None
+    result: SQLResultEvent
 
-class SQLDataFrameResultSummaryResponseEvent(Event):
-    """An event that represents a summary response for a SQL DataFrame result.
+class SQLResultSummaryResponseEvent(Event):
+    """An event that represents a summary response for SQL rows result.
 
-    The `summary` is the generated summary of the SQL DataFrame result.
+    The `summary` is the generated summary of the SQL rows result.
     """
 
+    id: str
     summary: str
-    result: SQLDataFrameResultEvent
+    result: SQLResultEvent
