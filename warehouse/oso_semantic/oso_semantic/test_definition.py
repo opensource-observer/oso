@@ -1,6 +1,8 @@
 import duckdb
 import pandas as pd
-from metrics_tools.semantic.definition import (
+from sqlglot import parse_one
+
+from .definition import (
     AttributePath,
     AttributePathTransformer,
     BoundMeasure,
@@ -10,8 +12,7 @@ from metrics_tools.semantic.definition import (
     Registry,
     SemanticQuery,
 )
-from metrics_tools.semantic.testing import setup_registry
-from sqlglot import parse_one
+from .testing import setup_registry
 
 
 def test_attribute_reference_traversal():
@@ -116,7 +117,7 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
         ],
         filters=[
             "github_event.from->artifact.name = 'repo1'",
-        ]
+        ],
     )
 
     query_exp = registry.query(query)
@@ -138,8 +139,9 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
                 "total_amount": [7.0, 7.0, 7.0],
             }
         ),
-        check_like=True
+        check_like=True,
     )
+
 
 def test_resolve_attributes_to_query_part(semantic_registry: Registry):
     # Test resolving a single attribute
@@ -147,22 +149,33 @@ def test_resolve_attributes_to_query_part(semantic_registry: Registry):
 
     resolved_query_part0 = ref0.resolve(semantic_registry)
     assert resolved_query_part0 is not None
-    assert resolved_query_part0.expression.sql(dialect="duckdb") == "$SEMANTIC_REF('artifact.artifact_name')"
+    assert (
+        resolved_query_part0.expression.sql(dialect="duckdb")
+        == "$SEMANTIC_REF('artifact.artifact_name')"
+    )
 
     parent_path = AttributePath.from_string("github_event.to->artifact.id")
     parent_traverser = parent_path.traverser()
     while parent_traverser.next():
         pass
-    scoped_resolved_query_part = ref0.resolve(semantic_registry, parent_traverser=parent_traverser)
+    scoped_resolved_query_part = ref0.resolve(
+        semantic_registry, parent_traverser=parent_traverser
+    )
 
     assert scoped_resolved_query_part is not None
-    assert scoped_resolved_query_part.expression.sql(dialect="duckdb") == "$SEMANTIC_REF('github_event.to->artifact.artifact_name')"
+    assert (
+        scoped_resolved_query_part.expression.sql(dialect="duckdb")
+        == "$SEMANTIC_REF('github_event.to->artifact.artifact_name')"
+    )
 
     ref1 = AttributePath.from_string("github_event.from->artifact.name")
     resolved_query_part1 = ref1.resolve(semantic_registry)
     assert resolved_query_part1 is not None
-    assert resolved_query_part1.expression.sql(dialect="duckdb") == "$SEMANTIC_REF('github_event.from->artifact.artifact_name')"
-    
+    assert (
+        resolved_query_part1.expression.sql(dialect="duckdb")
+        == "$SEMANTIC_REF('github_event.from->artifact.artifact_name')"
+    )
+
 
 def test_attribute_reference_transformer():
     simple_column = parse_one("github_event.to")
@@ -170,9 +183,13 @@ def test_attribute_reference_transformer():
     transformed_result0 = transformer0.transform(simple_column)
     assert transformed_result0 is not None
     assert len(transformed_result0.references) == 1
-    assert transformed_result0.references[0] == AttributePath.from_string("github_event.to")
+    assert transformed_result0.references[0] == AttributePath.from_string(
+        "github_event.to"
+    )
 
-    multiple_refs_sql = parse_one("github_event.to->artifact.count > github_event.from->artifact.count")
+    multiple_refs_sql = parse_one(
+        "github_event.to->artifact.count > github_event.from->artifact.count"
+    )
 
     transformer1 = AttributePathTransformer()
     transformed_result1 = transformer1.transform(multiple_refs_sql)
@@ -181,10 +198,14 @@ def test_attribute_reference_transformer():
     assert transformed_result1.node != multiple_refs_sql
     assert len(transformed_result1.references) == 2
 
-    assert AttributePath.from_string("github_event.to->artifact.count") in transformed_result1.references
-    assert AttributePath.from_string("github_event.from->artifact.count") in transformed_result1.references
-
-
+    assert (
+        AttributePath.from_string("github_event.to->artifact.count")
+        in transformed_result1.references
+    )
+    assert (
+        AttributePath.from_string("github_event.from->artifact.count")
+        in transformed_result1.references
+    )
 
 
 def test_resolve_metrics():
