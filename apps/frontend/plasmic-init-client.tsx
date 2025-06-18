@@ -129,7 +129,7 @@ PLASMIC.registerComponent(Markdown, {
       helpText: "Markdown string",
     },
   },
-  importPath: "react-markdown",
+  importPath: "./components/widgets/markdown",
 });
 
 PLASMIC.registerComponent(MetricsDataProvider, {

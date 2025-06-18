@@ -75,6 +75,7 @@
     "react-instantsearch-nextjs": "^0.4.5",
     "react-markdown": "^10.1.0",
     "react-use": "^17.6.0",
+    "remark-gfm": "^4.0.1",
     "serve": "^14.2.4",
     "sql-formatter": "^15.5.2",
     "stripe": "^18.1.1",
