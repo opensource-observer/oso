@@ -50,10 +50,12 @@ def upload_dataset(phoenix_client: px.Client, code_examples: ExampleList, datase
 
     
     dataset = Dataset("", "")  # for linter
+    existing = False
     appended = False
     # first check to see if the dataset already exists
     try:
         dataset = phoenix_client.get_dataset(name=dataset_name)
+        existing = True
 
         # if it does and we aren't running on a subset, diff and append
         if example_ids is None:
@@ -82,7 +84,7 @@ def upload_dataset(phoenix_client: px.Client, code_examples: ExampleList, datase
         else:
             logger.info(f"Dataset '{dataset_name}' not found, creating a new one.")
     
-    if not appended:
+    if not appended and not existing:
         dataset = phoenix_client.upload_dataset(
             dataset_name=dataset_name,
             inputs=[ex.input for ex in selected_code_examples.examples],
