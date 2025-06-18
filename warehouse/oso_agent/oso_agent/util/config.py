@@ -107,6 +107,11 @@ class AgentConfig(BaseSettings):
         description="Arize Phoenix dataset for text2sql evaluations",
     )
 
+    chat_line_length: int = Field(
+        default=50,
+        description="Maximum number of characters per line in chat messages",
+    )
+
     @model_validator(mode="after")
     def validate_urls(self) -> "AgentConfig":
         """Ensure URLs are properly formatted."""

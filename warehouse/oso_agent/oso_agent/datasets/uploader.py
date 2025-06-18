@@ -58,6 +58,7 @@ def upload_dataset(phoenix_client: px.Client, code_examples: ExampleList, datase
         # if it does and we aren't running on a subset, diff and append
         if example_ids is None:
             diff = diff_datasets(dataset, selected_code_examples)
+            logger.info(f"Found {len(diff.examples)} new examples to append to dataset '{dataset_name}'")
             if len(diff) > 0:
                 dataset = phoenix_client.append_to_dataset(
                     dataset_name=dataset_name,
