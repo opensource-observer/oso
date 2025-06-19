@@ -61,7 +61,7 @@ entities roughly map to certain classes of real world or digital entities.
       another project. We see collections as a flexible way to group related
       projects but each collection may have a different purpose.
 
-### A very basic `artifact` model
+### An `artifact` model with dimensions
 
 The model is the core abstraction of the semantic layer. It represents an
 object in the OSO data warehouse that corresponds to a specific table. This
@@ -95,14 +95,22 @@ artifact_model = Model(
             description="Namespace of the artifact",
             column_name="artifact_namespace"
         ),
+        Dimension(
+            name="source", 
+            description="Source of the artifact",
+            column_name="artifact_source"
+        ),
+        Dimension(
+            name="url", 
+            description="URL of the artifact",
+            column_name="artifact_url"
+        ),
     ]
 )
 ```
 
 At its most basic, a model must have a `name`, a `table`, and one or more
-attributes. We have chosen to model the `id` and `name` and `namespace`
-dimensions as the attributes of the `artifact` model.
-
+attributes. Here we've defined some basic dimensions for the `artifact` model.
 Let's query this model to see what it looks like when translated to SQL. For
 this we must first register this model to a registry and then create a query
 against it. 
@@ -156,16 +164,17 @@ actual columns names in the underlying table. The `artifact.artifact_id` is the
 column name in the `iceberg.oso.artifacts_v1` table that corresponds to the `id`
 dimension of the `artifact` model.
 
-Dimensions can also be filtered on. Let's filter only for artifacts that are in the `GITHUB` namespace. We can do this by adding a filter to the query:
+Dimensions can also be filtered on. Let's filter only for artifacts that are
+from the `GITHUB` source. We can do this by adding a filter to the query:
 
 ```python
-query_with_namespace: QueryBuilder = registry.select(
+query_with_filter: QueryBuilder = registry.select(
     "artifact.id",
     "artifact.name",
 ).add_filter(
-    "artifact.namespace = 'GITHUB'"
+    "artifact.source = 'GITHUB'"
 )
-print(query_with_namespace.sql(pretty=True))
+print(query_with_filter.sql(pretty=True))
 ```
 
 The `add_filter` method allows us to add a filter to the query using sql expressions. The expressions look very similar to standard sql but instead of columns being referenced, we use the model's attributes for filtering. The output of this query will look like this:
@@ -175,7 +184,7 @@ SELECT
     artifact.artifact_id as artifact__id,
     artifact.artifact_name as artifact__name
 FROM iceberg.oso.artifacts_v1 as artifact
-WHERE artifact.artifact_namespace = 'GITHUB'
+WHERE artifact.artifact_source = 'GITHUB'
 GROUP BY 1, 2
 ```
 
@@ -211,6 +220,11 @@ artifact_model = Model(
             column_name="artifact_namespace"
         ),
         Dimension(
+            name="source", 
+            description="Source of the artifact",
+            column_name="artifact_source"
+        ),
+        Dimension(
             name="url", 
             description="URL of the artifact",
             column_name="artifact_url"
@@ -243,9 +257,9 @@ registry = Registry()
 registry.register(artifact_model)
 
 # Query the model with the measure.
-# This query will select the count of artifacts in a given namespace
+# This query will select the count of artifacts in a given source
 count_query: QueryBuilder = registry.select(
-    "artifact.namespace",
+    "artifact.source",
     "artifact.count"
 )
 
@@ -256,18 +270,19 @@ The output of this query will look like this:
 
 ```sql
 SELECT
-    artifact.artifact_namespace as artifact__namespace,
+    artifact.artifact_source as artifact__source,
     count(artifact.artifact_id) as artifact__count
 FROM iceberg.oso.artifacts_v1 as artifact
 GROUP BY 1
 ```
 
-Much like, dimensions, measures can also be filtered on. For instance, if we wanted
-to only return artifact namespaces that have more than 100 artifacts, we could do the following:
+Much like, dimensions, measures can also be filtered on. For instance, if we
+wanted to only return artifact sources that have more than 100 artifacts, we
+could do the following:
 
 ```python
 count_query_with_filter: QueryBuilder = registry.select(
-    "artifact.namespace",
+    "artifact.source",
     "artifact.count"
 ).add_filter(
     "artifact.count > 100"
@@ -279,7 +294,7 @@ The generated SQL query will look like this:
 
 ```sql
 SELECT
-    artifact.artifact_namespace as artifact__namespace,
+    artifact.artifact_source as artifact__source,
     count(artifact.artifact_id) as artifact__count
 FROM iceberg.oso.artifacts_v1 as artifact
 GROUP BY 1

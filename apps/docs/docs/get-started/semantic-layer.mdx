@@ -157,7 +157,109 @@ GROUP BY
 
 ## Filtering
 
+Filtering is a key part of any query. The semantic layer provides a way to
+filter on the attributes of the models. For instance, if we wanted to filter the
+previous query to only include artifacts that are part of a specific namespace,
+we could do this:
+
+```python
+query = oso.semantic.select(
+    "github_event.time",
+    "github_event.to->collection.name",
+    "github_event.to->artifact.name",
+).add_filter(
+    "github_event.to->artifact.namespace = 'oso'",
+)
+```
+
+This would produce the following SQL:
+
+```sql
+SELECT
+  collection_2083abff.collection_name AS github_event_to__collection_name,
+  artifact_95a01095.artifact_name AS github_event_from__artifact_name,
+  github_event_420c9a8e.time AS github_event_time
+FROM oso.int_events__github AS github_event_420c9a8e
+LEFT JOIN oso.artifacts_v1 AS artifact_1b71f23f
+  ON github_event_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
+LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_5ee26df1
+  ON artifact_1b71f23f.artifact_id = artifacts_by_project_v1_5ee26df1.artifact_id
+LEFT JOIN oso.projects_v1 AS project_e17705b6
+  ON artifacts_by_project_v1_5ee26df1.project_id = project_e17705b6.project_id
+LEFT JOIN oso.projects_by_collection_v1 AS projects_by_collection_v1_8247793e
+  ON project_e17705b6.project_id = projects_by_collection_v1_8247793e.project_id
+LEFT JOIN oso.collections_v1 AS collection_2083abff
+  ON projects_by_collection_v1_8247793e.collection_id = collection_2083abff.collection_id
+LEFT JOIN oso.artifacts_v1 AS artifact_95a01095
+  ON github_event_420c9a8e.from_artifact_id = artifact_95a01095.artifact_id
+WHERE
+  artifact_1b71f23f.artifact_namespace = 'oso'
+GROUP BY
+  1,
+  2,
+  3
+``` 
+
+Additionall, you can also filter on a model's measures. Let's get all the artifacts with 1000 or less events:
+
+```python
+query = oso.semantic.select(
+    "github_event.time",
+    "github_event.to->collection.name",
+    "github_event.to->artifact.name",
+).add_filter(
+    "github_event.count <= 1000",
+)
+```
+
+This would produce the following SQL:
+
+```sql
+SELECT
+  collection_2083abff.collection_name AS github_event_to__collection_name,
+  artifact_95a01095.artifact_name AS github_event_from__artifact_name,
+  github_event_420c9a8e.time AS github_event_time
+FROM oso.int_events__github AS github_event_420c9a8e
+LEFT JOIN oso.artifacts_v1 AS artifact_1b71f23f
+  ON github_event_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
+LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_5ee26df1
+  ON artifact_1b71f23f.artifact_id = artifacts_by_project_v1_5ee26df1.artifact_id
+LEFT JOIN oso.projects_v1 AS project_e17705b6
+  ON artifacts_by_project_v1_5ee26df1.project_id = project_e17705b6.project_id
+LEFT JOIN oso.projects_by_collection_v1 AS projects_by_collection_v1_8247793e
+  ON project_e17705b6.project_id = projects_by_collection_v1_8247793e.project_id
+LEFT JOIN oso.collections_v1 AS collection_2083abff
+  ON projects_by_collection_v1_8247793e.collection_id = collection_2083abff.collection_id
+LEFT JOIN oso.artifacts_v1 AS artifact_95a01095
+  ON github_event_420c9a8e.from_artifact_id = artifact_95a01095.artifact_id
+GROUP BY
+  1,
+  2,
+  3
+HAVING
+  COUNT(github_event_420c9a8e.event_id) <= 1000
+```
+
 ## Chaining
+
+_this is still not fully defined_
+
+The semantic layer also provides a way to chain multiple queries together. This is akin to CTEs in SQL. 
+
+Let's find all the projects that published at least one new release in the last
+6 months and also had a user operation in ERC-4337.
+
+```python
+
+query = oso.semantic.named_select(
+  "github_release_metrics",
+  "project.id",
+  "metric.sum",
+).add_filter(
+  "timeseries_metrics_by_project.sample_date >= INTERVAL '6' MONTH',
+).add_filter(
+  "metrics.total > "
+)
 
 ## Full Reference
 
