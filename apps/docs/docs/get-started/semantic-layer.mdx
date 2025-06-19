@@ -88,10 +88,64 @@ To execute this generated sql query and return the associated dataframe one can 
 df = query.as_pandas()
 ```
 
-### Handling ambiguous joins
+### Querying with a relationship
 
-The previous example only involved a fairly simple join relationship. Artifacts
-are related to Collections via their relationship to Projects and some intermediate tables in between. However, in the OSO data model we also have a concept of Events. There are multiple event tables but let's consider the events from github. In the current semantic layer the model responsible for the github events is `github_event`. All of the event models have a generic interface that involves the following relationships:
+Relaltionships are a key part of the semantic layer. They allow us to define how models relate to each other. Unlike, SQL you don't explicity define join paths. The semantic layer resolves these paths for you. For dealing with relationships we have special semantics when a relationship attribute is included in the query. 
+
+#### Selecting just a relationship attribute
+
+The `project` model has a relationship to the collection via it's `collection` relationship attribute. 
+
+```python
+query = oso.semantic.select(
+  "project.collection",
+)
+```
+
+This would produce the following SQL:
+
+```sql
+SELECT
+  project_46f86faa.collection_id AS project_collection
+FROM oso.projects_v1 AS project_46f86faa
+GROUP BY
+  1
+```
+
+We can also include the relationship attribute to provide a filtering
+context without having an explicit filter. For instance if we wanted to only 
+get the project names that exist in _any_ collection, we could do this:
+
+```python
+query = oso.semantic.select(
+    "project.name",
+    "collection",
+)
+```
+
+As not all artifacts are part of a project, this will only return the projects that have a relationship to a collection. This would produce the following SQL:
+
+```sql
+SELECT
+  project_46f86faa.project_name AS project_name,
+  project_46f86faa.collection_id AS project_collection
+FROM oso.projects_v1 AS project_46f86faa
+WHERE
+  project_46f86faa.collection_id IS NOT NULL
+GROUP BY
+  1,
+  2
+```
+
+#### Handling ambiguous joins
+
+The previous examples only involved a fairly simple join relationships.
+Artifacts are related to Collections via their relationship to Projects and some
+intermediate tables in between. However, in the OSO data model we also have a
+concept of Events. There are multiple event tables but let's consider the events
+from github. In the current semantic layer the model responsible for the github
+events is `github_event`. All of the event models have a generic interface that
+involves the following relationships:
 
 - `from` - The artifact that initiated an event
 - `to` - The artifact that received an event
@@ -253,13 +307,31 @@ Let's find all the projects that published at least one new release in the last
 
 query = oso.semantic.named_select(
   "github_release_metrics",
-  "project.id",
-  "metric.sum",
+  "timeseries_metrics_by_project.sum as metric_sum",
+  "project", # Without an attribute this will reference the model itself
 ).add_filter(
-  "timeseries_metrics_by_project.sample_date >= INTERVAL '6' MONTH',
+  "metric.name LIKE 'GITHUB_releases_monthly'"
+).named_select(
+  "received_grants",
+  "project",
 ).add_filter(
-  "metrics.total > "
+  "github_release_metrics.metric.sum > 0"
+).named_select(
+  "paymaster_projects",
+  "project",
+).add_filter(
+  "4337_events.event_type LIKE 'CONTRACT_INVOCATION_VIA_PAYMASTER'"
+).select(
+  "project.name",
+  "received_grants.project",
+  "paymaster_projects.project",
 )
+```
+
+In order to chain queries, a query must be named. When this is done, the query
+builder context automatically register that query as another model in an
+temporary registry. This allows us to reference a query as if it were just
+another model in the semantic layer. 
 
 ## Full Reference
 
