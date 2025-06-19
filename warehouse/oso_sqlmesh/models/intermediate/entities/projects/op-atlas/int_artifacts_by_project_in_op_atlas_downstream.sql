@@ -1,12 +1,9 @@
 MODEL (
   name oso.int_artifacts_by_project_in_op_atlas_downstream,
-  description "Discovers all contracts downstream of project factories",
+  description "Discovers all contracts downstream of project deployers and factories",
   kind FULL,
   dialect trino,
-  partitioned_by (
-    artifact_source,
-    artifact_type
-  ),
+  partitioned_by "artifact_source",
   grain (project_id, artifact_id),
   tags (
     'entity_category=artifact',
@@ -17,54 +14,71 @@ MODEL (
   )
 );
 
--- Get all contracts for a project
-WITH project_factories AS (
-  SELECT
-    a.project_id,
-    a.artifact_name,
-    a.artifact_source
-  FROM oso.int_factories AS f
-  JOIN oso.int_artifacts_by_project_in_op_atlas AS a
-    ON f.factory_address = a.artifact_name
-    AND f.chain = a.artifact_source
-  WHERE a.artifact_type = 'CONTRACT'
-),
-
--- Get all contracts downstream of project factories
-contracts_from_factories AS (
-  SELECT
-    pf.project_id,
-    derived.chain AS artifact_source,
-    derived.contract_address AS artifact_name
-  FROM project_factories AS pf
-  JOIN oso.int_derived_contracts AS derived
-    ON derived.chain = pf.artifact_source
-    AND derived.factory_address = pf.artifact_name
-),
-
-unioned AS (
+WITH project_deployers AS (
   SELECT
     project_id,
-    artifact_source,
-    artifact_name,
-    'FACTORY' AS artifact_type
-  FROM project_factories
+    artifact_name AS deployer_address
+  FROM oso.int_artifacts_by_project_in_op_atlas
+  WHERE artifact_type = 'DEPLOYER'
+),
+
+project_contracts AS (
+  SELECT
+    project_id,
+    artifact_name AS contract_address,
+    artifact_source AS chain
+  FROM oso.int_artifacts_by_project_in_op_atlas
+  WHERE artifact_type IN ('FACTORY', 'CONTRACT')
+),
+
+first_level_contracts AS (
+  SELECT
+    pd.project_id,    
+    dc.contract_address,
+    dc.chain
+  FROM oso.int_derived_contracts AS dc
+  JOIN project_deployers AS pd
+    ON pd.deployer_address = dc.originating_address
+),
+
+all_contracts AS (
+  SELECT
+    project_id,
+    contract_address,
+    chain
+  FROM first_level_contracts
   UNION ALL
   SELECT
     project_id,
-    artifact_source,
-    artifact_name,
-    'CONTRACT' AS artifact_type
-  FROM contracts_from_factories
+    contract_address,
+    chain
+  FROM project_contracts
+),
+
+second_level_contracts AS (
+  SELECT
+    ac.project_id,
+    dc.contract_address,
+    dc.chain
+  FROM oso.int_derived_contracts AS dc
+  JOIN all_contracts AS ac
+    ON ac.contract_address = dc.factory_address
+    AND dc.chain = ac.chain
+),
+
+union_all_contracts AS (
+  SELECT * FROM first_level_contracts
+  UNION ALL
+  SELECT * FROM second_level_contracts
 )
 
 SELECT DISTINCT
   project_id,
-  @oso_entity_id(artifact_source, '', artifact_name) AS artifact_id,
-  artifact_source,
-  artifact_name AS artifact_source_id,
+  @oso_entity_id(chain, '', contract_address) AS artifact_id,
+  chain AS artifact_source,
+  contract_address AS artifact_source_id,
   '' AS artifact_namespace,
-  artifact_name,
-  artifact_type,
-  artifact_name AS artifact_url
-FROM unioned
+  contract_address AS artifact_name,
+  'CONTRACT' AS artifact_type,
+  contract_address AS artifact_url
+FROM union_all_contracts
