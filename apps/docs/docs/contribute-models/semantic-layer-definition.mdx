@@ -1,0 +1,287 @@
+---
+title: Semantic Layer Definition 
+sidebar_position: 1
+---
+
+import AnatomyOfSemanticLayer from "../_common/semantic-layer/_anatomy-of-semantic-layer.mdx";
+
+
+:::info
+This guide is for actually defining the semantic layer of the data warehouse. If
+you're just looking to make queries you should see the guide
+[here](../get-started/semantic-layer.mdx)
+:::
+
+## The semantic layer
+
+The OSO semantic layer allows us to provide a detailed interface to the OSO data
+model that encapsulates the contextual meaning of tables, columns or other
+abstractions in the data warehouse. The hope is that this interface will allow
+new users an easy way to interrogate the data while also providing for
+convenience tools when creating new models for seasoned users. 
+
+<AnatomyOfSemanticLayer/>
+
+## Defining the semantic layer
+
+The semantic layer definitions are all JSON serializable Python objects. These
+all represent objects detailed in the [Anatomy of the Semantic
+Layer](#anatomy-of-semantic-layer) section above. This section will walk through
+the definition of the `artifact`, `project`, and `collection` models. We will
+start with a very basic definition of the `artifact` model and expand it to
+include more attributes and relationships.
+
+### OSO artifacts, projects and collections
+
+Before we get to defining a semantic layer for these three entities, we need to
+understand the meaning these entities hold in the context of OSO. Inside the OSO
+data warehouse, artifacts, projects, and collections are generic entities to
+understand the events that occur in the universe of open source software. These
+entities roughly map to certain classes of real world or digital entities.
+
+* Artifact entities
+    * An artifact is generally an real or digital object that we consider the
+      smallest atom that can send or receive events. This could be an NPM
+      package, a Github repository, an Optimism contract, an Ethereum address,
+      or any other entity that can be interacted with that is generally
+      indivisible.
+* Project entities
+    * A project is a collection of artifacts that are related to each other in a
+      some way. Usually, this project relates to some real world phyiscal or
+      logical grouping of entities in the real world. In general, but not
+      always, a project "owns" a set of artifacts rather than simply being
+      composed of them. Examples of a project include an organization, a
+      company, a team or even a single person.
+* Collection entities
+    * A collection is an arbitrary grouping of projects. The relationship
+      between collections and projects is not necessarily one of ownership. For
+      instance, a collection could be a set of projects that are related to a
+      specific topic, or perhaps they're a set of projects involved in the same
+      event. A collection could also be a set of projects that simply relate to
+      another project. We see collections as a flexible way to group related
+      projects but each collection may have a different purpose.
+
+### A very basic `artifact` model
+
+The model is the core abstraction of the semantic layer. It represents an
+object in the OSO data warehouse that corresponds to a specific table. This
+model then has a set of attributes that are one of `Dimension`, `Measure`, or
+`Relationship`. Defining a model is done by creating a `Model` object with the
+appropriate attributes.
+
+To start, let's define a very basic model for the `artifact` table. This
+definition will be incomplete but it will give us a starting point to understand
+how to define a model. 
+
+```python
+from oso_semantic import Model, Dimension
+
+artifact_model = Model(
+    name="artifact",
+    table="iceberg.oso.artifacts_v1",
+    dimensions=[
+        Dimension(
+            name="id", 
+            description="Unique identifier for the artifact",
+            column_name="artifact_id",
+        ),
+        Dimension(
+            name="name", 
+            description="Name of the artifact",
+            column_name="artifact_name",
+        ),
+        Dimension(
+            name="namespace", 
+            description="Namespace of the artifact",
+            column_name="artifact_namespace"
+        ),
+    ]
+)
+```
+
+At its most basic, a model must have a `name`, a `table`, and one or more
+attributes. We have chosen to model the `id` and `name` and `namespace`
+dimensions as the attributes of the `artifact` model.
+
+Let's query this model to see what it looks like when translated to SQL. For
+this we must first register this model to a registry and then create a query
+against it. 
+
+To create the registry:
+
+```python
+from oso_semantic import Registry
+
+registry = Registry()
+registry.register(artifact_model) 
+```
+
+To query, we use the `select` method on the registry, which creates a
+`QueryBuilder` object that allows us to build a query against the registered
+models. 
+
+```python
+from oso_semantic import QueryBuilder
+
+query: QueryBuilder = registry.select(
+    "artifact.id", 
+    "artifact.name"
+)
+
+print(query.sql(pretty=True)) # Pretty print the SQL query
+```
+
+When querying, the `select` method simply takes a list of attributes that we
+want to query. These attributes are specified in the format
+`<model_name>.<attribute_name>`. In this case, we are querying the `id` and
+`name` attributes of the `artifact` model. In the final line, we call
+`query.sql(pretty=True)` and print the generated sql query to the console. This
+will output as follows:
+
+:::note 
+The sql generated by the semantic layer will actually be a bit more
+verbose. This example is simplified to show the basic structure of the query.
+:::
+
+```sql
+SELECT 
+    artifact.artifact_id as artifact__id,
+    artifact.artifact_name as artifact__name
+FROM iceberg.oso.artifacts_v1 as artifact
+GROUP BY 1, 2
+```
+
+From this query you will notice that the tool is translating dimension names to
+actual columns names in the underlying table. The `artifact.artifact_id` is the
+column name in the `iceberg.oso.artifacts_v1` table that corresponds to the `id`
+dimension of the `artifact` model.
+
+Dimensions can also be filtered on. Let's filter only for artifacts that are in the `GITHUB` namespace. We can do this by adding a filter to the query:
+
+```python
+query_with_namespace: QueryBuilder = registry.select(
+    "artifact.id",
+    "artifact.name",
+).add_filter(
+    "artifact.namespace = 'GITHUB'"
+)
+print(query_with_namespace.sql(pretty=True))
+```
+
+The `add_filter` method allows us to add a filter to the query using sql expressions. The expressions look very similar to standard sql but instead of columns being referenced, we use the model's attributes for filtering. The output of this query will look like this:
+
+```sql
+SELECT 
+    artifact.artifact_id as artifact__id,
+    artifact.artifact_name as artifact__name
+FROM iceberg.oso.artifacts_v1 as artifact
+WHERE artifact.artifact_namespace = 'GITHUB'
+GROUP BY 1, 2
+```
+
+### Adding measures to the `artifact` model
+
+Dimensions are useful for querying specific attributes of a model, but
+usually we also want to perform some kind of aggregation on the data. This is
+where measures come in. Measures are attributes that represent some kind of aggregation of the data in the model. For instance, we might want to know the count of artifacts or the distinct count of artifacts. 
+
+Here's an updated definition of the `artifact` model that includes measures and a more complete set of dimensions:
+
+```python
+from oso_semantic import Model, Dimension, Measure
+
+artifact_model = Model(
+    name="artifact",
+    table="iceberg.oso.artifacts_v1",
+    primary_key="artifact_id",
+    dimensions=[
+        Dimension(
+            name="id", 
+            description="Unique identifier for the artifact",
+            column_name="artifact_id",
+        ),
+        Dimension(
+            name="name", 
+            description="Name of the artifact",
+            column_name="artifact_name",
+        ),
+        Dimension(
+            name="namespace", 
+            description="Namespace of the artifact",
+            column_name="artifact_namespace"
+        ),
+        Dimension(
+            name="url", 
+            description="URL of the artifact",
+            column_name="artifact_url"
+        ),
+    ],
+    measures=[
+        Measure(
+            name="count", 
+            description="Count of artifacts",
+            query="count(self.id)",
+        )
+    ],
+)
+```
+
+Now we have a more complete model that also includes the measure count of
+artifacts. You will notice, that unlike a dimension, a measure does not have a
+`column_name` attribute. Instead, it has a `query` attribute that defines how
+the measure is calculated. In this case, the `count` measure is defined as
+`count(self.id)`. Measures may only reference attributes of models. Related
+models can also be referenced (covered later) but to prevent any ambiguity, the
+semantic layer provides a special `self` keyword that resolves to the current
+model instance. 
+
+If we query this model again, we can see how the measures are included in the SQL query:
+
+```python
+# Recreate the registry with the updated model
+registry = Registry()
+registry.register(artifact_model)
+
+# Query the model with the measure.
+# This query will select the count of artifacts in a given namespace
+count_query: QueryBuilder = registry.select(
+    "artifact.namespace",
+    "artifact.count"
+)
+
+print(count_query.sql(pretty=True))
+```
+
+The output of this query will look like this:
+
+```sql
+SELECT
+    artifact.artifact_namespace as artifact__namespace,
+    count(artifact.artifact_id) as artifact__count
+FROM iceberg.oso.artifacts_v1 as artifact
+GROUP BY 1
+```
+
+Much like, dimensions, measures can also be filtered on. For instance, if we wanted
+to only return artifact namespaces that have more than 100 artifacts, we could do the following:
+
+```python
+count_query_with_filter: QueryBuilder = registry.select(
+    "artifact.namespace",
+    "artifact.count"
+).add_filter(
+    "artifact.count > 100"
+)
+print(count_query_with_filter.sql(pretty=True))
+```
+
+The generated SQL query will look like this:
+
+```sql
+SELECT
+    artifact.artifact_namespace as artifact__namespace,
+    count(artifact.artifact_id) as artifact__count
+FROM iceberg.oso.artifacts_v1 as artifact
+GROUP BY 1
+HAVING count(artifact.artifact_id) > 100
+```
