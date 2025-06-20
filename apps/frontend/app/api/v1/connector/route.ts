@@ -5,9 +5,10 @@ import { ALLOWED_CONNECTORS } from "@/lib/types/dynamic-connector";
 import { dynamicConnectorsInsertSchema } from "@/lib/types/schema";
 import type { DynamicConnectorsInsert } from "@/lib/types/schema-types";
 import { ensure } from "@opensource-observer/utils";
-import { setSupabaseSession } from "@/lib/auth/auth";
+import { getUser, setSupabaseSession } from "@/lib/auth/auth";
 import { Tables } from "@/lib/types/supabase";
 import { getCatalogName } from "@/lib/dynamic-connectors";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const revalidate = 0;
 export const maxDuration = 300;
@@ -95,11 +96,13 @@ export async function POST(request: NextRequest) {
   }
 
   const additionalData = [
-    ...(dynamicConnector.config ? Object.entries(dynamicConnector.config) : []),
+    ...(insertedConnector.data.config
+      ? Object.entries(insertedConnector.data.config)
+      : []),
     ...Object.entries(credentials),
   ];
 
-  const query = `CREATE CATALOG ${getCatalogName(dynamicConnector.connector_name, dynamicConnector.is_public)} USING ${dynamicConnector.connector_type} ${
+  const query = `CREATE CATALOG ${getCatalogName(insertedConnector.data)} USING ${insertedConnector.data.connector_type} ${
     additionalData.length > 0
       ? `WITH (${additionalData
           .map(([key, value]) => `"${key}" = '${value}'`)
@@ -162,7 +165,7 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  const query = `DROP CATALOG ${getCatalogName(deletedConnector.data.connector_name, deletedConnector.data.is_public)}`;
+  const query = `DROP CATALOG ${getCatalogName(deletedConnector.data)}`;
   const { error } = await trinoClient.queryAll(query);
 
   if (error) {
@@ -183,4 +186,123 @@ export async function DELETE(request: NextRequest) {
   }
 
   return NextResponse.json(deletedConnector.data);
+}
+
+interface GetConnectorResponse {
+  tables: {
+    name: string;
+    description: string | null;
+    columns: {
+      name: string;
+      type: string;
+      description: string | null;
+    }[];
+  }[];
+  relationships: {
+    sourceTable: string;
+    sourceColumn: string;
+    targetTable: string;
+    targetColumn: string;
+  }[];
+}
+
+export async function GET(request: NextRequest) {
+  const supabaseClient = await createAdminClient();
+  const user = await getUser(request);
+  if (user.role === "anonymous" || user.orgId == null) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: connectorData, error: connectorError } = await supabaseClient
+    .from("dynamic_connectors")
+    .select("*, dynamic_table_contexts(*, dynamic_column_contexts(*))")
+    .eq("org_id", user.orgId);
+
+  if (connectorError) {
+    return NextResponse.json(
+      {
+        error: `Error fetching connectors: ${connectorError?.message || "Connector not found"}`,
+      },
+      { status: 500 },
+    );
+  }
+
+  const { data: relationshipsData, error: relationshipsError } =
+    await supabaseClient
+      .from("connector_relationships")
+      .select("*")
+      .eq("org_id", user.orgId);
+
+  if (relationshipsError) {
+    return NextResponse.json(
+      {
+        error: `Error fetching relationships: ${relationshipsError?.message || "Relationships not found"}`,
+      },
+      { status: 500 },
+    );
+  }
+
+  const tablesById = Object.fromEntries(
+    connectorData.flatMap((connector) =>
+      connector.dynamic_table_contexts.map((table) => [
+        table.id,
+        {
+          name: `${getCatalogName(connector)}.${table.table_name}`,
+          description: table.description,
+          columns: table.dynamic_column_contexts.map((column) => ({
+            name: column.column_name,
+            type: column.data_type,
+            description: column.description,
+          })),
+        },
+      ]),
+    ),
+  );
+  const relationships = relationshipsData
+    .map((r) => {
+      const sourceTable = tablesById[r.source_table_id];
+      const sourceColumn = sourceTable.columns.find(
+        (c) => c.name === r.source_column_name,
+      );
+      if (!sourceTable || !sourceColumn) {
+        // Invalid source table or column
+        return undefined;
+      }
+      if (r.target_oso_entity) {
+        const osoEntity = r.target_oso_entity.split(".");
+        if (osoEntity.length !== 2) {
+          // Invalid OSO entity format
+          return undefined;
+        }
+        return {
+          sourceTable: sourceTable.name,
+          sourceColumn: sourceColumn.name,
+          targetTable: osoEntity[0],
+          targetColumn: osoEntity[1],
+        };
+      }
+      if (!r.target_table_id || !r.target_column_name) {
+        return undefined;
+      }
+      const targetTable = tablesById[r.target_table_id];
+      const targetColumn = targetTable.columns.find(
+        (c) => c.name === r.target_column_name,
+      );
+      if (!targetTable || !targetColumn) {
+        // Invalid source table or column
+        return undefined;
+      }
+      return {
+        sourceTable: sourceTable.name,
+        sourceColumn: sourceColumn.name,
+        targetTable: targetTable.name,
+        targetColumn: targetColumn.name,
+      };
+    })
+    .filter((relationship) => relationship !== undefined);
+
+  return NextResponse.json<GetConnectorResponse>({
+    tables: Object.entries(tablesById).map(([_, table]) => table),
+    relationships,
+  });
 }

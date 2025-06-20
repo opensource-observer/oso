@@ -176,10 +176,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const catalogName = getCatalogName(
-    connector.connector_name,
-    connector.is_public,
-  );
+  const catalogName = getCatalogName(connector);
 
   const { data: schemaQueryResult, error: trinoError } =
     await trinoClient.queryAll(`SHOW SCHEMAS FROM ${catalogName}`);
