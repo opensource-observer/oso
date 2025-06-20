@@ -1,10 +1,10 @@
 import logging
 import typing as t
 
-from metrics_tools.utils.glot import exp_to_str
 from sqlglot import exp
 
 from .definition import AttributePath, Filter, Model, QueryPart, Registry
+from .utils import exp_to_str
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +136,10 @@ class QueryBuilder:
         # resolution of the actual column names allows us to do this on a per
         # subquery basis. For now, this isn't implemeneted.
         def transform_semantic_ref(node: exp.Expression):
-            if isinstance(node, exp.Anonymous) and exp_to_str(node.this).lower() == "$semantic_ref":
+            if (
+                isinstance(node, exp.Anonymous)
+                and exp_to_str(node.this).lower() == "$semantic_ref"
+            ):
                 # We need to replace the function with the actual column name
                 # from the registry
                 semantic_ref = exp_to_str(node.expressions[0])
@@ -145,15 +148,24 @@ class QueryBuilder:
                 traverser = ref.traverser()
                 while traverser.next():
                     pass
-                return exp.to_column(f"{traverser.current_table_alias}.{traverser.current_attribute_name}")
+                return exp.to_column(
+                    f"{traverser.current_table_alias}.{traverser.current_attribute_name}"
+                )
             return node
+
         query = query.transform(transform_semantic_ref)
 
         return query
 
 
 class QueryJoiner:
-    def __init__(self, select: exp.Select, base_model: Model, registry: Registry, dialect: str = "duckdb"):
+    def __init__(
+        self,
+        select: exp.Select,
+        base_model: Model,
+        registry: Registry,
+        dialect: str = "duckdb",
+    ):
         self._select = select
         self._base_model = base_model
         self._registry = registry
@@ -229,11 +241,16 @@ class QueryJoiner:
                 join_table_alias = create_alias(join_table.name)
                 join_table = join_table.as_(join_table_alias)
 
-                from_model_primary_key = from_model.primary_key_expression(from_table_alias)
+                from_model_primary_key = from_model.primary_key_expression(
+                    from_table_alias
+                )
                 join_table_self_key = relationship.self_key_with_alias(join_table_alias)
-                join_table_foreign_key = relationship.foreign_key_with_alias(join_table_alias)
-                referenced_model_primary_key = referenced_model.primary_key_expression(referenced_model_alias)
-
+                join_table_foreign_key = relationship.foreign_key_with_alias(
+                    join_table_alias
+                )
+                referenced_model_primary_key = referenced_model.primary_key_expression(
+                    referenced_model_alias
+                )
 
                 query = query.join(
                     join_table,
