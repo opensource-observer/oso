@@ -188,18 +188,15 @@ export async function DELETE(request: NextRequest) {
   return NextResponse.json(deletedConnector.data);
 }
 
-interface GetConnectorResponse {
-  tables: {
+interface TableSemanticData {
+  name: string;
+  description: string | null;
+  columns: {
     name: string;
+    type: string;
     description: string | null;
-    columns: {
-      name: string;
-      type: string;
-      description: string | null;
-    }[];
   }[];
   relationships: {
-    sourceTable: string;
     sourceColumn: string;
     targetTable: string;
     targetColumn: string;
@@ -242,7 +239,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const tablesById = Object.fromEntries(
+  const tablesById: Record<string, TableSemanticData> = Object.fromEntries(
     connectorData.flatMap((connector) =>
       connector.dynamic_table_contexts.map((table) => [
         table.id,
@@ -254,55 +251,57 @@ export async function GET(request: NextRequest) {
             type: column.data_type,
             description: column.description,
           })),
+          relationships: [],
         },
       ]),
     ),
   );
-  const relationships = relationshipsData
-    .map((r) => {
-      const sourceTable = tablesById[r.source_table_id];
-      const sourceColumn = sourceTable.columns.find(
-        (c) => c.name === r.source_column_name,
-      );
-      if (!sourceTable || !sourceColumn) {
-        // Invalid source table or column
-        return undefined;
+
+  // Process relationships and group them by source table
+  relationshipsData.forEach((r) => {
+    const sourceTable = tablesById[r.source_table_id];
+    const sourceColumn = sourceTable?.columns.find(
+      (c) => c.name === r.source_column_name,
+    );
+    if (!sourceTable || !sourceColumn) {
+      // Invalid source table or column
+      return;
+    }
+
+    let relationship;
+    if (r.target_oso_entity) {
+      const osoEntity = r.target_oso_entity.split(".");
+      if (osoEntity.length !== 2) {
+        // Invalid OSO entity format
+        return;
       }
-      if (r.target_oso_entity) {
-        const osoEntity = r.target_oso_entity.split(".");
-        if (osoEntity.length !== 2) {
-          // Invalid OSO entity format
-          return undefined;
-        }
-        return {
-          sourceTable: sourceTable.name,
-          sourceColumn: sourceColumn.name,
-          targetTable: osoEntity[0],
-          targetColumn: osoEntity[1],
-        };
-      }
-      if (!r.target_table_id || !r.target_column_name) {
-        return undefined;
-      }
+      relationship = {
+        sourceColumn: sourceColumn.name,
+        targetTable: osoEntity[0],
+        targetColumn: osoEntity[1],
+      };
+    } else if (r.target_table_id && r.target_column_name) {
       const targetTable = tablesById[r.target_table_id];
-      const targetColumn = targetTable.columns.find(
+      const targetColumn = targetTable?.columns.find(
         (c) => c.name === r.target_column_name,
       );
       if (!targetTable || !targetColumn) {
-        // Invalid source table or column
-        return undefined;
+        // Invalid target table or column
+        return;
       }
-      return {
-        sourceTable: sourceTable.name,
+      relationship = {
         sourceColumn: sourceColumn.name,
         targetTable: targetTable.name,
         targetColumn: targetColumn.name,
       };
-    })
-    .filter((relationship) => relationship !== undefined);
+    } else {
+      return;
+    }
 
-  return NextResponse.json<GetConnectorResponse>({
-    tables: Object.entries(tablesById).map(([_, table]) => table),
-    relationships,
+    sourceTable.relationships.push(relationship);
   });
+
+  return NextResponse.json<TableSemanticData[]>(
+    Object.entries(tablesById).map(([_, table]) => table),
+  );
 }

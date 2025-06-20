@@ -569,14 +569,11 @@ describe("API /api/v1/connector", () => {
       const json = await response.json();
 
       expect(response.status).toBe(200);
-      expect(json).toHaveProperty("tables");
-      expect(json).toHaveProperty("relationships");
-      expect(Array.isArray(json.tables)).toBe(true);
-      expect(Array.isArray(json.relationships)).toBe(true);
+      expect(Array.isArray(json)).toBe(true);
 
       // Check that our test data is included
       const testTableName = `${getCatalogName(testConnector)}.test_table`;
-      const foundTable = json.tables.find(
+      const foundTable = json.find(
         (table: any) => table.name === testTableName,
       );
       expect(foundTable).toBeDefined();
@@ -595,12 +592,13 @@ describe("API /api/v1/connector", () => {
       expect(nameColumn.type).toBe("varchar");
       expect(nameColumn.description).toBe("Name column");
 
-      // Check relationships
-      const foundRelationship = json.relationships.find(
-        (rel: any) =>
-          rel.sourceTable === testTableName && rel.sourceColumn === "id",
-      );
-      expect(foundRelationship).toBeDefined();
+      // Check relationships are nested in the table
+      expect(foundTable.relationships).toBeDefined();
+      expect(Array.isArray(foundTable.relationships)).toBe(true);
+      expect(foundTable.relationships).toHaveLength(1);
+
+      const foundRelationship = foundTable.relationships[0];
+      expect(foundRelationship.sourceColumn).toBe("id");
       expect(foundRelationship.targetTable).toBe("project");
       expect(foundRelationship.targetColumn).toBe("id");
     });
@@ -640,8 +638,7 @@ describe("API /api/v1/connector", () => {
       const json = await response.json();
 
       expect(response.status).toBe(200);
-      expect(json.tables).toEqual([]);
-      expect(json.relationships).toEqual([]);
+      expect(json).toEqual([]);
     });
 
     it("should filter out invalid relationships with malformed OSO entities", async () => {
@@ -671,12 +668,13 @@ describe("API /api/v1/connector", () => {
       expect(response.status).toBe(200);
 
       // Should only have the valid relationship, not the invalid one
-      const validRelationships = json.relationships.filter(
-        (rel: any) =>
-          rel.sourceTable === `${testConnector.connector_name}.test_table`,
+      const testTableName = `${getCatalogName(testConnector)}.test_table`;
+      const foundTable = json.find(
+        (table: any) => table.name === testTableName,
       );
-      expect(validRelationships).toHaveLength(1);
-      expect(validRelationships[0].targetTable).toBe("project");
+      expect(foundTable).toBeDefined();
+      expect(foundTable.relationships).toHaveLength(1);
+      expect(foundTable.relationships[0].targetTable).toBe("project");
 
       // Clean up invalid relationship
       if (invalidRelationship?.id) {
@@ -741,16 +739,21 @@ describe("API /api/v1/connector", () => {
       const json = await response.json();
 
       expect(response.status).toBe(200);
-      expect(json.tables).toHaveLength(2);
+      expect(json).toHaveLength(2);
 
-      // Check internal relationship
-      const internalRel = json.relationships.find(
-        (rel: any) =>
-          rel.sourceTable === `${testConnector.connector_name}.second_table` &&
-          rel.targetTable === `${testConnector.connector_name}.test_table`,
+      // Check internal relationship is nested in the source table
+      const secondTableName = `${getCatalogName(testConnector)}.second_table`;
+      const foundSecondTable = json.find(
+        (table: any) => table.name === secondTableName,
       );
-      expect(internalRel).toBeDefined();
+      expect(foundSecondTable).toBeDefined();
+      expect(foundSecondTable.relationships).toHaveLength(1);
+
+      const internalRel = foundSecondTable.relationships[0];
       expect(internalRel.sourceColumn).toBe("user_id");
+      expect(internalRel.targetTable).toBe(
+        `${getCatalogName(testConnector)}.test_table`,
+      );
       expect(internalRel.targetColumn).toBe("id");
 
       // Clean up
