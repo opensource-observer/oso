@@ -1,162 +1,200 @@
-import { ContractsV0Validator } from "./contracts.js";
+import { ethers } from "ethers";
 
-export interface EVMNetworkValidator {
-  isEOA(addr: string): Promise<boolean>;
-  isContract(addr: string): Promise<boolean>;
-  isFactory(addr: string): Promise<boolean>;
-  isDeployer(addr: string): Promise<boolean>;
-}
-
-interface GenericEVMNetworkValidatorOptions {
+export interface AddressValidationOptions {
   osoApiKey: string;
   osoEndpoint: string;
-  namespace?: string;
+  expectedNetwork: string; // e.g. "ARBITRUM", "BASE", "OPTIMISM", "ANY_EVM"
+  rpcUrl?: string;
 }
 
 /**
- * Enhanced EVM network validator using contracts_v0 endpoint
- * Replaces BigQuery and Alchemy-based validation with OSO's contracts_v0 API
+ * Checks if an address is a contract using ethers.js.
  */
-export class GenericEVMNetworkValidator implements EVMNetworkValidator {
-  private contractsValidator: ContractsV0Validator;
-
-  static create(
-    options: GenericEVMNetworkValidatorOptions,
-  ): EVMNetworkValidator {
-    return new GenericEVMNetworkValidator(options);
-  }
-
-  constructor(options: GenericEVMNetworkValidatorOptions) {
-    this.contractsValidator = new ContractsV0Validator(options);
-  }
-
-  async isEOA(addr: string): Promise<boolean> {
-    return await this.contractsValidator.isEOA(addr);
-  }
-
-  async isContract(addr: string): Promise<boolean> {
-    return await this.contractsValidator.isContract(addr);
-  }
-
-  async isFactory(addr: string): Promise<boolean> {
-    return await this.contractsValidator.isFactory(addr);
-  }
-
-  async isDeployer(addr: string): Promise<boolean> {
-    return await this.contractsValidator.isDeployer(addr);
-  }
-
-  /**
-   * Warning method for unsupported artifact types
-   * @param addr The address to check
-   * @param artifactType The unsupported artifact type (WALLET, SAFE, BRIDGE, etc.)
-   * @returns Promise that resolves to false with a console warning
-   */
-  async isUnsupportedArtifactType(
-    addr: string,
-    artifactType: string,
-  ): Promise<boolean> {
-    console.warn(
-      `⚠️  ${artifactType} validation not yet implemented for address: ${addr}. Using contracts_v0 endpoint.`,
-    );
+export async function isContractEthers(
+  address: string,
+  rpcUrl: string,
+): Promise<boolean> {
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  try {
+    const code = await provider.getCode(address);
+    return code !== "0x";
+  } catch {
     return false;
   }
+}
 
-  /**
-   * Convenience method for WALLET artifact type
-   */
-  async isWallet(addr: string): Promise<boolean> {
-    return this.isUnsupportedArtifactType(addr, "WALLET");
+/**
+ * Queries the contracts_v0 endpoint for contract info.
+ */
+export async function queryContractsV0(
+  address: string,
+  osoApiKey: string,
+  osoEndpoint: string,
+) {
+  const query = `
+    query ($address: String!) {
+      oso_contractsV0(where: { contractAddress: { _eq: $address }, }) {
+        contractAddress
+        contractNamespace
+        originatingAddress
+        factoryAddress
+      }
+    }
+  `;
+  const response = await fetch(osoEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${osoApiKey}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: { address: address.toLowerCase() },
+    }),
+  });
+  const data = await response.json();
+  return data?.data?.oso_contractsV0 || [];
+}
+
+/**
+ * Validates an address as a contract, factory, or deployer on the expected network.
+ */
+export async function validateAddressOnChain(
+  address: string,
+  options: AddressValidationOptions,
+  queryFn: typeof queryContractsV0 = queryContractsV0,
+): Promise<{
+  isContract: boolean;
+  isFactory: boolean;
+  isDeployer: boolean;
+  isOnExpectedNetwork: boolean;
+  contractNamespaces: string[];
+}> {
+  const results = await queryFn(
+    address,
+    options.osoApiKey,
+    options.osoEndpoint,
+  );
+
+  const contractNamespaces = results.map((c: any) => c.contractNamespace);
+  const isContract = results.length > 0;
+  const isFactory = results.some((c: any) => !!c.factoryAddress);
+  const isDeployer = results.some((c: any) => !!c.originatingAddress);
+
+  let isOnExpectedNetwork = false;
+  if (options.expectedNetwork === "ANY_EVM") {
+    isOnExpectedNetwork = isContract;
+  } else {
+    isOnExpectedNetwork = contractNamespaces.includes(options.expectedNetwork);
   }
 
-  /**
-   * Convenience method for SAFE artifact type
-   */
-  async isSafe(addr: string): Promise<boolean> {
-    return this.isUnsupportedArtifactType(addr, "SAFE");
-  }
-
-  /**
-   * Convenience method for BRIDGE artifact type
-   */
-  async isBridge(addr: string): Promise<boolean> {
-    return this.isUnsupportedArtifactType(addr, "BRIDGE");
-  }
-}
-
-export type EthereumOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "namespace"
->;
-
-/**
- * Ethereum validator - validates addresses on Ethereum mainnet
- * Ignores contract_namespace (equivalent to ANY_EVM behavior)
- */
-export function EthereumValidator(options: EthereumOptions) {
-  return GenericEVMNetworkValidator.create({
-    ...options,
-    osoEndpoint: "https://www.opensource.observer/api/v1/graphql",
-    namespace: undefined, // Explicitly ignore namespace for ANY_EVM behavior
-  });
+  return {
+    isContract,
+    isFactory,
+    isDeployer,
+    isOnExpectedNetwork,
+    contractNamespaces,
+  };
 }
 
 /**
- * AnyEVM validator - validates addresses across all EVM networks
- * Ignores contract_namespace for cross-chain validation
+ * Checks if an address is an EOA
  */
-export function AnyEVMValidator(options: EthereumOptions) {
-  return GenericEVMNetworkValidator.create({
-    ...options,
-    osoEndpoint: "https://www.opensource.observer/api/v1/graphql",
-    namespace: undefined, // Explicitly ignore namespace for cross-chain validation
-  });
+export async function isEOA(address: string, rpcUrl: string): Promise<boolean> {
+  return !(await isContractEthers(address, rpcUrl));
 }
 
-export type ArbitrumOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "namespace"
->;
-
 /**
- * Arbitrum validator - validates addresses specifically on Arbitrum
- * Uses ARBITRUM namespace for chain-specific validation
+ * Warning method for unsupported artifact types
  */
-export function ArbitrumValidator(options: ArbitrumOptions) {
-  return GenericEVMNetworkValidator.create({
-    ...options,
-    osoEndpoint: "https://www.opensource.observer/api/v1/graphql",
-    namespace: "ARBITRUM",
-  });
+export async function warnUnsupportedArtifactType(
+  addr: string,
+  artifactType: string,
+): Promise<boolean> {
+  console.warn(
+    `⚠️  ${artifactType} validation not yet implemented for address: ${addr}. Using contracts_v0 endpoint.`,
+  );
+  return false;
 }
 
-export type BaseOptions = Omit<GenericEVMNetworkValidatorOptions, "namespace">;
-
-/**
- * Base validator - validates addresses specifically on Base
- * Uses BASE namespace for chain-specific validation
- */
-export function BaseValidator(options: BaseOptions) {
-  return GenericEVMNetworkValidator.create({
-    ...options,
-    osoEndpoint: "https://www.opensource.observer/api/v1/graphql",
-    namespace: "BASE",
+export async function isContractOnChain(
+  address: string,
+  options: AddressValidationOptions,
+): Promise<boolean> {
+  const query = `
+    query ($address: String!) {
+      oso_contractsV0(where: { contractAddress: { _eq: $address } }) {
+        contractAddress
+      }
+    }
+  `;
+  const response = await fetch(options.osoEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${options.osoApiKey}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: { address: address.toLowerCase() },
+    }),
   });
+  const data = await response.json();
+  return (data?.data?.oso_contractsV0?.length ?? 0) > 0;
 }
 
-export type OptimismOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "namespace"
->;
-
-/**
- * Optimism validator - validates addresses specifically on Optimism
- * Uses OPTIMISM namespace for chain-specific validation
- */
-export function OptimismValidator(options: OptimismOptions) {
-  return GenericEVMNetworkValidator.create({
-    ...options,
-    osoEndpoint: "https://www.opensource.observer/api/v1/graphql",
-    namespace: "OPTIMISM",
+export async function isDeployerOnChain(
+  address: string,
+  options: AddressValidationOptions,
+): Promise<boolean> {
+  const query = `
+    query ($address: String!) {
+      oso_contractsV0(where: { originatingAddress: { _eq: $address } }, limit: 1) {
+        originatingAddress
+      }
+    }
+  `;
+  const response = await fetch(options.osoEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${options.osoApiKey}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: { address: address.toLowerCase() },
+    }),
   });
+  const data = await response.json();
+  return (data?.data?.oso_contractsV0?.length ?? 0) > 0;
+}
+
+export async function isFactoryOnChain(
+  address: string,
+  options: AddressValidationOptions,
+  namespace: string,
+): Promise<boolean> {
+  const query = `
+    query ($address: String!, $namespace: String!) {
+      oso_contractsV0(
+        where: { factoryAddress: { _eq: $address }, contractNamespace: { _eq: $namespace } }
+        limit: 1
+      ) {
+        factoryAddress
+      }
+    }
+  `;
+  const response = await fetch(options.osoEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${options.osoApiKey}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: { address: address.toLowerCase(), namespace },
+    }),
+  });
+  const data = await response.json();
+  return (data?.data?.oso_contractsV0?.length ?? 0) > 0;
 }
