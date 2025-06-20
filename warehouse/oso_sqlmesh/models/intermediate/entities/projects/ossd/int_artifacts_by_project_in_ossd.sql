@@ -91,32 +91,6 @@ WITH projects AS (
   INNER JOIN oso.stg_ossd__current_repositories AS repos
     ON LOWER(CONCAT('https://github.com/', repos.owner)) = LOWER(TRIM(TRAILING '/' FROM source_url))
     OR LOWER(repos.url) = LOWER(TRIM(TRAILING '/' FROM source_url))
-), all_npm_raw AS (
-  SELECT
-    'NPM' AS artifact_source,
-    'PACKAGE' AS artifact_type,
-    projects.project_id,
-    unnested_npm.url AS artifact_source_id,
-    unnested_npm.url AS artifact_url,
-    CASE
-      WHEN unnested_npm.url LIKE 'https://npmjs.com/package/%'
-      THEN SUBSTRING(unnested_npm.url, 27)
-      WHEN unnested_npm.url LIKE 'https://www.npmjs.com/package/%'
-      THEN SUBSTRING(unnested_npm.url, 31)
-      ELSE unnested_npm.url
-    END AS artifact_name
-  FROM projects
-  CROSS JOIN UNNEST(projects.npm) AS @unnested_struct_ref(unnested_npm)
-), all_npm AS (
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_name,
-    artifact_url,
-    SPLIT(REPLACE(artifact_name, '@', ''), '/')[@array_index(0)] AS artifact_namespace
-  FROM all_npm_raw
 ), ossd_blockchain AS (
   SELECT
     projects.project_id,
@@ -207,16 +181,6 @@ WITH projects AS (
     artifact_name,
     artifact_url
   FROM ossd_blockchain
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM all_npm
   UNION ALL
   SELECT
     project_id,
