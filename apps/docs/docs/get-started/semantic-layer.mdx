@@ -1,0 +1,340 @@
+---
+title: "Using the Semantic Layer"
+sidebar_position: 2
+---
+
+import AnatomyOfSemanticLayer from "../_common/semantic-layer/_anatomy-of-semantic-layer.mdx";
+
+After some exploration with the OSO data, you may find that the available tables
+have a complex set of relationships that can make it difficult to understand how
+to properly write some set of queries. Understanding the relationships of the
+tables key to being able to make meaningful queries against the OSO data. As
+part of the the `pyoso`, we now include an experimental semantic layer.
+
+The semantic layer provides a curated data model that can be used to query the
+OSO data warehouse through a python interface. The explicit relationships and
+attributes inherent in this semantic layer allow for automatically resolving
+join paths, aggregations, and other aspects of using the data model so that
+making informed queries doesn't require expertise in the universe of OSO tables.
+
+<AnatomyOfSemanticLayer>
+:::note 
+This guide is all about using the semantic layer and not defining it. If
+you'd like to contribute to the semantic layer by defining additional models,
+relationships, etc, see the guide
+[here](../contribute-models/semantic-layer-definition.mdx)
+:::
+</AnatomyOfSemanticLayer>
+
+
+## Querying against the semantic layer
+
+### A basic query
+
+Let's consider a basic query that only seeks to find all artifacts within a
+collection. If you only cared about the artifact name and collection name
+attributes this semantic query would look like this:
+
+```python
+from pyoso import Client
+
+oso = Client()
+
+query = oso.semantic.select(
+    "collection.name"
+    "artifact.name",
+)
+```
+
+This query simply `select`s the `name` attribute from both the `collection`
+model and the `artifact` model.
+
+To render this semantic query to sql you can do:
+
+```python
+print(query.sql())
+```
+
+By default this will use the trino SQL dialect and the printed query will look
+something like this:
+
+```sql
+SELECT
+  collection_db6d9b45.collection_name AS collection_name,
+  artifact_8e5b948a.artifact_name AS artifact_name
+FROM oso.artifacts_v1 AS artifact_8e5b948a
+LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_4f760b72
+  ON artifact_8e5b948a.artifact_id = artifacts_by_project_v1_4f760b72.artifact_id
+LEFT JOIN oso.projects_v1 AS project_46f86faa
+  ON artifacts_by_project_v1_4f760b72.project_id = project_46f86faa.project_id
+LEFT JOIN oso.projects_by_collection_v1 AS projects_by_collection_v1_483e7c1c
+  ON project_46f86faa.project_id = projects_by_collection_v1_483e7c1c.project_id
+LEFT JOIN oso.collections_v1 AS collection_db6d9b45
+  ON projects_by_collection_v1_483e7c1c.collection_id = collection_db6d9b45.collection_id
+GROUP BY
+  1,
+  2
+```
+
+As evident in the generated sql, the semantic query tool automatically decides the proper join path and automatically groups the collection name and artifact name.
+
+_Note:_ For this specific example, a custom written query could produce one less
+join, but due to the way the registry has is modeled this result is currently
+as intended.
+
+To execute this generated sql query and return the associated dataframe one can simply do:
+
+```python
+df = query.as_pandas()
+```
+
+### Querying with a relationship
+
+Relaltionships are a key part of the semantic layer. They allow us to define how models relate to each other. Unlike, SQL you don't explicity define join paths. The semantic layer resolves these paths for you. For dealing with relationships we have special semantics when a relationship attribute is included in the query. 
+
+#### Selecting just a relationship attribute
+
+The `project` model has a relationship to the collection via it's `collection` relationship attribute. 
+
+```python
+query = oso.semantic.select(
+  "project.collection",
+)
+```
+
+This would produce the following SQL:
+
+```sql
+SELECT
+  project_46f86faa.collection_id AS project_collection
+FROM oso.projects_v1 AS project_46f86faa
+GROUP BY
+  1
+```
+
+We can also include the relationship attribute to provide a filtering
+context without having an explicit filter. For instance if we wanted to only 
+get the project names that exist in _any_ collection, we could do this:
+
+```python
+query = oso.semantic.select(
+    "project.name",
+    "collection",
+)
+```
+
+As not all artifacts are part of a project, this will only return the projects that have a relationship to a collection. This would produce the following SQL:
+
+```sql
+SELECT
+  project_46f86faa.project_name AS project_name,
+  project_46f86faa.collection_id AS project_collection
+FROM oso.projects_v1 AS project_46f86faa
+WHERE
+  project_46f86faa.collection_id IS NOT NULL
+GROUP BY
+  1,
+  2
+```
+
+#### Handling ambiguous joins
+
+The previous examples only involved a fairly simple join relationships.
+Artifacts are related to Collections via their relationship to Projects and some
+intermediate tables in between. However, in the OSO data model we also have a
+concept of Events. There are multiple event tables but let's consider the events
+from github. In the current semantic layer the model responsible for the github
+events is `github_event`. All of the event models have a generic interface that
+involves the following relationships:
+
+- `from` - The artifact that initiated an event
+- `to` - The artifact that received an event
+
+If we instead wanted to make the following semantic query:
+
+```python
+query = oso.semantic.select(
+    "github_event.time",
+    "collection.name"
+    "artifact.name",
+)
+```
+
+If you try to render this sql:
+
+```python
+query.sql()
+```
+
+This would result in a `ModelHasAmbiguousJoinPath` exception. This "ambiguous"
+join is because there are two possible paths to join `github_event` to both the
+`artifact` model the `collection` model. In such a case, we need to give the
+semantic querying mechanism an explicit path for which to join against the
+`github_event` table. To do this, we use a special arrow operator `->` that will
+define the path we want to relate through for the ambiguous join. For instance,
+if what we cared about are the event times and the associated artifacts and
+collections that received an event we'd do this:
+
+```python
+query = oso.semantic.select(
+    "github_event.time",
+    "github_event.to->collection.name"
+    "github_event.to->artifact.name",
+)
+```
+
+This would then produce the following SQL:
+
+```sql
+SELECT
+  collection_2083abff.collection_name AS github_event_to__collection_name,
+  artifact_95a01095.artifact_name AS github_event_from__artifact_name,
+  github_event_420c9a8e.time AS github_event_time
+FROM oso.int_events__github AS github_event_420c9a8e
+LEFT JOIN oso.artifacts_v1 AS artifact_1b71f23f
+  ON github_event_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
+LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_5ee26df1
+  ON artifact_1b71f23f.artifact_id = artifacts_by_project_v1_5ee26df1.artifact_id
+LEFT JOIN oso.projects_v1 AS project_e17705b6
+  ON artifacts_by_project_v1_5ee26df1.project_id = project_e17705b6.project_id
+LEFT JOIN oso.projects_by_collection_v1 AS projects_by_collection_v1_8247793e
+  ON project_e17705b6.project_id = projects_by_collection_v1_8247793e.project_id
+LEFT JOIN oso.collections_v1 AS collection_2083abff
+  ON projects_by_collection_v1_8247793e.collection_id = collection_2083abff.collection_id
+LEFT JOIN oso.artifacts_v1 AS artifact_95a01095
+  ON github_event_420c9a8e.from_artifact_id = artifact_95a01095.artifact_id
+GROUP BY
+  1,
+  2,
+  3
+```
+
+## Filtering
+
+Filtering is a key part of any query. The semantic layer provides a way to
+filter on the attributes of the models. For instance, if we wanted to filter the
+previous query to only include artifacts that are part of a specific namespace,
+we could do this:
+
+```python
+query = oso.semantic.select(
+    "github_event.time",
+    "github_event.to->collection.name",
+    "github_event.to->artifact.name",
+).add_filter(
+    "github_event.to->artifact.namespace = 'oso'",
+)
+```
+
+This would produce the following SQL:
+
+```sql
+SELECT
+  collection_2083abff.collection_name AS github_event_to__collection_name,
+  artifact_95a01095.artifact_name AS github_event_from__artifact_name,
+  github_event_420c9a8e.time AS github_event_time
+FROM oso.int_events__github AS github_event_420c9a8e
+LEFT JOIN oso.artifacts_v1 AS artifact_1b71f23f
+  ON github_event_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
+LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_5ee26df1
+  ON artifact_1b71f23f.artifact_id = artifacts_by_project_v1_5ee26df1.artifact_id
+LEFT JOIN oso.projects_v1 AS project_e17705b6
+  ON artifacts_by_project_v1_5ee26df1.project_id = project_e17705b6.project_id
+LEFT JOIN oso.projects_by_collection_v1 AS projects_by_collection_v1_8247793e
+  ON project_e17705b6.project_id = projects_by_collection_v1_8247793e.project_id
+LEFT JOIN oso.collections_v1 AS collection_2083abff
+  ON projects_by_collection_v1_8247793e.collection_id = collection_2083abff.collection_id
+LEFT JOIN oso.artifacts_v1 AS artifact_95a01095
+  ON github_event_420c9a8e.from_artifact_id = artifact_95a01095.artifact_id
+WHERE
+  artifact_1b71f23f.artifact_namespace = 'oso'
+GROUP BY
+  1,
+  2,
+  3
+``` 
+
+Additionall, you can also filter on a model's measures. Let's get all the artifacts with 1000 or less events:
+
+```python
+query = oso.semantic.select(
+    "github_event.time",
+    "github_event.to->collection.name",
+    "github_event.to->artifact.name",
+).add_filter(
+    "github_event.count <= 1000",
+)
+```
+
+This would produce the following SQL:
+
+```sql
+SELECT
+  collection_2083abff.collection_name AS github_event_to__collection_name,
+  artifact_95a01095.artifact_name AS github_event_from__artifact_name,
+  github_event_420c9a8e.time AS github_event_time
+FROM oso.int_events__github AS github_event_420c9a8e
+LEFT JOIN oso.artifacts_v1 AS artifact_1b71f23f
+  ON github_event_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
+LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_5ee26df1
+  ON artifact_1b71f23f.artifact_id = artifacts_by_project_v1_5ee26df1.artifact_id
+LEFT JOIN oso.projects_v1 AS project_e17705b6
+  ON artifacts_by_project_v1_5ee26df1.project_id = project_e17705b6.project_id
+LEFT JOIN oso.projects_by_collection_v1 AS projects_by_collection_v1_8247793e
+  ON project_e17705b6.project_id = projects_by_collection_v1_8247793e.project_id
+LEFT JOIN oso.collections_v1 AS collection_2083abff
+  ON projects_by_collection_v1_8247793e.collection_id = collection_2083abff.collection_id
+LEFT JOIN oso.artifacts_v1 AS artifact_95a01095
+  ON github_event_420c9a8e.from_artifact_id = artifact_95a01095.artifact_id
+GROUP BY
+  1,
+  2,
+  3
+HAVING
+  COUNT(github_event_420c9a8e.event_id) <= 1000
+```
+
+## Chaining
+
+_this is still not fully defined_
+
+The semantic layer also provides a way to chain multiple queries together. This is akin to CTEs in SQL. 
+
+Let's find all the projects that published at least one new release in the last
+6 months and also had a user operation in ERC-4337.
+
+```python
+
+query = oso.semantic.named_select(
+  "github_release_metrics",
+  "timeseries_metrics_by_project.sum as metric_sum",
+  "project", # Without an attribute this will reference the model itself
+).add_filter(
+  "metric.name LIKE 'GITHUB_releases_monthly'"
+).named_select(
+  "received_grants",
+  "project",
+).add_filter(
+  "github_release_metrics.metric.sum > 0"
+).named_select(
+  "paymaster_projects",
+  "project",
+).add_filter(
+  "4337_events.event_type LIKE 'CONTRACT_INVOCATION_VIA_PAYMASTER'"
+).select(
+  "project.name",
+  "received_grants.project",
+  "paymaster_projects.project",
+)
+```
+
+In order to chain queries, a query must be named. When this is done, the query
+builder context automatically register that query as another model in an
+temporary registry. This allows us to reference a query as if it were just
+another model in the semantic layer. 
+
+## Full Reference
+
+Much like the OSO data model itself, the object model of the semantic layer is a
+dynamic and frequently changing set of abstractions. As such, the reference
+documentation of the semantic model is versioned and available [here](?). As the semantic model updates, so too does this living document.
