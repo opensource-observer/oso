@@ -46,7 +46,7 @@ github_artifacts AS (
     all_repos.artifact_url,
     all_repos.artifact_type
   FROM project_github_cleaned AS project_repos
-  CROSS JOIN oso.int_github_repositories AS all_repos
+  CROSS JOIN oso.int_artifacts__github AS all_repos
   WHERE project_repos.github = all_repos.artifact_namespace
 ),
 

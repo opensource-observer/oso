@@ -8,7 +8,7 @@ MODEL (
 );
 
 SELECT DISTINCT
-  repos.id AS artifact_source_id,
+  repos.id::TEXT AS artifact_source_id,
   artifact_fields.artifact_source,
   artifact_fields.artifact_namespace,
   artifact_fields.artifact_name,
