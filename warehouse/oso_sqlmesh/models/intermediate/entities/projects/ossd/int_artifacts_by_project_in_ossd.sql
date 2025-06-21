@@ -16,192 +16,172 @@ MODEL (
   )
 );
 
+-- =============================================================================
+-- BASE DATA PREPARATION
+-- =============================================================================
+
 WITH projects AS (
   SELECT
     project_id,
+    project_name,
     websites AS websites,
     social AS social,
     github AS github,
-    npm AS npm,
     blockchain AS blockchain,
     defillama AS defillama
   FROM oso.stg_ossd__current_projects
-), all_websites AS (
+),
+
+-- =============================================================================
+-- WEBSITE ARTIFACTS
+-- =============================================================================
+
+website_artifacts AS (
   SELECT
     projects.project_id,
-    unnested_website.url AS artifact_source_id,
-    'WWW' AS artifact_source,
-    '' AS artifact_namespace,
-    unnested_website.url AS artifact_name,
-    unnested_website.url AS artifact_url,
-    'WEBSITE' AS artifact_type
+    artifact_fields.artifact_url AS artifact_source_id,
+    artifact_fields.artifact_source,
+    artifact_fields.artifact_namespace,
+    artifact_fields.artifact_name,
+    artifact_fields.artifact_url,
+    artifact_fields.artifact_type
   FROM projects
   CROSS JOIN UNNEST(projects.websites) AS @unnested_struct_ref(unnested_website)
-), all_farcaster AS (
+  CROSS JOIN LATERAL @parse_website_artifact(unnested_website.url) AS artifact_fields
+),
+
+-- =============================================================================
+-- SOCIAL MEDIA ARTIFACTS
+-- =============================================================================
+
+farcaster_artifacts AS (
   SELECT
     projects.project_id,
-    unnested_farcaster.url AS artifact_source_id,
-    'FARCASTER' AS artifact_source,
-    '' AS artifact_namespace,
-    unnested_farcaster.url AS artifact_url,
-    'SOCIAL_HANDLE' AS artifact_type,
-    CASE
-      WHEN unnested_farcaster.url LIKE 'https://warpcast.com/%'
-      THEN SUBSTRING(unnested_farcaster.url, 22)
-      ELSE unnested_farcaster.url
-    END AS artifact_name
+    artifact_fields.artifact_url AS artifact_source_id,
+    artifact_fields.artifact_source,
+    artifact_fields.artifact_namespace,
+    artifact_fields.artifact_name,
+    artifact_fields.artifact_url,
+    artifact_fields.artifact_type
   FROM projects
   CROSS JOIN UNNEST(projects.social.farcaster) AS @unnested_struct_ref(unnested_farcaster)
-), all_twitter AS (
+  CROSS JOIN LATERAL @parse_social_handle_artifact('FARCASTER', unnested_farcaster.url) AS artifact_fields
+),
+
+twitter_artifacts AS (
   SELECT
     projects.project_id,
-    unnested_twitter.url AS artifact_source_id,
-    'TWITTER' AS artifact_source,
-    '' AS artifact_namespace,
-    unnested_twitter.url AS artifact_url,
-    'SOCIAL_HANDLE' AS artifact_type,
-    CASE
-      WHEN unnested_twitter.url LIKE 'https://twitter.com/%'
-      THEN SUBSTRING(unnested_twitter.url, 21)
-      WHEN unnested_twitter.url LIKE 'https://x.com/%'
-      THEN SUBSTRING(unnested_twitter.url, 15)
-      ELSE unnested_twitter.url
-    END AS artifact_name
+    artifact_fields.artifact_url AS artifact_source_id,
+    artifact_fields.artifact_source,
+    artifact_fields.artifact_namespace,
+    artifact_fields.artifact_name,
+    artifact_fields.artifact_url,
+    artifact_fields.artifact_type
   FROM projects
   CROSS JOIN UNNEST(projects.social.twitter) AS @unnested_struct_ref(unnested_twitter)
-), github_repos_raw AS (
+  CROSS JOIN LATERAL @parse_social_handle_artifact('TWITTER', unnested_twitter.url) AS artifact_fields
+),
+
+-- =============================================================================
+-- GITHUB REPOSITORY ARTIFACTS
+-- =============================================================================
+
+github_artifacts AS (
   SELECT
     projects.project_id,
-    'GITHUB' AS artifact_source,
-    unnested_github.url AS source_url,
-    'REPOSITORY' AS artifact_type
+    ossd_repos.artifact_source_id,
+    ossd_repos.artifact_source,
+    ossd_repos.artifact_namespace,
+    ossd_repos.artifact_name,
+    ossd_repos.artifact_url,
+    ossd_repos.artifact_type
   FROM projects
   CROSS JOIN UNNEST(projects.github) AS @unnested_struct_ref(unnested_github)
-), github_repos AS (
-  SELECT
-    project_id,
-    artifact_source,
-    repos.id::VARCHAR AS artifact_source_id,
-    repos.owner AS artifact_namespace,
-    repos.name AS artifact_name,
-    LOWER(CONCAT('https://github.com/', repos.owner, '/', repos.name))
-      AS artifact_url,
-    artifact_type
-  FROM github_repos_raw
-  INNER JOIN oso.stg_ossd__current_repositories AS repos
-    ON LOWER(CONCAT('https://github.com/', repos.owner)) = LOWER(TRIM(TRAILING '/' FROM source_url))
-    OR LOWER(repos.url) = LOWER(TRIM(TRAILING '/' FROM source_url))
-), ossd_blockchain AS (
+  INNER JOIN oso.int_repositories__ossd AS ossd_repos
+    ON unnested_github.url = ossd_repos.artifact_url
+    OR unnested_github.url = ossd_repos.owner_url
+),
+
+-- =============================================================================
+-- BLOCKCHAIN ARTIFACTS
+-- =============================================================================
+
+blockchain_artifacts AS (
   SELECT
     projects.project_id,
-    unnested_tag AS artifact_type,
+    artifact_fields.artifact_name AS artifact_source_id,
     unnested_network AS artifact_source,
-    unnested_blockchain.address AS artifact_source_id,
-    '' AS artifact_namespace,
-    unnested_blockchain.address AS artifact_name,
-    unnested_blockchain.address AS artifact_url
+    artifact_fields.artifact_namespace,
+    artifact_fields.artifact_name,
+    artifact_fields.artifact_url,
+    unnested_tag AS artifact_type
   FROM projects
   CROSS JOIN UNNEST(projects.blockchain) AS @unnested_struct_ref(unnested_blockchain)
   CROSS JOIN UNNEST(unnested_blockchain.networks) AS @unnested_array_ref(unnested_network)
   CROSS JOIN UNNEST(unnested_blockchain.tags) AS @unnested_array_ref(unnested_tag)
-), all_defillama AS (
+  CROSS JOIN LATERAL @parse_blockchain_artifact(unnested_blockchain.address) AS artifact_fields
+),
+
+-- =============================================================================
+-- DEFILLAMA PROTOCOL ARTIFACTS
+-- =============================================================================
+
+defillama_artifacts AS (
   SELECT
     projects.project_id,
-    LOWER(unnested_defillama.url) AS artifact_source_id,
-    'DEFILLAMA' AS artifact_source,
-    '' AS artifact_namespace,
-    CASE
-      WHEN unnested_defillama.url LIKE 'https://defillama.com/protocol/%'
-      THEN SUBSTRING(unnested_defillama.url, 32)
-      ELSE unnested_defillama.url
-    END AS artifact_name,
-    unnested_defillama.url AS artifact_url,
-    'DEFILLAMA_PROTOCOL' AS artifact_type
+    artifact_fields.artifact_url AS artifact_source_id,
+    artifact_fields.artifact_source,
+    artifact_fields.artifact_namespace,
+    artifact_fields.artifact_name,
+    artifact_fields.artifact_url,
+    artifact_fields.artifact_type
   FROM projects
   CROSS JOIN UNNEST(projects.defillama) AS @unnested_struct_ref(unnested_defillama)
-), ossd_funding AS (
+  CROSS JOIN LATERAL @parse_defillama_artifact(unnested_defillama.url) AS artifact_fields
+),
+
+-- =============================================================================
+-- OSSD FUNDING WALLET ARTIFACTS
+-- =============================================================================
+
+ossd_funding_artifacts AS (
   SELECT
     projects.project_id,
-    projects.project_name AS artifact_source_id,
-    'OSS_DIRECTORY' AS artifact_source,
-    'oso' AS artifact_namespace,
-    projects.project_name AS artifact_name,
-    CONCAT('https://www.opensource.observer/projects/', projects.project_name)
-      AS artifact_url,
-    'WALLET' AS artifact_type
-  FROM oso.int_projects AS projects
-  WHERE projects.project_source = 'OSS_DIRECTORY'
-), all_artifacts AS (
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM all_websites
+    artifact_fields.artifact_url AS artifact_source_id,
+    artifact_fields.artifact_source,
+    artifact_fields.artifact_namespace,
+    artifact_fields.artifact_name,
+    artifact_fields.artifact_url,
+    artifact_fields.artifact_type
+  FROM projects
+  CROSS JOIN LATERAL @create_ossd_funding_wallet_artifact(projects.project_name) AS artifact_fields
+),
+
+-- =============================================================================
+-- COMBINE ALL ARTIFACT TYPES
+-- =============================================================================
+
+all_artifacts AS (
+  SELECT * FROM website_artifacts
   UNION ALL
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM all_farcaster
+  SELECT * FROM farcaster_artifacts
   UNION ALL
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM all_twitter
+  SELECT * FROM twitter_artifacts
   UNION ALL
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM github_repos
+  SELECT * FROM github_artifacts
   UNION ALL
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM ossd_blockchain
+  SELECT * FROM blockchain_artifacts
   UNION ALL
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM all_defillama
+  SELECT * FROM defillama_artifacts
   UNION ALL
-  SELECT
-    project_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM ossd_funding
-), all_normalized_artifacts AS (
+  SELECT * FROM ossd_funding_artifacts
+),
+
+-- =============================================================================
+-- NORMALIZE AND DEDUPLICATE
+-- =============================================================================
+
+all_normalized_artifacts AS (
   SELECT DISTINCT
     project_id,
     LOWER(artifact_source_id) AS artifact_source_id,
@@ -212,10 +192,14 @@ WITH projects AS (
     LOWER(artifact_url) AS artifact_url
   FROM all_artifacts
 )
+
+-- =============================================================================
+-- FINAL OUTPUT
+-- =============================================================================
+
 SELECT
   project_id,
-  @oso_entity_id(artifact_source, artifact_namespace, artifact_name)
-    AS artifact_id,
+  @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
