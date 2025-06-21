@@ -11,7 +11,7 @@ MODEL (
 WITH ranked_repositories AS (
   SELECT
     node_id,
-    id,
+    id::TEXT AS id,
     LOWER(url) AS url,
     LOWER(name) AS name,
     LOWER(name_with_owner) AS name_with_owner,

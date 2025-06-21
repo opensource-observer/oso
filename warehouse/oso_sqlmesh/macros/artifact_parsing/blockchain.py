@@ -14,7 +14,6 @@ def parse_blockchain_artifact(
     Args:
         evaluator: The MacroEvaluator instance.
         address_expr: SQLGlot expression for the blockchain address.
-        network_expr: SQLGlot expression for the network (becomes artifact_source).
 
     Returns:
         A SQLGlot Subquery expression containing a SELECT statement with columns:
