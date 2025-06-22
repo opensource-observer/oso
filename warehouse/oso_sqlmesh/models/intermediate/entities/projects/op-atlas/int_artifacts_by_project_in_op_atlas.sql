@@ -82,19 +82,32 @@ twitter_artifacts AS (
 -- =============================================================================
 -- GITHUB REPOSITORY ARTIFACTS
 -- =============================================================================
+github_urls AS (
+  SELECT
+    atlas_id,
+    value AS repository_url
+  FROM oso.seed_op_atlas_registry_updates
+  WHERE action = 'INCLUDE' AND artifact_type = 'GITHUB_REPOSITORY'
+  UNION
+  SELECT
+    atlas_id,
+    repository_url
+  FROM oso.stg_op_atlas_project_repository
+  WHERE repository_url IS NOT NULL
+),
 github_artifacts AS (
   SELECT
-    stg.atlas_id,
+    gh_urls.atlas_id,
     gh_int.artifact_source_id,
     'GITHUB' AS artifact_source,
     parsed_url.artifact_namespace,
     parsed_url.artifact_name,
     parsed_url.artifact_url,
     parsed_url.artifact_type
-  FROM oso.stg_op_atlas_project_repository AS stg
-  CROSS JOIN LATERAL @parse_github_repository_artifact(stg.repository_url) AS parsed_url
+  FROM github_urls AS gh_urls
+  CROSS JOIN LATERAL @parse_github_repository_artifact(gh_urls.repository_url) AS parsed_url
   LEFT JOIN oso.int_artifacts__github AS gh_int
-    ON gh_int.artifact_url = stg.repository_url
+    ON gh_int.artifact_url = gh_urls.repository_url
 ),
 
 -- =============================================================================
@@ -146,6 +159,25 @@ deployer_artifacts AS (
 -- =============================================================================
 -- DEFILLAMA ARTIFACTS
 -- =============================================================================
+defillama_slugs AS (
+  SELECT
+    stg.atlas_id,
+    stg.defillama_slug
+  FROM oso.stg_op_atlas_project_defillama AS stg
+  LEFT JOIN oso.seed_op_atlas_registry_updates AS updates
+    ON updates.atlas_id = stg.atlas_id
+    AND updates.action = 'EXCLUDE'
+    AND updates.artifact_type = 'DEFILLAMA_PROTOCOL'
+  WHERE updates.value IS NULL
+  UNION
+  SELECT
+    atlas_id,
+    value AS defillama_slug
+  FROM oso.seed_op_atlas_registry_updates
+  WHERE
+    action = 'INCLUDE'
+    AND artifact_type = 'DEFILLAMA_PROTOCOL'
+),
 defillama_artifacts AS (
   SELECT
     stg.atlas_id,
@@ -155,7 +187,7 @@ defillama_artifacts AS (
     parsed.artifact_name,
     parsed.artifact_url,
     parsed.artifact_type
-  FROM oso.stg_op_atlas_project_defillama AS stg
+  FROM defillama_slugs AS stg
   LEFT JOIN oso.int_defillama_protocols AS dl_child
     ON stg.defillama_slug = dl_child.parent_protocol
   CROSS JOIN LATERAL @parse_defillama_artifact(
@@ -171,11 +203,22 @@ defillama_artifacts AS (
 -- =============================================================================
 -- OSO LINKED ARTIFACTS (Contracts, Deployers, DefiLlama from OSSD)
 -- =============================================================================
-oso_linked_projects AS (
+oso_linked_slugs AS (
   SELECT
     op.atlas_id,
-    ossd.project_id AS ossd_id
+    COALESCE(updates.value, op.open_source_observer_slug)
+      AS open_source_observer_slug
   FROM op_atlas_projects AS op
+  LEFT JOIN oso.seed_op_atlas_registry_updates AS updates
+    ON updates.atlas_id = op.atlas_id
+    AND updates.action = 'INCLUDE'
+    AND updates.artifact_type = 'OSO_SLUG'
+),
+oso_linked_projects AS (
+  SELECT DISTINCT
+    op.atlas_id,
+    ossd.project_id AS ossd_id
+  FROM oso_linked_slugs AS op
   JOIN oso.int_projects AS ossd
     ON ossd.project_source = 'OSS_DIRECTORY'
     AND ossd.project_name = op.open_source_observer_slug
