@@ -39,29 +39,16 @@ test_stg_op_atlas_project_farcaster:
         updated_at: "2025-02-01"
   outputs:
     query:
-      partial: true
       rows:
-      - artifact_source_id: "https://warpcast.com/b"
-        artifact_source: FARCASTER
-        artifact_namespace: ""
-        artifact_name: b
-        artifact_url: "https://warpcast.com/b"
-        artifact_type: SOCIAL_HANDLE
-      - artifact_source_id: "https://warpcast.com/c"
-        artifact_source: FARCASTER
-        artifact_namespace: ""
-        artifact_name: c
-        artifact_url: "https://warpcast.com/c"
-        artifact_type: SOCIAL_HANDLE
-      - artifact_source_id: "https://warpcast.com/d"
-        artifact_source: FARCASTER
-        artifact_namespace: ""
-        artifact_name: d
-        artifact_url: "https://warpcast.com/d"
-        artifact_type: SOCIAL_HANDLE
-      - artifact_source_id: "https://warpcast.com/e"
-        artifact_source: FARCASTER
-        artifact_namespace: ""
-        artifact_name: e
-        artifact_url: "https://warpcast.com/e"
-        artifact_type: SOCIAL_HANDLE
+      - atlas_id: "1"
+        farcaster_url: "https://farcaster.xyz/b"
+        updated_at: "2025-02-01"
+      - atlas_id: "1"
+        farcaster_url: "https://farcaster.xyz/@c"
+        updated_at: "2025-02-01"
+      - atlas_id: "1"
+        farcaster_url: "https://farcaster.xyz//d" # Note the double slash due to concatenation
+        updated_at: "2025-02-01"
+      - atlas_id: "1"
+        farcaster_url: "https://farcaster.xyz/https://warpcast.com/e" # Concatenation result
+        updated_at: "2025-02-01"

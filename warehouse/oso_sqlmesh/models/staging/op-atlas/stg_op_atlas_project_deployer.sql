@@ -7,29 +7,32 @@ MODEL (
   )
 );
 
-WITH cleaned_data AS (
+WITH source_data_raw AS (
   SELECT
-    LOWER(project_id::VARCHAR) AS project_id,
-    LOWER(deployer_address) AS deployer_address,
-    chain_id,
-    updated_at
-  FROM @oso_source('bigquery.op_atlas.project_contract')
+    LOWER(pc.project_id::TEXT) AS atlas_id,
+    LOWER(pc.deployer_address) AS deployer_address,
+    pc.chain_id::INTEGER AS chain_id,
+    pc.updated_at::TIMESTAMP AS updated_at
+  FROM @oso_source('bigquery.op_atlas.project_contract') AS pc
+  WHERE
+    pc.deployer_address IS NOT NULL
+    AND pc.chain_id IS NOT NULL
 ),
 
 latest_data AS (
   SELECT
-    *,
-    ROW_NUMBER() OVER (PARTITION BY project_id, chain_id, deployer_address ORDER BY updated_at DESC) AS rn
-  FROM cleaned_data
+    atlas_id,
+    deployer_address,
+    chain_id,
+    updated_at,
+    ROW_NUMBER() OVER (PARTITION BY atlas_id, chain_id, deployer_address ORDER BY updated_at DESC) AS rn
+  FROM source_data_raw
 )
 
 SELECT
-  @oso_entity_id('OP_ATLAS', '', project_id) AS project_id,
-  deployer_address AS artifact_source_id,
-  @chain_id_to_chain_name(chain_id) AS artifact_source,
-  '' AS artifact_namespace,
-  deployer_address AS artifact_name,
-  deployer_address AS artifact_url,
-  'DEPLOYER' AS artifact_type
+  atlas_id,
+  deployer_address,
+  chain_id,
+  updated_at
 FROM latest_data
 WHERE rn = 1

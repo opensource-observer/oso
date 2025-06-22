@@ -7,39 +7,28 @@ MODEL (
   )
 );
 
-WITH cleaned_data AS (
+WITH source_data_raw AS (
   SELECT
-    LOWER(projects.id::VARCHAR) AS project_id,
-    LOWER(CASE
-      WHEN farcaster.value LIKE 'https://warpcast.com/%'
-      THEN SUBSTRING(farcaster.value, 22)
-      WHEN farcaster.value LIKE '/%'
-      THEN SUBSTRING(farcaster.value, 2)
-      WHEN farcaster.value LIKE '@%'
-      THEN SUBSTRING(farcaster.value, 2)
-      ELSE farcaster.value
-    END) AS farcaster_handle,
-    projects.updated_at AS updated_at
-  FROM @oso_source('bigquery.op_atlas.project__farcaster') AS farcaster
-  INNER JOIN @oso_source('bigquery.op_atlas.project') AS projects
-    ON farcaster._dlt_parent_id = projects._dlt_id
+    LOWER(p.id::TEXT) AS atlas_id,
+    'https://farcaster.xyz/' || LOWER(fc.value) AS farcaster_url,
+    p.updated_at::TIMESTAMP AS updated_at
+  FROM @oso_source('bigquery.op_atlas.project__farcaster') AS fc
+  INNER JOIN @oso_source('bigquery.op_atlas.project') AS p
+    ON fc._dlt_parent_id = p._dlt_id
 ),
 
 latest_data AS (
   SELECT
-    *,
-    ROW_NUMBER() OVER (PARTITION BY project_id, farcaster_handle ORDER BY updated_at DESC) AS rn
-  FROM cleaned_data
+    atlas_id,
+    farcaster_url,
+    updated_at,
+    ROW_NUMBER() OVER (PARTITION BY atlas_id, farcaster_url ORDER BY updated_at DESC) AS rn
+  FROM source_data_raw
 )
 
 SELECT
-  @oso_entity_id('OP_ATLAS', '', project_id) AS project_id,
-  /* TODO: This should be FID */
-  CONCAT('https://warpcast.com/', farcaster_handle) AS artifact_source_id,
-  'FARCASTER' AS artifact_source,
-  '' AS artifact_namespace,
-  farcaster_handle AS artifact_name,
-  CONCAT('https://warpcast.com/', farcaster_handle) AS artifact_url,
-  'SOCIAL_HANDLE' AS artifact_type
+  atlas_id,
+  farcaster_url,
+  updated_at
 FROM latest_data
 WHERE rn = 1
