@@ -17,38 +17,46 @@ test_stg_op_atlas_project_contract:
         project_id: "0x0"
         chain_id: 1 
         contract_address: "0x123"
+        deployer_address: "0xabc"
         updated_at: "2025-02-01"
       - id: "0x2"
         project_id: "0x0"
         chain_id: 10
         contract_address: "0x123"
+        deployer_address: "0xabc"
         updated_at: "2025-02-01"
       - id: "0x3"
         project_id: "0x0"
         chain_id: 8453
         contract_address: "0x123"
+        deployer_address: "0xabc"
         updated_at: "2025-02-01"
       - id: "0x4"
         project_id: "0x0"
         chain_id: 99999
         contract_address: "0x123"
+        deployer_address: "0xabc"
         updated_at: "2025-02-01"
   outputs:
     query: # Query output is now just project_id, contract_address, chain_id
       rows:
       - atlas_id: "0x0" # Lowercased from input
         contract_address: "0x123" # Lowercased from input
-        chain_id: 1
+        deployer_address: "0xabc"
+        chain_id: 1        
         updated_at: "2025-02-01"
       - atlas_id: "0x0"
         contract_address: "0x123"
+        deployer_address: "0xabc"
         chain_id: 10
         updated_at: "2025-02-01"
       - atlas_id: "0x0"
         contract_address: "0x123"
+        deployer_address: "0xabc"
         chain_id: 8453
         updated_at: "2025-02-01"
       - atlas_id: "0x0"
         contract_address: "0x123"
+        deployer_address: "0xabc"        
         chain_id: 99999
         updated_at: "2025-02-01"

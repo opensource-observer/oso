@@ -109,7 +109,7 @@ contract_artifacts AS (
     parsed.artifact_name,
     parsed.artifact_url,
     'CONTRACT' AS artifact_type
-  FROM oso.stg_op_atlas_project_contract AS stg
+  FROM oso.stg_op_atlas_published_contract AS stg
   JOIN oso.seed_chain_id_to_chain_name AS chain_name
     ON chain_name.chain_id = stg.chain_id
   CROSS JOIN LATERAL @parse_blockchain_artifact(stg.contract_address) AS parsed
@@ -125,7 +125,7 @@ all_deployers AS (
     stg.deployer_address,
     chain_name.chain_name,
     COUNT(DISTINCT stg.atlas_id) OVER (PARTITION BY stg.deployer_address, chain_name.chain_name) as project_count_for_deployer
-  FROM oso.stg_op_atlas_project_deployer AS stg
+  FROM oso.stg_op_atlas_project_contract AS stg
   JOIN oso.seed_chain_id_to_chain_name AS chain_name
     ON chain_name.chain_id = stg.chain_id
 ),
@@ -161,7 +161,7 @@ defillama_artifacts AS (
   CROSS JOIN LATERAL @parse_defillama_artifact(
     CASE
       WHEN dl_child.url IS NOT NULL THEN dl_child.url
-      ELSE stg.defillama_slug
+      ELSE 'https://defillama.com/protocol/' || stg.defillama_slug
     END
   ) AS parsed
   WHERE parsed.artifact_name IS NOT NULL

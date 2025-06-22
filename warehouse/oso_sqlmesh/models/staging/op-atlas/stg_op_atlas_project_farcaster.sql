@@ -10,7 +10,7 @@ MODEL (
 WITH source_data_raw AS (
   SELECT
     LOWER(p.id::TEXT) AS atlas_id,
-    'https://farcaster.xyz/' || LOWER(fc.value) AS farcaster_url,
+    LOWER(fc.value) AS farcaster_url,
     p.updated_at::TIMESTAMP AS updated_at
   FROM @oso_source('bigquery.op_atlas.project__farcaster') AS fc
   INNER JOIN @oso_source('bigquery.op_atlas.project') AS p
