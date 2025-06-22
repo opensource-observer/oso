@@ -31,6 +31,12 @@ def parse_social_handle_artifact(
         exp.Substring(this=url_expr, start=exp.Literal.number(22))
     ).when(
         exp.And(
+            this=exp.EQ(this=platform_literal_expr, expression=exp.Literal.string('FARCASTER')),
+            expression=exp.Like(this=url_expr, expression=exp.Literal.string('https://farcaster.xyz/%'))
+        ),
+        exp.Substring(this=url_expr, start=exp.Literal.number(23))
+    ).when(
+        exp.And(
             this=exp.EQ(this=platform_literal_expr, expression=exp.Literal.string('TWITTER')),
             expression=exp.Like(this=url_expr, expression=exp.Literal.string('https://twitter.com/%'))
         ),
@@ -45,12 +51,21 @@ def parse_social_handle_artifact(
         url_expr # Default
     )
 
-    # Convert to x.com format for Twitter artifacts, keep original URL for others
+    # Convert to x.com format for Twitter artifacts, farcaster.xyz for Farcaster artifacts, keep original URL for others
     artifact_url_expr = exp.Case().when(
         exp.EQ(this=platform_literal_expr, expression=exp.Literal.string('TWITTER')),
         exp.Concat(
             expressions=[
                 exp.Literal.string('https://x.com/'),
+                exp.Lower(this=artifact_name_expr)
+            ],
+            safe=True
+        )
+    ).when(
+        exp.EQ(this=platform_literal_expr, expression=exp.Literal.string('FARCASTER')),
+        exp.Concat(
+            expressions=[
+                exp.Literal.string('https://farcaster.xyz/'),
                 exp.Lower(this=artifact_name_expr)
             ],
             safe=True
