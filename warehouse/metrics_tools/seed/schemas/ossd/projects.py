@@ -16,7 +16,6 @@ class Social(BaseModel):
     reddit: list[Url] | None = Column("ARRAY(ROW(?))")
     telegram: list[Url] | None = Column("ARRAY(ROW(?))")
     twitter: list[Url] | None = Column("ARRAY(ROW(?))")
-    warpcast: list[Url] | None = Column("ARRAY(ROW(?))")
     youtube: list[Url] | None = Column("ARRAY(ROW(?))")
 
 
@@ -61,13 +60,12 @@ seed = SeedConfig(
             websites=[Url(url="https://project1.com")],
             social=Social(
                 discord=[Url(url="https://discord.com/project1")],
-                farcaster=[Url(url="https://farcaster.com/project1")],
+                farcaster=[Url(url="https://warpcast.com/project1")],
                 medium=[Url(url="https://medium.com/project1")],
                 mirror=[Url(url="https://mirror.xyz/project1")],
                 reddit=[Url(url="https://reddit.com/project1")],
                 telegram=[Url(url="https://telegram.com/project1")],
                 twitter=[Url(url="https://twitter.com/project1")],
-                warpcast=[Url(url="https://warpcast.com/project1")],
                 youtube=[Url(url="https://youtube.com/project1")],
             ),
             blockchain=[
@@ -83,7 +81,7 @@ seed = SeedConfig(
             open_collective=[Url(url="https://opencollective.com/project1")],
             pypi=[Url(url="https://pypi.org/project1")],
             crates=[Url(url="https://crates.io/project1")],
-            defillama=[Url(url="https://defillama.com/project1")],
+            defillama=[Url(url="https://defillama.com/protocol/project1")],
             sha=None,
             committed_time=datetime.now(),
         ),
@@ -96,13 +94,12 @@ seed = SeedConfig(
             websites=[Url(url="https://project2.com")],
             social=Social(
                 discord=[Url(url="https://discord.com/project2")],
-                farcaster=[Url(url="https://farcaster.com/project2")],
+                farcaster=[Url(url="https://farcaster.xyz/project2")],
                 medium=[Url(url="https://medium.com/project2")],
                 mirror=[Url(url="https://mirror.xyz/project2")],
                 reddit=[Url(url="https://reddit.com/project2")],
                 telegram=[Url(url="https://telegram.com/project2")],
                 twitter=[Url(url="https://twitter.com/project2")],
-                warpcast=[Url(url="https://warpcast.com/project2")],
                 youtube=[Url(url="https://youtube.com/project2")],
             ),
             blockchain=[
@@ -118,7 +115,7 @@ seed = SeedConfig(
             open_collective=[Url(url="https://opencollective.com/project2")],
             pypi=[Url(url="https://pypi.org/project2")],
             crates=[Url(url="https://crates.io/project2")],
-            defillama=[Url(url="https://defillama.com/project2")],
+            defillama=[Url(url="https://defillama.com/protocol/project2")],
             sha=None,
             committed_time=datetime.now(),
         ),
