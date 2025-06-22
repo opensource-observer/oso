@@ -88,7 +88,7 @@ github_urls AS (
     value AS repository_url
   FROM oso.seed_op_atlas_registry_updates
   WHERE action = 'INCLUDE' AND artifact_type = 'GITHUB_REPOSITORY'
-  UNION ALL
+  UNION
   SELECT
     atlas_id,
     repository_url
@@ -169,7 +169,7 @@ defillama_slugs AS (
     AND updates.action = 'EXCLUDE'
     AND updates.artifact_type = 'DEFILLAMA_PROTOCOL'
   WHERE updates.value IS NULL
-  UNION ALL
+  UNION
   SELECT
     atlas_id,
     value AS defillama_slug
