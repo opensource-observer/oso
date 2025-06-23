@@ -3,12 +3,12 @@ import { getTrinoClient } from "@/lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
 import { getTableNamesFromSql } from "@/lib/parsing";
 import { getUser } from "@/lib/auth/auth";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
 import * as jsonwebtoken from "jsonwebtoken";
 import { AuthUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 // Next.js route control
 export const revalidate = 0;
@@ -65,16 +65,23 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.SQL_QUERY,
-    "/api/v1/sql",
-    { query },
-  );
+  const orgId = user.orgId;
 
-  if (!creditsDeducted) {
-    logger.log(`/api/sql: Insufficient credits for user ${user.userId}`);
-    return makeErrorResponse("Insufficient credits", 402);
+  if (orgId) {
+    try {
+      await CreditsService.checkAndDeductOrganizationCredits(
+        user,
+        orgId,
+        TransactionType.SQL_QUERY,
+        "/api/v1/sql",
+        { query },
+      );
+    } catch (error) {
+      logger.error(
+        `/api/sql: Error tracking usage for user ${user.userId}:`,
+        error,
+      );
+    }
   }
 
   const jwt = signJWT(user);

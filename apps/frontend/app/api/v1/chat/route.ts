@@ -2,9 +2,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { getUser } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 export const maxDuration = 60;
 
@@ -22,23 +22,31 @@ export async function POST(req: NextRequest) {
   const prompt = await req.json();
   await using tracker = trackServerEvent(user);
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.CHAT_QUERY,
-    "/api/v1/chat",
-    { message: getLatestMessage(prompt.messages) },
-  );
-
-  if (!creditsDeducted) {
-    logger.log(
-      `/api/chat: Insufficient credits for user ${
-        user.role === "anonymous" ? "anonymous" : user.userId
-      }`,
-    );
+  if (user.role === "anonymous") {
+    logger.log(`/api/chat: User is anonymous`);
     return NextResponse.json(
-      { error: "Insufficient credits" },
-      { status: 402 },
+      { error: "Authentication required" },
+      { status: 401 },
     );
+  }
+
+  const orgId = user.orgId;
+
+  if (orgId) {
+    try {
+      await CreditsService.checkAndDeductOrganizationCredits(
+        user,
+        orgId,
+        TransactionType.CHAT_QUERY,
+        "/api/v1/chat",
+        { message: getLatestMessage(prompt.messages) },
+      );
+    } catch (error) {
+      logger.error(
+        `/api/chat: Error tracking usage for user ${user.userId}:`,
+        error,
+      );
+    }
   }
 
   try {

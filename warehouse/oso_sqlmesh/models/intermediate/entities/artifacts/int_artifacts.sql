@@ -16,7 +16,7 @@ WITH all_artifacts AS (
     artifact_name,
     artifact_url,
     artifact_type
-  FROM oso.int_github_repositories
+  FROM oso.int_artifacts__github
   UNION ALL
   SELECT
     artifact_source_id,
@@ -35,6 +35,15 @@ WITH all_artifacts AS (
     url AS artifact_url,
     'DEFILLAMA_PROTOCOL' AS artifact_type
   FROM oso.int_defillama_protocols
+  UNION ALL
+  SELECT
+    package_artifact_name AS artifact_source_id,
+    sbom_artifact_source AS artifact_source,
+    '' AS artifact_namespace,
+    package_artifact_name AS artifact_name,
+    package_url AS artifact_url,
+    'PACKAGE' AS artifact_type
+  FROM oso.int_packages
 )
 
 SELECT DISTINCT

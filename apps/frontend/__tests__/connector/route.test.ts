@@ -97,7 +97,7 @@ describe("API /api/v1/connector", () => {
     it("should create a dynamic connector successfully", async () => {
       mockTrinoClient.queryAll.mockResolvedValueOnce({ error: null });
 
-      const connectorName = `${testOrg.org_name}_postgres`;
+      const connectorName = `${testOrg.org_name}__postgres`;
       const requestBody = {
         data: {
           org_id: testOrg.id,
@@ -229,7 +229,7 @@ describe("API /api/v1/connector", () => {
         error: new Error("Trino error"),
       });
 
-      const connectorName = `${testOrg.org_name}_postgres_cleanup`;
+      const connectorName = `${testOrg.org_name}__postgres_cleanup`;
       const requestBody = {
         data: {
           org_id: testOrg.id,
@@ -272,7 +272,7 @@ describe("API /api/v1/connector", () => {
     let connectorToDelete: any;
 
     beforeEach(async () => {
-      const connectorName = `${testOrg.org_name}_todelete_${randomUUID().split("-")[0]}`;
+      const connectorName = `${testOrg.org_name}__todelete_${randomUUID().split("-")[0]}`;
       const { data, error } = await supabaseAdminClient
         .from("dynamic_connectors")
         .insert({

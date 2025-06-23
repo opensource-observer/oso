@@ -39,9 +39,9 @@ def upload_dataset(phoenix_client: px.Client, code_examples: ExampleList, datase
         code_examples (ExampleList): The local code examples to upload.
     """
 
-    if example_ids is not None:
+    if example_ids and len(example_ids) > 0:
         selected_code_examples = ExampleList(
-            examples=[ex for ex in code_examples.examples if ex.id in example_ids]
+            examples=[ex for ex in code_examples.examples if ex.metadata['id'] in example_ids]
         )
         if not selected_code_examples.examples:
             raise ValueError(f"No examples matched IDs {example_ids}")
@@ -50,14 +50,16 @@ def upload_dataset(phoenix_client: px.Client, code_examples: ExampleList, datase
 
     
     dataset = Dataset("", "")  # for linter
-    appended = False
+    existing = False
     # first check to see if the dataset already exists
     try:
         dataset = phoenix_client.get_dataset(name=dataset_name)
+        existing = True
 
         # if it does and we aren't running on a subset, diff and append
         if example_ids is None:
             diff = diff_datasets(dataset, selected_code_examples)
+            logger.info(f"Found {len(diff.examples)} new examples to append to dataset '{dataset_name}'")
             if len(diff) > 0:
                 dataset = phoenix_client.append_to_dataset(
                     dataset_name=dataset_name,
@@ -65,14 +67,15 @@ def upload_dataset(phoenix_client: px.Client, code_examples: ExampleList, datase
                     outputs=[ex.output for ex in diff.examples],
                     metadata=[ex.metadata for ex in diff.examples],
                 )
-                appended = True
         # otherwise we need to delete the existing dataset
         else:  
             delete_phoenix_dataset(
                 config.arize_phoenix_base_url,
                 dataset.id,
                 config.arize_phoenix_api_key.get_secret_value()
-            )       
+            )
+            # Reset this value because we just deleted the dataset
+            existing = False
 
     except ValueError as e:
         if dataset_name not in str(e):
@@ -81,7 +84,7 @@ def upload_dataset(phoenix_client: px.Client, code_examples: ExampleList, datase
         else:
             logger.info(f"Dataset '{dataset_name}' not found, creating a new one.")
     
-    if not appended:
+    if not existing:
         dataset = phoenix_client.upload_dataset(
             dataset_name=dataset_name,
             inputs=[ex.input for ex in selected_code_examples.examples],

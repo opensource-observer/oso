@@ -14,14 +14,10 @@ export function AuthForm(props: AuthFormProps) {
   const { className } = props;
   const supabaseState = useSupabaseState();
 
-  if (!supabaseState) {
-    return <>Supabase not initialized yet</>;
-  }
-
   return (
     <div className={className}>
       <Auth
-        supabaseClient={supabaseState?.supabaseClient as SupabaseClient<any>}
+        supabaseClient={supabaseState.supabaseClient as SupabaseClient<any>}
         appearance={{ theme: ThemeSupa }}
         providers={["google"]}
         queryParams={{

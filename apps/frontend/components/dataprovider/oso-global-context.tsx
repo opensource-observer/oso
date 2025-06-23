@@ -47,6 +47,9 @@ const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = {
   createChat: { parameters: [{ name: "args", type: "object" }] },
   updateChat: { parameters: [{ name: "args", type: "object" }] },
   deleteChat: { parameters: [{ name: "args", type: "object" }] },
+  createSqlQuery: { parameters: [{ name: "args", type: "object" }] },
+  updateSqlQuery: { parameters: [{ name: "args", type: "object" }] },
+  deleteSqlQuery: { parameters: [{ name: "args", type: "object" }] },
   getConnectors: { parameters: [{ name: "args", type: "object" }] },
   getConnectorById: {
     parameters: [{ name: "args", type: "object" }],
@@ -163,6 +166,12 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
         client!.updateChat(args).then(handleSuccess).catch(handleError),
       deleteChat: (args: any) =>
         client!.deleteChat(args).then(handleSuccess).catch(handleError),
+      createSqlQuery: (args: any) =>
+        client!.createSqlQuery(args).then(handleSuccess).catch(handleError),
+      updateSqlQuery: (args: any) =>
+        client!.updateSqlQuery(args).then(handleSuccess).catch(handleError),
+      deleteSqlQuery: (args: any) =>
+        client!.deleteSqlQuery(args).then(handleSuccess).catch(handleError),
       getConnectors: (args: any) =>
         client!.getConnectors(args).then(handleSuccess).catch(handleError),
       getConnectorById: (args: any) =>

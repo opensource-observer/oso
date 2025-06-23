@@ -129,7 +129,7 @@ PLASMIC.registerComponent(Markdown, {
       helpText: "Markdown string",
     },
   },
-  importPath: "react-markdown",
+  importPath: "./components/widgets/markdown",
 });
 
 PLASMIC.registerComponent(MetricsDataProvider, {
@@ -235,6 +235,9 @@ PLASMIC.registerComponent(MonacoEditor, {
   name: "MonacoEditor",
   description: "Monaco editor",
   props: {
+    defaultValue: {
+      type: "string",
+    },
     value: {
       type: "string",
     },

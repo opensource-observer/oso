@@ -9,6 +9,7 @@ from .oso_text2sql import create_oso_query_engine
 
 async def create_default_query_engine_tool(
     config: AgentConfig,
+    synthesize_response: bool = True,
 ):
     llm = create_llm(config)
     oso_client = Client(
@@ -21,6 +22,7 @@ async def create_default_query_engine_tool(
         oso_client,
         llm,
         embedding,
+        synthesize_response=synthesize_response,
     )
     return QueryEngineTool.from_defaults(
         query_engine,

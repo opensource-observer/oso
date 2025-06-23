@@ -17,6 +17,7 @@ from oso_agent.server.definition import (
     BotConfig,
     ChatRequest,
 )
+from oso_agent.types.response import AnyResponse
 from oso_agent.util.log import setup_logging
 
 from ..types import (
@@ -88,6 +89,10 @@ def extract_wrapped_response(response: WrappedResponse) -> str:
             return query.query
         case ErrorResponse(message=message):
             return message
+        case AnyResponse(raw=raw):
+            return str(raw)
+        case _:
+            raise ValueError(f"Unsupported response type: {type(response.response)}")
 
 def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any]):
     # Dependency to get the cluster manager
@@ -118,9 +123,12 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         message_id = str(uuid.uuid4())
         lines.append(f'f:{{"messageId":"{message_id}"}}\n')
 
-        for line in response_str.split("\n"):
-            escaped_line = json.dumps(line)
-            lines.append(f"0:{escaped_line}\n")
+        # Split the response into substrings of N characters and escape
+        # newlines for json
+        for i in range(0, len(response_str), config.chat_line_length):
+            substring = response_str[i:i + config.chat_line_length]
+            escaped_substring = json.dumps(substring)
+            lines.append(f"0:{escaped_substring}\n")
 
         lines.append(
             'd:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n'

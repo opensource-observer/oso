@@ -2,7 +2,14 @@ MODEL (
   name oso.int_artifacts_by_project_all_sources,
   kind FULL,
   dialect trino,
+  partitioned_by (
+    artifact_source,
+    artifact_type,
+    project_source
+  ),
+  grain (project_id, artifact_id),
   tags (
+    'entity_category=artifact',
     'entity_category=project'
   ),
   audits (
@@ -27,7 +34,7 @@ WITH unioned AS (
     artifact_id,
     artifact_source_id,
     artifact_source,
-    'CONTRACT' AS artifact_type,
+    artifact_type,
     artifact_namespace,
     artifact_name,
     artifact_name AS artifact_url
@@ -43,6 +50,17 @@ WITH unioned AS (
     artifact_name,
     artifact_url
   FROM oso.int_artifacts_by_project_in_op_atlas
+  UNION ALL
+  SELECT
+    project_id,
+    artifact_id,
+    artifact_source_id,
+    artifact_source,
+    artifact_type,
+    artifact_namespace,
+    artifact_name,
+    artifact_url
+  FROM oso.int_artifacts_by_project_in_op_atlas_downstream
 )
 SELECT DISTINCT
   unioned.project_id,

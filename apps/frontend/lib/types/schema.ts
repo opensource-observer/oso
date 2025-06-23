@@ -456,6 +456,56 @@ export const purchaseIntentsUpdateSchema = z.object({
   user_id: z.string().optional(),
 });
 
+export const savedQueriesRowSchema = z.object({
+  created_at: z.string(),
+  created_by: z.string(),
+  data: z.string().nullable(),
+  deleted_at: z.string().nullable(),
+  display_name: z.string(),
+  id: z.string(),
+  org_id: z.string(),
+  updated_at: z.string(),
+});
+
+export const savedQueriesInsertSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string(),
+  data: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  display_name: z.string(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const savedQueriesUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string().optional(),
+  data: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  display_name: z.string().optional(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const savedQueriesRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("saved_queries_created_by_fkey"),
+    columns: z.tuple([z.literal("created_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("saved_queries_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const userCreditsRowSchema = z.object({
   created_at: z.string(),
   credits_balance: z.number(),

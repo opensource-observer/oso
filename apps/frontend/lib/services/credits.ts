@@ -14,8 +14,9 @@ export enum TransactionType {
   PURCHASE = "purchase",
 }
 
-export interface CreditTransaction {
+export interface OrganizationCreditTransaction {
   id: string;
+  org_id: string;
   user_id: string;
   amount: number;
   transaction_type: string;
@@ -24,9 +25,9 @@ export interface CreditTransaction {
   metadata?: Json | null;
 }
 
-export interface UserCredits {
+export interface OrganizationCredits {
   id: string;
-  user_id: string;
+  org_id: string;
   credits_balance: number;
   created_at: string;
   updated_at: string;
@@ -39,45 +40,48 @@ export class CreditsService {
     return user.role === "anonymous";
   }
 
-  static async getUserCredits(userId: string): Promise<UserCredits | null> {
+  static async getOrganizationCredits(
+    orgId: string,
+  ): Promise<OrganizationCredits | null> {
     const supabaseClient = await createServerClient();
     const { data, error } = await supabaseClient
-      .from("user_credits")
+      .from("organization_credits")
       .select("*")
-      .eq("user_id", userId)
+      .eq("org_id", orgId)
       .single();
 
     if (error) {
-      logger.error("Error fetching user credits:", error);
+      logger.error("Error fetching organization credits:", error);
       return null;
     }
 
     return data;
   }
 
-  static async getCreditTransactions(
-    userId: string,
+  static async getOrganizationCreditTransactions(
+    orgId: string,
     limit = 50,
     offset = 0,
-  ): Promise<CreditTransaction[]> {
+  ): Promise<OrganizationCreditTransaction[]> {
     const supabaseClient = await createServerClient();
     const { data, error } = await supabaseClient
-      .from("credit_transactions")
+      .from("organization_credit_transactions")
       .select("*")
-      .eq("user_id", userId)
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (error) {
-      logger.error("Error fetching credit transactions:", error);
+      logger.error("Error fetching organization credit transactions:", error);
       return [];
     }
 
     return data || [];
   }
 
-  static async checkAndDeductCredits(
+  static async checkAndDeductOrganizationCredits(
     user: User,
+    orgId: string,
     transactionType: TransactionType,
     apiEndpoint?: string,
     metadata?: Record<string, any>,
@@ -87,11 +91,12 @@ export class CreditsService {
     }
 
     const rpcFunction = CREDITS_PREVIEW_MODE
-      ? "preview_deduct_credits"
-      : "deduct_credits";
+      ? "preview_deduct_organization_credits"
+      : "deduct_organization_credits";
 
     const supabaseClient = await createServerClient();
     const { data, error } = await supabaseClient.rpc(rpcFunction, {
+      p_org_id: orgId,
       p_user_id: user.userId,
       p_amount: COST_PER_API_CALL,
       p_transaction_type: transactionType,
@@ -101,7 +106,7 @@ export class CreditsService {
 
     if (error) {
       logger.error(
-        `Error ${CREDITS_PREVIEW_MODE ? "previewing" : "deducting"} credits:`,
+        `Error ${CREDITS_PREVIEW_MODE ? "previewing" : "deducting"} organization credits:`,
         error,
       );
       return false;
@@ -109,7 +114,7 @@ export class CreditsService {
 
     if (CREDITS_PREVIEW_MODE) {
       logger.log(
-        `Preview credit usage tracked for user ${user.userId} on ${transactionType} at ${apiEndpoint}`,
+        `Preview organization credit usage tracked for user ${user.userId} in org ${orgId} on ${transactionType} at ${apiEndpoint}`,
       );
     }
 

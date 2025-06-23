@@ -1,0 +1,65 @@
+test_stg_op_atlas_project_repository:
+  gateway: local
+  model: oso.stg_op_atlas_project_repository
+  vars:
+    start: 2024-01-01
+    end: 2024-02-01
+  inputs:
+    # Mock inputs for @oso_source('bigquery.op_atlas.project_repository')
+    bigquery.op_atlas.project_repository:
+      rows:
+      - comment: "Mock for @oso_source"
+    bigquery.bq_op_atlas.project_repository:
+      rows:
+      - comment: "Mock for @oso_source"
+    sources__bigquery__op_atlas.project_repository: # Actual data for the project_repository table
+      rows:
+      - project_id: "repo_proj1"
+        url: "https://github.com/org1/repoA" # Will be lowercased
+        type: "GITHUB"
+        verified: TRUE
+        updated_at: "2025-01-15T00:00:00Z" # Newer
+      - project_id: "repo_proj1" # Same project, same repo, older update (should be filtered by ROW_NUMBER)
+        url: "https://github.com/org1/repoA"
+        type: "GITHUB"
+        verified: TRUE
+        updated_at: "2025-01-01T00:00:00Z" # Older
+      - project_id: "repo_proj1" # Same project, different repo
+        url: "HTTPS://GITHUB.COM/org1/repoB" # Will be lowercased
+        type: "GITHUB"
+        verified: TRUE
+        updated_at: "2025-01-10T00:00:00Z"
+      - project_id: "repo_proj2"
+        url: "https://github.com/org2/repoC"
+        type: "GITHUB"
+        verified: TRUE
+        updated_at: "2025-01-20T00:00:00Z"
+      - project_id: "repo_proj3" # Not verified
+        url: "https://github.com/org3/repoD"
+        type: "GITHUB"
+        verified: FALSE
+        updated_at: "2025-01-21T00:00:00Z"
+      - project_id: "repo_proj4" # Not GITHUB type
+        url: "https://gitlab.com/org4/repoE"
+        type: "GITLAB"
+        verified: TRUE
+        updated_at: "2025-01-22T00:00:00Z"
+      - project_id: "repo_proj5" # URL is null
+        url: NULL
+        type: "GITHUB"
+        verified: TRUE
+        updated_at: "2025-01-23T00:00:00Z"
+
+  outputs:
+    query:
+      rows:
+      # For repo_proj1, repoA, only the one with the latest updated_at
+      - atlas_id: "repo_proj1"
+        repository_url: "https://github.com/org1/repoa" # Lowercased
+        updated_at: "2025-01-15"
+      - atlas_id: "repo_proj1"
+        repository_url: "https://github.com/org1/repob" # Lowercased
+        updated_at: "2025-01-10"
+      - atlas_id: "repo_proj2"
+        repository_url: "https://github.com/org2/repoc"
+        updated_at: "2025-01-20"

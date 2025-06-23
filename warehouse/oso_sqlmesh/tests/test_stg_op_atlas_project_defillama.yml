@@ -1,0 +1,60 @@
+test_stg_op_atlas_project_defillama:
+  gateway: local
+  model: oso.stg_op_atlas_project_defillama
+  vars:
+    start: 2024-01-01
+    end: 2024-02-01
+  inputs:
+    # Mock inputs for @oso_source('bigquery.op_atlas.project')
+    bigquery.op_atlas.project:
+      rows:
+      - comment: "Mock for @oso_source in trino gateway"
+    bigquery.bq_op_atlas.project:
+      rows:
+      - comment: "Mock for @oso_source in local-trino gateway"
+    sources__bigquery__op_atlas.project: # Actual data for the project table
+      rows:
+      - id: "project1" # This will be lowercased to "project1"
+        _dlt_id: "dlt_proj1"
+        updated_at: "2025-01-15T00:00:00Z"
+      - id: "PROJECT2" # This will be lowercased to "project2"
+        _dlt_id: "dlt_proj2"
+        updated_at: "2025-01-10T00:00:00Z"
+
+    # Mock inputs for @oso_source('bigquery.op_atlas.project__defi_llama_slug')
+    bigquery.op_atlas.project__defi_llama_slug:
+      rows:
+      - comment: "Mock for @oso_source in trino gateway"
+    bigquery.bq_op_atlas.project__defi_llama_slug:
+      rows:
+      - comment: "Mock for @oso_source in local-trino gateway"
+    sources__bigquery__op_atlas.project__defi_llama_slug: # Actual data for defi_llama_slug table
+      rows:
+      # Project1 has two slugs, one more recent
+      - _dlt_parent_id: "dlt_proj1" # Links to project1
+        value: "slug-alpha"
+        _dlt_id: "dlt_slug1"
+      - _dlt_parent_id: "dlt_proj1" # Links to project1 (older, should be filtered by ROW_NUMBER)
+        value: "slug-beta"
+        _dlt_id: "dlt_slug2"
+      # Project2 has one slug
+      - _dlt_parent_id: "dlt_proj2" # Links to project2
+        value: "SLUG-GAMMA" # Will be lowercased
+        _dlt_id: "dlt_slug3"
+      # Slug for a project not in the project mock (should be filtered out by INNER JOIN)
+      - _dlt_parent_id: "dlt_proj_orphan"
+        value: "slug-orphan"
+        _dlt_id: "dlt_slug_orphan"
+
+  outputs:
+    query: # Expected output: project_id, defillama_slug (latest per project/slug combo)
+      rows:
+      - atlas_id: "project1"
+        defillama_slug: "slug-alpha" # Assuming updated_at for project1 makes this the latest for this combo
+        updated_at: "2025-01-15"
+      - atlas_id: "project1"
+        defillama_slug: "slug-beta" # This should also appear as it's a distinct slug for project1
+        updated_at: "2025-01-15"
+      - atlas_id: "project2"
+        defillama_slug: "slug-gamma"
+        updated_at: "2025-01-10"

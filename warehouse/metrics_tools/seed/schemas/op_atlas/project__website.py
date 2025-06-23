@@ -16,16 +16,28 @@ seed = SeedConfig(
     base=ProjectWebsite,
     rows=[
         ProjectWebsite(
-            value="http://website1.com",
-            dlt_parent_id="parent1",
-            dlt_list_idx=1,
-            dlt_id="dlt1",
+            value="https://soliditylang.org/",
+            dlt_parent_id="vh0m30QNSQHp1g",
+            dlt_list_idx=0,
+            dlt_id="jFiXNVfTTX3l9A",
         ),
         ProjectWebsite(
-            value="http://website2.com",
-            dlt_parent_id="parent2",
-            dlt_list_idx=2,
-            dlt_id="dlt2",
+            value="https://soliditylang.org/",
+            dlt_parent_id="w7iRlKxZn25cdg",
+            dlt_list_idx=0,
+            dlt_id="CprxSHI8nPkNzg",
+        ),
+        ProjectWebsite(
+            value="https://velodrome.finance",
+            dlt_parent_id="yMTcvWZwiZs5LA",
+            dlt_list_idx=0,
+            dlt_id="xcT/vRFHUjHYbA",
+        ),
+        ProjectWebsite(
+            value="https://www.erc4337.io/",
+            dlt_parent_id="O9Iu+1cGb3F3Ng",
+            dlt_list_idx=0,
+            dlt_id="AUYyn4skKW5wWA",
         ),
     ],
 )

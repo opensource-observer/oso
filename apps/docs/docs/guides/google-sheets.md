@@ -57,9 +57,9 @@ This guide shows you how to set up a Google Sheets connector in the Open Source 
      2. Base64-encode its contents (for example, run `base64 service-account.json`).
      3. Copy the Base64 string and paste it into this field.
    - **Metadata Sheet ID and Tab**: Copy your metadata sheet’s ID and tab name (e.g., `1A2B3C4D5E6F7G8H9I#Sheet1`).
-4. Click **Submit**. If everything is configured correctly, OSO will register your Google Sheets connector and create a schema named `[your_org_name]_gsheets.default`.
+4. Click **Submit**. If everything is configured correctly, OSO will register your Google Sheets connector and create a schema named `[your_org_name]__gsheets.default`.
 
-> **Note**: The schema name will be based on your organization name. For example, if your organization is named "acme", the schema would be `acme_gsheets.default`. Replace `[your_org_name]` in the queries below with your actual organization name.
+> **Note**: The schema name will be based on your organization name. For example, if your organization is named "acme", the schema would be `acme__gsheets.default` (note the double underscore). Replace `[your_org_name]` in the queries below with your actual organization name.
 
 ## Step 4: Verify in Pyoso
 
@@ -90,7 +90,7 @@ Use a simple `SELECT` to preview up to 5 rows from your metadata-indexed sheet. 
 ```python
 df_preview = client.to_pandas("""
 SELECT *
-FROM [your_org_name]_gsheets.default.my_test_sheet
+FROM [your_org_name]__gsheets.default.my_test_sheet
 LIMIT 5
 """)
 df_preview
@@ -108,7 +108,7 @@ SELECT
   sheet.project_name AS application_name,
   sheet.season,
   sheet.op_total_amount
-FROM [your_org_name]_gsheets.default.my_test_sheet AS sheet
+FROM [your_org_name]__gsheets.default.my_test_sheet AS sheet
 JOIN oso.projects_v1 p
   ON sheet.oso_slug = p.project_name
 WHERE sheet.oso_slug IS NOT NULL
@@ -224,7 +224,7 @@ Updates to your spreadsheet might take up to 10 minutes to be reflected in pyoso
 
 - **Empty Results**
   - Double-check the `table_name` in your metadata sheet matches your SQL `FROM` clause (including capitalization).
-  - Run `SELECT * FROM [your_org_name]_gsheets.default.__TABLES__` to list all available sheets.
+  - Run `SELECT * FROM [your_org_name]__gsheets.default.__TABLES__` to list all available sheets.
 
 ## Next Steps
 
