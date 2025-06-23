@@ -43,9 +43,65 @@ class GoogleGenAILLMConfig(BaseModel):
         """Return the API key for the Gemini model."""
         return self.google_api_key.get_secret_value()
 
+
+class LocalVectorStoreConfig(BaseModel):
+    type: t.Literal["local"] = "local"
+
+    dir: str = Field(
+        default="",
+        description="Directory for local vector storage"
+    )
+
+    index_name: str = Field(
+        default="default_index",
+        description="ID of the index for local vector storage"
+    )
+
+    @model_validator(mode="after")
+    def validate_dir(self) -> "LocalVectorStoreConfig":
+        """Ensure the directory is set for local vector storage."""
+        if not self.dir:
+            raise ValueError("Directory must be specified for local vector storage. Set env var AGENT_VECTOR_STORE__DIR to a directory for local vector storage.")
+        return self
+
+class GoogleGenAIVectorStoreConfig(BaseModel):
+    type: t.Literal["google_genai"] = "google_genai"
+
+    gcs_bucket: str = Field(
+        description="Google Cloud Storage bucket for vector storage"
+    )
+
+    project_id: str = Field(
+        description="Google Cloud project ID for the vector store"
+    )
+
+    region: str = Field(
+        default="us-central1",
+        description="Google Cloud region for the vector store"
+    )
+
+    index_name: str = Field(
+        default="default_index",
+        description="ID of the index in the Google GenAI vector store"
+    )
+
+    index_id: str = Field(
+        description="ID of the index in the Google GenAI vector store"
+    )
+
+    endpoint_id: str = Field(
+        description="ID of the index endpoint in the Google GenAI vector store"
+    )
+
+
 LLMConfig = t.Union[
     LocalLLMConfig,
     GoogleGenAILLMConfig,
+]
+
+VectorStoreConfig = t.Union[
+    LocalVectorStoreConfig,
+    GoogleGenAIVectorStoreConfig,
 ]
 
 class AgentConfig(BaseSettings):
@@ -62,11 +118,12 @@ class AgentConfig(BaseSettings):
         default=SecretStr(""), description="API key for the OSO API"
     )
 
-    vector_storage_dir: str = Field(default="", description="Directory for vector storage")
-
     agent_name: str = Field(default="function_text2sql", description="Name of the agent to use")
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
+    vector_store: VectorStoreConfig = Field(
+        discriminator="type", default_factory=lambda: LocalVectorStoreConfig(dir="")
+    )
 
     oso_mcp_url: str = Field(
         default="http://localhost:8000/sse", description="URL for the OSO MCP API"

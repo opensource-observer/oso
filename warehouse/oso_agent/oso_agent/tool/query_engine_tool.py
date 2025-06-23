@@ -1,5 +1,5 @@
 from llama_index.core.tools import QueryEngineTool
-from pyoso import Client
+from oso_agent.tool.storage_context import setup_storage_context
 
 from ..util.config import AgentConfig
 from .embedding import create_embedding
@@ -12,14 +12,14 @@ async def create_default_query_engine_tool(
     synthesize_response: bool = True,
 ):
     llm = create_llm(config)
-    oso_client = Client(
-        api_key=config.oso_api_key.get_secret_value(),
-    )
+
     embedding = create_embedding(config)
+
+    storage_context = setup_storage_context(config, embed_model=embedding)
 
     query_engine = await create_oso_query_engine(
         config,
-        oso_client,
+        storage_context,
         llm,
         embedding,
         synthesize_response=synthesize_response,

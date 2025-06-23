@@ -9,6 +9,7 @@ import opentelemetry.trace as trace
 import uvicorn
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
+from oso_agent.tool.storage_context import setup_storage_context
 from pyoso import Client
 
 from ..agent import setup_default_agent_registry
@@ -18,7 +19,7 @@ from ..server.definition import BotConfig
 from ..tool.embedding import create_embedding
 from ..tool.llm import create_llm
 from ..tool.oso_mcp_client import OsoMcpClient
-from ..tool.oso_text2sql import create_oso_query_engine
+from ..tool.oso_text2sql import create_oso_query_engine, index_oso_tables
 from ..types import ErrorResponse, SemanticResponse, SqlResponse, StrResponse
 from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
@@ -117,6 +118,38 @@ def query(config, query, agent_name, ollama_model, ollama_url):
         click.echo("─" * 80)
     except AgentError as e:
         click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+@cli.command()
+@pass_config
+def initialize_vector_store(config: AgentConfig):
+    """Index OSO tables for the agent.
+
+    This command indexes the OSO tables into a vector store to enable efficient
+    querying and retrieval of data, this should be done outside of the agent's
+    runtime so that the agent doesn't such a long startup time.
+
+    Currently we support either a local vector store or a Google GenAI vector
+    store.
+    """
+    try:
+        oso_client = Client(
+            api_key=config.oso_api_key.get_secret_value(),
+        )
+        embed = create_embedding(config)
+        storage_context = setup_storage_context(config, embed_model=embed)
+
+        asyncio.run(index_oso_tables(
+            config=config,
+            storage_context=storage_context,
+            oso_client=oso_client,
+            embed_model=embed,
+        ))
+
+        click.echo("\nOSO tables indexed successfully.")
+    except Exception as e:
+        click.echo(f"Error indexing OSO tables: {e}", err=True)
+        raise e
         sys.exit(1)
 
 
@@ -360,12 +393,11 @@ async def _run_demo(config: AgentConfig):
         llm = create_llm(config)
         embed = create_embedding(config)
 
-        oso_client = Client(
-            api_key=config.oso_api_key.get_secret_value(),
-        )
+        storage_context = setup_storage_context(config, embed_model=embed)
+
         query_engine = await create_oso_query_engine(
             config,
-            oso_client,
+            storage_context,
             llm,
             embed,
         )
