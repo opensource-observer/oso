@@ -1,17 +1,16 @@
-test_stg_github__pull_requests_basic:
-  model: oso.stg_github__pull_requests
+test_stg_github__issues_basic:
+  model: oso.stg_github__issues
   vars:
     start_dt: 2024-01-01
     end_dt: 2024-01-05
   inputs:
     oso.stg_github__events:
       rows:
-      # Pull request opened event
       - id: "event_1"
-        created_at: "2024-01-01 14:00:00"
-        type: "PullRequestEvent"
+        created_at: "2024-01-01 10:00:00"
+        type: "IssuesEvent"
         public: true
-        repo: 
+        repo:
           id: 12345
           name: "owner1/repo1"
           url: "https://api.github.com/repos/owner1/repo1"
@@ -23,11 +22,10 @@ test_stg_github__pull_requests_basic:
           url: "https://api.github.com/users/user1"
         org: null
         other: ""
-        payload: '{"action": "opened", "number": 1, "pull_request": {"created_at": "2024-01-01T14:00:00Z", "updated_at": "2024-01-01T14:00:00Z", "merged_at": null, "closed_at": null, "state": "open", "comments": 0, "author_association": "CONTRIBUTOR"}}'
-      # Pull request closed event
+        payload: '{"action": "opened", "issue": {"number": 1, "created_at": "2024-01-01T10:00:00Z", "updated_at": "2024-01-01T10:00:00Z", "closed_at": null, "state": "open", "comments": 0}}'
       - id: "event_2"
-        created_at: "2024-01-02 10:30:00"
-        type: "PullRequestEvent"
+        created_at: "2024-01-02 14:30:00"
+        type: "IssuesEvent"
         public: true
         repo:
           id: 12345
@@ -41,11 +39,10 @@ test_stg_github__pull_requests_basic:
           url: "https://api.github.com/users/user2"
         org: null
         other: ""
-        payload: '{"action": "closed", "number": 1, "pull_request": {"created_at": "2024-01-01T14:00:00Z", "updated_at": "2024-01-02T10:30:00Z", "merged_at": null, "closed_at": "2024-01-02T10:30:00Z", "state": "closed", "comments": 2, "author_association": "CONTRIBUTOR"}}'
-      # Pull request merged event
+        payload: '{"action": "closed", "issue": {"number": 1, "created_at": "2024-01-01T10:00:00Z", "updated_at": "2024-01-02T14:30:00Z", "closed_at": "2024-01-02T14:30:00Z", "state": "closed", "comments": 2}}'
       - id: "event_3"
-        created_at: "2024-01-03 16:45:00"
-        type: "PullRequestEvent"
+        created_at: "2024-01-03 16:15:00"
+        type: "IssuesEvent"
         public: true
         repo:
           id: 67890
@@ -59,11 +56,10 @@ test_stg_github__pull_requests_basic:
           url: "https://api.github.com/users/user3"
         org: null
         other: ""
-        payload: '{"action": "closed", "number": 5, "pull_request": {"created_at": "2024-01-03T10:00:00Z", "updated_at": "2024-01-03T16:45:00Z", "merged_at": "2024-01-03T16:45:00Z", "closed_at": "2024-01-03T16:45:00Z", "state": "closed", "comments": 1, "author_association": "MEMBER"}}'
-      # Pull request review_requested event
+        payload: '{"action": "reopened", "issue": {"number": 5, "created_at": "2024-01-02T12:00:00Z", "updated_at": "2024-01-03T16:15:00Z", "closed_at": null, "state": "open", "comments": 1}}'
       - id: "event_4"
-        created_at: "2024-01-04 09:15:00"
-        type: "PullRequestEvent"
+        created_at: "2024-01-04 11:45:00"
+        type: "IssuesEvent"
         public: true
         repo:
           id: 67890
@@ -77,11 +73,10 @@ test_stg_github__pull_requests_basic:
           url: "https://api.github.com/users/user4"
         org: null
         other: ""
-        payload: '{"action": "review_requested", "number": 7, "pull_request": {"created_at": "2024-01-04T09:15:00Z", "updated_at": "2024-01-04T09:15:00Z", "merged_at": null, "closed_at": null, "state": "open", "comments": 0, "author_association": "FIRST_TIME_CONTRIBUTOR"}}'
-      # Non-PullRequestEvent (should be filtered out)
+        payload: '{"action": "assigned", "issue": {"number": 8, "created_at": "2024-01-03T09:00:00Z", "updated_at": "2024-01-04T11:45:00Z", "closed_at": null, "state": "open", "comments": 3}}'
       - id: "event_5"
-        created_at: "2024-01-04 12:00:00"
-        type: "IssuesEvent"
+        created_at: "2024-01-04 15:00:00"
+        type: "PullRequestEvent"
         public: true
         repo:
           id: 12345
@@ -95,63 +90,72 @@ test_stg_github__pull_requests_basic:
           url: "https://api.github.com/users/user5"
         org: null
         other: ""
-        payload: '{"action": "opened", "number": 10}'
+        payload: '{"action": "opened", "pull_request": {"number": 10, "created_at": "2024-01-04T15:00:00Z", "updated_at": "2024-01-04T15:00:00Z", "merged_at": null, "closed_at": null, "state": "open", "comments": 0}}'
+      - id: "event_6"
+        created_at: "2024-01-06 12:00:00"
+        type: "IssuesEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1006
+          login: "user6"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1006"
+          url: "https://api.github.com/users/user6"
+        org: null
+        other: ""
+        payload: '{"action": "opened", "issue": {"number": 15, "created_at": "2024-01-06T12:00:00Z", "updated_at": "2024-01-06T12:00:00Z", "closed_at": null, "state": "open", "comments": 0}}'
   outputs:
     query:
       rows:
       - id: "event_1"
-        event_time: "2024-01-01 14:00:00"
+        event_time: "2024-01-01 10:00:00"
         repository_id: 12345
         repository_name: "owner1/repo1"
         actor_id: 1001
         actor_login: "user1"
-        type: "PULL_REQUEST_OPENED"
+        type: "ISSUE_OPENED"
         number: 1
-        created_at: "2024-01-01 14:00:00"
-        merged_at: null
+        created_at: "2024-01-01 10:00:00"
         closed_at: null
         state: "open"
         comments: 0.0
-        author_association: "CONTRIBUTOR"
       - id: "event_2"
-        event_time: "2024-01-02 10:30:00"
+        event_time: "2024-01-02 14:30:00"
         repository_id: 12345
         repository_name: "owner1/repo1"
         actor_id: 1002
         actor_login: "user2"
-        type: "PULL_REQUEST_CLOSED"
+        type: "ISSUE_CLOSED"
         number: 1
-        created_at: "2024-01-01 14:00:00"
-        merged_at: null
-        closed_at: "2024-01-02 10:30:00"
+        created_at: "2024-01-01 10:00:00"
+        closed_at: "2024-01-02 14:30:00"
         state: "closed"
         comments: 2.0
-        author_association: "CONTRIBUTOR"
       - id: "event_3"
-        event_time: "2024-01-03 16:45:00"
+        event_time: "2024-01-03 16:15:00"
         repository_id: 67890
         repository_name: "owner2/repo2"
         actor_id: 1003
         actor_login: "user3"
-        type: "PULL_REQUEST_CLOSED"
+        type: "ISSUE_REOPENED"
         number: 5
-        created_at: "2024-01-03 10:00:00"
-        merged_at: "2024-01-03 16:45:00"
-        closed_at: "2024-01-03 16:45:00"
-        state: "closed"
+        created_at: "2024-01-02 12:00:00"
+        closed_at: null
+        state: "open"
         comments: 1.0
-        author_association: "MEMBER"
       - id: "event_4"
-        event_time: "2024-01-04 09:15:00"
+        event_time: "2024-01-04 11:45:00"
         repository_id: 67890
         repository_name: "owner2/repo2"
         actor_id: 1004
         actor_login: "user4"
-        type: "PULL_REQUEST_REVIEW_REQUESTED"
-        number: 7
-        created_at: "2024-01-04 09:15:00"
-        merged_at: null
+        type: "ISSUE_ASSIGNED"
+        number: 8
+        created_at: "2024-01-03 09:00:00"
         closed_at: null
         state: "open"
-        comments: 0.0
-        author_association: "FIRST_TIME_CONTRIBUTOR"
+        comments: 3.0

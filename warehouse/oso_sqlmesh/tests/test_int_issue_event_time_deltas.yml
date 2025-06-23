@@ -1,0 +1,568 @@
+test_int_issue_event_time_deltas_basic:
+  model: oso.int_issue_event_time_deltas
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-05
+  inputs:
+    oso.int_events_aux_issues:
+      rows:
+      - time: "2024-01-01 10:00:00"
+        event_type: "ISSUE_OPENED"
+        event_source: "GITHUB"
+        issue_id: "issue_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_1_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 0
+        event_source_id: "issue_event_1"
+      - time: "2024-01-01 12:30:00"
+        event_type: "ISSUE_COMMENT"
+        event_source: "GITHUB"
+        issue_id: "issue_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_2_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 1
+        event_source_id: "comment_event_1"
+      - time: "2024-01-01 15:00:00"
+        event_type: "ISSUE_CLOSED"
+        event_source: "GITHUB"
+        issue_id: "issue_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_1_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: "2024-01-01 15:00:00"
+        comments: 1
+        event_source_id: "issue_close_event_1"
+      - time: "2024-01-02 16:00:00"
+        event_type: "ISSUE_REOPENED"
+        event_source: "GITHUB"
+        issue_id: "issue_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_1_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 1
+        event_source_id: "issue_reopen_event_1"
+      - time: "2024-01-02 17:00:00"
+        event_type: "PULL_REQUEST_OPENED"
+        event_source: "GITHUB"
+        issue_id: "pr_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_3_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 1
+        event_source_id: "pr_event_1"
+      - time: "2024-01-03 13:00:00"
+        event_type: "PULL_REQUEST_REVIEW_COMMENT"
+        event_source: "GITHUB"
+        issue_id: "pr_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_5_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 1
+        event_source_id: "pr_review_event_1"
+      - time: "2024-01-03 14:00:00"
+        event_type: "PULL_REQUEST_MERGED"
+        event_source: "GITHUB"
+        issue_id: "pr_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_4_hash"
+        created_at: "2024-01-02 16:00:00"
+        merged_at: "2024-01-03 14:00:00"
+        closed_at: "2024-01-03 14:00:00"
+        comments: 1
+        event_source_id: "pr_merge_event_1"
+      - time: "2024-01-03 13:59:59"
+        event_type: "PULL_REQUEST_REVIEW_COMMENT"
+        event_source: "GITHUB"
+        issue_id: "pr_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_4_hash"
+        created_at: "2024-01-02 16:00:00"
+        merged_at: "2024-01-03 14:00:00"
+        closed_at: "2024-01-03 14:00:00"
+        comments: 2
+        event_source_id: "pr_review_event_1"
+
+  outputs:
+    query:
+      rows:
+      - time: "2024-01-01 10:00:00"
+        event_type: "ISSUE_OPENED"
+        event_source: "GITHUB"
+        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_1_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 0.0
+        merged_delta: null
+        closed_delta: null
+        comments: 0.0
+      - time: "2024-01-01 12:30:00"
+        event_type: "ISSUE_COMMENT"
+        event_source: "GITHUB"
+        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_2_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 9000.0
+        merged_delta: null
+        closed_delta: null
+        comments: 1.0
+      - time: "2024-01-01 15:00:00"
+        event_type: "ISSUE_CLOSED"
+        event_source: "GITHUB"
+        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_1_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: "2024-01-01 15:00:00"
+        created_delta: 18000.0
+        merged_delta: null
+        closed_delta: 0.0
+        comments: 1.0
+      - time: "2024-01-02 16:00:00"
+        event_type: "ISSUE_REOPENED"
+        event_source: "GITHUB"
+        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_1_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 108000.0
+        merged_delta: null
+        closed_delta: null
+        comments: 1.0
+      - time: "2024-01-02 17:00:00"
+        event_type: "PULL_REQUEST_OPENED"
+        event_source: "GITHUB"
+        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_3_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 111600.0
+        merged_delta: null
+        closed_delta: null
+        comments: 1.0
+      - time: "2024-01-03 13:00:00"
+        event_type: "PULL_REQUEST_REVIEW_COMMENT"
+        event_source: "GITHUB"
+        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_5_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 183600.0
+        merged_delta: null
+        closed_delta: null
+        comments: 1.0
+      - time: "2024-01-03 14:00:00"
+        event_type: "PULL_REQUEST_MERGED"
+        event_source: "GITHUB"
+        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_4_hash"
+        created_at: "2024-01-02 16:00:00"
+        merged_at: "2024-01-03 14:00:00"
+        closed_at: "2024-01-03 14:00:00"
+        created_delta: 79200.0
+        merged_delta: 0.0
+        closed_delta: 0.0
+        comments: 1.0
+      - time: "2024-01-03 13:59:59"
+        event_type: "PULL_REQUEST_REVIEW_COMMENT"
+        event_source: "GITHUB"
+        issue_id: "3ef5da8a93fe039ae9024f73f56a684e161d56c7c9a3ece50458723572cb9e1b"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_4_hash"
+        created_at: "2024-01-02 16:00:00"
+        merged_at: "2024-01-03 14:00:00"
+        closed_at: "2024-01-03 14:00:00"
+        created_delta: 79199.0
+        merged_delta: -1.0
+        closed_delta: -1.0
+        comments: 2.0
+      # # PR opened: created_delta = 0
+      # - time: "2024-01-02 16:00:00"
+      #   event_type: "PULL_REQUEST_OPENED"
+      #   event_source: "GITHUB"
+      #   issue_id: "pr_1_hash"
+      #   issue_number: 2
+      #   to_artifact_id: "repo_1_hash"
+      #   from_artifact_id: "user_3_hash"
+      #   created_at: "2024-01-02 16:00:00"
+      #   merged_at: null
+      #   closed_at: null
+      #   created_delta: 0.0
+      #   merged_delta: null
+      #   closed_delta: null
+      #   comments: 0.0
+      # # PR review comment: created_delta = 75600 seconds (21 hours)
+      # - time: "2024-01-03 13:00:00"
+      #   event_type: "PULL_REQUEST_REVIEW_COMMENT"
+      #   event_source: "GITHUB"
+      #   issue_id: "pr_1_hash"
+      #   issue_number: 2
+      #   to_artifact_id: "repo_1_hash"
+      #   from_artifact_id: "user_5_hash"
+      #   created_at: "2024-01-02 16:00:00"
+      #   merged_at: null
+      #   closed_at: null
+      #   created_delta: 75600.0
+      #   merged_delta: null
+      #   closed_delta: null
+      #   comments: 1.0
+      # # PR merged: created_delta = 79200 seconds (22 hours), merged_delta = 0, closed_delta = 0
+      # - time: "2024-01-03 14:00:00"
+      #   event_type: "PULL_REQUEST_MERGED"
+      #   event_source: "GITHUB"
+      #   issue_id: "pr_1_hash"
+      #   issue_number: 2
+      #   to_artifact_id: "repo_1_hash"
+      #   from_artifact_id: "user_4_hash"
+      #   created_at: "2024-01-02 16:00:00"
+      #   merged_at: "2024-01-03 14:00:00"
+      #   closed_at: "2024-01-03 14:00:00"
+      #   created_delta: 79200.0
+      #   merged_delta: 0.0
+      #   closed_delta: 0.0
+      #   comments: 1.0
+
+# test_int_issue_event_time_deltas_edge_cases:
+#   model: oso.int_issue_event_time_deltas
+#   vars:
+#     start_dt: 2024-02-01
+#     end_dt: 2024-02-05
+#   inputs:
+#     oso.int_events_aux_issues:
+#       rows:
+#       # Issue that never gets closed/merged
+#       - time: "2024-02-01 10:00:00"
+#         event_type: "ISSUE_OPENED"
+#         event_source: "GITHUB"
+#         issue_id: "issue_open_hash"
+#         issue_number: 10
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_10_hash"
+#         created_at: "2024-02-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 0
+#         event_source_id: "issue_open_event"
+#       # Comment on the open issue
+#       - time: "2024-02-01 14:00:00"
+#         event_type: "ISSUE_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "issue_open_hash"
+#         issue_number: 10
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_11_hash"
+#         created_at: "2024-02-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 1
+#         event_source_id: "comment_open_event"
+#       # PR with only review events, never merged
+#       - time: "2024-02-02 09:00:00"
+#         event_type: "PULL_REQUEST_OPENED"
+#         event_source: "GITHUB"
+#         issue_id: "pr_review_hash"
+#         issue_number: 11
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_12_hash"
+#         created_at: "2024-02-02 09:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 0
+#         event_source_id: "pr_review_open_event"
+#       # Review comment on the PR
+#       - time: "2024-02-02 15:30:00"
+#         event_type: "PULL_REQUEST_REVIEW_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "pr_review_hash"
+#         issue_number: 11
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_13_hash"
+#         created_at: "2024-02-02 09:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 1
+#         event_source_id: "pr_review_comment_event"
+#       # Issue closed immediately without any activity
+#       - time: "2024-02-03 12:00:00"
+#         event_type: "ISSUE_OPENED"
+#         event_source: "GITHUB"
+#         issue_id: "issue_immediate_hash"
+#         issue_number: 12
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_14_hash"
+#         created_at: "2024-02-03 12:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 0
+#         event_source_id: "issue_immediate_open"
+#       - time: "2024-02-03 12:01:00"
+#         event_type: "ISSUE_CLOSED"
+#         event_source: "GITHUB"
+#         issue_id: "issue_immediate_hash"
+#         issue_number: 12
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_14_hash"
+#         created_at: "2024-02-03 12:00:00"
+#         merged_at: null
+#         closed_at: "2024-02-03 12:01:00"
+#         comments: 0
+#         event_source_id: "issue_immediate_close"
+#   outputs:
+#     query:
+#       rows:
+#       # Issue opened (never closed)
+#       - time: "2024-02-01 10:00:00"
+#         event_type: "ISSUE_OPENED"
+#         event_source: "GITHUB"
+#         issue_id: "issue_open_hash"
+#         issue_number: 10
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_10_hash"
+#         created_at: "2024-02-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 0.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 0.0
+#       # Comment on open issue: created_delta = 14400 seconds (4 hours)
+#       - time: "2024-02-01 14:00:00"
+#         event_type: "ISSUE_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "issue_open_hash"
+#         issue_number: 10
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_11_hash"
+#         created_at: "2024-02-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 14400.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 1.0
+#       # PR opened (never merged)
+#       - time: "2024-02-02 09:00:00"
+#         event_type: "PULL_REQUEST_OPENED"
+#         event_source: "GITHUB"
+#         issue_id: "pr_review_hash"
+#         issue_number: 11
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_12_hash"
+#         created_at: "2024-02-02 09:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 0.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 0.0
+#       # PR review comment: created_delta = 23400 seconds (6.5 hours)
+#       - time: "2024-02-02 15:30:00"
+#         event_type: "PULL_REQUEST_REVIEW_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "pr_review_hash"
+#         issue_number: 11
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_13_hash"
+#         created_at: "2024-02-02 09:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 23400.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 1.0
+#       # Issue opened immediately
+#       - time: "2024-02-03 12:00:00"
+#         event_type: "ISSUE_OPENED"
+#         event_source: "GITHUB"
+#         issue_id: "issue_immediate_hash"
+#         issue_number: 12
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_14_hash"
+#         created_at: "2024-02-03 12:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 0.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 0.0
+#       # Issue closed immediately: created_delta = 60 seconds (1 minute), closed_delta = 0
+#       - time: "2024-02-03 12:01:00"
+#         event_type: "ISSUE_CLOSED"
+#         event_source: "GITHUB"
+#         issue_id: "issue_immediate_hash"
+#         issue_number: 12
+#         to_artifact_id: "repo_2_hash"
+#         from_artifact_id: "user_14_hash"
+#         created_at: "2024-02-03 12:00:00"
+#         merged_at: null
+#         closed_at: "2024-02-03 12:01:00"
+#         created_delta: 60.0
+#         merged_delta: null
+#         closed_delta: 0.0
+#         comments: 0.0
+
+# test_int_issue_event_time_deltas_multiple_comments:
+#   model: oso.int_issue_event_time_deltas
+#   vars:
+#     start_dt: 2024-03-01
+#     end_dt: 2024-03-02
+#   inputs:
+#     oso.int_events_aux_issues:
+#       rows:
+#       # Issue with multiple comments
+#       - time: "2024-03-01 10:00:00"
+#         event_type: "ISSUE_OPENED"
+#         event_source: "GITHUB"
+#         issue_id: "issue_multi_hash"
+#         issue_number: 20
+#         to_artifact_id: "repo_3_hash"
+#         from_artifact_id: "user_20_hash"
+#         created_at: "2024-03-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 0
+#         event_source_id: "issue_multi_open"
+#       # First comment (1 hour later)
+#       - time: "2024-03-01 11:00:00"
+#         event_type: "ISSUE_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "issue_multi_hash"
+#         issue_number: 20
+#         to_artifact_id: "repo_3_hash"
+#         from_artifact_id: "user_21_hash"
+#         created_at: "2024-03-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 1
+#         event_source_id: "issue_multi_comment1"
+#       # Second comment (2 hours after creation)
+#       - time: "2024-03-01 12:00:00"
+#         event_type: "ISSUE_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "issue_multi_hash"
+#         issue_number: 20
+#         to_artifact_id: "repo_3_hash"
+#         from_artifact_id: "user_22_hash"
+#         created_at: "2024-03-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 2
+#         event_source_id: "issue_multi_comment2"
+#       # Third comment (3 hours after creation)
+#       - time: "2024-03-01 13:00:00"
+#         event_type: "ISSUE_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "issue_multi_hash"
+#         issue_number: 20
+#         to_artifact_id: "repo_3_hash"
+#         from_artifact_id: "user_23_hash"
+#         created_at: "2024-03-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         comments: 3
+#         event_source_id: "issue_multi_comment3"
+#   outputs:
+#     query:
+#       rows:
+#       # Issue opened
+#       - time: "2024-03-01 10:00:00"
+#         event_type: "ISSUE_OPENED"
+#         event_source: "GITHUB"
+#         issue_id: "issue_multi_hash"
+#         issue_number: 20
+#         to_artifact_id: "repo_3_hash"
+#         from_artifact_id: "user_20_hash"
+#         created_at: "2024-03-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 0.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 0.0
+#       # First comment: created_delta = 3600 seconds (1 hour)
+#       - time: "2024-03-01 11:00:00"
+#         event_type: "ISSUE_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "issue_multi_hash"
+#         issue_number: 20
+#         to_artifact_id: "repo_3_hash"
+#         from_artifact_id: "user_21_hash"
+#         created_at: "2024-03-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 3600.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 1.0
+#       # Second comment: created_delta = 7200 seconds (2 hours)
+#       - time: "2024-03-01 12:00:00"
+#         event_type: "ISSUE_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "issue_multi_hash"
+#         issue_number: 20
+#         to_artifact_id: "repo_3_hash"
+#         from_artifact_id: "user_22_hash"
+#         created_at: "2024-03-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 7200.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 2.0
+#       # Third comment: created_delta = 10800 seconds (3 hours)
+#       - time: "2024-03-01 13:00:00"
+#         event_type: "ISSUE_COMMENT"
+#         event_source: "GITHUB"
+#         issue_id: "issue_multi_hash"
+#         issue_number: 20
+#         to_artifact_id: "repo_3_hash"
+#         from_artifact_id: "user_23_hash"
+#         created_at: "2024-03-01 10:00:00"
+#         merged_at: null
+#         closed_at: null
+#         created_delta: 10800.0
+#         merged_delta: null
+#         closed_delta: null
+#         comments: 3.0

@@ -22,7 +22,7 @@ MODEL (
 WITH pull_request_comment_events AS (
   SELECT
     ghe.id AS id,
-    ghe.created_at AS event_time,
+    STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS event_time,
     ghe.repo.id AS repository_id,
     ghe.repo.name AS repository_name,
     ghe.actor.id AS actor_id,
@@ -37,11 +37,11 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestReviewCommentEvent'
-    and ghe.created_at BETWEEN @start_dt AND @end_dt
+    and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 ), issue_comment_events AS (
   SELECT
     ghe.id AS id,
-    ghe.created_at AS "event_time",
+    STRPTIME(ghe.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS "event_time",
     ghe.repo.id AS repository_id,
     ghe.repo.name AS repository_name,
     ghe.actor.id AS actor_id,
@@ -56,7 +56,7 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssueCommentEvent'
-    and ghe.created_at BETWEEN @start_dt AND @end_dt
+    and STRPTIME(ghe.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 ), all_events as (
   SELECT
     *

@@ -29,11 +29,11 @@ WITH pull_request_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
-    and ghe.created_at BETWEEN @start_dt AND @end_dt
+    and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 )
 SELECT
   pre.id AS id,
-  pre.created_at AS event_time,
+  STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS event_time,
   pre.repo.id AS repository_id,
   pre.repo.name AS repository_name,
   pre.actor.id AS actor_id,

@@ -430,20 +430,20 @@ timeseries_metrics(
         #     ),
         #     additional_tags=["data_category=code"],
         # ),
-        # "avg_time_to_first_response": MetricQueryDef(
-        #     ref="code/time_to_first_response.sql",
-        #     time_aggregations=[
-        #         "quarterly",
-        #         "biannually",
-        #     ],
-        #     entity_types=["artifact", "project", "collection"],
-        #     over_all_time=True,
-        #     metadata=MetricMetadata(
-        #         display_name="Average Time to First Response",
-        #         description="Metrics related to average time to first response",
-        #     ),
-        #     additional_tags=["data_category=code"],
-        # ),
+        "avg_time_to_first_response": MetricQueryDef(
+            ref="code/time_to_first_response.sql",
+            time_aggregations=[
+                "quarterly",
+                "biannually",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Average Time to First Response",
+                description="Metrics related to average time to first response",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         "active_addresses_aggregation": MetricQueryDef(
             ref="blockchain/active_addresses.sql",
             vars={
