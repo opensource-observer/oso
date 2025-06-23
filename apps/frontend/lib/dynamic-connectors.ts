@@ -1,3 +1,5 @@
-export function getCatalogName(connectorName: string, _?: boolean | null) {
-  return `${connectorName.trim().toLocaleLowerCase()}`;
+import { DynamicConnectorsRow } from "@/lib/types/schema-types";
+
+export function getCatalogName(connector: DynamicConnectorsRow) {
+  return `${connector.connector_name.trim().toLocaleLowerCase()}`;
 }
