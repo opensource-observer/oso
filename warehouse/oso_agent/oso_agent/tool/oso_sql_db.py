@@ -130,6 +130,7 @@ class OsoSqlDatabase(SQLDatabase):
                 columns.append(f"{column.name} ({column.type!s})")
         column_str = ", ".join(columns)
         info = f"Table '{table_name}' has columns: {column_str}, "
+        logger.debug(f"Retrieved info for table {table_name}: {info}")
         return info
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
@@ -158,7 +159,7 @@ class OsoSqlDatabase(SQLDatabase):
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
         """
-        logger.debug("Running SQL command: %s", command)
+        logger.debug(f"Running SQL command: {command}")
 
         line_split = [ line.lower() for line in command.strip().split('\n')]
         if self.dialect.lower() in line_split:
