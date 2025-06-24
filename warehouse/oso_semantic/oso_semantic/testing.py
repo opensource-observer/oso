@@ -85,7 +85,7 @@ def setup_registry():
                 Relationship(
                     source_foreign_key="project_id",
                     ref_model="projects_by_collection",
-                    ref_foreign_key="project_id",
+                    ref_key="project_id",
                     type=RelationshipType.ONE_TO_MANY,
                 ),
             ],
@@ -131,7 +131,7 @@ def setup_registry():
                 Relationship(
                     source_foreign_key="collection_id",
                     ref_model="collection",
-                    ref_foreign_key="collection_id",
+                    ref_key="collection_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],
@@ -172,7 +172,7 @@ def setup_registry():
                 Relationship(
                     source_foreign_key="artifact_id",
                     ref_model="artifacts_by_project",
-                    ref_foreign_key="artifact_id",
+                    ref_key="artifact_id",
                     type=RelationshipType.ONE_TO_MANY,
                 ),
             ],
@@ -213,7 +213,7 @@ def setup_registry():
                 Relationship(
                     source_foreign_key="project_id",
                     ref_model="project",
-                    ref_foreign_key="project_id",
+                    ref_key="project_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],
@@ -291,7 +291,7 @@ def setup_registry():
                     description="The artifact to which the event occurred",
                     source_foreign_key="to_artifact_id",
                     ref_model="artifact",
-                    ref_foreign_key="artifact_id",
+                    ref_key="artifact_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
                 Relationship(
@@ -299,7 +299,7 @@ def setup_registry():
                     description="The artifact from which the event occurred",
                     source_foreign_key="from_artifact_id",
                     ref_model="artifact",
-                    ref_foreign_key="artifact_id",
+                    ref_key="artifact_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],
@@ -397,13 +397,13 @@ def setup_registry():
                 Relationship(
                     source_foreign_key="artifact_id",
                     ref_model="artifact",
-                    ref_foreign_key="artifact_id",
+                    ref_key="artifact_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
                 Relationship(
                     source_foreign_key="metric_id",
                     ref_model="metric",
-                    ref_foreign_key="metric_id",
+                    ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],
@@ -460,13 +460,13 @@ def setup_registry():
                 Relationship(
                     source_foreign_key="project_id",
                     ref_model="project",
-                    ref_foreign_key="project_id",
+                    ref_key="project_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
                 Relationship(
                     source_foreign_key="metric_id",
                     ref_model="metric",
-                    ref_foreign_key="metric_id",
+                    ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],
@@ -523,13 +523,13 @@ def setup_registry():
                 Relationship(
                     source_foreign_key="collection_id",
                     ref_model="collection",
-                    ref_foreign_key="collection_id",
+                    ref_key="collection_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
                 Relationship(
                     source_foreign_key="metric_id",
                     ref_model="metric",
-                    ref_foreign_key="metric_id",
+                    ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],

@@ -553,7 +553,7 @@ class Relationship(BaseModel):
         source_foreign_key: Column(s) in the source (current) model that reference the target model.
                            Can be a single column name or list of column names for composite keys.
         ref_model: Name of the target model being referenced.
-        ref_foreign_key: Column(s) in the target model that is referenced.
+        ref_key: Column(s) in the target model that is referenced.
                         Can be a single column name or list of column names for composite keys.
     """
     name: str = ""
@@ -561,7 +561,7 @@ class Relationship(BaseModel):
     type: RelationshipType
     source_foreign_key: str | list[str]
     ref_model: str
-    ref_foreign_key: str | list[str]
+    ref_key: str | list[str]
 
     @model_validator(mode="after")
     def process_relationship(self):
@@ -571,12 +571,12 @@ class Relationship(BaseModel):
 
         if isinstance(self.source_foreign_key, str):
             self.source_foreign_key = [self.source_foreign_key]
-        if isinstance(self.ref_foreign_key, str):
-            self.ref_foreign_key = [self.ref_foreign_key]
+        if isinstance(self.ref_key, str):
+            self.ref_key = [self.ref_key]
 
         assert len(self.source_foreign_key) == len(
-            self.ref_foreign_key
-        ), f"Source foreign key {self.source_foreign_key} and reference foreign key {self.ref_foreign_key} must have the same length"
+            self.ref_key
+        ), f"Source foreign key {self.source_foreign_key} and reference foreign key {self.ref_key} must have the same length"
 
         return self
 
@@ -594,9 +594,7 @@ class Relationship(BaseModel):
             ),
             ref_model=self.ref_model,
             ref_foreign_key=(
-                self.ref_foreign_key
-                if isinstance(self.ref_foreign_key, list)
-                else [self.ref_foreign_key]
+                self.ref_key if isinstance(self.ref_key, list) else [self.ref_key]
             ),
         )
 
@@ -607,7 +605,7 @@ class BoundRelationship:
     type: RelationshipType
     source_foreign_key: list[str]
     ref_model: str
-    ref_foreign_key: list[str]
+    ref_key: list[str]
 
     def __init__(
         self,
@@ -624,7 +622,7 @@ class BoundRelationship:
         self.type = type
         self.source_foreign_key = source_foreign_key
         self.ref_model = ref_model
-        self.ref_foreign_key = ref_foreign_key
+        self.ref_key = ref_foreign_key
 
 
 class ViewConnector(BaseModel):
