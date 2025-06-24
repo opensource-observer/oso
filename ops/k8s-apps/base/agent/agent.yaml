@@ -31,10 +31,10 @@ spec:
       command: ["uv"]
       args:
         - run
-        - -vvv
         - --directory
         - warehouse/oso_agent
         - agent
+        - -vvv
         - serve
         - --host
         - "0.0.0.0"
