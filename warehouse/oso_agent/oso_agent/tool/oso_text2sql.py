@@ -26,13 +26,13 @@ DEFAULT_INCLUDE_TABLES = [
 ]
 
 DEFAULT_TABLES_TO_INDEX: dict[str, list[str]] = {
-    # "projects_v1": [
-    #     "project_source",
-    #     "project_namespace",
-    #     "project_name",
-    #     "display_name",
-    #     "description",
-    # ],
+    "projects_v1": [
+        "project_source",
+        "project_namespace",
+        "project_name",
+        "display_name",
+        "description",
+    ],
     "collections_v1": [
         "collection_source",
         "collection_namespace",
