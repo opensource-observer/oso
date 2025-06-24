@@ -94,15 +94,17 @@ class ExperimentRunner:
     """
 
     def __init__(
-        self, *, config: AgentConfig, resolver: ResourceResolver, evaluators: Evaluators | None = None
+        self, *, config: AgentConfig, resolver: ResourceResolver, evaluators: Evaluators | None = None, 
+        concurrent_evaluators: int = 2,
+        concurrent_runs: int = 2,
     ):
         self.config = config
         self.resolver = resolver
         self._evaluators: Evaluators = []
         self._eval_result_evalutors: list[EvalResultEvaluator] = []
         self._phoenix_client: VersionedAsyncClient | None = None
-        self._evaluators_semaphore = asyncio.Semaphore(2)
-        self._run_semaphore = asyncio.Semaphore(2)
+        self._evaluators_semaphore = asyncio.Semaphore(concurrent_evaluators)
+        self._run_semaphore = asyncio.Semaphore(concurrent_runs)
 
     def add_evaluator(self, func: t.Callable[..., t.Awaitable[EvaluationResult]], 
                       name: str = "", 
@@ -319,7 +321,7 @@ class ExperimentRunner:
         # Create the eval workflow
         workflow = self._setup_instrumented_workflow(
             workflow_cls=workflow_cls,
-            timeout=180,
+            timeout=300,
         )
 
         # Create the experiment in Phoenix
