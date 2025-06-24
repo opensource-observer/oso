@@ -23,3 +23,8 @@ spec:
         AGENT_ARIZE_PHOENIX_USE_CLOUD: "1"
         AGENT_DISCORD_BOT_TOKEN: gcp:secretmanager:production-agent-discord-bot-token/versions/latest
         AGENT_DISCORD_CHANNEL_ID: gcp:secretmanager:production-agent-discord-channel-id/versions/latest
+        AGENT_VECTOR_STORE__TYPE: "google_genai"
+        AGENT_VECTOR_STORE__GCS_BUCKET: "oso-agent-vector-search-usc1"
+        AGENT_VECTOR_STORE__PROJECT_ID: "opensource-observer"
+        AGENT_VECTOR_STORE__INDEX_ID: gcp:secretmanager:production-agent-vector-store-index-id/versions/latest
+        AGENT_VECTOR_STORE__ENDPOINT_ID: gcp:secretmanager:production-agent-vector-store-endpoint-id/versions/latest 
