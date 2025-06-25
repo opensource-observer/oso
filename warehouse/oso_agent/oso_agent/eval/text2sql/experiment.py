@@ -48,6 +48,7 @@ class Text2SqlExperimentOptions(BaseModel):
         "Currently only 'default' is supported.",
     )
 
+
 class FakeWorkflow(MixableWorkflow):
     @step
     async def handle_start(self, start_event: StartEvent) -> StopEvent:
@@ -101,7 +102,9 @@ async def text2sql_experiment(
     logger.debug("Creating Oso MCP client")
     # workflow = TextI2SQLExperimentWorkflow(oso_mcp_client=oso_mcp_client, keep_distinct=True)
 
-    async def clean_result(output: dict[str, t.Any], metadata: dict[str, t.Any], post_processed: str) -> EvaluationResult:
+    async def clean_result(
+        output: dict[str, t.Any], metadata: dict[str, t.Any], post_processed: str
+    ) -> EvaluationResult:
         """Clean the result for evaluation."""
         return EvaluationResult(
             score=1.0,
@@ -111,7 +114,12 @@ async def text2sql_experiment(
 
     logger.debug("Running experiment")
 
-    runner = ExperimentRunner(config=config, resolver=resolver) 
+    runner = ExperimentRunner(
+        config=config,
+        resolver=resolver,
+        concurrent_evaluators=5,
+        concurrent_runs=2,
+    )
     runner.add_evaluator(check_valid_sql)
     runner.add_evaluator(check_valid_sql_result)
     runner.add_evaluator(sql_query_type_similarity)

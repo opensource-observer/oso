@@ -1,9 +1,17 @@
 import logging
 import typing as t
+import uuid
 
-from llama_index.core.workflow import Context, StartEvent, StopEvent, Workflow, step, Event
-from llama_index.core.workflow.workflow import WorkflowMeta
+from llama_index.core.workflow import (
+    Context,
+    Event,
+    StartEvent,
+    StopEvent,
+    Workflow,
+    step,
+)
 from llama_index.core.workflow.handler import WorkflowHandler
+from llama_index.core.workflow.workflow import WorkflowMeta
 from opentelemetry import trace
 from oso_agent.agent.agent_registry import AgentRegistry
 from oso_agent.types.response import AnyResponse, ResponseType
@@ -257,16 +265,24 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
     
     async def run_events_iter(self, **kwargs) -> t.AsyncIterable[Event | WrappedResponse]:
         """Run the workflow and yield responses as they are produced."""
+
+        run_id = str(uuid.uuid4())
+        logger.debug(f"running workflow {self.__class__.__name__} with run_id: run[{run_id}]")
+
         with tracer.start_as_current_span("run_events_iter"):
             handler = self.run(stepwise=True, **kwargs)
             try:
                 events = await handler.run_step()
+                logger.debug(f"initial events run[{run_id}]: {len(events or [])}")
+
                 while events:
                     for event in events:
                         yield event
                         assert handler.ctx is not None, "Workflow handler context is not set."
                         handler.ctx.send_event(event)
                     events = await handler.run_step()
+                    logger.debug(f"next events run[{run_id}]: {len(events or [])}")
+
             except Exception as e:
                 yield WrappedResponse(handler=handler, response=self._wrap_error(e))
             yield self.ensure_wrapped_response(handler)

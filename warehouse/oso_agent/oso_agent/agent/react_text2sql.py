@@ -3,7 +3,7 @@ import logging
 from llama_index.core.agent.workflow import ReActAgent
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.tools import QueryEngineTool
-from pyoso import Client
+from oso_agent.tool.storage_context import setup_storage_context
 
 from ..prompts.system import SYSTEM_PROMPT
 from ..tool.embedding import create_embedding
@@ -34,13 +34,12 @@ async def create_react_text2sql_agent(config: AgentConfig) -> BaseWorkflowAgent:
         logger.info("Initializing function_text2sql agent")
         llm = create_llm(config)
         embedding = create_embedding(config)
-        oso_client = Client(
-            api_key=config.oso_api_key.get_secret_value(),
-        )
+
+        storage_context = setup_storage_context(config, embed_model=embedding)
 
         query_engine = await create_oso_query_engine(
             config,
-            oso_client,
+            storage_context,
             llm,
             embedding,
         )
