@@ -82,12 +82,19 @@ def test_semantic_model_shortest_path():
     )
 
     assert registry.dag.join_paths("artifact", "project") == (
-        ["artifact", "project"],
+        ["artifact", "artifacts_by_project", "project"],
         ["project"],
     )
 
     assert registry.dag.join_paths("github_event", "collection") == (
-        ["github_event", "artifact", "project", "collection"],
+        [
+            "github_event",
+            "artifact",
+            "artifacts_by_project",
+            "project",
+            "projects_by_collection",
+            "collection",
+        ],
         ["collection"],
     )
 
@@ -98,12 +105,12 @@ def test_semantic_model_shortest_path():
         model_ref="artifact", name="from"
     )
 
-    assert to_artifact_ref.model_ref == "artifact"
+    assert to_artifact_ref.ref_model == "artifact"
     assert to_artifact_ref.name == "to"
-    assert to_artifact_ref.foreign_key_column == "to_artifact_id"
-    assert from_artifact_ref.model_ref == "artifact"
+    assert to_artifact_ref.source_foreign_key[0] == "to_artifact_id"
+    assert from_artifact_ref.ref_model == "artifact"
     assert from_artifact_ref.name == "from"
-    assert from_artifact_ref.foreign_key_column == "from_artifact_id"
+    assert from_artifact_ref.source_foreign_key[0] == "from_artifact_id"
 
 
 def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):

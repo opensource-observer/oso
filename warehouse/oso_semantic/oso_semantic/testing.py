@@ -61,11 +61,13 @@ def setup_registry():
         Model(
             name="project",
             table="oso.projects_v1",
-            description=textwrap.dedent("""
+            description=textwrap.dedent(
+                """
                 A project is a collection of related artifacts. A project is
                 usually, but not limited to, some kind of organization, company,
                 or group that controls a set of artifacts.
-            """),
+            """
+            ),
             dimensions=[
                 Dimension(
                     name="id",
@@ -81,11 +83,10 @@ def setup_registry():
             primary_key="project_id",
             relationships=[
                 Relationship(
-                    model_ref="collection",
-                    type=RelationshipType.MANY_TO_MANY,
-                    join_table="oso.projects_by_collection_v1",
-                    self_key_column="project_id",
-                    foreign_key_column="collection_id",
+                    source_foreign_key="project_id",
+                    ref_model="projects_by_collection",
+                    ref_key="project_id",
+                    type=RelationshipType.ONE_TO_MANY,
                 ),
             ],
             measures=[
@@ -110,14 +111,45 @@ def setup_registry():
 
     registry.register(
         Model(
+            name="projects_by_collection",
+            table="oso.projects_by_collection_v1",
+            description=textwrap.dedent(
+                """
+                The join table between projects and collections. This table
+                represents the many-to-many relationship between projects and
+                collections.
+            """
+            ),
+            dimensions=[
+                Dimension(
+                    name="project_id",
+                    description="The unique identifier of the project",
+                    column_name="project_id",
+                ),
+            ],
+            relationships=[
+                Relationship(
+                    source_foreign_key="collection_id",
+                    ref_model="collection",
+                    ref_key="collection_id",
+                    type=RelationshipType.MANY_TO_ONE,
+                ),
+            ],
+        )
+    )
+
+    registry.register(
+        Model(
             name="artifact",
             table="oso.artifacts_v1",
-            description=textwrap.dedent("""
+            description=textwrap.dedent(
+                """
                 An artifact. This is the smallest atom of an acting entity in
                 OSO. Artifacts are usually repositories, blockchain addresses,
                 or some representation of a user. Artifacts do not generally
                 represent a group of any kind, but rather a single entity.
-            """),
+            """
+            ),
             dimensions=[
                 Dimension(
                     name="id",
@@ -138,11 +170,10 @@ def setup_registry():
             primary_key="artifact_id",
             relationships=[
                 Relationship(
-                    model_ref="project",
-                    type=RelationshipType.MANY_TO_MANY,
-                    join_table="oso.artifacts_by_project_v1",
-                    self_key_column="artifact_id",
-                    foreign_key_column="project_id",
+                    source_foreign_key="artifact_id",
+                    ref_model="artifacts_by_project",
+                    ref_key="artifact_id",
+                    type=RelationshipType.ONE_TO_MANY,
                 ),
             ],
             measures=[
@@ -162,11 +193,42 @@ def setup_registry():
 
     registry.register(
         Model(
+            name="artifacts_by_project",
+            table="oso.artifacts_by_project_v1",
+            description=textwrap.dedent(
+                """
+                The join table between artifacts and projects. This table
+                represents the many-to-many relationship between artifacts and
+                projects.
+            """
+            ),
+            dimensions=[
+                Dimension(
+                    name="artifact_id",
+                    description="The unique identifier of the artifact",
+                    column_name="artifact_id",
+                ),
+            ],
+            relationships=[
+                Relationship(
+                    source_foreign_key="project_id",
+                    ref_model="project",
+                    ref_key="project_id",
+                    type=RelationshipType.MANY_TO_ONE,
+                ),
+            ],
+        )
+    )
+
+    registry.register(
+        Model(
             name="github_event",
             table="oso.int_events__github",
-            description=textwrap.dedent("""
+            description=textwrap.dedent(
+                """
                 A github event. This could be any event that occurs on github.
-            """),
+            """
+            ),
             dimensions=[
                 Dimension(
                     name="time",
@@ -227,16 +289,18 @@ def setup_registry():
                 Relationship(
                     name="to",
                     description="The artifact to which the event occurred",
-                    model_ref="artifact",
+                    source_foreign_key="to_artifact_id",
+                    ref_model="artifact",
+                    ref_key="artifact_id",
                     type=RelationshipType.MANY_TO_ONE,
-                    foreign_key_column="to_artifact_id",
                 ),
                 Relationship(
                     name="from",
                     description="The artifact from which the event occurred",
-                    model_ref="artifact",
+                    source_foreign_key="from_artifact_id",
+                    ref_model="artifact",
+                    ref_key="artifact_id",
                     type=RelationshipType.MANY_TO_ONE,
-                    foreign_key_column="from_artifact_id",
                 ),
             ],
         )
@@ -287,7 +351,8 @@ def setup_registry():
         Model(
             name="timeseries_metrics_by_artifact",
             table="oso.timeseries_metrics_by_artifact_v0",
-            description=textwrap.dedent("""
+            description=textwrap.dedent(
+                """
                 Many-to-many table between metrics, artifacts, and dates. Each row
                 represents the value of a specific metric for a given artifact on a
                 particular date, capturing how that metric changes over time. This
@@ -297,21 +362,22 @@ def setup_registry():
                 (or other artifact-related tables). Business questions that can be
                 answered include: Which artifacts have the most active developers?
                 How many forks does this artifact have?
-            """),
+            """
+            ),
             dimensions=[
                 Dimension(
-                    name="sample_date", 
+                    name="sample_date",
                     column_name="month",
                 ),
                 Dimension(
-                    name="amount", 
+                    name="amount",
                     column_name="amount",
                 ),
                 Dimension(
                     name="unit",
                     description="The unit of the metric",
                     column_name="unit",
-                )
+                ),
             ],
             # Need to support composite primary keys
             primary_key=["metric_id", "artifact_id", "sample_date"],
@@ -329,25 +395,27 @@ def setup_registry():
             ],
             relationships=[
                 Relationship(
-                    model_ref="artifact",
+                    source_foreign_key="artifact_id",
+                    ref_model="artifact",
+                    ref_key="artifact_id",
                     type=RelationshipType.MANY_TO_ONE,
-                    foreign_key_column="artifact_id",
                 ),
                 Relationship(
-                    model_ref="metric",
+                    source_foreign_key="metric_id",
+                    ref_model="metric",
+                    ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
-                    foreign_key_column="metric_id",
                 ),
             ],
         )
     )
 
-
     registry.register(
         Model(
             name="timeseries_metrics_by_project",
             table="oso.timeseries_metrics_by_project_v0",
-            description=textwrap.dedent("""
+            description=textwrap.dedent(
+                """
                 Many-to-many table between metrics, projects, and dates. Each row
                 represents the value of a specific metric for a given project on a
                 particular date, capturing how that metric changes over time. This
@@ -357,21 +425,22 @@ def setup_registry():
                 (or other project-related tables). Business questions that can be
                 answered include: Which projects have the most active developers?
                 How many forks does this project have?
-            """),
+            """
+            ),
             dimensions=[
                 Dimension(
-                    name="sample_date", 
+                    name="sample_date",
                     column_name="month",
                 ),
                 Dimension(
-                    name="amount", 
+                    name="amount",
                     column_name="amount",
                 ),
                 Dimension(
                     name="unit",
                     description="The unit of the metric",
                     column_name="unit",
-                )
+                ),
             ],
             # Need to support composite primary keys
             primary_key=["metric_id", "project_id", "sample_date"],
@@ -389,14 +458,16 @@ def setup_registry():
             ],
             relationships=[
                 Relationship(
-                    model_ref="artifact",
+                    source_foreign_key="project_id",
+                    ref_model="project",
+                    ref_key="project_id",
                     type=RelationshipType.MANY_TO_ONE,
-                    foreign_key_column="artifact_id",
                 ),
                 Relationship(
-                    model_ref="metric",
+                    source_foreign_key="metric_id",
+                    ref_model="metric",
+                    ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
-                    foreign_key_column="metric_id",
                 ),
             ],
         )
@@ -406,7 +477,8 @@ def setup_registry():
         Model(
             name="timeseries_metrics_by_collection",
             table="oso.timeseries_metrics_by_collection_v0",
-            description=textwrap.dedent("""
+            description=textwrap.dedent(
+                """
                 Many-to-many table between metrics, collections, and dates. Each row
                 represents the value of a specific metric for a given collection on a
                 particular date, capturing how that metric changes over time. This
@@ -416,21 +488,22 @@ def setup_registry():
                 (or other collection-related tables). Business questions that can be
                 answered include: Which collections have the most active developers?
                 How many forks does this collection have?
-            """),
+            """
+            ),
             dimensions=[
                 Dimension(
-                    name="sample_date", 
+                    name="sample_date",
                     column_name="month",
                 ),
                 Dimension(
-                    name="amount", 
+                    name="amount",
                     column_name="amount",
                 ),
                 Dimension(
                     name="unit",
                     description="The unit of the metric",
                     column_name="unit",
-                )
+                ),
             ],
             # Need to support composite primary keys
             primary_key=["metric_id", "collection_id", "sample_date"],
@@ -448,19 +521,20 @@ def setup_registry():
             ],
             relationships=[
                 Relationship(
-                    model_ref="artifact",
+                    source_foreign_key="collection_id",
+                    ref_model="collection",
+                    ref_key="collection_id",
                     type=RelationshipType.MANY_TO_ONE,
-                    foreign_key_column="artifact_id",
                 ),
                 Relationship(
-                    model_ref="metric",
+                    source_foreign_key="metric_id",
+                    ref_model="metric",
+                    ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
-                    foreign_key_column="metric_id",
                 ),
             ],
         )
     )
-
 
     registry.complete()
     return registry
