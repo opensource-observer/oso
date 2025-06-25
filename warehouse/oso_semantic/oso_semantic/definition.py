@@ -52,7 +52,7 @@ class RegistryDAG:
         self.adjacency_map[model.name] = set()
 
         # Gets all the names of related models
-        reference_names = list(map(lambda x: x.model_ref, model.relationships))
+        reference_names = list(map(lambda x: x.ref_model, model.relationships))
 
         self.sorter.add(model.name, *reference_names)
 
@@ -537,47 +537,46 @@ class RelationshipType(str, Enum):
     ONE_TO_ONE = "one_to_one"
     MANY_TO_ONE = "many_to_one"
     ONE_TO_MANY = "one_to_many"
-    MANY_TO_MANY = "many_to_many"
 
 
 class Relationship(BaseModel):
+    """Defines a relationship between two models in the semantic layer.
+
+    A Relationship represents how one model connects to another model through
+    foreign key references. This enables the semantic layer to understand
+    data relationships and generate appropriate JOIN clauses in SQL queries.
+
+    Attributes:
+        name: Optional name for the relationship. If not provided, defaults to ref_model.
+        description: Optional human-readable description of the relationship.
+        type: The type of relationship (ONE_TO_ONE, ONE_TO_MANY, MANY_TO_ONE).
+        source_foreign_key: Column(s) in the source (current) model that reference the target model.
+                           Can be a single column name or list of column names for composite keys.
+        ref_model: Name of the target model being referenced.
+        ref_key: Column(s) in the target model that is referenced.
+                        Can be a single column name or list of column names for composite keys.
+    """
     name: str = ""
-    model_ref: str
     description: str = ""
-    foreign_key_column: str
     type: RelationshipType
-    join_table: t.Optional[str] = None
-    self_key_column: t.Optional[str] = None
+    source_foreign_key: str | list[str]
+    ref_model: str
+    ref_key: str | list[str]
 
     @model_validator(mode="after")
     def process_relationship(self):
         if not self.name:
             # If no name is provided, use the model_ref as the name
-            self.name = self.model_ref
+            self.name = self.ref_model
 
-        if self.type == RelationshipType.MANY_TO_MANY and not self.join_table:
-            raise ValueError(
-                "Many-to-many relationships must have a join table specified"
-            )
+        if isinstance(self.source_foreign_key, str):
+            self.source_foreign_key = [self.source_foreign_key]
+        if isinstance(self.ref_key, str):
+            self.ref_key = [self.ref_key]
 
-        if self.type != RelationshipType.MANY_TO_MANY and self.join_table:
-            raise ValueError(
-                "Join table can only be specified for many-to-many relationships"
-            )
-
-        self._self_key_expression = None
-        if self.type == RelationshipType.MANY_TO_MANY:
-            assert (
-                self.self_key_column
-            ), "Self key column must be specified for many-to-many relationships"
-            self_key_result = AttributePathTransformer.parse_to_self_expression(
-                f"Relationship {self.name}'s self_key_column", self.self_key_column
-            )
-            self._self_key_expression = self_key_result.node
-        foreign_key_result = AttributePathTransformer.parse_to_self_expression(
-            f"Relationship {self.name}'s foreign_key_column", self.foreign_key_column
-        )
-        self._foreign_key_expression = foreign_key_result.node
+        assert len(self.source_foreign_key) == len(
+            self.ref_key
+        ), f"Source foreign key {self.source_foreign_key} and reference foreign key {self.ref_key} must have the same length"
 
         return self
 
@@ -587,89 +586,43 @@ class Relationship(BaseModel):
         return BoundRelationship(
             model=model,
             name=self.name,
-            model_ref=self.model_ref,
             type=self.type,
-            self_key_column=self.self_key_column,
-            foreign_key_column=self.foreign_key_column,
-            foreign_key_expression=self._foreign_key_expression,
-            self_key_expression=self._self_key_expression,
-            join_table=self.join_table,
+            source_foreign_key=(
+                self.source_foreign_key
+                if isinstance(self.source_foreign_key, list)
+                else [self.source_foreign_key]
+            ),
+            ref_model=self.ref_model,
+            ref_foreign_key=(
+                self.ref_key if isinstance(self.ref_key, list) else [self.ref_key]
+            ),
         )
 
 
 class BoundRelationship:
     model: "Model"
     name: str = ""
-    model_ref: str
     type: RelationshipType
-    foreign_key_column: str
-    foreign_key_expression: exp.Expression
-    join_table: t.Optional[str] = None
-    self_key_column: t.Optional[str] = None
-    self_key_expression: t.Optional[exp.Expression] = None
+    source_foreign_key: list[str]
+    ref_model: str
+    ref_key: list[str]
 
     def __init__(
         self,
         *,
         model: "Model",
         name: str,
-        model_ref: str,
         type: RelationshipType,
-        foreign_key_column: str,
-        foreign_key_expression: exp.Expression,
-        self_key_column: t.Optional[str] = None,
-        self_key_expression: t.Optional[exp.Expression] = None,
-        join_table: t.Optional[str] = None,
+        source_foreign_key: list[str],
+        ref_model: str,
+        ref_foreign_key: list[str],
     ):
         self.model = model
         self.name = name
-        self.model_ref = model_ref
         self.type = type
-        self.self_key_column = self_key_column
-        self.foreign_key_column = foreign_key_column
-        self.self_key_expression = self_key_expression
-        self.foreign_key_expression = foreign_key_expression
-        self.join_table = join_table
-
-    def self_key_with_alias(self, alias: str) -> exp.Expression:
-        """Returns the self key column with the given alias"""
-
-        assert (
-            self.type == RelationshipType.MANY_TO_MANY
-        ), "self key only applies to many-to-many relationships"
-
-        assert self.self_key_expression is not None, "self key not specified"
-
-        def transform_columns(node: exp.Expression):
-            if isinstance(node, exp.Column):
-                if isinstance(node.table, exp.Identifier) and node.table.this != "self":
-                    raise ValueError(
-                        "Cannot reference another model in a relationship. Use `self` as the table alias for the model"
-                    )
-                return exp.Column(
-                    table=exp.to_identifier(alias),
-                    this=node.this,
-                )
-            return node
-
-        return self.self_key_expression.transform(transform_columns)
-
-    def foreign_key_with_alias(self, alias: str) -> exp.Expression:
-        assert self.foreign_key_expression is not None, "foreign key not specified"
-
-        def transform_columns(node: exp.Expression):
-            if isinstance(node, exp.Column):
-                if isinstance(node.table, exp.Identifier) and node.table.this != "self":
-                    raise ValueError(
-                        "Cannot reference another model in a relationship. Use `self` as the table alias for the model"
-                    )
-                return exp.Column(
-                    table=exp.to_identifier(alias),
-                    this=node.this,
-                )
-            return node
-
-        return self.foreign_key_expression.transform(transform_columns)
+        self.source_foreign_key = source_foreign_key
+        self.ref_model = ref_model
+        self.ref_key = ref_foreign_key
 
 
 class ViewConnector(BaseModel):
@@ -777,9 +730,9 @@ class Model(BaseModel):
 
             attributes[relationship.name] = relationship.bind(self)
 
-            if relationship.model_ref not in self._model_ref_lookup_by_model_name:
-                self._model_ref_lookup_by_model_name[relationship.model_ref] = []
-            self._model_ref_lookup_by_model_name[relationship.model_ref].append(
+            if relationship.ref_model not in self._model_ref_lookup_by_model_name:
+                self._model_ref_lookup_by_model_name[relationship.ref_model] = []
+            self._model_ref_lookup_by_model_name[relationship.ref_model].append(
                 relationship
             )
 
@@ -846,26 +799,26 @@ class Model(BaseModel):
         if name:
             for reference in self.relationships:
                 if reference.name == name:
-                    if reference.model_ref != model_ref:
+                    if reference.ref_model != model_ref:
                         raise ValueError(
                             f"Reference {name} does not match model_ref {model_ref}"
                         )
                     return self.get_relationship(name)
 
         for reference in self.relationships:
-            references = self._model_ref_lookup_by_model_name[reference.model_ref]
+            references = self._model_ref_lookup_by_model_name[reference.ref_model]
             if len(references) > 1:
                 raise ModelHasAmbiguousJoinPath(
                     f"Reference {model_ref} is ambiguous in model {self.name}"
                 )
-            if reference.model_ref == model_ref:
+            if reference.ref_model == model_ref:
                 relationship = self._all_attributes[reference.name]
                 if not isinstance(relationship, BoundRelationship):
                     raise ValueError(
                         f"{reference.name} is not a reference in model {self.name}"
                     )
                 return relationship
-        raise ValueError(f"Reference {name} not found in model {self.name}")
+        raise ValueError(f"Reference {model_ref} not found in model {self.name}")
 
     @property
     def table_exp(self):

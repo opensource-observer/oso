@@ -221,13 +221,12 @@ class QueryJoiner:
         join_path = registry.join_relationships(
             from_model_name, to_model_name, through_attribute=through_attribute
         )
-        from_model = registry.get_model(from_model_name)
 
         logger.debug(f"Join path: {join_path}")
 
         for relationship in join_path:
-            referenced_model = registry.get_model(relationship.model_ref)
-            referenced_model_alias = create_alias(relationship.model_ref)
+            referenced_model = registry.get_model(relationship.ref_model)
+            referenced_model_alias = create_alias(relationship.ref_model)
 
             referenced_model_table = referenced_model.table_exp.as_(
                 referenced_model_alias
@@ -236,42 +235,22 @@ class QueryJoiner:
             if referenced_model_alias in self._already_joined:
                 continue
 
-            if relationship.join_table:
-                join_table = exp.to_table(relationship.join_table)
-                join_table_alias = create_alias(join_table.name)
-                join_table = join_table.as_(join_table_alias)
-
-                from_model_primary_key = from_model.primary_key_expression(
-                    from_table_alias
-                )
-                join_table_self_key = relationship.self_key_with_alias(join_table_alias)
-                join_table_foreign_key = relationship.foreign_key_with_alias(
-                    join_table_alias
-                )
-                referenced_model_primary_key = referenced_model.primary_key_expression(
-                    referenced_model_alias
-                )
-
-                query = query.join(
-                    join_table,
-                    on=f"{from_model_primary_key.sql(dialect=self._dialect)} = {join_table_self_key.sql(dialect=self._dialect)}",
-                    join_type="left",
-                )
-                query = query.join(
-                    referenced_model_table,
-                    on=f"{join_table_foreign_key.sql(dialect=self._dialect)} = {referenced_model_primary_key.sql(dialect=self._dialect)}",
-                    join_type="left",
-                )
-            else:
-                query = query.join(
-                    referenced_model_table,
-                    on=f"{from_table_alias}.{relationship.foreign_key_column} = {referenced_model_alias}.{referenced_model.primary_key}",
-                    join_type="left",
-                )
+            query = query.join(
+                referenced_model_table,
+                on=" AND ".join(
+                    [
+                        f"{from_table_alias}.{exp.to_identifier(source_foreign_key)} = {referenced_model_alias}.{exp.to_identifier(ref_key)}"
+                        for source_foreign_key, ref_key in zip(
+                            relationship.source_foreign_key,
+                            relationship.ref_key,
+                        )
+                    ]
+                ),
+                join_type="left",
+            )
 
             from_table_alias = referenced_model_alias
             from_model_name = referenced_model.name
-            from_model = referenced_model
 
             self._already_joined.add(referenced_model_alias)
         self._select = query
