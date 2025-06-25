@@ -1,0 +1,45 @@
+test_int_first_contribution_to_artifact:
+  model: oso.int_first_contribution_to_artifact
+  inputs:
+    oso.int_first_of_event_from_artifact__github:
+      rows:
+        - time: "2024-01-01 10:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+          event_type: COMMIT_CODE
+        - time: "2024-01-02 11:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+          event_type: ISSUE_OPENED
+        - time: "2024-01-03 12:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_artifact_id: repo_1
+          event_type: PULL_REQUEST_OPENED
+        - time: "2024-01-04 13:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_artifact_id: repo_2
+          event_type: PULL_REQUEST_MERGED
+        - time: "2024-01-05 14:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_3
+          to_artifact_id: repo_2
+          event_type: OTHER_EVENT
+  outputs:
+    query:
+      rows:
+        - time: 2024-01-01
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+        - time: 2024-01-03
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_artifact_id: repo_1
+        - time: 2024-01-04
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_artifact_id: repo_2
