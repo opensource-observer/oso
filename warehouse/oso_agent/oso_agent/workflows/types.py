@@ -1,7 +1,8 @@
 import typing as t
+
 import pandas as pd
-from llama_index.core.workflow import Event
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.workflow import Event
 
 
 class Text2SQLGenerationEvent(Event):
@@ -60,3 +61,13 @@ class SQLResultSummaryResponseEvent(Event):
     id: str
     summary: str
     result: SQLResultEvent
+
+
+class ExceptionEvent(Event):
+    """An event that represents an exception that occurred during a workflow"""
+
+    error: Exception
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return f"ExceptionEvent(error={self.error})"

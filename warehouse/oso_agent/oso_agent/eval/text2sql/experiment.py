@@ -56,38 +56,80 @@ class FakeWorkflow(MixableWorkflow):
         print("hereerererereer")
         # This is a fake workflow for testing purposes
         return StopEvent(result=StrResponse(blob="Fake response"))
-
-
-async def text2sql_experiment(
-    config: AgentConfig, _registry: AgentRegistry, _raw_options: dict[str, t.Any]
+    
+async def post_process_result(
+    example: Example, result: EvalWorkflowResult, resolver: ResourceResolver
 ):
-    logger.info(f"Running text2sql experiment with: {config.model_dump_json()}")
+    """Post-process the result of the experiment."""
+    expected = str(example.output["answer"])
 
+    oso_mcp_client = t.cast(OsoMcpClient, resolver.get_resource("oso_mcp_client"))
+    try:
+        expected_sql_result = await oso_mcp_client.query_oso(expected)
+    except Exception as e:
+        logger.error(f"Error querying oso mcp client for expected result: {e}")
+        expected_sql_result = []
+
+    if not isinstance(expected_sql_result, list):
+        expected_sql_result = t.cast(list[dict[str, t.Any]], [])
+
+    final_result = result.final_result
+    raw_agent_response = None
+    if final_result:
+        raw_agent_response = final_result.response
+
+    actual_generated_sql = ""
+    actual_sql_result: list[dict[str, t.Any]] = []
+    # Find actual result
+
+    is_valid_sql_result = False
+    # Hacky but for now we only expect one Text2SQLGenerationEvent and one
+    # SQLResultEvent. This should be refactored in the future to handle
+    # multiple events
+    for event in result.events:
+        if isinstance(event, Text2SQLGenerationEvent):
+            actual_generated_sql = event.output_sql
+        if isinstance(event, SQLResultEvent):
+            if not event.error:
+                is_valid_sql_result = True
+            if isinstance(event.results, list):
+                actual_sql_result = t.cast(list[dict[str, t.Any]], event.results)
+
+    actual_sql_clean = clean_query_for_eval(
+        actual_generated_sql,
+        keep_distinct=True,
+    )
+    expected_sql_clean = clean_query_for_eval(
+        expected,
+        keep_distinct=True,
+    )
+
+    print(f"Raw agent response: {raw_agent_response}")
+    print(f"Raw agent response type: {type(raw_agent_response)} ")
+
+    # Process the results into ExampleResult
+    processed = ExampleResult(
+        expected_sql_result=expected_sql_result,
+        agent_response=raw_agent_response,
+        actual_sql_query=actual_sql_clean,
+        expected_sql_query=expected_sql_clean,
+        actual_sql_result=actual_sql_result,
+        is_valid_sql_result=is_valid_sql_result,
+    )
+    logger.info("post processing completed")
+    return processed
+
+async def resolver_factory(config: AgentConfig) -> ResourceResolver:
     # Load the query engine tool
     query_engine_tool = await create_default_query_engine_tool(config)
-
-    api_key = config.arize_phoenix_api_key.get_secret_value()
 
     logger.debug("Loading client")
 
     # We pass in the API key directly to the Phoenix client but it's likely
-    # ignored. See oso_agent/util/config.py
-    phoenix_client = px.Client(
-        endpoint=config.arize_phoenix_base_url,
-        headers={
-            "api_key": api_key,
-        },
-    )
+    # ignored. See oso_agent/util/config.py 
     logger.debug("Uploading dataset")
 
     # check if specific evals have been defined
-    example_ids = _raw_options.get("example_ids")
-    dataset_name = (
-        "local_run_text2sql_experiment" if example_ids else config.eval_dataset_text2sql
-    )
-    dataset = upload_dataset(
-        phoenix_client, TEXT2SQL_DATASET, dataset_name, config, example_ids
-    )
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
 
     resolver = ResourceResolver.from_resources(
@@ -97,6 +139,29 @@ async def text2sql_experiment(
         agent_name=config.agent_name,
         agent_config=config,
         llm=create_llm(config),
+    )
+    return resolver
+
+
+async def text2sql_experiment(
+    config: AgentConfig, _registry: AgentRegistry, _raw_options: dict[str, t.Any]
+):
+    logger.info(f"Running text2sql experiment with: {config.model_dump_json()}") 
+    
+    api_key = config.arize_phoenix_api_key.get_secret_value()
+    phoenix_client = px.Client(
+        endpoint=config.arize_phoenix_base_url,
+        headers={
+            "api_key": api_key,
+        },
+    )
+
+    example_ids = _raw_options.get("example_ids")
+    dataset_name = (
+        "local_run_text2sql_experiment" if example_ids else config.eval_dataset_text2sql
+    )
+    dataset = upload_dataset(
+        phoenix_client, TEXT2SQL_DATASET, dataset_name, config, example_ids
     )
 
     logger.debug("Creating Oso MCP client")
@@ -116,78 +181,16 @@ async def text2sql_experiment(
 
     runner = ExperimentRunner(
         config=config,
-        resolver=resolver,
-        concurrent_evaluators=5,
-        concurrent_runs=2,
+        resolver_factory=resolver_factory,
+        concurrent_evaluators=10,
+        concurrent_runs=1,
     )
     runner.add_evaluator(check_valid_sql)
     runner.add_evaluator(check_valid_sql_result)
     runner.add_evaluator(sql_query_type_similarity)
     runner.add_evaluator(sql_oso_models_used_similarity)
     runner.add_evaluator(result_exact_match)
-    runner.add_evaluator(result_fuzzy_match)
-
-    async def post_process_result(
-        example: Example, result: EvalWorkflowResult, resolver: ResourceResolver
-    ):
-        """Post-process the result of the experiment."""
-        expected = str(example.output["answer"])
-
-        oso_mcp_client = t.cast(OsoMcpClient, resolver.get_resource("oso_mcp_client"))
-        try:
-            expected_sql_result = await oso_mcp_client.query_oso(expected)
-        except Exception as e:
-            logger.error(f"Error querying oso mcp client for expected result: {e}")
-            expected_sql_result = []
-
-        if not isinstance(expected_sql_result, list):
-            expected_sql_result = t.cast(list[dict[str, t.Any]], [])
-
-        final_result = result.final_result
-        raw_agent_response = None
-        if final_result:
-            raw_agent_response = final_result.response
-
-        actual_generated_sql = ""
-        actual_sql_result: list[dict[str, t.Any]] = []
-        # Find actual result
-
-        is_valid_sql_result = False
-        # Hacky but for now we only expect one Text2SQLGenerationEvent and one
-        # SQLResultEvent. This should be refactored in the future to handle
-        # multiple events
-        for event in result.events:
-            if isinstance(event, Text2SQLGenerationEvent):
-                actual_generated_sql = event.output_sql
-            if isinstance(event, SQLResultEvent):
-                if not event.error:
-                    is_valid_sql_result = True
-                if isinstance(event.results, list):
-                    actual_sql_result = t.cast(list[dict[str, t.Any]], event.results)
-
-        actual_sql_clean = clean_query_for_eval(
-            actual_generated_sql,
-            keep_distinct=True,
-        )
-        expected_sql_clean = clean_query_for_eval(
-            expected,
-            keep_distinct=True,
-        )
-
-        print(f"Raw agent response: {raw_agent_response}")
-        print(f"Raw agent response type: {type(raw_agent_response)} ")
-
-        # Process the results into ExampleResult
-        processed = ExampleResult(
-            expected_sql_result=expected_sql_result,
-            agent_response=raw_agent_response,
-            actual_sql_query=actual_sql_clean,
-            expected_sql_query=expected_sql_clean,
-            actual_sql_result=actual_sql_result,
-            is_valid_sql_result=is_valid_sql_result,
-        )
-        logger.info("post processing completed")
-        return processed
+    runner.add_evaluator(result_fuzzy_match) 
 
     return await runner.run(
         dataset=dataset,
