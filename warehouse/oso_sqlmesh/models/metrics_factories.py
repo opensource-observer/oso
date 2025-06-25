@@ -416,6 +416,78 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
+        "issue_age_avg": MetricQueryDef(
+            ref="code/issue_age_avg.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Average Issue Age",
+                description="Average age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_max": MetricQueryDef(
+            ref="code/issue_age_max.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Maximum Issue Age",
+                description="Maximum age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_min": MetricQueryDef(
+            ref="code/issue_age_min.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Minimum Issue Age",
+                description="Minimum age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_median": MetricQueryDef(
+            ref="code/issue_age_median.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Median Issue Age",
+                description="Median age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         # "avg_prs_time_to_merge": MetricQueryDef(
         #     ref="code/prs_time_to_merge.sql",
         #     time_aggregations=[
