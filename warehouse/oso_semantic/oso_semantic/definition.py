@@ -818,7 +818,7 @@ class Model(BaseModel):
                         f"{reference.name} is not a reference in model {self.name}"
                     )
                 return relationship
-        raise ValueError(f"Reference {name} not found in model {self.name}")
+        raise ValueError(f"Reference {model_ref} not found in model {self.name}")
 
     @property
     def table_exp(self):
