@@ -239,7 +239,7 @@ class QueryJoiner:
                 referenced_model_table,
                 on=" AND ".join(
                     [
-                        f"{from_table_alias}.{source_foreign_key} = {referenced_model_alias}.{ref_key}"
+                        f"{from_table_alias}.{exp.to_identifier(source_foreign_key)} = {referenced_model_alias}.{exp.to_identifier(ref_key)}"
                         for source_foreign_key, ref_key in zip(
                             relationship.source_foreign_key,
                             relationship.ref_key,
