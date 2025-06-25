@@ -475,7 +475,7 @@ class ExperimentRunner:
             await self.run_evals_for_workflow(
                 workflow_result=workflow_result,
             )
-        
+        return experiment
 
     @property
     def phoenix_client(self):
