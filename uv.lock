@@ -267,7 +267,7 @@ wheels = [
 
 [[package]]
 name = "arize-phoenix"
-version = "10.13.1"
+version = "11.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioitertools" },
@@ -308,9 +308,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/2b/3273fc584dba2be8eee461e1d660a6adc308298bdc685c778f35d6bbeefd/arize_phoenix-10.13.1.tar.gz", hash = "sha256:679c96a1160a85ad058e737fd4b7085d946faf806395057096d08bdc3c2f448a", size = 3841374 }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/ac/461265fa101f5c928369b22c644c3c4663a0de90380868279c2eb4c96709/arize_phoenix-11.0.0.tar.gz", hash = "sha256:7576df5f735042b310858c55863625c589f2bad6c0d2896500e26f8559739126", size = 3887088 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/5e/cd75db8da33988d71b445ecd420243dbdf4b7181399ddd1e756a333ddceb/arize_phoenix-10.13.1-py3-none-any.whl", hash = "sha256:2aeed65ce79f61098b6bc4867fb0691b614c2997db50cb25f91dbefe9c1d5067", size = 4028444 },
+    { url = "https://files.pythonhosted.org/packages/85/83/15fa45dbe51ba8426905649f0ab0fa20d7421bc50d99d85c800216565dbb/arize_phoenix-11.0.0-py3-none-any.whl", hash = "sha256:ad3873603cfd761156fd67bc390e1442c6e4f191bc5bbd04ff6ae2e52d9e7dbd", size = 4092871 },
 ]
 
 [[package]]
@@ -4233,7 +4233,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "arize-phoenix", extras = ["evals"], specifier = "==10.13.1" },
+    { name = "arize-phoenix", extras = ["evals"], specifier = "==11.0.0" },
     { name = "arize-phoenix-otel", specifier = ">=0.10.1" },
     { name = "discord-py", specifier = ">=2.5.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
