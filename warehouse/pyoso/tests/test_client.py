@@ -23,8 +23,8 @@ class TestClient(TestCase):
     def test_constructor_without_semantic(self):
         reload(sys.modules["pyoso.client"])
         client = Client(api_key=self.CUSTOM_API_KEY)
-        self.assertIsNone(
-            client.semantic,
+        self.assertFalse(
+            hasattr(client, "semantic"),
             "Semantic should not be initialized without oso_semantic",
         )
 
@@ -32,7 +32,6 @@ class TestClient(TestCase):
     @mock.patch("requests.post")
     def test_to_pandas(self, mock_post: mock.Mock, mock_registry: mock.Mock):
         mock_registry.return_value = Registry()
-        print(mock_registry)
         mock_response = mock.Mock()
         columns = ["column"]
         data = [["test"]]

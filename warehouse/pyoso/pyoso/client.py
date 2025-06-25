@@ -45,11 +45,8 @@ class Client:
             if not self.__base_url.endswith("/"):
                 self.__base_url += "/"
 
-        self.semantic = (
-            create_registry(self.__base_url, self.__api_key)
-            if HAS_OSO_SEMANTIC
-            else None
-        )
+        if HAS_OSO_SEMANTIC:
+            self.semantic = create_registry(self.__base_url, self.__api_key)
 
     def __query(
         self, query: str, input_dialect="trino", output_dialect="trino"
