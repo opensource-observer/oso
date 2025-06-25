@@ -9,7 +9,7 @@ def json_extract_from_array(
     json_expression: exp.Expression,
     key: str,
 ):
-    """Convert a unix epoch timestamp to a date or timestamp."""
+    """Extract a value from a JSON array."""
 
     if evaluator.runtime_stage in ["loading"]:
         return exp.Array(this=[])
