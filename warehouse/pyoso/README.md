@@ -16,6 +16,16 @@ You can install `pyoso` using pip:
 pip install pyoso
 ```
 
+### Optional Semantic Modeling
+
+For semantic modeling capabilities, you can install with the semantic extra:
+
+```bash
+pip install pyoso[semantic]
+```
+
+This will include the `oso_semantic` package for building semantic models and queries.
+
 ## Usage
 
 Here is a basic example of how to use `pyoso`:
@@ -29,7 +39,7 @@ client = Client()
 
 # Fetch artifacts
 query = "SELECT * FROM artifacts_v1 LIMIT 5"
-artifacts = client.query(query)
+artifacts = client.to_pandas(query)
 
 print(artifacts)
 ```
