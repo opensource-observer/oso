@@ -10,6 +10,7 @@ export enum TransactionType {
   SQL_QUERY = "sql_query",
   GRAPHQL_QUERY = "graphql_query",
   CHAT_QUERY = "chat_query",
+  TEXT2SQL = "text2sql",
   ADMIN_GRANT = "admin_grant",
   PURCHASE = "purchase",
 }

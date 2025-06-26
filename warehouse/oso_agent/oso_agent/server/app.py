@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.datastructures import State
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from oso_agent.agent import setup_default_agent_registry
 from oso_agent.server.bot import setup_bot
 from oso_agent.server.definition import (
@@ -105,6 +105,17 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
     async def get_status():
         """Liveness endpoint"""
         return {"status": "Service is running"}
+
+    @app.post("/v0/text2sql")
+    async def text2sql(
+        request: Request,
+        chat_request: ChatRequest,
+    ) -> JSONResponse:
+        """Get the status of a job"""
+        #agent = get_agent(request, config)
+        sql = "SELECT * FROM projects_v1 LIMIT 10"
+        semantic = "semantic.select"
+        return JSONResponse({ sql: sql, semantic: semantic })
 
     @app.post("/v0/chat")
     async def chat(
