@@ -62,3 +62,30 @@ def build_fuzzy_entity_search_sql(entity_variants: list[str], table: str, column
     where_clause = " OR ".join(clauses)
     sql = f"SELECT * FROM {table} WHERE {where_clause} LIMIT 20"
     return sql
+
+def generate_entity_string_variants(variants: list[str]) -> list[str]:
+    """
+    Given a list of entity name variants, generate a set of deterministic variants
+    with different spacings and common symbols (e.g., -, _, space, no space), all lowercased.
+    Returns a list of unique variants suitable for fuzzy search.
+    """
+    import re
+    symbols = [' ', '-', '_', '']
+    result = set()
+    for variant in variants:
+        base = variant.strip().lower()
+        # Remove all non-alphanumeric except spaces, dashes, and underscores
+        alphanum = re.sub(r'[^a-z0-9\s\-_]', '', base)
+        # Split on any of space, dash, or underscore
+        parts = re.split(r'[\s\-_]+', alphanum)
+        # Generate all joinings with allowed symbols
+        for sym in symbols:
+            joined = sym.join(parts)
+            if joined:
+                result.add(joined)
+        # Also add the original base and alphanum
+        if base:
+            result.add(base)
+        if alphanum:
+            result.add(alphanum)
+    return list(result)

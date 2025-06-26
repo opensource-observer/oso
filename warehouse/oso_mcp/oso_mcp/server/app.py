@@ -12,6 +12,7 @@ from ..utils.entity_context import (
     build_fuzzy_entity_search_sql,
     call_llm_for_entity_variants,
     call_llm_for_final_selection,
+    generate_entity_string_variants,
 )
 from .config import MCPConfig
 
@@ -412,7 +413,8 @@ def setup_mcp_app(config: MCPConfig):
                 return McpErrorResponse(tool_name=f"search_{entity_type}", parameters=[entity], error=f"{entity_type.capitalize()} '{entity}' not found.")
         else:
             config = AgentConfig()
-            entity_variants = await call_llm_for_entity_variants(config, entity, nl_query, entity_type)
+            llm_variants = await call_llm_for_entity_variants(config, entity, nl_query, entity_type)
+            entity_variants = generate_entity_string_variants(llm_variants)
             sql = build_fuzzy_entity_search_sql(entity_variants, table, columns)
             resp = await query_oso(sql, ctx, limit=20)
             if not (isinstance(resp, McpSuccessResponse) and resp.results):
