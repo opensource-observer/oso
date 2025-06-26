@@ -269,6 +269,20 @@ class Registry:
 
         return from_path_joins + to_path_joins
 
+    def select(self, *selects: str):
+        from .query import QueryBuilder
+
+        """Returns a new query builder for the registry"""
+        if not self.completed:
+            raise ValueError("Registry has not been completed cannot create query")
+
+        query_builder = QueryBuilder(self)
+        for select in selects:
+            if not isinstance(select, str):
+                raise ValueError(f"Select must be a string, got {type(select)}")
+        query_builder = query_builder.select(*selects)
+        return query_builder
+
     def query(self, query: "SemanticQuery") -> exp.Expression:
         """Returns the SQL query for the given query"""
         # Get the columns and filters from the query
@@ -1448,10 +1462,8 @@ class SemanticQuery(BaseModel):
         from .query import QueryBuilder
 
         query = QueryBuilder(registry)
-        for select, alias in self._processed_selects:
-            query.add_select(select, alias)
-        for filter in self._processed_filters:
-            query.add_filter(filter)
+        query.select(*self.selects)
+        query.where(*self.filters)
         query.add_limit(self.limit)
         return query.build()
 
