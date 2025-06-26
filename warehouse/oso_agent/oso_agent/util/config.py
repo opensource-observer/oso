@@ -48,7 +48,7 @@ class LocalVectorStoreConfig(BaseModel):
     type: t.Literal["local"] = "local"
 
     dir: str = Field(
-        default="",
+        default_factory=lambda: os.getenv("AGENT_VECTOR_STORE__DIR", "/tmp/oso_agent_vector_store"),
         description="Directory for local vector storage"
     )
 
@@ -122,7 +122,7 @@ class AgentConfig(BaseSettings):
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
     vector_store: VectorStoreConfig = Field(
-        discriminator="type", default_factory=lambda: LocalVectorStoreConfig(dir="")
+        discriminator="type", default_factory=lambda: LocalVectorStoreConfig()
     )
 
     oso_mcp_url: str = Field(

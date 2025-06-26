@@ -60,6 +60,9 @@ class ResourceDependency(t.Generic[V]):
         return self._default_factory is not None
 
 
+def is_generic_type(typ: t.Any):
+    return t.get_origin(typ) is not None
+
 class ResourceResolver:
     """A resolver for resources in a workflow using a service locator pattern)."""
 
@@ -89,6 +92,14 @@ class ResourceResolver:
         """Check if all resources in the dictionary are available in the resolver."""
         missing_resources: list[tuple[str, str]] = []
         for name, resource_type in resources_dict.items():
+            if is_generic_type(resource_type):
+                # If the resource type is generic, we can skip validation because 
+                # we cannot check the type without additional context.
+                continue
+
+            if resource_type == t.Any:
+                continue
+
             if name not in self._resources:
                 missing_resources.append((
                     name,
