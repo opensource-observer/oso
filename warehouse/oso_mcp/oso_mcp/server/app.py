@@ -332,6 +332,126 @@ def setup_mcp_app(config: MCPConfig):
         return response
         #return { "success": True, "samples": samples }
 
+    @mcp.tool(
+        description="Use a text2sql agent to generate a SQL query from a natural language query",
+    )
+    async def query_text2sql_agent(
+        natural_language_query: str,
+        ctx: Context,
+    ) -> McpResponse:
+        """
+        Use a text2sql agent to generate a SQL query from a natural language query.
+        
+        Args:
+            natural_language_query: The natural language query to convert to SQL
+            
+        Returns:
+            Dict containing the generated SQL query
+        """
+        if ctx:
+            await ctx.info(f"Converting natural language query to SQL: {natural_language_query}")
+
+        # For now, return a placeholder response since this is a stub implementation
+        # In a real implementation, this would call an actual text2sql service
+        example_query = """
+            SELECT 
+                COUNT(DISTINCT project_id) AS project_count 
+            FROM oso.projects_by_collection_v1 
+            WHERE collection_name = 'optimism'
+        """
+        
+        return McpSuccessResponse(
+            tool_name="query_text2sql_agent",
+            parameters=[natural_language_query],
+            results=[example_query],
+        )
+
+    def build_entity_search_sql(entity: str, table: str, columns: list[str]) -> str:
+        """
+        Build a SQL query to search for an entity in a table by multiple columns, case/space-insensitive.
+        Args:
+            entity: The entity string to search for
+            table: The table to search in
+            columns: List of columns to search
+        Returns:
+            SQL query string
+        """
+        # Normalize entity: lower, strip, remove extra spaces
+        norm_entity = entity.strip().lower().replace("'", "''")
+        # Build OR conditions for each column
+        conditions = [
+            f"LOWER(TRIM(CAST({col} AS VARCHAR))) = '{norm_entity}'" for col in columns
+        ]
+        where_clause = " OR ".join(conditions)
+        sql = f"SELECT * FROM {table} WHERE {where_clause} LIMIT 1"
+        return sql
+
+    @mcp.tool(
+        description="Search for a project by name or display name in projects_v1. Returns the row if found, else not found.",
+    )
+    async def search_project(entity: str, ctx: Context) -> McpResponse:
+        sql = build_entity_search_sql(entity, "projects_v1", ["project_name", "display_name"])
+        resp = await query_oso(sql, ctx, limit=1)
+        if isinstance(resp, McpSuccessResponse) and resp.results:
+            return McpSuccessResponse(tool_name="search_project", parameters=[entity], results=resp.results)
+        else:
+            return McpErrorResponse(tool_name="search_project", parameters=[entity], error=f"Project '{entity}' not found.")
+
+    @mcp.tool(
+        description="Search for a collection by name or display name in collections_v1. Returns the row if found, else not found.",
+    )
+    async def search_collection(entity: str, ctx: Context) -> McpResponse:
+        sql = build_entity_search_sql(entity, "collections_v1", ["collection_name", "display_name"])
+        resp = await query_oso(sql, ctx, limit=1)
+        if isinstance(resp, McpSuccessResponse) and resp.results:
+            return McpSuccessResponse(tool_name="search_collection", parameters=[entity], results=resp.results)
+        else:
+            return McpErrorResponse(tool_name="search_collection", parameters=[entity], error=f"Collection '{entity}' not found.")
+
+    @mcp.tool(
+        description="Search for a chain/network by name in int_chainlist. Returns the row if found, else not found.",
+    )
+    async def search_chain(entity: str, ctx: Context) -> McpResponse:
+        sql = build_entity_search_sql(entity, "int_chainlist", ["chainlist_name", "oso_chain_name", "display_name"])
+        resp = await query_oso(sql, ctx, limit=1)
+        if isinstance(resp, McpSuccessResponse) and resp.results:
+            return McpSuccessResponse(tool_name="search_chain", parameters=[entity], results=resp.results)
+        else:
+            return McpErrorResponse(tool_name="search_chain", parameters=[entity], error=f"Chain/network '{entity}' not found.")
+
+    @mcp.tool(
+        description="Search for a metric by display name in metrics_v0. Returns the row if found, else not found.",
+    )
+    async def search_metric(entity: str, ctx: Context) -> McpResponse:
+        sql = build_entity_search_sql(entity, "metrics_v0", ["display_name"])
+        resp = await query_oso(sql, ctx, limit=1)
+        if isinstance(resp, McpSuccessResponse) and resp.results:
+            return McpSuccessResponse(tool_name="search_metric", parameters=[entity], results=resp.results)
+        else:
+            return McpErrorResponse(tool_name="search_metric", parameters=[entity], error=f"Metric '{entity}' not found.")
+
+    @mcp.tool(
+        description="Search for a model by name in models_v1. Returns the row if found, else not found.",
+    )
+    async def search_model(entity: str, ctx: Context) -> McpResponse:
+        sql = build_entity_search_sql(entity, "models_v1", ["model_name"])
+        resp = await query_oso(sql, ctx, limit=1)
+        if isinstance(resp, McpSuccessResponse) and resp.results:
+            return McpSuccessResponse(tool_name="search_model", parameters=[entity], results=resp.results)
+        else:
+            return McpErrorResponse(tool_name="search_model", parameters=[entity], error=f"Model '{entity}' not found.")
+
+    @mcp.tool(
+        description="Search for an artifact by name in artifacts_v1. Returns the row if found, else not found.",
+    )
+    async def search_artifact(entity: str, ctx: Context) -> McpResponse:
+        sql = build_entity_search_sql(entity, "artifacts_v1", ["artifact_name"])
+        resp = await query_oso(sql, ctx, limit=1)
+        if isinstance(resp, McpSuccessResponse) and resp.results:
+            return McpSuccessResponse(tool_name="search_artifact", parameters=[entity], results=resp.results)
+        else:
+            return McpErrorResponse(tool_name="search_artifact", parameters=[entity], error=f"Artifact '{entity}' not found.")
+
     @mcp.resource("help://getting-started")
     def get_help_guide() -> str:
         """
@@ -352,6 +472,7 @@ def setup_mcp_app(config: MCPConfig):
             2. `list_tables` - Get a list of all available tables
             3. `get_table_schema` - Retrieve the schema for a specific table
             4. `get_sample_queries` - Get sample queries to help you get started
+            5. `query_text2sql_agent` - Use a text2sql agent to generate a SQL query from a natural language query
             
             ## Authentication
             

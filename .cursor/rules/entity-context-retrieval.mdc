@@ -1,0 +1,164 @@
+---
+description: Help locate an unknown *entity* (chain, project, collection, etc.) in Pyoso's warehouse
+globs: 
+alwaysApply: false
+---
+# Cursor Entity Resolution Protocol
+
+---
+
+## 0. Task decomposition & scope confirmation  *(always first)*
+
+1. **Parse the request.**
+   Extract all distinct entity strings.
+   → Example:
+   *“Find Curve, Uniswap, and Base” → `["Curve", "Uniswap", "Base"]`*
+
+2. **Propose an execution plan.**
+   List entities in the order you plan to resolve them (default = listed order).
+
+   > “I'll tackle these one at a time:
+   >
+   > 1. Curve
+   > 2. Uniswap
+   > 3. Base
+   >
+   > I'll fully resolve each before moving to the next. Does that plan work?”
+
+3. **Pause for approval.**
+   → Do not proceed without an explicit "Yes" or revised plan from the user.
+
+---
+
+## 1. Supported entity types & search tools
+
+| Entity type    | What it represents                                                       | Search tool         |
+| -------------- | ------------------------------------------------------------------------ | ------------------- |
+| **Artifact**   | A concrete address / URL / identifier (e.g., contract address, Git repo) | `search_artifact`   |
+| **Metric**     | Quantitative measure we track for an artifact/project/collection         | `search_metric`     |
+| **Project**    | A discrete product / protocol; owns artifacts                            | `search_project`    |
+| **Collection** | Group of related projects                                                | `search_collection` |
+| **Model**      | A SQLMesh model (= materialized table)                                   | `search_model`      |
+| **Chain**      | Blockchain network (Ethereum, Optimism, etc.)                            | `search_chain`      |
+
+---
+
+## 2. High-level per-entity workflow
+
+For **each entity** in the user-approved list:
+
+1. **Form a ranked hypothesis list**
+   Example: `[Project, Artifact, Collection, Metric, Model, Chain]`
+   Based on entity name, user context, and past usage.
+
+2. **Pause for confirmation.**
+
+   > “For 'Curve', I think it's most likely a Project, then maybe an Artifact or Collection.
+   > Does this order look good: \[Project, Artifact, Collection, …]?”
+
+3. **Call each `search_*` tool in order** (unless user says otherwise):
+
+   For each type in the hypothesis list:
+
+   * **Call the corresponding search tool**
+
+     * `search_project("Curve")`
+     * `search_artifact("Curve")`
+     * ...
+
+   * **Evaluate the result**:
+
+     * If no result:
+
+       > “Nothing found for 'Curve' as a Project.”
+     * If result(s) returned:
+
+       * Run a lightweight plausibility check (e.g. name match, known aliases, chain consistency).
+       * If reasonable:
+
+         > “Found a plausible match for 'Curve' as a Project. I'll keep that result.”
+       * If questionable:
+
+         > “Found something, but I'm not sure it fits — want to review or skip it?”
+
+4. **Return a list of all matched types.**
+   Once all types are searched:
+
+   > “Here's what I found for 'Curve':
+   >
+   > * As a Project: Curve Finance
+   > * As an Artifact: Contract `0xabc…` on Ethereum
+   > * As a Metric: TVL on Curve pools
+   >
+   > Does this look good? Would you like to remove or revise any of these?”
+
+5. **User may approve, reject, or edit matches.**
+
+   * If user confirms → store entity mapping
+   * If not → revise and repeat search as needed
+
+---
+
+## 3. Interaction guarantees (per entity)
+
+* Always confirm the hypothesis order before searching.
+* Unless told otherwise, **search all types** and **return all relevant matches**.
+* Show matches clearly and pause for user approval.
+* Fully resolve one entity before moving to the next.
+* If user modifies any input mid-way, re-run updated step(s).
+
+---
+
+## 4. Error handling
+
+* If any `search_*` tool fails (timeout, bad input):
+  → Briefly show the error, retry once, then ask the user whether to proceed, retry, or skip.
+
+* If a tool returns ambiguous results or many false positives:
+  → Notify the user, summarize the issue, and ask whether to continue with lower-confidence results.
+
+* Do not cache or expose sensitive values.
+
+---
+
+## 5. Example multi-entity flow (condensed)
+
+```
+USER: "Can you look up 'Curve', 'Uniswap', and 'Base'?"
+
+AGENT:
+Got it — 3 entities:
+1. Curve
+2. Uniswap
+3. Base
+
+I'll handle them one at a time in that order. Does that work?
+
+USER: Yes.
+
+—
+
+🔍 CURVE
+
+AGENT:
+For "Curve", I think the best order is: [Project, Artifact, Collection, Metric]. OK?
+
+USER: Yes.
+
+→ search_project("Curve") … returns "Curve Finance"
+→ search_artifact("Curve") … returns 0xabc...
+→ search_collection("Curve") … no results
+→ search_metric("Curve") … returns metrics related to Curve's TVL and swap volume
+
+AGENT:
+Here's what I found for “Curve”:
+- Project: Curve Finance
+- Artifact: Contract 0xabc… on Ethereum
+- Metric: Daily swap volume
+
+Should I retain all of these?
+
+USER: Keep Project and Metric, drop Artifact.
+
+→ Moves to next entity (Uniswap)...
+```
