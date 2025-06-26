@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
+from typing import Callable
 
+import pandas as pd
 import requests
 from pyoso.exceptions import OsoHTTPError
 
@@ -98,15 +100,36 @@ def query_dynamic_models(base_url: str, api_key: str) -> list[SemanticTableRespo
         raise OsoHTTPError(e, response=e.response) from None
 
 
-def create_registry(base_url: str, api_key: str):
+def create_registry(
+    base_url: str, api_key: str, to_pandas_fn: Callable[[str], pd.DataFrame]
+):
+    from oso_semantic import Dimension, Model
+    from oso_semantic import QueryBuilder as InnerQueryBuilder
     from oso_semantic import (
-        Dimension,
-        Model,
         Registry,
         Relationship,
         RelationshipType,
         register_oso_models,
     )
+
+    class QueryBuilder(InnerQueryBuilder):
+        def __init__(self, registry: Registry, query_builder: InnerQueryBuilder):
+            super().__init__(registry)
+            self.__dict__.update(query_builder.__dict__)
+
+        def to_pandas(self):
+            sql = self.build()
+            return to_pandas_fn(sql.sql(dialect="trino"))
+
+    class SemanticRegistry:
+        """Wrapper for the Registry to provide the entrypoints to the users"""
+
+        def __init__(self, registry: Registry):
+            self.registry = registry
+
+        def select(self, *args):
+            query_builder = self.registry.select(*args)
+            return QueryBuilder(self.registry, query_builder)
 
     registry = Registry()
 
@@ -142,4 +165,4 @@ def create_registry(base_url: str, api_key: str):
         )
 
     registry.complete()
-    return registry
+    return SemanticRegistry(registry)
