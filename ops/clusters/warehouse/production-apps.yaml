@@ -21,4 +21,4 @@ spec:
   images:
     - name: ghcr.io/opensource-observer/oso
       newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-      newTag: deploy-20250627194147-9c02bdc # {"$imagepolicy": "flux-system:oso:tag"}
+      newTag: deploy-20250627195834-ae56740 # {"$imagepolicy": "flux-system:oso:tag"}
