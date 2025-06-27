@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.datastructures import State
 from fastapi.responses import JSONResponse, PlainTextResponse
 from oso_agent.agent import setup_default_agent_registry
+from oso_agent.agent.agent_registry import AgentRegistry
 from oso_agent.server.bot import setup_bot
 from oso_agent.server.definition import (
     AgentServerConfig,
@@ -19,7 +20,10 @@ from oso_agent.server.definition import (
 )
 from oso_agent.types.response import AnyResponse
 from oso_agent.util.log import setup_logging
+from oso_agent.workflows.default import setup_default_workflow_registry
+from oso_agent.workflows.registry import WorkflowRegistry
 
+from ..resources import DefaultResourceResolver, ResourceResolver
 from ..types import (
     ErrorResponse,
     SemanticResponse,
@@ -29,6 +33,7 @@ from ..types import (
     WrappedResponseAgent,
 )
 from ..util.asyncbase import setup_nest_asyncio
+from ..util.config import AgentConfig
 from ..util.tracing import setup_telemetry
 
 setup_nest_asyncio()
@@ -37,21 +42,49 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
+async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
+    """Default resolver factory that creates a resolver based on the AgentConfig."""
+    from oso_agent.tool.embedding import create_embedding
+    from oso_agent.tool.llm import create_llm
+    from oso_agent.tool.oso_text2sql import create_oso_query_engine
+    from oso_agent.tool.storage_context import setup_storage_context
+
+    llm = create_llm(config)
+    embedding = create_embedding(config)
+    storage_context = setup_storage_context(config, embed_model=embedding)
+    query_engine_tool = await create_oso_query_engine(
+        config,
+        storage_context,
+        llm,
+        embedding,
+        synthesize_response=False,
+    )
+
+    return DefaultResourceResolver.from_resources(
+        query_engine_tool=query_engine_tool,
+        llm=llm,
+        embedding=embedding,
+        storage_context=storage_context,
+    )
+
+
 def default_lifecycle(config: AgentServerConfig):
     @asynccontextmanager
     async def initialize_app(app: FastAPI):
         setup_telemetry(config)
-        registry = await setup_default_agent_registry(config)
-        agent = await registry.get_agent(config.agent_name)
+
+        agent_registry = await setup_default_agent_registry(config)
+        workflow_registry = await setup_default_workflow_registry(config, default_resolver_factory)
 
         bot_config = BotConfig()
-        bot = await setup_bot(bot_config, registry)
+        bot = await setup_bot(bot_config, agent_registry)
         await bot.login(bot_config.discord_bot_token.get_secret_value())
         connect_task = asyncio.create_task(bot.connect())
 
         try:
             yield {
-                "agent": agent,
+                "workflow_registry": workflow_registry,
+                "agent_registry": agent_registry,
             }
         finally:
             await bot.close()
@@ -64,13 +97,23 @@ class ApplicationStateStorage(t.Protocol):
     @property
     def state(self) -> State: ...
 
+def get_agent_registry(storage: ApplicationStateStorage) -> AgentRegistry:
+    """Get the agent registry from the application state."""
+    agent_registry = storage.state.agent_registry
+    assert agent_registry is not None, "Agent registry not initialized"
+    return t.cast(AgentRegistry, agent_registry)
 
-def get_agent(storage: ApplicationStateStorage, config: AgentServerConfig) -> WrappedResponseAgent:
+def get_workflow_registry(storage: ApplicationStateStorage) -> WorkflowRegistry:
+    """Get the workflow registry from the application state."""
+    workflow_registry = storage.state.workflow_registry
+    assert workflow_registry is not None, "Workflow registry not initialized"
+    return t.cast(WorkflowRegistry, workflow_registry)
+
+async def get_agent(storage: ApplicationStateStorage, config: AgentServerConfig) -> WrappedResponseAgent:
     """Get the agent from the application state."""
-    agent = storage.state.agent
-    assert agent is not None, "Agent not initialized"
-    return t.cast(WrappedResponseAgent, agent)
-
+    agent_registry = get_agent_registry(storage)
+    agent = await agent_registry.get_agent(config.agent_name)
+    return agent
 
 def app_factory(
     lifespan_factory: AppLifespanFactory[AgentServerConfig], config: AgentServerConfig
@@ -112,9 +155,29 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         chat_request: ChatRequest,
     ) -> JSONResponse:
         """Get the status of a job"""
-        #agent = get_agent(request, config)
-        sql = "SELECT * FROM projects_v1 LIMIT 10"
-        semantic = "semantic.select"
+        workflow_registry = get_workflow_registry(request)
+        basic_workflow = await workflow_registry.get_workflow("basic_text2sql")
+
+        async def fake_semantic_workflow_call():
+            """Fake semantic workflow for demonstration purposes."""
+            return WrappedResponse(handler=None, response=StrResponse(blob="semantic.select"))
+
+        # We trigger the workflows simultaneously using asyncio.create_task
+        sql_result = asyncio.create_task(
+            basic_workflow.wrapped_run(
+                input=chat_request.current_message.content,
+            )
+        )
+        # DOES NOTHING FOR NOW
+        semantic_result = asyncio.create_task(
+            fake_semantic_workflow_call()
+        )
+
+        # Wait for both tasks to complete
+        await asyncio.gather(sql_result, semantic_result)
+        sql = str(sql_result.result().response)
+        semantic = str(semantic_result.result().response)
+
         return JSONResponse({ sql: sql, semantic: semantic })
 
     @app.post("/v0/chat")
@@ -123,7 +186,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         chat_request: ChatRequest,
     ):
         """Get the status of a job"""
-        agent = get_agent(request, config)
+        agent = await get_agent(request, config)
         response = await agent.run_safe(
             chat_request.current_message.content,
             chat_history=chat_request.to_llama_index_chat_history(),

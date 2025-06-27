@@ -6,7 +6,6 @@ from llama_index.core.indices.struct_store.sql_query import (
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.workflow import Context, step
-from oso_agent.workflows.base import MixableWorkflow, ResourceDependency
 from oso_agent.workflows.types import (
     SQLResultEvent,
     SQLResultSummaryRequestEvent,
@@ -15,7 +14,9 @@ from oso_agent.workflows.types import (
 )
 from pyoso import Client
 
+from ...resources import ResourceDependency
 from ...tool.oso_mcp_client import OsoMcpClient
+from ..base import MixableWorkflow
 
 logger = logging.getLogger(__name__)
 

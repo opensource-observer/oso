@@ -13,7 +13,7 @@ from oso_agent.workflows.types import (
     Text2SQLGenerationEvent,
 )
 
-from ..base import ResourceDependency
+from ...resources import ResourceDependency
 from .mixins import McpDBWorkflow, SQLRowsResponseSynthesisMixin
 
 logger = logging.getLogger(__name__)

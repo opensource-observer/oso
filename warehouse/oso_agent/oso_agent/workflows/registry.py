@@ -4,6 +4,7 @@ import typing as t
 
 from oso_agent.types.response import WrappedResponse
 
+from ..resources import ResolverFactory
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError, AgentMissingError
 from .base import MixableWorkflow, ResourceResolver
@@ -16,10 +17,6 @@ WorkflowDict = t.Dict[str, MixableWorkflow]
 
 WorkflowFactory = t.Callable[[AgentConfig, ResourceResolver], t.Awaitable[MixableWorkflow]]
 ResponseWrapper = t.Callable[[t.Any], WrappedResponse]
-
-ResolverFactory = t.Callable[[AgentConfig], t.Awaitable[ResourceResolver]]
-
-
 
 def default_workflow_factory(
     cls: t.Type[MixableWorkflow],
@@ -70,10 +67,3 @@ class WorkflowRegistry:
             self.workflows[name] = workflow
             logger.info(f"Workflow '{name}' lazily created and added to the registry.")
         return self.workflows[name]
-
-    async def eager_load_all_workflows(self):
-        """Eagerly load all workflows in the registry."""
-        logger.info("Eagerly loading all workflows in the registry...")
-        for name in self.workflow_factories.keys():
-            await self.get_workflow(name)
-        logger.info("All workflows have been eagerly loaded.")
