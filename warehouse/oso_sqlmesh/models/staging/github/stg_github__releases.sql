@@ -28,11 +28,11 @@ WITH release_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'ReleaseEvent'
-    and ghe.created_at BETWEEN @start_dt AND @end_dt
+    and STRPTIME(ghe.payload ->> '$.release.created', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 )
 SELECT
   id AS id,
-  created_at AS created_at,
+  STRPTIME(payload ->> '$.release.created', '%Y-%m-%dT%H:%M:%SZ') AS created_at,
   repo.id AS repository_id,
   repo.name AS repository_name,
   actor.id AS actor_id,

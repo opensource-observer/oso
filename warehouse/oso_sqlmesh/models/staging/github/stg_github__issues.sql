@@ -1,3 +1,4 @@
+-- Issue events contains PR as well since PRs are a type of issue in GitHub.
 MODEL (
   name oso.stg_github__issues,
   kind INCREMENTAL_BY_TIME_RANGE (
@@ -28,11 +29,11 @@ WITH issue_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssuesEvent'
-    and ghe.created_at BETWEEN @start_dt AND @end_dt
+    and STRPTIME(ghe.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 )
 SELECT
   ie.id AS id,
-  ie.created_at AS event_time,
+  STRPTIME(ie.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS event_time,
   ie.repo.id AS repository_id,
   ie.repo.name AS repository_name,
   ie.actor.id AS actor_id,
