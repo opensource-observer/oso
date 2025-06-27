@@ -1,8 +1,8 @@
 MODEL (
   name oso.stg_eas__optimism_attestations,
   description 'Get the latest attestations',
-    dialect trino,
-    kind FULL,
+  dialect trino,
+  kind FULL,
   audits (
     has_at_least_n_rows(threshold := 0)
   )
