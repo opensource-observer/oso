@@ -308,9 +308,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/ac/461265fa101f5c928369b22c644c3c4663a0de90380868279c2eb4c96709/arize_phoenix-11.0.0.tar.gz", hash = "sha256:7576df5f735042b310858c55863625c589f2bad6c0d2896500e26f8559739126", size = 3887088 }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/ac/461265fa101f5c928369b22c644c3c4663a0de90380868279c2eb4c96709/arize_phoenix-11.0.0.tar.gz", hash = "sha256:7576df5f735042b310858c55863625c589f2bad6c0d2896500e26f8559739126", size = 3887088, upload-time = "2025-06-25T00:32:42.9Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/85/83/15fa45dbe51ba8426905649f0ab0fa20d7421bc50d99d85c800216565dbb/arize_phoenix-11.0.0-py3-none-any.whl", hash = "sha256:ad3873603cfd761156fd67bc390e1442c6e4f191bc5bbd04ff6ae2e52d9e7dbd", size = 4092871 },
+    { url = "https://files.pythonhosted.org/packages/85/83/15fa45dbe51ba8426905649f0ab0fa20d7421bc50d99d85c800216565dbb/arize_phoenix-11.0.0-py3-none-any.whl", hash = "sha256:ad3873603cfd761156fd67bc390e1442c6e4f191bc5bbd04ff6ae2e52d9e7dbd", size = 4092871, upload-time = "2025-06-25T00:32:40.486Z" },
 ]
 
 [[package]]
@@ -5064,7 +5064,7 @@ requires-dist = [
 
 [[package]]
 name = "pyoso"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
