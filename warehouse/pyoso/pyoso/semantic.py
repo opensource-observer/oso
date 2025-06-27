@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
+from typing import Callable
 
+import pandas as pd
 import requests
 from pyoso.exceptions import OsoHTTPError
 
@@ -98,17 +100,28 @@ def query_dynamic_models(base_url: str, api_key: str) -> list[SemanticTableRespo
         raise OsoHTTPError(e, response=e.response) from None
 
 
-def create_registry(base_url: str, api_key: str):
+def create_registry(
+    base_url: str, api_key: str, to_pandas_fn: Callable[[str], pd.DataFrame]
+):
+    from oso_semantic import Dimension, Model
+    from oso_semantic import QueryBuilder as InnerQueryBuilder
     from oso_semantic import (
-        Dimension,
-        Model,
         Registry,
         Relationship,
         RelationshipType,
         register_oso_models,
     )
 
-    registry = Registry()
+    class QueryBuilder(InnerQueryBuilder):
+
+        def __init__(self, registry: Registry):
+            super().__init__(registry)
+
+        def to_pandas(self):
+            sql = self.build()
+            return to_pandas_fn(sql.sql(dialect="trino"))
+
+    registry = Registry(QueryBuilder)
 
     register_oso_models(registry)
 

@@ -46,7 +46,9 @@ class Client:
                 self.__base_url += "/"
 
         if HAS_OSO_SEMANTIC:
-            self.semantic = create_registry(self.__base_url, self.__api_key)
+            self.semantic = create_registry(
+                self.__base_url, self.__api_key, self.to_pandas
+            )
 
     def __query(
         self, query: str, input_dialect="trino", output_dialect="trino"

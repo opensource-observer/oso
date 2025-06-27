@@ -1,15 +1,17 @@
 import logging
 import typing as t
 
+from oso_semantic import AttributePathTransformer
 from sqlglot import exp
+from sqlmesh.core.dialect import parse_one
 
-from .definition import AttributePath, Filter, Model, QueryPart, Registry
+from .definition import AttributePath, Filter, Model, QueryPart, QueryRegistry, Registry
 from .utils import exp_to_str
 
 logger = logging.getLogger(__name__)
 
 
-class QueryBuilder:
+class QueryBuilder(QueryRegistry):
     def __init__(self, registry: Registry):
         self._registry = registry
         self._select_refs: list[AttributePath] = []
@@ -41,31 +43,49 @@ class QueryBuilder:
 
         return self
 
-    def add_select(self, reference: AttributePath, alias: str):
+    def select(self, *selects: str):
         """Add a model attribute to the select clause"""
-        # validate the select by checking the attribute references
+        for select in selects:
+            result = AttributePathTransformer.transform(parse_one(select))
+            if len(result.references) != 1:
+                raise ValueError(
+                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
+                )
+            if not isinstance(result.node, (exp.Anonymous, exp.Alias)):
+                raise ValueError(
+                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
+                )
+            reference = result.references[0]
+            alias = reference.to_select_alias()
+            if isinstance(result.node, exp.Alias):
+                alias = exp_to_str(result.node.alias)
 
-        if not reference.is_valid_for_registry(self._registry):
-            raise ValueError(f"Invalid reference {reference} for registry")
-        part = reference.resolve(self._registry)
+            # validate the select by checking the attribute references
 
-        for resolved_reference in part.resolved_references:
-            if resolved_reference not in self._references:
-                self.add_reference(resolved_reference)
-        self._select_parts.append(part)
-        self._select_aliases.append(alias)
+            if not reference.is_valid_for_registry(self._registry):
+                raise ValueError(f"Invalid reference {reference} for registry")
+            part = reference.resolve(self._registry)
+
+            for resolved_reference in part.resolved_references:
+                if resolved_reference not in self._references:
+                    self.add_reference(resolved_reference)
+            self._select_parts.append(part)
+            self._select_aliases.append(alias)
         return self
 
-    def add_filter(self, filter: Filter):
+    def where(self, *filters: str):
         """Add a filter to the query"""
+        for filter in filters:
+            filter_expr = Filter(query=filter)
+            traverser = AttributePath(path=[]).traverser()
+            filter_part = filter_expr.to_query_part(
+                traverser, filter_expr.query, self._registry
+            )
 
-        traverser = AttributePath(path=[]).traverser()
-        filter_part = filter.to_query_part(traverser, filter.query, self._registry)
+            for ref in filter_part.resolved_references:
+                self.add_reference(ref)
 
-        for ref in filter_part.resolved_references:
-            self.add_reference(ref)
-
-        self._filter_parts.append(filter_part)
+            self._filter_parts.append(filter_part)
         return self
 
     def add_limit(self, limit: int):
