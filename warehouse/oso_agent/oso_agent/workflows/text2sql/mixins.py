@@ -3,7 +3,7 @@ import logging
 from llama_index.core.indices.struct_store.sql_query import (
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT,
 )
-from llama_index.core.llms import LLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.workflow import Context, StopEvent, step
 from oso_agent.types.response import AnyResponse, SqlResponse
@@ -42,18 +42,20 @@ class GenericText2SQLRouter(MixableWorkflow):
     """
 
     @step
-    async def handle_text2sql_query(
+    async def handle_text2sql_generation_event(
         self, ctx: Context, event: Text2SQLGenerationEvent
-    ) -> SQLExecutionRequestEvent  | StopEvent:
+    ) -> SQLExecutionRequestEvent | StopEvent:
         """Handle the text to SQL query event."""
         # This method should be overridden by subclasses to implement specific logic.
         if event.execute_sql:
+            logger.debug(f"query execution requested for query[{event.id}]: {event.output_sql}")
             return SQLExecutionRequestEvent(
                 id=event.id,
                 sql=event.output_sql,
                 synthesize_response=event.synthesize_response,
             )
         else:
+            logger.debug(f"query execution not requested for query[{event.id}]: {event.output_sql}")
             # If execute_sql is False, we simply return the generated SQL
             return StopEvent(
                 result=SqlResponse(query=SqlQuery(query=event.output_sql))
@@ -68,10 +70,12 @@ class GenericText2SQLRouter(MixableWorkflow):
         logger.info(f"Handling SQL results for query[{result.id}] with {len(result.results)} rows")
 
         if not result.synthesize_response:
+            logger.debug(f"SQL result synthesis not requested for query[{result.id}]")
             # If synthesis is not requested, we return the result directly
             # FIXME: we should create new response objects for dataframes and or row lists
             return StopEvent(result=AnyResponse(raw=result.results))
-
+        
+        logger.debug(f"SQL result synthesis requested for query[{result.id}]")
         return SQLResultSummaryRequestEvent(
             id=result.id,
             result=result
@@ -130,7 +134,7 @@ class McpDBWorkflow(MixableWorkflow):
 
     @step
     async def retrieve_sql_results(
-        self, ctx: Context, query: Text2SQLGenerationEvent
+        self, ctx: Context, query: SQLExecutionRequestEvent
     ) -> SQLResultEvent:
         """Retrieve SQL results using the MCP DB client."""
         if not self.oso_mcp_client:
@@ -174,7 +178,7 @@ class SQLRowsResponseSynthesisMixin(MixableWorkflow):
     response_synthesis_prompt: ResourceDependency[PromptTemplate] = ResourceDependency(
         default_factory=lambda: DEFAULT_RESPONSE_SYNTHESIS_PROMPT
     )
-    llm: ResourceDependency[LLM]
+    llm: ResourceDependency[FunctionCallingLLM]
 
     @step
     async def synthesize_sql_response_from_rows(

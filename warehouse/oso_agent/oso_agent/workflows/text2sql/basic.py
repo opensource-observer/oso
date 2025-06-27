@@ -2,7 +2,7 @@ import hashlib
 import logging
 
 from llama_index.core.base.response.schema import Response as ToolResponse
-from llama_index.core.llms import LLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.tools import QueryEngineTool
 from llama_index.core.workflow import Context, StartEvent, StopEvent, step
 from oso_agent.types.response import StrResponse
@@ -22,7 +22,7 @@ class BasicText2SQL(GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthes
     """
 
     query_engine_tool: ResourceDependency[QueryEngineTool]
-    llm: ResourceDependency[LLM]
+    llm: ResourceDependency[FunctionCallingLLM]
 
     @step
     async def handle_text2sql_query(self, ctx: Context, event: StartEvent) -> Text2SQLGenerationEvent:

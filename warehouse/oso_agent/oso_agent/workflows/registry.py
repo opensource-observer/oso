@@ -25,7 +25,7 @@ def default_workflow_factory(
     async def _factory(
         config: AgentConfig, resolver: ResourceResolver
     ) -> MixableWorkflow:
-        return cls(resolver)
+        return cls(resolver, timeout=config.workflow_timeout)
     return _factory
 
 class WorkflowRegistry:
