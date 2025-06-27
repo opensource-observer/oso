@@ -171,13 +171,16 @@ from the `GITHUB` source. We can do this by adding a filter to the query:
 query_with_filter: QueryBuilder = registry.select(
     "artifact.id",
     "artifact.name",
-).add_filter(
+).where(
     "artifact.source = 'GITHUB'"
 )
 print(query_with_filter.sql(pretty=True))
 ```
 
-The `add_filter` method allows us to add a filter to the query using sql expressions. The expressions look very similar to standard sql but instead of columns being referenced, we use the model's attributes for filtering. The output of this query will look like this:
+The `where` method allows us to add a filter to the query using sql expressions.
+The expressions look very similar to standard sql but instead of columns being
+referenced, we use the model's attributes for filtering. The output of this
+query will look like this:
 
 ```sql
 SELECT 
@@ -190,11 +193,14 @@ GROUP BY 1, 2
 
 ### Adding measures to the `artifact` model
 
-Dimensions are useful for querying specific attributes of a model, but
-usually we also want to perform some kind of aggregation on the data. This is
-where measures come in. Measures are attributes that represent some kind of aggregation of the data in the model. For instance, we might want to know the count of artifacts or the distinct count of artifacts. 
+Dimensions are useful for querying specific attributes of a model, but usually
+we also want to perform some kind of aggregation on the data. This is where
+measures come in. Measures are attributes that represent some kind of
+aggregation of the data in the model. For instance, we might want to know the
+count of artifacts or the distinct count of artifacts. 
 
-Here's an updated definition of the `artifact` model that includes measures and a more complete set of dimensions:
+Here's an updated definition of the `artifact` model that includes measures and
+a more complete set of dimensions:
 
 ```python
 from oso_semantic import Model, Dimension, Measure
@@ -249,7 +255,8 @@ models can also be referenced (covered later) but to prevent any ambiguity, the
 semantic layer provides a special `self` keyword that resolves to the current
 model instance. 
 
-If we query this model again, we can see how the measures are included in the SQL query:
+If we query this model again, we can see how the measures are included in the
+SQL query:
 
 ```python
 # Recreate the registry with the updated model
@@ -284,7 +291,7 @@ could do the following:
 count_query_with_filter: QueryBuilder = registry.select(
     "artifact.source",
     "artifact.count"
-).add_filter(
+).where(
     "artifact.count > 100"
 )
 print(count_query_with_filter.sql(pretty=True))
@@ -299,4 +306,174 @@ SELECT
 FROM iceberg.oso.artifacts_v1 as artifact
 GROUP BY 1
 HAVING count(artifact.artifact_id) > 100
+```
+
+### Adding relationships to the `artifact` model
+
+Relationships are used to define how models relate to each other. This allows
+the semantic layer to provide automatic joins between models when querying. In
+order for this to work, we need to define the relationships between models and
+classify them as either `one_to_one`, `one_to_many` or `many_to_one`. Many to
+many relationships are not explicitly modeled in the semantic layer but can be
+represented by a join table that is defined as a model.
+
+
+:::Note 
+One potentially unintuitive aspect of the semantic layer is that relationships
+are defined in a single direction and this is strictly enforced by the model
+registry. This allows us to treat the entire semantic layer as a directed
+acyclic graph. References within a model can happen in any direction but we
+force the definition to define a direction of the relationship. This is
+currently a limitation of the semantic layer and could change in the future.
+:::
+
+Let's add a model to represent the project entity called `project` and add the
+relationships between the `artifact` and `project` models. Despite roughly
+having a constraint that an artifact may only belong to a single project, the
+data model is flexible enough to allow an artifact to be related to many
+projects. For this reason, we model the artifact and project relationship as a
+many to many relationship. This means we will also model the join table as a
+model in the semantic layer.
+
+```python
+from oso_semantic import Model, Dimension, Measure, Relationship
+
+# Let's redefine the registry and include the models without using 
+# intermediate variables
+registry = Registry()
+
+
+registry.register(Model(
+    name="project",
+    description="A project is a collection of artifacts",
+    primary_key="project_id",
+    dimensions=[
+        Dimension(
+            name="id",
+            description="Unique identifier for the project",
+            column_name="project_id",
+        ),
+        Dimension(
+            name="name",
+            description="Name of the project",
+            column_name="project_name",
+        ),
+        Dimension(
+            name="description",
+            description="Description of the project",
+            column_name="project_description",
+        ),
+    ],
+))
+
+register.register(Model(
+    name="artifacts_by_project",
+    table="iceberg.oso.artifacts_by_project_v1",
+    primary_key="artifact_id",
+    description="Join table between artifacts and projects",
+    dimensions=[
+        Dimension(
+            name="artifact_id",
+            description="Unique identifier for the artifact",
+            column_name="artifact_id",
+        ),
+        Dimension(
+            name="project_id",
+            description="Unique identifier for the project",
+            column_name="project_id",
+        ),
+    ],
+    relationships=[
+        Relationship(
+            name="project",
+            ref_model="project",  
+            type="many_to_one",  
+            source_foreign_key="project_id",  
+            ref_key="project_id",
+        )
+    ]
+))
+
+registry.register(Model(
+    name="artifact",
+    table="iceberg.oso.artifacts_v1",
+    primary_key="artifact_id",
+    dimensions=[
+        Dimension(
+            name="id", 
+            description="Unique identifier for the artifact",
+            column_name="artifact_id",
+        ),
+        Dimension(
+            name="name", 
+            description="Name of the artifact",
+            column_name="artifact_name",
+        ),
+        Dimension(
+            name="namespace", 
+            description="Namespace of the artifact",
+            column_name="artifact_namespace"
+        ),
+        Dimension(
+            name="source", 
+            description="Source of the artifact",
+            column_name="artifact_source"
+        ),
+        Dimension(
+            name="url", 
+            description="URL of the artifact",
+            column_name="artifact_url"
+        ),
+    ],
+    measures=[
+        Measure(
+            name="count", 
+            description="Count of artifacts",
+            query="count(self.id)",
+        ),
+    ],
+    relationships=[
+        Relationship(
+            name="by_project",
+            description="Relationship to the artifacts_by_project model",
+            ref_model="artifacts_by_project",
+            type="many_to_one",
+            source_foreign_key="artifact_id",
+            ref_key="artifact_id",
+        )
+    ]
+))
+```
+
+In this we have now defined the relationships between the `artifact` and the
+`project` by mapping how the reference in one model tranlates to the referenced
+model. The relationships themselves are not defined using model objects
+explicity but rather reference models by names. This allows a more flexible way
+to define each of the models. Once you start querying the models, however, the
+registry is treated as immutable and the relationships are validated to ensure
+that the model and any relationships are valid and do not have cycles. 
+
+Now if we query for both `artifact` model attributes and `project` model
+attributes, the semantic layer will automatically join the two models together:
+
+```python
+query = registry.select(
+    "artifact.name",
+    "project.name",
+)
+print(query.sql(pretty=True))
+```
+
+The output of this query will look like this:
+
+```sql
+SELECT
+    artifact.artifact_name as artifact__name,
+    project.project_name as project__name
+FROM iceberg.oso.artifacts_v1 as artifact
+LEFT JOIN iceberg.oso.artifacts_by_project_v1 as artifacts_by_project_1b23c4d
+    ON artifact.artifact_id = artifacts_by_project_1b23c4d.artifact_id
+LEFT JOIN iceberg.oso.projects_v1 as project_12345678
+    ON artifacts_by_project_1b23c4d.project_id = project_12345678.project_id
+GROUP BY 1, 2
 ```

@@ -17,16 +17,6 @@ attributes inherent in this semantic layer allow for automatically resolving
 join paths, aggregations, and other aspects of using the data model so that
 making informed queries doesn't require expertise in the universe of OSO tables.
 
-<AnatomyOfSemanticLayer>
-:::note 
-This guide is all about using the semantic layer and not defining it. If
-you'd like to contribute to the semantic layer by defining additional models,
-relationships, etc, see the guide
-[here](../contribute-models/semantic-layer-definition.mdx)
-:::
-</AnatomyOfSemanticLayer>
-
-
 ## Querying against the semantic layer
 
 ### A basic query
@@ -78,9 +68,11 @@ GROUP BY
 
 As evident in the generated sql, the semantic query tool automatically decides the proper join path and automatically groups the collection name and artifact name.
 
-_Note:_ For this specific example, a custom written query could produce one less
+:::Note 
+For this specific example, a custom written query could produce one less
 join, but due to the way the registry has is modeled this result is currently
 as intended.
+:::
 
 To execute this generated sql query and return the associated dataframe one can simply do:
 
@@ -98,7 +90,7 @@ The `project` model has a relationship to the collection via it's `collection` r
 
 ```python
 query = oso.semantic.select(
-  "project.collection",
+  "project.projects_by_collection",
 )
 ```
 
@@ -106,11 +98,15 @@ This would produce the following SQL:
 
 ```sql
 SELECT
-  project_46f86faa.collection_id AS project_collection
+  projects_by_collection_v1_8247793e.collection_id AS project_collection
 FROM oso.projects_v1 AS project_46f86faa
+LEFT JOIN oso.projects_by_collection_v1 AS projects_by_collection_v1_8247793e
+  ON project_46f86faa.project_id = projects_by_collection_v1_8247793e.project_id
 GROUP BY
   1
 ```
+
+When a relationship attribute is selected only the key used to reference the foreign model is returned. In the case of `project.collection`, the collection is referenced by it's collection id in a foreign key relationship. 
 
 We can also include the relationship attribute to provide a filtering
 context without having an explicit filter. For instance if we wanted to only 
@@ -221,7 +217,7 @@ query = oso.semantic.select(
     "github_event.time",
     "github_event.to->collection.name",
     "github_event.to->artifact.name",
-).add_filter(
+).where(
     "github_event.to->artifact.namespace = 'oso'",
 )
 ```
@@ -261,7 +257,7 @@ query = oso.semantic.select(
     "github_event.time",
     "github_event.to->collection.name",
     "github_event.to->artifact.name",
-).add_filter(
+).where(
     "github_event.count <= 1000",
 )
 ```
@@ -294,32 +290,37 @@ HAVING
   COUNT(github_event_420c9a8e.event_id) <= 1000
 ```
 
-## Chaining
+## Chaining and reusing queries
 
-_this is still not fully defined_
-
-The semantic layer also provides a way to chain multiple queries together. This is akin to CTEs in SQL. 
+The semantic layer also provides a way to chain multiple queries together. In
+the same way that one may define CTEs in SQL, a named query allows us to
+reference a query as if it were just another model in the semantic layer. This
+can only happen within a single query builder context, so you must use the same
+`oso.semantic` instance to chain queries together that you wish to reuse. In
+order to support this, you must name a query using in the `select` method using
+the `as_` parameter. Then in subsequent queries you can reference that query 
+as if it were just another model in the semantic layer.
 
 Let's find all the projects that published at least one new release in the last
 6 months and also had a user operation in ERC-4337.
 
 ```python
 
-query = oso.semantic.named_select(
-  "github_release_metrics",
+query = oso.semantic.select(
   "timeseries_metrics_by_project.sum as metric_sum",
-  "project", # Without an attribute this will reference the model itself
-).add_filter(
+  "timeseries_metrics_by_project.project as metric_project",
+  as_="github_release_metrics",
+).where(
   "metric.name LIKE 'GITHUB_releases_monthly'"
-).named_select(
-  "received_grants",
+).select(
   "project",
-).add_filter(
+  as_="received_grants",
+).where(
   "github_release_metrics.metric.sum > 0"
-).named_select(
-  "paymaster_projects",
-  "project",
-).add_filter(
+).select(
+  "4337_events.to->project", # need to resolve an ambiguous join with events
+  as_="paymaster_projects",
+).where(
   "4337_events.event_type LIKE 'CONTRACT_INVOCATION_VIA_PAYMASTER'"
 ).select(
   "project.name",
@@ -328,13 +329,87 @@ query = oso.semantic.named_select(
 )
 ```
 
+This query will produce the following SQL:
+
+```sql
+-- The naming here is likely not correct, this needs to be fixed once we implement this
+with github_release_metrics as (
+  SELECT
+    timeseries_metrics_by_project_v1_4f760b72.sum AS metric_sum,
+    timeseries_metrics_by_project_v1_4f760b72.project_id AS metric_project
+  FROM oso.timeseries_metrics_by_project_v1 AS timeseries_metrics_by_project_v1_4f760b72
+  LEFT JOIN oso.timeseries_metrics_v1 AS timeseries_metrics_v1_5ee26df1
+    ON timeseries_metrics_by_project_v1_4f760b72.metric_id = timeseries_metrics_v1_5ee26df1.metric_id
+  WHERE
+    timeseries_metrics_v1_5ee26df1.name LIKE 'GITHUB_releases_monthly'
+  GROUP BY
+    1,
+    2
+),
+received_grants as (
+  SELECT
+    project_46f86faa.project_id AS project
+  FROM github_release_metrics
+  LEFT JOIN oso.projects_v1 AS project_46f86faa
+    ON github_release_metrics.metric_project = project_46f86faa.project_id
+  WHERE
+    github_release_metrics.metric_sum > 0
+  GROUP BY
+    1
+
 In order to chain queries, a query must be named. When this is done, the query
-builder context automatically register that query as another model in an
+builder context automatically registers that query as another model in an
 temporary registry. This allows us to reference a query as if it were just
 another model in the semantic layer. 
+
+### Querying a relationship attribute
+
+While not _always_ useful, it is possible to simply query a relationship
+attribute. While not always useful on it's own, this can be important to use
+when reusing queries as the semantic layer will automatically.
+
+```python
+query = registry.select(
+    "project.by_collection",
+)
+print(query.sql(pretty=True))
+```
+
+The output of this query will look like this:
+
+```sql
+SELECT
+    artifact.artifact_id as artifact__by_project
+FROM iceberg.oso.artifacts_v1 as artifact
+```
+
+The importance of this query is that assuming that not all projects have
+artifacts, this query will return all projects that actually have artifacts.
+
+When using reusing a query this ensures that the `Relationship` is maintained
+and can be used by downstream queries.
+
+Like this:
+
+```python
+query = registry.select(
+    "artifact.source as artifact_source",
+    "artifact.by_project"
+    as_="source_more_than_100_artifacts"
+).where(
+    "artifact.count > 100"
+).select(
+    "source_more_than_100_artifacts.artifact_source",
+    "project.name",
+)
+```
+
+This contrived example will produce a result that returns all projects related
+to artifact source that have more than 100 artifacts.
 
 ## Full Reference
 
 Much like the OSO data model itself, the object model of the semantic layer is a
 dynamic and frequently changing set of abstractions. As such, the reference
 documentation of the semantic model is versioned and available [here](?). As the semantic model updates, so too does this living document.
+
