@@ -1,17 +1,21 @@
 import logging
-from llama_index.core.workflow import Context, step
+
+from llama_index.core.indices.struct_store.sql_query import (
+    DEFAULT_RESPONSE_SYNTHESIS_PROMPT,
+)
 from llama_index.core.llms import LLM
-from llama_index.core.indices.struct_store.sql_query import DEFAULT_RESPONSE_SYNTHESIS_PROMPT
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.workflow import Context, step
 from oso_agent.workflows.base import MixableWorkflow, ResourceDependency
 from oso_agent.workflows.types import (
-    Text2SQLGenerationEvent,
     SQLResultEvent,
     SQLResultSummaryRequestEvent,
     SQLResultSummaryResponseEvent,
+    Text2SQLGenerationEvent,
 )
 from pyoso import Client
-from ..tool.oso_mcp_client import OsoMcpClient
+
+from ...tool.oso_mcp_client import OsoMcpClient
 
 logger = logging.getLogger(__name__)
 
@@ -110,25 +114,6 @@ class SQLRowsResponseSynthesisMixin(MixableWorkflow):
     )
     llm: ResourceDependency[LLM]
 
-    # @step
-    # async def synthesize_sql_response_from_dataframes(
-    #     self, ctx: Context, request: SQLDataFrameResultSummaryRequestEvent
-    # ) -> SQLDataFrameResultSummaryResponseEvent:
-    #     """Synthesize a SQL response from the generated SQL query."""
-
-    #     # TODO add actual synthesis logic here
-    #     response = self.llm.predict(
-    #         self.response_synthesis_prompt,
-    #         query_str=request.result.input_text,
-    #         sql_query=request.result.output_sql,
-    #         sql_response_str=str(request.result.df)
-    #     )
-
-    #     return SQLDataFrameResultSummaryResponseEvent(
-    #         summary=response,
-    #         result=request.result,
-    #     )
-    
     @step
     async def synthesize_sql_response_from_rows(
         self, request: SQLResultSummaryRequestEvent
