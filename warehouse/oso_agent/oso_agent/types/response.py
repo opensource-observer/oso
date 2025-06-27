@@ -52,7 +52,7 @@ class SemanticResponse(BaseModel):
 
     def __str__(self):
         return self.query.model_dump_json()
-
+    
 class SqlResponse(BaseModel):
     type: t.Literal["sql"] = "sql"
 

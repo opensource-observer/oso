@@ -5,8 +5,11 @@ from llama_index.core.indices.struct_store.sql_query import (
 )
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.workflow import Context, step
+from llama_index.core.workflow import Context, StopEvent, step
+from oso_agent.types.response import AnyResponse, SqlResponse
+from oso_agent.types.sql_query import SqlQuery
 from oso_agent.workflows.types import (
+    SQLExecutionRequestEvent,
     SQLResultEvent,
     SQLResultSummaryRequestEvent,
     SQLResultSummaryResponseEvent,
@@ -20,6 +23,60 @@ from ..base import MixableWorkflow
 
 logger = logging.getLogger(__name__)
 
+class GenericText2SQLRouter(MixableWorkflow):
+    """A generic mixin class for handling text to sql events in text2sql
+    workflows. 
+
+    The two events this handles are Text2SQLGenerationEvent and SQLResultEvent.
+
+    In both cases this mixin provides a way to short-circuit the workflow
+    depending on the options specified in the given events.
+
+    For Text2SQLGenerationEvent: 
+        - If execute_sql is True, it returns a SQLExecutionRequestEvent.
+        - If execute_sql is False, it returns a StopEvent with the generated SQL.
+
+    For SQLResultEvent:
+        - If synthesize_response is True, it returns a SQLResultSummaryRequestEvent.
+        - If synthesize_response is False, it returns a StopEvent with the raw results.
+    """
+
+    @step
+    async def handle_text2sql_query(
+        self, ctx: Context, event: Text2SQLGenerationEvent
+    ) -> SQLExecutionRequestEvent  | StopEvent:
+        """Handle the text to SQL query event."""
+        # This method should be overridden by subclasses to implement specific logic.
+        if event.execute_sql:
+            return SQLExecutionRequestEvent(
+                id=event.id,
+                sql=event.output_sql,
+                synthesize_response=event.synthesize_response,
+            )
+        else:
+            # If execute_sql is False, we simply return the generated SQL
+            return StopEvent(
+                result=SqlResponse(query=SqlQuery(query=event.output_sql))
+            )
+        
+    @step
+    async def handle_sql_results_rows(self, result: SQLResultEvent) -> SQLResultSummaryRequestEvent | StopEvent:
+        """Handle the SQL results routing to request a synthesized response."""
+        # Here you can process the rows as needed, for example, summarizing them.
+        # For this basic example, we just return the rows as a summary.
+
+        logger.info(f"Handling SQL results for query[{result.id}] with {len(result.results)} rows")
+
+        if not result.synthesize_response:
+            # If synthesis is not requested, we return the result directly
+            # FIXME: we should create new response objects for dataframes and or row lists
+            return StopEvent(result=AnyResponse(raw=result.results))
+
+        return SQLResultSummaryRequestEvent(
+            id=result.id,
+            result=result
+        )
+
 class PyosoWorkflow(MixableWorkflow):
     """Mixin class to enable PyOSO integration for agent workflows."""
 
@@ -27,14 +84,14 @@ class PyosoWorkflow(MixableWorkflow):
 
     @step
     async def retrieve_sql_results(
-        self, ctx: Context, query: Text2SQLGenerationEvent
+        self, ctx: Context, query: SQLExecutionRequestEvent 
     ) -> SQLResultEvent:
         """Retrieve SQL results using the PyOSO client."""
         if not self.oso_client:
             raise ValueError("PyOSO client is not initialized.")
 
         try:
-            return await self.execute_query(query.output_sql, query.id)
+            return await self.execute_query(query.output_sql, query.id, query.synthesize_response)
         except Exception as e:
             logger.error(f"Error retrieving SQL results: {e}")
 
@@ -44,10 +101,11 @@ class PyosoWorkflow(MixableWorkflow):
                 output_sql=query.output_sql,
                 results=[],
                 error=e,
+                synthesize_response=query.synthesize_response,
             )
 
     async def execute_query(
-        self, query: str, id: str = "query_execution"
+        self, query: str, id: str = "query_execution", synthesize_response: bool = True
     ) -> SQLResultEvent:
         """Execute a SQL query using the PyOSO client."""
         if not self.oso_client:
@@ -61,6 +119,7 @@ class PyosoWorkflow(MixableWorkflow):
             input_text=query,
             output_sql=query,
             results=df,
+            synthesize_response=synthesize_response
         )
 
     
@@ -78,7 +137,7 @@ class McpDBWorkflow(MixableWorkflow):
             raise ValueError("MCP DB client is not initialized.")
         
         try:
-            return await self.execute_query(query.output_sql, query.id)
+            return await self.execute_query(query.output_sql, query.id, query.synthesize_response)
         except Exception as e:
             logger.error(f"Error retrieving SQL results: {e}")
 
@@ -88,10 +147,11 @@ class McpDBWorkflow(MixableWorkflow):
                 output_sql=query.output_sql,
                 results=[],
                 error=e,
+                synthesize_response=query.synthesize_response,
             )
 
     async def execute_query(
-        self, query: str, id: str = "query_execution"
+        self, query: str, id: str = "query_execution", synthesize_response: bool = True
     ) -> SQLResultEvent:
         """Execute a SQL query using the PyOSO client."""
         if not self.oso_mcp_client:
@@ -105,6 +165,7 @@ class McpDBWorkflow(MixableWorkflow):
             input_text=query,
             output_sql=query,
             results=results,
+            synthesize_response=synthesize_response,
         )
 
 class SQLRowsResponseSynthesisMixin(MixableWorkflow):

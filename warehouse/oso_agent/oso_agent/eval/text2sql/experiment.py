@@ -5,12 +5,12 @@ import phoenix as px
 from llama_index.core.workflow import StartEvent, StopEvent, step
 from oso_agent.agent.agent_registry import AgentRegistry
 from oso_agent.eval.experiment_runner import ExperimentRunner
+from oso_agent.resources import DefaultResourceResolver, ResourceResolver
 from oso_agent.tool.llm import create_llm
 from oso_agent.tool.query_engine_tool import create_default_query_engine_tool
 from oso_agent.types.eval import ExampleResult
 from oso_agent.types.response import StrResponse
 from oso_agent.util.query import clean_query_for_eval
-from oso_agent.workflows import ResourceResolver
 from oso_agent.workflows.base import MixableWorkflow
 from oso_agent.workflows.eval import EvalWorkflowResult
 from oso_agent.workflows.text2sql.basic import BasicText2SQL
@@ -132,7 +132,7 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
     # check if specific evals have been defined
     oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
 
-    resolver = ResourceResolver.from_resources(
+    resolver = DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
         oso_mcp_client=oso_mcp_client,
         keep_distinct=True,

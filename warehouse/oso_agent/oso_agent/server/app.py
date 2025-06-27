@@ -167,8 +167,11 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         sql_result = asyncio.create_task(
             basic_workflow.wrapped_run(
                 input=chat_request.current_message.content,
+                synthesize_response=False,
+                execute_sql=False,
             )
         )
+
         # DOES NOTHING FOR NOW
         semantic_result = asyncio.create_task(
             fake_semantic_workflow_call()

@@ -7,18 +7,16 @@ from llama_index.core.tools import QueryEngineTool
 from llama_index.core.workflow import Context, StartEvent, StopEvent, step
 from oso_agent.types.response import StrResponse
 from oso_agent.workflows.types import (
-    SQLResultEvent,
-    SQLResultSummaryRequestEvent,
     SQLResultSummaryResponseEvent,
     Text2SQLGenerationEvent,
 )
 
 from ...resources import ResourceDependency
-from .mixins import McpDBWorkflow, SQLRowsResponseSynthesisMixin
+from .mixins import GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthesisMixin
 
 logger = logging.getLogger(__name__)
 
-class BasicText2SQL(McpDBWorkflow, SQLRowsResponseSynthesisMixin):
+class BasicText2SQL(GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthesisMixin):
     """The basic text to sql agent that just uses the descriptions and a rag to
     retrieve row context
     """
@@ -33,6 +31,7 @@ class BasicText2SQL(McpDBWorkflow, SQLRowsResponseSynthesisMixin):
         # For this basic example, we just return a StopEvent to end the workflow.
 
         event_input_id = getattr(event, "id", "")
+
         if not event_input_id:
             # Generate a unique ID for the event if not provided
             event_input_id = hashlib.sha1(event.input.encode()).hexdigest()
@@ -61,25 +60,18 @@ class BasicText2SQL(McpDBWorkflow, SQLRowsResponseSynthesisMixin):
         logger.debug(f"query engine tool created the following SQL query for query[{event_input_id}]: {output_sql}")
         if not output_sql:
             raise ValueError("No SQL query found in metadata of query engine tool output")
+        
+        synthesize_response = bool(getattr(event, "synthesize_response", True))
+        execute_sql = bool(getattr(event, "execute_sql", True))
 
         return Text2SQLGenerationEvent(
             id=event_input_id,
             output_sql=output_sql,
             input_text=event.input,
+            synthesize_response=synthesize_response,
+            execute_sql=execute_sql,
         )
-    
-    @step
-    async def handle_sql_results_rows(self, result: SQLResultEvent) -> SQLResultSummaryRequestEvent:
-        """Handle the SQL results routing to request a synthesized response."""
-        # Here you can process the rows as needed, for example, summarizing them.
-        # For this basic example, we just return the rows as a summary.
 
-        logger.info(f"Handling SQL results for query[{result.id}] with {len(result.results)} rows")
-
-        return SQLResultSummaryRequestEvent(
-            id=result.id,
-            result=result
-        )
 
     @step
     async def return_response(self, response: SQLResultSummaryResponseEvent) -> StopEvent:
