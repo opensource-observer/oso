@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import textwrap
 import typing as t
@@ -22,6 +24,15 @@ def coerce_to_tables_column(ref: str, expected_table: str = "self") -> exp.Expre
         return exp.to_column(f"{expected_table}.{ref}")
 
     raise ValueError(f"{ref} is not a valid {expected_table} reference")
+
+
+class QueryRegistry(t.Protocol):
+    def __init__(self, registry: Registry): ...
+    def add_reference(self, reference: AttributePath) -> t.Self: ...
+    def select(self, *selects: str) -> t.Self: ...
+    def where(self, *filters: str) -> t.Self: ...
+    def add_limit(self, limit: int) -> t.Self: ...
+    def build(self) -> exp.Expression: ...
 
 
 class RegistryDAG:
@@ -190,13 +201,20 @@ class UnboundModelAttribute(t.Protocol):
         ...
 
 
-class Registry:
+Q = t.TypeVar("Q", bound=QueryRegistry)
+
+
+class Registry(t.Generic[Q]):
+
     models: t.Dict[str, "Model"]
     dag: RegistryDAG
     views: t.Dict[str, "View"]
     completed: bool
 
-    def __init__(self):
+    def __init__(self, query_builder: type[Q] | None = None):
+        from .query import QueryBuilder
+
+        self.query_builder: type[Q] = query_builder or QueryBuilder  # type: ignore[assignment]
         self.models = {}
         self.views = {}
         self.sorted_model_names = None
@@ -270,13 +288,11 @@ class Registry:
         return from_path_joins + to_path_joins
 
     def select(self, *selects: str):
-        from .query import QueryBuilder
-
         """Returns a new query builder for the registry"""
         if not self.completed:
             raise ValueError("Registry has not been completed cannot create query")
 
-        query_builder = QueryBuilder(self)
+        query_builder = self.query_builder(self)
         for select in selects:
             if not isinstance(select, str):
                 raise ValueError(f"Select must be a string, got {type(select)}")
@@ -570,6 +586,7 @@ class Relationship(BaseModel):
         ref_key: Column(s) in the target model that is referenced.
                         Can be a single column name or list of column names for composite keys.
     """
+
     name: str = ""
     description: str = ""
     type: RelationshipType

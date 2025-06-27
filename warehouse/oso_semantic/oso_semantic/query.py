@@ -5,13 +5,13 @@ from oso_semantic import AttributePathTransformer
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
-from .definition import AttributePath, Filter, Model, QueryPart, Registry
+from .definition import AttributePath, Filter, Model, QueryPart, QueryRegistry, Registry
 from .utils import exp_to_str
 
 logger = logging.getLogger(__name__)
 
 
-class QueryBuilder:
+class QueryBuilder(QueryRegistry):
     def __init__(self, registry: Registry):
         self._registry = registry
         self._select_refs: list[AttributePath] = []

@@ -113,25 +113,15 @@ def create_registry(
     )
 
     class QueryBuilder(InnerQueryBuilder):
-        def __init__(self, registry: Registry, query_builder: InnerQueryBuilder):
+
+        def __init__(self, registry: Registry):
             super().__init__(registry)
-            self.__dict__.update(query_builder.__dict__)
 
         def to_pandas(self):
             sql = self.build()
             return to_pandas_fn(sql.sql(dialect="trino"))
 
-    class SemanticRegistry:
-        """Wrapper for the Registry to provide the entrypoints to the users"""
-
-        def __init__(self, registry: Registry):
-            self.registry = registry
-
-        def select(self, *args):
-            query_builder = self.registry.select(*args)
-            return QueryBuilder(self.registry, query_builder)
-
-    registry = Registry()
+    registry = Registry(QueryBuilder)
 
     register_oso_models(registry)
 
@@ -165,4 +155,4 @@ def create_registry(
         )
 
     registry.complete()
-    return SemanticRegistry(registry)
+    return registry
