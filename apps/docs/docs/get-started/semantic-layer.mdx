@@ -90,7 +90,7 @@ The `project` model has a relationship to the collection via it's `collection` r
 
 ```python
 query = oso.semantic.select(
-  "project.projects_by_collection",
+  "project.by_collection",
 )
 ```
 
@@ -297,70 +297,124 @@ the same way that one may define CTEs in SQL, a named query allows us to
 reference a query as if it were just another model in the semantic layer. This
 can only happen within a single query builder context, so you must use the same
 `oso.semantic` instance to chain queries together that you wish to reuse. In
-order to support this, you must name a query using in the `select` method using
-the `as_` parameter. Then in subsequent queries you can reference that query 
-as if it were just another model in the semantic layer.
+order to support this, you must name a query using the `with_select` method. The
+first argument to this method is the name of the query. Then in subsequent
+queries you can reference that query as if it were just another model in the
+semantic layer.
 
 Let's find all the projects that published at least one new release in the last
 6 months and also had a user operation in ERC-4337.
 
-```python
+:::Note
+This is not yet implemented and this design may need to change.
+:::
 
-query = oso.semantic.select(
+```python
+query = oso.semantic.with_select(
+  "github_release_metrics",
   "timeseries_metrics_by_project.sum as metric_sum",
-  "timeseries_metrics_by_project.project as metric_project",
-  as_="github_release_metrics",
+  "timeseries_metrics_by_project.project as project",
 ).where(
   "metric.name LIKE 'GITHUB_releases_monthly'"
-).select(
+).with_select(
+  "received_grants",
   "project",
-  as_="received_grants",
 ).where(
   "github_release_metrics.metric.sum > 0"
-).select(
-  "4337_events.to->project", # need to resolve an ambiguous join with events
-  as_="paymaster_projects",
+).with_select(
+  "paymaster_projects",
+  "4337_events.to",
 ).where(
   "4337_events.event_type LIKE 'CONTRACT_INVOCATION_VIA_PAYMASTER'"
-).select(
-  "project.name",
+).with_select(
+  "filtered_projects",
+  "project",
+  "paymaster_projects.to",
   "received_grants.project",
-  "paymaster_projects.project",
+).select(
+  "filtered_projects.name",
+).where(
+  "filtered_projects.project_name IS NOT NULL",
 )
 ```
 
 This query will produce the following SQL:
 
 ```sql
--- The naming here is likely not correct, this needs to be fixed once we implement this
+-- This query is not exactly correct we need to render this once this part of the code is implemented
 with github_release_metrics as (
   SELECT
-    timeseries_metrics_by_project_v1_4f760b72.sum AS metric_sum,
-    timeseries_metrics_by_project_v1_4f760b72.project_id AS metric_project
+    SUM(timeseries_metrics_by_project_v1_4f760b72.amount) AS metric_sum,
+    timeseries_metrics_by_project_v1_4f760b72.project_id AS project
   FROM oso.timeseries_metrics_by_project_v1 AS timeseries_metrics_by_project_v1_4f760b72
-  LEFT JOIN oso.timeseries_metrics_v1 AS timeseries_metrics_v1_5ee26df1
-    ON timeseries_metrics_by_project_v1_4f760b72.metric_id = timeseries_metrics_v1_5ee26df1.metric_id
+  LEFT JOIN oso.metrics_v0 AS metrics_v0_5ee26df1
+    ON timeseries_metrics_by_project_v1_4f760b72.metric_id = metrics_v0_5ee26df1.metric_id
   WHERE
-    timeseries_metrics_v1_5ee26df1.name LIKE 'GITHUB_releases_monthly'
+    metrics_v0_5ee26df1.name LIKE 'GITHUB_releases_monthly'
   GROUP BY
-    1,
     2
 ),
 received_grants as (
   SELECT
-    project_46f86faa.project_id AS project
-  FROM github_release_metrics
+    project_46f86faa.project_id AS project_id
+  FROM github_release_metrics as github_release_metrics_13371337
   LEFT JOIN oso.projects_v1 AS project_46f86faa
-    ON github_release_metrics.metric_project = project_46f86faa.project_id
+    ON github_release_metrics_13371337.project = project_46f86faa.project_id
   WHERE
-    github_release_metrics.metric_sum > 0
+    github_release_metrics_13371337.metric_sum > 0
   GROUP BY
     1
+),
+paymaster_projects as (
+  SELECT
+    4337_events_420c9a8e.to_artifact_id AS to_artifact_id
+  FROM oso.int_events__4337 AS 4337_events_420c9a8e
+  WHERE
+    4337_events_420c9a8e.event_type LIKE 'CONTRACT_INVOCATION_VIA_PAYMASTER'
+  GROUP BY
+    1
+),
+filtered_projects as (
+  SELECT
+    project_46f86faa.*,
+    paymaster_projects_8247793e.to_artifact_id AS to_artifact_id,
+    received_grants_5ee26df1.project_id AS project_id
+  FROM oso.projects_v1 AS project_46f86faa
+  LEFT JOIN paymaster_projects AS paymaster_projects_8247793e
+    ON project_46f86faa.project_id = paymaster_projects_8247793e.to_artifact_id
+  LEFT JOIN received_grants AS received_grants_5ee26df1
+    ON project_46f86faa.project_id = received_grants_5ee26df1.project_id
+  WHERE
+    project_46f86faa.project_name IS NOT NULL
+  GROUP BY
+    1, 2, 3, 4, 5, 6, 7, 8
+)
+SELECT
+  filtered_projects_5ee26df1.project_name AS filtered_projects_name
+FROM filtered_projects AS filtered_projects_5ee26df1
+GROUP BY
+  1
+```
 
-In order to chain queries, a query must be named. When this is done, the query
-builder context automatically registers that query as another model in an
-temporary registry. This allows us to reference a query as if it were just
-another model in the semantic layer. 
+### Star querying
+
+The semantic layer doesn't support star querying in the same way that SQL does. In order to get all of the fields from a model you instead simply reference the model itself. For instance, if you wanted to get all of the fields from the `artifact` model, you would do this:
+
+```python
+query = oso.semantic.select(
+    "artifact",
+)
+```
+
+This is more useful when combined with a filter. For instance, if you wanted to get all of the fields from the `artifact` model where the artifact is part of a specific collection, you would do this:
+
+```python
+query = oso.semantic.select(
+    "artifact",
+).where(
+    "collection.name = 'my_collection'",
+)
+```
 
 ### Querying a relationship attribute
 
@@ -392,10 +446,10 @@ and can be used by downstream queries.
 Like this:
 
 ```python
-query = registry.select(
+query = registry.with_select(
+    "source_more_than_100_artifacts",
     "artifact.source as artifact_source",
     "artifact.by_project"
-    as_="source_more_than_100_artifacts"
 ).where(
     "artifact.count > 100"
 ).select(
@@ -406,10 +460,3 @@ query = registry.select(
 
 This contrived example will produce a result that returns all projects related
 to artifact source that have more than 100 artifacts.
-
-## Full Reference
-
-Much like the OSO data model itself, the object model of the semantic layer is a
-dynamic and frequently changing set of abstractions. As such, the reference
-documentation of the semantic model is versioned and available [here](?). As the semantic model updates, so too does this living document.
-
