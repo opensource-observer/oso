@@ -163,6 +163,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
             return WrappedResponse(handler=None, response=StrResponse(blob="semantic.select"))
 
         # We trigger the workflows simultaneously using asyncio.create_task
+        # NOTE: for now this workflow does not support chat history it only accepts the most recent message
         sql_result = asyncio.create_task(
             basic_workflow.wrapped_run(
                 input=chat_request.current_message.content,

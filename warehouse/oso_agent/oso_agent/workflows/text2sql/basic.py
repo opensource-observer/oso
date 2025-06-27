@@ -36,7 +36,7 @@ class BasicText2SQL(McpDBWorkflow, SQLRowsResponseSynthesisMixin):
         if not event_input_id:
             # Generate a unique ID for the event if not provided
             event_input_id = hashlib.sha1(event.input.encode()).hexdigest()
-            logger.debug(f"No ID provided for event, generated ID: {event_input_id}")
+            logger.debug(f"No ID provided for event, generated ID: {event_input_id}") 
 
         logger.info(f"Handling text2sql query with input query[{event_input_id}]: {event.input}")
 
