@@ -106,6 +106,7 @@ pyoso = { workspace = true }
 oso-mcp = { workspace = true }
 oso-core = { workspace = true }
 metrics-service = { workspace = true }
+oso-semantic = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -115,7 +116,7 @@ members = [
     "warehouse/pynessie-gc",
     "warehouse/metrics-service",
     "lib/oso-core",
-    "warehouse/oso_semantic"
+    "warehouse/oso_semantic",
 ]
 
 [build-system]

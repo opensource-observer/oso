@@ -10,6 +10,7 @@ from ..tool.llm import create_llm
 from ..tool.oso_text2sql import create_oso_query_engine
 from ..util.config import AgentConfig
 from .registry import ResolverFactory, ResourceResolver, WorkflowRegistry
+from .semantic.mixins import SemanticWorkflow
 from .text2sql.basic import BasicText2SQL
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ async def setup_default_workflow_registry(config: AgentConfig, resolver_factory:
     registry = WorkflowRegistry(config, resolver_factory)
 
     registry.add_workflow("basic_text2sql", BasicText2SQL)
+    registry.add_workflow("semantic_query", SemanticWorkflow)
 
     logger.info("Default agent registry setup complete.")
     return registry

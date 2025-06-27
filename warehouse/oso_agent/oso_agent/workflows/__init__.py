@@ -2,4 +2,5 @@
 from .base import *
 from .eval import *
 from .registry import *
+from .semantic import *
 from .types import *
