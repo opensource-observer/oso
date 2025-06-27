@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+
 from llama_index.core.workflow import Event
+
 from ..types.response import WrappedResponse
 from .base import MixableWorkflow
 
@@ -20,8 +22,6 @@ class EvalWorkflow(MixableWorkflow):
         events = []
         final_result = None
         async for event in self.run_events_iter(*args, **kwargs):
-            #print("asfafaf")
-            #print(type(event))
             if isinstance(event, Event):
                 events.append(event)
             elif isinstance(event, WrappedResponse):
