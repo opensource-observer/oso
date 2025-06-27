@@ -3,7 +3,6 @@ import logging
 
 from llama_index.core.base.response.schema import Response as ToolResponse
 from llama_index.core.llms import LLM
-from llama_index.core.memory import Memory
 from llama_index.core.tools import QueryEngineTool
 from llama_index.core.workflow import Context, StartEvent, StopEvent, step
 from oso_agent.types.response import StrResponse
@@ -26,7 +25,6 @@ class BasicText2SQL(McpDBWorkflow, SQLRowsResponseSynthesisMixin):
 
     query_engine_tool: ResourceDependency[QueryEngineTool]
     llm: ResourceDependency[LLM]
-    memory: ResourceDependency[Memory]
 
     @step
     async def handle_text2sql_query(self, ctx: Context, event: StartEvent) -> Text2SQLGenerationEvent:
