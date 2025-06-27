@@ -159,7 +159,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         basic_workflow = await workflow_registry.get_workflow("basic_text2sql")
 
         async def fake_semantic_workflow_call():
-            """Fake semantic workflow for demonstration purposes."""
+            """Fake semantic workflow for while we wait for implementation"""
             return WrappedResponse(handler=None, response=StrResponse(blob="semantic.select"))
 
         # We trigger the workflows simultaneously using asyncio.create_task
