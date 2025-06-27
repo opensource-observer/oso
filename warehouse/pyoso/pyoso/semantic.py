@@ -143,7 +143,7 @@ def create_registry(
                 ],
                 relationships=[
                     Relationship(
-                        name=f"{relationship.source_column}->{relationship.target_table.split(".")[-1]}.{relationship.target_column}",
+                        name=f"{relationship.source_column}->{relationship.target_table.split('.')[-1]}.{relationship.target_column}",
                         type=RelationshipType.MANY_TO_ONE,
                         source_foreign_key=relationship.source_column,
                         ref_model=relationship.target_table.split(".")[-1],
