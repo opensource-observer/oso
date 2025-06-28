@@ -1,15 +1,17 @@
 """
 Provides a default workflow registry that is configured using the AgentConfig.
 """
+
 import logging
 
 from ..resources import DefaultResourceResolver, ResolverFactory, ResourceResolver
 from ..util.config import AgentConfig
 from .registry import WorkflowRegistry
-from .semantic.mixins import SemanticWorkflow
 from .text2sql.basic import BasicText2SQL
+from .text2sql.iterative import IterativeText2SQL
 
 logger = logging.getLogger(__name__)
+
 
 async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
     """Default resolver factory that creates a resolver based on the AgentConfig."""
@@ -45,12 +47,15 @@ async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
         registry=registry,
     )
 
-async def setup_default_workflow_registry(config: AgentConfig, resolver_factory: ResolverFactory = default_resolver_factory) -> WorkflowRegistry:
+
+async def setup_default_workflow_registry(
+    config: AgentConfig, resolver_factory: ResolverFactory = default_resolver_factory
+) -> WorkflowRegistry:
     logger.info("Setting up the default agent registry...")
     registry = WorkflowRegistry(config, resolver_factory)
 
     registry.add_workflow("basic_text2sql", BasicText2SQL)
-    registry.add_workflow("semantic_text2sql", SemanticWorkflow)
+    registry.add_workflow("iterative_text2sql", IterativeText2SQL)
 
     logger.info("Default agent registry setup complete.")
     return registry
