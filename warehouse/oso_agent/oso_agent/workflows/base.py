@@ -4,108 +4,21 @@ import logging
 import typing as t
 import uuid
 
-from llama_index.core.workflow import (
-    Context,
-    Event,
-    StartEvent,
-    StopEvent,
-    Workflow,
-    step,
-)
+from llama_index.core.workflow import Event, StopEvent, Workflow, step
 from llama_index.core.workflow.decorators import StepConfig
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import WorkflowMeta
 from opentelemetry import trace
-from oso_agent.agent.agent_registry import AgentRegistry
 from oso_agent.types.response import AnyResponse, ResponseType
-from oso_agent.util.config import AgentConfig
 from oso_agent.workflows.types import ExceptionEvent
 
+from ..resources import ResourceDependency, ResourceResolver
 from ..types import ErrorResponse, WrappedResponse
 
 ResponseWrapper = t.Callable[[t.Any], WrappedResponse]
 
 tracer = trace.get_tracer(__name__)
 logger = logging.getLogger(__name__)
-
-
-V = t.TypeVar("V")
-
-class ResolverEnabled(t.Protocol):
-    resolver: "ResourceResolver"
-
-    def resolve_resource(
-        self, name: str, default_factory: t.Optional[t.Callable[[], t.Any]]
-    ) -> t.Any: ...
-
-
-class ResourceDependency(t.Generic[V]):
-    def __init__(self, default_factory: t.Optional[t.Callable[[], V]] = None):
-        """A descriptor for resource dependencies in a workflow."""
-        self._default_factory = default_factory
-
-    def __set_name__(self, _owner, name):
-        self._name = name
-
-    def __get__(self, obj: ResolverEnabled, owner: t.Any) -> V:
-        return obj.resolve_resource(self._name, self._default_factory)
-
-    def __set__(self, obj: t.Optional[object], value: V) -> None:
-        raise AttributeError(
-            f"Cannot set resource '{self._name}'. Resources are immutable after initialization."
-        )
-    
-    def has_default_factory(self) -> bool:
-        """Check if the resource has a default factory."""
-        return self._default_factory is not None
-
-
-class ResourceResolver:
-    """A resolver for resources in a workflow using a service locator pattern)."""
-
-    @classmethod
-    def from_resources(cls, **kwargs: t.Any) -> "ResourceResolver":
-        """Create a ResourceResolver from keyword arguments."""
-        resolver = cls()
-        for name, value in kwargs.items():
-            resolver.add_resource(name, value)
-        return resolver
-
-    def __init__(self):
-        self._resources: dict[str, t.Any] = {}
-
-    def add_resource(self, name: str, resource: t.Any) -> None:
-        self._resources[name] = resource
-
-    def get_resource(self, name: str) -> t.Any:
-        """Get a resource by name."""
-        if name not in self._resources:
-            raise KeyError(f"Resource '{name}' not found in resolver.")
-        return self._resources[name]
-
-    def validate_for_required_resources(
-        self, resources_dict: dict[str, type]
-    ) -> list[tuple[str, str]]:
-        """Check if all resources in the dictionary are available in the resolver."""
-        missing_resources: list[tuple[str, str]] = []
-        for name, resource_type in resources_dict.items():
-            if name not in self._resources:
-                missing_resources.append((
-                    name,
-                    f"Resource '{name}' is missing from the resolver."
-                ))
-            elif not isinstance(self._resources[name], resource_type):
-                missing_resources.append((
-                    name,
-                    f"Resource '{name}' is of type {type(self._resources[name])}, "
-                    f"but should be {resource_type}.",
-                ))
-        return missing_resources
-    
-    def new_resolver(self, **additional_resources: t.Any) -> "ResourceResolver":
-        """Extend the resolver with additional resources."""
-        kwargs = {**self._resources, **additional_resources}
-        return ResourceResolver.from_resources(**kwargs)
 
 
 class WorkflowMixer(WorkflowMeta):
@@ -378,32 +291,3 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
 
         return StopEvent(result=ErrorResponse(message=str(event.error)))
 
-
-class SingleInstrumentedAgentWorkflow(MixableWorkflow):
-    registry: ResourceDependency[AgentRegistry]
-    agent_name: ResourceDependency[str]
-
-    @step
-    async def handle_start(self, context: Context, event: StartEvent) -> StopEvent:
-        """Handle the start event of the workflow."""
-        logger.info("Workflow started.")
-        agent = await self.registry.get_agent(self.agent_name)
-        response = await agent.run_safe(event.message)
-
-        return StopEvent(result=response)
-
-
-def agent_as_chat_workflow(
-    config: AgentConfig,
-    registry: AgentRegistry,
-    agent_name: str,
-) -> MixableWorkflow:
-    """Create an instrumented agent workflow from an agent name in the registry"""
-
-    resolver = ResourceResolver.from_resources(
-        registry=registry,
-        config=config,
-        agent_name=agent_name,
-    )
-
-    return SingleInstrumentedAgentWorkflow(resolver=resolver)

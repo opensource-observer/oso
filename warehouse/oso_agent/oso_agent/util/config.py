@@ -169,6 +169,10 @@ class AgentConfig(BaseSettings):
         description="Maximum number of characters per line in chat messages",
     )
 
+    workflow_timeout: float = Field(
+        default=120.0,
+    )
+
     @model_validator(mode="after")
     def validate_urls(self) -> "AgentConfig":
         """Ensure URLs are properly formatted."""

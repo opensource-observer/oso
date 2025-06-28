@@ -17,6 +17,19 @@ class Text2SQLGenerationEvent(Event):
     id: str
     input_text: str
     output_sql: str
+    synthesize_response: bool
+    execute_sql: bool
+
+class SQLExecutionRequestEvent(Event):
+    """An event that represents a request to execute a SQL query.
+
+    The `input_text` is the natural language query, and the `output_sql` is the
+    generated SQL query.
+    """
+
+    id: str
+    sql: str
+    synthesize_response: bool
 
 
 class SQLResultEvent(Event):
@@ -31,6 +44,7 @@ class SQLResultEvent(Event):
     output_sql: str
     results: pd.DataFrame | list[dict[str, t.Any]]
     error: Exception | None = None
+    synthesize_response: bool
 
     def is_valid(self) -> bool:
         """Check if the SQLResult is valid."""
