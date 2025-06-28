@@ -1,7 +1,8 @@
 import pytest
 from llama_index.core.workflow import Event, StartEvent, StopEvent, step
 
-from .base import MixableWorkflow, ResourceDependency, ResourceResolver
+from ..resources import DefaultResourceResolver, ResourceDependency
+from .base import MixableWorkflow
 
 
 class CustomEvent(Event):
@@ -35,7 +36,7 @@ async def test_mixable_workflow():
         pass
 
     event_log: list[str] = []
-    resolver = ResourceResolver.from_resources(
+    resolver = DefaultResourceResolver.from_resources(
         resource1="test1", resource2="test2", event_log=event_log
     )
 
