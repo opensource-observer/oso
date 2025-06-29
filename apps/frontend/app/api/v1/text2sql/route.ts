@@ -65,7 +65,9 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(prompt),
     });
 
-    return new Response(await response.text(), { status: response.status });
+    return NextResponse.json(await response.json(), {
+      status: response.status,
+    });
   } catch (error) {
     logger.error("Error in chat route:", error);
     return NextResponse.json(
