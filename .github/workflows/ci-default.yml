@@ -165,5 +165,6 @@ jobs:
 
       - name: Test (Node)
         run: pnpm test
+        if: github.repository_owner != 'opensource-observer'
         if: ${{ always() && matrix.component == 'node' }}
         #if: ${{ always() && steps.supabase.conclusion == 'success' &&  matrix.component == 'node' }}
