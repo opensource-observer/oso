@@ -20,7 +20,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  if: github.repository_owner != 'opensource-observer'
   build-deploy:
     # NOTE: This name appears in GitHub's Checks API.
     name: build-deploy
