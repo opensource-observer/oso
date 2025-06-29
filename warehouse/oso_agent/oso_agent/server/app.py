@@ -47,7 +47,9 @@ def default_lifecycle(config: AgentServerConfig):
         setup_telemetry(config)
 
         agent_registry = await setup_default_agent_registry(config)
-        workflow_registry = await setup_default_workflow_registry(config, default_resolver_factory)
+        workflow_registry = await setup_default_workflow_registry(
+            config, default_resolver_factory
+        )
 
         bot_config = BotConfig()
         bot = await setup_bot(bot_config, agent_registry)
@@ -70,11 +72,13 @@ class ApplicationStateStorage(t.Protocol):
     @property
     def state(self) -> State: ...
 
+
 def get_agent_registry(storage: ApplicationStateStorage) -> AgentRegistry:
     """Get the agent registry from the application state."""
     agent_registry = storage.state.agent_registry
     assert agent_registry is not None, "Agent registry not initialized"
     return t.cast(AgentRegistry, agent_registry)
+
 
 def get_workflow_registry(storage: ApplicationStateStorage) -> WorkflowRegistry:
     """Get the workflow registry from the application state."""
@@ -82,11 +86,15 @@ def get_workflow_registry(storage: ApplicationStateStorage) -> WorkflowRegistry:
     assert workflow_registry is not None, "Workflow registry not initialized"
     return t.cast(WorkflowRegistry, workflow_registry)
 
-async def get_agent(storage: ApplicationStateStorage, config: AgentServerConfig) -> WrappedResponseAgent:
+
+async def get_agent(
+    storage: ApplicationStateStorage, config: AgentServerConfig
+) -> WrappedResponseAgent:
     """Get the agent from the application state."""
     agent_registry = get_agent_registry(storage)
     agent = await agent_registry.get_agent(config.agent_name)
     return agent
+
 
 def app_factory(
     lifespan_factory: AppLifespanFactory[AgentServerConfig], config: AgentServerConfig
@@ -94,6 +102,7 @@ def app_factory(
     logger.debug(f"loading application with config: {config}")
     app = setup_app(config, lifespan=lifespan_factory(config))
     return app
+
 
 def extract_wrapped_response(response: WrappedResponse) -> str:
     match response.response:
@@ -109,6 +118,7 @@ def extract_wrapped_response(response: WrappedResponse) -> str:
             return str(raw)
         case _:
             raise ValueError(f"Unsupported response type: {type(response.response)}")
+
 
 def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any]):
     # Dependency to get the cluster manager
@@ -129,33 +139,18 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
     ) -> JSONResponse:
         """Get the status of a job"""
         workflow_registry = get_workflow_registry(request)
-        basic_workflow = await workflow_registry.get_workflow("basic_text2sql")
 
-        async def fake_semantic_workflow_call():
-            """Fake semantic workflow for while we wait for implementation"""
-            return WrappedResponse(handler=None, response=StrResponse(blob="semantic.select"))
+        iterative_workflow = await workflow_registry.get_workflow("iterative_text2sql")
 
-        # We trigger the workflows simultaneously using asyncio.create_task
-        # NOTE: for now this workflow does not support chat history it only accepts the most recent message
-        sql_result = asyncio.create_task(
-            basic_workflow.wrapped_run(
-                input=chat_request.current_message.content,
-                synthesize_response=False,
-                execute_sql=False,
-            )
+        result = await iterative_workflow.wrapped_run(
+            input=chat_request.current_message.content,
+            synthesize_response=False,
+            execute_sql=False,
         )
 
-        # DOES NOTHING FOR NOW
-        semantic_result = asyncio.create_task(
-            fake_semantic_workflow_call()
-        )
+        sql_output = str(result.response)
 
-        # Wait for both tasks to complete
-        await asyncio.gather(sql_result, semantic_result)
-        sql = str(sql_result.result().response)
-        semantic = str(semantic_result.result().response)
-
-        return JSONResponse({ sql: sql, semantic: semantic })
+        return JSONResponse({"sql": sql_output})
 
     @app.post("/v0/chat")
     async def chat(
@@ -177,7 +172,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         # Split the response into substrings of N characters and escape
         # newlines for json
         for i in range(0, len(response_str), config.chat_line_length):
-            substring = response_str[i:i + config.chat_line_length]
+            substring = response_str[i : i + config.chat_line_length]
             escaped_substring = json.dumps(substring)
             lines.append(f"0:{escaped_substring}\n")
 
