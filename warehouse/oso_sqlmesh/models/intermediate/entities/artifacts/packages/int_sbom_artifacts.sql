@@ -35,9 +35,7 @@ WITH ranked_snapshots AS (
     package_artifact_name,
     package_github_owner,
     package_github_repo
-  FROM oso.int_packages
-  WHERE
-    is_current_owner = TRUE
+  FROM oso.int_packages__current_maintainer_only
 )
 SELECT
   all_repos.project_id, /*
@@ -62,15 +60,15 @@ SELECT
   deps_dev_repos.project_id AS package_github_project_id,
   sbom_artifacts.snapshot_at
 FROM sbom_artifacts
-LEFT OUTER JOIN oso.int_all_artifacts AS all_repos
+LEFT OUTER JOIN oso.int_artifacts_by_project AS all_repos
   ON sbom_artifacts.artifact_namespace = all_repos.artifact_namespace
   AND sbom_artifacts.artifact_name = all_repos.artifact_name
-LEFT OUTER JOIN oso.int_all_artifacts AS all_packages
+LEFT OUTER JOIN oso.int_artifacts_by_project AS all_packages
   ON sbom_artifacts.package = all_packages.artifact_name
   AND sbom_artifacts.package_source = all_packages.artifact_source
 LEFT OUTER JOIN deps_dev_packages
   ON sbom_artifacts.package_source = deps_dev_packages.sbom_artifact_source
   AND sbom_artifacts.package = deps_dev_packages.package_artifact_name
-LEFT OUTER JOIN oso.int_all_artifacts AS deps_dev_repos
+LEFT OUTER JOIN oso.int_artifacts_by_project AS deps_dev_repos
   ON deps_dev_packages.package_github_owner = deps_dev_repos.artifact_namespace
   AND deps_dev_packages.package_github_repo = deps_dev_repos.artifact_name

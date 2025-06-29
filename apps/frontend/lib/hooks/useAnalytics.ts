@@ -1,8 +1,8 @@
 import { usePostHog } from "posthog-js/react";
 import { useState, useCallback } from "react";
-import { CreditsService, TransactionType } from "../services/credits";
-import { useAuth } from "./useAuth";
-import { logger } from "../logger";
+import { TransactionType } from "@/lib/services/credits";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { logger } from "@/lib/logger";
 
 interface AnalyticsOptions {
   properties?: Record<string, any>;
@@ -22,34 +22,6 @@ export function useAnalytics() {
       setError(null);
 
       try {
-        if (
-          options?.transactionType &&
-          [
-            TransactionType.SQL_QUERY,
-            TransactionType.GRAPHQL_QUERY,
-            TransactionType.CHAT_QUERY,
-          ].includes(options.transactionType)
-        ) {
-          if (user.role !== "anonymous") {
-            const success = await CreditsService.checkAndDeductCredits(
-              user,
-              options.transactionType,
-              options.apiEndpoint,
-              options.properties,
-            );
-
-            if (!success) {
-              setError("Insufficient credits");
-              setIsProcessing(false);
-              return false;
-            }
-          } else {
-            setError("Authentication required");
-            setIsProcessing(false);
-            return false;
-          }
-        }
-
         posthog.capture(eventName, {
           distinctId: user.role !== "anonymous" ? user.userId : undefined,
           ...options?.properties,

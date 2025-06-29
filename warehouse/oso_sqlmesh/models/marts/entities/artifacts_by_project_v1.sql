@@ -1,9 +1,12 @@
 MODEL (
   name oso.artifacts_by_project_v1,
   kind FULL,
+  partitioned_by bucket(artifact_id, 256),
   tags (
     'export',
-    'entity_category=project'
+    'entity_category=project',
+    'index={"idx_artifact_id": ["artifact_id"], "idx_artifact_name": ["artifact_name"]}',
+    'order_by=["artifact_id"]'
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
@@ -19,6 +22,10 @@ MODEL (
     project_source = 'The source of the project, such as "OP_ATLAS" or "OSS_DIRECTORY".',
     project_namespace = 'The grouping or namespace of the project.',
     project_name = 'The name of the project, such as the GitHub organization name. If the projects are from OSS_DIRECTORY, this will be a unique project slug.'
+  ),
+  physical_properties (
+    parquet_bloom_filter_columns = ['artifact_id'],
+    sorted_by = ['artifact_id']
   )
 );
 

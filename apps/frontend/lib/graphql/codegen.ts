@@ -1,5 +1,5 @@
 import { CodegenConfig } from "@graphql-codegen/cli";
-import { HASURA_URL, OSO_API_KEY } from "../config";
+import { HASURA_URL, OSO_API_KEY } from "@/lib/config";
 console.log(HASURA_URL);
 
 const SCHEMA: Record<string, any> = {};
@@ -17,7 +17,7 @@ const config: CodegenConfig = {
     "lib/**/*.{ts,tsx}",
   ],
   generates: {
-    "./lib/__generated__/": {
+    "./lib/graphql/generated/": {
       preset: "client",
       plugins: [],
       presetConfig: {

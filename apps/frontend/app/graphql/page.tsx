@@ -1,5 +1,5 @@
-import { EmbeddedSandbox } from "../../components/widgets/apollo-sandbox";
-import styles from "./graphql.module.css";
+import { EmbeddedSandbox } from "@/components/widgets/apollo-sandbox";
+import styles from "@/app/graphql/graphql.module.css";
 
 export const dynamic = "force-static";
 export const revalidate = false; // 3600 = 1 hour

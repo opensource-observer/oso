@@ -63,7 +63,7 @@ test_allow_private_catalog_allowed if {
 		"action": {
 			"operation": "SelectFromColumns",
 			"resource": {"table": {
-				"catalogName": "some-id_catalog",
+				"catalogName": "some-id__catalog",
 				"schemaName": "example_schema",
 				"tableName": "example_table",
 			}},
@@ -76,7 +76,7 @@ test_allow_private_catalog_allowed if {
 		},
 		"action": {
 			"operation": "AccessCatalog",
-			"resource": {"catalog": {"name": "some-id_catalog"}},
+			"resource": {"catalog": {"name": "some-id__catalog"}},
 		},
 	}
 }

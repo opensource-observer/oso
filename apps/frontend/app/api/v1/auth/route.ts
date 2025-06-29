@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getUser } from "../../../../lib/auth/auth";
+import { getUser } from "@/lib/auth/auth";
 import { assertNever } from "@opensource-observer/utils";
 //import { logger } from "../../../lib/logger";
 

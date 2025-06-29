@@ -46,6 +46,7 @@ module.exports = {
       "warn",
       {
         argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
       },
     ],
     "no-restricted-properties": [

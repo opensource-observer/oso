@@ -1,16 +1,12 @@
 import React from "react";
 
-import {
-  RawCollection,
-  DataTableConfig,
-  Collection,
-} from "../../lib/data-table";
-import { IProjectView } from "../../lib/projects";
-import { DataTableFieldGrowth } from "./data-table/field-growth";
-import { DataTableFieldProject } from "./data-table/field-project";
-import { DataTableFieldStatus } from "./data-table/field-status";
-import { DataTable } from "./data-table/generic-data-table";
-import { ExpandedProjectDataTable } from "./expanded-project-data-table";
+import { RawCollection, DataTableConfig, Collection } from "@/lib/data-table";
+import { IProjectView } from "@/lib/projects";
+import { DataTableFieldGrowth } from "@/components/project-browser/data-table/field-growth";
+import { DataTableFieldProject } from "@/components/project-browser/data-table/field-project";
+import { DataTableFieldStatus } from "@/components/project-browser/data-table/field-status";
+import { DataTable } from "@/components/project-browser/data-table/generic-data-table";
+import { ExpandedProjectDataTable } from "@/components/project-browser/expanded-project-data-table";
 
 export interface ProjectDataTableProps {
   className?: string;

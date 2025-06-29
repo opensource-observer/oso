@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 
-import styles from "../css/data-table.module.css";
+import styles from "@/components/project-browser/css/data-table.module.css";
 import {
   RawCollection,
   DataTableConfig,
@@ -8,16 +8,16 @@ import {
   DataTableField,
   Collection,
   ViewType,
-} from "../../../lib/data-table";
-import { IProjectView } from "../../../lib/projects";
+} from "@/lib/data-table";
+import { IProjectView } from "@/lib/projects";
 import {
   ProjectDataTableContext,
   IProjectDataTableControl,
   ProjectExpandedContext,
-} from "../project-contexts";
-import { Expandable } from "./expandable";
-import { DataTableFieldDefaultLabel } from "../data-table/field-label";
-import { DataTableFieldDefault } from "../data-table/field-default";
+} from "@/components/project-browser/project-contexts";
+import { Expandable } from "@/components/project-browser/data-table/expandable";
+import { DataTableFieldDefaultLabel } from "@/components/project-browser/data-table/field-label";
+import { DataTableFieldDefault } from "@/components/project-browser/data-table/field-default";
 
 export interface DataTableProps<T extends ViewType> {
   className?: string;

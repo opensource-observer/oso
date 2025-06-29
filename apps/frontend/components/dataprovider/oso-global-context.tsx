@@ -3,8 +3,9 @@ import { DataProvider, GlobalActionsProvider } from "@plasmicapp/loader-nextjs";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
-import * as config from "../../lib/config";
-import { useOsoAppClient } from "../hooks/oso-app";
+import * as config from "@/lib/config";
+import { useOsoAppClient } from "@/components/hooks/oso-app";
+import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
 
 const PLASMIC_KEY = "globals";
 const PLASMIC_CONTEXT_NAME = "OsoGlobalContext";
@@ -20,7 +21,14 @@ type SnackbarState = ADT<{
   };
 }>;
 
-const OsoGlobalActions: any = {
+type ExtractMethodNames<T> = {
+  [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;
+}[keyof T];
+type ExtractMethods<T> = {
+  [K in ExtractMethodNames<T>]: any;
+};
+
+const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = {
   updateMyUserProfile: { parameters: [{ name: "args", type: "object" }] },
   createApiKey: { parameters: [{ name: "args", type: "object" }] },
   deleteApiKey: { parameters: [{ name: "args", type: "object" }] },
@@ -36,9 +44,39 @@ const OsoGlobalActions: any = {
     parameters: [{ name: "args", type: "object" }],
   },
   deleteOrganization: { parameters: [{ name: "args", type: "object" }] },
+  createChat: { parameters: [{ name: "args", type: "object" }] },
+  updateChat: { parameters: [{ name: "args", type: "object" }] },
+  deleteChat: { parameters: [{ name: "args", type: "object" }] },
+  createSqlQuery: { parameters: [{ name: "args", type: "object" }] },
+  updateSqlQuery: { parameters: [{ name: "args", type: "object" }] },
+  deleteSqlQuery: { parameters: [{ name: "args", type: "object" }] },
   getConnectors: { parameters: [{ name: "args", type: "object" }] },
+  getConnectorById: {
+    parameters: [{ name: "args", type: "object" }],
+  },
   createConnector: { parameters: [{ name: "args", type: "object" }] },
   deleteConnector: { parameters: [{ name: "args", type: "object" }] },
+  syncConnector: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  getDynamicConnectorAndContextsByOrgId: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  getDynamicConnectorContexts: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  upsertDynamicConnectorContexts: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  getConnectorRelationships: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  createConnectorRelationship: {
+    parameters: [{ name: "args", type: "object" }],
+  },
+  deleteConnectorRelationship: {
+    parameters: [{ name: "args", type: "object" }],
+  },
 };
 
 // Users will be able to set these props in Studio.
@@ -73,6 +111,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
     console.log("Success: ", result);
     setResult(result);
     setSnackbarState({ _type: "success" });
+    return result;
   };
   const handleError = (error: any) => {
     console.log("Error: ", error);
@@ -81,6 +120,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       _type: "error",
       ...error,
     });
+    return error;
   };
   const handleClose = (
     _event?: React.SyntheticEvent | Event,
@@ -120,12 +160,58 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
           .catch(handleError),
       deleteOrganization: (args: any) =>
         client!.deleteOrganization(args).then(handleSuccess).catch(handleError),
+      createChat: (args: any) =>
+        client!.createChat(args).then(handleSuccess).catch(handleError),
+      updateChat: (args: any) =>
+        client!.updateChat(args).then(handleSuccess).catch(handleError),
+      deleteChat: (args: any) =>
+        client!.deleteChat(args).then(handleSuccess).catch(handleError),
+      createSqlQuery: (args: any) =>
+        client!.createSqlQuery(args).then(handleSuccess).catch(handleError),
+      updateSqlQuery: (args: any) =>
+        client!.updateSqlQuery(args).then(handleSuccess).catch(handleError),
+      deleteSqlQuery: (args: any) =>
+        client!.deleteSqlQuery(args).then(handleSuccess).catch(handleError),
       getConnectors: (args: any) =>
         client!.getConnectors(args).then(handleSuccess).catch(handleError),
+      getConnectorById: (args: any) =>
+        client!.getConnectorById(args).then(handleSuccess).catch(handleError),
       createConnector: (args: any) =>
         client!.createConnector(args).then(handleSuccess).catch(handleError),
       deleteConnector: (args: any) =>
         client!.deleteConnector(args).then(handleSuccess).catch(handleError),
+      syncConnector: (args: any) =>
+        client!.syncConnector(args).then(handleSuccess).catch(handleError),
+      getDynamicConnectorAndContextsByOrgId: (args: any) =>
+        client!
+          .getDynamicConnectorAndContextsByOrgId(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      getDynamicConnectorContexts: (args: any) =>
+        client!
+          .getDynamicConnectorContexts(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      upsertDynamicConnectorContexts: (args: any) =>
+        client!
+          .upsertDynamicConnectorContexts(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      getConnectorRelationships: (args: any) =>
+        client!
+          .getConnectorRelationships(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      createConnectorRelationship: (args: any) =>
+        client!
+          .createConnectorRelationship(args)
+          .then(handleSuccess)
+          .catch(handleError),
+      deleteConnectorRelationship: (args: any) =>
+        client!
+          .deleteConnectorRelationship(args)
+          .then(handleSuccess)
+          .catch(handleError),
     }),
     [client],
   );

@@ -1,6 +1,6 @@
-import { User } from "../types/user";
+import { User } from "@/lib/types/user";
 import { PostHog } from "posthog-node";
-import { PostHogClient } from "../clients/posthog";
+import { PostHogClient } from "@/lib/clients/posthog";
 
 export class PostHogTracker {
   private client: PostHog;

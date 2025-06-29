@@ -9,7 +9,13 @@ def coalesce_start_value(var_name: str, default: str) -> str:
     )
 
 
-superchain_audit_start = coalesce_str(["SQLMESH_DEBUG_START", "SQLMESH_DEBUG_SUPERCHAIN_AUDIT"], "2021-12-01")
+superchain_audit_start = coalesce_str(["SQLMESH_DEBUG_START", "SQLMESH_DEBUG_SUPERCHAIN_AUDIT_START"], "2021-12-01")
+# Generally this should always be set to now but if there are issues
+# with the superchain data then this can be set to a specific date to
+# avoid breaking the entire pipeline. That should only be used in
+# extenuating circumstances.
+superchain_audit_end = coalesce_str(["SQLMESH_DEBUG_SUPERCHAIN_AUDIT_END"], "2025-05-31")
+#superchain_audit_end = coalesce_str(["SQLMESH_DEBUG_SUPERCHAIN_AUDIT_END"], "now")
 blockchain_incremental_start = coalesce_start_value("BLOCKCHAIN", "2021-10-01")
 deps_dev_incremental_start = coalesce_start_value("DEPS_DEV", "2015-01-01")
 github_incremental_start = coalesce_start_value("GITHUB", "2015-01-01")

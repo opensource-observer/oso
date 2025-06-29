@@ -1,6 +1,6 @@
 import { createContext } from "react";
-import { IProjectsClient, NullProjectsClient } from "../../lib/projects";
-import { SortState, DataTableField } from "../../lib/data-table";
+import { IProjectsClient, NullProjectsClient } from "@/lib/projects";
+import { SortState, DataTableField } from "@/lib/data-table";
 
 export interface IProjectDataTableControl {
   onSortChange: (field: string) => void;

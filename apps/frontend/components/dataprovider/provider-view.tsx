@@ -1,6 +1,6 @@
 import { DataProvider } from "@plasmicapp/loader-nextjs";
 import { ReactNode } from "react";
-import { RegistrationProps } from "../../lib/types/plasmic";
+import { RegistrationProps } from "@/lib/types/plasmic";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_VARIABLE_NAME = "data";
@@ -11,8 +11,10 @@ type CommonDataProviderProps = {
   children?: ReactNode; // Show this
   loadingChildren?: ReactNode; // Show during loading if !ignoreLoading
   ignoreLoading?: boolean; // Skip the loading visual
+  forceLoading?: boolean; // Display the loadingChildren (Studio only)
   errorChildren?: ReactNode; // Show if error
   ignoreError?: boolean; // Skip the error visual
+  forceError?: boolean; // Display errorChildren (Studio only)
   useTestData?: boolean; // Use the testData prop instead of querying database
   testData?: any;
 };
@@ -50,6 +52,12 @@ const CommonDataProviderRegistration: RegistrationProps<CommonDataProviderProps>
       helpText: "Don't show 'loadingChildren' even if we're still loading data",
       advanced: true,
     },
+    forceLoading: {
+      type: "boolean",
+      helpText: "Render loadingChildren",
+      editOnly: true,
+      advanced: true,
+    },
     errorChildren: {
       type: "slot",
       defaultValue: {
@@ -60,6 +68,12 @@ const CommonDataProviderRegistration: RegistrationProps<CommonDataProviderProps>
     ignoreError: {
       type: "boolean",
       helpText: "Don't show 'errorChildren' even if we get an error",
+      advanced: true,
+    },
+    forceError: {
+      type: "boolean",
+      helpText: "Render errorChildren",
+      editOnly: true,
       advanced: true,
     },
     useTestData: {
@@ -82,9 +96,21 @@ const CommonDataProviderRegistration: RegistrationProps<CommonDataProviderProps>
 function DataProviderView(props: DataProviderViewProps) {
   const key = props.variableName ?? DEFAULT_VARIABLE_NAME;
   // Show when loading or error
-  if (props.loading && !props.ignoreLoading && !!props.loadingChildren) {
+  if (
+    props.forceLoading ||
+    (!props.useTestData &&
+      props.loading &&
+      !props.ignoreLoading &&
+      !!props.loadingChildren)
+  ) {
     return <div className={props.className}> {props.loadingChildren} </div>;
-  } else if (props.error && !props.ignoreError && !!props.errorChildren) {
+  } else if (
+    props.forceError ||
+    (!props.useTestData &&
+      props.error &&
+      !props.ignoreError &&
+      !!props.errorChildren)
+  ) {
     return (
       <div className={props.className}>
         <DataProvider name={key} data={props.error}>
@@ -93,9 +119,10 @@ function DataProviderView(props: DataProviderViewProps) {
       </div>
     );
   }
+  const data = props.useTestData ? props.testData : props.formattedData;
   return (
     <div className={props.className}>
-      <DataProvider name={key} data={props.formattedData}>
+      <DataProvider name={key} data={data}>
         {props.children}
       </DataProvider>
     </div>

@@ -1,7 +1,7 @@
 // High level project browser UI
 // Controls the access to the client and stores all state for browsing
-import styles from "./css/browser.module.css";
-import { ProjectDataTable } from "./project-data-table";
+import styles from "@/components/project-browser/css/browser.module.css";
+import { ProjectDataTable } from "@/components/project-browser/project-data-table";
 import { Autocomplete, TextField } from "@mui/material";
 //import { Calendar, CalendarProps } from "primereact/calendar";
 import React from "react";
@@ -10,14 +10,14 @@ import {
   IProjectsClient,
   IProjectView,
   ProjectViewsCollection,
-} from "../../lib/projects";
+} from "@/lib/projects";
 import {
   NullSortingState,
   SortingDirection,
   SortState,
   Collection,
-} from "../../lib/data-table";
-import { ProjectsClientContext } from "./project-contexts";
+} from "@/lib/data-table";
+import { ProjectsClientContext } from "@/components/project-browser/project-contexts";
 
 export interface ProjectBrowserProps {
   className?: string;

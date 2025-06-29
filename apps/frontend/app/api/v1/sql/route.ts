@@ -1,17 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
+import { getTrinoClient } from "@/lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
-import { getTableNamesFromSql } from "../../../../lib/parsing";
-import { getUser } from "../../../../lib/auth/auth";
-import {
-  CreditsService,
-  TransactionType,
-} from "../../../../lib/services/credits";
-import { trackServerEvent } from "../../../../lib/analytics/track";
-import { logger } from "../../../../lib/logger";
+import { getTableNamesFromSql } from "@/lib/parsing";
+import { getUser } from "@/lib/auth/auth";
+import { trackServerEvent } from "@/lib/analytics/track";
+import { logger } from "@/lib/logger";
 import * as jsonwebtoken from "jsonwebtoken";
-import { AuthUser } from "../../../../lib/types/user";
-import { EVENTS } from "../../../../lib/types/posthog";
+import { AuthUser } from "@/lib/types/user";
+import { EVENTS } from "@/lib/types/posthog";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 // Next.js route control
 export const revalidate = 0;
@@ -68,16 +65,23 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.SQL_QUERY,
-    "/api/v1/sql",
-    { query },
-  );
+  const orgId = user.orgId;
 
-  if (!creditsDeducted) {
-    logger.log(`/api/sql: Insufficient credits for user ${user.userId}`);
-    return makeErrorResponse("Insufficient credits", 402);
+  if (orgId) {
+    try {
+      await CreditsService.checkAndDeductOrganizationCredits(
+        user,
+        orgId,
+        TransactionType.SQL_QUERY,
+        "/api/v1/sql",
+        { query },
+      );
+    } catch (error) {
+      logger.error(
+        `/api/sql: Error tracking usage for user ${user.userId}:`,
+        error,
+      );
+    }
   }
 
   const jwt = signJWT(user);
@@ -92,17 +96,21 @@ export async function POST(request: NextRequest) {
     });
 
     const client = getTrinoClient(jwt);
-    const [firstRow, rows] = await client.query(query);
-    const readableStream = mapToReadableStream(firstRow, rows, format);
+    const { data, error } = await client.query(query);
+    if (error) {
+      return makeErrorResponse(error.message, 400);
+    }
+    const readableStream = mapToReadableStream(
+      data.firstRow,
+      data.iterator,
+      format,
+    );
     return new NextResponse(readableStream, {
       headers: {
         "Content-Type": "application/x-ndjson",
       },
     });
   } catch (e) {
-    if (e instanceof TrinoError) {
-      return makeErrorResponse(e.message, 400);
-    }
     logger.log(e);
     return makeErrorResponse("Unknown error", 500);
   }

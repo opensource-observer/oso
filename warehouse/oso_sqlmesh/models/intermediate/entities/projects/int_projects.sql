@@ -21,10 +21,10 @@ WITH ossd_projects AS (
   FROM oso.stg_ossd__current_projects
 ), op_atlas_projects AS (
   SELECT
-    project_id,
-    project_source,
-    project_namespace,
-    project_name,
+    @oso_entity_id('OP_ATLAS', '', atlas_id) AS project_id,
+    'OP_ATLAS' AS project_source,
+    '' AS project_namespace,
+    atlas_id AS project_name,
     display_name,
     description
   FROM oso.stg_op_atlas_project

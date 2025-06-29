@@ -4,7 +4,7 @@ import {
   CLICKHOUSE_PASSWORD,
   CLICKHOUSE_URL,
   CLICKHOUSE_USERNAME,
-} from "../config";
+} from "@/lib/config";
 
 export function getClickhouseClient() {
   return createClient({
