@@ -34,7 +34,20 @@ For now, in another separate terminal run arize phoenix in a docker container
 docker run -it --rm -p 6006:6006 -p 4317:4317 arizephoenix/phoenix:latest
 ```
 
-Then run the agent with an example query:
+Before we start interacting with any of the agents you will also need to initialize the vector db. On production we use Vertex AI Vector Search. When running locally, you need to setup the vector store to write to a local directory. Update your `.env` to include the following options:
+
+```
+AGENT_VECTOR_STORE__TYPE=local
+AGENT_VECTOR_STORE__DIR=/some/directory/to/store/vector/db
+```
+
+To initialize the vector store run this (it will take a while):
+
+```bash
+uv run agent initialize-vector-store
+```
+
+Finally you can run the agent with an example query:
 
 ```bash
 % uv run agent query "what columns does the table timeseries_metrics_by_artifact_v0 have?"
