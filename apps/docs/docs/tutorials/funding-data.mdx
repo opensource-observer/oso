@@ -3,11 +3,28 @@ title: Analyze Funding Data
 sidebar_position: 5
 ---
 
+import SankeyChart from '@site/src/components/SankeyChart';
+
 Analyze the funding history of your favorite projects.
 New to OSO? Check out our [Getting Started guide](../get-started/index.md)
 to set up your API access.
 
 This tutorial shows how to quickly lookup the funding history of your favorite projects, and then explore funding from specific sources (e.g. Gitcoin Grants, Open Collective, etc.) You can find the code for this tutorial [here](https://github.com/opensource-observer/insights/blob/main/tutorials/FundingMetrics.ipynb).
+
+<SankeyChart 
+  data={[
+    ['Funder A', 'Project X', 12345],
+    ['Funder A', 'Project Y', 6780],
+    ['Funder B', 'Project X', 4321],
+    ['Funder C', 'Project Z', 9100],
+    ['Funder D', 'Project A', 5500],
+    ['Funder A', 'Project B', 3200],
+    ['Funder B', 'Project C', 7800],
+    ['Funder D', 'Project D', 4100]
+  ]}
+  width={800}
+  height={600}
+/>
 
 ## Getting Started
 
