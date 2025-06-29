@@ -47,6 +47,8 @@ To initialize the vector store run this (it will take a while):
 uv run agent initialize-vector-store
 ```
 
+Once this is completed you should have a vector db stored on disk. It may take quite a while depending on the speed of your system. Luckily, this should only need to be run if you with to change anything in the vector db.
+
 Finally you can run the agent with an example query:
 
 ```bash
