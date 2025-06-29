@@ -7,6 +7,8 @@ import { EVENTS } from "@/lib/types/posthog";
 import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 export const maxDuration = 60;
+const CHAT_PATH = "/v0/chat";
+const CHAT_URL = new URL(CHAT_PATH, OSO_AGENT_URL).href;
 
 const getLatestMessage = (messages: any[]) => {
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
       message: getLatestMessage(prompt.messages),
     });
 
-    const response = await fetch(OSO_AGENT_URL, {
+    const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
