@@ -3,7 +3,7 @@ MODEL(
   description 'S7 onchain metrics by project with various aggregations and filters',
   kind full,
   dialect trino,
-  partitioned_by DAY("sample_date"),
+  partitioned_by (DAY("sample_date"), "metric_name", "chain"),
   grain(sample_date, chain, project_id, metric_name),
   tags (
     'entity_category=project'
@@ -24,10 +24,14 @@ WITH all_events AS (
     events.gas_fee,
     events.transaction_hash,
     events.event_weight,
-    COALESCE(users.is_farcaster_user, false) AS is_farcaster_user
+    COALESCE(users.is_farcaster_user, false) AS is_farcaster_user,
+    COALESCE(upgraded.is_eoa, false) AS is_7702_upgraded_eoa
   FROM oso.int_superchain_s7_onchain_builder_events AS events
   LEFT JOIN oso.int_superchain_onchain_user_labels AS users
     ON events.from_artifact_id = users.artifact_id
+  LEFT JOIN oso.int_addresses__7702_upgraded AS upgraded
+    ON events.from_artifact_id = upgraded.artifact_id
+    AND upgraded.upgraded_date <= events.time
 ),
 
 grouped_events AS (
@@ -89,6 +93,19 @@ contract_invocations_count AS (
     'contract_invocations_monthly' AS metric_name,
     SUM(count_events) AS amount
   FROM grouped_events
+  GROUP BY 1, 2, 3
+),
+
+-- 7702-upgraded EOAs transactions
+upgraded_eoa_transactions_count AS (
+  SELECT
+    project_id,
+    chain,
+    sample_date,
+    'contract_invocations_upgraded_eoa_monthly' AS metric_name,
+    APPROX_DISTINCT(transaction_hash) AS amount
+  FROM all_events
+  WHERE is_7702_upgraded_eoa = true
   GROUP BY 1, 2, 3
 ),
 
@@ -205,6 +222,19 @@ monthly_active_worldchain_verified_addresses AS (
   GROUP BY 1, 2, 3
 ),
 
+-- Active 7702-upgraded EOAs
+monthly_active_upgraded_eoa_addresses AS (
+  SELECT
+    project_id,
+    chain,
+    sample_date,
+    'active_upgraded_eoa_addresses_monthly' AS metric_name,
+    APPROX_DISTINCT(from_artifact_id) AS amount
+  FROM all_events
+  WHERE is_7702_upgraded_eoa = true
+  GROUP BY 1, 2, 3
+),
+
 -- Active addresses
 monthly_active_addresses AS (
   SELECT
@@ -250,6 +280,9 @@ union_all_metrics AS (
   FROM contract_invocations_count
   UNION ALL
   SELECT *
+  FROM upgraded_eoa_transactions_count
+  UNION ALL
+  SELECT *
   FROM aa_userop_count
   UNION ALL
   SELECT *
@@ -269,6 +302,9 @@ union_all_metrics AS (
   UNION ALL
   SELECT *
   FROM monthly_active_worldchain_verified_addresses
+  UNION ALL
+  SELECT *
+  FROM monthly_active_upgraded_eoa_addresses
   UNION ALL
   SELECT *
   FROM monthly_active_addresses

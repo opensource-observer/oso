@@ -7,8 +7,8 @@ import { EVENTS } from "@/lib/types/posthog";
 import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 export const maxDuration = 60;
-const CHAT_PATH = "/v0/chat";
-const CHAT_URL = new URL(CHAT_PATH, OSO_AGENT_URL).href;
+const TEXT2SQL_PATH = "/v0/text2sql";
+const TEXT2SQL_URL = new URL(TEXT2SQL_PATH, OSO_AGENT_URL).href;
 
 const getLatestMessage = (messages: any[]) => {
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   await using tracker = trackServerEvent(user);
 
   if (user.role === "anonymous") {
-    logger.log(`/api/chat: User is anonymous`);
+    logger.log(`/api/v1/text2sql: User is anonymous`);
     return NextResponse.json(
       { error: "Authentication required" },
       { status: 401 },
@@ -39,13 +39,13 @@ export async function POST(req: NextRequest) {
       await CreditsService.checkAndDeductOrganizationCredits(
         user,
         orgId,
-        TransactionType.CHAT_QUERY,
-        "/api/v1/chat",
+        TransactionType.TEXT2SQL,
+        "/api/v1/text2sql",
         { message: getLatestMessage(prompt.messages) },
       );
     } catch (error) {
       logger.error(
-        `/api/chat: Error tracking usage for user ${user.userId}:`,
+        `/api/v1/text2sql: Error tracking usage for user ${user.userId}:`,
         error,
       );
     }
@@ -53,11 +53,11 @@ export async function POST(req: NextRequest) {
 
   try {
     tracker.track(EVENTS.API_CALL, {
-      type: "chat",
+      type: "text2sql",
       message: getLatestMessage(prompt.messages),
     });
 
-    const response = await fetch(CHAT_URL, {
+    const response = await fetch(TEXT2SQL_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -65,7 +65,9 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(prompt),
     });
 
-    return new Response(await response.text(), { status: response.status });
+    return NextResponse.json(await response.json(), {
+      status: response.status,
+    });
   } catch (error) {
     logger.error("Error in chat route:", error);
     return NextResponse.json(

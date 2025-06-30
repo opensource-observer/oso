@@ -52,7 +52,7 @@ class SemanticResponse(BaseModel):
 
     def __str__(self):
         return self.query.model_dump_json()
-
+    
 class SqlResponse(BaseModel):
     type: t.Literal["sql"] = "sql"
 
@@ -72,15 +72,16 @@ ResponseType = t.Union[
 class WrappedResponse:
     """A wrapper for the response from an agent"""
     _response: ResponseType
-    _handler: WorkflowHandler
+    _handler: WorkflowHandler | None
 
-    def __init__(self, *, handler: WorkflowHandler, response: ResponseType):
+    def __init__(self, *, handler: WorkflowHandler | None, response: ResponseType):
         self._handler = handler
         self._response = response
 
     def ctx(self) -> Context:
         """Get the context of the workflow handler."""
 
+        assert self._handler is not None, "Workflow handler is not set."
         assert self._handler.ctx is not None, "Workflow handler context is not set."
         return self._handler.ctx
     

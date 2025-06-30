@@ -10,7 +10,6 @@ from .definition import (
     Measure,
     Model,
     Registry,
-    SemanticQuery,
 )
 from .testing import setup_registry
 
@@ -116,18 +115,13 @@ def test_semantic_model_shortest_path():
 def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
     registry = setup_registry()
 
-    query = SemanticQuery(
-        selects=[
-            "github_event.event_type AS event_type",
-            "github_event.to->collection.name AS collection_name",
-            "github_event.total_amount AS total_amount",
-        ],
-        filters=[
-            "github_event.from->artifact.name = 'repo1'",
-        ],
-    )
+    query = registry.select(
+        "github_event.event_type AS event_type",
+        "github_event.to->collection.name AS collection_name",
+        "github_event.total_amount AS total_amount",
+    ).where("github_event.from->artifact.name = 'repo1'")
 
-    query_exp = registry.query(query)
+    query_exp = query.build()
     assert query_exp is not None
     print(query_exp.sql(dialect="duckdb", pretty=True))
 

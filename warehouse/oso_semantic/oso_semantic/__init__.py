@@ -10,3 +10,4 @@ except PackageNotFoundError:
 from .definition import *
 from .errors import InvalidAttributeReferenceError
 from .query import QueryBuilder
+from .register import register_oso_models
