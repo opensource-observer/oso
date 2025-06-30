@@ -130,14 +130,11 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         """Get the status of a job"""
         workflow_registry = get_workflow_registry(request)
         basic_workflow = await workflow_registry.get_workflow("basic_text2sql")
-
-        async def fake_semantic_workflow_call():
-            """Fake semantic workflow for while we wait for implementation"""
-            return WrappedResponse(handler=None, response=StrResponse(blob="semantic.select"))
+        semantic_workflow = await workflow_registry.get_workflow("semantic_text2sql")
 
         # We trigger the workflows simultaneously using asyncio.create_task
         # NOTE: for now this workflow does not support chat history it only accepts the most recent message
-        sql_result = asyncio.create_task(
+        sql_result_task = asyncio.create_task(
             basic_workflow.wrapped_run(
                 input=chat_request.current_message.content,
                 synthesize_response=False,
@@ -145,17 +142,18 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
             )
         )
 
-        # DOES NOTHING FOR NOW
-        semantic_result = asyncio.create_task(
-            fake_semantic_workflow_call()
+        semantic_result_task = asyncio.create_task(
+            semantic_workflow.wrapped_run(
+                input=chat_request.current_message.content,
+            )
         )
 
         # Wait for both tasks to complete
-        await asyncio.gather(sql_result, semantic_result)
-        sql = str(sql_result.result().response)
-        semantic = str(semantic_result.result().response)
+        await asyncio.gather(sql_result_task, semantic_result_task)
+        sql = str(sql_result_task.result().response)
+        semantic = str(semantic_result_task.result().response)
 
-        return JSONResponse({ sql: sql, semantic: semantic })
+        return JSONResponse({ "sql": sql, "semantic": semantic })
 
     @app.post("/v0/chat")
     async def chat(
