@@ -1,9 +1,11 @@
 import textwrap
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Generic, List, Literal, Optional, TypeVar, Union
 
+import requests
 from mcp.server.fastmcp import Context, FastMCP
 from oso_agent.util.config import AgentConfig
 from pyoso import Client
@@ -357,20 +359,31 @@ def setup_mcp_app(config: MCPConfig):
         """
         if ctx:
             await ctx.info(f"Converting natural language query to SQL: {natural_language_query}")
-
-        # For now, return a placeholder response since this is a stub implementation
-        # In a real implementation, this would call an actual text2sql service
-        example_query = """
-            SELECT 
-                COUNT(DISTINCT project_id) AS project_count 
-            FROM oso.projects_by_collection_v1 
-            WHERE collection_name = 'optimism'
-        """
         
+        config = ctx.request_context.lifespan_context.config
+        if not config:
+            raise ValueError("Config is not available in the context")
+        api_key = config.oso_api_key
+        if not api_key:
+            raise ValueError("OSO API key is not available in the context")
+        
+        url = "https://www.opensource.observer/api/v1/text2sql"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+
+        data = {
+            "id": str(uuid.uuid4()),
+            "messages": [{"role": "user", "content": natural_language_query}],
+        }
+
+        response = requests.post(url, json=data, headers=headers)
+
         return McpSuccessResponse(
             tool_name="query_text2sql_agent",
             parameters=[natural_language_query],
-            results=[example_query],
+            results=[response.json()["sql"]],
         )
 
     def build_exact_entity_search_sql(entity: str, table: str, columns: list[str]) -> str:
