@@ -48,7 +48,7 @@ class LocalVectorStoreConfig(BaseModel):
     type: t.Literal["local"] = "local"
 
     dir: str = Field(
-        default_factory=lambda: os.getenv("AGENT_VECTOR_STORE__DIR", "/tmp/oso_agent_vector_store"),
+        default="", #lambda: os.getenv("AGENT_VECTOR_STORE__DIR", "/tmp/oso_agent_vector_store"),
         description="Directory for local vector storage"
     )
 
