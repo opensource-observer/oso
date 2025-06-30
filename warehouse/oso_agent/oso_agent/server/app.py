@@ -155,7 +155,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         sql = str(sql_result.result().response)
         semantic = str(semantic_result.result().response)
 
-        return JSONResponse({ sql: sql, semantic: semantic })
+        return JSONResponse({ "sql": sql, "semantic": semantic })
 
     @app.post("/v0/chat")
     async def chat(
