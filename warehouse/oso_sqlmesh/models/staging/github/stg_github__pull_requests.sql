@@ -29,10 +29,14 @@ WITH pull_request_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '1' DAY AND @end_dt + INTERVAL '1' DAY
     and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 )
 SELECT
   pre.id AS id,
+  -- the stg_github__events.created_at means the time the event was fired, 
+  -- but not the time the pull request was updated (i.e. the time the PullRequestEvent was created)
+  -- so we need to use the pull_request.updated_at field from the payload
   STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS event_time,
   pre.repo.id AS repository_id,
   pre.repo.name AS repository_name,

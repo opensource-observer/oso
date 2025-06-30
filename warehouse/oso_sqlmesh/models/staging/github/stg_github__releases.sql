@@ -28,10 +28,13 @@ WITH release_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'ReleaseEvent'
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '1' DAY AND @end_dt + INTERVAL '1' DAY
     and STRPTIME(ghe.payload ->> '$.release.created', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 )
 SELECT
   id AS id,
+  -- the stg_github__events.created_at means the time the event was fired, but not the time the release was created
+  -- so we need to use the release.created field from the payload
   STRPTIME(payload ->> '$.release.created', '%Y-%m-%dT%H:%M:%SZ') AS created_at,
   repo.id AS repository_id,
   repo.name AS repository_name,

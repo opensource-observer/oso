@@ -37,10 +37,14 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestReviewCommentEvent'
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '1' DAY AND @end_dt + INTERVAL '1' DAY
     and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 ), issue_comment_events AS (
   SELECT
     ghe.id AS id,
+    -- the stg_github__events.created_at means the time the event was fired,
+    -- but not the time the issue was updated (i.e. the time the IssuesEvent was created)
+    -- so we need to use the issue.updated_at field from the payload
     STRPTIME(ghe.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS "event_time",
     ghe.repo.id AS repository_id,
     ghe.repo.name AS repository_name,
