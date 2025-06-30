@@ -115,6 +115,7 @@ members = [
     "warehouse/pynessie-gc",
     "warehouse/metrics-service",
     "lib/oso-core",
+    "warehouse/oso_semantic"
 ]
 
 [build-system]

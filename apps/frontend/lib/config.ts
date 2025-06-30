@@ -83,4 +83,8 @@ export const STRIPE_PUBLISHABLE_KEY =
 export const STRIPE_WEBHOOK_SECRET =
   process.env.STRIPE_WEBHOOK_SECRET ?? "MISSING STRIPE_WEBHOOK_SECRET";
 export const OSO_ENTITIES_KEY = "oso_entities";
-export const OSO_ENTITIES = ["artifact_id", "project_id"];
+export const OSO_ENTITIES = [
+  "artifact.artifact_id",
+  "project.project_id",
+  "metrics.metric_id",
+];

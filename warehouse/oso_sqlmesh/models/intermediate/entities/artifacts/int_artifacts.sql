@@ -16,7 +16,7 @@ WITH all_artifacts AS (
     artifact_name,
     artifact_url,
     artifact_type
-  FROM oso.int_github_repositories
+  FROM oso.int_artifacts__github
   UNION ALL
   SELECT
     artifact_source_id,

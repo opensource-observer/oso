@@ -14,7 +14,19 @@ MODEL (
 WITH events AS (
   SELECT
     DATE_TRUNC('DAY', funding_date::DATE) AS bucket_day,
-    'OSS_FUNDING' AS event_source,
+    CASE
+      WHEN from_funder_name = 'optimism' AND grant_pool_name LIKE '%retro%'
+        THEN 'OPTIMISM_RETROFUNDING'
+      WHEN from_funder_name = 'optimism' AND grant_pool_name LIKE '%season%'
+        THEN 'OPTIMISM_GOVGRANTS'
+      WHEN from_funder_name LIKE '%octant%'
+        THEN 'OCTANT'
+      WHEN from_funder_name LIKE '%gitcoin%'
+        THEN 'GITCOIN'
+      WHEN from_funder_name LIKE '%dao-drops%'
+        THEN 'DAODROPS'
+      ELSE UPPER(from_funder_name)
+    END AS event_source,
     'FUNDING_AWARDED' AS event_type,
     @oso_entity_id('OSS_DIRECTORY', 'oso', to_project_name) AS to_artifact_id,
     @oso_entity_id('OSS_DIRECTORY', 'oso', from_funder_name) AS from_artifact_id,

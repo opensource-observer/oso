@@ -1,7 +1,8 @@
 import typing as t
+
 import pandas as pd
-from llama_index.core.workflow import Event
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.workflow import Event
 
 
 class Text2SQLGenerationEvent(Event):
@@ -14,6 +15,19 @@ class Text2SQLGenerationEvent(Event):
     id: str
     input_text: str
     output_sql: str
+    synthesize_response: bool
+    execute_sql: bool
+
+class SQLExecutionRequestEvent(Event):
+    """An event that represents a request to execute a SQL query.
+
+    The `input_text` is the natural language query, and the `output_sql` is the
+    generated SQL query.
+    """
+
+    id: str
+    sql: str
+    synthesize_response: bool
 
 class SQLResultEvent(Event):
     """An event that represents a result of a SQL query.
@@ -27,6 +41,7 @@ class SQLResultEvent(Event):
     output_sql: str
     results: pd.DataFrame | list[dict[str, t.Any]]
     error: Exception | None = None
+    synthesize_response: bool
 
     def is_valid(self) -> bool:
         """Check if the SQLResult is valid."""
@@ -60,3 +75,13 @@ class SQLResultSummaryResponseEvent(Event):
     id: str
     summary: str
     result: SQLResultEvent
+
+
+class ExceptionEvent(Event):
+    """An event that represents an exception that occurred during a workflow"""
+
+    error: Exception
+
+    def __str__(self) -> str:
+        """Return a string representation of the exception."""
+        return f"ExceptionEvent(error={self.error})"

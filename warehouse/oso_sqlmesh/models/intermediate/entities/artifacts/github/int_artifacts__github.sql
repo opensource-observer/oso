@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_github_repositories,
+  name oso.int_artifacts__github,
   description 'All GitHub repositories',
   kind FULL,
   audits (

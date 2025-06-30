@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import hashlib
 import textwrap
 import typing as t
 from enum import Enum
 from graphlib import TopologicalSorter
 
-from metrics_tools.semantic.errors import InvalidAttributeReferenceError
-from metrics_tools.utils.glot import exp_to_str, hash_expressions
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
+
+from .errors import InvalidAttributeReferenceError
+from .utils import exp_to_str, hash_expressions
 
 
 def coerce_to_tables_column(ref: str, expected_table: str = "self") -> exp.Expression:
@@ -17,10 +20,19 @@ def coerce_to_tables_column(ref: str, expected_table: str = "self") -> exp.Expre
 
     if column.table == expected_table:
         return column
-    if column.table == '':
+    if column.table == "":
         return exp.to_column(f"{expected_table}.{ref}")
 
     raise ValueError(f"{ref} is not a valid {expected_table} reference")
+
+
+class QueryRegistry(t.Protocol):
+    def __init__(self, registry: Registry): ...
+    def add_reference(self, reference: AttributePath) -> t.Self: ...
+    def select(self, *selects: str) -> t.Self: ...
+    def where(self, *filters: str) -> t.Self: ...
+    def add_limit(self, limit: int) -> t.Self: ...
+    def build(self) -> exp.Expression: ...
 
 
 class RegistryDAG:
@@ -51,7 +63,7 @@ class RegistryDAG:
         self.adjacency_map[model.name] = set()
 
         # Gets all the names of related models
-        reference_names = list(map(lambda x: x.model_ref, model.relationships))
+        reference_names = list(map(lambda x: x.ref_model, model.relationships))
 
         self.sorter.add(model.name, *reference_names)
 
@@ -162,7 +174,7 @@ class RegistryDAG:
                 if model == join_point:
                     break
         return from_path, to_path
-    
+
 
 class BoundModelAttribute(t.Protocol):
     def to_query_part(
@@ -174,12 +186,13 @@ class BoundModelAttribute(t.Protocol):
         """Returns the QueryPart for the bound query part"""
         ...
 
-    def validate(self):
-        ...
+    def validate(self): ...
 
 
 class UnboundModelAttribute(t.Protocol):
-    def bind(self, model: "Model", dependencies: dict[str, "AttributePath"]) -> "BoundModelAttribute":
+    def bind(
+        self, model: "Model", dependencies: dict[str, "AttributePath"]
+    ) -> "BoundModelAttribute":
         """Binds the query part to the given model and returns a attribute"""
         ...
 
@@ -188,13 +201,20 @@ class UnboundModelAttribute(t.Protocol):
         ...
 
 
-class Registry:
+Q = t.TypeVar("Q", bound=QueryRegistry)
+
+
+class Registry(t.Generic[Q]):
+
     models: t.Dict[str, "Model"]
     dag: RegistryDAG
     views: t.Dict[str, "View"]
     completed: bool
 
-    def __init__(self):
+    def __init__(self, query_builder: type[Q] | None = None):
+        from .query import QueryBuilder
+
+        self.query_builder: type[Q] = query_builder or QueryBuilder  # type: ignore[assignment]
         self.models = {}
         self.views = {}
         self.sorted_model_names = None
@@ -267,11 +287,23 @@ class Registry:
 
         return from_path_joins + to_path_joins
 
+    def select(self, *selects: str):
+        """Returns a new query builder for the registry"""
+        if not self.completed:
+            raise ValueError("Registry has not been completed cannot create query")
+
+        query_builder = self.query_builder(self)
+        for select in selects:
+            if not isinstance(select, str):
+                raise ValueError(f"Select must be a string, got {type(select)}")
+        query_builder = query_builder.select(*selects)
+        return query_builder
+
     def query(self, query: "SemanticQuery") -> exp.Expression:
         """Returns the SQL query for the given query"""
         # Get the columns and filters from the query
         return query.sql(self)
-    
+
     def describe(self) -> str:
         """Returns a description of the registry used for an LLM prompt"""
 
@@ -320,7 +352,7 @@ class Measure(BaseModel):
     def query_as_expression(self) -> exp.Expression:
         """Returns the SQL expression for the metric"""
         return self._expression
-    
+
     def attribute_references(self) -> t.List["AttributePath"]:
         """Returns the references for model attributes"""
         return self._attribute_references
@@ -438,9 +470,10 @@ class Dimension(BaseModel):
             expression = parse_one(self.query)
         else:
             expression = exp.Column(
-                table=exp.to_identifier("self"), this=exp.to_identifier(self.column_name)
+                table=exp.to_identifier("self"),
+                this=exp.to_identifier(self.column_name),
             )
-        
+
         # find all references in the expression
         result = AttributePathTransformer.transform(expression, self_model_name="self")
         self._expression = expression
@@ -457,7 +490,7 @@ class Dimension(BaseModel):
 
     def as_expression(self) -> exp.Expression:
         return self._expression
-    
+
     def attribute_references(self) -> t.List["AttributePath"]:
         return self._attribute_references
 
@@ -534,134 +567,93 @@ class RelationshipType(str, Enum):
     ONE_TO_ONE = "one_to_one"
     MANY_TO_ONE = "many_to_one"
     ONE_TO_MANY = "one_to_many"
-    MANY_TO_MANY = "many_to_many"
 
 
 class Relationship(BaseModel):
+    """Defines a relationship between two models in the semantic layer.
+
+    A Relationship represents how one model connects to another model through
+    foreign key references. This enables the semantic layer to understand
+    data relationships and generate appropriate JOIN clauses in SQL queries.
+
+    Attributes:
+        name: Optional name for the relationship. If not provided, defaults to ref_model.
+        description: Optional human-readable description of the relationship.
+        type: The type of relationship (ONE_TO_ONE, ONE_TO_MANY, MANY_TO_ONE).
+        source_foreign_key: Column(s) in the source (current) model that reference the target model.
+                           Can be a single column name or list of column names for composite keys.
+        ref_model: Name of the target model being referenced.
+        ref_key: Column(s) in the target model that is referenced.
+                        Can be a single column name or list of column names for composite keys.
+    """
+
     name: str = ""
-    model_ref: str
     description: str = ""
-    foreign_key_column: str 
     type: RelationshipType
-    join_table: t.Optional[str] = None
-    self_key_column: t.Optional[str] = None
+    source_foreign_key: str | list[str]
+    ref_model: str
+    ref_key: str | list[str]
 
     @model_validator(mode="after")
     def process_relationship(self):
         if not self.name:
             # If no name is provided, use the model_ref as the name
-            self.name = self.model_ref
+            self.name = self.ref_model
 
-        if self.type == RelationshipType.MANY_TO_MANY and not self.join_table:
-            raise ValueError(
-                "Many-to-many relationships must have a join table specified"
-            )
+        if isinstance(self.source_foreign_key, str):
+            self.source_foreign_key = [self.source_foreign_key]
+        if isinstance(self.ref_key, str):
+            self.ref_key = [self.ref_key]
 
-        if self.type != RelationshipType.MANY_TO_MANY and self.join_table:
-            raise ValueError(
-                "Join table can only be specified for many-to-many relationships"
-            )
-        
-        self._self_key_expression = None
-        if self.type == RelationshipType.MANY_TO_MANY:
-            assert self.self_key_column, "Self key column must be specified for many-to-many relationships"
-            self_key_result = AttributePathTransformer.parse_to_self_expression(
-                f"Relationship {self.name}'s self_key_column", self.self_key_column
-            )
-            self._self_key_expression = self_key_result.node
-        foreign_key_result = AttributePathTransformer.parse_to_self_expression(
-            f"Relationship {self.name}'s foreign_key_column", self.foreign_key_column
-        )
-        self._foreign_key_expression = foreign_key_result.node
+        assert len(self.source_foreign_key) == len(
+            self.ref_key
+        ), f"Source foreign key {self.source_foreign_key} and reference foreign key {self.ref_key} must have the same length"
 
         return self
-    
+
     def bind(self, model: "Model") -> "BoundRelationship":
         """Binds the relationship to a model and returns a BoundRelationship"""
 
         return BoundRelationship(
             model=model,
             name=self.name,
-            model_ref=self.model_ref,
             type=self.type,
-            self_key_column=self.self_key_column,
-            foreign_key_column=self.foreign_key_column,
-            foreign_key_expression=self._foreign_key_expression,
-            self_key_expression=self._self_key_expression,
-            join_table=self.join_table,
+            source_foreign_key=(
+                self.source_foreign_key
+                if isinstance(self.source_foreign_key, list)
+                else [self.source_foreign_key]
+            ),
+            ref_model=self.ref_model,
+            ref_foreign_key=(
+                self.ref_key if isinstance(self.ref_key, list) else [self.ref_key]
+            ),
         )
-    
+
 
 class BoundRelationship:
     model: "Model"
     name: str = ""
-    model_ref: str
     type: RelationshipType
-    foreign_key_column: str
-    foreign_key_expression: exp.Expression
-    join_table: t.Optional[str] = None
-    self_key_column: t.Optional[str] = None
-    self_key_expression: t.Optional[exp.Expression] = None
+    source_foreign_key: list[str]
+    ref_model: str
+    ref_key: list[str]
 
     def __init__(
         self,
         *,
         model: "Model",
         name: str,
-        model_ref: str,
         type: RelationshipType,
-        foreign_key_column: str,
-        foreign_key_expression: exp.Expression,
-        self_key_column: t.Optional[str] = None,
-        self_key_expression: t.Optional[exp.Expression] = None,
-        join_table: t.Optional[str] = None,
+        source_foreign_key: list[str],
+        ref_model: str,
+        ref_foreign_key: list[str],
     ):
         self.model = model
         self.name = name
-        self.model_ref = model_ref
         self.type = type
-        self.self_key_column = self_key_column
-        self.foreign_key_column = foreign_key_column
-        self.self_key_expression = self_key_expression
-        self.foreign_key_expression = foreign_key_expression
-        self.join_table = join_table
-
-    def self_key_with_alias(self, alias: str) -> exp.Expression:
-        """Returns the self key column with the given alias"""
-
-        assert self.type == RelationshipType.MANY_TO_MANY, "self key only applies to many-to-many relationships"
-
-        assert self.self_key_expression is not None, "self key not specified"
-
-        def transform_columns(node: exp.Expression):
-            if isinstance(node, exp.Column):
-                if isinstance(node.table, exp.Identifier) and node.table.this != "self":
-                    raise ValueError(
-                        "Cannot reference another model in a relationship. Use `self` as the table alias for the model"
-                    )
-                return exp.Column(
-                    table=exp.to_identifier(alias),
-                    this=node.this,
-                )
-            return node
-
-        return self.self_key_expression.transform(transform_columns)
-    
-    def foreign_key_with_alias(self, alias: str) -> exp.Expression:
-        assert self.foreign_key_expression is not None, "foreign key not specified"
-
-        def transform_columns(node: exp.Expression):
-            if isinstance(node, exp.Column):
-                if isinstance(node.table, exp.Identifier) and node.table.this != "self":
-                    raise ValueError(
-                        "Cannot reference another model in a relationship. Use `self` as the table alias for the model"
-                    )
-                return exp.Column(
-                    table=exp.to_identifier(alias),
-                    this=node.this,
-                )
-            return node
-        return self.foreign_key_expression.transform(transform_columns)
+        self.source_foreign_key = source_foreign_key
+        self.ref_model = ref_model
+        self.ref_key = ref_foreign_key
 
 
 class ViewConnector(BaseModel):
@@ -719,9 +711,7 @@ class Model(BaseModel):
 
             for relationship in references:
                 if relationship.is_relationship() or relationship.base_model != "self":
-                    raise ValueError(
-                        "Cannot reference a relationship in a dimension"
-                    )
+                    raise ValueError("Cannot reference a relationship in a dimension")
                 # Attribute/Column name
                 attribute_name = exp_to_str(relationship.final_attribute().this)
 
@@ -730,7 +720,9 @@ class Model(BaseModel):
                     # For a dimension this just means that the dimension is a column in the table
                     continue
 
-                attribute_graph[dimension.name].add(exp_to_str(relationship.final_attribute().this))
+                attribute_graph[dimension.name].add(
+                    exp_to_str(relationship.final_attribute().this)
+                )
 
             attributes[dimension.name] = dimension.bind(self)
 
@@ -739,7 +731,7 @@ class Model(BaseModel):
         dimensions_sorter.prepare()
 
         # Check for cycles in the measures and dimensions
-        # For now this only checks for cycles in the current model. 
+        # For now this only checks for cycles in the current model.
         for metric in self.measures:
             # Ensure we don't have duplicate names
             if metric.name in attributes or metric.name in attribute_graph:
@@ -749,8 +741,10 @@ class Model(BaseModel):
             attribute_graph[metric.name] = set()
             for relationship in metric.attribute_references():
                 if relationship.is_relationship() or relationship.base_model != "self":
-                    continue # Relationships are handled at query time (for now)
-                attribute_graph[metric.name].add(exp_to_str(relationship.final_attribute().this))
+                    continue  # Relationships are handled at query time (for now)
+                attribute_graph[metric.name].add(
+                    exp_to_str(relationship.final_attribute().this)
+                )
 
             attributes[metric.name] = metric.bind(self)
 
@@ -767,18 +761,20 @@ class Model(BaseModel):
 
             attributes[relationship.name] = relationship.bind(self)
 
-            if relationship.model_ref not in self._model_ref_lookup_by_model_name:
-                self._model_ref_lookup_by_model_name[relationship.model_ref] = []
-            self._model_ref_lookup_by_model_name[relationship.model_ref].append(relationship)
+            if relationship.ref_model not in self._model_ref_lookup_by_model_name:
+                self._model_ref_lookup_by_model_name[relationship.ref_model] = []
+            self._model_ref_lookup_by_model_name[relationship.ref_model].append(
+                relationship
+            )
 
-        self._all_attributes = attributes 
+        self._all_attributes = attributes
 
         if isinstance(self.primary_key, str):
             self._primary_key_expression = coerce_to_tables_column(self.primary_key)
         elif isinstance(self.primary_key, list):
-            self._primary_key_expression = hash_expressions(*[
-                coerce_to_tables_column(pk) for pk in self.primary_key
-            ])
+            self._primary_key_expression = hash_expressions(
+                *[coerce_to_tables_column(pk) for pk in self.primary_key]
+            )
 
         return self
 
@@ -788,7 +784,7 @@ class Model(BaseModel):
         def transform_columns(node: exp.Expression):
             if isinstance(node, exp.Column):
                 node_table = exp_to_str(node.table)
-                if node_table != "self": 
+                if node_table != "self":
                     # Do a check here but this is pretty fatal and should have
                     # been caught at validation time
                     raise ValueError(
@@ -799,6 +795,7 @@ class Model(BaseModel):
                     this=node.this,
                 )
             return node
+
         primary_key_expression = self._primary_key_expression.transform(
             transform_columns
         )
@@ -833,26 +830,26 @@ class Model(BaseModel):
         if name:
             for reference in self.relationships:
                 if reference.name == name:
-                    if reference.model_ref != model_ref:
+                    if reference.ref_model != model_ref:
                         raise ValueError(
                             f"Reference {name} does not match model_ref {model_ref}"
                         )
                     return self.get_relationship(name)
 
         for reference in self.relationships:
-            references = self._model_ref_lookup_by_model_name[reference.model_ref]
+            references = self._model_ref_lookup_by_model_name[reference.ref_model]
             if len(references) > 1:
                 raise ModelHasAmbiguousJoinPath(
                     f"Reference {model_ref} is ambiguous in model {self.name}"
                 )
-            if reference.model_ref == model_ref:
+            if reference.ref_model == model_ref:
                 relationship = self._all_attributes[reference.name]
                 if not isinstance(relationship, BoundRelationship):
                     raise ValueError(
                         f"{reference.name} is not a reference in model {self.name}"
                     )
                 return relationship
-        raise ValueError(f"Reference {name} not found in model {self.name}")
+        raise ValueError(f"Reference {model_ref} not found in model {self.name}")
 
     @property
     def table_exp(self):
@@ -866,7 +863,7 @@ class Model(BaseModel):
         if name not in self._all_attributes:
             raise ValueError(f"Attribute {name} not found in model {self.name}")
         return self._all_attributes[name]
-    
+
     def attributes(self):
         """Returns all attributes in the model"""
         return self._all_attributes.values()
@@ -876,7 +873,7 @@ class Model(BaseModel):
         dimension = self.get_dimension(name)
 
         return dimension.with_alias(alias)
-    
+
     def describe(self):
         """Returns a description of the model used for an LLM prompt"""
 
@@ -884,7 +881,9 @@ class Model(BaseModel):
         description += f"{self.description}\n"
         description += "\n### Dimensions:\n"
         for dimension in self.dimensions:
-            description += f"- `{self.name}.{dimension.name}`: {dimension.description}\n"
+            description += (
+                f"- `{self.name}.{dimension.name}`: {dimension.description}\n"
+            )
 
         description += "\n### Measures:\n"
         for measure in self.measures:
@@ -898,7 +897,10 @@ class Model(BaseModel):
             )
         ambiguous_rels_descriptions = ""
         include_ambiguous = False
-        for model_ref, model_relationships in self._model_ref_lookup_by_model_name.items():
+        for (
+            model_ref,
+            model_relationships,
+        ) in self._model_ref_lookup_by_model_name.items():
             if len(model_relationships) > 1:
                 include_ambiguous = True
                 ambiguous_rels_descriptions += (
@@ -962,7 +964,11 @@ class AttributePath(BaseModel):
     def columns(self):
         return self._columns
 
-    def resolve(self, registry: Registry, parent_traverser: "AttributePathTraverser | None" = None):
+    def resolve(
+        self,
+        registry: Registry,
+        parent_traverser: "AttributePathTraverser | None" = None,
+    ):
         traverser = self.traverser()
         while traverser.next():
             pass
@@ -1027,7 +1033,7 @@ class AttributePath(BaseModel):
             for column in self._columns
         ]
         return "->".join(columns_as_strs)
-    
+
     def to_select_alias(self) -> str:
         """Returns the string representation of the reference as a select alias"""
         columns_as_strs = [
@@ -1041,15 +1047,16 @@ class AttributePath(BaseModel):
         if not isinstance(other, AttributePath):
             return False
         return self.path == other.path
-    
+
     def final_attribute(self) -> exp.Column:
         """Returns the final column in the reference"""
         return self._columns[-1]
-    
+
     def is_relationship(self) -> bool:
         """Checks if the reference is a relationship"""
         return len(self._columns) > 1
-    
+
+
 class AttributeTransformerResult(BaseModel):
     """Internal result only used for the attribute reference transformer"""
 
@@ -1088,7 +1095,9 @@ class AttributePathTransformer:
     """
 
     @classmethod
-    def parse_to_self_expression(cls, context: str, expression_str: str) -> AttributeTransformerResult:
+    def parse_to_self_expression(
+        cls, context: str, expression_str: str
+    ) -> AttributeTransformerResult:
         """Parses an expression string to a SQL expression that references the self table."""
         expression = parse_one(expression_str)
         result = cls.transform(expression, self_model_name="self")
@@ -1102,7 +1111,10 @@ class AttributePathTransformer:
 
         # Remove $semantic_ref
         def transform_semantic_ref(node: exp.Expression):
-            if isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$semantic_ref":
+            if (
+                isinstance(node, exp.Anonymous)
+                and exp_to_str(node.this) == "$semantic_ref"
+            ):
                 return exp.to_column(exp_to_str(node.expressions[0]))
 
             return node
@@ -1123,7 +1135,9 @@ class AttributePathTransformer:
         """Transform an expression and return a result that also contains the
         attribute references found in the expression"""
 
-        transformer = cls(traverser=traverser, self_model_name=self_model_name, registry=registry)
+        transformer = cls(
+            traverser=traverser, self_model_name=self_model_name, registry=registry
+        )
         transformed_node = node.transform(transformer)
 
         return AttributeTransformerResult(
@@ -1131,7 +1145,10 @@ class AttributePathTransformer:
         )
 
     def __init__(
-        self, traverser: "AttributePathTraverser | None" = None, self_model_name: str = "", registry: Registry | None = None
+        self,
+        traverser: "AttributePathTraverser | None" = None,
+        self_model_name: str = "",
+        registry: Registry | None = None,
     ):
         self.references: list[AttributePath] = []
         self.self_model_name = self_model_name
@@ -1152,9 +1169,7 @@ class AttributePathTransformer:
                         # TODO ... improve this error message
                         raise ValueError("Cannot use self reference in this expression")
                     model_name = self.self_model_name
-                reference = AttributePath.from_string(
-                    f"{model_name}.{column_name}"
-                )
+                reference = AttributePath.from_string(f"{model_name}.{column_name}")
             else:
                 # Check for self in reference path
                 reference_path = node.sql(dialect="duckdb").split("->")
@@ -1178,7 +1193,9 @@ class AttributePathTransformer:
 
             # Check if the reference is to a model's attribute or to an actual column
             if self.registry:
-                part = appended_reference.resolve(self.registry, parent_traverser=self.traverser.copy())
+                part = appended_reference.resolve(
+                    self.registry, parent_traverser=self.traverser.copy()
+                )
                 for references in part.resolved_references:
                     self.references.append(references)
                 return part.expression
@@ -1191,7 +1208,7 @@ class AttributePathTransformer:
         scoped_reference = self.traverser.create_scoped_reference(reference)
         self.references.append(scoped_reference)
         return scoped_reference
-    
+
 
 class QueryPart(BaseModel):
     """The most basic representation of a part of a query.
@@ -1229,15 +1246,20 @@ class QueryPart(BaseModel):
     def is_additive(self):
         """Whether the column is additive"""
         return self.is_aggregate
-    
+
     def scope(self, traverser: "AttributePathTraverser") -> "QueryPart":
         """Scopes the query part to the given traverser"""
         scoped_references: list[AttributePath] = []
 
         def scope_semantic_refs(node: exp.Expression):
-            if isinstance(node, exp.Anonymous) and exp_to_str(node.this).lower() == "$semantic_ref":
+            if (
+                isinstance(node, exp.Anonymous)
+                and exp_to_str(node.this).lower() == "$semantic_ref"
+            ):
                 # Replace the reference with the scoped reference
-                current_reference = AttributePath.from_string(exp_to_str(node.expressions[0]))
+                current_reference = AttributePath.from_string(
+                    exp_to_str(node.expressions[0])
+                )
                 scoped_reference = traverser.create_scoped_reference(current_reference)
                 scoped_references.append(scoped_reference)
                 return exp.Anonymous(
@@ -1245,9 +1267,9 @@ class QueryPart(BaseModel):
                     expressions=[exp.Literal.string(str(scoped_reference))],
                 )
             return node
-        
+
         scoped_expression = self.expression.transform(scope_semantic_refs)
-        
+
         return QueryPart(
             registry=self.registry,
             original=self.original,
@@ -1265,7 +1287,7 @@ class AttributePathTraverser:
     would be distinguished would be through different model relationship
     attributes. Path traversal, tracks the joins through these attributes.
 
-    The following table shows how a traverser works, given a path 
+    The following table shows how a traverser works, given a path
     `a.b->c.d->e.f`:
 
     | Index             | 0      | 1               | 2                        |
@@ -1325,9 +1347,7 @@ class AttributePathTraverser:
         traverser.alias_stack = self.alias_stack[:]
         return traverser
 
-    def create_scoped_reference(
-        self, reference: AttributePath
-    ) -> AttributePath:
+    def create_scoped_reference(self, reference: AttributePath) -> AttributePath:
         """Creates a scoped reference for the given model and column"""
         if self.index == 0:
             return reference
@@ -1388,35 +1408,47 @@ class AttributePathTraverser:
 class SemanticQuery(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: str = Field(default="", description="Optional name used to identify the query")
-
-    description: str = Field(
-        default="",
-        description="A description of the query's intent and purpose."
+    name: str = Field(
+        default="", description="Optional name used to identify the query"
     )
 
-    selects: t.List[str] = Field(description=textwrap.dedent("""
+    description: str = Field(
+        default="", description="A description of the query's intent and purpose."
+    )
+
+    selects: t.List[str] = Field(
+        description=textwrap.dedent(
+            """
         A list of model attributes to select in the query. These should only be
         valid dimensions or measures from the available models in the registry.
         Joins are automatically handled by the query builder based on the
         provided attributes and the relationships defined in the models. If any
         ambiguous relationships between models should use the `->` syntax to
         specify the path through the relationships.
-    """))
-    filters: t.List[str] = Field(description=textwrap.dedent("""
+    """
+        )
+    )
+    filters: t.List[str] = Field(
+        description=textwrap.dedent(
+            """
         A list of filters to apply to the query. These should be valid
         expressions that can be used to filter the results. The expressions can
         reference model attributes just like the columns. If any ambiguous
         relationships between models should use the `->` syntax to specify the
         path through the relationships.
-    """), default_factory=lambda: [])
+    """
+        ),
+        default_factory=lambda: [],
+    )
 
     limit: int = Field(
         default=0,
-        description=textwrap.dedent("""
+        description=textwrap.dedent(
+            """
             The maximum number of rows to return in the query. If set to 0, no
             limit is applied.
-        """),
+        """
+        ),
     )
 
     @model_validator(mode="after")
@@ -1438,25 +1470,23 @@ class SemanticQuery(BaseModel):
                 alias = exp_to_str(result.node.alias)
 
             self._processed_selects.append((column_path, alias))
-            
+
         self._processed_filters = [Filter(query=f) for f in self.filters]
 
         return self
 
     def sql(self, registry: Registry):
-        from metrics_tools.semantic.query import QueryBuilder
+        from .query import QueryBuilder
 
         query = QueryBuilder(registry)
-        for select, alias in self._processed_selects:
-            query.add_select(select, alias)
-        for filter in self._processed_filters:
-            query.add_filter(filter)
+        query.select(*self.selects)
+        query.where(*self.filters)
         query.add_limit(self.limit)
         return query.build()
-    
+
     def analyze(self, registry: Registry):
         """Validates the query against the registry to ensure the query can be executed
-        
+
         Returns a set of suggestions to the user on how to fix the query
         """
         pass

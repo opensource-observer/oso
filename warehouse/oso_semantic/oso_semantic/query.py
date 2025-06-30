@@ -1,15 +1,17 @@
 import logging
 import typing as t
 
-from metrics_tools.utils.glot import exp_to_str
+from oso_semantic import AttributePathTransformer
 from sqlglot import exp
+from sqlmesh.core.dialect import parse_one
 
-from .definition import AttributePath, Filter, Model, QueryPart, Registry
+from .definition import AttributePath, Filter, Model, QueryPart, QueryRegistry, Registry
+from .utils import exp_to_str
 
 logger = logging.getLogger(__name__)
 
 
-class QueryBuilder:
+class QueryBuilder(QueryRegistry):
     def __init__(self, registry: Registry):
         self._registry = registry
         self._select_refs: list[AttributePath] = []
@@ -41,31 +43,49 @@ class QueryBuilder:
 
         return self
 
-    def add_select(self, reference: AttributePath, alias: str):
+    def select(self, *selects: str):
         """Add a model attribute to the select clause"""
-        # validate the select by checking the attribute references
+        for select in selects:
+            result = AttributePathTransformer.transform(parse_one(select))
+            if len(result.references) != 1:
+                raise ValueError(
+                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
+                )
+            if not isinstance(result.node, (exp.Anonymous, exp.Alias)):
+                raise ValueError(
+                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
+                )
+            reference = result.references[0]
+            alias = reference.to_select_alias()
+            if isinstance(result.node, exp.Alias):
+                alias = exp_to_str(result.node.alias)
 
-        if not reference.is_valid_for_registry(self._registry):
-            raise ValueError(f"Invalid reference {reference} for registry")
-        part = reference.resolve(self._registry)
+            # validate the select by checking the attribute references
 
-        for resolved_reference in part.resolved_references:
-            if resolved_reference not in self._references:
-                self.add_reference(resolved_reference)
-        self._select_parts.append(part)
-        self._select_aliases.append(alias)
+            if not reference.is_valid_for_registry(self._registry):
+                raise ValueError(f"Invalid reference {reference} for registry")
+            part = reference.resolve(self._registry)
+
+            for resolved_reference in part.resolved_references:
+                if resolved_reference not in self._references:
+                    self.add_reference(resolved_reference)
+            self._select_parts.append(part)
+            self._select_aliases.append(alias)
         return self
 
-    def add_filter(self, filter: Filter):
+    def where(self, *filters: str):
         """Add a filter to the query"""
+        for filter in filters:
+            filter_expr = Filter(query=filter)
+            traverser = AttributePath(path=[]).traverser()
+            filter_part = filter_expr.to_query_part(
+                traverser, filter_expr.query, self._registry
+            )
 
-        traverser = AttributePath(path=[]).traverser()
-        filter_part = filter.to_query_part(traverser, filter.query, self._registry)
+            for ref in filter_part.resolved_references:
+                self.add_reference(ref)
 
-        for ref in filter_part.resolved_references:
-            self.add_reference(ref)
-
-        self._filter_parts.append(filter_part)
+            self._filter_parts.append(filter_part)
         return self
 
     def add_limit(self, limit: int):
@@ -136,7 +156,10 @@ class QueryBuilder:
         # resolution of the actual column names allows us to do this on a per
         # subquery basis. For now, this isn't implemeneted.
         def transform_semantic_ref(node: exp.Expression):
-            if isinstance(node, exp.Anonymous) and exp_to_str(node.this).lower() == "$semantic_ref":
+            if (
+                isinstance(node, exp.Anonymous)
+                and exp_to_str(node.this).lower() == "$semantic_ref"
+            ):
                 # We need to replace the function with the actual column name
                 # from the registry
                 semantic_ref = exp_to_str(node.expressions[0])
@@ -145,15 +168,24 @@ class QueryBuilder:
                 traverser = ref.traverser()
                 while traverser.next():
                     pass
-                return exp.to_column(f"{traverser.current_table_alias}.{traverser.current_attribute_name}")
+                return exp.to_column(
+                    f"{traverser.current_table_alias}.{traverser.current_attribute_name}"
+                )
             return node
+
         query = query.transform(transform_semantic_ref)
 
         return query
 
 
 class QueryJoiner:
-    def __init__(self, select: exp.Select, base_model: Model, registry: Registry, dialect: str = "duckdb"):
+    def __init__(
+        self,
+        select: exp.Select,
+        base_model: Model,
+        registry: Registry,
+        dialect: str = "duckdb",
+    ):
         self._select = select
         self._base_model = base_model
         self._registry = registry
@@ -209,13 +241,12 @@ class QueryJoiner:
         join_path = registry.join_relationships(
             from_model_name, to_model_name, through_attribute=through_attribute
         )
-        from_model = registry.get_model(from_model_name)
 
         logger.debug(f"Join path: {join_path}")
 
         for relationship in join_path:
-            referenced_model = registry.get_model(relationship.model_ref)
-            referenced_model_alias = create_alias(relationship.model_ref)
+            referenced_model = registry.get_model(relationship.ref_model)
+            referenced_model_alias = create_alias(relationship.ref_model)
 
             referenced_model_table = referenced_model.table_exp.as_(
                 referenced_model_alias
@@ -224,37 +255,22 @@ class QueryJoiner:
             if referenced_model_alias in self._already_joined:
                 continue
 
-            if relationship.join_table:
-                join_table = exp.to_table(relationship.join_table)
-                join_table_alias = create_alias(join_table.name)
-                join_table = join_table.as_(join_table_alias)
-
-                from_model_primary_key = from_model.primary_key_expression(from_table_alias)
-                join_table_self_key = relationship.self_key_with_alias(join_table_alias)
-                join_table_foreign_key = relationship.foreign_key_with_alias(join_table_alias)
-                referenced_model_primary_key = referenced_model.primary_key_expression(referenced_model_alias)
-
-
-                query = query.join(
-                    join_table,
-                    on=f"{from_model_primary_key.sql(dialect=self._dialect)} = {join_table_self_key.sql(dialect=self._dialect)}",
-                    join_type="left",
-                )
-                query = query.join(
-                    referenced_model_table,
-                    on=f"{join_table_foreign_key.sql(dialect=self._dialect)} = {referenced_model_primary_key.sql(dialect=self._dialect)}",
-                    join_type="left",
-                )
-            else:
-                query = query.join(
-                    referenced_model_table,
-                    on=f"{from_table_alias}.{relationship.foreign_key_column} = {referenced_model_alias}.{referenced_model.primary_key}",
-                    join_type="left",
-                )
+            query = query.join(
+                referenced_model_table,
+                on=" AND ".join(
+                    [
+                        f"{from_table_alias}.{exp.to_identifier(source_foreign_key)} = {referenced_model_alias}.{exp.to_identifier(ref_key)}"
+                        for source_foreign_key, ref_key in zip(
+                            relationship.source_foreign_key,
+                            relationship.ref_key,
+                        )
+                    ]
+                ),
+                join_type="left",
+            )
 
             from_table_alias = referenced_model_alias
             from_model_name = referenced_model.name
-            from_model = referenced_model
 
             self._already_joined.add(referenced_model_alias)
         self._select = query

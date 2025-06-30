@@ -1,18 +1,18 @@
-from metrics_tools.semantic.definition import AttributePath, Filter
-from metrics_tools.semantic.query import QueryBuilder
-from metrics_tools.semantic.testing import setup_registry
 from sqlglot import exp
+
+from .query import QueryBuilder
+from .testing import setup_registry
 
 
 def test_query_builder_with_dimensions():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.add_select(AttributePath.from_string("github_event.month"), "event_month")
-    query.add_select(AttributePath.from_string("github_event.event_source"), "event_source")
-    query.add_select(AttributePath.from_string("github_event.from->artifact.name"), "artifact_name")
-    query.add_select(AttributePath.from_string("github_event.to->collection.name"), "collection_name")
-    query.add_filter(Filter(query="github_event.month = DATE '2023-01-01'"))
+    query.select("github_event.month AS event_month")
+    query.select("github_event.event_source AS event_source")
+    query.select("github_event.from->artifact.name AS artifact_name")
+    query.select("github_event.to->collection.name AS collection_name")
+    query.where("github_event.month = DATE '2023-01-01'")
 
     query_exp = query.build()
 
@@ -32,12 +32,13 @@ def test_query_builder_with_dimensions():
     assert tables_count["projects_v1"] == 1
     assert tables_count["collections_v1"] == 1
 
+
 def test_query_builder_with_metrics():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.add_select(AttributePath.from_string("collection.name"), "collection_name")
-    query.add_select(AttributePath.from_string("project.count"), "project_count")
+    query.select("collection.name AS collection_name")
+    query.select("project.count AS project_count")
 
     query_exp = query.build()
 

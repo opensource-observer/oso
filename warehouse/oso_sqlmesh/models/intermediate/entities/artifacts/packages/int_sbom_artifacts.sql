@@ -35,9 +35,7 @@ WITH ranked_snapshots AS (
     package_artifact_name,
     package_github_owner,
     package_github_repo
-  FROM oso.int_packages
-  WHERE
-    is_current_owner = TRUE
+  FROM oso.int_packages__current_maintainer_only
 )
 SELECT
   all_repos.project_id, /*

@@ -1,13 +1,13 @@
 import logging
 
-#from llama_index.core.agent.workflow import FunctionAgent
+# from llama_index.core.agent.workflow import FunctionAgent
 import typing as t
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 
-#from ..tool.oso_mcp import create_oso_mcp_tools
-from metrics_tools.semantic.definition import SemanticQuery
-from metrics_tools.semantic.testing import setup_registry
+# from ..tool.oso_mcp import create_oso_mcp_tools
+from oso_semantic.definition import SemanticQuery
+from oso_semantic.testing import setup_registry
 
 from ..tool.llm import create_llm
 from ..types.response import ResponseType, SemanticResponse
