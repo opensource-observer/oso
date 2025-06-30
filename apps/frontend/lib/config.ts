@@ -73,10 +73,8 @@ export const ALGOLIA_INDEX =
   process.env.NEXT_PUBLIC_ALGOLIA_INDEX ?? "MISSING ALGOLIA_INDEX";
 export const FEEDBACK_FARM_ID =
   process.env.NEXT_PUBLIC_FEEDBACK_FARM_ID ?? "MISSING FEEDBACK_FARM_ID";
-export const OSO_AGENT_URL = requireEnv(
-  process.env.OSO_AGENT_URL,
-  "OSO_AGENT_URL",
-);
+export const OSO_AGENT_URL =
+  process.env.OSO_AGENT_URL ?? "MISSING OSO_AGENT_URL";
 export const STRIPE_SECRET_KEY =
   process.env.STRIPE_SECRET_KEY ?? "MISSING STRIPE_SECRET_KEY";
 export const STRIPE_PUBLISHABLE_KEY =
