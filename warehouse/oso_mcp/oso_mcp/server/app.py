@@ -2,11 +2,17 @@ import textwrap
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Generic, List, Literal, Optional, TypeVar, Union
 
 from mcp.server.fastmcp import Context, FastMCP
+from oso_agent.util.config import AgentConfig
 from pyoso import Client
 
+from ..utils.entity_context import (
+    build_fuzzy_entity_search_sql,
+    call_llm_for_entity_variants,
+    call_llm_for_final_selection,
+)
 from .config import MCPConfig
 
 MCP_SSE_PORT = 8000
@@ -366,9 +372,9 @@ def setup_mcp_app(config: MCPConfig):
             results=[example_query],
         )
 
-    def build_entity_search_sql(entity: str, table: str, columns: list[str]) -> str:
+    def build_exact_entity_search_sql(entity: str, table: str, columns: list[str]) -> str:
         """
-        Build a SQL query to search for an entity in a table by multiple columns, case/space-insensitive.
+        Build a SQL query to search for an entity in a table by multiple columns, case/space-insensitive (exact match).
         Args:
             entity: The entity string to search for
             table: The table to search in
@@ -376,81 +382,135 @@ def setup_mcp_app(config: MCPConfig):
         Returns:
             SQL query string
         """
-        # Normalize entity: lower, strip, remove extra spaces
         norm_entity = entity.strip().lower().replace("'", "''")
-        # Build OR conditions for each column
         conditions = [
             f"LOWER(TRIM(CAST({col} AS VARCHAR))) = '{norm_entity}'" for col in columns
         ]
         where_clause = " OR ".join(conditions)
         sql = f"SELECT * FROM {table} WHERE {where_clause} LIMIT 1"
         return sql
+    
+    async def search_entity(
+        entity: str,
+        ctx: Context,
+        table: str,
+        columns: list[str],
+        entity_type: str,
+        match_type: Literal['exact', 'fuzzy'] = 'exact',
+        nl_query: str = "",
+        **kwargs
+    ) -> McpResponse:
+        """
+        Generic search function for entities (project, collection, chain, etc.)
+        """
+        if match_type == 'exact':
+            sql = build_exact_entity_search_sql(entity, table, columns)
+            resp = await query_oso(sql, ctx, limit=1)
+            if isinstance(resp, McpSuccessResponse) and resp.results:
+                return McpSuccessResponse(tool_name=f"search_{entity_type}", parameters=[entity], results=resp.results)
+            else:
+                return McpErrorResponse(tool_name=f"search_{entity_type}", parameters=[entity], error=f"{entity_type.capitalize()} '{entity}' not found.")
+        else:
+            config = AgentConfig()
+            entity_variants = await call_llm_for_entity_variants(config, entity, nl_query, entity_type)
+            sql = build_fuzzy_entity_search_sql(entity_variants, table, columns)
+            resp = await query_oso(sql, ctx, limit=20)
+            if not (isinstance(resp, McpSuccessResponse) and resp.results):
+                return McpErrorResponse(tool_name=f"search_{entity_type}", parameters=[entity], error=f"No close matches found for {entity_type} '{entity}'.")
+            candidates = resp.results
+            final_names = await call_llm_for_final_selection(config, nl_query, entity, entity_type, candidates)
+            final_results = [row for row in candidates if any(row.get(col) in final_names for col in columns)]
+            return McpSuccessResponse(tool_name=f"search_{entity_type}", parameters=[entity], results=final_results)
 
     @mcp.tool(
         description="Search for a project by name or display name in projects_v1. Returns the row if found, else not found.",
     )
-    async def search_project(entity: str, ctx: Context) -> McpResponse:
-        sql = build_entity_search_sql(entity, "projects_v1", ["project_name", "display_name"])
-        resp = await query_oso(sql, ctx, limit=1)
-        if isinstance(resp, McpSuccessResponse) and resp.results:
-            return McpSuccessResponse(tool_name="search_project", parameters=[entity], results=resp.results)
-        else:
-            return McpErrorResponse(tool_name="search_project", parameters=[entity], error=f"Project '{entity}' not found.")
+    async def search_project(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
+        return await search_entity(
+            entity=entity,
+            ctx=ctx,
+            table="projects_v1",
+            columns=["project_name", "display_name"],
+            entity_type="project",
+            match_type=match_type,
+            nl_query=nl_query,
+            **kwargs
+        )
 
     @mcp.tool(
         description="Search for a collection by name or display name in collections_v1. Returns the row if found, else not found.",
     )
-    async def search_collection(entity: str, ctx: Context) -> McpResponse:
-        sql = build_entity_search_sql(entity, "collections_v1", ["collection_name", "display_name"])
-        resp = await query_oso(sql, ctx, limit=1)
-        if isinstance(resp, McpSuccessResponse) and resp.results:
-            return McpSuccessResponse(tool_name="search_collection", parameters=[entity], results=resp.results)
-        else:
-            return McpErrorResponse(tool_name="search_collection", parameters=[entity], error=f"Collection '{entity}' not found.")
+    async def search_collection(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
+        return await search_entity(
+            entity=entity,
+            ctx=ctx,
+            table="collections_v1",
+            columns=["collection_name", "display_name"],
+            entity_type="collection",
+            match_type=match_type,
+            nl_query=nl_query,
+            **kwargs
+        )
 
     @mcp.tool(
         description="Search for a chain/network by name in int_chainlist. Returns the row if found, else not found.",
     )
-    async def search_chain(entity: str, ctx: Context) -> McpResponse:
-        sql = build_entity_search_sql(entity, "int_chainlist", ["chainlist_name", "oso_chain_name", "display_name"])
-        resp = await query_oso(sql, ctx, limit=1)
-        if isinstance(resp, McpSuccessResponse) and resp.results:
-            return McpSuccessResponse(tool_name="search_chain", parameters=[entity], results=resp.results)
-        else:
-            return McpErrorResponse(tool_name="search_chain", parameters=[entity], error=f"Chain/network '{entity}' not found.")
+    async def search_chain(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
+        return await search_entity(
+            entity=entity,
+            ctx=ctx,
+            table="int_chainlist",
+            columns=["chainlist_name", "oso_chain_name", "display_name"],
+            entity_type="chain",
+            match_type=match_type,
+            nl_query=nl_query,
+            **kwargs
+        )
 
     @mcp.tool(
         description="Search for a metric by display name in metrics_v0. Returns the row if found, else not found.",
     )
-    async def search_metric(entity: str, ctx: Context) -> McpResponse:
-        sql = build_entity_search_sql(entity, "metrics_v0", ["display_name"])
-        resp = await query_oso(sql, ctx, limit=1)
-        if isinstance(resp, McpSuccessResponse) and resp.results:
-            return McpSuccessResponse(tool_name="search_metric", parameters=[entity], results=resp.results)
-        else:
-            return McpErrorResponse(tool_name="search_metric", parameters=[entity], error=f"Metric '{entity}' not found.")
+    async def search_metric(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
+        return await search_entity(
+            entity=entity,
+            ctx=ctx,
+            table="metrics_v0",
+            columns=["display_name"],
+            entity_type="metric",
+            match_type=match_type,
+            nl_query=nl_query,
+            **kwargs
+        )
 
     @mcp.tool(
         description="Search for a model by name in models_v1. Returns the row if found, else not found.",
     )
-    async def search_model(entity: str, ctx: Context) -> McpResponse:
-        sql = build_entity_search_sql(entity, "models_v1", ["model_name"])
-        resp = await query_oso(sql, ctx, limit=1)
-        if isinstance(resp, McpSuccessResponse) and resp.results:
-            return McpSuccessResponse(tool_name="search_model", parameters=[entity], results=resp.results)
-        else:
-            return McpErrorResponse(tool_name="search_model", parameters=[entity], error=f"Model '{entity}' not found.")
+    async def search_model(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
+        return await search_entity(
+            entity=entity,
+            ctx=ctx,
+            table="models_v1",
+            columns=["model_name"],
+            entity_type="model",
+            match_type=match_type,
+            nl_query=nl_query,
+            **kwargs
+        )
 
     @mcp.tool(
         description="Search for an artifact by name in artifacts_v1. Returns the row if found, else not found.",
     )
-    async def search_artifact(entity: str, ctx: Context) -> McpResponse:
-        sql = build_entity_search_sql(entity, "artifacts_v1", ["artifact_name"])
-        resp = await query_oso(sql, ctx, limit=1)
-        if isinstance(resp, McpSuccessResponse) and resp.results:
-            return McpSuccessResponse(tool_name="search_artifact", parameters=[entity], results=resp.results)
-        else:
-            return McpErrorResponse(tool_name="search_artifact", parameters=[entity], error=f"Artifact '{entity}' not found.")
+    async def search_artifact(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
+        return await search_entity(
+            entity=entity,
+            ctx=ctx,
+            table="artifacts_v1",
+            columns=["artifact_name"],
+            entity_type="artifact",
+            match_type=match_type,
+            nl_query=nl_query,
+            **kwargs
+        )
 
     @mcp.resource("help://getting-started")
     def get_help_guide() -> str:
