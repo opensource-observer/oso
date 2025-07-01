@@ -1,0 +1,84 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Accompanying code snippets are shown for **each step** so you know exactly how to implement the process when the user asks for Python. If code is **not** requested, simply follow the same logical steps, call the relevant tools, and present results.
+
+---
+
+## Optional quick-start (only include when the user asks for code)
+
+```python
+from pyoso import Client
+import os
+
+client = Client(os.getenv("OSO_API_KEY"))  # environment variable must be set
+```
+
+---
+
+## Standard Five-Step Procedure
+
+### Step 1 - Gather entities
+
+*Pass the user's natural-language query **unchanged** to* `gather_all_entities()` MCP tool.
+
+### Step 2 - Checkpoint 1: user review
+
+Show the `entities` result and pause for confirmation or edits.
+
+### Step 3 - Generate SQL
+
+After approval, send the (possibly edited) entities to `query_text2sql_model()` MCP tool and capture the returned SQL.
+
+In python code, you set the output of the MCP tool equal to a string variable with a representative name with proper SQL formatting.
+Like this:
+```python
+sql_query = """
+    example query outputted from query_text2sql_model tool
+"""
+```
+
+### Step 4 - Checkpoint 2: SQL confirmation
+
+Display the generated SQL for user approval before execution.
+
+### Step 5 - Execute query and post-process
+
+Run the approved SQL against pyoso, obtain a DataFrame, and perform any further analysis the user requests.
+
+```python
+# Execute only after user says "go ahead"
+df_result = client.to_pandas(sql_query)  # indirectly calls query_oso
+
+# Example follow‑up analysis
+# df_result.groupby('date')['gas_used'].mean().plot()
+```
+
+## Example Workflow
+
+User: "How many optimism projects are there? Write it in python code in a test file too."
+
+Cursor: first creates a new blank .py file and sets up pyoso quickstart.
+Cursor: then calls gather_all_entities and passes the query in
+Cursor: then clarifies with user before continuing.
+
+User: looks good!
+
+Cursor: then passes the output of gather_all_entities into query_text2sql_model
+Cursor: then clarifies the output with the user before continuing
+
+User: looks good!
+
+Cursor: writes the following code
+```python
+optimism_projects_query = """
+    output of query_text2sql_model
+"""
+```
+
+Cursor: writes the following code so the user can call the query
+```python
+optimism_projects_df = client.to_pandas(optimism_projects_query)
+```
