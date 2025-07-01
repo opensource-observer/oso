@@ -412,21 +412,28 @@ def setup_mcp_app(config: MCPConfig):
         for entity_guess in entity_deconstructor_result.entities:            
             # 3. Try each entity type in ranking order until we find a valid one
             for entity_type in entity_guess.ranking:
+                print(f"Searching for {entity_type} {entity_guess.name}")
                 search_result = None
 
                 if entity_type == "project":
                     search_result = await search_project(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                    print(f"Search result for project: {search_result}")
                 elif entity_type == "collection":
                     search_result = await search_collection(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                    print(f"Search result for collection: {search_result}")
                 elif entity_type == "chain":
                     search_result = await search_chain(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                    print(f"Search result for chain: {search_result}")
                 elif entity_type == "metric":
                     search_result = await search_metric(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                    print(f"Search result for metric: {search_result}")
                 elif entity_type == "model":
                     search_result = await search_model(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                    print(f"Search result for model: {search_result}")
                 elif entity_type == "artifact":
                     search_result = await search_artifact(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
-                
+                    print(f"Search result for artifact: {search_result}")
+                    
                 if search_result and search_result.success:
                     entity_found = ResolvedEntity(
                         row=search_result.results[0],
