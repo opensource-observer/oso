@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import textwrap
 import typing as t
+from collections import deque
 from enum import Enum
 from graphlib import TopologicalSorter
 
@@ -38,26 +39,16 @@ class QueryRegistry(t.Protocol):
 class RegistryDAG:
     """A DAG of models and views that can be used to generate SQL queries.
 
-    This is used to determine the order in which models and views should be
+    This is used to determine the order in which models and views should be joined.
     """
 
     adjacency_map: t.Dict[str, t.Set[str]]
-    ancestor_depth: t.Dict[str, int]
-    sorted_model_names: t.List[str] | None
-    sorter: TopologicalSorter[str]
 
     def __init__(self):
         self.adjacency_map = {}
-        self.sorted_model_names = None
-        self.ancestor_depth = {}
-        self.sorter = TopologicalSorter()
 
     def add(self, model: "Model"):
-        """Inserts the model into the registry and updates the adjacency map.
-
-        Cycles are not allowed in the registry. If a cycle is detected, an error
-        will be raised on later calls
-        """
+        """Inserts the model into the registry and updates the adjacency map."""
 
         # Register the model under the given name
         self.adjacency_map[model.name] = set()
@@ -65,115 +56,158 @@ class RegistryDAG:
         # Gets all the names of related models
         reference_names = list(map(lambda x: x.ref_model, model.relationships))
 
-        self.sorter.add(model.name, *reference_names)
-
         adj_set = self.adjacency_map.get(model.name, set())
         adj_set = adj_set.union(set(reference_names))
         self.adjacency_map[model.name] = adj_set
 
-    def determine_ancestor_values(self):
-        """Determines the ancestor values of the model and updates the adjacency map"""
+    def check_cycle(self):
+        """Check if there are any cycles in the directed graph.
 
-        def get_ancestor_depth(name: str) -> int:
-            depth = 0
-            if name in self.ancestor_depth:
-                return self.ancestor_depth[name]
-
-            max_depth = 0
-            for current_deps in self.adjacency_map.get(name, set()):
-                depth = get_ancestor_depth(current_deps) + 1
-                if depth > max_depth:
-                    max_depth = depth
-            return max_depth
-
-        for model_name in self.topological_sort():
-            self.ancestor_depth[model_name] = get_ancestor_depth(model_name)
-
-    def get_ancestor_depth(self, name: str) -> int:
-        if name not in self.ancestor_depth:
-            raise ValueError(f"Model {name} not found in registry")
-        return self.ancestor_depth[name]
-
-    def depth_sorted_models(self, models: t.Collection[str], reverse: bool = False):
-        """Sorts the models in depth order"""
-        return sorted(models, key=lambda x: self.ancestor_depth[x], reverse=reverse)
-
-    def upstream(self, name: str, include_self: bool = False) -> t.Set[str]:
-        """Returns the upstream models of the given model"""
-
-        def get_upstream(name: str) -> t.Set[str]:
-            upstream = self.adjacency_map.get(name, set())
-            for current_deps in upstream:
-                upstream = upstream.union(get_upstream(current_deps))
-            return upstream
-
-        if include_self:
-            return get_upstream(name).union({name})
-        return get_upstream(name)
-
-    def topological_sort(self):
-        """Sort the models in topological order"""
-        if not self.sorted_model_names:
-            self.sorted_model_names = list(self.sorter.static_order())
-        for name in self.sorted_model_names:
-            yield name
-
-    def join_paths(
-        self, from_model: str, to_model: str
-    ) -> t.Tuple[t.List[str], t.List[str]]:
-        """Returns the shortest ordered paths between two models in the dag.
-
-        This will always return two paths, one from the from_model to the join
-        point and one from the join point to the to_model. The join point is the
-        model that intersects the two paths. If the two models are the same,
-        then the paths will be empty.
+        Throws an error if a cycle is detected.
         """
+        # 0: unvisited (white), 1: visiting (gray), 2: visited (black)
+        color = {node: 0 for node in self.adjacency_map}
 
-        if from_model not in self.adjacency_map:
-            raise ValueError(f"Model {from_model} not found in registry")
-        if to_model not in self.adjacency_map:
-            raise ValueError(f"Model {to_model} not found in registry")
-        if from_model == to_model:
-            return [], []
+        def cycle_dfs(node: str):
+            # Mark as visiting (gray)
+            color[node] = 1
 
-        # Get the upstream models of from_model
-        from_upstream = self.upstream(from_model, True)
+            # Visit all adjacent nodes
+            for neighbor in self.adjacency_map.get(node, set()):
+                neighbor_color = color[neighbor]
+                if neighbor_color == 1:
+                    raise ValueError(f"Cycle detected at model {neighbor}")
+                elif neighbor_color == 0:
+                    cycle_dfs(neighbor)
 
-        # Get the upstream models of to_model
-        to_upstream = self.upstream(to_model, True)
+            # Mark as visited (black)
+            color[node] = 2
+            return False
 
-        # Get the intersection of the two sets
-        intersection = from_upstream.intersection(to_upstream)
-        if not intersection:
+        # Check for cycles starting from each unvisited node
+        for node in self.adjacency_map:
+            if color[node] == 0:
+                cycle_dfs(node)
+
+    def find_best_join_tree(self, references: list[AttributePath]):
+        """Finds the join tree with the least amount of nodes (models) for the given references."""
+        join_trees = sorted(
+            [
+                tree
+                for tree in (
+                    self.build_join_tree(root.base_model, references)
+                    for root in references
+                )
+                if tree is not None
+            ],
+            key=lambda x: len(x),
+        )
+        if len(join_trees) == 0:
             raise ModelHasNoJoinPath(
-                f"No path found between {from_model} and {to_model}"
+                "No join tree found for the given references. Ensure that the references are valid and that the models are registered."
             )
-        # Sort the intersection by depth
-        sorted_intersection = self.depth_sorted_models(intersection, True)
+        return join_trees[0]
 
-        # Get the first model in the intersection
-        # This is the model that is closest to both models
-        # and is the model that will be used to join the two models
-        join_point = sorted_intersection[0]
+    def build_join_tree(self, root: str, references: list[AttributePath]):
+        # Build a tree rooted at root
+        queue = deque([root])
+        parents = {root: root}
 
-        # Get the path from the from_model to the join point
-        from_path = [from_model]
-        if from_model != join_point:
-            sorted_from_upstream = self.depth_sorted_models(from_upstream, True)
-            for model in sorted_from_upstream[1:]:
-                from_path.append(model)
-                if model == join_point:
+        while queue:
+            current = queue.popleft()
+            for child in self.adjacency_map.get(current, set()):
+                if child not in parents:
+                    parents[child] = current
+                    queue.append(child)
+
+        # Only include in the tree models/paths that are referenced
+        filtered_parents = {root: root}
+        for reference in references:
+            traverser = reference.traverser()
+            while True:
+                curr_model = traverser.current_model_name
+                while curr_model != root and curr_model not in filtered_parents:
+                    if curr_model not in parents:
+                        return None
+                    filtered_parents[curr_model] = parents[curr_model]
+                    curr_model = parents[curr_model]
+                if not traverser.next():
                     break
 
-        # Get the path from the join point to the to_model
-        to_path = [to_model]
-        if to_model != join_point:
-            sorted_to_upstream = self.depth_sorted_models(to_upstream, True)
-            for model in sorted_to_upstream[1:]:
-                to_path.append(model)
-                if model == join_point:
-                    break
-        return from_path, to_path
+        return JoinTree(root, filtered_parents)
+
+
+class JoinTree:
+    root: str
+    parents: dict[str, str]
+
+    def __init__(self, root: str, parents: dict[str, str]):
+        self.root = root
+        self.parents = parents
+
+        self.depths = {}
+        self._calculate_depths()
+
+    def __len__(self):
+        return len(self.parents)
+
+    def _calculate_depths(self):
+        def _get_depth(node: str) -> int:
+            if node in self.depths:
+                return self.depths[node]
+            if node == self.root:
+                self.depths[node] = 0
+                return 0
+
+            parent = self.parents[node]
+            depth = _get_depth(parent) + 1
+            self.depths[node] = depth
+            return depth
+
+        for node in self.parents:
+            _get_depth(node)
+
+    def get_path(self, from_node: str, to_node: str):
+        if from_node not in self.parents:
+            raise ValueError(f"Node {from_node} not found in join tree")
+        if to_node not in self.parents:
+            raise ValueError(f"Node {to_node} not found in join tree")
+        if from_node == to_node:
+            return []
+
+        from_depth = self.depths[from_node]
+        to_depth = self.depths[to_node]
+        current_from = from_node
+        current_to = to_node
+
+        # Bring both nodes to the same depth level
+        # Move the deeper node up until both are at the same depth
+        from_path = []
+        to_path = []
+
+        while from_depth > to_depth:
+            from_path.append(current_from)
+            current_from = self.parents[current_from]
+            from_depth -= 1
+
+        while to_depth > from_depth:
+            to_path.append(current_to)
+            current_to = self.parents[current_to]
+            to_depth -= 1
+
+        # Now both nodes are at the same depth, move both up until they meet (LCA)
+        while current_from != current_to:
+            from_path.append(current_from)
+            to_path.append(current_to)
+            current_from = self.parents[current_from]
+            current_to = self.parents[current_to]
+
+        lca = current_from
+
+        to_path.reverse()
+        result = from_path + [lca] + to_path
+
+        return result
 
 
 class BoundModelAttribute(t.Protocol):
@@ -209,7 +243,7 @@ class Registry(t.Generic[Q]):
     models: t.Dict[str, "Model"]
     dag: RegistryDAG
     views: t.Dict[str, "View"]
-    completed: bool
+    check_cycle: bool = False
 
     def __init__(self, query_builder: type[Q] | None = None):
         from .query import QueryBuilder
@@ -219,7 +253,6 @@ class Registry(t.Generic[Q]):
         self.views = {}
         self.sorted_model_names = None
         self.dag = RegistryDAG()
-        self.completed = False
 
     def register(self, model: "Model", repoen: bool = False):
         """Inserts the model into the registry and updates the adjacency map.
@@ -227,14 +260,11 @@ class Registry(t.Generic[Q]):
         Cycles are not allowed in the registry. If a cycle is detected, an error
         will be raised on later calls
         """
-        if self.completed and not repoen:
-            raise ValueError(
-                "Registry has already been completed cannot add new models"
-            )
 
         self.models[model.name] = model
         # Register the model under the given name
         self.dag.add(model)
+        self.check_cycle = True
 
     def register_view(self, view: "View"):
         self.views[view.name] = view
@@ -245,52 +275,10 @@ class Registry(t.Generic[Q]):
     def get_view(self, name: str) -> "View":
         return self.views[name]
 
-    def topological_sort(self):
-        """Sort the models in topological order"""
-        if not self.completed:
-            raise ValueError("Registry has not been completed cannot sort models")
-
-        yield from self.dag.topological_sort()
-
-    def complete(self):
-        """Completes the registry by determining the ancestor values of the models"""
-        self.completed = True
-
-        self.dag.determine_ancestor_values()
-
-    def join_relationships(
-        self, from_model: str, to_model: str, through_attribute: str = ""
-    ) -> t.List["BoundRelationship"]:
-        """Returns the join path between two models"""
-        from_path, to_path = self.dag.join_paths(from_model, to_model)
-
-        def build_join_path(
-            model_path: t.List[str], via_attribute: str = ""
-        ) -> t.List[BoundRelationship]:
-            prev_model: Model | None = None
-            join_path: t.List[BoundRelationship] = []
-            for model_name in model_path:
-                if prev_model is None:
-                    via_attribute = via_attribute
-                    prev_model = self.models[model_name]
-                    continue
-
-                relationship = prev_model.find_relationship(
-                    name=via_attribute, model_ref=model_name
-                )
-                prev_model = self.models[model_name]
-                join_path.append(relationship)
-            return join_path
-
-        from_path_joins = build_join_path(from_path, through_attribute)
-        to_path_joins = build_join_path(to_path)
-
-        return from_path_joins + to_path_joins
-
     def select(self, *selects: str):
         """Returns a new query builder for the registry"""
-        if not self.completed:
-            raise ValueError("Registry has not been completed cannot create query")
+        if self.check_cycle:
+            self.dag.check_cycle()
 
         query_builder = self.query_builder(self)
         for select in selects:
