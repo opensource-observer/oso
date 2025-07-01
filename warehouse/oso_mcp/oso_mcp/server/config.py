@@ -1,5 +1,6 @@
 import typing as t
 
+from oso_agent.util.config import AgentConfig
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -32,4 +33,7 @@ class MCPConfig(BaseSettings):
         description="API key for OSO",
     )
 
-   
+    agent_config: AgentConfig = Field(
+        default=AgentConfig(),
+        description="Configuration for the agent",
+    )

@@ -11,11 +11,17 @@ from oso_agent.util.config import AgentConfig
 from pyoso import Client
 
 from ..utils.entity_context import (
+    ResolvedEntity,
+    build_exact_entity_search_sql,
     build_fuzzy_entity_search_sql,
     call_llm_for_entity_variants,
     call_llm_for_final_selection,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+    entity_deconstructor,
+>>>>>>> 970d52dd (feat: added new cursor rules and finished entity context retrieval work)
     generate_entity_string_variants,
 =======
 >>>>>>> 584d2789 (feat: improved how entity search variants are generated)
@@ -346,7 +352,6 @@ def setup_mcp_app(config: MCPConfig):
             results=samples,
         )
         return response
-        #return { "success": True, "samples": samples }
 
     @mcp.tool(
         description="Use a text2sql agent to generate a SQL query from a natural language query",
@@ -367,9 +372,6 @@ def setup_mcp_app(config: MCPConfig):
         if ctx:
             await ctx.info(f"Converting natural language query to SQL: {natural_language_query}")
         
-        config = ctx.request_context.lifespan_context.config
-        if not config:
-            raise ValueError("Config is not available in the context")
         api_key = config.oso_api_key
         if not api_key:
             raise ValueError("OSO API key is not available in the context")
@@ -392,31 +394,85 @@ def setup_mcp_app(config: MCPConfig):
             parameters=[natural_language_query],
             results=[response.json()["sql"]],
         )
-
-    def build_exact_entity_search_sql(entity: str, table: str, columns: list[str]) -> str:
-        """
-        Build a SQL query to search for an entity in a table by multiple columns, case/space-insensitive (exact match).
-        Args:
-            entity: The entity string to search for
-            table: The table to search in
-            columns: List of columns to search
-        Returns:
-            SQL query string
-        """
-        norm_entity = entity.strip().lower().replace("'", "''")
-        conditions = [
-            f"LOWER(TRIM(CAST({col} AS VARCHAR))) = '{norm_entity}'" for col in columns
-        ]
-        where_clause = " OR ".join(conditions)
-        sql = f"SELECT * FROM {table} WHERE {where_clause} LIMIT 1"
-        return sql
     
+    @mcp.tool(
+        description="Gather all entities from a natural language query",
+    )
+    async def gather_all_entities(nl_query: str, ctx: Context) -> McpResponse:
+        """
+        Deconstruct a natural language query into entities and resolve their types.
+        """
+        # 1. Deconstruct the query into entities using the entity_deconstructor workflow
+        entity_deconstructor_result = await entity_deconstructor(nl_query, config.agent_config)
+        
+        # 2. For each entity, try to find it in the database using the ranking order
+        resolved_entities = []
+        all_models = set()      
+
+        for entity_guess in entity_deconstructor_result.entities:            
+            # 3. Try each entity type in ranking order until we find a valid one
+            for entity_type in entity_guess.ranking:
+                search_result = None
+
+                if entity_type == "project":
+                    search_result = await search_project(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                elif entity_type == "collection":
+                    search_result = await search_collection(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                elif entity_type == "chain":
+                    search_result = await search_chain(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                elif entity_type == "metric":
+                    search_result = await search_metric(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                elif entity_type == "model":
+                    search_result = await search_model(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                elif entity_type == "artifact":
+                    search_result = await search_artifact(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
+                
+                if search_result and search_result.success:
+                    entity_found = ResolvedEntity(
+                        row=search_result.results[0],
+                        description=entity_guess.description,
+                        entity_type=entity_type,
+                        suggested_models=entity_guess.suggested_models
+                    )
+                    resolved_entities.append(entity_found)
+                    all_models.update(entity_guess.suggested_models)
+                    break
+
+        # 4. Format the result as a string
+        if resolved_entities:
+            entity_string = ""
+            for entity in resolved_entities:
+                entity_string += f"""
+                    Entity Rows: {entity.row}
+                    Description: {entity.description}
+                    Entity Type: {entity.entity_type}
+                """
+
+            final_response = f"""
+                NL Query: {nl_query}
+                Entities:
+                    {entity_string}
+                Models: {', '.join(sorted(list(all_models)))}
+            """    
+        else:
+            final_response = f"""
+                NL Query: {nl_query}
+            """
+
+        return McpSuccessResponse(
+            tool_name="gather_all_entities",
+            parameters=[nl_query],
+            results=[final_response],
+        )
+    
+    # I will refactor because this is a mess
     async def search_entity(
         entity: str,
         ctx: Context,
         table: str,
         columns: list[str],
         entity_type: str,
+        agent_config: AgentConfig,
         match_type: Literal['exact', 'fuzzy'] = 'exact',
         nl_query: str = "",
         **kwargs
@@ -432,10 +488,14 @@ def setup_mcp_app(config: MCPConfig):
             else:
                 return McpErrorResponse(tool_name=f"search_{entity_type}", parameters=[entity], error=f"{entity_type.capitalize()} '{entity}' not found.")
         else:
+<<<<<<< HEAD
             config = AgentConfig()
 <<<<<<< HEAD
 <<<<<<< HEAD
             llm_variants = await call_llm_for_entity_variants(config, entity, nl_query, entity_type)
+=======
+            llm_variants = await call_llm_for_entity_variants(agent_config, entity, nl_query, entity_type)
+>>>>>>> 970d52dd (feat: added new cursor rules and finished entity context retrieval work)
             entity_variants = generate_entity_string_variants(llm_variants)
 =======
             entity_variants = await call_llm_for_entity_variants(config, entity, nl_query, entity_type)
@@ -449,7 +509,7 @@ def setup_mcp_app(config: MCPConfig):
             if not (isinstance(resp, McpSuccessResponse) and resp.results):
                 return McpErrorResponse(tool_name=f"search_{entity_type}", parameters=[entity], error=f"No close matches found for {entity_type} '{entity}'.")
             candidates = resp.results
-            final_names = await call_llm_for_final_selection(config, nl_query, entity, entity_type, candidates)
+            final_names = await call_llm_for_final_selection(agent_config, nl_query, entity, entity_type, candidates)
             final_results = [row for row in candidates if any(row.get(col) in final_names for col in columns)]
             return McpSuccessResponse(tool_name=f"search_{entity_type}", parameters=[entity], results=final_results)
 
@@ -465,6 +525,7 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="project",
             match_type=match_type,
             nl_query=nl_query,
+            agent_config=config.agent_config,
             **kwargs
         )
 
@@ -480,6 +541,7 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="collection",
             match_type=match_type,
             nl_query=nl_query,
+            agent_config=config.agent_config,
             **kwargs
         )
 
@@ -495,6 +557,7 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="chain",
             match_type=match_type,
             nl_query=nl_query,
+            agent_config=config.agent_config,
             **kwargs
         )
 
@@ -510,6 +573,7 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="metric",
             match_type=match_type,
             nl_query=nl_query,
+            agent_config=config.agent_config,
             **kwargs
         )
 
@@ -525,6 +589,7 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="model",
             match_type=match_type,
             nl_query=nl_query,
+            agent_config=config.agent_config,
             **kwargs
         )
 
@@ -540,6 +605,7 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="artifact",
             match_type=match_type,
             nl_query=nl_query,
+            agent_config=config.agent_config,
             **kwargs
         )
 
@@ -559,11 +625,22 @@ def setup_mcp_app(config: MCPConfig):
             
             ## Available Tools
             
+            ### Core Query Tools
             1. `query_oso` - Run custom SQL queries against the data lake
             2. `list_tables` - Get a list of all available tables
             3. `get_table_schema` - Retrieve the schema for a specific table
             4. `get_sample_queries` - Get sample queries to help you get started
             5. `query_text2sql_agent` - Use a text2sql agent to generate a SQL query from a natural language query
+            
+            ### Entity Search Tools
+            6. `search_project` - Search for a project by name or display name in projects_v1
+            7. `search_collection` - Search for a collection by name or display name in collections_v1
+            8. `search_chain` - Search for a chain/network by name in int_chainlist
+            9. `search_metric` - Search for a metric by display name in metrics_v0
+            10. `search_model` - Search for a model by name in models_v1
+            11. `search_artifact` - Search for an artifact by name in artifacts_v1
+            
+            Note: All search tools support both 'exact' and 'fuzzy' match types for flexible entity discovery.
             
             ## Authentication
             
