@@ -55,3 +55,17 @@ def test_query_builder_with_metrics():
 
     assert tables_count["projects_v1"] == 1
     assert tables_count["collections_v1"] == 1
+
+
+def test_query_builder_with_metric_and_filtered_dimension():
+    registry = setup_registry()
+
+    query = QueryBuilder(registry)
+    query.select("project.count")
+    query.where("project.by_collection->collection.name = 'optimism'")
+
+    query_exp = query.build()
+
+    print(query_exp.sql(pretty=True, dialect="duckdb"))
+
+    assert True
