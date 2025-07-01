@@ -5,7 +5,16 @@ from oso_semantic import AttributePathTransformer
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
-from .definition import AttributePath, Filter, Model, QueryPart, QueryRegistry, Registry
+from .definition import (
+    AttributePath,
+    BoundRelationship,
+    Filter,
+    JoinTree,
+    Model,
+    QueryPart,
+    QueryRegistry,
+    Registry,
+)
 from .utils import exp_to_str
 
 logger = logging.getLogger(__name__)
@@ -16,7 +25,7 @@ class QueryBuilder(QueryRegistry):
         self._registry = registry
         self._select_refs: list[AttributePath] = []
         self._references: list[AttributePath] = []
-        self._deepest_reference: AttributePath | None = None
+        self._root_model: Model | None = None
 
         self._select_parts: list[QueryPart] = []
         self._select_aliases: list[str] = []
@@ -30,16 +39,6 @@ class QueryBuilder(QueryRegistry):
         Every reference adds 0 or more joins to the query
         """
         self._references.append(reference)
-
-        if self._deepest_reference is None:
-            self._deepest_reference = reference
-        else:
-            ref_depth = self._registry.dag.get_ancestor_depth(reference.base_model)
-            deepest_ref_depth = self._registry.dag.get_ancestor_depth(
-                self._deepest_reference.base_model
-            )
-            if ref_depth > deepest_ref_depth:
-                self._deepest_reference = reference
 
         return self
 
@@ -93,21 +92,10 @@ class QueryBuilder(QueryRegistry):
         self._limit = limit
         return self
 
-    @property
-    def base_model(self):
-        """Get the base model of the query"""
-        if not self._deepest_reference:
-            raise ValueError("No reference added to the query")
-        return self._registry.get_model(self._deepest_reference.base_model)
-
     def build(self):
         """Render a select query"""
-
-        if not self._deepest_reference:
-            raise ValueError("No reference added to the query")
-
-        base_model = self.base_model
-        deepest_reference = self._deepest_reference
+        join_tree = self._registry.dag.find_best_join_tree(self._references)
+        self._root_model = self._registry.get_model(join_tree.root)
 
         # Turn references into actual expressions
         select_parts = self._select_parts
@@ -124,15 +112,17 @@ class QueryBuilder(QueryRegistry):
         # Establish base query
         query = exp.select(*select_expressions)
 
-        base_table = base_model.table_exp
-        base_table_with_alias = base_table.as_(
-            deepest_reference.traverser().alias(base_model.name)
-        )
-        query = query.from_(base_table_with_alias)
+        base_model = self._root_model
+        base_table = base_model.table_exp.as_(
+            AttributePath.from_string("").traverser().alias(base_model.name)
+        )  # Use an empty path to get the root model alias
+        query = query.from_(base_table)
 
         # Add joins
-        joiner = QueryJoiner(query, base_model, self._registry)
-        for ref in self._references:
+        joiner = QueryJoiner(query, base_model, join_tree, self._registry)
+        for ref in sorted(
+            self._references, key=lambda r: join_tree.depths[r.base_model]
+        ):
             joiner.join_reference(ref)
 
         query = joiner.joined_query
@@ -183,12 +173,14 @@ class QueryJoiner:
         self,
         select: exp.Select,
         base_model: Model,
+        join_tree: JoinTree,
         registry: Registry,
         dialect: str = "duckdb",
     ):
         self._select = select
         self._base_model = base_model
         self._registry = registry
+        self._join_tree = join_tree
         self._already_joined: set[str] = set()
         self._already_joined.add(base_model.name)
         self._dialect = dialect
@@ -199,7 +191,7 @@ class QueryJoiner:
 
         if self._base_model.name != reference.base_model:
             # Join to the base_model
-            self.join(
+            self._join(
                 from_model_name=self._base_model.name,
                 from_table_alias=traverser.alias(self._base_model.name),
                 to_model_name=reference.base_model,
@@ -211,7 +203,7 @@ class QueryJoiner:
         from_table_through_attribute = traverser.current_attribute_name
 
         while traverser.next():
-            self.join(
+            self._join(
                 from_model_name=from_model_name,
                 from_table_alias=from_table_alias,
                 to_model_name=traverser.current_model_name,
@@ -223,7 +215,7 @@ class QueryJoiner:
             from_table_alias = traverser.alias(from_model_name)
             from_table_through_attribute = traverser.current_attribute_name
 
-    def join(
+    def _join(
         self,
         *,
         from_model_name: str,
@@ -238,7 +230,7 @@ class QueryJoiner:
         registry = self._registry
         query = self._select
 
-        join_path = registry.join_relationships(
+        join_path = self._join_relationships(
             from_model_name, to_model_name, through_attribute=through_attribute
         )
 
@@ -274,6 +266,32 @@ class QueryJoiner:
 
             self._already_joined.add(referenced_model_alias)
         self._select = query
+
+    def _join_relationships(
+        self, from_model: str, to_model: str, through_attribute: str = ""
+    ) -> t.List[BoundRelationship]:
+        """Returns the join path between two models"""
+        path = self._join_tree.get_path(from_model, to_model)
+
+        def build_join_path(
+            model_path: t.List[str], via_attribute: str = ""
+        ) -> t.List[BoundRelationship]:
+            prev_model: Model | None = None
+            join_path: t.List[BoundRelationship] = []
+            for model_name in model_path:
+                if prev_model is None:
+                    via_attribute = via_attribute
+                    prev_model = self._registry.models[model_name]
+                    continue
+
+                relationship = prev_model.find_relationship(
+                    name=via_attribute, model_ref=model_name
+                )
+                prev_model = self._registry.models[model_name]
+                join_path.append(relationship)
+            return join_path
+
+        return build_join_path(path, through_attribute)
 
     @property
     def joined_query(self):

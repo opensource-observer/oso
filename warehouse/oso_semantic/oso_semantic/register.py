@@ -10,11 +10,11 @@ from .definition import (
 )
 
 
-def register_oso_models(registry: Registry):
+def register_oso_models(registry: Registry, catalog_name: str = "iceberg"):
     registry.register(
         Model(
             name="collection",
-            table="oso.collections_v1",
+            table=f"{catalog_name}.oso.collections_v1",
             description=textwrap.dedent(
                 """
                 A collection is a group of related projects. A collection is an
@@ -59,7 +59,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="project",
-            table="oso.projects_v1",
+            table=f"{catalog_name}.oso.projects_v1",
             description=textwrap.dedent(
                 """
                 A project is a collection of related artifacts. A project is
@@ -111,7 +111,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="projects_by_collection",
-            table="oso.projects_by_collection_v1",
+            table=f"{catalog_name}.oso.projects_by_collection_v1",
             description=textwrap.dedent(
                 """
                 The join table between projects and collections. This table
@@ -140,7 +140,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="artifact",
-            table="oso.artifacts_v1",
+            table=f"{catalog_name}.oso.artifacts_v1",
             description=textwrap.dedent(
                 """
                 An artifact. This is the smallest atom of an acting entity in
@@ -193,7 +193,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="artifacts_by_project",
-            table="oso.artifacts_by_project_v1",
+            table=f"{catalog_name}.oso.artifacts_by_project_v1",
             description=textwrap.dedent(
                 """
                 The join table between artifacts and projects. This table
@@ -222,7 +222,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="github_event",
-            table="oso.int_events__github",
+            table=f"{catalog_name}.oso.int_events__github",
             description=textwrap.dedent(
                 """
                 A github event. This could be any event that occurs on github.
@@ -308,7 +308,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="metrics",
-            table="oso.metrics_v0",
+            table=f"{catalog_name}.oso.metrics_v0",
             description=textwrap.dedent(
                 """
                 Each row represents metadata about a unique metric. This data can be
@@ -351,7 +351,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="timeseries_metrics_by_artifact",
-            table="oso.timeseries_metrics_by_artifact_v0",
+            table=f"{catalog_name}.oso.timeseries_metrics_by_artifact_v0",
             description=textwrap.dedent(
                 """
                 Many-to-many table between metrics, artifacts, and dates. Each row
@@ -403,7 +403,7 @@ def register_oso_models(registry: Registry):
                 ),
                 Relationship(
                     source_foreign_key="metric_id",
-                    ref_model="metric",
+                    ref_model="metrics",
                     ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
@@ -414,7 +414,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="timeseries_metrics_by_project",
-            table="oso.timeseries_metrics_by_project_v0",
+            table=f"{catalog_name}.oso.timeseries_metrics_by_project_v0",
             description=textwrap.dedent(
                 """
                 Many-to-many table between metrics, projects, and dates. Each row
@@ -466,7 +466,7 @@ def register_oso_models(registry: Registry):
                 ),
                 Relationship(
                     source_foreign_key="metric_id",
-                    ref_model="metric",
+                    ref_model="metrics",
                     ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
@@ -477,7 +477,7 @@ def register_oso_models(registry: Registry):
     registry.register(
         Model(
             name="timeseries_metrics_by_collection",
-            table="oso.timeseries_metrics_by_collection_v0",
+            table=f"{catalog_name}.oso.timeseries_metrics_by_collection_v0",
             description=textwrap.dedent(
                 """
                 Many-to-many table between metrics, collections, and dates. Each row
@@ -529,7 +529,7 @@ def register_oso_models(registry: Registry):
                 ),
                 Relationship(
                     source_foreign_key="metric_id",
-                    ref_model="metric",
+                    ref_model="metrics",
                     ref_key="metric_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
