@@ -7,6 +7,8 @@ import { EVENTS } from "@/lib/types/posthog";
 import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 export const maxDuration = 60;
+const TEXT2SQL_PATH = "/v0/text2sql";
+const TEXT2SQL_URL = new URL(TEXT2SQL_PATH, OSO_AGENT_URL).href;
 
 const getLatestMessage = (messages: any[]) => {
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
       message: getLatestMessage(prompt.messages),
     });
 
-    const response = await fetch(OSO_AGENT_URL, {
+    const response = await fetch(TEXT2SQL_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -63,7 +65,9 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(prompt),
     });
 
-    return new Response(await response.text(), { status: response.status });
+    return NextResponse.json(await response.json(), {
+      status: response.status,
+    });
   } catch (error) {
     logger.error("Error in chat route:", error);
     return NextResponse.json(

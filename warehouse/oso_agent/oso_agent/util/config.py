@@ -122,7 +122,7 @@ class AgentConfig(BaseSettings):
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
     vector_store: VectorStoreConfig = Field(
-        discriminator="type", default_factory=lambda: LocalVectorStoreConfig(dir="")
+        discriminator="type", default_factory=lambda: LocalVectorStoreConfig()
     )
 
     oso_mcp_url: str = Field(

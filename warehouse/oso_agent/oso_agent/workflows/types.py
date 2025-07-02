@@ -3,6 +3,7 @@ import typing as t
 import pandas as pd
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.workflow import Event
+from oso_semantic.definition import SemanticQuery
 
 
 class Text2SQLGenerationEvent(Event):
@@ -18,6 +19,7 @@ class Text2SQLGenerationEvent(Event):
     synthesize_response: bool
     execute_sql: bool
 
+
 class SQLExecutionRequestEvent(Event):
     """An event that represents a request to execute a SQL query.
 
@@ -26,8 +28,10 @@ class SQLExecutionRequestEvent(Event):
     """
 
     id: str
-    sql: str
+    input_text: str
+    output_sql: str
     synthesize_response: bool
+
 
 class SQLResultEvent(Event):
     """An event that represents a result of a SQL query.
@@ -46,7 +50,7 @@ class SQLResultEvent(Event):
     def is_valid(self) -> bool:
         """Check if the SQLResult is valid."""
         return self.error is None
-    
+
     def result_to_str(self) -> str:
         """Convert the SQL result to a string representation."""
         if isinstance(self.results, pd.DataFrame):
@@ -65,6 +69,7 @@ class SQLResultSummaryRequestEvent(Event):
     id: str
     override_prompt: PromptTemplate | None = None
     result: SQLResultEvent
+
 
 class SQLResultSummaryResponseEvent(Event):
     """An event that represents a summary response for SQL rows result.
@@ -85,3 +90,16 @@ class ExceptionEvent(Event):
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return f"ExceptionEvent(error={self.error})"
+
+
+class SemanticQueryEvent(Event):
+    """An event that represents a semantic query generated from natural language input.
+
+    The `structured_query` is the SemanticQuery object that represents the user's query
+    in a structured format.
+    The `input_text` is the original natural language query that was used to generate the
+    structured query.
+    """
+
+    structured_query: SemanticQuery
+    input_text: str

@@ -13,7 +13,8 @@ MODEL (
   '0x8bfdc42f26bf691d378d2073ae509c46b85c0eed8db8abc6987b6725dd0d056a',
   '0x10da43868e7439419af2859f2539ed8b355a0f330bd05a6d028ddff8fd4a03d8',
   '0xb6129298b2c0a4a1d632797574e252afa98aae9b3fd2d303139811b303138e0c',  
-  '0xfd2011b5c4f3e85a70453e9f4eb945d81885cdceea763c44faf54a6b73b5b8b0'
+  '0xfd2011b5c4f3e85a70453e9f4eb945d81885cdceea763c44faf54a6b73b5b8b0',
+  '0x51504348243d8e8fa59cf2ba983d9255373e5eb23fe22a0d18c0d36028561ace'
 ]);
 
 WITH measurement_periods AS (
@@ -26,7 +27,8 @@ WITH measurement_periods AS (
       ('2', DATE '2025-04-11'),
       ('3', DATE '2025-05-11'),
       ('4', DATE '2025-06-05'),
-      ('5', DATE '2025-07-01')
+      ('5', DATE '2025-07-01'),
+      ('6', DATE '2025-08-01')
   ) AS t(period_number, cutoff_date)
 ),
 
