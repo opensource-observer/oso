@@ -11,7 +11,7 @@ updates:
       - "**/*"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "uv" # See documentation for possible values
+  - package-ecosystem: "pip" # See documentation for possible values
     directories:
       - "/"
       - "**/*"
