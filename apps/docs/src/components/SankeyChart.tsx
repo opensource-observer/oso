@@ -56,12 +56,37 @@ export default function SankeyChart({
               width: 20,
               nodePadding: 10,
               colors: [
-                "#4285f4",
-                "#34a853",
-                "#fbbc04",
-                "#ea4335",
-                "#9c27b0",
-                "#ff9800",
+                "#4285f4", // Google Blue
+                "#34a853", // Google Green
+                "#fbbc04", // Google Yellow
+                "#ea4335", // Google Red
+                "#9c27b0", // Purple
+                "#ff9800", // Orange
+                "#00bcd4", // Cyan
+                "#4caf50", // Light Green
+                "#ff5722", // Deep Orange
+                "#3f51b5", // Indigo
+                "#e91e63", // Pink
+                "#795548", // Brown
+                "#607d8b", // Blue Grey
+                "#8bc34a", // Light Green
+                "#ffc107", // Amber
+                "#9e9e9e", // Grey
+                "#673ab7", // Deep Purple
+                "#2196f3", // Blue
+                "#ffeb3b", // Yellow
+                "#f44336", // Red
+                "#009688", // Teal
+                "#cddc39", // Lime
+                "#3f51b5", // Indigo
+                "#ff4081", // Pink
+                "#00bcd4", // Cyan
+                "#4caf50", // Green
+                "#ff9800", // Orange
+                "#9c27b0", // Purple
+                "#607d8b", // Blue Grey
+                "#795548", // Brown
+                "#e91e63", // Pink
               ],
             },
             link: {
