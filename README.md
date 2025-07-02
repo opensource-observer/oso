@@ -30,7 +30,6 @@ Open Source Observer is a free analytics suite that helps funders measure the im
   - `/opsscripts`: Python module of various ops related tools
   - `/tf-modules`: Terraform modules
 - `/warehouse`: All code specific to the data warehouse
-  - `/dbt`: dbt configuration
   - `/docker`: Docker configuration
   - `/metrics_tools`: Python utilities for managing data
   - `/oso_agent`: OSO agent

@@ -11,7 +11,6 @@
   },
   "scripts": {
     "build": "turbo run build --concurrency=100%",
-    "build:dbt:docs": "uv run dbt docs generate",
     "build:docs": "turbo run build --filter=@opensource-observer/docs",
     "build:frontend": "turbo run build --filter=@opensource-observer/frontend",
     "build:hasura": "turbo run build --filter=@opensource-observer/hasura-clickhouse",
