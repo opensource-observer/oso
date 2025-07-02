@@ -1,123 +1,200 @@
-import { Web3 } from "web3";
-import { BigQuery, BigQueryOptions } from "@google-cloud/bigquery";
-import _ from "lodash";
+import { ethers } from "ethers";
 
-export interface EVMNetworkValidator {
-  isEOA(addr: string): Promise<boolean>;
-  isContract(addr: string): Promise<boolean>;
-  isFactory(addr: string): Promise<boolean>;
-  isDeployer(addr: string): Promise<boolean>;
-}
-
-interface GenericEVMNetworkValidatorOptions {
-  rpcUrl: string;
-  deployerTable: string;
-  bqOptions?: BigQueryOptions;
+export interface AddressValidationOptions {
+  osoApiKey: string;
+  osoEndpoint: string;
+  expectedNetwork: string; // e.g. "ARBITRUM", "BASE", "OPTIMISM", "ANY_EVM"
+  rpcUrl?: string;
 }
 
 /**
- * In general most EVM networks should be able to inherit directly from this.
+ * Checks if an address is a contract using ethers.js.
  */
-export class GenericEVMNetworkValidator implements EVMNetworkValidator {
-  private web3: Web3;
-  private bq: BigQuery;
-  private deployerTable: string;
-
-  static create(
-    options: GenericEVMNetworkValidatorOptions,
-  ): EVMNetworkValidator {
-    const web3 = new Web3(options.rpcUrl);
-    const bq = new BigQuery(options.bqOptions);
-    return new GenericEVMNetworkValidator(web3, bq, options.deployerTable);
+export async function isContractEthers(
+  address: string,
+  rpcUrl: string,
+): Promise<boolean> {
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  try {
+    const code = await provider.getCode(address);
+    return code !== "0x";
+  } catch {
+    return false;
   }
+}
 
-  constructor(web3: Web3, bq: BigQuery, deployerTable: string) {
-    this.web3 = web3;
-    this.bq = bq;
-    this.deployerTable = deployerTable;
-  }
-
-  async isEOA(addr: string): Promise<boolean> {
-    const code = await this.web3.eth.getCode(addr);
-    return code === "0x";
-  }
-
-  async isContract(addr: string): Promise<boolean> {
-    return !(await this.isEOA(addr));
-  }
-
-  async isFactory(addr: string): Promise<boolean> {
-    const isContract = await this.isContract(addr);
-    if (!isContract) {
-      return false;
+/**
+ * Queries the contracts_v0 endpoint for contract info.
+ */
+export async function queryContractsV0(
+  address: string,
+  osoApiKey: string,
+  osoEndpoint: string,
+) {
+  const query = `
+    query ($address: String!) {
+      oso_contractsV0(where: { contractAddress: { _eq: $address }, }) {
+        contractAddress
+        contractNamespace
+        originatingAddress
+        factoryAddress
+      }
     }
-    return true;
+  `;
+  const response = await fetch(osoEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${osoApiKey}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: { address: address.toLowerCase() },
+    }),
+  });
+  const data = await response.json();
+  return data?.data?.oso_contractsV0 || [];
+}
+
+/**
+ * Validates an address as a contract, factory, or deployer on the expected network.
+ */
+export async function validateAddressOnChain(
+  address: string,
+  options: AddressValidationOptions,
+  queryFn: typeof queryContractsV0 = queryContractsV0,
+): Promise<{
+  isContract: boolean;
+  isFactory: boolean;
+  isDeployer: boolean;
+  isOnExpectedNetwork: boolean;
+  contractNamespaces: string[];
+}> {
+  const results = await queryFn(
+    address,
+    options.osoApiKey,
+    options.osoEndpoint,
+  );
+
+  const contractNamespaces = results.map((c: any) => c.contractNamespace);
+  const isContract = results.length > 0;
+  const isFactory = results.some((c: any) => !!c.factoryAddress);
+  const isDeployer = results.some((c: any) => !!c.originatingAddress);
+
+  let isOnExpectedNetwork = false;
+  if (options.expectedNetwork === "ANY_EVM") {
+    isOnExpectedNetwork = isContract;
+  } else {
+    isOnExpectedNetwork = contractNamespaces.includes(options.expectedNetwork);
   }
 
-  async isDeployer(addr: string): Promise<boolean> {
-    const query = `
-    SELECT * 
-    FROM ${this.deployerTable}
-    WHERE LOWER(deployer_address) = '${addr}'
-    `;
-    const [job] = await this.bq.createQueryJob(query);
-    const [results] = await job.getQueryResults();
-    if (results.length !== 0) {
-      return true;
-    } else {
-      return false;
+  return {
+    isContract,
+    isFactory,
+    isDeployer,
+    isOnExpectedNetwork,
+    contractNamespaces,
+  };
+}
+
+/**
+ * Checks if an address is an EOA
+ */
+export async function isEOA(address: string, rpcUrl: string): Promise<boolean> {
+  return !(await isContractEthers(address, rpcUrl));
+}
+
+/**
+ * Warning method for unsupported artifact types
+ */
+export async function warnUnsupportedArtifactType(
+  addr: string,
+  artifactType: string,
+): Promise<boolean> {
+  console.warn(
+    `⚠️  ${artifactType} validation not yet implemented for address: ${addr}. Using contracts_v0 endpoint.`,
+  );
+  return false;
+}
+
+export async function isContractOnChain(
+  address: string,
+  options: AddressValidationOptions,
+): Promise<boolean> {
+  const query = `
+    query ($address: String!) {
+      oso_contractsV0(where: { contractAddress: { _eq: $address } }) {
+        contractAddress
+      }
     }
-  }
+  `;
+  const response = await fetch(options.osoEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${options.osoApiKey}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: { address: address.toLowerCase() },
+    }),
+  });
+  const data = await response.json();
+  return (data?.data?.oso_contractsV0?.length ?? 0) > 0;
 }
 
-export type EthereumOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "deployerTable"
->;
-
-export function EthereumValidator(options: EthereumOptions) {
-  return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_ethereum__deployers`",
+export async function isDeployerOnChain(
+  address: string,
+  options: AddressValidationOptions,
+): Promise<boolean> {
+  const query = `
+    query ($address: String!) {
+      oso_contractsV0(where: { originatingAddress: { _eq: $address } }, limit: 1) {
+        originatingAddress
+      }
+    }
+  `;
+  const response = await fetch(options.osoEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${options.osoApiKey}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: { address: address.toLowerCase() },
     }),
-  );
+  });
+  const data = await response.json();
+  return (data?.data?.oso_contractsV0?.length ?? 0) > 0;
 }
 
-export type ArbitrumOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "deployerTable"
->;
-
-export function ArbitrumValidator(options: ArbitrumOptions) {
-  return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_arbitrum__deployers`",
+export async function isFactoryOnChain(
+  address: string,
+  options: AddressValidationOptions,
+  namespace: string,
+): Promise<boolean> {
+  const query = `
+    query ($address: String!, $namespace: String!) {
+      oso_contractsV0(
+        where: { factoryAddress: { _eq: $address }, contractNamespace: { _eq: $namespace } }
+        limit: 1
+      ) {
+        factoryAddress
+      }
+    }
+  `;
+  const response = await fetch(options.osoEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${options.osoApiKey}`,
+    },
+    body: JSON.stringify({
+      query,
+      variables: { address: address.toLowerCase(), namespace },
     }),
-  );
-}
-
-export type BaseOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "deployerTable"
->;
-
-export function BaseValidator(options: BaseOptions) {
-  return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_base__deployers`",
-    }),
-  );
-}
-
-export type OptimismOptions = Omit<
-  GenericEVMNetworkValidatorOptions,
-  "deployerTable"
->;
-
-export function OptimismValidator(options: OptimismOptions) {
-  return GenericEVMNetworkValidator.create(
-    _.merge(options, {
-      deployerTable: "`opensource-observer.oso.stg_optimism__deployers`",
-    }),
-  );
+  });
+  const data = await response.json();
+  return (data?.data?.oso_contractsV0?.length ?? 0) > 0;
 }
