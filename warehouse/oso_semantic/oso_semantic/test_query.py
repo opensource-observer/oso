@@ -69,4 +69,4 @@ def test_query_builder_with_metric_and_filtered_dimension():
 
     print(query_exp.sql(pretty=True, dialect="duckdb"))
 
-    assert True
+    assert False
