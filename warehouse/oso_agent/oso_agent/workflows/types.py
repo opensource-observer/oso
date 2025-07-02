@@ -2,8 +2,15 @@ import typing as t
 
 import pandas as pd
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.workflow import Event
 from oso_semantic.definition import SemanticQuery
+from pydantic import BaseModel
+
+
+class Event(BaseModel):
+    """This is a base class for all events in the MixableWorkflow system.
+    
+    DO NOT USE THE Event CLASS FROM THE llama_index.core.workflow module."""
+    pass
 
 
 class Text2SQLGenerationEvent(Event):
@@ -23,7 +30,7 @@ class Text2SQLGenerationEvent(Event):
 class SQLExecutionRequestEvent(Event):
     """An event that represents a request to execute a SQL query.
 
-    The `input_text` is the natural language query, and the `output_sql` is the
+    The `input_text` is the natural language query if one exists, and the `output_sql` is the
     generated SQL query.
     """
 

@@ -108,7 +108,7 @@ class PyosoWorkflow(MixableWorkflow):
             return SQLResultEvent(
                 id=query.id,
                 input_text=query.input_text,
-                output_sql=query.output_sql,
+                output_sql=query.sql,
                 results=[],
                 error=e,
                 synthesize_response=query.synthesize_response,
@@ -156,7 +156,7 @@ class McpDBWorkflow(MixableWorkflow):
             return SQLResultEvent(
                 id=query.id,
                 input_text=query.input_text,
-                output_sql=query.output_sql,
+                output_sql=query.sql,
                 results=[],
                 error=e,
                 synthesize_response=query.synthesize_response,
