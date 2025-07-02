@@ -52,7 +52,7 @@ def default_lifespan(config: MCPConfig):
         """Manage application lifecycle with OSO client in context"""
         api_key = config.oso_api_key
 
-        client = Client(api_key)
+        client = Client(api_key.get_secret_value())
         context = AppContext(oso_client=client)
 
         try:
@@ -134,9 +134,8 @@ def setup_mcp_app(config: MCPConfig):
                 parameters=[sql],
                 error=error_msg,
             )
-            #return {"success": False, "query": sql, "error": error_msg}
+            # return {"success": False, "query": sql, "error": error_msg}
             return response
-
 
     @mcp.tool(
         description="Retrieve a list of all available tables in the OSO data lake, including their names and metadata.",
@@ -169,7 +168,7 @@ def setup_mcp_app(config: MCPConfig):
                 results=tables,
             )
             return response
-            #return {"success": True, "tables": tables}
+            # return {"success": True, "tables": tables}
         except Exception as e:
             error_msg = str(e)
             if ctx:
@@ -180,8 +179,7 @@ def setup_mcp_app(config: MCPConfig):
                 error=error_msg,
             )
             return response
-            #return {"success": False, "error": error_msg}
-
+            # return {"success": False, "error": error_msg}
 
     @mcp.tool(
         description="Get the column schema (names, types, etc.) for a specified table in the OSO data lake.",
@@ -219,7 +217,7 @@ def setup_mcp_app(config: MCPConfig):
                 results=schema,
             )
             return response
-            #return {"success": True, "table": table_name, "schema": schema}
+            # return {"success": True, "table": table_name, "schema": schema}
         except Exception as e:
             error_msg = str(e)
             if ctx:
@@ -231,8 +229,7 @@ def setup_mcp_app(config: MCPConfig):
                 error=error_msg,
             )
             return response
-            #return {"success": False, "table": table_name, "error": error_msg}
-
+            # return {"success": False, "table": table_name, "error": error_msg}
 
     @mcp.tool(
         description="Retrieve a curated set of example SQL queries and their descriptions to help users get started with common OSO data lake tasks.",
@@ -389,11 +386,11 @@ def setup_mcp_app(config: MCPConfig):
         """
         if ctx:
             await ctx.info(f"Converting natural language query to SQL: {natural_language_query}")
-        
+
         api_key = config.oso_api_key
         if not api_key:
             raise ValueError("OSO API key is not available in the context")
-        
+
         url = "https://www.opensource.observer/api/v1/text2sql"
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -412,7 +409,7 @@ def setup_mcp_app(config: MCPConfig):
             parameters=[natural_language_query],
             results=[response.json()["sql"]],
         )
-    
+
     @mcp.tool(
         description="Generate a SQL query from a natural language question, using entity extraction and the text2sql agent for improved accuracy.",
     )
@@ -441,7 +438,7 @@ def setup_mcp_app(config: MCPConfig):
             parameters=[natural_language_query],    
             results=[query_text2sql_agent_result.results[0]],
         )
-    
+
     @mcp.tool(
         description="Extract and resolve all relevant entities (projects, collections, metrics, etc.) from a natural language query, returning their types and context.",
     )
@@ -461,16 +458,16 @@ def setup_mcp_app(config: MCPConfig):
             gather_all_entities("Show all projects in the Ethereum collection", ctx)
         """
         # 1. Deconstruct the query into entities using the entity_deconstructor workflow
-        entity_deconstructor_result = await entity_deconstructor(nl_query, config.agent_config)
-        
+        entity_deconstructor_result = await entity_deconstructor(nl_query, config)
+
         # 2. For each entity, try to find it in the database using the ranking order
         resolved_entities = []
         all_models = set()      
 
-        #print(f"Entity Deconstructor Result: {entity_deconstructor_result.entities}")
+        # print(f"Entity Deconstructor Result: {entity_deconstructor_result.entities}")
         for entity_guess in entity_deconstructor_result.entities:            
             # 3. Try each entity type in ranking order until we find a valid one
-            #print(f"Entity Rankings: {entity_guess.ranking}")
+            # print(f"Entity Rankings: {entity_guess.ranking}")
             for entity_type in entity_guess.ranking:
                 ##print(f"Searching for {entity_type} {entity_guess.name}")
                 search_result = None
@@ -493,7 +490,7 @@ def setup_mcp_app(config: MCPConfig):
                 elif entity_type == "artifact":
                     search_result = await search_artifact(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
                     print(f"Search result for artifact: {search_result}")
-                    
+
                 if search_result and search_result.success:
                     entity_found = ResolvedEntity(
                         row=search_result.results[0],
@@ -531,7 +528,7 @@ def setup_mcp_app(config: MCPConfig):
             parameters=[nl_query],
             results=[final_response],
         )
-    
+
     # I will refactor because this is a mess
     async def search_entity(
         entity: str,
@@ -594,8 +591,8 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="project",
             match_type=match_type,
             nl_query=nl_query,
-            agent_config=config.agent_config,
-            **kwargs
+            agent_config=config,
+            **kwargs,
         )
 
     @mcp.tool(
@@ -626,8 +623,8 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="collection",
             match_type=match_type,
             nl_query=nl_query,
-            agent_config=config.agent_config,
-            **kwargs
+            agent_config=config,
+            **kwargs,
         )
 
     @mcp.tool(
@@ -658,8 +655,8 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="chain",
             match_type=match_type,
             nl_query=nl_query,
-            agent_config=config.agent_config,
-            **kwargs
+            agent_config=config,
+            **kwargs,
         )
 
     @mcp.tool(
@@ -690,8 +687,8 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="metric",
             match_type=match_type,
             nl_query=nl_query,
-            agent_config=config.agent_config,
-            **kwargs
+            agent_config=config,
+            **kwargs,
         )
 
     @mcp.tool(
@@ -722,8 +719,8 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="model",
             match_type=match_type,
             nl_query=nl_query,
-            agent_config=config.agent_config,
-            **kwargs
+            agent_config=config,
+            **kwargs,
         )
 
     @mcp.tool(
@@ -754,8 +751,8 @@ def setup_mcp_app(config: MCPConfig):
             entity_type="artifact",
             match_type=match_type,
             nl_query=nl_query,
-            agent_config=config.agent_config,
-            **kwargs
+            agent_config=config,
+            **kwargs,
         )
 
     @mcp.resource("help://getting-started")

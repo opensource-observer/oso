@@ -2,17 +2,9 @@ import typing as t
 
 from oso_agent.util.config import AgentConfig
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class MCPConfig(BaseSettings):
-    """Configuration for the agent and its components."""
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        env_prefix="MCP_",
-        extra="ignore",
-    )
+class MCPConfig(AgentConfig):
 
     host: str = Field(
         default="127.0.0.1",
@@ -26,14 +18,4 @@ class MCPConfig(BaseSettings):
     transport: t.Literal['sse', 'stdio'] = Field(
         default="sse",
         description="The MCP transport.",
-    )
-
-    oso_api_key: str = Field(
-        default="MISSING OSO API KEY",
-        description="API key for OSO",
-    )
-
-    agent_config: AgentConfig = Field(
-        default=AgentConfig(),
-        description="Configuration for the agent",
     )
