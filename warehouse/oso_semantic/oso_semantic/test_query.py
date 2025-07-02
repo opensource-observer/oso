@@ -16,8 +16,6 @@ def test_query_builder_with_dimensions():
 
     query_exp = query.build()
 
-    print(query_exp.sql(pretty=True, dialect="duckdb"))
-
     joins = list(query_exp.find_all(exp.Join))
 
     assert len(joins) == 4
@@ -40,8 +38,6 @@ def test_query_builder_with_metrics():
     query.select("projects.count AS project_count")
 
     query_exp = query.build()
-
-    print(query_exp.sql(pretty=True, dialect="duckdb"))
 
     joins = list(query_exp.find_all(exp.From)) + list(query_exp.find_all(exp.Join))
 
@@ -66,6 +62,14 @@ def test_query_builder_with_metric_and_filtered_dimension():
 
     query_exp = query.build()
 
-    print(query_exp.sql(pretty=True, dialect="duckdb"))
-
-    assert True
+    assert query_exp.expressions is not None
+    assert len(query_exp.expressions) == 1
+    alias = query_exp.expressions[0].alias
+    assert alias == "project_count"
+    count_exp = query_exp.expressions[0].this
+    assert isinstance(count_exp, exp.Count)
+    column_exp = count_exp.this
+    assert isinstance(column_exp, exp.Column)
+    column_name_identifier = column_exp.this
+    assert isinstance(column_name_identifier, exp.Identifier)
+    assert column_name_identifier.this == "project_id"
