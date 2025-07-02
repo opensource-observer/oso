@@ -4422,7 +4422,7 @@ requires-dist = [
 
 [[package]]
 name = "oso-semantic"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "warehouse/oso_semantic" }
 dependencies = [
     { name = "pydantic" },
@@ -5064,7 +5064,7 @@ requires-dist = [
 
 [[package]]
 name = "pyoso"
-version = "0.5.1"
+version = "0.5.2"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
