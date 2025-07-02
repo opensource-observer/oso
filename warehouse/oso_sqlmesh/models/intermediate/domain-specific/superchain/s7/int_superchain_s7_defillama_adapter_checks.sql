@@ -2,7 +2,13 @@ MODEL (
   name oso.int_superchain_s7_defillama_adapter_checks,
   description 'Defillama adapter checks',
   kind VIEW,
-  dialect trino
+  dialect trino,
+  tags (
+    'entity_category=project'
+  ),
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  ),
 );
 
 @DEF(sample_date, '2025-06-01');
