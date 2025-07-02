@@ -5,7 +5,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
-    "build": "pnpm build:everything",
+    "build": "pnpm build:docs",
     "build:docs": "docusaurus build",
     "build:everything": "pnpm plasmic:update && pnpm plasmic:sync && pnpm build:docs",
     "swizzle": "docusaurus swizzle",
@@ -42,7 +42,7 @@
     "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.23.0",
-    "@plasmicapp/cli": "^0.1.338",
+    "@plasmicapp/cli": "^0.1.339",
     "dotenv": "^16.4.7",
     "typescript": "~5.8.2"
   },
