@@ -49,7 +49,7 @@
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.49.1",
+    "@supabase/supabase-js": "^2.50.2",
     "@tremor/react": "^3.18.7",
     "add": "^2.0.6",
     "ai": "^4.3.6",
