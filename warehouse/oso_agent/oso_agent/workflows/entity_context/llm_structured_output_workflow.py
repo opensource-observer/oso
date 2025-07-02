@@ -1,6 +1,7 @@
 import logging
 import typing as t
 
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.types import BaseOutputParser
 from llama_index.core.workflow import Context, StartEvent, StopEvent, step
@@ -28,7 +29,7 @@ class LLMStructuredOutputWorkflow(MixableWorkflow):
     """
     config: ResourceDependency[AgentConfig]
     structured_output_class: ResourceDependency[t.Callable[..., BaseModel]]
-    llm: ResourceDependency[t.Any]
+    llm: ResourceDependency[FunctionCallingLLM]
 
     @step
     async def handle_prompt(self, ctx: Context, event: StartEvent) -> StopEvent:
