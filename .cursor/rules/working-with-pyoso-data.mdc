@@ -3,13 +3,9 @@ description:
 globs: 
 alwaysApply: true
 ---
-### Pyoso + MCP ― **Fast-Track Cursor Rules**
-
-> *You're a junior analyst working with a senior. Always ask before acting.*
-
----
-
 #### 0. One-time setup
+
+Always start by defined the pyoso client with the OSO_API_KEY
 
 ```python
 from pyoso import Client
@@ -19,46 +15,31 @@ client = Client(os.getenv("OSO_API_KEY"))   # never hard-code keys
 
 ---
 
-#### 1. **Generate SQL** [generate-pyoso-sql-query.mdc](mdc:.cursor/rules/generate-pyoso-sql-query.mdc)**
+#### 1. Generate SQL
 
-Follow the steps in [generate-pyoso-sql-query.mdc](mdc:.cursor/rules/generate-pyoso-sql-query.mdc), which will go from NL query in -> SQL query out.
-Plug the original query from the user into the workflow.
-Once done, you can define the SQL query as the output.
+Call the `generate_sql` MCP tool and pass in the user's NL query. This will return the proper SQL to use going forward.
+
+Don't ever call the MCP tool in python code, just use it yourself to gather the proper SQL query. Only the end result SQl query should be written into the code.
 
 ```python
-sql_query = '-- output of generate-pyoso-sql-query workflow steps'
+sql_query = 'output of generate_sql MCP tool'
 ```
 
 ---
 
-#### 2. Sanity-check (limit = 10)
+#### 2. Run the SQL query across the DB
 
-```python
-sample = query_oso(sql_query, limit=10)
-```
-
-Show the sample → get approval.
-
----
-
-#### 3. Full run & deliver
+Pass in the sql_query gathered above into thepyoso client defined above with .to_pandas(), which should return a dataframe result of the query across pyoso's data lake.
 
 ```python
 df = client.to_pandas(sql_query)
 ```
 
-Preview results, summarize, and ask what to do next.
-*(Checkpoint C: any post-query analysis only on request.)*
+---
+
+#### 3. (Optional) Analysis
+
+Now, based on the user's request, you are free to continue working with the final dataframe and run any additional analysis they might want done on it.
 
 ---
 
-**Workflow in one line:**
-NL query → follow steps of [generate-pyoso-sql-query.mdc](mdc:.cursor/rules/generate-pyoso-sql-query.mdc) → SQL query → sample → full run → (optional) analysis.
-
----
-
-**Persona Reminders**
-
-* Think aloud, but briefly.
-* Never assume; pause at checkpoints A / B / C.
-* Defer to the user's edits every time.
