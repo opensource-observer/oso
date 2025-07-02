@@ -10,14 +10,16 @@ For supported versions of pyoso:
 | ------- | ------------------ |
 | 0.5.1   | :white_check_mark: |
 | 0.5.0   | :x:                |
-| 0.4.x   | :x: |
+| 0.4.x   | :x:                |
 | < 5.0   | :x:                |
 
 ## Reporting a Vulnerability
 
 As a public good, we rely on the community to help safely disclose vulnerabilities.
 
-TODO: 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+You can report vulnerabilities directly in the "Security" tab on our
+[GitHub repo](https://github.com/opensource-observer/oso/security).
+
+We will try to respond to all reports ASAP.
+If you need to reach us sooner, please find us on our
+[Discord](https://www.opensource.observer/discord).
