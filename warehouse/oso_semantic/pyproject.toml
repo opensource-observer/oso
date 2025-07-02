@@ -1,6 +1,6 @@
 [project]
 name = "oso-semantic"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 readme = "README.md"
 authors = [{ name = "OSO Team", email = "opensource-observer@googlegroups.com" }]
