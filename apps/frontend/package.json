@@ -60,7 +60,7 @@
     "formik-mui": "5.0.0-alpha.1",
     "formik-mui-x-date-pickers": "^1.0.0",
     "generate-api-key": "^1.0.2",
-    "graphql": "^16.10.0",
+    "graphql": "^16.11.0",
     "graphql-tag": "^2.12.6",
     "instantsearch.css": "^8.5.1",
     "next": "^14.2.30",
