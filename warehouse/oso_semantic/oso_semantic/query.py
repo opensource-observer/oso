@@ -7,11 +7,12 @@ from sqlmesh.core.dialect import parse_one
 
 from .definition import (
     AttributePath,
+    BoundDimension,
     BoundRelationship,
     Filter,
     JoinTree,
     Model,
-    QueryPart,
+    QueryComponent,
     QueryRegistry,
     Registry,
 )
@@ -27,9 +28,9 @@ class QueryBuilder(QueryRegistry):
         self._references: list[AttributePath] = []
         self._root_model: Model | None = None
 
-        self._select_parts: list[QueryPart] = []
+        self._select_parts: list[QueryComponent] = []
         self._select_aliases: list[str] = []
-        self._filter_parts: list[QueryPart] = []
+        self._filter_parts: list[QueryComponent] = []
 
         self._limit = 0
 
@@ -45,15 +46,9 @@ class QueryBuilder(QueryRegistry):
     def select(self, *selects: str):
         """Add a model attribute to the select clause"""
         for select in selects:
-            result = AttributePathTransformer.transform(parse_one(select))
-            if len(result.references) != 1:
-                raise ValueError(
-                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
-                )
-            if not isinstance(result.node, (exp.Anonymous, exp.Alias)):
-                raise ValueError(
-                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
-                )
+            result = AttributePathTransformer.transform(parse_one(select), registry=self._registry)
+            print(f"Select result: {result.references}")
+            print(f"Select node: {result.node}")
             reference = result.references[0]
             alias = reference.to_select_alias()
             if isinstance(result.node, exp.Alias):
@@ -77,9 +72,10 @@ class QueryBuilder(QueryRegistry):
         for filter in filters:
             filter_expr = Filter(query=filter)
             traverser = AttributePath(path=[]).traverser()
-            filter_part = filter_expr.to_query_part(
+            filter_part = filter_expr.to_query_component(
                 traverser, filter_expr.query, self._registry
             )
+            print(f"Filter part: {filter_part}")
 
             for ref in filter_part.resolved_references:
                 self.add_reference(ref)
@@ -158,9 +154,7 @@ class QueryBuilder(QueryRegistry):
                 traverser = ref.traverser()
                 while traverser.next():
                     pass
-                return exp.to_column(
-                    f"{traverser.current_table_alias}.{traverser.current_attribute_name}"
-                )
+                return f"{traverser.current_model_name}.{traverser.current_attribute_name}"
             return node
 
         query = query.transform(transform_semantic_ref)

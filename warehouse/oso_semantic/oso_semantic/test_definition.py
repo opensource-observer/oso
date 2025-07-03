@@ -1,6 +1,6 @@
 import duckdb
 import pandas as pd
-from sqlglot import parse_one
+from sqlglot import parse_one, exp
 
 from .definition import (
     AttributePath,
@@ -13,6 +13,7 @@ from .definition import (
     Registry,
     Relationship,
     RelationshipType,
+    SemanticExpression,
 )
 from .testing import setup_registry
 
@@ -163,7 +164,7 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
     )
 
 
-def test_resolve_attributes_to_query_part(semantic_registry: Registry):
+def test_resolve_attributes_to_query_component(semantic_registry: Registry):
     # Test resolving a single attribute
     ref0 = AttributePath.from_string("artifact.name")
 
@@ -259,7 +260,7 @@ def test_resolve_metrics():
     ref = AttributePath.from_string("artifact.id")
     traverser = ref.traverser()
 
-    query_part = metric.to_query_part(traverser, ref, registry)
+    query_part = metric.to_query_component(traverser, ref, registry)
 
     assert query_part.resolved_references == [ref]
 
@@ -673,3 +674,24 @@ def test_dag_find_best_join_tree_no_path():
         print(
             "✓ find_best_join_tree correctly raises exception for disconnected models"
         )
+
+
+def test_semantic_expression():
+    registry = setup_registry()
+    project_count_expression = SemanticExpression(query="project.count > 10")
+    print(project_count_expression.references)
+
+    assert project_count_expression.references == [
+        AttributePath.from_string("project.count")
+    ]
+
+    final_expression = project_count_expression.resolve("self", registry)
+
+    assert final_expression == exp.GT(
+        expressions=[
+            exp.Count(
+                this=exp.Column(this="self", name="count"),
+            ),
+            exp.Literal.number(10),
+        ]
+    )
