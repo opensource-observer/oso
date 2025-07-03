@@ -13,18 +13,20 @@ Observer (OSO) data lake, allowing you to:
 
 - Run SQL queries against the OSO data lake
 - Explore available tables and their schemas
-- Access sample queries to help you get started
+- Convert natural-language questions into SQL
+- Resolve project / collection / metric entities from user text
+- Search the data lake for projects, collections, chains, metrics, models, and artifacts
 
-OSO tracks metrics about open source projects, including GitHub stats, funding
+OSO tracks metrics about open-source projects, including GitHub stats, funding
 data, and on-chain activity.
 
 ## Installation
 
 1. Install dependencies:
 
-```bash
-uv sync --all-packages
-```
+   ```bash
+   uv sync --all-packages
+   ```
 
 2. Get an OSO API key from
    [Open Source Observer](https://www.opensource.observer). Follow the
@@ -33,109 +35,205 @@ uv sync --all-packages
 
 ## Running the MCP server
 
-You can start an instance of the MCP server
-
 ```bash
 uv run mcp serve
 ```
 
 ## Setting Up with Claude Desktop
 
-1. Open Claude Desktop settings by clicking on the Claude menu and selecting
-   "Settings"
-2. Select "Developer" in the sidebar and click "Edit Config"
-3. Add the following configuration to the `claude_desktop_config.json`:
+1. Open Claude Desktop settings (**Claude → Settings**)
 
-```jsonc
+2. Choose **Developer**, click **Edit Config**
+
+3. Insert:
+
+   ```jsonc
+   {
+     "mcpServers": {
+       "oso-data-lake": {
+         "command": "uv",
+         "args": ["run", "/path/to/your/oso/warehouse/oso_mcp/main.py"],
+         "env": {
+           "OSO_API_KEY": "your_api_key_here",
+           "VIRTUAL_ENV": "/path/to/your/oso/warehouse/oso_mcp/.venv",
+         },
+       },
+     },
+   }
+   ```
+
+4. Replace the paths and API key
+
+5. Restart Claude Desktop
+
+---
+
+## **Connecting the MCP Server to Cursor**
+
+### 1 · Copy environment variables
+
+Add the block below (from `.env.example`) to your local `.env`, then fill values:
+
+```env
+# MCP + Text2SQL Agent
+AGENT_VECTOR_STORE__TYPE=local
+AGENT_VECTOR_STORE__DIR=/path/to/your/vector/storage/directory
+
+AGENT_LLM__TYPE=google_genai
+AGENT_LLM__GOOGLE_API_KEY=your_google_genai_api_key_here
+
+AGENT_OSO_API_KEY=your_oso_api_key_here
+AGENT_ARIZE_PHOENIX_USE_CLOUD=0
+```
+
+### 2 · Configure Cursor
+
+Create or edit `.cursor/mcp.json`:
+
+```json
 {
   "mcpServers": {
-    // other MCP servers...
-    "oso-data-lake": {
-      "command": "uv",
-      "args": ["run", "/path/to/your/oso/warehouse/oso_mcp/main.py"],
-      "env": {
-        "OSO_API_KEY": "your_api_key_here",
-        "VIRTUAL_ENV": "/path/to/your/oso/warehouse/oso_mcp/.venv",
-      },
-    },
-  },
+    "oso": {
+      "url": "http://127.0.0.1:8000/sse"
+    }
+  }
 }
 ```
 
-4. Replace `/path/to/your/oso_mcp/` with the actual path to your repository
-5. Replace `your_api_key_here` with your OSO API key
-6. Restart Claude Desktop
+### 3 · Start the server
+
+```bash
+uv run oso_mcp serve
+```
+
+### 4 · Enable inside Cursor
+
+_Cursor → Settings → Tools & Integrations → MCP_
+Toggle **oso** on (and any individual tools you care about).
+
+> **Note:** If you add/remove tools later, **close and reopen Cursor**.
+> Cursor only connects to each MCP at startup.
+
+---
 
 ## Available Tools
 
-### query_oso
+| Tool                   | Purpose (one-liner)                              |
+| ---------------------- | ------------------------------------------------ |
+| `query_oso`            | Execute custom SQL against the OSO data lake     |
+| `list_tables`          | List every table available                       |
+| `get_table_schema`     | Show columns & types for a table                 |
+| `get_sample_queries`   | Retrieve curated example queries                 |
+| `query_text2sql_agent` | Convert plain English to SQL via OSO Text2SQL    |
+| `generate_sql`         | Smarter NLQ → SQL (entity resolution + Text2SQL) |
+| `gather_all_entities`  | Extract & resolve entities from a NLQ            |
+| `search_project`       | Find matching rows in `projects_v1`              |
+| `search_collection`    | Find matching rows in `collections_v1`           |
+| `search_chain`         | Find matching rows in `int_chainlist`            |
+| `search_metric`        | Find matching rows in `metrics_v0`               |
+| `search_model`         | Find matching rows in `models_v1`                |
+| `search_artifact`      | Find matching rows in `artifacts_v1`             |
 
-Run SQL queries against the OSO data lake.
+Below are fuller details and examples.
 
-**Parameters:**
+### `query_oso`
 
-- `sql` (string): SQL query to execute (SELECT statements only)
-- `limit` (integer, optional): Limit to apply to the query results
+Run any **SELECT** query.
 
-**Example:**
-
-```
-Can you run this SQL query against the OSO data lake: SELECT * FROM collections_v1 LIMIT 5
-```
-
-### list_tables
-
-List all available tables in the OSO data lake.
-
-**Example:**
-
-```
-What tables are available in the OSO data lake?
-```
-
-### get_table_schema
-
-Get the schema for a specific table in the OSO data lake.
-
-**Parameters:**
-
-- `table_name` (string): Name of the table to get schema for
-
-**Example:**
-
-```
-Show me the schema for the projects_v1 table
+```text
+Parameters
+- sql   (string, required)
+- limit (integer, optional)
 ```
 
-### get_sample_queries
+Example
+`query_oso("SELECT * FROM collections_v1", ctx, limit=5)`
 
-Get a set of sample queries to help users get started with the OSO data lake.
+### `list_tables`
 
-**Example:**
+No parameters.
 
+Example
+`list_tables(ctx)`
+
+### `get_table_schema`
+
+```text
+Parameters
+- table_name (string, required)
 ```
-Show me some sample queries for the OSO data lake
+
+Example
+`get_table_schema("projects_v1", ctx)`
+
+### `get_sample_queries`
+
+Returns a JSON list of pre-built queries and explanations.
+
+### `query_text2sql_agent`
+
+Translate NLQ to SQL directly.
+
+```text
+Parameters
+- natural_language_query (string, required)
 ```
+
+### `generate_sql`
+
+Uses **entity extraction** → **Text2SQL** for better accuracy.
+
+```text
+Parameters
+- natural_language_query (string, required)
+```
+
+### `gather_all_entities`
+
+Resolve all projects / collections / metrics etc. mentioned in an NLQ.
+
+```text
+Parameters
+- nl_query (string, required)
+```
+
+---
+
+### Entity-Search Helpers
+
+All entity search tools support two modes:
+
+| Arg          | Values                       | Default   |
+| ------------ | ---------------------------- | --------- |
+| `match_type` | `"exact"` \| `"fuzzy"`       | `"exact"` |
+| `nl_query`   | original NLQ for LLM context | ""        |
+
+Each returns matching rows from its table.
+
+_Examples_
+
+```text
+search_project("Uniswap", ctx, match_type="fuzzy")
+search_collection("ethereum-github", ctx)
+search_metric("GITHUB_commits_daily", ctx)
+```
+
+---
 
 ## Resources
 
-- **help://getting-started**: Basic guide to using the OSO data lake explorer
+- **help\://getting-started** — in-app quick-start guide
 
 ## Example Usage
 
-Here are some examples of how you might use this MCP server with Claude:
-
-1. "Show me the available tables in the OSO data lake"
-2. "What's the schema for the projects_v1 table?"
-3. "Can you run a query to find the top 10 most funded open source projects?"
-4. "Analyze the funding history of the Uniswap project"
-5. "Show me all the projects in the ethereum-github collection"
-6. "Do a deep dive on the contribution patterns for the ethereum project"
+1. “Generate SQL to list the top 10 funded projects.” (`generate_sql`)
+2. “What tables exist?” (`list_tables`)
+3. “Show the schema for `metrics_v0`.” (`get_table_schema`)
+4. “Find a project named Optimism.” (`search_project`)
+5. “Convert ‘total gas fees per collection last month’ to SQL.” (`query_text2sql_agent`)
 
 ## Getting OSO API Key
 
-1. Go to [www.opensource.observer](https://www.opensource.observer) and create
-   an account
-2. Go to [Account settings](https://www.opensource.observer/settings/profile)
-3. In the "API" section, click "+ New"
-4. Give your key a label and save the key when it's generated
+1. Sign up at **[www.opensource.observer](http://www.opensource.observer)**
+2. Visit **Settings → Profile → API**
+3. Click **+ New**, label your key, **save** it
