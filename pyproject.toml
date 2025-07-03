@@ -63,7 +63,7 @@ dependencies = [
     "gitpython<4.0.0,>=3.1.44",
     "minio<8.0.0,>=7.2.15",
     "colorlog<7.0.0,>=6.9.0",
-    "pyarrow-stubs<18.0,>=17.16",
+    "pyarrow-stubs>=17.16,<21.0",
     "gcloud-aio-storage<10.0.0,>=9.3.0",
     "kr8s==0.20.7",
 ]

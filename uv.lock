@@ -3773,7 +3773,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.3,<3.0.0" },
     { name = "pendulum", specifier = ">=3.0.0,<4.0.0" },
     { name = "polars", specifier = "==1.24.0" },
-    { name = "pyarrow-stubs", specifier = ">=17.16,<18.0" },
+    { name = "pyarrow-stubs", specifier = ">=17.16,<21.0" },
     { name = "pydantic-settings", specifier = ">=2.7.0,<3.0.0" },
     { name = "pyee", specifier = ">=12.1.1,<13.0.0" },
     { name = "pyiceberg", extras = ["hive", "s3fs"], specifier = ">=0.8.1,<1.0.0" },
