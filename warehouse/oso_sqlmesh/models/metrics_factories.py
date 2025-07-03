@@ -463,6 +463,24 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=blockchain"],
         ),
+        "gas_fees_internal": MetricQueryDef(
+            ref="blockchain/gas_fees_internal.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["project"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Gas Fees (Including Internal Transactions)",
+                description="Metrics related to blockchain gas fees (including internal transactions)",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
         "transactions": MetricQueryDef(
             ref="blockchain/transactions.sql",
             time_aggregations=[
