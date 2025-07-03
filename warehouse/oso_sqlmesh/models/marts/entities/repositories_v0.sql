@@ -1,13 +1,16 @@
 MODEL (
   name oso.repositories_v0,
   kind FULL,
+  tags (
+    'export',
+    'entity_category=artifact'
+  ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
 );
 
 SELECT
-  project_id,
   artifact_id,
   artifact_source_id,
   artifact_source,
@@ -24,4 +27,4 @@ SELECT
   "language",
   created_at,
   updated_at
-FROM oso.int_repositories
+FROM oso.int_repositories__ossd
