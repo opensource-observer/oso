@@ -28,3 +28,4 @@ spec:
         AGENT_VECTOR_STORE__PROJECT_ID: "opensource-observer"
         AGENT_VECTOR_STORE__INDEX_ID: gcp:secretmanager:production-agent-vector-store-index-id/versions/latest
         AGENT_VECTOR_STORE__ENDPOINT_ID: gcp:secretmanager:production-agent-vector-store-endpoint-id/versions/latest
+        AGENT_ENABLE_DISCORD_BOT: "1"
