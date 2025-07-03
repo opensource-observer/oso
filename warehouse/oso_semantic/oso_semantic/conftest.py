@@ -27,6 +27,7 @@ def semantic_db_conn() -> t.Iterator[duckdb.DuckDBPyConnection]:
         "collections_v1",
         "projects_by_collection_v1",
         "artifacts_by_project_v1",
+        "artifacts_by_collection_v1",
         "int_events__github",
     ]
 
