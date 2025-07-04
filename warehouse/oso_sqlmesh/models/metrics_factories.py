@@ -73,6 +73,7 @@ timeseries_metrics(
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
+        "int_worldchain_events_by_project",
     ],
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
@@ -442,6 +443,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Active Addresses Aggregation",
                 description="Metrics related to active blockchain addresses",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
+        "worldchain_users_aggregation": MetricQueryDef(
+            ref="blockchain/worldchain_users.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Worldchain Users Aggregation",
+                description="Metrics related to Worldchain users",
             ),
             additional_tags=["data_category=blockchain"],
         ),
