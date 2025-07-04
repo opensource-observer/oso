@@ -49,10 +49,14 @@ def default_lifecycle(config: AgentServerConfig):
         agent_registry = await setup_default_agent_registry(config)
         workflow_registry = await setup_default_workflow_registry(config, default_resolver_factory)
 
-        bot_config = BotConfig()
-        bot = await setup_bot(bot_config, agent_registry)
-        await bot.login(bot_config.discord_bot_token.get_secret_value())
-        connect_task = asyncio.create_task(bot.connect())
+        bot = None
+        connect_task = None
+
+        if config.enable_discord_bot:
+            bot_config = BotConfig()
+            bot = await setup_bot(bot_config, agent_registry)
+            await bot.login(bot_config.discord_bot_token.get_secret_value())
+            connect_task = asyncio.create_task(bot.connect())
 
         try:
             yield {
@@ -60,8 +64,10 @@ def default_lifecycle(config: AgentServerConfig):
                 "agent_registry": agent_registry,
             }
         finally:
-            await bot.close()
-            await connect_task
+            if config.enable_discord_bot:
+                if bot and connect_task:
+                    await bot.close()
+                    await connect_task
 
     return initialize_app
 
