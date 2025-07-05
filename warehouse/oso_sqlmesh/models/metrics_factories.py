@@ -44,11 +44,10 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
         # Hack for now, ignore these until we fix the audit
         return None
     
-    if "worldchain" in config["table_name"]:
-        # Hack for now, ignore these until we fix the audit
+    if "releases" in config["table_name"]:
         return None
     
-    if "releases" in config["table_name"]:
+    if "worldchain_users_aggregation" in config["table_name"]:
         return None
     
     if "data_category=blockchain" in config["additional_tags"]:
