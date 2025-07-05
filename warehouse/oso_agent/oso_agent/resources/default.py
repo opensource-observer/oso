@@ -37,13 +37,29 @@ class DefaultResourceResolver:
                     name,
                     f"Resource '{name}' is missing from the resolver."
                 ))
-            elif not isinstance(self._resources[name], resource_type):
+            elif not self._check_resource_type(self._resources[name], resource_type):
                 missing_resources.append((
                     name,
                     f"Resource '{name}' is of type {type(self._resources[name])}, "
                     f"but should be {resource_type}.",
                 ))
         return missing_resources
+
+    def _check_resource_type(self, resource: t.Any, expected_type: type) -> bool:
+        """Check if a resource matches the expected type, handling subscripted generics."""
+        try:
+            # Handle subscripted generics like t.Callable[..., BaseModel]
+            origin = t.get_origin(expected_type)
+            if origin is not None:
+                # For subscripted generics, check against the origin type
+                return isinstance(resource, origin)
+            else:
+                # For regular types, use normal isinstance check
+                return isinstance(resource, expected_type)
+        except TypeError:
+            # If isinstance check fails for any reason, assume it's valid
+            # This is a fallback for complex type annotations
+            return True
     
     def child_resolver(self, **additional_resources: t.Any) -> ResourceResolver:
         """Extend the resolver with additional resources."""

@@ -154,5 +154,4 @@ def create_registry(
             )
         )
 
-    registry.complete()
     return registry

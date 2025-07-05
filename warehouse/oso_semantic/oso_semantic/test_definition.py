@@ -9,7 +9,10 @@ from .definition import (
     Dimension,
     Measure,
     Model,
+    ModelHasNoJoinPath,
     Registry,
+    Relationship,
+    RelationshipType,
 )
 from .testing import setup_registry
 
@@ -70,32 +73,48 @@ def test_attribute_reference_traversal():
 def test_semantic_model_shortest_path():
     registry = setup_registry()
 
-    assert registry.dag.join_paths("github_event", "artifact") == (
-        ["github_event", "artifact"],
-        ["artifact"],
-    )
-
-    assert registry.dag.join_paths("artifact", "github_event") == (
-        ["artifact"],
-        ["github_event", "artifact"],
-    )
-
-    assert registry.dag.join_paths("artifact", "project") == (
-        ["artifact", "artifacts_by_project", "project"],
-        ["project"],
-    )
-
-    assert registry.dag.join_paths("github_event", "collection") == (
+    artifact_project_tree = registry.dag.find_best_join_tree(
         [
-            "github_event",
-            "artifact",
-            "artifacts_by_project",
-            "project",
-            "projects_by_collection",
-            "collection",
-        ],
-        ["collection"],
+            AttributePath(
+                path=["artifact.id", "artifacts_by_project.project_id", "project.id"]
+            ),
+        ]
     )
+    github_artifact_tree = registry.dag.find_best_join_tree(
+        [
+            AttributePath.from_string("github_event.to->artifact.id"),
+        ]
+    )
+    github_collection_tree = registry.dag.find_best_join_tree(
+        [
+            AttributePath.from_string("github_event.to->collection.id"),
+        ]
+    )
+
+    assert github_artifact_tree.get_path("github_event", "artifact") == [
+        "github_event",
+        "artifact",
+    ]
+
+    assert github_artifact_tree.get_path("artifact", "github_event") == [
+        "artifact",
+        "github_event",
+    ]
+
+    assert artifact_project_tree.get_path("artifact", "project") == [
+        "artifact",
+        "artifacts_by_project",
+        "project",
+    ]
+
+    assert github_collection_tree.get_path("github_event", "collection") == [
+        "github_event",
+        "artifact",
+        "artifacts_by_project",
+        "project",
+        "projects_by_collection",
+        "collection",
+    ]
 
     to_artifact_ref = registry.get_model("github_event").find_relationship(
         model_ref="artifact", name="to"
@@ -243,3 +262,414 @@ def test_resolve_metrics():
     query_part = metric.to_query_part(traverser, ref, registry)
 
     assert query_part.resolved_references == [ref]
+
+
+def test_registry_cycle_detection():
+    """Test that the registry can detect cycles in model relationships."""
+    from .definition import Model, Registry, Relationship, RelationshipType
+
+    registry = Registry()
+
+    # Create models that form a cycle: A -> B -> C -> A
+    model_a = Model(
+        name="model_a",
+        table="table_a",
+        relationships=[
+            Relationship(
+                name="to_b",
+                ref_model="model_b",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="b_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[],
+        measures=[],
+    )
+
+    model_b = Model(
+        name="model_b",
+        table="table_b",
+        relationships=[
+            Relationship(
+                name="to_c",
+                ref_model="model_c",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="c_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[],
+        measures=[],
+    )
+
+    model_c = Model(
+        name="model_c",
+        table="table_c",
+        relationships=[
+            Relationship(
+                name="to_a",
+                ref_model="model_a",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="a_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[],
+        measures=[],
+    )
+
+    # Register models (this creates the cycle)
+    registry.register(model_a)
+    registry.register(model_b)
+    registry.register(model_c)
+
+    # Test that querying raises an error when cycle is detected
+    try:
+        registry.select("model_a.id")
+        assert False, "Should have raised ValueError due to cycle"
+    except ValueError as e:
+        assert "Cycle detected" in str(e), f"Expected cycle error, got: {e}"
+
+
+def test_registry_no_cycle():
+    """Test that the registry correctly identifies when there are no cycles."""
+    from .definition import Model, Registry, Relationship, RelationshipType
+
+    registry = Registry()
+
+    # Create models without cycles: A -> B -> C (no back edges)
+    model_a = Model(
+        name="model_a",
+        table="table_a",
+        relationships=[
+            Relationship(
+                name="to_b",
+                ref_model="model_b",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="b_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[],
+        measures=[],
+    )
+
+    model_b = Model(
+        name="model_b",
+        table="table_b",
+        relationships=[
+            Relationship(
+                name="to_c",
+                ref_model="model_c",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="c_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[],
+        measures=[],
+    )
+
+    model_c = Model(
+        name="model_c",
+        table="table_c",
+        relationships=[],  # No relationships - end of chain
+        dimensions=[],
+        measures=[],
+    )
+
+    # Register models
+    registry.register(model_a)
+    registry.register(model_b)
+    registry.register(model_c)
+
+    # Test that no cycle is detected
+    registry.dag.check_cycle()
+
+
+def test_dag_find_best_join_tree():
+    """Test that find_best_join_tree returns the smallest possible tree."""
+    from .definition import (
+        AttributePath,
+        Dimension,
+        Model,
+        Registry,
+        Relationship,
+        RelationshipType,
+    )
+
+    registry = Registry()
+
+    # Create a simpler model graph for clearer testing:
+    # A -> B -> D
+    # A -> C -> D
+    # This gives us two possible paths from A to D
+
+    model_a = Model(
+        name="model_a",
+        table="table_a",
+        relationships=[
+            Relationship(
+                name="to_b",
+                ref_model="model_b",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="b_id",
+                ref_key="id",
+            ),
+            Relationship(
+                name="to_c",
+                ref_model="model_c",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="c_id",
+                ref_key="id",
+            ),
+        ],
+        dimensions=[
+            Dimension(name="id", description="A's ID"),
+            Dimension(name="name", description="A's name"),
+        ],
+        measures=[],
+    )
+
+    model_b = Model(
+        name="model_b",
+        table="table_b",
+        relationships=[
+            Relationship(
+                name="to_d",
+                ref_model="model_d",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="d_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[
+            Dimension(name="id", description="B's ID"),
+            Dimension(name="name", description="B's name"),
+        ],
+        measures=[],
+    )
+
+    model_c = Model(
+        name="model_c",
+        table="table_c",
+        relationships=[
+            Relationship(
+                name="to_d",
+                ref_model="model_d",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="d_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[
+            Dimension(name="id", description="C's ID"),
+            Dimension(name="name", description="C's name"),
+        ],
+        measures=[],
+    )
+
+    model_d = Model(
+        name="model_d",
+        table="table_d",
+        relationships=[],
+        dimensions=[
+            Dimension(name="id", description="D's ID"),
+            Dimension(name="value", description="D's value"),
+        ],
+        measures=[],
+    )
+
+    # Register all models
+    registry.register(model_a)
+    registry.register(model_b)
+    registry.register(model_c)
+    registry.register(model_d)
+
+    # Test 1: Simple case - only need A
+    references_a_only = [AttributePath.from_string("model_a.name")]
+    join_tree = registry.dag.find_best_join_tree(references_a_only)
+    assert len(join_tree) == 1, f"Expected tree with 1 node, got {len(join_tree)}"
+    assert (
+        join_tree.root == "model_a"
+    ), f"Expected root to be model_a, got {join_tree.root}"
+
+    # Test 2: Only need D
+    references_d_only = [AttributePath.from_string("model_d.value")]
+    join_tree = registry.dag.find_best_join_tree(references_d_only)
+    assert (
+        len(join_tree) == 1
+    ), f"Expected tree with 1 node (just D), got {len(join_tree)}"
+    assert (
+        join_tree.root == "model_d"
+    ), f"Expected root to be model_d, got {join_tree.root}"
+
+    # Test 3: Two models with direct relationship - A and B
+    references_a_b = [
+        AttributePath.from_string("model_a.name"),
+        AttributePath.from_string("model_b.name"),
+    ]
+    join_tree = registry.dag.find_best_join_tree(references_a_b)
+    assert len(join_tree) == 2, f"Expected tree with 2 nodes, got {len(join_tree)}"
+    assert join_tree.root in [
+        "model_a",
+        "model_b",
+    ], f"Expected root to be model_a or model_b, got {join_tree.root}"
+
+    # Test 4: Path through A->...->D
+    references_a_b_d = [
+        AttributePath.from_string("model_a.name"),
+        AttributePath.from_string("model_d.value"),
+    ]
+    join_tree = registry.dag.find_best_join_tree(references_a_b_d)
+    expected_models = {"model_a", "model_d"}
+    actual_models = set(join_tree.parents.keys())
+    assert expected_models.issubset(
+        actual_models
+    ), f"Expected models {expected_models} to be subset of {actual_models}"
+
+    # Test 5: Verify that find_best_join_tree finds the minimal tree when multiple options exist
+    references_both_paths = [
+        AttributePath.from_string("model_a.name"),
+        AttributePath.from_string("model_b.name"),
+        AttributePath.from_string("model_d.value"),
+    ]
+    expected_models = {"model_a", "model_b", "model_d"}
+    join_tree = registry.dag.find_best_join_tree(references_both_paths)
+    actual_models = set(join_tree.parents.keys())
+    assert expected_models.issubset(
+        actual_models
+    ), f"Expected models {expected_models} to be subset of {actual_models}"
+
+
+def test_dag_find_best_join_tree_comparison():
+    """Test that find_best_join_tree chooses the smaller of two possible trees."""
+
+    registry = Registry()
+
+    # Create a simple linear chain: A -> B -> C
+    model_a = Model(
+        name="model_a",
+        table="table_a",
+        relationships=[
+            Relationship(
+                name="to_b",
+                ref_model="model_b",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="b_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[
+            Dimension(name="id", description="A's ID"),
+            Dimension(name="name", description="A's name"),
+        ],
+        measures=[],
+    )
+
+    model_b = Model(
+        name="model_b",
+        table="table_b",
+        relationships=[
+            Relationship(
+                name="to_c",
+                ref_model="model_c",
+                type=RelationshipType.MANY_TO_ONE,
+                source_foreign_key="c_id",
+                ref_key="id",
+            )
+        ],
+        dimensions=[
+            Dimension(name="id", description="B's ID"),
+            Dimension(name="name", description="B's name"),
+        ],
+        measures=[],
+    )
+
+    model_c = Model(
+        name="model_c",
+        table="table_c",
+        relationships=[],
+        dimensions=[
+            Dimension(name="id", description="C's ID"),
+            Dimension(name="value", description="C's value"),
+        ],
+        measures=[],
+    )
+
+    # Register all models
+    registry.register(model_a)
+    registry.register(model_b)
+    registry.register(model_c)
+
+    # Test that when we only need B and C, we get a tree rooted at B or C (not A)
+    references_b_c = [
+        AttributePath.from_string("model_b.name"),
+        AttributePath.from_string("model_b.to_c->model_c.value"),
+    ]
+
+    join_tree = registry.dag.find_best_join_tree(references_b_c)
+
+    # Should only include B and C, not A
+    assert (
+        len(join_tree) == 2
+    ), f"Expected tree with 2 nodes (B,C), got {len(join_tree)}"
+    assert (
+        "model_a" not in join_tree.parents
+    ), f"Tree should not include model_a: {join_tree.parents}"
+    assert (
+        "model_b" in join_tree.parents
+    ), f"Tree should include model_b: {join_tree.parents}"
+    assert (
+        "model_c" in join_tree.parents
+    ), f"Tree should include model_c: {join_tree.parents}"
+
+    print("✓ find_best_join_tree correctly excludes unnecessary models")
+
+
+def test_dag_find_best_join_tree_no_path():
+    """Test that find_best_join_tree raises appropriate error when no path exists."""
+    registry = Registry()
+
+    # Create two isolated models with no connections
+    model_a = Model(
+        name="model_a",
+        table="table_a",
+        relationships=[],
+        dimensions=[
+            Dimension(name="id", description="A's ID"),
+            Dimension(name="name", description="A's name"),
+        ],
+        measures=[],
+    )
+
+    model_b = Model(
+        name="model_b",
+        table="table_b",
+        relationships=[],
+        dimensions=[
+            Dimension(name="id", description="B's ID"),
+            Dimension(name="name", description="B's name"),
+        ],
+        measures=[],
+    )
+
+    registry.register(model_a)
+    registry.register(model_b)
+
+    # Try to find a join tree that requires both isolated models
+    references = [
+        AttributePath.from_string("model_a.name"),
+        AttributePath.from_string("model_b.name"),
+    ]
+
+    # This should raise ModelHasNoJoinPath exception
+    try:
+        registry.dag.find_best_join_tree(references)
+        assert False, "Expected ModelHasNoJoinPath exception"
+    except ModelHasNoJoinPath as e:
+        assert "No join tree found" in str(e)
+        print(
+            "✓ find_best_join_tree correctly raises exception for disconnected models"
+        )

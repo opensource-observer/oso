@@ -122,7 +122,7 @@ class AgentConfig(BaseSettings):
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
     vector_store: VectorStoreConfig = Field(
-        discriminator="type", default_factory=lambda: LocalVectorStoreConfig(dir="")
+        discriminator="type", default_factory=lambda: LocalVectorStoreConfig()
     )
 
     oso_mcp_url: str = Field(
@@ -183,8 +183,8 @@ class AgentConfig(BaseSettings):
         if not self.arize_phoenix_traces_url:
             self.arize_phoenix_traces_url = f"{self.arize_phoenix_base_url}/v1/traces"
 
-        # This is a terrible hack because arize phoenix's libraries don't 
-        # consistently handle passing in api key or endpoint so we need to 
+        # This is a terrible hack because arize phoenix's libraries don't
+        # consistently handle passing in api key or endpoint so we need to
         # inject it into the environment
         os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = self.arize_phoenix_base_url
         if self.arize_phoenix_api_key.get_secret_value():
