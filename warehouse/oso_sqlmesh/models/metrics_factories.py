@@ -73,6 +73,7 @@ timeseries_metrics(
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
+        "int_worldchain_events_by_project",
     ],
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
@@ -445,6 +446,24 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=blockchain"],
         ),
+        "worldchain_users_aggregation": MetricQueryDef(
+            ref="blockchain/worldchain_users.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Worldchain Users Aggregation",
+                description="Metrics related to Worldchain users",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
         "gas_fees": MetricQueryDef(
             ref="blockchain/gas_fees.sql",
             time_aggregations=[
@@ -460,6 +479,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Gas Fees",
                 description="Metrics related to blockchain gas fees",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
+        "gas_fees_internal": MetricQueryDef(
+            ref="blockchain/gas_fees_internal.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["project"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Gas Fees (Including Internal Transactions)",
+                description="Metrics related to blockchain gas fees (including internal transactions)",
             ),
             additional_tags=["data_category=blockchain"],
         ),
