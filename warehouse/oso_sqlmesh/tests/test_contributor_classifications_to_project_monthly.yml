@@ -1,0 +1,155 @@
+test_contributor_classifications_to_project_monthly:
+  model: oso.contributor_classifications_to_project_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-01-31
+  inputs:
+    oso.contributor_active_days_to_project_monthly:
+      rows:
+      # Full-time contributor (30 active days out of 31)
+      - to_project_id: project_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 30
+      # Part-time contributor (5 active days out of 31)
+      - to_project_id: project_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 5
+      # Another part-time contributor (8 active days out of 31)
+      - to_project_id: project_1
+        from_artifact_id: contributor_3
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 8
+      # New contributor for project_2 (15 active days)
+      - to_project_id: project_2
+        from_artifact_id: contributor_4
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 15
+    oso.int_first_contribution_to_project:
+      rows:
+      # First contribution for contributor_1 was in 2023 (not new)
+      - time: 2023-06-15 10:00:00
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_project_id: project_1
+      # First contribution for contributor_2 was in 2023 (not new)
+      - time: 2023-08-20 14:30:00
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_project_id: project_1
+      # First contribution for contributor_3 was in current period (new contributor)
+      - time: 2024-01-15 09:20:00
+        event_source: GITHUB
+        from_artifact_id: contributor_3
+        to_project_id: project_1
+      # First contribution for contributor_4 was in current period (new contributor)
+      - time: 2024-01-10 16:45:00
+        event_source: GITHUB
+        from_artifact_id: contributor_4
+        to_project_id: project_2
+    oso.int_events_daily__github_with_lag:
+      rows:
+      # Historical activity for resurrected contributor test
+      # contributor_1 had activity in 2023 but was dormant before current period
+      - bucket_day: 2023-11-15
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: repo_1
+        event_type: COMMIT_CODE
+        last_event: 2023-11-15
+      # contributor_2 was active recently (not resurrected)
+      - bucket_day: 2023-12-28
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: repo_1
+        event_type: COMMIT_CODE
+        last_event: 2023-12-28
+      # contributor_5 is a resurrected contributor - last active in early 2023
+      - bucket_day: 2023-02-10
+        event_source: GITHUB
+        from_artifact_id: contributor_5
+        to_artifact_id: repo_1
+        event_type: COMMIT_CODE
+        last_event: 2023-02-10
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+  outputs:
+    query:
+      partial: true
+      rows:
+      # Full-time contributors (active_days / 31 >= 10/30 = 0.33)
+      # contributor_1: 30/31 = 0.97 >= 0.33 (full-time)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 1
+      # Part-time contributors (active_days / 31 < 10/30 = 0.33)
+      # contributor_2: 5/31 = 0.16 < 0.33 (part-time)
+      # contributor_3: 8/31 = 0.26 < 0.33 (part-time)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 2
+      # Part-time contributor for project_2
+      # contributor_4: 15/31 = 0.48 >= 0.33 (full-time)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 1
+      # New contributors (first contribution in current period)
+      # contributor_3 in project_1
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 1
+      # contributor_4 in project_2
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 1
+      # Resurrected contributors (contributors who were dormant for at least one period and returned)
+      # contributor_1 in project_1 (last active 2023-11-15, more than one month before current period)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: resurrected_contributors_monthly
+        amount: 1
+      # Active contributors (all contributors)
+      # project_1 has 3 active contributors
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 3
+      # project_2 has 1 active contributor
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 1

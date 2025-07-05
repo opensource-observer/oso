@@ -666,24 +666,21 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=defillama"],
         ),
-        # "contributors_lifecycle": MetricQueryDef(
-        #     ref="code/lifecycle.sql",
-        #     vars={
-        #         "activity_event_types": [
-        #             "COMMIT_CODE",
-        #             "ISSUE_OPENED",
-        #             "PULL_REQUEST_OPENED",
-        #             "PULL_REQUEST_MERGED",
-        #         ],
-        #     },
-        #     time_aggregations=["monthly", "quarterly", "biannually", "yearly"],
-        #     entity_types=["artifact", "project", "collection"],
-        #     metadata=MetricMetadata(
-        #         display_name="Contributors Lifecycle",
-        #         description="Metrics related to contributor lifecycle",
-        #     ),
-        #     additional_tags=["data_category=code"],
-        # ),
+        "contributors_lifecycle": MetricQueryDef(
+            ref="code/lifecycle.sql",
+            time_aggregations=[
+                "monthly", 
+                # "quarterly", 
+                # "biannually", 
+                "yearly"
+            ],
+            entity_types=["artifact", "project", "collection"],
+            metadata=MetricMetadata(
+                display_name="Contributors Lifecycle",
+                description="Metrics related to contributor lifecycle",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         "funding_received": MetricQueryDef(
             ref="funding/funding_received.sql",
             time_aggregations=[
