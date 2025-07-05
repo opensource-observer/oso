@@ -681,11 +681,11 @@ def test_semantic_expression():
     project_count_expression = SemanticExpression(query="project.count > 10")
     print(project_count_expression.references)
 
-    assert project_count_expression.references == [
+    assert project_count_expression.references() == [
         AttributePath.from_string("project.count")
     ]
 
-    final_expression = project_count_expression.resolve("self", registry)
+    final_expression = project_count_expression.resolve("", registry)
 
     assert final_expression == exp.GT(
         expressions=[

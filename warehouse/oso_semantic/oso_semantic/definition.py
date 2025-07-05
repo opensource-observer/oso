@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import hashlib
 import textwrap
 import typing as t
@@ -8,12 +9,15 @@ from enum import Enum
 from graphlib import TopologicalSorter
 
 from attr import dataclass
+from kopf import all_
 from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 
 from .errors import InvalidAttributeReferenceError
 from .utils import exp_to_str, hash_expressions
+
+logger = logging.getLogger(__name__)
 
 
 def coerce_to_tables_column(ref: str, expected_table: str = "self") -> exp.Expression:
@@ -331,11 +335,40 @@ class GenericExpression(BaseModel):
             "This method should be implemented by subclasses to return the SQL expression for the generic expression"
         )
 
-    def references(self) -> t.List["AttributePath"]:
-        """Returns the semantic references in the expression"""
+    def columns(self) -> t.List[exp.Column]:
+        """Returns the columns in the expression. By default a generic
+        expressions are _not_ allowed to reference columns"""
+        raise ValueError(
+            "GenericExpression columns method does not allow self references by default. Use allow_self=True to allow self references."
+        )
+
+    def references(self, allow_self: bool = False) -> t.List["AttributePath"]:
+        """Returns the semantic references in the expression
+
+        Args:
+            allow_self: If True, allows references to the `self` model. Defaults to False.
+
+        Returns:
+            A list of AttributePath objects representing the semantic references in the expression.
+        """
+
         raise NotImplementedError(
             "This method should be implemented by subclasses to return the semantic references in the expression"
         )
+
+    def placeholder_expression_to_attribute_path(self, node: exp.Anonymous) -> "AttributePath":
+        """Converts a placeholder expression to an AttributePath.
+
+        This is used to convert the $semantic_ref and $column_ref expressions
+        into AttributePath objects.
+        """
+        if not node.expressions:
+            raise ValueError("Placeholder expression must have at least one expression")
+        reference_literal = exp_to_str(node.expressions[0])
+        try:
+            return AttributePath.from_string(reference_literal)
+        except InvalidAttributeReferenceError as e:
+            raise ValueError(f"Invalid semantic reference: {e}")
 
     def resolve(
         self,
@@ -343,16 +376,57 @@ class GenericExpression(BaseModel):
         registry: Registry,
         traverser: AttributePathTraverser | None = None,
     ) -> exp.Expression:
-        """Returns the SQL expression for the semantic expression"""
-        raise NotImplementedError(
-            "This method should be implemented by subclasses to return the SQL expression for the semantic expression"
-        )
+        """Returns the SQL expression for an expression. This generic resolve
+        method turns $semantic_ref, and $column_ref anonymous expressions into
+        executable sql based on the current registry and traverser.
+        """
+        if not traverser:
+            traverser = AttributePathTraverser.from_root()
 
+        def convert_column(node: exp.Expression):
+            if isinstance(node, exp.Anonymous):
+                anonymous_function_name = exp_to_str(node.this)
+                if anonymous_function_name not in ["$semantic_ref", "$column_ref"]:
+                    # If this is not a semantic reference or column reference, we can skip it
+                    return node
 
-@dataclass(kw_only=True)
-class ResolvedExpression:
-    node: exp.Expression
-    references: t.List["AttributePath"]
+                # Get the model reference from the anonymous expression
+                reference = self.placeholder_expression_to_attribute_path(node)
+                reference = traverser.create_scoped_reference(reference)
+
+                column_traverser = reference.traverser()
+                column_traverser.to_end()
+                current_model_name = column_traverser.current_model_name
+                model = registry.get_model(current_model_name)
+                
+                if anonymous_function_name == "$semantic_ref":
+                    # If this is a semantic reference then we need to recursively resolve it
+                    attribute = model.get_attribute(column_traverser.current_attribute_name)
+                    match attribute:
+                        case BoundDimension():
+                            return attribute.resolve(
+                                registry=registry,
+                                traverser=traverser,
+                            )
+                        case BoundMeasure():
+                            return attribute.resolve(
+                                registry=registry,
+                                traverser=traverser,
+                            )
+                        case BoundRelationship():
+                            raise ValueError(
+                                f"Semantic reference {reference} cannot resolve to a relationship at this time. Only dimensions and measures are allowed."
+                            )
+
+                elif anonymous_function_name == "$column_ref":
+                    # If this is a column reference then we need to simply resolve to the model's column
+                    return exp.to_column(
+                        f"{current_model_name}.{column_traverser.current_attribute_name}",
+                    )
+
+            return node
+
+        return self._expression.transform(convert_column)
 
 
 class SemanticExpression(GenericExpression):
@@ -360,47 +434,63 @@ class SemanticExpression(GenericExpression):
 
     def to_sqlglot_expression(self) -> exp.Expression:
         """Transforms the query into a sqlglot expression"""
-        def transforms(node: exp.Expression) -> exp.Expression:
-            """Transforms the node to a sqlglot expression"""
-            if isinstance(node, exp.Column):
-                # If the column is a self reference, we need to transform it to an anonymous column
-                if node.table == "self":
-                    return exp.Anonymous(this=node.this)
+        def transform(node: exp.Expression) -> exp.Expression:
+            if is_expression_attribute_reference(node):
+                # For anything that's an attribut path we need to resolve it
+                if isinstance(node, exp.Column):
+                    # if it's a column this is a simple resolution simply to the column via the registry
+                    logger.debug(f"Found column reference: {node}")
+                    model_name = exp_to_str(node.table)
+                    column_name = exp_to_str(node.this)
+                    reference = AttributePath.from_string(f"{model_name}.{column_name}")
+                else:
+                    logger.debug(f"Found non column reference: {node}")
+                    # Check for self in reference path
+                    reference_path = node.sql(dialect="duckdb").split("->")
+                    for i in range(len(reference_path)):
+                        ref = reference_path[i]
+                        as_column = exp.to_column(ref)
+                        model_name = exp_to_str(as_column.table)
+
+                        if model_name == "self":
+                            reference_path[i] = f"{model_name}.{exp_to_str(as_column.this)}"
+                    reference = AttributePath(path=reference_path)
+
+                refs_as_literals = exp.Literal.string(str(reference))
+
+                return exp.Anonymous(this="$semantic_ref", expressions=[refs_as_literals])
             return node
-        expression = parse_one(self.query)
-        return expression.transform(transforms)
+        return parse_one(self.query).transform(transform)
 
     def references(
-        self, traverser: AttributePathTraverser | None = None
+        self, allow_self: bool = False
     ) -> t.List["AttributePath"]:
         """Returns the semantic references in the expression"""
-        expression = parse_one(self.query)
-        result = AttributePathTransformer.transform(
-            expression, self_model_name="self", traverser=traverser
-        )
-        return result.references
-
-    def resolve(
-        self,
-        self_model_name: str,
-        registry: Registry,
-        traverser: AttributePathTraverser | None = None,
-    ) -> exp.Expression:
-        """Returns the SQL expression for the semantic expression"""
-        expression = parse_one(self.query)
-
-        if not traverser:
-            traverser = AttributePathTraverser.from_root()
-
-        return AttributePathTransformer.transform(
-            expression,
-            traverser=traverser,
-            self_model_name=self_model_name,
-            registry=registry,
-        ).node
+        glot_expression = self._expression
+        all_reference_placeholders = glot_expression.find_all(exp.Anonymous)
+        references: t.List[AttributePath] = []
+        for reference_placeholder in all_reference_placeholders:
+            if reference_placeholder.this == "$semantic_ref":
+                # This is a semantic reference, we need to parse it
+                if not reference_placeholder.expressions:
+                    raise ValueError(
+                        "Semantic reference must have at least one expression"
+                    )
+                reference_literal = exp_to_str(reference_placeholder.expressions[0])
+                try:
+                    reference = AttributePath.from_string(reference_literal)
+                except InvalidAttributeReferenceError as e:
+                    raise ValueError(f"Invalid semantic reference: {e}")
+                if not allow_self and reference.is_self_reference():
+                    raise ValueError(
+                        f"SemanticExpression {self.query} not allowed to reference `self` model. Only valid in Dimension, Measure, and Relationship definitions."
+                    )
+                references.append(reference)
+        return references
 
 
-class RawExpression(BaseModel):
+
+class RawExpression(GenericExpression):
     """A raw SQL expression that is not in the semantic context.
 
     This is used to pass raw SQL expressions to the semantic layer without
@@ -418,20 +508,29 @@ class RawExpression(BaseModel):
         cannot reference other models. They can only reference the current model's
         table.
         """
-        for column in self.columns:
+        for column in self.columns():
             if exp_to_str(column.table) != "self":
                 raise ValueError(
                     f"Raw expression {self.query} cannot reference another model. Found reference to {column.table}. Only use `self`"
                 )
         return self
 
-    @property
-    def columns(self) -> t.Iterator[exp.Column]:
+    def to_sqlglot_expression(self) -> exp.Expression:
+        def convert_column(node: exp.Expression):
+            if isinstance(node, exp.Column):
+                return exp.Anonymous(
+                    this="$column_ref",
+                    expressions=[exp.Literal.string(f"{node.table}.{node.this}")],
+                )
+            return node
+        return parse_one(self.query).transform(convert_column)
+
+    def columns(self) -> t.List[exp.Column]:
         """Returns the columns in the expression"""
         expression = parse_one(self.query)
-        return expression.find_all(exp.Column)
+        return list(expression.find_all(exp.Column))
 
-    def resolve(
+    def boop_resolve(
         self,
         self_model_name: str,
         registry: Registry,
@@ -513,7 +612,7 @@ class Measure(BaseModel):
     def attribute_references(self) -> t.List["AttributePath"]:
         """Returns the references for model attributes"""
         if isinstance(self._expression, SemanticExpression):
-            return self._expression.references()
+            return self._expression.references(allow_self=True)
         else:
             return []
 
@@ -706,11 +805,11 @@ class Dimension(BaseModel):
             case SemanticExpression():
                 # Ensure all references point to self
                 columns = []
-                references = expression.references()
-                for ref in references:
-                    if ref.base_model != "self":
+                references = expression.references(allow_self=True)
+                for reference in references:
+                    if not reference.is_self_reference():
                         raise ValueError(
-                            f"Dimension {self.name} cannot reference another model. Found reference to {ref.base_model}. Only use `self`"
+                            f"Dimension {self.name} cannot reference another model. Found reference to {reference}. Only use `self`"
                         )
         self._attribute_references = references
         self._columns = columns
@@ -936,11 +1035,11 @@ class Model(BaseModel):
             known_columns.update(set([exp_to_str(a.this) for a in columns]))
             attribute_graph[dimension.name] = set()
 
-            for relationship in references:
-                if relationship.is_relationship() or relationship.base_model != "self":
+            for reference in references:
+                if reference.is_relationship() or reference.base_model != "self":
                     raise ValueError("Cannot reference a relationship in a dimension")
                 # Attribute/Column name
-                attribute_name = exp_to_str(relationship.final_attribute().this)
+                attribute_name = exp_to_str(reference.final_attribute().this)
 
                 if attribute_name == dimension.name:
                     # If the attribute name is the same as the dimension name, we can skip it.
@@ -948,7 +1047,7 @@ class Model(BaseModel):
                     continue
 
                 attribute_graph[dimension.name].add(
-                    exp_to_str(relationship.final_attribute().this)
+                    exp_to_str(reference.final_attribute().this)
                 )
 
             attributes[dimension.name] = dimension.bind(self)
@@ -959,53 +1058,53 @@ class Model(BaseModel):
 
         # Check for cycles in the measures and dimensions
         # For now this only checks for cycles in the current model.
-        for metric in self.measures:
+        for measure in self.measures:
             # Ensure we don't have duplicate names
-            if metric.name in attributes or metric.name in attribute_graph:
+            if measure.name in attributes or measure.name in attribute_graph:
                 raise ValueError(
-                    f"Measure {metric.name} already exists in model {self.name}"
+                    f"Measure {measure.name} already exists in model {self.name}"
                 )
-            attribute_graph[metric.name] = set()
+            attribute_graph[measure.name] = set()
 
             known_columns.update(
                 set(
                     exp_to_str(a.this)
-                    for a in metric.columns
+                    for a in measure.columns
                     if isinstance(a, exp.Column)
                 )
             )
 
-            for relationship in metric.attribute_references:
-                if relationship.is_relationship() or relationship.base_model != "self":
+            for reference in measure.attribute_references:
+                if reference.is_relationship() or reference.base_model != "self":
                     continue  # Relationships are handled at query time (for now)
-                attribute_graph[metric.name].add(
-                    exp_to_str(relationship.final_attribute().this)
+                attribute_graph[measure.name].add(
+                    exp_to_str(reference.final_attribute().this)
                 )
 
-            attributes[metric.name] = metric.bind(self)
+            attributes[measure.name] = measure.bind(self)
 
         # Ensure we have no cycles
         attribute_sorter = TopologicalSorter(attribute_graph)
         attribute_sorter.prepare()
 
         self._model_ref_lookup_by_model_name: dict[str, list[Relationship]] = {}
-        for relationship in self.relationships:
-            if relationship.name in attributes:
+        for reference in self.relationships:
+            if reference.name in attributes:
                 raise ValueError(
-                    f"{relationship.name} already exists in model {self.name}. Must be unique"
+                    f"{reference.name} already exists in model {self.name}. Must be unique"
                 )
 
-            attributes[relationship.name] = relationship.bind(self)
+            attributes[reference.name] = reference.bind(self)
 
-            if isinstance(relationship.source_foreign_key, str):
-                known_columns.add(relationship.source_foreign_key)
+            if isinstance(reference.source_foreign_key, str):
+                known_columns.add(reference.source_foreign_key)
             else:
-                known_columns.update(relationship.source_foreign_key)
+                known_columns.update(reference.source_foreign_key)
 
-            if relationship.ref_model not in self._model_ref_lookup_by_model_name:
-                self._model_ref_lookup_by_model_name[relationship.ref_model] = []
-            self._model_ref_lookup_by_model_name[relationship.ref_model].append(
-                relationship
+            if reference.ref_model not in self._model_ref_lookup_by_model_name:
+                self._model_ref_lookup_by_model_name[reference.ref_model] = []
+            self._model_ref_lookup_by_model_name[reference.ref_model].append(
+                reference
             )
 
         self._all_attributes = attributes
@@ -1224,6 +1323,7 @@ class AttributePath(BaseModel):
     @property
     def columns(self):
         return self._columns
+    
 
     def resolve(
         self,
@@ -1320,6 +1420,26 @@ class AttributePath(BaseModel):
     def is_relationship(self) -> bool:
         """Checks if the reference is a relationship"""
         return len(self._columns) > 1
+
+    def is_self_reference(self) -> bool:
+        """Checks if the reference is a self reference"""
+        has_self = False
+        for column in self._columns:
+            if exp_to_str(column.table) == "self":
+                has_self = True
+        return has_self
+
+    def rewrite_self(self, self_model_name: str) -> "AttributePath":
+        """Rewrites the self reference to the given model name"""
+        new_path = []
+        for column in self._columns:
+            if exp_to_str(column.table) == "self":
+                new_path.append(
+                    exp.to_column(f"{self_model_name}.{exp_to_str(column.this)}")
+                )
+            else:
+                new_path.append(column)
+        return AttributePath(path=new_path)
 
 
 class AttributeTransformerResult(BaseModel):
@@ -1688,6 +1808,12 @@ class AttributePathTraverser:
         if isinstance(current_attribute, BoundRelationship):
             raise InvalidAttributeReferenceError(self.reference)
         return True
+    
+    def to_end(self):
+        """Moves the traverser to the end of the reference"""
+        while self.next():
+            pass
+        return self
 
 
 class SemanticQuery(BaseModel):
