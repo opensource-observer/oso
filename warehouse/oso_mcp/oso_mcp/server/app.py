@@ -7,17 +7,18 @@ from typing import Generic, List, Literal, Optional, TypeVar, Union
 
 import requests
 from mcp.server.fastmcp import Context, FastMCP
-from oso_agent.util.config import AgentConfig
 from pyoso import Client
 
 from ..utils.entity_context import (
+    EntityType,
     ResolvedEntity,
     build_exact_entity_search_sql,
     build_fuzzy_entity_search_sql,
-    call_llm_for_entity_variants,
-    call_llm_for_final_selection,
-    entity_deconstructor,
-    generate_entity_string_variants,
+    extract_entities_from_nl_query,
+    format_for_text2sql,
+    generate_entity_variants,
+    normalize_entity_variants,
+    select_final_entity,
 )
 from .config import MCPConfig
 
@@ -75,11 +76,7 @@ def setup_mcp_app(config: MCPConfig):
     @mcp.tool(
         description="Execute a custom SQL SELECT query against the OSO data lake. Returns results as a list of records. Optionally limit the number of results for sampling.",
     )
-    async def query_oso(
-        sql: str,
-        ctx: Context,
-        limit: Optional[int] = None,
-    ) -> McpResponse:
+    async def query_oso(sql: str, ctx: Context, limit: Optional[int] = None) -> McpResponse:
         """
         Execute a SQL SELECT query against the OSO data lake.
 
@@ -366,10 +363,7 @@ def setup_mcp_app(config: MCPConfig):
     @mcp.tool(
         description="Convert a natural language question into a SQL query using the OSO text2sql agent. Returns the generated SQL string.",
     )
-    async def query_text2sql_agent(
-        natural_language_query: str,
-        ctx: Context,
-    ) -> McpResponse:
+    async def query_text2sql_agent(nl_query: str, ctx: Context) -> McpResponse:
         """
         Convert a natural language question into a SQL query using the OSO text2sql agent.
 
@@ -385,8 +379,8 @@ def setup_mcp_app(config: MCPConfig):
             query_text2sql_agent("Show all projects in the Ethereum collection", ctx)
         """
         if ctx:
-            await ctx.info(f"Converting natural language query to SQL: {natural_language_query}")
-
+            await ctx.info(f"Converting natural language query to SQL: {nl_query}")
+        
         api_key = config.oso_api_key
         if not api_key:
             raise ValueError("OSO API key is not available in the context")
@@ -399,361 +393,85 @@ def setup_mcp_app(config: MCPConfig):
 
         data = {
             "id": str(uuid.uuid4()),
-            "messages": [{"role": "user", "content": natural_language_query}],
+            "messages": [{"role": "user", "content": nl_query}],
         }
 
         response = requests.post(url, json=data, headers=headers)
 
         return McpSuccessResponse(
             tool_name="query_text2sql_agent",
-            parameters=[natural_language_query],
+            parameters=[nl_query],
             results=[response.json()["sql"]],
         )
 
     @mcp.tool(
         description="Generate a SQL query from a natural language question, using entity extraction and the text2sql agent for improved accuracy.",
     )
-    async def generate_sql(
-        natural_language_query: str,
-        ctx: Context,
-    ) -> McpResponse:
-        """
-        Generate a SQL query from a natural language question, using entity extraction and the text2sql agent for improved accuracy.
-
-        Args:
-            natural_language_query (str): The user's question in plain English.
-            ctx (Context): The request context.
-
-        Returns:
-            McpSuccessResponse: Generated SQL string.
-            McpErrorResponse: On error, contains error details.
-
-        Example:
-            generate_sql("Show all projects in the Ethereum collection", ctx)
-        """
-        gather_all_entities_result = await gather_all_entities(natural_language_query, ctx)
-        query_text2sql_agent_result = await query_text2sql_agent(gather_all_entities_result.results[0], ctx)
-        return McpSuccessResponse(
-            tool_name="generate_sql",
-            parameters=[natural_language_query],    
-            results=[query_text2sql_agent_result.results[0]],
-        )
-
-    @mcp.tool(
-        description="Extract and resolve all relevant entities (projects, collections, metrics, etc.) from a natural language query, returning their types and context.",
-    )
-    async def gather_all_entities(nl_query: str, ctx: Context) -> McpResponse:
-        """
-        Extract and resolve all relevant entities (projects, collections, metrics, etc.) from a natural language query.
-
-        Args:
-            nl_query (str): The user's question in plain English.
-            ctx (Context): The request context.
-
-        Returns:
-            McpSuccessResponse: String summary of resolved entities and their types.
-            McpErrorResponse: On error, contains error details.
-
-        Example:
-            gather_all_entities("Show all projects in the Ethereum collection", ctx)
-        """
-        # 1. Deconstruct the query into entities using the entity_deconstructor workflow
-        entity_deconstructor_result = await entity_deconstructor(nl_query, config)
-
-        # 2. For each entity, try to find it in the database using the ranking order
+    async def generate_sql(nl_query: str, ctx: Context) -> McpResponse:
+        # extract and search for all entities in the query
+        gather_all_entities_result = await gather_all_entities_and_search(nl_query, ctx)
+        # format the entities and the nl query into a string for the text2sql agent
+        entities_plus_nl_query = await format_for_text2sql(nl_query, gather_all_entities_result)
+        # call the text2sql agent to generate the sql query
+        query_text2sql_agent_result = await query_text2sql_agent(entities_plus_nl_query, ctx)
+        return query_text2sql_agent_result
+    
+    # nl query in -> list of resolved e ntities out
+    async def gather_all_entities_and_search(nl_query: str, ctx: Context) -> list[ResolvedEntity]:
+        # extract entities from the query 
+        entity_deconstructor_result = await extract_entities_from_nl_query(nl_query, config)
+    
         resolved_entities = []
-        all_models = set()      
-
-        # print(f"Entity Deconstructor Result: {entity_deconstructor_result.entities}")
+        # handle each entity one at a time
         for entity_guess in entity_deconstructor_result.entities:            
-            # 3. Try each entity type in ranking order until we find a valid one
-            # print(f"Entity Rankings: {entity_guess.ranking}")
+            # generate the variants
+            llm_generated_variants = await generate_entity_variants(config, entity_guess.name, nl_query, entity_guess.description)
+            # normalize the variants
+            normalized_variants = normalize_entity_variants(llm_generated_variants)
+            # then iterate over the ranking of entity types
             for entity_type in entity_guess.ranking:
-                ##print(f"Searching for {entity_type} {entity_guess.name}")
-                search_result = None
-
-                if entity_type == "project":
-                    search_result = await search_project(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
-                    print(f"Search result for project: {search_result}")
-                elif entity_type == "collection":
-                    search_result = await search_collection(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
-                    print(f"Search result for collection: {search_result}")
-                elif entity_type == "chain":
-                    search_result = await search_chain(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
-                    print(f"Search result for chain: {search_result}")
-                elif entity_type == "metric":
-                    search_result = await search_metric(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
-                    print(f"Search result for metric: {search_result}")
-                elif entity_type == "model":
-                    search_result = await search_model(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
-                    print(f"Search result for model: {search_result}")
-                elif entity_type == "artifact":
-                    search_result = await search_artifact(entity_guess.name, ctx, match_type="fuzzy", nl_query=nl_query)
-                    print(f"Search result for artifact: {search_result}")
-
-                if search_result and search_result.success:
-                    entity_found = ResolvedEntity(
-                        row=search_result.results[0],
-                        description=entity_guess.description,
-                        entity_type=entity_type,
-                        suggested_models=entity_guess.suggested_models
-                    )
-                    resolved_entities.append(entity_found)
-                    all_models.update(entity_guess.suggested_models)
+                # build the sql query
+                sql = build_fuzzy_entity_search_sql(normalized_variants, entity_type)
+                # execute the query
+                resp = await query_oso(sql, ctx, limit=1)
+                
+                if isinstance(resp, McpSuccessResponse) and resp.results:
+                    # select the correct row from the search result
+                    selected_row = await select_final_entity(nl_query, entity_guess.name, entity_type, resp.results, config)
+                    # if we have a selected row, we can add it to the list of resolved entities
+                    if selected_row:
+                        entity_found = ResolvedEntity(
+                            name=selected_row,
+                            description=entity_guess.description,
+                            entity_type=entity_type,
+                        )
+                        resolved_entities.append(entity_found)
                     break
-
-        # 4. Format the result as a string
-        if resolved_entities:
-            entity_string = ""
-            for entity in resolved_entities:
-                entity_string += f"""
-                    Entity Rows: {entity.row}
-                    Description: {entity.description}
-                    Entity Type: {entity.entity_type}
-                """
-
-            final_response = f"""
-                NL Query: {nl_query}
-                Entities:
-                    {entity_string}
-                Models: {', '.join(sorted(list(all_models)))}
-            """    
-        else:
-            final_response = f"""
-                NL Query: {nl_query}
-            """
-
-        return McpSuccessResponse(
-            tool_name="gather_all_entities",
-            parameters=[nl_query],
-            results=[final_response],
-        )
-
-    # I will refactor because this is a mess
-    async def search_entity(
-        entity: str,
-        ctx: Context,
-        table: str,
-        columns: list[str],
-        entity_type: str,
-        agent_config: AgentConfig,
-        match_type: Literal['exact', 'fuzzy'] = 'exact',
-        nl_query: str = "",
-        **kwargs
-    ) -> McpResponse:
+            # if we aren't successful at finding an entity for now we will assume the entity doesn't exist and ignore it
+        return resolved_entities
+    
+    @mcp.tool(
+        description="Search for an entity by name or display name in a specific table. Supports exact and fuzzy matching. Returns the matching row(s) if found.",
+    )
+    async def search_entity(entity: str, entity_type: EntityType, ctx: Context, nl_query: str, match_type: Literal['exact', 'fuzzy'] = 'exact', **kwargs) -> McpResponse:
         """
         Generic search function for entities (project, collection, chain, etc.)
         """
-        if match_type == 'exact':
-            sql = build_exact_entity_search_sql(entity, table, columns)
-            resp = await query_oso(sql, ctx, limit=1)
-            if isinstance(resp, McpSuccessResponse) and resp.results:
-                return McpSuccessResponse(tool_name=f"search_{entity_type}", parameters=[entity], results=resp.results)
-            else:
-                return McpErrorResponse(tool_name=f"search_{entity_type}", parameters=[entity], error=f"{entity_type.capitalize()} '{entity}' not found.")
+
+        if match_type == 'fuzzy':
+            # generate the variants
+            llm_generated_variants = await generate_entity_variants(config, entity, nl_query, entity_type)
+            # normalize the variants
+            normalized_variants = normalize_entity_variants(llm_generated_variants)
+            # build the sql query
+            sql = build_fuzzy_entity_search_sql(normalized_variants, entity_type)
         else:
-            llm_variants = await call_llm_for_entity_variants(agent_config, entity, nl_query, entity_type)
-            entity_variants = generate_entity_string_variants(llm_variants)
-            sql = build_fuzzy_entity_search_sql(entity_variants, table, columns)
-            resp = await query_oso(sql, ctx, limit=20)
-            if not (isinstance(resp, McpSuccessResponse) and resp.results):
-                return McpErrorResponse(tool_name=f"search_{entity_type}", parameters=[entity], error=f"No close matches found for {entity_type} '{entity}'.")
-            candidates = resp.results
-            final_names = await call_llm_for_final_selection(agent_config, nl_query, entity, entity_type, candidates)
-            final_results = [row for row in candidates if any(row.get(col) in final_names for col in columns)]
-            return McpSuccessResponse(tool_name=f"search_{entity_type}", parameters=[entity], results=final_results)
+            # build the sql query
+            sql = build_exact_entity_search_sql(entity, entity_type)
 
-    @mcp.tool(
-        description="Search for a project by name or display name in projects_v1. Supports exact and fuzzy matching. Returns the matching row(s) if found.",
-    )
-    async def search_project(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
-        """
-        Search for a project by name or display name in projects_v1.
-
-        Args:
-            entity (str): Project name or display name.
-            ctx (Context): The request context.
-            match_type (Literal['exact', 'fuzzy']): Use 'exact' for strict match, 'fuzzy' for approximate match.
-            nl_query (str): (Optional) The original NLQ for context.
-
-        Returns:
-            McpSuccessResponse: Matching project row(s).
-            McpErrorResponse: On error, contains error details.
-
-        Example:
-            search_project("Uniswap", ctx, match_type="fuzzy")
-        """
-        return await search_entity(
-            entity=entity,
-            ctx=ctx,
-            table="projects_v1",
-            columns=["project_name", "display_name"],
-            entity_type="project",
-            match_type=match_type,
-            nl_query=nl_query,
-            agent_config=config,
-            **kwargs,
-        )
-
-    @mcp.tool(
-        description="Search for a collection by name or display name in collections_v1. Supports exact and fuzzy matching. Returns the matching row(s) if found.",
-    )
-    async def search_collection(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
-        """
-        Search for a collection by name or display name in collections_v1.
-
-        Args:
-            entity (str): Collection name or display name.
-            ctx (Context): The request context.
-            match_type (Literal['exact', 'fuzzy']): Use 'exact' for strict match, 'fuzzy' for approximate match.
-            nl_query (str): (Optional) The original NLQ for context.
-
-        Returns:
-            McpSuccessResponse: Matching collection row(s).
-            McpErrorResponse: On error, contains error details.
-
-        Example:
-            search_collection("ethereum-github", ctx, match_type="exact")
-        """
-        return await search_entity(
-            entity=entity,
-            ctx=ctx,
-            table="collections_v1",
-            columns=["collection_name", "display_name"],
-            entity_type="collection",
-            match_type=match_type,
-            nl_query=nl_query,
-            agent_config=config,
-            **kwargs,
-        )
-
-    @mcp.tool(
-        description="Search for a chain/network by name in int_chainlist. Supports exact and fuzzy matching. Returns the matching row(s) if found.",
-    )
-    async def search_chain(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
-        """
-        Search for a chain/network by name in int_chainlist.
-
-        Args:
-            entity (str): Chain/network name.
-            ctx (Context): The request context.
-            match_type (Literal['exact', 'fuzzy']): Use 'exact' for strict match, 'fuzzy' for approximate match.
-            nl_query (str): (Optional) The original NLQ for context.
-
-        Returns:
-            McpSuccessResponse: Matching chain row(s).
-            McpErrorResponse: On error, contains error details.
-
-        Example:
-            search_chain("Optimism", ctx, match_type="fuzzy")
-        """
-        return await search_entity(
-            entity=entity,
-            ctx=ctx,
-            table="int_chainlist",
-            columns=["chainlist_name", "oso_chain_name", "display_name"],
-            entity_type="chain",
-            match_type=match_type,
-            nl_query=nl_query,
-            agent_config=config,
-            **kwargs,
-        )
-
-    @mcp.tool(
-        description="Search for a metric by display name in metrics_v0. Supports exact and fuzzy matching. Returns the matching row(s) if found.",
-    )
-    async def search_metric(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
-        """
-        Search for a metric by display name in metrics_v0.
-
-        Args:
-            entity (str): Metric display name.
-            ctx (Context): The request context.
-            match_type (Literal['exact', 'fuzzy']): Use 'exact' for strict match, 'fuzzy' for approximate match.
-            nl_query (str): (Optional) The original NLQ for context.
-
-        Returns:
-            McpSuccessResponse: Matching metric row(s).
-            McpErrorResponse: On error, contains error details.
-
-        Example:
-            search_metric("GITHUB_commits_daily", ctx, match_type="exact")
-        """
-        return await search_entity(
-            entity=entity,
-            ctx=ctx,
-            table="metrics_v0",
-            columns=["display_name"],
-            entity_type="metric",
-            match_type=match_type,
-            nl_query=nl_query,
-            agent_config=config,
-            **kwargs,
-        )
-
-    @mcp.tool(
-        description="Search for a model by name in models_v1. Supports exact and fuzzy matching. Returns the matching row(s) if found.",
-    )
-    async def search_model(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
-        """
-        Search for a model by name in models_v1.
-
-        Args:
-            entity (str): Model name.
-            ctx (Context): The request context.
-            match_type (Literal['exact', 'fuzzy']): Use 'exact' for strict match, 'fuzzy' for approximate match.
-            nl_query (str): (Optional) The original NLQ for context.
-
-        Returns:
-            McpSuccessResponse: Matching model row(s).
-            McpErrorResponse: On error, contains error details.
-
-        Example:
-            search_model("project_funding_summary", ctx, match_type="exact")
-        """
-        return await search_entity(
-            entity=entity,
-            ctx=ctx,
-            table="models_v1",
-            columns=["model_name"],
-            entity_type="model",
-            match_type=match_type,
-            nl_query=nl_query,
-            agent_config=config,
-            **kwargs,
-        )
-
-    @mcp.tool(
-        description="Search for an artifact by name in artifacts_v1. Supports exact and fuzzy matching. Returns the matching row(s) if found.",
-    )
-    async def search_artifact(entity: str, ctx: Context, match_type: Literal['exact', 'fuzzy'] = 'exact', nl_query: str = "", **kwargs) -> McpResponse:
-        """
-        Search for an artifact by name in artifacts_v1.
-
-        Args:
-            entity (str): Artifact name.
-            ctx (Context): The request context.
-            match_type (Literal['exact', 'fuzzy']): Use 'exact' for strict match, 'fuzzy' for approximate match.
-            nl_query (str): (Optional) The original NLQ for context.
-
-        Returns:
-            McpSuccessResponse: Matching artifact row(s).
-            McpErrorResponse: On error, contains error details.
-
-        Example:
-            search_artifact("@libp2p/echo", ctx, match_type="fuzzy")
-        """
-        return await search_entity(
-            entity=entity,
-            ctx=ctx,
-            table="artifacts_v1",
-            columns=["artifact_name"],
-            entity_type="artifact",
-            match_type=match_type,
-            nl_query=nl_query,
-            agent_config=config,
-            **kwargs,
-        )
+        # execute the query
+        resp = await query_oso(sql, ctx, limit=1)
+        return resp
 
     @mcp.resource("help://getting-started")
     def get_help_guide() -> str:
@@ -769,25 +487,46 @@ def setup_mcp_app(config: MCPConfig):
             
             Welcome to the OSO Data Lake Explorer! This server provides a suite of tools for querying and exploring the OSO (Open Source Observer) data lake.
             
-            ## Workflows & Tools
+            ## Available Tools
             
             ### 1. Data Exploration
-            - **list_tables**: List all available tables in the data lake.
-            - **get_table_schema**: Get the schema (columns, types) for a specific table.
-            - **get_sample_queries**: See example SQL queries for common tasks.
-            - **query_oso**: Run custom SQL SELECT queries and get results as records.
+            - **list_tables**: List all available tables in the data lake
+            - **get_table_schema**: Get the schema (columns, types) for a specific table
+            - **get_sample_queries**: See curated example SQL queries for common tasks
+            - **query_oso**: Execute custom SQL SELECT queries and get results as records
             
             ### 2. Natural Language to SQL
-            - **generate_sql**: Go from a natural language question to a SQL query, with entity extraction for accuracy.
+            - **generate_sql**: Convert natural language questions to SQL using entity extraction + text2sql agent (RECOMMENDED)
+            - **query_text2sql_agent**: Direct conversion of natural language to SQL using the text2sql agent
+            
+            ### 3. Entity Search
+            - **search_entity**: Search for specific entities (projects, collections, chains) by name with exact or fuzzy matching
+            
+            ## Recommended Workflows
+            
+            ### Getting Started
+            1. Use **list_tables** to see available data
+            2. Use **get_table_schema** to understand table structures
+            3. Use **get_sample_queries** for inspiration and patterns
+            
+            ### Natural Language Queries
+            1. Use **generate_sql** for most natural language questions (handles entity resolution automatically)
+            2. Use **query_text2sql_agent** for simpler queries that don't require entity context
+            
+            ### Direct SQL Queries
+            1. Use **query_oso** to execute custom SQL queries directly
+            2. Add `limit` parameter for sampling large result sets
             
             ## Best Practices
-            - Use **generate_sql** for most NLQ-to-SQL tasks (it handles entity context).
-            - Use **list_tables** and **get_table_schema** to explore available data.
-            - Use **get_sample_queries** for inspiration and copy-paste examples.
+            - **generate_sql** is the most powerful tool for natural language queries as it includes entity extraction
+            - Use **search_entity** when you need to verify entity names before building queries
+            - Start with **get_sample_queries** to understand common query patterns
+            - Use **list_tables** and **get_table_schema** to explore the data structure
             
             ## Troubleshooting
-            - If you get an error about a missing table or column, use **list_tables** and **get_table_schema** to check names.
-            - Ensure your OSO API key is set as the `OSO_API_KEY` environment variable.
+            - If you get errors about missing tables/columns, use **list_tables** and **get_table_schema**
+            - If entity names aren't found, try **search_entity** with fuzzy matching
+            - Ensure your OSO API key is set as the `OSO_API_KEY` environment variable
             
             ## Authentication
             This server requires an OSO API key to be set as the `OSO_API_KEY` environment variable.
