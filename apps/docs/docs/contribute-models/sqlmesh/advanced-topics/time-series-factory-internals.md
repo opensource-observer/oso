@@ -1,13 +1,12 @@
 ---
-title: Time Series Metrics Factory Deep Dive
-sidebar_position: 1
+title: Time-Series Factory Internals
+sidebar_position: 3
 ---
 
 :::info
 This guide is for an in-depth understanding of our model generation
 factory that is used to generate the time series metrics for OSO. If you'd like
-a more practical example of how to add new time series metrics models, [go
-here](./data-models.md).
+a more practical example of how to add new time series metrics models, see the [Create a Time-Series Metric guide](../how-to-guides/create-a-time-series-metric.md).
 :::
 
 ## Background
@@ -48,8 +47,8 @@ def execute(
 According to the sqlmesh documentation, Python models come in two different
 forms:
 
-1. A model that returns a dataframe (e.g. pandas, pyspark, snowpark)
-2. A model that returns a sqlglot expression (`sqlglot.exp.Expression`)
+1.  A model that returns a dataframe (e.g. pandas, pyspark, snowpark)
+2.  A model that returns a sqlglot expression (`sqlglot.exp.Expression`)
 
 These models are discovered by sqlmesh's loader as long as the model exists in
 the `models` directory of a sqlmesh project.
@@ -189,81 +188,3 @@ Our time series metrics factory has been enhanced to offer even greater flexibil
 - **Dynamic Query Rendering**: Leveraging SQLGlot for advanced query transformations, including conditional joins and derived columns.
 
 By adopting these enhancements, the time series metrics factory reduces maintenance overhead, ensures consistency across models, and enables complex analysis with minimal code duplication.
-
-### Expanded Use of Macros
-
-Building on existing macros like `@metrics_sample_date` and `@metrics_peer_ref`, the factory now supports additional macro functions for granular control and dynamic transformations:
-
-- **`@metrics_grain`**: Dynamically adjusts the grain level for queries based on configuration parameters.
-- **`@entity_relationships`**: Resolves complex multi-entity relationships and generates the appropriate joins automatically.
-- **`@rolling_window_offset`**: Calculates offsets for rolling window comparisons between metrics.
-
-These macros are injected into each generated model, ensuring seamless integration with SQLMesh's execution framework.
-
-## Workflow for Adding Metrics
-
-To illustrate the new capabilities, here's an example of adding a GitHub stars metric:
-
-**1. Write the SQL**
-
-```sql
-SELECT
-  @metrics_sample_date(events.bucket_day) AS metrics_sample_date,
-  events.event_source,
-  events.to_artifact_id,
-  '' AS from_artifact_id,
-  @metric_name() AS metric,
-  SUM(events.amount) AS amount
-FROM oso.int_events_daily__github AS events
-WHERE
-  event_type IN ('STARRED')
-  AND events.bucket_day BETWEEN @metrics_start('DATE') AND @metrics_end('DATE')
-GROUP BY 1, metric, from_artifact_id, to_artifact_id, event_source
-```
-
-**2. Define the Metric Query**
-
-```python
-"stars": MetricQueryDef(
-    ref="code/stars.sql",
-    time_aggregations=["daily", "monthly", "quarterly"],
-    rolling=RollingConfig(
-        windows=[30, 90, 180],
-        unit="day",
-        cron="@daily",
-    ),
-    entity_types=["artifact", "project", "collection"],
-    metadata=MetricMetadata(
-        display_name="GitHub Stars",
-        description="Aggregates GitHub stars across repositories and projects.",
-    ),
-),
-```
-
-**3. Render the Queries**
-
-```bash
-uv run oso metrics render stars --full-render --dialect duckdb
-```
-
-This generates SQL for each combination of entity type and aggregation interval, leveraging the advanced macros for dynamic grain adjustments and relationships.
-
-**4. Validate the Models**:
-
-Run the models locally to ensure correctness:
-
-```bash
-uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now
-```
-
-**5. Submit the Changes**:
-
-Push to GitHub and create a pull request following the established workflow.
-
-By following this process, you can efficiently integrate new metrics while maintaining consistency across the OSO data pipeline.
-
-## Conclusion
-
-The updated time series metrics factory streamlines the creation of robust, scalable models for OSO. By leveraging SQLMesh and SQLGlot's advanced capabilities, you can define metrics with precision and flexibility. For more practical examples, refer to the [data models guide](./data-models.md).
-
-Happy modeling!
