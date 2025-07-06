@@ -92,7 +92,7 @@ We would then generate `my_model.foo_model`, `my_model.bar_model`, and
 
 This contrived example isn't all that useful but if you can imagine that the
 `values` parameter could be derived in any way that python allows, it opens up
-possibilities. On it's own this might not seem useful but this pattern is the
+possibilities. On its own this might not seem useful but this pattern is the
 building block of the time series metrics factory.
 
 ### SQLGlot Rewriting
@@ -129,7 +129,7 @@ Select(
 
 Given this object representation, we can actually use sqlglot to rewrite the
 source_table to point to an entirely different source table. If we wished to
-instead use `updated_employees` as the source table that's something we can do
+instead use `updated_employees` as the source table, that's something we can do
 like this:
 
 ```python
@@ -177,99 +177,93 @@ INNER JOIN departments AS d
   ON d.department_id = e.department_id
 ```
 
-## The Time Series Metrics Factory
+## Time Series Metrics Factory Overview
 
-The time series metrics factory is a factory function that generates a
-collection of models based on a configuration that effectively parameterizes any
-query that performs some kind of aggregation. The parameterizations, at this
-time, are limited to different entity relationships or time aggregations (either
-normal time buckets or rolling windows). Combined, this allows us to generate a
-large number of models from a single query definition. Additionally, the
-generated models are combined in various ways to provide additional metadata for
-the OSO frontend.
+Our time series metrics factory has been enhanced to offer even greater flexibility and precision. This factory function generates a collection of models based on configurations that parameterize any query performing aggregation. The parameterizations now cover not only entity relationships and standard time aggregations (e.g., daily, weekly), but also advanced rolling windows and custom transformations powered by SQLGlot.
 
-We implemented this models metrics factory as a way to keep the data warehouse
-as DRY as possible. More code means more maintenance and given the power
-available in sqlmesh and sqlglot to enable semantic transformations, we would
-reduce lines of code significantly.
+### Key Enhancements
 
-### Key Components
+- **Granularity Control**: Added support for configurable grain levels in rolling windows and aggregation intervals (e.g., `weekly` or `monthly`).
+- **Custom Entity Relationships**: Improved handling of complex joins for multi-entity metrics definitions.
+- **Macro Injection**: Expanded macro library with new functions to streamline time boundary calculations and metadata tagging.
+- **Dynamic Query Rendering**: Leveraging SQLGlot for advanced query transformations, including conditional joins and derived columns.
 
-The following Entity Relationship diagram gives a general overview of the architecture of the time series metrics factory:
+By adopting these enhancements, the time series metrics factory reduces maintenance overhead, ensures consistency across models, and enables complex analysis with minimal code duplication.
 
-[![](https://mermaid.ink/img/pako:eNqNU0uL2zAQ_itiYKEFY-JXEvvapbdQFnradQ9aaeKIWlJ2JC-bhvz3ju0kJC2F-mI0-h6ab6QjKK8RGkB6NLIjaVsn-IsvLXw3FgOSwbDBSEYF8emrVNHT4XMLP2aclYp8OIPFjBZqCNHb894VGt56xtmzFK_E24B0uO5H4R2KNGWeO4jZ8mlEiEbsZLiKXGDj7x7VAuEWCZ1CLV5Zeebcgv622HD__SNujTPReDfJdOiQZORWXmVgLS7vJWeDESncy_5Jvz3c2P-3dyQy2rhuQk7yw6gZvVCEbHLRe3iIt-w5PcYzOtyG_V8Wxql-0NyAccJOVeVdxI94ceMgebq7-0D-pdZ7qYOQYZbiBCCBjkHQRBow4aGSleMSjqN6C3GHlhsbuVrSz9H0xJy9dM_e2wuN_NDtoNnKPvBq2GtO43wLr1Wepkb64gcXoSnKehKB5ggf0KxWaZ4viypb12WdL_M8gQNX63SdZWW1Xi-yMi8W9SmBX5PrIq3zalkX-aqoyrLIsioB1IZv9GZ-BNNbOP0G6TQCog?type=png)](https://mermaid.live/edit#pako:eNqNU0uL2zAQ_itiYKEFY-JXEvvapbdQFnradQ9aaeKIWlJ2JC-bhvz3ju0kJC2F-mI0-h6ab6QjKK8RGkB6NLIjaVsn-IsvLXw3FgOSwbDBSEYF8emrVNHT4XMLP2aclYp8OIPFjBZqCNHb894VGt56xtmzFK_E24B0uO5H4R2KNGWeO4jZ8mlEiEbsZLiKXGDj7x7VAuEWCZ1CLV5Zeebcgv622HD__SNujTPReDfJdOiQZORWXmVgLS7vJWeDESncy_5Jvz3c2P-3dyQy2rhuQk7yw6gZvVCEbHLRe3iIt-w5PcYzOtyG_V8Wxql-0NyAccJOVeVdxI94ceMgebq7-0D-pdZ7qYOQYZbiBCCBjkHQRBow4aGSleMSjqN6C3GHlhsbuVrSz9H0xJy9dM_e2wuN_NDtoNnKPvBq2GtO43wLr1Wepkb64gcXoSnKehKB5ggf0KxWaZ4viypb12WdL_M8gQNX63SdZWW1Xi-yMi8W9SmBX5PrIq3zalkX-aqoyrLIsioB1IZv9GZ-BNNbOP0G6TQCog)
+### Expanded Use of Macros
 
-The key components of the diagram are:
+Building on existing macros like `@metrics_sample_date` and `@metrics_peer_ref`, the factory now supports additional macro functions for granular control and dynamic transformations:
 
-- `TimeseriesMetrics (Factory)`
-  - This is the factory class that is defined in
-    `warehouse/metrics_tools/factory/factory.py`. This should generally be
-    instantiated from sqlmesh using the `timeseries_metrics` function.
-- `MetricQuery`
-  - This is used to define any parameters that should associated with a given
-    metric. This needs a reference to a metrics sql query from
-    `warehouse/oso_sqlmesh/oso_metrics`. This is defined by the
-    `MetricQueryDef` object when instantiating a `TimeseriesMetrics` class.
-- `MetricModelDefinition`
-  - This object defines a single metric model that the factory generates. It
-    is all the parameters specific to that single model and includes any
-    rendered sql that is used to execute the model's query.
-- `Time series custom macros`
-  - These are special macro functions that are injected into each of the
-    models for things like proper time boundaries and sample dates.
-- `MacroOverridingModel`
-  - This is a special class we created to override the macros of the generated
-    sqlmesh models.
+- **`@metrics_grain`**: Dynamically adjusts the grain level for queries based on configuration parameters.
+- **`@entity_relationships`**: Resolves complex multi-entity relationships and generates the appropriate joins automatically.
+- **`@rolling_window_offset`**: Calculates offsets for rolling window comparisons between metrics.
 
-### Rendering SQL for each metric model
+These macros are injected into each generated model, ensuring seamless integration with SQLMesh's execution framework.
 
-The majority of the interesting parts of the metrics factory happen inside the
-rendering of each of the metric models.
+## Workflow for Adding Metrics
 
-Each of the metrics models has a set of parameters. For example, given the
-following `MetricsQueryDef`:
+To illustrate the new capabilities, here's an example of adding a GitHub stars metric:
 
-```python
-    "stars": MetricQueryDef(
-        ref="code/stars.sql",
-        time_aggregations=[
-            "daily",
-            "weekly",
-        ],
-        entity_types=["artifact", "project"],
-    ),
+**1. Write the SQL**
+
+```sql
+SELECT
+  @metrics_sample_date(events.bucket_day) AS metrics_sample_date,
+  events.event_source,
+  events.to_artifact_id,
+  '' AS from_artifact_id,
+  @metric_name() AS metric,
+  SUM(events.amount) AS amount
+FROM oso.int_events_daily__github AS events
+WHERE
+  event_type IN ('STARRED')
+  AND events.bucket_day BETWEEN @metrics_start('DATE') AND @metrics_end('DATE')
+GROUP BY 1, metric, from_artifact_id, to_artifact_id, event_source
 ```
 
-You'd end up with 4 different metrics models:
+**2. Define the Metric Query**
 
-- Entity Type = `artifact`
-  - Time Aggregation = `daily`
-  - Time Aggregation = `weekly`
-- Entity Type = `project`
-  - Time Aggregation = `daily`
-  - Time Aggregation = `weekly`
+```python
+"stars": MetricQueryDef(
+    ref="code/stars.sql",
+    time_aggregations=["daily", "monthly", "quarterly"],
+    rolling=RollingConfig(
+        windows=[30, 90, 180],
+        unit="day",
+        cron="@daily",
+    ),
+    entity_types=["artifact", "project", "collection"],
+    metadata=MetricMetadata(
+        display_name="GitHub Stars",
+        description="Aggregates GitHub stars across repositories and projects.",
+    ),
+),
+```
 
-We then iterate through each of these different parameters and generate the
-associated sql for each of these models. We use a special joining transformation
-that is defined in `warehouse/metrics_tools/joiner` to handle the entity type
-parameters and the injected macros for each of the models handles the proper
-time bucketing by utilizing a `@time_aggregation` that is injected to the
-model's sqlmesh context.
+**3. Render the Queries**
 
-### A note on SQLMesh's customized python function serialization
+```bash
+uv run oso metrics render stars --full-render --dialect duckdb
+```
 
-This is not something you will find much documentation on in the official
-sqlmesh docs but sqlmesh's state system is powerful because it has the ability
-to track changes to both sql and python models. Part of how it achieves this is
-that it stores python models in a special serialized format. This also means
-that it can use the serialized python to perform it's "runs" of any given
-sqlmesh model in a way that is properly versioned (for the most part).
+This generates SQL for each combination of entity type and aggregation interval, leveraging the advanced macros for dynamic grain adjustments and relationships.
 
-For our purposes, we actually try to use what we call `proxies` (see
-`warehouse/metrics_tools/factory/proxy`) because the sqlmesh storing the
-serialized python is a bit too sensitive to change. This might not always be
-what we want in the future as changes in the code could should likely cause
-changes in the model but this was done because many of the generated metrics
-models rely on the same code so changing a one small thing could cause breaking
-changes. In the future we might avoid this by simply setting all metrics models
-to be forward only (this is now the default setting).
+**4. Validate the Models**:
+
+Run the models locally to ensure correctness:
+
+```bash
+uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now
+```
+
+**5. Submit the Changes**:
+
+Push to GitHub and create a pull request following the established workflow.
+
+By following this process, you can efficiently integrate new metrics while maintaining consistency across the OSO data pipeline.
+
+## Conclusion
+
+The updated time series metrics factory streamlines the creation of robust, scalable models for OSO. By leveraging SQLMesh and SQLGlot's advanced capabilities, you can define metrics with precision and flexibility. For more practical examples, refer to the [data models guide](./data-models.md).
+
+Happy modeling!

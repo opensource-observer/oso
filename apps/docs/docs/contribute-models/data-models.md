@@ -20,6 +20,7 @@ The OSO data model is complex, so you should read everything if you want to cont
 - We like long, skinny tables (many rows, few columns) to keep them performant
 - SQL must be written in Trino; we have macros to help with operations that can be tricky in Trino's SQL
 - Test locally before submitting a pull request
+- **For an in-depth guide on time series metrics, see the [Time Series Metrics Factory Deep Dive](./time-series-factory.md).**
 
 ## Core Concepts
 
@@ -506,7 +507,7 @@ Before submitting your models, it's important to test them thoroughly to ensure 
 1. **Run with Limited Data**: Test your models with a limited date range to speed up development:
 
 ```bash
-oso local sqlmesh plan dev --start 2025-01-01 --end 2025-01-31
+uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now
 ```
 
 SQLMesh will build your model and intelligently determine anything downstream that also needs to be rebuilt. This is a great way to test your model without waiting for the entire pipeline to run.
