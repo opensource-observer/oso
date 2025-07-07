@@ -1,5 +1,5 @@
 ---
-title: Semantic Layer Definition 
+title: Semantic Layer
 sidebar_position: 1
 ---
 
@@ -15,7 +15,7 @@ The OSO semantic layer allows us to provide a detailed interface to the OSO data
 model that encapsulates the contextual meaning of tables, columns or other
 abstractions in the data warehouse. The hope is that this interface will allow
 new users an easy way to interrogate the data while also providing for
-convenience tools when creating new models for seasoned users. 
+convenience tools when creating new models for seasoned users.
 
 ## Anatomy of the semantic layer
 
@@ -66,27 +66,27 @@ data warehouse, artifacts, projects, and collections are generic entities to
 understand the events that occur in the universe of open source software. These
 entities roughly map to certain classes of real world or digital entities.
 
-* Artifact entities
-    * An artifact is generally an real or digital object that we consider the
-      smallest atom that can send or receive events. This could be an NPM
-      package, a Github repository, an Optimism contract, an Ethereum address,
-      or any other entity that can be interacted with that is generally
-      indivisible.
-* Project entities
-    * A project is a collection of artifacts that are related to each other in a
-      some way. Usually, this project relates to some real world phyiscal or
-      logical grouping of entities in the real world. In general, but not
-      always, a project "owns" a set of artifacts rather than simply being
-      composed of them. Examples of a project include an organization, a
-      company, a team or even a single person.
-* Collection entities
-    * A collection is an arbitrary grouping of projects. The relationship
-      between collections and projects is not necessarily one of ownership. For
-      instance, a collection could be a set of projects that are related to a
-      specific topic, or perhaps they're a set of projects involved in the same
-      event. A collection could also be a set of projects that simply relate to
-      another project. We see collections as a flexible way to group related
-      projects but each collection may have a different purpose.
+- Artifact entities
+  - An artifact is generally an real or digital object that we consider the
+    smallest atom that can send or receive events. This could be an NPM
+    package, a Github repository, an Optimism contract, an Ethereum address,
+    or any other entity that can be interacted with that is generally
+    indivisible.
+- Project entities
+  - A project is a collection of artifacts that are related to each other in a
+    some way. Usually, this project relates to some real world phyiscal or
+    logical grouping of entities in the real world. In general, but not
+    always, a project "owns" a set of artifacts rather than simply being
+    composed of them. Examples of a project include an organization, a
+    company, a team or even a single person.
+- Collection entities
+  - A collection is an arbitrary grouping of projects. The relationship
+    between collections and projects is not necessarily one of ownership. For
+    instance, a collection could be a set of projects that are related to a
+    specific topic, or perhaps they're a set of projects involved in the same
+    event. A collection could also be a set of projects that simply relate to
+    another project. We see collections as a flexible way to group related
+    projects but each collection may have a different purpose.
 
 ### An `artifact` model with dimensions
 
@@ -98,7 +98,7 @@ appropriate attributes.
 
 To start, let's define a very basic model for the `artifact` table. This
 definition will be incomplete but it will give us a starting point to understand
-how to define a model. 
+how to define a model.
 
 ```python
 from oso_semantic import Model, Dimension
@@ -108,27 +108,27 @@ artifact_model = Model(
     table="iceberg.oso.artifacts_v1",
     dimensions=[
         Dimension(
-            name="id", 
+            name="id",
             description="Unique identifier for the artifact",
             column_name="artifact_id",
         ),
         Dimension(
-            name="name", 
+            name="name",
             description="Name of the artifact",
             column_name="artifact_name",
         ),
         Dimension(
-            name="namespace", 
+            name="namespace",
             description="Namespace of the artifact",
             column_name="artifact_namespace"
         ),
         Dimension(
-            name="source", 
+            name="source",
             description="Source of the artifact",
             column_name="artifact_source"
         ),
         Dimension(
-            name="url", 
+            name="url",
             description="URL of the artifact",
             column_name="artifact_url"
         ),
@@ -140,7 +140,7 @@ At its most basic, a model must have a `name`, a `table`, and one or more
 attributes. Here we've defined some basic dimensions for the `artifact` model.
 Let's query this model to see what it looks like when translated to SQL. For
 this we must first register this model to a registry and then create a query
-against it. 
+against it.
 
 To create the registry:
 
@@ -148,18 +148,18 @@ To create the registry:
 from oso_semantic import Registry
 
 registry = Registry()
-registry.register(artifact_model) 
+registry.register(artifact_model)
 ```
 
 To query, we use the `select` method on the registry, which creates a
 `QueryBuilder` object that allows us to build a query against the registered
-models. 
+models.
 
 ```python
 from oso_semantic import QueryBuilder
 
 query: QueryBuilder = registry.select(
-    "artifacts.id", 
+    "artifacts.id",
     "artifacts.name"
 )
 
@@ -173,13 +173,13 @@ want to query. These attributes are specified in the format
 `query.sql(pretty=True)` and print the generated sql query to the console. This
 will output as follows:
 
-:::note 
+:::note
 The sql generated by the semantic layer will actually be a bit more
 verbose. This example is simplified to show the basic structure of the query.
 :::
 
 ```sql
-SELECT 
+SELECT
     artifact.artifact_id as artifact__id,
     artifact.artifact_name as artifact__name
 FROM iceberg.oso.artifacts_v1 as artifact
@@ -210,7 +210,7 @@ referenced, we use the model's attributes for filtering. The output of this
 query will look like this:
 
 ```sql
-SELECT 
+SELECT
     artifact.artifact_id as artifact__id,
     artifact.artifact_name as artifact__name
 FROM iceberg.oso.artifacts_v1 as artifact
@@ -224,7 +224,7 @@ Dimensions are useful for querying specific attributes of a model, but usually
 we also want to perform some kind of aggregation on the data. This is where
 measures come in. Measures are attributes that represent some kind of
 aggregation of the data in the model. For instance, we might want to know the
-count of artifacts or the distinct count of artifacts. 
+count of artifacts or the distinct count of artifacts.
 
 Here's an updated definition of the `artifact` model that includes measures and
 a more complete set of dimensions:
@@ -238,34 +238,34 @@ artifact_model = Model(
     primary_key="artifact_id",
     dimensions=[
         Dimension(
-            name="id", 
+            name="id",
             description="Unique identifier for the artifact",
             column_name="artifact_id",
         ),
         Dimension(
-            name="name", 
+            name="name",
             description="Name of the artifact",
             column_name="artifact_name",
         ),
         Dimension(
-            name="namespace", 
+            name="namespace",
             description="Namespace of the artifact",
             column_name="artifact_namespace"
         ),
         Dimension(
-            name="source", 
+            name="source",
             description="Source of the artifact",
             column_name="artifact_source"
         ),
         Dimension(
-            name="url", 
+            name="url",
             description="URL of the artifact",
             column_name="artifact_url"
         ),
     ],
     measures=[
         Measure(
-            name="count", 
+            name="count",
             description="Count of artifacts",
             query="count(self.id)",
         )
@@ -280,7 +280,7 @@ the measure is calculated. In this case, the `count` measure is defined as
 `count(self.id)`. Measures may only reference attributes of models. Related
 models can also be referenced (covered later) but to prevent any ambiguity, the
 semantic layer provides a special `self` keyword that resolves to the current
-model instance. 
+model instance.
 
 If we query this model again, we can see how the measures are included in the
 SQL query:
@@ -344,8 +344,7 @@ classify them as either `one_to_one`, `one_to_many` or `many_to_one`. Many to
 many relationships are not explicitly modeled in the semantic layer but can be
 represented by a join table that is defined as a model.
 
-
-:::Note 
+:::Note
 One potentially unintuitive aspect of the semantic layer is that relationships
 are defined in a single direction and this is strictly enforced by the model
 registry. This allows us to treat the entire semantic layer as a directed
@@ -365,7 +364,7 @@ model in the semantic layer.
 ```python
 from oso_semantic import Model, Dimension, Measure, Relationship
 
-# Let's redefine the registry and include the models without using 
+# Let's redefine the registry and include the models without using
 # intermediate variables
 registry = Registry()
 
@@ -413,9 +412,9 @@ register.register(Model(
     relationships=[
         Relationship(
             name="project",
-            ref_model="project",  
-            type="many_to_one",  
-            source_foreign_key="project_id",  
+            ref_model="project",
+            type="many_to_one",
+            source_foreign_key="project_id",
             ref_key="project_id",
         )
     ]
@@ -427,34 +426,34 @@ registry.register(Model(
     primary_key="artifact_id",
     dimensions=[
         Dimension(
-            name="artifact_id", 
+            name="artifact_id",
             description="Unique identifier for the artifact",
             column_name="artifact_id",
         ),
         Dimension(
-            name="artifact_name", 
+            name="artifact_name",
             description="Name of the artifact",
             column_name="artifact_name",
         ),
         Dimension(
-            name="artifact_namespace", 
+            name="artifact_namespace",
             description="Namespace of the artifact",
             column_name="artifact_namespace"
         ),
         Dimension(
-            name="artifact_source", 
+            name="artifact_source",
             description="Source of the artifact",
             column_name="artifact_source"
         ),
         Dimension(
-            name="artifact_url", 
+            name="artifact_url",
             description="URL of the artifact",
             column_name="artifact_url"
         ),
     ],
     measures=[
         Measure(
-            name="count", 
+            name="count",
             description="Count of artifacts",
             query="count(self.id)",
         ),
@@ -478,7 +477,7 @@ model. The relationships themselves are not defined using model objects
 explicity but rather reference models by names. This allows a more flexible way
 to define each of the models. Once you start querying the models, however, the
 registry is treated as immutable and the relationships are validated to ensure
-that the model and any relationships are valid and do not have cycles. 
+that the model and any relationships are valid and do not have cycles.
 
 Now if we query for both `artifact` model attributes and `project` model
 attributes, the semantic layer will automatically join the two models together:

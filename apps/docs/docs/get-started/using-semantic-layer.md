@@ -3,8 +3,6 @@ title: "Using the Semantic Layer"
 sidebar_position: 2
 ---
 
-import AnatomyOfSemanticLayer from "../_common/semantic-layer/_anatomy-of-semantic-layer.mdx";
-
 After some exploration with the OSO data, you may find that the available tables
 have a complex set of relationships that can make it difficult to understand how
 to properly write some set of queries. Understanding the relationships of the
@@ -24,32 +22,32 @@ making informed queries doesn't require expertise in the universe of OSO tables.
 Before we get into a simple query, here's the overview of the most likely models
 you'd be querying against:
 
-* `artifacts` - This is a Semantic Model representing out `artifacts_v1` table.
+- `artifacts` - This is a Semantic Model representing out `artifacts_v1` table.
   This includes everything from repositories, packages, blockchain addresses,
   and similar.
-* `projects` - This is a Semantic Model representing our `projects_v1` table.
+- `projects` - This is a Semantic Model representing our `projects_v1` table.
   This includes all of the projects gathered in both `oss-directory` and
   projects defined from [op-atlas](https://atlas.optimism.io/). Projects are
   comprised of artifacts. Often projects are simply the github organization for
   a set of repositories. However, they can also represent other groupings of
-  artifacts. 
-* `collections` - This is a Semantic Model representing our `collections_v1`
+  artifacts.
+- `collections` - This is a Semantic Model representing our `collections_v1`
   table. A collection is a grouping of projects. This grouping can be completely
-  arbitrary. 
-* `int_events__github` - This is a Semantic Model representing our
+  arbitrary.
+- `int_events__github` - This is a Semantic Model representing our
   `int_events__github` table. Despite this being an intermediate table, it
   contains useful information that is likely useful for querying for github
   related events.
-* `int_events__blockchain` - This is a Semantic Model representing our
+- `int_events__blockchain` - This is a Semantic Model representing our
   `int_events__blockchain` table. This table contains events related to
   blockchain transactions and other blockchain related events.
-* `int_events__4337` - This is a Semantic Model representing our
+- `int_events__4337` - This is a Semantic Model representing our
   `int_events__4337` table. This table contains events related to ERC-4337
   transactions and other ERC-4337 related events.
-* `metrics` - This is a Semantic Model representing our `metrics_v0` table. This
+- `metrics` - This is a Semantic Model representing our `metrics_v0` table. This
   table is not actually the metrics themselves, but rather a directory of the
   _available_ metrics.
-* `timeseries_metrics_by_*` - These are a set of tables that actually represent
+- `timeseries_metrics_by_*` - These are a set of tables that actually represent
   the metrics for `artifacts`, `projects`, and `collections`. These tables are
   named based on the model they are associated with. For instance, the
   `timeseries_metrics_by_project_v1` table contains metrics for projects. These
@@ -105,7 +103,7 @@ GROUP BY
 
 As evident in the generated sql, the semantic query tool automatically decides the proper join path and automatically groups the collection name and artifact name.
 
-:::Note 
+:::Note
 For this specific example, a custom written query could produce one less
 join, but due to the way the registry has is modeled this result is currently
 as intended.
@@ -119,11 +117,11 @@ df = query.as_pandas()
 
 ### Querying with a relationship
 
-Relaltionships are a key part of the semantic layer. They allow us to define how models relate to each other. Unlike, SQL you don't explicity define join paths. The semantic layer resolves these paths for you. For dealing with relationships we have special semantics when a relationship attribute is included in the query. 
+Relaltionships are a key part of the semantic layer. They allow us to define how models relate to each other. Unlike, SQL you don't explicity define join paths. The semantic layer resolves these paths for you. For dealing with relationships we have special semantics when a relationship attribute is included in the query.
 
 #### Selecting just a relationship attribute
 
-The `project` model has a relationship to the collection via it's `collection` relationship attribute. 
+The `project` model has a relationship to the collection via it's `collection` relationship attribute.
 
 ```python
 query = oso.semantic.select(
@@ -143,10 +141,10 @@ GROUP BY
   1
 ```
 
-When a relationship attribute is selected only the key used to reference the foreign model is returned. In the case of `project.collection`, the collection is referenced by it's collection id in a foreign key relationship. 
+When a relationship attribute is selected only the key used to reference the foreign model is returned. In the case of `project.collection`, the collection is referenced by it's collection id in a foreign key relationship.
 
 We can also include the relationship attribute to provide a filtering
-context without having an explicit filter. For instance if we wanted to only 
+context without having an explicit filter. For instance if we wanted to only
 get the project names that exist in _any_ collection, we could do this:
 
 ```python
@@ -285,7 +283,7 @@ GROUP BY
   1,
   2,
   3
-``` 
+```
 
 Additionally, you can also filter on a model's measures. Let's get all the artifacts with 1000 or less events:
 
@@ -348,7 +346,7 @@ This is not yet implemented and this design may need to change.
 
 ```python
 github_release_metrics = oso.semantic.select(
-    "timeseries_metrics_by_project.sum as metric_sum", 
+    "timeseries_metrics_by_project.sum as metric_sum",
     "timeseries_metrics_by_project.project as project"
 ).where(
     "metrics.name LIKE 'GITHUB_releases_monthly'"
@@ -370,18 +368,18 @@ paymaster_projects = oso.semantic.select(
 )
 
 filtered_projects = oso.semantic.cte(
-    "paymaster_projects", 
+    "paymaster_projects",
     paymaster_projects
 ).cte(
    "received_grants",
-    received_grants 
+    received_grants
 ).select(
     "paymaster_projects.to",
     "received_grants.projects",
 )
 
 final = oso.semantic.cte(
-  "filtered_projects", 
+  "filtered_projects",
   filtered_projects
 ).select(
     "filtered_projects.name",
@@ -507,11 +505,11 @@ source_more_than_100_artifacts = registry.select(
 )
 
 registry.cte(
-    "source_more_than_100_artifacts", 
+    "source_more_than_100_artifacts",
     source_more_than_100_artifacts
 ).select(
     "source_more_than_100_artifacts.source",
-    "project.name", 
+    "project.name",
 )
 ```
 
