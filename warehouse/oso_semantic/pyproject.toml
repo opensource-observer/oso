@@ -8,7 +8,6 @@ requires-python = ">=3.8"
 dependencies = [
     "pydantic>=2.11.6",
     "sqlglot>=26.16.4",
-    "sqlmesh>=0.178.2",
 ]
 
 [build-system]
