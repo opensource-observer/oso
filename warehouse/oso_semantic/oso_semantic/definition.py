@@ -8,6 +8,7 @@ therefore the final sql can render to any dialect supported by sqlglot.
 
 See our documentation for more information at https://docs.opensource.observer.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -44,7 +45,8 @@ class QueryRegistry(t.Protocol):
     def add_reference(self, reference: AttributePath) -> t.Self: ...
     def select(self, *selects: str) -> t.Self: ...
     def where(self, *filters: str) -> t.Self: ...
-    def add_limit(self, limit: int) -> t.Self: ...
+    def limit(self, limit: int) -> t.Self: ...
+
     def build(self) -> exp.Expression: ...
 
 
@@ -260,6 +262,7 @@ class Registry(t.Generic[Q]):
         the registry that must follow the QueryRegistry protocol. If not
         provided, defaults to the QueryBuilder class.
     """
+
     models: t.Dict[str, "Model"]
     dag: RegistryDAG
     views: t.Dict[str, "View"]
@@ -327,7 +330,7 @@ class Registry(t.Generic[Q]):
             description += model.describe() + "\n"
 
         return description
-    
+
     def expand_reference(
         self,
         reference: "AttributePath",
@@ -347,21 +350,23 @@ class Registry(t.Generic[Q]):
 
             for sub_reference in sub_references:
                 # Rewrite the sub reference to the current model
-                expanded_references.extend([
-                    traverser.create_scoped_reference(ref) for ref in self.expand_reference(sub_reference)
-                ])
+                expanded_references.extend(
+                    [
+                        traverser.create_scoped_reference(ref)
+                        for ref in self.expand_reference(sub_reference)
+                    ]
+                )
             return expanded_references
 
-    def get_attribute_from_reference(self, reference: "AttributePath") -> "BoundDimension | BoundMeasure | BoundRelationship":
+    def get_attribute_from_reference(
+        self, reference: "AttributePath"
+    ) -> "BoundDimension | BoundMeasure | BoundRelationship":
         attr = reference.final_attribute()
 
         model = self.get_model(exp_to_str(attr.table))
         attribute_name = exp_to_str(attr.this)
 
-        return model.get_attribute(
-            attribute_name
-        )
-
+        return model.get_attribute(attribute_name)
 
 
 class GenericExpression(BaseModel):
@@ -474,7 +479,7 @@ class GenericExpression(BaseModel):
                 BoundMeasure, or BoundRelationship.
             traverser: The traverser to use for resolving the expression. If not
                 provided, a new traverser will be created from the root.
-        
+
         Returns:
             The resolved SQL expression as a sqlglot Expression object.
         """
@@ -532,7 +537,7 @@ class GenericExpression(BaseModel):
             return node
 
         return self._expression.transform(convert_column)
-    
+
     @classmethod
     def is_ref_node(cls, node: exp.Expression) -> bool:
         """Checks if the node is an anonymous reference node.
@@ -544,22 +549,27 @@ class GenericExpression(BaseModel):
             exp_to_str(node.this) == "$semantic_ref"
             or exp_to_str(node.this) == "$column_ref"
         )
-    
+
     @classmethod
     def is_column_ref_node(cls, node: exp.Expression) -> bool:
         """Checks if the node is a column reference node.
 
         This is used to determine if the node is a column reference.
         """
-        return isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$column_ref"
-    
+        return (
+            isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$column_ref"
+        )
+
     @classmethod
     def is_semantic_ref_node(cls, node: exp.Expression) -> bool:
         """Checks if the node is a semantic reference node.
 
         This is used to determine if the node is a semantic reference.
         """
-        return isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$semantic_ref"
+        return (
+            isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$semantic_ref"
+        )
+
 
 class SemanticExpression(GenericExpression):
     """A string expression that is in the semantic context"""
@@ -778,6 +788,7 @@ class BoundMeasure:
             for ref in self.measure.references(allow_self=True)
         ]
 
+
 class Select(BaseModel):
     """Represents the select part of a query. This should just be a semantic reference"""
 
@@ -817,8 +828,10 @@ class Select(BaseModel):
     def expression(self) -> SemanticExpression:
         """Returns the semantic expression for the select part of the query"""
         return self._expression
-    
-    def resolve(self, registry: Registry, traverser: AttributePathTraverser | None = None) -> exp.Expression:
+
+    def resolve(
+        self, registry: Registry, traverser: AttributePathTraverser | None = None
+    ) -> exp.Expression:
         """Returns a resolved SQL expression for the select part of the query."""
 
         return self._expression.resolve(
@@ -854,10 +867,9 @@ class Select(BaseModel):
             reference = self.references()[0]
             return reference.to_select_alias()
 
-    
-    
+
 class Filter(BaseModel):
-    """Represents the filter part of a query. 
+    """Represents the filter part of a query.
 
     Filters' queries are only SemanticExpressions.
     """
@@ -876,7 +888,7 @@ class Filter(BaseModel):
         self._expression = expression
 
         return self
-    
+
     @property
     def expression(self) -> SemanticExpression:
         """Returns the semantic expression for the filter"""
@@ -898,7 +910,7 @@ class Filter(BaseModel):
     def references(self) -> t.List["AttributePath"]:
         """Returns the semantic references in the dimension expression"""
         return self._expression.references(allow_self=False)
-    
+
     def is_aggregate(self, registry: Registry) -> bool:
         """Returns whether the filter expression is an aggregate function."""
         # If this references a measure, then it is an aggregate function (this likely needs to be fixed but)
@@ -1233,13 +1245,13 @@ class Model(BaseModel):
                 raise ValueError(
                     f"Dimension {dimension.name} already exists in model {self.name}"
                 )
-            references = [ref.rewrite_self(self.name) for ref in dimension.references(allow_self=True)]
+            references = [
+                ref.rewrite_self(self.name)
+                for ref in dimension.references(allow_self=True)
+            ]
 
             known_columns.update(
-                set([
-                    exp_to_str(col.this) 
-                    for col in dimension.columns
-                ]),
+                set([exp_to_str(col.this) for col in dimension.columns]),
             )
             attribute_graph[dimension.name] = set()
             attribute_references[dimension.name] = references
@@ -1273,15 +1285,15 @@ class Model(BaseModel):
                 raise ValueError(
                     f"Measure {measure.name} already exists in model {self.name}"
                 )
-            references = [ref.rewrite_self(self.name) for ref in measure.references(allow_self=True)]
+            references = [
+                ref.rewrite_self(self.name)
+                for ref in measure.references(allow_self=True)
+            ]
             attribute_graph[measure.name] = set()
             attribute_references[measure.name] = references
 
             known_columns.update(
-                set([
-                    exp_to_str(col.this)
-                    for col in measure.columns
-                ]),
+                set([exp_to_str(col.this) for col in measure.columns]),
             )
 
             for reference in references:
@@ -1472,9 +1484,7 @@ class Model(BaseModel):
         description += "\n"
         return description
 
-    def get_attribute_references(
-        self, name: str
-    ) -> t.List[AttributePath]:
+    def get_attribute_references(self, name: str) -> t.List[AttributePath]:
         """Returns the attribute references for the given attribute name"""
         if name not in self._attribute_references:
             raise ValueError(f"Attribute {name} not found in model {self.name}")
@@ -1647,7 +1657,9 @@ class QueryComponent(t.Protocol):
         """Returns whether the query component is an aggregate function."""
         ...
 
-    def resolve(self, registry: "Registry", traverser: "AttributePathTraverser | None" = None) -> exp.Expression:
+    def resolve(
+        self, registry: "Registry", traverser: "AttributePathTraverser | None" = None
+    ) -> exp.Expression:
         """Returns a resolved SQL expression for the query component.
 
         This should resolve any references to the actual columns in the query.
@@ -1799,7 +1811,7 @@ class AttributePathTraverser:
         while self.next():
             pass
         return self
-    
+
 
 class SemanticQuery(BaseModel):
     """Used for serialization of semantic queries"""
