@@ -3,9 +3,6 @@ title: Semantic Layer Definition
 sidebar_position: 1
 ---
 
-import AnatomyOfSemanticLayer from "../_common/semantic-layer/_anatomy-of-semantic-layer.mdx";
-
-
 :::info
 This guide is for actually defining the semantic layer of the data warehouse. If
 you're just looking to make queries you should see the guide
@@ -379,17 +376,17 @@ registry.register(Model(
     primary_key="project_id",
     dimensions=[
         Dimension(
-            name="id",
+            name="project_id",
             description="Unique identifier for the project",
             column_name="project_id",
         ),
         Dimension(
-            name="name",
+            name="project_name",
             description="Name of the project",
             column_name="project_name",
         ),
         Dimension(
-            name="description",
+            name="project_description",
             description="Description of the project",
             column_name="project_description",
         ),
@@ -425,32 +422,32 @@ register.register(Model(
 ))
 
 registry.register(Model(
-    name="artifact",
+    name="artifacts",
     table="iceberg.oso.artifacts_v1",
     primary_key="artifact_id",
     dimensions=[
         Dimension(
-            name="id", 
+            name="artifact_id", 
             description="Unique identifier for the artifact",
             column_name="artifact_id",
         ),
         Dimension(
-            name="name", 
+            name="artifact_name", 
             description="Name of the artifact",
             column_name="artifact_name",
         ),
         Dimension(
-            name="namespace", 
+            name="artifact_namespace", 
             description="Namespace of the artifact",
             column_name="artifact_namespace"
         ),
         Dimension(
-            name="source", 
+            name="artifact_source", 
             description="Source of the artifact",
             column_name="artifact_source"
         ),
         Dimension(
-            name="url", 
+            name="artifact_url", 
             description="URL of the artifact",
             column_name="artifact_url"
         ),
@@ -488,8 +485,8 @@ attributes, the semantic layer will automatically join the two models together:
 
 ```python
 query = registry.select(
-    "artifact.name",
-    "project.name",
+    "artifacts.name",
+    "projects.name",
 )
 print(query.sql(pretty=True))
 ```
@@ -498,12 +495,12 @@ The output of this query will look like this:
 
 ```sql
 SELECT
-    artifact.artifact_name as artifact__name,
-    project.project_name as project__name
-FROM iceberg.oso.artifacts_v1 as artifact
+    artifacts_12345678.artifact_name as artifact__name,
+    projects_12345678.project_name as project__name
+FROM iceberg.oso.artifacts_v1 as artifacts_12345678
 LEFT JOIN iceberg.oso.artifacts_by_project_v1 as artifacts_by_project_1b23c4d
-    ON artifact.artifact_id = artifacts_by_project_1b23c4d.artifact_id
-LEFT JOIN iceberg.oso.projects_v1 as project_12345678
-    ON artifacts_by_project_1b23c4d.project_id = project_12345678.project_id
+    ON artifacts_12345678.artifact_id = artifacts_by_project_1b23c4d.artifact_id
+LEFT JOIN iceberg.oso.projects_v1 as projects_12345678
+    ON artifacts_by_project_1b23c4d.project_id = projects_12345678.project_id
 GROUP BY 1, 2
 ```
