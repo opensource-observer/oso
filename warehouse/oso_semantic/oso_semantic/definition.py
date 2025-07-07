@@ -295,6 +295,16 @@ class Registry(t.Generic[Q]):
     def get_view(self, name: str) -> "View":
         return self.views[name]
 
+    def query_from_object(self, semantic_query: "SemanticQuery"):
+        """Allows initializing a query builder from a SemanticQuery object."""
+
+        query = self.select(*semantic_query.selects)
+        if semantic_query.filters:
+            query = query.where(*semantic_query.filters)
+        if semantic_query.limit:
+            query = query.add_limit(semantic_query.limit)
+        return query
+
     def select(self, *selects: str):
         """Returns a new query builder for the registry"""
         if self.check_cycle:
@@ -1785,3 +1795,50 @@ class AttributePathTraverser:
         while self.next():
             pass
         return self
+    
+
+class SemanticQuery(BaseModel):
+    """Used for serialization of semantic queries"""
+
+    name: str = Field(
+        default="", description="Optional name used to identify the query"
+    )
+
+    description: str = Field(
+        default="", description="A description of the query's intent and purpose."
+    )
+
+    selects: t.List[str] = Field(
+        description=textwrap.dedent(
+            """
+        A list of model attributes to select in the query. These should only be
+        valid dimensions or measures from the available models in the registry.
+        Joins are automatically handled by the query builder based on the
+        provided attributes and the relationships defined in the models. If any
+        ambiguous relationships between models should use the `->` syntax to
+        specify the path through the relationships.
+    """
+        )
+    )
+    filters: t.List[str] = Field(
+        description=textwrap.dedent(
+            """
+        A list of filters to apply to the query. These should be valid
+        expressions that can be used to filter the results. The expressions can
+        reference model attributes just like the columns. If any ambiguous
+        relationships between models should use the `->` syntax to specify the
+        path through the relationships.
+    """
+        ),
+        default_factory=lambda: [],
+    )
+
+    limit: int = Field(
+        default=0,
+        description=textwrap.dedent(
+            """
+            The maximum number of rows to return in the query. If set to 0, no
+            limit is applied.
+        """
+        ),
+    )
