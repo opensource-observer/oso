@@ -19,8 +19,7 @@ from enum import Enum
 from graphlib import TopologicalSorter
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from sqlglot import exp
-from sqlmesh.core.dialect import parse_one
+from sqlglot import exp, parse_one
 
 from .errors import InvalidAttributeReferenceError
 from .utils import exp_to_str, hash_expressions
