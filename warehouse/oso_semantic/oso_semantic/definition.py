@@ -885,7 +885,7 @@ class Filter(BaseModel):
         registry: Registry,
         traverser: AttributePathTraverser | None = None,
     ) -> exp.Expression:
-        """Returns a resolved SQL expression for the dimension."""
+        """Returns a resolved SQL expression for the filter."""
 
         return self._expression.resolve(
             traverser=traverser,
