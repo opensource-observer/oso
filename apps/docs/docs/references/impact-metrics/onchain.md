@@ -72,4 +72,4 @@ The latest version of our code metrics model can be viewed [here](https://models
 
 ---
 
-To contribute new metrics, please see our guide [here](../../contribute-models/data-models).
+To contribute new metrics, please see our guide [here](../../contribute-models/sqlmesh).
