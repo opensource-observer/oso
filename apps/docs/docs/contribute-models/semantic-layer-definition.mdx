@@ -20,7 +20,37 @@ abstractions in the data warehouse. The hope is that this interface will allow
 new users an easy way to interrogate the data while also providing for
 convenience tools when creating new models for seasoned users. 
 
-<AnatomyOfSemanticLayer/>
+## Anatomy of the semantic layer
+
+The semantic layer provides an interface that takes a lot of inspiration from
+the wonderful work at [cube.dev](https://cube.dev). Many of the same
+abstractions are used to provide a similar vocabulary for those familiar with
+that tool. These abstractions and components are as such:
+
+- `Model`
+  - A model is a given object abstraction in for a given data type in the OSO
+    data warehouse. At this time, it is expected that there's a single
+    canonical table to represent a given Model. Models, like any object can
+    relate to each other. For instance, the OSO data model has the concept of
+    an Artifact which is part of zero or more Projects, and Projects which are
+    part of zero or more Collections. Each of those entities are related to
+    their associated Models.
+- `Dimension`
+  - A dimension is a non-aggregated attribute of a model. This could be
+    something like an Artifact name, a Project namespace, a Collection
+    description, an Event type, or Event time.
+- `Measure`
+  - A measure is an aggregated attribute of a model that is usually used to summarize values related to a model. This could be something like, the count of Artfiacts or sum of the amount dimension of Events.
+- `Relationship`
+  - A relationship defines a relationship is a special attribute that defines
+    the relationship between one model and another. In sql, this is modelled as
+    some kind of foreign key.
+- `Interface`
+  - Much like an interface in an object oriented language, an interface is a generic interface that can be applied to a given model. This allows us to provide
+- `Registry`
+  - A registry is the directory of all the models and their relationships to
+    each other. Without the registry it's impossible to create a valid sql
+    query.
 
 ## Defining the semantic layer
 
@@ -132,8 +162,8 @@ models.
 from oso_semantic import QueryBuilder
 
 query: QueryBuilder = registry.select(
-    "artifact.id", 
-    "artifact.name"
+    "artifacts.id", 
+    "artifacts.name"
 )
 
 print(query.sql(pretty=True)) # Pretty print the SQL query

@@ -19,6 +19,43 @@ making informed queries doesn't require expertise in the universe of OSO tables.
 
 ## Querying against the semantic layer
 
+### Overview
+
+Before we get into a simple query, here's the overview of the most likely models
+you'd be querying against:
+
+* `artifacts` - This is a Semantic Model representing out `artifacts_v1` table.
+  This includes everything from repositories, packages, blockchain addresses,
+  and similar.
+* `projects` - This is a Semantic Model representing our `projects_v1` table.
+  This includes all of the projects gathered in both `oss-directory` and
+  projects defined from [op-atlas](https://atlas.optimism.io/). Projects are
+  comprised of artifacts. Often projects are simply the github organization for
+  a set of repositories. However, they can also represent other groupings of
+  artifacts. 
+* `collections` - This is a Semantic Model representing our `collections_v1`
+  table. A collection is a grouping of projects. This grouping can be completely
+  arbitrary. 
+* `int_events__github` - This is a Semantic Model representing our
+  `int_events__github` table. Despite this being an intermediate table, it
+  contains useful information that is likely useful for querying for github
+  related events.
+* `int_events__blockchain` - This is a Semantic Model representing our
+  `int_events__blockchain` table. This table contains events related to
+  blockchain transactions and other blockchain related events.
+* `int_events__4337` - This is a Semantic Model representing our
+  `int_events__4337` table. This table contains events related to ERC-4337
+  transactions and other ERC-4337 related events.
+* `metrics` - This is a Semantic Model representing our `metrics_v0` table. This
+  table is not actually the metrics themselves, but rather a directory of the
+  _available_ metrics.
+* `timeseries_metrics_by_*` - These are a set of tables that actually represent
+  the metrics for `artifacts`, `projects`, and `collections`. These tables are
+  named based on the model they are associated with. For instance, the
+  `timeseries_metrics_by_project_v1` table contains metrics for projects. These
+  are the actual values where `metrics` is the directory of available metric
+  types stored in these tables.
+
 ### A basic query
 
 Let's consider a basic query that only seeks to find all artifacts within a
@@ -150,8 +187,8 @@ If we instead wanted to make the following semantic query:
 
 ```python
 query = oso.semantic.select(
-    "github_event.time",
-    "collection.name"
+    "int_events__github.time",
+    "collection.name",
     "artifact.name",
 )
 ```
@@ -173,9 +210,9 @@ collections that received an event we'd do this:
 
 ```python
 query = oso.semantic.select(
-    "github_event.time",
-    "github_event.to->collection.name"
-    "github_event.to->artifact.name",
+    "int_events__github.time",
+    "int_events__github.to->collection.name",
+    "int_events__github.from->artifact.name",
 )
 ```
 
@@ -183,12 +220,12 @@ This would then produce the following SQL:
 
 ```sql
 SELECT
-  collection_2083abff.collection_name AS github_event_to__collection_name,
-  artifact_95a01095.artifact_name AS github_event_from__artifact_name,
-  github_event_420c9a8e.time AS github_event_time
-FROM oso.int_events__github AS github_event_420c9a8e
+  collection_2083abff.collection_name AS int_events__github_to__collection_name,
+  artifact_95a01095.artifact_name AS int_events__github_from__artifact_name,
+  int_events__github_420c9a8e.time AS int_events__github_time
+FROM oso.int_events__github AS int_events__github_420c9a8e
 LEFT JOIN oso.artifacts_v1 AS artifact_1b71f23f
-  ON github_event_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
+  ON int_events__github_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
 LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_5ee26df1
   ON artifact_1b71f23f.artifact_id = artifacts_by_project_v1_5ee26df1.artifact_id
 LEFT JOIN oso.projects_v1 AS project_e17705b6
@@ -214,11 +251,11 @@ we could do this:
 
 ```python
 query = oso.semantic.select(
-    "github_event.time",
-    "github_event.to->collection.name",
-    "github_event.to->artifact.name",
+    "int_events__github.time",
+    "int_events__github.to->collection.name",
+    "int_events__github.from->artifact.name",
 ).where(
-    "github_event.to->artifact.namespace = 'oso'",
+    "int_events__github.to->artifact.namespace = 'oso'",
 )
 ```
 
@@ -226,12 +263,12 @@ This would produce the following SQL:
 
 ```sql
 SELECT
-  collection_2083abff.collection_name AS github_event_to__collection_name,
-  artifact_95a01095.artifact_name AS github_event_from__artifact_name,
-  github_event_420c9a8e.time AS github_event_time
-FROM oso.int_events__github AS github_event_420c9a8e
+  collection_2083abff.collection_name AS int_events__github_to__collection_name,
+  artifact_95a01095.artifact_name AS int_events__github_from__artifact_name,
+  int_events__github_420c9a8e.time AS int_events__github_time
+FROM oso.int_events__github AS int_events__github_420c9a8e
 LEFT JOIN oso.artifacts_v1 AS artifact_1b71f23f
-  ON github_event_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
+  ON int_events__github_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
 LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_5ee26df1
   ON artifact_1b71f23f.artifact_id = artifacts_by_project_v1_5ee26df1.artifact_id
 LEFT JOIN oso.projects_v1 AS project_e17705b6
@@ -254,9 +291,9 @@ Additionally, you can also filter on a model's measures. Let's get all the artif
 
 ```python
 query = oso.semantic.select(
-    "github_event.time",
-    "github_event.to->collection.name",
-    "github_event.to->artifact.name",
+    "int_events__github.time",
+    "int_events__github.to->collection.name",
+    "int_events__github.to->artifact.name",
 ).where(
     "github_event.count <= 1000",
 )
@@ -266,12 +303,12 @@ This would produce the following SQL:
 
 ```sql
 SELECT
-  collection_2083abff.collection_name AS github_event_to__collection_name,
-  artifact_95a01095.artifact_name AS github_event_from__artifact_name,
-  github_event_420c9a8e.time AS github_event_time
-FROM oso.int_events__github AS github_event_420c9a8e
+  collection_2083abff.collection_name AS int_events__github_to__collection_name,
+  artifact_95a01095.artifact_name AS int_events__github_from__artifact_name,
+  int_events__github_420c9a8e.time AS int_events__github_time
+FROM oso.int_events__github AS int_events__github_420c9a8e
 LEFT JOIN oso.artifacts_v1 AS artifact_1b71f23f
-  ON github_event_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
+  ON int_events__github_420c9a8e.to_artifact_id = artifact_1b71f23f.artifact_id
 LEFT JOIN oso.artifacts_by_project_v1 AS artifacts_by_project_v1_5ee26df1
   ON artifact_1b71f23f.artifact_id = artifacts_by_project_v1_5ee26df1.artifact_id
 LEFT JOIN oso.projects_v1 AS project_e17705b6
@@ -310,35 +347,50 @@ This is not yet implemented and this design may need to change.
 :::
 
 ```python
-query = oso.semantic.with_select(
-  "github_release_metrics",
-  "timeseries_metrics_by_project.sum as metric_sum",
-  "timeseries_metrics_by_project.project as project",
+github_release_metrics = oso.semantic.select(
+    "timeseries_metrics_by_project.sum as metric_sum", 
+    "timeseries_metrics_by_project.project as project"
 ).where(
-  "metric.name LIKE 'GITHUB_releases_monthly'"
-).with_select(
-  "received_grants",
-  "project",
-).where(
-  "github_release_metrics.metric.sum > 0"
-).with_select(
-  "paymaster_projects",
-  "4337_events.to",
-).where(
-  "4337_events.event_type LIKE 'CONTRACT_INVOCATION_VIA_PAYMASTER'"
-).with_select(
-  "filtered_projects",
-  "project",
-  "paymaster_projects.to",
-  "received_grants.project",
+    "metrics.name LIKE 'GITHUB_releases_monthly'"
+)
+
+# Get the received grants by selecting `projects.*`
+received_grants = oso.semantic.cte(
+  "github_release_metrics", github_release_metrics
 ).select(
-  "filtered_projects.name",
+    "projects"
 ).where(
-  "filtered_projects.project_name IS NOT NULL",
+    "github_release_metrics.metric.sum > 0"
+)
+
+paymaster_projects = oso.semantic.select(
+    "int_events__4337.to",
+).where(
+    "int_events__4337.event_type LIKE 'CONTRACT_INVOCATION_VIA_PAYMASTER'"
+)
+
+filtered_projects = oso.semantic.cte(
+    "paymaster_projects", 
+    paymaster_projects
+).cte(
+   "received_grants",
+    received_grants 
+).select(
+    "paymaster_projects.to",
+    "received_grants.projects",
+)
+
+final = oso.semantic.cte(
+  "filtered_projects", 
+  filtered_projects
+).select(
+    "filtered_projects.name",
+).where(
+    "filtered_projects.project_name IS NOT NULL",
 )
 ```
 
-This query will produce the following SQL:
+This query will produce the following SQL similar to the following:
 
 ```sql
 -- This query is not exactly correct we need to render this once this part of the code is implemented
@@ -402,7 +454,7 @@ The semantic layer doesn't support star querying in the same way that SQL does. 
 
 ```python
 query = oso.semantic.select(
-    "artifact",
+    "artifact"
 )
 ```
 
@@ -424,7 +476,8 @@ when reusing queries as the semantic layer will automatically.
 
 ```python
 query = registry.select(
-    "project.by_collection",
+    "project",
+    ["by_collection"],
 )
 print(query.sql(pretty=True))
 ```
@@ -446,15 +499,19 @@ and can be used by downstream queries.
 Like this:
 
 ```python
-query = registry.with_select(
-    "source_more_than_100_artifacts",
-    "artifact.source as artifact_source",
-    "artifact.by_project"
+source_more_than_100_artifacts = registry.select(
+  "artifact.source as source",
+  "artifact.by_project as by_project"
 ).where(
     "artifact.count > 100"
+)
+
+registry.cte(
+    "source_more_than_100_artifacts", 
+    source_more_than_100_artifacts
 ).select(
-    "source_more_than_100_artifacts.artifact_source",
-    "project.name",
+    "source_more_than_100_artifacts.source",
+    "project.name", 
 )
 ```
 
