@@ -857,8 +857,10 @@ class Select(BaseModel):
     
     
 class Filter(BaseModel):
-    """Represents the filter part of a query. This should can be any semantic
-    expression or raw expression that resolves to a boolean expression."""
+    """Represents the filter part of a query. 
+
+    Filters' queries are only SemanticExpressions.
+    """
 
     query: SemanticExpression | str = Field(
         description="A semantic expression for the filter"
