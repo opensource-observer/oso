@@ -6,7 +6,7 @@ sidebar_position: 1
 :::info
 This guide is for actually defining the semantic layer of the data warehouse. If
 you're just looking to make queries you should see the guide
-[here](../get-started/semantic-layer.mdx)
+[here](../get-started/semantic-layer.md)
 :::
 
 ## The semantic layer
