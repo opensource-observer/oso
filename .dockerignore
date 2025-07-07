@@ -67,10 +67,6 @@ Dockerfile
 *.pyc
 **/__pycache__
 
-# dbt
-**/target/
-**/dbt_packages/
-
 # Cloudquery
 .cq/
 **/.cq

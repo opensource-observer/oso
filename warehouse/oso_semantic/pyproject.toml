@@ -1,6 +1,6 @@
 [project]
 name = "oso-semantic"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 readme = "README.md"
 authors = [{ name = "OSO Team", email = "opensource-observer@googlegroups.com" }]
@@ -8,7 +8,6 @@ requires-python = ">=3.8"
 dependencies = [
     "pydantic>=2.11.6",
     "sqlglot>=26.16.4",
-    "sqlmesh>=0.178.2",
 ]
 
 [build-system]

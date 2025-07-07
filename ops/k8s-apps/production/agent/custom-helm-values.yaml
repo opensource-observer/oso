@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20250630024738-23afd49 # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20250707191409-9f21645 # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       ingress:
@@ -28,3 +28,4 @@ spec:
         AGENT_VECTOR_STORE__PROJECT_ID: "opensource-observer"
         AGENT_VECTOR_STORE__INDEX_ID: gcp:secretmanager:production-agent-vector-store-index-id/versions/latest
         AGENT_VECTOR_STORE__ENDPOINT_ID: gcp:secretmanager:production-agent-vector-store-endpoint-id/versions/latest
+        AGENT_ENABLE_DISCORD_BOT: "1"

@@ -1,12 +1,21 @@
 import logging
 import typing as t
 
-from oso_semantic import AttributePathTransformer
 from sqlglot import exp
-from sqlmesh.core.dialect import parse_one
 
-from .definition import AttributePath, Filter, Model, QueryPart, QueryRegistry, Registry
-from .utils import exp_to_str
+from .definition import (
+    AttributePath,
+    AttributePathTraverser,
+    BoundRelationship,
+    Filter,
+    JoinTree,
+    Model,
+    QueryComponent,
+    QueryRegistry,
+    Registry,
+    Select,
+    SemanticExpression,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +25,11 @@ class QueryBuilder(QueryRegistry):
         self._registry = registry
         self._select_refs: list[AttributePath] = []
         self._references: list[AttributePath] = []
-        self._deepest_reference: AttributePath | None = None
+        self._root_model: Model | None = None
 
-        self._select_parts: list[QueryPart] = []
+        self._select_parts: list[QueryComponent] = []
         self._select_aliases: list[str] = []
-        self._filter_parts: list[QueryPart] = []
+        self._filter_parts: list[QueryComponent] = []
 
         self._limit = 0
 
@@ -31,61 +40,46 @@ class QueryBuilder(QueryRegistry):
         """
         self._references.append(reference)
 
-        if self._deepest_reference is None:
-            self._deepest_reference = reference
-        else:
-            ref_depth = self._registry.dag.get_ancestor_depth(reference.base_model)
-            deepest_ref_depth = self._registry.dag.get_ancestor_depth(
-                self._deepest_reference.base_model
-            )
-            if ref_depth > deepest_ref_depth:
-                self._deepest_reference = reference
-
         return self
 
     def select(self, *selects: str):
         """Add a model attribute to the select clause"""
         for select in selects:
-            result = AttributePathTransformer.transform(parse_one(select))
-            if len(result.references) != 1:
-                raise ValueError(
-                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
-                )
-            if not isinstance(result.node, (exp.Anonymous, exp.Alias)):
-                raise ValueError(
-                    f"Invalid column reference {select}. Must be a single reference with an optional alias"
-                )
-            reference = result.references[0]
-            alias = reference.to_select_alias()
-            if isinstance(result.node, exp.Alias):
-                alias = exp_to_str(result.node.alias)
+            select_expr = Select(query=select)
+
+            alias = select_expr.alias()
+
+            references = select_expr.references()
+            reference = references[0]
 
             # validate the select by checking the attribute references
 
-            if not reference.is_valid_for_registry(self._registry):
-                raise ValueError(f"Invalid reference {reference} for registry")
-            part = reference.resolve(self._registry)
+            resolved_references = self._registry.expand_reference(reference)
 
-            for resolved_reference in part.resolved_references:
+            for resolved_reference in resolved_references:
                 if resolved_reference not in self._references:
                     self.add_reference(resolved_reference)
-            self._select_parts.append(part)
+            self._select_parts.append(select_expr)
             self._select_aliases.append(alias)
         return self
 
-    def where(self, *filters: str):
+    def where(self, *filters: str | SemanticExpression):
         """Add a filter to the query"""
         for filter in filters:
             filter_expr = Filter(query=filter)
-            traverser = AttributePath(path=[]).traverser()
-            filter_part = filter_expr.to_query_part(
-                traverser, filter_expr.query, self._registry
-            )
 
-            for ref in filter_part.resolved_references:
-                self.add_reference(ref)
+            references = filter_expr.references()
 
-            self._filter_parts.append(filter_part)
+            for reference in references:
+                if not reference.is_valid_for_registry(self._registry):
+                    raise ValueError(f"Invalid reference {reference} for registry")
+                # Resolve the reference to the actual attribute
+                resolved_references = self._registry.expand_reference(reference)
+                for resolved_reference in resolved_references:
+                    if resolved_reference not in self._references:
+                        self.add_reference(resolved_reference)
+
+            self._filter_parts.append(filter_expr)
         return self
 
     def add_limit(self, limit: int):
@@ -93,21 +87,10 @@ class QueryBuilder(QueryRegistry):
         self._limit = limit
         return self
 
-    @property
-    def base_model(self):
-        """Get the base model of the query"""
-        if not self._deepest_reference:
-            raise ValueError("No reference added to the query")
-        return self._registry.get_model(self._deepest_reference.base_model)
-
     def build(self):
         """Render a select query"""
-
-        if not self._deepest_reference:
-            raise ValueError("No reference added to the query")
-
-        base_model = self.base_model
-        deepest_reference = self._deepest_reference
+        join_tree = self._registry.dag.find_best_join_tree(self._references)
+        self._root_model = self._registry.get_model(join_tree.root)
 
         # Turn references into actual expressions
         select_parts = self._select_parts
@@ -116,30 +99,34 @@ class QueryBuilder(QueryRegistry):
 
         for i in range(len(select_parts)):
             part = select_parts[i]
-            select_expressions.append(part.expression.as_(self._select_aliases[i]))
+            resolved = part.resolve(self._registry)
+            alias = self._select_aliases[i]
+            select_expressions.append(resolved.as_(alias))
 
-            if not part.is_aggregate:
+            if not part.is_aggregate(self._registry):
                 group_by_expressions.append(str(i + 1))
 
         # Establish base query
         query = exp.select(*select_expressions)
 
-        base_table = base_model.table_exp
-        base_table_with_alias = base_table.as_(
-            deepest_reference.traverser().alias(base_model.name)
-        )
-        query = query.from_(base_table_with_alias)
+        base_model = self._root_model
+        base_table = base_model.table_exp.as_(
+            AttributePathTraverser.from_root().alias(base_model.name)
+        )  # Use an empty path to get the root model alias
+        query = query.from_(base_table)
 
         # Add joins
-        joiner = QueryJoiner(query, base_model, self._registry)
-        for ref in self._references:
+        joiner = QueryJoiner(query, base_model, join_tree, self._registry)
+        for ref in sorted(
+            self._references, key=lambda r: join_tree.depths[r.base_model]
+        ):
             joiner.join_reference(ref)
 
         query = joiner.joined_query
 
         # Add filters
         for part in self._filter_parts:
-            part_expression = part.expression
+            part_expression = part.resolve(self._registry)
 
             query = query.where(part_expression)
 
@@ -150,31 +137,6 @@ class QueryBuilder(QueryRegistry):
         if self._limit:
             query = query.limit(self._limit)
 
-        # Replace $SEMANTIC_REF anonymous functions. The reason we do this here
-        # right now is because it seems we will likely need to split the query
-        # into multiple queries depending on the models joined. Doing a late
-        # resolution of the actual column names allows us to do this on a per
-        # subquery basis. For now, this isn't implemeneted.
-        def transform_semantic_ref(node: exp.Expression):
-            if (
-                isinstance(node, exp.Anonymous)
-                and exp_to_str(node.this).lower() == "$semantic_ref"
-            ):
-                # We need to replace the function with the actual column name
-                # from the registry
-                semantic_ref = exp_to_str(node.expressions[0])
-                ref = AttributePath.from_string(semantic_ref)
-                # Hack for now we should replace with a lookup in this instance
-                traverser = ref.traverser()
-                while traverser.next():
-                    pass
-                return exp.to_column(
-                    f"{traverser.current_table_alias}.{traverser.current_attribute_name}"
-                )
-            return node
-
-        query = query.transform(transform_semantic_ref)
-
         return query
 
 
@@ -183,12 +145,14 @@ class QueryJoiner:
         self,
         select: exp.Select,
         base_model: Model,
+        join_tree: JoinTree,
         registry: Registry,
         dialect: str = "duckdb",
     ):
         self._select = select
         self._base_model = base_model
         self._registry = registry
+        self._join_tree = join_tree
         self._already_joined: set[str] = set()
         self._already_joined.add(base_model.name)
         self._dialect = dialect
@@ -199,7 +163,7 @@ class QueryJoiner:
 
         if self._base_model.name != reference.base_model:
             # Join to the base_model
-            self.join(
+            self._join(
                 from_model_name=self._base_model.name,
                 from_table_alias=traverser.alias(self._base_model.name),
                 to_model_name=reference.base_model,
@@ -211,7 +175,7 @@ class QueryJoiner:
         from_table_through_attribute = traverser.current_attribute_name
 
         while traverser.next():
-            self.join(
+            self._join(
                 from_model_name=from_model_name,
                 from_table_alias=from_table_alias,
                 to_model_name=traverser.current_model_name,
@@ -223,7 +187,7 @@ class QueryJoiner:
             from_table_alias = traverser.alias(from_model_name)
             from_table_through_attribute = traverser.current_attribute_name
 
-    def join(
+    def _join(
         self,
         *,
         from_model_name: str,
@@ -238,7 +202,7 @@ class QueryJoiner:
         registry = self._registry
         query = self._select
 
-        join_path = registry.join_relationships(
+        join_path = self._join_relationships(
             from_model_name, to_model_name, through_attribute=through_attribute
         )
 
@@ -274,6 +238,32 @@ class QueryJoiner:
 
             self._already_joined.add(referenced_model_alias)
         self._select = query
+
+    def _join_relationships(
+        self, from_model: str, to_model: str, through_attribute: str = ""
+    ) -> t.List[BoundRelationship]:
+        """Returns the join path between two models"""
+        path = self._join_tree.get_path(from_model, to_model)
+
+        def build_join_path(
+            model_path: t.List[str], via_attribute: str = ""
+        ) -> t.List[BoundRelationship]:
+            prev_model: Model | None = None
+            join_path: t.List[BoundRelationship] = []
+            for model_name in model_path:
+                if prev_model is None:
+                    via_attribute = via_attribute
+                    prev_model = self._registry.models[model_name]
+                    continue
+
+                relationship = prev_model.find_relationship(
+                    name=via_attribute, model_ref=model_name
+                )
+                prev_model = self._registry.models[model_name]
+                join_path.append(relationship)
+            return join_path
+
+        return build_join_path(path, through_attribute)
 
     @property
     def joined_query(self):

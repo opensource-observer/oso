@@ -3,11 +3,76 @@ title: Analyze Funding Data
 sidebar_position: 5
 ---
 
+import SankeyChart from '@site/src/components/SankeyChart';
+
 Analyze the funding history of your favorite projects.
 New to OSO? Check out our [Getting Started guide](../get-started/index.md)
 to set up your API access.
 
 This tutorial shows how to quickly lookup the funding history of your favorite projects, and then explore funding from specific sources (e.g. Gitcoin Grants, Open Collective, etc.) You can find the code for this tutorial [here](https://github.com/opensource-observer/insights/blob/main/tutorials/FundingMetrics.ipynb).
+
+<SankeyChart 
+  data={[
+    ['Optimism (Retro Funding)', 'rotki', 773567],
+    ['Optimism (Retro Funding)', 'Giveth', 763502],
+    ['Optimism (Retro Funding)', 'growthepie', 429699],
+    ['Optimism (Retro Funding)', 'The Metagovernance Project', 445165],
+    ['Gitcoin (Matching)', 'rotki', 437212],
+    ['Arbitrum STIP', 'Tally', 350000],
+    ['Optimism (Retro Funding)', 'Tally', 347827],
+    ['Optimism (Retro Funding)', 'Praise', 277325],
+    ['Optimism (Gov Grants)', 'Tally', 272000],
+    ['Optimism (Gov Grants)', 'growthepie', 271250],
+    ['Octant', 'rotki', 264978],
+    ['Optimism (Retro Funding)', 'BrightID', 260871],
+    ['Optimism (Gov Grants)', 'The Metagovernance Project', 218750],
+    ['Optimism (Gov Grants)', 'Praise', 196000],
+    ['Gitcoin (Matching)', 'BrightID', 167265],
+    ['Octant', 'growthepie', 160927],
+    ['Gitcoin (Donations)', 'rotki', 159745],
+    ['Optimism (Gov Grants)', 'rotki', 155385],
+    ['Optimism (Gov Grants)', 'Glo Dollar', 150000],
+    ['Gitcoin (Matching)', 'DAppNode', 145749],
+    ['Optimism (Gov Grants)', 'Giveth', 114000],
+    ['Gitcoin (Donations)', 'BrightID', 111565],
+    ['Octant', 'Praise', 97426],
+    ['Octant', 'Giveth', 93294],
+    ['Gitcoin (Matching)', 'Giveth', 90638],
+    ['Optimism (Gov Grants)', 'DAppNode', 87500],
+    ['Gitcoin (Donations)', 'DAppNode', 82408],
+    ['Gitcoin (Matching)', 'The Metagovernance Project', 75029],
+    ['Optimism (Gov Grants)', 'MetaGame', 67900],
+    ['Gitcoin (Matching)', 'growthepie', 52982],
+    ['Gitcoin (Donations)', 'Giveth', 52792],
+    ['Stellar Community Fund', 'Giveth', 50000],
+    ['Octant', 'MetaGame', 41578],
+    ['Gitcoin (Matching)', 'Glo Dollar', 33483],
+    ['Gitcoin (Donations)', 'The Metagovernance Project', 30596],
+    ['Octant', 'DAppNode', 27295],
+    ['Octant', 'Glo Dollar', 24512],
+    ['DAO Drops', 'Giveth', 18186],
+    ['Octant', 'BrightID', 13053],
+    ['Stellar Community Fund', 'Glo Dollar', 13000],
+    ['DAO Drops', 'MetaGame', 11287],
+    ['DAO Drops', 'rotki', 10863],
+    ['Gitcoin (Donations)', 'MetaGame', 10676],
+    ['DAO Drops', 'The Metagovernance Project', 10439],
+    ['Gitcoin (Matching)', 'MetaGame', 7134],
+    ['Gitcoin (Matching)', 'Tally', 6411],
+    ['Gitcoin (Donations)', 'Glo Dollar', 6293],
+    ['Octant', 'The Metagovernance Project', 6252],
+    ['Gitcoin (Donations)', 'growthepie', 5564],
+    ['DAO Drops', 'Praise', 5326],
+    ['clr.fund', 'BrightID', 4256],
+    ['Gitcoin (Donations)', 'Praise', 2839],
+    ['clr.fund', 'DAppNode', 2237],
+    ['Gitcoin (Matching)', 'Praise', 1902],
+    ['Gitcoin (Donations)', 'Tally', 1469],
+    ['clr.fund', 'rotki', 1417]
+  ]}
+  width={800}
+  height={600}
+/>
 
 ## Getting Started
 
