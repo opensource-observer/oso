@@ -86,26 +86,28 @@ def test_semantic_model_shortest_path():
     )
     github_artifact_tree = registry.dag.find_best_join_tree(
         [
-            AttributePath.from_string("github_events.to->artifacts.artifact_id"),
+            AttributePath.from_string("int_events__github.to->artifacts.artifact_id"),
         ]
     )
     github_collection_tree = registry.dag.find_best_join_tree(
         [
-            AttributePath.from_string("github_events.to->collections.collection_id"),
+            AttributePath.from_string(
+                "int_events__github.to->collections.collection_id"
+            ),
         ]
     )
 
     print(github_collection_tree.root)
     print(github_collection_tree.parents)
 
-    assert github_artifact_tree.get_path("github_events", "artifacts") == [
-        "github_events",
+    assert github_artifact_tree.get_path("int_events__github", "artifacts") == [
+        "int_events__github",
         "artifacts",
     ]
 
-    assert github_artifact_tree.get_path("artifacts", "github_events") == [
+    assert github_artifact_tree.get_path("artifacts", "int_events__github") == [
         "artifacts",
-        "github_events",
+        "int_events__github",
     ]
 
     assert artifact_project_tree.get_path("artifacts", "projects") == [
@@ -114,17 +116,17 @@ def test_semantic_model_shortest_path():
         "projects",
     ]
 
-    assert github_collection_tree.get_path("github_events", "collections") == [
-        "github_events",
+    assert github_collection_tree.get_path("int_events__github", "collections") == [
+        "int_events__github",
         "artifacts",
         "artifacts_by_collection",
         "collections",
     ]
 
-    to_artifact_ref = registry.get_model("github_events").find_relationship(
+    to_artifact_ref = registry.get_model("int_events__github").find_relationship(
         model_ref="artifacts", name="to"
     )
-    from_artifact_ref = registry.get_model("github_events").find_relationship(
+    from_artifact_ref = registry.get_model("int_events__github").find_relationship(
         model_ref="artifacts", name="from"
     )
 
@@ -140,10 +142,10 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
     registry = setup_registry()
 
     query = registry.select(
-        "github_events.event_type AS event_type",
-        "github_events.to->collections.collection_name AS collection_name",
-        "github_events.total_amount AS total_amount",
-    ).where("github_events.from->artifacts.artifact_name = 'repo1'")
+        "int_events__github.event_type AS event_type",
+        "int_events__github.to->collections.collection_name AS collection_name",
+        "int_events__github.total_amount AS total_amount",
+    ).where("int_events__github.from->artifacts.artifact_name = 'repo1'")
 
     query_exp = query.build()
     assert query_exp is not None
@@ -179,7 +181,9 @@ def test_resolve_attributes_to_query_part(semantic_registry: Registry):
         == "$SEMANTIC_REF('artifacts.artifact_name')"
     )
 
-    parent_path = AttributePath.from_string("github_events.to->artifacts.artifact_id")
+    parent_path = AttributePath.from_string(
+        "int_events__github.to->artifacts.artifact_id"
+    )
     parent_traverser = parent_path.traverser()
     while parent_traverser.next():
         pass
@@ -190,30 +194,30 @@ def test_resolve_attributes_to_query_part(semantic_registry: Registry):
     assert scoped_resolved_query_part is not None
     assert (
         scoped_resolved_query_part.expression.sql(dialect="duckdb")
-        == "$SEMANTIC_REF('github_events.to->artifacts.artifact_name')"
+        == "$SEMANTIC_REF('int_events__github.to->artifacts.artifact_name')"
     )
 
-    ref1 = AttributePath.from_string("github_events.from->artifacts.artifact_name")
+    ref1 = AttributePath.from_string("int_events__github.from->artifacts.artifact_name")
     resolved_query_part1 = ref1.resolve(semantic_registry)
     assert resolved_query_part1 is not None
     assert (
         resolved_query_part1.expression.sql(dialect="duckdb")
-        == "$SEMANTIC_REF('github_events.from->artifacts.artifact_name')"
+        == "$SEMANTIC_REF('int_events__github.from->artifacts.artifact_name')"
     )
 
 
 def test_attribute_reference_transformer():
-    simple_column = parse_one("github_events.to")
+    simple_column = parse_one("int_events__github.to")
     transformer0 = AttributePathTransformer()
     transformed_result0 = transformer0.transform(simple_column)
     assert transformed_result0 is not None
     assert len(transformed_result0.references) == 1
     assert transformed_result0.references[0] == AttributePath.from_string(
-        "github_events.to"
+        "int_events__github.to"
     )
 
     multiple_refs_sql = parse_one(
-        "github_events.to->artifacts.count > github_events.from->artifacts.count"
+        "int_events__github.to->artifacts.count > int_events__github.from->artifacts.count"
     )
 
     transformer1 = AttributePathTransformer()
@@ -224,11 +228,11 @@ def test_attribute_reference_transformer():
     assert len(transformed_result1.references) == 2
 
     assert (
-        AttributePath.from_string("github_events.to->artifacts.count")
+        AttributePath.from_string("int_events__github.to->artifacts.count")
         in transformed_result1.references
     )
     assert (
-        AttributePath.from_string("github_events.from->artifacts.count")
+        AttributePath.from_string("int_events__github.from->artifacts.count")
         in transformed_result1.references
     )
 

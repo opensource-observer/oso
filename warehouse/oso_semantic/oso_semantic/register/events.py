@@ -46,7 +46,7 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="github_events",
+            name="int_events__github",
             table=f"{catalog_name}.oso.int_events__github",
             description=textwrap.dedent(
                 """
@@ -127,7 +127,7 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="blockchain_events",
+            name="int_events_daily__blockchain",
             table=f"{catalog_name}.oso.int_events_daily__blockchain",
             description=textwrap.dedent(
                 """
@@ -208,7 +208,7 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="funding_events",
+            name="int_events_daily__funding",
             table=f"{catalog_name}.oso.int_events_daily__funding",
             description=textwrap.dedent(
                 """

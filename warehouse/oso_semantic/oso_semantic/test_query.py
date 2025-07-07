@@ -8,11 +8,11 @@ def test_query_builder_with_dimensions():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.select("github_events.month AS event_month")
-    query.select("github_events.event_source AS event_source")
-    query.select("github_events.from->artifacts.artifact_name")
-    query.select("github_events.to->collections.collection_name")
-    query.where("github_events.month = DATE '2023-01-01'")
+    query.select("int_events__github.month AS event_month")
+    query.select("int_events__github.event_source AS event_source")
+    query.select("int_events__github.from->artifacts.artifact_name")
+    query.select("int_events__github.to->collections.collection_name")
+    query.where("int_events__github.month = DATE '2023-01-01'")
 
     query_exp = query.build()
 
