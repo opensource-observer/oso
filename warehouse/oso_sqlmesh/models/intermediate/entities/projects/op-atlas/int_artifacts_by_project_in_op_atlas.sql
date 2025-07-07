@@ -206,7 +206,7 @@ defillama_artifacts AS (
 oso_linked_slugs AS (
   SELECT
     op.atlas_id,
-    COALESCE(updates.value, op.open_source_observer_slug)
+    COALESCE(op.open_source_observer_slug, updates.value)
       AS open_source_observer_slug
   FROM op_atlas_projects AS op
   LEFT JOIN oso.seed_op_atlas_registry_updates AS updates
