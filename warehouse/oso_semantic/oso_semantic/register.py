@@ -47,11 +47,11 @@ def register_oso_models(registry: Registry, catalog_name: str = "iceberg"):
                     description="The number of distinct collections",
                     query="COUNT(DISTINCT self.id)",
                 ),
-                # Metric(
-                #     name="number_of_projects",
-                #     description="The number of related projects in the collection",
-                #     query="COUNT(project.id)",
-                # )
+                Measure(
+                    name="number_of_projects",
+                    description="The number of related projects in the collection",
+                    query="COUNT(project.id)",
+                )
             ],
         )
     )

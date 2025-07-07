@@ -1,10 +1,9 @@
 import duckdb
 import pandas as pd
-from sqlglot import parse_one, exp
+from sqlglot import parse_one
 
 from .definition import (
     AttributePath,
-    AttributePathTransformer,
     BoundMeasure,
     Dimension,
     Measure,
@@ -164,72 +163,78 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
     )
 
 
-def test_resolve_attributes_to_query_component(semantic_registry: Registry):
+def test_resolve_attributes(semantic_registry: Registry):
     # Test resolving a single attribute
-    ref0 = AttributePath.from_string("artifact.name")
+    ref0 = SemanticExpression(query="artifact.name")
 
-    resolved_query_part0 = ref0.resolve(semantic_registry)
-    assert resolved_query_part0 is not None
+    resolved_expr0 = ref0.resolve("", semantic_registry)
+    assert resolved_expr0 is not None
     assert (
-        resolved_query_part0.expression.sql(dialect="duckdb")
-        == "$SEMANTIC_REF('artifact.artifact_name')"
+        resolved_expr0 == parse_one("artifact_8e5b948a.artifact_name")
+    ), "Resolved expression should match expected SQL expression"
+
+    ref1 = SemanticExpression(query="github_event.to->artifact.id")
+    resolved_expr1 = ref1.resolve("", semantic_registry)
+
+    assert resolved_expr1 is not None
+    assert resolved_expr1 == parse_one(
+        "artifact_1b71f23f.artifact_id"
     )
 
-    parent_path = AttributePath.from_string("github_event.to->artifact.id")
-    parent_traverser = parent_path.traverser()
-    while parent_traverser.next():
-        pass
-    scoped_resolved_query_part = ref0.resolve(
-        semantic_registry, parent_traverser=parent_traverser
-    )
+    # Test resolving a more complex expression
+    ref2 = SemanticExpression(query="github_event.month")
+    resolved_expr2 = ref2.resolve("", semantic_registry)
+    assert resolved_expr2 is not None
+    assert resolved_expr2 == parse_one("DATE_TRUNC('month', github_event_420c9a8e.time::date)")
 
-    assert scoped_resolved_query_part is not None
-    assert (
-        scoped_resolved_query_part.expression.sql(dialect="duckdb")
-        == "$SEMANTIC_REF('github_event.to->artifact.artifact_name')"
-    )
 
-    ref1 = AttributePath.from_string("github_event.from->artifact.name")
-    resolved_query_part1 = ref1.resolve(semantic_registry)
-    assert resolved_query_part1 is not None
-    assert (
-        resolved_query_part1.expression.sql(dialect="duckdb")
-        == "$SEMANTIC_REF('github_event.from->artifact.artifact_name')"
-    )
+def test_expand_reference():
+    registry = setup_registry()
 
+    ref = AttributePath.from_string("github_event.to->artifact.id")
+    expanded_refs = registry.expand_reference(ref)
+
+    assert len(expanded_refs) == 1
+    assert expanded_refs[0] == AttributePath.from_string("github_event.to->artifact.id")
+
+    # # Test with a more complex reference
+    complex_ref = AttributePath.from_string("github_event.month")
+    complex_expanded_refs = registry.expand_reference(complex_ref)
+    print(complex_expanded_refs)
+    assert len(complex_expanded_refs) == 2
+    assert complex_expanded_refs == [
+        AttributePath.from_string("github_event.month"),
+        AttributePath.from_string("github_event.time"),
+    ]
 
 def test_attribute_reference_transformer():
-    simple_column = parse_one("github_event.to")
-    transformer0 = AttributePathTransformer()
-    transformed_result0 = transformer0.transform(simple_column)
-    assert transformed_result0 is not None
-    assert len(transformed_result0.references) == 1
-    assert transformed_result0.references[0] == AttributePath.from_string(
+    simple_column = SemanticExpression(query="github_event.to")
+
+    references0 = simple_column.references()
+    assert len(references0) == 1
+    assert references0[0] == AttributePath.from_string(
         "github_event.to"
     )
 
-    multiple_refs_sql = parse_one(
-        "github_event.to->artifact.count > github_event.from->artifact.count"
+    multiple_refs_sql = SemanticExpression(
+        query="github_event.to->artifact.count > github_event.from->artifact.count"
     )
 
-    transformer1 = AttributePathTransformer()
-    transformed_result1 = transformer1.transform(multiple_refs_sql)
+    references1 = multiple_refs_sql.references()
 
-    assert transformed_result1 is not None
-    assert transformed_result1.node != multiple_refs_sql
-    assert len(transformed_result1.references) == 2
+    assert len(references1) == 2
 
     assert (
         AttributePath.from_string("github_event.to->artifact.count")
-        in transformed_result1.references
+        in references1
     )
     assert (
         AttributePath.from_string("github_event.from->artifact.count")
-        in transformed_result1.references
+        in references1
     )
 
 
-def test_resolve_metrics():
+def test_resolve_measures():
     # registry = setup_registry()
 
     registry = Registry()
@@ -252,17 +257,13 @@ def test_resolve_metrics():
     )
     registry.register(model)
 
-    metric = model.get_attribute("count")
+    measure = model.get_attribute("count")
 
-    assert isinstance(metric, BoundMeasure), "count should be a BoundMetric"
-    assert metric is not None, "metric should not be None"
+    assert isinstance(measure, BoundMeasure), "count should be a BoundMetric"
+    assert measure is not None, "metric should not be None"
 
     ref = AttributePath.from_string("artifact.id")
-    traverser = ref.traverser()
-
-    query_part = metric.to_query_component(traverser, ref, registry)
-
-    assert query_part.resolved_references == [ref]
+    assert measure.references() == [ref], "Measure should reference artifact.id"
 
 
 def test_registry_cycle_detection():
@@ -679,7 +680,6 @@ def test_dag_find_best_join_tree_no_path():
 def test_semantic_expression():
     registry = setup_registry()
     project_count_expression = SemanticExpression(query="project.count > 10")
-    print(project_count_expression.references)
 
     assert project_count_expression.references() == [
         AttributePath.from_string("project.count")
@@ -687,11 +687,7 @@ def test_semantic_expression():
 
     final_expression = project_count_expression.resolve("", registry)
 
-    assert final_expression == exp.GT(
-        expressions=[
-            exp.Count(
-                this=exp.Column(this="self", name="count"),
-            ),
-            exp.Literal.number(10),
-        ]
-    )
+    print(repr(final_expression))
+
+    print("boop")
+    assert final_expression == parse_one("COUNT(project.project_id) > 10")
