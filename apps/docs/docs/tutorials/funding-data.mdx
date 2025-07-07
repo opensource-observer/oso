@@ -1,407 +1,288 @@
 ---
-title: Analyze Funding Histories
-sidebar_position: 7
+title: Analyze Funding Data
+sidebar_position: 5
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import SankeyChart from '@site/src/components/SankeyChart';
 
 Analyze the funding history of your favorite projects.
 New to OSO? Check out our [Getting Started guide](../get-started/index.md)
 to set up your API access.
 
-This tutorial shows how to quickly lookup the funding history of your favorite projects, and then explore funding from specific sources (e.g. Gitcoin Grants, Open Collective, etc.)
+This tutorial shows how to quickly lookup the funding history of your favorite projects, and then explore funding from specific sources (e.g. Gitcoin Grants, Open Collective, etc.) You can find the code for this tutorial [here](https://github.com/opensource-observer/insights/blob/main/tutorials/FundingMetrics.ipynb).
+
+<SankeyChart 
+  data={[
+    ['Optimism (Retro Funding)', 'rotki', 773567],
+    ['Optimism (Retro Funding)', 'Giveth', 763502],
+    ['Optimism (Retro Funding)', 'growthepie', 429699],
+    ['Optimism (Retro Funding)', 'The Metagovernance Project', 445165],
+    ['Gitcoin (Matching)', 'rotki', 437212],
+    ['Arbitrum STIP', 'Tally', 350000],
+    ['Optimism (Retro Funding)', 'Tally', 347827],
+    ['Optimism (Retro Funding)', 'Praise', 277325],
+    ['Optimism (Gov Grants)', 'Tally', 272000],
+    ['Optimism (Gov Grants)', 'growthepie', 271250],
+    ['Octant', 'rotki', 264978],
+    ['Optimism (Retro Funding)', 'BrightID', 260871],
+    ['Optimism (Gov Grants)', 'The Metagovernance Project', 218750],
+    ['Optimism (Gov Grants)', 'Praise', 196000],
+    ['Gitcoin (Matching)', 'BrightID', 167265],
+    ['Octant', 'growthepie', 160927],
+    ['Gitcoin (Donations)', 'rotki', 159745],
+    ['Optimism (Gov Grants)', 'rotki', 155385],
+    ['Optimism (Gov Grants)', 'Glo Dollar', 150000],
+    ['Gitcoin (Matching)', 'DAppNode', 145749],
+    ['Optimism (Gov Grants)', 'Giveth', 114000],
+    ['Gitcoin (Donations)', 'BrightID', 111565],
+    ['Octant', 'Praise', 97426],
+    ['Octant', 'Giveth', 93294],
+    ['Gitcoin (Matching)', 'Giveth', 90638],
+    ['Optimism (Gov Grants)', 'DAppNode', 87500],
+    ['Gitcoin (Donations)', 'DAppNode', 82408],
+    ['Gitcoin (Matching)', 'The Metagovernance Project', 75029],
+    ['Optimism (Gov Grants)', 'MetaGame', 67900],
+    ['Gitcoin (Matching)', 'growthepie', 52982],
+    ['Gitcoin (Donations)', 'Giveth', 52792],
+    ['Stellar Community Fund', 'Giveth', 50000],
+    ['Octant', 'MetaGame', 41578],
+    ['Gitcoin (Matching)', 'Glo Dollar', 33483],
+    ['Gitcoin (Donations)', 'The Metagovernance Project', 30596],
+    ['Octant', 'DAppNode', 27295],
+    ['Octant', 'Glo Dollar', 24512],
+    ['DAO Drops', 'Giveth', 18186],
+    ['Octant', 'BrightID', 13053],
+    ['Stellar Community Fund', 'Glo Dollar', 13000],
+    ['DAO Drops', 'MetaGame', 11287],
+    ['DAO Drops', 'rotki', 10863],
+    ['Gitcoin (Donations)', 'MetaGame', 10676],
+    ['DAO Drops', 'The Metagovernance Project', 10439],
+    ['Gitcoin (Matching)', 'MetaGame', 7134],
+    ['Gitcoin (Matching)', 'Tally', 6411],
+    ['Gitcoin (Donations)', 'Glo Dollar', 6293],
+    ['Octant', 'The Metagovernance Project', 6252],
+    ['Gitcoin (Donations)', 'growthepie', 5564],
+    ['DAO Drops', 'Praise', 5326],
+    ['clr.fund', 'BrightID', 4256],
+    ['Gitcoin (Donations)', 'Praise', 2839],
+    ['clr.fund', 'DAppNode', 2237],
+    ['Gitcoin (Matching)', 'Praise', 1902],
+    ['Gitcoin (Donations)', 'Tally', 1469],
+    ['clr.fund', 'rotki', 1417]
+  ]}
+  width={800}
+  height={600}
+/>
 
 ## Getting Started
 
 Before running any analysis, you'll need to set up your environment:
 
-<Tabs>
-<TabItem value="python" label="Python">
-
-Start your Python notebook with the following:
-
 ```python
+from dotenv import load_dotenv
 import os
 import pandas as pd
 from pyoso import Client
 
+load_dotenv()
 OSO_API_KEY = os.environ['OSO_API_KEY']
 client = Client(api_key=OSO_API_KEY)
 ```
 
 For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
 
-</TabItem>
-<TabItem value="graphql" label="GraphQL">
+## Available Funding Metrics
 
-The following queries should work if you copy-paste them into our [GraphQL sandbox](https://www.opensource.observer/graphql). For more information on how to use the GraphQL API, check out our [GraphQL guide](../integrate/api.md).
-
-</TabItem>
-</Tabs>
-
-## Basic Funding Analysis
-
-### Project Funding History
-
-Get the complete funding history for a specific project:
-
-<Tabs>
-<TabItem value="python" label="Python">
+First, let's see what funding metrics are available in the OSO data lake:
 
 ```python
-query = """
+client.to_pandas("""
+SELECT metric_name
+FROM metrics_v0
+WHERE metric_name LIKE '%_funding_%'
+ORDER BY 1
+""")
+```
+
+This query shows us all the funding-related metrics, including:
+- Gitcoin donations and matching funds (see [Gitcoin dataset](/integrate/datasets/index.mdx#gitcoin))
+- Open Collective funding (see [Open Collective dataset](/integrate/datasets/index.mdx#open-collective))
+- Overall OSS funding metrics (see [OSS Funding guide](/guides/oss-funding/index.md))
+
+Each metric is available at different time intervals (daily, weekly, monthly, quarterly, biannually, yearly, and over all time).
+
+## Aggregated Analysis
+
+### Total Funding by Source
+
+Let's look at the total funding amounts across different sources:
+
+```python
+client.to_pandas("""
 SELECT
-  time,
-  event_source,
-  from_project_name as funder,
-  amount,
-  grant_pool_name
-FROM oss_funding_v0
-WHERE to_project_name = 'uniswap'
-ORDER BY time DESC
-"""
-df = client.to_pandas(query)
-
-# Optional: Display total funding by source
-print("Funding by source:")
-print(df.groupby('event_source')['amount'].sum())
+  m.metric_name,
+  SUM(km.amount) AS total_amount_in_usd
+FROM key_metrics_by_project_v0 AS km
+JOIN metrics_v0 AS m ON km.metric_id = m.metric_id
+WHERE m.metric_name LIKE '%_funding_%'
+GROUP BY 1
+ORDER BY 2 DESC
+""")
 ```
 
-</TabItem>
-<TabItem value="graphql" label="GraphQL">
-
-```graphql
-query ProjectFundingHistory {
-  oso_ossFundingV0(
-    where: { toProjectName: { _eq: "uniswap" } }
-    order_by: { time: desc }
-  ) {
-    time
-    eventSource
-    fromProjectName
-    amount
-    grantPoolName
-  }
-}
-```
-
-</TabItem>
-</Tabs>
+This shows us the relative distribution of funding across different sources, with:
+- Overall OSS funding typically being the largest category
+- Gitcoin matching funds often being the second largest
+- Gitcoin donations usually being the third largest
 
 ### Top Funded Projects
 
-Find the projects that have received the most funding:
-
-<Tabs>
-<TabItem value="python" label="Python">
+Let's identify the projects that have received the most funding:
 
 ```python
-query = """
+client.to_pandas("""
 SELECT
-  to_project_name,
-  COUNT(DISTINCT event_source) as funding_sources,
-  COUNT(*) as number_of_grants,
-  SUM(amount) as total_funding
-FROM oss_funding_v0
-GROUP BY to_project_name
-HAVING total_funding > 0
-ORDER BY total_funding DESC
-LIMIT 20
-"""
-df = client.to_pandas(query)
-
-# Optional: Create a bar chart
-import plotly.express as px
-
-fig = px.bar(df, 
-    x='to_project_name', 
-    y='total_funding',
-    title='Top Funded Projects'
-)
-fig.show()
+  p.display_name AS project_display_name,
+  SUM(km.amount) AS total_amount_in_usd
+FROM key_metrics_by_project_v0 AS km
+JOIN metrics_v0 AS m ON km.metric_id = m.metric_id
+JOIN projects_v1 AS p ON km.project_id = p.project_id
+WHERE m.metric_name LIKE '%_funding_awarded_over_all_time'
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10
+""")
 ```
 
-</TabItem>
-<TabItem value="graphql" label="GraphQL">
+This query will show you the top 10 projects by total funding received, helping identify which projects have been most successful in securing funding.
 
-```graphql
-query TopFundedProjects {
-  # This query requires aggregation which is complex in GraphQL
-  # You would need to fetch all funding data and aggregate client-side
-  oso_ossFundingV0(
-    limit: 1000
-    order_by: { amount: desc }
-  ) {
-    toProjectName
-    eventSource
-    amount
-  }
-}
-```
+### Gitcoin-Specific Funding
 
-Note: For aggregation queries like this, the Python approach is more efficient as it handles the grouping and calculations server-side.
-
-</TabItem>
-</Tabs>
-
-## Advanced Analysis
-
-### Funding vs Development Activity
-
-Compare funding with development metrics to understand the relationship between financial support and project activity:
-
-<Tabs>
-<TabItem value="python" label="Python">
+Let's look at the top projects funded through Gitcoin donations:
 
 ```python
-query = """
-WITH project_funding AS (
+client.to_pandas("""
+SELECT
+  p.display_name AS project_display_name,
+  SUM(km.amount) AS total_amount_in_usd
+FROM key_metrics_by_project_v0 AS km
+JOIN metrics_v0 AS m ON km.metric_id = m.metric_id
+JOIN projects_v1 AS p ON km.project_id = p.project_id
+WHERE m.metric_name = 'GITCOIN_DONATIONS_funding_awarded_over_all_time'
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10
+""")
+```
+
+This analysis reveals the projects that have received the most funding through Gitcoin's donation platform.
+
+### Historical Analysis
+
+Let's look at funding trends before 2022:
+
+```python
+client.to_pandas("""
+SELECT
+  p.display_name AS project_display_name,
+  SUM(tm.amount) AS total_amount_in_usd
+FROM timeseries_metrics_by_project_v0 AS tm
+JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id
+JOIN projects_v1 AS p ON tm.project_id = p.project_id
+WHERE m.metric_name = 'GITCOIN_DONATIONS_funding_awarded_yearly'
+AND tm.sample_date < DATE '2022-01-01'
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10
+""")
+```
+
+This historical view shows the distribution of funding across projects in earlier years, helping understand how funding patterns have evolved over time.
+
+## Detailed Analysis of Funding Events
+
+### Individual Gitcoin Donors to Projects
+
+Let's look at detailed funding events for a specific project (e.g., Revoke):
+
+```python
+client.to_pandas("""
   SELECT
-    to_project_name,
-    SUM(amount) as total_funding,
-    COUNT(DISTINCT event_source) as funding_sources
-  FROM oss_funding_v0
-  GROUP BY to_project_name
-)
+    time,
+    round_number,
+    round_name,
+    event_source,
+    donor_address,
+    amount_in_usd
+  FROM int_events__gitcoin_funding
+  WHERE gitcoin_group_project_name = 'revokecash'
+  ORDER BY amount_in_usd DESC
+  LIMIT 10
+""")
+```
+
+This shows individual funding events, including:
+- The timing and size of donations
+- Matching fund allocations from different rounds
+- Various donations from different donors
+
+### Funders and Grant Pools
+
+Let's analyze the funding sources and their impact:
+
+```python
+client.to_pandas("""
 SELECT
-  f.to_project_name,
-  f.total_funding,
-  f.funding_sources,
-  m.active_developer_count_6_months,
-  m.commit_count_6_months,
-  m.opened_issue_count_6_months,
-  m.star_count,
-  m.fork_count
-FROM project_funding f
-JOIN code_metrics_by_project_v1 m
-  ON f.to_project_name = m.project_name
-WHERE f.total_funding > 0
-ORDER BY f.total_funding DESC
-"""
-df = client.to_pandas(query)
-
-# Optional: Create a scatter plot
-import plotly.express as px
-
-fig = px.scatter(df, 
-    x='total_funding', 
-    y='commit_count_6_months',
-    size='active_developer_count_6_months',
-    hover_data=['to_project_name', 'funding_sources'],
-    title='Funding vs Development Activity'
-)
-fig.show()
+  from_funder_name,
+  COUNT(DISTINCT grant_pool_name) AS grant_pools,
+  SUM(amount) AS amount_in_usd
+FROM stg_ossd__current_funding
+GROUP BY 1
+ORDER BY 3 DESC
+""")
 ```
 
-</TabItem>
-<TabItem value="graphql" label="GraphQL">
+This analysis helps identify:
+- The most active funders in the ecosystem
+- The number of grant pools managed by each funder
+- The total funding distributed by each source
 
-```graphql
-query FundingVsDevelopmentActivity {
-  # This complex analysis requires multiple queries and client-side processing
-  # First get code metrics for projects
-  codeMetrics: oso_codeMetricsByProjectV1 {
-    projectName
-    activeDevCount6Months: activeDevCount6Months
-    commitCount6Months
-    openedIssueCount6Months
-    starCount
-    forkCount
-  }
-  
-  # Then get funding data
-  # You would need to fetch all funding data and aggregate client-side
-  fundingData: oso_ossFundingV0 {
-    toProjectName
-    eventSource
-    amount
-  }
-}
-```
+### Project-to-Project Funding
 
-Note: For complex analyses like this, the Python approach is more efficient as it handles the joins and calculations server-side.
-
-</TabItem>
-</Tabs>
-
-### Funding Source Analysis
-
-Analyze the distribution and impact of different funding sources:
-
-<Tabs>
-<TabItem value="python" label="Python">
+Finally, let's look at funding flows between projects:
 
 ```python
 query = """
 SELECT
-  event_source,
-  grant_pool_name,
-  COUNT(DISTINCT to_project_name) as projects_funded,
-  COUNT(*) as number_of_grants,
-  SUM(amount) as total_funding,
-  AVG(amount) as average_grant
-FROM oss_funding_v0
-GROUP BY event_source, grant_pool_name
-HAVING total_funding > 0
-ORDER BY total_funding DESC
+  fp.project_id AS from_project_id,
+  tp.project_id AS to_project_id,
+  fp.display_name AS funder,
+  tp.display_name AS project,
+  SUM(e.amount) AS amount
+FROM int_events_daily__funding AS e
+JOIN artifacts_by_project_v1 AS fa
+  ON e.from_artifact_id = fa.artifact_id
+JOIN artifacts_by_project_v1 AS ta
+  ON e.to_artifact_id = ta.artifact_id
+JOIN projects_v1 AS fp
+  ON fa.project_id = fp.project_id
+JOIN projects_v1 AS tp
+  ON ta.project_id = tp.project_id
+GROUP BY 1,2,3,4
 """
 df = client.to_pandas(query)
-
-# Optional: Create a treemap visualization
-import plotly.express as px
-
-fig = px.treemap(df, 
-    path=[px.Constant('All Sources'), 'event_source', 'grant_pool_name'],
-    values='total_funding',
-    title='Funding Distribution by Source'
-)
-fig.show()
 ```
 
-</TabItem>
-<TabItem value="graphql" label="GraphQL">
+This shows the network of funding relationships between projects, helping identify:
+- Which projects are funding others
+- The magnitude of funding flows
+- The diversity of funding sources for each project
 
-```graphql
-query FundingSourceAnalysis {
-  # This aggregation query requires client-side processing
-  oso_ossFundingV0(
-    limit: 1000
-  ) {
-    eventSource
-    grantPoolName
-    toProjectName
-    amount
-  }
-}
-```
+## Next Steps
 
-Note: For aggregation queries like this, the Python approach is more efficient as it handles the grouping and calculations server-side.
-
-</TabItem>
-</Tabs>
-
-### Social Network Funding Analysis
-
-Analyze funding patterns within social networks by combining funding data with social graph data:
-
-<Tabs>
-<TabItem value="python" label="Python">
-
-```python
-query = """
-SELECT DISTINCT
-  donations.donor_address,
-  users.user_source_id as fid,
-  users.user_name as username,
-  donations.project_name,
-  amount_in_usd,
-  timestamp
-FROM gitcoin.all_donations as donations
-JOIN artifacts_by_user_v1 as users
-  ON lower(donations.donor_address) = users.artifact_name
-WHERE
-  user_source = 'FARCASTER'
-  AND users.user_source_id IN (
-    WITH max_date AS (
-      SELECT max(date) as last_date
-      FROM karma3.localtrust
-    )
-    SELECT CAST(j as string) as fid
-    FROM karma3.localtrust
-    WHERE i = 5650  -- Replace with your FID to see your network
-    ORDER BY v DESC
-    LIMIT 150
-  )
-ORDER BY amount_in_usd DESC
-"""
-df = client.to_pandas(query)
-
-# Optional: Create a network visualization
-import networkx as nx
-import plotly.graph_objects as go
-
-# Create a graph of donors and projects
-G = nx.Graph()
-for _, row in df.iterrows():
-    G.add_edge(row['username'], row['project_name'], weight=row['amount_in_usd'])
-
-# Create a spring layout
-pos = nx.spring_layout(G)
-
-# Create edges trace
-edge_x = []
-edge_y = []
-for edge in G.edges():
-    x0, y0 = pos[edge[0]]
-    x1, y1 = pos[edge[1]]
-    edge_x.extend([x0, x1, None])
-    edge_y.extend([y0, y1, None])
-
-edges_trace = go.Scatter(
-    x=edge_x, y=edge_y,
-    line=dict(width=0.5, color='#888'),
-    hoverinfo='none',
-    mode='lines')
-
-# Create nodes trace
-node_x = []
-node_y = []
-node_text = []
-for node in G.nodes():
-    x, y = pos[node]
-    node_x.append(x)
-    node_y.append(y)
-    node_text.append(node)
-
-nodes_trace = go.Scatter(
-    x=node_x, y=node_y,
-    mode='markers+text',
-    hoverinfo='text',
-    text=node_text,
-    textposition="top center",
-    marker=dict(size=10)
-)
-
-# Create the figure
-fig = go.Figure(data=[edges_trace, nodes_trace],
-    layout=go.Layout(
-        showlegend=False,
-        hovermode='closest',
-        margin=dict(b=0,l=0,r=0,t=0),
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
-    )
-)
-fig.show()
-```
-
-</TabItem>
-<TabItem value="graphql" label="GraphQL">
-
-```graphql
-query SocialNetworkFundingAnalysis {
-  # This complex analysis requires multiple data sources and client-side processing
-  # The Python approach is recommended for this type of analysis
-  
-  # You would need to query artifacts by user
-  users: oso_artifactsByUserV1(
-    where: { userSource: { _eq: "FARCASTER" } }
-    limit: 100
-  ) {
-    userSourceId
-    userName
-    artifactName
-  }
-  
-  # Then join with donation data from other sources
-  # This would require additional queries and client-side processing
-}
-```
-
-Note: For complex analyses involving multiple data sources like this, the Python approach is more efficient and flexible.
-
-</TabItem>
-</Tabs>
+- **Time Series Analysis**: Create visualizations of funding trends over time
+- **Funding Impact**: Correlate funding with development activity
+- **Network Analysis**: Map the funding network between projects
+- **Comparative Analysis**: Compare funding patterns across different ecosystems
 
 For more examples of funding analysis, check out our [Insights Repo](https://github.com/opensource-observer/insights).

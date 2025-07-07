@@ -84,6 +84,11 @@ class AgentServerConfig(AgentConfig):
         description="Host for the server to run on",
     )
 
+    enable_discord_bot: bool = Field(
+        default=False,
+        description="Enable the Discord bot for the agent",
+    )
+
 
 AppLifespan = t.Callable[[FastAPI], t.Any]
 

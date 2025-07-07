@@ -43,9 +43,65 @@ class GoogleGenAILLMConfig(BaseModel):
         """Return the API key for the Gemini model."""
         return self.google_api_key.get_secret_value()
 
+
+class LocalVectorStoreConfig(BaseModel):
+    type: t.Literal["local"] = "local"
+
+    dir: str = Field(
+        default="",
+        description="Directory for local vector storage"
+    )
+
+    index_name: str = Field(
+        default="default_index",
+        description="ID of the index for local vector storage"
+    )
+
+    @model_validator(mode="after")
+    def validate_dir(self) -> "LocalVectorStoreConfig":
+        """Ensure the directory is set for local vector storage."""
+        if not self.dir:
+            raise ValueError("Directory must be specified for local vector storage. Set env var AGENT_VECTOR_STORE__DIR to a directory for local vector storage.")
+        return self
+
+class GoogleGenAIVectorStoreConfig(BaseModel):
+    type: t.Literal["google_genai"] = "google_genai"
+
+    gcs_bucket: str = Field(
+        description="Google Cloud Storage bucket for vector storage"
+    )
+
+    project_id: str = Field(
+        description="Google Cloud project ID for the vector store"
+    )
+
+    region: str = Field(
+        default="us-central1",
+        description="Google Cloud region for the vector store"
+    )
+
+    index_name: str = Field(
+        default="default_index",
+        description="ID of the index in the Google GenAI vector store"
+    )
+
+    index_id: str = Field(
+        description="ID of the index in the Google GenAI vector store"
+    )
+
+    endpoint_id: str = Field(
+        description="ID of the index endpoint in the Google GenAI vector store"
+    )
+
+
 LLMConfig = t.Union[
     LocalLLMConfig,
     GoogleGenAILLMConfig,
+]
+
+VectorStoreConfig = t.Union[
+    LocalVectorStoreConfig,
+    GoogleGenAIVectorStoreConfig,
 ]
 
 class AgentConfig(BaseSettings):
@@ -58,9 +114,16 @@ class AgentConfig(BaseSettings):
         description="Whether to eagerly load all agents in the registry"
     )
 
+    oso_api_key: SecretStr = Field(
+        default=SecretStr(""), description="API key for the OSO API"
+    )
+
     agent_name: str = Field(default="function_text2sql", description="Name of the agent to use")
 
     llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
+    vector_store: VectorStoreConfig = Field(
+        discriminator="type", default_factory=lambda: LocalVectorStoreConfig()
+    )
 
     oso_mcp_url: str = Field(
         default="http://localhost:8000/sse", description="URL for the OSO MCP API"
@@ -101,6 +164,15 @@ class AgentConfig(BaseSettings):
         description="Arize Phoenix dataset for text2sql evaluations",
     )
 
+    chat_line_length: int = Field(
+        default=50,
+        description="Maximum number of characters per line in chat messages",
+    )
+
+    workflow_timeout: float = Field(
+        default=120.0,
+    )
+
     @model_validator(mode="after")
     def validate_urls(self) -> "AgentConfig":
         """Ensure URLs are properly formatted."""
@@ -111,8 +183,8 @@ class AgentConfig(BaseSettings):
         if not self.arize_phoenix_traces_url:
             self.arize_phoenix_traces_url = f"{self.arize_phoenix_base_url}/v1/traces"
 
-        # This is a terrible hack because arize phoenix's libraries don't 
-        # consistently handle passing in api key or endpoint so we need to 
+        # This is a terrible hack because arize phoenix's libraries don't
+        # consistently handle passing in api key or endpoint so we need to
         # inject it into the environment
         os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = self.arize_phoenix_base_url
         if self.arize_phoenix_api_key.get_secret_value():

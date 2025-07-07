@@ -2,8 +2,13 @@ MODEL (
   name oso.int_artifacts_by_project,
   kind FULL,
   dialect trino,
+  partitioned_by (
+    artifact_source,
+    project_source
+  ),
   grain (project_id, artifact_id),
   tags (
+    'entity_category=artifact',
     'entity_category=project'
   ),
   audits (
@@ -12,16 +17,14 @@ MODEL (
 );
 
 SELECT DISTINCT
-  artifacts.artifact_id,
-  artifacts.artifact_source_id,
-  artifacts.artifact_source,
-  artifacts.artifact_namespace,
-  artifacts.artifact_name,
-  artifacts.artifact_url,
-  projects.project_id,
-  projects.project_source,
-  projects.project_namespace,
-  projects.project_name
-FROM oso.int_all_artifacts AS artifacts
-JOIN oso.int_projects AS projects
-  ON artifacts.project_id = projects.project_id
+  artifact_id,
+  artifact_source_id,
+  artifact_source,
+  artifact_namespace,
+  artifact_name,
+  artifact_url,
+  project_id,
+  project_source,
+  project_namespace,
+  project_name
+FROM oso.int_artifacts_by_project_all_sources

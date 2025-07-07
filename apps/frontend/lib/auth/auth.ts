@@ -1,9 +1,7 @@
 import "server-only";
 import { type NextRequest } from "next/server";
-import {
-  createPrivilegedSupabaseClient,
-  createNormalSupabaseClient,
-} from "../clients/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createServerClient } from "@/lib/supabase/server";
 import { SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js";
 import {
   AnonUser,
@@ -13,8 +11,8 @@ import {
   User,
   OrganizationDetails,
   OrgRole,
-} from "../types/user";
-import { Database } from "../types/supabase";
+} from "@/lib/types/user";
+import { Database } from "@/lib/types/supabase";
 
 // Constants
 const DEFAULT_KEY_NAME = "login";
@@ -45,6 +43,7 @@ const COLUMNS = {
     ID: "id",
     NAME: "org_name",
     CREATED_BY: "created_by",
+    DELETED_AT: "deleted_at",
   },
   USERS_BY_ORG: {
     USER_ID: "user_id",
@@ -54,7 +53,7 @@ const COLUMNS = {
   },
 } as const;
 
-const supabasePrivileged = createPrivilegedSupabaseClient();
+const supabasePrivileged = createAdminClient();
 
 /**
  * Factory function for anonymous users
@@ -130,6 +129,7 @@ async function fetchSpecificOrganization(
     `,
     )
     .eq(COLUMNS.ORGANIZATIONS.ID, orgId)
+    .is(COLUMNS.ORGANIZATIONS.DELETED_AT, null)
     .single();
 
   if (orgError || !org) {
@@ -283,8 +283,8 @@ async function getUserByApiKey(
  * Authenticate a user via JWT token
  */
 async function getUserByJwt(token: string, host: string | null): Promise<User> {
-  const { data, error } =
-    await createNormalSupabaseClient().auth.getUser(token);
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.auth.getUser(token);
   if (error) {
     return makeAnonUser(host);
   }

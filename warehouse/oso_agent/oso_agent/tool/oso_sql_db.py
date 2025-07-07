@@ -1,5 +1,6 @@
 # pyright: reportCallIssue=false
 import asyncio
+import logging
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
@@ -8,6 +9,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.engine.interfaces import ReflectedColumn
 
 from .oso_mcp_client import OsoMcpClient
+
+logger = logging.getLogger(__name__)
 
 
 class OsoSqlDatabase(SQLDatabase):
@@ -105,6 +108,7 @@ class OsoSqlDatabase(SQLDatabase):
 
     def get_table_columns(self, table_name: str) -> List[ReflectedColumn]:
         """Get table columns."""
+        logger.debug("Getting table columns for table: %s", table_name)
         loop = asyncio.get_event_loop()
         coroutine = self._oso_client.get_table_schema(table_name)
         table_schema = loop.run_until_complete(coroutine)
@@ -113,6 +117,7 @@ class OsoSqlDatabase(SQLDatabase):
 
     def get_single_table_info(self, table_name: str) -> str:
         """Get table info for a single table."""
+        logger.debug("Getting table info for table: %s", table_name)
         loop = asyncio.get_event_loop()
         coroutine = self._oso_client.get_table_schema(table_name)
         table_schema = loop.run_until_complete(coroutine)
@@ -125,6 +130,7 @@ class OsoSqlDatabase(SQLDatabase):
                 columns.append(f"{column.name} ({column.type!s})")
         column_str = ", ".join(columns)
         info = f"Table '{table_name}' has columns: {column_str}, "
+        logger.debug(f"Retrieved info for table {table_name}: {info}")
         return info
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
@@ -145,6 +151,7 @@ class OsoSqlDatabase(SQLDatabase):
             return content
 
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
+    
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
@@ -152,9 +159,14 @@ class OsoSqlDatabase(SQLDatabase):
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
         """
-        loop = asyncio.get_event_loop()
-        coroutine = self._oso_client.query_oso(command)
-        query_results = loop.run_until_complete(coroutine)
+        logger.debug(f"Running SQL command: {command}")
+
+        line_split = [ line.lower() for line in command.strip().split('\n')]
+        if self.dialect.lower() in line_split:
+            if line_split[0] == self.dialect.lower():
+                command = "\n".join(line_split[1:])
+
+        query_results = asyncio.run(self._oso_client.query_oso(command))
         truncated_results = []
         col_keys = []
         for row in query_results:

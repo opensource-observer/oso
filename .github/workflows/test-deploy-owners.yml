@@ -45,10 +45,10 @@ jobs:
           cd ops/external-prs &&
           pnpm tools common is-repo-admin ${{ github.event.pull_request.user.login }} --output-file $GITHUB_OUTPUT
 
-      - name: Auto-approve PR if conditions are met
-        run: |
-          cd ops/external-prs &&
-          pnpm tools common attempt-auto-approve ${{ github.event.pull_request.number }} 
+#      - name: Auto-approve PR if conditions are met
+#        run: |
+#          cd ops/external-prs &&
+#          pnpm tools common attempt-auto-approve ${{ github.event.pull_request.number }} 
 
 #      - name: Login to google
 #        uses: "google-github-actions/auth@v2"

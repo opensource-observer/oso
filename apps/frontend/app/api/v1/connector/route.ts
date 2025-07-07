@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTrinoAdminClient } from "../../../../lib/clients/trino";
-import { createNormalSupabaseClient } from "../../../../lib/clients/supabase";
-import { ALLOWED_CONNECTORS } from "../../../../lib/types/dynamic-connector";
-import { dynamicConnectorsInsertSchema } from "../../../../lib/types/schema";
-import type { DynamicConnectorsInsert } from "../../../../lib/types/schema-types";
+import { getTrinoAdminClient } from "@/lib/clients/trino";
+import { createServerClient } from "@/lib/supabase/server";
+import { ALLOWED_CONNECTORS } from "@/lib/types/dynamic-connector";
+import { dynamicConnectorsInsertSchema } from "@/lib/types/schema";
+import type { DynamicConnectorsInsert } from "@/lib/types/schema-types";
 import { ensure } from "@opensource-observer/utils";
-import { setSupabaseSession } from "../../../../lib/auth/auth";
-import { Tables } from "../../../../lib/types/supabase";
+import { getUser, setSupabaseSession } from "@/lib/auth/auth";
+import { Tables } from "@/lib/types/supabase";
+import { getCatalogName } from "@/lib/dynamic-connectors";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const revalidate = 0;
 export const maxDuration = 300;
@@ -31,7 +33,7 @@ function validateDynamicConnectorParams(
     !connector_name
       .trim()
       .toLowerCase()
-      .startsWith(org.org_name.trim().toLowerCase())
+      .startsWith(`${org.org_name.trim().toLowerCase()}__`)
   ) {
     return NextResponse.json(
       {
@@ -42,12 +44,8 @@ function validateDynamicConnectorParams(
   }
 }
 
-function getCatalogName(connectorName: string, _?: boolean | null) {
-  return `${connectorName.trim().toLocaleLowerCase()}`;
-}
-
 export async function POST(request: NextRequest) {
-  const supabaseClient = createNormalSupabaseClient();
+  const supabaseClient = await createServerClient();
   const trinoClient = getTrinoAdminClient();
   const auth = await setSupabaseSession(supabaseClient, request);
   if (auth.error) {
@@ -67,7 +65,9 @@ export async function POST(request: NextRequest) {
     .single();
   if (error || !org) {
     return NextResponse.json(
-      { error: `Error fetching organization: ${error.message}` },
+      {
+        error: `Error fetching organization: ${error?.message || "Organization not found"}`,
+      },
       { status: 500 },
     );
   }
@@ -96,20 +96,21 @@ export async function POST(request: NextRequest) {
   }
 
   const additionalData = [
-    ...(dynamicConnector.config ? Object.entries(dynamicConnector.config) : []),
+    ...(insertedConnector.data.config
+      ? Object.entries(insertedConnector.data.config)
+      : []),
     ...Object.entries(credentials),
   ];
 
-  try {
-    const query = `CREATE CATALOG ${getCatalogName(dynamicConnector.connector_name, dynamicConnector.is_public)} USING ${dynamicConnector.connector_type} ${
-      additionalData.length > 0
-        ? `WITH (${additionalData
-            .map(([key, value]) => `"${key}" = '${value}'`)
-            .join(",\n")})`
-        : ""
-    }`;
-    await trinoClient.query(query);
-  } catch (e) {
+  const query = `CREATE CATALOG ${getCatalogName(insertedConnector.data)} USING ${insertedConnector.data.connector_type} ${
+    additionalData.length > 0
+      ? `WITH (${additionalData
+          .map(([key, value]) => `"${key}" = '${value}'`)
+          .join(",\n")})`
+      : ""
+  }`;
+  const { error: trinoError } = await trinoClient.queryAll(query);
+  if (trinoError) {
     // Best effort try to cleanup the connector from supabase
     await supabaseClient
       .from("dynamic_connectors")
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: `Error creating catalog: ${e}`,
+        error: `Error creating catalog: ${trinoError}`,
       },
       { status: 500 },
     );
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const supabaseClient = createNormalSupabaseClient();
+  const supabaseClient = await createServerClient();
   const trinoClient = getTrinoAdminClient();
   const auth = await setSupabaseSession(supabaseClient, request);
   if (auth.error) {
@@ -164,10 +165,10 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  try {
-    const query = `DROP CATALOG ${getCatalogName(deletedConnector.data.connector_name, deletedConnector.data.is_public)}`;
-    await trinoClient.query(query);
-  } catch (e) {
+  const query = `DROP CATALOG ${getCatalogName(deletedConnector.data)}`;
+  const { error } = await trinoClient.queryAll(query);
+
+  if (error) {
     // Best effort reverting operation
     await supabaseClient
       .from("dynamic_connectors")
@@ -178,11 +179,129 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: `Error creating catalog: ${e}`,
+        error: `Error dropping catalog: ${error}`,
       },
       { status: 500 },
     );
   }
 
   return NextResponse.json(deletedConnector.data);
+}
+
+interface TableSemanticData {
+  name: string;
+  description: string | null;
+  columns: {
+    name: string;
+    type: string;
+    description: string | null;
+  }[];
+  relationships: {
+    sourceColumn: string;
+    targetTable: string;
+    targetColumn: string;
+  }[];
+}
+
+export async function GET(request: NextRequest) {
+  const supabaseClient = await createAdminClient();
+  const user = await getUser(request);
+  if (user.role === "anonymous" || user.orgId == null) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: connectorData, error: connectorError } = await supabaseClient
+    .from("dynamic_connectors")
+    .select("*, dynamic_table_contexts(*, dynamic_column_contexts(*))")
+    .eq("org_id", user.orgId);
+
+  if (connectorError) {
+    return NextResponse.json(
+      {
+        error: `Error fetching connectors: ${connectorError?.message || "Connector not found"}`,
+      },
+      { status: 500 },
+    );
+  }
+
+  const { data: relationshipsData, error: relationshipsError } =
+    await supabaseClient
+      .from("connector_relationships")
+      .select("*")
+      .eq("org_id", user.orgId);
+
+  if (relationshipsError) {
+    return NextResponse.json(
+      {
+        error: `Error fetching relationships: ${relationshipsError?.message || "Relationships not found"}`,
+      },
+      { status: 500 },
+    );
+  }
+
+  const tablesById: Record<string, TableSemanticData> = Object.fromEntries(
+    connectorData.flatMap((connector) =>
+      connector.dynamic_table_contexts.map((table) => [
+        table.id,
+        {
+          name: `${getCatalogName(connector)}.${table.table_name}`,
+          description: table.description,
+          columns: table.dynamic_column_contexts.map((column) => ({
+            name: column.column_name,
+            type: column.data_type,
+            description: column.description,
+          })),
+          relationships: [],
+        },
+      ]),
+    ),
+  );
+
+  // Process relationships and group them by source table
+  relationshipsData.forEach((r) => {
+    const sourceTable = tablesById[r.source_table_id];
+    const sourceColumn = sourceTable?.columns.find(
+      (c) => c.name === r.source_column_name,
+    );
+    if (!sourceTable || !sourceColumn) {
+      // Invalid source table or column
+      return;
+    }
+
+    let relationship;
+    if (r.target_oso_entity) {
+      const osoEntity = r.target_oso_entity.split(".");
+      if (osoEntity.length !== 2) {
+        // Invalid OSO entity format
+        return;
+      }
+      relationship = {
+        sourceColumn: sourceColumn.name,
+        targetTable: osoEntity[0],
+        targetColumn: osoEntity[1],
+      };
+    } else if (r.target_table_id && r.target_column_name) {
+      const targetTable = tablesById[r.target_table_id];
+      const targetColumn = targetTable?.columns.find(
+        (c) => c.name === r.target_column_name,
+      );
+      if (!targetTable || !targetColumn) {
+        // Invalid target table or column
+        return;
+      }
+      relationship = {
+        sourceColumn: sourceColumn.name,
+        targetTable: targetTable.name,
+        targetColumn: targetColumn.name,
+      };
+    } else {
+      return;
+    }
+
+    sourceTable.relationships.push(relationship);
+  });
+
+  return NextResponse.json<TableSemanticData[]>(
+    Object.entries(tablesById).map(([_, table]) => table),
+  );
 }

@@ -307,3 +307,13 @@ kubectl port-forward --namespace=local-trino service/local-trino-trino 8080:8080
 
 This will open up a web server to interact with Trino directly at
 `http://127.0.0.1:8080`.
+
+## Models best practice
+
+When developing SQLMesh models that include `artifact_ids`, the best practice for optimal query performance is to **partition by `artifact_id`**.
+
+While adding a bloom filter for the `artifact_id` column might seem like a good optimization, it's not sufficient due to the high cardinality of this field (over 200 million unique values). The default bitset size of 1MB results in frequent false positives, which can degrade query performance.
+
+By partitioning on `artifact_id`, you significantly reduce the number of false positives on the bloom filter and improve query efficiency.
+
+For an example of proper partitioning implementation, see [`timeseries_metrics_by_artifact_v0.sql`](models/marts/metrics/timeseries_metrics_by_artifact_v0.sql), and for more details on bloom filter performance with high cardinality data, see: https://hur.st/bloomfilter/.

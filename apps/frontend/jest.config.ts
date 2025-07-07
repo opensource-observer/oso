@@ -9,6 +9,9 @@ const config: Config = {
     "^.+.js?$": ["babel-jest", { configFile: "./babel.config.testing.js" }],
   },
   transformIgnorePatterns: [`node_modules/(?!${esModules})`],
+  moduleNameMapper: {
+    "^@/(.*)": "<rootDir>/$1",
+  },
 };
 
 export default config;

@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20250602201735-9cbe2ba # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20250707152819-8c918ad # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       ingress:
@@ -18,7 +18,14 @@ spec:
         AGENT_LLM__GOOGLE_API_KEY: gcp:secretmanager:production-agent-google-api-secret/versions/latest
         AGENT_LLM__TYPE: "google_genai"
         AGENT_OSO_MCP_URL: "http://production-mcp-app.production-mcp.svc.cluster.local:8000/sse"
+        AGENT_OSO_API_KEY: gcp:secretmanager:production-oso-api-key/versions/latest
         AGENT_ARIZE_PHOENIX_API_KEY: gcp:secretmanager:production-agent-arize-phoenix-api-key/versions/latest
         AGENT_ARIZE_PHOENIX_USE_CLOUD: "1"
         AGENT_DISCORD_BOT_TOKEN: gcp:secretmanager:production-agent-discord-bot-token/versions/latest
         AGENT_DISCORD_CHANNEL_ID: gcp:secretmanager:production-agent-discord-channel-id/versions/latest
+        AGENT_VECTOR_STORE__TYPE: "google_genai"
+        AGENT_VECTOR_STORE__GCS_BUCKET: "oso-agent-vector-search-usc1"
+        AGENT_VECTOR_STORE__PROJECT_ID: "opensource-observer"
+        AGENT_VECTOR_STORE__INDEX_ID: gcp:secretmanager:production-agent-vector-store-index-id/versions/latest
+        AGENT_VECTOR_STORE__ENDPOINT_ID: gcp:secretmanager:production-agent-vector-store-endpoint-id/versions/latest
+        AGENT_ENABLE_DISCORD_BOT: "1"

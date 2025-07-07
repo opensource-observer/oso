@@ -11,7 +11,6 @@
   },
   "scripts": {
     "build": "turbo run build --concurrency=100%",
-    "build:dbt:docs": "uv run dbt docs generate",
     "build:docs": "turbo run build --filter=@opensource-observer/docs",
     "build:frontend": "turbo run build --filter=@opensource-observer/frontend",
     "build:hasura": "turbo run build --filter=@opensource-observer/hasura-clickhouse",
@@ -35,6 +34,7 @@
   },
   "devDependencies": {
     "eslint": "^8.57.0",
+    "eslint-plugin-no-relative-import-paths": "^1.6.1",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.2",

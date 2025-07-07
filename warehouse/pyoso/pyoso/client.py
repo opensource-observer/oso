@@ -5,10 +5,18 @@ from typing import Any, Optional
 
 import pandas as pd
 import requests
+from pyoso.constants import DEFAULT_BASE_URL, OSO_API_KEY
 from pyoso.exceptions import OsoError, OsoHTTPError
+from pyoso.semantic import create_registry
+from sqlglot import parse
 
-_DEFAULT_BASE_URL = "https://www.opensource.observer/api/v1/"
-OSO_API_KEY = "OSO_API_KEY"
+HAS_OSO_SEMANTIC = False
+try:
+    import oso_semantic  # noqa: F401
+
+    HAS_OSO_SEMANTIC = True
+except ImportError:
+    pass
 
 
 @dataclass
@@ -31,13 +39,33 @@ class Client:
             raise OsoError(
                 "API key is required. Either set it in the environment variable OSO_API_KEY or pass it as an argument."
             )
-        self.__base_url = _DEFAULT_BASE_URL
+        self.__base_url = DEFAULT_BASE_URL
         if client_opts and client_opts.base_url:
             self.__base_url = client_opts.base_url
             if not self.__base_url.endswith("/"):
                 self.__base_url += "/"
 
-    def __query(self, query: str):
+        if HAS_OSO_SEMANTIC:
+            self.semantic = create_registry(
+                self.__base_url, self.__api_key, self.to_pandas
+            )
+
+    def __query(
+        self, query: str, input_dialect="trino", output_dialect="trino"
+    ) -> QueryData:
+        # The following checks are only for providing better error messages as
+        # the oso api does _not_ support multiple queries nor the use of
+        # semicolons.
+        if not query:
+            raise OsoError("Query cannot be empty.")
+        parsed_query = parse(query, dialect=input_dialect)
+        if len(parsed_query) != 1:
+            raise OsoError(
+                "Only single queries are supported. Please provide a single SQL statement."
+            )
+        query_expression = parsed_query[0]
+        assert query_expression is not None, "query could not be parsed"
+
         headers = {
             "Content-Type": "application/json",
         }
@@ -47,7 +75,10 @@ class Client:
             response = requests.post(
                 f"{self.__base_url}sql",
                 headers=headers,
-                json={"query": query, "format": "minimal"},
+                json={
+                    "query": query_expression.sql(dialect=output_dialect),
+                    "format": "minimal",
+                },
                 stream=True,
             )
             response.raise_for_status()

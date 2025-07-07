@@ -1,4 +1,4 @@
-import { DataTableCellComponentProps } from "../../../lib/data-table";
+import { DataTableCellComponentProps } from "@/lib/data-table";
 
 type ProjectValue = {
   name: number;

@@ -1,8 +1,8 @@
-import { ApolloWrapper } from "../components/dataprovider/apollo-wrapper";
-import { PostHogProvider } from "../components/dataprovider/posthog-provider";
-import { SupabaseProvider } from "../components/hooks/supabase";
-import { GoogleAnalytics } from "../components/widgets/google-analytics";
-import "./globals.css";
+import { ApolloWrapper } from "@/components/dataprovider/apollo-wrapper";
+import { PostHogProvider } from "@/components/dataprovider/posthog-provider";
+import { SupabaseProvider } from "@/components/hooks/supabase";
+import { GoogleAnalytics } from "@/components/widgets/google-analytics";
+import "@/app/globals.css";
 
 export default function RootLayout({
   children,

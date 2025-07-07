@@ -47,8 +47,12 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     if "releases" in config["table_name"]:
         return None
     
+    if "worldchain_users_aggregation" in config["table_name"]:
+        return None
+    
     if "data_category=blockchain" in config["additional_tags"]:
         options["ignore_before"] = constants.superchain_audit_start
+        options["ignore_after"] = constants.superchain_audit_end
         options["missing_rate_min_threshold"] = 0.95
 
     return (
@@ -68,10 +72,11 @@ timeseries_metrics(
         "int_events_daily__blockchain",
         "int_events_daily__blockchain_token_transfers",
         "int_events_daily__4337",
-        "int_events_daily__defillama_tvl",
+        "int_events_daily__defillama",
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
+        "int_worldchain_events_by_project",
     ],
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
@@ -444,6 +449,24 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=blockchain"],
         ),
+        "worldchain_users_aggregation": MetricQueryDef(
+            ref="blockchain/worldchain_users.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Worldchain Users Aggregation",
+                description="Metrics related to Worldchain users",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
         "gas_fees": MetricQueryDef(
             ref="blockchain/gas_fees.sql",
             time_aggregations=[
@@ -459,6 +482,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Gas Fees",
                 description="Metrics related to blockchain gas fees",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
+        "gas_fees_internal": MetricQueryDef(
+            ref="blockchain/gas_fees_internal.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["project"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Gas Fees (Including Internal Transactions)",
+                description="Metrics related to blockchain gas fees (including internal transactions)",
             ),
             additional_tags=["data_category=blockchain"],
         ),
@@ -532,6 +573,45 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Defillama TVL",
                 description="Metrics related to Defillama TVL",
+            ),
+            additional_tags=["data_category=defillama"],
+        ),
+        "defillama_trading_volume": MetricQueryDef(
+            ref="blockchain/defillama_trading_volume.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            incremental=False,
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Defillama Trading Volume",
+                description="Metrics related to daily trading volume reported by Defillama",
+            ),
+            additional_tags=["data_category=defillama"],
+        ),
+
+        "defillama_lp_fee": MetricQueryDef(
+            ref="blockchain/defillama_lp_fee.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            incremental=False,
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Defillama LP Fees",
+                description="Metrics related to daily LP fees reported by Defillama",
             ),
             additional_tags=["data_category=defillama"],
         ),
@@ -609,5 +689,23 @@ timeseries_metrics(
         #         "data_category=dependencies",
         #     ],
         # ),
-    },
+        "bot_activity": MetricQueryDef(
+            ref="code/bot_activity.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Bot Activity",
+                description="Metrics related to bot activity on GitHub",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+    }, 
 )
