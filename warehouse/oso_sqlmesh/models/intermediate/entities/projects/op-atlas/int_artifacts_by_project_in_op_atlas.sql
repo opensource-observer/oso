@@ -87,7 +87,7 @@ github_urls AS (
     atlas_id,
     value AS repository_url
   FROM oso.seed_op_atlas_registry_updates
-  WHERE action = 'INCLUDE' AND artifact_type = 'GITHUB_REPOSITORY'
+  WHERE TRIM(action) = 'INCLUDE' AND artifact_type = 'GITHUB_REPOSITORY'
   UNION
   SELECT
     atlas_id,
@@ -166,7 +166,7 @@ defillama_slugs AS (
   FROM oso.stg_op_atlas_project_defillama AS stg
   LEFT JOIN oso.seed_op_atlas_registry_updates AS updates
     ON updates.atlas_id = stg.atlas_id
-    AND updates.action = 'EXCLUDE'
+    AND TRIM(updates.action) = 'EXCLUDE'
     AND updates.artifact_type = 'DEFILLAMA_PROTOCOL'
   WHERE updates.value IS NULL
   UNION
@@ -175,7 +175,7 @@ defillama_slugs AS (
     value AS defillama_slug
   FROM oso.seed_op_atlas_registry_updates
   WHERE
-    action = 'INCLUDE'
+    TRIM(action) = 'INCLUDE'
     AND artifact_type = 'DEFILLAMA_PROTOCOL'
 ),
 defillama_artifacts AS (
@@ -211,7 +211,7 @@ oso_linked_slugs AS (
   FROM op_atlas_projects AS op
   LEFT JOIN oso.seed_op_atlas_registry_updates AS updates
     ON updates.atlas_id = op.atlas_id
-    AND updates.action = 'INCLUDE'
+    AND TRIM(updates.action) = 'INCLUDE'
     AND updates.artifact_type = 'OSO_SLUG'
 ),
 oso_linked_projects AS (
