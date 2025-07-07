@@ -48,8 +48,6 @@ class QueryBuilder(QueryRegistry):
             select_expr = Select(query=select)
 
             alias = select_expr.alias()
-            print("alias")
-            print(alias)
 
             references = select_expr.references()
             reference = references[0]

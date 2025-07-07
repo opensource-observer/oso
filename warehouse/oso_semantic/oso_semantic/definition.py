@@ -378,7 +378,9 @@ class GenericExpression(BaseModel):
        considered should specifically be references to the _actual_ column names
        on the underlying table.
     2. SemanticExpression: This is a semantic expression that is in the semantic
-       context and can reference other models and attributes.
+       context and can reference models and attributes. When used in a dimension
+       or measure it may only reference `self`. In queries, it may reference any
+       model attribute available in the registry.
 
     In both cases, the query string is processed at the time of instantiation
     and all references to columns or other semantic layer attributes are
