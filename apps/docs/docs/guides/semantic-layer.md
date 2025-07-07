@@ -472,7 +472,7 @@ registry.register(Model(
 ```
 
 In this we have now defined the relationships between the `artifact` and the
-`project` by mapping how the reference in one model tranlates to the referenced
+`project` by mapping how the reference in one model translates to the referenced
 model. The relationships themselves are not defined using model objects
 explicity but rather reference models by names. This allows a more flexible way
 to define each of the models. Once you start querying the models, however, the
