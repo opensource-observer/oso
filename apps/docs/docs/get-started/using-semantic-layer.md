@@ -54,6 +54,22 @@ you'd be querying against:
   are the actual values where `metrics` is the directory of available metric
   types stored in these tables.
 
+:::Note
+The list above is not exhaustive. For more information on the available
+models, you can always refer to the live documentation inside the semantic
+layer. This can be accessed by using the `describe` method on the `semantic`
+object in the `pyoso` client:
+
+```python
+from pyoso import Client
+
+oso = Client()
+
+print(oso.semantic.describe())
+```
+
+:::
+
 ### A basic query
 
 Let's consider a basic query that only seeks to find all artifacts within a

@@ -370,7 +370,7 @@ registry = Registry()
 
 
 registry.register(Model(
-    name="project",
+    name="projects",
     description="A project is a collection of artifacts",
     primary_key="project_id",
     dimensions=[
@@ -471,15 +471,15 @@ registry.register(Model(
 ))
 ```
 
-In this we have now defined the relationships between the `artifact` and the
-`project` by mapping how the reference in one model translates to the referenced
+In this we have now defined the relationships between the `artifacts` and the
+`projects` by mapping how the reference in one model translates to the referenced
 model. The relationships themselves are not defined using model objects
 explicity but rather reference models by names. This allows a more flexible way
 to define each of the models. Once you start querying the models, however, the
 registry is treated as immutable and the relationships are validated to ensure
 that the model and any relationships are valid and do not have cycles.
 
-Now if we query for both `artifact` model attributes and `project` model
+Now if we query for both `artifacts` model attributes and `projects` model
 attributes, the semantic layer will automatically join the two models together:
 
 ```python
