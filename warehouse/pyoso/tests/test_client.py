@@ -143,7 +143,7 @@ class TestClient(TestCase):
         client = Client(api_key=self.CUSTOM_API_KEY)
 
         # Test the semantic select functionality
-        query_builder = client.semantic.select("users.id", "users.name")
+        query_builder = client.semantic.select("users", ["id", "name"])
         query_str = query_builder.build().sql(dialect="trino")
         result_df = query_builder.to_pandas()
 

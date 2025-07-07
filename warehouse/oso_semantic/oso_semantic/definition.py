@@ -42,9 +42,13 @@ def coerce_to_tables_column(ref: str, expected_table: str = "self") -> exp.Expre
 
 class QueryRegistry(t.Protocol):
     def __init__(self, registry: Registry): ...
+
     def add_reference(self, reference: AttributePath) -> t.Self: ...
-    def select(self, *selects: str) -> t.Self: ...
+
+    def select(self, model_name: str, columns: list[str]) -> t.Self: ...
+
     def where(self, *filters: str) -> t.Self: ...
+
     def limit(self, limit: int) -> t.Self: ...
 
     def build(self) -> exp.Expression: ...
@@ -298,26 +302,13 @@ class Registry(t.Generic[Q]):
     def get_view(self, name: str) -> "View":
         return self.views[name]
 
-    def query_from_object(self, semantic_query: "SemanticQuery"):
-        """Allows initializing a query builder from a SemanticQuery object."""
-
-        query = self.select(*semantic_query.selects)
-        if semantic_query.filters:
-            query = query.where(*semantic_query.filters)
-        if semantic_query.limit:
-            query = query.add_limit(semantic_query.limit)
-        return query
-
-    def select(self, *selects: str):
+    def select(self, model_name: str, columns: list[str]):
         """Returns a new query builder for the registry"""
         if self.check_cycle:
             self.dag.check_cycle()
 
         query_builder = self.query_builder(self)
-        for select in selects:
-            if not isinstance(select, str):
-                raise ValueError(f"Select must be a string, got {type(select)}")
-        query_builder = query_builder.select(*selects)
+        query_builder = query_builder.select(model_name, columns)
         return query_builder
 
     def describe(self) -> str:

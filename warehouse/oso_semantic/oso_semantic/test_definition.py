@@ -141,11 +141,16 @@ def test_semantic_model_shortest_path():
 def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
     registry = setup_registry()
 
-    query = registry.select(
-        "int_events__github.event_type AS event_type",
-        "int_events__github.to->collections.collection_name AS collection_name",
-        "int_events__github.total_amount AS total_amount",
-    ).where("int_events__github.from->artifacts.artifact_name = 'repo1'")
+    query = (
+        registry.select(
+            "int_events__github",
+            ["event_type AS event_type", "total_amount AS total_amount"],
+        )
+        .select(
+            "int_events__github.to->collections", ["collection_name AS collection_name"]
+        )
+        .where("int_events__github.from->artifacts.artifact_name = 'repo1'")
+    )
 
     query_exp = query.build()
     assert query_exp is not None
@@ -153,6 +158,7 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
 
     result = semantic_db_conn.sql(query_exp.sql(dialect="duckdb"))
     result_df = result.df()
+    print(result_df)
     result_df = result_df.sort_values(by=["collection_name"])
     result_df = result_df.reset_index(drop=True)
     print(result_df)
@@ -333,7 +339,7 @@ def test_registry_cycle_detection():
 
     # Test that querying raises an error when cycle is detected
     try:
-        registry.select("model_a.id")
+        registry.select("model_a", ["id"])
         assert False, "Should have raised ValueError due to cycle"
     except ValueError as e:
         assert "Cycle detected" in str(e), f"Expected cycle error, got: {e}"

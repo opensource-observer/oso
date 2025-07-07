@@ -8,11 +8,17 @@ def test_query_builder_with_dimensions():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.select("int_events__github.month AS event_month")
-    query.select("int_events__github.event_source AS event_source")
-    query.select("int_events__github.from->artifacts.artifact_name")
-    query.select("int_events__github.to->collections.collection_name")
-    query.where("int_events__github.month = DATE '2023-01-01'")
+    query.select(
+        "int_events__github",
+        [
+            "month AS event_month",
+            "event_source AS event_source",
+        ],
+    ).select("int_events__github.from->artifacts", ["artifact_name"]).select(
+        "int_events__github.to->collections", ["collection_name"]
+    ).where(
+        "int_events__github.month = DATE '2023-01-01'"
+    )
 
     query_exp = query.build()
 
@@ -34,8 +40,7 @@ def test_query_builder_with_metrics():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.select("collections.collection_name")
-    query.select("projects.count AS project_count")
+    query.select("collections", ["collection_name"]).select("projects", ["count"])
 
     query_exp = query.build()
 
@@ -57,7 +62,7 @@ def test_query_builder_with_metric_and_filtered_dimension():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.select("projects.count")
+    query.select("projects", ["count"])
     query.where("projects.by_collection->collections.collection_name = 'optimism'")
 
     query_exp = query.build()

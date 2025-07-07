@@ -42,7 +42,10 @@ class QueryBuilder(QueryRegistry):
 
         return self
 
-    def select(self, *selects: str):
+    def select(self, model_name: str, columns: list[str]):
+        return self._select(*[f"{model_name}.{column}" for column in columns])
+
+    def _select(self, *selects: str):
         """Add a model attribute to the select clause"""
         for select in selects:
             select_expr = Select(query=select)

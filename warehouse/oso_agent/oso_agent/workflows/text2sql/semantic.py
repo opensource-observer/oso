@@ -20,7 +20,7 @@ from oso_agent.workflows.types import (
     SQLResultSummaryResponseEvent,
     Text2SQLGenerationEvent,
 )
-from oso_semantic import Registry
+from oso_semantic import QueryBuilder, Registry
 from oso_semantic.definition import SemanticQuery
 
 logger = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ class SemanticText2SQLWorkflow(
 
         registry: Registry = self.resolver.get_resource("registry")
 
-        query_builder = registry.select(*structured_query.selects)
+        query_builder = QueryBuilder(registry)._select(*structured_query.selects)
 
         if structured_query.filters:
             for f in structured_query.filters:
