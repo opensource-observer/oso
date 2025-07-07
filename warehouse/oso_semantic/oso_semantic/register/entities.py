@@ -57,18 +57,21 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
             primary_key="artifact_id",
             relationships=[
                 Relationship(
+                    name="by_project",
                     source_foreign_key="artifact_id",
                     ref_model="artifacts_by_project",
                     ref_key="artifact_id",
                     type=RelationshipType.ONE_TO_MANY,
                 ),
                 Relationship(
+                    name="by_collection",
                     source_foreign_key="artifact_id",
                     ref_model="artifacts_by_collection",
                     ref_key="artifact_id",
                     type=RelationshipType.ONE_TO_MANY,
                 ),
                 Relationship(
+                    name="by_user",
                     source_foreign_key="artifact_id",
                     ref_model="artifacts_by_user",
                     ref_key="artifact_id",
@@ -136,6 +139,7 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
             primary_key="project_id",
             relationships=[
                 Relationship(
+                    name="by_collection",
                     source_foreign_key="project_id",
                     ref_model="projects_by_collection",
                     ref_key="project_id",

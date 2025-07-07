@@ -57,15 +57,15 @@ def test_query_builder_with_metric_and_filtered_dimension():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.select("project.count")
-    query.where("project.by_collection->collection.name = 'optimism'")
+    query.select("projects.count")
+    query.where("projects.by_collection->collections.collection_name = 'optimism'")
 
     query_exp = query.build()
 
     assert query_exp.expressions is not None
     assert len(query_exp.expressions) == 1
     alias = query_exp.expressions[0].alias
-    assert alias == "project_count"
+    assert alias == "projects_count"
     count_exp = query_exp.expressions[0].this
     assert isinstance(count_exp, exp.Count)
     column_exp = count_exp.this

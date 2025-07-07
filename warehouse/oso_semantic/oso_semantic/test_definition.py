@@ -172,46 +172,46 @@ def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
 
 def test_resolve_attributes(semantic_registry: Registry):
     # Test resolving a single attribute
-    ref0 = SemanticExpression(query="artifact.name")
+    ref0 = SemanticExpression(query="artifacts.artifact_name")
 
     resolved_expr0 = ref0.resolve(semantic_registry)
     assert resolved_expr0 is not None
     assert (
-        resolved_expr0 == parse_one("artifact_8e5b948a.artifact_name")
+        resolved_expr0 == parse_one("artifacts_e4e2753c.artifact_name")
     ), "Resolved expression should match expected SQL expression"
 
-    ref1 = SemanticExpression(query="github_event.to->artifact.id")
+    ref1 = SemanticExpression(query="int_events__github.to->artifacts.artifact_id")
     resolved_expr1 = ref1.resolve(semantic_registry)
 
     assert resolved_expr1 is not None
     assert resolved_expr1 == parse_one(
-        "artifact_1b71f23f.artifact_id"
+        "artifacts_b52061f6.artifact_id"
     )
 
     # Test resolving a more complex expression
-    ref2 = SemanticExpression(query="github_event.month")
+    ref2 = SemanticExpression(query="int_events__github.month")
     resolved_expr2 = ref2.resolve(semantic_registry)
     assert resolved_expr2 is not None
-    assert resolved_expr2 == parse_one("DATE_TRUNC('month', github_event_420c9a8e.time::date)")
+    assert resolved_expr2 == parse_one("DATE_TRUNC('month', int_events__github_022877ad.bucket_day)")
 
 
 def test_expand_reference():
     registry = setup_registry()
 
-    ref = AttributePath.from_string("github_event.to->artifact.id")
+    ref = AttributePath.from_string("int_events__github.to->artifacts.artifact_id")
     expanded_refs = registry.expand_reference(ref)
 
     assert len(expanded_refs) == 1
-    assert expanded_refs[0] == AttributePath.from_string("github_event.to->artifact.id")
+    assert expanded_refs[0] == AttributePath.from_string("int_events__github.to->artifacts.artifact_id")
 
     # # Test with a more complex reference
-    complex_ref = AttributePath.from_string("github_event.month")
+    complex_ref = AttributePath.from_string("int_events__github.month")
     complex_expanded_refs = registry.expand_reference(complex_ref)
     print(complex_expanded_refs)
     assert len(complex_expanded_refs) == 2
     assert complex_expanded_refs == [
-        AttributePath.from_string("github_event.month"),
-        AttributePath.from_string("github_event.time"),
+        AttributePath.from_string("int_events__github.month"),
+        AttributePath.from_string("int_events__github.bucket_day"),
     ]
 
 def test_attribute_reference_transformer():
@@ -242,8 +242,6 @@ def test_attribute_reference_transformer():
 
 
 def test_resolve_measures():
-    # registry = setup_registry()
-
     registry = Registry()
 
     model = Model(
@@ -269,7 +267,7 @@ def test_resolve_measures():
     assert isinstance(measure, BoundMeasure), "count should be a BoundMetric"
     assert measure is not None, "metric should not be None"
 
-    ref = AttributePath.from_string("artifact.id")
+    ref = AttributePath.from_string("artifacts.artifact_id")
     assert measure.references() == [ref], "Measure should reference artifact.id"
 
 
@@ -686,12 +684,12 @@ def test_dag_find_best_join_tree_no_path():
 
 def test_semantic_expression():
     registry = setup_registry()
-    project_count_expression = SemanticExpression(query="project.count > 10")
+    project_count_expression = SemanticExpression(query="projects.count > 10")
 
     assert project_count_expression.references() == [
-        AttributePath.from_string("project.count")
+        AttributePath.from_string("projects.count")
     ]
 
     final_expression = project_count_expression.resolve(registry)
 
-    assert final_expression == parse_one("COUNT(project_46f86faa.project_id) > 10")
+    assert final_expression == parse_one("COUNT(projects_35a2864c.project_id) > 10")
