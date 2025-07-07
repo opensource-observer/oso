@@ -16,8 +16,6 @@ def test_query_builder_with_dimensions():
 
     query_exp = query.build()
 
-    print(query_exp.sql(pretty=True, dialect="duckdb"))
-
     joins = list(query_exp.find_all(exp.Join))
 
     assert len(joins) == 6
@@ -41,8 +39,6 @@ def test_query_builder_with_metrics():
     query.select("project.count AS project_count")
 
     query_exp = query.build()
-
-    print(query_exp.sql(pretty=True, dialect="duckdb"))
 
     joins = list(query_exp.find_all(exp.From)) + list(query_exp.find_all(exp.Join))
 

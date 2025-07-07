@@ -82,6 +82,7 @@ def register_oso_models(registry: Registry, catalog_name: str = "iceberg"):
             primary_key="project_id",
             relationships=[
                 Relationship(
+                    name="by_collection",
                     source_foreign_key="project_id",
                     ref_model="projects_by_collection",
                     ref_key="project_id",
@@ -169,6 +170,7 @@ def register_oso_models(registry: Registry, catalog_name: str = "iceberg"):
             primary_key="artifact_id",
             relationships=[
                 Relationship(
+                    name="by_project",
                     source_foreign_key="artifact_id",
                     ref_model="artifacts_by_project",
                     ref_key="artifact_id",

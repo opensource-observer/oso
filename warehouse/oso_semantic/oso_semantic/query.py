@@ -5,6 +5,7 @@ from sqlglot import exp
 
 from .definition import (
     AttributePath,
+    AttributePathTraverser,
     BoundMeasure,
     BoundRelationship,
     Filter,
@@ -115,7 +116,9 @@ class QueryBuilder(QueryRegistry):
 
         for i in range(len(select_parts)):
             part = select_parts[i]
-            select_expressions.append(part.expression.resolve("", self._registry))
+            resolved = part.expression.resolve("", self._registry)
+            alias = self._select_aliases[i]
+            select_expressions.append(resolved.as_(alias))
 
             if not part.is_aggregate:
                 group_by_expressions.append(str(i + 1))
@@ -125,7 +128,7 @@ class QueryBuilder(QueryRegistry):
 
         base_model = self._root_model
         base_table = base_model.table_exp.as_(
-            AttributePath.from_string("").traverser().alias(base_model.name)
+            AttributePathTraverser.from_root().alias(base_model.name)
         )  # Use an empty path to get the root model alias
         query = query.from_(base_table)
 

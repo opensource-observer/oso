@@ -415,7 +415,6 @@ class GenericExpression(BaseModel):
 
         def convert_column(node: exp.Expression):
             if isinstance(node, exp.Anonymous):
-                print("Converting anonymous expression:", repr(node))
                 anonymous_function_name = exp_to_str(node.this)
                 if anonymous_function_name not in ["$semantic_ref", "$column_ref"]:
                     # If this is not a semantic reference or column reference, we can skip it
@@ -444,14 +443,12 @@ class GenericExpression(BaseModel):
                                 registry=registry,
                                 traverser=column_traverser,
                             )
-                            print("Resolved dimension:", repr(resolved))
                             return resolved
                         case BoundMeasure():
                             resolved = attribute.resolve(
                                 registry=registry,
                                 traverser=column_traverser,
                             )
-                            print("Resolved measure:", repr(resolved))
                             return resolved
                         case BoundRelationship():
                             raise ValueError(
@@ -459,17 +456,12 @@ class GenericExpression(BaseModel):
                             )
 
                 elif anonymous_function_name == "$column_ref":
-                    print("column ref")
-                    print(column_traverser.index)
-                    print(column_traverser.current_table_alias)
                     # If this is a column reference then we need to simply resolve to the model's column
                     col = exp.to_column(
                         f"{column_traverser.alias(current_model_name)}.{column_traverser.current_attribute_name}",
                     )
                     return col
             return node
-
-        print("Converting expression:", repr(self._expression))
 
         return self._expression.transform(convert_column)
 

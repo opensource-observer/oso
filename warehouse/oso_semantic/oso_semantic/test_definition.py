@@ -687,7 +687,4 @@ def test_semantic_expression():
 
     final_expression = project_count_expression.resolve("", registry)
 
-    print(repr(final_expression))
-
-    print("boop")
-    assert final_expression == parse_one("COUNT(project.project_id) > 10")
+    assert final_expression == parse_one("COUNT(project_46f86faa.project_id) > 10")
