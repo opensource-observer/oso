@@ -25,7 +25,7 @@ It's extremely important to use these IDs consistently across models to ensure d
 
 ### Events
 
-Events represent actions or interactions that occur between entities. These can include things like commits, contract interactions, package imports, funding events, and more. Events are typically brought in from [public databases](../integrate/datasets/index.mdx) via staging models.
+Events represent actions or interactions that occur between entities. These can include things like commits, contract interactions, package imports, funding events, and more. Events are typically brought in from [public databases](../../integrate/datasets/index.mdx) via staging models.
 
 We currently do not have a deterministic way to generate event IDs, but we are working on a solution to this problem. In the meantime, events are differentiated by their source, type, timestamp, and the to/from entities involved.
 

@@ -31,7 +31,7 @@ git clone https://github.com/opensource-observer/oss-directory.git
 ### Run SQLMesh locally
 
 - **Location**: [`warehouse/oso_sqlmesh`](https://github.com/opensource-observer/oso/tree/main/warehouse/oso_sqlmesh)
-- **Guide**: [SQLMesh Setup Guide](../contribute-models/setup.md)
+- **Guide**: [SQLMesh Quickstart Guide](../contribute-models/sqlmesh/quickstart.md)
 
 You should be able to run a `sqlmesh plan` successfully, eg:
 
