@@ -46,7 +46,6 @@ jobs:
           node-version: "20.x"
 
       - name: Build
-        if: github.repository_owner != 'opensource-observer'
         run: pnpm build:docs
 
       - name: Install wrangler
