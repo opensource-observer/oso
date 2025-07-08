@@ -198,7 +198,7 @@ importers:
         version: 5.0.0-alpha.1(@mui/material@5.16.0(@emotion/react@11.14.0(@types/react@18.3.11)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.11)(react@18.3.1))(@types/react@18.3.11)(react@18.3.1))(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(formik@2.4.6(react@18.3.1))(react@18.3.1)(tiny-warning@1.0.3)
       formik-mui-x-date-pickers:
         specifier: ^1.0.0
-        version: 1.0.0(d50c1871fb7030c4cc9f48f318f7ba95)
+        version: 1.0.0(cbbyjq4p6erp3flzp2wa6pm6eu)
       generate-api-key:
         specifier: ^1.0.2
         version: 1.0.2
@@ -519,8 +519,8 @@ importers:
         specifier: ^7.1.0
         version: 7.1.0
       libsodium-wrappers:
-        specifier: ^0.7.13
-        version: 0.7.13
+        specifier: ^0.7.15
+        version: 0.7.15
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -580,8 +580,8 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       libsodium-wrappers:
-        specifier: ^0.7.13
-        version: 0.7.13
+        specifier: ^0.7.15
+        version: 0.7.15
       octokit:
         specifier: ^5.0.3
         version: 5.0.3
@@ -8498,11 +8498,11 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  libsodium-wrappers@0.7.13:
-    resolution: {integrity: sha512-kasvDsEi/r1fMzKouIDv7B8I6vNmknXwGiYodErGuESoFTohGSKZplFtVxZqHaoQ217AynyIFgnOVRitpHs0Qw==}
+  libsodium-wrappers@0.7.15:
+    resolution: {integrity: sha512-E4anqJQwcfiC6+Yrl01C1m8p99wEhLmJSs0VQqST66SbQXXBoaJY0pF4BNjRYa/sOQAxx6lXAaAFIlx+15tXJQ==}
 
-  libsodium@0.7.13:
-    resolution: {integrity: sha512-mK8ju0fnrKXXfleL53vtp9xiPq5hKM0zbDQtcxQIsSmxNgSxqCj6R7Hl9PkrNe2j29T4yoDaF7DJLK9/i5iWUw==}
+  libsodium@0.7.15:
+    resolution: {integrity: sha512-sZwRknt/tUpE2AwzHq3jEyUU5uvIZHtSssktXq7owd++3CSgn8RGrv6UZJJBpP7+iBghBqe7Z06/2M31rI2NKw==}
 
   lilconfig@2.1.0:
     resolution: {integrity: sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==}
@@ -21818,7 +21818,7 @@ snapshots:
     dependencies:
       fetch-blob: 3.2.0
 
-  formik-mui-x-date-pickers@1.0.0(d50c1871fb7030c4cc9f48f318f7ba95):
+  formik-mui-x-date-pickers@1.0.0(cbbyjq4p6erp3flzp2wa6pm6eu):
     dependencies:
       '@emotion/react': 11.14.0(@types/react@18.3.11)(react@18.3.1)
       '@emotion/styled': 11.14.0(@emotion/react@11.14.0(@types/react@18.3.11)(react@18.3.1))(@types/react@18.3.11)(react@18.3.1)
@@ -23741,11 +23741,11 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  libsodium-wrappers@0.7.13:
+  libsodium-wrappers@0.7.15:
     dependencies:
-      libsodium: 0.7.13
+      libsodium: 0.7.15
 
-  libsodium@0.7.13: {}
+  libsodium@0.7.15: {}
 
   lilconfig@2.1.0: {}
 
