@@ -8,33 +8,33 @@ from oso_agent.workflows.entity_context.llm_structured_output_workflow import (
     create_llm_structured_output_workflow,
 )
 from pydantic import BaseModel, Field
-from sqlglot import expressions as exp
+from sqlglot import exp
 
 
 class EntityVariantsOutput(BaseModel):
-    variants: list[str] = Field(..., description="Possible variants for the entity name.")
+    variants: list[str] = Field(description="Possible variants for the entity name.")
 
 class EntitySelectionOutput(BaseModel):
-    selected: str = Field(..., description="Selected canonical entity name.")
+    selected: str = Field(description="Selected canonical entity name.")
 
 EntityType = Literal["project", "collection", "chain", "metric", "artifact"]
 
 class EntityGuess(BaseModel):
-    name: str = Field(..., description="Exact text of the entity mention")
-    description: str = Field(..., description="Why this entity exists in the query")
-    ranking: list[EntityType] = Field(..., description="All six entity types, ordered from most- to least-likely")
+    name: str = Field(description="Exact text of the entity mention")
+    description: str = Field(description="Why this entity exists in the query")
+    ranking: list[EntityType] = Field(description="All six entity types, ordered from most- to least-likely")
 
 class EntityDeconstructorOutput(BaseModel):
-    entities: list[EntityGuess] = Field(..., description="Extracted entities with ranked type guesses")
+    entities: list[EntityGuess] = Field(description="Extracted entities with ranked type guesses")
 
 class ResolvedEntity(BaseModel):
-    name: str = Field(..., description="Entity name")
-    description: str = Field(..., description="Description of what the entity is")
-    entity_type: EntityType = Field(..., description="The resolved entity type")
+    name: str = Field(description="Entity name")
+    description: str = Field(description="Description of what the entity is")
+    entity_type: EntityType = Field(description="The resolved entity type")
 
 class EntityResolutionResult(BaseModel):
-    nl_query: str = Field(..., description="Original natural language query")
-    entities: list[ResolvedEntity] = Field(..., description="Successfully resolved entities")
+    nl_query: str = Field(description="Original natural language query")
+    entities: list[ResolvedEntity] = Field(description="Successfully resolved entities")
 
 LOOKUP_TABLE: dict[EntityType, dict[str, list[str]]] = {
     "project": {"table": ["projects_v1"], "columns": ["project_name", "display_name"]},

@@ -416,7 +416,7 @@ def setup_mcp_app(config: MCPConfig):
         query_text2sql_agent_result = await query_text2sql_agent(entities_plus_nl_query, ctx)
         return query_text2sql_agent_result
     
-    # nl query in -> list of resolved e ntities out
+    # nl query in -> list of resolved entities out
     async def gather_all_entities_and_search(nl_query: str, ctx: Context) -> list[ResolvedEntity]:
         # extract entities from the query 
         entity_deconstructor_result = await extract_entities_from_nl_query(nl_query, config)
@@ -433,7 +433,7 @@ def setup_mcp_app(config: MCPConfig):
                 # build the sql query
                 sql = build_fuzzy_entity_search_sql(normalized_variants, entity_type)
                 # execute the query
-                resp = await query_oso(sql, ctx, limit=1)
+                resp = await query_oso(sql, ctx)
                 
                 if isinstance(resp, McpSuccessResponse) and resp.results:
                     # select the correct row from the search result
