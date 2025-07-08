@@ -5,6 +5,7 @@ queries into structured semantic queries using a specialized LLM.
 
 import logging
 from functools import partial
+from typing import Optional
 
 from llama_index.core import PromptTemplate
 from llama_index.core.base.response.schema import Response
@@ -332,11 +333,18 @@ Combine dimensions, measures, and relationships:
 
 # User's Natural Language Query
 {natural_language_query}
+
+# Error Feedback (if retrying after a previous failure)
+{error_feedback}
 """
 
 
 async def _translate_nl_to_semantic(
-    natural_language_query: str, *, llm: LLM, semantic_model_description: str
+    natural_language_query: str,
+    *,
+    llm: LLM,
+    semantic_model_description: str,
+    error_feedback: Optional[str] = None,
 ) -> Response:
     """
     The core logic for the tool. It uses a structured LLM to perform the translation.
@@ -349,6 +357,13 @@ async def _translate_nl_to_semantic(
         prompt_template,
         natural_language_query=natural_language_query,
         semantic_model_description=semantic_model_description,
+        error_feedback=error_feedback or "",
+    )
+
+    logger.debug(
+        "Translated natural language query '%s' to structured semantic query: %s",
+        natural_language_query,
+        structured_response,
     )
 
     return Response(
@@ -357,9 +372,7 @@ async def _translate_nl_to_semantic(
     )
 
 
-def create_semantic_query_tool(
-    llm: LLM, registry_description: str
-) -> FunctionTool:
+def create_semantic_query_tool(llm: LLM, registry_description: str) -> FunctionTool:
     """
     Factory function to create an instance of the SemanticQueryTool.
 
