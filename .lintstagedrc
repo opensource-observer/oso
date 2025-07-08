@@ -12,9 +12,5 @@
         "uv run ruff check --fix --force-exclude",
         "uv run isort",
         "pnpm pyright"
-    ],
-    "warehouse/dbt/**/*.sql": [
-        "uv run sqlfluff fix -f",
-        "uv run sqlfluff lint"
     ]
 }

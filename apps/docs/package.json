@@ -26,7 +26,7 @@
     "@docusaurus/preset-classic": "3.7.0",
     "@docusaurus/theme-common": "3.7.0",
     "@mdx-js/react": "^3.1.0",
-    "@plasmicapp/react-web": "^0.2.389",
+    "@plasmicapp/react-web": "^0.2.393",
     "@plasmicpkgs/antd5": "^0.0.279",
     "@plasmicpkgs/plasmic-basic-components": "^0.0.234",
     "clsx": "^2.1.1",
@@ -42,7 +42,7 @@
     "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.23.0",
-    "@plasmicapp/cli": "^0.1.338",
+    "@plasmicapp/cli": "0.1.340",
     "dotenv": "^16.4.7",
     "typescript": "~5.8.2"
   },

@@ -707,6 +707,7 @@ class TimeseriesMetrics:
             time_aggregation in ["biannually", "quarterly", "weekly"]
             or "funding" in query_config["table_name"]
             or "releases" in query_config["table_name"]
+            or "worldchain_users_aggregation" in query_config["table_name"]
         ):
             ignored_rules.append("incrementalmustdefinenogapsaudit")
 

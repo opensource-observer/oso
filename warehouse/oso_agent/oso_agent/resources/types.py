@@ -20,7 +20,9 @@ class ResourceDependency(t.Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
 
-    def __get__(self, obj: ResolverEnabled, owner: t.Any) -> V:
+    def __get__(self, obj: ResolverEnabled | None, owner: t.Any) -> V:
+        if obj is None:
+            return self  # type: ignore
         return obj.resolve_resource(self._name, self._default_factory)
 
     def __set__(self, obj: t.Optional[object], value: V) -> None:
