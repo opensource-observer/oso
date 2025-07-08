@@ -1,0 +1,99 @@
+---
+title: Contribute with SQLMesh
+sidebar_position: 0
+---
+
+OSO uses SQLMesh to manage our data models. SQLMesh is a powerful open-source SQL transformation framework that enables you to develop, test, and deploy SQL-based data transformations with confidence.
+
+This section provides a comprehensive guide to contributing data models to OSO using SQLMesh.
+
+### Getting Started
+
+<div className="card">
+  <a href="./quickstart">
+    <h5>Quickstart: Contribute Your First Model</h5>
+  </a>
+  <p>A step-by-step tutorial to get you up and running with a simple "hello world" data model.</p>
+</div>
+
+### Core Concepts
+
+<div className="card">
+  <a href="./core-concepts">
+    <h5>Core Data Modeling Concepts</h5>
+  </a>
+  <p>Learn about entities, events, metrics, and the hierarchical structure of our data models.</p>
+</div>
+
+### How-To Guides
+
+<div className="card">
+  <a href="./how-to-guides/contribute-a-data-model">
+    <h5>Contribute a Data Model</h5>
+  </a>
+  <p>The complete workflow for designing, implementing, and submitting a new data model.</p>
+</div>
+<div className="card">
+  <a href="./how-to-guides/create-a-time-series-metric">
+    <h5>Create a Time-Series Metric</h5>
+  </a>
+  <p>A focused guide on adding a new time-series metric using the metrics factory.</p>
+</div>
+<div className="card">
+  <a href="./how-to-guides/test-and-validate-models">
+    <h5>Test and Validate Models</h5>
+  </a>
+  <p>Learn how to test your models locally with DuckDB and Trino.</p>
+</div>
+
+### Reference
+
+<div className="card">
+  <a href="./advanced-topics/model-configuration">
+    <h5>Model Configuration</h5>
+  </a>
+  <p>Details on naming conventions, materialization, partitioning, and grain settings.</p>
+</div>
+<div className="card">
+  <a href="./advanced-topics/metrics-factory-macros">
+    <h5>Metrics Factory Macros</h5>
+  </a>
+  <p>A complete reference for all special `@metrics_*` macros.</p>
+</div>
+<div className="card">
+  <a href="./advanced-topics/time-series-factory-internals">
+    <h5>Time-Series Factory Internals</h5>
+  </a>
+  <p>A deep dive into the technical implementation of the metrics factory.</p>
+</div>
+
+<style>
+{`
+  .card {
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease-in-out;
+    margin-bottom: 1rem;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  .card h5 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .card p {
+    margin: 0;
+  }
+`}
+</style>

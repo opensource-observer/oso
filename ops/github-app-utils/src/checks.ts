@@ -29,8 +29,8 @@ export type CheckOutput = {
 type CheckRequest = {
   name: string;
   head_sha: string;
-  status: string;
-  conclusion?: string;
+  status: CheckStatus;
+  conclusion?: CheckConclusion;
   output: CheckOutput;
 };
 
@@ -46,6 +46,6 @@ export async function setCheckStatus(
   return await gh.request("POST /repos/{owner}/{repo}/check-runs", {
     owner: owner,
     repo: repo,
-    data: request,
+    ...request,
   });
 }
