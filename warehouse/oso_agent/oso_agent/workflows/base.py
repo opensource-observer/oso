@@ -20,7 +20,6 @@ ResponseWrapper = t.Callable[[t.Any], WrappedResponse]
 tracer = trace.get_tracer(__name__)
 logger = logging.getLogger(__name__)
 
-
 class WorkflowMixer(WorkflowMeta):
     def __new__(cls, name: str, bases: t.Tuple[type, ...], dct: t.Dict[str, t.Any]):
         """Ensure that annotated resource dependencies have a default value in dct"""

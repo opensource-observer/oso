@@ -1,0 +1,25 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+**Strict Cursor Rules for Querying the Pyoso Data Lake**
+
+1. **Input → `gather_all_entities()`**
+
+   * Pass the *unaltered* natural-language query (NLQ) directly into `gather_all_entities()` **every time**.
+
+2. **Entities → `query_text2sql_agent()`**
+
+   * Feed **only** the exact output from `gather_all_entities()` into `query_text2sql_agent()`.
+   * Do **not** edit, reorder, or add to the entity list.
+
+3. **SQL String → Further Work**
+
+   * The response from `query_text2sql_agent()` is your finalized, properly formatted SQL query.
+   * Use this SQL string *as-is* for any subsequent execution or analysis.
+
+---
+
+**Workflow Summary:**
+NL query **→** (`gather_all_entities()` + `query_text2sql_agent()`) **→** correct SQL out

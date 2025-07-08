@@ -7,6 +7,7 @@ from ..resources import DefaultResourceResolver, ResolverFactory, ResourceResolv
 from ..util.config import AgentConfig
 from .registry import WorkflowRegistry
 from .text2sql.basic import BasicText2SQL
+from .text2sql.semantic import SemanticText2SQLWorkflow
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
     from oso_agent.tool.embedding import create_embedding
     from oso_agent.tool.llm import create_llm
     from oso_agent.tool.oso_mcp_client import OsoMcpClient
+    from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.query_engine_tool import create_default_query_engine_tool
     from oso_agent.tool.storage_context import setup_storage_context
     from oso_semantic.testing import setup_registry
@@ -34,9 +36,11 @@ async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
         synthesize_response=False,
     )
     registry = setup_registry()
+    semantic_query_tool = create_semantic_query_tool(llm=llm, registry_description=registry.describe())
 
     return DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
+        semantic_query_tool=semantic_query_tool,
         llm=llm,
         embedding=embedding,
         storage_context=storage_context,
@@ -49,6 +53,7 @@ async def setup_default_workflow_registry(config: AgentConfig, resolver_factory:
     registry = WorkflowRegistry(config, resolver_factory)
 
     registry.add_workflow("basic_text2sql", BasicText2SQL)
+    registry.add_workflow("semantic_text2sql", SemanticText2SQLWorkflow)
 
     logger.info("Default agent registry setup complete.")
     return registry
