@@ -26,23 +26,31 @@ The OSO semantic layer provides a structured interface to the data warehouse tha
 A **Model** is an abstraction over a table in the data warehouse that represents a specific entity type. Each model corresponds to a single canonical table and defines the structure and relationships for that entity.
 
 **Key OSO Models:**
-- `artifact`: Represents the smallest atomic unit that can send/receive events (NPM packages, GitHub repos, Ethereum addresses, etc.)
-- `project`: A collection of related artifacts, typically representing an organization, company, team, or individual
-- `collection`: An arbitrary grouping of projects for analysis purposes (topical groups, event participants, etc.)
-- `github_event`: Events occurring on GitHub platforms
-- `artifacts_by_project`: Join table linking artifacts to projects (many-to-many relationship)
-- `projects_by_collection`: Join table linking projects to collections (many-to-many relationship)
+- `artifacts`: Represents the smallest atomic unit that can send/receive events (NPM packages, GitHub repos, Ethereum addresses, etc.)
+- `projects`: A collection of related artifacts, typically representing an organization, company, team, or individual
+- `collections`: An arbitrary grouping of projects for analysis purposes (topical groups, event participants, etc.)
+- `users`: User profiles from sources like GitHub, ENS, Farcaster.
+- `int_events__github`: Daily aggregated events from GitHub (commits, PRs, issues, etc.).
+- `int_events_daily__blockchain`: Daily aggregated events from various blockchains.
+- `int_events_daily__funding`: Daily aggregated funding events.
+- `metrics`: Metadata about unique metrics for analyzing project health and trends.
+- `timeseries_metrics_by_artifacts`: Time-series data for metrics on a per-artifact basis.
+- `timeseries_metrics_by_projects`: Time-series data for metrics on a per-project basis.
+- `artifacts_by_project`: Join table linking artifacts to projects.
+- `projects_by_collection`: Join table linking projects to collections.
+- `artifacts_by_collection`: Join table linking artifacts to collections.
+- `artifacts_by_user`: Join table linking artifacts to users.
 
 ## Dimensions
 A **Dimension** is a non-aggregated attribute of a model used for filtering, grouping, and detailed analysis.
 
 **Common Dimension Patterns:**
-- Identity dimensions: `artifact.id`, `project.id`, `collection.id`
-- Name dimensions: `artifact.name`, `project.name`, `collection.name`
-- Classification dimensions: `artifact.source`, `artifact.namespace`
-- Descriptive dimensions: `project.description`, `collection.description`
-- Temporal dimensions: `github_event.time`
-- URL dimensions: `artifact.url`
+- Identity dimensions: `artifacts.artifact_id`, `projects.project_id`, `collections.collection_id`, `users.user_id`
+- Name dimensions: `artifacts.artifact_name`, `projects.project_name`, `collections.collection_name`, `users.display_name`
+- Classification dimensions: `artifacts.artifact_source`, `artifacts.artifact_namespace`, `projects.project_source`
+- Descriptive dimensions: `projects.description`, `collections.description`, `users.bio`
+- Temporal dimensions: `int_events__github.bucket_day`, `timeseries_metrics_by_artifacts.sample_date`
+- URL dimensions: `users.url`, `users.profile_picture_url`
 
 ## Measures
 A **Measure** is an aggregated attribute that summarizes data across multiple rows, typically using functions like COUNT, SUM, AVG, etc.
@@ -50,7 +58,7 @@ A **Measure** is an aggregated attribute that summarizes data across multiple ro
 **Important Measure Rules:**
 - NEVER use raw SQL aggregation functions (COUNT(), SUM(), etc.)
 - ALWAYS use predefined measures from the semantic model
-- Common measures: `artifact.count`, `project.count`, `collection.count`, `github_event.count`
+- Common measures: `artifacts.count`, `projects.count`, `collections.count`, `int_events__github.count`, `int_events__github.total_amount`, `timeseries_metrics_by_artifacts.sum`, `timeseries_metrics_by_artifacts.avg`
 - Measures can be filtered using HAVING clauses in generated SQL
 
 ## Relationships
@@ -63,15 +71,17 @@ A **Measure** is an aggregated attribute that summarizes data across multiple ro
 - `many_to_many`: Handled through join tables (like `artifacts_by_project`)
 
 **Key Relationship Patterns:**
-- `artifact.by_project`: Links artifacts to their projects
-- `project.by_collection`: Links projects to their collections  
-- `github_event.from`: Links events to source artifacts
-- `github_event.to`: Links events to target artifacts
+- `artifacts.by_project`: Links artifacts to their projects
+- `projects.by_collection`: Links projects to their collections  
+- `int_events__github.from`: Links events to source artifacts
+- `int_events__github.to`: Links events to target artifacts
+- `timeseries_metrics_by_artifacts.artifacts`: Links metrics to artifacts
+- `timeseries_metrics_by_artifacts.metrics`: Links metrics to metric definitions
 
 **IMPORTANT: Relationship Direction**
 Relationships are unidirectional in the semantic model:
-- ✅ Use `project.by_collection->collection.name` (correct direction)
-- ❌ Do NOT use `collection.by_project->project.name` (wrong direction - this relationship doesn't exist)
+- ✅ Use `projects.by_collection->collections.collection_name` (correct direction)
+- ❌ Do NOT use `collections.by_project->projects.project_name` (wrong direction - this relationship doesn't exist)
 
 # Advanced Semantic Query Construction
 
@@ -79,19 +89,19 @@ Relationships are unidirectional in the semantic model:
 Use the `->` operator to traverse relationships between models:
 
 **Basic Traversal:**
-- `project.by_collection->collection.name`: Get collection names for projects
-- `artifact.by_project->project.by_collection->collection.name`: Get collection names for artifacts
+- `projects.by_collection->collections.collection_name`: Get collection names for projects
+- `artifacts.by_project->projects.by_collection->collections.collection_name`: Get collection names for artifacts
 
 **Complex Multi-hop Traversal:**
-- `github_event.to->artifact.by_project->project.by_collection->collection.name`: Get collection names for artifacts that received GitHub events
+- `int_events__github.to->artifacts.by_project->projects.by_collection->collections.collection_name`: Get collection names for artifacts that received GitHub events
 
 ## Handling Ambiguous Joins
 Some models have multiple relationships to the same target model, creating ambiguity that MUST be resolved explicitly.
 
 **Event Model Ambiguity:**
 Events have both `from` and `to` relationships to artifacts. You MUST specify which path:
-- `github_event.from->artifact.name`: Name of artifact that initiated the event
-- `github_event.to->artifact.name`: Name of artifact that received the event
+- `int_events__github.from->artifacts.artifact_name`: Name of artifact that initiated the event
+- `int_events__github.to->artifacts.artifact_name`: Name of artifact that received the event
 
 **When Ambiguity Occurs:**
 - Multiple relationship paths exist between queried models
@@ -103,35 +113,35 @@ Events have both `from` and `to` relationships to artifacts. You MUST specify wh
 ### Dimension Filtering
 Filter on non-aggregated attributes:
 ```
-"artifact.source = 'GITHUB'"
-"collection.name = 'optimism'"
-"artifact.namespace = 'ethereum'"
-"github_event.time > '2023-01-01'"
+"artifacts.artifact_source = 'GITHUB'"
+"collections.collection_name = 'optimism'"
+"artifacts.artifact_namespace = 'ethereum'"
+"int_events__github.bucket_day > '2023-01-01'"
 ```
 
 ### Measure Filtering
 Filter on aggregated values (becomes HAVING clause):
 ```
-"artifact.count > 100"
-"project.count <= 50"
-"github_event.count >= 1000"
+"artifacts.count > 100"
+"projects.count <= 50"
+"int_events__github.count >= 1000"
 ```
 
 ### Relationship Filtering
 Filter through traversed relationships:
 ```
-"artifact.by_project->project.name = 'ethereum'"
-"github_event.to->artifact.source = 'GITHUB'"
-"artifact.by_project->project.by_collection->collection.name = 'defi'"
+"artifacts.by_project->projects.project_name = 'ethereum'"
+"int_events__github.to->artifacts.artifact_source = 'GITHUB'"
+"artifacts.by_project->projects.by_collection->collections.collection_name = 'defi'"
 ```
 
 ### Complex Filtering
 Combine multiple filters with AND logic:
 ```python
 "where": [
-    "collection.name = 'optimism'",
-    "github_event.time >= '2023-01-01'",
-    "github_event.count > 10"
+    "collections.collection_name = 'optimism'",
+    "int_events__github.bucket_day >= '2023-01-01'",
+    "int_events__github.count > 10"
 ]
 ```
 
@@ -141,7 +151,7 @@ Combine multiple filters with AND logic:
 Select individual attributes:
 ```json
 {
-    "select": ["artifact.name", "project.name", "collection.name"],
+    "select": ["artifacts.artifact_name", "projects.project_name", "collections.collection_name"],
     "where": []
 }
 ```
@@ -150,7 +160,7 @@ Select individual attributes:
 Select aggregated values:
 ```json
 {
-    "select": ["collection.count", "project.count"],
+    "select": ["collections.count", "projects.count"],
     "where": []
 }
 ```
@@ -159,7 +169,7 @@ Select aggregated values:
 Select through traversed relationships:
 ```json
 {
-    "select": ["github_event.time", "github_event.to->artifact.name"],
+    "select": ["int_events__github.bucket_day", "int_events__github.to->artifacts.artifact_name"],
     "where": []
 }
 ```
@@ -169,12 +179,12 @@ Combine dimensions, measures, and relationships:
 ```json
 {
     "select": [
-        "collection.name",
-        "collection.count", 
-        "project.name",
-        "project.count"
+        "collections.collection_name",
+        "collections.count", 
+        "projects.project_name",
+        "projects.count"
     ],
-    "where": ["collection.count > 5", "project.by_collection->collection.name IS NOT NULL"]
+    "where": ["collections.count > 5", "projects.by_collection->collections.collection_name IS NOT NULL"]
 }
 ```
 
@@ -187,7 +197,7 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["artifact.count"],
+    "select": ["artifacts.count"],
     "where": []
 }
 ```
@@ -197,8 +207,8 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["artifact.count"],
-    "where": ["artifact.source = 'GITHUB'"]
+    "select": ["artifacts.count"],
+    "where": ["artifacts.artifact_source = 'GITHUB'"]
 }
 ```
 
@@ -209,8 +219,8 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["project.count"],
-    "where": ["project.by_collection->collection.name = 'optimism'"]
+    "select": ["projects.count"],
+    "where": ["projects.by_collection->collections.collection_name = 'optimism'"]
 }
 ```
 
@@ -219,8 +229,8 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["artifact.name"],
-    "where": ["artifact.by_project->project.by_collection->collection.name = 'defi'"]
+    "select": ["artifacts.artifact_name"],
+    "where": ["artifacts.by_project->projects.by_collection->collections.collection_name = 'defi'"]
 }
 ```
 
@@ -231,7 +241,7 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["github_event.time", "github_event.from->artifact.name"],
+    "select": ["int_events__github.bucket_day", "int_events__github.from->artifacts.artifact_name"],
     "where": []
 }
 ```
@@ -241,7 +251,7 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["github_event.time", "github_event.to->artifact.name"],
+    "select": ["int_events__github.bucket_day", "int_events__github.to->artifacts.artifact_name"],
     "where": []
 }
 ```
@@ -252,9 +262,9 @@ Combine dimensions, measures, and relationships:
 ```json
 {
     "select": [
-        "github_event.time",
-        "github_event.from->artifact.name",
-        "github_event.to->artifact.name"
+        "int_events__github.bucket_day",
+        "int_events__github.from->artifacts.artifact_name",
+        "int_events__github.to->artifacts.artifact_name"
     ],
     "where": []
 }
@@ -267,8 +277,8 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["collection.name"],
-    "where": ["project.by_collection->collection.name IS NOT NULL", "project.count > 10"]
+    "select": ["collections.collection_name"],
+    "where": ["projects.by_collection->collections.collection_name IS NOT NULL", "projects.count > 10"]
 }
 ```
 
@@ -277,11 +287,11 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["artifact.name"],
+    "select": ["artifacts.artifact_name"],
     "where": [
-        "artifact.source = 'GITHUB'",
-        "artifact.namespace = 'ethereum'",
-        "artifact.by_project->project.by_collection->collection.name = 'defi'"
+        "artifacts.artifact_source = 'GITHUB'",
+        "artifacts.artifact_namespace = 'ethereum'",
+        "artifacts.by_project->projects.by_collection->collections.collection_name = 'defi'"
     ]
 }
 ```
@@ -291,11 +301,11 @@ Combine dimensions, measures, and relationships:
 - **SemanticQuery:**
 ```json
 {
-    "select": ["github_event.time", "github_event.to->artifact.name"],
+    "select": ["int_events__github.bucket_day", "int_events__github.to->artifacts.artifact_name"],
     "where": [
-        "github_event.time >= '2023-01-01'",
-        "github_event.time < '2024-01-01'",
-        "github_event.to->artifact.count > 100"
+        "int_events__github.bucket_day >= '2023-01-01'",
+        "int_events__github.bucket_day < '2024-01-01'",
+        "int_events__github.count > 100"
     ]
 }
 ```
@@ -305,20 +315,20 @@ Combine dimensions, measures, and relationships:
 ## Common Mistakes to Avoid
 
 1. **Using Raw SQL Functions:**
-   - ❌ Wrong: `"select": ["COUNT(artifact.id)"]`
-   - ✅ Correct: `"select": ["artifact.count"]`
+   - ❌ Wrong: `"select": ["COUNT(artifacts.artifact_id)"]`
+   - ✅ Correct: `"select": ["artifacts.count"]`
 
 2. **Mixing Selection and Filtering:**
-   - ❌ Wrong: `"select": ["artifact.name WHERE artifact.source = 'GITHUB'"]`
-   - ✅ Correct: `"select": ["artifact.name"], "where": ["artifact.source = 'GITHUB'"]`
+   - ❌ Wrong: `"select": ["artifacts.artifact_name WHERE artifacts.artifact_source = 'GITHUB'"]`
+   - ✅ Correct: `"select": ["artifacts.artifact_name"], "where": ["artifacts.artifact_source = 'GITHUB'"]`
 
 3. **Not Handling Ambiguous Joins:**
-   - ❌ Wrong: `"select": ["github_event.time", "artifact.name"]` (ambiguous)
-   - ✅ Correct: `"select": ["github_event.time", "github_event.to->artifact.name"]`
+   - ❌ Wrong: `"select": ["int_events__github.bucket_day", "artifacts.artifact_name"]` (ambiguous)
+   - ✅ Correct: `"select": ["int_events__github.bucket_day", "int_events__github.to->artifacts.artifact_name"]`
 
 4. **Incorrect Relationship Syntax:**
-   - ❌ Wrong: `"artifact->project.name"` (missing intermediate relationship)
-   - ✅ Correct: `"artifact.by_project->project.name"`
+   - ❌ Wrong: `"artifacts->project.project_name"` (missing intermediate relationship)
+   - ✅ Correct: `"artifacts.by_project->projects.project_name"`
 
 ## Key Validation Rules
 
