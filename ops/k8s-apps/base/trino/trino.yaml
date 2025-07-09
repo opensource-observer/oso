@@ -90,4 +90,4 @@ spec:
         - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
 
     additionalConfigProperties:
-      - query.max-stage-count=158
+      - query.max-stage-count=200
