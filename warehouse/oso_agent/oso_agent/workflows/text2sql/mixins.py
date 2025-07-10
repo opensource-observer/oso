@@ -17,8 +17,8 @@ from oso_agent.workflows.types import (
 )
 from pyoso import Client
 
+from ...clients.oso_client import OsoClient
 from ...resources import ResourceDependency
-from ...tool.oso_mcp_client import OsoMcpClient
 from ..base import MixableWorkflow
 
 logger = logging.getLogger(__name__)
@@ -133,18 +133,18 @@ class PyosoWorkflow(MixableWorkflow):
         )
 
 
-class McpDBWorkflow(MixableWorkflow):
-    """Mixin class to enable a soon to be deprecated integration for accessing the DB via the MCP"""
+class OsoDBWorkflow(MixableWorkflow):
+    """Mixin class to enable a soon to be deprecated integration for accessing the DB"""
 
-    oso_mcp_client: ResourceDependency[OsoMcpClient]
+    oso_client: ResourceDependency[OsoClient]
 
     @step
     async def retrieve_sql_results(
         self, ctx: Context, query: SQLExecutionRequestEvent
     ) -> SQLResultEvent:
-        """Retrieve SQL results using the MCP DB client."""
-        if not self.oso_mcp_client:
-            raise ValueError("MCP DB client is not initialized.")
+        """Retrieve SQL results using the OSO DB client."""
+        if not self.oso_client:
+            raise ValueError("OSO DB client is not initialized.")
 
         try:
             return await self.execute_query(
@@ -166,11 +166,11 @@ class McpDBWorkflow(MixableWorkflow):
         self, query: str, id: str = "query_execution", synthesize_response: bool = True
     ) -> SQLResultEvent:
         """Execute a SQL query using the PyOSO client."""
-        if not self.oso_mcp_client:
+        if not self.oso_client:
             raise ValueError("PyOSO client is not initialized.")
 
         # Example of executing a query and returning results
-        results = await self.oso_mcp_client.query_oso(query)
+        results = await self.oso_client.query_oso(query)
 
         return SQLResultEvent(
             id=id,

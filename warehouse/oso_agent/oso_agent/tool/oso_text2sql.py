@@ -87,7 +87,7 @@ async def index_oso_tables(
     tables_to_index = tables_to_index or DEFAULT_TABLES_TO_INDEX
 
     oso_db = await OsoSqlDatabase.create(
-        oso_mcp_url=config.oso_mcp_url,
+        oso_api_key=config.oso_api_key.get_secret_value(),
         include_tables=include_tables,
     )
 
@@ -133,8 +133,8 @@ async def index_oso_tables(
         logger.info(f"Number of nodes indexed: {len(nodes)}")
         index = VectorStoreIndex(nodes, embed_model=embed_model, storage_context=storage_context, is_complete_overwrite=True, insert_batch_size=100000)
         return index
-        #vector_store.add(nodes)
-        #index.storage_context.persist()
+        # vector_store.add(nodes)
+        # index.storage_context.persist()
 
 
 async def create_oso_query_engine(
@@ -154,9 +154,8 @@ async def create_oso_query_engine(
     else:
         index = VectorStoreIndex.from_vector_store(vector_store=storage_context.vector_store, embed_model=embedding)
 
-
     oso_db = await OsoSqlDatabase.create(
-        oso_mcp_url=config.oso_mcp_url,
+        oso_api_key=config.oso_api_key.get_secret_value(),
         include_tables=include_tables,
     )
 

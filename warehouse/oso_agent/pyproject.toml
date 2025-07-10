@@ -20,6 +20,7 @@ dependencies = [
     "llama-index-vector-stores-vertexaivectorsearch>=0.2.0",
     "openinference-instrumentation-llama-index>=4.3.0",
     "oso-semantic",
+    "pyoso",
     "pytest>=8.3.5",
     "pytest-asyncio>=0.26.0",
     "scikit-learn>=1.6.1",
@@ -28,8 +29,8 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-pyoso = { workspace = true }
 oso-semantic = { workspace = true }
+pyoso = { workspace = true }
 
 [project.scripts]
 agent = "oso_agent.cli:cli"

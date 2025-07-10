@@ -21,12 +21,6 @@ Add this to the `.env` file in `warehouse/oso_mcp/`
 
 ## Run the agent
 
-First run the MCP server in a separate terminal:
-
-```bash
-uv run mcp serve
-```
-
 For now, in another separate terminal run arize phoenix in a docker container
 (this command is intentionally ephemeral):
 
