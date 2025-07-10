@@ -82,7 +82,7 @@ class QueryBuilder(QueryRegistry):
             self._filter_parts.append(filter_expr)
         return self
 
-    def add_limit(self, limit: int):
+    def limit(self, limit: int):
         """Add a limit to the query"""
         self._limit = limit
         return self
