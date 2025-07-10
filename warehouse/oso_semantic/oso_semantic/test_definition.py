@@ -18,7 +18,6 @@ from .testing import setup_registry
 
 
 def test_attribute_reference_traversal():
-
     ref1 = AttributePath.from_string("a.b->c.d->e.f")
     ref2 = AttributePath(path=["a.b", "c.d", "e.f"])
     ref3 = AttributePath(path=["a.b", "c.d", "x.y"])
@@ -130,12 +129,12 @@ def test_semantic_model_shortest_path():
         model_ref="artifacts", name="from"
     )
 
-    assert to_artifact_ref.ref_model == "artifacts"
-    assert to_artifact_ref.name == "to"
-    assert to_artifact_ref.source_foreign_key[0] == "to_artifact_id"
-    assert from_artifact_ref.ref_model == "artifacts"
-    assert from_artifact_ref.name == "from"
-    assert from_artifact_ref.source_foreign_key[0] == "from_artifact_id"
+    assert to_artifact_ref.relationship.ref_model == "artifacts"
+    assert to_artifact_ref.relationship.name == "to"
+    assert to_artifact_ref.relationship.source_foreign_key[0] == "to_artifact_id"
+    assert from_artifact_ref.relationship.ref_model == "artifacts"
+    assert from_artifact_ref.relationship.name == "from"
+    assert from_artifact_ref.relationship.source_foreign_key[0] == "from_artifact_id"
 
 
 def test_semantic_query(semantic_db_conn: duckdb.DuckDBPyConnection):
@@ -176,23 +175,23 @@ def test_resolve_attributes(semantic_registry: Registry):
 
     resolved_expr0 = ref0.resolve(semantic_registry)
     assert resolved_expr0 is not None
-    assert (
-        resolved_expr0 == parse_one("artifacts_e4e2753c.artifact_name")
-    ), "Resolved expression should match expected SQL expression"
+    assert resolved_expr0 == parse_one("artifacts_e4e2753c.artifact_name"), (
+        "Resolved expression should match expected SQL expression"
+    )
 
     ref1 = SemanticExpression(query="int_events__github.to->artifacts.artifact_id")
     resolved_expr1 = ref1.resolve(semantic_registry)
 
     assert resolved_expr1 is not None
-    assert resolved_expr1 == parse_one(
-        "artifacts_b52061f6.artifact_id"
-    )
+    assert resolved_expr1 == parse_one("artifacts_b52061f6.artifact_id")
 
     # Test resolving a more complex expression
     ref2 = SemanticExpression(query="int_events__github.month")
     resolved_expr2 = ref2.resolve(semantic_registry)
     assert resolved_expr2 is not None
-    assert resolved_expr2 == parse_one("DATE_TRUNC('month', int_events__github_022877ad.bucket_day)")
+    assert resolved_expr2 == parse_one(
+        "DATE_TRUNC('month', int_events__github_022877ad.bucket_day)"
+    )
 
 
 def test_expand_reference():
@@ -202,7 +201,9 @@ def test_expand_reference():
     expanded_refs = registry.expand_reference(ref)
 
     assert len(expanded_refs) == 1
-    assert expanded_refs[0] == AttributePath.from_string("int_events__github.to->artifacts.artifact_id")
+    assert expanded_refs[0] == AttributePath.from_string(
+        "int_events__github.to->artifacts.artifact_id"
+    )
 
     # # Test with a more complex reference
     complex_ref = AttributePath.from_string("int_events__github.month")
@@ -214,14 +215,13 @@ def test_expand_reference():
         AttributePath.from_string("int_events__github.bucket_day"),
     ]
 
+
 def test_attribute_reference_transformer():
     simple_column = SemanticExpression(query="github_event.to")
 
     references0 = simple_column.references()
     assert len(references0) == 1
-    assert references0[0] == AttributePath.from_string(
-        "github_event.to"
-    )
+    assert references0[0] == AttributePath.from_string("github_event.to")
 
     multiple_refs_sql = SemanticExpression(
         query="github_event.to->artifact.count > github_event.from->artifact.count"
@@ -231,14 +231,8 @@ def test_attribute_reference_transformer():
 
     assert len(references1) == 2
 
-    assert (
-        AttributePath.from_string("github_event.to->artifact.count")
-        in references1
-    )
-    assert (
-        AttributePath.from_string("github_event.from->artifact.count")
-        in references1
-    )
+    assert AttributePath.from_string("github_event.to->artifact.count") in references1
+    assert AttributePath.from_string("github_event.from->artifact.count") in references1
 
 
 def test_resolve_measures():
@@ -498,19 +492,19 @@ def test_dag_find_best_join_tree():
     references_a_only = [AttributePath.from_string("model_a.name")]
     join_tree = registry.dag.find_best_join_tree(references_a_only)
     assert len(join_tree) == 1, f"Expected tree with 1 node, got {len(join_tree)}"
-    assert (
-        join_tree.root == "model_a"
-    ), f"Expected root to be model_a, got {join_tree.root}"
+    assert join_tree.root == "model_a", (
+        f"Expected root to be model_a, got {join_tree.root}"
+    )
 
     # Test 2: Only need D
     references_d_only = [AttributePath.from_string("model_d.value")]
     join_tree = registry.dag.find_best_join_tree(references_d_only)
-    assert (
-        len(join_tree) == 1
-    ), f"Expected tree with 1 node (just D), got {len(join_tree)}"
-    assert (
-        join_tree.root == "model_d"
-    ), f"Expected root to be model_d, got {join_tree.root}"
+    assert len(join_tree) == 1, (
+        f"Expected tree with 1 node (just D), got {len(join_tree)}"
+    )
+    assert join_tree.root == "model_d", (
+        f"Expected root to be model_d, got {join_tree.root}"
+    )
 
     # Test 3: Two models with direct relationship - A and B
     references_a_b = [
@@ -532,9 +526,9 @@ def test_dag_find_best_join_tree():
     join_tree = registry.dag.find_best_join_tree(references_a_b_d)
     expected_models = {"model_a", "model_d"}
     actual_models = set(join_tree.parents.keys())
-    assert expected_models.issubset(
-        actual_models
-    ), f"Expected models {expected_models} to be subset of {actual_models}"
+    assert expected_models.issubset(actual_models), (
+        f"Expected models {expected_models} to be subset of {actual_models}"
+    )
 
     # Test 5: Verify that find_best_join_tree finds the minimal tree when multiple options exist
     references_both_paths = [
@@ -545,9 +539,9 @@ def test_dag_find_best_join_tree():
     expected_models = {"model_a", "model_b", "model_d"}
     join_tree = registry.dag.find_best_join_tree(references_both_paths)
     actual_models = set(join_tree.parents.keys())
-    assert expected_models.issubset(
-        actual_models
-    ), f"Expected models {expected_models} to be subset of {actual_models}"
+    assert expected_models.issubset(actual_models), (
+        f"Expected models {expected_models} to be subset of {actual_models}"
+    )
 
 
 def test_dag_find_best_join_tree_comparison():
@@ -619,18 +613,18 @@ def test_dag_find_best_join_tree_comparison():
     join_tree = registry.dag.find_best_join_tree(references_b_c)
 
     # Should only include B and C, not A
-    assert (
-        len(join_tree) == 2
-    ), f"Expected tree with 2 nodes (B,C), got {len(join_tree)}"
-    assert (
-        "model_a" not in join_tree.parents
-    ), f"Tree should not include model_a: {join_tree.parents}"
-    assert (
-        "model_b" in join_tree.parents
-    ), f"Tree should include model_b: {join_tree.parents}"
-    assert (
-        "model_c" in join_tree.parents
-    ), f"Tree should include model_c: {join_tree.parents}"
+    assert len(join_tree) == 2, (
+        f"Expected tree with 2 nodes (B,C), got {len(join_tree)}"
+    )
+    assert "model_a" not in join_tree.parents, (
+        f"Tree should not include model_a: {join_tree.parents}"
+    )
+    assert "model_b" in join_tree.parents, (
+        f"Tree should include model_b: {join_tree.parents}"
+    )
+    assert "model_c" in join_tree.parents, (
+        f"Tree should include model_c: {join_tree.parents}"
+    )
 
     print("✓ find_best_join_tree correctly excludes unnecessary models")
 
@@ -693,3 +687,35 @@ def test_semantic_expression():
     final_expression = project_count_expression.resolve(registry)
 
     assert final_expression == parse_one("COUNT(projects_35a2864c.project_id) > 10")
+
+
+def test_semantic_expression_with_cte(semantic_db_conn: duckdb.DuckDBPyConnection):
+    registry = setup_registry()
+
+    # Create a CTE for projects
+    cte_query = registry.select("projects.project_id AS project_id").where(
+        "projects.project_id = 'project1'"
+    )
+    cte_name = "project_1"
+
+    query = registry.cte(cte_name, cte_query).select(
+        "project_1.project_id AS project_id",
+        "collections.collection_name AS collection_name",
+    )
+    query_exp = query.build()
+    assert query_exp is not None
+    print(query_exp.sql(dialect="duckdb", pretty=True))
+
+    result = semantic_db_conn.sql(query_exp.sql(dialect="duckdb"))
+    result_df = result.df()
+    result_df = result_df.sort_values(by=["collection_name"])
+    pd.testing.assert_frame_equal(
+        result_df,
+        pd.DataFrame(
+            {
+                "project_id": ["project1", "project1", "project1"],
+                "collection_name": ["collection1", "collection2", "collection3"],
+            }
+        ),
+        check_like=True,
+    )
