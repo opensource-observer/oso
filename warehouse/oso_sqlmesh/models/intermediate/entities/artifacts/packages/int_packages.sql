@@ -20,29 +20,19 @@ WITH raw_packages AS (
   FROM oso.stg_deps_dev__packages
 ),
 
--- Map package sources to SBOM artifact sources
+-- Map package sources to SBOM artifact sources using macros
 package_source_mapping AS (
   SELECT
-    package_artifact_source,
-    package_artifact_name,
-    package_version,
-    package_github_owner,
-    package_github_repo,
-    CASE
-      WHEN package_artifact_source = 'CARGO' THEN 'RUST'
-      WHEN package_artifact_source = 'PYPI' THEN 'PIP'
-      ELSE package_artifact_source
-    END AS sbom_artifact_source,
-    CASE
-      WHEN package_artifact_source = 'NPM' THEN 'https://www.npmjs.com/package/' || package_artifact_name
-      WHEN package_artifact_source = 'PYPI' THEN 'https://pypi.org/project/' || package_artifact_name
-      WHEN package_artifact_source = 'CARGO' THEN 'https://crates.io/crates/' || package_artifact_name
-      WHEN package_artifact_source = 'GO' THEN 'https://pkg.go.dev/' || package_artifact_name
-      WHEN package_artifact_source = 'MAVEN' THEN 'https://mvnrepository.com/artifact/' || REPLACE(package_artifact_name, ':', '/')
-      WHEN package_artifact_source = 'NUGET' THEN 'https://www.nuget.org/packages/' || package_artifact_name
-      ELSE NULL
-    END AS package_url
-  FROM raw_packages
+    rp.package_artifact_source,
+    rp.package_artifact_name,
+    rp.package_version,
+    rp.package_github_owner,
+    rp.package_github_repo,
+    sbom_details.artifact_source AS sbom_artifact_source,
+    pkg_details.artifact_url AS package_url
+  FROM raw_packages AS rp,
+  LATERAL @parse_package_artifacts(rp.package_artifact_source, rp.package_artifact_name) AS pkg_details,
+  LATERAL @parse_sbom_artifacts(rp.package_artifact_source, rp.package_artifact_name) AS sbom_details
 ),
 
 -- Find the latest version for each package to determine current ownership
