@@ -172,6 +172,12 @@ docker compose up --wait
 This will open up a web server to interact with Trino directly at
 `http://127.0.0.1:8080`.
 
+Then, you can run sqlmesh with the test seed data again without shutting down the docker containers.
+
+```bash
+oso local sqlmesh-test plan dev --start '1 week' --end now --keep-containers
+```
+
 This is also a good way if you want to keep running sqlmesh on top of the same containers
 instead of recreating them every time. To initialize the data you can run:
 
