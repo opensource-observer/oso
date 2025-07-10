@@ -378,7 +378,7 @@ def demo(config, agent_name, ollama_model, ollama_url):
 async def _run_demo(config: AgentConfig):
     """Run demo queries asynchronously."""
     try:
-        # Example of using the OsoMcpClient to get table schema
+        # Example of using the OsoClient to get table schema
         client = OsoClient(config.oso_api_key.get_secret_value())
         result = await client.get_table_schema("projects_v1")
         print("Table schema for 'projects_v1':")

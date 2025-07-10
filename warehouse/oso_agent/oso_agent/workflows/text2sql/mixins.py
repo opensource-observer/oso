@@ -133,8 +133,8 @@ class PyosoWorkflow(MixableWorkflow):
         )
 
 
-class McpDBWorkflow(MixableWorkflow):
-    """Mixin class to enable a soon to be deprecated integration for accessing the DB via the MCP"""
+class OsoDBWorkflow(MixableWorkflow):
+    """Mixin class to enable a soon to be deprecated integration for accessing the DB"""
 
     oso_client: ResourceDependency[OsoClient]
 
@@ -142,9 +142,9 @@ class McpDBWorkflow(MixableWorkflow):
     async def retrieve_sql_results(
         self, ctx: Context, query: SQLExecutionRequestEvent
     ) -> SQLResultEvent:
-        """Retrieve SQL results using the MCP DB client."""
+        """Retrieve SQL results using the OSO DB client."""
         if not self.oso_client:
-            raise ValueError("MCP DB client is not initialized.")
+            raise ValueError("OSO DB client is not initialized.")
 
         try:
             return await self.execute_query(

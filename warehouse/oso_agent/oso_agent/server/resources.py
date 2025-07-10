@@ -32,6 +32,6 @@ async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
         llm=llm,
         embedding=embedding,
         storage_context=storage_context,
-        oso_mcp_client=oso_client,
+        oso_client=oso_client,
         registry=registry,
     )

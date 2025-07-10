@@ -12,7 +12,7 @@ from oso_agent.types.response import StrResponse
 from oso_agent.workflows.base import ResourceResolver
 from oso_agent.workflows.text2sql.mixins import (
     GenericText2SQLRouter,
-    McpDBWorkflow,
+    OsoDBWorkflow,
     SQLRowsResponseSynthesisMixin,
 )
 from oso_agent.workflows.types import (
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class SemanticText2SQLWorkflow(
-    GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthesisMixin
+    GenericText2SQLRouter, OsoDBWorkflow, SQLRowsResponseSynthesisMixin
 ):
     """
     This workflow translates natural language to SQL in two main steps:
