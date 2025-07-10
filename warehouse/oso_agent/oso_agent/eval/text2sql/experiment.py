@@ -18,9 +18,9 @@ from oso_agent.workflows.types import SQLResultEvent, Text2SQLGenerationEvent
 from phoenix.experiments.types import EvaluationResult, Example
 from pydantic import BaseModel, Field
 
+from ...clients.oso_client import OsoClient
 from ...datasets.text2sql import TEXT2SQL_DATASET
 from ...datasets.uploader import upload_dataset
-from ...tool.oso_mcp_client import OsoMcpClient
 from ...util.asyncbase import setup_nest_asyncio
 from ...util.config import AgentConfig
 from .evals import (
@@ -56,18 +56,18 @@ class FakeWorkflow(MixableWorkflow):
         print("hereerererereer")
         # This is a fake workflow for testing purposes
         return StopEvent(result=StrResponse(blob="Fake response"))
-    
+
 async def post_process_result(
     example: Example, result: EvalWorkflowResult, resolver: ResourceResolver
 ):
     """Post-process the result of the experiment."""
     expected = str(example.output["answer"])
 
-    oso_mcp_client = t.cast(OsoMcpClient, resolver.get_resource("oso_mcp_client"))
+    oso_client = t.cast(OsoClient, resolver.get_resource("oso_client"))
     try:
-        expected_sql_result = await oso_mcp_client.query_oso(expected)
+        expected_sql_result = await oso_client.query_oso(expected)
     except Exception as e:
-        logger.error(f"Error querying oso mcp client for expected result: {e}")
+        logger.error(f"Error querying oso client for expected result: {e}")
         expected_sql_result = []
 
     if not isinstance(expected_sql_result, list):
@@ -126,15 +126,15 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
     logger.debug("Loading client")
 
     # We pass in the API key directly to the Phoenix client but it's likely
-    # ignored. See oso_agent/util/config.py 
+    # ignored. See oso_agent/util/config.py
     logger.debug("Uploading dataset")
 
     # check if specific evals have been defined
-    oso_mcp_client = OsoMcpClient(config.oso_mcp_url)
+    oso_client = OsoClient(config.oso_api_key.get_secret_value())
 
     resolver = DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
-        oso_mcp_client=oso_mcp_client,
+        oso_client=oso_client,
         keep_distinct=True,
         agent_name=config.agent_name,
         agent_config=config,
@@ -147,7 +147,7 @@ async def text2sql_experiment(
     config: AgentConfig, _registry: AgentRegistry, _raw_options: dict[str, t.Any]
 ):
     logger.info(f"Running text2sql experiment with: {config.model_dump_json()}") 
-    
+
     api_key = config.arize_phoenix_api_key.get_secret_value()
     phoenix_client = px.Client(
         endpoint=config.arize_phoenix_base_url,
@@ -163,9 +163,6 @@ async def text2sql_experiment(
     dataset = upload_dataset(
         phoenix_client, TEXT2SQL_DATASET, dataset_name, config, example_ids
     )
-
-    logger.debug("Creating Oso MCP client")
-    # workflow = TextI2SQLExperimentWorkflow(oso_mcp_client=oso_mcp_client, keep_distinct=True)
 
     async def clean_result(
         output: dict[str, t.Any], metadata: dict[str, t.Any], post_processed: str
