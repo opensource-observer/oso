@@ -709,6 +709,8 @@ def test_semantic_expression_with_cte(semantic_db_conn: duckdb.DuckDBPyConnectio
     result = semantic_db_conn.sql(query_exp.sql(dialect="duckdb"))
     result_df = result.df()
     result_df = result_df.sort_values(by=["collection_name"])
+    result_df = result_df.reset_index(drop=True)
+
     pd.testing.assert_frame_equal(
         result_df,
         pd.DataFrame(

@@ -150,8 +150,6 @@ class QueryBuilder(QueryRegistry):
                             )
                         )
 
-        print(dimensions)
-        print(relationships)
         return Model(
             name=name, table=name, dimensions=dimensions, relationships=relationships
         )
