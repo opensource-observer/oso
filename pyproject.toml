@@ -65,7 +65,7 @@ dependencies = [
     "colorlog<7.0.0,>=6.9.0",
     "pyarrow-stubs>=17.16,<21.0",
     "gcloud-aio-storage<10.0.0,>=9.3.0",
-    "kr8s==0.20.7",
+    "kr8s==0.20.9",
 ]
 name = "oso"
 version = "1.0.0"
