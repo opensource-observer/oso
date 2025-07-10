@@ -96,7 +96,7 @@ class SemanticText2SQLWorkflow(
                 query_builder = query_builder.where(f)
 
         if structured_query.limit:
-            query_builder = query_builder.add_limit(structured_query.limit)
+            query_builder = query_builder.limit(structured_query.limit)
 
         sql_expression = query_builder.build()
         final_sql = sql_expression.sql(pretty=True)

@@ -44,7 +44,8 @@ class QueryRegistry(t.Protocol):
     def add_reference(self, reference: AttributePath) -> t.Self: ...
     def select(self, *selects: str) -> t.Self: ...
     def where(self, *filters: str) -> t.Self: ...
-    def add_limit(self, limit: int) -> t.Self: ...
+    def limit(self, limit: int) -> t.Self: ...
+
     def build(self) -> exp.Expression: ...
 
 
@@ -302,7 +303,7 @@ class Registry(t.Generic[Q]):
         if semantic_query.filters:
             query = query.where(*semantic_query.filters)
         if semantic_query.limit:
-            query = query.add_limit(semantic_query.limit)
+            query = query.limit(semantic_query.limit)
         return query
 
     def select(self, *selects: str):
@@ -327,7 +328,7 @@ class Registry(t.Generic[Q]):
             description += model.describe() + "\n"
 
         return description
-    
+
     def expand_reference(
         self,
         reference: "AttributePath",
@@ -361,7 +362,6 @@ class Registry(t.Generic[Q]):
         return model.get_attribute(
             attribute_name
         )
-
 
 
 class GenericExpression(BaseModel):
@@ -817,7 +817,7 @@ class Select(BaseModel):
     def expression(self) -> SemanticExpression:
         """Returns the semantic expression for the select part of the query"""
         return self._expression
-    
+
     def resolve(self, registry: Registry, traverser: AttributePathTraverser | None = None) -> exp.Expression:
         """Returns a resolved SQL expression for the select part of the query."""
 
@@ -854,8 +854,7 @@ class Select(BaseModel):
             reference = self.references()[0]
             return reference.to_select_alias()
 
-    
-    
+
 class Filter(BaseModel):
     """Represents the filter part of a query. 
 
@@ -1799,7 +1798,7 @@ class AttributePathTraverser:
         while self.next():
             pass
         return self
-    
+
 
 class SemanticQuery(BaseModel):
     """Used for serialization of semantic queries"""
