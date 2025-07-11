@@ -9,6 +9,7 @@
         "prettier --ignore-path .gitignore --log-level warn --check"
     ],
     "**/*.py": [
+        "uv run ruff format",
         "uv run ruff check --fix --force-exclude",
         "uv run isort",
         "pnpm pyright"
