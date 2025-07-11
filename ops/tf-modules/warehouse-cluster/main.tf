@@ -31,7 +31,7 @@ locals {
       machine_type       = "e2-standard-4"
       node_locations     = join(",", var.cluster_zones)
       min_count          = 0
-      max_count          = 4
+      max_count          = 8
       local_ssd_count    = 0
       spot               = false
       disk_size_gb       = 100
