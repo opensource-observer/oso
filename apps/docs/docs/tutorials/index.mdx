@@ -17,34 +17,184 @@ Examples of applications and data science built on OSO's data platform. Each exa
 
 Understand how your project is doing, explore contributions, and grow visibility
 
-- 📦 [Map Dependencies](./dependencies/) - Map software supply chains and package dependencies
-- 🕸️ [Network Graphs](./network-graph/) - Analyze collaboration patterns and community connections
-- 🤝 Developer Retention (coming soon) - View developer churn and retention patterns over time
+<div className="row" style={{marginBottom: '1rem'}}>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%'}}>
+      <CardHeader>
+        <h3>📦 Map Dependencies</h3>
+      </CardHeader>
+      <CardBody>
+        <p>Map software supply chains and package dependencies</p>
+      </CardBody>
+      <CardFooter>
+        <a href={paths.mapDependencies} className="button button--primary button--block">
+          Learn More
+        </a>
+      </CardFooter>
+    </Card>
+  </div>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%'}}>
+      <CardHeader>
+        <h3>🕸️ Network Graphs</h3>
+      </CardHeader>
+      <CardBody>
+        <p>Analyze collaboration patterns and community connections</p>
+      </CardBody>
+      <CardFooter>
+        <a href={paths.networkGraphs} className="button button--primary button--block">
+          Learn More
+        </a>
+      </CardFooter>
+    </Card>
+  </div>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%', opacity: 0.6}}>
+      <CardHeader>
+        <h3>🤝 Developer Retention <em>(coming&nbsp;soon)</em></h3>
+      </CardHeader>
+      <CardBody>
+        <p>View developer churn and retention patterns over time</p>
+      </CardBody>
+    </Card>
+  </div>
+</div>
+
+---
 
 ## Foundations & DAOs
 
 Analyze funding impact, evaluate grantees, and monitor developer ecosystems
 
-- 💸 [Analyze Funding](./funding-data/) - Track funding flows and analyze grant program impact
-- 🪝 [Uniswap Hooks](./uniswap-hooks/) - Join OSO data with Dune stats to analyze Uniswap v4 hooks
-- 🔴 [Superchain Activity](./superchain-activity/) - Explore OP Atlas project activity on the Superchain
+<div className="row" style={{marginBottom: '1rem'}}>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%'}}>
+      <CardHeader>
+        <h3>💸 Analyze Funding</h3>
+      </CardHeader>
+      <CardBody>
+        <p>Track funding flows and analyze grant program impact</p>
+      </CardBody>
+      <CardFooter>
+        <a href={paths.analyzeFunding} className="button button--primary button--block">
+          Learn More
+        </a>
+      </CardFooter>
+    </Card>
+  </div>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%'}}>
+      <CardHeader>
+        <h3>🪝 Uniswap Hooks</h3>
+      </CardHeader>
+      <CardBody>
+        <p>Join OSO and Dune data to profile early Uniswap v4 hook adoption</p>
+      </CardBody>
+      <CardFooter>
+        <a href={paths.uniswapHooks} className="button button--primary button--block">
+          Learn More
+        </a>
+      </CardFooter>
+    </Card>
+  </div>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%', opacity: 0.6}}>
+      <CardHeader>
+        <h3>💻 Grant KPI Dashboard <em>(coming&nbsp;soon)</em></h3>
+      </CardHeader>
+      <CardBody>
+        <p>Build a live dashboard to track the progress and impact of grants</p>
+      </CardBody>
+    </Card>
+  </div>
+</div>
 
-## Students & Data Scientists
+---
+
+### 🧑‍🎓 Students & Data Scientists
 
 Build ML models, explore project data, and contribute data science work using pyoso
 
-- 👥 [Cohort Analysis](./cohort-analysis/) - Track a cohort of projects across a set of metrics over time
+<div className="row" style={{marginBottom: '1rem'}}>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%'}}>
+      <CardHeader>
+        <h3>👥 Cohort Analysis</h3>
+      </CardHeader>
+      <CardBody>
+        <p>Track a cohort of projects across a set of metrics over time</p>
+      </CardBody>
+      <CardFooter>
+        <a href={paths.cohortAnalysis} className="button button--primary button--block">
+          Learn More
+        </a>
+      </CardFooter>
+    </Card>
+  </div>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%', opacity: 0.6}}>
+      <CardHeader>
+        <h3>📈 Forecasting <em>(coming&nbsp;soon)</em></h3>
+      </CardHeader>
+      <CardBody>
+        <p>Leverage timeseries models to estimate how metrics will change over time</p>
+      </CardBody>
+    </Card>
+  </div>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%', opacity: 0.6}}>
+      <CardHeader>
+        <h3>🛡️ Trusted Users <em>(coming&nbsp;soon)</em></h3>
+      </CardHeader>
+      <CardBody>
+        <p>Train models to classify users on the basis of different trust signals</p>
+      </CardBody>
+    </Card>
+  </div>
+</div>
+
+---
 
 ## Researchers
 
 Conduct advanced analysis on OSS ecosystems, governance networks, and funding trends
 
-- ⭐ OpenRank (coming soon) - Run OpenRank on top of any network graph with your own trust seed assumptions
-- 🛡️ Trusted Users (coming soon) - Classify users on the basis of different trust signals
+<div className="row" style={{marginBottom: '1rem'}}>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%', opacity: 0.6}}>
+      <CardHeader>
+        <h3>⭐ OpenRank <em>(coming&nbsp;soon)</em></h3>
+      </CardHeader>
+      <CardBody>
+        <p>Run OpenRank on top of any network graph with your own trust seed assumptions</p>
+      </CardBody>
+    </Card>
+  </div>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%', opacity: 0.6}}>
+      <CardHeader>
+        <h3>🔬 Causal Inference <em>(coming&nbsp;soon)</em></h3>
+      </CardHeader>
+      <CardBody>
+        <p>Estimate the causal effect of grants on TVL and users using synthetic controls</p>
+      </CardBody>
+    </Card>
+  </div>
+  <div className="col col--4" style={{marginBottom: '1rem'}}>
+    <Card shadow="md" style={{height: '100%', opacity: 0.6}}>
+      <CardHeader>
+        <h3>🏛️ Economic Simulation Sandbox <em>(coming&nbsp;soon)</em></h3>
+      </CardHeader>
+      <CardBody>
+        <p>Model government policies, market cycles, and GDP dynamics</p>
+      </CardBody>
+    </Card>
+  </div>
+</div>
 
 ---
 
-## Looking for something else?
+### Looking for something else?
 
 Check out our [Colab community folder](https://drive.google.com/drive/folders/1mzqrSToxPaWhsoGOR-UVldIsaX1gqP0F?usp=sharing) or browse our [GitHub Repository](https://github.com/opensource-observer/insights) to find work by our community.
 
