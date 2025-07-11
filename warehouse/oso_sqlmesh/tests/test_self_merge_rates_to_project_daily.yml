@@ -1,0 +1,91 @@
+test_self_merge_rates_to_project_daily:
+  model: oso.self_merge_rates_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-31
+  inputs:
+    oso.int_events_aux_prs:
+      rows:
+      # Repository 1: Multiple PR events showing lifecycle
+      # PR 1: Self-merged without comments
+      - time: "2024-01-01 09:00:00"
+        to_artifact_id: repo_1
+        from_artifact_id: user_1
+        pr_id: pr_1_1
+        pr_number: 1
+        event_type: PULL_REQUEST_OPENED
+        event_source: GITHUB
+        merged_at: null
+        comments: 0
+      - time: "2024-01-01 10:00:00"
+        to_artifact_id: repo_1
+        from_artifact_id: user_1
+        pr_id: pr_1_1
+        pr_number: 1
+        event_type: PULL_REQUEST_MERGED
+        event_source: GITHUB
+        merged_at: "2024-01-01 10:00:00"
+        comments: 0
+      # PR 2: Self-merged with comments (not counted)
+      - time: "2024-01-02 09:00:00"
+        to_artifact_id: repo_1
+        from_artifact_id: user_1
+        pr_id: pr_1_2
+        pr_number: 2
+        event_type: PULL_REQUEST_OPENED
+        event_source: GITHUB
+        merged_at: null
+        comments: 0
+      - time: "2024-01-02 11:00:00"
+        to_artifact_id: repo_1
+        from_artifact_id: user_1
+        pr_id: pr_1_2
+        pr_number: 2
+        event_type: PULL_REQUEST_MERGED
+        event_source: GITHUB
+        merged_at: "2024-01-02 11:00:00"
+        comments: 2
+      # PR 3: Merged by different user
+      - time: "2024-01-03 09:00:00"
+        to_artifact_id: repo_1
+        from_artifact_id: user_2
+        pr_id: pr_1_3
+        pr_number: 3
+        event_type: PULL_REQUEST_OPENED
+        event_source: GITHUB
+        merged_at: null
+        comments: 0
+      - time: "2024-01-03 12:00:00"
+        to_artifact_id: repo_1
+        from_artifact_id: user_3
+        pr_id: pr_1_3
+        pr_number: 3
+        event_type: PULL_REQUEST_MERGED
+        event_source: GITHUB
+        merged_at: "2024-01-03 12:00:00"
+        comments: 0
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows: 
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: self_merge_rates_daily
+        amount: 1
+      - metrics_sample_date: 2024-01-02
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: self_merge_rates_daily
+        amount: 0
+      - metrics_sample_date: 2024-01-03
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: self_merge_rates_daily
+        amount: 0

@@ -1,0 +1,104 @@
+test_issue_age_avg_to_project_daily:
+  model: oso.issue_age_avg_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-03
+  inputs:
+    oso.int_issue_event_time_deltas:
+      rows:
+      # Issue 1 - Repository 1 - various ages
+      - time: "2024-01-01 10:00:00"
+        event_type: "ISSUE_OPENED"
+        event_source: "GITHUB"
+        issue_id: "issue_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_1_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 0.0
+        merged_delta: null
+        closed_delta: null
+        comments: 0.0
+      - time: "2024-01-01 12:00:00"
+        event_type: "ISSUE_COMMENT"
+        event_source: "GITHUB"
+        issue_id: "issue_1_hash"
+        issue_number: 1
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_2_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 7200.0
+        merged_delta: null
+        closed_delta: null
+        comments: 1.0
+      # Issue 2 - Repository 1 - different ages
+      - time: "2024-01-01 11:00:00"
+        event_type: "ISSUE_OPENED"
+        event_source: "GITHUB"
+        issue_id: "issue_2_hash"
+        issue_number: 2
+        to_artifact_id: "repo_1_hash"
+        from_artifact_id: "user_3_hash"
+        created_at: "2023-12-31 11:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 86400.0
+        merged_delta: null
+        closed_delta: null
+        comments: 0.0
+      # Issue 3 - Repository 2 - different repo
+      - time: "2024-01-02 10:00:00"
+        event_type: "ISSUE_OPENED"
+        event_source: "GITHUB"
+        issue_id: "issue_3_hash"
+        issue_number: 1
+        to_artifact_id: "repo_2_hash"
+        from_artifact_id: "user_4_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 86400.0
+        merged_delta: null
+        closed_delta: null
+        comments: 0.0
+      - time: "2024-01-02 14:00:00"
+        event_type: "ISSUE_COMMENT"
+        event_source: "GITHUB"
+        issue_id: "issue_3_hash"
+        issue_number: 1
+        to_artifact_id: "repo_2_hash"
+        from_artifact_id: "user_5_hash"
+        created_at: "2024-01-01 10:00:00"
+        merged_at: null
+        closed_at: null
+        created_delta: 100800.0
+        merged_delta: null
+        closed_delta: null
+        comments: 1.0
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: "repo_1_hash"
+        project_id: "project_1"
+      - artifact_id: "repo_2_hash"
+        project_id: "project_2"
+  outputs:
+    query:
+      rows:
+      # Project 1 - Jan 1: AVG(0.0, 7200.0, 86400.0) = 31200.0
+      - metrics_sample_date: "2024-01-01"
+        event_source: "GITHUB"
+        to_project_id: "project_1"
+        from_artifact_id: ""
+        metric: "issue_age_avg_daily"
+        amount: 31200.0
+      # Project 2 - Jan 2: AVG(86400.0, 100800.0) = 93600.0
+      - metrics_sample_date: "2024-01-02"
+        event_source: "GITHUB"
+        to_project_id: "project_2"
+        from_artifact_id: ""
+        metric: "issue_age_avg_daily"
+        amount: 93600.0

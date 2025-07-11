@@ -1,0 +1,211 @@
+test_contributor_absence_factor_to_project_daily_basic:
+  model: oso.contributor_absence_factor_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 1000
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 433
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_3
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 343
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_4
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 332
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_5
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 202
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_6
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 90
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_7
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 42
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_8
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 33
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: contributor_absence_factor_daily
+        amount: 2
+
+test_contributor_absence_factor_to_project_daily_single_contributor:
+  model: oso.contributor_absence_factor_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 100
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: contributor_absence_factor_daily
+        amount: 1
+
+test_contributor_absence_factor_to_project_daily_equal_contributions:
+  model: oso.contributor_absence_factor_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 25
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 25
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_3
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 25
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_4
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 25
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: contributor_absence_factor_daily
+        amount: 2
+
+test_contributor_absence_factor_to_project_daily_mixed_event_types:
+  model: oso.contributor_absence_factor_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 30
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-01-01
+        amount: 20
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 25
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_3
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 15
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_3
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-01
+        amount: 10
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: contributor_absence_factor_daily
+        amount: 1
+
+test_contributor_absence_factor_to_project_daily_no_activity:
+  model: oso.contributor_absence_factor_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows: []
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows: []

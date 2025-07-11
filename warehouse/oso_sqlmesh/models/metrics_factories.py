@@ -76,6 +76,7 @@ timeseries_metrics(
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
+        "int_events_aux_prs",
         "int_worldchain_events_by_project",
     ],
     audits=[
@@ -218,6 +219,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Contributors",
                 description="Metrics related to GitHub contributors",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "new_contributors": MetricQueryDef(
+            ref="code/new_contributors.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="New Contributors",
+                description="Metrics related to new GitHub contributors identified by author_association = 'FIRST_TIME_CONTRIBUTOR'",
             ),
             additional_tags=["data_category=code"],
         ),
@@ -401,6 +420,78 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
+        "issue_age_avg": MetricQueryDef(
+            ref="code/issue_age_avg.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Average Issue Age",
+                description="Average age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_max": MetricQueryDef(
+            ref="code/issue_age_max.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Maximum Issue Age",
+                description="Maximum age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_min": MetricQueryDef(
+            ref="code/issue_age_min.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Minimum Issue Age",
+                description="Minimum age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_median": MetricQueryDef(
+            ref="code/issue_age_median.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Median Issue Age",
+                description="Median age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         # "avg_prs_time_to_merge": MetricQueryDef(
         #     ref="code/prs_time_to_merge.sql",
         #     time_aggregations=[
@@ -415,20 +506,20 @@ timeseries_metrics(
         #     ),
         #     additional_tags=["data_category=code"],
         # ),
-        # "avg_time_to_first_response": MetricQueryDef(
-        #     ref="code/time_to_first_response.sql",
-        #     time_aggregations=[
-        #         "quarterly",
-        #         "biannually",
-        #     ],
-        #     entity_types=["artifact", "project", "collection"],
-        #     over_all_time=True,
-        #     metadata=MetricMetadata(
-        #         display_name="Average Time to First Response",
-        #         description="Metrics related to average time to first response",
-        #     ),
-        #     additional_tags=["data_category=code"],
-        # ),
+        "avg_time_to_first_response": MetricQueryDef(
+            ref="code/time_to_first_response.sql",
+            time_aggregations=[
+                "quarterly",
+                "biannually",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Average Time to First Response",
+                description="Metrics related to average time to first response",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         "active_addresses_aggregation": MetricQueryDef(
             ref="blockchain/active_addresses.sql",
             vars={
@@ -707,5 +798,100 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
-    }, 
+        "burstiness": MetricQueryDef(
+            ref="code/burstiness.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Burstiness",
+                description="Metrics related to GitHub repository burstiness",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "contributor_absence_factor": MetricQueryDef(
+            ref="code/contributor_absence_factor.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Contributor Absence Factor",
+                description="Measures the minimum number of contributors responsible for 50% of total contributions. Lower values indicate higher risk if key contributors leave. Previously known as Bus Factor.",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "prs_comments": MetricQueryDef(
+            ref="code/prs_comments.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Pull Request Comments",
+                description="Metrics related to GitHub pull request review comments",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "project_velocity": MetricQueryDef(
+            ref="code/project_velocity.sql",
+            vars={
+                "weight_issues_closed": 1,
+                "weight_commits": 1,
+                "weight_pr_reviews": 1,
+                "weight_contributors": 2,
+            },
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Project Velocity",
+                description="Measures development speed through a weighted combination of issues closed, commits, pull request reviews, and contributors. Provides insight into project innovation and activity levels.",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "self_merge_rates": MetricQueryDef(
+            ref="code/self_merge_rates.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Self Merge Rates",
+                description="Metrics related to self-merged pull requests without comments as a ratio of total merged pull requests",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+    },
 )

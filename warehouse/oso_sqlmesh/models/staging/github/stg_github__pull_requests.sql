@@ -29,11 +29,15 @@ WITH pull_request_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
-    and ghe.created_at BETWEEN @start_dt AND @end_dt
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '1' DAY AND @end_dt + INTERVAL '1' DAY
+    and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 )
 SELECT
   pre.id AS id,
-  pre.created_at AS event_time,
+  -- the stg_github__events.created_at means the time the event was fired, 
+  -- but not the time the pull request was updated (i.e. the time the PullRequestEvent was created)
+  -- so we need to use the pull_request.updated_at field from the payload
+  STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS event_time,
   pre.repo.id AS repository_id,
   pre.repo.name AS repository_name,
   pre.actor.id AS actor_id,
@@ -44,5 +48,6 @@ SELECT
   STRPTIME(pre.payload ->> '$.pull_request.merged_at', '%Y-%m-%dT%H:%M:%SZ') AS merged_at,
   STRPTIME(pre.payload ->> '$.pull_request.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
   pre.payload ->> '$.pull_request.state' AS "state",
-  CAST(pre.payload -> '$.pull_request.comments' AS DOUBLE) AS comments
+  CAST(pre.payload -> '$.pull_request.comments' AS DOUBLE) AS comments,
+  CAST(pre.payload ->> '$.pull_request.author_association' AS VARCHAR) AS author_association
 FROM pull_request_events AS pre
