@@ -100,8 +100,8 @@ class QueryBuilder(QueryRegistry):
         return self
 
     def to_model(self, name: str):
-        relationships: list[Relationship] = []
-        dimensions: list[Dimension] = []
+        relationships: set[Relationship] = set()
+        dimensions: set[Dimension] = set()
         for select_part, alias in zip(self._select_parts, self._select_aliases):
             references = select_part.references()
             reference = references[0]
@@ -109,7 +109,7 @@ class QueryBuilder(QueryRegistry):
             model = self._registry.get_model(exp_to_str(final_column.table))
             attribute = model.get_attribute(exp_to_str(final_column.this))
             if isinstance(attribute, BoundRelationship):
-                relationships.append(
+                relationships.add(
                     Relationship(
                         name=alias,
                         type=attribute.relationship.type,
@@ -119,7 +119,7 @@ class QueryBuilder(QueryRegistry):
                     )
                 )
             elif isinstance(attribute, BoundMeasure):
-                dimensions.append(
+                dimensions.add(
                     Dimension(
                         name=alias,
                         description=attribute.measure.description,
@@ -127,7 +127,7 @@ class QueryBuilder(QueryRegistry):
                     )
                 )
             else:
-                dimensions.append(
+                dimensions.add(
                     Dimension(
                         name=alias,
                         description=attribute.dimension.description,
@@ -140,9 +140,9 @@ class QueryBuilder(QueryRegistry):
                     if relationship.source_foreign_key[0] == exp_to_str(
                         final_column.this
                     ):
-                        relationships.append(
+                        relationships.add(
                             Relationship(
-                                name=f"by_{alias}",
+                                name=f"{relationship.ref_model}_by_{alias}",
                                 type=relationship.type,
                                 source_foreign_key=alias,
                                 ref_model=relationship.ref_model,
@@ -151,7 +151,10 @@ class QueryBuilder(QueryRegistry):
                         )
 
         return Model(
-            name=name, table=name, dimensions=dimensions, relationships=relationships
+            name=name,
+            table=name,
+            dimensions=[dimension for dimension in dimensions],
+            relationships=[relationship for relationship in relationships],
         )
 
     def build(self):

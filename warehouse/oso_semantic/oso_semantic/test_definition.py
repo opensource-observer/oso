@@ -265,130 +265,6 @@ def test_resolve_measures():
     assert measure.references() == [ref], "Measure should reference artifact.id"
 
 
-def test_registry_cycle_detection():
-    """Test that the registry can detect cycles in model relationships."""
-    from .definition import Model, Registry, Relationship, RelationshipType
-
-    registry = Registry()
-
-    # Create models that form a cycle: A -> B -> C -> A
-    model_a = Model(
-        name="model_a",
-        table="table_a",
-        relationships=[
-            Relationship(
-                name="to_b",
-                ref_model="model_b",
-                type=RelationshipType.MANY_TO_ONE,
-                source_foreign_key="b_id",
-                ref_key="id",
-            )
-        ],
-        dimensions=[],
-        measures=[],
-    )
-
-    model_b = Model(
-        name="model_b",
-        table="table_b",
-        relationships=[
-            Relationship(
-                name="to_c",
-                ref_model="model_c",
-                type=RelationshipType.MANY_TO_ONE,
-                source_foreign_key="c_id",
-                ref_key="id",
-            )
-        ],
-        dimensions=[],
-        measures=[],
-    )
-
-    model_c = Model(
-        name="model_c",
-        table="table_c",
-        relationships=[
-            Relationship(
-                name="to_a",
-                ref_model="model_a",
-                type=RelationshipType.MANY_TO_ONE,
-                source_foreign_key="a_id",
-                ref_key="id",
-            )
-        ],
-        dimensions=[],
-        measures=[],
-    )
-
-    # Register models (this creates the cycle)
-    registry.register(model_a)
-    registry.register(model_b)
-    registry.register(model_c)
-
-    # Test that querying raises an error when cycle is detected
-    try:
-        registry.select("model_a.id")
-        assert False, "Should have raised ValueError due to cycle"
-    except ValueError as e:
-        assert "Cycle detected" in str(e), f"Expected cycle error, got: {e}"
-
-
-def test_registry_no_cycle():
-    """Test that the registry correctly identifies when there are no cycles."""
-    from .definition import Model, Registry, Relationship, RelationshipType
-
-    registry = Registry()
-
-    # Create models without cycles: A -> B -> C (no back edges)
-    model_a = Model(
-        name="model_a",
-        table="table_a",
-        relationships=[
-            Relationship(
-                name="to_b",
-                ref_model="model_b",
-                type=RelationshipType.MANY_TO_ONE,
-                source_foreign_key="b_id",
-                ref_key="id",
-            )
-        ],
-        dimensions=[],
-        measures=[],
-    )
-
-    model_b = Model(
-        name="model_b",
-        table="table_b",
-        relationships=[
-            Relationship(
-                name="to_c",
-                ref_model="model_c",
-                type=RelationshipType.MANY_TO_ONE,
-                source_foreign_key="c_id",
-                ref_key="id",
-            )
-        ],
-        dimensions=[],
-        measures=[],
-    )
-
-    model_c = Model(
-        name="model_c",
-        table="table_c",
-        relationships=[],  # No relationships - end of chain
-        dimensions=[],
-        measures=[],
-    )
-
-    # Register models
-    registry.register(model_a)
-    registry.register(model_b)
-    registry.register(model_c)
-
-    # Test that no cycle is detected
-    registry.dag.check_cycle()
-
-
 def test_dag_find_best_join_tree():
     """Test that find_best_join_tree returns the smallest possible tree."""
     from .definition import (
@@ -717,6 +593,56 @@ def test_semantic_expression_with_cte(semantic_db_conn: duckdb.DuckDBPyConnectio
             {
                 "project_id": ["project1", "project1", "project1"],
                 "collection_name": ["collection1", "collection2", "collection3"],
+            }
+        ),
+        check_like=True,
+    )
+
+
+def test_semantic_expression_with_dependant_cte(
+    semantic_db_conn: duckdb.DuckDBPyConnection,
+):
+    registry = setup_registry()
+
+    # Create a CTE for projects
+    cte_artifact_events = registry.select(
+        "int_events__github.event_type AS event_type",
+        "int_events__github.from->artifacts.artifact_name AS artifact_name",
+        "int_events__github.from->artifacts.artifact_id AS artifact_id",
+    )
+    cte_project_events = registry.cte("artifact_events", cte_artifact_events).select(
+        "artifact_events.event_type AS event_type",
+        "artifact_events.artifact_name AS artifact_name",
+        "projects.project_name AS project_name",
+        "projects.project_id AS project_id",
+    )
+    query = (
+        registry.cte("cte_project_events", cte_project_events)
+        .select(
+            "cte_project_events.project_id AS project_id",
+            "cte_project_events.project_name AS project_name",
+            "cte_project_events.event_type AS event_type",
+            "collections.collection_name AS collection_name",
+        )
+        .where("collections.collection_name = 'collection1'")
+    )
+    query_exp = query.build()
+    assert query_exp is not None
+    print(query_exp.sql(dialect="duckdb", pretty=True))
+
+    result = semantic_db_conn.sql(query_exp.sql(dialect="duckdb"))
+    result_df = result.df()
+    result_df = result_df.sort_values(by=["project_id"])
+    result_df = result_df.reset_index(drop=True)
+
+    pd.testing.assert_frame_equal(
+        result_df,
+        pd.DataFrame(
+            {
+                "project_id": ["project1", "project2"],
+                "project_name": ["org1", "org2"],
+                "event_type": ["COMMIT_CODE", "COMMIT_CODE"],
+                "collection_name": ["collection1", "collection1"],
             }
         ),
         check_like=True,

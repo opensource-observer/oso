@@ -50,8 +50,8 @@ class QueryRegistry(t.Protocol):
     def build(self) -> exp.Expression: ...
 
 
-class RegistryDAG:
-    """A DAG of models and views that can be used to generate SQL queries.
+class RegistryGraph:
+    """A graph of models and views that can be used to generate SQL queries.
 
     This is used to determine the order in which models and views should be joined.
     """
@@ -70,38 +70,10 @@ class RegistryDAG:
         # Gets all the names of related models
         reference_names = list(map(lambda x: x.ref_model, model.relationships))
 
-        adj_set = self.adjacency_map.get(model.name, set())
-        adj_set = adj_set.union(set(reference_names))
-        self.adjacency_map[model.name] = adj_set
-
-    def check_cycle(self):
-        """Check if there are any cycles in the directed graph.
-
-        Throws an error if a cycle is detected.
-        """
-        # 0: unvisited (white), 1: visiting (gray), 2: visited (black)
-        color = {node: 0 for node in self.adjacency_map}
-
-        def cycle_dfs(node: str):
-            # Mark as visiting (gray)
-            color[node] = 1
-
-            # Visit all adjacent nodes
-            for neighbor in self.adjacency_map.get(node, set()):
-                neighbor_color = color[neighbor]
-                if neighbor_color == 1:
-                    raise ValueError(f"Cycle detected at model {neighbor}")
-                elif neighbor_color == 0:
-                    cycle_dfs(neighbor)
-
-            # Mark as visited (black)
-            color[node] = 2
-            return False
-
-        # Check for cycles starting from each unvisited node
-        for node in self.adjacency_map:
-            if color[node] == 0:
-                cycle_dfs(node)
+        for reference in reference_names:
+            self.adjacency_map.setdefault(reference, set())
+            self.adjacency_map[reference].add(model.name)
+            self.adjacency_map[model.name].add(reference)
 
     def find_best_join_tree(self, references: list[AttributePath]):
         """Finds the join tree with the least amount of nodes (models) for the given references."""
@@ -264,9 +236,8 @@ class Registry(t.Generic[Q]):
     """
 
     models: t.Dict[str, "Model"]
-    dag: RegistryDAG
+    dag: RegistryGraph
     views: t.Dict[str, "View"]
-    check_cycle: bool = False
 
     def __init__(self, query_builder: type[Q] | None = None):
         from .query import QueryBuilder
@@ -275,7 +246,7 @@ class Registry(t.Generic[Q]):
         self.models = {}
         self.views = {}
         self.sorted_model_names = None
-        self.dag = RegistryDAG()
+        self.dag = RegistryGraph()
 
     def register(self, model: "Model", repoen: bool = False):
         """Inserts the model into the registry and updates the adjacency map.
@@ -287,7 +258,6 @@ class Registry(t.Generic[Q]):
         self.models[model.name] = model
         # Register the model under the given name
         self.dag.add(model)
-        self.check_cycle = True
 
     def register_view(self, view: "View"):
         self.views[view.name] = view
@@ -310,16 +280,12 @@ class Registry(t.Generic[Q]):
 
     def cte(self, name: str, query: Q):
         """Returns a new query builder for the registry with a subquery"""
-        if self.check_cycle:
-            self.dag.check_cycle()
 
         query_builder = self.query_builder(self).cte(name, query)
         return query_builder
 
     def select(self, *selects: str):
         """Returns a new query builder for the registry"""
-        if self.check_cycle:
-            self.dag.check_cycle()
 
         query_builder = self.query_builder(self)
         for select in selects:
@@ -992,6 +958,9 @@ class Dimension(BaseModel):
         ),
     )
 
+    def __hash__(self):
+        return self.name.__hash__()
+
     @model_validator(mode="after")
     def process_dimension(self):
         if self.query and self.column_name:
@@ -1137,6 +1106,9 @@ class Relationship(BaseModel):
     source_foreign_key: str | list[str]
     ref_model: str
     ref_key: str | list[str]
+
+    def __hash__(self):
+        return self.name.__hash__()
 
     @model_validator(mode="after")
     def process_relationship(self):

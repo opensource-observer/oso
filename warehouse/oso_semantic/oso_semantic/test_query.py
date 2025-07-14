@@ -89,16 +89,18 @@ def test_query_builder_to_model():
     # Attempt to convert the query to a model
     model = query.to_model("test_model")
 
+    model.dimensions.sort(key=lambda d: d.name)
+
     assert model.name == "test_model"
     assert model.table == "test_model"
     assert len(model.dimensions) == 5
     assert model.dimensions[0].name == "event_month"
     assert model.dimensions[1].name == "event_type"
-    assert model.dimensions[2].name == "int_events__github_event_source"
+    assert model.dimensions[2].name == "int_events__github_count"
+    assert model.dimensions[3].name == "int_events__github_event_source"
     assert (
-        model.dimensions[3].name == "int_events__github_from__artifacts_artifact_name"
+        model.dimensions[4].name == "int_events__github_from__artifacts_artifact_name"
     )
-    assert model.dimensions[4].name == "int_events__github_count"
     assert len(model.relationships) == 1
     assert model.relationships[0].name == "artifact_id"
 
