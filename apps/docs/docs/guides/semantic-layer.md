@@ -53,7 +53,7 @@ that tool. These abstractions and components are as such:
 
 The semantic layer definitions are all JSON serializable Python objects. These
 all represent objects detailed in the [Anatomy of the Semantic
-Layer](#anatomy-of-semantic-layer) section above. This section will walk through
+Layer](#anatomy-of-the-semantic-layer) section above. This section will walk through
 the definition of the `artifact`, `project`, and `collection` models. We will
 start with a very basic definition of the `artifact` model and expand it to
 include more attributes and relationships.
