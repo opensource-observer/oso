@@ -72,7 +72,7 @@ select
   cast(case 
     when total.total_merged_count > 0 then 
       coalesce(self_merged.self_merged_count, 0) / cast(total.total_merged_count as double)
-    else -1
+    else NULL
   end as double) as amount
 from total_merged_prs as total
 left join self_merged_prs_without_comments as self_merged

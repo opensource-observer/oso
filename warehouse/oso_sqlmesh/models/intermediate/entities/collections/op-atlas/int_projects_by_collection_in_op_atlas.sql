@@ -27,7 +27,7 @@ WITH measurement_periods AS (
       ('2', DATE '2025-04-11'),
       ('3', DATE '2025-05-11'),
       ('4', DATE '2025-06-05'),
-      ('5', DATE '2025-07-01'),
+      ('5', DATE '2025-07-08'),
       ('6', DATE '2025-08-01')
   ) AS t(period_number, cutoff_date)
 ),
