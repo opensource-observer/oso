@@ -1,22 +1,27 @@
-import React,  { CSSProperties } from 'react';
-import clsx from 'clsx'; 
-import useBaseUrl from '@docusaurus/useBaseUrl'; // Import the useBaseUrl function from Docusaurus
+import React from "react";
+import PropTypes from "prop-types";
+import clsx from "clsx";
+import useBaseUrl from "@docusaurus/useBaseUrl"; // Import the useBaseUrl function from Docusaurus
 
-const CardImage = ({
-  className, 
-  style,
-  cardImageUrl,
-  alt,
-  title,
-}) => {   
+const CardImage = ({ className, style, cardImageUrl, alt, title }) => {
   const generatedCardImageUrl = useBaseUrl(cardImageUrl);
   return (
     <img
-      className={clsx('card__image', className)}
+      className={clsx("card__image", className)}
       style={style}
-      src={generatedCardImageUrl} alt={alt} title={title}
+      src={generatedCardImageUrl}
+      alt={alt}
+      title={title}
     />
-  )
-}
+  );
+};
 
-export default CardImage; 
+CardImage.propTypes = {
+  className: PropTypes.string,
+  style: PropTypes.object,
+  cardImageUrl: PropTypes.string.isRequired,
+  alt: PropTypes.string,
+  title: PropTypes.string,
+};
+
+export default CardImage;
