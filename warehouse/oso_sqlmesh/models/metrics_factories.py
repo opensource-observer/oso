@@ -710,8 +710,8 @@ timeseries_metrics(
             ref="code/lifecycle.sql",
             time_aggregations=[
                 "monthly", 
-                # "quarterly", 
-                # "biannually", 
+                "quarterly", 
+                "biannually", 
                 "yearly"
             ],
             entity_types=["artifact", "project", "collection"],
