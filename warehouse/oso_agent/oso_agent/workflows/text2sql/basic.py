@@ -26,9 +26,12 @@ class BasicText2SQL(
 
     query_engine_tool: ResourceDependency[QueryEngineTool]
     llm: ResourceDependency[FunctionCallingLLM]
+    max_retries: int = 5
 
     @step
-    async def handle_text2sql_query(self, ctx: Context, event: StartEvent) -> Text2SQLGenerationEvent:
+    async def handle_text2sql_query(
+        self, ctx: Context, event: StartEvent
+    ) -> Text2SQLGenerationEvent:
         """Handle the start event of the workflow."""
         # Here you would typically initialize the workflow, set up context, etc.
         # For this basic example, we just return a StopEvent to end the workflow.
@@ -38,29 +41,45 @@ class BasicText2SQL(
         if not event_input_id:
             # Generate a unique ID for the event if not provided
             event_input_id = hashlib.sha1(event.input.encode()).hexdigest()
-            logger.debug(f"No ID provided for event, generated ID: {event_input_id}") 
+            logger.debug("No ID provided for event, generated ID: %s", event_input_id)
 
-        logger.info(f"Handling text2sql query with input query[{event_input_id}]: {event.input}")
+        logger.info(
+            "Handling text2sql query with input query[%s]: %s",
+            event_input_id,
+            event.input,
+        )
 
         try:
             tool_output = await self.query_engine_tool.acall(
                 input=event.input,
                 context=ctx,
             )
-            logger.debug(f"query engine called successfully for query[{event_input_id}]")
+            logger.debug(
+                "query engine called successfully for query[%s]", event_input_id
+            )
         except Exception as e:
-            logger.error(f"Error calling query engine tool query[{event_input_id}]: {e}")
-            raise ValueError(f"Failed to call query engine tool query[{event_input_id}]: {e}")
+            logger.error(
+                "Error calling query engine tool query[%s]: %s", event_input_id, e
+            )
+            raise ValueError(
+                f"Failed to call query engine tool query[{event_input_id}]: {e}"
+            ) from e
 
         raw_output = tool_output.raw_output
-        assert isinstance(raw_output, ToolResponse), "Expected a ToolResponse from the query engine tool"
+        assert isinstance(
+            raw_output, ToolResponse
+        ), "Expected a ToolResponse from the query engine tool"
 
         if raw_output.metadata is None:
             raise ValueError("No metadata in query engine tool output")
 
         output_sql = raw_output.metadata.get("sql_query")
 
-        logger.debug(f"query engine tool created the following SQL query for query[{event_input_id}]: {output_sql}")
+        logger.debug(
+            "query engine tool created the following SQL query for query[%s]: %s",
+            event_input_id,
+            output_sql,
+        )
         if not output_sql:
             raise ValueError("No SQL query found in metadata of query engine tool output")
 
@@ -73,15 +92,20 @@ class BasicText2SQL(
             input_text=event.input,
             synthesize_response=synthesize_response,
             execute_sql=execute_sql,
+            remaining_tries=self.max_retries,
         )
 
     @step
-    async def return_response(self, response: SQLResultSummaryResponseEvent) -> StopEvent:
+    async def return_response(
+        self, response: SQLResultSummaryResponseEvent
+    ) -> StopEvent:
         """Return the response from the SQL query."""
         # This step can be used to process the response further or just return it.
 
-        logger.debug(f"Returning response for query[{response.id}] with summary: {response.summary}")
-
-        return StopEvent(
-            result=StrResponse(blob=response.summary)
+        logger.debug(
+            "Returning response for query[%s] with summary: %s",
+            response.id,
+            response.summary,
         )
+
+        return StopEvent(result=StrResponse(blob=response.summary))
