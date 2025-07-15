@@ -87,7 +87,7 @@
     "winston": "^3.17.0",
     "yarn": "^1.22.22",
     "yup": "^1.6.1",
-    "zod": "^3.25.7"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@apollo/rover": "^0.28.1",
