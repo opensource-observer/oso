@@ -3,6 +3,8 @@ Provides a default workflow registry that is configured using the AgentConfig.
 """
 import logging
 
+from oso_semantic.register import register_oso_models
+
 from ..resources import DefaultResourceResolver, ResolverFactory, ResourceResolver
 from ..util.config import AgentConfig
 from .registry import WorkflowRegistry
@@ -36,6 +38,7 @@ async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
         synthesize_response=False,
     )
     registry = setup_registry()
+    register_oso_models(registry)
     semantic_query_tool = create_semantic_query_tool(llm=llm, registry_description=registry.describe())
 
     return DefaultResourceResolver.from_resources(
