@@ -172,7 +172,7 @@ class OsoDBWorkflow(MixableWorkflow):
     @step
     async def retrieve_sql_results(
         self, ctx: Context, query: SQLExecutionRequestEvent
-    ) -> SQLResultEvent:
+    ) -> SQLResultEvent | RetrySemanticQueryEvent:
         """Retrieve SQL results using the OSO DB client."""
         if not self.oso_client:
             raise ValueError("OSO DB client is not initialized.")
