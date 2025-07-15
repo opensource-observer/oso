@@ -6,7 +6,7 @@ import uuid
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Header, Request
 from fastapi.datastructures import State
 from fastapi.responses import JSONResponse, PlainTextResponse
 from oso_agent.agent import setup_default_agent_registry
@@ -19,9 +19,11 @@ from oso_agent.server.definition import (
     ChatRequest,
 )
 from oso_agent.types.response import AnyResponse
+from oso_agent.util import WorkflowConfig
 from oso_agent.util.log import setup_logging
 from oso_agent.workflows.default import setup_default_workflow_registry
 from oso_agent.workflows.registry import WorkflowRegistry
+from pydantic import SecretStr
 
 from ..types import (
     ErrorResponse,
@@ -142,12 +144,25 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
     async def text2sql(
         request: Request,
         chat_request: ChatRequest,
+        authorization: t.Annotated[str | None, Header()] = None,
     ) -> JSONResponse:
         """Get the status of a job"""
+        oso_api_key = (
+            authorization.removeprefix("Bearer ").strip()
+            if authorization and authorization.startswith("Bearer ")
+            else config.oso_api_key.get_secret_value()
+        )
+        logger.info(f"Using Oso API key: {oso_api_key}")
+        workflow_config = WorkflowConfig(oso_api_key=SecretStr(oso_api_key))
         workflow_registry = get_workflow_registry(request)
-        basic_workflow = await workflow_registry.get_workflow("basic_text2sql")
-        semantic_workflow = await workflow_registry.get_workflow("semantic_text2sql")
+        basic_workflow = await workflow_registry.get_workflow(
+            "basic_text2sql", workflow_config
+        )
+        semantic_workflow = await workflow_registry.get_workflow(
+            "semantic_text2sql", workflow_config
+        )
 
+        logger.info("loaded workflows")
         # We trigger the workflows simultaneously using asyncio.create_task
         # NOTE: for now this workflow does not support chat history it only accepts the most recent message
         sql_result_task = asyncio.create_task(
