@@ -1,0 +1,153 @@
+test_int_events_aux_prs_basic:
+  model: oso.int_events_aux_prs
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-05
+  inputs:
+    oso.stg_github__pull_requests:
+      rows:
+      - id: "pr_event_1"
+        event_time: "2024-01-01 14:00:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1001
+        actor_login: "user1"
+        type: "PULL_REQUEST_OPENED"
+        number: 1
+        created_at: "2024-01-01 14:00:00"
+        merged_at: null
+        closed_at: null
+        state: "open"
+        comments: 0
+        author_association: "FIRST_TIME_CONTRIBUTOR"
+      - id: "pr_event_2"
+        event_time: "2024-01-02 10:00:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1002
+        actor_login: "user2"
+        type: "PULL_REQUEST_OPENED"
+        number: 2
+        created_at: "2024-01-02 10:00:00"
+        merged_at: null
+        closed_at: null
+        state: "open"
+        comments: 0
+        author_association: "MEMBER"
+    oso.stg_github__pull_request_merge_events:
+      rows:
+      - id: "pr_merge_event_1"
+        event_time: "2024-01-03 16:00:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1003
+        actor_login: "user3"
+        type: "PULL_REQUEST_MERGED"
+        number: 1
+        created_at: "2024-01-01 14:00:00"
+        merged_at: "2024-01-03 16:00:00"
+        closed_at: "2024-01-03 16:00:00"
+        state: "closed"
+        merge_commit_sha: "abc123def456"
+        changed_files: 2
+        additions: 15
+        deletions: 3
+        review_comments: 1
+        comments: 2
+        author_association: "CONTRIBUTOR"
+    oso.stg_github__comments:
+      rows:
+      - id: "pr_comment_event_1"
+        event_time: "2024-01-01 18:30:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1004
+        actor_login: "user4"
+        type: "PULL_REQUEST_REVIEW_COMMENT"
+        number: 1
+        created_at: "2024-01-01 14:00:00"
+        merged_at: null
+        closed_at: null
+        state: "open"
+        comments: 1
+      - id: "pr_comment_event_2"
+        event_time: "2024-01-02 12:15:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1005
+        actor_login: "user5"
+        type: "PULL_REQUEST_COMMENT"
+        number: 2
+        created_at: "2024-01-02 10:00:00"
+        merged_at: null
+        closed_at: null
+        state: "open"
+        comments: 1
+  outputs:
+    query:
+      rows:
+      - time: "2024-01-01 14:00:00"
+        to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
+        from_artifact_id: "3d37ccdc4b332167e08948b0360d23d9ddbbd607df3dbcdacd0ad7a250ae0003"
+        pr_id: "1f8691e043d32a5bd31a58a510bc38a5ac0ea5381fa75fdd9cab8d952fa03848"
+        pr_number: 1
+        created_at: "2024-01-01 14:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 0
+        author_association: "FIRST_TIME_CONTRIBUTOR"
+        event_type: "PULL_REQUEST_OPENED"
+        event_source_id: "pr_event_1"
+        event_source: "GITHUB"
+      - time: "2024-01-01 18:30:00"
+        to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
+        from_artifact_id: "6bbaca2f0003f87e64ab336abcf15e30f29056940874c782e96ec61c744ef768"
+        pr_id: "1f8691e043d32a5bd31a58a510bc38a5ac0ea5381fa75fdd9cab8d952fa03848"
+        pr_number: 1
+        created_at: "2024-01-01 14:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 1
+        author_association: null
+        event_type: "PULL_REQUEST_REVIEW_COMMENT"
+        event_source_id: "pr_comment_event_1"
+        event_source: "GITHUB"
+      - time: "2024-01-02 10:00:00"
+        to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
+        from_artifact_id: "ad7bbe20ff9368ca0a4e27dd0bc570aaf1f9759adaf3a36b21752642a95b1d6e"
+        pr_id: "90dbe855eb6cabc56f5df78de418054456d3fd159b1b4cbf87a3763d7040c08a"
+        pr_number: 2
+        created_at: "2024-01-02 10:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 0
+        author_association: "MEMBER"
+        event_type: "PULL_REQUEST_OPENED"
+        event_source_id: "pr_event_2"
+        event_source: "GITHUB"
+      - time: "2024-01-02 12:15:00"
+        to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
+        from_artifact_id: "8e48d4f7043915d4ac45680690d816792360c031dbe9779f68592b185b1dbec3"
+        pr_id: "90dbe855eb6cabc56f5df78de418054456d3fd159b1b4cbf87a3763d7040c08a"
+        pr_number: 2
+        created_at: "2024-01-02 10:00:00"
+        merged_at: null
+        closed_at: null
+        comments: 1
+        author_association: null
+        event_type: "PULL_REQUEST_COMMENT"
+        event_source_id: "pr_comment_event_2"
+        event_source: "GITHUB"
+      - time: "2024-01-03 16:00:00"
+        to_artifact_id: "0e90ac08293acd5f3f20c0811165396068c0af98f14976c7ac6c20f117dfa248"
+        from_artifact_id: "b899924d11f826736da0953c0f031f6fe240310ac50ac3e7965498a4a8402345"
+        pr_id: "1f8691e043d32a5bd31a58a510bc38a5ac0ea5381fa75fdd9cab8d952fa03848"
+        pr_number: 1
+        created_at: "2024-01-01 14:00:00"
+        merged_at: "2024-01-03 16:00:00"
+        closed_at: "2024-01-03 16:00:00"
+        comments: 2
+        author_association: "CONTRIBUTOR"
+        event_type: "PULL_REQUEST_MERGED"
+        event_source_id: "pr_merge_event_1"
+        event_source: "GITHUB"

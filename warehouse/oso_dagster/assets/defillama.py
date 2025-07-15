@@ -557,3 +557,99 @@ def defillama_protocol_metadata_assets(
     if global_config.enable_bigquery:
         bigquery_adapter(resource, cluster=["slug"])
     yield resource
+
+
+def get_defillama_historical_chain_tvl(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch historical chain TVL data for specified chains from DefiLlama API.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Historical chain TVL entries with chain, time, and tvl fields.
+    """
+    session = Session(timeout=300)
+    
+    # Initial list of chains to fetch
+    chains = [
+        "ethereum", "polygon", "arbitrum", "celo", "mint",
+        "base", "optimism", "unichain", "world chain", "mode", "ink", "soneium",
+        "lisk", "fraxtal", "polynomial", "filecoin", "ham", "superseed", "swellchain",
+        "zora", "bob", 
+    ]
+    
+    for i, chain in enumerate(chains):
+        try:
+            url = f"https://api.llama.fi/v2/historicalChainTvl/{chain}"
+            context.log.info(f"[Historical Chain TVL] {i+1}/{len(chains)} {chain}")
+            
+            response = session.get(url)
+            response.raise_for_status()
+            data = response.json()
+            
+            # Parse the historical TVL data
+            for entry in data:
+                try:
+                    timestamp = pd.Timestamp(entry["date"], unit="s")
+                    if not isinstance(timestamp, pd.Timestamp) or pd.isna(timestamp):
+                        continue
+                    
+                    amount = float(entry["tvl"])
+                    
+                    event = {
+                        "time": timestamp.isoformat(),
+                        "chain": chain,
+                        "tvl": amount,
+                    }
+                    yield event
+                    
+                except (KeyError, ValueError) as e:
+                    context.log.warning(f"Error parsing TVL entry for {chain}: {e}")
+                    continue
+                    
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                context.log.warning(f"Chain {chain} not found (404)")
+                continue
+            context.log.warning(f"Historical Chain TVL: {chain}: {e}")
+        except Exception as e:
+            context.log.error(f"Historical Chain TVL: {chain}: {e}")
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="historical_chain_tvl",
+    op_tags={
+        "dagster/concurrency_key": "defillama_historical_chain_tvl",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_historical_chain_tvl_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads historical chain TVL data
+    from DefiLlama into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes historical chain TVL rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_historical_chain_tvl(context),
+        name="historical_chain_tvl",
+        primary_key=["chain", "time"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, partition="time", cluster=["chain"])
+    yield resource

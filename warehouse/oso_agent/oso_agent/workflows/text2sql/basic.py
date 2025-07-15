@@ -12,13 +12,13 @@ from oso_agent.workflows.types import (
 )
 
 from ...resources import ResourceDependency
-from .mixins import GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthesisMixin
+from .mixins import GenericText2SQLRouter, OsoDBWorkflow, SQLRowsResponseSynthesisMixin
 
 logger = logging.getLogger(__name__)
 
 
 class BasicText2SQL(
-    GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthesisMixin
+    GenericText2SQLRouter, OsoDBWorkflow, SQLRowsResponseSynthesisMixin
 ):
     """The basic text to sql agent that just uses the descriptions and a rag to
     retrieve row context
@@ -81,9 +81,7 @@ class BasicText2SQL(
             output_sql,
         )
         if not output_sql:
-            raise ValueError(
-                "No SQL query found in metadata of query engine tool output"
-            )
+            raise ValueError("No SQL query found in metadata of query engine tool output")
 
         synthesize_response = bool(getattr(event, "synthesize_response", True))
         execute_sql = bool(getattr(event, "execute_sql", True))

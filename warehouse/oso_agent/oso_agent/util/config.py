@@ -125,11 +125,6 @@ class AgentConfig(BaseSettings):
         discriminator="type", default_factory=lambda: LocalVectorStoreConfig()
     )
 
-    oso_mcp_url: str = Field(
-        default="http://localhost:8000/sse", description="URL for the OSO MCP API"
-    )
-    use_mcp: bool = Field(default=True, description="Whether to use MCP tools")
-
     enable_telemetry: bool = Field(
         default=True, description="Whether to enable OpenTelemetry instrumentation"
     )

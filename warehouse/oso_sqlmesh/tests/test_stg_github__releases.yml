@@ -1,0 +1,166 @@
+test_stg_github__releases_basic:
+  model: oso.stg_github__releases
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-05
+  inputs:
+    oso.stg_github__events:
+      rows:
+      # Release published event - should be included
+      - id: "event_1"
+        created_at: "2024-01-01 14:00:00"
+        type: "ReleaseEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1001
+          login: "user1"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1001"
+          url: "https://api.github.com/users/user1"
+        org: null
+        other: ""
+        payload: '{"action": "published", "release": {"id": 123456, "tag_name": "v1.0.0", "name": "Release 1.0.0", "created": "2024-01-01T14:00:00Z", "published_at": "2024-01-01T14:00:00Z", "draft": false, "prerelease": false, "author": {"login": "user1", "id": 1001}}}'
+      # Another release published event - should be included
+      - id: "event_2"
+        created_at: "2024-01-02 10:30:00"
+        type: "ReleaseEvent"
+        public: true
+        repo:
+          id: 67890
+          name: "owner2/repo2"
+          url: "https://api.github.com/repos/owner2/repo2"
+        actor:
+          id: 1002
+          login: "user2"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1002"
+          url: "https://api.github.com/users/user2"
+        org: null
+        other: ""
+        payload: '{"action": "published", "release": {"id": 789012, "tag_name": "v2.1.0", "name": "Release 2.1.0", "created": "2024-01-02T10:30:00Z", "published_at": "2024-01-02T10:30:00Z", "draft": false, "prerelease": true, "author": {"login": "user2", "id": 1002}}}'
+      # Release event with different action - should still be included (model doesn't filter by action)
+      - id: "event_3"
+        created_at: "2024-01-03 16:45:00"
+        type: "ReleaseEvent"
+        public: true
+        repo:
+          id: 11111
+          name: "owner3/repo3"
+          url: "https://api.github.com/repos/owner3/repo3"
+        actor:
+          id: 1003
+          login: "user3"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1003"
+          url: "https://api.github.com/users/user3"
+        org: null
+        other: ""
+        payload: '{"action": "edited", "release": {"id": 345678, "tag_name": "v1.1.0", "name": "Release 1.1.0", "created": "2024-01-03T16:45:00Z", "published_at": "2024-01-03T16:45:00Z", "draft": false, "prerelease": false, "author": {"login": "user3", "id": 1003}}}'
+      # Non-ReleaseEvent - should be excluded
+      - id: "event_4"
+        created_at: "2024-01-04 12:00:00"
+        type: "PushEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1004
+          login: "user4"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1004"
+          url: "https://api.github.com/users/user4"
+        org: null
+        other: ""
+        payload: '{"ref": "refs/heads/main", "commits": []}'
+  outputs:
+    query:
+      rows:
+      - id: "event_1"
+        created_at: "2024-01-01 14:00:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1001
+        actor_login: "user1"
+        type: "RELEASE_PUBLISHED"
+      - id: "event_2"
+        created_at: "2024-01-02 10:30:00"
+        repository_id: 67890
+        repository_name: "owner2/repo2"
+        actor_id: 1002
+        actor_login: "user2"
+        type: "RELEASE_PUBLISHED"
+      - id: "event_3"
+        created_at: "2024-01-03 16:45:00"
+        repository_id: 11111
+        repository_name: "owner3/repo3"
+        actor_id: 1003
+        actor_login: "user3"
+        type: "RELEASE_PUBLISHED"
+
+test_stg_github__releases_edge_cases:
+  model: oso.stg_github__releases
+  vars:
+    start_dt: 2024-03-01
+    end_dt: 2024-03-05
+  inputs:
+    oso.stg_github__events:
+      rows:
+      # Release with minimal payload - should be included
+      - id: "event_9"
+        created_at: "2024-03-01 08:00:00"
+        type: "ReleaseEvent"
+        public: true
+        repo:
+          id: 66666
+          name: "owner8/repo8"
+          url: "https://api.github.com/repos/owner8/repo8"
+        actor:
+          id: 3001
+          login: "user9"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/3001"
+          url: "https://api.github.com/users/user9"
+        org: null
+        other: ""
+        payload: '{"action": "published", "release": {"id": 890123, "tag_name": "v4.0.0", "created": "2024-03-01T08:00:00Z"}}'
+      # Release with deleted action - should be included
+      - id: "event_10"
+        created_at: "2024-03-02 14:30:00"
+        type: "ReleaseEvent"
+        public: true
+        repo:
+          id: 77777
+          name: "owner9/repo9"
+          url: "https://api.github.com/repos/owner9/repo9"
+        actor:
+          id: 3002
+          login: "user10"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/3002"
+          url: "https://api.github.com/users/user10"
+        org: null
+        other: ""
+        payload: '{"action": "deleted", "release": {"id": 901234, "tag_name": "v4.0.1", "name": "Release 4.0.1", "created": "2024-03-02T14:30:00Z", "published_at": null, "draft": false, "prerelease": false, "author": {"login": "user10", "id": 3002}}}'
+  outputs:
+    query:
+      rows:
+      - id: "event_9"
+        created_at: "2024-03-01 08:00:00"
+        repository_id: 66666
+        repository_name: "owner8/repo8"
+        actor_id: 3001
+        actor_login: "user9"
+        type: "RELEASE_PUBLISHED"
+      - id: "event_10"
+        created_at: "2024-03-02 14:30:00"
+        repository_id: 77777
+        repository_name: "owner9/repo9"
+        actor_id: 3002
+        actor_login: "user10"
+        type: "RELEASE_PUBLISHED"
