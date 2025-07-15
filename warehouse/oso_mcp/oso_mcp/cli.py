@@ -35,3 +35,9 @@ def serve(config: MCPConfig):
     mcp_app = setup_mcp_app(config)
 
     mcp_app.run(transport=config.transport)
+
+
+@cli.command()
+def env_schema():
+    """Show the environment variable schema for the MCP server."""
+    MCPConfig.print_env_schema()
