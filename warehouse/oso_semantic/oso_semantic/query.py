@@ -1,28 +1,34 @@
 import logging
 import typing as t
+from copy import deepcopy
 
 from sqlglot import exp
 
 from .definition import (
     AttributePath,
     AttributePathTraverser,
+    BoundMeasure,
     BoundRelationship,
+    Dimension,
     Filter,
     JoinTree,
     Model,
     QueryComponent,
     QueryRegistry,
     Registry,
+    Relationship,
     Select,
     SemanticExpression,
 )
+from .utils import exp_to_str
 
 logger = logging.getLogger(__name__)
 
 
 class QueryBuilder(QueryRegistry):
     def __init__(self, registry: Registry):
-        self._registry = registry
+        self._registry = deepcopy(registry)
+        self._ctes: list[tuple[str, QueryBuilder]] = []
         self._select_refs: list[AttributePath] = []
         self._references: list[AttributePath] = []
         self._root_model: Model | None = None
@@ -33,7 +39,7 @@ class QueryBuilder(QueryRegistry):
 
         self._limit = 0
 
-    def add_reference(self, reference: AttributePath):
+    def _add_reference(self, reference: AttributePath):
         """Adds an attribute reference to the query
 
         Every reference adds 0 or more joins to the query
@@ -58,7 +64,7 @@ class QueryBuilder(QueryRegistry):
 
             for resolved_reference in resolved_references:
                 if resolved_reference not in self._references:
-                    self.add_reference(resolved_reference)
+                    self._add_reference(resolved_reference)
             self._select_parts.append(select_expr)
             self._select_aliases.append(alias)
         return self
@@ -77,7 +83,7 @@ class QueryBuilder(QueryRegistry):
                 resolved_references = self._registry.expand_reference(reference)
                 for resolved_reference in resolved_references:
                     if resolved_reference not in self._references:
-                        self.add_reference(resolved_reference)
+                        self._add_reference(resolved_reference)
 
             self._filter_parts.append(filter_expr)
         return self
@@ -86,6 +92,70 @@ class QueryBuilder(QueryRegistry):
         """Add a limit to the query"""
         self._limit = limit
         return self
+
+    def cte(self, name: str, query: t.Self):
+        model = query.to_model(name)
+        self._registry.register(model)
+        self._ctes.append((name, query))
+        return self
+
+    def to_model(self, name: str):
+        relationships: set[Relationship] = set()
+        dimensions: set[Dimension] = set()
+        for select_part, alias in zip(self._select_parts, self._select_aliases):
+            references = select_part.references()
+            reference = references[0]
+            final_column = reference.final_attribute()
+            model = self._registry.get_model(exp_to_str(final_column.table))
+            attribute = model.get_attribute(exp_to_str(final_column.this))
+            if isinstance(attribute, BoundRelationship):
+                relationships.add(
+                    Relationship(
+                        name=alias,
+                        type=attribute.relationship.type,
+                        source_foreign_key=alias,
+                        ref_model=attribute.relationship.ref_model,
+                        ref_key=attribute.relationship.ref_key,
+                    )
+                )
+            elif isinstance(attribute, BoundMeasure):
+                dimensions.add(
+                    Dimension(
+                        name=alias,
+                        description=attribute.measure.description,
+                        column_name=alias,
+                    )
+                )
+            else:
+                dimensions.add(
+                    Dimension(
+                        name=alias,
+                        description=attribute.dimension.description,
+                        query="",
+                        column_name=alias,
+                    )
+                )
+                # Sometimes the relationship is also a dimension
+                for relationship in model.relationships:
+                    if relationship.source_foreign_key[0] == exp_to_str(
+                        final_column.this
+                    ):
+                        relationships.add(
+                            Relationship(
+                                name=f"{relationship.ref_model}_by_{alias}",
+                                type=relationship.type,
+                                source_foreign_key=alias,
+                                ref_model=relationship.ref_model,
+                                ref_key=relationship.ref_key,
+                            )
+                        )
+
+        return Model(
+            name=name,
+            table=name,
+            dimensions=[dimension for dimension in dimensions],
+            relationships=[relationship for relationship in relationships],
+        )
 
     def build(self):
         """Render a select query"""
@@ -136,6 +206,11 @@ class QueryBuilder(QueryRegistry):
 
         if self._limit:
             query = query.limit(self._limit)
+
+        # Add CTEs
+        for name, cte_query in self._ctes:
+            cte_exp = cte_query.build()
+            query = query.with_(name, as_=cte_exp)
 
         return query
 
@@ -208,9 +283,13 @@ class QueryJoiner:
 
         logger.debug(f"Join path: {join_path}")
 
-        for relationship in join_path:
-            referenced_model = registry.get_model(relationship.ref_model)
-            referenced_model_alias = create_alias(relationship.ref_model)
+        for bound_relationship in join_path:
+            referenced_model = registry.get_model(
+                bound_relationship.relationship.ref_model
+            )
+            referenced_model_alias = create_alias(
+                bound_relationship.relationship.ref_model
+            )
 
             referenced_model_table = referenced_model.table_exp.as_(
                 referenced_model_alias
@@ -225,8 +304,8 @@ class QueryJoiner:
                     [
                         f"{from_table_alias}.{exp.to_identifier(source_foreign_key)} = {referenced_model_alias}.{exp.to_identifier(ref_key)}"
                         for source_foreign_key, ref_key in zip(
-                            relationship.source_foreign_key,
-                            relationship.ref_key,
+                            bound_relationship.relationship.source_foreign_key,
+                            bound_relationship.relationship.ref_key,
                         )
                     ]
                 ),
