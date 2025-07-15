@@ -12,11 +12,14 @@ from oso_agent.workflows.types import (
 )
 
 from ...resources import ResourceDependency
-from .mixins import GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthesisMixin
+from .mixins import GenericText2SQLRouter, OsoDBWorkflow, SQLRowsResponseSynthesisMixin
 
 logger = logging.getLogger(__name__)
 
-class BasicText2SQL(GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthesisMixin):
+
+class BasicText2SQL(
+    GenericText2SQLRouter, OsoDBWorkflow, SQLRowsResponseSynthesisMixin
+):
     """The basic text to sql agent that just uses the descriptions and a rag to
     retrieve row context
     """
@@ -60,7 +63,7 @@ class BasicText2SQL(GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthes
         logger.debug(f"query engine tool created the following SQL query for query[{event_input_id}]: {output_sql}")
         if not output_sql:
             raise ValueError("No SQL query found in metadata of query engine tool output")
-        
+
         synthesize_response = bool(getattr(event, "synthesize_response", True))
         execute_sql = bool(getattr(event, "execute_sql", True))
 
@@ -72,7 +75,6 @@ class BasicText2SQL(GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthes
             execute_sql=execute_sql,
         )
 
-
     @step
     async def return_response(self, response: SQLResultSummaryResponseEvent) -> StopEvent:
         """Return the response from the SQL query."""
@@ -83,4 +85,3 @@ class BasicText2SQL(GenericText2SQLRouter, McpDBWorkflow, SQLRowsResponseSynthes
         return StopEvent(
             result=StrResponse(blob=response.summary)
         )
-

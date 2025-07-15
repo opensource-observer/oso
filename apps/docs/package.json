@@ -38,10 +38,10 @@
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.7.0",
     "@docusaurus/tsconfig": "3.8.1",
-    "@docusaurus/types": "3.7.0",
+    "@docusaurus/types": "3.8.1",
     "@eslint/compat": "^1.2.7",
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.23.0",
+    "@eslint/js": "^9.31.0",
     "@plasmicapp/cli": "0.1.340",
     "dotenv": "^16.4.7",
     "typescript": "~5.8.2"

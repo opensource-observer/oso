@@ -8,6 +8,7 @@ therefore the final sql can render to any dialect supported by sqlglot.
 
 See our documentation for more information at https://docs.opensource.observer.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -41,15 +42,16 @@ def coerce_to_tables_column(ref: str, expected_table: str = "self") -> exp.Expre
 
 class QueryRegistry(t.Protocol):
     def __init__(self, registry: Registry): ...
-    def add_reference(self, reference: AttributePath) -> t.Self: ...
     def select(self, *selects: str) -> t.Self: ...
     def where(self, *filters: str) -> t.Self: ...
-    def add_limit(self, limit: int) -> t.Self: ...
+    def limit(self, limit: int) -> t.Self: ...
+    def cte(self, name: str, query: t.Self) -> t.Self: ...
+    def to_model(self, name: str) -> Model: ...
     def build(self) -> exp.Expression: ...
 
 
-class RegistryDAG:
-    """A DAG of models and views that can be used to generate SQL queries.
+class RegistryGraph:
+    """A graph of models and views that can be used to generate SQL queries.
 
     This is used to determine the order in which models and views should be joined.
     """
@@ -68,38 +70,10 @@ class RegistryDAG:
         # Gets all the names of related models
         reference_names = list(map(lambda x: x.ref_model, model.relationships))
 
-        adj_set = self.adjacency_map.get(model.name, set())
-        adj_set = adj_set.union(set(reference_names))
-        self.adjacency_map[model.name] = adj_set
-
-    def check_cycle(self):
-        """Check if there are any cycles in the directed graph.
-
-        Throws an error if a cycle is detected.
-        """
-        # 0: unvisited (white), 1: visiting (gray), 2: visited (black)
-        color = {node: 0 for node in self.adjacency_map}
-
-        def cycle_dfs(node: str):
-            # Mark as visiting (gray)
-            color[node] = 1
-
-            # Visit all adjacent nodes
-            for neighbor in self.adjacency_map.get(node, set()):
-                neighbor_color = color[neighbor]
-                if neighbor_color == 1:
-                    raise ValueError(f"Cycle detected at model {neighbor}")
-                elif neighbor_color == 0:
-                    cycle_dfs(neighbor)
-
-            # Mark as visited (black)
-            color[node] = 2
-            return False
-
-        # Check for cycles starting from each unvisited node
-        for node in self.adjacency_map:
-            if color[node] == 0:
-                cycle_dfs(node)
+        for reference in reference_names:
+            self.adjacency_map.setdefault(reference, set())
+            self.adjacency_map[reference].add(model.name)
+            self.adjacency_map[model.name].add(reference)
 
     def find_best_join_tree(self, references: list[AttributePath]):
         """Finds the join tree with the least amount of nodes (models) for the given references."""
@@ -260,10 +234,10 @@ class Registry(t.Generic[Q]):
         the registry that must follow the QueryRegistry protocol. If not
         provided, defaults to the QueryBuilder class.
     """
+
     models: t.Dict[str, "Model"]
-    dag: RegistryDAG
+    dag: RegistryGraph
     views: t.Dict[str, "View"]
-    check_cycle: bool = False
 
     def __init__(self, query_builder: type[Q] | None = None):
         from .query import QueryBuilder
@@ -272,7 +246,7 @@ class Registry(t.Generic[Q]):
         self.models = {}
         self.views = {}
         self.sorted_model_names = None
-        self.dag = RegistryDAG()
+        self.dag = RegistryGraph()
 
     def register(self, model: "Model", repoen: bool = False):
         """Inserts the model into the registry and updates the adjacency map.
@@ -284,7 +258,6 @@ class Registry(t.Generic[Q]):
         self.models[model.name] = model
         # Register the model under the given name
         self.dag.add(model)
-        self.check_cycle = True
 
     def register_view(self, view: "View"):
         self.views[view.name] = view
@@ -302,13 +275,17 @@ class Registry(t.Generic[Q]):
         if semantic_query.filters:
             query = query.where(*semantic_query.filters)
         if semantic_query.limit:
-            query = query.add_limit(semantic_query.limit)
+            query = query.limit(semantic_query.limit)
         return query
+
+    def cte(self, name: str, query: Q):
+        """Returns a new query builder for the registry with a subquery"""
+
+        query_builder = self.query_builder(self).cte(name, query)
+        return query_builder
 
     def select(self, *selects: str):
         """Returns a new query builder for the registry"""
-        if self.check_cycle:
-            self.dag.check_cycle()
 
         query_builder = self.query_builder(self)
         for select in selects:
@@ -327,7 +304,7 @@ class Registry(t.Generic[Q]):
             description += model.describe() + "\n"
 
         return description
-    
+
     def expand_reference(
         self,
         reference: "AttributePath",
@@ -347,21 +324,23 @@ class Registry(t.Generic[Q]):
 
             for sub_reference in sub_references:
                 # Rewrite the sub reference to the current model
-                expanded_references.extend([
-                    traverser.create_scoped_reference(ref) for ref in self.expand_reference(sub_reference)
-                ])
+                expanded_references.extend(
+                    [
+                        traverser.create_scoped_reference(ref)
+                        for ref in self.expand_reference(sub_reference)
+                    ]
+                )
             return expanded_references
 
-    def get_attribute_from_reference(self, reference: "AttributePath") -> "BoundDimension | BoundMeasure | BoundRelationship":
+    def get_attribute_from_reference(
+        self, reference: "AttributePath"
+    ) -> "BoundDimension | BoundMeasure | BoundRelationship":
         attr = reference.final_attribute()
 
         model = self.get_model(exp_to_str(attr.table))
         attribute_name = exp_to_str(attr.this)
 
-        return model.get_attribute(
-            attribute_name
-        )
-
+        return model.get_attribute(attribute_name)
 
 
 class GenericExpression(BaseModel):
@@ -474,7 +453,7 @@ class GenericExpression(BaseModel):
                 BoundMeasure, or BoundRelationship.
             traverser: The traverser to use for resolving the expression. If not
                 provided, a new traverser will be created from the root.
-        
+
         Returns:
             The resolved SQL expression as a sqlglot Expression object.
         """
@@ -519,9 +498,11 @@ class GenericExpression(BaseModel):
                             )
                             return resolved
                         case BoundRelationship():
-                            raise ValueError(
-                                f"Semantic reference {reference} cannot resolve to a relationship at this time. Only dimensions and measures are allowed."
+                            resolved = attribute.resolve(
+                                registry=registry,
+                                traverser=column_traverser,
                             )
+                            return resolved
 
                 elif anonymous_function_name == "$column_ref":
                     # If this is a column reference then we need to simply resolve to the model's column
@@ -532,7 +513,7 @@ class GenericExpression(BaseModel):
             return node
 
         return self._expression.transform(convert_column)
-    
+
     @classmethod
     def is_ref_node(cls, node: exp.Expression) -> bool:
         """Checks if the node is an anonymous reference node.
@@ -544,22 +525,27 @@ class GenericExpression(BaseModel):
             exp_to_str(node.this) == "$semantic_ref"
             or exp_to_str(node.this) == "$column_ref"
         )
-    
+
     @classmethod
     def is_column_ref_node(cls, node: exp.Expression) -> bool:
         """Checks if the node is a column reference node.
 
         This is used to determine if the node is a column reference.
         """
-        return isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$column_ref"
-    
+        return (
+            isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$column_ref"
+        )
+
     @classmethod
     def is_semantic_ref_node(cls, node: exp.Expression) -> bool:
         """Checks if the node is a semantic reference node.
 
         This is used to determine if the node is a semantic reference.
         """
-        return isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$semantic_ref"
+        return (
+            isinstance(node, exp.Anonymous) and exp_to_str(node.this) == "$semantic_ref"
+        )
+
 
 class SemanticExpression(GenericExpression):
     """A string expression that is in the semantic context"""
@@ -778,6 +764,7 @@ class BoundMeasure:
             for ref in self.measure.references(allow_self=True)
         ]
 
+
 class Select(BaseModel):
     """Represents the select part of a query. This should just be a semantic reference"""
 
@@ -817,8 +804,10 @@ class Select(BaseModel):
     def expression(self) -> SemanticExpression:
         """Returns the semantic expression for the select part of the query"""
         return self._expression
-    
-    def resolve(self, registry: Registry, traverser: AttributePathTraverser | None = None) -> exp.Expression:
+
+    def resolve(
+        self, registry: Registry, traverser: AttributePathTraverser | None = None
+    ) -> exp.Expression:
         """Returns a resolved SQL expression for the select part of the query."""
 
         return self._expression.resolve(
@@ -854,10 +843,9 @@ class Select(BaseModel):
             reference = self.references()[0]
             return reference.to_select_alias()
 
-    
-    
+
 class Filter(BaseModel):
-    """Represents the filter part of a query. 
+    """Represents the filter part of a query.
 
     Filters' queries are only SemanticExpressions.
     """
@@ -876,7 +864,7 @@ class Filter(BaseModel):
         self._expression = expression
 
         return self
-    
+
     @property
     def expression(self) -> SemanticExpression:
         """Returns the semantic expression for the filter"""
@@ -898,7 +886,7 @@ class Filter(BaseModel):
     def references(self) -> t.List["AttributePath"]:
         """Returns the semantic references in the dimension expression"""
         return self._expression.references(allow_self=False)
-    
+
     def is_aggregate(self, registry: Registry) -> bool:
         """Returns whether the filter expression is an aggregate function."""
         # If this references a measure, then it is an aggregate function (this likely needs to be fixed but)
@@ -969,6 +957,9 @@ class Dimension(BaseModel):
     """
         ),
     )
+
+    def __hash__(self):
+        return self.name.__hash__()
 
     @model_validator(mode="after")
     def process_dimension(self):
@@ -1116,6 +1107,9 @@ class Relationship(BaseModel):
     ref_model: str
     ref_key: str | list[str]
 
+    def __hash__(self):
+        return self.name.__hash__()
+
     @model_validator(mode="after")
     def process_relationship(self):
         if not self.name:
@@ -1127,9 +1121,16 @@ class Relationship(BaseModel):
         if isinstance(self.ref_key, str):
             self.ref_key = [self.ref_key]
 
-        assert len(self.source_foreign_key) == len(
-            self.ref_key
-        ), f"Source foreign key {self.source_foreign_key} and reference foreign key {self.ref_key} must have the same length"
+        assert len(self.source_foreign_key) == len(self.ref_key), (
+            f"Source foreign key {self.source_foreign_key} and reference foreign key {self.ref_key} must have the same length"
+        )
+
+        self._expression = RawExpression(
+            query=exp.Column(
+                table=exp.to_identifier("self"),
+                this=exp.to_identifier(self.source_foreign_key[0]),
+            ).sql(dialect="trino")
+        )
 
         return self
 
@@ -1138,44 +1139,48 @@ class Relationship(BaseModel):
 
         return BoundRelationship(
             model=model,
-            name=self.name,
-            type=self.type,
-            source_foreign_key=(
-                self.source_foreign_key
-                if isinstance(self.source_foreign_key, list)
-                else [self.source_foreign_key]
-            ),
-            ref_model=self.ref_model,
-            ref_foreign_key=(
-                self.ref_key if isinstance(self.ref_key, list) else [self.ref_key]
-            ),
+            relationship=self,
+        )
+
+    def references(self, model: "Model") -> t.List["AttributePath"]:
+        """Returns the semantic references in the relationship"""
+        return [AttributePath.from_string(f"{model.name}.{self.name}")]
+
+    def resolve(
+        self,
+        self_model_name: str,
+        registry: Registry,
+        traverser: AttributePathTraverser | None = None,
+    ) -> exp.Expression:
+        """Returns a resolved SQL expression for the relationship."""
+
+        return self._expression.resolve(
+            traverser=traverser,
+            self_model_name=self_model_name,
+            registry=registry,
         )
 
 
 class BoundRelationship:
     model: "Model"
-    name: str = ""
-    type: RelationshipType
-    source_foreign_key: list[str]
-    ref_model: str
-    ref_key: list[str]
+    relationship: Relationship
 
-    def __init__(
-        self,
-        *,
-        model: "Model",
-        name: str,
-        type: RelationshipType,
-        source_foreign_key: list[str],
-        ref_model: str,
-        ref_foreign_key: list[str],
-    ):
+    def __init__(self, *, model: "Model", relationship: Relationship):
         self.model = model
-        self.name = name
-        self.type = type
-        self.source_foreign_key = source_foreign_key
-        self.ref_model = ref_model
-        self.ref_key = ref_foreign_key
+        self.relationship = relationship
+
+    def resolve(
+        self,
+        registry: Registry,
+        traverser: "AttributePathTraverser | None" = None,
+    ) -> exp.Expression:
+        """Returns the QueryComponent"""
+
+        return self.relationship.resolve(
+            traverser=traverser,
+            self_model_name=self.model.name,
+            registry=registry,
+        )
 
 
 class ViewConnector(BaseModel):
@@ -1233,13 +1238,13 @@ class Model(BaseModel):
                 raise ValueError(
                     f"Dimension {dimension.name} already exists in model {self.name}"
                 )
-            references = [ref.rewrite_self(self.name) for ref in dimension.references(allow_self=True)]
+            references = [
+                ref.rewrite_self(self.name)
+                for ref in dimension.references(allow_self=True)
+            ]
 
             known_columns.update(
-                set([
-                    exp_to_str(col.this) 
-                    for col in dimension.columns
-                ]),
+                set([exp_to_str(col.this) for col in dimension.columns]),
             )
             attribute_graph[dimension.name] = set()
             attribute_references[dimension.name] = references
@@ -1273,15 +1278,15 @@ class Model(BaseModel):
                 raise ValueError(
                     f"Measure {measure.name} already exists in model {self.name}"
                 )
-            references = [ref.rewrite_self(self.name) for ref in measure.references(allow_self=True)]
+            references = [
+                ref.rewrite_self(self.name)
+                for ref in measure.references(allow_self=True)
+            ]
             attribute_graph[measure.name] = set()
             attribute_references[measure.name] = references
 
             known_columns.update(
-                set([
-                    exp_to_str(col.this)
-                    for col in measure.columns
-                ]),
+                set([exp_to_str(col.this) for col in measure.columns]),
             )
 
             for reference in references:
@@ -1308,6 +1313,7 @@ class Model(BaseModel):
                 )
 
             attributes[reference.name] = reference.bind(self)
+            attribute_references[reference.name] = []
 
             if isinstance(reference.source_foreign_key, str):
                 known_columns.add(reference.source_foreign_key)
@@ -1472,9 +1478,7 @@ class Model(BaseModel):
         description += "\n"
         return description
 
-    def get_attribute_references(
-        self, name: str
-    ) -> t.List[AttributePath]:
+    def get_attribute_references(self, name: str) -> t.List[AttributePath]:
         """Returns the attribute references for the given attribute name"""
         if name not in self._attribute_references:
             raise ValueError(f"Attribute {name} not found in model {self.name}")
@@ -1647,7 +1651,9 @@ class QueryComponent(t.Protocol):
         """Returns whether the query component is an aggregate function."""
         ...
 
-    def resolve(self, registry: "Registry", traverser: "AttributePathTraverser | None" = None) -> exp.Expression:
+    def resolve(
+        self, registry: "Registry", traverser: "AttributePathTraverser | None" = None
+    ) -> exp.Expression:
         """Returns a resolved SQL expression for the query component.
 
         This should resolve any references to the actual columns in the query.
@@ -1799,7 +1805,7 @@ class AttributePathTraverser:
         while self.next():
             pass
         return self
-    
+
 
 class SemanticQuery(BaseModel):
     """Used for serialization of semantic queries"""
