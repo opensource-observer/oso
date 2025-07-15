@@ -6,53 +6,54 @@ test_contributor_classifications_to_project_monthly:
   inputs:
     oso.contributor_active_days_to_project_monthly:
       rows:
+      # Update input data to use readable pseudo names
       # Full-time contributor (30 active days out of 31)
       - to_project_id: project_1
         from_artifact_id: contributor_1
         event_source: GITHUB
         metrics_sample_date: 2024-01-01
-        metric: contributor_active_days
+        metric: contributor_active_days_monthly
         amount: 30
       # Part-time contributor (5 active days out of 31)
       - to_project_id: project_1
         from_artifact_id: contributor_2
         event_source: GITHUB
         metrics_sample_date: 2024-01-01
-        metric: contributor_active_days
+        metric: contributor_active_days_monthly
         amount: 5
       # Another part-time contributor (8 active days out of 31)
       - to_project_id: project_1
         from_artifact_id: contributor_3
         event_source: GITHUB
         metrics_sample_date: 2024-01-01
-        metric: contributor_active_days
+        metric: contributor_active_days_monthly
         amount: 8
       # New contributor for project_2 (15 active days)
       - to_project_id: project_2
         from_artifact_id: contributor_4
         event_source: GITHUB
         metrics_sample_date: 2024-01-01
-        metric: contributor_active_days
+        metric: contributor_active_days_monthly
         amount: 15
     oso.int_first_contribution_to_project:
       rows:
       # First contribution for contributor_1 was in 2023 (not new)
-      - time: 2023-06-15 10:00:00
+      - time: 2023-06-15
         event_source: GITHUB
         from_artifact_id: contributor_1
         to_project_id: project_1
       # First contribution for contributor_2 was in 2023 (not new)
-      - time: 2023-08-20 14:30:00
+      - time: 2023-08-20
         event_source: GITHUB
         from_artifact_id: contributor_2
         to_project_id: project_1
       # First contribution for contributor_3 was in current period (new contributor)
-      - time: 2024-01-15 09:20:00
+      - time: 2024-01-15
         event_source: GITHUB
         from_artifact_id: contributor_3
         to_project_id: project_1
       # First contribution for contributor_4 was in current period (new contributor)
-      - time: 2024-01-10 16:45:00
+      - time: 2024-01-10
         event_source: GITHUB
         from_artifact_id: contributor_4
         to_project_id: project_2
@@ -90,6 +91,7 @@ test_contributor_classifications_to_project_monthly:
     query:
       partial: true
       rows:
+      # Use readable pseudo names for expected outputs
       # Full-time contributors (active_days / 31 >= 10/30 = 0.33)
       # contributor_1: 30/31 = 0.97 >= 0.33 (full-time)
       - metrics_sample_date: 2024-01-01

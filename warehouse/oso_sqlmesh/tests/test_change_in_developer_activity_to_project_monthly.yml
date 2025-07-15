@@ -1,0 +1,361 @@
+test_change_in_developer_activity_to_project_monthly:
+  model: oso.change_in_developer_activity_to_project_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-03-31
+  inputs:
+    oso.contributor_classifications_to_project_monthly:
+      rows:
+      # Project 1 data for monthly aggregation
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 15
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 20
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 18
+      
+      # Full-time contributors for project 1
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 8
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 12
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 10
+      
+      # Part-time contributors for project 1
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 7
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 8
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 8
+      
+      # Project 2 data for testing different patterns
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 25
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 22
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 28
+      
+      # Full-time contributors for project 2
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 15
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 13
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 16
+      
+      # Part-time contributors for project 2
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 10
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 9
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 12
+        
+  outputs:
+    query:
+      rows:
+      # For project_1, January (2024-01-01): LAG returns NULL for first period
+      # change_in_active_developers = NULL - 15 = NULL
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: null
+      
+      # For project_2, January (2024-01-01): LAG returns NULL for first period
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: null
+      
+      # For project_1, February (2024-02-01): 
+      # change_in_active_developers = LAG(15) - 20 = 15 - 20 = -5
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: -5
+      
+      # For project_1, March (2024-03-01):
+      # change_in_active_developers = LAG(20) - 18 = 20 - 18 = 2
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: 2
+      
+      # For project_1, February (2024-02-01):
+      # change_in_full_time_contributors = LAG(8) - 12 = 8 - 12 = -4
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: -4
+      
+      # For project_1, March (2024-03-01):
+      # change_in_full_time_contributors = LAG(12) - 10 = 12 - 10 = 2
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: 2
+      
+      # For project_1, February (2024-02-01):
+      # change_in_part_time_contributors = LAG(7) - 8 = 7 - 8 = -1
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: -1
+      
+      # For project_1, March (2024-03-01):
+      # change_in_part_time_contributors = LAG(8) - 8 = 8 - 8 = 0
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: 0
+      
+      # For project_2, February (2024-02-01):
+      # change_in_active_developers = LAG(25) - 22 = 25 - 22 = 3
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: 3
+      
+      # For project_2, March (2024-03-01):
+      # change_in_active_developers = LAG(22) - 28 = 22 - 28 = -6
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: -6
+      
+      # For project_2, February (2024-02-01):
+      # change_in_full_time_contributors = LAG(15) - 13 = 15 - 13 = 2
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: 2
+      
+      # For project_2, March (2024-03-01):
+      # change_in_full_time_contributors = LAG(13) - 16 = 13 - 16 = -3
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: -3
+      
+      # For project_2, February (2024-02-01):
+      # change_in_part_time_contributors = LAG(10) - 9 = 10 - 9 = 1
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: 1
+      
+      # For project_2, March (2024-03-01):
+      # change_in_part_time_contributors = LAG(9) - 12 = 9 - 12 = -3
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: -3
+
+test_change_in_developer_activity_to_project_monthly_edge_cases:
+  model: oso.change_in_developer_activity_to_project_monthly
+  vars:
+    start: 2024-04-01
+    end: 2024-06-30
+  inputs:
+    oso.contributor_classifications_to_project_monthly:
+      rows:
+      # Single data point - should have no LAG value (NULL)
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_project_id: project_solo
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 10
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_project_id: project_solo
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 5
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_project_id: project_solo
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 5
+      
+      # Project with gaps in data (skip May)
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_project_id: project_gaps
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 12
+      # Gap in May 2024
+      - metrics_sample_date: 2024-06-01
+        event_source: GITHUB
+        to_project_id: project_gaps
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 15
+      
+  outputs:
+    query:
+      rows:
+      # First month has LAG = NULL for all metrics, so amount = NULL - current_amount = NULL
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_project_id: project_solo
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: null
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_project_id: project_solo
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_project_id: project_solo
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: null
+      
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_project_id: project_gaps
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: null
+      
+      # project_gaps on 2024-06-01 should calculate change from 2024-04-01 (previous available)
+      # change_in_active_developers = LAG(12) - 15 = 12 - 15 = -3
+      - metrics_sample_date: 2024-06-01
+        event_source: GITHUB
+        to_project_id: project_gaps
+        from_artifact_id: ''
+        metric: change_in_active_developers_monthly
+        amount: -3
