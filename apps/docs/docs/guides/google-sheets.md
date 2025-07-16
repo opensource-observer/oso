@@ -228,7 +228,7 @@ Updates to your spreadsheet might take up to 10 minutes to be reflected in pyoso
 
 ## Next Steps
 
-- Explore other [pyoso tutorials](../tutorials/index.md) to learn more query patterns.
+- Explore other [pyoso tutorials](../tutorials/index.mdx) to learn more query patterns.
 - See the official Trino docs on Google Sheets connector for advanced settings:  
   [Trino: Google Sheets Connector](https://trino.io/docs/current/connector/googlesheets.html).
 

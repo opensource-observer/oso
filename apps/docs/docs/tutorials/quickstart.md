@@ -143,4 +143,4 @@ Add a cumulative column:
 df_stars['cumulative_amount'] = df_stars['amount'].cumsum()
 ```
 
-That's it! You're now ready to explore the OSO data lake using pyoso. For more examples, check out our other [tutorials](./index.md).
+That's it! You're now ready to explore the OSO data lake using pyoso. For more examples, check out our other [tutorials](./index.mdx).

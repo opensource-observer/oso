@@ -11,7 +11,7 @@ Welcome! This guide will help you get started as a contributor to Open Source Ob
 Start by exploring OSO's data and understanding what we're building:
 
 1. **Get started with OSO data** - Follow the [Get Started guide](../get-started/index.md) to access our data lake
-2. **Complete a tutorial** - Work through at least one [tutorial](../tutorials/index.md) using `pyoso` to understand our data models
+2. **Complete a tutorial** - Work through at least one [tutorial](../tutorials/index.mdx) using `pyoso` to understand our data models
 3. **Test the API** - Make some test queries to the [OSO API](../get-started/api.mdx) to see what's available
 
 ## 2. Set Up Your Local Development Environment
