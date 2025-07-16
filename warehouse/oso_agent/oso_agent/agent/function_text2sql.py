@@ -9,9 +9,6 @@ from ..prompts.system import SYSTEM_PROMPT
 from ..tool.embedding import create_embedding
 from ..tool.llm import create_llm
 from ..tool.oso_text2sql import create_oso_query_engine
-
-# from ..tool.oso_mcp import create_oso_mcp_tools
-# from ..types.sql_query import SqlQuery
 from ..util.config import AgentConfig
 from ..util.errors import AgentConfigError
 from .decorator import wrapped_agent

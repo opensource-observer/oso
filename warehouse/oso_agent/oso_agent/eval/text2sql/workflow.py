@@ -1,14 +1,12 @@
 import logging
 
-
 from oso_agent.workflows.eval import EvalWorkflow
 
-from ...workflows.text2sql.basic import BasicText2SQL
-from ...tool.oso_mcp_client import OsoMcpClient
+from ...clients.oso_client import OsoClient
 from ...workflows import ResourceDependency
+from ...workflows.text2sql.basic import BasicText2SQL
 
 logger = logging.getLogger(__name__)
-
 
 
 class Text2SQLExperimentWorkflow(BasicText2SQL, EvalWorkflow):
@@ -19,7 +17,7 @@ class Text2SQLExperimentWorkflow(BasicText2SQL, EvalWorkflow):
     workflow.
     """
 
-    oso_mcp_client: ResourceDependency[OsoMcpClient]
+    oso_client: ResourceDependency[OsoClient]
     keep_distinct: ResourceDependency[bool]
 
     # clean data

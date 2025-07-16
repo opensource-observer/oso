@@ -47,7 +47,9 @@ def default_lifecycle(config: AgentServerConfig):
         setup_telemetry(config)
 
         agent_registry = await setup_default_agent_registry(config)
-        workflow_registry = await setup_default_workflow_registry(config, default_resolver_factory)
+        workflow_registry = await setup_default_workflow_registry(
+            config, default_resolver_factory
+        )
 
         bot = None
         connect_task = None
@@ -76,11 +78,13 @@ class ApplicationStateStorage(t.Protocol):
     @property
     def state(self) -> State: ...
 
+
 def get_agent_registry(storage: ApplicationStateStorage) -> AgentRegistry:
     """Get the agent registry from the application state."""
     agent_registry = storage.state.agent_registry
     assert agent_registry is not None, "Agent registry not initialized"
     return t.cast(AgentRegistry, agent_registry)
+
 
 def get_workflow_registry(storage: ApplicationStateStorage) -> WorkflowRegistry:
     """Get the workflow registry from the application state."""
@@ -88,11 +92,15 @@ def get_workflow_registry(storage: ApplicationStateStorage) -> WorkflowRegistry:
     assert workflow_registry is not None, "Workflow registry not initialized"
     return t.cast(WorkflowRegistry, workflow_registry)
 
-async def get_agent(storage: ApplicationStateStorage, config: AgentServerConfig) -> WrappedResponseAgent:
+
+async def get_agent(
+    storage: ApplicationStateStorage, config: AgentServerConfig
+) -> WrappedResponseAgent:
     """Get the agent from the application state."""
     agent_registry = get_agent_registry(storage)
     agent = await agent_registry.get_agent(config.agent_name)
     return agent
+
 
 def app_factory(
     lifespan_factory: AppLifespanFactory[AgentServerConfig], config: AgentServerConfig
@@ -100,6 +108,7 @@ def app_factory(
     logger.debug(f"loading application with config: {config}")
     app = setup_app(config, lifespan=lifespan_factory(config))
     return app
+
 
 def extract_wrapped_response(response: WrappedResponse) -> str:
     match response.response:
@@ -115,6 +124,7 @@ def extract_wrapped_response(response: WrappedResponse) -> str:
             return str(raw)
         case _:
             raise ValueError(f"Unsupported response type: {type(response.response)}")
+
 
 def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any]):
     # Dependency to get the cluster manager
@@ -159,7 +169,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         sql = str(sql_result_task.result().response)
         semantic = str(semantic_result_task.result().response)
 
-        return JSONResponse({ "sql": sql, "semantic": semantic })
+        return JSONResponse({"sql": sql, "semantic": semantic})
 
     @app.post("/v0/chat")
     async def chat(
@@ -181,7 +191,7 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         # Split the response into substrings of N characters and escape
         # newlines for json
         for i in range(0, len(response_str), config.chat_line_length):
-            substring = response_str[i:i + config.chat_line_length]
+            substring = response_str[i : i + config.chat_line_length]
             escaped_substring = json.dumps(substring)
             lines.append(f"0:{escaped_substring}\n")
 

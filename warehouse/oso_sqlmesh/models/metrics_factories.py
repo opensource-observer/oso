@@ -43,13 +43,13 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     if "funding" in config["table_name"]:
         # Hack for now, ignore these until we fix the audit
         return None
-    
+
     if "releases" in config["table_name"]:
         return None
-    
+
     if "worldchain_users_aggregation" in config["table_name"]:
         return None
-    
+
     if "data_category=blockchain" in config["additional_tags"]:
         options["ignore_before"] = constants.superchain_audit_start
         options["ignore_after"] = constants.superchain_audit_end
@@ -686,7 +686,6 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=defillama"],
         ),
-
         "defillama_lp_fee": MetricQueryDef(
             ref="blockchain/defillama_lp_fee.sql",
             time_aggregations=[
@@ -708,11 +707,19 @@ timeseries_metrics(
         ),
         "contributors_lifecycle": MetricQueryDef(
             ref="code/lifecycle.sql",
+            vars={
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
             time_aggregations=[
-                "monthly", 
-                "quarterly", 
-                "biannually", 
-                "yearly"
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
             metadata=MetricMetadata(
