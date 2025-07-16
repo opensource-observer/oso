@@ -13,12 +13,12 @@ from oso_agent.tool.storage_context import setup_storage_context
 from pyoso import Client
 
 from ..agent import setup_default_agent_registry
+from ..clients.oso_client import OsoClient
 from ..eval.experiment_registry import get_experiments
 from ..server.bot import setup_bot
 from ..server.definition import BotConfig
 from ..tool.embedding import create_embedding
 from ..tool.llm import create_llm
-from ..tool.oso_mcp_client import OsoMcpClient
 from ..tool.oso_text2sql import create_oso_query_engine, index_oso_tables
 from ..types import ErrorResponse, SemanticResponse, SqlResponse, StrResponse
 from ..util.asyncbase import setup_nest_asyncio
@@ -378,8 +378,8 @@ def demo(config, agent_name, ollama_model, ollama_url):
 async def _run_demo(config: AgentConfig):
     """Run demo queries asynchronously."""
     try:
-        # Example of using the OsoMcpClient to get table schema
-        client = OsoMcpClient(config.oso_mcp_url)
+        # Example of using the OsoClient to get table schema
+        client = OsoClient(config.oso_api_key.get_secret_value())
         result = await client.get_table_schema("projects_v1")
         print("Table schema for 'projects_v1':")
         print(result)

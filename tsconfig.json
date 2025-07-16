@@ -14,8 +14,8 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
   },
   "exclude": ["node_modules"],
-  "include": []
+  "include": [],
 }

@@ -18,6 +18,8 @@ class Text2SQLGenerationEvent(Event):
     output_sql: str
     synthesize_response: bool
     execute_sql: bool
+    remaining_tries: int
+    error_context: list[str] = []
 
 
 class SQLExecutionRequestEvent(Event):
@@ -31,6 +33,8 @@ class SQLExecutionRequestEvent(Event):
     input_text: str
     output_sql: str
     synthesize_response: bool
+    remaining_tries: int
+    error_context: list[str] = []
 
 
 class SQLResultEvent(Event):
@@ -55,8 +59,7 @@ class SQLResultEvent(Event):
         """Convert the SQL result to a string representation."""
         if isinstance(self.results, pd.DataFrame):
             return self.results.to_string(index=False)
-        else:
-            return str(self.results)
+        return str(self.results)
 
 
 class SQLResultSummaryRequestEvent(Event):
@@ -99,7 +102,29 @@ class SemanticQueryEvent(Event):
     in a structured format.
     The `input_text` is the original natural language query that was used to generate the
     structured query.
+    The `remaining_tries` is the number of remaining attempts to generate a valid query.
+    The `error_context` accumulates error messages from previous attempts to provide
+    better context to the LLM for retry attempts.
     """
 
     structured_query: SemanticQuery
     input_text: str
+    remaining_tries: int = 5
+    error_context: list[str] = []
+
+
+class RetrySemanticQueryEvent(Event):
+    """An event that represents a retry attempt for a semantic query generation.
+
+    The `input_text` is the original natural language query that was used to generate the
+    structured query.
+    The `error` is the error that occurred during the previous attempt.
+    The `remaining_tries` is the number of remaining attempts.
+    The `error_context` accumulates error messages from previous attempts to provide
+    better context to the LLM for retry attempts.
+    """
+
+    input_text: str
+    error: Exception
+    remaining_tries: int
+    error_context: list[str] = []

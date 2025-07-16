@@ -53,7 +53,14 @@ class ChatRequest(BaseModel):
             )
             for message in self.messages
         ]
-    
+
+
+class ToolsRequest(BaseModel):
+    """Request to proxy one of the agent's tool"""
+
+    tool: str
+    params: list[t.Any]
+
 
 class BotConfig(AgentConfig):
     """Configuration for the bot."""

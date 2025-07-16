@@ -1,0 +1,225 @@
+test_stg_github__pull_request_merge_events_basic:
+  model: oso.stg_github__pull_request_merge_events
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-05
+  inputs:
+    oso.stg_github__events:
+      rows:
+      # Pull request merged event - should be included
+      - id: "event_1"
+        created_at: "2024-01-01 16:45:00"
+        type: "PullRequestEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1001
+          login: "user1"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1001"
+          url: "https://api.github.com/users/user1"
+        org: null
+        other: ""
+        payload: '{"action": "closed", "number": 1, "pull_request": {"id": "pr_1", "created_at": "2024-01-01T10:00:00Z", "merged_at": "2024-01-01T16:45:00Z", "updated_at": "2024-01-01T16:45:00Z", "closed_at": "2024-01-01T16:45:00Z", "state": "closed", "user": {"id": 1001, "login": "user1"}, "merge_commit_sha": "abc123", "changed_files": 3, "additions": 50, "deletions": 10, "review_comments": 2, "comments": 1, "author_association": "CONTRIBUTOR"}}'
+      # Another pull request merged event - should be included
+      - id: "event_2"
+        created_at: "2024-01-02 14:30:00"
+        type: "PullRequestEvent"
+        public: true
+        repo:
+          id: 67890
+          name: "owner2/repo2"
+          url: "https://api.github.com/repos/owner2/repo2"
+        actor:
+          id: 1002
+          login: "user2"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1002"
+          url: "https://api.github.com/users/user2"
+        org: null
+        other: ""
+        payload: '{"action": "closed", "number": 5, "pull_request": {"id": "pr_5", "created_at": "2024-01-02T09:00:00Z", "merged_at": "2024-01-02T14:30:00Z", "updated_at": "2024-01-02T14:30:00Z", "closed_at": "2024-01-02T14:30:00Z", "state": "closed", "user": {"id": 1002, "login": "user2"}, "merge_commit_sha": "def456", "changed_files": 1, "additions": 25, "deletions": 5, "review_comments": 0, "comments": 3, "author_association": "MEMBER"}}'
+      # Pull request closed but not merged - should be excluded (merged_at is null)
+      - id: "event_3"
+        created_at: "2024-01-03 10:30:00"
+        type: "PullRequestEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1003
+          login: "user3"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1003"
+          url: "https://api.github.com/users/user3"
+        org: null
+        other: ""
+        payload: '{"action": "closed", "number": 2, "pull_request": {"id": "pr_2", "created_at": "2024-01-03T08:00:00Z", "merged_at": null, "updated_at": "2024-01-03T10:30:00Z", "closed_at": "2024-01-03T10:30:00Z", "state": "closed", "user": {"id": 1003, "login": "user3"}, "merge_commit_sha": null, "changed_files": 2, "additions": 15, "deletions": 8, "review_comments": 1, "comments": 0, "author_association": "CONTRIBUTOR"}}'
+      # Pull request opened - should be excluded (action is not 'closed')
+      - id: "event_4"
+        created_at: "2024-01-04 09:15:00"
+        type: "PullRequestEvent"
+        public: true
+        repo:
+          id: 67890
+          name: "owner2/repo2"
+          url: "https://api.github.com/repos/owner2/repo2"
+        actor:
+          id: 1004
+          login: "user4"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1004"
+          url: "https://api.github.com/users/user4"
+        org: null
+        other: ""
+        payload: '{"action": "opened", "number": 7, "pull_request": {"id": "pr_7", "created_at": "2024-01-04T09:15:00Z", "merged_at": null, "updated_at": "2024-01-04T09:15:00Z", "closed_at": null, "state": "open", "user": {"id": 1004, "login": "user4"}, "merge_commit_sha": null, "changed_files": 4, "additions": 100, "deletions": 20, "review_comments": 0, "comments": 0, "author_association": "FIRST_TIME_CONTRIBUTOR"}}'
+      # Non-PullRequestEvent - should be excluded
+      - id: "event_5"
+        created_at: "2024-01-04 12:00:00"
+        type: "IssuesEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1005
+          login: "user5"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1005"
+          url: "https://api.github.com/users/user5"
+        org: null
+        other: ""
+        payload: '{"action": "closed", "number": 10}'
+  outputs:
+    query:
+      rows:
+      - repository_id: 12345
+        repository_name: "owner1/repo1"
+        type: "PULL_REQUEST_MERGED"
+        id: "pr_1"
+        event_time: "2024-01-01 16:45:00"
+        merged_at: "2024-01-01 16:45:00"
+        created_at: "2024-01-01 10:00:00"
+        closed_at: "2024-01-01 16:45:00"
+        actor_id: 1001
+        actor_login: "user1"
+        state: "closed"
+        merge_commit_sha: "abc123"
+        changed_files: 3
+        additions: 50
+        deletions: 10
+        review_comments: 2.0
+        comments: 1.0
+        author_association: "CONTRIBUTOR"
+        number: 1
+      - repository_id: 67890
+        repository_name: "owner2/repo2"
+        type: "PULL_REQUEST_MERGED"
+        id: "pr_5"
+        event_time: "2024-01-02 14:30:00"
+        merged_at: "2024-01-02 14:30:00"
+        created_at: "2024-01-02 09:00:00"
+        closed_at: "2024-01-02 14:30:00"
+        actor_id: 1002
+        actor_login: "user2"
+        state: "closed"
+        merge_commit_sha: "def456"
+        changed_files: 1
+        additions: 25
+        deletions: 5
+        review_comments: 0.0
+        comments: 3.0
+        author_association: "MEMBER"
+        number: 5
+
+test_stg_github__pull_request_merge_events_edge_cases:
+  model: oso.stg_github__pull_request_merge_events
+  vars:
+    start_dt: 2024-02-01
+    end_dt: 2024-02-05
+  inputs:
+    oso.stg_github__events:
+      rows:
+      # Pull request merged with minimal data - should be included
+      - id: "event_6"
+        created_at: "2024-02-01 12:00:00"
+        type: "PullRequestEvent"
+        public: true
+        repo:
+          id: 11111
+          name: "owner3/repo3"
+          url: "https://api.github.com/repos/owner3/repo3"
+        actor:
+          id: 2001
+          login: "user6"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/2001"
+          url: "https://api.github.com/users/user6"
+        org: null
+        other: ""
+        payload: '{"action": "closed", "number": 100, "pull_request": {"id": "pr_100", "created_at": "2024-02-01T10:00:00Z", "merged_at": "2024-02-01T12:00:00Z", "updated_at": "2024-02-01T12:00:00Z", "closed_at": "2024-02-01T12:00:00Z", "state": "closed", "user": {"id": 2001, "login": "user6"}, "merge_commit_sha": "ghi789", "changed_files": 0, "additions": 0, "deletions": 0, "review_comments": 0, "comments": 0, "author_association": "OWNER"}}'
+      # Pull request with null values in some fields - should be included
+      - id: "event_7"
+        created_at: "2024-02-02 15:30:00"
+        type: "PullRequestEvent"
+        public: true
+        repo:
+          id: 22222
+          name: "owner4/repo4"
+          url: "https://api.github.com/repos/owner4/repo4"
+        actor:
+          id: 2002
+          login: "user7"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/2002"
+          url: "https://api.github.com/users/user7"
+        org: null
+        other: ""
+        payload: '{"action": "closed", "number": 200, "pull_request": {"id": "pr_200", "created_at": "2024-02-02T14:00:00Z", "merged_at": "2024-02-02T15:30:00Z", "updated_at": "2024-02-02T15:30:00Z", "closed_at": "2024-02-02T15:30:00Z", "state": "closed", "user": {"id": 2002, "login": "user7"}, "merge_commit_sha": null, "changed_files": null, "additions": null, "deletions": null, "review_comments": null, "comments": null, "author_association": "COLLABORATOR"}}'
+  outputs:
+    query:
+      rows:
+      - repository_id: 11111
+        repository_name: "owner3/repo3"
+        type: "PULL_REQUEST_MERGED"
+        id: "pr_100"
+        event_time: "2024-02-01 12:00:00"
+        merged_at: "2024-02-01 12:00:00"
+        created_at: "2024-02-01 10:00:00"
+        closed_at: "2024-02-01 12:00:00"
+        actor_id: 2001
+        actor_login: "user6"
+        state: "closed"
+        merge_commit_sha: "ghi789"
+        changed_files: 0
+        additions: 0
+        deletions: 0
+        review_comments: 0.0
+        comments: 0.0
+        author_association: "OWNER"
+        number: 100
+      - repository_id: 22222
+        repository_name: "owner4/repo4"
+        type: "PULL_REQUEST_MERGED"
+        id: "pr_200"
+        event_time: "2024-02-02 15:30:00"
+        merged_at: "2024-02-02 15:30:00"
+        created_at: "2024-02-02 14:00:00"
+        closed_at: "2024-02-02 15:30:00"
+        actor_id: 2002
+        actor_login: "user7"
+        state: "closed"
+        merge_commit_sha: null
+        changed_files: null
+        additions: null
+        deletions: null
+        review_comments: null
+        comments: null
+        author_association: "COLLABORATOR"
+        number: 200

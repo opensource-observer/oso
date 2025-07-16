@@ -9,6 +9,7 @@ from llama_index.core.workflow import Context, StopEvent, step
 from oso_agent.types.response import AnyResponse, SqlResponse
 from oso_agent.types.sql_query import SqlQuery
 from oso_agent.workflows.types import (
+    RetrySemanticQueryEvent,
     SQLExecutionRequestEvent,
     SQLResultEvent,
     SQLResultSummaryRequestEvent,
@@ -17,8 +18,8 @@ from oso_agent.workflows.types import (
 )
 from pyoso import Client
 
+from ...clients.oso_client import OsoClient
 from ...resources import ResourceDependency
-from ...tool.oso_mcp_client import OsoMcpClient
 from ..base import MixableWorkflow
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,8 @@ class GenericText2SQLRouter(MixableWorkflow):
                 input_text=event.input_text,
                 output_sql=event.output_sql,
                 synthesize_response=event.synthesize_response,
+                remaining_tries=event.remaining_tries,
+                error_context=event.error_context,
             )
         else:
             logger.debug(
@@ -89,22 +92,44 @@ class PyosoWorkflow(MixableWorkflow):
     """Mixin class to enable PyOSO integration for agent workflows."""
 
     oso_client: ResourceDependency[Client]
+    enable_retries: bool = True
+    max_retries: int = 5
 
     @step
     async def retrieve_sql_results(
-        self, ctx: Context, query: SQLExecutionRequestEvent
-    ) -> SQLResultEvent:
+        self, query: SQLExecutionRequestEvent
+    ) -> SQLResultEvent | RetrySemanticQueryEvent:
         """Retrieve SQL results using the PyOSO client."""
         if not self.oso_client:
             raise ValueError("PyOSO client is not initialized.")
 
         try:
+            logger.debug(f"Executing SQL query: {query.output_sql}")
             return await self.execute_query(
                 query.output_sql, query.input_text, query.id, query.synthesize_response
             )
         except Exception as e:
             logger.error(f"Error retrieving SQL results: {e}")
+            logger.debug(f"Failed SQL query was: {query.output_sql}")
 
+            if self.enable_retries and query.remaining_tries > 0:
+                retry_number = self.max_retries - query.remaining_tries + 1
+                error_context = query.error_context + [
+                    f"SQL execution retry {retry_number} failed: {str(e)}"
+                ]
+                logger.debug(
+                    f"SQL execution failed on retry {retry_number}/{self.max_retries}. Error context: {'; '.join(error_context)}"
+                )
+                return RetrySemanticQueryEvent(
+                    input_text=query.input_text,
+                    error=e,
+                    remaining_tries=query.remaining_tries - 1,
+                    error_context=error_context,
+                )
+
+            logger.debug(
+                f"SQL execution failed after {self.max_retries} retries. Final error: {e}"
+            )
             return SQLResultEvent(
                 id=query.id,
                 input_text=query.input_text,
@@ -115,7 +140,11 @@ class PyosoWorkflow(MixableWorkflow):
             )
 
     async def execute_query(
-        self, query: str, input_text: str, id: str = "query_execution", synthesize_response: bool = True
+        self,
+        query: str,
+        input_text: str,
+        id: str = "query_execution",
+        synthesize_response: bool = True,
     ) -> SQLResultEvent:
         """Execute a SQL query using the PyOSO client."""
         if not self.oso_client:
@@ -133,18 +162,20 @@ class PyosoWorkflow(MixableWorkflow):
         )
 
 
-class McpDBWorkflow(MixableWorkflow):
-    """Mixin class to enable a soon to be deprecated integration for accessing the DB via the MCP"""
+class OsoDBWorkflow(MixableWorkflow):
+    """Mixin class to enable a soon to be deprecated integration for accessing the DB"""
 
-    oso_mcp_client: ResourceDependency[OsoMcpClient]
+    oso_client: ResourceDependency[OsoClient]
+    enable_retries: bool = True
+    max_retries: int = 5
 
     @step
     async def retrieve_sql_results(
         self, ctx: Context, query: SQLExecutionRequestEvent
-    ) -> SQLResultEvent:
-        """Retrieve SQL results using the MCP DB client."""
-        if not self.oso_mcp_client:
-            raise ValueError("MCP DB client is not initialized.")
+    ) -> SQLResultEvent | RetrySemanticQueryEvent:
+        """Retrieve SQL results using the OSO DB client."""
+        if not self.oso_client:
+            raise ValueError("OSO DB client is not initialized.")
 
         try:
             return await self.execute_query(
@@ -153,6 +184,24 @@ class McpDBWorkflow(MixableWorkflow):
         except Exception as e:
             logger.error(f"Error retrieving SQL results: {e}")
 
+            if self.enable_retries and query.remaining_tries > 0:
+                retry_number = self.max_retries - query.remaining_tries + 1
+                error_context = query.error_context + [
+                    f"SQL execution retry {retry_number} failed: {str(e)}"
+                ]
+                logger.debug(
+                    f"SQL execution failed on retry {retry_number}/{self.max_retries}. Error context: {'; '.join(error_context)}"
+                )
+                return RetrySemanticQueryEvent(
+                    input_text=query.input_text,
+                    error=e,
+                    remaining_tries=query.remaining_tries - 1,
+                    error_context=error_context,
+                )
+
+            logger.debug(
+                f"SQL execution failed after {self.max_retries} retries. Final error: {e}"
+            )
             return SQLResultEvent(
                 id=query.id,
                 input_text=query.input_text,
@@ -166,11 +215,11 @@ class McpDBWorkflow(MixableWorkflow):
         self, query: str, id: str = "query_execution", synthesize_response: bool = True
     ) -> SQLResultEvent:
         """Execute a SQL query using the PyOSO client."""
-        if not self.oso_mcp_client:
+        if not self.oso_client:
             raise ValueError("PyOSO client is not initialized.")
 
         # Example of executing a query and returning results
-        results = await self.oso_mcp_client.query_oso(query)
+        results = await self.oso_client.query_oso(query)
 
         return SQLResultEvent(
             id=id,

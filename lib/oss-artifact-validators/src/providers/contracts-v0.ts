@@ -8,6 +8,7 @@ import {
 export interface ContractsV0Config {
   osoApiKey: string;
   osoEndpoint: string;
+  timeout?: number;
 }
 
 export interface ContractsV0Response {
@@ -106,17 +107,43 @@ export class ContractsV0Provider
     query: string,
     variables: Record<string, any>,
   ): Promise<any> {
-    const response = await fetch(this.config.osoEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.config.osoApiKey}`,
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    });
-    return await response.json();
+    const timeout = this.config.timeout || 15000; // Default 15 seconds
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(this.config.osoEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.config.osoApiKey}`,
+        },
+        body: JSON.stringify({
+          query,
+          variables,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          throw new Error(`Request timeout after ${timeout}ms`);
+        }
+        throw new Error(`Contracts v0 API request failed: ${error.message}`);
+      }
+
+      throw new Error("Unknown error occurred during contracts v0 API request");
+    }
   }
 }

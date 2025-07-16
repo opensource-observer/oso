@@ -20,7 +20,8 @@
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
-    "test": "pnpm build && node --experimental-vm-modules node_modules/jest/bin/jest.js dist/"
+    "test": "pnpm build && node --experimental-vm-modules node_modules/jest/bin/jest.js dist/",
+    "test:real": "pnpm build && node dist/test-real-endpoint.js"
   },
   "keywords": [],
   "devDependencies": {
@@ -34,6 +35,7 @@
   "dependencies": {
     "@jest/globals": "^30.0.2",
     "@types/lodash": "^4.17.6",
+    "dotenv": "^17.2.0",
     "ethers": "^6.14.4",
     "lodash": "^4.17.21"
   }

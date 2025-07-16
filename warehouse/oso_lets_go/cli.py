@@ -769,7 +769,8 @@ def reset(
 )
 @click.pass_context
 @click.option("--duckdb/--no-duckdb", default=False)
-def sqlmesh_test(ctx: click.Context, duckdb: bool):
+@click.option("--keep-containers/--no-keep-containers", default=False, help="Keep Docker containers running after test completion")
+def sqlmesh_test(ctx: click.Context, duckdb: bool, keep_containers: bool):
     extra_args = ctx.args
     if not ctx.args:
         extra_args = []
@@ -811,7 +812,10 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool):
             )
 
         finally:
-            docker_client.compose.down()
+            if not keep_containers:
+                docker_client.compose.down()
+            else:
+                logger.info("Keeping Docker containers running (--keep-containers flag set)")
 
 
 @local.command()

@@ -33,12 +33,15 @@ export class GenericAddressValidator implements AddressValidator {
     if (contractProvider) {
       const contractSummary = await contractProvider.contractSummary(address);
 
-      // checking if it's on the expected network
-      // const isOnExpectedNetwork = this.checkExpectedNetwork(contractSummary.namespaces);
+      // Check if it's on the expected network
+      const isOnExpectedNetwork = this.checkExpectedNetwork(
+        contractSummary.namespaces,
+      );
 
       return {
         ...contractSummary,
-        // (to include any additional validation logic if needed)
+        // Filter namespaces based on expected network
+        namespaces: isOnExpectedNetwork ? contractSummary.namespaces : [],
       };
     }
 
@@ -46,12 +49,16 @@ export class GenericAddressValidator implements AddressValidator {
     const addressProvider = this.getFirstAddressProvider();
     if (addressProvider) {
       const addressSummary = await addressProvider.lookup(address);
-      // const isOnExpectedNetwork = this.checkExpectedNetwork(addressSummary.namespaces);
+      const isOnExpectedNetwork = this.checkExpectedNetwork(
+        addressSummary.namespaces,
+      );
 
       return {
         ...addressSummary,
         isFactory: false,
         isDeployer: false,
+        // Filter namespaces based on expected network
+        namespaces: isOnExpectedNetwork ? addressSummary.namespaces : [],
       };
     }
 

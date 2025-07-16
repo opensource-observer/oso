@@ -8,11 +8,16 @@ import {
 } from "../providers/contracts-v0.js";
 import { RpcProvider, RpcConfig } from "../providers/rpc.js";
 import { AddressValidator } from "../common/interfaces.js";
+import {
+  OSSDirectoryValidator,
+  OSSDirectoryValidatorConfig,
+} from "./oss-directory-validator.js";
 
 export interface ValidatorFactoryConfig {
   contractsV0?: ContractsV0Config;
   rpc?: RpcConfig;
   expectedNetwork?: string;
+  timeout?: number; // Timeout in milliseconds, default 15000ms
 }
 
 /**
@@ -27,14 +32,17 @@ export function createAddressValidator(
 
   const validator = new GenericAddressValidator({}, {}, validatorConfig);
 
-  // Add contracts v0 provider if configured
+  // Add contracts v0 provider
   if (config.contractsV0) {
-    const contractsProvider = new ContractsV0Provider(config.contractsV0);
+    const contractsProvider = new ContractsV0Provider({
+      ...config.contractsV0,
+      timeout: config.timeout || config.contractsV0.timeout,
+    });
     validator.addContractProvider("contracts-v0", contractsProvider);
     validator.addAddressProvider("contracts-v0", contractsProvider);
   }
 
-  // Add RPC provider if configured (usually as fallback)
+  // Add RPC provider (as fallback)
   if (config.rpc) {
     const rpcProvider = new RpcProvider(config.rpc);
     validator.addAddressProvider("rpc", rpcProvider);
@@ -50,13 +58,16 @@ export function createContractsV0Validator(
   osoApiKey: string,
   osoEndpoint: string,
   expectedNetwork?: string,
+  timeout?: number,
 ): AddressValidator {
   return createAddressValidator({
     contractsV0: {
       osoApiKey,
       osoEndpoint,
+      timeout,
     },
     expectedNetwork,
+    timeout,
   });
 }
 
@@ -78,5 +89,23 @@ export function createHybridValidator(
       rpcUrl,
     },
     expectedNetwork,
+  });
+}
+
+/**
+ * Factory function to create an OSS Directory validator
+ *  validator for blockchain artifact validation
+ */
+export function createOSSDirectoryValidator(
+  osoApiKey: string,
+  osoEndpoint: string,
+  expectedNetwork?: string,
+  timeout?: number,
+): OSSDirectoryValidator {
+  return new OSSDirectoryValidator({
+    osoApiKey,
+    osoEndpoint,
+    expectedNetwork,
+    timeout,
   });
 }

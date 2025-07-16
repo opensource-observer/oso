@@ -8,10 +8,8 @@ export interface AddressLookupSummary {
 export interface ContractLookupSummary extends AddressLookupSummary {
   isFactory: boolean;
   isDeployer: boolean;
-  namespaces: string[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface AddressValidationSummary {
   address: string;
   isContract: boolean;
@@ -19,7 +17,6 @@ export interface AddressValidationSummary {
   namespaces: string[];
   isFactory: boolean;
   isDeployer: boolean;
-  // (Extensible for future validation requirements)
 }
 
 // Provider interfaces for dependency injection
