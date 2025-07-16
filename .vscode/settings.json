@@ -1,6 +1,5 @@
 {
     "chat.instructionsFilesLocations": {
-        ".cursor/rules/generate-pyoso-sql-query.mdc": true,
         ".cursor/rules/working-with-pyoso-data.mdc": true
     }
 }
