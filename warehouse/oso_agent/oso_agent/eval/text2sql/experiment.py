@@ -57,6 +57,7 @@ class FakeWorkflow(MixableWorkflow):
         # This is a fake workflow for testing purposes
         return StopEvent(result=StrResponse(blob="Fake response"))
 
+
 async def post_process_result(
     example: Example, result: EvalWorkflowResult, resolver: ResourceResolver
 ):
@@ -119,18 +120,17 @@ async def post_process_result(
     logger.info("post processing completed")
     return processed
 
+
 async def resolver_factory(config: AgentConfig) -> ResourceResolver:
+    oso_client = OsoClient(config.oso_api_key.get_secret_value())
     # Load the query engine tool
-    query_engine_tool = await create_default_query_engine_tool(config)
+    query_engine_tool = await create_default_query_engine_tool(config, oso_client)
 
     logger.debug("Loading client")
 
     # We pass in the API key directly to the Phoenix client but it's likely
     # ignored. See oso_agent/util/config.py
     logger.debug("Uploading dataset")
-
-    # check if specific evals have been defined
-    oso_client = OsoClient(config.oso_api_key.get_secret_value())
 
     resolver = DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
@@ -146,7 +146,7 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
 async def text2sql_experiment(
     config: AgentConfig, _registry: AgentRegistry, _raw_options: dict[str, t.Any]
 ):
-    logger.info(f"Running text2sql experiment with: {config.model_dump_json()}") 
+    logger.info(f"Running text2sql experiment with: {config.model_dump_json()}")
 
     api_key = config.arize_phoenix_api_key.get_secret_value()
     phoenix_client = px.Client(
@@ -187,7 +187,7 @@ async def text2sql_experiment(
     runner.add_evaluator(sql_query_type_similarity)
     runner.add_evaluator(sql_oso_models_used_similarity)
     runner.add_evaluator(result_exact_match)
-    runner.add_evaluator(result_fuzzy_match) 
+    runner.add_evaluator(result_fuzzy_match)
 
     return await runner.run(
         dataset=dataset,

@@ -20,6 +20,7 @@ ResponseWrapper = t.Callable[[t.Any], WrappedResponse]
 tracer = trace.get_tracer(__name__)
 logger = logging.getLogger(__name__)
 
+
 class WorkflowMixer(WorkflowMeta):
     def __new__(cls, name: str, bases: t.Tuple[type, ...], dct: t.Dict[str, t.Any]):
         """Ensure that annotated resource dependencies have a default value in dct"""
@@ -43,9 +44,9 @@ class WorkflowMixer(WorkflowMeta):
             for attr_name, attr_type in base.__annotations__.items():
                 if isinstance(attr_type, ResourceDependency):
                     args = getattr(attr_type, "__args__", None)
-                    assert (
-                        args is not None
-                    ), "ResourceDependency must have type arguments."
+                    assert args is not None, (
+                        "ResourceDependency must have type arguments."
+                    )
                     if len(args) != 1:
                         raise TypeError(
                             f"ResourceDependency for {attr_name} must have exactly one type argument."
@@ -90,19 +91,25 @@ class WorkflowMixer(WorkflowMeta):
         cls._required_resources = required_resources
 
         return super().__new__(cls, name, bases, dct)
-    
+
+
 T = t.TypeVar("T")
 
-def wrap_step_with_error_handler(func: t.Callable[..., t.Awaitable[T]]) -> t.Callable[..., t.Awaitable[T | ExceptionEvent]]:
+
+def wrap_step_with_error_handler(
+    func: t.Callable[..., t.Awaitable[T]],
+) -> t.Callable[..., t.Awaitable[T | ExceptionEvent]]:
     """Decorator to wrap an existing step function with an error handler."""
     step_config = t.cast(StepConfig, getattr(func, "__step_config", None))
-    assert step_config is not None, "Function must be a step to use wrap_step_with_error_handler"
+    assert step_config is not None, (
+        "Function must be a step to use wrap_step_with_error_handler"
+    )
 
     # If the step _handles_ ExceptionEvent, we choose not to wrap it, as it is
     # supposed to handle exceptions after they've occurred
     if ExceptionEvent in step_config.accepted_events:
         return func
-    
+
     # If the step already returns ExceptionEvent, we assume it has its own error handling
     if ExceptionEvent in step_config.return_types:
         return func
@@ -136,7 +143,11 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
     step.
     """
 
-    def __init__(self, resolver: ResourceResolver, **kwargs: t.Any):
+    def __init__(
+        self,
+        resolver: ResourceResolver,
+        **kwargs: t.Any,
+    ):
         super().__init__(**kwargs)
         self.resolver = resolver
         self._resolved_resources: dict[str, t.Any] = {}
@@ -153,7 +164,10 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
             for name, error in missing_resources:
                 if "missing" in error:
                     attr = getattr(self.__class__, name)
-                    if isinstance(attr, ResourceDependency) and attr.has_default_factory():
+                    if (
+                        isinstance(attr, ResourceDependency)
+                        and attr.has_default_factory()
+                    ):
                         # If the resource has a default factory, we can skip the error
                         continue
                 errors.append(error)
@@ -211,12 +225,16 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
         # Store the resolved resource for future use
         self._resolved_resources[name] = resolved_resource
         return resolved_resource
-    
-    async def run_events_iter(self, **kwargs) -> t.AsyncIterable[Event | WrappedResponse]:
+
+    async def run_events_iter(
+        self, **kwargs
+    ) -> t.AsyncIterable[Event | WrappedResponse]:
         """Run the workflow and yield responses as they are produced."""
 
         run_id = str(uuid.uuid4())
-        logger.debug(f"running workflow {self.__class__.__name__} with run_id: run[{run_id}]")
+        logger.debug(
+            f"running workflow {self.__class__.__name__} with run_id: run[{run_id}]"
+        )
 
         with tracer.start_as_current_span("run_events_iter"):
             handler = self.run(stepwise=True, **kwargs)
@@ -227,7 +245,9 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
                 while events:
                     for event in events:
                         yield event
-                        assert handler.ctx is not None, "Workflow handler context is not set."
+                        assert handler.ctx is not None, (
+                            "Workflow handler context is not set."
+                        )
                         handler.ctx.send_event(event)
                     events = await self._wait_for_events(run_id, handler)
                     logger.debug(f"next events run[{run_id}]: {len(events or [])}")
@@ -238,10 +258,14 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
             try:
                 yield self.ensure_wrapped_response(handler)
             except Exception as e:
-                logger.error(f"error retrieving the final response for run[{run_id}]: {e}")
+                logger.error(
+                    f"error retrieving the final response for run[{run_id}]: {e}"
+                )
                 yield WrappedResponse(handler=handler, response=self._wrap_error(e))
 
-    async def _wait_for_events(self, run_id: str, handler: WorkflowHandler) -> t.List[Event]:
+    async def _wait_for_events(
+        self, run_id: str, handler: WorkflowHandler
+    ) -> t.List[Event]:
         """Wait for events to be produced by the workflow handler.
 
         This is made to be fairly robust against timeout failures on the
@@ -253,27 +277,31 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
         cancelling = False
         wait_timeout = 5
         while True:
-            done, _pending = await asyncio.wait([run_step], timeout=wait_timeout, return_when=asyncio.ALL_COMPLETED)
+            done, _pending = await asyncio.wait(
+                [run_step], timeout=wait_timeout, return_when=asyncio.ALL_COMPLETED
+            )
             if done:
                 return run_step.result() or []
             if handler.cancelled():
                 break
             if handler.is_done():
                 if not cancelling:
-                    logger.warning(f"Workflow run run[{run_id}] was done before it could produce any events. Attempting clean up")
+                    logger.warning(
+                        f"Workflow run run[{run_id}] was done before it could produce any events. Attempting clean up"
+                    )
                     cancelling = True
                     run_step.cancel()
                 if not run_step.done():
-                    logger.warning(f"Workflow run run[{run_id}] was cancelled, but the step is still running. Clean up failed.")
+                    logger.warning(
+                        f"Workflow run run[{run_id}] was cancelled, but the step is still running. Clean up failed."
+                    )
                     break
 
         raise Exception(
             f"Workflow run run[{run_id}] was cancelled before it could produce any events."
         )
 
-    def ensure_wrapped_response(
-        self, handler: WorkflowHandler
-    ) -> WrappedResponse:
+    def ensure_wrapped_response(self, handler: WorkflowHandler) -> WrappedResponse:
         """Wrap a response in a WrappedResponse."""
         response = handler.result()
         if not isinstance(response, ResponseType):
@@ -282,11 +310,10 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
                 response=AnyResponse(raw=response),
             )
         return WrappedResponse(handler=handler, response=response)
-    
+
     @step
     def exception_handler(self, event: ExceptionEvent) -> StopEvent:
         """Handle exceptions that occur during the workflow execution."""
         logger.error(f"Exception occurred in workflow: {event.error}")
 
         return StopEvent(result=ErrorResponse(message=str(event.error)))
-
