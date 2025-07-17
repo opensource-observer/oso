@@ -70,14 +70,14 @@
         },
         {
           "id": "_F-nuwBX0XMK",
-          "name": "DocsCard",
+          "name": "LinkCard",
           "type": "managed",
           "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
-          "renderModuleFilePath": "generated/docs_opensource_observer/PlasmicDocsCard.tsx",
+          "renderModuleFilePath": "generated/docs_opensource_observer/PlasmicLinkCard.tsx",
           "importSpec": {
-            "modulePath": "DocsCard.tsx"
+            "modulePath": "LinkCard.tsx"
           },
-          "cssFilePath": "generated/docs_opensource_observer/PlasmicDocsCard.module.css",
+          "cssFilePath": "generated/docs_opensource_observer/PlasmicLinkCard.module.css",
           "scheme": "blackbox",
           "componentType": "component"
         }
@@ -137,7 +137,7 @@
         }
       ],
       "indirect": false,
-      "globalContextsFilePath": "generated/docs_opensource_observer/PlasmicGlobalContextsProvider.tsx",
+      "globalContextsFilePath": "",
       "splitsProviderFilePath": "",
       "codeComponents": [
         {
@@ -611,7 +611,8 @@
           "componentImportPath": "@plasmicpkgs/antd5/skinny/registerBreadcrumb"
         }
       ],
-      "customFunctions": []
+      "customFunctions": [],
+      "jsBundleThemes": []
     }
   ],
   "globalVariants": {
