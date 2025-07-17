@@ -42,8 +42,8 @@
     "turbo": "^1.13.4"
   },
   "engines": {
-    "node": ">=18.x",
-    "pnpm": ">=8"
+    "node": ">=20.x",
+    "pnpm": ">=9"
   },
   "dependencies": {
     "pyright": "^1.1.378"
