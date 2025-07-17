@@ -13,8 +13,10 @@ from oso_agent.types.response import StrResponse
 from oso_agent.util.query import clean_query_for_eval
 from oso_agent.workflows.base import MixableWorkflow
 from oso_agent.workflows.eval import EvalWorkflowResult
-from oso_agent.workflows.text2sql.basic import BasicText2SQL
+from oso_agent.workflows.text2sql.semantic import SemanticText2SQLWorkflow
 from oso_agent.workflows.types import SQLResultEvent, Text2SQLGenerationEvent
+from oso_semantic.definition import Registry
+from oso_semantic.register import register_oso_models
 from phoenix.experiments.types import EvaluationResult, Example
 from pydantic import BaseModel, Field
 
@@ -56,6 +58,7 @@ class FakeWorkflow(MixableWorkflow):
         print("hereerererereer")
         # This is a fake workflow for testing purposes
         return StopEvent(result=StrResponse(blob="Fake response"))
+
 
 async def post_process_result(
     example: Example, result: EvalWorkflowResult, resolver: ResourceResolver
@@ -119,9 +122,23 @@ async def post_process_result(
     logger.info("post processing completed")
     return processed
 
+
 async def resolver_factory(config: AgentConfig) -> ResourceResolver:
+    from oso_agent.tool.embedding import create_embedding
+    from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
+    from oso_agent.tool.storage_context import setup_storage_context
+
     # Load the query engine tool
-    query_engine_tool = await create_default_query_engine_tool(config)
+    llm = create_llm(config)
+    embedding = create_embedding(config)
+    storage_context = setup_storage_context(config, embed_model=embedding)
+    query_engine_tool = await create_default_query_engine_tool(
+        config,
+        llm=llm,
+        storage_context=storage_context,
+        embedding=embedding,
+        synthesize_response=False,
+    )
 
     logger.debug("Loading client")
 
@@ -132,13 +149,24 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
     # check if specific evals have been defined
     oso_client = OsoClient(config.oso_api_key.get_secret_value())
 
+    # Setup registry and semantic query tool
+    registry = Registry()
+    register_oso_models(registry)
+    semantic_query_tool = create_semantic_query_tool(
+        llm=llm, registry_description=registry.describe()
+    )
+
     resolver = DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
+        semantic_query_tool=semantic_query_tool,
         oso_client=oso_client,
         keep_distinct=True,
         agent_name=config.agent_name,
         agent_config=config,
-        llm=create_llm(config),
+        llm=llm,
+        embedding=embedding,
+        storage_context=storage_context,
+        registry=registry,
     )
     return resolver
 
@@ -146,7 +174,7 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
 async def text2sql_experiment(
     config: AgentConfig, _registry: AgentRegistry, _raw_options: dict[str, t.Any]
 ):
-    logger.info(f"Running text2sql experiment with: {config.model_dump_json()}") 
+    logger.info(f"Running text2sql experiment with: {config.model_dump_json()}")
 
     api_key = config.arize_phoenix_api_key.get_secret_value()
     phoenix_client = px.Client(
@@ -187,11 +215,11 @@ async def text2sql_experiment(
     runner.add_evaluator(sql_query_type_similarity)
     runner.add_evaluator(sql_oso_models_used_similarity)
     runner.add_evaluator(result_exact_match)
-    runner.add_evaluator(result_fuzzy_match) 
+    runner.add_evaluator(result_fuzzy_match)
 
     return await runner.run(
         dataset=dataset,
-        workflow_cls=BasicText2SQL,
+        workflow_cls=SemanticText2SQLWorkflow,
         experiment_name=EXPERIMENT_NAME,
         experiment_metadata={"agent_name": config.agent_name},
         post_process_result=post_process_result,
