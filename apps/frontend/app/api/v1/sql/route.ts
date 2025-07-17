@@ -5,10 +5,11 @@ import { getTableNamesFromSql } from "@/lib/parsing";
 import { getUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
-import * as jsonwebtoken from "jsonwebtoken";
+import { sign } from "jsonwebtoken";
 import { AuthUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
 import { CreditsService, TransactionType } from "@/lib/services/credits";
+import { TRINO_JWT_SECRET } from "@/lib/config";
 
 // Next.js route control
 export const revalidate = 0;
@@ -21,12 +22,12 @@ const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
 function signJWT(user: AuthUser) {
-  const secret = process.env.TRINO_JWT_SECRET;
+  const secret = TRINO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
   }
-  // TODO: make subject use organization name
-  return jsonwebtoken.sign(
+
+  return sign(
     {
       userId: user.userId,
     },
@@ -36,6 +37,7 @@ function signJWT(user: AuthUser) {
       subject: `jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`,
       audience: "consumer-trino",
       issuer: "opensource-observer",
+      expiresIn: "1h",
     },
   );
 }

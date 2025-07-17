@@ -13,6 +13,8 @@ import {
   OrgRole,
 } from "@/lib/types/user";
 import { Database } from "@/lib/types/supabase";
+import { sign, verify } from "jsonwebtoken";
+import { OSO_JWT_SECRET } from "@/lib/config";
 
 // Constants
 const DEFAULT_KEY_NAME = "login";
@@ -316,9 +318,11 @@ async function getUser(request: NextRequest): Promise<User> {
     : trimmedAuth;
 
   const jwtUser = await getUserByJwt(token, host);
-  const user =
+  const apiKeyUser =
     jwtUser.role === "anonymous" ? await getUserByApiKey(token, host) : jwtUser;
 
+  const user =
+    apiKeyUser.role === "anonymous" ? verifyOsoJwt(token, host) : apiKeyUser;
   if (user.role === "anonymous") {
     return user;
   }
@@ -339,6 +343,54 @@ async function getUser(request: NextRequest): Promise<User> {
   }
 
   return user;
+}
+
+function signOsoJwt(
+  user: AuthUser,
+  org: Omit<OrganizationDetails, "orgRole">,
+): string {
+  const secret = OSO_JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT Secret not found: unable to authenticate");
+  }
+
+  const authUser: AuthUser = {
+    ...user,
+    ...org,
+    role: "user",
+    orgRole: "member",
+  }; // For JWT requests, default to lower permissions for now
+
+  return sign(authUser, secret, {
+    algorithm: "HS256",
+    audience: "opensource-observer",
+    issuer: "opensource-observer",
+  });
+}
+
+function verifyOsoJwt(token: string, host: string | null): AuthUser | AnonUser {
+  try {
+    const data = verify(token, OSO_JWT_SECRET, {
+      algorithms: ["HS256"],
+      audience: "opensource-observer",
+      issuer: "opensource-observer",
+    });
+
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !("userId" in data && "orgId" in data)
+    ) {
+      return makeAnonUser(host);
+    }
+
+    return data as AuthUser;
+  } catch (e: unknown) {
+    console.log(
+      `auth: Invalid JWT token: ${e instanceof Error ? e.message : ""} => anon`,
+    );
+    return makeAnonUser(host);
+  }
 }
 
 /**
@@ -369,4 +421,4 @@ async function setSupabaseSession(
   return { data, error: null };
 }
 
-export { getUser, setSupabaseSession };
+export { getUser, setSupabaseSession, signOsoJwt, verifyOsoJwt };
