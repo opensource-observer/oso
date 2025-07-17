@@ -17,12 +17,12 @@ client = Client(os.getenv("OSO_API_KEY"))   # never hard-code keys
 
 #### 1. Generate SQL
 
-Call the `generate_sql` MCP tool and pass in the user's NL query. This will return the proper SQL to use going forward.
+Call the `query_text2sql_agent()` MCP tool and pass in the user's natural language query and it will return a SQL query.
 
 Don't ever call the MCP tool in python code, just use it yourself to gather the proper SQL query. Only the end result SQl query should be written into the code.
 
 ```python
-sql_query = 'output of generate_sql MCP tool'
+sql_query = 'output of query_text2sql_agent MCP tool'
 ```
 
 ---
