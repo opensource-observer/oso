@@ -2,7 +2,7 @@
   "projects": [
     {
       "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "caTPwKxj5ZrD9LQ7DMdK4Z": "3.42.0"
       },
@@ -36,12 +36,12 @@
         {
           "type": "renderModule",
           "assetId": "XdMR0R8lmSdz",
-          "checksum": "cbd72d7d42c2d0f4ed9deb7959fd1bb0"
+          "checksum": "f2a3e47f155a5a26bf2bd9c3413a239c"
         },
         {
           "type": "cssRules",
           "assetId": "XdMR0R8lmSdz",
-          "checksum": "cbd72d7d42c2d0f4ed9deb7959fd1bb0"
+          "checksum": "f2a3e47f155a5a26bf2bd9c3413a239c"
         },
         {
           "type": "icon",
