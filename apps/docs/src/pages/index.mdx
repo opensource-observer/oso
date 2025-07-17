@@ -4,6 +4,9 @@ description: "Open Source Observer (OSO) Documentation site"
 sidebar_position: 0
 ---
 
-import Overview from '@site/src/components/plasmic/Overview';
+import { PlasmicRootProvider } from "@plasmicapp/react-web";
+import Overview from "@site/src/components/plasmic/Overview";
 
-<Overview />
+<PlasmicRootProvider>
+  <Overview /> 
+</PlasmicRootProvider>

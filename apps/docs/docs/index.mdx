@@ -4,6 +4,9 @@ sidebar_position: 0
 hide_title: true
 ---
 
-import Overview from '@site/src/components/plasmic/Overview';
+import { PlasmicRootProvider } from "@plasmicapp/react-web";
+import Overview from "@site/src/components/plasmic/Overview";
 
-<Overview />
+<PlasmicRootProvider>
+  <Overview /> 
+</PlasmicRootProvider>

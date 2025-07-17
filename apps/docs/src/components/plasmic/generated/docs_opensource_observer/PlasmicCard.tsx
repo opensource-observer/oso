@@ -183,6 +183,7 @@ function PlasmicCard__RenderFunc(props: {
           data-plasmic-override={overrides.freeBox}
           className={classNames(projectcss.all, sty.freeBox, {
             [sty.freeBoxnoTitle]: hasVariant($state, "noTitle", "noTitle"),
+            [sty.freeBoxtheme_dark]: hasVariant($state, "theme", "dark"),
           })}
         >
           {renderPlasmicSlot({

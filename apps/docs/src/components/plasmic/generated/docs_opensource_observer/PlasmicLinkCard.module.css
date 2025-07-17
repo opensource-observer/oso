@@ -9,10 +9,11 @@
   background: #ffffffcc;
   box-shadow: 0px 0px 4px 0px #0000001a;
   min-height: 64px;
+  color: var(--token-gN119pN46HXv);
   border-radius: 8px;
 }
 .roottheme_dark {
-  background: var(--token-7AdcKFArKr7V);
+  background: #ffffff1a;
 }
 .icon {
   display: flex;
@@ -74,7 +75,6 @@
 }
 .slotTargetTitle {
   font-weight: 700;
-  font-size: var(--antd-fontSizeHeading5);
 }
 .slotTargetTitletheme_dark {
   color: var(--token-WcqAzrLgrO6X);
@@ -96,21 +96,13 @@
   align-items: flex-start;
   justify-content: flex-start;
 }
+.slotTargetChildrentheme_dark {
+  color: var(--token-WcqAzrLgrO6X);
+}
 .text___2AACg {
   position: relative;
   width: 100%;
   height: auto;
   max-width: 100%;
-  color: var(--antd-colorBgContainer);
-  font-size: var(--antd-fontSizeSM);
   min-width: 0;
-}
-.text__m0Woh {
-  position: relative;
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  color: var(--token-gN119pN46HXv);
-  min-width: 0;
-  display: none;
 }
