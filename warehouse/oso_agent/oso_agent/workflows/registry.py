@@ -40,12 +40,14 @@ class WorkflowRegistry:
     def __init__(
         self,
         config: AgentConfig,
-        resolver_factory: ResolverFactory,
+        default_resolver: ResourceResolver,
+        workflow_resolver_factory: ResolverFactory,
     ):
         """Initialize registry."""
         self.config = config
         self.workflow_factories: dict[str, WorkflowFactory] = {}
-        self.resolver_factory = resolver_factory
+        self.default_resolver = default_resolver
+        self.workflow_resolver_factory = workflow_resolver_factory
 
     def add_workflow(
         self, name: str, workflow: WorkflowFactory | t.Type[MixableWorkflow]
@@ -73,7 +75,11 @@ class WorkflowRegistry:
             raise AgentMissingError(f"Workflow '{name}' not found in the registry.")
 
         factory = self.workflow_factories[name]
-        resolver = await self.resolver_factory(self.config, workflow_config)
-        workflow = await factory(self.config, resolver)
+        resolver = await self.workflow_resolver_factory(
+            self.default_resolver, self.config, workflow_config
+        )
+        workflow = await factory(
+            self.config, resolver.merge_resolver(self.default_resolver)
+        )
         logger.info(f"Workflow '{name}' created.")
         return workflow

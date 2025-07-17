@@ -45,6 +45,10 @@ class ResourceResolver(t.Protocol):
         """Get a resource by name."""
         ...
 
+    def get_resources(self) -> dict[str, t.Any]:
+        """Get all resources in the resolver."""
+        ...
+
     def validate_for_required_resources(
         self, resources_dict: dict[str, type]
     ) -> list[tuple[str, str]]:
@@ -55,7 +59,11 @@ class ResourceResolver(t.Protocol):
         """Extend the resolver with additional resources."""
         ...
 
+    def merge_resolver(self, other: "ResourceResolver") -> "ResourceResolver":
+        """Extend the resolver with resources from another resolver."""
+        ...
+
 
 ResolverFactory = t.Callable[
-    [AgentConfig, WorkflowConfig], t.Awaitable[ResourceResolver]
+    [ResourceResolver, AgentConfig, WorkflowConfig], t.Awaitable[ResourceResolver]
 ]

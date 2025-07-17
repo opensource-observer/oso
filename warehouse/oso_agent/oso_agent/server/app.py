@@ -35,7 +35,7 @@ from ..types import (
 )
 from ..util.asyncbase import setup_nest_asyncio
 from ..util.tracing import setup_telemetry
-from ..workflows.default import default_resolver_factory
+from ..workflows.default import default_resolver_factory, workflow_resolver_factory
 
 setup_nest_asyncio()
 
@@ -50,7 +50,9 @@ def default_lifecycle(config: AgentServerConfig):
 
         agent_registry = await setup_default_agent_registry(config)
         workflow_registry = await setup_default_workflow_registry(
-            config, default_resolver_factory
+            config,
+            await default_resolver_factory(config),
+            workflow_resolver_factory,
         )
 
         bot = None
@@ -152,7 +154,6 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
             if authorization and authorization.startswith("Bearer ")
             else config.oso_api_key.get_secret_value()
         )
-        logger.info(f"Using Oso API key: {oso_api_key}")
         workflow_config = WorkflowConfig(oso_api_key=SecretStr(oso_api_key))
         workflow_registry = get_workflow_registry(request)
         basic_workflow = await workflow_registry.get_workflow(
@@ -162,7 +163,6 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
             "semantic_text2sql", workflow_config
         )
 
-        logger.info("loaded workflows")
         # We trigger the workflows simultaneously using asyncio.create_task
         # NOTE: for now this workflow does not support chat history it only accepts the most recent message
         sql_result_task = asyncio.create_task(
