@@ -5,9 +5,9 @@ import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { ALGOLIA_INDEX } from "@/lib/config";
 import { PLASMIC } from "@/plasmic-init";
 import { format } from "sql-formatter";
-import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
+import { generateApiKey } from "@/lib/auth/keys";
 import { Markdown } from "@/components/widgets/markdown";
 import {
   MetricsDataProvider,
@@ -35,7 +35,6 @@ import {
 } from "@/components/widgets/auth-actions";
 import { MonacoEditor } from "@/components/widgets/monaco-editor";
 import { OSOChat } from "@/components/widgets/oso-chat";
-import { register as registerMetricsUtils } from "@/lib/metrics-utils";
 import {
   OsoDataProvider,
   OsoDataProviderRegistration,
@@ -107,10 +106,8 @@ PLASMIC.registerFunction(generateApiKey, {
     type: "string",
     description: "the API key",
   },
-  importPath: "generate-api-key",
+  importPath: "./lib/auth/keys",
 });
-
-registerMetricsUtils(PLASMIC);
 
 PLASMIC.registerComponent(CircularProgress, {
   name: "CircularProgress",
