@@ -25,6 +25,7 @@ export interface OverviewProps extends DefaultOverviewProps {}
 
 function Overview_(props: OverviewProps, ref: HTMLElementRefOf<"div">) {
   const color = useColorMode();
+  console.log(color.colorMode);
   // Use PlasmicOverview to render this component as it was
   // designed in Plasmic, by activating the appropriate variants,
   // attaching the appropriate event handlers, etc.  You

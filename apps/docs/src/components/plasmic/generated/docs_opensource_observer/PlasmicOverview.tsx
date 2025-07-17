@@ -547,14 +547,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={
-                      "https://docs.opensource.observer/docs/guides/notebooks/"
-                    }
+                    image={null}
+                    link={"/docs/guides/notebooks/"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -572,15 +571,6 @@ function PlasmicOverview__RenderFunc(props: {
                     >
                       {"\ud83d\udcd3 \nConnect to notebooks"}
                     </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text__b8GL5,
-                      )}
-                    >
-                      {"something here"}
-                    </div>
                   </LinkCard>
                   <LinkCard
                     className={classNames(
@@ -594,12 +584,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={"https://docs.opensource.observer/docs/tutorials/"}
+                    image={null}
+                    link={"/docs/tutorials/"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -617,15 +608,6 @@ function PlasmicOverview__RenderFunc(props: {
                     >
                       {"\ud83d\udcda \nSee tutorials"}
                     </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text__mj707,
-                      )}
-                    >
-                      {"something here"}
-                    </div>
                   </LinkCard>
                   <LinkCard
                     className={classNames(
@@ -639,14 +621,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={
-                      "https://docs.opensource.observer/docs/contribute-models/"
-                    }
+                    image={null}
+                    link={"/docs/contribute-models/"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -663,15 +644,6 @@ function PlasmicOverview__RenderFunc(props: {
                       )}
                     >
                       {"\ud83e\udd16 \nContribute models"}
-                    </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text___9DsmD,
-                      )}
-                    >
-                      {"something here"}
                     </div>
                   </LinkCard>
                 </Stack__>
@@ -710,12 +682,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={"https://docs.opensource.observer/docs/integrate/api"}
+                    image={null}
+                    link={"/docs/integrate/api"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -733,15 +706,6 @@ function PlasmicOverview__RenderFunc(props: {
                     >
                       {"\u26a1 \nUse the GraphQL API"}
                     </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text__fllMb,
-                      )}
-                    >
-                      {"something here"}
-                    </div>
                   </LinkCard>
                   <LinkCard
                     className={classNames(
@@ -755,14 +719,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={
-                      "https://docs.opensource.observer/docs/guides/dagster/"
-                    }
+                    image={null}
+                    link={"/docs/guides/dagster/"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -780,15 +743,6 @@ function PlasmicOverview__RenderFunc(props: {
                     >
                       {"\ud83d\udcc8 \nView the entire pipeline"}
                     </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text__u7QRc,
-                      )}
-                    >
-                      {"something here"}
-                    </div>
                   </LinkCard>
                   <LinkCard
                     className={classNames(
@@ -802,14 +756,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={
-                      "https://docs.opensource.observer/docs/contribute-data/"
-                    }
+                    image={null}
+                    link={"/docs/contribute-data/"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -826,15 +779,6 @@ function PlasmicOverview__RenderFunc(props: {
                       )}
                     >
                       {"\ud83d\udd0c \nConnect your data"}
-                    </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text__fFg9B,
-                      )}
-                    >
-                      {"something here"}
                     </div>
                   </LinkCard>
                 </Stack__>
@@ -873,12 +817,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={"https://docs.opensource.observer/docs/projects/"}
+                    image={null}
+                    link={"/docs/projects/"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -896,15 +841,6 @@ function PlasmicOverview__RenderFunc(props: {
                     >
                       {"\u2795 \nAdd your project"}
                     </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text___96W6,
-                      )}
-                    >
-                      {"something here"}
-                    </div>
                   </LinkCard>
                   <LinkCard
                     className={classNames(
@@ -918,14 +854,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={
-                      "https://docs.opensource.observer/docs/projects/view-artifacts"
-                    }
+                    image={null}
+                    link={"/docs/projects/view-artifacts"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -943,15 +878,6 @@ function PlasmicOverview__RenderFunc(props: {
                     >
                       {"\ud83d\udce6 \nView project artifacts"}
                     </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text__tknnv,
-                      )}
-                    >
-                      {"something here"}
-                    </div>
                   </LinkCard>
                   <LinkCard
                     className={classNames(
@@ -965,14 +891,13 @@ function PlasmicOverview__RenderFunc(props: {
                         ),
                       },
                     )}
-                    link={
-                      "https://docs.opensource.observer/docs/projects/troubleshoot"
-                    }
+                    image={null}
+                    link={"/docs/projects/troubleshoot"}
                     noTitle={true}
                     theme={
                       hasVariant($state, "theme", "dark") ? "dark" : undefined
                     }
-                    title={"Get started"}
+                    title={null}
                   >
                     <div
                       className={classNames(
@@ -989,15 +914,6 @@ function PlasmicOverview__RenderFunc(props: {
                       )}
                     >
                       {"\ud83d\udd27 \nTroubleshoot data issues"}
-                    </div>
-                    <div
-                      className={classNames(
-                        projectcss.all,
-                        projectcss.__wab_text,
-                        sty.text__nQkmU,
-                      )}
-                    >
-                      {"something here"}
                     </div>
                   </LinkCard>
                 </Stack__>

@@ -232,6 +232,7 @@ function PlasmicLinkCard__RenderFunc(props: {
         data-plasmic-override={overrides.header}
         className={classNames(projectcss.all, sty.header, {
           [sty.headernoTitle]: hasVariant($state, "noTitle", "noTitle"),
+          [sty.headertheme_dark]: hasVariant($state, "theme", "dark"),
         })}
       >
         <div
@@ -240,6 +241,11 @@ function PlasmicLinkCard__RenderFunc(props: {
               $state,
               "noTitle",
               "noTitle",
+            ),
+            [sty.freeBoxtheme_dark__djG7FGyFc5]: hasVariant(
+              $state,
+              "theme",
+              "dark",
             ),
           })}
         >
@@ -261,32 +267,29 @@ function PlasmicLinkCard__RenderFunc(props: {
         data-plasmic-override={overrides.body}
         className={classNames(projectcss.all, sty.body, {
           [sty.bodynoTitle]: hasVariant($state, "noTitle", "noTitle"),
+          [sty.bodytheme_dark]: hasVariant($state, "theme", "dark"),
         })}
       >
         {renderPlasmicSlot({
           defaultContents: (
-            <React.Fragment>
-              <div
-                className={classNames(
-                  projectcss.all,
-                  projectcss.__wab_text,
-                  sty.text___2AACg,
-                )}
-              >
-                {"something here"}
-              </div>
-              <div
-                className={classNames(
-                  projectcss.all,
-                  projectcss.__wab_text,
-                  sty.text__m0Woh,
-                )}
-              >
-                {"something here"}
-              </div>
-            </React.Fragment>
+            <div
+              className={classNames(
+                projectcss.all,
+                projectcss.__wab_text,
+                sty.text___2AACg,
+              )}
+            >
+              {"something here"}
+            </div>
           ),
           value: args.children,
+          className: classNames(sty.slotTargetChildren, {
+            [sty.slotTargetChildrentheme_dark]: hasVariant(
+              $state,
+              "theme",
+              "dark",
+            ),
+          }),
         })}
       </div>
     </PlasmicLink__>
