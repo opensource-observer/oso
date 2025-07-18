@@ -1,0 +1,164 @@
+test_model_activity_daily_v0_basic:
+  model: oso.model_activity_daily_v0
+  inputs:
+    oso.models_v0:
+      rows:
+      - model_id: model_1
+        model_name: int_events__github
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-01-01 10:00:00
+      - model_id: model_2
+        model_name: int_events_daily__github
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-01-01 10:30:00
+      - model_id: model_3
+        model_name: stg_github__events
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-01-01 11:00:00
+      - model_id: model_4
+        model_name: stg_superchain__transactions
+        rendered_sql: 'SELECT * FROM transactions WHERE 1=1'
+        rendered_at: 2024-01-01 11:30:00
+      - model_id: model_5
+        model_name: stg_worldchain__blocks
+        rendered_sql: 'SELECT * FROM blocks WHERE 1=1'
+        rendered_at: 2024-01-01 12:00:00
+      - model_id: model_6
+        model_name: int_events_daily__github
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-01-02 09:00:00
+      - model_id: model_7
+        model_name: some_other_model
+        rendered_sql: 'SELECT * FROM other WHERE 1=1'
+        rendered_at: 2024-01-02 09:30:00
+      - model_id: model_8
+        model_name: stg_superchain__contracts
+        rendered_sql: 'SELECT * FROM contracts WHERE 1=1'
+        rendered_at: 2024-01-02 10:00:00
+  outputs:
+    query:
+      rows:
+      - rendered_date: 2024-01-01
+        model_name: int_events__github
+        daily_count: 1
+      - rendered_date: 2024-01-01
+        model_name: int_events_daily__github
+        daily_count: 1
+      - rendered_date: 2024-01-01
+        model_name: stg_github__events
+        daily_count: 1
+      - rendered_date: 2024-01-01
+        model_name: stg_superchain__transactions
+        daily_count: 1
+      - rendered_date: 2024-01-01
+        model_name: stg_worldchain__blocks
+        daily_count: 1
+      - rendered_date: 2024-01-02
+        model_name: int_events_daily__github
+        daily_count: 1
+      - rendered_date: 2024-01-02
+        model_name: stg_superchain__contracts
+        daily_count: 1
+
+test_model_activity_daily_v0_pattern_filtering:
+  model: oso.model_activity_daily_v0
+  inputs:
+    oso.models_v0:
+      rows:
+      - model_id: model_1
+        model_name: int_events__optimism
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-02-01 10:00:00
+      - model_id: model_2
+        model_name: int_events_daily__base
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-02-01 10:30:00
+      - model_id: model_3
+        model_name: stg_github__events
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-02-01 11:00:00
+      - model_id: model_4
+        model_name: some_random_model
+        rendered_sql: 'SELECT * FROM random WHERE 1=1'
+        rendered_at: 2024-02-01 11:30:00
+      - model_id: model_5
+        model_name: another_unmatched_model
+        rendered_sql: 'SELECT * FROM unmatched WHERE 1=1'
+        rendered_at: 2024-02-01 12:00:00
+      - model_id: model_6
+        model_name: stg_worldchain__users
+        rendered_sql: 'SELECT * FROM users WHERE 1=1'
+        rendered_at: 2024-02-02 09:00:00
+  outputs:
+    query:
+      rows:
+      - rendered_date: 2024-02-01
+        model_name: int_events__optimism
+        daily_count: 1
+      - rendered_date: 2024-02-01
+        model_name: int_events_daily__base
+        daily_count: 1
+      - rendered_date: 2024-02-01
+        model_name: stg_github__events
+        daily_count: 1
+      - rendered_date: 2024-02-02
+        model_name: stg_worldchain__users
+        daily_count: 1
+
+test_model_activity_daily_v0_multiple_entries:
+  model: oso.model_activity_daily_v0
+  inputs:
+    oso.models_v0:
+      rows:
+      - model_id: model_1
+        model_name: int_events__ethereum
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-03-01 08:00:00
+      - model_id: model_2
+        model_name: int_events__ethereum
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-03-01 10:00:00
+      - model_id: model_3
+        model_name: int_events__ethereum
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-03-01 14:00:00
+      - model_id: model_4
+        model_name: stg_superchain__logs
+        rendered_sql: 'SELECT * FROM logs WHERE 1=1'
+        rendered_at: 2024-03-01 09:00:00
+      - model_id: model_5
+        model_name: stg_superchain__logs
+        rendered_sql: 'SELECT * FROM logs WHERE 1=1'
+        rendered_at: 2024-03-01 15:00:00
+      - model_id: model_6
+        model_name: int_events_daily__polygon
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-03-02 11:00:00
+      - model_id: model_7
+        model_name: int_events_daily__polygon
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-03-02 16:00:00
+      - model_id: model_8
+        model_name: int_events_daily__polygon
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-03-02 20:00:00
+      - model_id: model_9
+        model_name: int_events_daily__polygon
+        rendered_sql: 'SELECT * FROM events WHERE 1=1'
+        rendered_at: 2024-03-02 22:00:00
+      - model_id: model_10
+        model_name: unmatched_model_name
+        rendered_sql: 'SELECT * FROM other WHERE 1=1'
+        rendered_at: 2024-03-01 12:00:00
+  outputs:
+    query:
+      rows:
+      - rendered_date: 2024-03-01
+        model_name: int_events__ethereum
+        daily_count: 3
+      - rendered_date: 2024-03-01
+        model_name: stg_superchain__logs
+        daily_count: 2
+      - rendered_date: 2024-03-02
+        model_name: int_events_daily__polygon
+        daily_count: 4
