@@ -1,4 +1,3 @@
-
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -7,14 +6,17 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import requests
 from mcp.server.fastmcp import Context, FastMCP
-from pyoso import Client
 
 from .config import MCPConfig
+
+# from pyoso import Client
+
 
 MCP_SSE_PORT = 8000
 
 P = TypeVar("P")
 R = TypeVar("R")
+
 
 @dataclass
 class McpErrorResponse(Generic[P]):
@@ -23,6 +25,7 @@ class McpErrorResponse(Generic[P]):
     success: bool = False
     parameters: Optional[List[P]] = None
 
+
 @dataclass
 class McpSuccessResponse(Generic[P, R]):
     tool_name: str
@@ -30,30 +33,35 @@ class McpSuccessResponse(Generic[P, R]):
     success: bool = True
     parameters: Optional[List[P]] = None
 
+
 McpResponse = Union[McpErrorResponse[P], McpSuccessResponse[P, R]]
+
 
 @dataclass
 class AppContext:
-    oso_client: Optional[Client] = None
+    # oso_client: Optional[Client] = None
+    pass
+
 
 def default_lifespan(config: MCPConfig):
     @asynccontextmanager
     async def app_lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
         """Manage application lifecycle with OSO client in context"""
-        api_key = config.oso_api_key
+        # api_key = config.oso_api_key
 
-        client = Client(api_key.get_secret_value())
-        context = AppContext(oso_client=client)
+        # client = Client(api_key.get_secret_value())
+        # context = AppContext(oso_client=client)
+        context = AppContext()
 
         try:
             yield context
         finally:
             pass
+
     return app_lifespan
 
 
 def setup_mcp_app(config: MCPConfig):
-
     mcp = FastMCP(
         "OSO Data Lake Explorer",
         port=config.port,
@@ -82,7 +90,7 @@ def setup_mcp_app(config: MCPConfig):
         """
         if ctx:
             await ctx.info(f"Converting natural language query to SQL: {nl_query}")
-        
+
         api_key = config.oso_api_key
         if not api_key:
             raise ValueError("OSO API key is not available in the context")
@@ -105,5 +113,5 @@ def setup_mcp_app(config: MCPConfig):
             parameters=[nl_query],
             results=[response.json()["sql"]],
         )
-    
+
     return mcp
