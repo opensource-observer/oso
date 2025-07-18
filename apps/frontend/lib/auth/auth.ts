@@ -11,10 +11,11 @@ import {
   User,
   OrganizationDetails,
   OrgRole,
+  AuthUserSchema,
 } from "@/lib/types/user";
 import { Database } from "@/lib/types/supabase";
-import { sign, verify } from "jsonwebtoken";
 import { OSO_JWT_SECRET } from "@/lib/config";
+import { SignJWT, jwtVerify } from "jose";
 
 // Constants
 const DEFAULT_KEY_NAME = "login";
@@ -322,7 +323,9 @@ async function getUser(request: NextRequest): Promise<User> {
     jwtUser.role === "anonymous" ? await getUserByApiKey(token, host) : jwtUser;
 
   const user =
-    apiKeyUser.role === "anonymous" ? verifyOsoJwt(token, host) : apiKeyUser;
+    apiKeyUser.role === "anonymous"
+      ? await verifyOsoJwt(token, host)
+      : apiKeyUser;
   if (user.role === "anonymous") {
     return user;
   }
@@ -345,10 +348,10 @@ async function getUser(request: NextRequest): Promise<User> {
   return user;
 }
 
-function signOsoJwt(
+async function signOsoJwt(
   user: AuthUser,
   org: Omit<OrganizationDetails, "orgRole">,
-): string {
+): Promise<string> {
   const secret = OSO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
@@ -361,30 +364,34 @@ function signOsoJwt(
     orgRole: "member",
   }; // For JWT requests, default to lower permissions for now
 
-  return sign(authUser, secret, {
-    algorithm: "HS256",
-    audience: "opensource-observer",
-    issuer: "opensource-observer",
-  });
+  return new SignJWT(authUser as any)
+    .setProtectedHeader({ alg: "HS256" })
+    .setAudience("opensource-observer")
+    .setIssuer("opensource-observer")
+    .setExpirationTime("1h")
+    .sign(new TextEncoder().encode(secret));
 }
 
-function verifyOsoJwt(token: string, host: string | null): AuthUser | AnonUser {
+async function verifyOsoJwt(
+  token: string,
+  host: string | null,
+): Promise<AuthUser | AnonUser> {
+  const secret = OSO_JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT Secret not found: unable to authenticate");
+  }
   try {
-    const data = verify(token, OSO_JWT_SECRET, {
-      algorithms: ["HS256"],
-      audience: "opensource-observer",
-      issuer: "opensource-observer",
-    });
+    const { payload } = await jwtVerify<AuthUser>(
+      token,
+      new TextEncoder().encode(secret),
+      {
+        algorithms: ["HS256"],
+        audience: "opensource-observer",
+        issuer: "opensource-observer",
+      },
+    );
 
-    if (
-      !data ||
-      typeof data !== "object" ||
-      !("userId" in data && "orgId" in data)
-    ) {
-      return makeAnonUser(host);
-    }
-
-    return data as AuthUser;
+    return AuthUserSchema.parse(payload);
   } catch (e: unknown) {
     console.log(
       `auth: Invalid JWT token: ${e instanceof Error ? e.message : ""} => anon`,

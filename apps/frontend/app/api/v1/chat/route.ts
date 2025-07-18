@@ -66,6 +66,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const osoToken = await signOsoJwt(user, {
+    orgId: org.id,
+    orgName: org.org_name,
+  });
+
   try {
     tracker.track(EVENTS.API_CALL, {
       type: "chat",
@@ -75,7 +80,7 @@ export async function POST(req: NextRequest) {
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${signOsoJwt(user, { orgId: org.id, orgName: org.org_name })}`,
+        Authorization: `Bearer ${osoToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(prompt),

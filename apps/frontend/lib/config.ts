@@ -63,8 +63,7 @@ export const TRINO_ADMIN_PASSWORD =
   process.env.TRINO_ADMIN_PASSWORD ?? "MISSING TRINO_PASSWORD";
 export const TRINO_CATALOG = process.env.TRINO_CATALOG ?? "iceberg";
 export const TRINO_SCHEMA = process.env.TRINO_SCHEMA ?? "oso";
-export const TRINO_JWT_SECRET =
-  process.env.TRINO_JWT_SECRET ?? "MISSING TRINO_JWT_SECRET";
+export const TRINO_JWT_SECRET = process.env.TRINO_JWT_SECRET;
 
 export const ALGOLIA_APPLICATION_ID =
   process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID ??
@@ -84,8 +83,7 @@ export const STRIPE_PUBLISHABLE_KEY =
   "MISSING STRIPE_PUBLISHABLE_KEY";
 export const STRIPE_WEBHOOK_SECRET =
   process.env.STRIPE_WEBHOOK_SECRET ?? "MISSING STRIPE_WEBHOOK_SECRET";
-export const OSO_JWT_SECRET =
-  process.env.OSO_JWT_SECRET ?? "MISSING OSO_JWT_SECRET";
+export const OSO_JWT_SECRET = process.env.OSO_JWT_SECRET;
 export const OSO_ENTITIES_KEY = "oso_entities";
 export const OSO_ENTITIES = [
   "artifact.artifact_id",
