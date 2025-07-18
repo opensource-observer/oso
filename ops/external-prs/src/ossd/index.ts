@@ -17,14 +17,14 @@ import * as fs from "fs";
 import * as path from "path";
 import * as repl from "repl";
 import columnify from "columnify";
-import { BigQueryOptions } from "@google-cloud/bigquery";
 import {
   DefiLlamaValidator,
   EVMNetworkValidator,
-  EthereumValidator,
-  ArbitrumValidator,
-  BaseValidator,
-  OptimismValidator,
+  EthereumContractsV0Validator,
+  ArbitrumContractsV0Validator,
+  BaseContractsV0Validator,
+  OptimismContractsV0Validator,
+  AnyEVMContractsV0Validator,
 } from "@opensource-observer/oss-artifact-validators";
 import { uncheckedCast } from "@opensource-observer/utils";
 import { CheckConclusion, CheckStatus } from "../checks.js";
@@ -321,36 +321,13 @@ class OSSDirectoryPullRequest {
     this.blockchainValidators = {};
   }
 
-  async loadValidators(urls: RpcUrlArgs) {
-    const googleProjectId = process.env.GOOGLE_PROJECT_ID;
-    const bqOptions: BigQueryOptions = {
-      ...(googleProjectId ? { projectId: googleProjectId } : {}),
-    };
+  async loadValidators() {
     this.defillamaValidator = new DefiLlamaValidator();
-    this.blockchainValidators["any_evm"] = EthereumValidator({
-      rpcUrl: urls.mainnetRpcUrl,
-      bqOptions,
-    });
-
-    this.blockchainValidators["mainnet"] = EthereumValidator({
-      rpcUrl: urls.mainnetRpcUrl,
-      bqOptions,
-    });
-
-    this.blockchainValidators["arbitrum_one"] = ArbitrumValidator({
-      rpcUrl: urls.arbitrumRpcUrl,
-      bqOptions,
-    });
-
-    this.blockchainValidators["base"] = BaseValidator({
-      rpcUrl: urls.baseRpcUrl,
-      bqOptions,
-    });
-
-    this.blockchainValidators["optimism"] = OptimismValidator({
-      rpcUrl: urls.optimismRpcUrl,
-      bqOptions,
-    });
+    this.blockchainValidators["any_evm"] = AnyEVMContractsV0Validator();
+    this.blockchainValidators["mainnet"] = EthereumContractsV0Validator();
+    this.blockchainValidators["arbitrum_one"] = ArbitrumContractsV0Validator();
+    this.blockchainValidators["base"] = BaseContractsV0Validator();
+    this.blockchainValidators["optimism"] = OptimismContractsV0Validator();
   }
 
   async dbAll(query: string) {
@@ -604,7 +581,7 @@ class OSSDirectoryPullRequest {
     );
   }
 
-  async validate(urls: RpcUrlArgs) {
+  async validate() {
     const args = this.args;
     logger.info({
       message: "validating the pull request",
@@ -613,7 +590,7 @@ class OSSDirectoryPullRequest {
       pr: args.pr,
     });
     // Initialize
-    await this.loadValidators(urls);
+    await this.loadValidators();
     const results = await ValidationResults.create();
 
     // Validate blockchain artifacts
@@ -763,7 +740,7 @@ async function listPR(args: OSSDirectoryPullRequestArgs) {
 
 async function validatePR(args: ValidatePRArgs) {
   const pr = await OSSDirectoryPullRequest.init(args);
-  await pr.validate(args);
+  await pr.validate();
 }
 
 /**
