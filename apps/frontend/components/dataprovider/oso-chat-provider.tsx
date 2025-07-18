@@ -55,6 +55,9 @@ function OsoChatProvider(props: OsoChatProviderProps) {
   const chatData = useChat({
     api: CHAT_PATH,
     headers: headers,
+    body: {
+      chatId: chatId,
+    },
   });
 
   React.useEffect(() => {

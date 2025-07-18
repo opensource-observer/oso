@@ -5,10 +5,11 @@ import { getTableNamesFromSql } from "@/lib/parsing";
 import { getUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
-import * as jsonwebtoken from "jsonwebtoken";
 import { AuthUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
 import { CreditsService, TransactionType } from "@/lib/services/credits";
+import { TRINO_JWT_SECRET } from "@/lib/config";
+import { SignJWT } from "jose";
 
 // Next.js route control
 export const revalidate = 0;
@@ -20,24 +21,21 @@ const FORMAT = "format";
 const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
-function signJWT(user: AuthUser) {
-  const secret = process.env.TRINO_JWT_SECRET;
+async function signJWT(user: AuthUser) {
+  const secret = TRINO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
   }
-  // TODO: make subject use organization name
-  return jsonwebtoken.sign(
-    {
-      userId: user.userId,
-    },
-    secret,
-    {
-      algorithm: "HS256",
-      subject: `jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`,
-      audience: "consumer-trino",
-      issuer: "opensource-observer",
-    },
-  );
+
+  return new SignJWT({
+    userId: user.userId,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(`jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`)
+    .setAudience("consumer-trino")
+    .setIssuer("opensource-observer")
+    .setExpirationTime("1h")
+    .sign(new TextEncoder().encode(secret));
 }
 
 /**
@@ -84,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const jwt = signJWT(user);
+  const jwt = await signJWT(user);
 
   try {
     tracker.track(EVENTS.API_CALL, {
