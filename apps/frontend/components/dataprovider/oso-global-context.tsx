@@ -1,5 +1,9 @@
 import React, { ReactNode } from "react";
-import { DataProvider, GlobalActionsProvider } from "@plasmicapp/loader-nextjs"; // or "@plasmicapp/loader-*""
+import {
+  GlobalContextMeta,
+  DataProvider,
+  GlobalActionsProvider,
+} from "@plasmicapp/loader-nextjs";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { ADT } from "ts-adt";
@@ -85,12 +89,16 @@ interface OsoGlobalContextProps {
   errorCodeMap?: any; // Map of error codes to error messages
 }
 
-const OsoGlobalContextPropsRegistration: any = {
-  errorCodeMap: {
-    type: "object",
-    defaultValue: {},
-    helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
+const OsoGlobalContextMeta: GlobalContextMeta<OsoGlobalContextProps> = {
+  name: "OsoGlobalContext",
+  props: {
+    errorCodeMap: {
+      type: "object",
+      defaultValue: {},
+      helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
+    },
   },
+  globalActions: OsoGlobalActions,
 };
 
 function OsoGlobalContext(props: OsoGlobalContextProps) {
@@ -250,8 +258,4 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
   );
 }
 
-export {
-  OsoGlobalContext,
-  OsoGlobalActions,
-  OsoGlobalContextPropsRegistration,
-};
+export { OsoGlobalContext, OsoGlobalContextMeta };
