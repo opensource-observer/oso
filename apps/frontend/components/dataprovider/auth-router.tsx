@@ -1,11 +1,11 @@
 import { ReactNode } from "react";
 import { usePostHog } from "posthog-js/react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
 } from "@/components/dataprovider/provider-view";
-import { RegistrationProps } from "@/lib/types/plasmic";
 import { useSupabaseState } from "@/components/hooks/supabase";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
@@ -16,25 +16,29 @@ type AuthRouterProps = CommonDataProviderProps & {
   testNoAuth?: boolean;
 };
 
-const AuthRouterRegistration: RegistrationProps<AuthRouterProps> = {
-  ...CommonDataProviderRegistration,
-  noAuthChildren: {
-    type: "slot",
-    defaultValue: {
-      type: "text",
-      value: "Placeholder",
+const AuthRouterMeta: CodeComponentMeta<AuthRouterProps> = {
+  name: "AuthRouter",
+  props: {
+    ...CommonDataProviderRegistration,
+    noAuthChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreNoAuth: {
+      type: "boolean",
+      advanced: true,
+      helpText: "Always render children",
+    },
+    testNoAuth: {
+      type: "boolean",
+      editOnly: true,
+      advanced: true,
     },
   },
-  ignoreNoAuth: {
-    type: "boolean",
-    advanced: true,
-    helpText: "Always render children",
-  },
-  testNoAuth: {
-    type: "boolean",
-    editOnly: true,
-    advanced: true,
-  },
+  providesData: true,
 };
 
 function AuthRouter(props: AuthRouterProps) {
@@ -87,5 +91,5 @@ function AuthRouter(props: AuthRouterProps) {
   );
 }
 
-export { AuthRouter, AuthRouterRegistration };
+export { AuthRouter, AuthRouterMeta };
 export type { AuthRouterProps };

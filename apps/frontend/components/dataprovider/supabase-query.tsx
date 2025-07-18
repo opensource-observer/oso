@@ -1,9 +1,9 @@
 import React from "react";
 import useSWR from "swr";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { SupabaseQueryArgs, supabaseQuery } from "@/lib/supabase/query";
 import { useSupabaseState } from "@/components/hooks/supabase";
-import { RegistrationProps } from "@/lib/types/plasmic";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
@@ -40,33 +40,37 @@ const genKey = (props: SupabaseQueryProps) => {
  */
 type SupabaseQueryProps = Partial<SupabaseQueryArgs> & CommonDataProviderProps;
 
-const SupabaseQueryRegistration: RegistrationProps<SupabaseQueryProps> = {
-  ...CommonDataProviderRegistration,
-  tableName: {
-    type: "string",
-    helpText: "Supabase table name",
+const SupabaseQueryMeta: CodeComponentMeta<SupabaseQueryProps> = {
+  name: "SupabaseQuery",
+  props: {
+    ...CommonDataProviderRegistration,
+    tableName: {
+      type: "string",
+      helpText: "Supabase table name",
+    },
+    columns: {
+      type: "string",
+      helpText: "Comma-separated list of columns",
+    },
+    filters: {
+      type: "object",
+      defaultValue: [],
+      helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
+    },
+    limit: {
+      type: "number",
+      helpText: "Number of rows to return",
+    },
+    orderBy: {
+      type: "string",
+      helpText: "Name of column to order by",
+    },
+    orderAscending: {
+      type: "boolean",
+      helpText: "True if ascending, false if descending",
+    },
   },
-  columns: {
-    type: "string",
-    helpText: "Comma-separated list of columns",
-  },
-  filters: {
-    type: "object",
-    defaultValue: [],
-    helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
-  },
-  limit: {
-    type: "number",
-    helpText: "Number of rows to return",
-  },
-  orderBy: {
-    type: "string",
-    helpText: "Name of column to order by",
-  },
-  orderAscending: {
-    type: "boolean",
-    helpText: "True if ascending, false if descending",
-  },
+  providesData: true,
 };
 
 function SupabaseQuery(props: SupabaseQueryProps) {
@@ -102,5 +106,5 @@ function SupabaseQuery(props: SupabaseQueryProps) {
   );
 }
 
-export { SupabaseQueryRegistration, SupabaseQuery };
+export { SupabaseQuery, SupabaseQueryMeta };
 export type { SupabaseQueryProps };

@@ -1,7 +1,7 @@
 import React from "react";
 import _ from "lodash";
 import useSWR from "swr";
-import { RegistrationProps } from "@/lib/types/plasmic";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
@@ -38,13 +38,19 @@ type OsoDataProviderProps = CommonDataProviderProps & {
   dataFetches?: { [name: string]: Partial<DataFetch> };
 };
 
-const OsoDataProviderRegistration: RegistrationProps<OsoDataProviderProps> = {
-  ...CommonDataProviderRegistration,
-  dataFetches: {
-    type: "object",
-    helpText:
-      "e.g. { members: { method: 'getOrganizationMembers', args: { orgId: 'ORG_ID_HERE' } } }",
+const OsoDataProviderMeta: CodeComponentMeta<OsoDataProviderProps> = {
+  name: "OsoDataProvider",
+  description: "OSO data provider",
+  props: {
+    ...CommonDataProviderRegistration,
+    dataFetches: {
+      type: "object",
+      helpText:
+        "e.g. { members: { method: 'getOrganizationMembers', args: { orgId: 'ORG_ID_HERE' } } }",
+    },
   },
+  providesData: true,
+  importPath: "./components/dataprovider/oso-data-provider",
 };
 
 function OsoDataProvider(props: OsoDataProviderProps) {
@@ -89,5 +95,5 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   );
 }
 
-export { OsoDataProviderRegistration, OsoDataProvider };
+export { OsoDataProvider, OsoDataProviderMeta };
 export type { OsoDataProviderProps };

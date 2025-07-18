@@ -44,7 +44,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@mui/material": "^5.16.0",
     "@opensource-observer/utils": "workspace:*",
-    "@plasmicapp/loader-nextjs": "^1.0.432",
+    "@plasmicapp/loader-nextjs": "^1.0.433",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
