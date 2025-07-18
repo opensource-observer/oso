@@ -48,14 +48,13 @@ class OsoSqlDatabase(SQLDatabase):
     @classmethod
     async def create(
         cls,
-        oso_api_key: str,
+        oso_client: OsoClient,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
         max_string_length: int = 300,
     ):
         """Create engine from database URI."""
-        oso_client = OsoClient(oso_api_key)
 
         all_tables = await oso_client.list_tables()
         all_tables_set = set(all_tables)
@@ -83,7 +82,9 @@ class OsoSqlDatabase(SQLDatabase):
         if not isinstance(sample_rows_in_table_info, int):
             raise TypeError("sample_rows_in_table_info must be an integer")
 
-        result = cls(oso_client, usable_tables_set, sample_rows_in_table_info, max_string_length)
+        result = cls(
+            oso_client, usable_tables_set, sample_rows_in_table_info, max_string_length
+        )
         return result
 
     @property
@@ -111,7 +112,10 @@ class OsoSqlDatabase(SQLDatabase):
         loop = asyncio.get_event_loop()
         coroutine = self._oso_client.get_table_schema(table_name)
         table_schema = loop.run_until_complete(coroutine)
-        columns = [ReflectedColumn(name=col.name, type=col.type, comment=col.description) for col in table_schema]
+        columns = [
+            ReflectedColumn(name=col.name, type=col.type, comment=col.description)
+            for col in table_schema
+        ]
         return columns
 
     def get_single_table_info(self, table_name: str) -> str:
@@ -124,7 +128,9 @@ class OsoSqlDatabase(SQLDatabase):
         columns = []
         for column in table_schema:
             if column.description:
-                columns.append(f"{column.name} ({column.type!s}): '{column.description}'")
+                columns.append(
+                    f"{column.name} ({column.type!s}): '{column.description}'"
+                )
             else:
                 columns.append(f"{column.name} ({column.type!s})")
         column_str = ", ".join(columns)
@@ -159,7 +165,7 @@ class OsoSqlDatabase(SQLDatabase):
         """
         logger.debug(f"Running SQL command: {command}")
 
-        line_split = [ line.lower() for line in command.strip().split('\n')]
+        line_split = [line.lower() for line in command.strip().split("\n")]
         if self.dialect.lower() in line_split:
             if line_split[0] == self.dialect.lower():
                 command = "\n".join(line_split[1:])
