@@ -3,29 +3,27 @@ name: ci-default
 env:
   # CI variables
   DOCKER_PLATFORM: "amd64"
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  #TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  #TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   # Frontend variables
   NODE_ENV: ${{ vars.NODE_ENV }}
   PLASMIC_PROJECT_ID: ${{ vars.PLASMIC_PROJECT_ID }}
   PLASMIC_PROJECT_API_TOKEN: ${{ vars.PLASMIC_PROJECT_API_TOKEN }}
-  NEXT_PUBLIC_DOMAIN: "www.opensource.observer"
+  NEXT_PUBLIC_DOMAIN: ${{ vars.NEXT_PUBLIC_DOMAIN }}
   NEXT_PUBLIC_DB_GRAPHQL_URL: ${{ vars.NEXT_PUBLIC_DB_GRAPHQL_URL }}
   HASURA_URL: ${{ vars.HASURA_URL }}
-  OSO_API_KEY: ${{ secrets.OSO_API_KEY }}
+  OSO_API_KEY: "test"
+  OSO_AGENT_URL: "http://localhost:8888/"
+  NEXT_PUBLIC_ALGOLIA_APPLICATION_ID: "test"
+  NEXT_PUBLIC_ALGOLIA_API_KEY: "test"
+  NEXT_PUBLIC_ALGOLIA_INDEX: "test"
   # Docs variables
-  DOCS_URL: "https://docs.opensource.observer"
+  DOCS_URL: ${{ vars.DOCS_URL }}
   DOCS_ALGOLIA_APP_ID: "test"
   DOCS_ALGOLIA_API_KEY: "test"
   DOCS_ALGOLIA_INDEX: "test"
   DOCS_GOOGLE_ANALYTICS_KEY: "test"
-  # dbt variables
-  #DBT_TARGET: "production"
-  # Google variables
-  #GOOGLE_PROJECT_ID: "opensource-observer"
-  #GOOGLE_TEST_DUMMY_CREDENTIALS_JSON: ${{ vars.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}
   # Supabase
-  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
   NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "test"
   SUPABASE_SERVICE_KEY: "test"
@@ -36,8 +34,6 @@ env:
   CLICKHOUSE_PASSWORD: "password"
   # SQLMesh variables
   SQLMESH_DUCKDB_LOCAL_PATH: "/tmp/oso.duckdb"
-  # should not be set to a legitimate value for testing. This will use up API quota otherwise
-  #DUNE_API_KEY: "none"
 
 # Trigger the workflow when:
 on:
@@ -47,7 +43,8 @@ on:
       - main
   # Or when a pull request event occurs for a pull request against one of the
   # matched branches.
-  pull_request:
+  #pull_request:
+  pull_request_target:
     branches:
       - main
   # Allows you to run this workflow manually from the Actions tab
@@ -56,14 +53,24 @@ on:
 
 # Cancel in progress jobs on new pushes.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint-and-test:
+  # Authorization step will determine which environment we run in
+  authorize:
+    # External pull requests should run on `public`, which requires approval
+    # Internal pull requests continue to run on `testing`
+    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'public' || 'testing' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
+
+  build-lint-test:
     # NOTE: This name appears in GitHub's Checks API.
     name: test
-    environment: testing
+    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'public' || 'testing' }}
+    needs: authorize
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -76,33 +83,14 @@ jobs:
           # Check out pull request's HEAD commit instead of the merge commit to
           # prevent gitlint from failing due to too long commit message titles,
           # e.g. "Merge 3e621938d65caaa67f8e35d145335d889d470fc8 into 19a39b2f66cd7a165082d1486b2f1eb36ec2354a".
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
           # Fetch all history so gitlint can check the relevant commits.
           fetch-depth: "0"
-          
-      - name: Load public vars
-        run: |
-          bash .github/scripts/load-public-vars.sh $GITHUB_ENV \
-            NODE_ENV \
-            PLASMIC_PROJECT_ID \
-            PLASMIC_PROJECT_API_TOKEN \
-            NEXT_PUBLIC_DOMAIN \
-            NEXT_PUBLIC_DB_GRAPHQL_URL \
-            HASURA_URL \
-            OSO_API_KEY \
-            GOOGLE_PROJECT_ID \
-            GOOGLE_TEST_DUMMY_CREDENTIALS_JSON \
-            PUBLIC_VARS_TEST
-
-      - name: Check if algolia is empty, set the variable to some dummy value if it is
-        shell: bash
-        run: |
-          echo "NEXT_PUBLIC_ALGOLIA_API_KEY=${NEXT_PUBLIC_ALGOLIA_API_KEY:-xxxx}" >> "$GITHUB_ENV"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
           run_install: |
             - recursive: true
               args: [--frozen-lockfile, --strict-peer-dependencies]
@@ -120,18 +108,6 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --all-packages --all-extras
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly-87bc53fc6c874bd4c92d97ed180b949e3a36d78c
-        if: ${{ matrix.component == 'node' }}        
-
-      #- name: Authenticate to google (test dummy)
-      #  uses: google-github-actions/auth@v2
-      #  with:
-      #    credentials_json: "${{ env.GOOGLE_TEST_DUMMY_CREDENTIALS_JSON }}"
-      #    create_credentials_file: true
 
       # ─────────────────────────────────────────────────────────────────────
       # Python steps
@@ -192,13 +168,3 @@ jobs:
         run: pnpm test
         if: ${{ always() && matrix.component == 'node' }}
         #if: ${{ always() && steps.supabase.conclusion == 'success' &&  matrix.component == 'node' }}
-
-      # ─────────────────────────────────────────────────────────────────────
-      # dbt steps (deprecated)
-      # - name: Setup dbt profile
-      #   run: bash .github/scripts/create-dbt-profile.sh ${GOOGLE_APPLICATION_CREDENTIALS}
-        
-      # - name: Lint SQL (dbt)
-      #   run: |
-      #     uv run sqlfluff lint --dialect bigquery ./warehouse/dbt/models
-      #   if: ${{ always() && matrix.component == 'dbt' }}

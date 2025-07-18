@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { useEffect } from "react";
-import { logger } from "../../../lib/logger";
+import { logger } from "@/lib/logger";
 
 const REDIRECT_URL = "/retry";
 

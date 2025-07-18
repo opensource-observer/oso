@@ -65,12 +65,12 @@ to integrating with a
 [3rd party data tool](https://docs.opensource.observer/docs/integrate/3rd-party),
 like [Hex](https://docs.opensource.observer/docs/integrate/3rd-party#hex-example),
 or [Tableau](https://cloud.google.com/bigquery/docs/analyze-data-tableau).
-If you end up using this data, we only ask that you share what you’ve learned and tag us
+If you end up using this data, we only ask that you share what you've learned and tag us
 [@OSObserver](https://x.com/osobserver).
 
 You should start by subscribing to a dataset from our
 [Data Overview](https://docs.opensource.observer/docs/integrate/overview/).
-Once you’ve subscribed, you can run queries in your favorite data tool.
+Once you've subscribed, you can run queries in your favorite data tool.
 
 For example to get a summary of code activity for
 [Uniswap](https://uniswap.org/),
@@ -100,7 +100,7 @@ where
   and LOWER(trace_type) in ("create", "create2")
 ```
 
-Or lookup vitalik.eth’s
+Or lookup vitalik.eth's
 [Gitcoin passport](https://passport.gitcoin.co/)
 score:
 
@@ -114,9 +114,9 @@ from YOUR_PROJECT_NAME.gitcoin.passport_scores
 where passport_address = '0xd8da6bf26964af9d7eed9e03e53415d37aa96045'
 ```
 
-When you’ve developed a novel impact metrics or data model,
+When you've developed a novel impact metrics or data model,
 we encourage you to
-[contribute back to the OSO data pipeline](../../docs/contribute-models/data-models),
+[contribute back to the OSO data pipeline](../../docs/contribute-models/sqlmesh),
 which is continuously deployed from our
 [open source repository](https://github.com/opensource-observer/oso/).
 

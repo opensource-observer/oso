@@ -18,6 +18,7 @@ pyoso = { workspace = true }
 
 [project.scripts]
 mcp = "oso_mcp.cli:cli"
+oso_mcp = "oso_mcp.cli:cli"
 
 [build-system]
 requires = ["hatchling"]

@@ -1,6 +1,6 @@
 import React, { ReactElement } from "react";
 import { FeedbackFarm } from "@feedbackfarm/react";
-import { FEEDBACK_FARM_ID } from "../../lib/config";
+import { FEEDBACK_FARM_ID } from "@/lib/config";
 
 export type FeedbackWrapperProps = {
   className?: string; // Plasmic CSS class

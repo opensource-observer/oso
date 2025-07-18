@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
-import { SUPABASE_URL, SUPABASE_SERVICE_KEY } from "../../config";
+import { SUPABASE_URL, SUPABASE_SERVICE_KEY } from "@/lib/config";
 
 describe("Organizations", () => {
   // Generate unique IDs for this test suite to avoid conflicts with other tests

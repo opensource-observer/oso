@@ -35,6 +35,8 @@ spec:
     remediation:
       retries: 3
   values:
+    image:
+      tag: "476"
     additionalNodeProperties:
       - log.format=json
       - log.console-format=json
@@ -86,3 +88,6 @@ spec:
       additionalJVMConfig:
         #- "--add-opens=java.base/java.nio=ALL-UNNAMED"
         - "-Djavax.net.ssl.trustStore=/etc/ssl/k8s-certs/ca-certificates.p12"
+
+    additionalConfigProperties:
+      - query.max-stage-count=200

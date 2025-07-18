@@ -4,6 +4,8 @@ metadata:
   name: pynessie-gc-job
 spec:
   schedule: "0 0 * * 2"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       template:
@@ -26,8 +28,8 @@ spec:
               resources:
                 requests:
                   cpu: 1
-                  memory: 1Gi
-                limits:
                   memory: 2Gi
+                limits:
+                  memory: 2.5Gi
           restartPolicy: Never
           serviceAccountName: production-nessie

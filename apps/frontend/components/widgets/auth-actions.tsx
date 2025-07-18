@@ -3,9 +3,9 @@ import { Provider } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { assertNever, ensure, spawn } from "@opensource-observer/utils";
-import { useSupabaseState } from "../hooks/supabase";
-import { RegistrationProps } from "../../lib/types/plasmic";
-import { NODE_ENV, DOMAIN } from "../../lib/config";
+import { useSupabaseState } from "@/components/hooks/supabase";
+import { RegistrationProps } from "@/lib/types/plasmic";
+import { NODE_ENV, DOMAIN } from "@/lib/config";
 
 type AuthActionType = "signInWithOAuth" | "signOut";
 const DEFAULT_PROVIDER: Provider = "google";
@@ -87,7 +87,11 @@ function AuthActions(props: AuthActionsProps) {
         },
       },
     });
-    await supabaseState?.revalidate();
+    if (supabaseState._type !== "loading") {
+      await supabaseState.revalidate();
+    } else {
+      console.warn("Unable to revalidate Supabase state. Client never loaded");
+    }
     console.log("Supabase signin:", data, error);
   };
 
@@ -102,7 +106,11 @@ function AuthActions(props: AuthActionsProps) {
       redirect: redirectOnComplete,
     });
     posthog.reset();
-    await supabaseState?.revalidate();
+    if (supabaseState._type !== "loading") {
+      await supabaseState.revalidate();
+    } else {
+      console.warn("Unable to revalidate Supabase state. Client never loaded");
+    }
     console.log("Supabase signout: ", error);
     if (redirectOnComplete) {
       router.push(redirectOnComplete);

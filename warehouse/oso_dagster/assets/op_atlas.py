@@ -116,12 +116,11 @@ op_atlas = sql_assets(
             "defer_table_reflect": True,
         },
         {
-            "table": "RewardClaim",
-            "incremental": incremental("updatedAt"),
+            "table": "PublishedContract",
             "defer_table_reflect": True,
         },
         {
-            "table": "User",
+            "table": "RewardClaim",
             "incremental": incremental("updatedAt"),
             "defer_table_reflect": True,
         },

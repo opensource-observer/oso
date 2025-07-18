@@ -2,7 +2,7 @@ services:
   trino:
     ports:
       - "${SQLMESH_TRINO_PORT:-8080}:8080"
-    image: "trinodb/trino:474"
+    image: "trinodb/trino:476"
     volumes:
       - ./docker/trino/etc:/etc/trino/
 

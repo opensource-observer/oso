@@ -46,7 +46,7 @@ github_artifacts AS (
     all_repos.artifact_url,
     all_repos.artifact_type
   FROM project_github_cleaned AS project_repos
-  CROSS JOIN oso.int_github_repositories AS all_repos
+  CROSS JOIN oso.int_artifacts__github AS all_repos
   WHERE project_repos.github = all_repos.artifact_namespace
 ),
 
@@ -93,11 +93,13 @@ website_artifacts AS (
 
 project_addresses AS (
   SELECT
-    project_id,
-    recipient_address AS address,
-    @chain_id_to_chain_name(chain_id) AS chain
-  FROM oso.stg_gitcoin__all_matching
-  WHERE match_amount_in_usd > 0
+    m.project_id,
+    m.recipient_address AS address,
+    cl.oso_chain_name AS chain
+  FROM oso.stg_gitcoin__all_matching AS m
+  JOIN oso.int_chainlist AS cl
+    ON m.chain_id = cl.chain_id
+  WHERE m.match_amount_in_usd > 0
 ),
 
 address_artifacts AS (

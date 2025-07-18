@@ -9,14 +9,11 @@ import { OperationDefinitionNode } from "graphql";
 import { readFileSync } from "fs";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { EVENTS } from "../../../../lib/types/posthog";
-import { getUser } from "../../../../lib/auth/auth";
-import {
-  CreditsService,
-  TransactionType,
-} from "../../../../lib/services/credits";
-import { trackServerEvent } from "../../../../lib/analytics/track";
-import { logger } from "../../../../lib/logger";
+import { EVENTS } from "@/lib/types/posthog";
+import { getUser } from "@/lib/auth/auth";
+import { trackServerEvent } from "@/lib/analytics/track";
+import { logger } from "@/lib/logger";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
 
 // https://vercel.com/guides/loading-static-file-nextjs-api-route
 const supergraphPath = path.join(
@@ -111,23 +108,25 @@ const customHandler = async (req: NextRequest) => {
     logger.error("Error parsing GraphQL request body:", error);
   }
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.GRAPHQL_QUERY,
-    "/api/v1/graphql",
-    { operation, query },
-  );
+  if (user.role !== "anonymous") {
+    const orgId = user.orgId;
 
-  if (!creditsDeducted) {
-    logger.log(
-      `/api/graphql: Insufficient credits for user ${
-        user.role === "anonymous" ? "anonymous" : user.userId
-      }`,
-    );
-    return NextResponse.json(
-      { errors: [{ message: "Insufficient credits" }] },
-      { status: 402 },
-    );
+    if (orgId) {
+      try {
+        await CreditsService.checkAndDeductOrganizationCredits(
+          user,
+          orgId,
+          TransactionType.GRAPHQL_QUERY,
+          "/api/v1/graphql",
+          { operation, query },
+        );
+      } catch (error) {
+        logger.error(
+          `/api/graphql: Error tracking usage for user ${user.userId}:`,
+          error,
+        );
+      }
+    }
   }
 
   const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {

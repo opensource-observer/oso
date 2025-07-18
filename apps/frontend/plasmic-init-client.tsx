@@ -2,52 +2,56 @@
 
 import dynamic from "next/dynamic";
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
-import { ALGOLIA_INDEX } from "./lib/config";
-import { PLASMIC } from "./plasmic-init";
+import { ALGOLIA_INDEX } from "@/lib/config";
+import { PLASMIC } from "@/plasmic-init";
 import { format } from "sql-formatter";
-import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
+import { generateApiKey } from "@/lib/auth/keys";
+import { Markdown } from "@/components/widgets/markdown";
 import {
   MetricsDataProvider,
   MetricsDataProviderRegistration,
-} from "./components/dataprovider/metrics-data-provider";
+} from "@/components/dataprovider/metrics-data-provider";
 //import { AlgoliaSearchList } from "./components/widgets/algolia";
-import { FeedbackWrapper } from "./components/widgets/feedback-farm";
+import { FeedbackWrapper } from "@/components/widgets/feedback-farm";
 import {
   SupabaseQuery,
   SupabaseQueryRegistration,
-} from "./components/dataprovider/supabase-query";
+} from "@/components/dataprovider/supabase-query";
 import {
   SupabaseWrite,
   SupabaseWriteRegistration,
-} from "./components/widgets/supabase-write";
-import { BarList } from "./components/widgets/tremor";
-import { AuthForm } from "./components/widgets/auth-form";
+} from "@/components/widgets/supabase-write";
+import { BarList } from "@/components/widgets/tremor";
+import { AuthForm } from "@/components/widgets/auth-form";
 import {
   AuthRouter,
   AuthRouterRegistration,
-} from "./components/dataprovider/auth-router";
+} from "@/components/dataprovider/auth-router";
 import {
   AuthActions,
   AuthActionsRegistration,
-} from "./components/widgets/auth-actions";
-import { MonacoEditor } from "./components/widgets/monaco-editor";
-import { OSOChat } from "./components/widgets/oso-chat";
-import { register as registerMetricsUtils } from "./lib/metrics-utils";
+} from "@/components/widgets/auth-actions";
+import { MonacoEditor } from "@/components/widgets/monaco-editor";
+import { OSOChat } from "@/components/widgets/oso-chat";
 import {
   OsoDataProvider,
   OsoDataProviderRegistration,
-} from "./components/dataprovider/oso-data-provider";
+} from "@/components/dataprovider/oso-data-provider";
 import {
   OsoGlobalContext,
   OsoGlobalActions,
   OsoGlobalContextPropsRegistration,
-} from "./components/dataprovider/oso-global-context";
+} from "@/components/dataprovider/oso-global-context";
 import {
   DynamicConnectorForm,
   DynamicConnectorFormRegistration,
-} from "./components/widgets/connectors/dynamic-connector-form";
+} from "@/components/widgets/connectors/dynamic-connector-form";
+import {
+  OsoChatProvider,
+  OsoChatProviderRegistration,
+} from "@/components/dataprovider/oso-chat-provider";
 
 /**
  * Plasmic global context
@@ -102,16 +106,27 @@ PLASMIC.registerFunction(generateApiKey, {
     type: "string",
     description: "the API key",
   },
-  importPath: "generate-api-key",
+  importPath: "./lib/auth/keys",
 });
-
-registerMetricsUtils(PLASMIC);
 
 PLASMIC.registerComponent(CircularProgress, {
   name: "CircularProgress",
   description: "Circular loading widget",
   props: {},
   importPath: "@mui/material/CircularProgress",
+});
+
+PLASMIC.registerComponent(Markdown, {
+  name: "Markdown",
+  description: "Render Markdown",
+  props: {
+    content: {
+      type: "string",
+      defaultValue: "Hello World",
+      helpText: "Markdown string",
+    },
+  },
+  importPath: "./components/widgets/markdown",
 });
 
 PLASMIC.registerComponent(MetricsDataProvider, {
@@ -217,6 +232,9 @@ PLASMIC.registerComponent(MonacoEditor, {
   name: "MonacoEditor",
   description: "Monaco editor",
   props: {
+    defaultValue: {
+      type: "string",
+    },
     value: {
       type: "string",
     },
@@ -314,6 +332,15 @@ PLASMIC.registerComponent(DynamicConnectorForm, {
     ...DynamicConnectorFormRegistration,
   },
   importPath: "./components/widgets/connectors/dynamic-connector-form",
+});
+
+PLASMIC.registerComponent(OsoChatProvider, {
+  name: "OsoChatProvider",
+  props: {
+    ...OsoChatProviderRegistration,
+  },
+  providesData: true,
+  importPath: "./components/dataprovider/oso-chat-provider",
 });
 
 /**

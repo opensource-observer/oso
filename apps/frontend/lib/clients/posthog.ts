@@ -1,5 +1,5 @@
 import { PostHog } from "posthog-node";
-import { POSTHOG_HOST_DIRECT, POSTHOG_KEY } from "../config";
+import { POSTHOG_HOST_DIRECT, POSTHOG_KEY } from "@/lib/config";
 
 /**
  * Use this if you want direct access to the PostHog client
