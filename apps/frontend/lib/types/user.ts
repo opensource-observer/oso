@@ -1,39 +1,54 @@
-export type UserRole = "anonymous" | "user" | "admin";
-export type OrgRole = "admin" | "member";
+import { z } from "zod";
 
-interface BaseUser {
-  role: UserRole;
-  host: string | null;
-}
+// Zod schemas
+export const UserRoleSchema = z.enum(["anonymous", "user", "admin"]);
+export const OrgRoleSchema = z.enum(["admin", "member"]);
 
-export type AnonUser = BaseUser & {
-  role: "anonymous";
-};
+export const BaseUserSchema = z.object({
+  role: UserRoleSchema,
+  host: z.string().nullable(),
+});
 
-export interface UserDetails {
-  userId: string;
-  keyName: string;
-  email?: string;
-  name: string;
-}
+export const AnonUserSchema = BaseUserSchema.extend({
+  role: z.literal("anonymous"),
+});
 
-export interface OrganizationDetails {
-  orgId: string;
-  orgName: string;
-  orgRole: OrgRole;
-}
+export const UserDetailsSchema = z.object({
+  userId: z.string(),
+  keyName: z.string(),
+  email: z.string().optional(),
+  name: z.string(),
+});
 
-export type NormalUser = BaseUser &
-  UserDetails &
-  Partial<OrganizationDetails> & {
-    role: "user";
-  };
+export const OrganizationDetailsSchema = z.object({
+  orgId: z.string(),
+  orgName: z.string(),
+  orgRole: OrgRoleSchema,
+});
 
-export type AdminUser = BaseUser &
-  UserDetails &
-  Partial<OrganizationDetails> & {
-    role: "admin";
-  };
+export const NormalUserSchema = BaseUserSchema.extend({
+  role: z.literal("user"),
+})
+  .merge(UserDetailsSchema)
+  .merge(OrganizationDetailsSchema.partial());
 
-export type AuthUser = NormalUser | AdminUser;
-export type User = AnonUser | AuthUser;
+export const AdminUserSchema = BaseUserSchema.extend({
+  role: z.literal("admin"),
+})
+  .merge(UserDetailsSchema)
+  .merge(OrganizationDetailsSchema.partial());
+
+export const AuthUserSchema = z.union([NormalUserSchema, AdminUserSchema]);
+export const UserSchema = z.union([AnonUserSchema, AuthUserSchema]);
+
+// Exported types inferred from Zod schemas
+export type UserRole = z.infer<typeof UserRoleSchema>;
+export type OrgRole = z.infer<typeof OrgRoleSchema>;
+export type BaseUser = z.infer<typeof BaseUserSchema>;
+export type AnonUser = z.infer<typeof AnonUserSchema>;
+export type UserDetails = z.infer<typeof UserDetailsSchema>;
+export type OrganizationDetails = z.infer<typeof OrganizationDetailsSchema>;
+export type NormalUser = z.infer<typeof NormalUserSchema>;
+export type AdminUser = z.infer<typeof AdminUserSchema>;
+export type AuthUser = z.infer<typeof AuthUserSchema>;
+export type User = z.infer<typeof UserSchema>;
