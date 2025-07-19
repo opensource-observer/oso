@@ -1,9 +1,14 @@
-import { request, gql } from "graphql-request";
+import { gql, request } from "graphql-request";
+import { Web3 } from "web3";
 import { EVMNetworkValidator } from "./evm.js";
+
+const ANY_EVM = "ANY_EVM";
+const DEFAULT_API_URL = "https://www.opensource.observer/api/v1/graphql";
 
 export interface ContractsV0ValidatorOptions {
   apiUrl?: string;
   contractNamespace?: string;
+  rpcUrl: string;
 }
 
 interface ContractsV0Response {
@@ -20,19 +25,23 @@ interface ContractsV0Response {
 
 export class ContractsV0Validator implements EVMNetworkValidator {
   private readonly apiUrl: string;
-  private readonly contractNamespace?: string;
+  private readonly contractNamespace: string;
+  private readonly web3: Web3;
 
-  constructor(options: ContractsV0ValidatorOptions = {}) {
-    this.apiUrl =
-      options.apiUrl ?? "https://www.opensource.observer/api/v1/graphql";
-    this.contractNamespace = options.contractNamespace;
+  constructor(options: ContractsV0ValidatorOptions) {
+    this.apiUrl = options.apiUrl ?? DEFAULT_API_URL;
+    this.contractNamespace = options.contractNamespace ?? ANY_EVM;
+    this.web3 = new Web3(options.rpcUrl);
   }
 
-  async isEOA(_addr: string): Promise<boolean> {
-    console.warn(
-      "isEOA is not supported by contracts_v0 endpoint. Use isContract instead.",
-    );
-    return false;
+  private normalizeAddress(address: string): string {
+    return address.trim().toLowerCase();
+  }
+
+  async isEOA(addr: string): Promise<boolean> {
+    const normalizedAddr = this.normalizeAddress(addr);
+    const code = await this.web3.eth.getCode(normalizedAddr);
+    return code === "0x";
   }
 
   async isContract(addr: string): Promise<boolean> {
@@ -45,7 +54,9 @@ export class ContractsV0Validator implements EVMNetworkValidator {
       }
     `;
 
-    return this.executeQuery(query, { contractAddress: addr.toLowerCase() });
+    return this.executeQuery(query, {
+      contractAddress: this.normalizeAddress(addr),
+    });
   }
 
   async isFactory(addr: string): Promise<boolean> {
@@ -58,7 +69,9 @@ export class ContractsV0Validator implements EVMNetworkValidator {
       }
     `;
 
-    return this.executeQuery(query, { factoryAddress: addr.toLowerCase() });
+    return this.executeQuery(query, {
+      factoryAddress: this.normalizeAddress(addr),
+    });
   }
 
   async isDeployer(addr: string): Promise<boolean> {
@@ -73,7 +86,9 @@ export class ContractsV0Validator implements EVMNetworkValidator {
       }
     `;
 
-    return this.executeQuery(query, { deployerAddress: addr.toLowerCase() });
+    return this.executeQuery(query, {
+      deployerAddress: this.normalizeAddress(addr),
+    });
   }
 
   private async executeQuery(
@@ -87,7 +102,7 @@ export class ContractsV0Validator implements EVMNetworkValidator {
         variables,
       );
 
-      if (!this.contractNamespace) {
+      if (this.contractNamespace === ANY_EVM) {
         return response.oso_contractsV0.length > 0;
       }
 
@@ -102,25 +117,30 @@ export class ContractsV0Validator implements EVMNetworkValidator {
 }
 
 export const createContractsV0Validator = (
+  rpcUrl: string,
   network?: string,
 ): ContractsV0Validator => {
-  const contractNamespace =
-    network && network !== "ANY_EVM" ? network : undefined;
+  const contractNamespace = network ?? ANY_EVM;
 
-  return new ContractsV0Validator({ contractNamespace });
+  return new ContractsV0Validator({ contractNamespace, rpcUrl });
 };
 
-export const EthereumContractsV0Validator = (): ContractsV0Validator =>
-  createContractsV0Validator("ETHEREUM");
+export const EthereumContractsV0Validator = (
+  rpcUrl: string,
+): ContractsV0Validator => createContractsV0Validator(rpcUrl, "ETHEREUM");
 
-export const ArbitrumContractsV0Validator = (): ContractsV0Validator =>
-  createContractsV0Validator("ARBITRUM");
+export const ArbitrumContractsV0Validator = (
+  rpcUrl: string,
+): ContractsV0Validator => createContractsV0Validator(rpcUrl, "ARBITRUM");
 
-export const BaseContractsV0Validator = (): ContractsV0Validator =>
-  createContractsV0Validator("BASE");
+export const BaseContractsV0Validator = (
+  rpcUrl: string,
+): ContractsV0Validator => createContractsV0Validator(rpcUrl, "BASE");
 
-export const OptimismContractsV0Validator = (): ContractsV0Validator =>
-  createContractsV0Validator("OPTIMISM");
+export const OptimismContractsV0Validator = (
+  rpcUrl: string,
+): ContractsV0Validator => createContractsV0Validator(rpcUrl, "OPTIMISM");
 
-export const AnyEVMContractsV0Validator = (): ContractsV0Validator =>
-  createContractsV0Validator("ANY_EVM");
+export const AnyEVMContractsV0Validator = (
+  rpcUrl: string,
+): ContractsV0Validator => createContractsV0Validator(rpcUrl, ANY_EVM);
