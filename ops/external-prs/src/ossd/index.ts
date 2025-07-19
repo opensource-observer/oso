@@ -321,13 +321,23 @@ class OSSDirectoryPullRequest {
     this.blockchainValidators = {};
   }
 
-  async loadValidators() {
+  async loadValidators(urls: RpcUrlArgs) {
     this.defillamaValidator = new DefiLlamaValidator();
-    this.blockchainValidators["any_evm"] = AnyEVMContractsV0Validator();
-    this.blockchainValidators["mainnet"] = EthereumContractsV0Validator();
-    this.blockchainValidators["arbitrum_one"] = ArbitrumContractsV0Validator();
-    this.blockchainValidators["base"] = BaseContractsV0Validator();
-    this.blockchainValidators["optimism"] = OptimismContractsV0Validator();
+    this.blockchainValidators["any_evm"] = AnyEVMContractsV0Validator(
+      urls.mainnetRpcUrl,
+    );
+    this.blockchainValidators["mainnet"] = EthereumContractsV0Validator(
+      urls.mainnetRpcUrl,
+    );
+    this.blockchainValidators["arbitrum_one"] = ArbitrumContractsV0Validator(
+      urls.arbitrumRpcUrl,
+    );
+    this.blockchainValidators["base"] = BaseContractsV0Validator(
+      urls.baseRpcUrl,
+    );
+    this.blockchainValidators["optimism"] = OptimismContractsV0Validator(
+      urls.optimismRpcUrl,
+    );
   }
 
   async dbAll(query: string) {
@@ -581,7 +591,7 @@ class OSSDirectoryPullRequest {
     );
   }
 
-  async validate() {
+  async validate(urls: RpcUrlArgs) {
     const args = this.args;
     logger.info({
       message: "validating the pull request",
@@ -590,7 +600,7 @@ class OSSDirectoryPullRequest {
       pr: args.pr,
     });
     // Initialize
-    await this.loadValidators();
+    await this.loadValidators(urls);
     const results = await ValidationResults.create();
 
     // Validate blockchain artifacts
@@ -740,7 +750,7 @@ async function listPR(args: OSSDirectoryPullRequestArgs) {
 
 async function validatePR(args: ValidatePRArgs) {
   const pr = await OSSDirectoryPullRequest.init(args);
-  await pr.validate();
+  await pr.validate(args);
 }
 
 /**
