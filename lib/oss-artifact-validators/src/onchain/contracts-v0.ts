@@ -1,5 +1,5 @@
 import { gql, request } from "graphql-request";
-import { Web3 } from "web3";
+import { createPublicClient, http, PublicClient } from "viem";
 import { EVMNetworkValidator } from "./evm.js";
 
 const ANY_EVM = "ANY_EVM";
@@ -26,22 +26,32 @@ interface ContractsV0Response {
 export class ContractsV0Validator implements EVMNetworkValidator {
   private readonly apiUrl: string;
   private readonly contractNamespace: string;
-  private readonly web3: Web3;
+  private readonly client: PublicClient;
 
   constructor(options: ContractsV0ValidatorOptions) {
     this.apiUrl = options.apiUrl ?? DEFAULT_API_URL;
     this.contractNamespace = options.contractNamespace ?? ANY_EVM;
-    this.web3 = new Web3(options.rpcUrl);
+    this.client = createPublicClient({
+      transport: http(options.rpcUrl),
+    });
   }
 
-  private normalizeAddress(address: string): string {
-    return address.trim().toLowerCase();
+  private normalizeAddress(address: string): `0x${string}` {
+    const normalized = address.trim().toLowerCase();
+    if (!normalized.startsWith("0x")) {
+      throw new Error(
+        `Invalid address format: ${address}. Address must start with 0x`,
+      );
+    }
+    return normalized as `0x${string}`;
   }
 
   async isEOA(addr: string): Promise<boolean> {
     const normalizedAddr = this.normalizeAddress(addr);
-    const code = await this.web3.eth.getCode(normalizedAddr);
-    return code === "0x";
+    const code = await this.client.getCode({
+      address: normalizedAddr,
+    });
+    return !code || code === "0x";
   }
 
   async isContract(addr: string): Promise<boolean> {
