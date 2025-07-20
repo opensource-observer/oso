@@ -186,7 +186,7 @@ class SemanticText2SQLWorkflow(
         logger.debug(f"Structured query: {event.structured_query}")
         try:
             final_sql = self._build_sql_from_query(event.structured_query)
-            synthesize_response = bool(getattr(event, "synthesize_response", False))
+            synthesize_response = bool(getattr(event, "synthesize_response", True))
             execute_sql = bool(getattr(event, "execute_sql", True))
 
             event_input_id = getattr(event, "id", "")

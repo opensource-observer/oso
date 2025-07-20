@@ -86,7 +86,7 @@ class BasicText2SQL(
                 "No SQL query found in metadata of query engine tool output"
             )
 
-        synthesize_response = bool(getattr(event, "synthesize_response", False))
+        synthesize_response = bool(getattr(event, "synthesize_response", True))
         execute_sql = bool(getattr(event, "execute_sql", True))
 
         return Text2SQLGenerationEvent(
