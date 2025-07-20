@@ -34,7 +34,7 @@ def test_query_builder_with_metrics():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.select("collections.collection_name")
+    query.select("projects.by_collection->collections.collection_name")
     query.select("projects.count AS project_count")
 
     query_exp = query.build()
