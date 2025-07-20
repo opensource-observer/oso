@@ -5,20 +5,12 @@ import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { ALGOLIA_INDEX } from "@/lib/config";
 import { PLASMIC } from "@/plasmic-init";
 import { format } from "sql-formatter";
-import generateApiKey from "generate-api-key";
 import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
+import { generateApiKey } from "@/lib/auth/keys";
 import { Markdown } from "@/components/widgets/markdown";
-import {
-  MetricsDataProvider,
-  MetricsDataProviderRegistration,
-} from "@/components/dataprovider/metrics-data-provider";
 //import { AlgoliaSearchList } from "./components/widgets/algolia";
 import { FeedbackWrapper } from "@/components/widgets/feedback-farm";
-import {
-  SupabaseQuery,
-  SupabaseQueryRegistration,
-} from "@/components/dataprovider/supabase-query";
 import {
   SupabaseWrite,
   SupabaseWriteRegistration,
@@ -26,45 +18,21 @@ import {
 import { BarList } from "@/components/widgets/tremor";
 import { AuthForm } from "@/components/widgets/auth-form";
 import {
-  AuthRouter,
-  AuthRouterRegistration,
-} from "@/components/dataprovider/auth-router";
-import {
   AuthActions,
   AuthActionsRegistration,
 } from "@/components/widgets/auth-actions";
 import { MonacoEditor } from "@/components/widgets/monaco-editor";
 import { OSOChat } from "@/components/widgets/oso-chat";
-import { register as registerMetricsUtils } from "@/lib/metrics-utils";
-import {
-  OsoDataProvider,
-  OsoDataProviderRegistration,
-} from "@/components/dataprovider/oso-data-provider";
-import {
-  OsoGlobalContext,
-  OsoGlobalActions,
-  OsoGlobalContextPropsRegistration,
-} from "@/components/dataprovider/oso-global-context";
 import {
   DynamicConnectorForm,
   DynamicConnectorFormRegistration,
 } from "@/components/widgets/connectors/dynamic-connector-form";
-import {
-  OsoChatProvider,
-  OsoChatProviderRegistration,
-} from "@/components/dataprovider/oso-chat-provider";
+import { registerAllDataProvider } from "@/components/dataprovider";
 
 /**
- * Plasmic global context
+ * Plasmic data provider registration
  */
-
-PLASMIC.registerGlobalContext(OsoGlobalContext, {
-  name: "OsoGlobalContext",
-  props: { ...OsoGlobalContextPropsRegistration },
-  providesData: true,
-  globalActions: { ...OsoGlobalActions },
-  importPath: "./components/dataprovider/oso-global-context",
-});
+registerAllDataProvider(PLASMIC);
 
 /**
  * Plasmic component registration
@@ -107,10 +75,8 @@ PLASMIC.registerFunction(generateApiKey, {
     type: "string",
     description: "the API key",
   },
-  importPath: "generate-api-key",
+  importPath: "./lib/auth/keys",
 });
-
-registerMetricsUtils(PLASMIC);
 
 PLASMIC.registerComponent(CircularProgress, {
   name: "CircularProgress",
@@ -130,14 +96,6 @@ PLASMIC.registerComponent(Markdown, {
     },
   },
   importPath: "./components/widgets/markdown",
-});
-
-PLASMIC.registerComponent(MetricsDataProvider, {
-  name: "MetricsDataProvider",
-  description: "Data context for metrics",
-  props: { ...MetricsDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/metrics-data-provider",
 });
 
 PLASMIC.registerComponent(AreaChart, {
@@ -287,21 +245,6 @@ PLASMIC.registerComponent(FeedbackWrapper, {
   importPath: "./components/widgets/feedback-farm",
 });
 
-PLASMIC.registerComponent(SupabaseQuery, {
-  name: "SupabaseQuery",
-  props: { ...SupabaseQueryRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/supabase-query",
-});
-
-PLASMIC.registerComponent(OsoDataProvider, {
-  name: "OsoDataProvider",
-  description: "OSO data provider",
-  props: { ...OsoDataProviderRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/oso-data-provider",
-});
-
 PLASMIC.registerComponent(SupabaseWrite, {
   name: "SupabaseWrite",
   props: { ...SupabaseWriteRegistration },
@@ -313,13 +256,6 @@ PLASMIC.registerComponent(AuthForm, {
   description: "Supabase Auth Form",
   props: {},
   importPath: "./components/widgets/auth-form",
-});
-
-PLASMIC.registerComponent(AuthRouter, {
-  name: "AuthRouter",
-  props: { ...AuthRouterRegistration },
-  providesData: true,
-  importPath: "./components/dataprovider/auth-router",
 });
 
 PLASMIC.registerComponent(AuthActions, {
@@ -335,15 +271,6 @@ PLASMIC.registerComponent(DynamicConnectorForm, {
     ...DynamicConnectorFormRegistration,
   },
   importPath: "./components/widgets/connectors/dynamic-connector-form",
-});
-
-PLASMIC.registerComponent(OsoChatProvider, {
-  name: "OsoChatProvider",
-  props: {
-    ...OsoChatProviderRegistration,
-  },
-  providesData: true,
-  importPath: "./components/dataprovider/oso-chat-provider",
 });
 
 /**

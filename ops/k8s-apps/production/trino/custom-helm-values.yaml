@@ -64,6 +64,7 @@ spec:
       # Set a very large max query length ONLY for internal writer production
       # trino
       - "query.max-length=1000000000"
+      - "query.max-stage-count=200"
       - "exchange.http-client.max-content-length=64MB"
     additionalExchangeManagerProperties:
       - "exchange.sink-buffers-per-partition=2"

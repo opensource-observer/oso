@@ -127,11 +127,11 @@ async def post_process_result(
 
 async def basic_resolver_factory(config: AgentConfig) -> ResourceResolver:
     """Create a resolver for the original BasicText2SQL workflow."""
-    query_engine_tool = await create_default_query_engine_tool(config)
+    oso_client = OsoClient(config.oso_api_key.get_secret_value())
+    # Load the query engine tool
+    query_engine_tool = await create_default_query_engine_tool(config, oso_client)
 
     logger.debug("Loading client")
-
-    oso_client = OsoClient(config.oso_api_key.get_secret_value())
 
     resolver = DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
@@ -150,12 +150,16 @@ async def semantic_resolver_factory(config: AgentConfig) -> ResourceResolver:
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.storage_context import setup_storage_context
 
+    # check if specific evals have been defined
+    oso_client = OsoClient(config.oso_api_key.get_secret_value())
+
     # Load the query engine tool
     llm = create_llm(config)
     embedding = create_embedding(config)
     storage_context = setup_storage_context(config, embed_model=embedding)
     query_engine_tool = await create_default_query_engine_tool(
         config,
+        oso_client,
         llm=llm,
         storage_context=storage_context,
         embedding=embedding,
@@ -163,13 +167,6 @@ async def semantic_resolver_factory(config: AgentConfig) -> ResourceResolver:
     )
 
     logger.debug("Loading client")
-
-    # We pass in the API key directly to the Phoenix client but it's likely
-    # ignored. See oso_agent/util/config.py
-    logger.debug("Uploading dataset")
-
-    # check if specific evals have been defined
-    oso_client = OsoClient(config.oso_api_key.get_secret_value())
 
     # Setup registry and semantic query tool
     registry = Registry()

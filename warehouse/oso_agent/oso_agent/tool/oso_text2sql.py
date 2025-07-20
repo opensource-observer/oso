@@ -7,7 +7,7 @@ from llama_index.core.query_engine import NLSQLTableQueryEngine
 from llama_index.core.retrievers import BaseRetriever, NLSQLRetriever
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilters
-from pyoso import Client
+from oso_agent.clients import OsoClient
 
 from ..util.config import AgentConfig
 from .oso_sql_db import OsoSqlDatabase
@@ -65,11 +65,12 @@ DEFAULT_TABLES_TO_INDEX: dict[str, list[str]] = {
     ],
 }
 
+
 async def index_oso_tables(
     *,
     config: AgentConfig,
     storage_context: StorageContext,
-    oso_client: Client,
+    oso_client: OsoClient,
     embed_model: BaseEmbedding,
     tables_to_index: dict[str, list[str]] | None = None,
     include_tables: list[str] | None = None,
@@ -79,7 +80,7 @@ async def index_oso_tables(
 
     This is not intended to be run every time the agent runs. It should be
     called as a preprocessing step using the cli command `index-oso-tables`.
-    """ 
+    """
 
     tables_to_index = tables_to_index or DEFAULT_TABLES_TO_INDEX
 
@@ -87,7 +88,7 @@ async def index_oso_tables(
     tables_to_index = tables_to_index or DEFAULT_TABLES_TO_INDEX
 
     oso_db = await OsoSqlDatabase.create(
-        oso_api_key=config.oso_api_key.get_secret_value(),
+        oso_client=oso_client,
         include_tables=include_tables,
     )
 
@@ -104,7 +105,7 @@ async def index_oso_tables(
         row_tups = []
 
         # get all rows from table
-        df = oso_client.to_pandas(f'SELECT * FROM "{table_name}"')
+        df = oso_client.client.to_pandas(f'SELECT * FROM "{table_name}"')
 
         for index, row in df.iterrows():
             column_values = []
@@ -113,9 +114,15 @@ async def index_oso_tables(
             row_tups.append(tuple(column_values))
 
         # index each row, put into vector store index
-        table_nodes = [TextNode(text=str(row), metadata={
-            "table_name": table_name,
-        }) for row in row_tups]
+        table_nodes = [
+            TextNode(
+                text=str(row),
+                metadata={
+                    "table_name": table_name,
+                },
+            )
+            for row in row_tups
+        ]
 
         nodes.extend(table_nodes)
 
@@ -124,14 +131,24 @@ async def index_oso_tables(
 
     if config.vector_store.type == "local":
         logger.info(f"Persisting index to local directory: {config.vector_store.dir}")
-        index = VectorStoreIndex(nodes, embed_model=embed_model, storage_context=storage_context)
+        index = VectorStoreIndex(
+            nodes, embed_model=embed_model, storage_context=storage_context
+        )
         index.set_index_id(config.vector_store.index_name)
         index.storage_context.persist(persist_dir=config.vector_store.dir)
         return index
     else:
-        logger.info(f"Persisting index to vector store with ID: {config.vector_store.index_id}")
+        logger.info(
+            f"Persisting index to vector store with ID: {config.vector_store.index_id}"
+        )
         logger.info(f"Number of nodes indexed: {len(nodes)}")
-        index = VectorStoreIndex(nodes, embed_model=embed_model, storage_context=storage_context, is_complete_overwrite=True, insert_batch_size=100000)
+        index = VectorStoreIndex(
+            nodes,
+            embed_model=embed_model,
+            storage_context=storage_context,
+            is_complete_overwrite=True,
+            insert_batch_size=100000,
+        )
         return index
         # vector_store.add(nodes)
         # index.storage_context.persist()
@@ -139,6 +156,7 @@ async def index_oso_tables(
 
 async def create_oso_query_engine(
     config: AgentConfig,
+    oso_client: OsoClient,
     storage_context: StorageContext,
     llm: FunctionCallingLLM,
     embedding: BaseEmbedding,
@@ -150,12 +168,18 @@ async def create_oso_query_engine(
     tables_to_index = tables_to_index or DEFAULT_TABLES_TO_INDEX
 
     if config.vector_store.type == "local":
-        index = load_index_from_storage(storage_context, index_id=config.vector_store.index_name, embed_model=embedding)
+        index = load_index_from_storage(
+            storage_context,
+            index_id=config.vector_store.index_name,
+            embed_model=embedding,
+        )
     else:
-        index = VectorStoreIndex.from_vector_store(vector_store=storage_context.vector_store, embed_model=embedding)
+        index = VectorStoreIndex.from_vector_store(
+            vector_store=storage_context.vector_store, embed_model=embedding
+        )
 
     oso_db = await OsoSqlDatabase.create(
-        oso_api_key=config.oso_api_key.get_secret_value(),
+        oso_client=oso_client,
         include_tables=include_tables,
     )
 
@@ -172,13 +196,15 @@ async def create_oso_query_engine(
     rows_retrievers: dict[str, BaseRetriever] = {}
     for table_name in oso_db.get_usable_table_names():
         if table_name not in tables_to_index:
-            rows_retrievers[table_name] = VectorStoreIndex([], embed_model=embedding).as_retriever(similarity_top_k=1)
+            rows_retrievers[table_name] = VectorStoreIndex(
+                [], embed_model=embedding
+            ).as_retriever(similarity_top_k=1)
             continue
         rows_retrievers[table_name] = index.as_retriever(
             similarity_top_k=5,
             filters=MetadataFilters(
                 filters=[ExactMatchFilter(key="table_name", value=table_name)]
-            )
+            ),
         )
 
     query_engine._sql_retriever = NLSQLRetriever(
