@@ -2,6 +2,7 @@
 A workflow for translating natural language to SQL using a semantic layer.
 """
 
+import hashlib
 import logging
 import typing as t
 
@@ -44,6 +45,7 @@ class SemanticText2SQLWorkflow(
 
     registry: ResourceDependency[Registry]
     semantic_query_tool: ResourceDependency[FunctionTool]
+    enable_retries: bool = True
     max_retries: int = 5
 
     def __init__(
@@ -178,11 +180,18 @@ class SemanticText2SQLWorkflow(
         logger.debug(f"Structured query: {event.structured_query}")
         try:
             final_sql = self._build_sql_from_query(event.structured_query)
-            synthesize_response = bool(getattr(event, "synthesize_response", True))
+            synthesize_response = bool(getattr(event, "synthesize_response", False))
             execute_sql = bool(getattr(event, "execute_sql", True))
 
+            event_input_id = getattr(event, "id", "")
+            if not event_input_id:
+                event_input_id = hashlib.sha1(event.input_text.encode()).hexdigest()
+                logger.debug(
+                    "No ID provided for event, generated ID: %s", event_input_id
+                )
+
             return Text2SQLGenerationEvent(
-                id="semantic_query",
+                id=event_input_id,
                 input_text=event.input_text,
                 output_sql=final_sql,
                 synthesize_response=synthesize_response,
