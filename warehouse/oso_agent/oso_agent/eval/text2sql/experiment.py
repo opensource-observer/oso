@@ -13,6 +13,7 @@ from oso_agent.types.response import StrResponse
 from oso_agent.util.query import clean_query_for_eval
 from oso_agent.workflows.base import MixableWorkflow
 from oso_agent.workflows.eval import EvalWorkflowResult
+from oso_agent.workflows.text2sql.basic import BasicText2SQL
 from oso_agent.workflows.text2sql.semantic import SemanticText2SQLWorkflow
 from oso_agent.workflows.types import SQLResultEvent, Text2SQLGenerationEvent
 from oso_semantic.definition import Registry
@@ -36,7 +37,8 @@ from .evals import (
 
 setup_nest_asyncio()
 
-EXPERIMENT_NAME = "text2sql-experiment"
+BASE_EXPERIMENT_NAME = "text2sql-experiment"
+SEMANTIC_EXPERIMENT_NAME = "text2sql-semantic-experiment"
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +125,27 @@ async def post_process_result(
     return processed
 
 
-async def resolver_factory(config: AgentConfig) -> ResourceResolver:
+async def basic_resolver_factory(config: AgentConfig) -> ResourceResolver:
+    """Create a resolver for the original BasicText2SQL workflow."""
+    query_engine_tool = await create_default_query_engine_tool(config)
+
+    logger.debug("Loading client")
+
+    oso_client = OsoClient(config.oso_api_key.get_secret_value())
+
+    resolver = DefaultResourceResolver.from_resources(
+        query_engine_tool=query_engine_tool,
+        oso_client=oso_client,
+        keep_distinct=True,
+        agent_name=config.agent_name,
+        agent_config=config,
+        llm=create_llm(config),
+    )
+    return resolver
+
+
+async def semantic_resolver_factory(config: AgentConfig) -> ResourceResolver:
+    """Create a resolver for the SemanticText2SQL workflow."""
     from oso_agent.tool.embedding import create_embedding
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.storage_context import setup_storage_context
@@ -186,7 +208,9 @@ async def text2sql_experiment(
 
     example_ids = _raw_options.get("example_ids")
     dataset_name = (
-        "local_run_text2sql_experiment" if example_ids else config.eval_dataset_text2sql
+        "local_run_text2sql_experiment"
+        if example_ids
+        else f"{config.eval_dataset_text2sql}_basic"
     )
     dataset = upload_dataset(
         phoenix_client, TEXT2SQL_DATASET, dataset_name, config, example_ids
@@ -206,7 +230,67 @@ async def text2sql_experiment(
 
     runner = ExperimentRunner(
         config=config,
-        resolver_factory=resolver_factory,
+        resolver_factory=basic_resolver_factory,
+        concurrent_evaluators=10,
+        concurrent_runs=1,
+    )
+    runner.add_evaluator(check_valid_sql)
+    runner.add_evaluator(check_valid_sql_result)
+    runner.add_evaluator(sql_query_type_similarity)
+    runner.add_evaluator(sql_oso_models_used_similarity)
+    runner.add_evaluator(result_exact_match)
+    runner.add_evaluator(result_fuzzy_match)
+
+    return await runner.run(
+        dataset=dataset,
+        workflow_cls=BasicText2SQL,
+        experiment_name=BASE_EXPERIMENT_NAME,
+        experiment_metadata={"agent_name": config.agent_name},
+        post_process_result=post_process_result,
+    )
+
+
+async def text2sql_semantic_experiment(
+    config: AgentConfig, _registry: AgentRegistry, _raw_options: dict[str, t.Any]
+):
+    """Semantic text2sql experiment using SemanticText2SQLWorkflow."""
+    logger.info(
+        f"Running text2sql semantic experiment with: {config.model_dump_json()}"
+    )
+
+    api_key = config.arize_phoenix_api_key.get_secret_value()
+    phoenix_client = px.Client(
+        endpoint=config.arize_phoenix_base_url,
+        headers={
+            "api_key": api_key,
+        },
+    )
+
+    example_ids = _raw_options.get("example_ids")
+    dataset_name = (
+        "local_run_text2sql_semantic_experiment"
+        if example_ids
+        else f"{config.eval_dataset_text2sql}_semantic"
+    )
+    dataset = upload_dataset(
+        phoenix_client, TEXT2SQL_DATASET, dataset_name, config, example_ids
+    )
+
+    async def clean_result(
+        output: dict[str, t.Any], metadata: dict[str, t.Any], post_processed: str
+    ) -> EvaluationResult:
+        """Clean the result for evaluation."""
+        return EvaluationResult(
+            score=1.0,
+            label="clean_result",
+            explanation="The result has been cleaned and is ready for evaluation.",
+        )
+
+    logger.debug("Running semantic experiment")
+
+    runner = ExperimentRunner(
+        config=config,
+        resolver_factory=semantic_resolver_factory,
         concurrent_evaluators=10,
         concurrent_runs=1,
     )
@@ -220,7 +304,7 @@ async def text2sql_experiment(
     return await runner.run(
         dataset=dataset,
         workflow_cls=SemanticText2SQLWorkflow,
-        experiment_name=EXPERIMENT_NAME,
+        experiment_name=SEMANTIC_EXPERIMENT_NAME,
         experiment_metadata={"agent_name": config.agent_name},
         post_process_result=post_process_result,
     )
