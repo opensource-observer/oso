@@ -1,0 +1,135 @@
+test_projects_v1_basic:
+  model: oso.projects_v1
+  inputs:
+    oso.int_projects:
+      rows:
+      # OSS Directory projects
+      - project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project-1"
+        display_name: "Test Project 1"
+        description: "A test project from OSS Directory"
+      - project_id: "project_2" 
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "another-project"
+        display_name: "Another Project"
+        description: "Another test project from OSS Directory"
+      
+      # OP Atlas projects
+      - project_id: "project_3"
+        project_source: "OP_ATLAS"
+        project_namespace: "op"
+        project_name: "optimism-project"
+        display_name: "Optimism Project"
+        description: "A project from OP Atlas"
+      - project_id: "project_4"
+        project_source: "OP_ATLAS"
+        project_namespace: "op"
+        project_name: "base-project"
+        display_name: "Base Project"
+        description: "A Base ecosystem project"
+      
+      # Project with minimal data
+      - project_id: "project_5"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: ""
+        project_name: "minimal-project"
+        display_name: null
+        description: null
+
+  outputs:
+    query:
+      rows:
+      # OSS Directory projects
+      - project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project-1"
+        display_name: "Test Project 1"
+        description: "A test project from OSS Directory"
+      - project_id: "project_2"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "another-project"
+        display_name: "Another Project"
+        description: "Another test project from OSS Directory"
+      
+      # OP Atlas projects
+      - project_id: "project_3"
+        project_source: "OP_ATLAS"
+        project_namespace: "op"
+        project_name: "optimism-project"
+        display_name: "Optimism Project"
+        description: "A project from OP Atlas"
+      - project_id: "project_4"
+        project_source: "OP_ATLAS"
+        project_namespace: "op"
+        project_name: "base-project"
+        display_name: "Base Project"
+        description: "A Base ecosystem project"
+      
+      # Project with minimal data
+      - project_id: "project_5"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: ""
+        project_name: "minimal-project"
+        display_name: null
+        description: null
+
+test_projects_v1_edge_cases:
+  model: oso.projects_v1
+  inputs:
+    oso.int_projects:
+      rows:
+      # Project with special characters
+      - project_id: "project_edge_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "test-org"
+        project_name: "project-with-dashes-and_underscores"
+        display_name: "Project With Dashes and Underscores"
+        description: "Testing special characters in project names"
+      
+      # Project with empty namespace
+      - project_id: "project_edge_2"
+        project_source: "OP_ATLAS"
+        project_namespace: ""
+        project_name: "standalone-project"
+        display_name: "Standalone Project"
+        description: "Project without namespace"
+      
+      # Project with very long description
+      - project_id: "project_edge_3"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "long"
+        project_name: "project-with-long-description"
+        display_name: "Project with Long Description"
+        description: "This is a very long description that tests how the system handles lengthy text fields. It contains multiple sentences and should be properly stored and retrieved without truncation or other issues."
+
+  outputs:
+    query:
+      rows:
+      # Project with special characters
+      - project_id: "project_edge_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "test-org"
+        project_name: "project-with-dashes-and_underscores"
+        display_name: "Project With Dashes and Underscores"
+        description: "Testing special characters in project names"
+      
+      # Project with empty namespace
+      - project_id: "project_edge_2"
+        project_source: "OP_ATLAS"
+        project_namespace: ""
+        project_name: "standalone-project"
+        display_name: "Standalone Project"
+        description: "Project without namespace"
+      
+      # Project with very long description
+      - project_id: "project_edge_3"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "long"
+        project_name: "project-with-long-description"
+        display_name: "Project with Long Description"
+        description: "This is a very long description that tests how the system handles lengthy text fields. It contains multiple sentences and should be properly stored and retrieved without truncation or other issues."

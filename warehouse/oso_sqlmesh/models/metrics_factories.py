@@ -273,8 +273,8 @@ timeseries_metrics(
             },
             time_aggregations=[
                 "monthly",
-                # "quarterly",
-                # "biannually",
+                "quarterly",
+                "biannually",
                 "yearly",
             ],
             entity_types=["artifact", "project", "collection"],
@@ -311,8 +311,8 @@ timeseries_metrics(
             },
             time_aggregations=[
                 "monthly",
-                # "quarterly",
-                # "biannually",
+                "quarterly",
+                "biannually",
                 "yearly",
             ],
             metadata=MetricMetadata(
@@ -334,20 +334,20 @@ timeseries_metrics(
         #     ),
         #     entity_types=["artifact", "project", "collection"],
         # ),
-        # "change_in_developer_activity": MetricQueryDef(
-        #     ref="code/change_in_developers.sql",
-        #     time_aggregations=[
-        #         "monthly",
-        #         "quarterly",
-        #         "biannually",
-        #         "yearly",
-        #     ],
-        #     metadata=MetricMetadata(
-        #         display_name="Change in Developer Activity",
-        #         description="Metrics related to change in developer activity",
-        #     ),
-        #     additional_tags=["data_category=code"],
-        # ),
+        "change_in_developer_activity": MetricQueryDef(
+            ref="code/change_in_developers.sql",
+            time_aggregations=[
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            metadata=MetricMetadata(
+                display_name="Change in Developer Activity",
+                description="Metrics related to change in developer activity",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         "opened_pull_requests": MetricQueryDef(
             ref="code/prs_opened.sql",
             time_aggregations=[
