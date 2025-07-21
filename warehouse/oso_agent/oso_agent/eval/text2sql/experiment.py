@@ -16,8 +16,6 @@ from oso_agent.workflows.eval import EvalWorkflowResult
 from oso_agent.workflows.text2sql.basic import BasicText2SQL
 from oso_agent.workflows.text2sql.semantic import SemanticText2SQLWorkflow
 from oso_agent.workflows.types import SQLResultEvent, Text2SQLGenerationEvent
-from oso_semantic.definition import Registry
-from oso_semantic.register import register_oso_models
 from phoenix.experiments.types import EvaluationResult, Example
 from pydantic import BaseModel, Field
 
@@ -147,10 +145,8 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
         synthesize_response=False,
     )
 
-    registry = Registry()
-    register_oso_models(registry)
     semantic_query_tool = create_semantic_query_tool(
-        llm=llm, registry_description=registry.describe()
+        llm=llm, registry_description=oso_client.client.semantic.describe()
     )
 
     resolver = DefaultResourceResolver.from_resources(
@@ -163,7 +159,7 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
         llm=llm,
         embedding=embedding,
         storage_context=storage_context,
-        registry=registry,
+        registry=oso_client.client.semantic,
     )
     return resolver
 
