@@ -125,38 +125,19 @@ async def post_process_result(
     return processed
 
 
-async def basic_resolver_factory(config: AgentConfig) -> ResourceResolver:
-    """Create a resolver for the original BasicText2SQL workflow."""
-    oso_client = OsoClient(config.oso_api_key.get_secret_value())
-    # Load the query engine tool
-    query_engine_tool = await create_default_query_engine_tool(config, oso_client)
-
-    logger.debug("Loading client")
-
-    resolver = DefaultResourceResolver.from_resources(
-        query_engine_tool=query_engine_tool,
-        oso_client=oso_client,
-        keep_distinct=True,
-        agent_name=config.agent_name,
-        agent_config=config,
-        llm=create_llm(config),
-    )
-    return resolver
-
-
-async def semantic_resolver_factory(config: AgentConfig) -> ResourceResolver:
-    """Create a resolver for the SemanticText2SQL workflow."""
+async def resolver_factory(config: AgentConfig) -> ResourceResolver:
+    """Create a resolver with all tools initialized"""
     from oso_agent.tool.embedding import create_embedding
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.storage_context import setup_storage_context
 
-    # check if specific evals have been defined
     oso_client = OsoClient(config.oso_api_key.get_secret_value())
-
-    # Load the query engine tool
     llm = create_llm(config)
     embedding = create_embedding(config)
     storage_context = setup_storage_context(config, embed_model=embedding)
+
+    logger.debug("Loading client")
+
     query_engine_tool = await create_default_query_engine_tool(
         config,
         oso_client,
@@ -166,9 +147,6 @@ async def semantic_resolver_factory(config: AgentConfig) -> ResourceResolver:
         synthesize_response=False,
     )
 
-    logger.debug("Loading client")
-
-    # Setup registry and semantic query tool
     registry = Registry()
     register_oso_models(registry)
     semantic_query_tool = create_semantic_query_tool(
@@ -227,7 +205,7 @@ async def text2sql_experiment(
 
     runner = ExperimentRunner(
         config=config,
-        resolver_factory=basic_resolver_factory,
+        resolver_factory=resolver_factory,
         concurrent_evaluators=10,
         concurrent_runs=1,
     )
@@ -287,7 +265,7 @@ async def text2sql_semantic_experiment(
 
     runner = ExperimentRunner(
         config=config,
-        resolver_factory=semantic_resolver_factory,
+        resolver_factory=resolver_factory,
         concurrent_evaluators=10,
         concurrent_runs=1,
     )
