@@ -4,9 +4,6 @@ Provides a default workflow registry that is configured using the AgentConfig.
 
 import logging
 
-from oso_semantic.definition import Registry
-from oso_semantic.register import register_oso_models
-
 from ..resources import DefaultResourceResolver, ResolverFactory, ResourceResolver
 from ..util.config import AgentConfig, WorkflowConfig
 from .registry import WorkflowRegistry
@@ -20,24 +17,16 @@ async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
     """Creates a resource resolver using provided resources and configuration for specific workflows."""
     from oso_agent.tool.embedding import create_embedding
     from oso_agent.tool.llm import create_llm
-    from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.storage_context import setup_storage_context
 
     llm = create_llm(config)
     embedding = create_embedding(config)
     storage_context = setup_storage_context(config, embed_model=embedding)
-    registry = Registry()
-    register_oso_models(registry)
-    semantic_query_tool = create_semantic_query_tool(
-        llm=llm, registry_description=registry.describe()
-    )
 
     return DefaultResourceResolver.from_resources(
-        semantic_query_tool=semantic_query_tool,
         llm=llm,
         embedding=embedding,
         storage_context=storage_context,
-        registry=registry,
     )
 
 
@@ -48,7 +37,10 @@ async def workflow_resolver_factory(
 ) -> ResourceResolver:
     """Resolver factory that creates a resolver for dependant resources for workflows."""
     from oso_agent.clients.oso_client import OsoClient
+    from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.query_engine_tool import create_default_query_engine_tool
+
+    llm = resources.get_resource("llm")
 
     oso_client = OsoClient(
         workflow_config.oso_api_key.get_secret_value(),
@@ -57,15 +49,21 @@ async def workflow_resolver_factory(
     query_engine_tool = await create_default_query_engine_tool(
         config,
         oso_client=oso_client,
-        llm=resources.get_resource("llm"),
+        llm=llm,
         storage_context=resources.get_resource("storage_context"),
         embedding=resources.get_resource("embedding"),
         synthesize_response=False,
     )
 
+    semantic_query_tool = create_semantic_query_tool(
+        llm=llm, registry_description=oso_client.client.semantic.describe()
+    )
+
     return DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
+        semantic_query_tool=semantic_query_tool,
         oso_client=oso_client,
+        registry=oso_client.client.semantic,
     )
 
 
