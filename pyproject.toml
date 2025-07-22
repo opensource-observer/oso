@@ -132,7 +132,6 @@ pythonVersion = "3.12"
 typeCheckingMode = "standard"
 ignore = [
     "warehouse/bq2cloudsql",
-    "warehouse/meltano-setup",
     "warehouse/oso_lets_go",
     "warehouse/oso_dagster/dlt_sources/sql_database"
 ]
@@ -140,7 +139,6 @@ ignore = [
 [tool.ruff]
 exclude = [
     "warehouse/bq2cloudsql",
-    "warehouse/meltano-setup",
     "warehouse/oso_lets_go",
     "warehouse/oso_dagster/dlt_sources",
     "warehouse/oso_dagster/dlt_sources/sql_database/**/*.py",
