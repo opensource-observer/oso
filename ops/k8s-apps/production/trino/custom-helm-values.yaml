@@ -108,6 +108,7 @@ spec:
     catalogs:
       iceberg: |
         connector.name=iceberg
+        iceberg.max-commit-retry=10
         iceberg.catalog.type=rest
         iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
         iceberg.rest-catalog.prefix=main
