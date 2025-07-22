@@ -23,7 +23,7 @@ test_stg_github__releases_basic:
           url: "https://api.github.com/users/user1"
         org: null
         other: ""
-        payload: '{"action": "published", "release": {"id": 123456, "tag_name": "v1.0.0", "name": "Release 1.0.0", "created": "2024-01-01T14:00:00Z", "published_at": "2024-01-01T14:00:00Z", "draft": false, "prerelease": false, "author": {"login": "user1", "id": 1001}}}'
+        payload: '{"action": "published", "release": {"id": 123456, "tag_name": "v1.0.0", "name": "Release 1.0.0", "created_at": "2024-01-01T14:00:00Z", "published_at": "2024-01-01T14:00:00Z", "draft": false, "prerelease": false, "author": {"login": "user1", "id": 1001}}}'
       # Another release published event - should be included
       - id: "event_2"
         created_at: "2024-01-02 10:30:00"
@@ -41,7 +41,7 @@ test_stg_github__releases_basic:
           url: "https://api.github.com/users/user2"
         org: null
         other: ""
-        payload: '{"action": "published", "release": {"id": 789012, "tag_name": "v2.1.0", "name": "Release 2.1.0", "created": "2024-01-02T10:30:00Z", "published_at": "2024-01-02T10:30:00Z", "draft": false, "prerelease": true, "author": {"login": "user2", "id": 1002}}}'
+        payload: '{"action": "published", "release": {"id": 789012, "tag_name": "v2.1.0", "name": "Release 2.1.0", "created_at": "2024-01-02T10:30:00Z", "published_at": "2024-01-02T10:30:00Z", "draft": false, "prerelease": true, "author": {"login": "user2", "id": 1002}}}'
       # Release event with different action - should still be included (model doesn't filter by action)
       - id: "event_3"
         created_at: "2024-01-03 16:45:00"
