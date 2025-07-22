@@ -50,6 +50,9 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     if "worldchain_users_aggregation" in config["table_name"]:
         return None
 
+    if "new_contributors" in config["table_name"]:
+        return None
+
     if "data_category=blockchain" in config["additional_tags"]:
         options["ignore_before"] = constants.superchain_audit_start
         options["ignore_after"] = constants.superchain_audit_end
