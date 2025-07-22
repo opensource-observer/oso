@@ -1,0 +1,105 @@
+test_new_contributors_to_project_daily_basic:
+  model: oso.new_contributors_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-05
+  inputs:
+    oso.int_events_aux_prs:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        time: "2024-01-01 10:00:00"
+        author_association: FIRST_TIME_CONTRIBUTOR
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        time: "2024-01-01 14:00:00"
+        author_association: FIRST_TIME_CONTRIBUTOR
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        time: "2024-01-02 09:00:00"
+        author_association: MEMBER
+      - to_artifact_id: repo_2
+        from_artifact_id: user_3
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        time: "2024-01-03 11:00:00"
+        author_association: FIRST_TIME_CONTRIBUTOR
+      - to_artifact_id: repo_1
+        from_artifact_id: user_4
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        time: "2024-01-03 13:00:00"
+        author_association: FIRST_TIME_CONTRIBUTOR
+      - to_artifact_id: repo_1
+        from_artifact_id: user_7
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        time: "2024-01-03 18:00:00"
+        author_association: FIRST_TIME_CONTRIBUTOR
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: new_contributors_daily
+        amount: 2
+      - metrics_sample_date: 2024-01-03
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: new_contributors_daily
+        amount: 2
+      - metrics_sample_date: 2024-01-03
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: new_contributors_daily
+        amount: 1
+
+test_new_contributors_to_project_daily_same_day_multiple_events:
+  model: oso.new_contributors_to_project_daily
+  vars:
+    start: 2024-03-01
+    end: 2024-03-01
+  inputs:
+    oso.int_events_aux_prs:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        time: 2024-03-01 09:00:00
+        author_association: FIRST_TIME_CONTRIBUTOR
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: GITHUB
+        event_type: PULL_REQUEST_MERGED
+        time: 2024-03-01 15:00:00
+        author_association: FIRST_TIME_CONTRIBUTOR
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: new_contributors_daily
+        amount: 1

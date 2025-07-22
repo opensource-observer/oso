@@ -3,6 +3,7 @@ import logging
 from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.tools import QueryEngineTool
+from oso_agent.clients import OsoClient
 from oso_agent.tool.storage_context import setup_storage_context
 
 from ..prompts.system import SYSTEM_PROMPT
@@ -33,11 +34,15 @@ def create_function_text2sql_agent_factory(synthesize_response: bool = True):
                 logger.info("function_text2sql: Response synthesis is enabled")
             else:
                 logger.info("function_text2sql: Response synthesis is disabled")
+            oso_client = OsoClient(
+                config.oso_api_key.get_secret_value(),
+            )
             llm = create_llm(config)
             embedding = create_embedding(config)
             storage_context = setup_storage_context(config, embed_model=embedding)
             query_engine = await create_oso_query_engine(
                 config,
+                oso_client,
                 storage_context,
                 llm,
                 embedding,
