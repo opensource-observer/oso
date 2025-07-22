@@ -36,12 +36,23 @@ ossd_labeled_addresses AS (
     ON artifacts.project_id = ossd_projects.project_id
   WHERE artifacts.artifact_type IN ('DEPLOYER', 'CONTRACT', 'EOA', 'BRIDGE')
 ),
+high_activity_addresses AS (
+  SELECT DISTINCT
+    contract_address AS address,
+    contract_namespace AS chain,
+    NULL::VARCHAR AS owner_project,
+    'CONTRACTS_V0' AS labeling_source
+  FROM oso.contracts_v0
+  WHERE sort_weight >= 10000
+),
 all_labeled_addresses AS (  
   SELECT * FROM oli_labeled_addresses
   UNION ALL
   SELECT * FROM atlas_labeled_addresses
   UNION ALL
   SELECT * FROM ossd_labeled_addresses
+  UNION ALL
+  SELECT * FROM high_activity_addresses
 )
 
 SELECT
