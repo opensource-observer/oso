@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Concatenate,
     Dict,
+    Generator,
     List,
     Optional,
     ParamSpec,
@@ -16,6 +17,7 @@ from typing import (
 
 import dlt
 from dagster import AssetExecutionContext
+from dlt.extract.resource import DltResource
 from gql import Client, gql
 from gql.transport.exceptions import TransportError
 from gql.transport.requests import RequestsHTTPTransport
@@ -159,9 +161,9 @@ class GraphQLResourceConfig:
         parameters: The parameters to include in the introspection query.
         pagination: The pagination configuration.
         exclude: Fields to exclude from the GraphQL schema expansion.
+        deps: Dependencies for the GraphQL resource, e.g., other DLT resources.
     """
 
-    # TODO(jabolo): Add ability to pass secrets
     name: str
     endpoint: str
     target_type: str
@@ -172,6 +174,14 @@ class GraphQLResourceConfig:
     parameters: Optional[Dict[str, Dict[str, Any]]] = None
     pagination: Optional[PaginationConfig] = None
     exclude: Optional[List[str]] = None
+    deps: Optional[
+        List[
+            Callable[
+                [AssetExecutionContext, Any],
+                Generator[Callable[..., DltResource], Any, Any],
+            ]
+        ]
+    ] = None
 
 
 def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
@@ -437,10 +447,12 @@ class FieldExpander:
         if field_name in self.exclude_fields:
             return None
 
-        # TODO(jabolo): Handle field arguments
-        field_args = field.get("args", [])
-        if field_args:
-            return None
+        for arg in field.get("args", []):
+            if arg.get("type", {}).get("kind") == "NON_NULL":
+                self.context.log.warning(
+                    f"GraphQLFactory: Skipping field '{field_name}' because it has a required argument '{arg['name']}' that cannot be provided."
+                )
+                return None
 
         field_type_obj = field.get("type", {})
         if not field_type_obj:
@@ -481,8 +493,7 @@ class FieldExpander:
 
         expanded_fields = []
         for subfield in type_fields:
-            next_depth = depth + 1 if not is_pagination_field else depth
-            expanded = self.expand_field(subfield, new_path, next_depth)
+            expanded = self.expand_field(subfield, new_path, depth + 1)
             if expanded:
                 expanded_fields.append(expanded)
 
@@ -682,7 +693,29 @@ def _graphql_factory(
                     f"Target type '{config.target_type}' not found in the introspection query."
                 )
 
-            type_to_python = TypeToPython(available_types)
+            target_field = next(
+                (
+                    f
+                    for f in target_object.get("fields", [])
+                    if f["name"] == config.target_query
+                ),
+                None,
+            )
+            if not target_field:
+                raise ValueError(
+                    f"Target query '{config.target_query}' not found in type '{config.target_type}'."
+                )
+
+            type_info = get_type_info(target_field.get("type", {}))
+            return_type_name = type_info.get("name")
+            if not return_type_name:
+                raise ValueError(
+                    f"Could not determine return type for query '{config.target_query}'."
+                )
+
+            return_type_def = dictionary_types.get(return_type_name)
+            if not return_type_def:
+                raise ValueError(f"Type '{return_type_name}' not found in schema.")
 
             field_expander = FieldExpander(
                 context,
@@ -693,34 +726,28 @@ def _graphql_factory(
             )
 
             expanded_fields = []
-            field_types = []
-
-            context.log.info(
-                f"Starting field expansion for type '{config.target_type}'"
-            )
-
-            for field in target_object.get("fields", []):
-                expanded = field_expander.expand_field(field)
-
-                if expanded:
-                    expanded_fields.append(expanded)
-                    field_types.append(
-                        (
-                            field.get("name"),
-                            resolve_type(field.get("type"), type_to_python),
-                        )
-                    )
-                else:
-                    field_name = field.get("name", "")
-                    context.log.warning(
-                        f"GraphQLFactory: Field '{field_name}' was skipped in the query."
-                    )
+            if return_type_def.get("fields"):
+                for field in return_type_def.get("fields", []):
+                    expanded = field_expander.expand_field(field)
+                    if expanded:
+                        expanded_fields.append(expanded)
 
             query_parameters, query_variables = get_query_parameters(
                 config.parameters, config.pagination
             )
 
-            generated_body = f"{{ {config.target_query} {query_variables} {{ {' '.join(expanded_fields)} }} }}"
+            selection_set = ""
+            if expanded_fields:
+                selection_set = f" {{ {' '.join(expanded_fields)} }}"
+            elif return_type_def.get("kind") == "OBJECT":
+                raise ValueError(
+                    f"Could not expand any fields for query '{config.target_query}' with return type '{return_type_name}'. "
+                    "This might be because all sub-fields require arguments, are excluded, or max_depth is too low."
+                )
+
+            generated_body = (
+                f"{{ {config.target_query}{query_variables}{selection_set} }}"
+            )
             generated_query = f"query {query_parameters} {generated_body}"
 
             transport = RequestsHTTPTransport(
@@ -778,10 +805,18 @@ def _graphql_factory(
                     if isinstance(data_items, list):
                         for item in data_items:
                             total_items += 1
-                            yield item
+                            if config.deps:
+                                for dep in config.deps:
+                                    yield from dep(context, item)
+                            else:
+                                yield item
                     else:
                         total_items += 1
-                        yield data_items
+                        if config.deps:
+                            for dep in config.deps:
+                                yield from dep(context, data_items)
+                        else:
+                            yield data_items
 
                     page_count += 1
 
