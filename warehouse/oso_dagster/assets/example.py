@@ -51,10 +51,11 @@ def expenses(
         target_query="transactions",
         parameters={
             "type": {"type": "TransactionType!", "value": "DEBIT"},
-            "dateFrom": {"type": "DateTime!", "value": "2015-01-23T05:00:00.000Z"},
+            "dateFrom": {"type": "DateTime!", "value": "2024-01-23T05:00:00.000Z"},
             "dateTo": {"type": "DateTime!", "value": "2025-01-01T00:00:00.000Z"},
         },
         exclude=["loggedInAccount", "me"],
+        transform_fn=lambda result: result["transactions"]["nodes"],
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
             page_size=100,
@@ -65,6 +66,7 @@ def expenses(
             rate_limit_seconds=1.0,
         ),
         max_depth=2,
+        deps=[],
     )
 
-    yield graphql_factory(config, context)
+    yield graphql_factory(config, context, max_table_nesting=0)
