@@ -10,6 +10,6 @@ MODEL (
 
 SELECT
   time::TIMESTAMP AS time,
-  LOWER(chain::VARCHAR) AS chain,
+  UPPER(chain::VARCHAR) AS chain,
   tvl::DOUBLE AS tvl
 FROM @oso_source('bigquery.defillama.historical_chain_tvl') 
