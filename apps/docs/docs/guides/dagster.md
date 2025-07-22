@@ -89,3 +89,30 @@ please reach out to the core OSO team on
 [Discord](https://www.opensource.observer/discord).
 We will arrange a secure way to share your secrets
 into our production keystore.
+
+### Restating SQLMesh models
+
+:::warning
+**DO NOT RESTATE SQLMesh models without approval!**
+:::
+
+If you need to restate a SQLMesh model, you can do so via the Dagster UI.
+
+Select the job, e.g., `sqlmesh_all_assets`.
+
+Then select the dropdown menu next to the **Materialize all** button and click **Open launchpad**.
+
+Update the config to include the model you want to restate, for example:
+
+```yaml
+ops:
+  sqlmesh_project:
+    config:
+      restate_by_entity_category: false
+      restate_models:
+        - oso.stg_github__XYZ
+        - oso.stg_github__XYZ_2
+      skip_tests: false
+```
+
+This will restate the `stg_github__XYZ` and `stg_github__XYZ_2` staging models and all downstream SQLMesh models in the warehouse.
