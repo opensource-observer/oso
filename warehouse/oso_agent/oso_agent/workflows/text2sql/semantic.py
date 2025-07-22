@@ -2,6 +2,7 @@
 A workflow for translating natural language to SQL using a semantic layer.
 """
 
+import hashlib
 import logging
 import typing as t
 
@@ -9,6 +10,7 @@ from llama_index.core.base.response.schema import Response as ToolResponse
 from llama_index.core.tools import FunctionTool
 from llama_index.core.workflow import StartEvent, StopEvent, step
 from oso_agent.resources import ResourceDependency
+from oso_agent.types import ErrorResponse
 from oso_agent.types.response import StrResponse
 from oso_agent.workflows.base import ResourceResolver
 from oso_agent.workflows.text2sql.mixins import (
@@ -44,6 +46,7 @@ class SemanticText2SQLWorkflow(
 
     registry: ResourceDependency[Registry]
     semantic_query_tool: ResourceDependency[FunctionTool]
+    enable_retries: bool = True
     max_retries: int = 5
 
     def __init__(
@@ -97,7 +100,7 @@ class SemanticText2SQLWorkflow(
     @step
     async def start_translation(
         self, event: StartEvent | RetrySemanticQueryEvent
-    ) -> SemanticQueryEvent | RetrySemanticQueryEvent:
+    ) -> SemanticQueryEvent | RetrySemanticQueryEvent | StopEvent:
         """
         Translate natural language to a structured SemanticQuery.
         This step can be called at the start of a workflow or as a retry attempt.
@@ -108,7 +111,12 @@ class SemanticText2SQLWorkflow(
                 f"Retrying translation... attempt {retry_number}/{self.max_retries}, {event.remaining_tries} tries left"
             )
             if event.remaining_tries <= 0:
-                raise ValueError("Exceeded max retries for semantic query translation")
+                logger.error("Exceeded max retries for semantic query translation")
+                return StopEvent(
+                    result=ErrorResponse(
+                        message="Exceeded max retries for semantic query translation"
+                    )
+                )
 
             natural_language_query = event.input_text
             error_feedback = str(event.error)
@@ -181,8 +189,15 @@ class SemanticText2SQLWorkflow(
             synthesize_response = bool(getattr(event, "synthesize_response", True))
             execute_sql = bool(getattr(event, "execute_sql", True))
 
+            event_input_id = getattr(event, "id", "")
+            if not event_input_id:
+                event_input_id = hashlib.sha1(event.input_text.encode()).hexdigest()
+                logger.debug(
+                    "No ID provided for event, generated ID: %s", event_input_id
+                )
+
             return Text2SQLGenerationEvent(
-                id="semantic_query",
+                id=event_input_id,
                 input_text=event.input_text,
                 output_sql=final_sql,
                 synthesize_response=synthesize_response,
