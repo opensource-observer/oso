@@ -708,6 +708,7 @@ class TimeseriesMetrics:
             or "funding" in query_config["table_name"]
             or "releases" in query_config["table_name"]
             or "worldchain_users_aggregation" in query_config["table_name"]
+            or "new_contributors" in query_config["table_name"]
         ):
             ignored_rules.append("incrementalmustdefinenogapsaudit")
 
