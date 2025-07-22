@@ -53,15 +53,22 @@ all_labeled_addresses AS (
   SELECT * FROM ossd_labeled_addresses
   UNION ALL
   SELECT * FROM high_activity_addresses
+),
+artifacts AS (
+  SELECT
+    UPPER(all_labeled_addresses.chain) AS chain,
+    artifact_fields.artifact_namespace,
+    artifact_fields.artifact_name AS address,
+    all_labeled_addresses.owner_project,
+    all_labeled_addresses.labeling_source
+  FROM all_labeled_addresses
+  CROSS JOIN LATERAL @parse_blockchain_artifact(address) AS artifact_fields
 )
 
-SELECT
-  @oso_entity_id(chain, '', address) AS artifact_id,
+SELECT DISTINCT
+  @oso_entity_id(chain, artifact_namespace, address) AS artifact_id,
   address,
   chain,
   owner_project,
   labeling_source
-FROM all_labeled_addresses
-
-
-
+FROM artifacts
