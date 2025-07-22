@@ -29,6 +29,8 @@ spec:
         runRetries:
           enabled: true
           maxRetries: 3
+        runMonitoring:
+          startTimeoutSeconds: 600
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
             value: "1"
@@ -72,7 +74,7 @@ spec:
           - name: "oso-dagster"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250718192641-1911334 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250722100601-b5782fb # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env

@@ -64,6 +64,7 @@ spec:
       # Set a very large max query length ONLY for internal writer production
       # trino
       - "query.max-length=1000000000"
+      - "query.max-stage-count=200"
       - "exchange.http-client.max-content-length=64MB"
     additionalExchangeManagerProperties:
       - "exchange.sink-buffers-per-partition=2"
@@ -107,6 +108,7 @@ spec:
     catalogs:
       iceberg: |
         connector.name=iceberg
+        iceberg.max-commit-retry=10
         iceberg.catalog.type=rest
         iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
         iceberg.rest-catalog.prefix=main

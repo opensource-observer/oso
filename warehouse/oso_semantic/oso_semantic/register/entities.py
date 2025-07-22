@@ -35,22 +35,22 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                 ),
                 Dimension(
                     name="artifact_source_id",
-                    description="The native identifier for the artifact from the source",
+                    description="The native identifier for the artifact from the source, such as a GitHub repository ID or NPM package ID",
                     column_name="artifact_source_id",
                 ),
                 Dimension(
                     name="artifact_source",
-                    description="The original source of the artifact (GITHUB, NPM, DEFILLAMA)",
+                    description='The original source of the artifact, such as "GITHUB", "NPM", or "DEFILLAMA"',
                     column_name="artifact_source",
                 ),
                 Dimension(
                     name="artifact_namespace",
-                    description="The grouping or namespace of the artifact",
+                    description="The grouping or namespace of the artifact, such as the GitHub organization or NPM scope. It will will be empty if the artifact source does not have its own namespacing conventions",
                     column_name="artifact_namespace",
                 ),
                 Dimension(
                     name="artifact_name",
-                    description="The name of the artifact",
+                    description="The name of the artifact, such as the GitHub repository name, NPM package name, or blockchain address",
                     column_name="artifact_name",
                 ),
             ],
@@ -67,13 +67,6 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                     name="by_collection",
                     source_foreign_key="artifact_id",
                     ref_model="artifacts_by_collection",
-                    ref_key="artifact_id",
-                    type=RelationshipType.ONE_TO_MANY,
-                ),
-                Relationship(
-                    name="by_user",
-                    source_foreign_key="artifact_id",
-                    ref_model="artifacts_by_user",
                     ref_key="artifact_id",
                     type=RelationshipType.ONE_TO_MANY,
                 ),
@@ -112,22 +105,22 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                 ),
                 Dimension(
                     name="project_source",
-                    description="The source of the project (OSS_DIRECTORY, OP_ATLAS)",
+                    description='The source of the project, such as "OSS_DIRECTORY", or "OP_ATLAS"',
                     column_name="project_source",
                 ),
                 Dimension(
                     name="project_namespace",
-                    description="The namespace of the project within the source",
+                    description="The namespace of the project within the source, which may include organization information",
                     column_name="project_namespace",
                 ),
                 Dimension(
                     name="project_name",
-                    description="The project slug or other name given to the project",
+                    description="the project slug or other name given to the project (unique to the registry but not globally unique)",
                     column_name="project_name",
                 ),
                 Dimension(
                     name="display_name",
-                    description="The display name of the project, more human-readable",
+                    description="The display name of the project, which may be a more human-readable name than the project_name",
                     column_name="display_name",
                 ),
                 Dimension(
@@ -181,7 +174,7 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                 ),
                 Dimension(
                     name="collection_source",
-                    description="The source of the collection (OP_ATLAS, OSS_DIRECTORY)",
+                    description='The source of the collection, such as "OP_ATLAS" or "OSS_DIRECTORY"',
                     column_name="collection_source",
                 ),
                 Dimension(
@@ -191,17 +184,17 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                 ),
                 Dimension(
                     name="collection_name",
-                    description="The name of the collection, such as an ecosystem name",
+                    description="The name of the collection, such as an ecosystem name. If the collections are from OSS_DIRECTORY, this will be a unique collection slug",
                     column_name="collection_name",
                 ),
                 Dimension(
                     name="display_name",
-                    description="The display name of the collection, human-readable",
+                    description="The display name of the collection, which may not be unique. This is typically a human-readable name",
                     column_name="display_name",
                 ),
                 Dimension(
                     name="description",
-                    description="Brief summary or purpose of the collection",
+                    description="brief summary or purpose of the collection",
                     column_name="description",
                 ),
             ],
@@ -216,70 +209,6 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                     name="distinct_count",
                     description="The number of distinct collections",
                     query="COUNT(DISTINCT self.collection_id)",
-                ),
-            ],
-        )
-    )
-
-    registry.register(
-        Model(
-            name="users",
-            table=f"{catalog_name}.oso.users_v1",
-            description=textwrap.dedent(
-                """
-                This model contains user profiles, including their unique identifiers, 
-                source information, display names, profile pictures, bios, and URLs. 
-                It is used to capture user identity across the OSO platform.
-                """
-            ),
-            dimensions=[
-                Dimension(
-                    name="user_id",
-                    description="The unique identifier for the user, as generated by OSO",
-                    column_name="user_id",
-                ),
-                Dimension(
-                    name="user_source_id",
-                    description="The unique identifier for the user from the source",
-                    column_name="user_source_id",
-                ),
-                Dimension(
-                    name="user_source",
-                    description="The source of the user (GITHUB, ENS, FARCASTER)",
-                    column_name="user_source",
-                ),
-                Dimension(
-                    name="display_name",
-                    description="The display name of the user",
-                    column_name="display_name",
-                ),
-                Dimension(
-                    name="profile_picture_url",
-                    description="The URL to the user profile picture",
-                    column_name="profile_picture_url",
-                ),
-                Dimension(
-                    name="bio",
-                    description="A short biography or description of the user",
-                    column_name="bio",
-                ),
-                Dimension(
-                    name="url",
-                    description="A URL to the user website",
-                    column_name="url",
-                ),
-            ],
-            primary_key="user_id",
-            measures=[
-                Measure(
-                    name="count",
-                    description="The number of users",
-                    query="COUNT(self.user_id)",
-                ),
-                Measure(
-                    name="distinct_count",
-                    description="The number of distinct users",
-                    query="COUNT(DISTINCT self.user_id)",
                 ),
             ],
         )
@@ -313,22 +242,22 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                 ),
                 Dimension(
                     name="originating_address",
-                    description="The EOA address that initiated the contract deployment",
+                    description="The EOA address that initiated the contract deployment transaction",
                     column_name="originating_address",
                 ),
                 Dimension(
                     name="factory_address",
-                    description="The address of the factory that deployed the contract",
+                    description="The address of the factory that deployed the contract, if this is the same as the originating address then this was a direct deployment by an EOA",
                     column_name="factory_address",
                 ),
                 Dimension(
                     name="root_deployer_address",
-                    description="The EOA address that is considered the root deployer",
+                    description="The EOA address that is considered the root deployer of the contract. If the contract was deployed directly by an EOA, this should be the same as the originating address, if the contract was deployed by a factory this is the creator of the factory",
                     column_name="root_deployer_address",
                 ),
                 Dimension(
                     name="sort_weight",
-                    description="A weight used for sorting contracts",
+                    description="A weight used for sorting contracts. At this time, this is the tx count of the last 180 days",
                     column_name="sort_weight",
                 ),
             ],
@@ -365,19 +294,34 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
             ),
             dimensions=[
                 Dimension(
-                    name="owner",
-                    description="The owner of the repository",
-                    column_name="owner",
+                    name="artifact_id",
+                    description="The unique identifier for the artifact",
+                    column_name="artifact_id",
                 ),
                 Dimension(
-                    name="name",
-                    description="The name of the repository",
-                    column_name="name",
+                    name="artifact_source_id",
+                    description="The native identifier for the artifact from the source",
+                    column_name="artifact_source_id",
                 ),
                 Dimension(
-                    name="url",
+                    name="artifact_source",
+                    description="The original source of the artifact",
+                    column_name="artifact_source",
+                ),
+                Dimension(
+                    name="artifact_namespace",
+                    description="The grouping or namespace of the artifact",
+                    column_name="artifact_namespace",
+                ),
+                Dimension(
+                    name="artifact_name",
+                    description="The name of the artifact",
+                    column_name="artifact_name",
+                ),
+                Dimension(
+                    name="artifact_url",
                     description="The URL of the repository",
-                    column_name="url",
+                    column_name="artifact_url",
                 ),
                 Dimension(
                     name="is_fork",
@@ -385,17 +329,52 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                     column_name="is_fork",
                 ),
                 Dimension(
+                    name="branch",
+                    description="The default branch of the repository",
+                    column_name="branch",
+                ),
+                Dimension(
                     name="star_count",
                     description="The number of stars for the repository",
                     column_name="star_count",
+                ),
+                Dimension(
+                    name="watcher_count",
+                    description="The number of watchers for the repository",
+                    column_name="watcher_count",
+                ),
+                Dimension(
+                    name="fork_count",
+                    description="The number of forks for the repository",
+                    column_name="fork_count",
+                ),
+                Dimension(
+                    name="license_name",
+                    description="The name of the license",
+                    column_name="license_name",
+                ),
+                Dimension(
+                    name="license_spdx_id",
+                    description="The SPDX ID of the license",
+                    column_name="license_spdx_id",
                 ),
                 Dimension(
                     name="language",
                     description="The primary programming language of the repository",
                     column_name="language",
                 ),
+                Dimension(
+                    name="created_at",
+                    description="The timestamp when the repository was created",
+                    column_name="created_at",
+                ),
+                Dimension(
+                    name="updated_at",
+                    description="The timestamp when the repository was last updated",
+                    column_name="updated_at",
+                ),
             ],
-            primary_key=["owner", "name"],
+            primary_key="artifact_id",
             measures=[
                 Measure(
                     name="count",
@@ -412,6 +391,16 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                     description="The average number of stars per repository",
                     query="AVG(self.star_count)",
                 ),
+                Measure(
+                    name="total_forks",
+                    description="The total number of forks across repositories",
+                    query="SUM(self.fork_count)",
+                ),
+                Measure(
+                    name="avg_forks",
+                    description="The average number of forks per repository",
+                    query="AVG(self.fork_count)",
+                ),
             ],
         )
     )
@@ -422,28 +411,63 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
             table=f"{catalog_name}.oso.package_owners_v0",
             description=textwrap.dedent(
                 """
-                This table contains information about package owners across different
-                package registries like NPM, PyPI, etc.
+                This table contains information about package ownership relationships
+                between packages and their owners across different package registries.
                 """
             ),
             dimensions=[
                 Dimension(
-                    name="package_manager",
-                    description="The package manager (NPM, PyPI, etc.)",
-                    column_name="package_manager",
+                    name="package_project_id",
+                    description="The project ID of the package",
+                    column_name="package_project_id",
                 ),
                 Dimension(
-                    name="package_name",
-                    description="The name of the package",
-                    column_name="package_name",
+                    name="package_artifact_id",
+                    description="The artifact ID of the package",
+                    column_name="package_artifact_id",
                 ),
                 Dimension(
-                    name="owner_name",
-                    description="The name of the package owner",
-                    column_name="owner_name",
+                    name="package_artifact_source",
+                    description="The source of the package artifact",
+                    column_name="package_artifact_source",
+                ),
+                Dimension(
+                    name="package_artifact_namespace",
+                    description="The namespace of the package artifact",
+                    column_name="package_artifact_namespace",
+                ),
+                Dimension(
+                    name="package_artifact_name",
+                    description="The name of the package artifact",
+                    column_name="package_artifact_name",
+                ),
+                Dimension(
+                    name="package_owner_project_id",
+                    description="The project ID of the package owner",
+                    column_name="package_owner_project_id",
+                ),
+                Dimension(
+                    name="package_owner_artifact_id",
+                    description="The artifact ID of the package owner",
+                    column_name="package_owner_artifact_id",
+                ),
+                Dimension(
+                    name="package_owner_source",
+                    description="The source of the package owner",
+                    column_name="package_owner_source",
+                ),
+                Dimension(
+                    name="package_owner_artifact_namespace",
+                    description="The namespace of the package owner artifact",
+                    column_name="package_owner_artifact_namespace",
+                ),
+                Dimension(
+                    name="package_owner_artifact_name",
+                    description="The name of the package owner artifact",
+                    column_name="package_owner_artifact_name",
                 ),
             ],
-            primary_key=["package_manager", "package_name", "owner_name"],
+            primary_key=["package_artifact_id", "package_owner_artifact_id"],
             measures=[
                 Measure(
                     name="count",
@@ -461,41 +485,77 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
             description=textwrap.dedent(
                 """
                 Software Bill of Materials (SBOM) data containing information about
-                software dependencies and components.
+                software dependencies between projects and packages.
                 """
             ),
             dimensions=[
                 Dimension(
-                    name="sbom_type",
-                    description="The type of SBOM",
-                    column_name="sbom_type",
+                    name="from_project_id",
+                    description="The project ID of the dependent project",
+                    column_name="from_project_id",
                 ),
                 Dimension(
-                    name="component_name",
-                    description="The name of the software component",
-                    column_name="component_name",
+                    name="from_artifact_id",
+                    description="The artifact ID of the dependent artifact",
+                    column_name="from_artifact_id",
                 ),
                 Dimension(
-                    name="component_version",
-                    description="The version of the software component",
-                    column_name="component_version",
+                    name="from_artifact_source",
+                    description="The source of the dependent artifact",
+                    column_name="from_artifact_source",
                 ),
                 Dimension(
-                    name="license",
-                    description="The license of the software component",
-                    column_name="license",
+                    name="from_artifact_namespace",
+                    description="The namespace of the dependent artifact",
+                    column_name="from_artifact_namespace",
+                ),
+                Dimension(
+                    name="from_artifact_name",
+                    description="The name of the dependent artifact",
+                    column_name="from_artifact_name",
+                ),
+                Dimension(
+                    name="to_package_project_id",
+                    description="The project ID of the dependency package",
+                    column_name="to_package_project_id",
+                ),
+                Dimension(
+                    name="to_package_artifact_id",
+                    description="The artifact ID of the dependency package",
+                    column_name="to_package_artifact_id",
+                ),
+                Dimension(
+                    name="to_package_artifact_source",
+                    description="The source of the dependency package",
+                    column_name="to_package_artifact_source",
+                ),
+                Dimension(
+                    name="to_package_artifact_namespace",
+                    description="The namespace of the dependency package",
+                    column_name="to_package_artifact_namespace",
+                ),
+                Dimension(
+                    name="to_package_artifact_name",
+                    description="The name of the dependency package",
+                    column_name="to_package_artifact_name",
                 ),
             ],
+            primary_key=["from_artifact_id", "to_package_artifact_id"],
             measures=[
                 Measure(
                     name="count",
-                    description="The number of SBOM entries",
+                    description="The number of SBOM dependency records",
                     query="COUNT(*)",
                 ),
                 Measure(
-                    name="distinct_components",
-                    description="The number of distinct components",
-                    query="COUNT(DISTINCT self.component_name)",
+                    name="distinct_from_artifacts",
+                    description="The number of distinct artifacts with dependencies",
+                    query="COUNT(DISTINCT self.from_artifact_id)",
+                ),
+                Measure(
+                    name="distinct_to_packages",
+                    description="The number of distinct dependency packages",
+                    query="COUNT(DISTINCT self.to_package_artifact_id)",
                 ),
             ],
         )
@@ -523,28 +583,33 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                     column_name="artifact_id",
                 ),
                 Dimension(
-                    name="project_id",
-                    description="The unique identifier for the project",
-                    column_name="project_id",
+                    name="artifact_source_id",
+                    description="The native identifier for the artifact from the source, such as a GitHub repository ID or NPM package ID",
+                    column_name="artifact_source_id",
                 ),
                 Dimension(
                     name="artifact_source",
-                    description="The original source of the artifact",
+                    description='The original source of the artifact, such as "GITHUB", "NPM", or "DEFILLAMA"',
                     column_name="artifact_source",
                 ),
                 Dimension(
                     name="artifact_namespace",
-                    description="The grouping or namespace of the artifact",
+                    description="The grouping or namespace of the artifact, such as the GitHub organization or NPM scope",
                     column_name="artifact_namespace",
                 ),
                 Dimension(
                     name="artifact_name",
-                    description="The name of the artifact",
+                    description="The name of the artifact, such as the GitHub repository name, NPM package name, or blockchain address",
                     column_name="artifact_name",
                 ),
                 Dimension(
+                    name="project_id",
+                    description="The unique identifier for the project that owns the artifact",
+                    column_name="project_id",
+                ),
+                Dimension(
                     name="project_source",
-                    description="The source of the project",
+                    description='The source of the project, such as "OP_ATLAS" or "OSS_DIRECTORY"',
                     column_name="project_source",
                 ),
                 Dimension(
@@ -554,7 +619,7 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                 ),
                 Dimension(
                     name="project_name",
-                    description="The name of the project",
+                    description="The name of the project, such as the GitHub organization name. If the projects are from OSS_DIRECTORY, this will be a unique project slug",
                     column_name="project_name",
                 ),
             ],
@@ -564,6 +629,12 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                     source_foreign_key="project_id",
                     ref_model="projects",
                     ref_key="project_id",
+                    type=RelationshipType.MANY_TO_ONE,
+                ),
+                Relationship(
+                    source_foreign_key="artifact_id",
+                    ref_model="artifacts",
+                    ref_key="artifact_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],
@@ -584,13 +655,43 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
             dimensions=[
                 Dimension(
                     name="project_id",
-                    description="The unique identifier of the project",
+                    description="The unique identifier for the project, as generated by OSO",
                     column_name="project_id",
                 ),
                 Dimension(
+                    name="project_source",
+                    description='The source of the project, such as "OSS_DIRECTORY", or "OP_ATLAS"',
+                    column_name="project_source",
+                ),
+                Dimension(
+                    name="project_namespace",
+                    description="The namespace of the project within the source, which may include organization information",
+                    column_name="project_namespace",
+                ),
+                Dimension(
+                    name="project_name",
+                    description="The project slug or other name given to the project (unique to the registry but not globally unique)",
+                    column_name="project_name",
+                ),
+                Dimension(
                     name="collection_id",
-                    description="The unique identifier of the collection",
+                    description="The unique identifier for the collection, as generated by OSO",
                     column_name="collection_id",
+                ),
+                Dimension(
+                    name="collection_source",
+                    description='The source of the collection, such as "OSS_DIRECTORY", or "OP_ATLAS"',
+                    column_name="collection_source",
+                ),
+                Dimension(
+                    name="collection_namespace",
+                    description="The namespace of the collection within the source, which may include organization information",
+                    column_name="collection_namespace",
+                ),
+                Dimension(
+                    name="collection_name",
+                    description="The name of the collection",
+                    column_name="collection_name",
                 ),
             ],
             primary_key=["project_id", "collection_id"],
@@ -599,6 +700,12 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                     source_foreign_key="collection_id",
                     ref_model="collections",
                     ref_key="collection_id",
+                    type=RelationshipType.MANY_TO_ONE,
+                ),
+                Relationship(
+                    source_foreign_key="project_id",
+                    ref_model="projects",
+                    ref_key="project_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],
@@ -618,13 +725,48 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
             dimensions=[
                 Dimension(
                     name="artifact_id",
-                    description="The unique identifier of the artifact",
+                    description="The unique identifier for the artifact",
                     column_name="artifact_id",
                 ),
                 Dimension(
+                    name="artifact_source_id",
+                    description="The native identifier for the artifact from the source, such as a GitHub repository ID or NPM package ID",
+                    column_name="artifact_source_id",
+                ),
+                Dimension(
+                    name="artifact_source",
+                    description='The original source of the artifact, such as "GITHUB", "NPM", or "DEFILLAMA"',
+                    column_name="artifact_source",
+                ),
+                Dimension(
+                    name="artifact_namespace",
+                    description="The grouping or namespace of the artifact, such as the GitHub organization or NPM scope",
+                    column_name="artifact_namespace",
+                ),
+                Dimension(
+                    name="artifact_name",
+                    description="The name of the artifact, such as the GitHub repository name, NPM package name, or blockchain address",
+                    column_name="artifact_name",
+                ),
+                Dimension(
                     name="collection_id",
-                    description="The unique identifier of the collection",
+                    description="The unique identifier for the collection that includes the artifact",
                     column_name="collection_id",
+                ),
+                Dimension(
+                    name="collection_source",
+                    description='The source of the collection, such as "OP_ATLAS" or "OSS_DIRECTORY"',
+                    column_name="collection_source",
+                ),
+                Dimension(
+                    name="collection_namespace",
+                    description="The grouping or namespace of the collection",
+                    column_name="collection_namespace",
+                ),
+                Dimension(
+                    name="collection_name",
+                    description="The name of the collection, such as an ecosystem name. If the collections are from OSS_DIRECTORY, this will be a unique collection slug",
+                    column_name="collection_name",
                 ),
             ],
             primary_key=["artifact_id", "collection_id"],
@@ -635,38 +777,10 @@ def register_entities(registry: Registry, catalog_name: str = "iceberg"):
                     ref_key="collection_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
-            ],
-        )
-    )
-
-    registry.register(
-        Model(
-            name="artifacts_by_user",
-            table=f"{catalog_name}.oso.artifacts_by_user_v1",
-            description=textwrap.dedent(
-                """
-                The join table between artifacts and users. This table represents 
-                the many-to-many relationship between artifacts and users.
-                """
-            ),
-            dimensions=[
-                Dimension(
-                    name="artifact_id",
-                    description="The unique identifier of the artifact",
-                    column_name="artifact_id",
-                ),
-                Dimension(
-                    name="user_id",
-                    description="The unique identifier of the user",
-                    column_name="user_id",
-                ),
-            ],
-            primary_key=["artifact_id", "user_id"],
-            relationships=[
                 Relationship(
-                    source_foreign_key="user_id",
-                    ref_model="users",
-                    ref_key="user_id",
+                    source_foreign_key="artifact_id",
+                    ref_model="artifacts",
+                    ref_key="artifact_id",
                     type=RelationshipType.MANY_TO_ONE,
                 ),
             ],

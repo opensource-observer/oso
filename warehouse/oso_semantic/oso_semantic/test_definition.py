@@ -190,7 +190,7 @@ def test_resolve_attributes(semantic_registry: Registry):
     resolved_expr2 = ref2.resolve(semantic_registry)
     assert resolved_expr2 is not None
     assert resolved_expr2 == parse_one(
-        "DATE_TRUNC('month', int_events__github_022877ad.bucket_day)"
+        "DATE_TRUNC('month', int_events__github_022877ad.time)"
     )
 
 
@@ -212,7 +212,7 @@ def test_expand_reference():
     assert len(complex_expanded_refs) == 2
     assert complex_expanded_refs == [
         AttributePath.from_string("int_events__github.month"),
-        AttributePath.from_string("int_events__github.bucket_day"),
+        AttributePath.from_string("int_events__github.time"),
     ]
 
 

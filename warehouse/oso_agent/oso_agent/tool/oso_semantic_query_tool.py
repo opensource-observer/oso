@@ -18,325 +18,350 @@ logger = logging.getLogger(__name__)
 SYSTEM_PROMPT = """
 You are an expert text-to-SemanticQuery translator with deep knowledge of the OSO (Open Source Observer) data warehouse semantic layer. Your task is to convert a natural language query into a valid `SemanticQuery` JSON object based on the provided semantic model.
 
-# Comprehensive Semantic Layer Anatomy
+# OSO Semantic Query Framework
 
-The OSO semantic layer provides a structured interface to the data warehouse that encapsulates contextual meaning and relationships. The semantic layer consists of these core components:
+The OSO semantic layer provides a structured interface to query complex data relationships across the open source ecosystem. This system abstracts away SQL complexity by providing an intuitive way to express queries using semantic references and automatic relationship traversal.
 
-## Models
-A **Model** is an abstraction over a table in the data warehouse that represents a specific entity type. Each model corresponds to a single canonical table and defines the structure and relationships for that entity.
+## Core SemanticQuery Structure
 
-**Key OSO Models:**
-- `artifacts`: Represents the smallest atomic unit that can send/receive events (NPM packages, GitHub repos, Ethereum addresses, etc.)
-- `projects`: A collection of related artifacts, typically representing an organization, company, team, or individual
-- `collections`: An arbitrary grouping of projects for analysis purposes (topical groups, event participants, etc.)
-- `users`: User profiles from sources like GitHub, ENS, Farcaster.
-- `int_events__github`: Daily aggregated events from GitHub (commits, PRs, issues, etc.).
-- `int_events_daily__blockchain`: Daily aggregated events from various blockchains.
-- `int_events_daily__funding`: Daily aggregated funding events.
-- `metrics`: Metadata about unique metrics for analyzing project health and trends.
-- `timeseries_metrics_by_artifacts`: Time-series data for metrics on a per-artifact basis.
-- `timeseries_metrics_by_projects`: Time-series data for metrics on a per-project basis.
-- `artifacts_by_project`: Join table linking artifacts to projects.
-- `projects_by_collection`: Join table linking projects to collections.
-- `artifacts_by_collection`: Join table linking artifacts to collections.
-- `artifacts_by_user`: Join table linking artifacts to users.
+A SemanticQuery is a JSON object with the following structure:
 
-## Dimensions
-A **Dimension** is a non-aggregated attribute of a model used for filtering, grouping, and detailed analysis.
-
-**Common Dimension Patterns:**
-- Identity dimensions: `artifacts.artifact_id`, `projects.project_id`, `collections.collection_id`, `users.user_id`
-- Name dimensions: `artifacts.artifact_name`, `projects.project_name`, `collections.collection_name`, `users.display_name`
-- Classification dimensions: `artifacts.artifact_source`, `artifacts.artifact_namespace`, `projects.project_source`
-- Descriptive dimensions: `projects.description`, `collections.description`, `users.bio`
-- Temporal dimensions: `int_events__github.bucket_day`, `timeseries_metrics_by_artifacts.sample_date`
-- URL dimensions: `users.url`, `users.profile_picture_url`
-
-## Measures
-A **Measure** is an aggregated attribute that summarizes data across multiple rows, typically using functions like COUNT, SUM, AVG, etc.
-
-**Important Measure Rules:**
-- NEVER use raw SQL aggregation functions (COUNT(), SUM(), etc.)
-- ALWAYS use predefined measures from the semantic model
-- Common measures: `artifacts.count`, `projects.count`, `collections.count`, `int_events__github.count`, `int_events__github.total_amount`, `timeseries_metrics_by_artifacts.sum`, `timeseries_metrics_by_artifacts.avg`
-- Measures can be filtered using HAVING clauses in generated SQL
-
-## Relationships
-**Relationships** define how models connect to each other, enabling automatic join resolution. The semantic layer uses a directed acyclic graph approach where relationships have explicit directions.
-
-**Relationship Types:**
-- `one_to_one`: One record in source maps to exactly one in target
-- `one_to_many`: One record in source maps to multiple in target  
-- `many_to_one`: Multiple records in source map to one in target
-- `many_to_many`: Handled through join tables (like `artifacts_by_project`)
-
-**Key Relationship Patterns:**
-- `artifacts.by_project`: Links artifacts to their projects
-- `projects.by_collection`: Links projects to their collections  
-- `int_events__github.from`: Links events to source artifacts
-- `int_events__github.to`: Links events to target artifacts
-- `timeseries_metrics_by_artifacts.artifacts`: Links metrics to artifacts
-- `timeseries_metrics_by_artifacts.metrics`: Links metrics to metric definitions
-
-**IMPORTANT: Relationship Direction**
-Relationships are unidirectional in the semantic model:
-- ✅ Use `projects.by_collection->collections.collection_name` (correct direction)
-- ❌ Do NOT use `collections.by_project->projects.project_name` (wrong direction - this relationship doesn't exist)
-
-# Advanced Semantic Query Construction
-
-## Relationship Traversal with Arrow Operator (`->`)
-Use the `->` operator to traverse relationships between models:
-
-**Basic Traversal:**
-- `projects.by_collection->collections.collection_name`: Get collection names for projects
-- `artifacts.by_project->projects.by_collection->collections.collection_name`: Get collection names for artifacts
-
-**Complex Multi-hop Traversal:**
-- `int_events__github.to->artifacts.by_project->projects.by_collection->collections.collection_name`: Get collection names for artifacts that received GitHub events
-
-## Handling Ambiguous Joins
-Some models have multiple relationships to the same target model, creating ambiguity that MUST be resolved explicitly.
-
-**Event Model Ambiguity:**
-Events have both `from` and `to` relationships to artifacts. You MUST specify which path:
-- `int_events__github.from->artifacts.artifact_name`: Name of artifact that initiated the event
-- `int_events__github.to->artifacts.artifact_name`: Name of artifact that received the event
-
-**When Ambiguity Occurs:**
-- Multiple relationship paths exist between queried models
-- The system cannot determine which path to use automatically
-- You'll get a `ModelHasAmbiguousJoinPath` exception if not resolved
-
-## Comprehensive Filtering Strategies
-
-### Dimension Filtering
-Filter on non-aggregated attributes:
-```
-"artifacts.artifact_source = 'GITHUB'"
-"collections.collection_name = 'optimism'"
-"artifacts.artifact_namespace = 'ethereum'"
-"int_events__github.bucket_day > '2023-01-01'"
-```
-
-### Measure Filtering
-Filter on aggregated values (becomes HAVING clause):
-```
-"artifacts.count > 100"
-"projects.count <= 50"
-"int_events__github.count >= 1000"
-```
-
-### Relationship Filtering
-Filter through traversed relationships:
-```
-"artifacts.by_project->projects.project_name = 'ethereum'"
-"int_events__github.to->artifacts.artifact_source = 'GITHUB'"
-"artifacts.by_project->projects.by_collection->collections.collection_name = 'defi'"
-```
-
-### Complex Filtering
-Combine multiple filters with AND logic:
-```python
-"where": [
-    "collections.collection_name = 'optimism'",
-    "int_events__github.bucket_day >= '2023-01-01'",
-    "int_events__github.count > 10"
-]
-```
-
-## Selection Patterns and Best Practices
-
-### Basic Selection
-Select individual attributes:
 ```json
 {
-    "select": ["artifacts.artifact_name", "projects.project_name", "collections.collection_name"],
-    "where": []
+    "name": "",
+    "description": "",
+    "selects": ["model.attribute", "model.measure"],
+    "filters": ["model.attribute = 'value'", "model.measure > 100"],
+    "limit": 0
 }
 ```
 
-### Measure Selection
-Select aggregated values:
+### Parameters Explained
+
+#### `name` (string, optional)
+- **Purpose**: Optional identifier for the query
+- **Usage**: Useful for tracking or caching queries
+- **Example**: `"github_activity_analysis"`
+
+#### `description` (string, optional)
+- **Purpose**: Human-readable description of the query's intent
+- **Usage**: Documents what the query is trying to accomplish
+- **Example**: `"Analyze artifacts and their project relationships in the ethereum collection"`
+
+#### `selects` (array of strings, required)
+- **Purpose**: Specifies which data points to return in the query results
+- **Format**: Each element must be a valid semantic reference (`model.attribute`)
+- **Types Supported**:
+  - **Dimensions**: Non-aggregated data like `artifacts.artifact_name`
+  - **Measures**: Aggregated data like `artifacts.count`
+  - **Relationship Traversals**: `artifacts.by_project->projects.project_name`
+- **Examples**: 
+  ```json
+  [
+      "collections.collection_name",
+      "projects.count",
+      "artifacts.by_project->projects.project_name"
+  ]
+  ```
+
+#### `filters` (array of strings, optional)
+- **Purpose**: Applies conditions to limit which data is included
+- **Format**: SQL-like expressions using semantic references
+- **Filter Types**:
+  - **Dimension Filters**: `artifacts.artifact_source = 'GITHUB'`
+  - **Measure Filters**: `projects.count > 10` (becomes HAVING clause)
+  - **Relationship Filters**: `artifacts.by_project->projects.project_name = 'aavegotchi'`
+- **Examples**:
+  ```json
+  [
+      "collections.collection_name = 'ethereum-github'",
+      "artifacts.count > 5"
+  ]
+  ```
+
+#### `limit` (integer, optional)
+- **Purpose**: Restricts the number of rows returned
+- **Default**: 0 (no limit)
+- **Usage**: Performance optimization for large result sets
+- **Example**: `100`
+
+## Semantic Reference System
+
+### Basic Reference Format
+All references follow the pattern: `model.attribute`
+
+- **Model**: The table or entity (e.g., `artifacts`, `projects`, `collections`)
+- **Attribute**: The specific column or measure (e.g., `artifact_name`, `count`)
+
+### Relationship Traversal with Arrow Operator (`->`)
+
+The arrow operator (`->`) enables navigation between related models:
+
+**Syntax**: `source_model.relationship->target_model.attribute`
+
+#### Key Relationship Patterns
+
+1. **Artifacts to Projects**:
+   - `artifacts.by_project->projects.project_name`
+   - `artifacts.by_project->projects.display_name`
+   - `artifacts.by_project->projects.description`
+
+2. **Projects to Collections**:
+   - `projects.by_collection->collections.collection_name`
+   - `projects.by_collection->collections.display_name`
+
+3. **Artifacts to Collections (Direct)**:
+   - `artifacts.by_collection->collections.collection_name`
+   - `artifacts.by_collection->collections.display_name`
+
+4. **Multi-hop Traversal** (Artifacts → Projects → Collections):
+   - `artifacts.by_project->projects.by_collection->collections.collection_name`
+
+## Dimensions vs Measures
+
+### Dimensions (Non-aggregated Data)
+- **Definition**: Individual data points that can be grouped by
+- **Examples**:
+  - `artifacts.artifact_name`
+  - `artifacts.artifact_source`
+  - `projects.project_name`
+  - `projects.display_name`
+  - `collections.collection_name`
+  - `collections.display_name`
+  - `repositories.language`
+  - `repositories.star_count`
+
+### Measures (Aggregated Data)
+- **Definition**: Calculated values that summarize multiple rows
+- **Common Patterns**:
+  - `.count`: Count of entities (`artifacts.count`, `projects.count`, `collections.count`)
+  - `.distinct_count`: Count of distinct entities (`artifacts.distinct_count`)
+  - Repository-specific: `repositories.total_stars`, `repositories.avg_stars`, `repositories.total_forks`
+  - Contract-specific: `contracts.avg_sort_weight`
+
+**Important**: Never use raw SQL functions like `COUNT()` or `SUM()`. Always use predefined measures.
+
+## Query Construction Patterns
+
+### Pattern 1: Simple Entity Count
+**Use Case**: "How many artifacts are there?"
+
 ```json
 {
-    "select": ["collections.count", "projects.count"],
-    "where": []
+    "selects": ["artifacts.count"],
+    "filters": []
 }
 ```
 
-### Relationship Selection
-Select through traversed relationships:
+### Pattern 2: Filtered Count by Source
+**Use Case**: "How many GitHub artifacts are there?"
+
 ```json
 {
-    "select": ["int_events__github.bucket_day", "int_events__github.to->artifacts.artifact_name"],
-    "where": []
+    "selects": ["artifacts.count"],
+    "filters": ["artifacts.artifact_source = 'GITHUB'"]
 }
 ```
 
-### Mixed Selection
-Combine dimensions, measures, and relationships:
+### Pattern 3: Cross-Model Analysis
+**Use Case**: "Show project names and their collection names"
+
 ```json
 {
-    "select": [
-        "collections.collection_name",
-        "collections.count", 
+    "selects": [
         "projects.project_name",
-        "projects.count"
+        "projects.by_collection->collections.collection_name"
     ],
-    "where": ["collections.count > 5", "projects.by_collection->collections.collection_name IS NOT NULL"]
+    "filters": []
 }
 ```
 
-# Comprehensive Examples by Use Case
+### Pattern 4: Repository Analysis
+**Use Case**: "Show repositories with their programming languages and star counts"
 
-## Simple Counting Queries
-
-**Example 1: Basic Entity Count**
-- **User Query:** "How many artifacts are there?"
-- **SemanticQuery:**
 ```json
 {
-    "select": ["artifacts.count"],
-    "where": []
-}
-```
-
-**Example 2: Filtered Entity Count**
-- **User Query:** "How many GitHub artifacts are there?"
-- **SemanticQuery:**
-```json
-{
-    "select": ["artifacts.count"],
-    "where": ["artifacts.artifact_source = 'GITHUB'"]
-}
-```
-
-## Relationship-Based Queries
-
-**Example 3: Cross-Model Aggregation**
-- **User Query:** "How many projects are in the 'optimism' collection?"
-- **SemanticQuery:**
-```json
-{
-    "select": ["projects.count"],
-    "where": ["projects.by_collection->collections.collection_name = 'optimism'"]
-}
-```
-
-**Example 4: Multi-hop Relationship**
-- **User Query:** "What are the names of artifacts in the 'defi' collection?"
-- **SemanticQuery:**
-```json
-{
-    "select": ["artifacts.artifact_name"],
-    "where": ["artifacts.by_project->projects.by_collection->collections.collection_name = 'defi'"]
-}
-```
-
-## Event-Based Queries (Handling Ambiguity)
-
-**Example 5: Event Source Analysis**
-- **User Query:** "Get the time and source artifact name for GitHub events"
-- **SemanticQuery:**
-```json
-{
-    "select": ["int_events__github.bucket_day", "int_events__github.from->artifacts.artifact_name"],
-    "where": []
-}
-```
-
-**Example 6: Event Target Analysis**
-- **User Query:** "Get the time and target artifact name for GitHub events"
-- **SemanticQuery:**
-```json
-{
-    "select": ["int_events__github.bucket_day", "int_events__github.to->artifacts.artifact_name"],
-    "where": []
-}
-```
-
-**Example 7: Bidirectional Event Analysis**
-- **User Query:** "For GitHub events, show the time, source artifact, and target artifact"
-- **SemanticQuery:**
-```json
-{
-    "select": [
-        "int_events__github.bucket_day",
-        "int_events__github.from->artifacts.artifact_name",
-        "int_events__github.to->artifacts.artifact_name"
+    "selects": [
+        "repositories.artifact_name",
+        "repositories.language",
+        "repositories.star_count"
     ],
-    "where": []
+    "filters": ["repositories.star_count > 100"]
 }
 ```
 
-## Complex Analytical Queries
+### Pattern 5: Complex Multi-hop Analysis
+**Use Case**: "Show artifacts in specific collections with their project details"
 
-**Example 8: Filtered Cross-Model Analysis**
-- **User Query:** "What are the names of collections that have more than 10 projects?"
-- **SemanticQuery:**
 ```json
 {
-    "select": ["collections.collection_name"],
-    "where": ["projects.by_collection->collections.collection_name IS NOT NULL", "projects.count > 10"]
-}
-```
-
-**Example 9: Multi-Dimensional Filtering**
-- **User Query:** "Get artifact names from GitHub in the 'ethereum' namespace that are part of projects in the 'defi' collection"
-- **SemanticQuery:**
-```json
-{
-    "select": ["artifacts.artifact_name"],
-    "where": [
-        "artifacts.artifact_source = 'GITHUB'",
-        "artifacts.artifact_namespace = 'ethereum'",
-        "artifacts.by_project->projects.by_collection->collections.collection_name = 'defi'"
+    "selects": [
+        "artifacts.artifact_name",
+        "artifacts.by_project->projects.display_name",
+        "artifacts.by_project->projects.by_collection->collections.collection_name"
+    ],
+    "filters": [
+        "artifacts.by_project->projects.by_collection->collections.collection_name = 'ethereum-github'",
+        "artifacts.artifact_source = 'GITHUB'"
     ]
 }
 ```
 
-**Example 10: Temporal and Aggregate Filtering**
-- **User Query:** "Show GitHub events from 2023 where the target artifact received more than 100 events"
-- **SemanticQuery:**
+### Pattern 6: Collection-based Project Analysis
+**Use Case**: "Show all projects in a specific collection"
+
 ```json
 {
-    "select": ["int_events__github.bucket_day", "int_events__github.to->artifacts.artifact_name"],
-    "where": [
-        "int_events__github.bucket_day >= '2023-01-01'",
-        "int_events__github.bucket_day < '2024-01-01'",
-        "int_events__github.count > 100"
+    "selects": [
+        "projects.display_name",
+        "projects.description",
+        "projects.by_collection->collections.collection_name"
+    ],
+    "filters": [
+        "projects.by_collection->collections.collection_name = 'ethereum-github'"
     ]
 }
 ```
 
-# Error Prevention and Troubleshooting
+## Advanced Query Features
+
+### Repository Metrics Analysis
+Analyze repository statistics and characteristics:
+
+```json
+{
+    "selects": [
+        "repositories.artifact_name",
+        "repositories.language",
+        "repositories.total_stars",
+        "repositories.total_forks"
+    ],
+    "filters": [
+        "repositories.language = 'TypeScript'",
+        "repositories.star_count > 1000"
+    ]
+}
+```
+
+### Contract Analysis
+Analyze smart contract deployments:
+
+```json
+{
+    "selects": [
+        "contracts.contract_address",
+        "contracts.contract_namespace",
+        "contracts.deployment_date"
+    ],
+    "filters": [
+        "contracts.deployment_date >= '2023-01-01'"
+    ]
+}
+```
+
+### Collection Ecosystem Analysis
+Analyze entire ecosystems through collections:
+
+```json
+{
+    "selects": [
+        "collections.display_name",
+        "projects.count",
+        "artifacts.count"
+    ],
+    "filters": [
+        "collections.collection_source = 'OSS_DIRECTORY'"
+    ]
+}
+```
 
 ## Common Mistakes to Avoid
 
-1. **Using Raw SQL Functions:**
-   - ❌ Wrong: `"select": ["COUNT(artifacts.artifact_id)"]`
-   - ✅ Correct: `"select": ["artifacts.count"]`
+### ❌ Wrong: Using Raw SQL Functions
+```json
+{
+    "selects": ["COUNT(artifacts.artifact_id)"]
+}
+```
 
-2. **Mixing Selection and Filtering:**
-   - ❌ Wrong: `"select": ["artifacts.artifact_name WHERE artifacts.artifact_source = 'GITHUB'"]`
-   - ✅ Correct: `"select": ["artifacts.artifact_name"], "where": ["artifacts.artifact_source = 'GITHUB'"]`
+### ✅ Correct: Using Semantic Measures
+```json
+{
+    "selects": ["artifacts.count"]
+}
+```
 
-3. **Not Handling Ambiguous Joins:**
-   - ❌ Wrong: `"select": ["int_events__github.bucket_day", "artifacts.artifact_name"]` (ambiguous)
-   - ✅ Correct: `"select": ["int_events__github.bucket_day", "int_events__github.to->artifacts.artifact_name"]`
+### ❌ Wrong: Invalid Relationship Direction
+```json
+{
+    "selects": ["collections.by_project->projects.project_name"]
+}
+```
 
-4. **Incorrect Relationship Syntax:**
-   - ❌ Wrong: `"artifacts->project.project_name"` (missing intermediate relationship)
-   - ✅ Correct: `"artifacts.by_project->projects.project_name"`
+### ✅ Correct: Valid Relationship Direction
+```json
+{
+    "selects": ["projects.by_collection->collections.collection_name"]
+}
+```
 
-## Key Validation Rules
+### ❌ Wrong: Mixing Selection and Filtering
+```json
+{
+    "selects": ["artifacts.artifact_name WHERE artifacts.artifact_source = 'GITHUB'"]
+}
+```
 
-1. All attributes must use semantic references (`model.attribute`)
-2. Relationships must be traversed explicitly with `->` operator
-3. Ambiguous joins must be resolved with explicit path specification
-4. Measures must be used instead of raw SQL aggregation functions
-5. Filter conditions go in `where` array, not in `select` array
+### ✅ Correct: Separate Select and Filter
+```json
+{
+    "selects": ["artifacts.artifact_name"],
+    "filters": ["artifacts.artifact_source = 'GITHUB'"]
+}
+```
+
+### ❌ Wrong: Non-existent Attributes
+```json
+{
+    "selects": ["artifacts.total_commits"]
+}
+```
+
+### ✅ Correct: Valid Attributes from Model Definition
+```json
+{
+    "selects": ["artifacts.artifact_name"]
+}
+```
+
+## Query Output and Results
+
+### Expected Response Format
+The tool returns a `Response` object containing:
+
+- **response** (string): String representation of the structured query
+- **metadata** (dict): Contains the actual `SemanticQuery` object under the key `"semantic_query"`
+
+### Using the Generated Query
+The output `SemanticQuery` can be:
+1. Passed to the OSO query builder to generate SQL
+2. Executed against the OSO data warehouse
+3. Used for further query composition or analysis
+
+### Performance Considerations
+
+1. **Use Limits**: For exploratory queries, add reasonable limits
+2. **Filter Early**: Apply filters to reduce data processing
+3. **Specific Relationships**: Use explicit relationship paths for better performance
+4. **Choose Appropriate Models**: Use direct relationships when possible
+
+## Error Prevention Guidelines
+
+1. **Validate Entity References**: Ensure all model.attribute combinations exist in the semantic model definition
+2. **Use Correct Relationships**: Only use relationships that are actually defined (`by_project`, `by_collection`)
+3. **Use Semantic Measures**: Never use raw SQL aggregation functions
+4. **Proper Filter Syntax**: Use valid SQL expressions in filter conditions
+5. **Verify Relationship Directions**: Ensure relationship traversals follow the correct direction
 
 # Semantic Model Definition
 {semantic_model_description}
@@ -346,6 +371,15 @@ Combine dimensions, measures, and relationships:
 
 # Error Feedback (if retrying after a previous failure)
 {error_feedback}
+
+IMPORTANT FINAL INSTRUCTIONS:
+- Always return a valid JSON SemanticQuery object
+- Use only attributes and relationships defined in the semantic model above
+- Use predefined measures (like `.count`, `.distinct_count`) instead of raw SQL functions
+- Ensure all relationship traversals use valid paths with the `->` operator
+- Apply appropriate filters to focus the query on relevant data
+- Verify all column references against the semantic model before using them
+- Only use the relationships that are actually defined: artifacts.by_project, artifacts.by_collection, projects.by_collection
 """
 
 
@@ -358,6 +392,15 @@ async def _translate_nl_to_semantic(
 ) -> Response:
     """
     The core logic for the tool. It uses a structured LLM to perform the translation.
+
+    Args:
+        natural_language_query: The user's natural language query to translate
+        llm: The language model instance to use for translation
+        semantic_model_description: Description of the available semantic models
+        error_feedback: Optional feedback from previous failed attempts
+
+    Returns:
+        Response object containing the structured semantic query
     """
     prompt_template = PromptTemplate(SYSTEM_PROMPT)
 
@@ -388,6 +431,13 @@ def create_semantic_query_tool(llm: LLM, registry_description: str) -> FunctionT
 
     This follows the standard pattern of wrapping a function with baked-in
     dependencies into a FunctionTool.
+
+    Args:
+        llm: The language model instance to use for query translation
+        registry_description: Description of the semantic model registry
+
+    Returns:
+        FunctionTool instance configured for semantic query translation
     """
     tool_fn = partial(
         _translate_nl_to_semantic,

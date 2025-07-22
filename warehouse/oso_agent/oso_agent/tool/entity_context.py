@@ -2,10 +2,10 @@
 TEMPORARY DUMP FILE - NOT FOR PRODUCTION USE
 
 This file contains entity context and SQL generation functionality that was moved
-out of the MCP server. It's currently a dump of various functions and will 
+out of the MCP server. It's currently a dump of various functions and will
 eventually be refactored and integrated into the oso_agent workflow properly.
 
-This is just a temporary location to store all these functions while we 
+This is just a temporary location to store all these functions while we
 reorganize the codebase structure.
 """
 
@@ -39,11 +39,15 @@ EntityType = Literal["project", "collection", "chain", "metric", "artifact"]
 class EntityGuess(BaseModel):
     name: str = Field(description="Exact text of the entity mention")
     description: str = Field(description="Why this entity exists in the query")
-    ranking: list[EntityType] = Field(description="All six entity types, ordered from most- to least-likely")
+    ranking: list[EntityType] = Field(
+        description="All six entity types, ordered from most- to least-likely"
+    )
 
 
 class EntityDeconstructorOutput(BaseModel):
-    entities: list[EntityGuess] = Field(description="Extracted entities with ranked type guesses")
+    entities: list[EntityGuess] = Field(
+        description="Extracted entities with ranked type guesses"
+    )
 
 
 class ResolvedEntity(BaseModel):
@@ -60,16 +64,21 @@ class EntityResolutionResult(BaseModel):
 # Constants
 LOOKUP_TABLE: dict[EntityType, dict[str, list[str]]] = {
     "project": {"table": ["projects_v1"], "columns": ["project_name", "display_name"]},
-    "collection": {"table": ["collections_v1"], "columns": ["collection_name", "display_name"]},
+    "collection": {
+        "table": ["collections_v1"],
+        "columns": ["collection_name", "display_name"],
+    },
     "chain": {"table": ["int_chainlist"], "columns": ["chain_name"]},
     "metric": {"table": ["metrics_v0"], "columns": ["metric_name"]},
-    "artifact": {"table": ["artifacts_v1"], "columns": ["artifact_name"]}
+    "artifact": {"table": ["artifacts_v1"], "columns": ["artifact_name"]},
 }
 
 
 # Helper Functions for SQL Generation and Entity Resolution
 # prev MCP tool (can be a tool in the agent workflow)
-async def query_oso(sql: str, oso_client: Client, limit: Optional[int] = None) -> Dict[str, Any]:
+async def query_oso(
+    sql: str, oso_client: Client, limit: Optional[int] = None
+) -> Dict[str, Any]:
     """
     Execute a SQL SELECT query against the OSO data lake.
 
@@ -93,7 +102,7 @@ async def query_oso(sql: str, oso_client: Client, limit: Optional[int] = None) -
     try:
         df = oso_client.to_pandas(sql)
         results = df.to_dict(orient="records")
-        
+
         return {
             "success": True,
             "query": sql,
@@ -106,6 +115,7 @@ async def query_oso(sql: str, oso_client: Client, limit: Optional[int] = None) -
             "query": sql,
             "error": error_msg,
         }
+
 
 # prev MCP tool (can be a tool in the agent workflow)
 async def list_tables(oso_client: Client) -> Dict[str, Any]:
@@ -124,7 +134,7 @@ async def list_tables(oso_client: Client) -> Dict[str, Any]:
     try:
         df = oso_client.to_pandas("SHOW TABLES")
         tables = df.to_dict(orient="records")
-        
+
         return {
             "success": True,
             "tables": tables,
@@ -135,6 +145,7 @@ async def list_tables(oso_client: Client) -> Dict[str, Any]:
             "success": False,
             "error": error_msg,
         }
+
 
 # prev MCP tool (can be a tool in the agent workflow)
 async def get_table_schema(table_name: str, oso_client: Client) -> Dict[str, Any]:
@@ -155,7 +166,7 @@ async def get_table_schema(table_name: str, oso_client: Client) -> Dict[str, Any
         schema_query = f"DESCRIBE {table_name}"
         df = oso_client.to_pandas(schema_query)
         schema = df.to_dict(orient="records")
-        
+
         return {
             "success": True,
             "table": table_name,
@@ -168,6 +179,7 @@ async def get_table_schema(table_name: str, oso_client: Client) -> Dict[str, Any
             "table": table_name,
             "error": error_msg,
         }
+
 
 # prev MCP tool (can be a tool in the agent workflow)
 def get_sample_queries() -> Dict[str, Any]:
@@ -290,56 +302,66 @@ def get_sample_queries() -> Dict[str, Any]:
             """,
         },
     ]
-    
+
     return {
         "success": True,
         "samples": samples,
     }
 
+
 # helper function with previous MCP server (likely out of scope)
 async def generate_sql(nl_query: str, oso_client: Client, config: AgentConfig) -> str:
     """
     Generate a SQL query from a natural language question, using entity extraction and the text2sql agent for improved accuracy.
-    
+
     Args:
         nl_query (str): Natural language query
         oso_client (Client): OSO client instance
         config (AgentConfig): Agent configuration
-        
+
     Returns:
         str: Generated SQL query
     """
     # extract and search for all entities in the query
-    gather_all_entities_result = await gather_all_entities_and_search(nl_query, oso_client, config)
+    gather_all_entities_result = await gather_all_entities_and_search(
+        nl_query, oso_client, config
+    )
     # format the entities and the nl query into a string for the text2sql agent
-    entities_plus_nl_query = await format_for_text2sql(nl_query, gather_all_entities_result)
+    entities_plus_nl_query = await format_for_text2sql(
+        nl_query, gather_all_entities_result
+    )
     # call the text2sql agent to generate the sql query
     # Note: query_text2sql_agent function needs to be imported/implemented separately
     # query_text2sql_agent_result = await query_text2sql_agent(entities_plus_nl_query, config)
     # For now, return the formatted string
     return entities_plus_nl_query
 
+
 # helper function to run the entire entity search workflow (this can be incorporated into the agent workflow)
-async def gather_all_entities_and_search(nl_query: str, oso_client: Client, config: AgentConfig) -> List[ResolvedEntity]:
+async def gather_all_entities_and_search(
+    nl_query: str, oso_client: Client, config: AgentConfig
+) -> List[ResolvedEntity]:
     """
     Extract and resolve all entities from a natural language query.
-    
+
     Args:
         nl_query (str): Natural language query
         oso_client (Client): OSO client instance
         config (AgentConfig): Agent configuration
-        
+
     Returns:
         List[ResolvedEntity]: List of resolved entities
     """
-    # extract entities from the query 
+    # extract entities from the query
     entity_deconstructor_result = await extract_entities_from_nl_query(nl_query, config)
 
     resolved_entities = []
     # handle each entity one at a time
-    for entity_guess in entity_deconstructor_result.entities:            
+    for entity_guess in entity_deconstructor_result.entities:
         # generate the variants
-        llm_generated_variants = await generate_entity_variants(config, entity_guess.name, nl_query, entity_guess.description)
+        llm_generated_variants = await generate_entity_variants(
+            config, entity_guess.name, nl_query, entity_guess.description
+        )
         # normalize the variants
         normalized_variants = normalize_entity_variants(llm_generated_variants)
         # then iterate over the ranking of entity types
@@ -348,10 +370,12 @@ async def gather_all_entities_and_search(nl_query: str, oso_client: Client, conf
             sql = build_fuzzy_entity_search_sql(normalized_variants, entity_type)
             # execute the query
             resp = await query_oso(sql, oso_client)
-            
+
             if resp.get("success") and resp.get("results"):
                 # select the correct row from the search result
-                selected_row = await select_final_entity(nl_query, entity_guess.name, entity_type, resp["results"], config)
+                selected_row = await select_final_entity(
+                    nl_query, entity_guess.name, entity_type, resp["results"], config
+                )
                 # if we have a selected row, we can add it to the list of resolved entities
                 if selected_row:
                     entity_found = ResolvedEntity(
@@ -364,19 +388,20 @@ async def gather_all_entities_and_search(nl_query: str, oso_client: Client, conf
         # if we aren't successful at finding an entity for now we will assume the entity doesn't exist and ignore it
     return resolved_entities
 
+
 # helper function with previous MCP server (likely out of scope)
 async def search_entity(
-    entity: str, 
-    entity_type: EntityType, 
-    oso_client: Client, 
-    nl_query: str, 
+    entity: str,
+    entity_type: EntityType,
+    oso_client: Client,
+    nl_query: str,
     config: AgentConfig,
-    match_type: Literal['exact', 'fuzzy'] = 'exact', 
-    **kwargs
+    match_type: Literal["exact", "fuzzy"] = "exact",
+    **kwargs,
 ) -> Dict[str, Any]:
     """
     Generic search function for entities (project, collection, chain, etc.)
-    
+
     Args:
         entity (str): Entity name to search for
         entity_type (EntityType): Type of entity
@@ -384,13 +409,15 @@ async def search_entity(
         nl_query (str): Original natural language query for context
         config (AgentConfig): Agent configuration
         match_type (Literal['exact', 'fuzzy']): Search match type
-        
+
     Returns:
         Dict[str, Any]: Search results
     """
-    if match_type == 'fuzzy':
+    if match_type == "fuzzy":
         # generate the variants
-        llm_generated_variants = await generate_entity_variants(config, entity, nl_query, entity_type)
+        llm_generated_variants = await generate_entity_variants(
+            config, entity, nl_query, entity_type
+        )
         # normalize the variants
         normalized_variants = normalize_entity_variants(llm_generated_variants)
         # build the sql query
@@ -402,6 +429,7 @@ async def search_entity(
     # execute the query
     resp = await query_oso(sql, oso_client, limit=1)
     return resp
+
 
 # prev MCP tool (can be a tool in the agent workflow)
 def get_help_guide() -> str:
@@ -461,21 +489,25 @@ def get_help_guide() -> str:
         This server requires an OSO API key to be set as the `OSO_API_KEY` environment variable.
     """)
 
+
 # helper function for the agent workflow to extract entities from a natural language query
 # this step is included in the latest agent workflow version (just needs to be refactored)
-async def extract_entities_from_nl_query(nl_query: str, config: AgentConfig) -> EntityDeconstructorOutput:  
+async def extract_entities_from_nl_query(
+    nl_query: str, config: AgentConfig
+) -> EntityDeconstructorOutput:
     """
     Extract entities from a natural language query using LLM structured output.
-    
+
     Args:
         nl_query (str): Natural language query
         config (AgentConfig): Agent configuration
-        
+
     Returns:
         EntityDeconstructorOutput: Extracted entities with type rankings
     """
-    # call an LLM with the nl_query and extract entities with clues of what type to default to 
-    prompt = """
+    # call an LLM with the nl_query and extract entities with clues of what type to default to
+    prompt = (
+        """
         You are an **Entity Deconstructor** for the OSO Data Lake.
         Your output feeds an automated SQL-builder, so precision matters.
 
@@ -572,31 +604,35 @@ async def extract_entities_from_nl_query(nl_query: str, config: AgentConfig) -> 
         ────────────────────────────────────────────────────────────────────────
         USER QUESTION
         ────────────────────────────────────────────────────────────────────────
-    """ + f"{nl_query}"
+    """
+        + f"{nl_query}"
+    )
 
     workflow = create_llm_structured_output_workflow(config, EntityDeconstructorOutput)
     result = await workflow.run(input=prompt)
 
     return result.raw
 
+
 # helper function for the agent workflow to extract entities from a natural language query
 # this step is included in the latest agent workflow version (just needs to be refactored)
-async def generate_entity_variants(config: AgentConfig, entity: str, nl_query: str, entity_description: str) -> list[str]:
+async def generate_entity_variants(
+    config: AgentConfig, entity: str, nl_query: str, entity_description: str
+) -> list[str]:
     """
     Use LLMStructuredOutputWorkflow to get possible variants for an entity name.
-    
+
     Args:
         config (AgentConfig): Agent configuration
         entity (str): Entity name
         nl_query (str): Original natural language query
         entity_description (str): Description of the entity
-        
+
     Returns:
         list[str]: List of entity variants
     """
     # build the prompt for the llm
-    prompt = (
-        f"""
+    prompt = f"""
         You are an expert in generating variants for crypto-related entities. 
         You will be given a target entity, a description of what the entity is, and a NL query for context on why the entity matters.
         Your job is to generate a list of different spellings, versions, and ways the same entity could be represented in a database.
@@ -625,128 +661,135 @@ async def generate_entity_variants(config: AgentConfig, entity: str, nl_query: s
 
         Return the result as a JSON object with a single key 'variants' containing a list of strings.
         """
-    )
     workflow = create_llm_structured_output_workflow(config, EntityVariantsOutput)
     result = await workflow.run(input=prompt)
     return result.raw.variants
+
 
 # helper function for the agent workflow to extract entities from a natural language query
 # this step is included in the latest agent workflow version (just needs to be refactored)
 def normalize_entity_variants(variants: list[str]) -> list[str]:
     """
     Normalize entity variants by cleaning and generating different joining patterns.
-    
+
     Args:
         variants (list[str]): List of entity variants
-        
+
     Returns:
         list[str]: Normalized variants
     """
     result = set()
-    
+
     for variant in variants:
         # normalize: lowercase and strip whitespace
         base = variant.strip().lower()
         if not base:
             continue
-            
+
         # remove all non-alphanumeric except spaces, dashes, and underscores
-        alphanum = re.sub(r'[^a-z0-9\s\-_]', '', base)
-        
+        alphanum = re.sub(r"[^a-z0-9\s\-_]", "", base)
+
         # split on any whitespace, dash, or underscore to get word parts
-        parts = re.split(r'[\s\-_]+', alphanum)
+        parts = re.split(r"[\s\-_]+", alphanum)
         parts = [part for part in parts if part]  # remove empty parts
-        
+
         if not parts:
             continue
-            
+
         # generate all possible joinings with different symbols
-        symbols = [' ', '-', '_', '']  # space, dash, underscore, no separator
-        
+        symbols = [" ", "-", "_", ""]  # space, dash, underscore, no separator
+
         for symbol in symbols:
             joined = symbol.join(parts)
             if joined:
                 result.add(joined)
-        
+
         # also add the original normalized base
         if base:
             result.add(base)
         if alphanum and alphanum != base:
             result.add(alphanum)
-    
+
     # return sorted list for deterministic output
     return sorted(list(result))
+
 
 # helper function for the agent workflow to extract entities from a natural language query
 # this step is included in the latest agent workflow version (just needs to be refactored)
 def build_exact_entity_search_sql(entity: str, entity_type: EntityType) -> str:
     """
     Build a SQL query to search for an entity in a table by multiple columns, case/space-insensitive (exact match).
-    
+
     Args:
         entity (str): Entity name to search for
         entity_type (EntityType): Type of entity
-        
+
     Returns:
         str: SQL query string
-    """    
+    """
     table = LOOKUP_TABLE[entity_type]["table"][0]
     columns = LOOKUP_TABLE[entity_type]["columns"]
-    
+
     norm_entity = entity.strip().lower()
-    
+
     # build conditions using sqlglot expressions
     conditions = []
     for col in columns:
         # build: LOWER(TRIM(CAST(col AS VARCHAR))) = ?
-        col_expr = sg.func("LOWER", sg.func("TRIM", sg.func("CAST", sg.column(col), exp.DataType.build("VARCHAR"))))
+        col_expr = sg.func(
+            "LOWER",
+            sg.func(
+                "TRIM", sg.func("CAST", sg.column(col), exp.DataType.build("VARCHAR"))
+            ),
+        )
         condition = sg.condition(col_expr).eq(exp.Literal.string(norm_entity))
         conditions.append(condition)
-    
+
     # combine conditions with OR
     where_condition = conditions[0]
     for cond in conditions[1:]:
         where_condition = where_condition.or_(cond)
-    
+
     # build the full query
     query = sg.select("*").from_(table).where(where_condition).limit(1)
-    
+
     return query.sql()
+
 
 # probably out of scope, not sure if we will be doing fuzzy/exact matching since we are generating variants + normalizing them
 def build_fuzzy_entity_search_sql(variants: list[str], entity_type: EntityType) -> str:
     """
     Build a SQL query for fuzzy entity search using wildcard LIKE operations.
-    
+
     Args:
         variants (list[str]): List of entity variants
         entity_type (EntityType): Type of entity
-        
+
     Returns:
         str: SQL query string
     """
     if entity_type not in LOOKUP_TABLE:
         raise ValueError(f"Invalid entity type: {entity_type}")
-    
+
     table = LOOKUP_TABLE[entity_type]["table"][0]
     columns = LOOKUP_TABLE[entity_type]["columns"]
-    
+
     # build conditions for each variant against each column
     conditions = []
     for variant in variants:
         clean_variant = variant.strip().lower()
         if not clean_variant:
             continue
-            
+
         # create wildcard pattern: %variant%
         wildcard_pattern = f"%{clean_variant}%"
-        
+
         for col in columns:
             # build: LOWER(col) LIKE '%variant%'
             col_expr = sg.func("LOWER", sg.column(col))
             condition = col_expr.like(exp.Literal.string(wildcard_pattern))
             conditions.append(condition)
-    
+
     if not conditions:
         # if no valid variants, return a query that returns no results
         query = sg.select("*").from_(table).where(sg.condition("FALSE"))
@@ -755,25 +798,32 @@ def build_fuzzy_entity_search_sql(variants: list[str], entity_type: EntityType) 
         where_condition = conditions[0]
         for cond in conditions[1:]:
             where_condition = where_condition.or_(cond)
-        
+
         # build the full query
         query = sg.select("*").from_(table).where(where_condition)
-    
+
     return query.sql()
+
 
 # helper function for the agent workflow to extract entities from a natural language query
 # this step is included in the latest agent workflow version (just needs to be refactored)
-async def select_final_entity(nl_query: str, entity: str, entity_type: str, candidates: list[dict], config: AgentConfig) -> str:
+async def select_final_entity(
+    nl_query: str,
+    entity: str,
+    entity_type: str,
+    candidates: list[dict],
+    config: AgentConfig,
+) -> str:
     """
     Use LLMStructuredOutputWorkflow to select the best entity names from a list of candidates.
-    
+
     Args:
         nl_query (str): Original natural language query
         entity (str): Entity name from query
         entity_type (str): Type of entity
         candidates (list[dict]): List of candidate entities
         config (AgentConfig): Agent configuration
-        
+
     Returns:
         str: Selected entity name or empty string if not confident
     """
@@ -814,26 +864,29 @@ async def select_final_entity(nl_query: str, entity: str, entity_type: str, cand
     result = await workflow.run(input=prompt)
     return result.raw.selected
 
+
 # helper function with previous MCP server (likely out of scope)
 async def format_for_text2sql(nl_query: str, entities: list[ResolvedEntity]) -> str:
     """
     Build a formatted string that includes the nl query and resolved entities
     for consumption by the text2sql agent.
-    
+
     Args:
         nl_query (str): Original natural language query
         entities (list[ResolvedEntity]): List of resolved entities
-        
+
     Returns:
         str: Formatted string for text2sql agent
     """
     # start with the nl query
     result = f"NL Query: {nl_query}\n"
-    
+
     # add entities section
     if entities:
         result += "Entities:\n"
         for entity in entities:
-            result += f"    {entity.name} - {entity.entity_type} - {entity.description}\n"
-    
+            result += (
+                f"    {entity.name} - {entity.entity_type} - {entity.description}\n"
+            )
+
     return result.strip()  # remove trailing newline

@@ -12,6 +12,7 @@ logger = logging.getLogger("oso-mcp")
 
 pass_config = click.make_pass_decorator(MCPConfig, ensure=True)
 
+
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "--verbose",
