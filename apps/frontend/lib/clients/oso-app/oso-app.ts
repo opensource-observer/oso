@@ -902,22 +902,21 @@ class OsoAppClient {
       );
     }
 
-    const groupedData = _.groupBy(data, "dynamic_connectors.id");
-
-    return Object.entries(groupedData).map(([_key, rows]) => {
-      const { dynamic_table_contexts: _, ...unparsedConnector } = rows[0];
+    return data.map((dynamicConnector) => {
+      const { dynamic_table_contexts: _, ...unparsedConnector } =
+        dynamicConnector;
       const connector = dynamicConnectorsRowSchema.parse(unparsedConnector);
-      const contexts = rows.flatMap((row) => {
-        return row.dynamic_table_contexts.flatMap((tableContexts) => {
-          const { dynamic_column_contexts: columns, ...table } = tableContexts;
+      const contexts = dynamicConnector.dynamic_table_contexts.map(
+        (tableContext) => {
+          const { dynamic_column_contexts: columns, ...table } = tableContext;
           return {
             table: dynamicTableContextsRowSchema.parse(table),
             columns: columns.map((c) =>
               dynamicColumnContextsRowSchema.parse(c),
             ),
           };
-        });
-      });
+        },
+      );
       return { connector, contexts };
     });
   }
