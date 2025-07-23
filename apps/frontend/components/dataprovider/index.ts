@@ -1,3 +1,4 @@
+import { NextJsPlasmicComponentLoader } from "@plasmicapp/loader-nextjs";
 import {
   OsoGlobalContext,
   OsoGlobalContextMeta,
@@ -22,7 +23,6 @@ import {
   OsoChatProvider,
   OsoChatProviderMeta,
 } from "@/components/dataprovider/oso-chat-provider";
-import { NextJsPlasmicComponentLoader } from "@plasmicapp/loader-nextjs";
 
 export function registerAllDataProvider(PLASMIC: NextJsPlasmicComponentLoader) {
   // Global Context

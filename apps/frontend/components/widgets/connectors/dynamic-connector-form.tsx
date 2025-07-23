@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   Select,
   SelectContent,
@@ -12,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { PostgresConnectorForm } from "@/components/widgets/connectors/postgres-connector-form";
 import { GoogleSheetsConnectorForm } from "@/components/widgets/connectors/google-sheets-connector-form";
 import { ConnectorType } from "@/lib/types/dynamic-connector";
-import { RegistrationProps } from "@/lib/types/plasmic";
 import { cn } from "@/lib/utils";
 
 type DynamicConnectorFormProps = {
@@ -24,8 +24,9 @@ type DynamicConnectorFormProps = {
   onCancel: () => void;
 };
 
-export const DynamicConnectorFormRegistration: RegistrationProps<DynamicConnectorFormProps> =
-  {
+const DynamicConnectorFormMeta: CodeComponentMeta<DynamicConnectorFormProps> = {
+  name: "DynamicConnectorForm",
+  props: {
     onSubmit: {
       type: "eventHandler",
       argTypes: [
@@ -43,9 +44,10 @@ export const DynamicConnectorFormRegistration: RegistrationProps<DynamicConnecto
       type: "eventHandler",
       argTypes: [],
     },
-  };
+  },
+};
 
-export function DynamicConnectorForm(props: DynamicConnectorFormProps) {
+function DynamicConnectorForm(props: DynamicConnectorFormProps) {
   const { className, onSubmit, onCancel } = props;
   const [connectorType, setConnectorType] = useState<ConnectorType | undefined>(
     undefined,
@@ -79,3 +81,5 @@ export function DynamicConnectorForm(props: DynamicConnectorFormProps) {
     </div>
   );
 }
+
+export { DynamicConnectorForm, DynamicConnectorFormMeta };

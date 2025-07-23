@@ -50,7 +50,6 @@ const OsoDataProviderMeta: CodeComponentMeta<OsoDataProviderProps> = {
     },
   },
   providesData: true,
-  importPath: "./components/dataprovider/oso-data-provider",
 };
 
 function OsoDataProvider(props: OsoDataProviderProps) {
