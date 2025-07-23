@@ -28,11 +28,13 @@ import {
   DynamicConnectorFormRegistration,
 } from "@/components/widgets/connectors/dynamic-connector-form";
 import { registerAllDataProvider } from "@/components/dataprovider";
+import { registerAllUi } from "@/components/ui";
 
 /**
- * Plasmic data provider registration
+ * Plasmic registration
  */
 registerAllDataProvider(PLASMIC);
+registerAllUi(PLASMIC);
 
 /**
  * Plasmic component registration
