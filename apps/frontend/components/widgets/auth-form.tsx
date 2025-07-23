@@ -1,4 +1,5 @@
 "use client";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -10,7 +11,14 @@ type AuthFormProps = {
   className?: string; // Plasmic CSS class
 };
 
-export function AuthForm(props: AuthFormProps) {
+const AuthFormMeta: CodeComponentMeta<AuthFormProps> = {
+  name: "AuthForm",
+  description: "Supabase Auth Form",
+  props: {},
+  importPath: "./components/widgets/auth-form",
+};
+
+function AuthForm(props: AuthFormProps) {
   const { className } = props;
   const supabaseState = useSupabaseState();
 
@@ -31,3 +39,5 @@ export function AuthForm(props: AuthFormProps) {
     </div>
   );
 }
+
+export { AuthForm, AuthFormMeta };

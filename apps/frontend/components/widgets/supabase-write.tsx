@@ -1,4 +1,5 @@
 import React, { ReactNode } from "react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { useRouter } from "next/navigation";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
@@ -6,7 +7,6 @@ import { ADT } from "ts-adt";
 import { HttpError, assertNever, spawn } from "@opensource-observer/utils";
 import { usePostHog } from "posthog-js/react";
 import { EVENTS } from "@/lib/types/posthog";
-import { RegistrationProps } from "@/lib/types/plasmic";
 import { useSupabaseState } from "@/components/hooks/supabase";
 
 type SnackbarState = ADT<{
@@ -41,33 +41,36 @@ type SupabaseWriteProps = {
   errorCodeMap?: any; // Map of error codes to error messages
 };
 
-const SupabaseWriteRegistration: RegistrationProps<SupabaseWriteProps> = {
-  children: "slot",
-  actionType: {
-    type: "choice",
-    options: ["insert", "update", "upsert", "delete"],
-  },
-  tableName: {
-    type: "string",
-    helpText: "Supabase table name",
-  },
-  data: {
-    type: "object",
-    defaultValue: {},
-    helpText: "Data to insert",
-  },
-  filters: {
-    type: "object",
-    defaultValue: [],
-    helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
-    hidden: (props) =>
-      props.actionType === "insert" || props.actionType === "upsert",
-  },
-  redirectOnComplete: "string",
-  errorCodeMap: {
-    type: "object",
-    defaultValue: {},
-    helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
+const SupabaseWriteMeta: CodeComponentMeta<SupabaseWriteProps> = {
+  name: "SupabaseWrite",
+  props: {
+    children: "slot",
+    actionType: {
+      type: "choice",
+      options: ["insert", "update", "upsert", "delete"],
+    },
+    tableName: {
+      type: "string",
+      helpText: "Supabase table name",
+    },
+    data: {
+      type: "object",
+      defaultValue: {},
+      helpText: "Data to insert",
+    },
+    filters: {
+      type: "object",
+      defaultValue: [],
+      helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
+      hidden: (props) =>
+        props.actionType === "insert" || props.actionType === "upsert",
+    },
+    redirectOnComplete: "string",
+    errorCodeMap: {
+      type: "object",
+      defaultValue: {},
+      helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
+    },
   },
 };
 
@@ -199,5 +202,5 @@ function SupabaseWrite(props: SupabaseWriteProps) {
   );
 }
 
-export { SupabaseWriteRegistration, SupabaseWrite };
+export { SupabaseWrite, SupabaseWriteMeta };
 export type { SupabaseWriteProps };
