@@ -3,13 +3,12 @@
 import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
 import { PLASMIC } from "@/plasmic-init";
 import { format } from "sql-formatter";
-import CircularProgress from "@mui/material/CircularProgress";
 import { AreaChart } from "@tremor/react";
-import { generateApiKey } from "@/lib/auth/keys";
 import { BarList } from "@/components/widgets/tremor";
 import { registerAllDataProvider } from "@/components/dataprovider";
 import { registerAllUi } from "@/components/ui";
 import { registerAllWidgets } from "@/components/widgets";
+import { generateApiKey } from "@/lib/auth/keys";
 
 /**
  * Plasmic registration
@@ -60,13 +59,6 @@ PLASMIC.registerFunction(generateApiKey, {
     description: "the API key",
   },
   importPath: "./lib/auth/keys",
-});
-
-PLASMIC.registerComponent(CircularProgress, {
-  name: "CircularProgress",
-  description: "Circular loading widget",
-  props: {},
-  importPath: "@mui/material/CircularProgress",
 });
 
 PLASMIC.registerComponent(AreaChart, {

@@ -43,7 +43,6 @@
     "@headlessui/tailwindcss": "^0.2.2",
     "@hookform/resolvers": "^5.1.1",
     "@monaco-editor/react": "^4.7.0",
-    "@mui/material": "^5.16.0",
     "@opensource-observer/utils": "workspace:*",
     "@plasmicapp/loader-nextjs": "^1.0.433",
     "@radix-ui/react-dialog": "^1.1.14",
