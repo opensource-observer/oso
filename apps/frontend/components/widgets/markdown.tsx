@@ -1,11 +1,24 @@
 "use client";
 
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 type MarkdownProps = {
   className?: string;
   content?: string; // Show this per item
+};
+
+const MarkdownMeta: CodeComponentMeta<MarkdownProps> = {
+  name: "Markdown",
+  description: "Render Markdown",
+  props: {
+    content: {
+      type: "string",
+      defaultValue: "Hello World",
+      helpText: "Markdown string",
+    },
+  },
 };
 
 function Markdown(props: MarkdownProps) {
@@ -19,4 +32,4 @@ function Markdown(props: MarkdownProps) {
   );
 }
 
-export { Markdown };
+export { Markdown, MarkdownMeta };
