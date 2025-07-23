@@ -4,6 +4,9 @@ description: Get started with pyoso and common query patterns for our most popul
 sidebar_position: 2
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 This tutorial walks through the basics of using [pyoso](../get-started/python.md) to explore the OSO data lake. This tutorial is designed to be run locally in a Jupyter notebook. We also have guides for using pyoso in different notebook environments [here](../guides/notebooks/).
 
 :::tip
@@ -41,43 +44,144 @@ def stringify(arr):
 
 Get a preview of all available models:
 
+<Tabs>
+<TabItem value="python" label="Python">
+
 ```python
 client.to_pandas("SELECT * FROM models_v0 LIMIT 5")
 ```
 
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+query = semantic.select(
+    "models_v0.*"
+).limit(5)
+```
+
+</TabItem>
+</Tabs>
+
 Get the list of stable production models:
+
+<Tabs>
+<TabItem value="python" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM models_v0 WHERE model_name LIKE '%_v1'")
 ```
 
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "models_v0",                 
+).where(
+    "models_v0.model_name LIKE '%_v1'"
+)
+```
+
+</TabItem>
+</Tabs>
+
 Get the list of less stable models:
+
+<Tabs>
+<TabItem value="python" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM models_v0 WHERE model_name LIKE '%_v0'")
 ```
 
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "models_v0",
+).where(
+    "models_v0.model_name LIKE '%_v0'"
+)
+```
+
+</TabItem>
+</Tabs>
+
 ## Query Popular Models
 
 Get a list of projects:
+
+<Tabs>
+<TabItem value="python" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM projects_v1 LIMIT 5")
 ```
 
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "projects_v1",
+).limit(5)
+```
+
+</TabItem>
+</Tabs>
+
 Look up a specific project:
+
+<Tabs>
+<TabItem value="python" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM projects_v1 WHERE project_name = 'opensource-observer'")
 ```
 
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "projects_v1",
+).where(
+    "projects_v1.project_name = 'opensource-observer'"
+)
+```
+
+</TabItem>
+</Tabs>
+
 Get all artifacts owned by a project:
+
+<Tabs>
+<TabItem value="python" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM artifacts_by_project_v1 WHERE project_name = 'opensource-observer'")
 ```
 
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "artifacts_by_project_v1",
+).where(
+    "artifacts_by_project_v1.project_name = 'opensource-observer'"
+)
+```
+
+</TabItem>
+</Tabs>
+
 Get available key metrics for OSO:
+
+<Tabs>
+<TabItem value="python" label="Python">
 
 ```python
 client.to_pandas("""
@@ -94,7 +198,32 @@ client.to_pandas("""
 """)
 ```
 
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "key_metrics_by_project_v0.metric_id",
+    "metrics_v0.metric_name",
+    "metrics_v0.display_name",
+    "key_metrics_by_project_v0.sample_date",
+    "key_metrics_by_project_v0.amount",
+    "key_metrics_by_project_v0.unit",
+).join(
+    "metrics_v0", 
+    on="key_metrics_by_project_v0.metric_id = metrics_v0.metric_id"
+).where(
+    "key_metrics_by_project_v0.project_id = 'UuWbpo5bpL5QsYvlukUWNm2uE8HFjxQxzCM0e+HMZfk='"
+)
+```
+
+</TabItem>
+</Tabs>
+
 Get a set of key metrics for a few projects:
+
+<Tabs>
+<TabItem value="python" label="Python">
 
 ```python
 MY_PROJECTS = ['opensource-observer', 'huggingface', 'wevm']
@@ -116,7 +245,45 @@ client.to_pandas(f"""
 """)
 ```
 
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+MY_PROJECTS = ['opensource-observer', 'huggingface', 'wevm']
+MY_METRICS = ['GITHUB_stars_over_all_time', 'GITHUB_forks_over_all_time']
+
+oso = Client()  # ensure OSO_API_KEY is set
+
+query = (
+    oso.semantic.select(
+        "projects_v1.display_name",
+        "metrics_v0.display_name",
+        "key_metrics_by_project_v0.sample_date",
+        "key_metrics_by_project_v0.amount",
+    )
+    .join(
+        "metrics_v0",
+        on="metrics_v0.metric_id = key_metrics_by_project_v0.metric_id"
+    )
+    .join(
+        "projects_v1",
+        on="projects_v1.project_id = key_metrics_by_project_v0.project_id"
+    )
+    .where(
+        f"projects_v1.project_name IN ({', '.join(repr(p) for p in MY_PROJECTS)})",
+        f"metrics_v0.metric_name IN ({', '.join(repr(m) for m in MY_METRICS)})",
+    )
+    .order_by("projects_v1.display_name", "metrics_v0.display_name")
+)
+```
+
+</TabItem>
+</Tabs>
+
 Get timeseries metrics for OSO:
+
+<Tabs>
+<TabItem value="python" label="Python">
 
 ```python
 df_stars = client.to_pandas("""
@@ -136,6 +303,38 @@ df_stars = client.to_pandas("""
   ORDER BY tm.sample_date
 """)
 ```
+
+</TabItem>
+<TabItem value="python" label="Semantic Layer">
+
+```python
+query = (
+    oso.semantic.select(
+        "timeseries_metrics_by_project_v0.metric_id",
+        "metrics_v0.metric_name",
+        "metrics_v0.display_name",
+        "timeseries_metrics_by_project_v0.sample_date",
+        "timeseries_metrics_by_project_v0.amount",
+        "timeseries_metrics_by_project_v0.unit",
+    )
+    .join(
+        "metrics_v0",
+        on="metrics_v0.metric_id = timeseries_metrics_by_project_v0.metric_id"
+    )
+    .join(
+        "projects_v1",
+        on="projects_v1.project_id = timeseries_metrics_by_project_v0.project_id"
+    )
+    .where(
+        "projects_v1.project_name = 'opensource-observer'",
+        "metrics_v0.metric_name = 'GITHUB_stars_daily'"
+    )
+    .order_by("timeseries_metrics_by_project_v0.sample_date")
+)
+```
+
+</TabItem>
+</Tabs>
 
 Add a cumulative column:
 
