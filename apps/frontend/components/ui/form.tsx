@@ -167,6 +167,7 @@ const FormMessage = React.forwardRef<
 });
 FormMessage.displayName = "FormMessage";
 
+// Needed because of https://github.com/orgs/react-hook-form/discussions/8020
 function safeSubmit<T>(promise: (event: React.SyntheticEvent) => Promise<T>) {
   return (event: React.SyntheticEvent) => {
     if (promise) {
