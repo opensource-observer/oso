@@ -1,4 +1,15 @@
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { cn } from "@/lib/utils";
+
+const SkeletonMeta: CodeComponentMeta<React.HTMLAttributes<HTMLDivElement>> = {
+  name: "Skeleton",
+  description: "Skeleton loading widget",
+  props: {},
+  defaultStyles: {
+    width: "100%",
+    height: "10px",
+  },
+};
 
 function Skeleton({
   className,
@@ -12,4 +23,4 @@ function Skeleton({
   );
 }
 
-export { Skeleton };
+export { Skeleton, SkeletonMeta };

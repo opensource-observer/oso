@@ -160,3 +160,54 @@ In a previous iteration of this service we selected different agents from an
 agent registry. That has now been replaced with a `WorkflowRegistry` that is
 used to register workflows. However, the simple agent workflows can still be
 modeled as a single workflow.
+
+# Text2SQL Workflows Diagrams
+
+Currently, the `oso_agent` supports two main types of workflows for
+Text2SQL: Basic and Semantic. Below are the diagrams representing these workflows.
+
+```mermaid
+graph TD
+    Y[StartEvent] --> A[Natural Language Query]
+    A --> B{Workflow Type}
+
+    %% Basic Workflow Path
+    B -->|basic| C[text2sql-basic]
+    C --> E[QueryEngineTool]
+    E --> F[RAG-based SQL Generation]
+    F --> G[Extract SQL from Metadata]
+    G --> H{SQL Valid?}
+    H -->|No| I[Fail - No Retry]
+    H -->|Yes| J[Execute SQL]
+
+    %% Semantic Workflow Path
+    B -->|semantic| D[text2sql-semantic]
+    D --> K[SemanticQueryTool]
+    K --> L[Natural Language to SemanticQuery]
+    L --> M[Registry build_sql]
+    M --> N[SemanticQuery to SQL]
+    N --> O{SQL Valid?}
+    O -->|Yes| S[Execute SQL]
+    O -->|No| P{Retries < 5?}
+    P -->|No| Q[Fail After Max Retries]
+    P -->|Yes| R[Add Error Context]
+    R --> L
+
+    %% Shared Execution Path
+    J --> T[Execute SQL via OsoClient]
+    S --> T
+    T --> U[SQL Results]
+    U --> V[Synthesize Response]
+    V --> X[Natural Language Response]
+
+    %% Styling
+    classDef basic fill:#ffcdd2,stroke:#c62828,stroke-width:2px,color:#000
+    classDef semantic fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    classDef shared fill:#bbdefb,stroke:#1565c0,stroke-width:2px,color:#000
+    classDef events fill:#ffe0b2,stroke:#f57c00,stroke-width:2px,color:#000
+
+    class C,E,F,G,H,I,J basic
+    class D,K,L,M,N,O,P,Q,R,S semantic
+    class T,U,V,X shared
+    class Y,A,B events
+```
