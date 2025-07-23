@@ -1,5 +1,6 @@
 import { NextJsPlasmicComponentLoader } from "@plasmicapp/loader-nextjs";
 import dynamic from "next/dynamic";
+import { AreaChart } from "@tremor/react";
 //import { AlgoliaSearchList } from "./components/widgets/algolia";
 import { AlgoliaSearchListMeta } from "@/components/widgets/algolia";
 import {
@@ -25,6 +26,11 @@ import {
   SupabaseWrite,
   SupabaseWriteMeta,
 } from "@/components/widgets/supabase-write";
+import {
+  AreaChartMeta,
+  BarList,
+  BarListMeta,
+} from "@/components/widgets/tremor";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -42,4 +48,6 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(MonacoEditor, MonacoEditorMeta);
   PLASMIC.registerComponent(OSOChat, OSOChatMeta);
   PLASMIC.registerComponent(SupabaseWrite, SupabaseWriteMeta);
+  PLASMIC.registerComponent(BarList, BarListMeta);
+  PLASMIC.registerComponent(AreaChart, AreaChartMeta);
 }
