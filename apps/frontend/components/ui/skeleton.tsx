@@ -5,6 +5,10 @@ const SkeletonMeta: CodeComponentMeta<React.HTMLAttributes<HTMLDivElement>> = {
   name: "Skeleton",
   description: "Skeleton loading widget",
   props: {},
+  defaultStyles: {
+    width: "100%",
+    height: "10px",
+  },
 };
 
 function Skeleton({
