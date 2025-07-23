@@ -3,7 +3,6 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
-import { DYNAMIC_CONNECTOR_NAME_REGEX } from "@/lib/types/dynamic-connector";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -13,9 +12,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  safeSubmit,
 } from "@/components/ui/form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  ConnectorNameField,
+  connectorNameSchema,
+} from "@/components/widgets/connectors/connector-form-utils";
 
 const postgresConnectorConfigSchema = z.object({
   "connection-url": z.string().min(1, "Connection URL is required"),
@@ -24,13 +28,7 @@ const postgresConnectorConfigSchema = z.object({
 });
 
 const postgresFormSchema = z.object({
-  connector_name: z
-    .string()
-    .min(1, "Connector name is required")
-    .refine(
-      (val) => DYNAMIC_CONNECTOR_NAME_REGEX.test(val),
-      "Invalid name, valid characters are a-z 0-9 _ -",
-    ),
+  connector_name: connectorNameSchema,
   config: postgresConnectorConfigSchema,
 });
 
@@ -49,6 +47,14 @@ export function PostgresConnectorForm(props: PostgresConnectorFormProps) {
 
   const form = useForm<PostgresFormData>({
     resolver: zodResolver(postgresFormSchema),
+    defaultValues: {
+      connector_name: "",
+      config: {
+        "connection-url": "",
+        "connection-user": "",
+        "connection-password": "",
+      },
+    },
   });
 
   const onFormSubmit = React.useCallback(
@@ -75,37 +81,18 @@ export function PostgresConnectorForm(props: PostgresConnectorFormProps) {
   return (
     <Form {...form}>
       <form
-        onSubmit={() => void form.handleSubmit(onFormSubmit)}
+        onSubmit={safeSubmit(form.handleSubmit(onFormSubmit))}
         className="space-y-4"
       >
-        <FormField
-          control={form.control}
-          name="connector_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Connector Name</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage>
-                <span className="text-sm text-muted-foreground">
-                  Valid characters are a-z 0-9 _ -
-                  <br />
-                  The organization name will be automatically added as a prefix
-                </span>
-              </FormMessage>
-            </FormItem>
-          )}
-        />
+        <ConnectorNameField control={form.control} />
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Learn more about the postgres connector{" "}
             <Link
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline inline-flex items-center gap-1"
               href="https://trino.io/docs/current/connector/postgresql.html"
               target="_blank"
             >
-              here
+              View Postgresql connector documentation
             </Link>
           </div>
           <div className="space-y-4">

@@ -12,11 +12,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  safeSubmit,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { DYNAMIC_CONNECTOR_NAME_REGEX } from "@/lib/types/dynamic-connector";
+import {
+  ConnectorNameField,
+  connectorNameSchema,
+} from "@/components/widgets/connectors/connector-form-utils";
 
 const googleSheetsConnectorConfigSchema = z.object({
   "credentials-key": z.string({}).min(1, "Credentials Key is required"),
@@ -24,13 +28,7 @@ const googleSheetsConnectorConfigSchema = z.object({
 });
 
 const googleSheetsFormSchema = z.object({
-  connector_name: z
-    .string()
-    .min(1, "Connector name is required")
-    .refine(
-      (val) => DYNAMIC_CONNECTOR_NAME_REGEX.test(val),
-      "Invalid name, valid characters are a-z 0-9 _ -",
-    ),
+  connector_name: connectorNameSchema,
   config: googleSheetsConnectorConfigSchema,
 });
 
@@ -51,9 +49,14 @@ export function GoogleSheetsConnectorForm(
 
   const form = useForm<GoogleSheetsFormData>({
     resolver: zodResolver(googleSheetsFormSchema),
+    defaultValues: {
+      connector_name: "",
+      config: {
+        "credentials-key": "",
+        "metadata-sheet-id": "",
+      },
+    },
   });
-
-  console.log(form.getValues());
 
   const onFormSubmit = React.useCallback(
     (data: GoogleSheetsFormData) => {
@@ -66,7 +69,9 @@ export function GoogleSheetsConnectorForm(
           },
         },
         {
-          "gsheets.credentials-key": btoa(data.config["credentials-key"]),
+          "gsheets.credentials-key": btoa(
+            data.config["credentials-key"].trim(),
+          ),
         },
       );
     },
@@ -76,38 +81,34 @@ export function GoogleSheetsConnectorForm(
   return (
     <Form {...form}>
       <form
-        onSubmit={() => void form.handleSubmit(onFormSubmit)}
+        onSubmit={safeSubmit(form.handleSubmit(onFormSubmit))}
         className="space-y-4"
       >
-        <FormField
-          control={form.control}
-          name="connector_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Connector Name</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage>
-                <span className="text-sm text-muted-foreground">
-                  Valid characters are a-z 0-9 _ -
-                  <br />
-                  The organization name will be automatically added as a prefix
-                </span>
-              </FormMessage>
-            </FormItem>
-          )}
-        />
+        <ConnectorNameField control={form.control} />
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Learn more about the google sheets connector{" "}
             <Link
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline inline-flex items-center gap-1"
               href="https://trino.io/docs/current/connector/googlesheets.html"
               target="_blank"
             >
-              here
+              View GoogleSheets connector documentation
             </Link>
+          </div>
+          <div className="space-y-2">
+            <FormField
+              control={form.control}
+              name="config.metadata-sheet-id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Metadata Sheet ID</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -119,21 +120,6 @@ export function GoogleSheetsConnectorForm(
                     <FormLabel>JSON Credentials</FormLabel>
                     <FormControl>
                       <Textarea {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="config.metadata-sheet-id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Metadata Sheet ID</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

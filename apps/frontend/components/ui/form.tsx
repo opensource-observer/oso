@@ -167,6 +167,16 @@ const FormMessage = React.forwardRef<
 });
 FormMessage.displayName = "FormMessage";
 
+function safeSubmit<T>(promise: (event: React.SyntheticEvent) => Promise<T>) {
+  return (event: React.SyntheticEvent) => {
+    if (promise) {
+      promise(event).catch((error) => {
+        console.log("Unexpected error", error);
+      });
+    }
+  };
+}
+
 export {
   useFormField,
   Form,
@@ -176,4 +186,5 @@ export {
   FormDescription,
   FormMessage,
   FormField,
+  safeSubmit,
 };
