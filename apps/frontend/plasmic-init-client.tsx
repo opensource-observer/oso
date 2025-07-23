@@ -8,16 +8,14 @@ import { AreaChart } from "@tremor/react";
 import { generateApiKey } from "@/lib/auth/keys";
 import { BarList } from "@/components/widgets/tremor";
 import { registerAllDataProvider } from "@/components/dataprovider";
+import { registerAllUi } from "@/components/ui";
 import { registerAllWidgets } from "@/components/widgets";
 
 /**
- * Plasmic data provider registration
+ * Plasmic registration
  */
 registerAllDataProvider(PLASMIC);
-
-/**
- * Plasmic widgets registration
- */
+registerAllUi(PLASMIC);
 registerAllWidgets(PLASMIC);
 
 /**
