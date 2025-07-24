@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 const bigQueryConnectorConfigSchema = z.object({
   "project-id": z.string().min(1, "Project ID is required"),
-  "credentials-key": z.string().min(1, "Connection User is required"),
+  "credentials-key": z.string().min(1, "JSON credentials are required"),
 });
 
 const bigQueryFormSchema = z.object({
