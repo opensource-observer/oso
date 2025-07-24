@@ -15,7 +15,7 @@ const connectorNameSchema = z
   .min(1, "Connector name is required")
   .refine(
     (val) => DYNAMIC_CONNECTOR_NAME_REGEX.test(val),
-    "Invalid name, valid characters are a-z 0-9 _ -",
+    "Invalid name, valid characters are a-z 0-9 _",
   );
 
 function ConnectorNameField<T extends { connector_name: string }>({
