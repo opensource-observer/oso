@@ -20,6 +20,7 @@ if PROJECT_ID is None:
 TEMP_DIR = '/tmp'
 
 @asset(
+    key_prefix=["crypto_ecosystems"],
     group_name="crypto_ecosystems"
 )
 def crypto_ecosystem_data(context: AssetExecutionContext, bigquery: BigQueryResource) -> MaterializeResult:
@@ -70,6 +71,7 @@ def crypto_ecosystem_data(context: AssetExecutionContext, bigquery: BigQueryReso
 
 @asset(
     deps=[crypto_ecosystem_data],
+    key_prefix=["crypto_ecosystems"],
     group_name="crypto_ecosystems"
 )
 def bitcoin_ecosystem_data(
