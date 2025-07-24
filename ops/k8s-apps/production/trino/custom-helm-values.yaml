@@ -55,7 +55,7 @@ spec:
         query:
           maxMemoryPerNode: 350GB
       jvm:
-        maxHeapSize: "875GB"
+        maxHeapSize: "875G"
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
