@@ -9,8 +9,10 @@ image: ./s7-onchain-cover.png
 import Head from '@docusaurus/Head';
 
 <Head>
-  <link rel="canonical" href="https://gov.optimism.io/" />
+  <link rel="canonical" href="https://gov.optimism.io/t/season-7-retro-funding-early-evidence-on-onchain-builders-impact/10163" />
 </Head>
+
+_This is a copy of a two-part post on the Optimism Governance Forum. You can find the original post [here](https://gov.optimism.io/t/season-7-retro-funding-early-evidence-on-onchain-builders-impact/10163)._
 
 Season 7 budgeted 8 million OP to Onchain Builders across the Superchain.
 
