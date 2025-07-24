@@ -9,8 +9,10 @@ image: ./s7-devtooling-cover.png
 import Head from '@docusaurus/Head';
 
 <Head>
-  <link rel="canonical" href="https://gov.optimism.io/" />
+  <link rel="canonical" href="https://gov.optimism.io/t/season-7-retro-funding-early-evidence-on-developer-tooling-impact/10162" />
 </Head>
+
+_This is a copy of a two-part post on the Optimism Governance Forum. You can find the original post [here](https://gov.optimism.io/t/season-7-retro-funding-early-evidence-on-developer-tooling-impact/10162)._
 
 Season 7 budgeted 8 million OP to open source developer tooling.
 
@@ -26,12 +28,12 @@ This analysis looks in detail at three questions:
 
 1. **Out of 242 applicants, 97 received rewards.** Top recipients include Ethers, Hardhat, OpenZeppelin Contracts, Solidity, Viem.
 2. **Higher grants vs RetroPGF3.** Many of the devtools that participated in RetroPGF3 now receive materially larger OP amounts.
-3. **Small, seasoned teams.** Retro Funding directly supports \~36 full-time maintainers; most projects are solo or two-person shops. Median tool age is 3.5 years. Projects with 3+ years of history and 2+ active devs earned the highest median reward (125K OP).
-4. **Broad downstream footprint**. At least 89 full-time developers on 177 onchain projects depend on these tools. Those onchain projects have burned 1,567 ETH in direct gas (\~9% of network total) and their contracts touch \~45 % of all Superchain transactions since January 2025\.
-5. **Developer momentum.** Full-time onchain devs have increased 33% since 2023, while devtool maintainers grew 8.5%. The two curves track closely, signalling healthy scaling of the tooling layer. Evidence suggests that Optimism has outpaced peer ecosystems in developer growth since 2023\.
-6. **Center-of-gravity.** Most funded libraries remain multi-ecosystem (e.g., only 10% of repos that use Ethers are Superchain builders), but a few tools (e.g., Cannon at 33%) are disproportionately Superchain-centric. We calculate an average “center-of-gravity” ratio of 12% for all funded projects.
-7. **Cost-of-substitution.** Rebuilding all of the funded tools once would cost a minimum of US $26M. If every app on the Superchain had to rebuild its own stack, the cost would be US $862M. Assuming Optimism’s 12% “fair share”, the implied cost savings for onchain builders is $103M.
-8. **Maintainer sentiment**. Multiple devs report that Retro rewards are a meaningful incentive: “Without the OP, I wouldn’t have touched my tool this year”. OSS companies like OpenZeppelin and BlockScout treat predictable Retro flows as hiring runway.
+3. **Small, seasoned teams.** Retro Funding directly supports ~36 full-time maintainers; most projects are solo or two-person shops. Median tool age is 3.5 years. Projects with 3+ years of history and 2+ active devs earned the highest median reward (125K OP).
+4. **Broad downstream footprint.** At least 89 full-time developers on 177 onchain projects depend on these tools. Those onchain projects have burned 1,567 ETH in direct gas (~9% of network total) and their contracts touch ~45 % of all Superchain transactions since January 2025.
+5. **Developer momentum.** Full-time onchain devs have increased 33% since 2023, while devtool maintainers grew 8.5%. The two curves track closely, signalling healthy scaling of the tooling layer. Evidence suggests that Optimism has outpaced peer ecosystems in developer growth since 2023.
+6. **Center-of-gravity.** Most funded libraries remain multi-ecosystem (e.g., only 10% of repos that use Ethers are Superchain builders), but a few tools (e.g., Cannon at 33%) are disproportionately Superchain-centric. We calculate an average "center-of-gravity" ratio of 12% for all funded projects.
+7. **Cost-of-substitution.** Rebuilding all of the funded tools once would cost a minimum of US $26M. If every app on the Superchain had to rebuild its own stack, the cost would be US $862M. Assuming Optimism's 12% "fair share", the implied cost savings for onchain builders is $103M.
+8. **Maintainer sentiment.** Multiple devs report that Retro rewards are a meaningful incentive: "Without the OP, I wouldn't have touched my tool this year".
 
 ### Background
 
@@ -40,9 +42,9 @@ Per the original [mission scope](https://gov.optimism.io/t/retro-funding-dev-too
 1. Adoption of Dev Tool by onchain builders
 2. Importance of the tool in onchain application development
 
-Rewards are determined using public metrics and an open source algorithm maintained by OSO. The strategy for the algorithm was [voted on](https://snapshot.box/#/s:retrofunding.eth/proposal/0x52d4bc671fb09118ec727f411b5d0740ce539c06a2b742adf1bc90cbb67cc4f8) by citizens at the start of the mission and shaped over the course of the mission by community feedback.
+Rewards are determined using public metrics and an open source algorithm maintained in [this GitHub repo](https://github.com/ethereum-optimism/Retro-Funding). The strategy for the algorithm was [voted on](https://snapshot.box/#/s:retrofunding.eth/proposal/0x52d4bc671fb09118ec727f411b5d0740ce539c06a2b742adf1bc90cbb67cc4f8) by citizens at the start of the mission and shaped over the course of the mission by community feedback.
 
-As of July 2025, five (out of six) monthly measurement periods have been completed. A total of 6.6M OP has been awarded to Dev Tools. The final reward allocation will be determined on 1 August 2025\.
+As of July 2025, five (out of six) monthly measurement periods have been completed. A total of 6.6M OP has been awarded to Dev Tools. The final reward allocation will be determined on 1 August 2025.
 
 ### Measurement objectives
 
@@ -50,12 +52,12 @@ Over the long run, Optimism seeks to measure whether Retro Funding is shifting d
 
 This impact should be evidenced by the following success metrics:
 
-1. **Improvement in the developer experience of onchain applications over time** across the lifecycle of initial development, deployment and maintenance.
-2. **Reduction in the resources spent on developer tooling & services by developers**, and growth in the diversity of high quality tools leading to increased choice
+1. Improvement in the developer experience of onchain applications over time across the lifecycle of initial development, deployment and maintenance.
+2. Reduction in the resources spent on developer tooling & services by developers, and growth in the diversity of high quality tools leading to increased choice
 
-Ideally, this analysis would make use of longitudinal DevX surveys and more granular estimates of builder expenditure and cost-savings. Unfortunately, we do not have such data. For the current review, we rely primarily on maintainer output or “full-time” developer months as a leading indicator of impact.
+Ideally, this analysis would make use of longitudinal DevX surveys and more granular estimates of builder expenditure and cost-savings. Unfortunately, we do not have such data. For the current review, we rely primarily on maintainer output or "full-time" developer months as a leading indicator of impact.
 
-Please note: our definition of “full-time” follows the Electric Capital methodology (≥ 10 commit days per month). We only consider open source activity, not developer activity on private repos.
+Please note: our definition of "full-time" follows the Electric Capital methodology (≥ 10 commit days per month). We only consider open source activity, not developer activity on private repos.
 
 ### Caveats
 
@@ -63,7 +65,7 @@ Please note: our definition of “full-time” follows the Electric Capital meth
 - **Lagged impact.** Changes in DevX or app success may take 6-12 months to surface. This review mostly focuses on leading indicators (usage \+ dev activity).
 - **Blind spots.** Private-repo work, DevX sentiment, and real cost savings are outside current data. Figures quoted here rest on a handful of key assumptions and should be treated as directional.
 - **Conservative methodology.** We measure only what we can see: explicit package imports, public-repo activity, etc. Implicit dependencies (e.g., every smart contract depends on Solidity), private-repo activity, and local usage (e.g., of IDEs) are not captured currently. Our usage and downstream impact estimates are more of a floor than a ceiling.
-- **Continuous improvement.** The reward algorithm was refined throughout the round. Weights, dependency-matching logic, and metrics are frequently updated in response to community feedback. All data pipelines and scoring code are open source, and further contributions are welcome\!
+- **Continuous improvement.** The reward algorithm was refined throughout the round. Weights, dependency-matching logic, and metrics are frequently updated in response to community feedback. All data pipelines and scoring code are open source, and further contributions are welcome!
 
 ## Which tools got funded?
 
@@ -139,9 +141,9 @@ The scatter plots below show that awards climb gradually with age and contributo
 
 ### Usage footprint
 
-The developer tools funded by this mission were used by **177 onchain projects** whose users directly spent **1,567 ETH in gas** since January (9% of all transaction fees) and whose contracts were invoked either directly or via internal calls in approximately **45% of transactions** across the Superchain.
+The developer tools funded by this mission were used by 177 onchain projects whose users directly spent 1,567 ETH in gas since January (9% of all transaction fees) and whose contracts were invoked either directly or via internal calls in approximately 45% of transactions across the Superchain.
 
-Caveats:
+**Caveats:**
 
 - The gas-fee figure ignores internal calls, so it is conservative.
 - The 45% transaction share treats comes from a sample of dates; it doesn’t weight by gas consumed or value transferred.
@@ -151,9 +153,9 @@ Caveats:
 
 This section looks at public repo developer activity across the Superchain since 2020\. To be included, a developer must be working on a devtooling project applying for Retro Funding or an onchain builder that contributed at least 0.1 ETH in gas to the Superchain since January. Thus, it is only a subset of the wider developer ecosystem and excludes contributors from OP Labs.
 
-- **Full-time developers that maintain devtooling projects:** 36 (+8.5% since April 2023\)
-- **Additional full-time devs building _on_ those tools:** 89 (+32% since April 2023\)
-- **Average active devs in the dependency graph:** 1071 (+47% since April 2023\)
+- Full-time developers that maintain devtooling projects: 36 (+8.5% since April 2023)
+- Additional full-time devs building on those tools: 89 (+32% since April 2023)
+- Average active devs in the dependency graph: 1071 (+47% since April 2023)
 
 _Our definition of “full-time” developer follows the Electric Capital methodology (≥ 10 commit days per month)._
 
@@ -163,7 +165,7 @@ _Our definition of “full-time” developer follows the Electric Capital method
 
 ### Developer leverage
 
-The ratio of onchain devs to tooling maintainers hovers near 2 : 1\. As the ratio has been falling slightly, this suggests there is more stability at the tooling layer and less at the application layer. Another interpretation could be that onchain builders need less code to build their application and are now spending more on other functions (e.g., design, marketing) than software development.
+The ratio of onchain devs to tooling maintainers hovers near 2 : 1. As the ratio has been falling slightly, this suggests there is more stability at the tooling layer and less at the application layer. Another interpretation could be that onchain builders need less code to build their application and are now spending more on other functions (e.g., design, marketing) than software development.
 
 ![onchain-devtool-developer-ratio.png](./onchain-devtool-developer-ratio.png)
 
@@ -201,11 +203,11 @@ The scatterplot below captures this distribution. Large dark circles clustered o
 
 ![center-of-gravity-distribution.png](./center-of-gravity-distribution.png)
 
-Caveats:
+**Caveats:**
 
-- Conservative scope. This ignores private-repo usage and off-chain dependency graphs (e.g., a closed-source exchange backend in Rust that still imports Ethers).
-- No value weighting. Every dependent repo counts the same: Aerodrome and a weekend hackathon project each add “one,” regardless of their economic impact. (Note: the Retro Funding rewards algorithm does capture economic impact on the Superchain, but we don’t extend the same analysis to the rest of the dependency analysis.)
-- Sanity check. The Superchain currently captures roughly half of all L2 transactions and TVL and roughly 5% for all of crypto. The average center of gravity of 12% looks reasonable.
+- **Conservative scope**. This ignores private-repo usage and off-chain dependency graphs (e.g., a closed-source exchange backend in Rust that still imports Ethers).
+- **No value weighting.** Every dependent repo counts the same: Aerodrome and a weekend hackathon project each add “one,” regardless of their economic impact. (Note: the Retro Funding rewards algorithm does capture economic impact on the Superchain, but we don’t extend the same analysis to the rest of the dependency analysis.)
+- **Sanity check.** The Superchain currently captures roughly half of all L2 transactions and TVL and roughly 5% for all of crypto. The average center of gravity of 12% looks reasonable.
 
 ## Has the mission been an effective use of funds?
 
@@ -219,9 +221,9 @@ We assess effectiveness from three angles:
 
 On a back-of-the-envelope basis, the 6.6M OP disbursed so far is supporting about 36 full-time maintainers. Simple division gives \~183K OP per full-timer or \~15K OP per month over 12 months. That ratio is useful as a benchmark \- it shows Retro Funding has potential to offer near market rate funding for stewarding valuable devtooling \- but it should not be mistaken for an actual cost curve or value measure:
 
-- **Maintenance ≠ innovation.** Meaningful advances often require large, lumpy investments that a pure “maintenance budget” would never cover. For every project that succeeds, there are many that never make it.
-- **A project is more than its primary maintainer.** Each “full-time maintainer” coordinates a broader community \- part-time contributors, testers, documentation writers \- much of whose effort never shows up as code commits. Periods of low code activity on GitHub do not mean a maintainer is sitting idle.
-- **Ecosystem leverage.** A single developer can unblock hundreds of downstream builders; dividing OP by head-count ignores that multiplier. The next methodology
+- Maintenance ≠ innovation. Meaningful advances often require large, lumpy investments that a pure "maintenance budget" would never cover. For every project that succeeds, there are many that never make it.
+- A project is more than its primary maintainer. Each "full-time maintainer" coordinates a broader community - part-time contributors, testers, documentation writers - much of whose effort never shows up as code commits. Periods of low code activity on GitHub do not mean a maintainer is sitting idle.
+- Ecosystem leverage. A single developer can unblock hundreds of downstream builders; dividing OP by head-count ignores that multiplier. As discussed in the previous section, there is at least a 2x multiplier just within the Optimism ecosystem.
 
 ### Cost-of-substitution
 
@@ -236,7 +238,7 @@ Although we lack actual estimates of builders’ expenditure and productivity, w
 | If every app rebuilt its own stack              | US $862M                        |
 | Optimism’s “fair-share” (12% center of gravity) | US $103M                        |
 
-Caveats:
+**Caveats:**
 
 - **Global cost per dev-month**. The analysis is particularly sensitive to this assumption. For consistency, we’ve used the same global weighted average as the Harvard study and prorated the part-time portion to 25%. Security-critical crypto work costs significantly more than the $7,800 global average.
 - **More than just code.** As discussed previously, OSS production involves more than code, e.g., issue triage, product direction, community moderation. A project is worth more than just the commit-days put into it.
@@ -246,27 +248,25 @@ Caveats:
 
 ### Maintainer motivations
 
-\[TODO: Jonas to add more detail\]
-
 As established earlier, the devtools targeted for Retro Funding are mostly maintained by small teams as opposed to large organizations. There is anecdotal evidence that Retro Funding is shifting the incentives and planning for various maintainer archetypes.
 
 Based on interviews with dozens of dev tool maintainers, we observe a consistent pattern in how Retro Funding changes the incentives and planning for different types of maintainers. These impacts are clearest when we distinguish three broad archetypes:
 
-| Archetype                     | What Retro Funding changed                                                                                                                                                                                                                                                                                                   | Ceiling                                                                                                                                                                                                                                                          |
-| :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Part-time Solo maintainer** | Retro Funding often acts as the catalyst that lets maintainers prioritize their open-source work over other competing projects. Example: PRBMath, LoopDecoder                                                                                                                                                                | Many of these builders don’t want to scale beyond a single full time contributor. After going full-time, they are unlikely to expand.Retro rewards help maximize their contribution, but do not necessarily transform the structure or ambitions of the project. |
-| **Independent full‑timer**    | These are solo or duo maintainers who are already working full-time on their dev tools. For them, Retro Funding acts less as an active runway and more as a rainy-day endowment, something to rely on if other funding dries up. Example: Ethers, WEVM                                                                       | These teams are stable but not necessarily sustainable. Retro Funding ensures continuity, but doesn’t typically lead to aggressive growth.                                                                                                                       |
-| **OSS company**               | In contrast, OSS companies treat Retro Funding as part of their growth calculus. When OP flows are predictable, these orgs are willing to hire marginal engineers, expand contributor programs, or invest in additional features. The rewards help de-risk operational scaling. Example: OpenZeppelin, BuidlGuidl, Solidity. | These orgs can grow, but rely on forecastable support. Month-to-month volatility limits their ability to plan beyond the next cycle.                                                                                                                             |
+| Archetype                  | What Retro Funding changed                                                                                                                                                                     | Ceiling                                                                                                                                                     |
+| :------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Part-time, Solo maintainer | Retro Funding often acts as the catalyst that lets maintainers prioritize their open-source work over other competing projects. Examples: PRBMath, LoopDecoder                                 | Many of these builders don't want to scale beyond a single full time contributor. They are unlikely to transform the structure or ambitions of the project. |
+| Independent full‑timer     | These are solo or duo maintainers who are already working full-time on their dev tools. For them, Retro Funding acts less as an active runway and more as an endowment. Examples: Ethers, WEVM | These teams are stable but not necessarily sustainable. Retro Funding provides a buffer, but doesn't typically lead to aggressive growth.                   |
+| OSS company                | In contrast, OSS companies treat Retro Funding as part of their growth calculus, and say that the rewards help de-risk operational scaling. Examples: OpenZeppelin, BuidlGuidl, Solidity.      | These orgs can grow, but month-to-month volatility limits their ability to plan beyond the next cycle.                                                      |
 
-#### A Shared Thread: Intrinsic Motivation Amplified
+#### A common thread: intrinsic motivation amplified
 
-Across all three types, the most powerful effect has been Retro Funding’s amplification of intrinsic motivation. Maintain­ers repeatedly tell us that their contributions are motivated by building something useful, rather than maximizing profit. Retro Funding taps into that existing motivation, providing maintainers with predictable rewards, which allows them to dedicate their full focus to their work.
+Across all three types, the most powerful effect has been Retro Funding's amplification of intrinsic motivation. Maintain­ers repeatedly tell us that their contributions are motivated by building something useful, rather than maximizing profit. Retro Funding taps into that existing motivation, providing maintainers with predictable rewards, which allows them to dedicate their full focus to their work.
 
 Overall, predictable Retro Funding appears to incentivize more output at the margin. There are also encouraging trends in the data if we attempt to categorize each project based on its recent activity:
 
 ![monthly-devs-by-builder-archetype.png](./monthly-devs-by-builder-archetype.png)
 
-Longer term, there is a question of whether Retro Funding is a sufficient attractor to draw net new tooling but doesn’t crowd out other forms of builder activity.
+Longer term, there is a question of whether Retro Funding is a sufficient attractor to draw net new tooling but doesn't crowd out other forms of builder activity.
 
 ## Recommendations
 
@@ -274,7 +274,7 @@ We believe this preliminary analysis from Season 7 shows that Retro Funding can 
 
 ### Blind spots to close
 
-This table details what we can’t yet see and how to fix it. Most gaps involve data that builders may be willing to share if the process were low-friction, privacy-respecting, and obviously useful to them.
+This table details what we can't yet see and how to fix it. Most gaps involve data that builders may be willing to share if the process were low-friction, privacy-respecting, and obviously useful to them.
 
 | Gap                       | Why it matters                                                                                        | Potential solution                                                                                                                                    |
 | :------------------------ | :---------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -299,10 +299,10 @@ Optimism also needs to monitor a concise set of _outcome metrics_ over the next 
 
 Season 7 establishes a baseline mechanism for rewarding developer tools and tracking their usage across the Superchain. Going forward, the only question that matters is:
 
-_Did this OP spent today bring tomorrow’s builders to Optimism faster than any alternative?_
+> **Did this OP spent today bring tomorrow's builders to Optimism faster than any alternative?**
 
 With the right instrumentation in place, we can move from promising anecdotes to defensible ROI, and give every future Retro Funding cycle a firmer foundation.
 
-—
+---
 
-Fun fact: this analysis took 3 commit-days. You can find the notebook and queries to the underlying source data [here](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/s7/S7_DevTools_PreliminaryImpactAnalysis.ipynb).
+The notebook and queries to the underlying source data are available [here](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/s7/S7_DevTools_PreliminaryImpactAnalysis.ipynb).
