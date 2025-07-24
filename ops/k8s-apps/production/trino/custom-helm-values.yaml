@@ -42,8 +42,8 @@ spec:
     worker:
       resources:
         requests:
-          cpu: 63000m
-          memory: 390000Mi
+          cpu: 39000m
+          memory: 900000Mi
       tolerations:
         - key: pool_type
           operator: Equal
@@ -53,9 +53,9 @@ spec:
         pool_type: trino-worker
       config:
         query:
-          maxMemoryPerNode: 140GB
+          maxMemoryPerNode: 350GB
       jvm:
-        maxHeapSize: "350G"
+        maxHeapSize: "875GB"
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
