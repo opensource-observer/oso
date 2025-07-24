@@ -76,15 +76,11 @@ function TallyPopup(props: TallyPopupProps) {
   }
 
   const link =
-    `#tally-open=${formId}` + layout
-      ? `&tally-layout=${layout}`
-      : "" + width
-        ? `&tally-width=${width}`
-        : "" + emoji
-          ? `&tally-emoji-text=${emoji}`
-          : "" + emojiAnimation
-            ? `&tally-emoji-animation=${emojiAnimation}`
-            : "";
+    `#tally-open=${formId}` +
+    (layout ? `&tally-layout=${layout}` : "") +
+    (width ? `&tally-width=${width}` : "") +
+    (emoji ? `&tally-emoji-text=${emoji}` : "") +
+    (emojiAnimation ? `&tally-emoji-animation=${emojiAnimation}` : "");
 
   return (
     <>
