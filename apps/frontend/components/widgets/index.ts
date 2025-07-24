@@ -26,6 +26,7 @@ import {
   SupabaseWrite,
   SupabaseWriteMeta,
 } from "@/components/widgets/supabase-write";
+import { TallyPopup, TallyPopupMeta } from "@/components/widgets/tally";
 import {
   AreaChartMeta,
   BarList,
@@ -48,6 +49,7 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(MonacoEditor, MonacoEditorMeta);
   PLASMIC.registerComponent(OSOChat, OSOChatMeta);
   PLASMIC.registerComponent(SupabaseWrite, SupabaseWriteMeta);
+  PLASMIC.registerComponent(TallyPopup, TallyPopupMeta);
   PLASMIC.registerComponent(BarList, BarListMeta);
   PLASMIC.registerComponent(AreaChart, AreaChartMeta);
 }

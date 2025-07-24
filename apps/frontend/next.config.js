@@ -97,6 +97,11 @@ const nextConfig = {
               permanent: false,
             },
             {
+              source: "/forms/oso-interest",
+              destination: "https://tally.so/r/w7NDv6",
+              permanent: false,
+            },
+            {
               source: "/forms/data-collective-interest",
               destination: "https://tally.so/r/mRD4Pl",
               permanent: false,
