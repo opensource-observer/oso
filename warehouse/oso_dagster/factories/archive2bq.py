@@ -1,9 +1,11 @@
 import csv
+import json
 import os
 import shutil
 import tempfile
 import urllib.request
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, cast
 
 import pyarrow.parquet as pq
@@ -56,7 +58,7 @@ class Archive2BqAssetConfig:
     # The maximum depth of the files in the archive
     max_depth: int = 3
     # The schema overrides for the BigQuery table
-    schema_overrides: Optional[Dict[str, Dict[str, str]]] = None
+    schema_overrides: Optional[Dict[str, Dict[str, str | Dict[str, str]]]] = None
     # The GCS bucket to stage the data
     staging_bucket: str
     # The dataset in BigQuery
@@ -69,6 +71,8 @@ class Archive2BqAssetConfig:
     asset_name: str
     # Dagster dependencies
     deps: AssetDeps
+    # Combine all files into a single table (only for JSONL)
+    combine_files: bool = False
     # Dagster remaining args
     asset_kwargs: dict = field(default_factory=lambda: {})
 
@@ -109,6 +113,19 @@ def extract_to_tempdir(source_url: str, skip_uncompression: bool = False) -> str
             shutil.unpack_archive(file_path, tempdir)
 
     return tempdir
+
+
+def combine_jsonl_files(files: List[str], output_path: str) -> None:
+    """
+    Combines multiple JSONL files into a single JSONL file.
+
+    Args:
+        files (List[str]): List of JSONL file paths to combine.
+        output_path (str): Path where the combined file should be written.
+    """
+    with open(output_path, "w", encoding="utf-8") as outfile:
+        for file_path in files:
+            outfile.write(Path(file_path).read_text(encoding="utf-8"))
 
 
 def get_list_of_files(
@@ -196,6 +213,28 @@ def get_parquet_schema(file_path: str) -> List[SchemaField]:
     return [SchemaField(field.name, "STRING") for field in schema]
 
 
+def get_jsonl_schema(file_path: str) -> List[SchemaField]:
+    """
+    Gets the schema of the JSONL file by reading the first line and extracting keys.
+
+    Args:
+        file_path (str): The path to the JSONL file.
+
+    Returns:
+        List[SchemaField]: The schema of the JSONL file.
+    """
+    with open(file_path, "r", encoding="utf-8") as f:
+        first_line = f.readline().strip()
+        if not first_line:
+            return []
+
+        first_record = json.loads(first_line)
+        if not isinstance(first_record, dict):
+            raise ValueError("JSONL file must contain JSON objects")
+
+        return [SchemaField(key, "STRING") for key in first_record.keys()]
+
+
 def upload_file_to_gcs(
     context: AssetExecutionContext,
     gcs: GCSResource,
@@ -230,25 +269,33 @@ def upload_file_to_gcs(
 
 def apply_schema_overrides(
     schema: List[SchemaField],
-    schema_overrides: Dict[str, str],
+    schema_overrides: Dict[str, str | Dict[str, str]],
 ) -> List[SchemaField]:
     """
     Applies the schema overrides to the schema.
 
     Args:
         schema (List[SchemaField]): The schema.
-        schema_overrides (Dict[str, str]): The schema overrides.
+        schema_overrides (Dict[str, str | Dict[str, str]]): The schema overrides.
+            Can be either a string for field type, or a dict with 'type' and 'mode' keys.
 
     Returns:
         List[SchemaField]: The schema with the overrides applied.
     """
-    for field_name, field_type in schema_overrides.items():
+    for field_name, override in schema_overrides.items():
+        field_type, field_mode = (
+            (override, "NULLABLE")
+            if isinstance(override, str)
+            else (override.get("type", "STRING"), override.get("mode", "NULLABLE"))
+        )
+
         if field_type not in BQ_ALLOWED_TYPES:
             raise ValueError(f"Invalid field type: {field_type}")
 
-        for param in schema:
+        for i, param in enumerate(schema):
             if param.name == field_name:
-                schema[schema.index(param)] = SchemaField(param.name, field_type)
+                schema[i] = SchemaField(param.name, field_type, mode=field_mode)
+                break
 
     return schema
 
@@ -289,6 +336,8 @@ def upload_file_to_bq(
             schema = get_csv_schema(file_path)
         elif asset_config.source_format == SourceFormat.PARQUET:
             schema = get_parquet_schema(file_path)
+        elif asset_config.source_format == SourceFormat.NEWLINE_DELIMITED_JSON:
+            schema = get_jsonl_schema(file_path)
         else:
             raise ValueError(f"Unsupported source format: {asset_config.source_format}")
 
@@ -308,6 +357,12 @@ def upload_file_to_bq(
                 write_disposition=WriteDisposition.WRITE_TRUNCATE,
             )
         elif asset_config.source_format == SourceFormat.PARQUET:
+            job_config = LoadJobConfig(
+                autodetect=True,
+                source_format=asset_config.source_format,
+                write_disposition=WriteDisposition.WRITE_TRUNCATE,
+            )
+        elif asset_config.source_format == SourceFormat.NEWLINE_DELIMITED_JSON:
             job_config = LoadJobConfig(
                 autodetect=True,
                 source_format=asset_config.source_format,
@@ -371,7 +426,11 @@ def create_archive2bq_asset(
         "opensource.observer/factory": "archive2bq",
     }
 
-    if asset_config.source_format not in [SourceFormat.CSV, SourceFormat.PARQUET]:
+    if asset_config.source_format not in [
+        SourceFormat.CSV,
+        SourceFormat.PARQUET,
+        SourceFormat.NEWLINE_DELIMITED_JSON,
+    ]:
         raise ValueError(f"Unsupported source format: {asset_config.source_format}")
 
     @asset(
@@ -405,7 +464,7 @@ def create_archive2bq_asset(
         )
 
         context.log.info(
-            f"Archive2Bq: Found {len(files)} valid files: {", ".join(files)}"
+            f"Archive2Bq: Found {len(files)} valid files: {', '.join(files)}"
         )
 
         if len(files) == 0:
@@ -422,14 +481,23 @@ def create_archive2bq_asset(
 
         create_dataset_if_not_exists(context, bigquery, asset_config.dataset_id)
 
-        for file in files:
+        should_combine = (
+            asset_config.combine_files
+            and asset_config.source_format == SourceFormat.NEWLINE_DELIMITED_JSON
+        )
+
+        if should_combine:
+            combined_file_path = os.path.join(
+                tempdir, f"{asset_config.asset_name}.jsonl"
+            )
+            combine_jsonl_files(files, combined_file_path)
+            files_to_process = [combined_file_path]
+        else:
+            files_to_process = files
+
+        for file in files_to_process:
             upload_file_to_bq(
-                bigquery,
-                gcs,
-                context,
-                asset_config,
-                file,
-                context.run_id,
+                bigquery, gcs, context, asset_config, file, context.run_id
             )
 
         cleanup_tempdir(tempdir)
