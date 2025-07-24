@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      pyright:
-        specifier: ^1.1.378
-        version: 1.1.378
     devDependencies:
       eslint:
         specifier: ^8.57.0
