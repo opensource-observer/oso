@@ -39,7 +39,7 @@ def defillama_slug_to_name(slug: str) -> str:
         str: The parsed protocol name
     """
 
-    return f"{slug.replace('-', '_').replace(".", '__dot__')}_protocol"
+    return f"{slug.replace('-', '_').replace('.', '__dot__')}_protocol"
 
 
 def get_valid_defillama_slugs() -> Set[str]:
@@ -260,8 +260,8 @@ def parse_timeseries_events(
     *,
     slug: str,
     parent_protocol: str,
-    raw: list,                       
-    event_type: str,                 
+    raw: list,
+    event_type: str,
 ) -> Generator[Dict[str, Any], None, None]:
     """
     Parse and yield time series events from raw DefiLlama chart data.
@@ -297,7 +297,7 @@ def parse_timeseries_events(
                     "slug": slug,
                     "protocol": slug,
                     "parent_protocol": parent_protocol,
-                    "chain": "",                      
+                    "chain": "",
                     "token": "USD",
                     "event_type": event_type,
                     "amount": float(val),
@@ -335,7 +335,7 @@ def get_defillama_volume_events(
         Dict[str, Any]: Parsed trading volume entries with slug, time, amount,
         and other metadata fields.
     """
-    
+
     session = Session(timeout=300)
     valid_slugs = get_valid_defillama_slugs()
 
@@ -345,7 +345,7 @@ def get_defillama_volume_events(
             "?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=false"
         )
         try:
-            context.log.info(f"[Volumes] {i+1}/{len(valid_slugs)} {slug}")
+            context.log.info(f"[Volumes] {i + 1}/{len(valid_slugs)} {slug}")
             r = session.get(url)
             r.raise_for_status()
             data = r.json()
@@ -365,6 +365,7 @@ def get_defillama_volume_events(
             context.log.warning(f"Volumes: {slug}: {e}")
         except Exception as e:
             context.log.error(f"Volumes: {slug}: {e}")
+
 
 @dlt_factory(
     key_prefix="defillama",
@@ -422,7 +423,7 @@ def get_defillama_fee_events(
     for i, slug in enumerate(valid_slugs):
         url = f"https://api.llama.fi/summary/fees/{slug}?dataType=dailyFees"
         try:
-            context.log.info(f"[Fees] {i+1}/{len(valid_slugs)} {slug}")
+            context.log.info(f"[Fees] {i + 1}/{len(valid_slugs)} {slug}")
             r = session.get(url)
             r.raise_for_status()
             data = r.json()
@@ -573,44 +574,61 @@ def get_defillama_historical_chain_tvl(
         Dict[str, Any]: Historical chain TVL entries with chain, time, and tvl fields.
     """
     session = Session(timeout=300)
-    
+
     # Initial list of chains to fetch
     chains = [
-        "ethereum", "polygon", "arbitrum", "celo", "mint",
-        "base", "optimism", "unichain", "world chain", "mode", "ink", "soneium",
-        "lisk", "fraxtal", "polynomial", "filecoin", "ham", "superseed", "swellchain",
-        "zora", "bob", 
+        "ethereum",
+        "polygon",
+        "arbitrum",
+        "celo",
+        "mint",
+        "base",
+        "optimism",
+        "unichain",
+        "world chain",
+        "mode",
+        "ink",
+        "soneium",
+        "lisk",
+        "fraxtal",
+        "polynomial",
+        "filecoin",
+        "ham",
+        "superseed",
+        "swellchain",
+        "zora",
+        "bob",
     ]
-    
+
     for i, chain in enumerate(chains):
         try:
             url = f"https://api.llama.fi/v2/historicalChainTvl/{chain}"
-            context.log.info(f"[Historical Chain TVL] {i+1}/{len(chains)} {chain}")
-            
+            context.log.info(f"[Historical Chain TVL] {i + 1}/{len(chains)} {chain}")
+
             response = session.get(url)
             response.raise_for_status()
             data = response.json()
-            
+
             # Parse the historical TVL data
             for entry in data:
                 try:
                     timestamp = pd.Timestamp(entry["date"], unit="s")
                     if not isinstance(timestamp, pd.Timestamp) or pd.isna(timestamp):
                         continue
-                    
+
                     amount = float(entry["tvl"])
-                    
+
                     event = {
                         "time": timestamp.isoformat(),
                         "chain": chain,
                         "tvl": amount,
                     }
                     yield event
-                    
+
                 except (KeyError, ValueError) as e:
                     context.log.warning(f"Error parsing TVL entry for {chain}: {e}")
                     continue
-                    
+
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
                 context.log.warning(f"Chain {chain} not found (404)")
@@ -652,4 +670,78 @@ def defillama_historical_chain_tvl_assets(
     )
     if global_config.enable_bigquery:
         bigquery_adapter(resource, partition="time", cluster=["chain"])
+    yield resource
+
+
+def get_defillama_chains(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch chain data from the DefiLlama API.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Chain data entries with fields like gecko_id, tvl,
+        tokenSymbol, cmcId, name, and chainId.
+    """
+    session = Session(timeout=300)
+
+    try:
+        context.log.info("Fetching chain data from DefiLlama")
+        response = session.get("https://api.llama.fi/v2/chains")
+        response.raise_for_status()
+        chains = response.json()
+
+        for chain in chains:
+            yield {
+                "gecko_id": str(chain.get("gecko_id", "")),
+                "tvl": float(chain.get("tvl", 0.0)),
+                "token_symbol": str(chain.get("tokenSymbol", "")),
+                "cmc_id": str(chain.get("cmcId", "")) if chain.get("cmcId") else None,
+                "name": str(chain.get("name", "")),
+                "chain_id": int(chain.get("chainId", 0))
+                if chain.get("chainId")
+                else None,
+            }
+
+    except requests.exceptions.RequestException as e:
+        context.log.error(f"Failed to fetch chain data: {e}")
+        raise
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="chains",
+    op_tags={
+        "dagster/concurrency_key": "defillama_chains",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_chains_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads chain data from DefiLlama
+    into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes chain data rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_chains(context),
+        name="chains",
+        primary_key=["gecko_id"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, cluster=["gecko_id"])
     yield resource
