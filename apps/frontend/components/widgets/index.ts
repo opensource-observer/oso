@@ -18,13 +18,10 @@ import {
 } from "@/components/widgets/feedback-farm";
 import { Markdown, MarkdownMeta } from "@/components/widgets/markdown";
 import {
-  MarketingNavbar,
-  MarketingNavbarMeta,
-} from "@/components/widgets/marketing-navbar";
-import {
   MonacoEditor,
   MonacoEditorMeta,
 } from "@/components/widgets/monaco-editor";
+import { Navbar, NavbarMeta } from "@/components/widgets/navbar";
 import { OSOChat, OSOChatMeta } from "@/components/widgets/oso-chat";
 import {
   SupabaseWrite,
@@ -50,8 +47,8 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(DynamicConnectorForm, DynamicConnectorFormMeta);
   PLASMIC.registerComponent(FeedbackWrapper, FeedbackWrapperMeta);
   PLASMIC.registerComponent(Markdown, MarkdownMeta);
-  PLASMIC.registerComponent(MarketingNavbar, MarketingNavbarMeta);
   PLASMIC.registerComponent(MonacoEditor, MonacoEditorMeta);
+  PLASMIC.registerComponent(Navbar, NavbarMeta);
   PLASMIC.registerComponent(OSOChat, OSOChatMeta);
   PLASMIC.registerComponent(SupabaseWrite, SupabaseWriteMeta);
   PLASMIC.registerComponent(TallyPopup, TallyPopupMeta);
