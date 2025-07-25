@@ -27,19 +27,22 @@ K8S_CONFIG = {
 }
 
 
-def defillama_slug_to_name(slug: str) -> str:
+def get_valid_defillama_chains() -> Set[str]:
     """
-    Parse a defillama slug into a protocol name, replacing dashes
-    with underscores and periods with '__dot__'.
-
-    Args:
-        slug (str): The defillama slug to parse.
-
-    Returns:
-        str: The parsed protocol name
+    Get all valid defillama chain identifiers from the defillama.chains table.
+    """
+    client = bigquery.Client()
+    query = """
+        SELECT DISTINCT name
+        FROM `opensource-observer.defillama.chains`
     """
 
-    return f"{slug.replace('-', '_').replace('.', '__dot__')}_protocol"
+    chains = set()
+    try:
+        chains.update({row["name"] for row in client.query(query).result()})
+    except Exception as e:
+        logger.warning(f"Failed to fetch valid Defillama chains: {e}")
+    return chains
 
 
 def get_valid_defillama_slugs() -> Set[str]:
@@ -576,7 +579,7 @@ def get_defillama_historical_chain_tvl(
     session = Session(timeout=300)
 
     # Initial list of chains to fetch
-    chains = [
+    initial_chains = {
         "ethereum",
         "polygon",
         "arbitrum",
@@ -585,20 +588,8 @@ def get_defillama_historical_chain_tvl(
         "base",
         "optimism",
         "unichain",
-        "world chain",
-        "mode",
-        "ink",
-        "soneium",
-        "lisk",
-        "fraxtal",
-        "polynomial",
-        "filecoin",
-        "ham",
-        "superseed",
-        "swellchain",
-        "zora",
-        "bob",
-    ]
+    }
+    chains = get_valid_defillama_chains() or initial_chains
 
     for i, chain in enumerate(chains):
         try:
@@ -697,11 +688,11 @@ def get_defillama_chains(
 
         for chain in chains:
             yield {
-                "gecko_id": str(chain.get("gecko_id", "")),
+                "gecko_id": chain.get("gecko_id", ""),
                 "tvl": float(chain.get("tvl", 0.0)),
-                "token_symbol": str(chain.get("tokenSymbol", "")),
-                "cmc_id": str(chain.get("cmcId", "")) if chain.get("cmcId") else None,
-                "name": str(chain.get("name", "")),
+                "token_symbol": chain.get("tokenSymbol", ""),
+                "cmc_id": chain.get("cmcId", ""),
+                "name": chain.get("name", ""),
                 "chain_id": int(chain.get("chainId", 0))
                 if chain.get("chainId")
                 else None,
@@ -739,9 +730,9 @@ def defillama_chains_assets(
     resource = dlt.resource(
         get_defillama_chains(context),
         name="chains",
-        primary_key=["gecko_id"],
+        primary_key=["name"],
         write_disposition="replace",
     )
     if global_config.enable_bigquery:
-        bigquery_adapter(resource, cluster=["gecko_id"])
+        bigquery_adapter(resource, cluster=["name"])
     yield resource
