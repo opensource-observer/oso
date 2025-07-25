@@ -693,9 +693,7 @@ def get_defillama_chains(
                 "token_symbol": chain.get("tokenSymbol", ""),
                 "cmc_id": chain.get("cmcId", ""),
                 "name": chain.get("name", ""),
-                "chain_id": int(chain.get("chainId", 0))
-                if chain.get("chainId")
-                else None,
+                "chain_id": int(chain["chainId"]) if chain.get("chainId") is not None else None,
             }
 
     except requests.exceptions.RequestException as e:
