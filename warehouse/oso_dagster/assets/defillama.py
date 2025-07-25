@@ -41,7 +41,7 @@ def get_valid_defillama_chains() -> Set[str]:
     try:
         chains.update({row["name"] for row in client.query(query).result()})
     except Exception as e:
-        logger.warning(f"Failed to fetch valid Defillama chains: {e}")
+        context.log.warning(f"Failed to fetch valid Defillama chains: {e}")
     return chains
 
 
