@@ -40,7 +40,7 @@ seed = SeedConfig(
         FundamentalsFull(
             metric_key="market_cap_eth",
             origin_key="arbitrum",
-            date="2025-07-16",
+            date=(datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d"),
             value=691769.0,
             dlt_load_id="1752677526.5693965",
             dlt_id="IoYNEfn2Mk6PpQ",
