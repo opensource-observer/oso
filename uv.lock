@@ -4020,6 +4020,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "duckdb" },
+    { name = "pandas" },
     { name = "pytest" },
 ]
 
@@ -4032,6 +4033,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "duckdb", specifier = ">=1.3.0" },
+    { name = "pandas", specifier = ">=2.3.0" },
     { name = "pytest", specifier = ">=8.4.0" },
 ]
 

@@ -336,7 +336,7 @@ class QueryJoiner:
                     continue
 
                 relationship = prev_model.find_relationship(
-                    name=via_attribute, model_ref=model_name
+                    name=via_attribute, model_ref=self._registry.models[model_name]
                 )
                 prev_model = self._registry.models[model_name]
                 join_path.append(relationship)

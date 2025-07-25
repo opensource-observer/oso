@@ -34,7 +34,7 @@ def test_query_builder_with_metrics():
     registry = setup_registry()
 
     query = QueryBuilder(registry)
-    query.select("projects.by_collection->collections.collection_name")
+    query.select("collections.collection_name")
     query.select("projects.count AS project_count")
 
     query_exp = query.build()
@@ -58,7 +58,7 @@ def test_query_builder_with_metric_and_filtered_dimension():
 
     query = QueryBuilder(registry)
     query.select("projects.count")
-    query.where("projects.by_collection->collections.collection_name = 'optimism'")
+    query.where("collections.collection_name = 'optimism'")
 
     query_exp = query.build()
 

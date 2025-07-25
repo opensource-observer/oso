@@ -17,5 +17,6 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "duckdb>=1.3.0",
+    "pandas>=2.3.0",
     "pytest>=8.4.0",
 ]
