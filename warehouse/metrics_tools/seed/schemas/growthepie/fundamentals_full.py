@@ -13,7 +13,9 @@ class FundamentalsFull(BaseModel):
         "VARCHAR",
         description="The origin/chain/protocol identifier (e.g., arbitrum, blast, celo)",
     )
-    date: str | None = Column("DATE", description="The date of the metric measurement")
+    date: str | None = Column(
+        "VARCHAR", description="The date of the metric measurement"
+    )
     value: float | None = Column(
         "DOUBLE", description="The numerical value of the metric"
     )
