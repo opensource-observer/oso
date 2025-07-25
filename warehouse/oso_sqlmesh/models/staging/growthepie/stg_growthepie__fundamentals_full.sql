@@ -10,7 +10,7 @@ MODEL (
 
 SELECT
   metric_key::VARCHAR AS metric_key,
-  origin_key::VARCHAR AS origin_key,
+  UPPER(origin_key::VARCHAR) AS origin_key,
   date::DATE AS date,
   value::DOUBLE AS value
 FROM @oso_source('bigquery.growthepie.fundamentals_full') 
