@@ -41,7 +41,7 @@ def get_valid_defillama_chains() -> Set[str]:
     try:
         chains.update({row["name"] for row in client.query(query).result()})
     except Exception as e:
-        context.log.warning(f"Failed to fetch valid Defillama chains: {e}")
+        logger.warning(f"Failed to fetch valid Defillama chains: {e}")
     return chains
 
 
@@ -66,7 +66,7 @@ def get_valid_defillama_slugs() -> Set[str]:
         op_atlas_data = [row["value"] for row in client.query(op_atlas_query).result()]
 
     except Forbidden as e:
-        logging.warning(f"Failed to fetch data from BigQuery, using fallback: {e}")
+        logger.warning(f"Failed to fetch data from BigQuery, using fallback: {e}")
 
         op_atlas_data = []
 
@@ -694,7 +694,9 @@ def get_defillama_chains(
                 "token_symbol": chain.get("tokenSymbol", ""),
                 "cmc_id": chain.get("cmcId", ""),
                 "name": chain.get("name", ""),
-                "chain_id": int(chain["chainId"]) if chain.get("chainId") is not None else None,
+                "chain_id": int(chain["chainId"])
+                if chain.get("chainId") is not None
+                else None,
             }
 
     except requests.exceptions.RequestException as e:
