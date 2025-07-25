@@ -1,9 +1,7 @@
 import * as React from "react";
-import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
 import { cva } from "class-variance-authority";
 import { ChevronDown } from "lucide-react";
-import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
@@ -117,135 +115,6 @@ const NavigationMenuIndicator = React.forwardRef<
 NavigationMenuIndicator.displayName =
   NavigationMenuPrimitive.Indicator.displayName;
 
-type MenuItemListData = { title: string; href: string };
-type MenuItemData = {
-  title: string;
-  items: MenuItemListData[];
-};
-const marketingMenuItems: MenuItemData[] = [
-  {
-    title: "Overview",
-    items: [
-      {
-        title: "Homepage",
-        href: "/",
-      },
-      {
-        title: "Why OSO",
-        href: "/why-oso",
-      },
-      {
-        title: "Pricing",
-        href: "/test",
-      },
-    ],
-  },
-  {
-    title: "Product",
-    items: [
-      {
-        title: "Data Marketplace",
-        href: "/product/data",
-      },
-      {
-        title: "Data Integrations",
-        href: "/product/integrations",
-      },
-      {
-        title: "Python SDK",
-        href: "/product/pyoso",
-      },
-      {
-        title: "llmoso AI",
-        href: "/product/ai",
-      },
-      {
-        title: "Developer API",
-        href: "/product/api",
-      },
-      {
-        title: "OSO Terminal",
-        href: "/product/terminal",
-      },
-      {
-        title: "Data Warehouse",
-        href: "/product/warehouse",
-      },
-    ],
-  },
-  {
-    title: "Solutions",
-    items: [
-      {
-        title: "Ecosystem Growth",
-        href: "/solutions/ecosystems",
-      },
-      {
-        title: "Venture Capital",
-        href: "/solutions/venture",
-      },
-      {
-        title: "Reputation Networks",
-        href: "/solutions/reputation",
-      },
-      {
-        title: "Retro Funding",
-        href: "/solutions/retrofunding",
-      },
-      {
-        title: "Politics",
-        href: "/solutions/politics",
-      },
-    ],
-  },
-];
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-type MarketingNavBarProps = {};
-
-const MarketingNavbarMeta: CodeComponentMeta<MarketingNavBarProps> = {
-  name: "MarketingNavbar",
-  description: "NavBar for marketing pages",
-  props: {},
-};
-
-function MarketingNavbar() {
-  return (
-    <NavigationMenu>
-      <NavigationMenuList>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-            <Link href="/">Home</Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        {marketingMenuItems.map((menuItem) => (
-          <NavigationMenuItem key={menuItem.title}>
-            <NavigationMenuTrigger>{menuItem.title}</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <ul className="grid w-[300px] gap-4">
-                <li>
-                  {menuItem.items.map((listItem) => (
-                    <NavigationMenuLink key={listItem.href} asChild>
-                      <Link href={listItem.href}>
-                        <div className="font-medium">{listItem.title}</div>
-                      </Link>
-                    </NavigationMenuLink>
-                  ))}
-                </li>
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-        ))}
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-            <Link href="https://docs.opensource.observer">Docs</Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-      </NavigationMenuList>
-    </NavigationMenu>
-  );
-}
-
 export {
   navigationMenuTriggerStyle,
   NavigationMenu,
@@ -256,6 +125,4 @@ export {
   NavigationMenuLink,
   NavigationMenuIndicator,
   NavigationMenuViewport,
-  MarketingNavbar,
-  MarketingNavbarMeta,
 };
