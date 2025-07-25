@@ -589,7 +589,8 @@ def get_defillama_historical_chain_tvl(
         "optimism",
         "unichain",
     }
-    chains = get_valid_defillama_chains() or initial_chains
+    valid_chains = get_valid_defillama_chains()
+    chains = valid_chains if valid_chains else initial_chains
 
     for i, chain in enumerate(chains):
         try:
