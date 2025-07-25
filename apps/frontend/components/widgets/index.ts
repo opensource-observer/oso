@@ -21,11 +21,13 @@ import {
   MonacoEditor,
   MonacoEditorMeta,
 } from "@/components/widgets/monaco-editor";
+import { Navbar, NavbarMeta } from "@/components/widgets/navbar";
 import { OSOChat, OSOChatMeta } from "@/components/widgets/oso-chat";
 import {
   SupabaseWrite,
   SupabaseWriteMeta,
 } from "@/components/widgets/supabase-write";
+import { TallyPopup, TallyPopupMeta } from "@/components/widgets/tally";
 import {
   AreaChartMeta,
   BarList,
@@ -46,8 +48,10 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(FeedbackWrapper, FeedbackWrapperMeta);
   PLASMIC.registerComponent(Markdown, MarkdownMeta);
   PLASMIC.registerComponent(MonacoEditor, MonacoEditorMeta);
+  PLASMIC.registerComponent(Navbar, NavbarMeta);
   PLASMIC.registerComponent(OSOChat, OSOChatMeta);
   PLASMIC.registerComponent(SupabaseWrite, SupabaseWriteMeta);
+  PLASMIC.registerComponent(TallyPopup, TallyPopupMeta);
   PLASMIC.registerComponent(BarList, BarListMeta);
   PLASMIC.registerComponent(AreaChart, AreaChartMeta);
 }

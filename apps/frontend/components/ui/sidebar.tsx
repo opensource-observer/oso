@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Tooltip,
+  TooltipRoot,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
@@ -596,7 +596,7 @@ const SidebarMenuButton = React.forwardRef<
     }
 
     return (
-      <Tooltip>
+      <TooltipRoot>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent
           side="right"
@@ -604,7 +604,7 @@ const SidebarMenuButton = React.forwardRef<
           hidden={state !== "collapsed" || isMobile}
           {...tooltip}
         />
-      </Tooltip>
+      </TooltipRoot>
     );
   },
 );

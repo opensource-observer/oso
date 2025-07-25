@@ -14,6 +14,7 @@ import { PostgresConnectorForm } from "@/components/widgets/connectors/postgres-
 import { GoogleSheetsConnectorForm } from "@/components/widgets/connectors/google-sheets-connector-form";
 import { ConnectorType } from "@/lib/types/dynamic-connector";
 import { cn } from "@/lib/utils";
+import { BigQueryConnectorForm } from "@/components/widgets/connectors/bigquery-connector-form";
 
 type DynamicConnectorFormProps = {
   className?: string; // Plasmic CSS class
@@ -67,6 +68,7 @@ function DynamicConnectorForm(props: DynamicConnectorFormProps) {
           <SelectContent usePortal={false}>
             <SelectItem value="postgresql">PostgreSQL</SelectItem>
             <SelectItem value="gsheets">Google Sheets</SelectItem>
+            <SelectItem value="bigquery">BigQuery</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -77,6 +79,10 @@ function DynamicConnectorForm(props: DynamicConnectorFormProps) {
 
       {connectorType === "gsheets" && (
         <GoogleSheetsConnectorForm onSubmit={onSubmit} onCancel={onCancel} />
+      )}
+
+      {connectorType === "bigquery" && (
+        <BigQueryConnectorForm onSubmit={onSubmit} onCancel={onCancel} />
       )}
     </div>
   );

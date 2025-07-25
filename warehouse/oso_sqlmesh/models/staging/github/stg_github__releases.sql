@@ -2,7 +2,7 @@ MODEL (
   name oso.stg_github__releases,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column created_at,
-    batch_size 90,
+    batch_size 365,
     batch_concurrency 3,
     lookback 31,
     forward_only true,

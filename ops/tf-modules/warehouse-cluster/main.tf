@@ -113,10 +113,10 @@ locals {
     # Trino worker pool
     {
       name                              = "${var.cluster_name}-trino-worker-node-pool"
-      machine_type                      = "n1-highmem-64"
+      machine_type                      = "m1-ultramem-40"
       node_locations                    = join(",", var.cluster_zones)
       min_count                         = 0
-      max_count                         = 10
+      max_count                         = 20
       local_ssd_count                   = 0
       local_ssd_ephemeral_storage_count = 0
       spot                              = true
