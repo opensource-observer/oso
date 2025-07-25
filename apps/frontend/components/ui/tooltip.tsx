@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 import { cn } from "@/lib/utils";
 
 const TooltipProvider = TooltipPrimitive.Provider;
 
-const Tooltip = TooltipPrimitive.Root;
+const TooltipRoot = TooltipPrimitive.Root;
 
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
@@ -29,4 +30,44 @@ const TooltipContent = React.forwardRef<
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+type ToolTipSide = "top" | "right" | "bottom" | "left";
+type ToolTipProps = {
+  className?: string; // Plasmic CSS class
+  trigger?: React.ReactElement; // Show this
+  content?: React.ReactElement; // Show this
+  side?: ToolTipSide; // Position of the tooltip
+};
+
+const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
+  name: "ToolTip",
+  description: "shadcn/ui tooltip component",
+  props: {
+    trigger: "slot",
+    content: "slot",
+    side: {
+      type: "choice",
+      options: ["top", "right", "bottom", "left"],
+    },
+  },
+};
+
+function ToolTip(props: ToolTipProps) {
+  const { className, trigger, content, side } = props;
+  return (
+    <TooltipRoot>
+      <TooltipTrigger asChild>
+        <div className={className}>{trigger}</div>
+      </TooltipTrigger>
+      <TooltipContent side={side}>{content}</TooltipContent>
+    </TooltipRoot>
+  );
+}
+
+export {
+  TooltipRoot,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+  ToolTip,
+  ToolTipMeta,
+};
