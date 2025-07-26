@@ -51,7 +51,7 @@ SELECT
   from_artifact_name,
   to_artifact_name,
   @oso_entity_id(event_source, '', from_artifact_name) AS from_artifact_id,
-  @oso_entity_id(event_source, '', from_artifact_name) AS to_artifact_id,
+  @oso_entity_id(event_source, '', to_artifact_name) AS to_artifact_id,
   transaction_hash,
   userop_gas_cost
 FROM base_events
