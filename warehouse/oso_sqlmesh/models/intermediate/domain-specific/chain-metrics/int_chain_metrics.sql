@@ -52,7 +52,7 @@ union_metrics AS (
   SELECT * FROM oso_metrics
 )
 
-SELECT DISTINCT
+SELECT
   sample_date,
   source,
   chain,
