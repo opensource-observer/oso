@@ -7,10 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 def agent_config_dict():
     """Return the configuration dictionary for the agent."""
-    return SettingsConfigDict(
-        env_prefix="agent_", 
-        env_nested_delimiter="__"
-    )
+    return SettingsConfigDict(env_prefix="agent_", env_nested_delimiter="__")
+
 
 class LocalLLMConfig(BaseModel):
     type: t.Literal["local"] = "local"
@@ -29,11 +27,12 @@ class LocalLLMConfig(BaseModel):
         default=60.0, description="Timeout in seconds for Ollama API requests", gt=0
     )
 
+
 class GoogleGenAILLMConfig(BaseModel):
     type: t.Literal["google_genai"] = "google_genai"
 
     google_api_key: SecretStr
-    
+
     model: str = Field(default="gemini-2.0-flash")
 
     embedding: str = Field(default="text-embedding-004")
@@ -47,22 +46,21 @@ class GoogleGenAILLMConfig(BaseModel):
 class LocalVectorStoreConfig(BaseModel):
     type: t.Literal["local"] = "local"
 
-    dir: str = Field(
-        default="",
-        description="Directory for local vector storage"
-    )
+    dir: str = Field(default="", description="Directory for local vector storage")
 
     index_name: str = Field(
-        default="default_index",
-        description="ID of the index for local vector storage"
+        default="default_index", description="ID of the index for local vector storage"
     )
 
     @model_validator(mode="after")
     def validate_dir(self) -> "LocalVectorStoreConfig":
         """Ensure the directory is set for local vector storage."""
         if not self.dir:
-            raise ValueError("Directory must be specified for local vector storage. Set env var AGENT_VECTOR_STORE__DIR to a directory for local vector storage.")
+            raise ValueError(
+                "Directory must be specified for local vector storage. Set env var AGENT_VECTOR_STORE__DIR to a directory for local vector storage."
+            )
         return self
+
 
 class GoogleGenAIVectorStoreConfig(BaseModel):
     type: t.Literal["google_genai"] = "google_genai"
@@ -71,18 +69,15 @@ class GoogleGenAIVectorStoreConfig(BaseModel):
         description="Google Cloud Storage bucket for vector storage"
     )
 
-    project_id: str = Field(
-        description="Google Cloud project ID for the vector store"
-    )
+    project_id: str = Field(description="Google Cloud project ID for the vector store")
 
     region: str = Field(
-        default="us-central1",
-        description="Google Cloud region for the vector store"
+        default="us-central1", description="Google Cloud region for the vector store"
     )
 
     index_name: str = Field(
         default="default_index",
-        description="ID of the index in the Google GenAI vector store"
+        description="ID of the index in the Google GenAI vector store",
     )
 
     index_id: str = Field(
@@ -104,23 +99,27 @@ VectorStoreConfig = t.Union[
     GoogleGenAIVectorStoreConfig,
 ]
 
+
 class AgentConfig(BaseSettings):
     """Configuration for the agent and its components."""
 
     model_config = agent_config_dict()
 
     eagerly_load_all_agents: bool = Field(
-        default=False,
-        description="Whether to eagerly load all agents in the registry"
+        default=False, description="Whether to eagerly load all agents in the registry"
     )
 
     oso_api_key: SecretStr = Field(
         default=SecretStr(""), description="API key for the OSO API"
     )
 
-    agent_name: str = Field(default="function_text2sql", description="Name of the agent to use")
+    agent_name: str = Field(
+        default="function_text2sql", description="Name of the agent to use"
+    )
 
-    llm: LLMConfig = Field(discriminator="type", default_factory=lambda: LocalLLMConfig())
+    llm: LLMConfig = Field(
+        discriminator="type", default_factory=lambda: LocalLLMConfig()
+    )
     vector_store: VectorStoreConfig = Field(
         discriminator="type", default_factory=lambda: LocalVectorStoreConfig()
     )
@@ -150,8 +149,7 @@ class AgentConfig(BaseSettings):
     )
 
     arize_phoenix_api_key: SecretStr = Field(
-        default=SecretStr(""),
-        description="API key for the Arize Phoenix API"
+        default=SecretStr(""), description="API key for the Arize Phoenix API"
     )
 
     eval_dataset_text2sql: str = Field(
@@ -173,7 +171,9 @@ class AgentConfig(BaseSettings):
         """Ensure URLs are properly formatted."""
         if self.arize_phoenix_use_cloud:
             if not self.arize_phoenix_api_key.get_secret_value():
-                raise ValueError("Arize Phoenix API key must be set when using cloud mode")
+                raise ValueError(
+                    "Arize Phoenix API key must be set when using cloud mode"
+                )
             self.arize_phoenix_base_url = "https://app.phoenix.arize.com"
         if not self.arize_phoenix_traces_url:
             self.arize_phoenix_traces_url = f"{self.arize_phoenix_base_url}/v1/traces"
@@ -183,8 +183,12 @@ class AgentConfig(BaseSettings):
         # inject it into the environment
         os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = self.arize_phoenix_base_url
         if self.arize_phoenix_api_key.get_secret_value():
-            os.environ["PHOENIX_CLIENT_HEADERS"] = f"api_key={self.arize_phoenix_api_key.get_secret_value()}"
-            os.environ["OTEL_EXPORTER_OTLP_HEADER"] = f"api_key={self.arize_phoenix_api_key.get_secret_value()}"
+            os.environ["PHOENIX_CLIENT_HEADERS"] = (
+                f"api_key={self.arize_phoenix_api_key.get_secret_value()}"
+            )
+            os.environ["OTEL_EXPORTER_OTLP_HEADER"] = (
+                f"api_key={self.arize_phoenix_api_key.get_secret_value()}"
+            )
 
         return self
 
@@ -194,3 +198,11 @@ class AgentConfig(BaseSettings):
         if not updates:
             return self
         return AgentConfig(**{**self.model_dump(), **updates})
+
+
+class WorkflowConfig(BaseModel):
+    """Configuration for a workflow."""
+
+    oso_api_key: SecretStr = Field(
+        default=SecretStr(""), description="API key for the OSO API"
+    )

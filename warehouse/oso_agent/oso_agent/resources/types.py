@@ -1,9 +1,9 @@
-
 import typing as t
 
-from ..util.config import AgentConfig
+from ..util.config import AgentConfig, WorkflowConfig
 
 V = t.TypeVar("V")
+
 
 class ResolverEnabled(t.Protocol):
     resolver: "ResourceResolver"
@@ -11,6 +11,7 @@ class ResolverEnabled(t.Protocol):
     def resolve_resource(
         self, name: str, default_factory: t.Optional[t.Callable[[], t.Any]]
     ) -> t.Any: ...
+
 
 class ResourceDependency(t.Generic[V]):
     def __init__(self, default_factory: t.Optional[t.Callable[[], V]] = None):
@@ -29,19 +30,23 @@ class ResourceDependency(t.Generic[V]):
         raise AttributeError(
             f"Cannot set resource '{self._name}'. Resources are immutable after initialization."
         )
-    
+
     def has_default_factory(self) -> bool:
         """Check if the resource has a default factory."""
         return self._default_factory is not None
 
+
 class ResourceResolver(t.Protocol):
     """Protocol for a resource resolver that can resolve resources by name."""
 
-    def add_resource(self, name: str, resource: t.Any) -> None:
-        ...
+    def add_resource(self, name: str, resource: t.Any) -> None: ...
 
     def get_resource(self, name: str) -> t.Any:
         """Get a resource by name."""
+        ...
+
+    def get_resources(self) -> dict[str, t.Any]:
+        """Get all resources in the resolver."""
         ...
 
     def validate_for_required_resources(
@@ -49,9 +54,16 @@ class ResourceResolver(t.Protocol):
     ) -> list[tuple[str, str]]:
         """Check if all resources in the dictionary are available in the resolver."""
         ...
-    
+
     def child_resolver(self, **additional_resources: t.Any) -> "ResourceResolver":
         """Extend the resolver with additional resources."""
         ...
 
-ResolverFactory = t.Callable[[AgentConfig], t.Awaitable[ResourceResolver]]
+    def merge_resolver(self, other: "ResourceResolver") -> "ResourceResolver":
+        """Extend the resolver with resources from another resolver."""
+        ...
+
+
+ResolverFactory = t.Callable[
+    [ResourceResolver, AgentConfig, WorkflowConfig], t.Awaitable[ResourceResolver]
+]

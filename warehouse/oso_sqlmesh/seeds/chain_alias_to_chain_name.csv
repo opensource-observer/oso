@@ -10,3 +10,6 @@ defillama,polygon zkevm,POLYGON_ZKEVM
 defillama,swellchain,SWELL
 defillama,world chain,WORLDCHAIN
 defillama,zksync era,ZKSYNC_ERA
+growthepie,arbitrum,ARBITRUM_ONE
+growthepie,ethereum,MAINNET
+growthepie,fraxtal,FRAX

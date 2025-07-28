@@ -12,6 +12,7 @@ class ModuleFilter(logging.Filter):
     def filter(self, record):
         return record.name.startswith(self.module_name)
 
+
 def setup_logging(verbosity: int):
     """Configure logging level based on verbosity."""
     match verbosity:

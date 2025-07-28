@@ -43,6 +43,7 @@ class AppContext:
     pass
 
 
+
 def default_lifespan(config: MCPConfig):
     @asynccontextmanager
     async def app_lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
