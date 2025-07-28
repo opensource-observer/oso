@@ -1142,6 +1142,20 @@ class Relationship(BaseModel):
             relationship=self,
         )
 
+    def inverse(self, model: "Model") -> "Relationship":
+        """Returns the inverse relationship of this relationship.
+
+        The inverse relationship is the relationship from the target model to the source model.
+        """
+        return Relationship(
+            name=self.name,
+            description=self.description,
+            type=self.type,
+            source_foreign_key=self.ref_key,
+            ref_model=model.name,
+            ref_key=self.source_foreign_key,
+        )
+
     def references(self, model: "Model") -> t.List["AttributePath"]:
         """Returns the semantic references in the relationship"""
         return [AttributePath.from_string(f"{model.name}.{self.name}")]
@@ -1168,6 +1182,11 @@ class BoundRelationship:
     def __init__(self, *, model: "Model", relationship: Relationship):
         self.model = model
         self.relationship = relationship
+
+    def inverse(self, model: "Model") -> "BoundRelationship":
+        return BoundRelationship(
+            model=model, relationship=self.relationship.inverse(model)
+        )
 
     def resolve(
         self,
@@ -1391,18 +1410,16 @@ class Model(BaseModel):
         return relationship
 
     def find_relationship(
-        self, *, model_ref: str, name: str = ""
+        self, *, model_ref: "Model", name: str = "", model_ref_lookup: bool = False
     ) -> "BoundRelationship":
         """Returns the reference with the given name or model_ref"""
-        if name == "" and model_ref == "":
-            raise ValueError("Must provide either name or model_ref to get reference")
-
+        model_ref_name = model_ref.name
         if name:
             for reference in self.relationships:
                 if reference.name == name:
-                    if reference.ref_model != model_ref:
+                    if reference.ref_model != model_ref_name:
                         raise ValueError(
-                            f"Reference {name} does not match model_ref {model_ref}"
+                            f"Reference {name} does not match model_ref {model_ref_name}"
                         )
                     return self.get_relationship(name)
 
@@ -1410,16 +1427,24 @@ class Model(BaseModel):
             references = self._model_ref_lookup_by_model_name[reference.ref_model]
             if len(references) > 1:
                 raise ModelHasAmbiguousJoinPath(
-                    f"Reference {model_ref} is ambiguous in model {self.name}"
+                    f"Reference {model_ref_name} is ambiguous in model {self.name}"
                 )
-            if reference.ref_model == model_ref:
+            if reference.ref_model == model_ref_name:
                 relationship = self._all_attributes[reference.name]
                 if not isinstance(relationship, BoundRelationship):
                     raise ValueError(
                         f"{reference.name} is not a reference in model {self.name}"
                     )
                 return relationship
-        raise ValueError(f"Reference {model_ref} not found in model {self.name}")
+
+        # Check if the relationship is defined on the other model
+        if not model_ref_lookup:
+            relationship = model_ref.find_relationship(
+                model_ref=self, model_ref_lookup=True
+            )
+            return relationship.inverse(model_ref)
+
+        raise ValueError(f"Reference {model_ref_name} not found in model {self.name}")
 
     @property
     def table_exp(self):
