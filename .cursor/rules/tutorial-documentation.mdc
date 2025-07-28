@@ -1,0 +1,386 @@
+---
+description: Use this rule when creating new tutorials for pyoso and/or GraphQL APIs.
+alwaysApply: false
+---
+
+These project-specific rules teach the Cursor AI how to scaffold, extend, and refactor data tutorials in the OSO documentation. Follow them exactly.
+
+## 1. File Placement & Naming
+
+- Place tutorial files under `apps/docs/docs/tutorials/`.
+- Use lowercase with hyphens for filenames (e.g. `funding-data.mdx`, `network-graph.md`).
+- Use `.mdx` for tutorials with custom React components or complex formatting.
+- Use `.md` for simpler tutorials with basic markdown.
+
+## 2. Frontmatter Structure
+
+### Required Frontmatter
+```yaml
+---
+title: "Descriptive Tutorial Title"
+sidebar_position: [number]
+---
+```
+
+### Optional Frontmatter
+```yaml
+---
+title: "Descriptive Tutorial Title"
+description: "Brief description for SEO and previews"
+sidebar_position: [number]
+---
+```
+
+### Sidebar Position Guidelines
+- `0`: Index page (reserved for `index.md`)
+- `1-3`: Core tutorials (quickstart, basic concepts)
+- `4-7`: Intermediate tutorials (specific analysis types)
+- `8+`: Advanced or use-case specific tutorials (niche workflows)
+
+## 3. Tutorial Structure
+
+### Header Section
+```markdown
+# Tutorial Title
+
+Brief description of what the tutorial covers.
+New to OSO? Check out our [Getting Started guide](../get-started/index.md)
+to set up your API access.
+
+:::tip
+Optional tip box with helpful information, links to related resources, or important notes.
+:::
+```
+
+### Getting Started Section
+Always include a "Getting Started" section with environment setup. **Python is the default language for all tutorials unless GraphQL is explicitly required.**
+
+#### Python-Only Tutorials (Default)
+```markdown
+## Getting Started
+
+Before running any analysis, you'll need to set up your environment:
+
+```python
+import os
+import pandas as pd
+from pyoso import Client
+
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
+```
+
+For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
+```
+
+#### Multi-Language Tutorials (GraphQL + Python)
+Only use this format when GraphQL examples are explicitly needed:
+
+```markdown
+## Getting Started
+
+Before running any analysis, you'll need to set up your environment:
+
+<Tabs>
+<TabItem value="python" label="Python">
+
+Start your Python notebook with the following:
+
+```python
+import os
+import pandas as pd
+from pyoso import Client
+
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
+```
+
+For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
+
+</TabItem>
+<TabItem value="graphql" label="GraphQL">
+
+The following queries should work if you copy-paste them into our [GraphQL sandbox](https://www.opensource.observer/graphql). For more information on how to use the GraphQL API, check out our [GraphQL guide](../integrate/api.md).
+
+</TabItem>
+</Tabs>
+```
+
+### Content Sections
+- Use clear, descriptive section headers (## Section Name)
+- **Default to Python-only examples unless GraphQL is explicitly required**
+- Use Tabs/TabItem components only when providing both Python and GraphQL examples
+- Include code comments explaining complex queries
+- Add visualizations when helpful (charts, graphs, tables)
+
+### Code Examples
+- Use proper syntax highlighting (```python, ```graphql, ```sql)
+- Include complete, runnable code snippets
+- Add explanatory comments for complex queries
+- Use consistent variable naming (client, df, query)
+- Include expected output or results when helpful
+
+## 4. Content Guidelines
+
+### Tutorial Types & Patterns
+
+#### Quickstart Tutorials
+- Focus on basic setup and common patterns
+- Include multiple simple examples
+- Cover the most popular models and queries
+- Keep code snippets short and focused
+- **Use Python-only examples by default**
+
+#### Analysis Tutorials
+- Start with data exploration
+- Build up to complex analysis
+- Include data visualization examples
+- Show how to interpret results
+- **Use Python-only examples by default**
+
+#### Integration Tutorials
+- Demonstrate combining multiple data sources
+- Show complex joins and aggregations
+- Include performance considerations
+- Provide troubleshooting tips
+- **Use Python-only examples by default**
+
+#### Multi-Language Tutorials
+- Only create when GraphQL examples are explicitly required
+- Provide equivalent functionality in both Python and GraphQL
+- Use Tabs/TabItem components for language switching
+- Ensure both examples produce the same results
+
+### Code Quality Standards
+
+#### Python Code
+```python
+# Good: Clear variable names, proper imports
+import os
+import pandas as pd
+from pyoso import Client
+
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
+
+# Descriptive query with comments
+query = """
+SELECT
+  project_name,
+  display_name,
+  created_at
+FROM projects_v1
+WHERE display_name LIKE '%example%'
+ORDER BY created_at DESC
+"""
+df = client.to_pandas(query)
+```
+
+#### GraphQL Code
+```graphql
+# Good: Clear query structure with comments
+query ProjectAnalysis {
+  oso_projectsV1(
+    where: { displayName: { _ilike: "%example%" } }
+    orderBy: { createdAt: DESC }
+  ) {
+    projectId
+    projectName
+    displayName
+    createdAt
+  }
+}
+```
+
+#### SQL Code
+```sql
+-- Good: Clear structure with comments
+SELECT
+  p.project_name,
+  p.display_name,
+  COUNT(a.artifact_id) AS artifact_count
+FROM projects_v1 p
+LEFT JOIN artifacts_by_project_v1 a ON p.project_id = a.project_id
+WHERE p.display_name LIKE '%example%'
+GROUP BY p.project_id, p.project_name, p.display_name
+ORDER BY artifact_count DESC
+```
+
+### Helper Functions
+Include common helper functions when needed:
+
+```python
+# Helper function for SQL array formatting
+def stringify(arr):
+    return "'" + "','".join(arr) + "'"
+
+# Helper function for date formatting
+def format_date_range(start_date, end_date):
+    return f"'{start_date}' AND '{end_date}'"
+```
+
+## 5. Visual Elements
+
+### Images & Charts
+- Place images in the same directory as the tutorial
+- Use descriptive filenames (e.g., `network-graph.png`, `funding-flow.png`)
+- Include alt text for accessibility
+- Reference images with relative paths
+
+```markdown
+![Network Graph](network-graph.png)
+```
+
+### Custom Components
+- Use MDX for tutorials requiring custom React components
+- Import components at the top of the file
+- Follow the existing component patterns (SankeyChart, Tabs, etc.)
+
+```mdx
+import SankeyChart from '@site/src/components/SankeyChart';
+
+<SankeyChart 
+  data={[
+    ['Source', 'Target', 1000],
+    ['Source', 'Target2', 500]
+  ]}
+  width={800}
+  height={600}
+/>
+```
+
+### Tables
+Use markdown tables for structured data:
+
+```markdown
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Data 1   | Data 2   | Data 3   |
+| Data 4   | Data 5   | Data 6   |
+```
+
+## 6. Cross-References & Links
+
+### Internal Links
+- Link to related tutorials: `[Quickstart](./quickstart.md)`
+- Link to guides: `[Getting Started guide](../get-started/index.md)`
+- Link to API docs: `[GraphQL guide](../integrate/api.md)`
+- Link to specific public dataset documentation: `[BigQuery Public Datasets](../../integrate/datasets/index.mdx)`
+
+### External Links
+- Link to GitHub repositories: `[Insights Repo](https://github.com/opensource-observer/insights)`
+- Link to OSO-maintained tools: `[GraphQL sandbox](https://www.opensource.observer/graphql)`
+- Link to external data sources and tools: e.g., `[Open Labels Initiative](https://www.openlabelsinitiative.org/)`
+
+
+### Tips & Notes
+Use appropriate callout boxes:
+
+```markdown
+:::tip
+Helpful information or best practices.
+:::
+
+:::note
+Important information that users should be aware of.
+:::
+
+:::warning
+Critical information or potential issues to avoid.
+:::
+```
+
+## 7. Tutorial Examples to Emulate
+
+### Simple Tutorial (quickstart.md)
+- Basic setup and common queries
+- Multiple short examples
+- Progressive complexity
+- Clear explanations
+
+### Complex Tutorial (funding-data.mdx)
+- Custom visualizations (SankeyChart)
+- Multiple analysis approaches
+- Real-world examples
+- Comprehensive coverage
+
+### Multi-Language Tutorial (collection-view.mdx)
+- Python and GraphQL examples (when GraphQL is explicitly needed)
+- Tabs for language switching
+- Equivalent functionality across languages
+- Clear code organization
+
+### Advanced Tutorial (network-graph.md)
+- Complex data analysis
+- Multiple data sources
+- Visualization output
+- Detailed explanations
+
+## 8. Writing Style Guidelines
+
+### Tone & Voice
+- Use action-oriented titles (e.g., "Monitor Account Abstraction Adoption" vs "Account Abstraction Analysis")
+- Use clear, instructional language
+- Write for developers and data analysts
+- Assume basic familiarity with SQL and Python
+- Provide context for complex concepts
+
+### Structure & Flow
+- Start with simple examples
+- Build complexity gradually
+- Use consistent terminology
+- Include practical applications
+
+### Code Comments
+- Explain complex queries
+- Highlight important parts
+- Provide context for decisions
+- Include expected outcomes
+
+## 9. Testing & Validation
+
+### Code Testing
+- Ensure all code examples are runnable
+- Test with actual OSO data
+- Verify GraphQL queries work in sandbox
+- Check for syntax errors
+
+### Content Review
+- Verify all links work
+- Check image paths and alt text
+- Ensure consistent formatting
+- Validate frontmatter structure
+
+## 10. Commit Checklist
+
+### Content
+- [ ] Clear, descriptive title
+- [ ] Proper frontmatter with sidebar_position
+- [ ] Getting Started section with setup instructions
+- [ ] Python examples (default) or both Python and GraphQL (when explicitly needed)
+- [ ] Proper code syntax highlighting
+- [ ] Helpful comments and explanations
+- [ ] Cross-references to related content
+- [ ] Visual elements (images, charts) when helpful
+
+### Technical
+- [ ] File in correct path with proper naming
+- [ ] Valid markdown/MDX syntax
+- [ ] Working code examples
+- [ ] Proper image references
+- [ ] Functional links (internal and external); always use relative links for internal links
+- [ ] Consistent formatting and style
+
+### Documentation
+- [ ] Update tutorial index if adding new tutorial
+- [ ] Add appropriate sidebar position
+- [ ] Include in relevant navigation
+- [ ] Test all code examples
+- [ ] Verify visual elements display correctly
+- [ ] External data source attribution (external links)
+
+---
+
+**If Cursor proposes content that violates these rules, regenerate.**
+alwaysApply: false
+---

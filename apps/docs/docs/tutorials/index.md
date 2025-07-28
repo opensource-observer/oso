@@ -17,6 +17,7 @@ Examples of applications and data science built on OSO's data platform. Each exa
 - 🪝 [Uniswap Hooks](./uniswap-hooks.mdx) - Join OSO data with Dune stats to analyze Uniswap v4 hooks
 - 🔴 [Superchain Activity](./superchain-activity.md) - Explore OP Atlas project activity on the Superchain.
 - 📈 [Contract Activity](./contract-activity.mdx) - Learn how to identify and analyze contract activity.
+- 🔐 [Account Abstraction](./account-abstraction/index.mdx) - Analyze ERC-4337 Account Abstraction data across Superchain networks.
 - 🤝 Developer Retention (coming soon) - View developer churn and retention patterns over time
 - ⭐ OpenRank (coming soon) - Run OpenRank on top of any network graph with your own trust seed assumptions
 - 🛡️ Trusted Users (coming soon) - Classify users on the basis of different trust signals
