@@ -5,35 +5,47 @@ import typing as t
 
 import colorlog
 
-connected_to_sqlmesh_logs = False
+connected_to_application_logs = False
 
 logger = logging.getLogger(__name__)
 
 
-def add_metrics_tools_to_sqlmesh_logging():
-    """sqlmesh won't automatically add metrics_tools logging. This will enable
-    logs from any of the metrics tools utilities. If sqlmesh is the runner"""
+def add_oso_core_to_current_application_logging():
+    """Originally created to ensure that oso_core logs appear in sqlmesh. This
+    will automatically add the `oso_core` logger to the main running
+    application."""
     import __main__
 
-    global connected_to_sqlmesh_logs
+    global connected_to_application_logs
 
     try:
         app_name = os.path.basename(__main__.__file__)
     except AttributeError:
         # Do nothing if __main__.__file__ doesn't exist
         return
-    if app_name == "sqlmesh" and not connected_to_sqlmesh_logs:
-        add_metrics_tools_to_existing_logger(app_name)
-        connected_to_sqlmesh_logs = True
-        logger.info("metrics_tools logs connected to sqlmesh")
+    if not connected_to_application_logs:
+        extend_existing_logger("oso_core", app_name)
+        connected_to_application_logs = True
+        logger.info(f"oso_core logger connected to {app_name} application logs.")
 
 
-def add_metrics_tools_to_existing_logger(logger_name: str):
+def extend_existing_logger(target_logger_name: str, logger_name: str):
+    """Extends an existing logger to aggregate logs for a different logger by
+    adding a filter to the currently existing logger. This is useful for
+    extending an already existing logger
+
+    Args:
+        target_logger_name (str): The name of the logger to extend.
+        logger_name (str): The name of the logger to aggregate logs from.
+    Returns:
+        None
+    """
+
     class MetricsToolsFilter(logging.Filter):
         def filter(self, record):
-            return record.name == "metrics_tools"
+            return record.name == logger_name
 
-    app_logger = logging.getLogger(logger_name)
+    app_logger = logging.getLogger(target_logger_name)
     app_logger.addFilter(MetricsToolsFilter())
 
 

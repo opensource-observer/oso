@@ -13,7 +13,7 @@ import polars as pl
 from dask.distributed import Worker, WorkerPlugin, get_worker
 from google.cloud import storage
 from metrics_service.types import ExportReference, ExportType
-from metrics_tools.utils.logging import setup_module_logging
+from oso_core.logging import setup_module_logging
 from sqlglot import exp
 
 logger = logging.getLogger(__name__)
@@ -115,9 +115,9 @@ class DuckDBMetricsWorkerPlugin(MetricsWorkerPlugin):
             f"[{self._uuid}] got a cache request for {table_ref_name}:{export_reference.table.table_name}"
         )
         assert export_reference.type == ExportType.GCS, "Only GCS exports are supported"
-        assert (
-            export_reference.payload.get("gcs_path") is not None
-        ), "A gcs_path is required"
+        assert export_reference.payload.get("gcs_path") is not None, (
+            "A gcs_path is required"
+        )
 
         if self._cache_status.get(table_ref_name):
             return
