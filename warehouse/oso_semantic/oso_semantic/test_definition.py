@@ -123,10 +123,10 @@ def test_semantic_model_shortest_path():
     ]
 
     to_artifact_ref = registry.get_model("int_events__github").find_relationship(
-        model_ref="artifacts", name="to"
+        model_ref=registry.get_model("artifacts"), name="to"
     )
     from_artifact_ref = registry.get_model("int_events__github").find_relationship(
-        model_ref="artifacts", name="from"
+        model_ref=registry.get_model("artifacts"), name="from"
     )
 
     assert to_artifact_ref.relationship.ref_model == "artifacts"
