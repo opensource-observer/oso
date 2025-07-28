@@ -17,7 +17,8 @@ MODEL (
 WITH project_deployers AS (
   SELECT
     project_id,
-    artifact_name AS deployer_address
+    artifact_name AS deployer_address,
+    artifact_source AS chain
   FROM oso.int_artifacts_by_project_in_ossd
   WHERE artifact_type = 'DEPLOYER'
 ),
@@ -39,6 +40,10 @@ first_level_contracts AS (
   FROM oso.int_derived_contracts AS dc
   JOIN project_deployers AS pd
     ON pd.deployer_address = dc.originating_address
+    AND (
+      pd.chain = dc.chain
+      OR pd.chain = 'ANY_EVM'
+    )
 ),
 
 all_contracts AS (
