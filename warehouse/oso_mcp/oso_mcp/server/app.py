@@ -6,11 +6,9 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import requests
 from mcp.server.fastmcp import Context, FastMCP
+from pyoso import Client
 
 from .config import MCPConfig
-
-# from pyoso import Client
-
 
 MCP_SSE_PORT = 8000
 
@@ -39,20 +37,17 @@ McpResponse = Union[McpErrorResponse[P], McpSuccessResponse[P, R]]
 
 @dataclass
 class AppContext:
-    # oso_client: Optional[Client] = None
-    pass
-
+    oso_client: Optional[Client] = None
 
 
 def default_lifespan(config: MCPConfig):
     @asynccontextmanager
     async def app_lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
         """Manage application lifecycle with OSO client in context"""
-        # api_key = config.oso_api_key
+        api_key = config.oso_api_key
 
-        # client = Client(api_key.get_secret_value())
-        # context = AppContext(oso_client=client)
-        context = AppContext()
+        client = Client(api_key.get_secret_value())
+        context = AppContext(oso_client=client)
 
         try:
             yield context
