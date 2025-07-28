@@ -41,8 +41,10 @@ first_level_contracts AS (
   JOIN project_deployers AS pd
     ON pd.deployer_address = dc.originating_address
     AND (
-      pd.chain = dc.chain
-      OR pd.chain = 'ANY_EVM'
+      CASE 
+        WHEN pd.chain = 'ANY_EVM' THEN TRUE
+        ELSE pd.chain = dc.chain
+      END
     )
 ),
 
