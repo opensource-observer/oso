@@ -4,7 +4,7 @@ import logging
 import typing as t
 import uuid
 
-from llama_index.core.workflow import Event, StopEvent, Workflow, step
+from llama_index.core.workflow import Event, StartEvent, StopEvent, Workflow, step
 from llama_index.core.workflow.decorators import StepConfig
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import WorkflowMeta
@@ -28,18 +28,23 @@ class WorkflowMixer(WorkflowMeta):
         required_resources: dict[str, type] = {}
 
         for base in bases:
+            # Skip typing constructs like Generic, which don't have the same metaclass constraints
+            if hasattr(base, "__module__") and base.__module__ == "typing":
+                continue
+
+            # Skip typing._GenericAlias and other typing internals
+            if hasattr(base, "__origin__"):
+                continue
+
             if base.__class__ != cls:
                 if issubclass(base, Workflow):
                     # If the base class is a regular workflow, we can skip it
                     continue
                 if not issubclass(base.__class__, WorkflowMixer):
-                    # If the base class is a mixable workflow, we can skip it
+                    # If the base class is not a mixable workflow, raise an error
                     raise TypeError(
                         f"Base class {base.__name__} is not a mixable workflow."
                     )
-                raise TypeError(
-                    f"Base class {base.__name__} is not a mixable workflow."
-                )
 
             for attr_name, attr_type in base.__annotations__.items():
                 if isinstance(attr_type, ResourceDependency):
@@ -317,3 +322,25 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
         logger.error(f"Exception occurred in workflow: {event.error}")
 
         return StopEvent(result=ErrorResponse(message=str(event.error)))
+
+
+S = t.TypeVar("S", bound=StartEvent)
+
+
+class StartingWorkflow(MixableWorkflow, t.Generic[S]):
+    """A workflow that enforces typed start events and returns WrappedResponse."""
+
+    def run(self, start_event: S, **kwargs) -> WorkflowHandler:
+        """Run the workflow with a typed start event."""
+
+        return super().run(start_event=start_event, **kwargs)
+
+    async def wrapped_run(self, start_event: S, **kwargs) -> WrappedResponse:
+        """Run the workflow with a typed start event and return a WrappedResponse."""
+        handler = self.run(start_event, **kwargs)
+        raw_response = await handler
+
+        if isinstance(raw_response, WrappedResponse):
+            return raw_response
+
+        return self.ensure_wrapped_response(handler)
