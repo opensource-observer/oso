@@ -1,4 +1,5 @@
 import logging
+import os
 import typing as t
 
 from pydantic import Field, SecretStr
@@ -21,7 +22,11 @@ class MCPConfig(BaseSettings):
     model_config = mcp_config_dict()
 
     oso_api_key: SecretStr = Field(
-        default=SecretStr(""),
+        default_factory=lambda: SecretStr(
+            os.environ.get(
+                "COPILOT_MCP_OSO_API_KEY", os.environ.get("MCP_OSO_API_KEY", "")
+            )
+        ),
         description="API key for the OSO API",
         json_schema_extra={
             "required": True
