@@ -1,55 +1,8 @@
 import logging
 import os
 
-from dagster import Definitions
-from dagster_embedded_elt.dlt import DagsterDltResource
-from dagster_gcp import BigQueryResource, GCSResource
-from dagster_k8s import k8s_job_executor
-from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dotenv import find_dotenv, load_dotenv
-from metrics_tools.utils.logging import setup_module_logging
-from oso_dagster.resources.bq import BigQueryImporterResource
-from oso_dagster.resources.clickhouse import ClickhouseImporterResource
-from oso_dagster.resources.duckdb import (
-    DuckDBExporterResource,
-    DuckDBImporterResource,
-    DuckDBResource,
-)
-from oso_dagster.resources.storage import (
-    GCSTimeOrderedStorageResource,
-    TimeOrderedStorageResource,
-)
-from oso_dagster.resources.trino import TrinoExporterResource
-
-from . import assets
-from .cbt import CBTResource
-from .config import DagsterConfig
-from .factories import load_all_assets_from_package
-from .factories.alerts import setup_alert_sensors
-from .resources import (
-    BigQueryDataTransferResource,
-    ClickhouseResource,
-    K8sApiResource,
-    K8sResource,
-    MCSK8sResource,
-    MCSRemoteResource,
-    PrefixedSQLMeshTranslator,
-    Trino2BigQuerySQLMeshExporter,
-    Trino2ClickhouseSQLMeshExporter,
-    TrinoK8sResource,
-    TrinoRemoteResource,
-    load_dlt_staging,
-    load_dlt_warehouse_destination,
-    load_io_manager,
-)
-from .schedules import get_partitioned_schedules, schedules
-from .utils import (
-    CanvasDiscordWebhookAlertManager,
-    GCPSecretResolver,
-    LocalSecretResolver,
-    LogAlertManager,
-    setup_chunked_state_cleanup_sensor,
-)
+from oso_core.logging.decorators import time_function
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +13,57 @@ elif os.environ.get("ENV") == "production":
 load_dotenv()
 
 
+@time_function(logger)
 def load_definitions():
+    from dagster import Definitions
+    from dagster_embedded_elt.dlt import DagsterDltResource
+    from dagster_gcp import BigQueryResource, GCSResource
+    from dagster_k8s import k8s_job_executor
+    from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
+    from oso_core.logging import setup_module_logging
+    from oso_dagster.resources.bq import BigQueryImporterResource
+    from oso_dagster.resources.clickhouse import ClickhouseImporterResource
+    from oso_dagster.resources.duckdb import (
+        DuckDBExporterResource,
+        DuckDBImporterResource,
+        DuckDBResource,
+    )
+    from oso_dagster.resources.storage import (
+        GCSTimeOrderedStorageResource,
+        TimeOrderedStorageResource,
+    )
+    from oso_dagster.resources.trino import TrinoExporterResource
+
+    from . import assets
+    from .cbt import CBTResource
+    from .config import DagsterConfig
+    from .factories import load_all_assets_from_package
+    from .factories.alerts import setup_alert_sensors
+    from .resources import (
+        BigQueryDataTransferResource,
+        ClickhouseResource,
+        K8sApiResource,
+        K8sResource,
+        MCSK8sResource,
+        MCSRemoteResource,
+        PrefixedSQLMeshTranslator,
+        Trino2BigQuerySQLMeshExporter,
+        Trino2ClickhouseSQLMeshExporter,
+        TrinoK8sResource,
+        TrinoRemoteResource,
+        load_dlt_staging,
+        load_dlt_warehouse_destination,
+        load_io_manager,
+    )
+    from .schedules import get_partitioned_schedules, schedules
+    from .utils import (
+        CanvasDiscordWebhookAlertManager,
+        GCPSecretResolver,
+        LocalSecretResolver,
+        LogAlertManager,
+        setup_chunked_state_cleanup_sensor,
+    )
+
     setup_module_logging("oso_dagster")
     # Load the configuration for the project
     global_config = DagsterConfig()  # type: ignore
