@@ -8,7 +8,7 @@ from metrics_service.app import app_factory, default_lifecycle
 from metrics_service.client import BaseWebsocketConnector, Client
 from metrics_service.types import AppConfig
 from metrics_tools.definition import MetricModelDefinition
-from metrics_tools.utils.logging import setup_module_logging
+from oso_core.logging import setup_module_logging
 from starlette.testclient import WebSocketTestSession
 
 
