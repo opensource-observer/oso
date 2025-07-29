@@ -38,7 +38,7 @@ WITH contract_metrics AS (
     COUNT(DISTINCT contract_address) AS amount
   FROM oso.int_contracts_overview
   WHERE
-    deployment_date BETWEEN @start_dt AND @end_dt
+    deployment_timestamp BETWEEN @start_dt AND @end_dt
   GROUP BY 1, 2
 ),
 
@@ -50,7 +50,7 @@ deployer_metrics AS (
     COUNT(DISTINCT originating_address) AS amount
   FROM oso.int_contracts_overview
   WHERE
-    deployment_date BETWEEN @start_dt AND @end_dt
+    deployment_timestamp BETWEEN @start_dt AND @end_dt
   GROUP BY 1, 2
 ),
 
