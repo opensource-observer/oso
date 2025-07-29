@@ -32,11 +32,11 @@ MODEL (
 
 WITH contract_metrics AS (
   SELECT
-    deployment_date AS sample_date,
+    DATE_TRUNC('DAY', deployment_timestamp::DATE) AS sample_date,
     contract_namespace AS chain,
     'CONTRACTS_DEPLOYED' AS metric_name,
     COUNT(DISTINCT contract_address) AS amount
-  FROM oso.contracts_v0
+  FROM oso.int_contracts_overview
   WHERE
     deployment_date BETWEEN @start_dt AND @end_dt
   GROUP BY 1, 2
@@ -44,11 +44,11 @@ WITH contract_metrics AS (
 
 deployer_metrics AS (
   SELECT
-    deployment_date AS sample_date,
+    DATE_TRUNC('DAY', deployment_timestamp::DATE) AS sample_date,
     contract_namespace AS chain,
     'ACTIVE_DEPLOYERS' AS metric_name,
     COUNT(DISTINCT originating_address) AS amount
-  FROM oso.contracts_v0
+  FROM oso.int_contracts_overview
   WHERE
     deployment_date BETWEEN @start_dt AND @end_dt
   GROUP BY 1, 2
