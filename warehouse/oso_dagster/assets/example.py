@@ -1,31 +1,5 @@
 # TODO(jabolo): Delete this file when done with brainstorming.
-"""
-def my_dependency(data: Unknown) -> Generator[dlt.resource]:
-  safe_parsed = somehow_validate(data)
-
-  all_ids = [x["id"] for x in safe_parsed["data"]]
-
-  for id in all_ids:
-    yield from graphql_factory(
-      config=Config(
-        ...,
-        deps=[]
-      )
-    )
-
-@dlt_factory(...)
-def example_asset(config: DagsteConfig) -> Generator[dlt.resource]:
-
-    # This is a Generator[dlt.resource]
-    initial_factory = graphql_factory(
-      config=Config(
-        ...
-        deps=[my_dependency]
-      )
-    )
-
-    yield from initial_factory
-"""
+from typing import Any
 
 from dagster import AssetExecutionContext
 
@@ -38,35 +12,56 @@ from ..factories.graphql import (
 )
 
 
+def from_account_users(context: AssetExecutionContext, data: Any):
+    config = GraphQLResourceConfig(
+        name=f"account_query_{data['fromAccount']['id']}",
+        endpoint="https://api.opencollective.com/graphql/v2",
+        target_type="Query",
+        target_query="account",
+        exclude=["feed", "stats", "parentAccount"],
+        parameters={
+            "id": {
+                "type": "String",
+                "value": data["fromAccount"]["id"],
+            },
+        },
+        transform_fn=lambda result: result["account"],
+        max_depth=2,
+    )
+
+    yield from graphql_factory(config, context, max_table_nesting=0)
+
+
 @dlt_factory(
     key_prefix="oc_v2",
 )
-def expenses(
+def account_users(
     context: AssetExecutionContext,
 ):
     config = GraphQLResourceConfig(
-        name="expenses",
+        name="account_users",
         endpoint="https://api.opencollective.com/graphql/v2",
         target_type="Query",
         target_query="transactions",
         parameters={
             "type": {"type": "TransactionType!", "value": "DEBIT"},
-            "dateFrom": {"type": "DateTime!", "value": "2024-01-23T05:00:00.000Z"},
-            "dateTo": {"type": "DateTime!", "value": "2025-01-01T00:00:00.000Z"},
+            "dateFrom": {"type": "DateTime!", "value": "2023-01-23T05:00:00.000Z"},
+            "dateTo": {"type": "DateTime!", "value": "2024-01-01T00:00:00.000Z"},
         },
         exclude=["loggedInAccount", "me"],
         transform_fn=lambda result: result["transactions"]["nodes"],
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
-            page_size=100,
-            max_pages=5,
+            page_size=5,
+            max_pages=2,
             offset_field="offset",
             limit_field="limit",
             total_count_path="totalCount",
-            rate_limit_seconds=1.0,
+            rate_limit_seconds=5.0,
         ),
+        deps_rate_limit_seconds=5.0,
         max_depth=2,
-        deps=[],
+        deps=[from_account_users],
     )
 
     yield graphql_factory(config, context, max_table_nesting=0)
