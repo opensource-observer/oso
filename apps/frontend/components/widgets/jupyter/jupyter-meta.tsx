@@ -1,16 +1,19 @@
 "use client";
 
+import { ReactElement } from "react";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import type { JupyterProps, INotebookProps } from "@datalayer/jupyter-react";
 
 type JupyterRootProps = Partial<JupyterProps> & {
   className?: string;
+  children?: ReactElement;
 };
 
 const JupyterRootMeta: CodeComponentMeta<JupyterRootProps> = {
   name: "JupyterRoot",
   description: "Root wrapper for Jupyter components",
   props: {
+    children: "slot",
     jupyterServerUrl: "string",
     jupyterServerToken: "string",
     lite: "boolean",

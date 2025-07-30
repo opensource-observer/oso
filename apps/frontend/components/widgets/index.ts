@@ -20,7 +20,7 @@ import {
   JupyterRootMeta,
   JupyterNotebookMeta,
   JupyterConsoleMeta,
-} from "@/components/widgets/jupyter-meta";
+} from "@/components/widgets/jupyter/jupyter-meta";
 import { Markdown, MarkdownMeta } from "@/components/widgets/markdown";
 import {
   MonacoEditor,
@@ -47,15 +47,15 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
     AlgoliaSearchListMeta,
   );
   PLASMIC.registerComponent(
-    dynamic(() => import("./jupyter-root"), { ssr: false }),
+    dynamic(() => import("./jupyter/jupyter-root"), { ssr: false }),
     JupyterRootMeta,
   );
   PLASMIC.registerComponent(
-    dynamic(() => import("./jupyter-notebook"), { ssr: false }),
+    dynamic(() => import("./jupyter/jupyter-notebook"), { ssr: false }),
     JupyterNotebookMeta,
   );
   PLASMIC.registerComponent(
-    dynamic(() => import("./jupyter-console"), { ssr: false }),
+    dynamic(() => import("./jupyter/jupyter-console"), { ssr: false }),
     JupyterConsoleMeta,
   );
 
