@@ -44,7 +44,8 @@ def load_all_assets_from_package(
 
     Args:
         package (ModuleType): The package to load assets and factories from.
-        early_resources (Dict[str, Any]): A dictionary of early resources to pass to factories.
+        resources (ResourcesContext): The resources context to use for loading
+            asset factories.
 
     Returns:
         AssetFactoryResponse: A response containing all loaded assets and factories.
