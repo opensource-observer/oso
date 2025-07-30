@@ -117,12 +117,15 @@ const nextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+  /**
+   * JUPYTER SETTINGS
+   * Mostly copied from https://github.com/datalayer-examples/jupyter-nextjs-example/blob/main/next.config.ts
+   */
   transpilePackages: ["@jupyterlab/settingregistry", "@jupyterlite/settings"],
   webpack: (config, options) => {
     if (options.isServer) {
       config.plugins = [...config.plugins];
     }
-    /** JUPYTER SETTINGS START */
     config.resolve.fallback = {
       ...config.resolve.fallback,
       buffer: require.resolve("buffer/"),
@@ -193,7 +196,6 @@ const nextConfig = {
         },
       },
     );
-    /** JUPYTER SETTINGS END */
     return config;
   },
 };
