@@ -10,8 +10,10 @@ from dlt.common.destination import Destination
 from oso_core.logging import setup_module_logging
 from oso_core.logging.decorators import time_function
 from oso_dagster.cbt.cbt import CBTResource
-from oso_dagster.definitions.common import load_definitions_with_asset_factories
-from oso_dagster.definitions.resources import run_with_default_resources
+from oso_dagster.definitions.common import (
+    load_definitions_with_asset_factories,
+    run_with_default_resources,
+)
 from oso_dagster.factories.common import ResourcesContext
 from oso_dagster.resources import (
     BigQueryDataTransferResource,

@@ -144,7 +144,6 @@ def trino_resource_factory(
 
 
 @resource_factory("sqlmesh")
-@time_function(logger)
 def sqlmesh_resource_factory(
     sqlmesh_config: SQLMeshContextConfig,
 ) -> SQLMeshResource:
@@ -368,14 +367,3 @@ def default_resource_registry():
     registry.add(time_ordered_storage_factory)
 
     return registry
-
-
-def run_with_default_resources[T](
-    func: t.Callable[..., T],
-    **kwargs: t.Any,
-) -> T:
-    """Run a function with the default resources."""
-    registry = default_resource_registry()
-    resources = registry.context()
-
-    return resources.run(func, **kwargs)
