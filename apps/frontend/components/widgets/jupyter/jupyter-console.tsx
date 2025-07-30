@@ -1,6 +1,6 @@
 "use client";
 import { Console } from "@datalayer/jupyter-react";
-import type { JupyterConsoleProps } from "@/components/widgets/jupyter-meta";
+import type { JupyterConsoleProps } from "@/components/widgets/jupyter/jupyter-meta";
 
 function JupyterConsole(props: JupyterConsoleProps) {
   return (
