@@ -6,7 +6,7 @@ from types import ModuleType
 
 from dagster import load_assets_from_modules
 
-from .common import AssetFactoryResponse, EarlyResourcesAssetFactory
+from .common import AssetFactoryResponse, EarlyResourcesAssetFactory, ResourcesContext
 
 
 class EarlyResourcesAssetFactoryDAG:
@@ -37,9 +37,19 @@ class EarlyResourcesAssetFactoryDAG:
 
 
 def load_all_assets_from_package(
-    package: ModuleType, early_resources: t.Dict[str, t.Any]
+    package: ModuleType,
+    resources: ResourcesContext,
 ) -> AssetFactoryResponse:
-    """Loads all assets and factories from a given package and any submodules it may have"""
+    """Loads all assets and factories from a given package and any submodules it may have
+
+    Args:
+        package (ModuleType): The package to load assets and factories from.
+        resources (ResourcesContext): The resources context to use for loading
+            asset factories.
+
+    Returns:
+        AssetFactoryResponse: A response containing all loaded assets and factories.
+    """
     package_path = package.__path__
 
     modules: t.List[ModuleType] = []
@@ -57,7 +67,7 @@ def load_all_assets_from_package(
     for early_factory, deps in early_resources_dag.sorted():
         resolved_deps = [resolved_factories[factory] for factory in deps]
 
-        resp = early_factory(dependencies=resolved_deps, **early_resources)
+        resp = early_factory(resources, dependencies=resolved_deps)
 
         resolved_factories[early_factory] = resp
         factories = factories + resp
@@ -70,6 +80,20 @@ def load_assets_factories_from_modules(
     modules: t.List[ModuleType],
     dag: EarlyResourcesAssetFactoryDAG,
 ) -> AssetFactoryResponse:
+    """Loads all AssetFactoryResponses or EarlyResourcesAssetFactory's into a
+    DAG. This is mostly an internal function and isn't intended to be called
+    directly outside of this module.
+
+    Args:
+        modules (List[ModuleType]): The modules to load assets and factories
+        from.
+        dag (EarlyResourcesAssetFactoryDAG): A DAG to track early
+        resources asset factories.
+
+    Returns:
+        AssetFactoryResponse: A response containing all loaded assets and
+        factories.
+    """
     all = AssetFactoryResponse([])
     for module in modules:
         module_dict = module.__dict__.copy()

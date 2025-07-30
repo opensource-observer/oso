@@ -3,6 +3,7 @@ This generates the whole set of goldsky assets for all network assets. This is
 to simplify the management of these things into a single place.
 """
 
+from oso_dagster.config import DagsterConfig
 from oso_dagster.utils import gcs_to_bucket_name, unpack_config
 
 from ..common import AssetFactoryResponse, early_resources_asset_factory
@@ -13,9 +14,9 @@ from .config import GoldskyNetworkConfig, NetworkAssetSourceConfig
 
 @unpack_config(GoldskyNetworkConfig)
 def goldsky_network_assets(config: GoldskyNetworkConfig):
-
     @early_resources_asset_factory(caller_depth=2)
-    def _factory(project_id: str, staging_bucket: str):
+    def _factory(global_config: DagsterConfig, staging_bucket: str):
+        project_id = global_config.project_id
         staging_bucket_name = gcs_to_bucket_name(staging_bucket)
 
         blocks_asset_config = NetworkAssetSourceConfig.with_defaults(
@@ -67,9 +68,9 @@ def goldsky_network_assets(config: GoldskyNetworkConfig):
         transactions = AssetFactoryResponse([])
 
         if config.transactions_enabled:
-            assert (
-                blocks_table_fqn != ""
-            ), "blocks table location cannot be derived. must not be empty"
+            assert blocks_table_fqn != "", (
+                "blocks table location cannot be derived. must not be empty"
+            )
 
             transactions = goldsky_asset(
                 key_prefix=config.network_name,
@@ -112,9 +113,9 @@ def goldsky_network_assets(config: GoldskyNetworkConfig):
         traces = AssetFactoryResponse([])
 
         if config.traces_enabled:
-            assert (
-                transactions_table_fqn != ""
-            ), "transactions table cannot be derived. must not be empty"
+            assert transactions_table_fqn != "", (
+                "transactions table cannot be derived. must not be empty"
+            )
 
             traces = goldsky_asset(
                 key_prefix=config.network_name,

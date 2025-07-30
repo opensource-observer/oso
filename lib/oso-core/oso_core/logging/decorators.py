@@ -2,6 +2,7 @@
 Some potentially useful logging decorators
 """
 
+import functools
 import logging
 
 
@@ -9,6 +10,7 @@ def time_function(logger: logging.Logger):
     """Decorator to time a function and log the duration."""
 
     def decorator(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             import time
 
