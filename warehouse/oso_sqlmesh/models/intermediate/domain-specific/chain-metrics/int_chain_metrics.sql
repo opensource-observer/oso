@@ -37,9 +37,9 @@ defillama_metrics AS (
 oso_metrics AS (
   SELECT
     sample_date,
+    'OSO' AS source,
     chain,
     metric_name,
-    'OSO' AS source,
     amount
   FROM oso.int_chain_metrics_from_oso
 ),
