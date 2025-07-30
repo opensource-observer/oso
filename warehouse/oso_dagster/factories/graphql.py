@@ -1,6 +1,7 @@
 import time
 from dataclasses import dataclass
 from enum import Enum
+from functools import cache
 from typing import (
     Any,
     Callable,
@@ -11,6 +12,7 @@ from typing import (
     Optional,
     ParamSpec,
     Set,
+    Tuple,
     TypeVar,
     cast,
 )
@@ -161,8 +163,15 @@ class GraphQLResourceConfig:
         parameters: The parameters to include in the introspection query.
         pagination: The pagination configuration.
         exclude: Fields to exclude from the GraphQL schema expansion.
-        deps: Dependencies for the GraphQL resource, e.g., other DLT resources.
+        deps_rate_limit_seconds: Seconds to wait between dependency calls.
+        deps: Dependencies for the GraphQL resource. If provided, the main query results
+              will be used as intermediate data to feed the dependencies, and those
+              intermediate rows will be skipped from the final output. The factory can
+              only return one consistent data shape, so deps serve as a means to transform
+              the intermediate data into the final desired output format.
     """
+
+    # TODO(javi): explain diff shapes merge + only yields leaves
 
     name: str
     endpoint: str
@@ -174,11 +183,12 @@ class GraphQLResourceConfig:
     parameters: Optional[Dict[str, Dict[str, Any]]] = None
     pagination: Optional[PaginationConfig] = None
     exclude: Optional[List[str]] = None
+    deps_rate_limit_seconds: float = 0.0
     deps: Optional[
         List[
             Callable[
                 [AssetExecutionContext, Any],
-                Generator[Callable[..., DltResource], Any, Any],
+                Generator[Any, Any, Any],
             ]
         ]
     ] = None
@@ -206,21 +216,27 @@ def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
     return f"kind name ofType {{ {create_fragment(depth - 1)} }}"
 
 
-def get_graphql_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
+@cache
+def get_graphql_introspection(
+    endpoint: str, headers_tuple: Optional[Tuple[Tuple[str, str], ...]], max_depth: int
+) -> Dict[str, Any]:
     """
     Fetch the GraphQL introspection query from the given endpoint.
 
     Args:
-        config: The configuration for the GraphQL resource.
+        endpoint: The GraphQL endpoint URL.
+        headers_tuple: Headers as a tuple of tuples for hashability.
+        max_depth: Maximum depth for the introspection query.
 
     Returns:
         The introspection query result.
     """
+    headers_dict = dict(headers_tuple) if headers_tuple else None
 
     transport = RequestsHTTPTransport(
-        url=config.endpoint,
+        url=endpoint,
         use_json=True,
-        headers=config.headers,
+        headers=headers_dict,
         timeout=300,
     )
 
@@ -230,14 +246,14 @@ def get_graphql_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
     )
 
     populated_query = INTROSPECTION_QUERY.replace(
-        "{{ DEPTH }}", create_fragment(config.max_depth + 5)
+        "{{ DEPTH }}", create_fragment(max_depth + 5)
     )
 
     try:
         return client.execute(gql(populated_query))
     except TransportError as exception:
         raise ValueError(
-            f"Failed to fetch GraphQL introspection query from {config.endpoint}.",
+            f"Failed to fetch GraphQL introspection query from {endpoint}.",
         ) from exception
 
 
@@ -426,7 +442,11 @@ class FieldExpander:
         return False
 
     def expand_field(
-        self, field: Dict[str, Any], current_path: str = "", depth: int = 0
+        self,
+        field: Dict[str, Any],
+        current_path: str = "",
+        depth: int = 0,
+        field_path: str = "",
     ) -> Optional[str]:
         """
         Expand a field in the introspection query, handling cycles and max depth.
@@ -436,6 +456,7 @@ class FieldExpander:
             field: The field to expand.
             current_path: The current path in the query (for cycle detection).
             depth: Current depth in the query.
+            field_path: The dot-separated path of field names for exclusion checking.
 
         Returns:
             The expanded field as a GraphQL query string, or None if field should be skipped.
@@ -444,8 +465,13 @@ class FieldExpander:
         if not field_name:
             return None
 
-        if field_name in self.exclude_fields:
-            return None
+        full_field_path = f"{field_path}.{field_name}" if field_path else field_name
+
+        for exclude_pattern in self.exclude_fields:
+            if full_field_path == exclude_pattern or full_field_path.startswith(
+                exclude_pattern + "."
+            ):
+                return None
 
         for arg in field.get("args", []):
             if arg.get("type", {}).get("kind") == "NON_NULL":
@@ -493,7 +519,7 @@ class FieldExpander:
 
         expanded_fields = []
         for subfield in type_fields:
-            expanded = self.expand_field(subfield, new_path, depth + 1)
+            expanded = self.expand_field(subfield, new_path, depth + 1, full_field_path)
             if expanded:
                 expanded_fields.append(expanded)
 
@@ -630,7 +656,9 @@ T = TypeVar("T")
 
 def _graphql_factory(
     _resource: Callable[Q, T],
-) -> Callable[Concatenate[GraphQLResourceConfig, AssetExecutionContext, Q], T]:
+) -> Callable[
+    Concatenate[GraphQLResourceConfig, AssetExecutionContext, Q], DltResource
+]:
     """
     This factory creates a DLT asset from a GraphQL resource, automatically
     wiring the introspection query to the target query and generating a Pydantic model.
@@ -677,7 +705,12 @@ def _graphql_factory(
                 The GraphQL query result
             """
 
-            introspection = get_graphql_introspection(config)
+            headers_tuple = (
+                tuple(sorted(config.headers.items())) if config.headers else None
+            )
+            introspection = get_graphql_introspection(
+                config.endpoint, headers_tuple, config.max_depth
+            )
 
             available_types = introspection["__schema"]["types"]
             if not available_types:
@@ -728,7 +761,7 @@ def _graphql_factory(
             expanded_fields = []
             if return_type_def.get("fields"):
                 for field in return_type_def.get("fields", []):
-                    expanded = field_expander.expand_field(field)
+                    expanded = field_expander.expand_field(field, "", 0, "")
                     if expanded:
                         expanded_fields.append(expanded)
 
@@ -803,17 +836,23 @@ def _graphql_factory(
                     )
 
                     if isinstance(data_items, list):
-                        for item in data_items:
+                        for item_idx, item in enumerate(data_items):
                             total_items += 1
                             if config.deps:
-                                for dep in config.deps:
+                                if item_idx > 0 and config.deps_rate_limit_seconds > 0:
+                                    time.sleep(config.deps_rate_limit_seconds)
+                                for i, dep in enumerate(config.deps):
+                                    if i > 0 and config.deps_rate_limit_seconds > 0:
+                                        time.sleep(config.deps_rate_limit_seconds)
                                     yield from dep(context, item)
                             else:
                                 yield item
                     else:
                         total_items += 1
                         if config.deps:
-                            for dep in config.deps:
+                            for i, dep in enumerate(config.deps):
+                                if i > 0 and config.deps_rate_limit_seconds > 0:
+                                    time.sleep(config.deps_rate_limit_seconds)
                                 yield from dep(context, data_items)
                         else:
                             yield data_items
@@ -884,7 +923,9 @@ def _graphql_factory(
         return _execute_query
 
     return cast(
-        Callable[Concatenate[GraphQLResourceConfig, AssetExecutionContext, Q], T],
+        Callable[
+            Concatenate[GraphQLResourceConfig, AssetExecutionContext, Q], DltResource
+        ],
         _factory,
     )
 
