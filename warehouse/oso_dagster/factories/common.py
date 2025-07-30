@@ -99,12 +99,14 @@ class ResourceFactory:
 class ResourcesRegistry:
     """Out of the box, dagster doesn't have a concept of factories.
     Additionally, it doesn't have a concept of early resources. This class is a
-    dependency injection registry that allows us to define factory functions
-    for resources required by assets that use the EarlyResourcesAssetFactory. To
+    dependency injection registry that allows us to define factory functions for
+    resources required by assets that use the EarlyResourcesAssetFactory. To
     improve performance, the factory functions used to create the resources
-    should be fully self contained and declare all their imports in the function
-    itself as opposed to at the module level. This allows us to avoid importing
-    unnecessary modules when the resources are not used.
+    should attempt to be self contained and declare most of their imports in the
+    function itself as opposed to at the module level. Any imports done at the
+    module level should be "pure" imports. By "pure", importing the module
+    should have no side effects. Many of our assets are not structured this way,
+    and so should be avoided in module level imports.
     """
 
     def __init__(
