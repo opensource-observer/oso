@@ -16,6 +16,11 @@ import {
   FeedbackWrapper,
   FeedbackWrapperMeta,
 } from "@/components/widgets/feedback-farm";
+import {
+  JupyterRootMeta,
+  JupyterNotebookMeta,
+  JupyterConsoleMeta,
+} from "@/components/widgets/jupyter/jupyter-meta";
 import { Markdown, MarkdownMeta } from "@/components/widgets/markdown";
 import {
   MonacoEditor,
@@ -41,11 +46,26 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
     dynamic(() => import("./algolia"), { ssr: false }),
     AlgoliaSearchListMeta,
   );
+  PLASMIC.registerComponent(
+    dynamic(() => import("./jupyter/jupyter-root"), { ssr: false }),
+    JupyterRootMeta,
+  );
+  PLASMIC.registerComponent(
+    dynamic(() => import("./jupyter/jupyter-notebook"), { ssr: false }),
+    JupyterNotebookMeta,
+  );
+  PLASMIC.registerComponent(
+    dynamic(() => import("./jupyter/jupyter-console"), { ssr: false }),
+    JupyterConsoleMeta,
+  );
 
   PLASMIC.registerComponent(AuthActions, AuthActionsMeta);
   PLASMIC.registerComponent(AuthForm, AuthFormMeta);
   PLASMIC.registerComponent(DynamicConnectorForm, DynamicConnectorFormMeta);
   PLASMIC.registerComponent(FeedbackWrapper, FeedbackWrapperMeta);
+  //PLASMIC.registerComponent(JupyterRoot, JupyterRootMeta);
+  //PLASMIC.registerComponent(JupyterNotebook, JupyterNotebookMeta);
+  //PLASMIC.registerComponent(JupyterConsole, JupyterConsoleMeta);
   PLASMIC.registerComponent(Markdown, MarkdownMeta);
   PLASMIC.registerComponent(MonacoEditor, MonacoEditorMeta);
   PLASMIC.registerComponent(Navbar, NavbarMeta);
