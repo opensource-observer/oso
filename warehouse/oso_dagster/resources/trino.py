@@ -1,6 +1,6 @@
 import logging
 import typing as t
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager
 
 import aiotrino
 from aiotrino.dbapi import Connection as AsyncConnection
@@ -20,12 +20,12 @@ module_logger = logging.getLogger(__name__)
 class TrinoResource(ConfigurableResource):
     """Base Trino resource"""
 
-    @contextmanager
+    @asynccontextmanager
     def get_client(
         self,
         session_properties: t.Optional[t.Dict[str, t.Any]] = None,
         log_override: t.Optional[logging.Logger] = None,
-    ) -> t.Iterator[Connection]:
+    ) -> t.AsyncIterator[Connection]:
         raise NotImplementedError(
             "get_client not implemented on the base TrinoResource"
         )

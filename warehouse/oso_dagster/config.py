@@ -83,6 +83,14 @@ class DagsterConfig(BaseSettings):
     mcs_k8s_deployment_name: str = ""
     mcs_connect_timeout: int = 240
 
+    # This is a bit of a legacy configuration that we need to remove
+    cbt_search_paths: list[str] = Field(
+        default_factory=lambda: [os.path.join(os.path.dirname(__file__), "models")]
+    )
+
+    clickhouse_importer_secret_group_name: str = "clickhouse_importer"
+    clickhouse_secret_group_name: str = "clickhouse"
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         """Handles any configurations that can be generated from other configuration values"""
