@@ -91,6 +91,8 @@ class DagsterConfig(BaseSettings):
     clickhouse_importer_secret_group_name: str = "clickhouse_importer"
     clickhouse_secret_group_name: str = "clickhouse"
 
+    eagerly_load_sql_tables: bool = False
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         """Handles any configurations that can be generated from other configuration values"""

@@ -182,10 +182,31 @@ class ResourcesContext:
         self,
         f: t.Callable[..., T],
         additional_annotations: t.Dict[str, t.Type] | None = None,
+        additional_inject: t.Dict[str, t.Any] | None = None,
         **kwargs,
     ) -> T:
-        """Run a function and resolve all the resources this function requires."""
+        """Run a function and resolve all the resources this function requires.
+
+        Args:
+            f (Callable[..., T]): The function to run.
+            additional_annotations (Dict[str, Type], optional): Additional annotations
+                to use for the function. This is useful for functions that require
+                additional resources that are not defined in the function's
+                annotations (for some reason).
+            additional_inject (Dict[str, Any], optional): Additional resources to inject
+                into the function. This is useful to override any injection or other
+                defined annotations, this is different than kwargs because it
+                isn't passed to the function unless the function explicitly
+                requests it.
+            **kwargs: Additional keyword arguments to pass to the function
+                The values in kwargs are not modified in any way
+
+        Returns:
+            T: The result of the function.
+
+        """
         additional_annotations = additional_annotations or {}
+        additional_inject = additional_inject or {}
         annotations = f.__annotations__.copy()
         annotations.update(additional_annotations)
 
@@ -195,7 +216,14 @@ class ResourcesContext:
             # ResourcesContext to it.
             resolved_resources["resources"] = self
         for key in annotations.keys():
-            if key == "return":
+            if key in ["return", "resources"]:
+                continue
+            if key in additional_inject:
+                # If the key is in additional_inject, we will use that value.
+                resolved_resources[key] = additional_inject[key]
+                continue
+            if key in kwargs:
+                # If the key is already in kwargs, we don't need to resolve it.
                 continue
             resolved_resources[key] = self.resolve(key)
         return f(**resolved_resources, **kwargs)
@@ -247,7 +275,7 @@ class EarlyResourcesAssetFactory:
             res = resources.run(
                 self._f,
                 additional_annotations=self.additional_annotations,
-                dependencies=dependencies,
+                additional_inject=dict(dependencies=dependencies),
             )
         except Exception:
             if self._caller:

@@ -34,6 +34,8 @@ from ..config import DagsterConfig
 
 logger = logging.getLogger(__name__)
 
+setup_module_logging("oso_dagster")
+
 
 @time_function(logger)
 def load_definitions(
@@ -46,7 +48,7 @@ def load_definitions(
     clickhouse: ClickhouseResource,
     io_manager: ConfigurableIOManagerFactory,
     duckdb: DuckDBResource,
-    secret_resolver: SecretResolver,
+    secrets: SecretResolver,
     dlt_staging_destination: Destination,
     dlt_warehouse_destination: Destination,
     dlt: DagsterDltResource,
@@ -70,8 +72,6 @@ def load_definitions(
     from ..factories.alerts import setup_alert_sensors
     from ..schedules import get_partitioned_schedules, schedules
     from ..utils import setup_chunked_state_cleanup_sensor
-
-    setup_module_logging("oso_dagster")
 
     asset_factories = load_all_assets_from_package(assets, resources)
     alerts = setup_alert_sensors(
@@ -98,14 +98,13 @@ def load_definitions(
         "clickhouse": clickhouse,
         "io_manager": io_manager,
         "dlt": dlt,
-        "secrets": secret_resolver,
+        "secrets": secrets,
         "dlt_staging_destination": dlt_staging_destination,
         "dlt_warehouse_destination": dlt_warehouse_destination,
         "project_id": global_config.project_id,
         "alert_manager": alert_manager,
         "sqlmesh_config": sqlmesh_config,
         "sqlmesh_infra_config": sqlmesh_infra_config,
-        "sqlmesh": SQLMeshResource(config=sqlmesh_config),
         "k8s": k8s,
         "trino": trino,
         "global_config": global_config,
@@ -117,6 +116,8 @@ def load_definitions(
         "duckdb_exporter": duckdb_exporter,
         "duckdb_importer": duckdb_importer,
         "time_ordered_storage": time_ordered_storage,
+        "sqlmesh": sqlmesh,
+        "duckdb": duckdb,
     }
 
     extra_kwargs = {}

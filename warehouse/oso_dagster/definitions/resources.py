@@ -4,7 +4,7 @@ import typing as t
 from dagster import ConfigurableIOManagerFactory
 from dagster_dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
-from dagster_sqlmesh import SQLMeshContextConfig
+from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dlt.common.destination import Destination
 from oso_core.logging.decorators import time_function
 from oso_dagster.cbt.cbt import CBTResource
@@ -30,13 +30,17 @@ from oso_dagster.resources import (
 from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
 from oso_dagster.resources.duckdb import DuckDBExporterResource
-from oso_dagster.resources.storage import TimeOrderedStorageResource
+from oso_dagster.resources.storage import (
+    GCSTimeOrderedStorageResource,
+    TimeOrderedStorageResource,
+)
 from oso_dagster.resources.trino import TrinoExporterResource
 from oso_dagster.utils.alerts import (
     AlertManager,
     CanvasDiscordWebhookAlertManager,
     LogAlertManager,
 )
+from oso_dagster.utils.secrets import SecretResolver
 
 from ..config import DagsterConfig
 from ..utils import GCPSecretResolver, LocalSecretResolver
@@ -51,9 +55,9 @@ def global_config_factory() -> DagsterConfig:
     return DagsterConfig()
 
 
-@resource_factory("secret_resolver")
+@resource_factory("secrets")
 @time_function(logger)
-def secret_resolver_factory(
+def secrets_factory(
     global_config: DagsterConfig,
 ) -> LocalSecretResolver | GCPSecretResolver:
     """Factory function to create a secret resolver based on the configuration."""
@@ -84,11 +88,11 @@ def bigquery_datatransfer_resource_factory(
 @time_function(logger)
 def clickhouse_resource_factory(
     global_config: DagsterConfig,
-    secret_resolver: LocalSecretResolver | GCPSecretResolver,
+    secrets: LocalSecretResolver | GCPSecretResolver,
 ) -> ClickhouseResource:
     """Factory function to create a Clickhouse resource."""
     return ClickhouseResource(
-        secrets=secret_resolver,
+        secrets=secrets,
         secret_group_name=global_config.clickhouse_secret_group_name,
     )
 
@@ -136,6 +140,16 @@ def trino_resource_factory(
         coordinator_deployment_name=global_config.trino_k8s_coordinator_deployment_name,
         worker_deployment_name=global_config.trino_k8s_worker_deployment_name,
         use_port_forward=global_config.k8s_use_port_forward,
+    )
+
+
+@resource_factory("sqlmesh")
+def sqlmesh_resource_factory(
+    sqlmesh_config: SQLMeshContextConfig,
+) -> SQLMeshResource:
+    """Factory function to create a SQLMesh resource."""
+    return SQLMeshResource(
+        config=sqlmesh_config,
     )
 
 
@@ -214,12 +228,12 @@ def trino_exporter_factory(
 def clickhouse_importer_factory(
     global_config: DagsterConfig,
     clickhouse: ClickhouseResource,
-    secret_resolver: LocalSecretResolver | GCPSecretResolver,
+    secrets: SecretResolver,
 ) -> ClickhouseImporterResource:
     """Factory function to create a Clickhouse importer."""
     return ClickhouseImporterResource(
         clickhouse=clickhouse,
-        secrets=secret_resolver,
+        secrets=secrets,
         secret_group_name=global_config.clickhouse_importer_secret_group_name,
     )
 
@@ -307,6 +321,18 @@ def alert_manager_factory(global_config: DagsterConfig) -> AlertManager:
     return LogAlertManager()
 
 
+@resource_factory("time_ordered_storage")
+@time_function(logger)
+def time_ordered_storage_factory(
+    global_config: DagsterConfig,
+) -> TimeOrderedStorageResource:
+    if not global_config.enable_k8s:
+        return TimeOrderedStorageResource()
+    return GCSTimeOrderedStorageResource(
+        bucket_name=global_config.gcs_bucket,
+    )
+
+
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
@@ -314,11 +340,12 @@ def default_resource_registry():
     registry = ResourcesRegistry()
 
     registry.add(global_config_factory)
-    registry.add(secret_resolver_factory)
+    registry.add(secrets_factory)
     registry.add(bigquery_resource_factory)
     registry.add(bigquery_datatransfer_resource_factory)
     registry.add(clickhouse_resource_factory)
     registry.add(gcs_resource_factory)
+    registry.add(sqlmesh_resource_factory)
     registry.add(sqlmesh_translator_factory)
     registry.add(sqlmesh_config_factory)
     registry.add(k8s_resource_factory)
@@ -337,6 +364,7 @@ def default_resource_registry():
     registry.add(sqlmesh_infra_config_factory)
     registry.add(io_manager_factory)
     registry.add(alert_manager_factory)
+    registry.add(time_ordered_storage_factory)
 
     return registry
 
