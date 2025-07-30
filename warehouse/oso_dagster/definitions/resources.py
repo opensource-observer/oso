@@ -144,6 +144,7 @@ def trino_resource_factory(
 
 
 @resource_factory("sqlmesh")
+@time_function(logger)
 def sqlmesh_resource_factory(
     sqlmesh_config: SQLMeshContextConfig,
 ) -> SQLMeshResource:
