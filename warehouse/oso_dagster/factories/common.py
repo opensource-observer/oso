@@ -174,6 +174,10 @@ class ResourcesContext:
     requests.
     """
 
+    # This is the reserved keyword used to reference the resources context in
+    # function annotations that use the ResourcesContext + ResourcesRegistry
+    resources_keyword_name = "resources"
+
     def __init__(self, registry: ResourcesRegistry):
         self._registry = registry
         self._resolved_resources: t.Dict[str, t.Any] = {}
@@ -211,12 +215,12 @@ class ResourcesContext:
         annotations.update(additional_annotations)
 
         resolved_resources: t.Dict[str, t.Any] = {}
-        if "resources" in annotations:
+        if ResourcesContext.resources_keyword_name in annotations:
             # If the function has a resources argument, we will pass the
             # ResourcesContext to it.
-            resolved_resources["resources"] = self
+            resolved_resources[ResourcesContext.resources_keyword_name] = self
         for key in annotations.keys():
-            if key in ["return", "resources"]:
+            if key in ["return", ResourcesContext.resources_keyword_name]:
                 continue
             if key in additional_inject:
                 # If the key is in additional_inject, we will use that value.
