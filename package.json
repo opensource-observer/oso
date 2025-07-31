@@ -27,7 +27,7 @@
     "lint": "turbo run lint --concurrency=100%",
     "serve": "pnpm serve build",
     "sync:hasura": "turbo run sync --filter=@opensource-observer/hasura-clickhouse",
-    "pyright": "pyright",
+    "pyright": "pyright --pythonpath $(echo 'import sys; print(sys.prefix)' | uv run -)/bin/python",
     "test": "turbo run test --concurrency=1",
     "test:integration": "(docker compose -f docker/compose.yaml down || true) && docker compose -f docker/compose.yaml run --rm test",
     "prepare": "husky install"
