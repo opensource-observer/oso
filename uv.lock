@@ -3919,6 +3919,7 @@ dependencies = [
     { name = "ruamel-yaml" },
     { name = "sqlalchemy" },
     { name = "sqlmesh", extra = ["trino"] },
+    { name = "structlog" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "websockets" },
 ]
@@ -3985,6 +3986,7 @@ requires-dist = [
     { name = "ruamel-yaml", specifier = ">=0.18.6,<1.0.0" },
     { name = "sqlalchemy", specifier = ">=2.0.25,<3.0.0" },
     { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
+    { name = "structlog", specifier = ">=25.4.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.1,<1.0.0" },
     { name = "websockets", specifier = ">=14.1,<15.0" },
 ]
