@@ -1,8 +1,9 @@
-import logging
 import typing as t
 
 import dlt
-from dagster import AssetExecutionContext, AssetKey
+import structlog
+from dagster import AssetExecutionContext, AssetKey, AssetSpec
+from dagster_dlt.translator import DltResourceTranslatorData
 from dagster_embedded_elt.dlt import (
     DagsterDltResource,
     DagsterDltTranslator,
@@ -16,6 +17,7 @@ from dlt.sources.credentials import (
     ConnectionStringCredentials,
     GcpServiceAccountCredentials,
 )
+from oso_dagster.config import DagsterConfig
 from oso_dagster.dlt_sources.sql_database.helpers import engine_from_credentials
 from sqlalchemy import Engine, MetaData, Table
 from sqlalchemy.exc import NoSuchTableError
@@ -24,7 +26,7 @@ from ..dlt_sources.sql_database import TableBackend, sql_table
 from ..utils.secrets import SecretReference, SecretResolver
 from .common import AssetFactoryResponse, AssetList, early_resources_asset_factory
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class SQLTableOptions(t.TypedDict):
@@ -58,7 +60,7 @@ def _generate_asset_for_table(
 ):
     all_table_options = table_options.copy()
 
-    @dlt.source(name=f"{source_name}_{table_options["table"]}")
+    @dlt.source(name=f"{source_name}_{table_options['table']}")
     def _source():
         destination_table_name = table_options.get("destination_table_name")
         write_disposition = table_options.get("write_disposition")
@@ -73,7 +75,7 @@ def _generate_asset_for_table(
         return resource
 
     @dlt_assets(
-        name=f"{source_name}_{table_options["table"]}",
+        name=f"{source_name}_{table_options['table']}",
         dlt_source=_source(),
         dlt_pipeline=pipeline,
         dagster_dlt_translator=translator,
@@ -107,10 +109,9 @@ def sql_assets(
     @early_resources_asset_factory(caller_depth=2)
     def factory(
         secrets: SecretResolver,
-        project_id: str,
+        global_config: DagsterConfig,
         dlt_staging_destination: dlt.destinations.filesystem,
     ):
-
         tags = {
             "opensource.observer/environment": environment,
             "opensource.observer/factory": "sql_dlt",
@@ -131,18 +132,32 @@ def sql_assets(
         assets: AssetList = []
 
         for table in sql_tables:
-            pipeline_name = f"{source_name}_{table["table"]}_to_bigquery"
+            pipeline_name = f"{source_name}_{table['table']}_to_bigquery"
             if group_name != "":
                 pipeline_name = (
-                    f"{source_name}_{group_name}_{table["table"]}_to_bigquery"
+                    f"{source_name}_{group_name}_{table['table']}_to_bigquery"
                 )
                 if table.get("destination_table_name") is None:
-                    table["destination_table_name"] = f"{group_name}__{table["table"]}"
+                    table["destination_table_name"] = f"{group_name}__{table['table']}"
+
+            # This prevents loading the table eagerly at dagster startup. This
+            # significantly speeds up the loading of the dagster UI and prevents
+            # unnecessary table reflection.
+            if not global_config.eagerly_load_sql_tables:
+                logger.info(
+                    f"Deferring table reflection for {table['table']}",
+                    source_name=source_name,
+                    table=table["table"],
+                )
+                if table.get("defer_table_reflect") is None:
+                    table["defer_table_reflect"] = True
 
             pipeline = dlt.pipeline(
                 pipeline_name=pipeline_name,
                 destination=bigquery(
-                    credentials=GcpServiceAccountCredentials(project_id=project_id)
+                    credentials=GcpServiceAccountCredentials(
+                        project_id=global_config.project_id
+                    )
                 ),
                 dataset_name=source_name,
                 staging=dlt_staging_destination,
@@ -178,14 +193,23 @@ class PrefixedDltTranslator(DagsterDltTranslator):
         self._include_deps = include_deps
         self._tags = tags.copy()
 
-    def get_asset_key(self, resource: DltResource) -> AssetKey:
+    def get_asset_spec(self, data: DltResourceTranslatorData):
+        return AssetSpec(
+            key=self.get_asset_key_from_resource(data.resource),
+            tags=self._tags,
+            deps=self.get_deps_asset_keys_from_resource(data.resource),
+        )
+
+    def get_asset_key_from_resource(self, resource: DltResource) -> AssetKey:
         key: t.List[str] = []
         key.extend(self._prefix)
         key.append(self._source_name)
         key.append(resource.name)
         return AssetKey(key)
 
-    def get_deps_asset_keys(self, resource: DltResource) -> t.Iterable[AssetKey]:
+    def get_deps_asset_keys_from_resource(
+        self, resource: DltResource
+    ) -> t.Iterable[AssetKey]:
         """We don't include the source here in the graph. It's not a necessary stub to represent"""
         if not self._include_deps:
             return []
@@ -195,7 +219,3 @@ class PrefixedDltTranslator(DagsterDltTranslator):
         key.append("sources")
         key.append(resource.name)
         return [AssetKey(key)]
-
-    def get_tags(self, resource: DltResource):
-        # As of 2024-07-10 This doesn't work. We will make a PR upstream
-        return self._tags

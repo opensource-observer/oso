@@ -13,6 +13,7 @@ dagster:
 
 osoDagster:
   verboseLogs: 0
+  eagerlyLoadSqlTables: 0
 
 global:
   dagsterInternalName: "dagster"
