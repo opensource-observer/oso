@@ -16,7 +16,7 @@ def time_context(logger: logging.Logger, name: str, **log_kwargs):
         duration = end_time - start_time
         duration_ms = duration * 1000
         logger.info(
-            f"Timing '{name}' took {duration_ms:.4f} milliseconds.",
+            f"Timing `{name}` took {duration_ms:.4f} milliseconds.",
             extra=dict(
                 event_type="timing",
                 duration_ms=duration_ms,

@@ -22,7 +22,7 @@ def time_function(logger: logging.Logger, override_name: str = ""):
             duration = end_time - start_time
             duration_ms = duration * 1000
             logger.info(
-                f"Function '{name}' took {duration_ms:.4f} milliseconds.",
+                f"Function `{name}` took {duration_ms:.4f} milliseconds.",
                 extra=dict(event_type="timing", duration_ms=duration_ms),
             )
             return result

@@ -75,4 +75,4 @@ def configure_structured_logging() -> None:
     handler.setFormatter(formatter)
     root_logger = logging.getLogger()
     root_logger.addHandler(handler)
-    root_logger.setLevel(logging.INFO)
+    # root_logger.setLevel(logging.INFO)
