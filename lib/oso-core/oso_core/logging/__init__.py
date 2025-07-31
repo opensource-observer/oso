@@ -1,13 +1,13 @@
 import logging
 import os
-import sys
 import typing as t
 
-import colorlog
+import structlog
+from oso_core.logging.defaults import configure_structured_logging
 
 connected_to_application_logs = False
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def add_oso_core_to_current_application_logging():
@@ -69,28 +69,8 @@ def setup_multiple_modules_logging(module_names: t.List[str]):
 def setup_module_logging(
     module_name: str,
     level: int = logging.DEBUG,
-    override_format: str = "",
-    color: bool = False,
 ):
+    configure_structured_logging()
+
     logger = logging.getLogger(module_name)
     logger.setLevel(level)  # Adjust the level as needed
-
-    # Create a handler that logs to stdout
-    if color:
-        format = "%(asctime)s - %(log_color)s%(levelname)-8s%(reset)s - %(name)s - %(message)s"
-        stdout_handler = colorlog.StreamHandler(sys.stdout)
-        formatter = colorlog.ColoredFormatter(format, datefmt="%Y-%m-%dT%H:%M:%S")
-    else:
-        format = "%(asctime)s - %(levelname)-8s - %(name)s - %(message)s"
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter(format, datefmt="%Y-%m-%dT%H:%M:%S")
-    stdout_handler.setLevel(level)  # Adjust the level as needed
-
-    # Add the filter to the handler
-    stdout_handler.addFilter(ModuleFilter(module_name))
-
-    # Set a formatter (optional)
-    stdout_handler.setFormatter(formatter)
-
-    # Add the handler to the logger
-    logger.addHandler(stdout_handler)
