@@ -4,9 +4,13 @@ import typing as t
 from graphlib import TopologicalSorter
 from types import ModuleType
 
+import structlog
 from dagster import load_assets_from_modules
+from oso_core.logging.utils import time_context
 
 from .common import AssetFactoryResponse, EarlyResourcesAssetFactory, ResourcesContext
+
+logger = structlog.get_logger(__name__)
 
 
 class EarlyResourcesAssetFactoryDAG:
@@ -57,8 +61,9 @@ def load_all_assets_from_package(
 
     for module_info in pkgutil.walk_packages(package_path, package.__name__ + "."):
         module_name = module_info.name
-        module = importlib.import_module(module_name)
-        modules.append(module)
+        with time_context(logger, f"loading module {module_name}"):
+            module = importlib.import_module(module_name)
+            modules.append(module)
     factories = load_assets_factories_from_modules(modules, early_resources_dag)
 
     resolved_factories: t.Dict[EarlyResourcesAssetFactory, AssetFactoryResponse] = {}
@@ -67,7 +72,12 @@ def load_all_assets_from_package(
     for early_factory, deps in early_resources_dag.sorted():
         resolved_deps = [resolved_factories[factory] for factory in deps]
 
-        resp = early_factory(resources, dependencies=resolved_deps)
+        with time_context(
+            logger,
+            f"generating assets for '{early_factory.name}'",
+            loading_from_module=early_factory.module,
+        ):
+            resp = early_factory(resources, dependencies=resolved_deps)
 
         resolved_factories[early_factory] = resp
         factories = factories + resp
@@ -96,18 +106,19 @@ def load_assets_factories_from_modules(
     """
     all = AssetFactoryResponse([])
     for module in modules:
-        module_dict = module.__dict__.copy()
-        for _, obj in module_dict.items():
-            if isinstance(obj, EarlyResourcesAssetFactory):
-                # resp = obj(**early_resources)
-                # all = all + resp
-                dag.add(obj)
-            elif isinstance(obj, AssetFactoryResponse):
-                all = all + obj
-            elif isinstance(obj, list):
-                for item in obj:
-                    if isinstance(item, EarlyResourcesAssetFactory):
-                        dag.add(item)
-                    elif isinstance(item, AssetFactoryResponse):
-                        all = all + item
+        with time_context(logger, f"loading assets from {module.__name__}"):
+            module_dict = module.__dict__.copy()
+            for _, obj in module_dict.items():
+                if isinstance(obj, EarlyResourcesAssetFactory):
+                    # resp = obj(**early_resources)
+                    # all = all + resp
+                    dag.add(obj)
+                elif isinstance(obj, AssetFactoryResponse):
+                    all = all + obj
+                elif isinstance(obj, list):
+                    for item in obj:
+                        if isinstance(item, EarlyResourcesAssetFactory):
+                            dag.add(item)
+                        elif isinstance(item, AssetFactoryResponse):
+                            all = all + item
     return all
