@@ -21,8 +21,7 @@ class IntermediateMacroEvaluatorTransform(Transform):
         registry = MacroRegistry("intermediate_macros")
         for macro in self._macros:
             if isinstance(macro, tuple):
-                func, aliases = macro
-                registry.update(create_unregistered_wrapped_macro(func, aliases))
+                registry.update(create_unregistered_wrapped_macro(*macro))
             else:
                 registry.update(create_unregistered_wrapped_macro(macro))
 
