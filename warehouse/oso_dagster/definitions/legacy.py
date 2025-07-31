@@ -11,6 +11,12 @@ setup_module_logging("oso_dagster")
 
 @time_function(logger, override_name="legacy_main")
 def main():
+    """This is the "legacy" definitions for oso_dagster. It is currently being
+    decomposed to smaller sets of code locations.
+
+    Imports are done here to attempt to get a notion of timing for import
+    loading.
+    """
     from dagster import ConfigurableIOManagerFactory, Definitions
     from dagster_dlt import DagsterDltResource
     from dagster_gcp import BigQueryResource, GCSResource
