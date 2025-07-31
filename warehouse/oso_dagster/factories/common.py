@@ -304,6 +304,16 @@ class EarlyResourcesAssetFactory:
             raise Exception("Invalid early resource factory")
 
     @property
+    def name(self) -> str:
+        """Get the name of the asset factory."""
+        return self._f.__name__
+
+    @property
+    def module(self) -> str:
+        """Get the module of the asset factory."""
+        return self._f.__module__
+
+    @property
     def dependencies(self):
         return self._dependencies[:]
 
