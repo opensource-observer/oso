@@ -56,7 +56,7 @@ client.to_pandas("SELECT * FROM models_v0 LIMIT 5")
 
 ```python
 query = semantic.select(
-    "models_v0"
+    "models"
 ).limit(5)
 ```
 
