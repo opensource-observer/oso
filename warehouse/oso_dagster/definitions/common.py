@@ -1,6 +1,6 @@
 import typing as t
 
-from dagster import Definitions
+from dagster import Definitions, json_console_logger
 from oso_dagster.factories.common import AssetFactoryResponse
 
 from .resources import default_resource_registry
@@ -14,6 +14,9 @@ def load_definitions_with_asset_factories(
         jobs=asset_factories.jobs,
         asset_checks=asset_factories.checks,
         sensors=asset_factories.sensors,
+        loggers={
+            "console": json_console_logger,
+        },
         **kwargs,
     )
 
