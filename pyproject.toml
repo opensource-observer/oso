@@ -67,6 +67,7 @@ dependencies = [
     "gcloud-aio-storage<10.0.0,>=9.3.0",
     "kr8s==0.20.9",
     "structlog>=25.4.0",
+    "pandas-gbq>=0.29.2",
 ]
 name = "oso"
 version = "1.0.0"
