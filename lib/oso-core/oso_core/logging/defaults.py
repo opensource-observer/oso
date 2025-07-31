@@ -5,7 +5,7 @@ import structlog
 STRUCTURED_LOGGING_CONFIGURED = False
 
 
-def flatten_extras(
+def flatten_extra_field(
     logger: logging.Logger, log_method: str, event_dict: structlog.types.EventDict
 ):
     """This flattens the extras dict so that it can be used in the log message."""
@@ -16,7 +16,7 @@ def flatten_extras(
     return event_dict
 
 
-def event_type(
+def ensure_event_type(
     logger: logging.Logger, log_method: str, event_dict: structlog.types.EventDict
 ):
     """This allows us to add an event_type to logs so we can do filtering in the
@@ -47,12 +47,12 @@ def configure_structured_logging() -> None:
 
     timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
     shared_processors = [
-        flatten_extras,
+        flatten_extra_field,
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
         timestamper,
         structlog.processors.StackInfoRenderer(),
-        event_type,
+        ensure_event_type,
     ]
 
     structlog.configure(
