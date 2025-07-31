@@ -1,4 +1,3 @@
-import functools
 import logging
 import typing as t
 from uuid import uuid4
@@ -90,7 +89,6 @@ def _dlt_factory[
             asset_name = name or f.__name__
 
             @early_resources_asset_factory(caller_depth=2)
-            @functools.wraps(f)
             def _factory(
                 dlt_staging_destination: Destination,
                 dlt_warehouse_destination: Destination,
