@@ -34,6 +34,9 @@ def default_workflow_factory(
     return _factory
 
 
+T = t.TypeVar("T", bound=MixableWorkflow)
+
+
 class WorkflowRegistry:
     """Registry of all workflows."""
 
@@ -69,8 +72,12 @@ class WorkflowRegistry:
         logger.info(f"Workflow factory '{name}' added to the registry.")
 
     async def get_workflow(
-        self, name: str, workflow_config: WorkflowConfig
-    ) -> MixableWorkflow:
+        self,
+        name: str,
+        workflow_config: WorkflowConfig,
+        workflow_type: t.Optional[t.Type[T]] = None,
+    ) -> T:
+        """Get a workflow instance of specific type."""
         if name not in self.workflow_factories:
             raise AgentMissingError(f"Workflow '{name}' not found in the registry.")
 
@@ -78,8 +85,10 @@ class WorkflowRegistry:
         resolver = await self.workflow_resolver_factory(
             self.default_resolver, self.config, workflow_config
         )
+
         workflow = await factory(
             self.config, resolver.merge_resolver(self.default_resolver)
         )
-        logger.info(f"Workflow '{name}' created.")
-        return workflow
+        logger.debug(f"Created workflow '{name}' of type {type(workflow).__name__}")
+
+        return t.cast(T, workflow)

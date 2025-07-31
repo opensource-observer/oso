@@ -14,6 +14,7 @@ from oso_agent.util.query import clean_query_for_eval
 from oso_agent.workflows.base import MixableWorkflow
 from oso_agent.workflows.eval import EvalWorkflowResult
 from oso_agent.workflows.text2sql.basic import BasicText2SQL
+from oso_agent.workflows.text2sql.events import Text2SQLStartEvent
 from oso_agent.workflows.text2sql.semantic import SemanticText2SQLWorkflow
 from oso_agent.workflows.types import SQLResultEvent, Text2SQLGenerationEvent
 from phoenix.experiments.types import EvaluationResult, Example
@@ -218,6 +219,13 @@ async def text2sql_experiment(
         experiment_name=BASE_EXPERIMENT_NAME,
         experiment_metadata={"agent_name": config.agent_name},
         post_process_result=post_process_result,
+        input_generator=lambda x: {
+            "start_event": Text2SQLStartEvent(
+                input=str(x["question"]),
+                synthesize_response=True,
+                execute_sql=True,
+            )
+        },
     )
 
 
@@ -278,4 +286,11 @@ async def text2sql_semantic_experiment(
         experiment_name=SEMANTIC_EXPERIMENT_NAME,
         experiment_metadata={"agent_name": config.agent_name},
         post_process_result=post_process_result,
+        input_generator=lambda x: {
+            "start_event": Text2SQLStartEvent(
+                input=str(x["question"]),
+                synthesize_response=True,
+                execute_sql=True,
+            )
+        },
     )
