@@ -8,7 +8,8 @@ STRUCTURED_LOGGING_CONFIGURED = False
 def flatten_extra_field(
     logger: logging.Logger, log_method: str, event_dict: structlog.types.EventDict
 ):
-    """This flattens the extras dict so that it can be used in the log message."""
+    """This flattens the `extra` dict that is allowed in stdlib's logging so
+    that it appears as top level items in the log message."""
     if "extra" in event_dict:
         for key, value in event_dict["extra"].items():
             event_dict[key] = value
