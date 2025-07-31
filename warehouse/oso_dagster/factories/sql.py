@@ -1,7 +1,7 @@
-import logging
 import typing as t
 
 import dlt
+import structlog
 from dagster import AssetExecutionContext, AssetKey, AssetSpec
 from dagster_dlt.translator import DltResourceTranslatorData
 from dagster_embedded_elt.dlt import (
@@ -26,7 +26,7 @@ from ..dlt_sources.sql_database import TableBackend, sql_table
 from ..utils.secrets import SecretReference, SecretResolver
 from .common import AssetFactoryResponse, AssetList, early_resources_asset_factory
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class SQLTableOptions(t.TypedDict):
@@ -144,6 +144,11 @@ def sql_assets(
             # significantly speeds up the loading of the dagster UI and prevents
             # unnecessary table reflection.
             if not global_config.eagerly_load_sql_tables:
+                logger.info(
+                    f"Deferring table reflection for {table['table']}",
+                    source_name=source_name,
+                    table=table["table"],
+                )
                 if table.get("defer_table_reflect") is None:
                     table["defer_table_reflect"] = True
 
