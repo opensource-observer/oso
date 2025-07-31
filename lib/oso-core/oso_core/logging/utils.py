@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 @contextmanager
 def time_context(logger: logging.Logger, name: str, **log_kwargs):
-    """Context manager to measure the time a block of code and log the
+    """Context manager to measure the timing of a block of code and log the
     duration."""
     import time
 
