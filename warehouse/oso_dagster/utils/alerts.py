@@ -7,9 +7,10 @@ import pytz
 import requests
 from attr import dataclass
 from dagster import Config, DagsterEvent, DagsterEventType, OpExecutionContext
-from dagster._core.events import JobFailureData
 from discord_webhook import DiscordEmbed, DiscordWebhook
 from PIL import Image, ImageDraw, ImageFile, ImageFont
+
+from . import dagsterinternals as dginternals
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +201,7 @@ class CanvasDiscordWebhookAlertManager(AlertManager):
 
         job_name = result.job_name
 
-        if isinstance(result.event_specific_data, JobFailureData):
+        if isinstance(result.event_specific_data, dginternals.JobFailureData):
             if (
                 result.event_specific_data.first_step_failure_event
                 and result.event_specific_data.first_step_failure_event.step_key

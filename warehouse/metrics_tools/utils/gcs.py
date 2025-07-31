@@ -34,7 +34,7 @@ async def delete_gcs_folders(
         import logging
         from metrics_tools.utils.gcs import delete_gcs_folders
         from gcloud.aio import storage
-        from metrics_tools.utils.logging import setup_module_logging
+        from oso_core.logging import setup_module_logging
 
 
         async def main():

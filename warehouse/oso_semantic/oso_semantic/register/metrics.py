@@ -65,6 +65,11 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
                     column_name="description",
                 ),
                 Dimension(
+                    name="rendered_sql",
+                    description="The SQL query used to compute the metric",
+                    column_name="rendered_sql",
+                ),
+                Dimension(
                     name="sql_source_path",
                     description="The path to the SQL file that defines the metric",
                     column_name="sql_source_path",
@@ -93,7 +98,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="timeseries_metrics_by_artifacts",
+            name="timeseries_metrics_by_artifact",
             table=f"{catalog_name}.oso.timeseries_metrics_by_artifact_v0",
             description=textwrap.dedent(
                 """
@@ -109,6 +114,16 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
                 """
             ),
             dimensions=[
+                Dimension(
+                    name="metric_id",
+                    description="The unique identifier of the metric",
+                    column_name="metric_id",
+                ),
+                Dimension(
+                    name="artifact_id",
+                    description="The unique identifier of the artifact",
+                    column_name="artifact_id",
+                ),
                 Dimension(
                     name="sample_date",
                     description="The date when the metric was sampled",
@@ -162,7 +177,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="timeseries_metrics_by_projects",
+            name="timeseries_metrics_by_project",
             table=f"{catalog_name}.oso.timeseries_metrics_by_project_v0",
             description=textwrap.dedent(
                 """
@@ -178,6 +193,16 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
                 """
             ),
             dimensions=[
+                Dimension(
+                    name="metric_id",
+                    description="The unique identifier of the metric",
+                    column_name="metric_id",
+                ),
+                Dimension(
+                    name="project_id",
+                    description="The unique identifier of the project",
+                    column_name="project_id",
+                ),
                 Dimension(
                     name="sample_date",
                     description="The date when the metric was sampled",
@@ -231,7 +256,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="timeseries_metrics_by_collections",
+            name="timeseries_metrics_by_collection",
             table=f"{catalog_name}.oso.timeseries_metrics_by_collection_v0",
             description=textwrap.dedent(
                 """
@@ -247,6 +272,16 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
                 """
             ),
             dimensions=[
+                Dimension(
+                    name="metric_id",
+                    description="The unique identifier of the metric",
+                    column_name="metric_id",
+                ),
+                Dimension(
+                    name="collection_id",
+                    description="The unique identifier of the collection",
+                    column_name="collection_id",
+                ),
                 Dimension(
                     name="sample_date",
                     description="The date when the metric was sampled",
@@ -300,7 +335,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="key_metrics_by_artifacts",
+            name="key_metrics_by_artifact",
             table=f"{catalog_name}.oso.key_metrics_by_artifact_v0",
             description=textwrap.dedent(
                 """
@@ -309,6 +344,21 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
                 """
             ),
             dimensions=[
+                Dimension(
+                    name="metric_id",
+                    description="The unique identifier of the metric",
+                    column_name="metric_id",
+                ),
+                Dimension(
+                    name="artifact_id",
+                    description="The unique identifier of the artifact",
+                    column_name="artifact_id",
+                ),
+                Dimension(
+                    name="sample_date",
+                    description="The date when the metric was sampled",
+                    column_name="sample_date",
+                ),
                 Dimension(
                     name="amount",
                     description="The value of the metric for the artifact",
@@ -357,7 +407,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="key_metrics_by_projects",
+            name="key_metrics_by_project",
             table=f"{catalog_name}.oso.key_metrics_by_project_v0",
             description=textwrap.dedent(
                 """
@@ -366,6 +416,21 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
                 """
             ),
             dimensions=[
+                Dimension(
+                    name="metric_id",
+                    description="The unique identifier of the metric",
+                    column_name="metric_id",
+                ),
+                Dimension(
+                    name="project_id",
+                    description="The unique identifier of the project",
+                    column_name="project_id",
+                ),
+                Dimension(
+                    name="sample_date",
+                    description="The date when the metric was sampled",
+                    column_name="sample_date",
+                ),
                 Dimension(
                     name="amount",
                     description="The value of the metric for the project",

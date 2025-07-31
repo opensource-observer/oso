@@ -1,4 +1,3 @@
-
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -16,12 +15,14 @@ MCP_SSE_PORT = 8000
 P = TypeVar("P")
 R = TypeVar("R")
 
+
 @dataclass
 class McpErrorResponse(Generic[P]):
     tool_name: str
     error: str
     success: bool = False
     parameters: Optional[List[P]] = None
+
 
 @dataclass
 class McpSuccessResponse(Generic[P, R]):
@@ -30,11 +31,14 @@ class McpSuccessResponse(Generic[P, R]):
     success: bool = True
     parameters: Optional[List[P]] = None
 
+
 McpResponse = Union[McpErrorResponse[P], McpSuccessResponse[P, R]]
+
 
 @dataclass
 class AppContext:
     oso_client: Optional[Client] = None
+
 
 def default_lifespan(config: MCPConfig):
     @asynccontextmanager
@@ -49,11 +53,11 @@ def default_lifespan(config: MCPConfig):
             yield context
         finally:
             pass
+
     return app_lifespan
 
 
 def setup_mcp_app(config: MCPConfig):
-
     mcp = FastMCP(
         "OSO Data Lake Explorer",
         port=config.port,
@@ -82,7 +86,7 @@ def setup_mcp_app(config: MCPConfig):
         """
         if ctx:
             await ctx.info(f"Converting natural language query to SQL: {nl_query}")
-        
+
         api_key = config.oso_api_key
         if not api_key:
             raise ValueError("OSO API key is not available in the context")
@@ -105,5 +109,5 @@ def setup_mcp_app(config: MCPConfig):
             parameters=[nl_query],
             results=[response.json()["sql"]],
         )
-    
+
     return mcp

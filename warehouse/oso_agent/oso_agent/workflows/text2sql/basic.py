@@ -5,9 +5,9 @@ from llama_index.core.base.response.schema import Response as ToolResponse
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.tools import QueryEngineTool
 from llama_index.core.workflow import Context, StartEvent, StopEvent, step
-
 from oso_agent.types.response import StrResponse
 from oso_agent.workflows.types import (
+    RetrySemanticQueryEvent,
     SQLResultSummaryResponseEvent,
     Text2SQLGenerationEvent,
 )
@@ -112,3 +112,18 @@ class BasicText2SQL(
         )
 
         return StopEvent(result=StrResponse(blob=response.summary))
+
+    # TODO(jabolo): We may want to rename `RetrySemanticQueryEvent` to
+    # `RetryEvent` to make it more generic in the future.
+    @step
+    async def handle_retry_semantic_query(
+        self, event: RetrySemanticQueryEvent
+    ) -> StopEvent:
+        """Handle retry events by raising an error"""
+        error_msg = (
+            f"Retries are not supported in BasicText2SQL workflow. "
+            f"Original error: {event.error}. "
+            f"Use SemanticText2SQLWorkflow for retry functionality."
+        )
+        logger.error(error_msg)
+        raise ValueError(error_msg)

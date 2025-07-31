@@ -4,6 +4,10 @@ metadata:
   name: production-dagster
 spec:
   values:
+    # We should eventually set this to 0, but we are setting it to 1 to gather
+    # timing data
+    osoDagster:
+      eagerlyLoadSqlTables: 1
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
       port: "5432"
@@ -74,14 +78,16 @@ spec:
           - name: "oso-dagster"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250721233601-a046993 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250731081700-23ee61c # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
-              - "oso_dagster.definitions"
+              - "oso_dagster.definitions.legacy"
+              - "--log-format"
+              - "json"
             includeConfigInLaunchedRuns:
               enabled: false
     sqlmesh:

@@ -1,4 +1,6 @@
 // @ts-check
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const webpack = require("webpack");
 
 /**
  * @type {import('next').NextConfig}
@@ -97,6 +99,11 @@ const nextConfig = {
               permanent: false,
             },
             {
+              source: "/forms/oso-interest",
+              destination: "https://tally.so/r/w7NDv6",
+              permanent: false,
+            },
+            {
               source: "/forms/data-collective-interest",
               destination: "https://tally.so/r/mRD4Pl",
               permanent: false,
@@ -110,11 +117,85 @@ const nextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
-  webpack: (config, { isServer }) => {
-    if (isServer) {
+  /**
+   * JUPYTER SETTINGS
+   * Mostly copied from https://github.com/datalayer-examples/jupyter-nextjs-example/blob/main/next.config.ts
+   */
+  transpilePackages: ["@jupyterlab/settingregistry", "@jupyterlite/settings"],
+  webpack: (config, options) => {
+    if (options.isServer) {
       config.plugins = [...config.plugins];
     }
-
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      buffer: require.resolve("buffer/"),
+    };
+    config.plugins.push(
+      new webpack.ProvidePlugin({
+        Buffer: ["buffer", "Buffer"],
+      }),
+    );
+    // Fix json5 import issue for JupyterLab packages
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      json5: require.resolve("json5/lib/index.js"),
+    };
+    // Add a plugin to strip `~` from import paths
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(/^~(.*)/, (resource) => {
+        resource.request = resource.request.replace(/^~/, "");
+      }),
+    );
+    config.module.rules.push(
+      { test: /\.js.map$/, type: "asset/resource" },
+      {
+        // In .css files, svg is loaded as a data URI.
+        test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
+        issuer: /\.css$/,
+        use: {
+          loader: "svg-url-loader",
+          options: { encoding: "none", limit: 10000 },
+        },
+      },
+      {
+        // In .ts and .tsx files (both of which compile to .js), svg files
+        // must be loaded as a raw string instead of data URIs.
+        test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
+        issuer: /\.js$/,
+        type: "asset/source",
+      },
+      // Ship the JupyterLite service worker.
+      {
+        resourceQuery: /text/,
+        type: "asset/resource",
+        generator: {
+          filename: "[name][ext]",
+        },
+      },
+      // Rule for pyodide kernel
+      {
+        test: /pypi\/.*/,
+        type: "asset/resource",
+        generator: {
+          filename: "pypi/[name][ext][query]",
+        },
+      },
+      // Rule for Python wheel files
+      {
+        test: /\.whl$/,
+        type: "asset/resource",
+        generator: {
+          filename: "pypi/[name][ext][query]",
+        },
+      },
+      {
+        test: /pyodide-kernel-extension\/schema\/.*/,
+        type: "asset/resource",
+        generator: {
+          filename: "schema/[name][ext][query]",
+        },
+      },
+    );
     return config;
   },
 };

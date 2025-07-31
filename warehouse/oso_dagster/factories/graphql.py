@@ -1,3 +1,4 @@
+import functools
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -665,6 +666,7 @@ def _graphql_factory(
         resource: The function to decorate.
     """
 
+    @functools.wraps(_resource)
     def _factory(
         config: GraphQLResourceConfig,
         context: AssetExecutionContext,

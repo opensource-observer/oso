@@ -44,6 +44,7 @@ spec:
         # Include internal python libraries in the dagster logs.
         managedPythonLoggers:
           - metrics_tools
+          - oso_core
           - oso_dagster
       nameOverride: "dagster"
       ingress:
@@ -87,7 +88,9 @@ spec:
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
-              - "oso_dagster.definitions"
+              - "oso_dagster.definitions.legacy"
+              - "--log-format"
+              - "json"
             includeConfigInLaunchedRuns:
               enabled: false
 

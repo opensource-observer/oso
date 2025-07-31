@@ -4,11 +4,10 @@ import typing as t
 from dagster import AssetKey, ResourceParam
 from dagster_sqlmesh import DagsterSQLMeshController, SQLMeshContextConfig
 from dagster_sqlmesh.controller.base import DEFAULT_CONTEXT_FACTORY
-from oso_dagster.definitions import PrefixedSQLMeshTranslator
 from sqlmesh.core.model import Model
 
 from ..factories import AssetFactoryResponse, early_resources_asset_factory
-from ..resources import SQLMeshExporter
+from ..resources import PrefixedSQLMeshTranslator, SQLMeshExporter
 
 logger = logging.getLogger(__name__)
 

@@ -68,6 +68,7 @@ dependencies = [
     "pyarrow-stubs>=17.16,<21.0",
     "gcloud-aio-storage<10.0.0,>=9.3.0",
     "kr8s==0.20.9",
+    "structlog>=25.4.0",
 ]
 
 [build-system]

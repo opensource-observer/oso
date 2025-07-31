@@ -1,6 +1,7 @@
 "use client";
 
 import Editor from "@monaco-editor/react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 interface MonacoEditorProps {
   className?: string;
@@ -12,6 +13,52 @@ interface MonacoEditorProps {
   theme?: string;
   options?: any;
 }
+
+const MonacoEditorMeta: CodeComponentMeta<MonacoEditorProps> = {
+  name: "MonacoEditor",
+  description: "Monaco editor",
+  props: {
+    defaultValue: {
+      type: "string",
+    },
+    value: {
+      type: "string",
+    },
+    onChange: {
+      type: "eventHandler",
+      argTypes: [
+        {
+          name: "value",
+          type: "string",
+        },
+      ],
+    },
+    height: {
+      type: "string",
+      defaultValue: "200px",
+    },
+    language: {
+      type: "string",
+      defaultValue: "sql",
+    },
+    theme: {
+      type: "string",
+      defaultValue: "vs-light",
+    },
+    options: {
+      type: "object",
+      defaultValue: {},
+    },
+  },
+  states: {
+    value: {
+      type: "writable",
+      variableType: "text",
+      valueProp: "value",
+      onChangeProp: "onChange",
+    },
+  },
+};
 
 function MonacoEditor({
   className,
@@ -54,4 +101,4 @@ function MonacoEditor({
   );
 }
 
-export { MonacoEditor };
+export { MonacoEditor, MonacoEditorMeta };

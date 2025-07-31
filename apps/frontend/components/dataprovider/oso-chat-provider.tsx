@@ -38,7 +38,6 @@ const OsoChatProviderMeta: CodeComponentMeta<OsoChatProviderProps> = {
     },
   },
   providesData: true,
-  importPath: "./components/dataprovider/oso-chat-provider",
 };
 
 function OsoChatProvider(props: OsoChatProviderProps) {

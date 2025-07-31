@@ -31,7 +31,6 @@ from metrics_tools.runner import render_metrics_query
 from metrics_tools.seed.seed import db_seed
 from metrics_tools.transfer.gcs import GCSTimeOrderedStorage
 from metrics_tools.transfer.trino import TrinoExporter
-from metrics_tools.utils.logging import setup_module_logging
 from metrics_tools.utils.tables import list_query_table_dependencies
 from metrics_tools.utils.testing import load_timeseries_metrics
 from numpy import full, std
@@ -41,6 +40,7 @@ from opsscripts.utils.dockertools import (
     initialize_docker_client,
 )
 from opsscripts.utils.k8stools import deploy_oso_k8s_job
+from oso_core.logging import setup_module_logging
 from oso_lets_go.wizard import MultipleChoiceInput
 from python_on_whales import DockerClient
 from sqlglot import pretty
@@ -302,12 +302,15 @@ def clean_expired_trino_hive_files(
         )
     )
 
+
 @production.command()
 @click.option("--service-name", default="receiver")
 @click.option("--namespace", default="flux-system")
 @click.option("--endpoint", required=True)
 @click.option("--remote-port", type=int, default=9292)
-def trigger_image_update(service_name: str, namespace: str, endpoint: str, remote_port: int):
+def trigger_image_update(
+    service_name: str, namespace: str, endpoint: str, remote_port: int
+):
     flux_service = Service.get(
         service_name,
         namespace,
@@ -315,15 +318,21 @@ def trigger_image_update(service_name: str, namespace: str, endpoint: str, remot
     # Turns out the remote port should be 9292 for the flux service and not 8080
     # as the service has listed. Not sure why but this is the port that the service
     # forwards to.
-    with flux_service.portforward(remote_port=remote_port, local_port=None) as local_port:
+    with flux_service.portforward(
+        remote_port=remote_port, local_port=None
+    ) as local_port:
         logger.info(f"Port forwarded to localhost:{local_port}")
 
         url = urljoin(f"http://localhost:{local_port}", endpoint)
         res = httpx.get(url)
         if res.status_code != 200:
-            logger.error(f"Failed to trigger image update: {res.status_code} {res.text}")
+            logger.error(
+                f"Failed to trigger image update: {res.status_code} {res.text}"
+            )
         else:
-            logger.info(f"Image update webhook triggered for {service_name} in {namespace}")
+            logger.info(
+                f"Image update webhook triggered for {service_name} in {namespace}"
+            )
 
 
 @production.command()
@@ -769,7 +778,11 @@ def reset(
 )
 @click.pass_context
 @click.option("--duckdb/--no-duckdb", default=False)
-@click.option("--keep-containers/--no-keep-containers", default=False, help="Keep Docker containers running after test completion")
+@click.option(
+    "--keep-containers/--no-keep-containers",
+    default=False,
+    help="Keep Docker containers running after test completion",
+)
 def sqlmesh_test(ctx: click.Context, duckdb: bool, keep_containers: bool):
     extra_args = ctx.args
     if not ctx.args:
@@ -815,7 +828,9 @@ def sqlmesh_test(ctx: click.Context, duckdb: bool, keep_containers: bool):
             if not keep_containers:
                 docker_client.compose.down()
             else:
-                logger.info("Keeping Docker containers running (--keep-containers flag set)")
+                logger.info(
+                    "Keeping Docker containers running (--keep-containers flag set)"
+                )
 
 
 @local.command()

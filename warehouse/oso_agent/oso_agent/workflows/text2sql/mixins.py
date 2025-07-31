@@ -92,7 +92,7 @@ class PyosoWorkflow(MixableWorkflow):
     """Mixin class to enable PyOSO integration for agent workflows."""
 
     oso_client: ResourceDependency[Client]
-    enable_retries: bool = True
+    enable_retries: bool = False
     max_retries: int = 5
 
     @step
@@ -166,7 +166,7 @@ class OsoDBWorkflow(MixableWorkflow):
     """Mixin class to enable a soon to be deprecated integration for accessing the DB"""
 
     oso_client: ResourceDependency[OsoClient]
-    enable_retries: bool = True
+    enable_retries: bool = False
     max_retries: int = 5
 
     @step

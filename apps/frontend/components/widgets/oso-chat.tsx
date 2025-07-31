@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import ReactMarkdown from "react-markdown";
@@ -12,7 +13,15 @@ interface OSOChatProps {
   children?: ReactElement; // Show this
 }
 
-export function OSOChat(props: OSOChatProps) {
+const OSOChatMeta: CodeComponentMeta<OSOChatProps> = {
+  name: "OSOChat",
+  description: "LLM-powered chat overlay",
+  props: {
+    children: "slot",
+  },
+};
+
+function OSOChat(props: OSOChatProps) {
   const { className, children } = props;
   const supabaseState = useSupabaseState();
   const session =
@@ -300,3 +309,5 @@ export function OSOChat(props: OSOChatProps) {
     </>
   );
 }
+
+export { OSOChat, OSOChatMeta };
