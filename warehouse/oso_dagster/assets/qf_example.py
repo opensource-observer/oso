@@ -1,13 +1,3 @@
-"""
-Example showing how the GraphQL factory already supports asset dependencies
-for the Giveth QF rounds use case described in issue #4518.
-
-This demonstrates that the current factory can:
-1. Fetch QF rounds as initial data
-2. Use round IDs to create dependent assets for projects per round
-3. Support dynamic asset creation based on upstream data
-"""
-
 from typing import Any
 
 from dagster import AssetExecutionContext
@@ -19,11 +9,6 @@ from ..factories.graphql import (
     PaginationType,
     graphql_factory,
 )
-
-# This is the error we get when we don't exclude the fields.
-"""
-GraphQL query execution failed: {'message': 'Cannot return null for non-nullable field ProjectPowerView.projectId.', 'locations': [{'line': 954, 'column': 9}], 'path': ['allProjects', 'projects', 0, 'projectPower', 'projectId'], 'extensions': {'code': 'INTERNAL_SERVER_ERROR'}}
-"""
 
 
 def projects_for_round(context: AssetExecutionContext, data: Any):
@@ -52,7 +37,7 @@ def projects_for_round(context: AssetExecutionContext, data: Any):
         transform_fn=lambda result: result["allProjects"]["projects"],
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
-            page_size=10,
+            page_size=100,
             max_pages=5,
             offset_field="skip",
             limit_field="take",
@@ -84,10 +69,8 @@ def qf_rounds(context: AssetExecutionContext):
         },
         transform_fn=lambda result: result["qfRounds"],
         max_depth=2,
-        # This is where the magic happens: each QF round will trigger
-        # the creation of a dependent asset for its projects
         deps=[projects_for_round],
         deps_rate_limit_seconds=1.0,
     )
 
-    yield from graphql_factory(config, context, max_table_nesting=0)
+    yield graphql_factory(config, context, max_table_nesting=0)
