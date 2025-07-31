@@ -1,9 +1,9 @@
 import inspect
-import logging
 import typing as t
 from dataclasses import dataclass, field
 from graphlib import TopologicalSorter
 
+import structlog
 from dagster import (
     AssetChecksDefinition,
     AssetsDefinition,
@@ -24,7 +24,7 @@ type AssetDeps = t.Iterable[dginternals.CoercibleToAssetDep]
 type AssetKeyPrefixParam = dginternals.CoercibleToAssetKeyPrefix
 type FactoryJobDefinition = JobDefinition | dginternals.UnresolvedAssetJobDefinition
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class GenericGCSAsset:
@@ -216,6 +216,12 @@ class ResourcesContext:
         annotations = f.__annotations__.copy()
         annotations.update(additional_annotations)
 
+        logger.debug(
+            f"running function {f.__name__} with annotations",
+            func_name=f.__name__,
+            annotations=annotations,
+        )
+
         resolved_resources: t.Dict[str, t.Any] = {}
         if ResourcesContext.resources_keyword_name in annotations:
             # If the function has a resources argument, we will pass the
@@ -307,6 +313,12 @@ class EarlyResourcesAssetFactory:
     def name(self) -> str:
         """Get the name of the asset factory."""
         return self._f.__name__
+
+    @property
+    def caller_filename(self) -> str:
+        if self._caller is None:
+            return "<unknown>"
+        return self._caller.filename
 
     @property
     def module(self) -> str:

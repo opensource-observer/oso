@@ -61,7 +61,9 @@ def load_all_assets_from_package(
 
     for module_info in pkgutil.walk_packages(package_path, package.__name__ + "."):
         module_name = module_info.name
-        with time_context(logger, f"loading module {module_name}"):
+        with time_context(
+            logger, f"loading module {module_name}", module_name=module_name
+        ):
             module = importlib.import_module(module_name)
             modules.append(module)
     factories = load_assets_factories_from_modules(modules, early_resources_dag)
@@ -75,6 +77,7 @@ def load_all_assets_from_package(
         with time_context(
             logger,
             f"generating assets for '{early_factory.name}'",
+            caller_filename=early_factory.caller_filename,
             loading_from_module=early_factory.module,
         ):
             resp = early_factory(resources, dependencies=resolved_deps)
