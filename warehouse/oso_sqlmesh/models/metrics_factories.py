@@ -833,6 +833,7 @@ timeseries_metrics(
                 "biannually",
                 "yearly",
             ],
+            entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
                 display_name="Contributor Absence Factor",

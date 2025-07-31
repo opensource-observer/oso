@@ -209,3 +209,40 @@ test_contributor_absence_factor_to_project_daily_no_activity:
   outputs:
     query:
       rows: []
+
+
+test_contributor_absence_factor_to_project_daily_multiple_artifacts_in_project:
+  model: oso.contributor_absence_factor_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 100
+      - to_artifact_id: repo_2
+        from_artifact_id: contributor_2
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 100
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: contributor_absence_factor_daily
+        amount: 1

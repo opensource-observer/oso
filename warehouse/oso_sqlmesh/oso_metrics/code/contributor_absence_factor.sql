@@ -35,7 +35,7 @@ ranked_contributors as (
     cc.contribution_amount,
     tc.total_amount,
     row_number() over (
-      partition by cc.metrics_sample_date, cc.event_source, cc.to_artifact_id 
+      partition by cc.metrics_sample_date, cc.event_source, cc.to_artifact_id
       order by cc.contribution_amount desc
     ) as contributor_rank
   from contributor_contributions cc
@@ -55,29 +55,20 @@ cumulative_contributions as (
     total_amount,
     contributor_rank,
     sum(contribution_amount) over (
-      partition by metrics_sample_date, event_source, to_artifact_id 
+      partition by metrics_sample_date, event_source, to_artifact_id
       order by contributor_rank
       rows unbounded preceding
     ) as cumulative_amount
   from ranked_contributors
-),
-
-absence_factor as (
-  select
-    metrics_sample_date,
-    event_source,
-    to_artifact_id,
-    min(contributor_rank) as contributor_absence_factor
-  from cumulative_contributions
-  where cumulative_amount >= (total_amount * 0.5)
-  group by 1, 2, 3
 )
 
 select
-  af.metrics_sample_date,
-  af.event_source,
-  af.to_artifact_id,
+  metrics_sample_date,
+  event_source,
+  to_artifact_id,
   '' as from_artifact_id,
   @metric_name() as metric,
-  af.contributor_absence_factor as amount
-from absence_factor af
+  min(contributor_rank) as amount
+from cumulative_contributions
+where cumulative_amount >= (total_amount * 0.5)
+group by 1, 2, 3, 4, 5
