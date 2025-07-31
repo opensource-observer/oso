@@ -85,7 +85,9 @@ spec:
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
-              - "oso_dagster.definitions"
+              - "oso_dagster.definitions.legacy"
+              - "--log-format"
+              - "json"
             includeConfigInLaunchedRuns:
               enabled: false
     sqlmesh:
