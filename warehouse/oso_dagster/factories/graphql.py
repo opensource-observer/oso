@@ -171,8 +171,6 @@ class GraphQLResourceConfig:
               the intermediate data into the final desired output format.
     """
 
-    # TODO(javi): explain diff shapes merge + only yields leaves
-
     name: str
     endpoint: str
     target_type: str
