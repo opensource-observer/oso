@@ -33,6 +33,12 @@ def configure_structured_logging() -> None:
     directly from the structlog docs. See:
 
     https://www.structlog.org/en/stable/standard-library.html#rendering-using-structlog-based-formatters-within-logging
+
+    This sets up a structured handler at the root logger. It does not configure
+    the level of the root logger, so it is up to the user to enable the
+    appropriate level so that logs appear on stdout.
+
+    This should be called at the start of an application.
     """
     global STRUCTURED_LOGGING_CONFIGURED
     if STRUCTURED_LOGGING_CONFIGURED:
@@ -75,4 +81,3 @@ def configure_structured_logging() -> None:
     handler.setFormatter(formatter)
     root_logger = logging.getLogger()
     root_logger.addHandler(handler)
-    # root_logger.setLevel(logging.INFO)
