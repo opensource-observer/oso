@@ -69,6 +69,7 @@ def setup_multiple_modules_logging(module_names: t.List[str]):
 def setup_module_logging(
     module_name: str,
     level: int = logging.DEBUG,
+    color: bool = False,
 ):
     configure_structured_logging()
 
