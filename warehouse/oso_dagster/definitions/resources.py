@@ -1,6 +1,6 @@
-import logging
 import typing as t
 
+import structlog
 from dagster import ConfigurableIOManagerFactory
 from dagster_dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
@@ -45,7 +45,7 @@ from oso_dagster.utils.secrets import SecretResolver
 from ..config import DagsterConfig
 from ..utils import GCPSecretResolver, LocalSecretResolver
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @resource_factory("global_config")
