@@ -19,7 +19,7 @@ from ..factories import early_resources_asset_factory
 class SQLMeshRunConfig(dg.Config):
     # Set this to True to restate the selected models
     restate_models: list[str] | None = None
-    
+
     # Set this to True to dynamically identify models to restate based on entity_category tags
     restate_by_entity_category: bool = False
     # List of entity categories to restate (e.g., ["project", "collection"])
@@ -79,10 +79,8 @@ def sqlmesh_factory(
         trino: TrinoResource,
         config: SQLMeshRunConfig,
     ):
-
         restate_models = config.restate_models[:] if config.restate_models else []
-        
-        # Ensure that both trino and the mcs are available
+
         async with multiple_async_contexts(
             trino=trino.ensure_available(log_override=context.log),
         ):
@@ -90,19 +88,25 @@ def sqlmesh_factory(
             if config.restate_by_entity_category:
                 # Ensure we have entity categories to filter by
                 if not config.restate_entity_categories:
-                    context.log.info("restate_by_entity_category is True but no entity categories specified. Using both 'project' and 'collection'.")
+                    context.log.info(
+                        "restate_by_entity_category is True but no entity categories specified. Using both 'project' and 'collection'."
+                    )
                     entity_categories = ["project", "collection"]
                 else:
                     entity_categories = config.restate_entity_categories
-                    context.log.info(f"Filtering models by entity categories: {entity_categories}")
+                    context.log.info(
+                        f"Filtering models by entity categories: {entity_categories}"
+                    )
 
                 for category in entity_categories:
                     restate_models.append(f"tag:entity_category={category}")
 
             plan_options: PlanOptions = {"skip_tests": config.skip_tests}
             if config.allow_destructive_models:
-                plan_options["allow_destructive_models"] = config.allow_destructive_models
-            
+                plan_options["allow_destructive_models"] = (
+                    config.allow_destructive_models
+                )
+
             # If we specify a dev_environment, we will first plan it for safety
             if dev_environment:
                 context.log.info("Planning dev environment")
@@ -130,7 +134,7 @@ def sqlmesh_factory(
                 yield result
 
     all_assets_selection = AssetSelection.assets(sqlmesh_project)
-    
+
     return AssetFactoryResponse(
         assets=[sqlmesh_project],
         jobs=[
