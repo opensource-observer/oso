@@ -125,7 +125,7 @@ client.to_pandas("SELECT * FROM projects_v1 LIMIT 5")
 
 ```python
 query = oso.semantic.select(
-    "projects_v1",
+    "projects",
 ).limit(5)
 ```
 
