@@ -179,13 +179,33 @@ The new dependency system allows you to:
   final dataset
 - **Rate limit dependencies**: Control the rate of dependent API calls
 
-When `deps` is provided:
+#### Tree-like Dependency Structure
+
+Dependencies can be viewed as a **tree structure** where:
+
+- The **root** is your main GraphQL query
+- **Branches** are dependency functions that process each item from the parent
+- **Leaves** are the final data shapes that get yielded to your dataset
+
+```
+Main Query (transactions)
+├── Item 1 → fetch_account_details() → Account Data (leaf)
+├── Item 2 → fetch_account_details() → Account Data (leaf)
+└── Item 3 → fetch_account_details() → Account Data (leaf)
+```
+
+#### Data Shape Merging
+
+When `deps` is provided, **DLT automatically handles different data shapes**:
 
 1. The main query executes and fetches data
 2. Each item from the main query is passed to dependency functions
-3. Dependency functions can execute additional GraphQL queries
-4. Only the dependency results are included in the final output
-5. The main query data serves as intermediate processing data
+3. Dependency functions can execute additional GraphQL queries with different schemas
+4. **DLT merges different data shapes** from dependencies automatically
+5. **Only leaf nodes** (final dependency results) are included in the final output
+6. The main query data serves as intermediate processing data and is discarded
+
+This means you can have dependencies that return completely different data structures (e.g., transactions → accounts → users), and DLT will intelligently combine them into a coherent dataset, only preserving the final leaf data from your dependency tree.
 
 ---
 
