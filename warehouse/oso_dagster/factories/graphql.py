@@ -187,7 +187,7 @@ class GraphQLResourceConfig:
         List[
             Callable[
                 [AssetExecutionContext, Any],
-                Generator[Any, Any, Any],
+                Generator[DltResource, Any, Any],
             ]
         ]
     ] = None
