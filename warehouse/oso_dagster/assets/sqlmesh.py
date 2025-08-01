@@ -75,7 +75,6 @@ def sqlmesh_factory(
     dev_environment = sqlmesh_infra_config["dev_environment"]
     environment = sqlmesh_infra_config["environment"]
 
-    print(sqlmesh_cache_options)
 
     @sqlmesh_assets(
         config=sqlmesh_context_config,
