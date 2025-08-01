@@ -1029,8 +1029,8 @@ wheels = [
 
 [[package]]
 name = "dagster-sqlmesh"
-version = "0.17.0"
-source = { registry = "https://pypi.org/simple" }
+version = "0.18.0"
+source = { editable = "../dagster-sqlmesh" }
 dependencies = [
     { name = "dagster" },
     { name = "pyarrow" },
@@ -3743,7 +3743,7 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = "==0.17.0" },
+    { name = "dagster-sqlmesh", editable = "../dagster-sqlmesh" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.8.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.8.0" },

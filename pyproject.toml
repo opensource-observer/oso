@@ -101,6 +101,7 @@ pyoso = { workspace = true }
 oso-mcp = { workspace = true }
 oso-core = { workspace = true }
 metrics-service = { workspace = true }
+dagster-sqlmesh = { path = "../dagster-sqlmesh", editable = true }
 
 [tool.uv.workspace]
 members = [
