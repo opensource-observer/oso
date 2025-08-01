@@ -1,14 +1,22 @@
 import copy
 
 import dagster as dg
-from dagster import AssetExecutionContext, AssetSelection, RunConfig, define_asset_job
+from dagster import (
+    AssetExecutionContext,
+    AssetSelection,
+    ResourceParam,
+    RunConfig,
+    define_asset_job,
+)
 from dagster_sqlmesh import (
+    DagsterSQLMeshCacheOptions,
     PlanOptions,
     SQLMeshContextConfig,
     SQLMeshDagsterTranslator,
     SQLMeshResource,
     sqlmesh_assets,
 )
+from oso_dagster.config import DagsterConfig
 from oso_dagster.factories.common import AssetFactoryResponse
 from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
@@ -60,29 +68,38 @@ op_tags = {
 @early_resources_asset_factory()
 def sqlmesh_factory(
     sqlmesh_infra_config: dict,
-    sqlmesh_config: SQLMeshContextConfig,
+    sqlmesh_context_config: SQLMeshContextConfig,
     sqlmesh_translator: SQLMeshDagsterTranslator,
+    sqlmesh_cache_options: DagsterSQLMeshCacheOptions,
 ):
     dev_environment = sqlmesh_infra_config["dev_environment"]
     environment = sqlmesh_infra_config["environment"]
 
+    print(sqlmesh_cache_options)
+
     @sqlmesh_assets(
-        config=sqlmesh_config,
+        config=sqlmesh_context_config,
         environment=environment,
         dagster_sqlmesh_translator=sqlmesh_translator,
         enabled_subsetting=False,
         op_tags=op_tags,
+        cache_options=sqlmesh_cache_options,
     )
     async def sqlmesh_project(
         context: AssetExecutionContext,
+        global_config: ResourceParam[DagsterConfig],
         sqlmesh: SQLMeshResource,
         trino: TrinoResource,
         config: SQLMeshRunConfig,
     ):
         restate_models = config.restate_models[:] if config.restate_models else []
 
-        async with multiple_async_contexts(
-            trino=trino.ensure_available(log_override=context.log),
+        # We use this helper function so we can run sqlmesh both locally and in
+        # a k8s environment
+        def run_sqlmesh(
+            context: AssetExecutionContext,
+            sqlmesh: SQLMeshResource,
+            config: SQLMeshRunConfig,
         ):
             # If restate_by_entity_category is True, dynamically identify models based on entity categories
             if config.restate_by_entity_category:
@@ -131,6 +148,18 @@ def sqlmesh_factory(
                 end=config.end,
                 restate_models=restate_models,
             ):
+                yield result
+
+        # Trino can either be `local-trino` or `trino`
+        if "trino" in global_config.sqlmesh_gateway:
+            async with multiple_async_contexts(
+                trino=trino.ensure_available(log_override=context.log),
+            ):
+                for result in run_sqlmesh(context, sqlmesh, config):
+                    yield result
+        else:
+            # If we are not running trino we are using duckdb
+            for result in run_sqlmesh(context, sqlmesh, config):
                 yield result
 
     all_assets_selection = AssetSelection.assets(sqlmesh_project)

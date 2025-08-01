@@ -1,12 +1,16 @@
 import logging
 import typing as t
 
+from dotenv import load_dotenv
 from oso_core.logging import setup_module_logging
 from oso_core.logging.decorators import time_function
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 setup_module_logging("oso_dagster")
+setup_module_logging("dagster_sqlmesh")
 
 
 @time_function(logger, override_name="legacy_main")
@@ -68,7 +72,7 @@ def main():
         dlt_warehouse_destination: Destination,
         dlt: DagsterDltResource,
         alert_manager: AlertManager,
-        sqlmesh_config: SQLMeshContextConfig,
+        sqlmesh_context_config: SQLMeshContextConfig,
         sqlmesh_infra_config: t.Dict[str, str],
         sqlmesh: SQLMeshResource,
         k8s: K8sResource,
@@ -118,7 +122,7 @@ def main():
             "dlt_warehouse_destination": dlt_warehouse_destination,
             "project_id": global_config.project_id,
             "alert_manager": alert_manager,
-            "sqlmesh_config": sqlmesh_config,
+            "sqlmesh_config": sqlmesh_context_config,
             "sqlmesh_infra_config": sqlmesh_infra_config,
             "k8s": k8s,
             "trino": trino,
