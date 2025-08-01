@@ -1,10 +1,15 @@
+import os
 import typing as t
 
 import structlog
 from dagster import ConfigurableIOManagerFactory
 from dagster_dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
-from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
+from dagster_sqlmesh import (
+    DagsterSQLMeshCacheOptions,
+    SQLMeshContextConfig,
+    SQLMeshResource,
+)
 from dlt.common.destination import Destination
 from oso_core.logging.decorators import time_function
 from oso_dagster.cbt.cbt import CBTResource
@@ -41,6 +46,7 @@ from oso_dagster.utils.alerts import (
     LogAlertManager,
 )
 from oso_dagster.utils.secrets import SecretResolver
+from sqlmesh.core.config.connection import DuckDBConnectionConfig, TrinoConnectionConfig
 
 from ..config import DagsterConfig
 from ..utils import GCPSecretResolver, LocalSecretResolver
@@ -103,15 +109,55 @@ def gcs_resource_factory(global_config: DagsterConfig) -> GCSResource:
     return GCSResource(project=global_config.project_id)
 
 
+@resource_factory("sqlmesh_cache_options")
+@time_function(logger)
+def sqlmesh_cache_options_factory(
+    global_config: DagsterConfig,
+) -> DagsterSQLMeshCacheOptions:
+    """Factory function to create SQLMesh cache options."""
+
+    return DagsterSQLMeshCacheOptions(
+        enabled=global_config.sqlmesh_dagster_asset_cache_enabled,
+        cache_dir=global_config.sqlmesh_dagster_asset_cache_dir,
+        enable_ttl=global_config.sqlmesh_dagster_asset_enable_ttl,
+        ttl_seconds=global_config.sqlmesh_dagster_asset_ttl_seconds,
+    )
+
+
 @resource_factory("sqlmesh_translator")
 @time_function(logger)
-def sqlmesh_translator_factory():
-    return PrefixedSQLMeshTranslator("sqlmesh")
+def sqlmesh_translator_factory(
+    global_config: DagsterConfig, sqlmesh_context_config: SQLMeshContextConfig
+) -> PrefixedSQLMeshTranslator:
+    sqlmesh_config = sqlmesh_context_config.sqlmesh_config
+    if sqlmesh_config is None:
+        raise ValueError("SQLMesh configuration is not set in the context config.")
+    gateway = sqlmesh_config.gateways[global_config.sqlmesh_gateway]
+    connection = gateway.connection
+    if connection is None:
+        raise ValueError("SQLMesh gateway connection is not set in the context config.")
+    default_catalog = ""
+    match connection:
+        case TrinoConnectionConfig(catalog=catalog):
+            default_catalog = catalog
+        case DuckDBConnectionConfig(database=database):
+            if not database:
+                raise ValueError(
+                    "DuckDB database path is not set in the context config."
+                )
+            default_catalog = os.path.basename(database).split(".")[0]
+        case _:
+            raise ValueError(
+                f"Unsupported SQLMesh connection type: {type(connection).__name__}"
+            )
+    return PrefixedSQLMeshTranslator("sqlmesh", default_catalog)
 
 
-@resource_factory("sqlmesh_config")
+@resource_factory("sqlmesh_context_config")
 @time_function(logger)
-def sqlmesh_config_factory(global_config: DagsterConfig) -> SQLMeshContextConfig:
+def sqlmesh_context_config_factory(
+    global_config: DagsterConfig,
+) -> SQLMeshContextConfig:
     return SQLMeshContextConfig(
         path=global_config.sqlmesh_dir,
         gateway=global_config.sqlmesh_gateway,
@@ -145,11 +191,11 @@ def trino_resource_factory(
 
 @resource_factory("sqlmesh")
 def sqlmesh_resource_factory(
-    sqlmesh_config: SQLMeshContextConfig,
+    sqlmesh_context_config: SQLMeshContextConfig,
 ) -> SQLMeshResource:
     """Factory function to create a SQLMesh resource."""
     return SQLMeshResource(
-        config=sqlmesh_config,
+        config=sqlmesh_context_config,
     )
 
 
@@ -347,7 +393,8 @@ def default_resource_registry():
     registry.add(gcs_resource_factory)
     registry.add(sqlmesh_resource_factory)
     registry.add(sqlmesh_translator_factory)
-    registry.add(sqlmesh_config_factory)
+    registry.add(sqlmesh_context_config_factory)
+    registry.add(sqlmesh_cache_options_factory)
     registry.add(k8s_resource_factory)
     registry.add(trino_resource_factory)
     registry.add(sqlmesh_exporter_factory)

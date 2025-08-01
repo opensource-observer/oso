@@ -60,6 +60,10 @@ class DagsterConfig(BaseSettings):
     sqlmesh_catalog: str = "iceberg"
     sqlmesh_schema: str = "oso"
     sqlmesh_bq_export_dataset_id: str = "oso"
+    sqlmesh_dagster_asset_cache_enabled: bool = False
+    sqlmesh_dagster_asset_cache_dir: str = ""
+    sqlmesh_dagster_asset_enable_ttl: bool = True
+    sqlmesh_dagster_asset_ttl_seconds: int = 60 * 5
 
     enable_k8s_executor: bool = False
 
