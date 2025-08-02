@@ -35,8 +35,11 @@ SELECT
   to_address,
   gas AS gas_used,
   gas_price,
+  receipt_gas_used,
+  receipt_effective_gas_price,
   value_lossless,
-  @chain_name(chain) AS chain
+  @chain_name(chain) AS chain,
+  transaction_type
 FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.transactions')
 WHERE
   network = 'mainnet'
