@@ -212,7 +212,7 @@ test_contributors_lifecycle_to_project_monthly:
         from_artifact_id: ''
         metric: churned_contributors_monthly
         amount: null
-      
+
       # Project 2 - All lifecycle metrics will be NULL for first period
       - metrics_sample_date: 2024-01-01
         to_project_id: project_2
@@ -274,13 +274,13 @@ test_contributors_lifecycle_to_project_monthly:
         from_artifact_id: ''
         metric: change_in_new_contributors_monthly
         amount: -1
-      # Churned contributors: previous_active(10) - (current_active(12) + new(3) + resurrected(0)) = 10 - 15 = -5
+      # Churned contributors: previous_active(10) - (current_active(12) - new(3) - resurrected(0)) = 10 - 9 = 1
       - metrics_sample_date: 2024-02-01
         to_project_id: project_1
         event_source: GITHUB
         from_artifact_id: ''
         metric: churned_contributors_monthly
-        amount: -5
+        amount: 1
 
       # March 2024 - Project 1 results
       # Change in active contributors: previous(12) - current(8) = 4
@@ -311,13 +311,13 @@ test_contributors_lifecycle_to_project_monthly:
         from_artifact_id: ''
         metric: change_in_new_contributors_monthly
         amount: 2
-      # Churned contributors: previous_active(12) - (current_active(8) + new(1) + resurrected(2)) = 12 - 11 = 1
+      # Churned contributors: previous_active(12) - (current_active(8) - new(1) - resurrected(2)) = 12 - 5 = 7
       - metrics_sample_date: 2024-03-01
         to_project_id: project_1
         event_source: GITHUB
         from_artifact_id: ''
         metric: churned_contributors_monthly
-        amount: 1
+        amount: 7
 
       # February 2024 - Project 2 results
       # Change in active contributors: previous(5) - current(6) = -1
@@ -348,13 +348,13 @@ test_contributors_lifecycle_to_project_monthly:
         from_artifact_id: ''
         metric: change_in_new_contributors_monthly
         amount: 0
-      # Churned contributors: previous_active(5) - (current_active(6) + new(1) + resurrected(1)) = 5 - 8 = -3
+      # Churned contributors: previous_active(5) - (current_active(6) - new(1) - resurrected(1)) = 5 - 4 = 1
       - metrics_sample_date: 2024-02-01
         to_project_id: project_2
         event_source: GITHUB
         from_artifact_id: ''
         metric: churned_contributors_monthly
-        amount: -3
+        amount: 1
 
 test_contributors_lifecycle_to_project_monthly_edge_cases:
   model: oso.contributors_lifecycle_to_project_monthly
@@ -462,7 +462,7 @@ test_contributors_lifecycle_to_project_monthly_edge_cases:
         from_artifact_id: ''
         metric: churned_contributors_monthly
         amount: null
-        
+
       # February results with zero values
       # Change in active contributors: previous(5) - current(0) = 5
       - metrics_sample_date: 2024-02-01
@@ -492,7 +492,7 @@ test_contributors_lifecycle_to_project_monthly_edge_cases:
         from_artifact_id: ''
         metric: change_in_new_contributors_monthly
         amount: 1
-      # Churned contributors: previous_active(5) - (current_active(0) + new(0) + resurrected(0)) = 5 - 0 = 5
+      # Churned contributors: previous_active(5) - (current_active(0) - new(0) - resurrected(0)) = 5 - 0 = 5
       - metrics_sample_date: 2024-02-01
         to_project_id: project_1
         event_source: GITHUB
