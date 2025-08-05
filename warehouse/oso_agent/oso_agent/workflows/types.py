@@ -2,7 +2,9 @@ import typing as t
 
 import pandas as pd
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.workflow import Event
+from oso_agent.tool.oso_sql_db import OsoSqlDatabase
 from oso_semantic.definition import SemanticQuery
 
 
@@ -128,3 +130,35 @@ class RetrySemanticQueryEvent(Event):
     error: Exception
     remaining_tries: int
     error_context: list[str] = []
+
+
+class StartQueryEngineEvent(Event):
+    """Event to start the QueryEngine workflow steps."""
+
+    id: str
+    input_text: str
+    synthesize_response: bool = True
+    execute_sql: bool = True
+
+
+class SchemaAnalysisEvent(Event):
+    """Event carrying schema analysis results."""
+
+    id: str
+    input_text: str
+    sql_database: OsoSqlDatabase
+    relevant_tables: list[str]
+    synthesize_response: bool = True
+    execute_sql: bool = True
+
+
+class RowContextEvent(Event):
+    """Event carrying row context retrieval results."""
+
+    id: str
+    input_text: str
+    sql_database: OsoSqlDatabase
+    relevant_tables: list[str]
+    row_retrievers: dict[str, BaseRetriever]
+    synthesize_response: bool = True
+    execute_sql: bool = True
