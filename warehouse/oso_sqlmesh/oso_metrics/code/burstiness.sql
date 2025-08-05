@@ -52,13 +52,14 @@ variance_calc as (
   from activity_stats
 )
 select
-  variance_calc.metrics_sample_date as metrics_sample_date,
-  variance_calc.event_source as event_source,
-  variance_calc.to_artifact_id as to_artifact_id,
+  variance_calc.metrics_sample_date,
+  variance_calc.event_source,
+  variance_calc.to_artifact_id,
   '' as from_artifact_id,
   @metric_name() as metric,
   cast(case
-    when mean_activity > 0 then variance_activity * variance_activity / mean_activity
+    when sum(mean_activity) > 0 then sum(variance_activity * variance_activity) / sum(mean_activity)
     else NULL
   end as DOUBLE) as amount
 from variance_calc
+group by 1, 2, 3, 4, 5
