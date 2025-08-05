@@ -13,7 +13,7 @@ import {
   GET_TIMESERIES_METRICS_BY_ARTIFACT,
   GET_TIMESERIES_METRICS_BY_PROJECT,
   GET_TIMESERIES_METRICS_BY_COLLECTION,
-} from "@/lib/graphql/queries";
+} from "@/lib/graphql/oso_queries";
 import { eventTimeToLabel } from "@/lib/parsing";
 import type { EventData } from "@/lib/types/db";
 import {
