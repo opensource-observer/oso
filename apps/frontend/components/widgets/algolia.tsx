@@ -5,7 +5,7 @@ import { liteClient } from "algoliasearch/lite";
 import React, { ReactElement, useEffect, useRef } from "react";
 import { Index, SearchBox, useInfiniteHits } from "react-instantsearch";
 import { InstantSearchNext } from "react-instantsearch-nextjs";
-import { DataProvider } from "@plasmicapp/loader-nextjs";
+import { CodeComponentMeta, DataProvider } from "@plasmicapp/loader-nextjs";
 import {
   ALGOLIA_APPLICATION_ID,
   ALGOLIA_API_KEY,
@@ -24,6 +24,22 @@ type AlgoliaSearchListProps = {
   indexName?: string; // Choose a custom Algolia index
   placeholder?: string; // Placeholder for search box
   defaultSearchResults?: any; // Show some results even if no query
+};
+
+const AlgoliaSearchListMeta: CodeComponentMeta<AlgoliaSearchListProps> = {
+  name: "AlgoliaSearchList",
+  description: "Algolia-powered search list",
+  props: {
+    children: "slot",
+    indexName: {
+      type: "string",
+      defaultValue: ALGOLIA_INDEX,
+      helpText: "Comma-separated Algolia index names",
+    },
+    placeholder: "string",
+    defaultSearchResults: "object",
+  },
+  providesData: true,
 };
 
 function HitsContainer(props: AlgoliaSearchListProps) {
@@ -110,5 +126,5 @@ function AlgoliaSearchList(props: AlgoliaSearchListProps) {
   );
 }
 
-//export { AlgoliaSearchList };
+export { AlgoliaSearchListMeta, AlgoliaSearchList };
 export default AlgoliaSearchList;

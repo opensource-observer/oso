@@ -56,9 +56,9 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
             ),
             dimensions=[
                 Dimension(
-                    name="bucket_day",
-                    description="The day the event occurred",
-                    column_name="bucket_day",
+                    name="time",
+                    description="The timestamp when the event occurred",
+                    column_name="time",
                 ),
                 Dimension(
                     name="event_type",
@@ -71,6 +71,51 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
                     column_name="event_source",
                 ),
                 Dimension(
+                    name="event_source_id",
+                    description="The source ID of the event",
+                    column_name="event_source_id",
+                ),
+                Dimension(
+                    name="to_artifact_id",
+                    description="The ID of the artifact to which the event occurred",
+                    column_name="to_artifact_id",
+                ),
+                Dimension(
+                    name="from_artifact_id",
+                    description="The ID of the artifact from which the event occurred",
+                    column_name="from_artifact_id",
+                ),
+                Dimension(
+                    name="to_artifact_name",
+                    description="The name of the target artifact",
+                    column_name="to_artifact_name",
+                ),
+                Dimension(
+                    name="to_artifact_namespace",
+                    description="The namespace of the target artifact",
+                    column_name="to_artifact_namespace",
+                ),
+                Dimension(
+                    name="to_artifact_source_id",
+                    description="The source ID of the target artifact",
+                    column_name="to_artifact_source_id",
+                ),
+                Dimension(
+                    name="from_artifact_name",
+                    description="The name of the source artifact",
+                    column_name="from_artifact_name",
+                ),
+                Dimension(
+                    name="from_artifact_namespace",
+                    description="The namespace of the source artifact",
+                    column_name="from_artifact_namespace",
+                ),
+                Dimension(
+                    name="from_artifact_source_id",
+                    description="The source ID of the source artifact",
+                    column_name="from_artifact_source_id",
+                ),
+                Dimension(
                     name="amount",
                     description="The amount or count of the event",
                     column_name="amount",
@@ -78,12 +123,17 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
                 Dimension(
                     name="month",
                     description="The month the event occurred",
-                    query="DATE_TRUNC('month', self.bucket_day)",
+                    query="DATE_TRUNC('month', self.time)",
                 ),
                 Dimension(
                     name="year",
                     description="The year the event occurred",
-                    query="DATE_TRUNC('year', self.bucket_day)",
+                    query="DATE_TRUNC('year', self.time)",
+                ),
+                Dimension(
+                    name="date",
+                    description="The date the event occurred",
+                    query="DATE_TRUNC('day', self.time)",
                 ),
             ],
             measures=[
@@ -103,7 +153,7 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
                     query="AVG(self.amount)",
                 ),
             ],
-            time_column="bucket_day",
+            time_column="time",
             relationships=[
                 Relationship(
                     name="from",
@@ -152,9 +202,24 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
                     column_name="event_source",
                 ),
                 Dimension(
+                    name="from_artifact_id",
+                    description="The ID of the artifact from which the event occurred",
+                    column_name="from_artifact_id",
+                ),
+                Dimension(
+                    name="to_artifact_id",
+                    description="The ID of the artifact to which the event occurred",
+                    column_name="to_artifact_id",
+                ),
+                Dimension(
                     name="amount",
                     description="The amount or count of the event",
                     column_name="amount",
+                ),
+                Dimension(
+                    name="count",
+                    description="The count of events",
+                    column_name="count",
                 ),
                 Dimension(
                     name="month",
@@ -169,8 +234,8 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
             ],
             measures=[
                 Measure(
-                    name="count",
-                    description="The number of events",
+                    name="record_count",
+                    description="The number of event records",
                     query="COUNT(*)",
                 ),
                 Measure(
@@ -182,6 +247,11 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
                     name="avg_amount",
                     description="The average amount of events",
                     query="AVG(self.amount)",
+                ),
+                Measure(
+                    name="total_count",
+                    description="The total count from the count column",
+                    query="SUM(self.count)",
                 ),
             ],
             time_column="bucket_day",
@@ -231,6 +301,16 @@ def register_events(registry: Registry, catalog_name: str = "iceberg"):
                     name="event_source",
                     description="The source of the funding",
                     column_name="event_source",
+                ),
+                Dimension(
+                    name="from_artifact_id",
+                    description="The ID of the artifact from which the event occurred",
+                    column_name="from_artifact_id",
+                ),
+                Dimension(
+                    name="to_artifact_id",
+                    description="The ID of the artifact to which the event occurred",
+                    column_name="to_artifact_id",
                 ),
                 Dimension(
                     name="amount",

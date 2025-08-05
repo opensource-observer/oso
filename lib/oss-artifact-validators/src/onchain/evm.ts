@@ -1,4 +1,4 @@
-import { Web3 } from "web3";
+import { createPublicClient, http, PublicClient } from "viem";
 import { BigQuery, BigQueryOptions } from "@google-cloud/bigquery";
 import _ from "lodash";
 
@@ -19,27 +19,31 @@ interface GenericEVMNetworkValidatorOptions {
  * In general most EVM networks should be able to inherit directly from this.
  */
 export class GenericEVMNetworkValidator implements EVMNetworkValidator {
-  private web3: Web3;
+  private client: PublicClient;
   private bq: BigQuery;
   private deployerTable: string;
 
   static create(
     options: GenericEVMNetworkValidatorOptions,
   ): EVMNetworkValidator {
-    const web3 = new Web3(options.rpcUrl);
+    const client = createPublicClient({
+      transport: http(options.rpcUrl),
+    });
     const bq = new BigQuery(options.bqOptions);
-    return new GenericEVMNetworkValidator(web3, bq, options.deployerTable);
+    return new GenericEVMNetworkValidator(client, bq, options.deployerTable);
   }
 
-  constructor(web3: Web3, bq: BigQuery, deployerTable: string) {
-    this.web3 = web3;
+  constructor(client: PublicClient, bq: BigQuery, deployerTable: string) {
+    this.client = client;
     this.bq = bq;
     this.deployerTable = deployerTable;
   }
 
   async isEOA(addr: string): Promise<boolean> {
-    const code = await this.web3.eth.getCode(addr);
-    return code === "0x";
+    const code = await this.client.getCode({
+      address: addr as `0x${string}`,
+    });
+    return !code || code === "0x";
   }
 
   async isContract(addr: string): Promise<boolean> {

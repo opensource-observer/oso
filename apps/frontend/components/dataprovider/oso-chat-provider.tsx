@@ -1,11 +1,11 @@
 import React from "react";
 import { useChat } from "@ai-sdk/react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
 } from "@/components/dataprovider/provider-view";
-import { RegistrationProps } from "@/lib/types/plasmic";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
 import { logger } from "@/lib/logger";
@@ -24,16 +24,20 @@ type OsoChatProviderProps = CommonDataProviderProps & {
   chatId?: string;
 };
 
-const OsoChatProviderRegistration: RegistrationProps<OsoChatProviderProps> = {
-  ...CommonDataProviderRegistration,
-  agentName: {
-    type: "string",
-    helpText: "The agent's name (e.g. function_text2sql)",
+const OsoChatProviderMeta: CodeComponentMeta<OsoChatProviderProps> = {
+  name: "OsoChatProvider",
+  props: {
+    ...CommonDataProviderRegistration,
+    agentName: {
+      type: "string",
+      helpText: "The agent's name (e.g. function_text2sql)",
+    },
+    chatId: {
+      type: "string",
+      helpText: "The chat 'id' to save to in Supabase",
+    },
   },
-  chatId: {
-    type: "string",
-    helpText: "The chat 'id' to save to in Supabase",
-  },
+  providesData: true,
 };
 
 function OsoChatProvider(props: OsoChatProviderProps) {
@@ -55,6 +59,9 @@ function OsoChatProvider(props: OsoChatProviderProps) {
   const chatData = useChat({
     api: CHAT_PATH,
     headers: headers,
+    body: {
+      chatId: chatId,
+    },
   });
 
   React.useEffect(() => {
@@ -112,5 +119,5 @@ function OsoChatProvider(props: OsoChatProviderProps) {
   );
 }
 
-export { OsoChatProviderRegistration, OsoChatProvider };
+export { OsoChatProvider, OsoChatProviderMeta };
 export type { OsoChatProviderProps };

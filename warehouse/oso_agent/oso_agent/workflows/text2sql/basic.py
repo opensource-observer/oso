@@ -7,6 +7,7 @@ from llama_index.core.tools import QueryEngineTool
 from llama_index.core.workflow import Context, StartEvent, StopEvent, step
 from oso_agent.types.response import StrResponse
 from oso_agent.workflows.types import (
+    RetrySemanticQueryEvent,
     SQLResultSummaryResponseEvent,
     Text2SQLGenerationEvent,
 )
@@ -66,9 +67,9 @@ class BasicText2SQL(
             ) from e
 
         raw_output = tool_output.raw_output
-        assert isinstance(
-            raw_output, ToolResponse
-        ), "Expected a ToolResponse from the query engine tool"
+        assert isinstance(raw_output, ToolResponse), (
+            "Expected a ToolResponse from the query engine tool"
+        )
 
         if raw_output.metadata is None:
             raise ValueError("No metadata in query engine tool output")
@@ -81,7 +82,9 @@ class BasicText2SQL(
             output_sql,
         )
         if not output_sql:
-            raise ValueError("No SQL query found in metadata of query engine tool output")
+            raise ValueError(
+                "No SQL query found in metadata of query engine tool output"
+            )
 
         synthesize_response = bool(getattr(event, "synthesize_response", True))
         execute_sql = bool(getattr(event, "execute_sql", True))
@@ -109,3 +112,18 @@ class BasicText2SQL(
         )
 
         return StopEvent(result=StrResponse(blob=response.summary))
+
+    # TODO(jabolo): We may want to rename `RetrySemanticQueryEvent` to
+    # `RetryEvent` to make it more generic in the future.
+    @step
+    async def handle_retry_semantic_query(
+        self, event: RetrySemanticQueryEvent
+    ) -> StopEvent:
+        """Handle retry events by raising an error"""
+        error_msg = (
+            f"Retries are not supported in BasicText2SQL workflow. "
+            f"Original error: {event.error}. "
+            f"Use SemanticText2SQLWorkflow for retry functionality."
+        )
+        logger.error(error_msg)
+        raise ValueError(error_msg)

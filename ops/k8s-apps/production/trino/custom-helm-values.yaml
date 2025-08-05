@@ -42,8 +42,8 @@ spec:
     worker:
       resources:
         requests:
-          cpu: 63000m
-          memory: 390000Mi
+          cpu: 78000m
+          memory: 1700Gi
       tolerations:
         - key: pool_type
           operator: Equal
@@ -53,9 +53,9 @@ spec:
         pool_type: trino-worker
       config:
         query:
-          maxMemoryPerNode: 140GB
+          maxMemoryPerNode: 700GB
       jvm:
-        maxHeapSize: "350G"
+        maxHeapSize: "1500G"
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
@@ -64,6 +64,7 @@ spec:
       # Set a very large max query length ONLY for internal writer production
       # trino
       - "query.max-length=1000000000"
+      - "query.max-stage-count=200"
       - "exchange.http-client.max-content-length=64MB"
     additionalExchangeManagerProperties:
       - "exchange.sink-buffers-per-partition=2"
@@ -81,7 +82,7 @@ spec:
         baseDir: gs://oso-iceberg-exchange-usc1/trino-exchange
       config:
         query:
-          maxMemory: "1400GB"
+          maxMemory: "7000GB"
       workers: 1
       autoscaling:
         enabled: true
@@ -107,6 +108,7 @@ spec:
     catalogs:
       iceberg: |
         connector.name=iceberg
+        iceberg.max-commit-retry=10
         iceberg.catalog.type=rest
         iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
         iceberg.rest-catalog.prefix=main

@@ -10,7 +10,6 @@ import uvicorn
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
 from oso_agent.tool.storage_context import setup_storage_context
-from pyoso import Client
 
 from ..agent import setup_default_agent_registry
 from ..clients.oso_client import OsoClient
@@ -120,6 +119,7 @@ def query(config, query, agent_name, ollama_model, ollama_url):
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
+
 @cli.command()
 @pass_config
 def initialize_vector_store(config: AgentConfig):
@@ -133,18 +133,20 @@ def initialize_vector_store(config: AgentConfig):
     store.
     """
     try:
-        oso_client = Client(
+        oso_client = OsoClient(
             api_key=config.oso_api_key.get_secret_value(),
         )
         embed = create_embedding(config)
         storage_context = setup_storage_context(config, embed_model=embed)
 
-        asyncio.run(index_oso_tables(
-            config=config,
-            storage_context=storage_context,
-            oso_client=oso_client,
-            embed_model=embed,
-        ))
+        asyncio.run(
+            index_oso_tables(
+                config=config,
+                storage_context=storage_context,
+                oso_client=oso_client,
+                embed_model=embed,
+            )
+        )
 
         click.echo("\nOSO tables indexed successfully.")
     except Exception as e:
@@ -211,7 +213,10 @@ class JsonType(click.ParamType):
 )
 @pass_config
 def experiment(
-    config: AgentConfig, experiment_name: str, experiment_options: dict[str, t.Any], example_ids: str
+    config: AgentConfig,
+    experiment_name: str,
+    experiment_options: dict[str, t.Any],
+    example_ids: str,
 ):
     """Run a single experiment through the agent.
 
@@ -223,7 +228,7 @@ def experiment(
         ) as b:
             experiment_options = {
                 **experiment_options,
-                "example_ids": [s.strip() for s in example_ids.split(",") if s.strip()]
+                "example_ids": [s.strip() for s in example_ids.split(",") if s.strip()],
             }
 
             response = asyncio.run(
@@ -397,6 +402,7 @@ async def _run_demo(config: AgentConfig):
 
         query_engine = await create_oso_query_engine(
             config,
+            client,
             storage_context,
             llm,
             embed,

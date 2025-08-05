@@ -11,8 +11,11 @@ import {
   User,
   OrganizationDetails,
   OrgRole,
+  AuthUserSchema,
 } from "@/lib/types/user";
 import { Database } from "@/lib/types/supabase";
+import { OSO_JWT_SECRET } from "@/lib/config";
+import { SignJWT, jwtVerify } from "jose";
 
 // Constants
 const DEFAULT_KEY_NAME = "login";
@@ -316,9 +319,13 @@ async function getUser(request: NextRequest): Promise<User> {
     : trimmedAuth;
 
   const jwtUser = await getUserByJwt(token, host);
-  const user =
+  const apiKeyUser =
     jwtUser.role === "anonymous" ? await getUserByApiKey(token, host) : jwtUser;
 
+  const user =
+    apiKeyUser.role === "anonymous"
+      ? await verifyOsoJwt(token, host)
+      : apiKeyUser;
   if (user.role === "anonymous") {
     return user;
   }
@@ -339,6 +346,58 @@ async function getUser(request: NextRequest): Promise<User> {
   }
 
   return user;
+}
+
+async function signOsoJwt(
+  user: AuthUser,
+  org: Omit<OrganizationDetails, "orgRole">,
+): Promise<string> {
+  const secret = OSO_JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT Secret not found: unable to authenticate");
+  }
+
+  const authUser: AuthUser = {
+    ...user,
+    ...org,
+    role: "user",
+    orgRole: "member",
+  }; // For JWT requests, default to lower permissions for now
+
+  return new SignJWT(authUser as any)
+    .setProtectedHeader({ alg: "HS256" })
+    .setAudience("opensource-observer")
+    .setIssuer("opensource-observer")
+    .setExpirationTime("1h")
+    .sign(new TextEncoder().encode(secret));
+}
+
+async function verifyOsoJwt(
+  token: string,
+  host: string | null,
+): Promise<AuthUser | AnonUser> {
+  const secret = OSO_JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT Secret not found: unable to authenticate");
+  }
+  try {
+    const { payload } = await jwtVerify<AuthUser>(
+      token,
+      new TextEncoder().encode(secret),
+      {
+        algorithms: ["HS256"],
+        audience: "opensource-observer",
+        issuer: "opensource-observer",
+      },
+    );
+
+    return AuthUserSchema.parse(payload);
+  } catch (e: unknown) {
+    console.log(
+      `auth: Invalid JWT token: ${e instanceof Error ? e.message : ""} => anon`,
+    );
+    return makeAnonUser(host);
+  }
 }
 
 /**
@@ -369,4 +428,4 @@ async function setSupabaseSession(
   return { data, error: null };
 }
 
-export { getUser, setSupabaseSession };
+export { getUser, setSupabaseSession, signOsoJwt, verifyOsoJwt };

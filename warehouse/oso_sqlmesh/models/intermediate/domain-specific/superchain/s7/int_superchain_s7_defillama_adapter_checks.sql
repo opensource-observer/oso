@@ -11,7 +11,7 @@ MODEL (
   ),
 );
 
-@DEF(sample_date, '2025-06-01');
+@DEF(sample_date, '2025-07-01');
 
 WITH project_data AS (
   SELECT

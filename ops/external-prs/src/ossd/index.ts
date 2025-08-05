@@ -17,14 +17,14 @@ import * as fs from "fs";
 import * as path from "path";
 import * as repl from "repl";
 import columnify from "columnify";
-import { BigQueryOptions } from "@google-cloud/bigquery";
 import {
   DefiLlamaValidator,
   EVMNetworkValidator,
-  EthereumValidator,
-  ArbitrumValidator,
-  BaseValidator,
-  OptimismValidator,
+  EthereumContractsV0Validator,
+  ArbitrumContractsV0Validator,
+  BaseContractsV0Validator,
+  OptimismContractsV0Validator,
+  AnyEVMContractsV0Validator,
 } from "@opensource-observer/oss-artifact-validators";
 import { uncheckedCast } from "@opensource-observer/utils";
 import { CheckConclusion, CheckStatus } from "../checks.js";
@@ -322,35 +322,22 @@ class OSSDirectoryPullRequest {
   }
 
   async loadValidators(urls: RpcUrlArgs) {
-    const googleProjectId = process.env.GOOGLE_PROJECT_ID;
-    const bqOptions: BigQueryOptions = {
-      ...(googleProjectId ? { projectId: googleProjectId } : {}),
-    };
     this.defillamaValidator = new DefiLlamaValidator();
-    this.blockchainValidators["any_evm"] = EthereumValidator({
-      rpcUrl: urls.mainnetRpcUrl,
-      bqOptions,
-    });
-
-    this.blockchainValidators["mainnet"] = EthereumValidator({
-      rpcUrl: urls.mainnetRpcUrl,
-      bqOptions,
-    });
-
-    this.blockchainValidators["arbitrum_one"] = ArbitrumValidator({
-      rpcUrl: urls.arbitrumRpcUrl,
-      bqOptions,
-    });
-
-    this.blockchainValidators["base"] = BaseValidator({
-      rpcUrl: urls.baseRpcUrl,
-      bqOptions,
-    });
-
-    this.blockchainValidators["optimism"] = OptimismValidator({
-      rpcUrl: urls.optimismRpcUrl,
-      bqOptions,
-    });
+    this.blockchainValidators["any_evm"] = AnyEVMContractsV0Validator(
+      urls.mainnetRpcUrl,
+    );
+    this.blockchainValidators["mainnet"] = EthereumContractsV0Validator(
+      urls.mainnetRpcUrl,
+    );
+    this.blockchainValidators["arbitrum_one"] = ArbitrumContractsV0Validator(
+      urls.arbitrumRpcUrl,
+    );
+    this.blockchainValidators["base"] = BaseContractsV0Validator(
+      urls.baseRpcUrl,
+    );
+    this.blockchainValidators["optimism"] = OptimismContractsV0Validator(
+      urls.optimismRpcUrl,
+    );
   }
 
   async dbAll(query: string) {
