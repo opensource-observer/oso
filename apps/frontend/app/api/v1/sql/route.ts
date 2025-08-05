@@ -10,13 +10,21 @@ import { EVENTS } from "@/lib/types/posthog";
 import { CreditsService, TransactionType } from "@/lib/services/credits";
 import { TRINO_JWT_SECRET } from "@/lib/config";
 import { SignJWT } from "jose";
+import {
+  AssetMaterialization,
+  safeGetAssetsMaterializations,
+} from "@/lib/dagster/assets";
+import { z } from "zod";
 
 // Next.js route control
 export const revalidate = 0;
 export const maxDuration = 300;
 
-const QUERY = "query";
-const FORMAT = "format";
+const RequestBodySchema = z.object({
+  query: z.string(),
+  format: z.enum(["json", "minimal"]).default("json"),
+  includeAnalytics: z.boolean().default(false),
+});
 
 const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
@@ -46,9 +54,9 @@ async function signJWT(user: AuthUser) {
  * @returns
  */
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const query = body?.[QUERY];
-  const format = body?.[FORMAT] ?? "json";
+  const { query, format, includeAnalytics } = RequestBodySchema.parse(
+    await request.json(),
+  );
   const user = await getUser(request);
   await using tracker = trackServerEvent(user);
 
@@ -83,24 +91,32 @@ export async function POST(request: NextRequest) {
   }
 
   const jwt = await signJWT(user);
+  const tables = getTableNamesFromSql(query);
 
   try {
     tracker.track(EVENTS.API_CALL, {
       type: "sql",
-      models: getTableNamesFromSql(query),
+      models: tables,
       query: query,
       apiKeyName: user.keyName,
       host: user.host,
     });
 
     const client = getTrinoClient(jwt);
-    const { data, error } = await client.query(query);
+    const [trinoData, assets] = await Promise.all([
+      client.query(query),
+      includeAnalytics
+        ? safeGetAssetsMaterializations(tables)
+        : Promise.resolve([]),
+    ]);
+    const { data, error } = trinoData;
     if (error) {
       return makeErrorResponse(error.message, 400);
     }
     const readableStream = mapToReadableStream(
       data.firstRow,
       data.iterator,
+      assets,
       format,
     );
     return new NextResponse(readableStream, {
@@ -117,6 +133,7 @@ export async function POST(request: NextRequest) {
 function mapToReadableStream(
   firstRow: QueryResult,
   rows: Iterator<QueryResult>,
+  assets: AssetMaterialization[],
   format: "json" | "minimal",
 ) {
   const textEncoder = new TextEncoder();
@@ -146,6 +163,11 @@ function mapToReadableStream(
   return new ReadableStream({
     async start(controller) {
       try {
+        if (assets.length > 0) {
+          controller.enqueue(
+            textEncoder.encode(JSON.stringify({ assetStatus: assets }) + "\n"),
+          );
+        }
         controller.enqueue(
           textEncoder.encode(
             JSON.stringify(mapToFormat(firstRow.data, true)) + "\n",
