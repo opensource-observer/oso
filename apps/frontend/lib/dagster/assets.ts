@@ -6,6 +6,8 @@ import {
 import { logger } from "@/lib/logger";
 import { ApolloClient } from "@apollo/client";
 
+const ASSET_PREFIX = "oso";
+
 type AssetId = string;
 type AssetKey = { path: string[] };
 
@@ -135,7 +137,7 @@ async function getAssetsMaterializations(
   const allAssetKeys = new Set<string>();
 
   tables.forEach((table) => {
-    const tableAssetKey = `oso.${table}`;
+    const tableAssetKey = `${ASSET_PREFIX}.${table}`;
     if (graph[tableAssetKey]) {
       const dependencies = collectAllDependencies(tableAssetKey);
       dependencies.forEach((key) => allAssetKeys.add(key));
@@ -174,7 +176,7 @@ async function getAssetsMaterializations(
 
   // Process each table and its dependencies
   tables.forEach((table) => {
-    const tableAssetKey = `oso.${table}`;
+    const tableAssetKey = `${ASSET_PREFIX}.${table}`;
     if (graph[tableAssetKey]) {
       addAssetWithDependencies(tableAssetKey);
     }
