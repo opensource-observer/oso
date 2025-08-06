@@ -111,6 +111,24 @@ github_artifacts AS (
 ),
 
 -- =============================================================================
+-- DEPLOYER ARTIFACTS
+-- =============================================================================
+deployer_artifacts AS (
+  SELECT
+    deployers.atlas_id,
+    parsed.artifact_name AS artifact_source_id,
+    chain_name.chain_name AS artifact_source,
+    parsed.artifact_namespace,
+    parsed.artifact_name,
+    parsed.artifact_url,
+    'DEPLOYER' AS artifact_type
+  FROM oso.int_op_atlas_deduped_deployers AS deployers
+  JOIN oso.seed_chain_id_to_chain_name AS chain_name
+    ON chain_name.chain_id = deployers.chain_id
+  CROSS JOIN LATERAL @parse_blockchain_artifact(deployers.deployer_address) AS parsed
+),
+
+-- =============================================================================
 -- CONTRACT ARTIFACTS
 -- =============================================================================
 contract_artifacts AS (
@@ -125,35 +143,11 @@ contract_artifacts AS (
   FROM oso.stg_op_atlas_published_contract AS stg
   JOIN oso.seed_chain_id_to_chain_name AS chain_name
     ON chain_name.chain_id = stg.chain_id
+  JOIN oso.int_op_atlas_deduped_deployers AS dd
+    ON dd.atlas_id = stg.atlas_id
+    AND dd.contract_address = stg.contract_address
+    AND dd.chain_id = stg.chain_id
   CROSS JOIN LATERAL @parse_blockchain_artifact(stg.contract_address) AS parsed
-  WHERE parsed.artifact_name IS NOT NULL
-),
-
--- =============================================================================
--- DEPLOYER ARTIFACTS
--- =============================================================================
-all_deployers AS (
-  SELECT
-    stg.atlas_id,
-    stg.deployer_address,
-    chain_name.chain_name,
-    COUNT(DISTINCT stg.atlas_id) OVER (PARTITION BY stg.deployer_address, chain_name.chain_name) as project_count_for_deployer
-  FROM oso.stg_op_atlas_project_contract AS stg
-  JOIN oso.seed_chain_id_to_chain_name AS chain_name
-    ON chain_name.chain_id = stg.chain_id
-),
-deployer_artifacts AS (
-  SELECT
-    all_deployers.atlas_id,
-    parsed.artifact_name AS artifact_source_id,
-    all_deployers.chain_name AS artifact_source,
-    parsed.artifact_namespace,
-    parsed.artifact_name,
-    parsed.artifact_url,
-    'DEPLOYER' AS artifact_type
-  FROM all_deployers
-  CROSS JOIN LATERAL @parse_blockchain_artifact(all_deployers.deployer_address) AS parsed
-  WHERE all_deployers.project_count_for_deployer = 1
 ),
 
 -- =============================================================================

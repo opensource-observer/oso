@@ -98,7 +98,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="timeseries_metrics_by_artifacts",
+            name="timeseries_metrics_by_artifact",
             table=f"{catalog_name}.oso.timeseries_metrics_by_artifact_v0",
             description=textwrap.dedent(
                 """
@@ -177,7 +177,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="timeseries_metrics_by_projects",
+            name="timeseries_metrics_by_project",
             table=f"{catalog_name}.oso.timeseries_metrics_by_project_v0",
             description=textwrap.dedent(
                 """
@@ -256,7 +256,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="timeseries_metrics_by_collections",
+            name="timeseries_metrics_by_collection",
             table=f"{catalog_name}.oso.timeseries_metrics_by_collection_v0",
             description=textwrap.dedent(
                 """
@@ -335,7 +335,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="key_metrics_by_artifacts",
+            name="key_metrics_by_artifact",
             table=f"{catalog_name}.oso.key_metrics_by_artifact_v0",
             description=textwrap.dedent(
                 """
@@ -407,7 +407,7 @@ def register_metrics(registry: Registry, catalog_name: str = "iceberg"):
 
     registry.register(
         Model(
-            name="key_metrics_by_projects",
+            name="key_metrics_by_project",
             table=f"{catalog_name}.oso.key_metrics_by_project_v0",
             description=textwrap.dedent(
                 """

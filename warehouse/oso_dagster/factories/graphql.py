@@ -1,3 +1,4 @@
+import functools
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -537,7 +538,7 @@ def get_query_parameters(
         return "", ""
 
     param_defs = ", ".join(
-        [f'${key}: {value["type"]}' for key, value in all_params.items()]
+        [f"${key}: {value['type']}" for key, value in all_params.items()]
     )
     param_refs = ", ".join([f"{key}: ${key}" for key in all_params.keys()])
 
@@ -623,6 +624,7 @@ def _graphql_factory(
         resource: The function to decorate.
     """
 
+    @functools.wraps(_resource)
     def _factory(config: GraphQLResourceConfig, /, *_args: Q.args, **kwargs: Q.kwargs):
         """
         Wrap the decorated function with the GraphQLFactory.

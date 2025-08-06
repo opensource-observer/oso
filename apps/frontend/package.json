@@ -37,6 +37,9 @@
     "@apollo/subgraph": "^2.11.2",
     "@as-integrations/next": "^3.2.0",
     "@clickhouse/client": "^1.11.2",
+    "@datalayer/icons-react": "^1.0.6",
+    "@datalayer/jupyter-react": "^1.0.5",
+    "@datalayer/primer-addons": "^1.0.3",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@feedbackfarm/react": "^4.0.10",
@@ -132,10 +135,12 @@
     "postcss": "^8.5.6",
     "supabase": "^2.31.4",
     "supazod": "^2.0.0",
+    "svg-url-loader": "^8.0.0",
     "tailwindcss": "^3.4.4",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "webpack": "^5.101.0"
   }
 }

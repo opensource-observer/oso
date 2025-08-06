@@ -135,8 +135,8 @@ type NavBarProps = {
 };
 
 const NavbarMeta: CodeComponentMeta<NavBarProps> = {
-  name: "MarketingNavbar",
-  description: "NavBar for marketing pages",
+  name: "Navbar",
+  description: "shadcn-based NavBar",
   props: {
     menuItems: {
       type: "object",
@@ -149,7 +149,7 @@ const NavbarMeta: CodeComponentMeta<NavBarProps> = {
 function Navbar(props: NavBarProps) {
   const menuItems: NavBarItem[] = props.menuItems ?? DEFAULT_MENU_ITEMS;
   return (
-    <NavigationMenu>
+    <NavigationMenu className={props.className}>
       <NavigationMenuList>
         {menuItems.map((item) =>
           item.type === "link" ? (
