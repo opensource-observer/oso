@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      pyright:
-        specifier: ^1.1.378
-        version: 1.1.378
     devDependencies:
       eslint:
         specifier: ^8.57.0
@@ -33,6 +29,9 @@ importers:
       prettier:
         specifier: ^3.3.2
         version: 3.3.2
+      pyright:
+        specifier: ^1.1.390
+        version: 1.1.403
       turbo:
         specifier: ^1.13.4
         version: 1.13.4
@@ -12394,8 +12393,8 @@ packages:
   pure-rand@7.0.1:
     resolution: {integrity: sha512-oTUZM/NAZS8p7ANR3SHh30kXB+zK2r2BPcEn/awJIbOvq82WoMN4p62AWWp3Hhw50G0xMsw1mhIBLqHw64EcNQ==}
 
-  pyright@1.1.378:
-    resolution: {integrity: sha512-lCDJUtcUGDYXOASd27WFxSM0qls/3kvblUsuWqSP+4l7z8JKgAMNRhUEw3s7h1JiRqruKi4SMMn/btgj5ZmnzA==}
+  pyright@1.1.403:
+    resolution: {integrity: sha512-OyslngwxftKgNfbiyR8WDadUoLHDoinwUfbd50P1VBfLWkR5cro9R52qMQMpVI/LiSVpWbzunToR2NX7SanwmA==}
     engines: {node: '>=14.0.0'}
     hasBin: true
 
@@ -29005,7 +29004,7 @@ snapshots:
 
   instantsearch-ui-components@0.11.2:
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.2
 
   instantsearch.css@8.5.1: {}
 
@@ -31931,7 +31930,7 @@ snapshots:
       glob: 10.4.5
       lodash: 4.17.21
       mkdirp: 3.0.1
-      pyright: 1.1.378
+      pyright: 1.1.403
       simple-git: 3.25.0
       tmp-promise: 3.0.3
       ts-adt: 2.1.2
@@ -32872,7 +32871,7 @@ snapshots:
 
   pure-rand@7.0.1: {}
 
-  pyright@1.1.378:
+  pyright@1.1.403:
     optionalDependencies:
       fsevents: 2.3.3
 
@@ -32980,7 +32979,7 @@ snapshots:
 
   react-error-boundary@3.1.4(react@19.1.0):
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.2
       react: 19.1.0
 
   react-fast-compare@3.2.2: {}
@@ -33002,7 +33001,7 @@ snapshots:
 
   react-instantsearch-core@7.16.1(algoliasearch@5.34.0)(react@18.3.1):
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.2
       algoliasearch: 5.34.0
       algoliasearch-helper: 3.26.0(algoliasearch@5.34.0)
       instantsearch.js: 4.79.1(algoliasearch@5.34.0)
