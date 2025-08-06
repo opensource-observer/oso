@@ -100,9 +100,9 @@ client.to_pandas("SELECT * FROM models_v0 WHERE model_name LIKE '%_v0'")
 
 ```python
 query = oso.semantic.select(
-    "models_v0",
+    "models",
 ).where(
-    "models_v0.model_name LIKE '%_v0'"
+    "models.model_name LIKE '%_v0'"
 )
 ```
 
