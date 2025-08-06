@@ -2,7 +2,6 @@ import functools
 import time
 from dataclasses import dataclass
 from enum import Enum
-from functools import cache
 from typing import (
     Any,
     Callable,
@@ -24,6 +23,8 @@ from dlt.extract.resource import DltResource
 from gql import Client, gql
 from gql.transport.exceptions import TransportError
 from gql.transport.requests import RequestsHTTPTransport
+from oso_dagster.config import DagsterConfig
+from oso_dagster.utils.redis import redis_cache
 
 # The maximum depth of the introspection query.
 FRAGMENT_MAX_DEPTH = 10
@@ -148,6 +149,11 @@ class PaginationConfig:
     stop_condition: Optional[Callable[[Dict[str, Any], int], bool]] = None
 
 
+type GraphQLDependencyCallable = Callable[
+    [AssetExecutionContext, DagsterConfig, Any], Generator[DltResource, Any, Any]
+]
+
+
 @dataclass
 class GraphQLResourceConfig:
     """
@@ -183,14 +189,7 @@ class GraphQLResourceConfig:
     pagination: Optional[PaginationConfig] = None
     exclude: Optional[List[str]] = None
     deps_rate_limit_seconds: float = 0.0
-    deps: Optional[
-        List[
-            Callable[
-                [AssetExecutionContext, Any],
-                Generator[DltResource, Any, Any],
-            ]
-        ]
-    ] = None
+    deps: Optional[List[GraphQLDependencyCallable]] = None
 
 
 def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
@@ -215,9 +214,10 @@ def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
     return f"kind name ofType {{ {create_fragment(depth - 1)} }}"
 
 
-@cache
-def get_graphql_introspection(
-    endpoint: str, headers_tuple: Optional[Tuple[Tuple[str, str], ...]], max_depth: int
+def _get_graphql_introspection(
+    endpoint: str,
+    headers_tuple: Optional[Tuple[Tuple[str, str], ...]],
+    max_depth: int,
 ) -> Dict[str, Any]:
     """
     Fetch the GraphQL introspection query from the given endpoint.
@@ -652,12 +652,15 @@ def extract_data_for_pagination(
 Q = ParamSpec("Q")
 T = TypeVar("T")
 
+type GraphQLFactoryCallable[**P] = Callable[
+    Concatenate[GraphQLResourceConfig, DagsterConfig, AssetExecutionContext, P],
+    DltResource,
+]
+
 
 def _graphql_factory(
     _resource: Callable[Q, T],
-) -> Callable[
-    Concatenate[GraphQLResourceConfig, AssetExecutionContext, Q], DltResource
-]:
+) -> GraphQLFactoryCallable[Q]:
     """
     This factory creates a DLT asset from a GraphQL resource, automatically
     wiring the introspection query to the target query and generating a Pydantic model.
@@ -669,6 +672,7 @@ def _graphql_factory(
     @functools.wraps(_resource)
     def _factory(
         config: GraphQLResourceConfig,
+        global_config: DagsterConfig,
         context: AssetExecutionContext,
         /,
         *_args: Q.args,
@@ -679,6 +683,8 @@ def _graphql_factory(
 
         Args:
             config: The configuration for the GraphQL resource.
+            global_config: The global dagster configuration.
+            context: The execution context for the Dagster asset.
             *_args: The arguments for the decorated function.
             **kwargs: The keyword arguments for the decorated function.
 
@@ -695,6 +701,10 @@ def _graphql_factory(
             raise ValueError(
                 "Target type not specified in the GraphQL resource config."
             )
+
+        get_graphql_introspection = redis_cache(
+            context, global_config.http_cache, _get_graphql_introspection
+        )
 
         @dlt.resource(name=config.name, **kwargs)
         def _execute_query():
@@ -844,7 +854,7 @@ def _graphql_factory(
                                 for i, dep in enumerate(config.deps):
                                     if i > 0 and config.deps_rate_limit_seconds > 0:
                                         time.sleep(config.deps_rate_limit_seconds)
-                                    yield from dep(context, item)
+                                    yield from dep(context, global_config, item)
                             else:
                                 yield item
                     else:
@@ -853,7 +863,7 @@ def _graphql_factory(
                             for i, dep in enumerate(config.deps):
                                 if i > 0 and config.deps_rate_limit_seconds > 0:
                                     time.sleep(config.deps_rate_limit_seconds)
-                                yield from dep(context, data_items)
+                                yield from dep(context, global_config, data_items)
                         else:
                             yield data_items
 
@@ -922,12 +932,7 @@ def _graphql_factory(
 
         return _execute_query
 
-    return cast(
-        Callable[
-            Concatenate[GraphQLResourceConfig, AssetExecutionContext, Q], DltResource
-        ],
-        _factory,
-    )
+    return cast(GraphQLFactoryCallable[Q], _factory)
 
 
 graphql_factory = _graphql_factory(dlt.resource)
