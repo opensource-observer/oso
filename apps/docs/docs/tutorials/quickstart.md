@@ -146,9 +146,9 @@ client.to_pandas("SELECT * FROM projects_v1 WHERE project_name = 'opensource-obs
 
 ```python
 query = oso.semantic.select(
-    "projects_v1",
+    "projects",
 ).where(
-    "projects_v1.project_name = 'opensource-observer'"
+    "projects.project_name = 'opensource-observer'"
 )
 ```
 
