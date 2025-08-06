@@ -1,9 +1,9 @@
 from typing import Optional
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.workflow import Event
 
 
-class Text2SQLStartEvent(BaseModel):
+class Text2SQLStartEvent(Event):
     """Start event for Text2SQL workflows."""
 
     input: str
