@@ -2,7 +2,7 @@ import hashlib
 import logging
 
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.workflow import Context, StartEvent, StopEvent, step
+from llama_index.core.workflow import Context, StopEvent, step
 from oso_agent.types.response import StrResponse
 from oso_agent.workflows.types import (
     RetrySemanticQueryEvent,
@@ -11,6 +11,8 @@ from oso_agent.workflows.types import (
 )
 
 from ...resources import ResourceDependency
+from ..base import StartingWorkflow
+from .events import Text2SQLStartEvent
 from .mixins import (
     GenericText2SQLRouter,
     OsoDBWorkflow,
@@ -22,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class BasicText2SQL(
+    StartingWorkflow[Text2SQLStartEvent],
     GenericText2SQLRouter,
     OsoDBWorkflow,
     SQLRowsResponseSynthesisMixin,
@@ -36,30 +39,26 @@ class BasicText2SQL(
 
     @step
     async def handle_text2sql_query(
-        self, _ctx: Context, event: StartEvent
+        self, _ctx: Context, event: Text2SQLStartEvent
     ) -> StartQueryEngineEvent:
         """Handle the start event by initiating the QueryEngine workflow."""
-        event_input_id = getattr(event, "id", "")
 
-        if not event_input_id:
+        if not event.id:
             # Generate a unique ID for the event if not provided
-            event_input_id = hashlib.sha1(event.input.encode()).hexdigest()
-            logger.debug("No ID provided for event, generated ID: %s", event_input_id)
+            event.id = hashlib.sha1(event.input.encode()).hexdigest()
+            logger.debug("No ID provided for event, generated ID: %s", event.id)
 
         logger.info(
             "Handling text2sql query with input query[%s]: %s",
-            event_input_id,
+            event.id,
             event.input,
         )
 
-        synthesize_response = bool(getattr(event, "synthesize_response", True))
-        execute_sql = bool(getattr(event, "execute_sql", True))
-
         return StartQueryEngineEvent(
-            id=event_input_id,
+            id=event.id,
             input_text=event.input,
-            synthesize_response=synthesize_response,
-            execute_sql=execute_sql,
+            synthesize_response=event.synthesize_response,
+            execute_sql=event.execute_sql,
         )
 
     @step
