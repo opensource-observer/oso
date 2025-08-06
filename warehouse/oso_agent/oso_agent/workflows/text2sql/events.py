@@ -1,9 +1,9 @@
 from typing import Optional
 
-from llama_index.core.workflow import Event
+from llama_index.core.workflow import StartEvent
 
 
-class Text2SQLStartEvent(Event):
+class Text2SQLStartEvent(StartEvent):
     """Start event for Text2SQL workflows."""
 
     input: str
