@@ -304,8 +304,8 @@ query = (
         "timeseries_metrics_by_project.unit",
     )
     .where(
-        "projects_v1.project_name = 'opensource-observer'",
-        "metrics_v0.metric_name = 'GITHUB_stars_daily'"
+        "projects.project_name = 'opensource-observer'",
+        "metrics.metric_name = 'GITHUB_stars_daily'"
     )
 )
 ```
