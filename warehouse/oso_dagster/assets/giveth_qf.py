@@ -1,6 +1,7 @@
 from typing import Any
 
 from dagster import AssetExecutionContext
+from oso_dagster.config import DagsterConfig
 
 from ..factories.dlt import dlt_factory
 from ..factories.graphql import (
@@ -11,7 +12,9 @@ from ..factories.graphql import (
 )
 
 
-def projects_for_round(context: AssetExecutionContext, data: Any):
+def projects_for_round(
+    context: AssetExecutionContext, global_config: DagsterConfig, data: Any
+):
     """
     Dependency function that creates a GraphQL resource for each QF round.
     Uses the round ID from upstream data to fetch projects for that specific round.
@@ -46,13 +49,13 @@ def projects_for_round(context: AssetExecutionContext, data: Any):
         max_depth=3,
     )
 
-    yield from graphql_factory(config, context, max_table_nesting=0)
+    yield from graphql_factory(config, global_config, context, max_table_nesting=0)
 
 
 @dlt_factory(
     key_prefix="giveth",
 )
-def qf_rounds(context: AssetExecutionContext):
+def qf_rounds(context: AssetExecutionContext, global_config: DagsterConfig):
     """
     Main asset that fetches QF rounds and creates dependent project assets.
     """
@@ -73,4 +76,4 @@ def qf_rounds(context: AssetExecutionContext):
         deps_rate_limit_seconds=1.0,
     )
 
-    yield graphql_factory(config, context, max_table_nesting=0)
+    yield graphql_factory(config, global_config, context, max_table_nesting=0)

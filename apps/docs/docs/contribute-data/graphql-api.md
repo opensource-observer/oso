@@ -34,6 +34,7 @@ from ..factories.graphql import (
     graphql_factory,
 )
 from ..factories.dlt import dlt_factory
+from ..config import DagsterConfig
 
 # Configuration for the main transactions query
 config = GraphQLResourceConfig(
@@ -100,7 +101,7 @@ dependency chaining. You can create assets that depend on the results of other
 GraphQL queries:
 
 ```python
-def fetch_account_details(context: AssetExecutionContext, transaction_data):
+def fetch_account_details(context: AssetExecutionContext, global_config: DagsterConfig, transaction_data):
     """
     Dependency function that fetches account details for each transaction.
     This function receives individual transaction items and yields account data.
@@ -122,12 +123,12 @@ def fetch_account_details(context: AssetExecutionContext, transaction_data):
     )
 
     # The dependency yields data from the nested GraphQL query
-    yield from graphql_factory(account_config, context, max_table_nesting=0)
+    yield from graphql_factory(account_config, global_config, context, max_table_nesting=0)
 
 @dlt_factory(
     key_prefix="open_collective",
 )
-def transactions_with_accounts(context: AssetExecutionContext):
+def transactions_with_accounts(context: AssetExecutionContext, global_config: DagsterConfig):
     """
     Main asset that fetches transactions and their associated account details.
     """
@@ -155,13 +156,16 @@ def transactions_with_accounts(context: AssetExecutionContext):
     )
 
     # Return the configured resource
-    yield graphql_factory(config, context, max_table_nesting=0)
+    yield graphql_factory(config, global_config, context, max_table_nesting=0)
 ```
 
 :::tip
-The GraphQL factory function now takes a mandatory `config` argument and
-`AssetExecutionContext`. Additional arguments are passed to the underlying
-`dlt.resource` function, allowing you to customize the behavior of the asset.
+The GraphQL factory function now takes a mandatory `config` argument,
+`global_config` (DagsterConfig), and `AssetExecutionContext`. The `global_config`
+is required for Redis caching functionality that stores GraphQL introspection
+results for 24 hours, preventing overwhelming of external services. Additional
+arguments are passed to the underlying `dlt.resource` function, allowing you to
+customize the behavior of the asset.
 
 For the full reference of the allowed arguments, check out the DLT
 [`resource`](https://dlthub.com/docs/general-usage/resource) documentation.
