@@ -31,7 +31,7 @@ dependencies = [
     "lz4<5.0.0,>=4.3.3",
     "oss-directory==0.2.5",
     "pendulum<4.0.0,>=3.0.0",
-    "polars==1.31.0",
+    "polars==1.32.0",
     "pytest<9.0.0,>=8.2.1",
     "python-dotenv<2.0.0,>=1.0.1",
     "requests<3.0.0,>=2.31.0",
