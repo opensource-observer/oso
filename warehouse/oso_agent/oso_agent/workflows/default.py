@@ -38,7 +38,6 @@ async def workflow_resolver_factory(
     """Resolver factory that creates a resolver for dependant resources for workflows."""
     from oso_agent.clients.oso_client import OsoClient
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
-    from oso_agent.tool.query_engine_tool import create_default_query_engine_tool
 
     llm = resources.get_resource("llm")
 
@@ -46,21 +45,11 @@ async def workflow_resolver_factory(
         workflow_config.oso_api_key.get_secret_value(),
     )
 
-    query_engine_tool = await create_default_query_engine_tool(
-        config,
-        oso_client=oso_client,
-        llm=llm,
-        storage_context=resources.get_resource("storage_context"),
-        embedding=resources.get_resource("embedding"),
-        synthesize_response=False,
-    )
-
     semantic_query_tool = create_semantic_query_tool(
         llm=llm, registry_description=oso_client.client.semantic.describe()
     )
 
     return DefaultResourceResolver.from_resources(
-        query_engine_tool=query_engine_tool,
         semantic_query_tool=semantic_query_tool,
         oso_client=oso_client,
         registry=oso_client.client.semantic,
