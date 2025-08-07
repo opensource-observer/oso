@@ -8,7 +8,7 @@ import typing as t
 
 from llama_index.core.base.response.schema import Response as ToolResponse
 from llama_index.core.tools import FunctionTool
-from llama_index.core.workflow import StartEvent, StopEvent, step
+from llama_index.core.workflow import StopEvent, step
 from oso_agent.resources import ResourceDependency
 from oso_agent.types import ErrorResponse
 from oso_agent.types.response import StrResponse
@@ -27,11 +27,17 @@ from oso_agent.workflows.types import (
 from oso_semantic import Registry
 from oso_semantic.definition import SemanticQuery
 
+from ..base import StartingWorkflow
+from .events import Text2SQLStartEvent
+
 logger = logging.getLogger(__name__)
 
 
 class SemanticText2SQLWorkflow(
-    GenericText2SQLRouter, OsoDBWorkflow, SQLRowsResponseSynthesisMixin
+    StartingWorkflow[Text2SQLStartEvent],
+    GenericText2SQLRouter,
+    OsoDBWorkflow,
+    SQLRowsResponseSynthesisMixin,
 ):
     """
     This workflow translates natural language to SQL in two main steps:
@@ -99,7 +105,7 @@ class SemanticText2SQLWorkflow(
 
     @step
     async def start_translation(
-        self, event: StartEvent | RetrySemanticQueryEvent
+        self, event: Text2SQLStartEvent | RetrySemanticQueryEvent
     ) -> SemanticQueryEvent | RetrySemanticQueryEvent | StopEvent:
         """
         Translate natural language to a structured SemanticQuery.
