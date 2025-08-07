@@ -1,18 +1,11 @@
 import json
 import os
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 import requests
-from pyoso.analytics import (
-    DataAnalytics,
-    DataStatus,
-    MaterializationStatus,
-    PartitionStatus,
-    PartitionStatusRange,
-)
+from pydantic import BaseModel
+from pyoso.analytics import DataAnalytics, DataStatus
 from pyoso.constants import DEFAULT_BASE_URL, OSO_API_KEY
 from pyoso.exceptions import OsoError, OsoHTTPError
 from pyoso.semantic import create_registry
@@ -27,13 +20,11 @@ except ImportError:
     pass
 
 
-@dataclass
-class ClientConfig:
-    base_url: Optional[str]
+class ClientConfig(BaseModel):
+    base_url: str | None
 
 
-@dataclass
-class QueryData:
+class QueryData(BaseModel):
     columns: list[str]
     data: list[list[Any]]
 
@@ -72,46 +63,10 @@ class QueryResponse:
             if chunk:
                 parsed_obj = json.loads(chunk)
 
-                # Check if this is the first line with asset status
                 if "assetStatus" in parsed_obj:
                     for asset in parsed_obj["assetStatus"]:
-                        # Parse partition status if present
-                        partition_status = None
-                        if asset["status"].get("partitionStatus"):
-                            ps = asset["status"]["partitionStatus"]
-                            ranges = []
-                            for range_data in ps.get("ranges", []):
-                                ranges.append(
-                                    PartitionStatusRange(
-                                        end_key=range_data["endKey"],
-                                        start_key=range_data["startKey"],
-                                        status=range_data["status"],
-                                    )
-                                )
-                            partition_status = PartitionStatus(
-                                num_failed=ps["numFailed"],
-                                num_materialized=ps["numMaterialized"],
-                                num_materializing=ps["numMaterializing"],
-                                num_partitions=ps["numPartitions"],
-                                ranges=ranges,
-                            )
-
-                        asset_status = MaterializationStatus(
-                            partition_status=partition_status,
-                            latest_materialization=datetime.fromtimestamp(
-                                asset["status"]["latestMaterialization"]
-                            )
-                            if asset["status"].get("latestMaterialization")
-                            else None,
-                        )
-
-                        data_status = DataStatus(
-                            key=asset["key"],
-                            status=asset_status,
-                            dependencies=asset["dependencies"],
-                        )
-
-                        analytics[asset["key"]] = data_status
+                        data_status = DataStatus.model_validate(asset)
+                        analytics[data_status.key] = data_status
                 elif "columns" in parsed_obj:
                     columns.extend(parsed_obj["columns"])
 
@@ -124,7 +79,7 @@ class QueryResponse:
 
 class Client:
     def __init__(
-        self, api_key: Optional[str] = None, client_opts: Optional[ClientConfig] = None
+        self, api_key: str | None = None, client_opts: ClientConfig | None = None
     ):
         self.__api_key = api_key if api_key else os.environ.get(OSO_API_KEY)
         if not self.__api_key:

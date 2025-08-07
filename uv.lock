@@ -4539,6 +4539,7 @@ version = "0.6.0"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
+    { name = "pydantic" },
     { name = "requests" },
     { name = "sqlglot" },
 ]
@@ -4558,6 +4559,7 @@ dev = [
 requires-dist = [
     { name = "oso-semantic", marker = "extra == 'semantic'", editable = "warehouse/oso_semantic" },
     { name = "pandas", specifier = ">=1.2.0" },
+    { name = "pydantic", specifier = ">=2.11.6" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "sqlglot", specifier = ">=26.16.4" },
 ]

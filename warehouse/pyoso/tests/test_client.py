@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import reload
 from unittest import TestCase, mock
 
@@ -251,7 +251,8 @@ class TestClient(TestCase):
         assert asset.status is not None
         self.assertIsInstance(asset.status.latest_materialization, datetime)
         self.assertEqual(
-            asset.status.latest_materialization, datetime.fromtimestamp(1642678800)
+            asset.status.latest_materialization,
+            datetime.fromtimestamp(1642678800, tz=timezone.utc),
         )
 
         partition_status = asset.status.partition_status

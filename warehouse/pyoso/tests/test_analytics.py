@@ -15,42 +15,42 @@ class TestDataAnalytics(TestCase):
             "root1": DataStatus(
                 key="root1",
                 status=MaterializationStatus(
-                    latest_materialization=datetime.fromtimestamp(1642678800)
+                    latestMaterialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=["child1", "child2"],
             ),
             "root2": DataStatus(
                 key="root2",
                 status=MaterializationStatus(
-                    latest_materialization=datetime.fromtimestamp(1642678800)
+                    latestMaterialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=["child3"],
             ),
             "child1": DataStatus(
                 key="child1",
                 status=MaterializationStatus(
-                    latest_materialization=datetime.fromtimestamp(1642678800)
+                    latestMaterialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=["grandchild1"],
             ),
             "child2": DataStatus(
                 key="child2",
                 status=MaterializationStatus(
-                    latest_materialization=datetime.fromtimestamp(1642678800)
+                    latestMaterialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=[],
             ),
             "child3": DataStatus(
                 key="child3",
                 status=MaterializationStatus(
-                    latest_materialization=datetime.fromtimestamp(1642678800)
+                    latestMaterialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=[],
             ),
             "grandchild1": DataStatus(
                 key="grandchild1",
                 status=MaterializationStatus(
-                    latest_materialization=datetime.fromtimestamp(1642678800)
+                    latestMaterialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=[],
             ),

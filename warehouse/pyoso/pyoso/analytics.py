@@ -1,32 +1,32 @@
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class PartitionStatusRange:
-    end_key: str
-    start_key: str
+class PartitionStatusRange(BaseModel):
+    end_key: str = Field(alias="endKey")
+    start_key: str = Field(alias="startKey")
     status: str
 
 
-@dataclass
-class PartitionStatus:
-    num_failed: int
-    num_materialized: int
-    num_materializing: int
-    num_partitions: int
+class PartitionStatus(BaseModel):
+    num_failed: int = Field(alias="numFailed")
+    num_materialized: int = Field(alias="numMaterialized")
+    num_materializing: int = Field(alias="numMaterializing")
+    num_partitions: int = Field(alias="numPartitions")
     ranges: list[PartitionStatusRange]
 
 
-@dataclass
-class MaterializationStatus:
-    partition_status: Optional[PartitionStatus] = None
-    latest_materialization: Optional[datetime] = None
+class MaterializationStatus(BaseModel):
+    partition_status: PartitionStatus | None = Field(
+        default=None, alias="partitionStatus"
+    )
+    latest_materialization: datetime | None = Field(
+        default=None, alias="latestMaterialization"
+    )
 
 
-@dataclass
-class DataStatus:
+class DataStatus(BaseModel):
     key: str
     status: MaterializationStatus
     dependencies: list[str]
@@ -72,11 +72,11 @@ class DataAnalytics:
         """Get the root keys (top-level nodes in the dependency tree)."""
         return self._root_keys.copy()
 
-    def get(self, key: str) -> Optional[DataStatus]:
+    def get(self, key: str) -> DataStatus | None:
         """Get analytics data for a specific key."""
         return self._analytics_data.get(key)
 
-    def print_tree(self, key: Optional[str] = None):
+    def print_tree(self, key: str | None = None):
         """Print analytics data as a tree structure.
 
         Args:
