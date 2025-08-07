@@ -106,7 +106,6 @@ query = oso.semantic.select(
 )
 ```
 
-
 </TabItem>
 </Tabs>
 
