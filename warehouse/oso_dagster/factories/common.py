@@ -379,14 +379,7 @@ def resource_factory(name: str):
 
 CacheableDagsterObjectGenerator = t.Callable[
     ...,
-    t.Iterable[
-        t.Union[
-            CacheableAssetOptions,
-            CacheableJobOptions,
-            CacheableSensorOptions,
-            CacheableAssetCheckOptions,
-        ]
-    ],
+    BaseModel
 ]
 
 
@@ -457,81 +450,11 @@ class CacheableDagsterContext:
 
         self._generators: list[CacheableDagsterObjectGenerator] = []
 
-    def job(self, **kwargs: t.Any) -> t.Callable:
-        """Create a cacheable job definition"""
-
-        def _decorator(f: t.Callable) -> t.Callable:
-            self._job_handlers[f.__name__] = (f, kwargs)
-            return f
-
-        return _decorator
-
-    def sensor(self, **kwargs: t.Any) -> t.Callable:
-        def _decorator(f: t.Callable[..., SensorDefinition]) -> t.Callable:
-            self._sensor_handlers[f.__name__] = (f, kwargs)
-            return f
-
-        return _decorator
-
-    def asset_check(self, **kwargs: t.Any) -> t.Callable:
-        """Create a cacheable asset check definition"""
-
-        def _decorator(f: t.Callable[..., AssetChecksDefinition]) -> t.Callable:
-            self._asset_check_handlers[f.__name__] = (f, kwargs)
-            return f
-
-        return _decorator
-
-    def asset(self, **kwargs: t.Any) -> t.Callable:
-        """Create a cacheable asset definition"""
-
-        def _decorator(f: t.Callable[..., CacheableAssetOptions]) -> t.Callable:
-            # This decorator is used to create cacheable assets, so we don't need to do anything here.
-            self._asset_handlers[f.__name__] = (f, kwargs)
-            return f
-
-        return _decorator
-
-    def multi_asset(self, **kwargs: t.Any) -> t.Callable:
-        """Create a cacheable multi-asset definition"""
-
-        def _decorator(f: t.Callable[..., CacheableMultiAssetOptions]) -> t.Callable:
-            # This decorator is used to create cacheable multi-assets, so we don't need to do anything here.
-            return f
-
-        return _decorator
-
-    def add_generator(
+    def register_generator(
         self,
         generator: CacheableDagsterObjectGenerator,
     ):
         self._generators.append(generator)
-
-    def emit_job(self, handler_name: str, job_options: CacheableJobOptions):
-        """Emit a job definition from the cacheable context."""
-        if handler_name not in self._job_handlers:
-            raise ValueError(f"Job handler {handler_name} not found.")
-        self._job_bindings.append((handler_name, job_options))
-
-    def emit_sensor(self, handler_name: str, sensor_options: CacheableSensorOptions):
-        """Emit a sensor definition from the cacheable context."""
-        if handler_name not in self._sensor_handlers:
-            raise ValueError(f"Sensor handler {handler_name} not found.")
-        self._sensor_bindings.append((handler_name, sensor_options))
-
-    def emit_asset_check(
-        self, handler_name: str, asset_check_options: CacheableAssetCheckOptions
-    ):
-        """Emit an asset check definition from the cacheable context."""
-        if handler_name not in self._asset_check_handlers:
-            raise ValueError(f"Asset check handler {handler_name} not found.")
-        self._asset_check_bindings.append((handler_name, asset_check_options))
-
-    def emit_asset(self, handler_name: str, asset_options: CacheableAssetOptions):
-        """Emit an asset definition from the cacheable context."""
-        if handler_name not in self._asset_handlers:
-            raise ValueError(f"Asset handler {handler_name} not found.")
-        self._asset_bindings.append((handler_name, asset_options))
 
     def load_bindings_from_cache(self):
         """Load the bindings from cache. This will load all the jobs, sensors,

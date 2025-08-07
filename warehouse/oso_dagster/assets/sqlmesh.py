@@ -1,3 +1,4 @@
+import typing as t
 import copy
 
 import dagster as dg
@@ -9,19 +10,20 @@ from dagster import (
     define_asset_job,
 )
 from dagster_sqlmesh import (
-    DagsterSQLMeshCacheOptions,
     PlanOptions,
     SQLMeshContextConfig,
     SQLMeshDagsterTranslator,
     SQLMeshResource,
-    sqlmesh_assets,
+    sqlmesh_to_multi_asset_options,
+    SQLMeshMultiAssetOptions,
 )
 from oso_dagster.config import DagsterConfig
-from oso_dagster.factories.common import AssetFactoryResponse
+from oso_dagster.factories.cache import CacheableMultiAssetOptions
+from oso_dagster.factories.common import CacheableContextEmitter, CacheableDagsterContext
 from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
 
-from ..factories import early_resources_asset_factory
+from ..factories import AssetFactoryResponse, cacheable_asset_factory
 
 
 class SQLMeshRunConfig(dg.Config):
@@ -64,154 +66,173 @@ op_tags = {
     }
 }
 
-
-@early_resources_asset_factory()
-def sqlmesh_factory(
+def sqlmesh_cacheable_asset_generator(
+    context: CacheableContextEmitter,
     sqlmesh_infra_config: dict,
     sqlmesh_context_config: SQLMeshContextConfig,
     sqlmesh_translator: SQLMeshDagsterTranslator,
-    sqlmesh_cache_options: DagsterSQLMeshCacheOptions,
 ):
     dev_environment = sqlmesh_infra_config["dev_environment"]
     environment = sqlmesh_infra_config["environment"]
 
-
-    @sqlmesh_assets(
+    multi_asset_options = sqlmesh_to_multi_asset_options(
         config=sqlmesh_context_config,
         environment=environment,
         dagster_sqlmesh_translator=sqlmesh_translator,
-        enabled_subsetting=False,
-        op_tags=op_tags,
-        cache_options=sqlmesh_cache_options,
     )
-    async def sqlmesh_project(
-        context: AssetExecutionContext,
-        global_config: ResourceParam[DagsterConfig],
-        sqlmesh: SQLMeshResource,
-        trino: TrinoResource,
-        config: SQLMeshRunConfig,
+    context.emit_multi_asset()
+
+
+@cacheable_asset_factory
+def sqlmesh_factory(
+    context: CacheableDagsterContext,
+):
+    def _cacheable_factory(
+        context: CacheableContextEmitter,
+        sqlmesh_infra_config: dict,
+        sqlmesh_context_config: SQLMeshContextConfig,
+        sqlmesh_translator: SQLMeshDagsterTranslator,
     ):
-        restate_models = config.restate_models[:] if config.restate_models else []
+        dev_environment = sqlmesh_infra_config["dev_environment"]
+        environment = sqlmesh_infra_config["environment"]
 
-        # We use this helper function so we can run sqlmesh both locally and in
-        # a k8s environment
-        def run_sqlmesh(
-            context: AssetExecutionContext,
-            sqlmesh: SQLMeshResource,
-            config: SQLMeshRunConfig,
-        ):
-            # If restate_by_entity_category is True, dynamically identify models based on entity categories
-            if config.restate_by_entity_category:
-                # Ensure we have entity categories to filter by
-                if not config.restate_entity_categories:
-                    context.log.info(
-                        "restate_by_entity_category is True but no entity categories specified. Using both 'project' and 'collection'."
-                    )
-                    entity_categories = ["project", "collection"]
-                else:
-                    entity_categories = config.restate_entity_categories
-                    context.log.info(
-                        f"Filtering models by entity categories: {entity_categories}"
-                    )
+        def asset_generator():
+            @sqlmesh_assets(
+                config=sqlmesh_context_config,
+                environment=environment,
+                dagster_sqlmesh_translator=sqlmesh_translator,
+                enabled_subsetting=False,
+                op_tags=op_tags,
+            )
+            async def sqlmesh_project(
+                context: AssetExecutionContext,
+                global_config: ResourceParam[DagsterConfig],
+                sqlmesh: SQLMeshResource,
+                trino: TrinoResource,
+                config: SQLMeshRunConfig,
+            ):
+                restate_models = config.restate_models[:] if config.restate_models else []
 
-                for category in entity_categories:
-                    restate_models.append(f"tag:entity_category={category}")
+                # We use this helper function so we can run sqlmesh both locally and in
+                # a k8s environment
+                def run_sqlmesh(
+                    context: AssetExecutionContext,
+                    sqlmesh: SQLMeshResource,
+                    config: SQLMeshRunConfig,
+                ):
+                    # If restate_by_entity_category is True, dynamically identify models based on entity categories
+                    if config.restate_by_entity_category:
+                        # Ensure we have entity categories to filter by
+                        if not config.restate_entity_categories:
+                            context.log.info(
+                                "restate_by_entity_category is True but no entity categories specified. Using both 'project' and 'collection'."
+                            )
+                            entity_categories = ["project", "collection"]
+                        else:
+                            entity_categories = config.restate_entity_categories
+                            context.log.info(
+                                f"Filtering models by entity categories: {entity_categories}"
+                            )
 
-            plan_options: PlanOptions = {"skip_tests": config.skip_tests}
-            if config.allow_destructive_models:
-                plan_options["allow_destructive_models"] = (
-                    config.allow_destructive_models
-                )
+                        for category in entity_categories:
+                            restate_models.append(f"tag:entity_category={category}")
 
-            # If we specify a dev_environment, we will first plan it for safety
-            if dev_environment:
-                context.log.info("Planning dev environment")
-                all(
-                    sqlmesh.run(
+                    plan_options: PlanOptions = {"skip_tests": config.skip_tests}
+                    if config.allow_destructive_models:
+                        plan_options["allow_destructive_models"] = (
+                            config.allow_destructive_models
+                        )
+
+                    # If we specify a dev_environment, we will first plan it for safety
+                    if dev_environment:
+                        context.log.info("Planning dev environment")
+                        all(
+                            sqlmesh.run(
+                                context,
+                                environment=dev_environment,
+                                plan_options=copy.deepcopy(plan_options),
+                                start=config.start,
+                                end=config.end,
+                                restate_models=restate_models,
+                                skip_run=True,
+                            )
+                        )
+
+                    context.log.info("Starting to process prod environment")
+                    for result in sqlmesh.run(
                         context,
-                        environment=dev_environment,
+                        environment=environment,
                         plan_options=copy.deepcopy(plan_options),
                         start=config.start,
                         end=config.end,
                         restate_models=restate_models,
-                        skip_run=True,
-                    )
-                )
+                    ):
+                        yield result
 
-            context.log.info("Starting to process prod environment")
-            for result in sqlmesh.run(
-                context,
-                environment=environment,
-                plan_options=copy.deepcopy(plan_options),
-                start=config.start,
-                end=config.end,
-                restate_models=restate_models,
-            ):
-                yield result
+                # Trino can either be `local-trino` or `trino`
+                if "trino" in global_config.sqlmesh_gateway:
+                    async with multiple_async_contexts(
+                        trino=trino.ensure_available(log_override=context.log),
+                    ):
+                        for result in run_sqlmesh(context, sqlmesh, config):
+                            yield result
+                else:
+                    # If we are not running trino we are using duckdb
+                    for result in run_sqlmesh(context, sqlmesh, config):
+                        yield result
 
-        # Trino can either be `local-trino` or `trino`
-        if "trino" in global_config.sqlmesh_gateway:
-            async with multiple_async_contexts(
-                trino=trino.ensure_available(log_override=context.log),
-            ):
-                for result in run_sqlmesh(context, sqlmesh, config):
-                    yield result
-        else:
-            # If we are not running trino we are using duckdb
-            for result in run_sqlmesh(context, sqlmesh, config):
-                yield result
+            all_assets_selection = AssetSelection.assets(sqlmesh_project)
 
-    all_assets_selection = AssetSelection.assets(sqlmesh_project)
-
-    return AssetFactoryResponse(
-        assets=[sqlmesh_project],
-        jobs=[
-            define_asset_job(
-                name="sqlmesh_all_assets",
-                selection=all_assets_selection,
-                description="All assets in the sqlmesh project",
-            ),
-            # Job to restate all project and collection related assets
-            define_asset_job(
-                name="sqlmesh_restate_project_collection_assets",
-                selection=all_assets_selection,
-                description="Restate all project and collection related assets",
-                config=RunConfig(
-                    ops={
-                        "sqlmesh_project": SQLMeshRunConfig(
-                            restate_by_entity_category=True,
-                            restate_entity_categories=["project", "collection"],
+            return AssetFactoryResponse(
+                assets=[sqlmesh_project],
+                jobs=[
+                    define_asset_job(
+                        name="sqlmesh_all_assets",
+                        selection=all_assets_selection,
+                        description="All assets in the sqlmesh project",
+                    ),
+                    # Job to restate all project and collection related assets
+                    define_asset_job(
+                        name="sqlmesh_restate_project_collection_assets",
+                        selection=all_assets_selection,
+                        description="Restate all project and collection related assets",
+                        config=RunConfig(
+                            ops={
+                                "sqlmesh_project": SQLMeshRunConfig(
+                                    restate_by_entity_category=True,
+                                    restate_entity_categories=["project", "collection"],
+                                ),
+                            }
                         ),
-                    }
-                ),
-            ),
-            # Job to restate only project related assets
-            define_asset_job(
-                name="sqlmesh_restate_project_assets",
-                selection=all_assets_selection,
-                description="Restate only project related assets",
-                config=RunConfig(
-                    ops={
-                        "sqlmesh_project": SQLMeshRunConfig(
-                            restate_by_entity_category=True,
-                            restate_entity_categories=["project"],
+                    ),
+                    # Job to restate only project related assets
+                    define_asset_job(
+                        name="sqlmesh_restate_project_assets",
+                        selection=all_assets_selection,
+                        description="Restate only project related assets",
+                        config=RunConfig(
+                            ops={
+                                "sqlmesh_project": SQLMeshRunConfig(
+                                    restate_by_entity_category=True,
+                                    restate_entity_categories=["project"],
+                                ),
+                            }
                         ),
-                    }
-                ),
-            ),
-            # Job to restate only collection related assets
-            define_asset_job(
-                name="sqlmesh_restate_collection_assets",
-                selection=all_assets_selection,
-                description="Restate only collection related assets",
-                config=RunConfig(
-                    ops={
-                        "sqlmesh_project": SQLMeshRunConfig(
-                            restate_by_entity_category=True,
-                            restate_entity_categories=["collection"],
-                        )
-                    }
-                ),
-            ),
-        ],
-    )
+                    ),
+                    # Job to restate only collection related assets
+                    define_asset_job(
+                        name="sqlmesh_restate_collection_assets",
+                        selection=all_assets_selection,
+                        description="Restate only collection related assets",
+                        config=RunConfig(
+                            ops={
+                                "sqlmesh_project": SQLMeshRunConfig(
+                                    restate_by_entity_category=True,
+                                    restate_entity_categories=["collection"],
+                                )
+                            }
+                        ),
+                    ),
+                ],
+            )
+    return context
