@@ -3861,43 +3861,23 @@ name = "oso-core"
 version = "0.1.0"
 source = { editable = "lib/oso-core" }
 dependencies = [
-    { name = "arrow" },
-    { name = "boltons" },
-    { name = "click" },
-    { name = "githubkit" },
-    { name = "pandas" },
-    { name = "pendulum" },
-    { name = "polars" },
-    { name = "pydantic-settings" },
-    { name = "pytest" },
-    { name = "python-dotenv" },
-    { name = "redis" },
-    { name = "requests" },
-    { name = "ruamel-yaml" },
-    { name = "sqlalchemy" },
     { name = "sqlmesh", extra = ["trino"] },
     { name = "structlog" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
 [package.metadata]
 requires-dist = [
-    { name = "arrow", specifier = "<2.0.0" },
-    { name = "boltons", specifier = ">=24.0.0,<26.0.0" },
-    { name = "click" },
-    { name = "githubkit", specifier = ">=0.12.4,<1.0.0" },
-    { name = "pandas", specifier = "<3.0.0" },
-    { name = "pendulum", specifier = ">=3.0.0,<4.0.0" },
-    { name = "polars", specifier = "<2.0.0" },
-    { name = "pydantic-settings", specifier = ">=2.7.0,<3.0.0" },
-    { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
-    { name = "redis", specifier = ">=5.0.7,<7.0.0" },
-    { name = "requests", specifier = ">=2.31.0,<3.0.0" },
-    { name = "ruamel-yaml", specifier = ">=0.18.6,<1.0.0" },
-    { name = "sqlalchemy", specifier = ">=2.0.25,<3.0.0" },
     { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
     { name = "structlog", specifier = ">=25.4.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.2.1,<9.0.0" }]
 
 [[package]]
 name = "oso-mcp"
