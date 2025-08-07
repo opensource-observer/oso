@@ -38,3 +38,8 @@ def test_write_file_to_temp_dir(temp_dir):
     stored_test0 = cache.retrieve_object(key="test_key0", model_type=FakeModel)
 
     assert test0 == stored_test0, "Stored and retrieved objects should match"
+
+    test1 = FakeNestedModel(name="nested_test", nested=test0)
+    cache.store_object(key="test_key1", value=test1)
+    stored_test1 = cache.retrieve_object(key="test_key1", model_type=FakeNestedModel)
+    assert test1 == stored_test1, "Nested stored and retrieved objects should match"
