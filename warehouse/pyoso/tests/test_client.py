@@ -249,22 +249,22 @@ class TestClient(TestCase):
         # Verify status details
         self.assertIsInstance(asset.status, MaterializationStatus)
         assert asset.status is not None
-        self.assertIsInstance(asset.status.latestMaterialization, datetime)
+        self.assertIsInstance(asset.status.latest_materialization, datetime)
         self.assertEqual(
-            asset.status.latestMaterialization, datetime.fromtimestamp(1642678800)
+            asset.status.latest_materialization, datetime.fromtimestamp(1642678800)
         )
 
-        partition_status = asset.status.partitionStatus
+        partition_status = asset.status.partition_status
         assert partition_status is not None
         self.assertIsInstance(partition_status, PartitionStatus)
-        self.assertEqual(partition_status.numMaterialized, 10)
-        self.assertEqual(partition_status.numPartitions, 10)
+        self.assertEqual(partition_status.num_materialized, 10)
+        self.assertEqual(partition_status.num_partitions, 10)
         self.assertEqual(len(partition_status.ranges), 1)
 
         range_status = partition_status.ranges[0]
         self.assertIsInstance(range_status, PartitionStatusRange)
         self.assertEqual(range_status.status, "SUCCESS")
-        self.assertEqual(range_status.startKey, "2024-01-01")
+        self.assertEqual(range_status.start_key, "2024-01-01")
 
 
 @mock.patch.dict(sys.modules, {"oso_semantic": None})

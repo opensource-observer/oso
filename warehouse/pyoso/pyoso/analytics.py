@@ -5,24 +5,24 @@ from typing import Optional
 
 @dataclass
 class PartitionStatusRange:
-    endKey: str
-    startKey: str
+    end_key: str
+    start_key: str
     status: str
 
 
 @dataclass
 class PartitionStatus:
-    numFailed: int
-    numMaterialized: int
-    numMaterializing: int
-    numPartitions: int
+    num_failed: int
+    num_materialized: int
+    num_materializing: int
+    num_partitions: int
     ranges: list[PartitionStatusRange]
 
 
 @dataclass
 class MaterializationStatus:
-    partitionStatus: Optional[PartitionStatus] = None
-    latestMaterialization: Optional[datetime] = None
+    partition_status: Optional[PartitionStatus] = None
+    latest_materialization: Optional[datetime] = None
 
 
 @dataclass
@@ -108,15 +108,17 @@ class DataAnalytics:
         status = data_status.status
         status_parts = []
 
-        if not status.latestMaterialization and not status.partitionStatus:
+        if not status.latest_materialization and not status.partition_status:
             status_parts.append("No analytics data")
-        if status.latestMaterialization:
+        if status.latest_materialization:
             status_parts.append(
-                f"Last: {status.latestMaterialization.strftime('%Y-%m-%d %H:%M:%S')}"
+                f"Last: {status.latest_materialization.strftime('%Y-%m-%d %H:%M:%S')}"
             )
-        if status.partitionStatus:
-            ps = status.partitionStatus
-            status_parts.append(f"Partitions: {ps.numMaterialized}/{ps.numPartitions}")
+        if status.partition_status:
+            ps = status.partition_status
+            status_parts.append(
+                f"Partitions: {ps.num_materialized}/{ps.num_partitions}"
+            )
 
         status_text = f" ({', '.join(status_parts)})" if status_parts else ""
 

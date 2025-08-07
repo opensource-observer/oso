@@ -83,22 +83,22 @@ class QueryResponse:
                             for range_data in ps.get("ranges", []):
                                 ranges.append(
                                     PartitionStatusRange(
-                                        endKey=range_data["endKey"],
-                                        startKey=range_data["startKey"],
+                                        end_key=range_data["endKey"],
+                                        start_key=range_data["startKey"],
                                         status=range_data["status"],
                                     )
                                 )
                             partition_status = PartitionStatus(
-                                numFailed=ps["numFailed"],
-                                numMaterialized=ps["numMaterialized"],
-                                numMaterializing=ps["numMaterializing"],
-                                numPartitions=ps["numPartitions"],
+                                num_failed=ps["numFailed"],
+                                num_materialized=ps["numMaterialized"],
+                                num_materializing=ps["numMaterializing"],
+                                num_partitions=ps["numPartitions"],
                                 ranges=ranges,
                             )
 
                         asset_status = MaterializationStatus(
-                            partitionStatus=partition_status,
-                            latestMaterialization=datetime.fromtimestamp(
+                            partition_status=partition_status,
+                            latest_materialization=datetime.fromtimestamp(
                                 asset["status"]["latestMaterialization"]
                             )
                             if asset["status"].get("latestMaterialization")

@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-Test script to demonstrate the root_keys property and DataAnalytics functionality.
-"""
-
 from datetime import datetime
 from unittest import TestCase
 
@@ -20,42 +15,42 @@ class TestDataAnalytics(TestCase):
             "root1": DataStatus(
                 key="root1",
                 status=MaterializationStatus(
-                    latestMaterialization=datetime.fromtimestamp(1642678800)
+                    latest_materialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=["child1", "child2"],
             ),
             "root2": DataStatus(
                 key="root2",
                 status=MaterializationStatus(
-                    latestMaterialization=datetime.fromtimestamp(1642678800)
+                    latest_materialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=["child3"],
             ),
             "child1": DataStatus(
                 key="child1",
                 status=MaterializationStatus(
-                    latestMaterialization=datetime.fromtimestamp(1642678800)
+                    latest_materialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=["grandchild1"],
             ),
             "child2": DataStatus(
                 key="child2",
                 status=MaterializationStatus(
-                    latestMaterialization=datetime.fromtimestamp(1642678800)
+                    latest_materialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=[],
             ),
             "child3": DataStatus(
                 key="child3",
                 status=MaterializationStatus(
-                    latestMaterialization=datetime.fromtimestamp(1642678800)
+                    latest_materialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=[],
             ),
             "grandchild1": DataStatus(
                 key="grandchild1",
                 status=MaterializationStatus(
-                    latestMaterialization=datetime.fromtimestamp(1642678800)
+                    latest_materialization=datetime.fromtimestamp(1642678800)
                 ),
                 dependencies=[],
             ),
