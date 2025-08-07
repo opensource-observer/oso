@@ -61,7 +61,7 @@ class CacheMetadata(BaseModel):
             if age.total_seconds() > options.ttl:
                 return False
 
-        return False  # Placeholder for actual expiration logic
+        return True
 
 
 class CacheBackend(abc.ABC):
