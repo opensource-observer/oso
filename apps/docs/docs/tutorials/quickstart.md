@@ -45,14 +45,14 @@ def stringify(arr):
 Get a preview of all available models:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM models_v0 LIMIT 5")
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 query = semantic.select(
@@ -66,18 +66,18 @@ query = semantic.select(
 Get the list of stable production models:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM models_v0 WHERE model_name LIKE '%_v1'")
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 query = oso.semantic.select(
-    "models",                 
+    "models",
 ).where(
     "models.model_name LIKE '%_v1'"
 )
@@ -89,14 +89,14 @@ query = oso.semantic.select(
 Get the list of less stable models:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM models_v0 WHERE model_name LIKE '%_v0'")
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 query = oso.semantic.select(
@@ -114,14 +114,14 @@ query = oso.semantic.select(
 Get a list of projects:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM projects_v1 LIMIT 5")
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 query = oso.semantic.select(
@@ -135,14 +135,14 @@ query = oso.semantic.select(
 Look up a specific project:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM projects_v1 WHERE project_name = 'opensource-observer'")
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 query = oso.semantic.select(
@@ -158,14 +158,14 @@ query = oso.semantic.select(
 Get all artifacts owned by a project:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 client.to_pandas("SELECT * FROM artifacts_by_project_v1 WHERE project_name = 'opensource-observer'")
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 query = oso.semantic.select(
@@ -181,7 +181,7 @@ query = oso.semantic.select(
 Get available key metrics for OSO:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 client.to_pandas("""
@@ -199,7 +199,7 @@ client.to_pandas("""
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 query = oso.semantic.select(
@@ -220,7 +220,7 @@ query = oso.semantic.select(
 Get a set of key metrics for a few projects:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 MY_PROJECTS = ['opensource-observer', 'huggingface', 'wevm']
@@ -243,7 +243,7 @@ client.to_pandas(f"""
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 MY_PROJECTS = ['opensource-observer', 'huggingface', 'wevm']
@@ -269,7 +269,7 @@ query = oso.semantic.select(
 Get timeseries metrics for OSO:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 df_stars = client.to_pandas("""
@@ -291,7 +291,7 @@ df_stars = client.to_pandas("""
 ```
 
 </TabItem>
-<TabItem value="python" label="Semantic Layer">
+<TabItem value="python-semantic" label="Semantic Layer">
 
 ```python
 query = (
