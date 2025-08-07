@@ -46,7 +46,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Package and publish other docker containers
-        run: bash .github/scripts/publish-docker-containers.sh
+        run: bash .github/scripts/publish-docker-containers.sh --ignore-git-status
 
       # The remaining steps currently kill a pods in our kubernetes
       # because we haven't dealt with using strict versions on the cluster yet.
