@@ -43,7 +43,6 @@ dependencies = [
     "dagster-duckdb<1.0.0,>=0.24.0",
     "dagster-duckdb-polars<1.0.0,>=0.24.0",
     "google-cloud-bigquery-storage<3.0.0,>=2.25.0",
-    "dagster-sqlmesh==0.17.0",
     "google-auth<3.0.0,>=2.34.0",
     "dagster-k8s<1.0.0,>=0.24.6",
     "pyiceberg[hive,s3fs]<1.0.0,>=0.8.1",
@@ -68,6 +67,7 @@ dependencies = [
     "kr8s==0.20.9",
     "structlog>=25.4.0",
     "pandas-gbq>=0.29.2",
+    "dagster-sqlmesh==0.19.0",
 ]
 name = "oso"
 version = "1.0.0"
@@ -102,7 +102,6 @@ pyoso = { workspace = true }
 oso-mcp = { workspace = true }
 oso-core = { workspace = true }
 metrics-service = { workspace = true }
-dagster-sqlmesh = { path = "../dagster-sqlmesh", editable = true }
 
 [tool.uv.workspace]
 members = [
