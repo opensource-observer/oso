@@ -4,7 +4,7 @@ import pytest
 from pydantic import BaseModel
 
 from .file import FileCacheBackend
-from .types import CacheOptions
+from .types import CacheMetadataOptions
 
 
 class FakeModel(BaseModel):
@@ -30,16 +30,22 @@ def temp_dir():
 
 def test_write_file_to_temp_dir(temp_dir):
     """Test writing a file to the temporary directory."""
-    cache = FileCacheBackend(cache_dir=temp_dir, default_options=CacheOptions(ttl=60))
+    cache_backend = FileCacheBackend(cache_dir=temp_dir)
 
     test0 = FakeModel(name="test", value=42)
 
-    cache.store_object(key="test_key0", value=test0)
-    stored_test0 = cache.retrieve_object(key="test_key0", model_type=FakeModel)
+    options = CacheMetadataOptions(ttl_seconds=60)
+
+    cache_backend.store_object(key="test_key0", value=test0, options=options)
+    stored_test0 = cache_backend.retrieve_object(
+        key="test_key0", model_type=FakeModel, options=options
+    )
 
     assert test0 == stored_test0, "Stored and retrieved objects should match"
 
     test1 = FakeNestedModel(name="nested_test", nested=test0)
-    cache.store_object(key="test_key1", value=test1)
-    stored_test1 = cache.retrieve_object(key="test_key1", model_type=FakeNestedModel)
+    cache_backend.store_object(key="test_key1", value=test1, options=options)
+    stored_test1 = cache_backend.retrieve_object(
+        key="test_key1", model_type=FakeNestedModel, options=options
+    )
     assert test1 == stored_test1, "Nested stored and retrieved objects should match"
