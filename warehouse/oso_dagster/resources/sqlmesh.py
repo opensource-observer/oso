@@ -21,12 +21,11 @@ from dagster_sqlmesh import SQLMeshDagsterTranslator
 from dagster_sqlmesh.controller.base import SQLMeshInstance
 from metrics_service.types import TableMetadata, TableReference
 from metrics_tools.transfer.coordinator import Destination, Source, transfer
-from openai import BaseModel
 from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
 from oso_dagster.resources.duckdb import DuckDBExporterResource, DuckDBImporterResource
 from oso_dagster.resources.trino import TrinoExporterResource
-from pydantic import Field
+from pydantic import BaseModel, Field
 from sqlglot import exp
 from sqlmesh import Context
 from sqlmesh.core.dialect import parse_one
