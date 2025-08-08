@@ -395,10 +395,7 @@ class CacheableDagsterObjectGenerator(t.Protocol[C]):
     __name__: str
 
 
-class CacheableDagsterObjectRehydrator(t.Protocol):
-    def __call__(self, *args, **kwargs) -> AssetFactoryResponse:
-        """Rehydrate the cacheable dagster object from the cache."""
-        ...
+type CacheableDagsterObjectHydrator = t.Callable[..., AssetFactoryResponse]
 
 
 class CacheableDagsterObjectKey(StructuredCacheKey):
@@ -441,7 +438,7 @@ class CacheableDagsterContext:
 
         return _decorator
 
-    def register_rehydrator(self) -> t.Callable[..., None]:
+    def register_hydrator(self) -> t.Callable[..., None]:
         """A decorator that registers a rehydrator function to the cacheable context."""
 
         def _decorator(

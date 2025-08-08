@@ -137,7 +137,7 @@ def sqlmesh_factory(
             )
         )
 
-    @cache_context.register_rehydrator()
+    @cache_context.register_hydrator()
     def sqlmesh_assets_rehydrator(
         cacheable_sqlmesh_multi_asset_options: CacheableSQLMeshMultiAssetOptions,
         sqlmesh_infra_config: dict,

@@ -71,7 +71,7 @@ def sqlmesh_export_factory(
 
         return SQLMeshExportedAssetsCollection(assets_map=assets_map)
 
-    @cache_context.register_rehydrator()
+    @cache_context.register_hydrator()
     def rehydrate_exported_assets_defs(
         cacheable_exported_assets_defs: SQLMeshExportedAssetsCollection,
         sqlmesh_exporters: ResourceParam[t.List[SQLMeshExporter]],

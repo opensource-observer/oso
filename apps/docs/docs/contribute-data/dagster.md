@@ -201,11 +201,11 @@ the ResourceResolver).
 `CacheableDagsterContext` allows us to _mostly_ cacheable `AssetFactoryResponse` objects.
 We say _mostly_, because due to the complexity of the dagster object model we
 don't actually cache the dagster objects but instead cache objects that allow
-for fast rehydration of dagster objects. In order to accomplish this, we
+for fast hydration of dagster objects. In order to accomplish this, we
 separate the generation cacheable objects (must be inherit from
-`pydantic.BaseModel`) from the rehydration of those cached objects into an
+`pydantic.BaseModel`) from the hydration of those cached objects into an
 `AssetFactoryResponse`. You can have any number of cacheable object generation
-functions and only a single rehydration function.
+functions and only a single hydration function.
 
 This would generally look like the following:
 
@@ -225,8 +225,8 @@ def my_asset_factory(cache_context: CacheableDagsterContext) -> CacheableAssetFa
         return SomeCacheableResponse(responses=responses)
 
 
-    @cache_context.rehydrator()
-    def rehydrate_cacheable_response(
+    @cache_context.hydrator()
+    def hydrate_cacheable_response(
         cacheable_response: SomeCacheableResponse,
     ) -> AssetFactoryResponse:
         # Convert the cacheable response to a set of dagster objects
