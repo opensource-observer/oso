@@ -1,6 +1,6 @@
 [project]
 name = "pyoso"
-version = "0.5.2"
+version = "0.6.0"
 description = ""
 readme = "README.md"
 requires-python = ">=3.8"
@@ -9,6 +9,7 @@ authors = [
 ]
 dependencies = [
     "pandas>=1.2.0",
+    "pydantic>=2.11.6",
     "requests>=2.32.4",
     "sqlglot>=26.16.4",
 ]

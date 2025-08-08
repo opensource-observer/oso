@@ -1,77 +1,28 @@
-from dataclasses import dataclass, field
 from typing import Callable
 
 import pandas as pd
 import requests
+from pydantic import BaseModel, Field
 from pyoso.exceptions import OsoHTTPError
 
 
-@dataclass
-class SemanticColumn:
+class SemanticColumn(BaseModel):
     name: str
     type: str
-    description: str
+    description: str | None
 
 
-@dataclass
-class SemanticRelationship:
-    source_column: str
-    target_table: str
-    target_column: str
+class SemanticRelationship(BaseModel):
+    source_column: str = Field(alias="sourceColumn")
+    target_table: str = Field(alias="targetTable")
+    target_column: str = Field(alias="targetColumn")
 
 
-@dataclass
-class SemanticTableResponse:
+class SemanticTableResponse(BaseModel):
     name: str
-    description: str
-    columns: list[SemanticColumn] = field(default_factory=list)
-    relationships: list[SemanticRelationship] = field(default_factory=list)
-
-
-def map_to_semantic_table_response(table_data: dict) -> SemanticTableResponse:
-    assert (
-        "name" in table_data and table_data.get("name") is not None
-    ), "Table name is required"
-    columns = []
-    if "columns" in table_data:
-        for col_data in table_data["columns"]:
-            assert (
-                "name" in col_data and col_data.get("name") is not None
-            ), "Column name is required"
-            column = SemanticColumn(
-                name=col_data.get("name"),
-                type=col_data.get("type") or "",
-                description=col_data.get("description") or "",
-            )
-            columns.append(column)
-
-    # Extract relationships
-    relationships = []
-    if "relationships" in table_data:
-        for rel_data in table_data["relationships"]:
-            assert (
-                "sourceColumn" in rel_data
-                and "targetTable" in rel_data
-                and "targetColumn" in rel_data
-                and rel_data.get("sourceColumn") is not None
-                and rel_data.get("targetTable") is not None
-                and rel_data.get("targetColumn") is not None
-            ), "Source column, target table and target column are required in relationship data"
-
-            relationship = SemanticRelationship(
-                source_column=rel_data.get("sourceColumn"),
-                target_table=rel_data.get("targetTable"),
-                target_column=rel_data.get("targetColumn"),
-            )
-
-            relationships.append(relationship)
-
-    return SemanticTableResponse(
-        name=table_data.get("name") or "",
-        description=table_data.get("description") or "",
-        columns=columns,
-        relationships=relationships,
-    )
+    description: str | None
+    columns: list[SemanticColumn] = Field(default_factory=list)
+    relationships: list[SemanticRelationship] = Field(default_factory=list)
 
 
 def query_dynamic_models(base_url: str, api_key: str) -> list[SemanticTableResponse]:
@@ -86,15 +37,11 @@ def query_dynamic_models(base_url: str, api_key: str) -> list[SemanticTableRespo
         )
         response.raise_for_status()
 
-        # Parse the JSON response
         response_data = response.json()
 
-        # Map the response to SemanticTableResponse objects
-        tables = []
-        for table_data in response_data:
-            table = map_to_semantic_table_response(table_data)
-            tables.append(table)
-
+        tables = [
+            SemanticTableResponse.model_validate(table) for table in response_data
+        ]
         return tables
     except requests.HTTPError as e:
         raise OsoHTTPError(e, response=e.response) from None
@@ -113,7 +60,6 @@ def create_registry(
     )
 
     class QueryBuilder(InnerQueryBuilder):
-
         def __init__(self, registry: Registry):
             super().__init__(registry)
 
@@ -131,13 +77,13 @@ def create_registry(
         registry.register(
             Model(
                 name=model_name,
-                description=table.description,
+                description=table.description or "",
                 table=table.name,
                 dimensions=[
                     Dimension(
                         name=column.name,
                         column_name=column.name,
-                        description=column.description,
+                        description=column.description or "",
                     )
                     for column in table.columns
                 ],
