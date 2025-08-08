@@ -30,7 +30,7 @@ class CacheOptions(BaseModel):
     """
 
     default_ttl_seconds: int = (
-        0  # Time to live for the cache in seconds. 0 means no expiration.
+        900  # Time to live for the cache in seconds. 0 means no expiration.
     )
     enabled: bool = True  # Whether the cache is enabled
 
