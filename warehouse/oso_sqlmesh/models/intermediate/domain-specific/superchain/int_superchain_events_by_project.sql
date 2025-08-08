@@ -20,7 +20,8 @@ MODEL (
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
     "incrementalmusthaveforwardonly",
-  )
+  ),
+  enabled false
 );
 
 WITH unioned_events AS (

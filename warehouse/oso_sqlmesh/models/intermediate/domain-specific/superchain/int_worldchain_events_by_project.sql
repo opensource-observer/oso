@@ -21,7 +21,7 @@ MODEL (
   ignored_rules (
     "incrementalmusthaveforwardonly",
     "incrementalmustdefinenogapsaudit",
-  )
+  ),
 );
 
 WITH worldchain_contracts AS (
