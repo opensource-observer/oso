@@ -35,11 +35,15 @@ SELECT
   to_address,
   gas AS gas_used,
   gas_price,
+  receipt_gas_used,
+  receipt_effective_gas_price,
+  receipt_l1_fee,
+  receipt_status,
   value_lossless,
-  @chain_name(chain) AS chain
+  @chain_name(chain) AS chain,
+  transaction_type
 FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.transactions')
 WHERE
   network = 'mainnet'
-  AND receipt_status = 1
   AND gas > 0
   AND /* Bigquery requires we specify partitions to filter for this data source */ dt BETWEEN @start_dt AND @end_dt
