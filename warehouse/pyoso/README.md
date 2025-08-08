@@ -53,7 +53,7 @@ For more advanced use cases, the `client.query()` method returns a `QueryRespons
 
 ```python
 import os
-from pyoso.client import Client
+from pyoso import Client
 
 # Initialize the client
 os.environ["OSO_API_KEY"] = "your_api_key"
@@ -65,7 +65,7 @@ response = client.query(query)
 
 # You can still get the DataFrame as before
 df = response.to_pandas()
-print("---\nQuery Data ---")
+print("\n--- Query Data ---")
 print(df)
 
 # Now, inspect the analytics to see the dependency tree
