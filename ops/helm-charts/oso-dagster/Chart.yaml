@@ -3,7 +3,7 @@ name: oso-dagster
 description: Extension of the dagster template
 
 type: application
-version: 0.21.0
+version: 0.22.0
 appVersion: "1.0.0"
 dependencies:
 - name: dagster
