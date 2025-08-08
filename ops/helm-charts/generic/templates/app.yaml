@@ -55,6 +55,8 @@ spec:
           {{- toYaml . | nindent 10 }}
         {{- end }}
         env:
+          - name: OSO_ENABLE_JSON_LOGS
+            value: "{{ .Values.app.enableJsonLogs }}"
           - name: {{ .Values.app.hostEnvVar }}
             value: "{{ .Values.app.host }}"
           - name: {{ .Values.app.portEnvVar }}
