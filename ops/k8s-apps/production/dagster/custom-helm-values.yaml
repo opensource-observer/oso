@@ -7,7 +7,7 @@ spec:
     # We should eventually set this to 0, but we are setting it to 1 to gather
     # timing data
     osoDagster:
-      eagerlyLoadSqlTables: 1
+      eagerlyLoadSqlTables: 0
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
       port: "5432"
