@@ -49,3 +49,4 @@ data:
   SQLMESH_MCS_DEFAULT_SLOTS: "{{ .Values.sqlmesh.mcs.defaultSlots }}"
   SQLMESH_MCS_SKIP_ROLLING: "{{- if .Values.sqlmesh.mcs.skipRolling -}}1{{- else -}}0{{- end -}}"
   DAGSTER_ASSET_CACHE_DIR: "{{ .Values.osoDagster.assetCacheDir }}"
+  OSO_ENABLE_JSON_LOGS: "{{- if .Values.osoDagster.enableJsonLogs -}}1{{- else -}}0{{- end -}}"
