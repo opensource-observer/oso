@@ -72,16 +72,16 @@ def sqlmesh_export_factory(
         return SQLMeshExportedAssetsCollection(assets_map=assets_map)
 
     @cache_context.register_hydrator()
-    def rehydrate_exported_assets_defs(
+    def hydrate_exported_assets_defs(
         cacheable_exported_assets_defs: SQLMeshExportedAssetsCollection,
         sqlmesh_exporters: ResourceParam[t.List[SQLMeshExporter]],
     ) -> AssetFactoryResponse:
-        """Rehydrate the exported assets definitions."""
-        rehydrated_assets: list[AssetsDefinition] = []
+        """hydrate the exported assets definitions."""
+        hydrated_assets: list[AssetsDefinition] = []
         for exporter in sqlmesh_exporters:
             if exporter.name() in cacheable_exported_assets_defs.assets_map:
                 asset_def = cacheable_exported_assets_defs.assets_map[exporter.name()]
-                rehydrated_assets.append(exporter.asset_from_definition(asset_def))
+                hydrated_assets.append(exporter.asset_from_definition(asset_def))
             else:
                 logger.warning(
                     "Exporter not found in cached assets",
@@ -89,7 +89,7 @@ def sqlmesh_export_factory(
                 )
 
         return AssetFactoryResponse(
-            assets=rehydrated_assets,
+            assets=hydrated_assets,
         )
 
     return cache_context

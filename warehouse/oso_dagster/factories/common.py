@@ -416,7 +416,7 @@ class CacheableDagsterContext:
             str,
             t.Tuple[CacheableDagsterObjectGenerator, t.Type[BaseModel], dict[str, str]],
         ] = {}
-        self._rehydrator: t.Callable[..., AssetFactoryResponse] | None = None
+        self._hydrator: t.Callable[..., AssetFactoryResponse] | None = None
 
     def register_generator(
         self,
@@ -439,42 +439,42 @@ class CacheableDagsterContext:
         return _decorator
 
     def register_hydrator(self) -> t.Callable[..., None]:
-        """A decorator that registers a rehydrator function to the cacheable context."""
+        """A decorator that registers a hydrator function to the cacheable context."""
 
         def _decorator(
             f: t.Callable[..., AssetFactoryResponse],
         ) -> None:
-            """A decorator that registers a rehydrator function to the cacheable context."""
-            if self._rehydrator is not None:
-                raise ValueError("Rehydrator already registered.")
-            self._rehydrator = f
+            """A decorator that registers a hydrator function to the cacheable context."""
+            if self._hydrator is not None:
+                raise ValueError("hydrator already registered.")
+            self._hydrator = f
 
         return _decorator
 
     def load(self, cache_key_metadata: dict[str, str]):
         """Load the cacheable context.
 
-        For all of the expected annotations in the rehydrator, we will run
+        For all of the expected annotations in the hydrator, we will run
         either load from cache or run the generator functions and then inject
-        that into the rehydrator.
+        that into the hydrator.
         """
 
-        if self._rehydrator is None:
-            raise ValueError("Rehydrator not registered.")
+        if self._hydrator is None:
+            raise ValueError("hydrator not registered.")
 
         resources = self._resources
 
         generated_objects: t.Dict[str, BaseModel] = {}
 
-        # Get all the annotations from the rehydrator function
-        annotations = self._rehydrator.__annotations__
+        # Get all the annotations from the hydrator function
+        annotations = self._hydrator.__annotations__
         for key, value in annotations.items():
             if key == "return":
                 continue
 
             if key == ResourcesContext.resources_keyword_name:
                 # If the key is the resources context, we will inject the resources context
-                # into the rehydrator.
+                # into the hydrator.
                 continue
 
             if key in self._generators and resources.has_resource_available(key):
@@ -492,7 +492,7 @@ class CacheableDagsterContext:
                 if value is not cacheable_type:
                     raise ValueError(
                         f"Generator {key} is registered with type {cacheable_type}, "
-                        f"but the rehydrator expects type {value}."
+                        f"but the hydrator expects type {value}."
                     )
 
                 generator_cache_key_metadata = copy.deepcopy(cache_key_metadata)
@@ -516,8 +516,8 @@ class CacheableDagsterContext:
 
                 generated_objects[key] = obj
 
-        # Run the rehydrator with the loaded bindings
-        return resources.run(self._rehydrator, additional_inject=generated_objects)
+        # Run the hydrator with the loaded bindings
+        return resources.run(self._hydrator, additional_inject=generated_objects)
 
 
 def cacheable_asset_factory(tags: dict[str, str] | None = None):
