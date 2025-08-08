@@ -20,11 +20,11 @@ from dagster_sqlmesh import (
     sqlmesh_asset_from_multi_asset_options,
     sqlmesh_to_multi_asset_options,
 )
-from openai import BaseModel
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories.common import CacheableDagsterContext
 from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
+from pydantic import BaseModel
 
 from ..factories import AssetFactoryResponse, cacheable_asset_factory
 
