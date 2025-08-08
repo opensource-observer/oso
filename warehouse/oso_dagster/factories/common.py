@@ -1,3 +1,4 @@
+import copy
 import inspect
 import typing as t
 from dataclasses import dataclass, field
@@ -415,19 +416,28 @@ class CacheableDagsterContext:
         self._resources = resources
 
         self._generators: dict[
-            str, t.Tuple[CacheableDagsterObjectGenerator, t.Type[BaseModel]]
+            str,
+            t.Tuple[CacheableDagsterObjectGenerator, t.Type[BaseModel], dict[str, str]],
         ] = {}
         self._rehydrator: t.Callable[..., AssetFactoryResponse] | None = None
 
     def register_generator(
-        self, *, cacheable_type: t.Type[C], name: str = ""
+        self,
+        *,
+        cacheable_type: t.Type[C],
+        name: str = "",
+        extra_cache_key_metadata: dict[str, str] | None = None,
     ) -> t.Callable[..., None]:
         def _decorator(
             generator: CacheableDagsterObjectGenerator[C],
         ) -> None:
             """A decorator that registers a generator function to the cacheable context."""
             generator_name = name or generator.__name__
-            self._generators[generator_name] = (generator, cacheable_type)
+            self._generators[generator_name] = (
+                generator,
+                cacheable_type,
+                extra_cache_key_metadata or {},
+            )
 
         return _decorator
 
@@ -479,15 +489,20 @@ class CacheableDagsterContext:
 
             # First check if the key is one of the registered generators
             if key in self._generators:
-                generator, cacheable_type = self._generators[key]
+                generator, cacheable_type, extra_cache_key_metadata = self._generators[
+                    key
+                ]
                 if value is not cacheable_type:
                     raise ValueError(
                         f"Generator {key} is registered with type {cacheable_type}, "
                         f"but the rehydrator expects type {value}."
                     )
 
+                generator_cache_key_metadata = copy.deepcopy(cache_key_metadata)
+                generator_cache_key_metadata.update(extra_cache_key_metadata)
+
                 cache_key = CacheableDagsterObjectKey(
-                    cache_key_metadata=cache_key_metadata,
+                    cache_key_metadata=generator_cache_key_metadata,
                     name=self._name,
                     sub_name=key,
                 )

@@ -111,10 +111,15 @@ class CacheableSQLMeshMultiAssetOptions(BaseModel):
         )
 
 
-@cacheable_asset_factory()
-def sqlmesh_factory(cache_context: CacheableDagsterContext):
+@cacheable_asset_factory(tags=dict(run_at_build="true"))
+def sqlmesh_factory(
+    global_config: DagsterConfig, cache_context: CacheableDagsterContext
+):
     @cache_context.register_generator(
         cacheable_type=CacheableSQLMeshMultiAssetOptions,
+        extra_cache_key_metadata=dict(
+            sqlmesh_gateway=global_config.sqlmesh_gateway,
+        ),
     )
     def cacheable_sqlmesh_multi_asset_options(
         *,

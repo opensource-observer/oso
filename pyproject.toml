@@ -83,6 +83,7 @@ documentation = "https://docs.opensource.observer/"
 bq2cloudsql = "bq2cloudsql.script:run"
 oso_lets_go = "oso_lets_go.wizard:run"
 oso = "oso_lets_go.cli:cli"
+oso_dagster = "oso_dagster.cli:cli"
 
 [dependency-groups]
 dev = [
