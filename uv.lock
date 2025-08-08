@@ -3861,6 +3861,8 @@ name = "oso-core"
 version = "0.1.0"
 source = { editable = "lib/oso-core" }
 dependencies = [
+    { name = "arrow" },
+    { name = "orjson" },
     { name = "sqlmesh", extra = ["trino"] },
     { name = "structlog" },
 ]
@@ -3872,6 +3874,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "arrow", specifier = "<2.0.0" },
+    { name = "orjson", specifier = ">=3.10.18" },
     { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
     { name = "structlog", specifier = ">=25.4.0" },
 ]
