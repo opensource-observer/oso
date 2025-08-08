@@ -150,3 +150,99 @@ gitcoin_passport_scores = interval_gcs_import_asset(
     ),
 )
 ```
+
+## Creating an asset factory that needs resources
+
+If your asset factory needs resources, to generate the assets you will need to
+use the `EarlyResourcesAssetFactory` class. To do this, you can simply use the
+`@early_resources_asset_factory` decorator. This decorator automatically sets up
+the underlying `EarlyResourcesAssetFactory` instance based on your decorated
+function. The decorated function can also declare the resources it needs by
+annotating the function arguments with the resource types. To get the
+`global_config` resource that uses a class called `DagsterConfig` in your asset
+factory you would just do this:
+
+```python
+import dagster as dg
+from oso_dagster.factories import early_resources_asset_factory
+
+@early_resources_asset_factory()
+def my_asset_factory(
+    global_config: DagsterConfig,
+):
+    @dg.asset
+    def my_asset(context: dg.AssetExecutionContext):
+        # Use the global_config resource to create the asset
+        some_value = global_config.some_setting
+
+        ...
+
+    return AssetFactoryResponse(
+        assets=assets
+    )
+```
+
+This can be useful in many cases where you need to preprocess before the assets
+are loaded.
+
+## Defining cacheable asset factories
+
+Many of the assets in the system can are created using an asset factory.
+However, we have discovered that often these factories can add significant
+overhead to the start time of dagster. To mitigate this, we can cache the
+results of these factories (some at build time) and some at runtime. To do this
+we define a new way to create assets that can be cached.
+
+To do this you need to use the `cacheable_asset_factory` decorator. This
+decorator expects the decorated function to take at least the `cache_context`
+argument and any other resources that it might need (resources are resolved with
+the ResourceResolver).
+
+`CacheableDagsterContext` allows us to _mostly_ cacheable `AssetFactoryResponse` objects.
+We say _mostly_, because due to the complexity of the dagster object model we
+don't actually cache the dagster objects but instead cache objects that allow
+for fast rehydration of dagster objects. In order to accomplish this, we
+separate the generation cacheable objects (must be inherit from
+`pydantic.BaseModel`) from the rehydration of those cached objects into an
+`AssetFactoryResponse`. You can have any number of cacheable object generation
+functions and only a single rehydration function.
+
+This would generally look like the following:
+
+```python
+import dagster as dg
+
+class SomeCacheableResponse(BaseModel):
+    responses: List[str]
+
+@cacheable_asset_factory
+def my_asset_factory(cache_context: CacheableDagsterContext) -> CacheableAssetFactoryResponse:
+    @cache_context.register_generator()
+    def cacheable_response(some_resource: SomeResource) -> SomeCacheableResponse:
+        responses = []
+        for response in some_resource.some_slow_iterator():
+            responses.append(response)
+        return SomeCacheableResponse(responses=responses)
+
+
+    @cache_context.rehydrator()
+    def rehydrate_cacheable_response(
+        cacheable_response: SomeCacheableResponse,
+    ) -> AssetFactoryResponse:
+        # Convert the cacheable response to a set of dagster objects
+
+        assets: list[dg.AssetsDefinition] = []
+
+        for response in cacheable_response.responses:
+            # Create dagster assets, sensors, jobs, etc. based on the response
+            @dg.asset(name=response)
+            def my_asset(context: dg.AssetExecutionContext):
+                # Do something that creates an asset
+                pass
+            assets.append(my_asset)
+
+        return AssetFactoryResponse(
+            assets=assets
+        )
+
+```
