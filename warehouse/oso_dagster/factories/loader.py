@@ -39,10 +39,19 @@ class EarlyResourcesAssetFactoryDAG:
 
         return self._sorted
 
+    def matching_tags(self, tags: dict[str, str]) -> "EarlyResourcesAssetFactoryDAG":
+        """Returns a subgraph of EarlyResourcesAssetFactory that match the given tags."""
+        subgraph = EarlyResourcesAssetFactoryDAG()
+        for factory in self._graph.keys():
+            if all(factory.tags.get(k) == v for k, v in tags.items()):
+                subgraph.add(factory)
+        return subgraph
+
 
 def load_all_assets_from_package(
     package: ModuleType,
     resources: ResourcesContext,
+    matching_tags: dict[str, str] | None = None,
 ) -> AssetFactoryResponse:
     """Loads all assets and factories from a given package and any submodules it may have
 
@@ -50,6 +59,10 @@ def load_all_assets_from_package(
         package (ModuleType): The package to load assets and factories from.
         resources (ResourcesContext): The resources context to use for loading
             asset factories.
+        matching_tags (dict[str, str] | None): If provided, only assets and factories
+            with matching tags will be loaded. This only filters the early
+            resources asset factories. This is useful for preprocessing early asset
+            factories.
 
     Returns:
         AssetFactoryResponse: A response containing all loaded assets and factories.

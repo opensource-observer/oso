@@ -12,15 +12,9 @@ from dagster import (
     SensorDefinition,
     SourceAsset,
 )
-from oso_core.cache import CacheBackend, CacheInvalidError
+from oso_core.cache import Cache, CacheInvalidError
+from oso_core.cache.types import StructuredCacheKey
 from oso_dagster.config import DagsterConfig
-from oso_dagster.factories.cache import (
-    CacheableAssetCheckOptions,
-    CacheableAssetOptions,
-    CacheableJobOptions,
-    CacheableMultiAssetOptions,
-    CacheableSensorOptions,
-)
 from oso_dagster.utils import dagsterinternals as dginternals
 from pydantic import BaseModel
 
@@ -249,6 +243,10 @@ class ResourcesContext:
             resolved_resources[key] = self.resolve(key)
         return f(**resolved_resources, **kwargs)
 
+    def has_resource_available(self, name: str) -> bool:
+        """Check if this resource is available in the registry."""
+        return name in self._registry._resources
+
     def resolve(self, name: str) -> t.Any:
         """Resolve a resource by name. If the resource is not resolved yet, it
         will be resolved and cached."""
@@ -276,14 +274,16 @@ class EarlyResourcesAssetFactory:
     def __init__(
         self,
         f: EarlyResourcesAssetDecoratedFunction,
-        caller: t.Optional[inspect.FrameInfo] = None,
-        additional_annotations: t.Optional[t.Dict[str, t.Any]] = None,
-        dependencies: t.Optional[t.List["EarlyResourcesAssetFactory"]] = None,
+        caller: inspect.FrameInfo | None = None,
+        additional_annotations: t.Dict[str, t.Any] | None = None,
+        dependencies: t.List["EarlyResourcesAssetFactory"] | None = None,
+        tags: dict[str, str] | None = None,
     ):
         self._f = f
         self._caller = caller
         self.additional_annotations = additional_annotations or {}
         self._dependencies = dependencies or []
+        self._tags = tags or {}
 
     def __call__(
         self, resources: ResourcesContext, dependencies: t.List[AssetFactoryResponse]
@@ -296,7 +296,9 @@ class EarlyResourcesAssetFactory:
             res = resources.run(
                 self._f,
                 additional_annotations=self.additional_annotations,
-                additional_inject=dict(dependencies=dependencies),
+                additional_inject=dict(
+                    dependencies=dependencies, factory_caller=self._caller
+                ),
             )
         except Exception:
             if self._caller:
@@ -338,12 +340,18 @@ class EarlyResourcesAssetFactory:
     def dependencies(self):
         return self._dependencies[:]
 
+    @property
+    def tags(self) -> dict[str, str]:
+        """Get the tags for the asset factory."""
+        return self._tags.copy()
+
 
 def early_resources_asset_factory(
     *,
     caller_depth: int = 1,
     additional_annotations: t.Optional[t.Dict[str, t.Any]] = None,
     dependencies: t.Optional[t.List[EarlyResourcesAssetFactory]] = None,
+    tags: dict[str, str] | None = None,
 ):
     caller = inspect.stack()[caller_depth]
 
@@ -377,184 +385,156 @@ def resource_factory(name: str):
     return _decorator
 
 
-CacheableDagsterObjectGenerator = t.Callable[
-    ...,
-    BaseModel
-]
+C = t.TypeVar("C", bound=BaseModel, covariant=True)
 
 
-class CacheableContextEmitter(t.Protocol):
-    """A protocol that defines the methods that a cache context emitter should implement."""
+class CacheableDagsterObjectGenerator(t.Protocol[C]):
+    def __call__(self, *args, **kwargs) -> C: ...
 
-    def emit_job(self, handler_name: str, job_options: CacheableJobOptions):
-        """Emit a job definition from the cacheable context."""
-        ...
+    __name__: str
 
-    def emit_sensor(self, handler_name: str, sensor_options: CacheableSensorOptions):
-        """Emit a sensor definition from the cacheable context."""
-        ...
 
-    def emit_asset_check(
-        self, handler_name: str, asset_check_options: CacheableAssetCheckOptions
-    ):
-        """Emit an asset check definition from the cacheable context."""
-        ...
-
-    def emit_asset(self, handler_name: str, asset_options: CacheableAssetOptions):
-        """Emit an asset definition from the cacheable context."""
-        ...
-
-    def emit_multi_asset(
-        self, handler_name: str, multi_asset_options: CacheableMultiAssetOptions
-    ):
-        """Emit a multi-asset definition from the cacheable context."""
-        ...
-
-    def add_generator(self, generator: CacheableDagsterObjectGenerator):
-        """Add a generator to the cacheable context."""
+class CacheableDagsterObjectRehydrator(t.Protocol):
+    def __call__(self, *args, **kwargs) -> AssetFactoryResponse:
+        """Rehydrate the cacheable dagster object from the cache."""
         ...
 
 
-class CacheableDagsterContextBindings(BaseModel):
-    """A class that holds the bindings for a cacheable dagster context."""
-
-    jobs: t.List[t.Tuple[str, CacheableJobOptions]] = field(default_factory=list)
-    sensors: t.List[t.Tuple[str, CacheableSensorOptions]] = field(default_factory=list)
-    asset_checks: t.List[t.Tuple[str, CacheableAssetCheckOptions]] = field(
-        default_factory=list
-    )
-    assets: t.List[t.Tuple[str, CacheableAssetOptions]] = field(default_factory=list)
-    multi_assets: t.List[t.Tuple[str, CacheableMultiAssetOptions]] = field(
-        default_factory=list
-    )
+class CacheableDagsterObjectKey(StructuredCacheKey):
+    cache_key_metadata: dict[str, str]
+    name: str
+    sub_name: str = ""
 
 
 class CacheableDagsterContext:
     """Provides a way to create cacheable asset factories from one or more generateor functions."""
 
-    def __init__(self, name: str, resources: ResourcesContext, cache: CacheBackend):
-        self.name = name
+    def __init__(self, name: str, resources: ResourcesContext, cache: Cache):
+        self._name = name
         self._cache = cache
         self._resources = resources
-        self._job_handlers: t.Dict[str, t.Tuple[t.Callable, dict]] = {}
-        self._sensor_handlers: t.Dict[str, t.Tuple[t.Callable, dict]] = {}
-        self._asset_check_handlers: t.Dict[str, t.Tuple[t.Callable, dict]] = {}
-        self._asset_handlers: t.Dict[str, t.Tuple[t.Callable, dict]] = {}
-        self._multi_asset_handlers: t.Dict[str, t.Tuple[t.Callable, dict]] = {}
 
-        self._job_bindings: list[t.Tuple[str, CacheableJobOptions]] = []
-        self._asset_bindings: list[t.Tuple[str, CacheableAssetOptions]] = []
-        self._sensor_bindings: list[t.Tuple[str, CacheableSensorOptions]] = []
-        self._asset_check_bindings: list[t.Tuple[str, CacheableAssetCheckOptions]] = []
-        self._multi_asset_bindings: list[t.Tuple[str, CacheableMultiAssetOptions]] = []
-
-        self._generators: list[CacheableDagsterObjectGenerator] = []
+        self._generators: dict[
+            str, t.Tuple[CacheableDagsterObjectGenerator, t.Type[BaseModel]]
+        ] = {}
+        self._rehydrator: t.Callable[..., AssetFactoryResponse] | None = None
 
     def register_generator(
-        self,
-        generator: CacheableDagsterObjectGenerator,
-    ):
-        self._generators.append(generator)
+        self, *, cacheable_type: t.Type[C], name: str = ""
+    ) -> t.Callable[..., None]:
+        def _decorator(
+            generator: CacheableDagsterObjectGenerator[C],
+        ) -> None:
+            """A decorator that registers a generator function to the cacheable context."""
+            generator_name = name or generator.__name__
+            self._generators[generator_name] = (generator, cacheable_type)
 
-    def load_bindings_from_cache(self):
-        """Load the bindings from cache. This will load all the jobs, sensors,
-        asset checks, and assets that were emitted from the cacheable context."""
-        # This is a placeholder for loading the bindings from cache.
-        # In a real implementation, this would load the bindings from a cache
-        # and return them.
-        bindings = self._cache.retrieve_object(
-            self.name, CacheableDagsterContextBindings
-        )
-        self._job_bindings = bindings.jobs
-        self._sensor_bindings = bindings.sensors
-        self._asset_check_bindings = bindings.asset_checks
-        self._asset_bindings = bindings.assets
-        self._multi_asset_bindings = bindings.multi_assets
+        return _decorator
 
-    def store_bindings_to_cache(self):
-        """Store the bindings to cache. This will store all the jobs, sensors,
-        asset checks, and assets that were emitted from the cacheable context."""
-        bindings = CacheableDagsterContextBindings(
-            jobs=self._job_bindings,
-            sensors=self._sensor_bindings,
-            asset_checks=self._asset_check_bindings,
-            assets=self._asset_bindings,
-            multi_assets=self._multi_asset_bindings,
-        )
-        self._cache.store_object(self.name, bindings)
+    def register_rehydrator(self) -> t.Callable[..., None]:
+        """A decorator that registers a rehydrator function to the cacheable context."""
 
-    def load(self):
-        # Attempt to load this cacheable context from cache
-        try:
-            self.load_bindings_from_cache()
-        except CacheInvalidError:
-            # If that fails, we will run the generators to create all the objects for
-            # this cacheable context.
-            for generator in self._generators:
-                self._resources.run(
-                    generator, additional_inject={"cache_context": self}
+        def _decorator(
+            f: t.Callable[..., AssetFactoryResponse],
+        ) -> None:
+            """A decorator that registers a rehydrator function to the cacheable context."""
+            if self._rehydrator is not None:
+                raise ValueError("Rehydrator already registered.")
+            self._rehydrator = f
+
+        return _decorator
+
+    def load(self, cache_key_metadata: dict[str, str]):
+        """Load the cacheable context.
+
+        For all of the expected annotations in the rehydrator, we will run
+        either load from cache or run the generator functions and then inject
+        that into the rehydrator.
+        """
+
+        if self._rehydrator is None:
+            raise ValueError("Rehydrator not registered.")
+
+        resources = self._resources
+
+        generated_objects: t.Dict[str, BaseModel] = {}
+
+        # Get all the annotations from the rehydrator function
+        annotations = self._rehydrator.__annotations__
+        for key, value in annotations.items():
+            if key == "return":
+                continue
+
+            if key == ResourcesContext.resources_keyword_name:
+                # If the key is the resources context, we will inject the resources context
+                # into the rehydrator.
+                continue
+
+            if key in self._generators and resources.has_resource_available(key):
+                raise ValueError(
+                    f"Resource {key} is already registered as a generator, "
+                    "but is also expected to be resolved from the resources context."
+                    "this is ambiguous and should be resolved by the caller."
                 )
 
-            # After running the generators, we will store the bindings in cache.
-            self.store_bindings_to_cache()
+            # First check if the key is one of the registered generators
+            if key in self._generators:
+                generator, cacheable_type = self._generators[key]
+                if value is not cacheable_type:
+                    raise ValueError(
+                        f"Generator {key} is registered with type {cacheable_type}, "
+                        f"but the rehydrator expects type {value}."
+                    )
 
-        return self.asset_factory_response_from_bindings()
+                cache_key = CacheableDagsterObjectKey(
+                    cache_key_metadata=cache_key_metadata,
+                    name=self._name,
+                    sub_name=key,
+                )
 
-    def asset_factory_response_from_bindings(self) -> AssetFactoryResponse:
-        """Create an AssetFactoryResponse from the bindings."""
-        assets = [
-            options.as_dagster_asset(
-                self._asset_handlers[handler_name][0],
-                **self._asset_handlers[handler_name][1],
+                try:
+                    # Try to load the object from cache
+                    obj = self._cache.retrieve_object(cache_key, cacheable_type)
+                except CacheInvalidError:
+                    # If the object is not in cache, we will run the generator
+                    obj = resources.run(
+                        generator, additional_inject={"cache_context": self}
+                    )
+                    self._cache.store_object(cache_key, obj)
+
+                generated_objects[key] = obj
+
+        # Run the rehydrator with the loaded bindings
+        return resources.run(self._rehydrator, additional_inject=generated_objects)
+
+
+def cacheable_asset_factory(tags: dict[str, str] | None = None):
+    def _decorator(
+        f: t.Callable[..., CacheableDagsterContext],
+    ) -> EarlyResourcesAssetFactory:
+        """A decorator that creates a cacheable asset factory from a generator function.
+
+        This decorator will create a cacheable asset factory that can be used to
+        create assets that can be cached and retrieved from the cache.
+        """
+
+        @early_resources_asset_factory(caller_depth=2, tags=tags)
+        def _factory(
+            resources: ResourcesContext, cache: Cache, factory_caller: inspect.FrameInfo
+        ) -> AssetFactoryResponse:
+            context = CacheableDagsterContext(
+                name=f.__name__,
+                resources=resources,
+                cache=cache,
             )
-            for handler_name, options in self._asset_bindings
-        ]
-        sensors = [
-            options.as_dagster_sensor(
-                self._sensor_handlers[handler_name][0],
-                **self._sensor_handlers[handler_name][1],
+            resources.run(f, additional_inject={"cache_context": context})
+
+            return context.load(
+                cache_key_metadata=dict(
+                    filename=factory_caller.filename,
+                )
             )
-            for handler_name, options in self._sensor_bindings
-        ]
-        jobs: t.List[FactoryJobDefinition] = [
-            options.as_dagster_job(
-                self._job_handlers[handler_name][0],
-                **self._job_handlers[handler_name][1],
-            )
-            for handler_name, options in self._job_bindings
-        ]
-        checks = [
-            options.as_dagster_asset_check(
-                self._asset_check_handlers[handler_name][0],
-                **self._asset_check_handlers[handler_name][1],
-            )
-            for handler_name, options in self._asset_check_bindings
-        ]
-        return AssetFactoryResponse(
-            assets=assets,
-            sensors=sensors,
-            jobs=jobs,
-            checks=checks,
-        )
 
+        return _factory
 
-def cacheable_asset_factory(
-    f: t.Callable[..., CacheableDagsterContext],
-) -> EarlyResourcesAssetFactory:
-    """A decorator that creates a cacheable asset factory from a generator function.
-
-    This decorator will create a cacheable asset factory that can be used to
-    create assets that can be cached and retrieved from the cache.
-    """
-
-    @early_resources_asset_factory(caller_depth=2)
-    def _factory(resources: ResourcesContext) -> AssetFactoryResponse:
-        context = CacheableDagsterContext(
-            name=f.__name__,
-            resources=resources,
-            cache=resources.resolve("cache"),
-        )
-        resources.run(f, additional_inject={"cache_context": context})
-        return context.load()
-
-    return _factory
+    return _decorator

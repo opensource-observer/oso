@@ -5,12 +5,9 @@ import structlog
 from dagster import ConfigurableIOManagerFactory
 from dagster_dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
-from dagster_sqlmesh import (
-    DagsterSQLMeshCacheOptions,
-    SQLMeshContextConfig,
-    SQLMeshResource,
-)
+from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dlt.common.destination import Destination
+from oso_core.cache import Cache, CacheOptions, FileCacheBackend
 from oso_core.logging.decorators import time_function
 from oso_dagster.cbt.cbt import CBTResource
 from oso_dagster.factories import resource_factory
@@ -109,18 +106,20 @@ def gcs_resource_factory(global_config: DagsterConfig) -> GCSResource:
     return GCSResource(project=global_config.project_id)
 
 
-@resource_factory("sqlmesh_cache_options")
+@resource_factory("cache")
 @time_function(logger)
-def sqlmesh_cache_options_factory(
+def cache_factory(
     global_config: DagsterConfig,
-) -> DagsterSQLMeshCacheOptions:
+) -> Cache:
     """Factory function to create SQLMesh cache options."""
-
-    return DagsterSQLMeshCacheOptions(
-        enabled=global_config.sqlmesh_dagster_asset_cache_enabled,
-        cache_dir=global_config.sqlmesh_dagster_asset_cache_dir,
-        enable_ttl=global_config.sqlmesh_dagster_asset_enable_ttl,
-        ttl_seconds=global_config.sqlmesh_dagster_asset_ttl_seconds,
+    return Cache.from_backend(
+        backend=FileCacheBackend(
+            cache_dir=global_config.asset_cache_dir,
+        ),
+        options=CacheOptions(
+            default_ttl_seconds=global_config.asset_cache_default_ttl_seconds,
+            enabled=global_config.asset_cache_enabled,
+        ),
     )
 
 
@@ -394,7 +393,7 @@ def default_resource_registry():
     registry.add(sqlmesh_resource_factory)
     registry.add(sqlmesh_translator_factory)
     registry.add(sqlmesh_context_config_factory)
-    registry.add(sqlmesh_cache_options_factory)
+    registry.add(cache_factory)
     registry.add(k8s_resource_factory)
     registry.add(trino_resource_factory)
     registry.add(sqlmesh_exporter_factory)
