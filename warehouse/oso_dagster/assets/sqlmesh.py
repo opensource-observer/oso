@@ -20,6 +20,7 @@ from dagster_sqlmesh import (
     sqlmesh_asset_from_multi_asset_options,
     sqlmesh_to_multi_asset_options,
 )
+from oso_core.cache.types import CacheMetadataOptions
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories.common import CacheableDagsterContext
 from oso_dagster.resources.trino import TrinoResource
@@ -115,10 +116,15 @@ class CacheableSQLMeshMultiAssetOptions(BaseModel):
 def sqlmesh_factory(
     global_config: DagsterConfig, cache_context: CacheableDagsterContext
 ):
+    # If we're in a deployed environment at build time, we can
+    # cache the sqlmesh build indefinitely
     @cache_context.register_generator(
         cacheable_type=CacheableSQLMeshMultiAssetOptions,
         extra_cache_key_metadata=dict(
             sqlmesh_gateway=global_config.sqlmesh_gateway,
+        ),
+        cache_metadata_options=CacheMetadataOptions.with_no_expiration_if(
+            global_config.run_mode == "build" and global_config.in_deployed_container
         ),
     )
     def cacheable_sqlmesh_multi_asset_options(

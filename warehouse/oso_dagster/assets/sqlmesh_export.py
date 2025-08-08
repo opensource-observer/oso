@@ -4,6 +4,7 @@ import structlog
 from dagster import AssetKey, AssetsDefinition, ResourceParam
 from dagster_sqlmesh import DagsterSQLMeshController, SQLMeshContextConfig
 from dagster_sqlmesh.controller.base import DEFAULT_CONTEXT_FACTORY
+from oso_core.cache.types import CacheMetadataOptions
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories.common import CacheableDagsterContext
 from oso_dagster.resources.sqlmesh import SQLMeshExportedAssetDefinition
@@ -31,6 +32,9 @@ def sqlmesh_export_factory(
         cacheable_type=SQLMeshExportedAssetsCollection,
         extra_cache_key_metadata=dict(
             sqlmesh_gateway=global_config.sqlmesh_gateway,
+        ),
+        cache_metadata_options=CacheMetadataOptions.with_no_expiration_if(
+            global_config.run_mode == "build" and global_config.in_deployed_container
         ),
     )
     def cacheable_exported_assets_defs(

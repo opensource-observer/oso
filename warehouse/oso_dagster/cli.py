@@ -1,6 +1,7 @@
 import click
 from dotenv import load_dotenv
-from oso_dagster.factories.common import ResourcesContext
+from oso_dagster.config import DagsterConfig
+from oso_dagster.factories.common import ResourcesContext, resource_factory
 from oso_dagster.factories.loader import load_all_assets_from_package
 
 load_dotenv()
@@ -19,12 +20,18 @@ def build():
     from . import assets
     from .definitions.common import run_with_default_resources
 
+    @resource_factory("global_config")
+    def injected_dagster_config() -> DagsterConfig:
+        return DagsterConfig(
+            run_mode="build",
+        )
+
     def run_build(resources: ResourcesContext):
         load_all_assets_from_package(
             assets, resources, matching_tags={"run_at_build": "true"}
         )
 
-    run_with_default_resources(run_build)
+    run_with_default_resources(run_build, override_resources=[injected_dagster_config])
 
 
 if __name__ == "__main__":

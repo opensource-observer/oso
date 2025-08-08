@@ -14,7 +14,7 @@ from dagster import (
     SourceAsset,
 )
 from oso_core.cache import Cache, CacheInvalidError
-from oso_core.cache.types import StructuredCacheKey
+from oso_core.cache.types import CacheMetadataOptions, StructuredCacheKey
 from oso_dagster.config import DagsterConfig
 from oso_dagster.utils import dagsterinternals as dginternals
 from pydantic import BaseModel
@@ -130,14 +130,14 @@ class ResourcesRegistry:
             resources_dag=self._resources_dag.copy(),
         )
 
-    def add(self, resource_factory: ResourceFactory):
+    def add(self, resource_factory: ResourceFactory, override: bool = False):
         """Add a resource factory to the early resources container."""
         if resource_factory.name == "resources":
             raise ValueError(
                 "Resource factory with name 'resources' is reserved and cannot be used."
             )
 
-        if resource_factory.name in self._resources:
+        if resource_factory.name in self._resources and not override:
             raise ValueError(
                 f"Resource factory with name {resource_factory.name} already exists."
             )
@@ -362,6 +362,7 @@ def early_resources_asset_factory(
             caller=caller,
             additional_annotations=additional_annotations,
             dependencies=dependencies,
+            tags=tags,
         )
 
     return _decorator
@@ -404,6 +405,14 @@ class CacheableDagsterObjectKey(StructuredCacheKey):
     sub_name: str = ""
 
 
+@dataclass(kw_only=True)
+class _GeneratorRegistration:
+    generator: CacheableDagsterObjectGenerator
+    cacheable_type: t.Type[BaseModel]
+    extra_cache_key_metadata: dict[str, str]
+    cache_metadata_options: CacheMetadataOptions | None = None
+
+
 class CacheableDagsterContext:
     """Provides a way to create cacheable asset factories from one or more generateor functions."""
 
@@ -414,7 +423,7 @@ class CacheableDagsterContext:
 
         self._generators: dict[
             str,
-            t.Tuple[CacheableDagsterObjectGenerator, t.Type[BaseModel], dict[str, str]],
+            _GeneratorRegistration,
         ] = {}
         self._hydrator: t.Callable[..., AssetFactoryResponse] | None = None
 
@@ -424,16 +433,18 @@ class CacheableDagsterContext:
         cacheable_type: t.Type[C],
         name: str = "",
         extra_cache_key_metadata: dict[str, str] | None = None,
+        cache_metadata_options: CacheMetadataOptions | None = None,
     ) -> t.Callable[..., None]:
         def _decorator(
             generator: CacheableDagsterObjectGenerator[C],
         ) -> None:
             """A decorator that registers a generator function to the cacheable context."""
             generator_name = name or generator.__name__
-            self._generators[generator_name] = (
-                generator,
-                cacheable_type,
-                extra_cache_key_metadata or {},
+            self._generators[generator_name] = _GeneratorRegistration(
+                generator=generator,
+                cacheable_type=cacheable_type,
+                extra_cache_key_metadata=extra_cache_key_metadata or {},
+                cache_metadata_options=cache_metadata_options,
             )
 
         return _decorator
@@ -486,17 +497,17 @@ class CacheableDagsterContext:
 
             # First check if the key is one of the registered generators
             if key in self._generators:
-                generator, cacheable_type, extra_cache_key_metadata = self._generators[
-                    key
-                ]
-                if value is not cacheable_type:
+                registration = self._generators[key]
+                if value is not registration.cacheable_type:
                     raise ValueError(
-                        f"Generator {key} is registered with type {cacheable_type}, "
+                        f"Generator {key} is registered with type {registration.cacheable_type}, "
                         f"but the hydrator expects type {value}."
                     )
 
                 generator_cache_key_metadata = copy.deepcopy(cache_key_metadata)
-                generator_cache_key_metadata.update(extra_cache_key_metadata)
+                generator_cache_key_metadata.update(
+                    registration.extra_cache_key_metadata
+                )
 
                 cache_key = CacheableDagsterObjectKey(
                     cache_key_metadata=generator_cache_key_metadata,
@@ -506,13 +517,20 @@ class CacheableDagsterContext:
 
                 try:
                     # Try to load the object from cache
-                    obj = self._cache.retrieve_object(cache_key, cacheable_type)
+                    obj = self._cache.retrieve_object(
+                        cache_key,
+                        registration.cacheable_type,
+                        options=registration.cache_metadata_options,
+                    )
                 except CacheInvalidError:
                     # If the object is not in cache, we will run the generator
                     obj = resources.run(
-                        generator, additional_inject={"cache_context": self}
+                        registration.generator,
+                        additional_inject={"cache_context": self},
                     )
-                    self._cache.store_object(cache_key, obj)
+                    self._cache.store_object(
+                        cache_key, obj, options=registration.cache_metadata_options
+                    )
 
                 generated_objects[key] = obj
 

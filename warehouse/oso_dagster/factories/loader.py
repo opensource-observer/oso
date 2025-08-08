@@ -83,8 +83,15 @@ def load_all_assets_from_package(
 
     resolved_factories: t.Dict[EarlyResourcesAssetFactory, AssetFactoryResponse] = {}
 
+    if matching_tags:
+        logger.debug(f"Filtering early resources DAG with tags: {matching_tags}")
+        early_resources_dag = early_resources_dag.matching_tags(matching_tags)
+
     # Resolve all early factories in topological order
     for early_factory, deps in early_resources_dag.sorted():
+        logger.debug(
+            f"Resolving early factory '{early_factory.name}' with deps: {deps}"
+        )
         resolved_deps = [resolved_factories[factory] for factory in deps]
 
         with time_context(

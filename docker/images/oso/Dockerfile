@@ -17,7 +17,7 @@ RUN uv sync --all-packages --locked
 ENV DAGSTER_ASSET_CACHE_DIR=/dagster_assets_cache
 ENV DAGSTER_ASSET_CACHE_ENABLED=1
 ENV DAGSTER_SQLMESH_GATEWAY=trino
-ENV DAGSTER_GOOGLE_PROJECT_ID=opensource-observer
+ENV GOOGLE_PROJECT_ID=opensource-observer
 RUN uv run oso_dagster build
 
 ENTRYPOINT  []

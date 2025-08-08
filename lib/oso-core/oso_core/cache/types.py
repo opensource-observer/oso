@@ -17,9 +17,19 @@ K = t.TypeVar("K", bound=BaseModel)
 
 class CacheMetadataOptions(BaseModel):
     ttl_seconds: int = (
-       900  # Time to live for the cache in seconds. 0 means no expiration.
+        900  # Time to live for the cache in seconds. 0 means no expiration.
     )
     override_ttl: bool = False
+
+    @classmethod
+    def with_no_expiration(cls) -> t.Self:
+        return cls(ttl_seconds=0)
+
+    @classmethod
+    def with_no_expiration_if(cls, condition: bool) -> t.Self:
+        if condition:
+            return cls.with_no_expiration()
+        return cls()
 
 
 class CacheOptions(BaseModel):
