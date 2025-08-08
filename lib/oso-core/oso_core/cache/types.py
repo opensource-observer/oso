@@ -17,7 +17,7 @@ K = t.TypeVar("K", bound=BaseModel)
 
 class CacheMetadataOptions(BaseModel):
     ttl_seconds: int = (
-        0  # Time to live for the cache in seconds. 0 means no expiration.
+       900  # Time to live for the cache in seconds. 0 means no expiration.
     )
     override_ttl: bool = False
 
