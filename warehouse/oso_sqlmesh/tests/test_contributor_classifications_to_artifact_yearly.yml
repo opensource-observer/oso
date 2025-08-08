@@ -1,0 +1,79 @@
+test_contributor_classifications_to_artifact_yearly:
+  model: oso.contributor_classifications_to_artifact_yearly
+  vars:
+    start: 2024-01-01
+    end: 2024-12-31
+  inputs:
+    oso.contributor_active_days_to_artifact_yearly:
+      rows:
+      # Full-time contributor to artifact_1 (200 active days out of 366)
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 200
+      # Part-time contributor to artifact_1 (80 active days out of 366)
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 80
+    oso.int_first_contribution_to_artifact:
+      rows:
+      # First contribution for contributor_1 was in 2023 (not new)
+      - time: 2023-07-15 14:20:00
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+      # First contribution for contributor_2 was in current year (new contributor)
+      - time: 2024-04-10 11:30:00
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: artifact_1
+    oso.int_events_daily__github_with_lag:
+      rows:
+      # contributor_1 had some historical activity in 2023
+      - bucket_day: 2023-11-20
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+        event_type: COMMIT_CODE
+        last_event: 2023-11-20
+  outputs:
+    query:
+      partial: true
+      rows:
+      # Full-time contributors (active_days / 366 >= 10/30 = 0.33)
+      # contributor_1: 200/366 = 0.55 >= 0.33 (full-time)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: full_time_contributors_yearly
+        amount: 1
+      # Part-time contributors (active_days / 366 < 10/30 = 0.33)
+      # contributor_2: 80/366 = 0.22 < 0.33 (part-time)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: part_time_contributors_yearly
+        amount: 1
+      # New contributors (first contribution in current year)
+      # contributor_2 to artifact_1
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: new_contributors_yearly
+        amount: 1
+      # Active contributors (all contributors)
+      # artifact_1 has 2 active contributors
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: active_contributors_yearly
+        amount: 2

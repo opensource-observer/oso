@@ -1,0 +1,135 @@
+test_collections_v1_basic:
+  model: oso.collections_v1
+  inputs:
+    oso.int_collections:
+      rows:
+      # OSS Directory collections
+      - collection_id: "collection_1"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: "oso"
+        collection_name: "ethereum-ecosystem"
+        display_name: "Ethereum Ecosystem"
+        description: "Projects building on Ethereum"
+      - collection_id: "collection_2"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: "oso"
+        collection_name: "defi-protocols"
+        display_name: "DeFi Protocols"
+        description: "Decentralized Finance protocols and applications"
+      
+      # OP Atlas collections
+      - collection_id: "collection_3"
+        collection_source: "OP_ATLAS"
+        collection_namespace: "op"
+        collection_name: "optimism-retro-funding-4"
+        display_name: "Optimism Retro Funding Round 4"
+        description: "Projects participating in Optimism's 4th retroactive funding round"
+      - collection_id: "collection_4"
+        collection_source: "OP_ATLAS"
+        collection_namespace: "op"
+        collection_name: "base-ecosystem"
+        display_name: "Base Ecosystem"
+        description: "Projects building on Base blockchain"
+      
+      # Collection with minimal data
+      - collection_id: "collection_5"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: ""
+        collection_name: "minimal-collection"
+        display_name: null
+        description: null
+
+  outputs:
+    query:
+      rows:
+      # OSS Directory collections
+      - collection_id: "collection_1"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: "oso"
+        collection_name: "ethereum-ecosystem"
+        display_name: "Ethereum Ecosystem"
+        description: "Projects building on Ethereum"
+      - collection_id: "collection_2"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: "oso"
+        collection_name: "defi-protocols"
+        display_name: "DeFi Protocols"
+        description: "Decentralized Finance protocols and applications"
+      
+      # OP Atlas collections
+      - collection_id: "collection_3"
+        collection_source: "OP_ATLAS"
+        collection_namespace: "op"
+        collection_name: "optimism-retro-funding-4"
+        display_name: "Optimism Retro Funding Round 4"
+        description: "Projects participating in Optimism's 4th retroactive funding round"
+      - collection_id: "collection_4"
+        collection_source: "OP_ATLAS"
+        collection_namespace: "op"
+        collection_name: "base-ecosystem"
+        display_name: "Base Ecosystem"
+        description: "Projects building on Base blockchain"
+      
+      # Collection with minimal data
+      - collection_id: "collection_5"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: ""
+        collection_name: "minimal-collection"
+        display_name: null
+        description: null
+
+test_collections_v1_edge_cases:
+  model: oso.collections_v1
+  inputs:
+    oso.int_collections:
+      rows:
+      # Collection with special characters
+      - collection_id: "collection_edge_1"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: "test-org"
+        collection_name: "collection-with-special_chars"
+        display_name: "Collection With Special Characters & Symbols"
+        description: "Testing special characters in collection names"
+      
+      # Collection with empty namespace
+      - collection_id: "collection_edge_2"
+        collection_source: "OP_ATLAS"
+        collection_namespace: ""
+        collection_name: "standalone-collection"
+        display_name: "Standalone Collection"
+        description: "Collection without namespace"
+      
+      # Collection with very long description
+      - collection_id: "collection_edge_3"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: "long"
+        collection_name: "collection-with-long-description"
+        display_name: "Collection with Long Description"
+        description: "This is a very long description that tests how the system handles lengthy text fields for collections. It contains multiple sentences and should be properly stored and retrieved without truncation or other issues. Collections can have detailed descriptions explaining their purpose and scope."
+
+  outputs:
+    query:
+      rows:
+      # Collection with special characters
+      - collection_id: "collection_edge_1"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: "test-org"
+        collection_name: "collection-with-special_chars"
+        display_name: "Collection With Special Characters & Symbols"
+        description: "Testing special characters in collection names"
+      
+      # Collection with empty namespace
+      - collection_id: "collection_edge_2"
+        collection_source: "OP_ATLAS"
+        collection_namespace: ""
+        collection_name: "standalone-collection"
+        display_name: "Standalone Collection"
+        description: "Collection without namespace"
+      
+      # Collection with very long description
+      - collection_id: "collection_edge_3"
+        collection_source: "OSS_DIRECTORY"
+        collection_namespace: "long"
+        collection_name: "collection-with-long-description"
+        display_name: "Collection with Long Description"
+        description: "This is a very long description that tests how the system handles lengthy text fields for collections. It contains multiple sentences and should be properly stored and retrieved without truncation or other issues. Collections can have detailed descriptions explaining their purpose and scope."
