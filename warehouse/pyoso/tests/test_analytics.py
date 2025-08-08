@@ -75,6 +75,11 @@ class TestDataAnalytics(TestCase):
         nonexistent_data = analytics.get("nonexistent")
         self.assertIsNone(nonexistent_data)
 
+        sources = analytics.sources
+        self.assertEqual(
+            set([s.key for s in sources]), {"child2", "child3", "grandchild1"}
+        )
+
     def test_empty_analytics(self):
         """Test DataAnalytics with empty data."""
         analytics = DataAnalytics({})
