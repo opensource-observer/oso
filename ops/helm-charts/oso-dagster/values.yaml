@@ -14,6 +14,7 @@ dagster:
 osoDagster:
   verboseLogs: 0
   eagerlyLoadSqlTables: 0
+  assetCacheDir: /dagster_assets_cache
 
 global:
   dagsterInternalName: "dagster"
