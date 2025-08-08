@@ -119,6 +119,7 @@ def extract_protocol(url: str) -> str:
 def parse_chain_tvl(
     protocol: str,
     parent_protocol: str,
+    category: str,
     chain_tvls_raw: Dict,
 ) -> Generator[Dict[str, Any], None, None]:
     """
@@ -128,6 +129,7 @@ def parse_chain_tvl(
     Args:
         protocol (str): The protocol slug
         parent_protocol (str): The parent protocol (if any)
+        category (str): The protocol category
         chain_tvls_raw (Dict): The raw chain TVL data
 
     Yields:
@@ -157,6 +159,7 @@ def parse_chain_tvl(
                     "slug": protocol,
                     "protocol": protocol,
                     "parent_protocol": parent_protocol,
+                    "category": category,
                     "chain": chain,
                     "token": "USD",
                     "tvl": amount,
@@ -202,10 +205,15 @@ def get_defillama_tvl_events(
             if "parentProtocol" in protocol_data:
                 parent_protocol = protocol_data.get("parentProtocol", "")
 
+            category = ""
+            if "category" in protocol_data:
+                category = protocol_data.get("category", "")
+
             if "chainTvls" in protocol_data:
                 yield from parse_chain_tvl(
                     slug,
                     parent_protocol,
+                    category,
                     protocol_data["chainTvls"],
                 )
 

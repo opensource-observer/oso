@@ -64,18 +64,19 @@ total_merged_prs as (
     to_artifact_id
 )
 select
-  total.metrics_sample_date as metrics_sample_date,
-  total.event_source as event_source,
-  total.to_artifact_id as to_artifact_id,
+  total.metrics_sample_date,
+  total.event_source,
+  total.to_artifact_id,
   '' as from_artifact_id,
   @metric_name() as metric,
-  cast(case 
-    when total.total_merged_count > 0 then 
-      coalesce(self_merged.self_merged_count, 0) / cast(total.total_merged_count as double)
-    else NULL
+  cast(case
+    when sum(total.total_merged_count) > 0
+      then sum(coalesce(self_merged.self_merged_count, 0)) / cast(sum(total.total_merged_count) as double)
+    else null
   end as double) as amount
 from total_merged_prs as total
 left join self_merged_prs_without_comments as self_merged
   on total.metrics_sample_date = self_merged.metrics_sample_date
   and total.event_source = self_merged.event_source
   and total.to_artifact_id = self_merged.to_artifact_id
+group by 1, 2, 3, 4, 5
