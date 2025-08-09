@@ -1,14 +1,14 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { defineConfig } from "vitest/config";
 
+/**
+// TODO: Update plugin once this issue is resolved:
+// https://github.com/storybookjs/storybook/issues/32127
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-
 const dirname =
   typeof __dirname !== "undefined"
     ? __dirname
     : path.dirname(fileURLToPath(import.meta.url));
+*/
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
@@ -19,7 +19,11 @@ export default defineConfig({
         plugins: [
           // The plugin will run tests for the stories defined in your Storybook config
           // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+          /**
+          // TODO: Update plugin once this issue is resolved:
+          // https://github.com/storybookjs/storybook/issues/32127
           storybookTest({ configDir: path.join(dirname, ".storybook") }),
+          **/
         ],
         test: {
           name: "storybook",
