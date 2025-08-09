@@ -13,6 +13,7 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0)
   ),
+  enabled false,
 );
 
 @DEF(gas_fees_threshold, 0.1);
