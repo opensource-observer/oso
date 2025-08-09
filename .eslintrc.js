@@ -9,6 +9,7 @@ module.exports = {
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "prettier",
+    //"plugin:storybook/recommended"
   ],
   ignorePatterns: [
     "**/vendor/*.js",
@@ -17,6 +18,7 @@ module.exports = {
     "**/utilities/**",
     "**/.eslintrc.js",
     "**/postcss.config.js",
+    "!.storybook",
     //"**/next.config.js",
     //"**/tailwind.config.js",
     //"**/.env",
