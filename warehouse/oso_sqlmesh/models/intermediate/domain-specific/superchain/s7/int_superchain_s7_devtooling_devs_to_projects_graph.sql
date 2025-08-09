@@ -40,6 +40,7 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0)
   ),
+  enabled false,
 );
 
 @DEF(active_developer_date_threshold, DATE('2024-01-01'));

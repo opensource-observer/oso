@@ -23,7 +23,8 @@ MODEL(
   ignored_rules (
     "incrementalmusthaveforwardonly",
     "incrementalmustdefinenogapsaudit",
-  )
+  ),
+  enabled false,
 );
 
 
