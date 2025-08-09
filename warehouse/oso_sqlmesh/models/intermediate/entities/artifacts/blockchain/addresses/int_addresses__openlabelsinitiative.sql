@@ -20,6 +20,8 @@ WITH pivoted AS (
     END AS chain_id,
     MAX(CASE WHEN tag_id = 'owner_project' THEN tag_value ELSE NULL END)
       AS owner_project,
+    MAX(CASE WHEN tag_id = 'usage_category' THEN tag_value ELSE NULL END)
+      AS usage_category,
     FLATTEN(ARRAY_AGG(
       CASE
         WHEN tag_id = 'is_eoa' THEN ['EOA']
@@ -41,6 +43,7 @@ normalized AS (
     p.address,
     p.chain_id,
     p.owner_project,
+    p.usage_category,
     unnested.address_type
   FROM pivoted AS p
   CROSS JOIN UNNEST(p.address_types) AS unnested(address_type)
@@ -51,6 +54,7 @@ SELECT
   n.chain_id,
   cl.oso_chain_name AS chain,
   n.owner_project,
+  n.usage_category,
   n.address_type
 FROM normalized AS n
 JOIN oso.int_chainlist AS cl
