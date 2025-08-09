@@ -7,7 +7,7 @@ spec:
     # We should eventually set this to 0, but we are setting it to 1 to gather
     # timing data
     osoDagster:
-      eagerlyLoadSqlTables: 1
+      eagerlyLoadSqlTables: 0
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
       port: "5432"
@@ -78,7 +78,7 @@ spec:
           - name: "oso-dagster"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250808170527-0815b75 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250808210748-5b4c9dc # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env

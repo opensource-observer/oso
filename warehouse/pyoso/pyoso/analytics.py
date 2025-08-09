@@ -31,6 +31,24 @@ class DataStatus(BaseModel):
     status: MaterializationStatus
     dependencies: list[str]
 
+    def __str__(self):
+        status = self.status
+        status_parts = []
+
+        if not status.latest_materialization and not status.partition_status:
+            status_parts.append("No analytics data")
+        if status.latest_materialization:
+            status_parts.append(
+                f"Last: {status.latest_materialization.strftime('%Y-%m-%d %H:%M:%S')}"
+            )
+        if status.partition_status:
+            ps = status.partition_status
+            status_parts.append(
+                f"Partitions: {ps.num_materialized}/{ps.num_partitions}"
+            )
+        status_text = f" ({', '.join(status_parts)})" if status_parts else ""
+        return f"{self.key}{status_text}"
+
 
 class DataAnalytics:
     """Container for analytics data with tree-structured display methods."""
@@ -57,7 +75,7 @@ class DataAnalytics:
 
     def __iter__(self):
         """Iterate over the analytics data keys."""
-        return iter(self._analytics_data.keys())
+        return iter(self._analytics_data.items())
 
     def __contains__(self, key: str) -> bool:
         """Check if a key exists in the analytics data."""
@@ -71,6 +89,15 @@ class DataAnalytics:
     def root_keys(self) -> list[str]:
         """Get the root keys (top-level nodes in the dependency tree)."""
         return self._root_keys.copy()
+
+    @property
+    def sources(self) -> list[DataStatus]:
+        """Get all sources (keys with no dependencies)."""
+        return [
+            status
+            for status in self._analytics_data.values()
+            if len(status.dependencies) == 0
+        ]
 
     def get(self, key: str) -> DataStatus | None:
         """Get analytics data for a specific key."""
@@ -104,27 +131,9 @@ class DataAnalytics:
         visited.add(key)
         data_status = self._analytics_data[key]
 
-        # Print the current node with inline status information
-        status = data_status.status
-        status_parts = []
-
-        if not status.latest_materialization and not status.partition_status:
-            status_parts.append("No analytics data")
-        if status.latest_materialization:
-            status_parts.append(
-                f"Last: {status.latest_materialization.strftime('%Y-%m-%d %H:%M:%S')}"
-            )
-        if status.partition_status:
-            ps = status.partition_status
-            status_parts.append(
-                f"Partitions: {ps.num_materialized}/{ps.num_partitions}"
-            )
-
-        status_text = f" ({', '.join(status_parts)})" if status_parts else ""
-
         # Determine the prefix for the current node
         prefix = "└── " if is_last else "├── "
-        print(f"{indent}{prefix}{key}{status_text}")
+        print(f"{indent}{prefix}{data_status}")
 
         # Print dependencies
         if data_status.dependencies:
