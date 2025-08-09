@@ -8,7 +8,6 @@ import {
   NavigationMenuLink,
   NavigationMenuTrigger,
   NavigationMenuContent,
-  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 
 type LinkItemData = {
@@ -45,7 +44,7 @@ const DEFAULT_MENU_ITEMS: NavBarItem[] = [
       {
         type: "link",
         title: "Pricing",
-        href: "/test",
+        href: "/pricing",
       },
     ],
   },
@@ -140,7 +139,6 @@ const NavbarMeta: CodeComponentMeta<NavBarProps> = {
   props: {
     menuItems: {
       type: "object",
-      defaultValue: {},
       helpText: "Override default menu items",
     },
   },
@@ -156,25 +154,30 @@ function Navbar(props: NavBarProps) {
             <NavigationMenuItem key={item.href}>
               <NavigationMenuLink
                 asChild
-                className={navigationMenuTriggerStyle()}
+                className="group inline-flex h-9 w-full items-center justify-center rounded-md bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=open]:text-accent-foreground data-[state=open]:bg-accent/50 data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent"
               >
                 <Link href={item.href}>{item.title}</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
           ) : item.type === "menu" ? (
-            <NavigationMenuItem key={item.title}>
-              <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[300px] gap-4">
-                  <li>
-                    {item.items.map((listItem) => (
-                      <NavigationMenuLink key={listItem.href} asChild>
-                        <Link href={listItem.href}>
-                          <div className="font-medium">{listItem.title}</div>
+            <NavigationMenuItem className="relative" key={item.title}>
+              <NavigationMenuTrigger className="bg-transparent">
+                {item.title}
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="absolute top-0 left-100">
+                <ul className="w-80 grid grid-cols-1">
+                  {item.items.map((listItem) => (
+                    <li key={listItem.href}>
+                      <NavigationMenuLink
+                        className="group inline-flex h-9 w-80 items-center justify-center rounded-md bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=open]:text-accent-foreground data-[state=open]:bg-accent/50 data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent"
+                        asChild
+                      >
+                        <Link className="w-48" href={listItem.href}>
+                          <div className="">{listItem.title}</div>
                         </Link>
                       </NavigationMenuLink>
-                    ))}
-                  </li>
+                    </li>
+                  ))}
                 </ul>
               </NavigationMenuContent>
             </NavigationMenuItem>
