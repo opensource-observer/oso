@@ -24,7 +24,9 @@
     "supabase:zod": "supazod -i ./lib/types/supabase.ts -o ./lib/types/schema.ts -t ./lib/types/schema-types.ts && eslint --fix ./lib/types/schema.ts ./lib/types/schema-types.ts",
     "test": "dotenv -e .env.local -- jest --ci --passWithNoTests",
     "test:watch": "jest --watch",
-    "update:deps": "ncu -i"
+    "update:deps": "ncu -i",
+    "storybook": "storybook dev -p 3000",
+    "build:storybook": "storybook build"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",
@@ -105,10 +107,15 @@
   },
   "devDependencies": {
     "@apollo/rover": "^0.34.1",
+    "@chromatic-com/storybook": "^4.1.0",
     "@graphql-codegen/cli": "^5.0.7",
     "@graphql-codegen/client-preset": "^4.8.3",
     "@graphql-typed-document-node/core": "^3.2.0",
     "@parcel/watcher": "^2.5.1",
+    "@storybook/addon-a11y": "^9.1.1",
+    "@storybook/addon-docs": "^9.1.1",
+    "@storybook/addon-onboarding": "^9.1.1",
+    "@storybook/addon-vitest": "^9.1.1",
     "@tailwindcss/typography": "^0.5.16",
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.20",
@@ -126,9 +133,11 @@
     "eslint-config-next": "14.1.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-config-react": "^1.1.7",
+    "eslint-plugin-storybook": "^9.1.1",
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
     "postcss": "^8.5.6",
+    "storybook": "^9.1.1",
     "supabase": "^2.31.4",
     "supazod": "^2.0.0",
     "svg-url-loader": "^8.0.0",
@@ -137,6 +146,11 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",
-    "webpack": "^5.101.0"
+    "webpack": "^5.101.0",
+    "@storybook/nextjs-vite": "^9.1.1",
+    "vitest": "^3.2.4",
+    "@vitest/browser": "^3.2.4",
+    "playwright": "^1.54.2",
+    "@vitest/coverage-v8": "^3.2.4"
   }
 }
