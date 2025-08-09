@@ -1,6 +1,10 @@
 {
   "root": false,
-  "extends": ["../../.eslintrc.js", "next/core-web-vitals"],
+  "extends": [
+    "../../.eslintrc.js",
+    "next/core-web-vitals",
+    "plugin:storybook/recommended"
+  ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": ["./apps/frontend/tsconfig.json"]
