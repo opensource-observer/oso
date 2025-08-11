@@ -3,4 +3,4 @@ name: generic
 description: Deploys a generic application
 
 type: application
-version: 0.3.0
+version: 0.4.0

@@ -1029,7 +1029,7 @@ wheels = [
 
 [[package]]
 name = "dagster-sqlmesh"
-version = "0.17.0"
+version = "0.19.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dagster" },
@@ -1037,9 +1037,9 @@ dependencies = [
     { name = "pytest" },
     { name = "sqlmesh" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/38/5e/4e13c17a124fb1d4bd1cb96bc8d59bdaeac004524a3219d5d257d1fc2224/dagster_sqlmesh-0.17.0.tar.gz", hash = "sha256:18599a3887f5255049ca800c19a565407d11786473164cbf51114cbfb5c33625", size = 210466 }
+sdist = { url = "https://files.pythonhosted.org/packages/c4/53/7d26939f25cabfaefc9a37e22114d3760e72eef3764c89054a0f3f7dfe72/dagster_sqlmesh-0.19.0.tar.gz", hash = "sha256:95b743c99ea08adb9aa3df3a46fc08c96297e9b070af80bdc8a2dab8bcfbf92c", size = 217724 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/70/fd3569d054d1d211cf3c074cd68c10c0e7f0800662e0fe1f5ba587fa2b7d/dagster_sqlmesh-0.17.0-py3-none-any.whl", hash = "sha256:6c1c42fd2766b7cc1622f529c3b3eeff9f5a33bd32638bcb01e410101ccc0348", size = 31969 },
+    { url = "https://files.pythonhosted.org/packages/bf/d3/087c3f97fdd83c42a708714fdba641e941ef0c0eaee03ebfeec6c20a80f1/dagster_sqlmesh-0.19.0-py3-none-any.whl", hash = "sha256:4ff76c643157a3e4ac96f7ae0475c4013b2b3e1e659976e670e506101aa52ab6", size = 33449 },
 ]
 
 [[package]]
@@ -3193,7 +3193,7 @@ requires-dist = [
     { name = "google-cloud-secret-manager", specifier = ">=2.20.0,<3.0.0" },
     { name = "google-cloud-service-management", specifier = ">=1.8.3,<2.0.0" },
     { name = "google-cloud-service-usage", specifier = ">=1.10.3,<2.0.0" },
-    { name = "google-cloud-storage", specifier = ">=2.14.0,<3.0.0" },
+    { name = "google-cloud-storage", specifier = ">=2.14.0,<4.0.0" },
     { name = "isort", specifier = ">=5.13.2,<7.0.0" },
     { name = "kr8s", specifier = "==0.20.9" },
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
@@ -3203,10 +3203,10 @@ requires-dist = [
     { name = "oss-directory", specifier = "==0.2.5" },
     { name = "pandas", specifier = ">=2.2.3,<3.0.0" },
     { name = "pendulum", specifier = ">=3.0.0,<4.0.0" },
-    { name = "polars", specifier = "==1.31.0" },
+    { name = "polars", specifier = "<2.0.0" },
     { name = "pyarrow-stubs", specifier = ">=17.16,<21.0" },
     { name = "pydantic-settings", specifier = ">=2.7.0,<3.0.0" },
-    { name = "pyee", specifier = ">=12.1.1,<13.0.0" },
+    { name = "pyee", specifier = ">=12.1.1,<14.0.0" },
     { name = "pyiceberg", extras = ["hive", "s3fs"], specifier = ">=0.8.1,<1.0.0" },
     { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0,<2.0.0" },
@@ -3743,7 +3743,7 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = "==0.17.0" },
+    { name = "dagster-sqlmesh", specifier = ">=0.19.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.8.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.8.0" },
@@ -3765,7 +3765,7 @@ requires-dist = [
     { name = "google-cloud-secret-manager", specifier = ">=2.20.0,<3.0.0" },
     { name = "google-cloud-service-management", specifier = ">=1.8.3,<2.0.0" },
     { name = "google-cloud-service-usage", specifier = ">=1.10.3,<2.0.0" },
-    { name = "google-cloud-storage", specifier = ">=2.14.0,<3.0.0" },
+    { name = "google-cloud-storage", specifier = ">=2.14.0,<4.0.0" },
     { name = "isort", specifier = ">=5.13.2,<7.0.0" },
     { name = "kr8s", specifier = "==0.20.9" },
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
@@ -3775,10 +3775,10 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.3,<3.0.0" },
     { name = "pandas-gbq", specifier = ">=0.29.2" },
     { name = "pendulum", specifier = ">=3.0.0,<4.0.0" },
-    { name = "polars", specifier = "==1.31.0" },
+    { name = "polars", specifier = ">=1.31.0,<2.0.0" },
     { name = "pyarrow-stubs", specifier = ">=17.16,<21.0" },
     { name = "pydantic-settings", specifier = ">=2.7.0,<3.0.0" },
-    { name = "pyee", specifier = ">=12.1.1,<13.0.0" },
+    { name = "pyee", specifier = ">=12.1.1,<14.0.0" },
     { name = "pyiceberg", extras = ["hive", "s3fs"], specifier = ">=0.8.1,<1.0.0" },
     { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0,<2.0.0" },
@@ -3861,137 +3861,27 @@ name = "oso-core"
 version = "0.1.0"
 source = { editable = "lib/oso-core" }
 dependencies = [
-    { name = "aiotrino" },
     { name = "arrow" },
-    { name = "bokeh" },
-    { name = "boltons" },
-    { name = "click" },
-    { name = "clickhouse-connect" },
-    { name = "cloud-sql-python-connector", extra = ["pg8000"] },
-    { name = "colorlog" },
-    { name = "connectorx" },
-    { name = "dagster" },
-    { name = "dagster-duckdb" },
-    { name = "dagster-duckdb-polars" },
-    { name = "dagster-embedded-elt" },
-    { name = "dagster-gcp" },
-    { name = "dagster-k8s" },
-    { name = "dagster-polars" },
-    { name = "dagster-postgres" },
-    { name = "dagster-webserver" },
-    { name = "dask", extra = ["distributed"] },
-    { name = "dask-kubernetes" },
-    { name = "discord-webhook" },
-    { name = "dlt" },
-    { name = "docker" },
-    { name = "duckdb" },
-    { name = "fastapi", extra = ["standard"] },
-    { name = "gcloud-aio-storage" },
-    { name = "gcsfs" },
-    { name = "githubkit" },
-    { name = "gitpython" },
-    { name = "google-api-python-client" },
-    { name = "google-auth" },
-    { name = "google-cloud-bigquery" },
-    { name = "google-cloud-bigquery-datatransfer" },
-    { name = "google-cloud-bigquery-storage" },
-    { name = "google-cloud-resource-manager" },
-    { name = "google-cloud-secret-manager" },
-    { name = "google-cloud-service-management" },
-    { name = "google-cloud-service-usage" },
-    { name = "google-cloud-storage" },
-    { name = "isort" },
-    { name = "kr8s" },
-    { name = "lz4" },
-    { name = "minio" },
-    { name = "openrank-sdk" },
-    { name = "oss-directory" },
-    { name = "pandas" },
-    { name = "pendulum" },
-    { name = "polars" },
-    { name = "pyarrow-stubs" },
-    { name = "pydantic-settings" },
-    { name = "pyee" },
-    { name = "pyiceberg", extra = ["hive", "s3fs"] },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "python-dotenv" },
-    { name = "redis" },
-    { name = "requests" },
-    { name = "ruamel-yaml" },
-    { name = "sqlalchemy" },
+    { name = "orjson" },
     { name = "sqlmesh", extra = ["trino"] },
     { name = "structlog" },
-    { name = "uvicorn", extra = ["standard"] },
-    { name = "websockets" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "aiotrino", specifier = ">=0.2.3,<1.0.0" },
-    { name = "arrow", specifier = ">=1.3.0,<2.0.0" },
-    { name = "bokeh", specifier = ">=3.6.1,<4.0.0" },
-    { name = "boltons", specifier = ">=24.0.0,<26.0.0" },
-    { name = "click", specifier = ">=8.1.7,<9.0.0" },
-    { name = "clickhouse-connect", specifier = ">=0.7.16,<1.0.0" },
-    { name = "cloud-sql-python-connector", extras = ["pg8000"], specifier = ">=1.6.0,<2.0.0" },
-    { name = "colorlog", specifier = ">=6.9.0,<7.0.0" },
-    { name = "connectorx", specifier = ">=0.4.0,<1.0.0" },
-    { name = "dagster", specifier = ">=1.8.6,<2.0.0" },
-    { name = "dagster-duckdb", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-duckdb-polars", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-embedded-elt", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-gcp", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
-    { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
-    { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.8.0" },
-    { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.8.0" },
-    { name = "discord-webhook", specifier = ">=1.3.1,<2.0.0" },
-    { name = "dlt", specifier = ">=1.3.0,<2.0.0" },
-    { name = "docker", specifier = ">=7.1.0,<8.0.0" },
-    { name = "duckdb", specifier = ">=1.1.0,<2.0.0" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.115.6,<1.0.0" },
-    { name = "gcloud-aio-storage", specifier = ">=9.3.0,<10.0.0" },
-    { name = "gcsfs", specifier = ">=2024.6.1,<2026.0.0" },
-    { name = "githubkit", specifier = ">=0.12.4,<1.0.0" },
-    { name = "gitpython", specifier = ">=3.1.44,<4.0.0" },
-    { name = "google-api-python-client", specifier = ">=2.116.0,<3.0.0" },
-    { name = "google-auth", specifier = ">=2.34.0,<3.0.0" },
-    { name = "google-cloud-bigquery", specifier = ">=3.17.1,<4.0.0" },
-    { name = "google-cloud-bigquery-datatransfer", specifier = ">=3.15.3,<4.0.0" },
-    { name = "google-cloud-bigquery-storage", specifier = ">=2.25.0,<3.0.0" },
-    { name = "google-cloud-resource-manager", specifier = ">=1.12.3,<2.0.0" },
-    { name = "google-cloud-secret-manager", specifier = ">=2.20.0,<3.0.0" },
-    { name = "google-cloud-service-management", specifier = ">=1.8.3,<2.0.0" },
-    { name = "google-cloud-service-usage", specifier = ">=1.10.3,<2.0.0" },
-    { name = "google-cloud-storage", specifier = ">=2.14.0,<3.0.0" },
-    { name = "isort", specifier = ">=5.13.2,<7.0.0" },
-    { name = "kr8s", specifier = "==0.20.9" },
-    { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
-    { name = "minio", specifier = ">=7.2.15,<8.0.0" },
-    { name = "openrank-sdk", specifier = ">=0.4.0,<1.0.0" },
-    { name = "oss-directory", specifier = "==0.2.5" },
-    { name = "pandas", specifier = ">=2.2.3,<3.0.0" },
-    { name = "pendulum", specifier = ">=3.0.0,<4.0.0" },
-    { name = "polars", specifier = "==1.31.0" },
-    { name = "pyarrow-stubs", specifier = ">=17.16,<21.0" },
-    { name = "pydantic-settings", specifier = ">=2.7.0,<3.0.0" },
-    { name = "pyee", specifier = ">=12.1.1,<13.0.0" },
-    { name = "pyiceberg", extras = ["hive", "s3fs"], specifier = ">=0.8.1,<1.0.0" },
-    { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0,<2.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
-    { name = "redis", specifier = ">=5.0.7,<7.0.0" },
-    { name = "requests", specifier = ">=2.31.0,<3.0.0" },
-    { name = "ruamel-yaml", specifier = ">=0.18.6,<1.0.0" },
-    { name = "sqlalchemy", specifier = ">=2.0.25,<3.0.0" },
+    { name = "arrow", specifier = "<2.0.0" },
+    { name = "orjson", specifier = ">=3.10.18" },
     { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
     { name = "structlog", specifier = ">=25.4.0" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.1,<1.0.0" },
-    { name = "websockets", specifier = ">=14.1,<15.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.2.1,<9.0.0" }]
 
 [[package]]
 name = "oso-mcp"
@@ -4649,10 +4539,11 @@ requires-dist = [
 
 [[package]]
 name = "pyoso"
-version = "0.5.2"
+version = "0.6.1"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
+    { name = "pydantic" },
     { name = "requests" },
     { name = "sqlglot" },
 ]
@@ -4672,6 +4563,7 @@ dev = [
 requires-dist = [
     { name = "oso-semantic", marker = "extra == 'semantic'", editable = "warehouse/oso_semantic" },
     { name = "pandas", specifier = ">=1.2.0" },
+    { name = "pydantic", specifier = ">=2.11.6" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "sqlglot", specifier = ">=26.16.4" },
 ]

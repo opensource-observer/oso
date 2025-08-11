@@ -46,9 +46,10 @@ uv run oso local sqlmesh-test --duckdb plan dev --start '1 week' --end now
 
 You should be able to run `uv run dagster dev` successfully.
 
-4. **Run the Docs locally**
+### Run the Docs locally
 
 - **Location**: [`apps/docs`](https://github.com/opensource-observer/oso/tree/main/apps/docs)
+- **Guide**: See the readme in the directory above and [Docusaurus docs](https://docusaurus.io/docs) for advanced features
 
 You should be able to run `pnpm start` successfully.
 

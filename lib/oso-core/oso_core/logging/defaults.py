@@ -1,4 +1,5 @@
 import logging
+import os
 
 import structlog
 
@@ -29,7 +30,11 @@ def ensure_event_type(
     return event_dict
 
 
-def configure_structured_logging() -> None:
+def configure_structured_logging(
+    *,
+    enable_json_logs: bool = os.environ.get("OSO_ENABLE_JSON_LOGS", "0")
+    in ["true", "1"],
+) -> None:
     """Configure structured logging for the application. This was taken almost
     directly from the structlog docs. See:
 
@@ -53,6 +58,7 @@ def configure_structured_logging() -> None:
         structlog.stdlib.add_log_level,
         timestamper,
         structlog.processors.StackInfoRenderer(),
+        structlog.processors.ExceptionRenderer(),
         ensure_event_type,
     ]
 
@@ -73,7 +79,9 @@ def configure_structured_logging() -> None:
         processors=[
             # Remove _record & _from_structlog.
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            structlog.processors.JSONRenderer(),
+            structlog.processors.JSONRenderer()
+            if enable_json_logs
+            else structlog.dev.ConsoleRenderer(),
         ],
     )
 

@@ -1,26 +1,39 @@
 import logging
+import typing as t
 
+from llama_index.core import StorageContext, VectorStoreIndex, load_index_from_storage
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.struct_store.sql_query import (
     DEFAULT_RESPONSE_SYNTHESIS_PROMPT,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.query_engine import NLSQLTableQueryEngine
+from llama_index.core.retrievers import BaseRetriever, NLSQLRetriever
+from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilters
 from llama_index.core.workflow import Context, StopEvent, step
+from oso_agent.clients import OsoClient
+from oso_agent.resources import ResourceDependency
+from oso_agent.tool.oso_sql_db import OsoSqlDatabase
+from oso_agent.tool.oso_text2sql import DEFAULT_INCLUDE_TABLES, DEFAULT_TABLES_TO_INDEX
+from oso_agent.tool.storage_context import setup_storage_context
 from oso_agent.types.response import AnyResponse, SqlResponse
 from oso_agent.types.sql_query import SqlQuery
+from oso_agent.util.config import AgentConfig
+from oso_agent.workflows.base import MixableWorkflow
 from oso_agent.workflows.types import (
     RetrySemanticQueryEvent,
+    RowContextEvent,
+    SchemaAnalysisEvent,
     SQLExecutionRequestEvent,
     SQLResultEvent,
     SQLResultSummaryRequestEvent,
     SQLResultSummaryResponseEvent,
+    StartQueryEngineEvent,
     Text2SQLGenerationEvent,
 )
 from pyoso import Client
-
-from ...clients.oso_client import OsoClient
-from ...resources import ResourceDependency
-from ..base import MixableWorkflow
 
 logger = logging.getLogger(__name__)
 
@@ -256,3 +269,203 @@ class SQLRowsResponseSynthesisMixin(MixableWorkflow):
             summary=response,
             result=request.result,
         )
+
+
+class OsoQueryEngineWorkflowMixin(MixableWorkflow):
+    """Mixin class to enable OSO query engine functionality in agent workflows."""
+
+    oso_client: ResourceDependency[OsoClient]
+    llm: ResourceDependency[FunctionCallingLLM]
+    embedding: ResourceDependency[BaseEmbedding]
+    agent_config: ResourceDependency[AgentConfig]
+
+    include_tables: list[str] = DEFAULT_INCLUDE_TABLES
+    tables_to_index: dict[str, list[str]] = DEFAULT_TABLES_TO_INDEX
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._sql_database: t.Optional[OsoSqlDatabase] = None
+        self._vector_index: t.Optional[BaseIndex] = None
+        self._storage_context: t.Optional[StorageContext] = None
+
+    async def _get_sql_database(self) -> OsoSqlDatabase:
+        """Get or create the OSO SQL database connection."""
+        if self._sql_database is None:
+            self._sql_database = await OsoSqlDatabase.create(
+                oso_client=self.oso_client,
+                include_tables=self.include_tables,
+            )
+        return self._sql_database
+
+    async def _get_vector_index(self) -> BaseIndex:
+        """Get or create the vector index for row context retrieval."""
+        if self._vector_index is None:
+            storage_context = self._get_storage_context()
+
+            if self.agent_config.vector_store.type == "local":
+                self._vector_index = load_index_from_storage(
+                    storage_context,
+                    index_id=self.agent_config.vector_store.index_name,
+                    embed_model=self.embedding,
+                )
+            else:
+                self._vector_index = VectorStoreIndex.from_vector_store(
+                    vector_store=storage_context.vector_store,
+                    embed_model=self.embedding,
+                )
+
+        return self._vector_index
+
+    def _get_storage_context(self) -> StorageContext:
+        """Get or create the storage context."""
+        if self._storage_context is None:
+            self._storage_context = setup_storage_context(
+                self.agent_config, embed_model=self.embedding
+            )
+        return self._storage_context
+
+    @step
+    async def analyze_schema(
+        self, _ctx: Context, event: StartQueryEngineEvent
+    ) -> SchemaAnalysisEvent:
+        """
+        Analyze the schema to determine which tables are relevant for the query.
+
+        This step replaces the schema analysis logic that was hidden inside QueryEngineTool.
+        """
+        logger.debug(f"Analyzing schema for query[{event.id}]: {event.input_text}")
+
+        try:
+            sql_database = await self._get_sql_database()
+            relevant_tables = list(sql_database.get_usable_table_names())
+
+            logger.debug(
+                f"Schema analysis complete for query[{event.id}]. "
+                f"Found {len(relevant_tables)} relevant tables: {relevant_tables}"
+            )
+
+            return SchemaAnalysisEvent(
+                id=event.id,
+                input_text=event.input_text,
+                sql_database=sql_database,
+                relevant_tables=relevant_tables,
+                synthesize_response=event.synthesize_response,
+                execute_sql=event.execute_sql,
+            )
+
+        except Exception as e:
+            logger.error(f"Error during schema analysis for query[{event.id}]: {e}")
+            raise ValueError(
+                f"Schema analysis failed for query[{event.id}]: {e}"
+            ) from e
+
+    @step
+    async def retrieve_row_context(
+        self, _ctx: Context, event: SchemaAnalysisEvent
+    ) -> RowContextEvent:
+        """
+        Retrieve relevant row context using embedding-based similarity search.
+
+        This step replaces the row retrieval logic that was hidden inside QueryEngineTool.
+        """
+        logger.debug(
+            f"Retrieving row context for query[{event.id}] with {len(event.relevant_tables)} tables"
+        )
+
+        try:
+            vector_index = await self._get_vector_index()
+
+            row_retrievers: dict[str, BaseRetriever] = {}
+
+            for table_name in event.relevant_tables:
+                if table_name not in self.tables_to_index:
+                    row_retrievers[table_name] = VectorStoreIndex(
+                        [], embed_model=self.embedding
+                    ).as_retriever(similarity_top_k=1)
+                    continue
+
+                row_retrievers[table_name] = vector_index.as_retriever(
+                    similarity_top_k=5,
+                    filters=MetadataFilters(
+                        filters=[ExactMatchFilter(key="table_name", value=table_name)]
+                    ),
+                )
+
+            logger.debug(
+                f"Row context retrieval complete for query[{event.id}]. "
+                f"Created retrievers for {len(row_retrievers)} tables"
+            )
+
+            return RowContextEvent(
+                id=event.id,
+                input_text=event.input_text,
+                sql_database=event.sql_database,
+                relevant_tables=event.relevant_tables,
+                row_retrievers=row_retrievers,
+                synthesize_response=event.synthesize_response,
+                execute_sql=event.execute_sql,
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Error during row context retrieval for query[{event.id}]: {e}"
+            )
+            raise ValueError(
+                f"Row context retrieval failed for query[{event.id}]: {e}"
+            ) from e
+
+    @step
+    async def generate_sql_from_context(
+        self, _ctx: Context, event: RowContextEvent
+    ) -> Text2SQLGenerationEvent:
+        """
+        Generate SQL query using LLM with schema and row context.
+
+        This step replaces the SQL generation logic that was hidden inside QueryEngineTool.
+        """
+        logger.debug(
+            f"Generating SQL for query[{event.id}] using {len(event.row_retrievers)} row retrievers"
+        )
+
+        try:
+            query_engine = NLSQLTableQueryEngine(
+                sql_database=event.sql_database,
+                tables=event.relevant_tables,
+                llm=self.llm,
+                embed_model=self.embedding,
+                synthesize_response=False,
+            )
+
+            query_engine._sql_retriever = NLSQLRetriever(
+                event.sql_database,
+                llm=self.llm,
+                rows_retrievers=event.row_retrievers,
+                embed_model=self.embedding,
+                sql_only=False,
+                verbose=True,
+            )
+
+            response = await query_engine.aquery(event.input_text)
+
+            if response.metadata is None:
+                raise ValueError("No metadata in query engine response")
+
+            sql_query = response.metadata.get("sql_query")
+            if not sql_query:
+                raise ValueError("No SQL query found in response metadata")
+
+            logger.debug(f"SQL generation complete for query[{event.id}]: {sql_query}")
+
+            return Text2SQLGenerationEvent(
+                id=event.id,
+                input_text=event.input_text,
+                output_sql=sql_query,
+                synthesize_response=event.synthesize_response,
+                execute_sql=event.execute_sql,
+                remaining_tries=5,
+                error_context=[],
+            )
+
+        except Exception as e:
+            logger.error(f"Error during SQL generation for query[{event.id}]: {e}")
+            raise ValueError(f"SQL generation failed for query[{event.id}]: {e}") from e

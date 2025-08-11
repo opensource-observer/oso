@@ -1,3 +1,4 @@
+import copy
 import inspect
 import typing as t
 from dataclasses import dataclass, field
@@ -12,8 +13,11 @@ from dagster import (
     SensorDefinition,
     SourceAsset,
 )
+from oso_core.cache import Cache, CacheInvalidError
+from oso_core.cache.types import CacheMetadataOptions, StructuredCacheKey
 from oso_dagster.config import DagsterConfig
 from oso_dagster.utils import dagsterinternals as dginternals
+from pydantic import BaseModel
 
 type GenericAsset = t.Union[
     AssetsDefinition, SourceAsset, dginternals.CacheableAssetsDefinition, AssetSpec
@@ -126,14 +130,14 @@ class ResourcesRegistry:
             resources_dag=self._resources_dag.copy(),
         )
 
-    def add(self, resource_factory: ResourceFactory):
+    def add(self, resource_factory: ResourceFactory, override: bool = False):
         """Add a resource factory to the early resources container."""
         if resource_factory.name == "resources":
             raise ValueError(
                 "Resource factory with name 'resources' is reserved and cannot be used."
             )
 
-        if resource_factory.name in self._resources:
+        if resource_factory.name in self._resources and not override:
             raise ValueError(
                 f"Resource factory with name {resource_factory.name} already exists."
             )
@@ -240,6 +244,10 @@ class ResourcesContext:
             resolved_resources[key] = self.resolve(key)
         return f(**resolved_resources, **kwargs)
 
+    def has_resource_available(self, name: str) -> bool:
+        """Check if this resource is available in the registry."""
+        return name in self._registry._resources
+
     def resolve(self, name: str) -> t.Any:
         """Resolve a resource by name. If the resource is not resolved yet, it
         will be resolved and cached."""
@@ -267,14 +275,16 @@ class EarlyResourcesAssetFactory:
     def __init__(
         self,
         f: EarlyResourcesAssetDecoratedFunction,
-        caller: t.Optional[inspect.FrameInfo] = None,
-        additional_annotations: t.Optional[t.Dict[str, t.Any]] = None,
-        dependencies: t.Optional[t.List["EarlyResourcesAssetFactory"]] = None,
+        caller: inspect.FrameInfo | None = None,
+        additional_annotations: t.Dict[str, t.Any] | None = None,
+        dependencies: t.List["EarlyResourcesAssetFactory"] | None = None,
+        tags: dict[str, str] | None = None,
     ):
         self._f = f
         self._caller = caller
         self.additional_annotations = additional_annotations or {}
         self._dependencies = dependencies or []
+        self._tags = tags or {}
 
     def __call__(
         self, resources: ResourcesContext, dependencies: t.List[AssetFactoryResponse]
@@ -287,7 +297,9 @@ class EarlyResourcesAssetFactory:
             res = resources.run(
                 self._f,
                 additional_annotations=self.additional_annotations,
-                additional_inject=dict(dependencies=dependencies),
+                additional_inject=dict(
+                    dependencies=dependencies, factory_caller=self._caller
+                ),
             )
         except Exception:
             if self._caller:
@@ -329,12 +341,18 @@ class EarlyResourcesAssetFactory:
     def dependencies(self):
         return self._dependencies[:]
 
+    @property
+    def tags(self) -> dict[str, str]:
+        """Get the tags for the asset factory."""
+        return self._tags.copy()
+
 
 def early_resources_asset_factory(
     *,
     caller_depth: int = 1,
     additional_annotations: t.Optional[t.Dict[str, t.Any]] = None,
     dependencies: t.Optional[t.List[EarlyResourcesAssetFactory]] = None,
+    tags: dict[str, str] | None = None,
 ):
     caller = inspect.stack()[caller_depth]
 
@@ -344,6 +362,7 @@ def early_resources_asset_factory(
             caller=caller,
             additional_annotations=additional_annotations,
             dependencies=dependencies,
+            tags=tags,
         )
 
     return _decorator
@@ -364,5 +383,188 @@ def resource_factory(name: str):
             dependencies=dependencies,
             return_type=return_type,
         )
+
+    return _decorator
+
+
+C = t.TypeVar("C", bound=BaseModel, covariant=True)
+
+
+class CacheableDagsterObjectGenerator(t.Protocol[C]):
+    def __call__(self, *args, **kwargs) -> C: ...
+
+    __name__: str
+
+
+type CacheableDagsterObjectHydrator = t.Callable[..., AssetFactoryResponse]
+
+
+class CacheableDagsterObjectKey(StructuredCacheKey):
+    cache_key_metadata: dict[str, str]
+    name: str
+    sub_name: str = ""
+
+
+@dataclass(kw_only=True)
+class _GeneratorRegistration:
+    generator: CacheableDagsterObjectGenerator
+    cacheable_type: t.Type[BaseModel]
+    extra_cache_key_metadata: dict[str, str]
+    cache_metadata_options: CacheMetadataOptions | None = None
+
+
+class CacheableDagsterContext:
+    """Provides a way to create cacheable asset factories from one or more generateor functions."""
+
+    def __init__(self, name: str, resources: ResourcesContext, cache: Cache):
+        self._name = name
+        self._cache = cache
+        self._resources = resources
+
+        self._generators: dict[
+            str,
+            _GeneratorRegistration,
+        ] = {}
+        self._hydrator: t.Callable[..., AssetFactoryResponse] | None = None
+
+    def register_generator(
+        self,
+        *,
+        cacheable_type: t.Type[C],
+        name: str = "",
+        extra_cache_key_metadata: dict[str, str] | None = None,
+        cache_metadata_options: CacheMetadataOptions | None = None,
+    ) -> t.Callable[..., None]:
+        def _decorator(
+            generator: CacheableDagsterObjectGenerator[C],
+        ) -> None:
+            """A decorator that registers a generator function to the cacheable context."""
+            generator_name = name or generator.__name__
+            self._generators[generator_name] = _GeneratorRegistration(
+                generator=generator,
+                cacheable_type=cacheable_type,
+                extra_cache_key_metadata=extra_cache_key_metadata or {},
+                cache_metadata_options=cache_metadata_options,
+            )
+
+        return _decorator
+
+    def register_hydrator(self) -> t.Callable[..., None]:
+        """A decorator that registers a hydrator function to the cacheable context."""
+
+        def _decorator(
+            f: t.Callable[..., AssetFactoryResponse],
+        ) -> None:
+            """A decorator that registers a hydrator function to the cacheable context."""
+            if self._hydrator is not None:
+                raise ValueError("hydrator already registered.")
+            self._hydrator = f
+
+        return _decorator
+
+    def load(self, cache_key_metadata: dict[str, str]):
+        """Load the cacheable context.
+
+        For all of the expected annotations in the hydrator, we will run
+        either load from cache or run the generator functions and then inject
+        that into the hydrator.
+        """
+
+        if self._hydrator is None:
+            raise ValueError("hydrator not registered.")
+
+        resources = self._resources
+
+        generated_objects: t.Dict[str, BaseModel] = {}
+
+        # Get all the annotations from the hydrator function
+        annotations = self._hydrator.__annotations__
+        for key, value in annotations.items():
+            if key == "return":
+                continue
+
+            if key == ResourcesContext.resources_keyword_name:
+                # If the key is the resources context, we will inject the resources context
+                # into the hydrator.
+                continue
+
+            if key in self._generators and resources.has_resource_available(key):
+                raise ValueError(
+                    f"Resource {key} is already registered as a generator, "
+                    "but is also expected to be resolved from the resources context."
+                    "this is ambiguous and should be resolved by the caller."
+                )
+
+            # First check if the key is one of the registered generators
+            if key in self._generators:
+                registration = self._generators[key]
+                if value is not registration.cacheable_type:
+                    raise ValueError(
+                        f"Generator {key} is registered with type {registration.cacheable_type}, "
+                        f"but the hydrator expects type {value}."
+                    )
+
+                generator_cache_key_metadata = copy.deepcopy(cache_key_metadata)
+                generator_cache_key_metadata.update(
+                    registration.extra_cache_key_metadata
+                )
+
+                cache_key = CacheableDagsterObjectKey(
+                    cache_key_metadata=generator_cache_key_metadata,
+                    name=self._name,
+                    sub_name=key,
+                )
+
+                try:
+                    # Try to load the object from cache
+                    obj = self._cache.retrieve_object(
+                        cache_key,
+                        registration.cacheable_type,
+                        options=registration.cache_metadata_options,
+                    )
+                except CacheInvalidError:
+                    # If the object is not in cache, we will run the generator
+                    obj = resources.run(
+                        registration.generator,
+                        additional_inject={"cache_context": self},
+                    )
+                    self._cache.store_object(
+                        cache_key, obj, options=registration.cache_metadata_options
+                    )
+
+                generated_objects[key] = obj
+
+        # Run the hydrator with the loaded bindings
+        return resources.run(self._hydrator, additional_inject=generated_objects)
+
+
+def cacheable_asset_factory(tags: dict[str, str] | None = None):
+    def _decorator(
+        f: t.Callable[..., CacheableDagsterContext],
+    ) -> EarlyResourcesAssetFactory:
+        """A decorator that creates a cacheable asset factory from a generator function.
+
+        This decorator will create a cacheable asset factory that can be used to
+        create assets that can be cached and retrieved from the cache.
+        """
+
+        @early_resources_asset_factory(caller_depth=2, tags=tags)
+        def _factory(
+            resources: ResourcesContext, cache: Cache, factory_caller: inspect.FrameInfo
+        ) -> AssetFactoryResponse:
+            context = CacheableDagsterContext(
+                name=f.__name__,
+                resources=resources,
+                cache=cache,
+            )
+            resources.run(f, additional_inject={"cache_context": context})
+
+            return context.load(
+                cache_key_metadata=dict(
+                    filename=factory_caller.filename,
+                )
+            )
+
+        return _factory
 
     return _decorator
