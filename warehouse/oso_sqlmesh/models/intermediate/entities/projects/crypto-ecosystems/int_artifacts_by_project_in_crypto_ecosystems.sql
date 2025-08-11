@@ -14,19 +14,19 @@ MODEL (
 
 WITH parsed_artifacts AS (
   SELECT
-    eco_name,
-    branch_name,
+    taxonomy.eco_name,
+    b.branch_name,
     gh_int.artifact_source_id,
     parsed_url.artifact_namespace,
     parsed_url.artifact_name,
     parsed_url.artifact_url,
     parsed_url.artifact_type
-  FROM oso.stg_crypto_ecosystems__taxonomy
-  CROSS JOIN UNNEST(branch) AS b(branch_name)
-  CROSS JOIN LATERAL @parse_github_repository_artifact(repo_url) AS parsed_url
+  FROM oso.stg_crypto_ecosystems__taxonomy AS taxonomy
+  CROSS JOIN UNNEST(taxonomy.branch) AS b(branch_name)
+  CROSS JOIN LATERAL @parse_github_repository_artifact(taxonomy.repo_url) AS parsed_url
   LEFT JOIN oso.int_artifacts__github AS gh_int
-    ON gh_int.artifact_url = repo_url
-  WHERE branch_name IS NOT NULL
+    ON gh_int.artifact_url = taxonomy.repo_url
+  WHERE b.branch_name IS NOT NULL
 ),
 
 project_mappings AS (
