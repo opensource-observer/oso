@@ -1,6 +1,6 @@
 MODEL (
   name oso.timeseries_metrics_by_artifact_v0,
-  kind FULL,
+  kind VIEW,
   partitioned_by (month(sample_date), bucket(artifact_id, 64)),
   tags (
     'export',
