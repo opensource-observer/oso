@@ -75,7 +75,7 @@ def ensure[T](x: Optional[T], msg: str) -> T:
     """
     if x is None:
         raise NullOrUndefinedValueError(
-            f"Value must not be undefined or null{f" - {msg}" if msg else ""}"
+            f"Value must not be undefined or null{f' - {msg}' if msg else ''}"
         )
     else:
         y: T = x
@@ -148,6 +148,12 @@ class QueryConfig(BaseModel):
     )
 
 
+class QueryRetriesExceeded(Exception):
+    """
+    Exception raised when the maximum number of query retries is exceeded.
+    """
+
+
 def query_with_retry(
     client: Client,
     context: AssetExecutionContext,
@@ -208,7 +214,7 @@ def query_with_retry(
                 steps = list(generate_steps(total_count, limit))
                 current_index *= 2
                 if limit < config.minimum_limit:
-                    raise ValueError(
+                    raise QueryRetriesExceeded(
                         f"Query failed after reaching the minimum limit of {limit}."
                     ) from exception
                 context.log.info(f"Retrying with limit: {limit}")
