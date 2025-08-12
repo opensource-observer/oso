@@ -88,8 +88,8 @@ importers:
         specifier: ^3.3.1
         version: 3.3.1
       '@eslint/js':
-        specifier: ^9.31.0
-        version: 9.31.0
+        specifier: ^9.33.0
+        version: 9.33.0
       '@plasmicapp/cli':
         specifier: 0.1.340
         version: 0.1.340
@@ -2407,8 +2407,8 @@ packages:
     resolution: {integrity: sha512-eohesHH8WFRUprDNyEREgqP6beG6htMeUYeCpkEgBCieCMme5r9zFWjzAJp//9S+Kub4rqE+jXe9Cp1a7IYIIA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@eslint/js@9.31.0':
-    resolution: {integrity: sha512-LOm5OVt7D4qiKCqoiPbA7LWmI+tbw1VbTUowBcUMgQSuM6poJufkFkYDcQpo5KfgD39TnNySV26QjOh7VFpSyw==}
+  '@eslint/js@9.33.0':
+    resolution: {integrity: sha512-5K1/mKhWaMfreBGJTwval43JJmkip0RmM+3+IuqupeSKNC/Th2Kc7ucaq5ovTSra/OOKB9c58CGSz3QMVbWt0A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/object-schema@2.1.6':
@@ -8900,6 +8900,9 @@ packages:
 
   gl-matrix@3.4.3:
     resolution: {integrity: sha512-wcCp8vu8FT22BnvKVPjXa/ICBWRq/zjFfdofZy1WSpQZpphblv12/bOQLBC1rMM7SGOFS9ltVmKOHil5+Ml7gA==}
+
+  gl-matrix@3.4.4:
+    resolution: {integrity: sha512-latSnyDNt/8zYUB6VIJ6PCh2jBjJX6gnDsoCZ7LyW7GkqrD51EWwa9qCoGixj8YqBtETQK/xY7OmpTF8xz1DdQ==}
 
   gl-text@1.4.0:
     resolution: {integrity: sha512-o47+XBqLCj1efmuNyCHt7/UEJmB9l66ql7pnobD6p+sgmBUdzfMZXIF0zD2+KRfpd99DJN+QXdvTFAGCKCVSmQ==}
@@ -18072,7 +18075,7 @@ snapshots:
   '@eslint/js@9.12.0':
     optional: true
 
-  '@eslint/js@9.31.0': {}
+  '@eslint/js@9.33.0': {}
 
   '@eslint/object-schema@2.1.6':
     optional: true
@@ -28167,6 +28170,8 @@ snapshots:
 
   gl-matrix@3.4.3: {}
 
+  gl-matrix@3.4.4: {}
+
   gl-text@1.4.0:
     dependencies:
       bit-twiddle: 1.0.2
@@ -30646,7 +30651,7 @@ snapshots:
       csscolorparser: 1.0.3
       earcut: 2.2.4
       geojson-vt: 3.2.1
-      gl-matrix: 3.4.3
+      gl-matrix: 3.4.4
       grid-index: 1.1.0
       murmurhash-js: 1.0.0
       pbf: 3.3.0
