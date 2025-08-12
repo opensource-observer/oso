@@ -17,6 +17,7 @@ module.exports = {
     "**/utilities/**",
     "**/.eslintrc.js",
     "**/postcss.config.js",
+    "!.storybook",
     //"**/next.config.js",
     //"**/tailwind.config.js",
     //"**/.env",
