@@ -26,7 +26,6 @@ WITH parsed_artifacts AS (
   CROSS JOIN LATERAL @parse_github_repository_artifact(taxonomy.repo_url) AS parsed_url
   LEFT JOIN oso.int_artifacts__github AS gh_int
     ON gh_int.artifact_url = taxonomy.repo_url
-  WHERE b.branch_name IS NOT NULL
 ),
 
 project_mappings AS (
@@ -42,6 +41,7 @@ project_mappings AS (
     artifact_url,
     artifact_type
   FROM parsed_artifacts
+  WHERE eco_name IS NOT NULL
   
   UNION ALL
   
@@ -57,6 +57,7 @@ project_mappings AS (
     artifact_url,
     artifact_type
   FROM parsed_artifacts
+  WHERE branch_name IS NOT NULL
 )
 
 SELECT DISTINCT
