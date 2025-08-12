@@ -3,7 +3,6 @@ MODEL (
   kind VIEW,
   partitioned_by (month(sample_date), bucket(artifact_id, 64)),
   tags (
-    'export',
     'model_type=full',
     'model_category=metrics',
     'model_stage=mart'
