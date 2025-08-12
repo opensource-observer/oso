@@ -15,7 +15,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   message = "Loading...",
 }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="flex flex-col items-center p-8">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">
@@ -31,7 +31,7 @@ const AuthWarning: React.FC = () => {
     <div className="max-w-4xl mx-auto mt-12 px-4">
       <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-md">
         <div className="flex">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <svg
               className="h-5 w-5 text-amber-400"
               viewBox="0 0 20 20"
@@ -88,7 +88,7 @@ const Alert: React.FC<AlertProps> = ({ type, message, onDismiss }) => {
       className={`mb-6 ${bgColor} border-l-4 ${borderColor} p-4 rounded-r-md relative`}
     >
       <div className="flex">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <svg
             className={`h-5 w-5 ${iconColor}`}
             viewBox="0 0 20 20"
@@ -169,7 +169,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-left
           focus:ring-2 focus:ring-blue-500 focus:border-blue-500
           disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed
-          transition-colors duration-200 shadow-sm hover:border-gray-400 dark:hover:border-gray-500
+          transition-colors duration-200 shadow-xs hover:border-gray-400 dark:hover:border-gray-500
         "
       >
         <span
@@ -214,7 +214,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
               }}
               className="
                 w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700
-                focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none
+                focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-hidden
                 text-gray-900 dark:text-white first:rounded-t-lg last:rounded-b-lg
                 transition-colors duration-150
               "
@@ -303,7 +303,7 @@ const CreditBalance: React.FC<CreditBalanceProps> = ({
   organizationName,
 }) => {
   return (
-    <div className="mb-8 overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+    <div className="mb-8 overflow-hidden bg-linear-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
       <div className="px-8 py-10">
         <div className="flex items-center">
           <svg
@@ -493,7 +493,7 @@ const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ history }) => {
           {history.map((purchase) => (
             <div
               key={purchase.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-xs border border-gray-200 dark:border-gray-700 overflow-hidden"
             >
               <div className="p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between">
@@ -573,7 +573,7 @@ const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ history }) => {
 
 const TestPaymentInfo: React.FC = () => {
   return (
-    <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="rounded-xl bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white">
           Test Payment Information
