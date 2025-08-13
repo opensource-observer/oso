@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_artifacts_by_collection_in_defillama,
+  name oso.int_projects_by_collection_in_defillama,
   kind FULL,
   tags (
     'entity_category=project',
@@ -28,7 +28,7 @@ SELECT DISTINCT
   project_source,
   project_namespace,
   project_name,
-  @to_entity_id(collection_source, collection_namespace, collection_name) AS collection_id,
+  @oso_entity_id(collection_source, collection_namespace, collection_name) AS collection_id,
   collection_source,
   collection_namespace,
   collection_name,
