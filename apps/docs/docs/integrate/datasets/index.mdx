@@ -20,6 +20,8 @@ import OpAtlasLogo from "./op-atlas.png";
 import OliLogo from "./oli.png";
 import CryptoEcosystemsLogo from "./crypto-ecosystems-logo.jpeg";
 import ElectricCapitalLogo from "./electric_capital_logo_transparent.png";
+import GrowthepieLogo from "./growthepie_logo.png";
+import GrowthepieFullLogo from "./growthepie_full_logo.png";
 
 OSO curates a variety of public datasets from the open source ecosystem.
 Check out our [BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae)
@@ -56,7 +58,7 @@ Here are our featured public datasets, organized by category:
   <a href="#crypto-ecosystems" className="datalink-card">
     <div className="datalink-header">
       <img src={CryptoEcosystemsLogo} alt="CryptoEcosystemsLogo" className="datalink-logo" />
-      <span className="tag">Updated weekly</span>
+      <span className="tag">Updated daily</span>
     </div>
     <h3>Crypto Ecosystems</h3>
   </a>
@@ -84,42 +86,49 @@ Here are our featured public datasets, organized by category:
   <a href="#arbitrum-one" className="datalink-card">
     <div className="datalink-header">
       <img src={ArbitrumLogo} alt="Arbitrum Logo" className="datalink-logo" />
-      <span className="tag">Updated weekly</span>
+      <span className="tag">Updated daily</span>
     </div>
     <h3>Arbitrum One</h3>
+  </a>
+  <a href="#growthepie" className="datalink-card">
+    <div className="datalink-header">
+      <img src={GrowthepieLogo} alt="Growthepie Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>growthepie</h3>
   </a>
   <a href="#open-labels-initiative" className="datalink-card">
     <div className="datalink-header">
       <img src={OliLogo} alt="Open Labels Initiative Logo" className="datalink-logo" />
-      <span className="tag">Updated weekly</span>
+      <span className="tag">Updated daily</span>
     </div>
     <h3>Open Labels Initiative</h3>
   </a>
   <a href="#filecoin-lily" className="datalink-card">
     <div className="datalink-header">
       <img src={FilecoinLogo} alt="Filecoin Logo" className="datalink-logo" />
-      <span className="tag">Updated weekly</span>
+      <span className="tag">Updated daily</span>
     </div>
     <h3>Filecoin Lily</h3>
   </a>
   <a href="#eas" className="datalink-card">
     <div className="datalink-header">
       <img src={EasLogo} alt="EAS Logo" className="datalink-logo" />
-      <span className="tag">Updated weekly</span>
+      <span className="tag">Updated daily</span>
     </div>
     <h3>Ethereum Attestation Service</h3>
   </a>
   <a href="#farcaster" className="datalink-card">
     <div className="datalink-header">
       <img src={FarcasterLogo} alt="Farcaster Logo" className="datalink-logo" />
-      <span className="tag">Updated weekly</span>
+      <span className="tag">Updated daily</span>
     </div>
     <h3>Farcaster</h3>
   </a>
   <a href="#lens" className="datalink-card">
     <div className="datalink-header">
       <img src={LensLogo} alt="Lens Logo" className="datalink-logo" />
-      <span className="tag">Updated weekly</span>
+      <span className="tag">Updated daily</span>
     </div>
     <h3>Lens</h3>
   </a>
@@ -133,7 +142,7 @@ Here are our featured public datasets, organized by category:
   <a href="#gitcoin" className="datalink-card">
     <div className="datalink-header">
       <img src={GitcoinLogo} alt="Gitcoin Logo" className="datalink-logo" />
-      <span className="tag">Updated daily</span>
+      <span className="tag">Updated weekly</span>
     </div>
     <h3>Gitcoin</h3>
   </a>
@@ -209,7 +218,7 @@ Here are our featured public datasets, organized by category:
 
 ## OSO Production Pipeline
 
-<img src={OsoLogo} width="200" />
+<img src={OsoLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -265,7 +274,7 @@ Some of the v0 (WIP) models that we include in analysis but may be a bit unstabl
 
 ### GitHub Archive
 
-<img src={GithubLogo} width="100" />
+<img src={GithubLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -301,7 +310,7 @@ GROUP by issue_status
 
 ### Open Source Insights
 
-<img src={OpenSourceInsights} width="200" />
+<img src={OpenSourceInsights} height="50" />
 
 <Button
   size={"compact"}
@@ -354,7 +363,7 @@ WHERE RowNumber = 1
 
 ### Crypto Ecosystems
 
-<img src={ElectricCapitalLogo}/>
+<img src={ElectricCapitalLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -387,11 +396,11 @@ Attribution needs to have 3 components:
 - Link: https://github.com/electric-capital/crypto-ecosystems
 - Logo: https://github.com/electric-capital/crypto-ecosystems/blob/master/static/electric_capital_logo_transparent.png
 
-## Blockchain datasets
+## Blockchain Datasets
 
 ### Ethereum
 
-<img src={EthereumLogo} width="100" />
+<img src={EthereumLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -428,7 +437,7 @@ LIMIT 10
 
 ### Superchain
 
-<img src={OptimismLogo} width="100" />
+<img src={OptimismLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -469,7 +478,7 @@ For example, to get all transactions to the 4337 EntryPoint contracts for all OP
 
 ### Superchain 4337
 
-<img src={OptimismLogo} width="100" />
+<img src={OptimismLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -500,7 +509,7 @@ ORDER BY 3 DESC
 
 ### Arbitrum One
 
-<img src={ArbitrumLogo} width="100" />
+<img src={ArbitrumLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -525,9 +534,41 @@ WHERE block_timestamp BETWEEN 1693526400 AND 1693612800
 ORDER BY block_number
 ```
 
+### growthepie
+
+<img src={GrowthepieFullLogo} height="50" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/discovery/projects/opensource-observer/locations/us/dataExchanges/open_source_observer_190181416ae/listings/growthepie_198a2464823"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+The project [growthepie](https://growthepie.xyz/) aims to enhance transparency and understanding of the Ethereum ecosystem by providing comprehensive, curated data, analysis and educational resources to users, developers and chain teams. The project is MIT licensed.
+
+OSO mirrors a copy of the growthepie **fundamentals** dataset and hosts it on BigQuery. You can read more about this dataset [here](https://docs.growthepie.xyz/api).
+
+Here is a sample query:
+
+```sql
+SELECT
+  date,
+  value
+FROM `YOUR_PROJECT_NAME.growthepie.fundamentals_full`
+WHERE
+  origin_key = 'ethereum'  
+  AND metric_key = 'market_cap_usd'
+ORDER BY date DESC
+LIMIT 30
+```
+
 ### Open Labels Initiative
 
-<img src={OliLogo} width="200" />
+<img src={OliLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -554,7 +595,7 @@ WHERE tag_id = 'owner_project'
 
 ### Filecoin Lily
 
-<img src={FilecoinLogo} width="100" />
+<img src={FilecoinLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -584,7 +625,7 @@ WHERE
 
 ### Ethereum Attestation Service
 
-<img src={EasLogo} width="200" />
+<img src={EasLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -617,7 +658,7 @@ WHERE
 
 ### Farcaster
 
-<img src={FarcasterLogo} width="100" />
+<img src={FarcasterLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -684,7 +725,7 @@ FROM eth_addresses
 
 ### Lens
 
-<img src={LensLogo} width="200" />
+<img src={LensLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -709,11 +750,11 @@ LIMIT 5
 
 Note: the Lens Polygon dataset that was previously available on BigQuery has been deprecated.
 
-## Projects and funding
+## Projects and Funding
 
 ### OP Atlas
 
-<img src={OpAtlasLogo} width="200" />
+<img src={OpAtlasLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -743,7 +784,7 @@ For more information, go to https://atlas.optimism.io/ or check out the [OP Atla
 
 ### Gitcoin
 
-<img src={GitcoinLogo} width="200" />
+<img src={GitcoinLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -787,7 +828,7 @@ FROM `YOUR_PROJECT_NAME.gitcoin.all_matching`
 
 ### Open Collective
 
-<img src={OcLogo} width="200" />
+<img src={OcLogo} height="50" />
 
 <Button
   size={"compact"}
@@ -815,7 +856,7 @@ WHERE
   AND JSON_VALUE(to_account, "$.id") = "ov349mrw-gz75lpy9-975qa08d-jeybknox"
 ```
 
-## Subscribe to a dataset
+## Subscribe to a Dataset
 
 ### 1. Data exchange listings
 
@@ -859,7 +900,7 @@ For more on how you can optimize your queries, check out these guide:
 - [Avoiding eight common BigQuery query mistakes](https://www.doit.com/avoiding-eight-common-bigquery-query-mistakes/)
 
 
-## Next steps
+## Next Steps
 
 Once you've subscribed our datasets to your own Google project,
 you can start to run queries and analyses with a variety of tools.
