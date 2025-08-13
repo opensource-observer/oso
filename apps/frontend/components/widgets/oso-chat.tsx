@@ -243,7 +243,7 @@ function OSOChat(props: OSOChatProps) {
                 value={input}
                 onChange={handleInputChange}
                 placeholder="Ask about OSO data..."
-                className="flex-1 px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none min-h-[44px] max-h-[120px] overflow-y-auto"
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-md focus:outline-hidden focus:ring-1 focus:ring-blue-500 resize-none min-h-[44px] max-h-[120px] overflow-y-auto"
                 disabled={status === "streaming" || status === "submitted"}
                 rows={1}
                 onKeyDown={(e) => {
