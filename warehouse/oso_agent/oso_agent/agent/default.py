@@ -6,9 +6,6 @@ import logging
 from ..util.config import AgentConfig
 from .agent_registry import AgentRegistry
 from .function_text2sql import create_function_text2sql_agent_factory
-from .react_mcp import create_react_mcp_agent
-from .react_text2sql import create_react_text2sql_agent
-from .semantic_agent import create_semantic_agent
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +14,10 @@ async def setup_default_agent_registry(config: AgentConfig) -> AgentRegistry:
     registry = AgentRegistry(config)
 
     registry.add_agent("function_text2sql", create_function_text2sql_agent_factory())
-    registry.add_agent("function_text2sql_no_synthesis", create_function_text2sql_agent_factory(synthesize_response=False))
-    registry.add_agent("react_mcp", create_react_mcp_agent)
-    registry.add_agent("react_text2sql", create_react_text2sql_agent)
-    registry.add_agent("semantic", create_semantic_agent)
+    registry.add_agent(
+        "function_text2sql_no_synthesis",
+        create_function_text2sql_agent_factory(synthesize_response=False),
+    )
 
     if config.eagerly_load_all_agents:
         logger.info("Eagerly loading all agents in the registry...")

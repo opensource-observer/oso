@@ -1,0 +1,337 @@
+---
+description: Use this rule when creating new seed files and staging models
+alwaysApply: false
+---
+
+# Cursor Rules – Creating Seed Files and Staging Models for OSO
+
+These project-specific rules teach the Cursor AI how to scaffold, extend, and refactor seed files and staging models in the OSO data pipeline. Follow them exactly.
+
+## 1. Seed File Placement & Naming
+
+- Place seed files under `warehouse/metrics_tools/seed/schemas/<source_name>/`.
+- Use lowercase snake_case for filenames (e.g. `chainlist.py`, `labels_decoded.py`).
+- Create a subdirectory for each data source if multiple seed files exist.
+- Keep all constants and configuration in the module; avoid global mutable state.
+
+## 2. Staging Model Placement & Naming
+
+- Place staging models under `warehouse/oso_sqlmesh/models/staging/<source_name>/`.
+- Use the naming convention: `stg_<source_name>__<table_name>.sql`.
+- Use lowercase with underscores for source names and table names.
+- Create a subdirectory for each data source if multiple staging models exist.
+
+## 3. Seed File Structure
+
+### Imports
+```python
+from metrics_tools.seed.types import Column, SeedConfig
+from pydantic import BaseModel
+```
+
+### Model Definition
+- Define a Pydantic model that inherits from `BaseModel`.
+- Use descriptive docstrings for the model class.
+- Use type hints with `| None` for nullable fields.
+- Use the `Column` type for field annotations with SQL type and description.
+
+**Example:**
+```python
+class Chainlist(BaseModel):
+    """Stores chain information from Chainlist.org"""
+
+    name: str | None = Column("VARCHAR", description="The name of the chain")
+    chain_id: int | None = Column("INTEGER", description="The chain ID")
+    # ... other fields
+```
+
+### Seed Configuration
+- Create a `SeedConfig` instance named `seed`.
+- Set `catalog="bigquery"`.
+- Use the source name as the `schema`.
+- Use the table name as the `table`.
+- Set `base` to your model class.
+- Include representative sample data in the `rows` list.
+
+**Example:**
+```python
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="chainlist",
+    table="chains",
+    base=Chainlist,
+    rows=[
+        Chainlist(
+            name="Ethereum Mainnet",
+            chain_id=1,
+            # ... other fields
+        ),
+        # ... more sample rows
+    ],
+)
+```
+
+## 4. Staging Model Structure
+
+### Model Header
+```sql
+MODEL (
+  name oso.stg_<source_name>__<table_name>,
+  description 'Brief description of the staging model',
+  dialect trino,
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
+);
+```
+
+### Column Transformations
+- Use `::TYPE` for explicit type casting.
+- Use `LOWER()` for address fields to ensure consistency.
+- Use `@from_unix_timestamp()` for timestamp conversions.
+- Handle NULL values with `CASE WHEN` statements.
+- Use `ROW_NUMBER() OVER (PARTITION BY ...)` for deduplication when needed.
+
+**Example:**
+```sql
+SELECT
+  id::TEXT AS id,
+  LOWER(recipient::TEXT) AS recipient,
+  @from_unix_timestamp(time_created) AS time_created,
+  CASE WHEN expiration_time > 0 THEN @from_unix_timestamp(expiration_time) ELSE NULL END AS expiration_time
+FROM @oso_source('bigquery.source_name.table_name')
+```
+
+## 5. Data Types & Transformations
+
+### Common Type Mappings
+- **Addresses**: `LOWER(field::TEXT)` for consistency
+- **Timestamps**: `@from_unix_timestamp(field)` for Unix timestamps
+- **Booleans**: `field::BOOLEAN` for boolean values
+- **Numbers**: `field::BIGINT` for integers, `field::DOUBLE` for floats
+- **Strings**: `field::VARCHAR` or `field::TEXT` for text
+
+### Special Cases
+- **Chain IDs**: Use `BIGINT` for large chain IDs
+- **Decimals**: Use `INTEGER` for currency decimals
+- **JSON**: Use `TEXT` for JSON strings
+- **IPFS Hashes**: Use `TEXT` for IPFS content
+
+## 6. Sample Data Guidelines
+
+### Seed File Sample Data
+- Include 2-5 representative rows per seed file.
+- Cover different scenarios (active/revoked, different chains, etc.).
+- Use realistic but anonymized data.
+- Include edge cases (NULL values, special characters).
+
+### Sample Data Examples
+```python
+# Active label
+LabelsDecoded(
+    id="0x1234567890abcdef...",
+    chain_id="eip155:1",
+    address="0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    tag_id="is_eoa",
+    tag_value="true",
+    revoked=False,
+    # ... other fields
+),
+
+# Revoked label
+LabelsDecoded(
+    id="0xabcdef1234567890...",
+    chain_id="eip155:1",
+    address="0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    tag_id="is_eoa",
+    tag_value="true",
+    revoked=True,
+    revocation_time=1744237338,
+    # ... other fields
+),
+```
+
+## 7. Staging Model Best Practices
+
+### Deduplication
+When dealing with potentially duplicate records:
+```sql
+WITH deduplicated AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS row_number
+  FROM @oso_source('bigquery.source.table')
+)
+SELECT * FROM deduplicated WHERE row_number = 1
+```
+
+### Filtering
+- Filter out revoked records: `WHERE revoked = False`
+- Filter out expired records: `WHERE expiration_time IS NULL OR expiration_time > NOW()`
+- Filter by time ranges when appropriate
+
+### Data Quality
+- Use `DISTINCT` to remove exact duplicates
+- Validate required fields are not NULL
+- Ensure proper type casting for all fields
+
+## 8. Naming Conventions
+
+### Seed Files
+- **File name**: `source_name.py` or `table_name.py`
+- **Model class**: PascalCase (e.g., `Chainlist`, `LabelsDecoded`)
+- **Schema**: lowercase source name
+- **Table**: lowercase table name
+
+### Staging Models
+- **File name**: `stg_<source_name>__<table_name>.sql`
+- **Model name**: `oso.stg_<source_name>__<table_name>`
+- **Source reference**: `bigquery.<schema>.<table>`
+
+## 9. Examples to Emulate
+
+### Simple Seed File (chainlist.py)
+```python
+class Chainlist(BaseModel):
+    """Stores chain information from Chainlist.org"""
+    name: str | None = Column("VARCHAR", description="The name of the chain")
+    chain_id: int | None = Column("INTEGER", description="The chain ID")
+    # ... other fields
+
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="chainlist",
+    table="chains",
+    base=Chainlist,
+    rows=[...]
+)
+```
+
+### Complex Seed File (labels_decoded.py)
+```python
+class LabelsDecoded(BaseModel):
+    """Stores decoded labels from the Open Labels Initiative"""
+    id: str | None = Column("VARCHAR", description="Unique identifier for the label")
+    chain_id: str | None = Column("VARCHAR", description="Chain identifier in eip155 format")
+    address: str | None = Column("VARCHAR", description="The address being labeled")
+    revoked: bool | None = Column("BOOLEAN", description="Whether the label has been revoked")
+    # ... other fields
+
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="openlabelsinitiative",
+    table="labels_decoded",
+    base=LabelsDecoded,
+    rows=[...]
+)
+```
+
+### Simple Staging Model (stg_chainlist__chains.sql)
+```sql
+MODEL (
+  name oso.stg_chainlist__chains,
+  description 'The most recent view of chains and their RPC endpoints',
+  dialect trino,
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
+);
+
+SELECT
+  name::VARCHAR AS name,
+  chain_id::BIGINT AS chain_id,
+  # ... other fields
+FROM @oso_source('bigquery.chainlist.chains')
+```
+
+### Complex Staging Model (stg_eas__optimism_attestations.sql)
+```sql
+MODEL (
+  name oso.stg_eas__optimism_attestations,
+  description 'Get the latest attestations',
+  dialect trino,
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
+);
+
+WITH attestations AS (
+  SELECT
+    id::TEXT AS id,
+    LOWER(recipient::TEXT) AS recipient,
+    @from_unix_timestamp(time_created) AS time_created,
+    CASE WHEN expiration_time > 0 THEN @from_unix_timestamp(expiration_time) ELSE NULL END AS expiration_time,
+    ROW_NUMBER() OVER (PARTITION BY id ORDER BY time DESC) AS row_number
+  FROM @oso_source('bigquery.ethereum_attestation_service_optimism.attestations')
+)
+SELECT * FROM attestations WHERE row_number = 1
+```
+
+## 10. Testing & Validation
+
+### Seed File Testing
+- Ensure all sample data is valid according to the model schema
+- Test with different data types and edge cases
+- Verify that the seed data loads correctly in BigQuery
+
+### Staging Model Testing
+- Test with the actual seed data
+- Verify type conversions work correctly
+- Ensure deduplication logic functions as expected
+- Test filtering conditions with various data scenarios
+
+## 11. DLT Traces
+
+### DLT Internal Fields
+- **Ignore DLT traces by default**: Do not include `_dlt_load_id` and `_dlt_id` fields in staging models unless specifically required.
+- **DLT fields are internal**: These fields (`_dlt_load_id`, `_dlt_id`) are used internally by DLT for data loading and should not be exposed in downstream models unless explicitly needed.
+- **Include only when necessary**: Only include DLT fields in staging models when there's a specific business requirement or debugging need.
+
+**Example - Exclude DLT fields (default):**
+```sql
+SELECT
+  time::TIMESTAMP AS time,
+  LOWER(chain::VARCHAR) AS chain,
+  tvl::DOUBLE AS tvl
+FROM @oso_source('bigquery.defillama.historical_chain_tvl')
+```
+
+**Example - Include DLT fields (only when required):**
+```sql
+SELECT
+  time::TIMESTAMP AS time,
+  LOWER(chain::VARCHAR) AS chain,
+  tvl::DOUBLE AS tvl,
+  _dlt_load_id::VARCHAR AS _dlt_load_id,
+  _dlt_id::VARCHAR AS _dlt_id
+FROM @oso_source('bigquery.defillama.historical_chain_tvl')
+```
+
+## 12. Commit Checklist
+
+### Seed Files
+- [ ] File in correct path with proper naming
+- [ ] Model class has descriptive docstring
+- [ ] All fields have proper type hints and Column annotations
+- [ ] Sample data covers representative scenarios
+- [ ] Pass ruff, black (line length 100)
+
+### Staging Models
+- [ ] File in correct path with proper naming convention
+- [ ] Model header includes description and audits
+- [ ] All columns have proper type casting
+- [ ] Address fields use LOWER() transformation
+- [ ] Timestamp fields use @from_unix_timestamp() when needed
+- [ ] Deduplication logic is implemented if needed
+- [ ] Filtering conditions are appropriate
+- [ ] DLT traces excluded unless specifically required
+
+---
+
+**If Cursor proposes code that violates these rules, regenerate.**
+description: Use this rule when creating new seed files and staging models
+alwaysApply: false
+---

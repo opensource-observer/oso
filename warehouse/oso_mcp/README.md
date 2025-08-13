@@ -1,141 +1,157 @@
 # OSO-MCP Server
 
-A Model Context Protocol (MCP) server for interacting with the Open Source
-Observer (OSO) data lake.
-
-> [!WARNING]
-> This is a work in progress and is not yet ready for production use. Yet.
+A Model Context Protocol (MCP) server that connects your local IDE with the Open Source Observer's production text2sql agent.
 
 ## Overview
 
-This MCP server provides tools for exploring and analyzing the Open Source
-Observer (OSO) data lake, allowing you to:
-
-- Run SQL queries against the OSO data lake
-- Explore available tables and their schemas
-- Access sample queries to help you get started
-
-OSO tracks metrics about open source projects, including GitHub stats, funding
-data, and on-chain activity.
+This MCP server allows you to connect your local IDE with our production text2sql agent, giving your IDE's AI assistant the ability to query and analyze data from the Open Source Observer (OSO) data lake using natural language. We have plans to add more connections to more agents down the line which will function similarly, and ultimately allow IDE LLMs to level up with our stack.
 
 ## Installation
 
-1. Install dependencies:
+### Prerequisites
+
+1. **Clone the repository** (if you haven't already):
+
+   ```bash
+   git clone https://github.com/opensource-observer/oso.git
+   cd oso
+   ```
+
+2. **Pull the latest changes** (if you already have the repo):
+
+   ```bash
+   git pull origin main
+   ```
+
+3. **Sync the latest packages**:
+
+   ```bash
+   uv sync --all-packages
+   pnpm install
+   ```
+
+4. **Set up your environment**: Refer to the `.env.example` file in the `oso_mcp` folder, but here's essentially what you need (see the [Setting up your environment](#setting-up-your-environment) section below for details).
+
+## Setting up your environment
+
+You'll need to set up the following environment variables. You can create a `.env` file in the `warehouse/oso_mcp` directory:
+
+- `MCP_OSO_API_KEY` (required) - Your OSO API key
+- `MCP_HOST` (default: `127.0.0.1`) - The host to run the server on
+- `MCP_PORT` (default: `8000`) - The port to run the server on
+- `MCP_TRANSPORT` (default: `sse`) - Transport method (`sse` or `stdio`)
+
+### Getting your OSO API key
+
+Navigate to [https://docs.opensource.observer/docs/get-started/python](https://docs.opensource.observer/docs/get-started/python) and follow the steps in the "Generate an API key" section.
+
+## Running the server
+
+To run the MCP server:
 
 ```bash
-uv sync --all-packages
+uv run oso_mcp serve
 ```
 
-2. Get an OSO API key from
-   [Open Source Observer](https://www.opensource.observer). Follow the
-   instructions in the [Getting OSO API Key](#getting-oso-api-key) section to
-   obtain your key.
+### Additional options
 
-## Running the MCP server
+- **For help**: `uv run oso_mcp -h`
+- **Verbose output**: `uv run oso_mcp -v serve` (use `-v` for info, `-vv` for debug)
+  - None = only warnings
+  - One `-v` = info level
+  - Two `-vv` = debug info
+- **View environment schema**: `uv run oso_mcp env-schema`
 
-You can start an instance of the MCP server
+For any other help with the CLI, add the `-h` flag after any command to see details and steps.
 
-```bash
-uv run mcp serve
-```
+## Connecting to your IDE
 
-## Setting Up with Claude Desktop
+We currently support:
 
-1. Open Claude Desktop settings by clicking on the Claude menu and selecting
-   "Settings"
-2. Select "Developer" in the sidebar and click "Edit Config"
-3. Add the following configuration to the `claude_desktop_config.json`:
+- Cursor
+- VS Code with Copilot.
 
-```jsonc
-{
-  "mcpServers": {
-    // other MCP servers...
-    "oso-data-lake": {
-      "command": "uv",
-      "args": ["run", "/path/to/your/oso/warehouse/oso_mcp/main.py"],
-      "env": {
-        "OSO_API_KEY": "your_api_key_here",
-        "VIRTUAL_ENV": "/path/to/your/oso/warehouse/oso_mcp/.venv",
-      },
-    },
-  },
-}
-```
+We're constantly updating things, but if you don't see your IDE supported, don't worry! It should be pretty easy to set things up - find their documentation on MCP servers and follow their steps (usually involves some sort of `mcp.json` in a proprietary folder). If you manage to figure it out, please open a PR and add it here!
 
-4. Replace `/path/to/your/oso_mcp/` with the actual path to your repository
-5. Replace `your_api_key_here` with your OSO API key
-6. Restart Claude Desktop
+### Cursor
 
-## Available Tools
+1. **Create MCP configuration**: Make sure in the `.cursor` folder at your project root you have a `mcp.json` with the following format:
 
-### query_oso
+   ```json
+   {
+     "mcpServers": {
+       "oso": {
+         "url": "http://127.0.0.1:8000/sse"
+       }
+     }
+   }
+   ```
 
-Run SQL queries against the OSO data lake.
+2. **Important**: Make sure you're in your project root when you do this or it won't work.
 
-**Parameters:**
+3. **Start the server**: Follow all the above steps to run the server.
 
-- `sql` (string): SQL query to execute (SELECT statements only)
-- `limit` (integer, optional): Limit to apply to the query results
+4. **Enable in Cursor**: Once the server is running:
+   - Navigate to Settings (top right) → Tools & Integrations → MCP
+   - If you don't see the MCP server under "MCP tools" as an option (should say "oso"), there might be a problem with connecting your `mcp.json` to Cursor
+   - To solve this: click "+ New MCP server", then paste the above `mcp.json` contents into the file
+   - You should then see "oso" show the number of tools available
+   - Click on it to select which tools you want Cursor to have access to
 
-**Example:**
+#### Troubleshooting Cursor
 
-```
-Can you run this SQL query against the OSO data lake: SELECT * FROM collections_v1 LIMIT 5
-```
+- **Yellow dot ("loading tools")**: Toggle the server on and off and it should update
+- **Red dot**: There's a problem with your server - make sure it shows in the terminal as active and running. You should see:
 
-### list_tables
+  ```
+  INFO:     Started server process [26321]
+  INFO:     Waiting for application startup.
+  INFO:     Application startup complete.
+  INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+  ```
 
-List all available tables in the OSO data lake.
+- **Important note**: Cursor only connects to MCP servers once at app start. If you make changes and want to see them reflected, simply restarting the server won't work - you'll need to close and reopen Cursor, then rerun the server.
 
-**Example:**
+#### Using with Cursor
 
-```
-What tables are available in the OSO data lake?
-```
+Now you should be good to go with Cursor! When you talk to Cursor, it will have the option to use the tools you selected.
 
-### get_table_schema
+**Note**: We have a `@working-with-pyoso-data.mdc` Cursor rule that briefly explains to Cursor how to work with our text2sql tool. This is set to 'always' be included by default, but for best results (since it doesn't always work automatically), it's best to specifically add it to your queries by writing `@` and then `working-with-pyoso-data.mdc`.
 
-Get the schema for a specific table in the OSO data lake.
+### VS Code + Copilot
 
-**Parameters:**
+1. **Create MCP configuration**: Put a `mcp.json` file in the `.vscode` folder (note the different format):
 
-- `table_name` (string): Name of the table to get schema for
+   ```json
+   {
+     "servers": {
+       "oso": {
+         "url": "http://127.0.0.1:8000/sse"
+       }
+     }
+   }
+   ```
 
-**Example:**
+2. **Set up settings.json** (optional but recommended): Open VS Code settings (Cmd + Shift + P → "Open User Settings (JSON)"). This is only necessary if you want Copilot to use the Cursor rules files for context.
 
-```
-Show me the schema for the projects_v1 table
-```
+   In this `settings.json`, paste the files you want it to use as context:
 
-### get_sample_queries
+   ```json
+   {
+     "chat.instructionsFilesLocations": {
+       ".cursor/rules/working-with-pyoso-data.mdc": true
+     }
+   }
+   ```
 
-Get a set of sample queries to help users get started with the OSO data lake.
+   We have an example in `.vscode/settings.json`.
 
-**Example:**
+3. **Start the server**: Follow the above steps to run the server.
 
-```
-Show me some sample queries for the OSO data lake
-```
+4. **Use in VS Code**: When you go to chat with Copilot:
+   - Click "Add context" above the user input
+   - In the dropdown, click "MCP resources"
+   - If your server successfully connected, you should see it appear as an option
+   - You can manually select this into the chat (this also indicates Copilot should see it and use it at its own discretion)
 
-## Resources
-
-- **help://getting-started**: Basic guide to using the OSO data lake explorer
-
-## Example Usage
-
-Here are some examples of how you might use this MCP server with Claude:
-
-1. "Show me the available tables in the OSO data lake"
-2. "What's the schema for the projects_v1 table?"
-3. "Can you run a query to find the top 10 most funded open source projects?"
-4. "Analyze the funding history of the Uniswap project"
-5. "Show me all the projects in the ethereum-github collection"
-6. "Do a deep dive on the contribution patterns for the ethereum project"
-
-## Getting OSO API Key
-
-1. Go to [www.opensource.observer](https://www.opensource.observer) and create
-   an account
-2. Go to [Account settings](https://www.opensource.observer/settings/profile)
-3. In the "API" section, click "+ New"
-4. Give your key a label and save the key when it's generated
+Now you're good to work with Copilot!

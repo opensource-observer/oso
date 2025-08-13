@@ -9,11 +9,12 @@ MODEL (
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
-  )
+  ),
+  enabled false,
 );
 
 
-@DEF(default_sample_date, DATE '2025-05-01');
+@DEF(default_sample_date, DATE '2025-07-01');
 
 WITH onchain_builder_eligibility AS (
   SELECT DISTINCT
@@ -126,23 +127,10 @@ devtooling_metrics AS (
   FROM oso.int_superchain_s7_devtooling_metrics_by_project
 ),
 
-rewards AS (
-  SELECT
-    project_id,
-    sample_date,
-    metric AS metric_name,
-    amount,
-    'OP' AS unit
-  FROM oso.int_superchain_s7_m1_rewards
-),
-
-
 all_metrics AS (
   SELECT * FROM onchain_builder_eligibility
   UNION ALL
   SELECT * FROM onchain_builder_metrics
-  UNION ALL
-  SELECT * FROM rewards
   UNION ALL
   SELECT * FROM devtooling_metrics
 )

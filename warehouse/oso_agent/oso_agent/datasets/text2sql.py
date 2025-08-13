@@ -623,7 +623,7 @@ TEXT2SQL_DATASET: ExampleList = ExampleList(examples=[
         id="27",
         question="List projects that published at least one new release in the last 6 months and had a user operation via paymaster in ERC-4337.",
         answer_query="""
-            WITH recieved_grants AS (
+            WITH received_grants AS (
                 SELECT 
                     project_id 
                 FROM oso.timeseries_metrics_by_project_v0 AS tm 

@@ -36,7 +36,7 @@ from metrics_tools.transformer import (
     SQLTransformer,
 )
 from metrics_tools.transformer.qualify import QualifyTransform
-from metrics_tools.utils.logging import add_metrics_tools_to_sqlmesh_logging
+from oso_core.logging import add_oso_core_to_current_application_logging
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.macros import MacroEvaluator
@@ -707,6 +707,8 @@ class TimeseriesMetrics:
             time_aggregation in ["biannually", "quarterly", "weekly"]
             or "funding" in query_config["table_name"]
             or "releases" in query_config["table_name"]
+            or "worldchain_users_aggregation" in query_config["table_name"]
+            or "new_contributors" in query_config["table_name"]
         ):
             ignored_rules.append("incrementalmustdefinenogapsaudit")
 
@@ -848,7 +850,7 @@ def timeseries_metrics(
 ):
     from metrics_tools.utils.testing import ENABLE_TIMESERIES_DEBUG
 
-    add_metrics_tools_to_sqlmesh_logging()
+    add_oso_core_to_current_application_logging()
     logger.info("loading timeseries metrics")
     frame_info = inspect.stack()[1]
     calling_file = frame_info.filename

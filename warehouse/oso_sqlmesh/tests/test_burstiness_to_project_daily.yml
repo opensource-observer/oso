@@ -1,0 +1,493 @@
+test_burstiness_to_project_daily:
+  model: oso.burstiness_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-31
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # repo_1 with multiple users and event types on same days (potential for duplicate rows)
+      - from_artifact_id: user_1
+        to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 6
+      - from_artifact_id: user_2
+        to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-01
+        amount: 4
+      - from_artifact_id: user_1
+        to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-02
+        amount: 8
+      - from_artifact_id: user_3
+        to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        bucket_day: 2024-01-02
+        amount: 4
+      - from_artifact_id: user_1
+        to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-03
+        amount: 5
+      - from_artifact_id: user_4
+        to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        event_type: STARRED
+        bucket_day: 2024-01-03
+        amount: 3
+      - from_artifact_id: user_1
+        to_artifact_id: repo_1
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-04
+        amount: 10
+      # repo_2 with different pattern but also multiple users/events per day
+      - from_artifact_id: user_5
+        to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-01-01
+        amount: 5
+      - from_artifact_id: user_5
+        to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-02
+        amount: 5
+      - from_artifact_id: user_6
+        to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_REVIEW_COMMENT
+        bucket_day: 2024-01-02
+        amount: 2
+      - from_artifact_id: user_5
+        to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-03
+        amount: 6
+      - from_artifact_id: user_6
+        to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        bucket_day: 2024-01-04
+        amount: 4
+      - from_artifact_id: user_7
+        to_artifact_id: repo_2
+        event_source: SOURCE_PROVIDER
+        event_type: STARRED
+        bucket_day: 2024-01-05
+        amount: 5
+    oso.int_first_last_commit_to_github_repository:
+      rows:
+      - artifact_id: repo_1
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_1
+        first_commit_time: 2024-01-01 00:00:00
+        last_commit_time: 2024-01-04 00:00:00
+      - artifact_id: repo_2
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_2
+        first_commit_time: 2024-01-01 00:00:00
+        last_commit_time: 2024-01-05 00:00:00
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.09090909091
+      - metrics_sample_date: 2024-01-03
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.7111111111
+      - metrics_sample_date: 2024-01-04
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.4
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.1666666667
+      - metrics_sample_date: 2024-01-03
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.07407407407
+      - metrics_sample_date: 2024-01-04
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.2840909091
+      - metrics_sample_date: 2024-01-05
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0.2002962963
+test_burstiness_to_project_daily_with_gaps:
+  model: oso.burstiness_to_project_daily
+  vars:
+    start: 2024-02-01
+    end: 2024-02-10
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_3
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-02-01
+        amount: 15
+      - to_artifact_id: repo_3
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-02-04
+        amount: 20
+      - to_artifact_id: repo_3
+        event_source: SOURCE_PROVIDER
+        bucket_day: 2024-02-07
+        amount: 10
+    oso.int_first_last_commit_to_github_repository:
+      rows:
+      - artifact_id: repo_3
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_3
+        first_commit_time: 2024-02-01 00:00:00
+        last_commit_time: 2024-02-07 00:00:00
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_3
+        project_id: project_3
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-02-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-02-04
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 725.7254464
+      - metrics_sample_date: 2024-02-07
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 602.6886945
+
+test_burstiness_to_project_daily_multiple_users_events:
+  model: oso.burstiness_to_project_daily
+  vars:
+    start: 2024-03-01
+    end: 2024-03-05
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # Single repository with multiple users and event types on same days
+      # This should result in exactly one row per date, not multiple
+      - from_artifact_id: user_a
+        to_artifact_id: repo_test
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-03-01
+        amount: 5
+      - from_artifact_id: user_b
+        to_artifact_id: repo_test
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-03-01
+        amount: 2
+      - from_artifact_id: user_c
+        to_artifact_id: repo_test
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-03-01
+        amount: 1
+      - from_artifact_id: user_a
+        to_artifact_id: repo_test
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-03-02
+        amount: 8
+      - from_artifact_id: user_b
+        to_artifact_id: repo_test
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-03-02
+        amount: 3
+      - from_artifact_id: user_d
+        to_artifact_id: repo_test
+        event_source: SOURCE_PROVIDER
+        event_type: STARRED
+        bucket_day: 2024-03-02
+        amount: 1
+    oso.int_first_last_commit_to_github_repository:
+      rows:
+      - artifact_id: repo_test
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_test
+        first_commit_time: 2024-03-01 00:00:00
+        last_commit_time: 2024-03-02 00:00:00
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_test
+        project_id: project_test
+  outputs:
+    query:
+      rows:
+      # Should have exactly 2 rows (one per date), not 6 rows (one per user/event combo)
+      - metrics_sample_date: 2024-03-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_test
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-03-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_test
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 1.6
+
+test_burstiness_to_project_daily_complex_multi_user_events:
+  model: oso.burstiness_to_project_daily
+  vars:
+    start: 2024-04-01
+    end: 2024-04-05
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # repo_complex with many users and event types on same days (comprehensive test for duplicate rows)
+      - bucket_day: 2024-04-01
+        from_artifact_id: user_1
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        amount: 10
+      - bucket_day: 2024-04-01
+        from_artifact_id: user_2
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        amount: 2
+      - bucket_day: 2024-04-01
+        from_artifact_id: user_3
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_OPENED
+        amount: 1
+      - bucket_day: 2024-04-01
+        from_artifact_id: user_4
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: STARRED
+        amount: 1
+      - bucket_day: 2024-04-02
+        from_artifact_id: user_1
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        amount: 12
+      - bucket_day: 2024-04-02
+        from_artifact_id: user_2
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_REVIEW_COMMENT
+        amount: 3
+      - bucket_day: 2024-04-02
+        from_artifact_id: user_5
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        amount: 2
+      - bucket_day: 2024-04-02
+        from_artifact_id: user_6
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: FORKED
+        amount: 1
+      - bucket_day: 2024-04-03
+        from_artifact_id: user_1
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        amount: 8
+      - bucket_day: 2024-04-03
+        from_artifact_id: user_3
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        amount: 1
+      - bucket_day: 2024-04-03
+        from_artifact_id: user_7
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: RELEASE_PUBLISHED
+        amount: 1
+      - bucket_day: 2024-04-04
+        from_artifact_id: user_1
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        amount: 10
+      - bucket_day: 2024-04-04
+        from_artifact_id: user_8
+        to_artifact_id: repo_complex
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_COMMENT
+        amount: 2
+    oso.int_first_last_commit_to_github_repository:
+      rows:
+      - artifact_id: repo_complex
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_complex
+        first_commit_time: 2024-04-01 00:00:00
+        last_commit_time: 2024-04-04 00:00:00
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_complex
+        project_id: project_complex
+  outputs:
+    query:
+      rows:
+      # Should have exactly 4 rows (one per date), not 13 rows (one per user/event combo)
+      # This tests aggregation of multiple users and event types per day at project level
+      - metrics_sample_date: 2024-04-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_complex
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-04-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_complex
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 1
+      - metrics_sample_date: 2024-04-03
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_complex
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 8.126984127
+      - metrics_sample_date: 2024-04-04
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_complex
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 5.671296296
+
+
+test_burstiness_to_project_daily_multiple_artifacts_in_project:
+  model: oso.burstiness_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-02
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # Day 1
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 100
+      - to_artifact_id: repo_2
+        from_artifact_id: contributor_2
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 100
+      # Day 2
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-02
+        amount: 100
+      - to_artifact_id: repo_2
+        from_artifact_id: contributor_2
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-02
+        amount: 100
+    oso.int_first_last_commit_to_github_repository:
+      rows:
+      - artifact_id: repo_1
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_1
+        first_commit_time: 2024-01-01 00:00:00
+        last_commit_time: 2024-01-02 00:00:00
+      - artifact_id: repo_2
+        artifact_source_id: github
+        artifact_namespace: test
+        artifact_name: repo_2
+        first_commit_time: 2024-01-01 00:00:00
+        last_commit_time: 2024-01-02 00:00:00
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: burstiness_daily
+        amount: 0

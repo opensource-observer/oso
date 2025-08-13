@@ -96,7 +96,7 @@ WITH github_comments AS (
 ), github_pull_request_merge_events AS (
   /* noqa: ST06 */
   SELECT
-    created_at AS "time",
+    event_time AS "time",
     type AS event_type,
     id::TEXT AS event_source_id,
     'GITHUB' AS event_source,
@@ -115,7 +115,7 @@ WITH github_comments AS (
     comments
   FROM oso.stg_github__pull_request_merge_events
   WHERE
-    created_at BETWEEN @start_dt AND @end_dt
+    event_time BETWEEN @start_dt AND @end_dt
 ), issue_events AS (
   SELECT
     time,

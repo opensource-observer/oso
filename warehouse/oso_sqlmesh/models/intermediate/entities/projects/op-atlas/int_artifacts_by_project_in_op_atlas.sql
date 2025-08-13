@@ -87,7 +87,7 @@ github_urls AS (
     atlas_id,
     value AS repository_url
   FROM oso.seed_op_atlas_registry_updates
-  WHERE action = 'INCLUDE' AND artifact_type = 'GITHUB_REPOSITORY'
+  WHERE TRIM(action) = 'INCLUDE' AND artifact_type = 'GITHUB_REPOSITORY'
   UNION
   SELECT
     atlas_id,
@@ -111,6 +111,24 @@ github_artifacts AS (
 ),
 
 -- =============================================================================
+-- DEPLOYER ARTIFACTS
+-- =============================================================================
+deployer_artifacts AS (
+  SELECT
+    deployers.atlas_id,
+    parsed.artifact_name AS artifact_source_id,
+    chain_name.chain_name AS artifact_source,
+    parsed.artifact_namespace,
+    parsed.artifact_name,
+    parsed.artifact_url,
+    'DEPLOYER' AS artifact_type
+  FROM oso.int_op_atlas_deduped_deployers AS deployers
+  JOIN oso.seed_chain_id_to_chain_name AS chain_name
+    ON chain_name.chain_id = deployers.chain_id
+  CROSS JOIN LATERAL @parse_blockchain_artifact(deployers.deployer_address) AS parsed
+),
+
+-- =============================================================================
 -- CONTRACT ARTIFACTS
 -- =============================================================================
 contract_artifacts AS (
@@ -125,35 +143,11 @@ contract_artifacts AS (
   FROM oso.stg_op_atlas_published_contract AS stg
   JOIN oso.seed_chain_id_to_chain_name AS chain_name
     ON chain_name.chain_id = stg.chain_id
+  JOIN oso.int_op_atlas_deduped_deployers AS dd
+    ON dd.atlas_id = stg.atlas_id
+    AND dd.contract_address = stg.contract_address
+    AND dd.chain_id = stg.chain_id
   CROSS JOIN LATERAL @parse_blockchain_artifact(stg.contract_address) AS parsed
-  WHERE parsed.artifact_name IS NOT NULL
-),
-
--- =============================================================================
--- DEPLOYER ARTIFACTS
--- =============================================================================
-all_deployers AS (
-  SELECT
-    stg.atlas_id,
-    stg.deployer_address,
-    chain_name.chain_name,
-    COUNT(DISTINCT stg.atlas_id) OVER (PARTITION BY stg.deployer_address, chain_name.chain_name) as project_count_for_deployer
-  FROM oso.stg_op_atlas_project_contract AS stg
-  JOIN oso.seed_chain_id_to_chain_name AS chain_name
-    ON chain_name.chain_id = stg.chain_id
-),
-deployer_artifacts AS (
-  SELECT
-    all_deployers.atlas_id,
-    parsed.artifact_name AS artifact_source_id,
-    all_deployers.chain_name AS artifact_source,
-    parsed.artifact_namespace,
-    parsed.artifact_name,
-    parsed.artifact_url,
-    'DEPLOYER' AS artifact_type
-  FROM all_deployers
-  CROSS JOIN LATERAL @parse_blockchain_artifact(all_deployers.deployer_address) AS parsed
-  WHERE all_deployers.project_count_for_deployer = 1
 ),
 
 -- =============================================================================
@@ -166,7 +160,7 @@ defillama_slugs AS (
   FROM oso.stg_op_atlas_project_defillama AS stg
   LEFT JOIN oso.seed_op_atlas_registry_updates AS updates
     ON updates.atlas_id = stg.atlas_id
-    AND updates.action = 'EXCLUDE'
+    AND TRIM(updates.action) = 'EXCLUDE'
     AND updates.artifact_type = 'DEFILLAMA_PROTOCOL'
   WHERE updates.value IS NULL
   UNION
@@ -175,7 +169,7 @@ defillama_slugs AS (
     value AS defillama_slug
   FROM oso.seed_op_atlas_registry_updates
   WHERE
-    action = 'INCLUDE'
+    TRIM(action) = 'INCLUDE'
     AND artifact_type = 'DEFILLAMA_PROTOCOL'
 ),
 defillama_artifacts AS (
@@ -211,7 +205,7 @@ oso_linked_slugs AS (
   FROM op_atlas_projects AS op
   LEFT JOIN oso.seed_op_atlas_registry_updates AS updates
     ON updates.atlas_id = op.atlas_id
-    AND updates.action = 'INCLUDE'
+    AND TRIM(updates.action) = 'INCLUDE'
     AND updates.artifact_type = 'OSO_SLUG'
 ),
 oso_linked_projects AS (

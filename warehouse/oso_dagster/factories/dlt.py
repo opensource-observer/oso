@@ -48,10 +48,9 @@ def pydantic_to_dlt_nullable_columns(b: t.Type[BaseModel]):
 
 def _dlt_factory[
     R: t.Union[AssetMaterialization, MaterializeResult],
-    C: DltAssetConfig, **P,
-](
-    c: t.Callable[P, t.Any], config_type: t.Type[C] = DltAssetConfig
-):
+    C: DltAssetConfig,
+    **P,
+](c: t.Callable[P, t.Any], config_type: t.Type[C] = DltAssetConfig):
     def dlt_factory(
         config_type: t.Type[C] = config_type,
         dataset_name: str = "",
@@ -95,7 +94,6 @@ def _dlt_factory[
                 dlt_warehouse_destination: Destination,
                 secrets: SecretResolver,
             ):
-
                 # logger.info(f"Creating asset for {key_prefix} with {tags}")
                 resolved_secrets = resolve_secrets_for_func(secrets, f)
                 source = dltlib.source(f)
@@ -140,7 +138,7 @@ def _dlt_factory[
                 )
                 def _dlt_asset(
                     context: AssetExecutionContext,
-                    config: config_type,
+                    config: config_type,  # type: ignore[valid-type]
                     **extra_source_args,
                 ) -> t.Iterable[R]:
                     pipeline_name = f"{key_prefix_str}_{name}_{uuid4()}"
@@ -160,9 +158,9 @@ def _dlt_factory[
                     global_config = t.cast(
                         DagsterConfig, getattr(context.resources, "global_config")
                     )
-                    assert (
-                        global_config
-                    ), "global_config resource is not loading correctly"
+                    assert global_config, (
+                        "global_config resource is not loading correctly"
+                    )
                     if global_config.enable_bigquery:
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(

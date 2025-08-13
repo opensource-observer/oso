@@ -6,5 +6,10 @@ packages:
   - lib/utils
   - ops/external-prs
   - ops/github-app-utils
+
+ignoredBuiltDependencies:
+  - unrs-resolver
+
 onlyBuiltDependencies:
+  - '@apollo/rover'
   - supabase

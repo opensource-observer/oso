@@ -1,6 +1,6 @@
 [project]
 name = "pyoso"
-version = "0.4.0"
+version = "0.6.1"
 description = ""
 readme = "README.md"
 requires-python = ">=3.8"
@@ -9,7 +9,14 @@ authors = [
 ]
 dependencies = [
     "pandas>=1.2.0",
+    "pydantic>=2.11.6",
+    "requests>=2.32.4",
     "sqlglot>=26.16.4",
+]
+
+[project.optional-dependencies]
+semantic = [
+    "oso-semantic",
 ]
 
 [build-system]
@@ -18,5 +25,9 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "oso-semantic",
     "pandas-stubs>=2.2.3.250308",
 ]
+
+[tool.uv.sources]
+oso-semantic = { workspace = true }

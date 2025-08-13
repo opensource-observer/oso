@@ -9,16 +9,16 @@ import opentelemetry.trace as trace
 import uvicorn
 from dotenv import load_dotenv
 from llama_index.core.llms import ChatMessage, MessageRole
-from pyoso import Client
+from oso_agent.tool.storage_context import setup_storage_context
 
 from ..agent import setup_default_agent_registry
+from ..clients.oso_client import OsoClient
 from ..eval.experiment_registry import get_experiments
 from ..server.bot import setup_bot
 from ..server.definition import BotConfig
 from ..tool.embedding import create_embedding
 from ..tool.llm import create_llm
-from ..tool.oso_mcp_client import OsoMcpClient
-from ..tool.oso_text2sql import create_oso_query_engine
+from ..tool.oso_text2sql import create_oso_query_engine, index_oso_tables
 from ..types import ErrorResponse, SemanticResponse, SqlResponse, StrResponse
 from ..util.asyncbase import setup_nest_asyncio
 from ..util.config import AgentConfig
@@ -120,6 +120,41 @@ def query(config, query, agent_name, ollama_model, ollama_url):
         sys.exit(1)
 
 
+@cli.command()
+@pass_config
+def initialize_vector_store(config: AgentConfig):
+    """Index OSO tables for the agent.
+
+    This command indexes the OSO tables into a vector store to enable efficient
+    querying and retrieval of data, this should be done outside of the agent's
+    runtime so that the agent doesn't such a long startup time.
+
+    Currently we support either a local vector store or a Google GenAI vector
+    store.
+    """
+    try:
+        oso_client = OsoClient(
+            api_key=config.oso_api_key.get_secret_value(),
+        )
+        embed = create_embedding(config)
+        storage_context = setup_storage_context(config, embed_model=embed)
+
+        asyncio.run(
+            index_oso_tables(
+                config=config,
+                storage_context=storage_context,
+                oso_client=oso_client,
+                embed_model=embed,
+            )
+        )
+
+        click.echo("\nOSO tables indexed successfully.")
+    except Exception as e:
+        click.echo(f"Error indexing OSO tables: {e}", err=True)
+        raise e
+        sys.exit(1)
+
+
 async def _run_query(query: str, config: AgentConfig) -> str:
     """Run a query through the agent asynchronously."""
 
@@ -178,7 +213,10 @@ class JsonType(click.ParamType):
 )
 @pass_config
 def experiment(
-    config: AgentConfig, experiment_name: str, experiment_options: dict[str, t.Any], example_ids: str
+    config: AgentConfig,
+    experiment_name: str,
+    experiment_options: dict[str, t.Any],
+    example_ids: str,
 ):
     """Run a single experiment through the agent.
 
@@ -190,7 +228,7 @@ def experiment(
         ) as b:
             experiment_options = {
                 **experiment_options,
-                "example_ids": [s.strip() for s in example_ids.split(",") if s.strip()]
+                "example_ids": [s.strip() for s in example_ids.split(",") if s.strip()],
             }
 
             response = asyncio.run(
@@ -345,8 +383,8 @@ def demo(config, agent_name, ollama_model, ollama_url):
 async def _run_demo(config: AgentConfig):
     """Run demo queries asynchronously."""
     try:
-        # Example of using the OsoMcpClient to get table schema
-        client = OsoMcpClient(config.oso_mcp_url)
+        # Example of using the OsoClient to get table schema
+        client = OsoClient(config.oso_api_key.get_secret_value())
         result = await client.get_table_schema("projects_v1")
         print("Table schema for 'projects_v1':")
         print(result)
@@ -360,12 +398,12 @@ async def _run_demo(config: AgentConfig):
         llm = create_llm(config)
         embed = create_embedding(config)
 
-        oso_client = Client(
-            api_key=config.oso_api_key.get_secret_value(),
-        )
+        storage_context = setup_storage_context(config, embed_model=embed)
+
         query_engine = await create_oso_query_engine(
             config,
-            oso_client,
+            client,
+            storage_context,
             llm,
             embed,
         )

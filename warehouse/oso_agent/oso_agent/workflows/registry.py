@@ -1,12 +1,13 @@
+import inspect
 import logging
 import typing as t
 
-from oso_agent.agent.agent_registry import AgentRegistry
 from oso_agent.types.response import WrappedResponse
-from oso_agent.workflows.base import MixableWorkflow
 
-from ..util.config import AgentConfig
+from ..resources import ResolverFactory
+from ..util.config import AgentConfig, WorkflowConfig
 from ..util.errors import AgentConfigError, AgentMissingError
+from .base import MixableWorkflow, ResourceResolver
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -14,45 +15,80 @@ logger = logging.getLogger(__name__)
 # Type alias for a dictionary of agents
 WorkflowDict = t.Dict[str, MixableWorkflow]
 
-WorkflowFactory = t.Callable[[AgentConfig, AgentRegistry], t.Awaitable[MixableWorkflow]]
+WorkflowFactory = t.Callable[
+    [AgentConfig, ResourceResolver], t.Awaitable[MixableWorkflow]
+]
 ResponseWrapper = t.Callable[[t.Any], WrappedResponse]
 
+
+def default_workflow_factory(
+    cls: t.Type[MixableWorkflow],
+):
+    """Default workflow factory that raises an error if no specific factory is provided."""
+
+    async def _factory(
+        config: AgentConfig, resolver: ResourceResolver
+    ) -> MixableWorkflow:
+        return cls(resolver, timeout=config.workflow_timeout)
+
+    return _factory
+
+
+T = t.TypeVar("T", bound=MixableWorkflow)
 
 
 class WorkflowRegistry:
     """Registry of all workflows."""
+
     def __init__(
         self,
         config: AgentConfig,
-        agent_registry: AgentRegistry,
+        default_resolver: ResourceResolver,
+        workflow_resolver_factory: ResolverFactory,
     ):
         """Initialize registry."""
         self.config = config
         self.workflow_factories: dict[str, WorkflowFactory] = {}
-        self.workflows: WorkflowDict = {}
-        self.agent_registry = agent_registry
+        self.default_resolver = default_resolver
+        self.workflow_resolver_factory = workflow_resolver_factory
 
-    def add_workflow(self, name: str, factory: WorkflowFactory):
+    def add_workflow(
+        self, name: str, workflow: WorkflowFactory | t.Type[MixableWorkflow]
+    ):
         """Add a workflow to the registry."""
         if name in self.workflow_factories:
             raise AgentConfigError(f"Workflow '{name}' already exists in the registry.")
+        if inspect.isclass(workflow):
+            if not issubclass(workflow, MixableWorkflow):
+                raise AgentConfigError(
+                    f"Workflow '{name}' must be a subclass of MixableWorkflow."
+                )
+            factory = default_workflow_factory(workflow)
+        elif inspect.isfunction(workflow):
+            factory = workflow
+        else:
+            raise AgentConfigError(f"Workflow '{name}' must be a callable or a class.")
         self.workflow_factories[name] = factory
         logger.info(f"Workflow factory '{name}' added to the registry.")
 
-    async def get_workflow(self, name: str) -> MixableWorkflow:
-        workflow = self.workflows.get(name)
-        if workflow is None and name not in self.workflow_factories:
+    async def get_workflow(
+        self,
+        name: str,
+        workflow_config: WorkflowConfig,
+        workflow_type: t.Optional[t.Type[T]] = None,
+    ) -> T:
+        """Get a workflow instance of specific type."""
+        if name not in self.workflow_factories:
             raise AgentMissingError(f"Workflow '{name}' not found in the registry.")
-        if workflow is None:
-            factory = self.workflow_factories[name]
-            workflow = await factory(self.config, self.agent_registry)
-            self.workflows[name] = workflow
-            logger.info(f"Workflow '{name}' lazily created and added to the registry.")
-        return self.workflows[name]
 
-    async def eager_load_all_workflows(self):
-        """Eagerly load all workflows in the registry."""
-        logger.info("Eagerly loading all workflows in the registry...")
-        for name in self.workflow_factories.keys():
-            await self.get_workflow(name)
-        logger.info("All workflows have been eagerly loaded.")
+        factory = self.workflow_factories[name]
+        resolver = await self.workflow_resolver_factory(
+            self.default_resolver, self.config, workflow_config
+        )
+
+        workflow = await factory(
+            self.config, resolver.merge_resolver(self.default_resolver)
+        )
+        logger.debug(f"Created workflow '{name}' of type {type(workflow).__name__}")
+
+        return t.cast(T, workflow)

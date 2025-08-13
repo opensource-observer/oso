@@ -18,7 +18,6 @@ MODEL (
     "incrementalmustdefinenogapsaudit",
   ),
   tags (
-    "ossd",
     "incremental",
   ),
 );

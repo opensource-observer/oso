@@ -9,12 +9,13 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0)
   ),
+  enabled false,
 );
 
 @DEF(min_package_connection_count, 3);
 @DEF(min_developer_connection_count, 5);
-@DEF(start_gas_date, DATE('2025-05-01'));
-@DEF(end_gas_date, DATE('2025-06-01'));
+@DEF(start_gas_date, DATE('2025-07-01'));
+@DEF(end_gas_date, DATE('2025-08-01'));
 
 WITH devtooling_projects AS (
   SELECT

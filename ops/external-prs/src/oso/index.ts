@@ -258,7 +258,8 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
     await _sodium.ready;
 
     const pkey = await octo.rest.actions.getEnvironmentPublicKey({
-      repository_id: repo.data.id,
+      owner: repo.data.owner.login,
+      repo: repo.data.name,
       environment_name: args.environment,
     });
 
@@ -268,7 +269,8 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
     const ciphertext = Buffer.from(encryptedBytes).toString("base64");
 
     await octo.rest.actions.createOrUpdateEnvironmentSecret({
-      repository_id: repo.data.id,
+      owner: repo.data.owner.login,
+      repo: repo.data.name,
       environment_name: args.environment,
       secret_name: args.name,
       encrypted_value: ciphertext,
@@ -277,13 +279,15 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
   } else {
     try {
       const currentVar = await octo.rest.actions.getEnvironmentVariable({
-        repository_id: repo.data.id,
+        owner: repo.data.owner.login,
+        repo: repo.data.name,
         environment_name: args.environment,
         name: args.name,
       });
       if (currentVar) {
         await octo.rest.actions.deleteEnvironmentVariable({
-          repository_id: repo.data.id,
+          owner: repo.data.owner.login,
+          repo: repo.data.name,
           environment_name: args.environment,
           name: args.name,
         });
@@ -292,7 +296,8 @@ async function refreshCredentials(args: RefreshGCPCredentials) {
       logger.info(`no existing var found, ${e}`);
     }
     await octo.rest.actions.createEnvironmentVariable({
-      repository_id: repo.data.id,
+      owner: repo.data.owner.login,
+      repo: repo.data.name,
       environment_name: args.environment,
       name: args.name,
       value: creds,

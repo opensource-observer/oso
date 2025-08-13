@@ -8,7 +8,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.interfaces import ReflectedColumn
 
-from .oso_mcp_client import OsoMcpClient
+from ..clients.oso_client import OsoClient
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class OsoSqlDatabase(SQLDatabase):
     LlamaIndex abstractions
 
     Args:
-        oso_mcp_url (str): URL of the OSO MCP server.
+        oso_api_key (str): API Key for authenticating to the pyoso servers.
         ignore_tables (Optional[List[str]]): List of table names to ignore. If set,
             include_tables must be None.
         include_tables (Optional[List[str]]): List of table names to include. If set,
@@ -31,16 +31,15 @@ class OsoSqlDatabase(SQLDatabase):
         max_string_length (int): The maximum string length to use.
 
     """
-    
 
     def __init__(
         self,
-        oso_client: OsoMcpClient,
+        oso_client: OsoClient,
         tables: Set[str],
         sample_rows_in_table_info: int,
         max_string_length: int,
     ):
-        #super().__init__(engine=create_engine("")) 
+        # super().__init__(engine=create_engine(""))
         self._oso_client = oso_client
         self._tables = tables
         self._sample_rows_in_table_info = sample_rows_in_table_info
@@ -49,14 +48,13 @@ class OsoSqlDatabase(SQLDatabase):
     @classmethod
     async def create(
         cls,
-        oso_mcp_url: str,
+        oso_client: OsoClient,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
         sample_rows_in_table_info: int = 3,
         max_string_length: int = 300,
     ):
         """Create engine from database URI."""
-        oso_client = OsoMcpClient(oso_mcp_url)
 
         all_tables = await oso_client.list_tables()
         all_tables_set = set(all_tables)
@@ -83,8 +81,10 @@ class OsoSqlDatabase(SQLDatabase):
 
         if not isinstance(sample_rows_in_table_info, int):
             raise TypeError("sample_rows_in_table_info must be an integer")
-        
-        result = cls(oso_client, usable_tables_set, sample_rows_in_table_info, max_string_length)
+
+        result = cls(
+            oso_client, usable_tables_set, sample_rows_in_table_info, max_string_length
+        )
         return result
 
     @property
@@ -112,7 +112,10 @@ class OsoSqlDatabase(SQLDatabase):
         loop = asyncio.get_event_loop()
         coroutine = self._oso_client.get_table_schema(table_name)
         table_schema = loop.run_until_complete(coroutine)
-        columns = [ReflectedColumn(name=col.name, type=col.type, comment=col.description) for col in table_schema]
+        columns = [
+            ReflectedColumn(name=col.name, type=col.type, comment=col.description)
+            for col in table_schema
+        ]
         return columns
 
     def get_single_table_info(self, table_name: str) -> str:
@@ -125,11 +128,14 @@ class OsoSqlDatabase(SQLDatabase):
         columns = []
         for column in table_schema:
             if column.description:
-                columns.append(f"{column.name} ({column.type!s}): '{column.description}'")
+                columns.append(
+                    f"{column.name} ({column.type!s}): '{column.description}'"
+                )
             else:
                 columns.append(f"{column.name} ({column.type!s})")
         column_str = ", ".join(columns)
         info = f"Table '{table_name}' has columns: {column_str}, "
+        logger.debug(f"Retrieved info for table {table_name}: {info}")
         return info
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
@@ -150,7 +156,6 @@ class OsoSqlDatabase(SQLDatabase):
             return content
 
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
-    
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """Execute a SQL statement and return a string representing the results.
@@ -158,9 +163,9 @@ class OsoSqlDatabase(SQLDatabase):
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
         """
-        logger.debug("Running SQL command: %s", command)
+        logger.debug(f"Running SQL command: {command}")
 
-        line_split = [ line.lower() for line in command.strip().split('\n')]
+        line_split = [line.lower() for line in command.strip().split("\n")]
         if self.dialect.lower() in line_split:
             if line_split[0] == self.dialect.lower():
                 command = "\n".join(line_split[1:])
