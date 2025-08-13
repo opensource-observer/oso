@@ -34,7 +34,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@google-cloud/bigquery": "^7.8.0",
+    "@google-cloud/bigquery": "^8.1.1",
     "@opensource-observer/oss-artifact-validators": "workspace:*",
     "@opensource-observer/utils": "workspace:*",
     "@types/columnify": "^1.5.4",

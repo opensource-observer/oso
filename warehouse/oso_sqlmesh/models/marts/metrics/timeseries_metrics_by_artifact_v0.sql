@@ -1,9 +1,7 @@
 MODEL (
   name oso.timeseries_metrics_by_artifact_v0,
-  kind FULL,
-  partitioned_by (month(sample_date), bucket(artifact_id, 64)),
+  kind VIEW,
   tags (
-    'export',
     'model_type=full',
     'model_category=metrics',
     'model_stage=mart'
@@ -18,10 +16,6 @@ MODEL (
     sample_date = 'The date when the metric was sampled, truncated to the day.',
     amount = 'The value of the metric for the artifact on the sample date.',
     unit = 'The unit of measurement for the metric, if applicable.'
-  ),
-  physical_properties (
-    parquet_bloom_filter_columns = ['artifact_id'],
-    sorted_by = ['sample_date']
   )
 );
 
