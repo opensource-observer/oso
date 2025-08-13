@@ -26,7 +26,8 @@ import {
   MonacoEditor,
   MonacoEditorMeta,
 } from "@/components/widgets/monaco-editor";
-import { Navbar, NavbarMeta } from "@/components/widgets/navbar";
+import { OsoNavbar, OsoNavbarMeta } from "@/components/widgets/oso-navbar";
+import { OsoSidebar, OsoSidebarMeta } from "@/components/widgets/oso-sidebar";
 import { OSOChat, OSOChatMeta } from "@/components/widgets/oso-chat";
 import {
   SupabaseWrite,
@@ -68,7 +69,8 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   //PLASMIC.registerComponent(JupyterConsole, JupyterConsoleMeta);
   PLASMIC.registerComponent(Markdown, MarkdownMeta);
   PLASMIC.registerComponent(MonacoEditor, MonacoEditorMeta);
-  PLASMIC.registerComponent(Navbar, NavbarMeta);
+  PLASMIC.registerComponent(OsoNavbar, OsoNavbarMeta);
+  PLASMIC.registerComponent(OsoSidebar, OsoSidebarMeta);
   PLASMIC.registerComponent(OSOChat, OSOChatMeta);
   PLASMIC.registerComponent(SupabaseWrite, SupabaseWriteMeta);
   PLASMIC.registerComponent(TallyPopup, TallyPopupMeta);

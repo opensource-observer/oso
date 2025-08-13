@@ -128,13 +128,13 @@ const DEFAULT_MENU_ITEMS: NavBarItem[] = [
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-type NavBarProps = {
+type OsoNavbarProps = {
   className?: string; // Plasmic CSS class
   menuItems?: NavBarItem[]; // Override default menu items
 };
 
-const NavbarMeta: CodeComponentMeta<NavBarProps> = {
-  name: "Navbar",
+const OsoNavbarMeta: CodeComponentMeta<OsoNavbarProps> = {
+  name: "OsoNavbar",
   description: "shadcn-based NavBar",
   props: {
     menuItems: {
@@ -144,7 +144,7 @@ const NavbarMeta: CodeComponentMeta<NavBarProps> = {
   },
 };
 
-function Navbar(props: NavBarProps) {
+function OsoNavbar(props: OsoNavbarProps) {
   const menuItems: NavBarItem[] = props.menuItems ?? DEFAULT_MENU_ITEMS;
   return (
     <NavigationMenu className={props.className}>
@@ -190,4 +190,4 @@ function Navbar(props: NavBarProps) {
   );
 }
 
-export { Navbar, NavbarMeta };
+export { OsoNavbar, OsoNavbarMeta };
