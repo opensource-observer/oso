@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { OsoNavbar } from "@/components/widgets/oso-navbar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { OsoSidebar } from "@/components/widgets/oso-sidebar";
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
-  title: "widgets/OsoNavbar",
-  component: OsoNavbar,
+  title: "widgets/OsoSidebar",
+  component: OsoSidebar,
   parameters: {
     // Optional parameter to center the component in the Canvas. More info: https://storybook.js.org/docs/configure/story-layout
     layout: "centered",
@@ -16,7 +17,7 @@ const meta = {
     //backgroundColor: { control: 'color' },
   },
   args: {},
-} satisfies Meta<typeof OsoNavbar>;
+} satisfies Meta<typeof OsoSidebar>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -26,4 +27,9 @@ export const Primary: Story = {
   args: {
     //className: "h-[20px] w-[100px] rounded-full",
   },
+  render: (args) => (
+    <SidebarProvider>
+      <OsoSidebar {...args} />
+    </SidebarProvider>
+  ),
 };
