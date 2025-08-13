@@ -40,8 +40,7 @@ def projects_for_round(
         transform_fn=lambda result: result["allProjects"]["projects"],
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
-            page_size=100,
-            max_pages=5,
+            page_size=10,
             offset_field="skip",
             limit_field="take",
             rate_limit_seconds=2.0,
