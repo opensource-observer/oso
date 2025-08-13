@@ -16,10 +16,6 @@ MODEL (
     sample_date = 'The date when the metric was sampled, truncated to the day.',
     amount = 'The value of the metric for the artifact on the sample date.',
     unit = 'The unit of measurement for the metric, if applicable.'
-  ),
-  physical_properties (
-    parquet_bloom_filter_columns = ['artifact_id'],
-    sorted_by = ['sample_date']
   )
 );
 
