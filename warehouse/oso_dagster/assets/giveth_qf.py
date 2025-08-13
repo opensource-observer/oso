@@ -48,7 +48,7 @@ def projects_for_round(
         max_depth=3,
     )
 
-    yield from graphql_factory(config, global_config, context, max_table_nesting=0)
+    yield from graphql_factory(config, global_config, context)
 
 
 @dlt_factory(
@@ -75,4 +75,6 @@ def qf_rounds(context: AssetExecutionContext, global_config: DagsterConfig):
         deps_rate_limit_seconds=1.0,
     )
 
-    yield graphql_factory(config, global_config, context, max_table_nesting=0)
+    yield graphql_factory(
+        config, global_config, context, max_table_nesting=0, write_disposition="replace"
+    )
