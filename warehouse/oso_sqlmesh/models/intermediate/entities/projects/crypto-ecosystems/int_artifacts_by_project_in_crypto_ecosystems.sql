@@ -47,17 +47,17 @@ branch_projects AS (
   SELECT
     'CRYPTO_ECOSYSTEMS' AS project_source,
     'branch' AS project_namespace,
-    @to_entity_name(branch_name) AS project_name,
-    branch_name AS project_display_name,
+    @to_entity_name(b.branch_name) AS project_name,
+    b.branch_name AS project_display_name,
     'GITHUB' AS artifact_source,
-    artifact_source_id,
-    artifact_namespace,
-    artifact_name,
-    artifact_url,
-    artifact_type
+    parsed_artifacts.artifact_source_id,
+    parsed_artifacts.artifact_namespace,
+    parsed_artifacts.artifact_name,
+    parsed_artifacts.artifact_url,
+    parsed_artifacts.artifact_type
   FROM parsed_artifacts
-  CROSS JOIN UNNEST(branch) AS b(branch_name)
-  WHERE branch_name IS NOT NULL
+  CROSS JOIN UNNEST(parsed_artifacts.branch) AS b(branch_name)
+  WHERE b.branch_name IS NOT NULL
 ),
 
 all_project_mappings AS (
