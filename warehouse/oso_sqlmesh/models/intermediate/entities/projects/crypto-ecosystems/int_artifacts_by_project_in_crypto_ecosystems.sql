@@ -14,7 +14,6 @@ MODEL (
 
 WITH parsed_artifacts AS (
   SELECT
-    taxonomy.repo_url,
     taxonomy.eco_name,
     taxonomy.branch,
     gh_int.artifact_source_id,
@@ -32,7 +31,7 @@ eco_projects AS (
   SELECT
     'CRYPTO_ECOSYSTEMS' AS project_source,
     'eco' AS project_namespace,
-    LOWER(eco_name) AS project_name,
+    @to_entity_name(eco_name) AS project_name,
     eco_name AS project_display_name,
     'GITHUB' AS artifact_source,
     artifact_source_id,
@@ -48,7 +47,7 @@ branch_projects AS (
   SELECT
     'CRYPTO_ECOSYSTEMS' AS project_source,
     'branch' AS project_namespace,
-    LOWER(branch_name) AS project_name,
+    @to_entity_name(branch_name) AS project_name,
     branch_name AS project_display_name,
     'GITHUB' AS artifact_source,
     artifact_source_id,
