@@ -13,12 +13,12 @@ import FilecoinLogo from "./filecoin.png";
 import FarcasterLogo from "./farcaster.jpg";
 import LensLogo from "./lens-protocol.png";
 import GitcoinLogo from "./gitcoin.png";
-import OpenrankLogo from "./openrank.png";
 import ArbitrumLogo from "./arbitrum.png";
 import EasLogo from "./eas.png";
 import OcLogo from "./open-collective.png";
 import OpAtlasLogo from "./op-atlas.png";
 import OliLogo from "./oli.png";
+import ElectricCapitalLogo from "./crypto-ecosystems-logo.jpeg";
 
 OSO curates a variety of public datasets from the open source ecosystem.
 Check out our [BigQuery data exchange](https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae)
@@ -28,7 +28,7 @@ If you don't have a BigQuery account, [start here](../../get-started/bigquery.md
 *Note: If you want to explore data and metrics computed in the OSO data pipeline,
 we recommend that you use [pyoso](../query-data.mdx) instead.*
 
-Here are some of our featured public datasets:
+Here are our featured public datasets, organized by category:
 
 <div className="datalinks-container">
   <a href="#oso-production-pipeline" className="datalink-card">
@@ -51,6 +51,13 @@ Here are some of our featured public datasets:
       <span className="tag">Updated daily</span>
     </div>
     <h3>Open Source Insights</h3>
+  </a>
+  <a href="#crypto-ecosystems" className="datalink-card">
+    <div className="datalink-header">
+      <img src={ElectricCapitalLogo} alt="Electric Capital Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>Crypto Ecosystems</h3>
   </a>
   <a href="#ethereum" className="datalink-card">
     <div className="datalink-header">
@@ -80,12 +87,26 @@ Here are some of our featured public datasets:
     </div>
     <h3>Arbitrum One</h3>
   </a>
+  <a href="#open-labels-initiative" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OliLogo} alt="Open Labels Initiative Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>Open Labels Initiative</h3>
+  </a>
   <a href="#filecoin-lily" className="datalink-card">
     <div className="datalink-header">
       <img src={FilecoinLogo} alt="Filecoin Logo" className="datalink-logo" />
       <span className="tag">Updated weekly</span>
     </div>
     <h3>Filecoin Lily</h3>
+  </a>
+  <a href="#eas" className="datalink-card">
+    <div className="datalink-header">
+      <img src={EasLogo} alt="EAS Logo" className="datalink-logo" />
+      <span className="tag">Updated weekly</span>
+    </div>
+    <h3>Ethereum Attestation Service</h3>
   </a>
   <a href="#farcaster" className="datalink-card">
     <div className="datalink-header">
@@ -101,6 +122,13 @@ Here are some of our featured public datasets:
     </div>
     <h3>Lens</h3>
   </a>
+  <a href="#op-atlas" className="datalink-card">
+    <div className="datalink-header">
+      <img src={OpAtlasLogo} alt="OP Atlas Logo" className="datalink-logo" />
+      <span className="tag">Updated daily</span>
+    </div>
+    <h3>OP Atlas</h3>
+  </a>
   <a href="#gitcoin" className="datalink-card">
     <div className="datalink-header">
       <img src={GitcoinLogo} alt="Gitcoin Logo" className="datalink-logo" />
@@ -114,34 +142,6 @@ Here are some of our featured public datasets:
       <span className="tag">Updated weekly</span>
     </div>
     <h3>Open Collective</h3>
-  </a>
-  <a href="#op-atlas" className="datalink-card">
-    <div className="datalink-header">
-      <img src={OpAtlasLogo} alt="OP Atlas Logo" className="datalink-logo" />
-      <span className="tag">Updated daily</span>
-    </div>
-    <h3>OP Atlas</h3>
-  </a>
-  <a href="#openrank" className="datalink-card">
-    <div className="datalink-header">
-      <img src={OpenrankLogo} alt="OpenRank Logo" className="datalink-logo" />
-      <span className="tag">Updated daily</span>
-    </div>
-    <h3>OpenRank</h3>
-  </a>
-  <a href="#eas" className="datalink-card">
-    <div className="datalink-header">
-      <img src={EasLogo} alt="EAS Logo" className="datalink-logo" />
-      <span className="tag">Updated weekly</span>
-    </div>
-    <h3>EAS</h3>
-  </a>
-  <a href="#open-labels-initiative" className="datalink-card">
-    <div className="datalink-header">
-      <img src={OliLogo} alt="Open Labels Initiative Logo" className="datalink-logo" />
-      <span className="tag">Archive</span>
-    </div>
-    <h3>Open Labels Initiative</h3>
   </a>
 </div>
 
@@ -260,7 +260,7 @@ Some of the v0 (WIP) models that we include in analysis but may be a bit unstabl
 - `metrics_v0`: a list of all metrics available in OSO
 - `timeseries_metrics_by_project_v0`: a list of all metrics for a given project
 
-## External Datasets
+## Open Source Software
 
 ### GitHub Archive
 
@@ -295,7 +295,7 @@ SELECT event as issue_status, COUNT(*) as cnt FROM (
   FROM `githubarchive.day.20200101`
   WHERE type = 'IssuesEvent'
 )
-GROUP by issue_status;
+GROUP by issue_status
 ```
 
 ### Open Source Insights
@@ -348,9 +348,45 @@ FROM (
     WHERE
       System = Sys
       AND VersionInfo.IsRelease)
-WHERE RowNumber = 1;
+WHERE RowNumber = 1
 ```
 
+### Crypto Ecosystems
+
+<img src="https://github.com/electric-capital/crypto-ecosystems/blob/master/static/electric_capital_logo_transparent.png?raw=true"/>
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/discovery/projects/opensource-observer/locations/us/dataExchanges/open_source_observer_190181416ae/listings/crypto_ecosystems_1989ddf0dcd"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+Crypto Ecosystems is a taxonomy of open source blockchain, web3, cryptocurrency, and decentralized ecosystems and their code repositories. If you're working in open source crypto, submit your repository [here](https://github.com/electric-capital/crypto-ecosystems) to be counted!
+
+OSO maintains a fork of the [Crypto Ecosystems repo](https://github.com/electric-capital/crypto-ecosystems) and regularly pushes a copy of the full taxonomy to BigQuery. For example, you can get a list of all ecosystems and the number of repositories in each:
+
+```sql
+SELECT
+  eco_name,
+  COUNT(repo_url) as repo_count
+FROM `YOUR_PROJECT_NAME.crypto_ecosystems.taxonomy`
+GROUP BY 1
+ORDER BY 2 DESC
+```
+
+The [original repository](https://github.com/electric-capital/crypto-ecosystems) is licensed under MIT license with attribution. To use the Electric Capital Crypto Ecosystems Map in your project, you will need an attribution.
+
+Attribution needs to have 3 components:
+
+- Source: "Electric Capital Crypto Ecosystems"
+- Link: https://github.com/electric-capital/crypto-ecosystems
+- Logo: https://github.com/electric-capital/crypto-ecosystems/blob/master/static/electric_capital_logo_transparent.png
+
+## Blockchain datasets
 
 ### Ethereum
 
@@ -388,7 +424,6 @@ FROM `bigquery-public-data.crypto_ethereum.transactions` AS transactions
 ORDER BY block_number DESC
 LIMIT 10
 ```
-
 
 ### Superchain
 
@@ -476,9 +511,6 @@ ORDER BY 3 DESC
   children={"Subscribe on BigQuery"}
 />{" "}
 
-
-
-
 [Arbitrum](https://arbitrum.foundation/) is a Layer 2 scaling solution for Ethereum. We currently provide blocks, transactions, and traces for Arbitrum's flagship network, Arbitrum One. This public dataset is maintained by our partners at [Goldsky](https://goldsky.com/).
 
 For example, to get the average gas per transaction for each block on Arbitrum One on September 1st, 2024:
@@ -492,6 +524,32 @@ WHERE block_timestamp BETWEEN 1693526400 AND 1693612800
 ORDER BY block_number
 ```
 
+### Open Labels Initiative
+
+<img src={OliLogo} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/discovery/projects/opensource-observer/locations/us/dataExchanges/open_source_observer_190181416ae/listings/openlabelsinitiative_196179b761d"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+A standardized framework and data model for EVM address labeling, maintained by [growthepie.xyz](https://growthepie.xyz/).
+
+For example, you can get project ownership labels for addresses:
+
+```sql
+SELECT
+  address,
+  chain_id,
+  tag_value AS project_name
+FROM `YOUR_PROJECT_NAME.openlabelsinitiative.labels_decoded`
+WHERE tag_id = 'owner_project'
+```
 
 ### Filecoin Lily
 
@@ -506,9 +564,6 @@ ORDER BY block_number
   }
   children={"Subscribe on BigQuery"}
 />{" "}
-
-
-
 
 [Filecoin](https://filecoin.io/) is a decentralized storage network designed to
 store humanity's most important information.
@@ -526,6 +581,38 @@ WHERE
   CAST(timestamp_seconds((height * 30) + 1598306400) AS DATE) > CURRENT_DATE() - INTERVAL 1 MONTH
 ```
 
+### Ethereum Attestation Service
+
+<img src={EasLogo} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/ethereum_attestation_service_197a68ef9e8"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+[Ethereum Attestation Service (EAS)](https://attest.org/) is an infrastructure public good for making attestations onchain or offchain about anything.
+
+This dataset mirrors the dataset offered by [EAS](https://attest.org/) for use in the OSO data pipeline, currenty showing all attestations on the Optimism network.
+
+For example, you can get a list of all * official * RetroPGF badgeholders:
+
+```sql
+SELECT
+  recipient AS badgeholder,
+  JSON_VALUE(decoded_data_json, "$[0].value.value") AS rpgfRound
+FROM `YOUR_PROJECT_NAME.ethereum_attestation_service_optimism.attestations`
+WHERE
+  revoked = False
+  AND schema_id = '0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b'
+  AND attester = '0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9'
+```
+
+## Social
 
 ### Farcaster
 
@@ -540,8 +627,6 @@ WHERE
   }
   children={"Subscribe on BigQuery"}
 />{" "}
-
-
 
 [Farcaster](https://www.farcaster.xyz/) is a decentralized social network built on Ethereum.
 This dataset mirrors the dataset offered by [Indexing](https://blog.indexing.co/posts/IaPkkuevwwfgBWtZ3F7eg5oQUqyV_o6sLDo28oEV8Tg)
@@ -610,8 +695,6 @@ FROM eth_addresses
   children={"View on BigQuery"}
 />{" "}
 
-
-
 [Lens Protocol](https://www.lens.xyz/) is an open social network.
 This dataset is well-documented by [Lens](https://lens.xyz/docs/chain/tools/bigquery/introduction).
 It includes data from Lens Chain Mainnet.
@@ -624,6 +707,38 @@ LIMIT 5
 ```
 
 Note: the Lens Polygon dataset that was previously available on BigQuery has been deprecated.
+
+## Projects and funding
+
+### OP Atlas
+
+<img src={OpAtlasLogo} width="200" />
+
+<Button
+  size={"compact"}
+  color={"blue"}
+  target={"_blank"}
+  link={
+    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/op_atlas_1959149f871"
+  }
+  children={"Subscribe on BigQuery"}
+/>{" "}
+
+OP Atlas contains data about projects contributing to the Optimism Collective and applying for Retro Funding, shepherded by the fine folks of [Agora](https://github.com/voteagora).
+
+For example, you can get a list of all projects and their associated repository URLs:
+
+```sql
+SELECT
+  p.name,
+  p.description,
+  r.url AS repo_url
+FROM `YOUR_PROJECT_NAME.op_atlas.project` AS p
+JOIN `YOUR_PROJECT_NAME.op_atlas.project_repository` AS r
+  ON p.id = r.project_id
+```
+
+For more information, go to https://atlas.optimism.io/ or check out the [OP Atlas GitHub](https://github.com/voteagora/op-atlas).
 
 ### Gitcoin
 
@@ -638,8 +753,6 @@ Note: the Lens Polygon dataset that was previously available on BigQuery has bee
   }
   children={"Subscribe on BigQuery"}
 />{" "}
-
-
 
 [Gitcoin](https://gitcoin.co/) is the hub of grantmaking in the Ethereum ecosystem. All project, round, and donation data from [regendata.xyz](https://regendata.xyz) is available in this dataset and updated daily.
 
@@ -685,9 +798,6 @@ FROM `YOUR_PROJECT_NAME.gitcoin.all_matching`
   children={"Subscribe on BigQuery"}
 />{" "}
 
-
-
-
 [Open Collective](https://opencollective.com/) is a platform for transparent finances and governance for open source projects.
 
 The Open Collective datasets contains all transactions realized on the platform since its inception. Separate datasets are available for **expenses** and **deposits**.
@@ -702,137 +812,6 @@ FROM
 WHERE
   JSON_VALUE(amount, "$.currency") = "USD"
   AND JSON_VALUE(to_account, "$.id") = "ov349mrw-gz75lpy9-975qa08d-jeybknox"
-```
-
-### OP Atlas
-
-<img src={OpAtlasLogo} width="200" />
-
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={
-    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/op_atlas_1959149f871"
-  }
-  children={"Subscribe on BigQuery"}
-/>{" "}
-
-OP Atlas contains data about projects contributing to the Optimism Collective and applying for Retro Funding, shepherded by the fine folks of [Agora](https://github.com/voteagora).
-
-For example, you can get a list of all projects and their associated repository URLs:
-
-```sql
-SELECT
-  p.name,
-  p.description,
-  r.url AS repo_url
-FROM `YOUR_PROJECT_NAME.op_atlas.project` AS p
-JOIN `YOUR_PROJECT_NAME.op_atlas.project_repository` AS r
-  ON p.id = r.project_id
-```
-
-For more information, go to https://atlas.optimism.io/ or check out the [OP Atlas GitHub](https://github.com/voteagora/op-atlas).
-
-### OpenRank
-
-<img src={OpenrankLogo} width="200" />
-
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={
-    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/openrank_19077ba1f3f"
-  }
-  children={"Subscribe on BigQuery"}
-/>{" "}
-
-
-
-
-[OpenRank](https://openrank.com/) is a reputation protocol that enables
-verifiable compute for a large class of reputation algorithms,
-in particular those that (a) operate on a graph,
-(b) are iterative in nature and (c) have a tendency toward convergence.
-Such algorithms include EigenTrust, Collaborative Filtering, Hubs and Authorities,
-Latent Semantic Analysis, etc.
-
-In this dataset, Farcaster users reputations are scored in 2 ways:
-- With `globaltrust`, we calculate global reputation scores, seeded by the trust of Optimism badgeholders.
-- With `localtrust`, you can get reputation scores of other users relative to specified user.
-
-For example, you can get the globaltrust reputation score of **vitalik.eth**
-
-```sql
-SELECT
-  strategy_id,
-  i,
-  v,
-  date
-FROM `YOUR_PROJECT_NAME.karma3.globaltrust`
-WHERE i = 5650
-```
-
-### Open Labels Initiative
-
-<img src={OliLogo} width="200" />
-
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={
-    "https://console.cloud.google.com/bigquery/analytics-hub/discovery/projects/opensource-observer/locations/us/dataExchanges/open_source_observer_190181416ae/listings/openlabelsinitiative_196179b761d"
-  }
-  children={"Subscribe on BigQuery"}
-/>{" "}
-
-A standardized framework and data model for EVM address labeling, maintained by [growthepie.xyz](https://growthepie.xyz/).
-
-For example, you can get project ownership labels for addresses:
-
-```sql
-SELECT
-  address,
-  chain_id,
-  tag_value AS project_name
-FROM `YOUR_PROJECT_NAME.openlabelsinitiative.labels_decoded`
-WHERE tag_id = 'owner_project'
-```
-
-### Ethereum Attestation Service
-
-<img src={EasLogo} width="200" />
-
-<Button
-  size={"compact"}
-  color={"blue"}
-  target={"_blank"}
-  link={
-    "https://console.cloud.google.com/bigquery/analytics-hub/exchanges/projects/87806073973/locations/us/dataExchanges/open_source_observer_190181416ae/listings/ethereum_attestation_service_197a68ef9e8"
-  }
-  children={"Subscribe on BigQuery"}
-/>{" "}
-
-
-
-
-[Ethereum Attestation Service (EAS)](https://attest.org/) is an infrastructure public good for making attestations onchain or offchain about anything.
-
-This dataset mirrors the dataset offered by [EAS](https://attest.org/) for use in the OSO data pipeline, currenty showing all attestations on the Optimism network.
-
-For example, you can get a list of all * official * RetroPGF badgeholders:
-
-```sql
-SELECT
-  recipient AS badgeholder,
-  JSON_VALUE(decoded_data_json, "$[0].value.value") AS rpgfRound
-FROM `YOUR_PROJECT_NAME.ethereum_attestation_service_optimism.attestations`
-WHERE
-  revoked = False
-  AND schema_id = '0xfdcfdad2dbe7489e0ce56b260348b7f14e8365a8a325aef9834818c00d46b31b'
-  AND attester = '0x621477dBA416E12df7FF0d48E14c4D20DC85D7D9'
 ```
 
 ## Subscribe to a dataset
