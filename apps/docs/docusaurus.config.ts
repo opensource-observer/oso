@@ -53,11 +53,12 @@ const config: Config = {
           blogSidebarCount: "ALL",
           blogTagsPostsComponent: "@site/src/components/BlogTagsPostsPage.tsx",
         },
-        theme: {
-          customCss: "./src/css/custom.css",
-        },
         gtag: {
           trackingID: GOOGLE_ANALYTICS_KEY,
+          //anonymizeIP: true, // Should we anonymize the IP?
+        },
+        theme: {
+          customCss: "./src/css/custom.css",
         },
       } satisfies Preset.Options,
     ],

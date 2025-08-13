@@ -16,7 +16,26 @@ $ pnpm start
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
 
+### Plasmic development
+
+If you are making changes to Plasmic components,
+you will need to run Plasmic sync and check the generated code in to the repository.
+
+You can run a full build via
+
+```
+$ pnpm build:everything
+```
+
+Or you can just run the Plasmic sync via
+
+```
+# pnpm plasmic:sync
+```
+
 ### Build
+
+To just run the Docusaurus build
 
 ```
 $ pnpm build

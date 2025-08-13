@@ -380,6 +380,83 @@ export const dynamicTableContextsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const organizationCreditTransactionsRowSchema = z.object({
+  amount: z.number(),
+  api_endpoint: z.string().nullable(),
+  created_at: z.string(),
+  id: z.string(),
+  metadata: jsonSchema.nullable(),
+  org_id: z.string(),
+  transaction_type: z.string(),
+  user_id: z.string(),
+});
+
+export const organizationCreditTransactionsInsertSchema = z.object({
+  amount: z.number(),
+  api_endpoint: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  id: z.string().optional(),
+  metadata: jsonSchema.optional().nullable(),
+  org_id: z.string(),
+  transaction_type: z.string(),
+  user_id: z.string(),
+});
+
+export const organizationCreditTransactionsUpdateSchema = z.object({
+  amount: z.number().optional(),
+  api_endpoint: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  id: z.string().optional(),
+  metadata: jsonSchema.optional().nullable(),
+  org_id: z.string().optional(),
+  transaction_type: z.string().optional(),
+  user_id: z.string().optional(),
+});
+
+export const organizationCreditTransactionsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("organization_credit_transactions_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const organizationCreditsRowSchema = z.object({
+  created_at: z.string(),
+  credits_balance: z.number(),
+  id: z.string(),
+  org_id: z.string(),
+  updated_at: z.string(),
+});
+
+export const organizationCreditsInsertSchema = z.object({
+  created_at: z.string().optional(),
+  credits_balance: z.number().optional(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const organizationCreditsUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  credits_balance: z.number().optional(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const organizationCreditsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("organization_credits_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(true),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const organizationsRowSchema = z.object({
   created_at: z.string(),
   created_by: z.string(),
@@ -423,6 +500,7 @@ export const purchaseIntentsRowSchema = z.object({
   credits_amount: z.number(),
   id: z.string(),
   metadata: jsonSchema.nullable(),
+  org_id: z.string().nullable(),
   package_id: z.string(),
   price_cents: z.number(),
   status: z.string(),
@@ -436,6 +514,7 @@ export const purchaseIntentsInsertSchema = z.object({
   credits_amount: z.number(),
   id: z.string().optional(),
   metadata: jsonSchema.optional().nullable(),
+  org_id: z.string().optional().nullable(),
   package_id: z.string(),
   price_cents: z.number(),
   status: z.string().optional(),
@@ -449,12 +528,73 @@ export const purchaseIntentsUpdateSchema = z.object({
   credits_amount: z.number().optional(),
   id: z.string().optional(),
   metadata: jsonSchema.optional().nullable(),
+  org_id: z.string().optional().nullable(),
   package_id: z.string().optional(),
   price_cents: z.number().optional(),
   status: z.string().optional(),
   stripe_session_id: z.string().optional(),
   user_id: z.string().optional(),
 });
+
+export const purchaseIntentsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("purchase_intents_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const savedQueriesRowSchema = z.object({
+  created_at: z.string(),
+  created_by: z.string(),
+  data: z.string().nullable(),
+  deleted_at: z.string().nullable(),
+  display_name: z.string(),
+  id: z.string(),
+  org_id: z.string(),
+  updated_at: z.string(),
+});
+
+export const savedQueriesInsertSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string(),
+  data: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  display_name: z.string(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const savedQueriesUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string().optional(),
+  data: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  display_name: z.string().optional(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const savedQueriesRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("saved_queries_created_by_fkey"),
+    columns: z.tuple([z.literal("created_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("saved_queries_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
 
 export const userCreditsRowSchema = z.object({
   created_at: z.string(),
@@ -566,6 +706,16 @@ export const addCreditsArgsSchema = z.object({
 
 export const addCreditsReturnsSchema = z.boolean();
 
+export const addOrganizationCreditsArgsSchema = z.object({
+  p_org_id: z.string(),
+  p_user_id: z.string(),
+  p_amount: z.number(),
+  p_transaction_type: z.string(),
+  p_metadata: jsonSchema.optional(),
+});
+
+export const addOrganizationCreditsReturnsSchema = z.boolean();
+
 export const deductCreditsArgsSchema = z.object({
   p_user_id: z.string(),
   p_amount: z.number(),
@@ -575,6 +725,23 @@ export const deductCreditsArgsSchema = z.object({
 });
 
 export const deductCreditsReturnsSchema = z.boolean();
+
+export const deductOrganizationCreditsArgsSchema = z.object({
+  p_org_id: z.string(),
+  p_user_id: z.string(),
+  p_amount: z.number(),
+  p_transaction_type: z.string(),
+  p_api_endpoint: z.string().optional(),
+  p_metadata: jsonSchema.optional(),
+});
+
+export const deductOrganizationCreditsReturnsSchema = z.boolean();
+
+export const getOrganizationCreditsArgsSchema = z.object({
+  p_org_id: z.string(),
+});
+
+export const getOrganizationCreditsReturnsSchema = z.number();
 
 export const getUserCreditsArgsSchema = z.object({
   p_user_id: z.string(),
@@ -597,3 +764,14 @@ export const previewDeductCreditsArgsSchema = z.object({
 });
 
 export const previewDeductCreditsReturnsSchema = z.boolean();
+
+export const previewDeductOrganizationCreditsArgsSchema = z.object({
+  p_org_id: z.string(),
+  p_user_id: z.string(),
+  p_amount: z.number(),
+  p_transaction_type: z.string(),
+  p_api_endpoint: z.string().optional(),
+  p_metadata: jsonSchema.optional(),
+});
+
+export const previewDeductOrganizationCreditsReturnsSchema = z.boolean();

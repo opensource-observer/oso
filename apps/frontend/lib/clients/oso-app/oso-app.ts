@@ -550,48 +550,163 @@ class OsoAppClient {
   }
 
   /**
-   * Gets the current credit balance for the logged in user.
+   * Creates a new saved query
+   * - Chats are stored under an organization
+   * @param args
+   * @returns
+   */
+  async createSqlQuery(args: Partial<{ orgId: string }>) {
+    console.log("createSqlQuery: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const user = await this.getUser();
+
+    const { data: queryData, error: queryError } = await this.supabaseClient
+      .from("saved_queries")
+      .insert({
+        org_id: orgId,
+        display_name: new Date().toLocaleString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (queryError) {
+      throw queryError;
+    } else if (!queryData) {
+      throw new MissingDataError("Failed to create SQL query");
+    }
+
+    return queryData;
+  }
+
+  async getSqlQueriesByOrgId(args: Partial<{ orgId: string }>) {
+    console.log("getSqlQueriesByOrgId: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("saved_queries")
+      .select(
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+      )
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find SQL queries for orgId=${orgId}`,
+      );
+    }
+    return data;
+  }
+
+  async getSqlQueryById(args: Partial<{ queryId: string }>) {
+    console.log("getSqlQueryById: ", args);
+    const queryId = ensure(args.queryId, "Missing queryId argument");
+    const { data, error } = await this.supabaseClient
+      .from("saved_queries")
+      .select()
+      .eq("id", queryId)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find SQL query for queryId=${queryId}`,
+      );
+    }
+    return data;
+  }
+
+  /**
+   * Update SQL query data
+   * @param args
+   */
+  async updateSqlQuery(
+    args: Partial<Database["public"]["Tables"]["saved_queries"]["Update"]>,
+  ) {
+    console.log("updateSqlQuery: ", args);
+    const queryId = ensure(args.id, "Missing SQL query 'id' argument");
+    const { error } = await this.supabaseClient
+      .from("saved_queries")
+      .update({ ...args })
+      .eq("id", queryId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a SQL query
+   * - We use `deleted_at` to mark the query as removed instead of deleting the row
+   * @param args
+   */
+  async deleteSqlQuery(args: Partial<{ queryId: string }>): Promise<void> {
+    console.log("deleteSqlQuery: ", args);
+    const queryId = ensure(args.queryId, "Missing queryId argument");
+    const { error } = await this.supabaseClient
+      .from("saved_queries")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", queryId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the current credit balance for an organization.
+   * @param orgId - The organization ID
    * @returns Promise<number> - The current credit balance
    */
-  async getMyCredits(): Promise<number> {
-    console.log("getMyCredits");
-    const user = await this.getUser();
+  async getOrganizationCredits(
+    args: Partial<{ orgId: string }>,
+  ): Promise<number> {
+    const id = ensure(
+      args.orgId,
+      "orgId is required to get organization credits",
+    );
+    console.log("getOrganizationCredits for org:", id);
     const { data, error } = await this.supabaseClient
-      .from("user_credits")
+      .from("organization_credits")
       .select("credits_balance")
-      .eq("user_id", user.id)
+      .eq("org_id", id)
       .single();
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credits for user id=${user.id}`,
+        `Unable to find credits for organization id=${id}`,
       );
     }
     return data.credits_balance;
   }
 
   /**
-   * Gets the credit transaction history for the logged in user.
+   * Gets the credit transaction history for an organization.
+   * @param orgId - The organization ID
    * @param args - Optional parameters for pagination and filtering
-   * @returns Promise<Array> - Array of credit transactions
+   * @returns Promise<Array> - Array of organization credit transactions
    */
-  async getMyCreditTransactions(
+  async getOrganizationCreditTransactions(
     args: Partial<{
+      orgId: string;
       limit: number;
       offset: number;
       transactionType?: string;
     }> = {},
   ) {
-    console.log("getMyCreditTransactions: ", args);
-    const user = await this.getUser();
+    const id = ensure(
+      args.orgId,
+      "orgId is required to get organization credit transactions",
+    );
+    console.log("getOrganizationCreditTransactions for org:", id, args);
     const { limit = 50, offset = 0, transactionType } = args;
 
     let query = this.supabaseClient
-      .from("credit_transactions")
+      .from("organization_credit_transactions")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("org_id", id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -605,7 +720,7 @@ class OsoAppClient {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credit transactions for user id=${user.id}`,
+        `Unable to find credit transactions for organization id=${id}`,
       );
     }
     return data;
@@ -787,22 +902,21 @@ class OsoAppClient {
       );
     }
 
-    const groupedData = _.groupBy(data, "dynamic_connectors.id");
-
-    return Object.entries(groupedData).map(([_key, rows]) => {
-      const { dynamic_table_contexts: _, ...unparsedConnector } = rows[0];
+    return data.map((dynamicConnector) => {
+      const { dynamic_table_contexts: _, ...unparsedConnector } =
+        dynamicConnector;
       const connector = dynamicConnectorsRowSchema.parse(unparsedConnector);
-      const contexts = rows.flatMap((row) => {
-        return row.dynamic_table_contexts.flatMap((tableContexts) => {
-          const { dynamic_column_contexts: columns, ...table } = tableContexts;
+      const contexts = dynamicConnector.dynamic_table_contexts.map(
+        (tableContext) => {
+          const { dynamic_column_contexts: columns, ...table } = tableContext;
           return {
             table: dynamicTableContextsRowSchema.parse(table),
             columns: columns.map((c) =>
               dynamicColumnContextsRowSchema.parse(c),
             ),
           };
-        });
-      });
+        },
+      );
       return { connector, contexts };
     });
   }
@@ -926,6 +1040,11 @@ class OsoAppClient {
       "Either source_table_id and source_column_name or target_oso_entity must be provided",
     );
 
+    assert(
+      data.source_table_id !== data.target_table_id,
+      "Source and target table IDs must be different",
+    );
+
     const { data: relationshipData, error } = await this.supabaseClient
       .from("connector_relationships")
       .insert(data)
@@ -965,16 +1084,18 @@ class OsoAppClient {
 
   /**
    * Initiates a Stripe checkout session to buy credits.
-   * @param args - Contains the packageId to purchase
+   * @param args - Contains the packageId to purchase and required orgId
    * @returns Promise<{ sessionId: string; url: string }> - Stripe checkout session info
    */
   async buyCredits(
     args: Partial<{
       packageId: string;
+      orgId: string;
     }>,
   ): Promise<{ sessionId: string; url: string; publishableKey: string }> {
     console.log("buyCredits: ", args);
     const packageId = ensure(args.packageId, "Missing packageId argument");
+    const orgId = ensure(args.orgId, "Missing orgId argument");
 
     const {
       data: { session },
@@ -983,13 +1104,15 @@ class OsoAppClient {
       throw new AuthError("No active session");
     }
 
+    const body: { packageId: string; orgId: string } = { packageId, orgId };
+
     const response = await fetch("/api/v1/stripe/checkout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ packageId }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

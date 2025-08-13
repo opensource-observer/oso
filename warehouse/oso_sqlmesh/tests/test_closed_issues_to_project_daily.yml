@@ -1,0 +1,133 @@
+test_closed_issues_to_project_daily_basic:
+  model: oso.closed_issues_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-05
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        bucket_day: 2024-01-01
+        amount: 3
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        bucket_day: 2024-01-02
+        amount: 1
+      - to_artifact_id: repo_2
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        bucket_day: 2024-01-03
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: user_3
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-01-01
+        amount: 5
+      - to_artifact_id: repo_1
+        from_artifact_id: user_3
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_CLOSED
+        bucket_day: 2024-01-02
+        amount: 2
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: closed_issues_daily
+        amount: 3
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: closed_issues_daily
+        amount: 1
+      - metrics_sample_date: 2024-01-03
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: closed_issues_daily
+        amount: 2
+
+test_closed_issues_to_project_daily_no_closed_issues:
+  model: oso.closed_issues_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-02
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-01-01
+        amount: 5
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_CLOSED
+        bucket_day: 2024-01-02
+        amount: 2
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows: []
+
+test_closed_issues_to_project_daily_multiple_closures_same_day:
+  model: oso.closed_issues_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-01
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        bucket_day: 2024-01-01
+        amount: 4
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        bucket_day: 2024-01-01
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: user_3
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_CLOSED
+        bucket_day: 2024-01-01
+        amount: 1
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: closed_issues_daily
+        amount: 7

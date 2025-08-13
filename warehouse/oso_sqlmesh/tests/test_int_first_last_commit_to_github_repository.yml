@@ -1,0 +1,180 @@
+test_int_first_last_commit_to_github_repository:
+  model: oso.int_first_last_commit_to_github_repository
+  inputs:
+    oso.int_events__github:
+      rows:
+        - time: "2024-01-01 10:00:00"
+          from_artifact_id: user_1
+          from_artifact_source_id: github_123
+          from_artifact_namespace: user_1
+          from_artifact_name: user_1
+          to_artifact_id: repo_1
+          to_artifact_source_id: github_repo_123
+          to_artifact_namespace: owner_1
+          to_artifact_name: repo_1
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          event_source_id: commit_1
+          amount: 1
+        - time: "2024-01-03 15:00:00"
+          from_artifact_id: user_2
+          from_artifact_source_id: github_456
+          from_artifact_namespace: user_2
+          from_artifact_name: user_2
+          to_artifact_id: repo_1
+          to_artifact_source_id: github_repo_123
+          to_artifact_namespace: owner_1
+          to_artifact_name: repo_1
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          event_source_id: commit_2
+          amount: 1
+        - time: "2024-01-02 12:00:00"
+          from_artifact_id: user_3
+          from_artifact_source_id: github_789
+          from_artifact_namespace: user_3
+          from_artifact_name: user_3
+          to_artifact_id: repo_1
+          to_artifact_source_id: github_repo_123
+          to_artifact_namespace: owner_1
+          to_artifact_name: repo_1
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          event_source_id: commit_3
+          amount: 1
+        - time: "2024-01-05 08:00:00"
+          from_artifact_id: user_1
+          from_artifact_source_id: github_123
+          from_artifact_namespace: user_1
+          from_artifact_name: user_1
+          to_artifact_id: repo_2
+          to_artifact_source_id: github_repo_456
+          to_artifact_namespace: owner_2
+          to_artifact_name: repo_2
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          event_source_id: commit_4
+          amount: 1
+        - time: "2024-01-01 14:00:00"
+          from_artifact_id: user_1
+          from_artifact_source_id: github_123
+          from_artifact_namespace: user_1
+          from_artifact_name: user_1
+          to_artifact_id: repo_1
+          to_artifact_source_id: github_repo_123
+          to_artifact_namespace: owner_1
+          to_artifact_name: repo_1
+          event_type: ISSUE_OPENED
+          event_source: GITHUB
+          event_source_id: issue_1
+          amount: 1
+  outputs:
+    query:
+      rows:
+        - artifact_id: repo_1
+          artifact_source_id: github_repo_123
+          artifact_namespace: owner_1
+          artifact_name: repo_1
+          first_commit_time: "2024-01-01 10:00:00"
+          last_commit_time: "2024-01-03 15:00:00"
+        - artifact_id: repo_2
+          artifact_source_id: github_repo_456
+          artifact_namespace: owner_2
+          artifact_name: repo_2
+          first_commit_time: "2024-01-05 08:00:00"
+          last_commit_time: "2024-01-05 08:00:00"
+
+test_int_first_last_commit_to_github_repository_single_commit:
+  model: oso.int_first_last_commit_to_github_repository
+  inputs:
+    oso.int_events__github:
+      rows:
+        - time: "2024-01-01 10:00:00"
+          from_artifact_id: user_single
+          from_artifact_source_id: github_789
+          from_artifact_namespace: user_single
+          from_artifact_name: user_single
+          to_artifact_id: repo_single
+          to_artifact_source_id: github_repo_single
+          to_artifact_namespace: owner_single
+          to_artifact_name: repo_single
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          event_source_id: commit_single
+          amount: 1
+  outputs:
+    query:
+      rows:
+        - artifact_id: repo_single
+          artifact_source_id: github_repo_single
+          artifact_namespace: owner_single
+          artifact_name: repo_single
+          first_commit_time: "2024-01-01 10:00:00"
+          last_commit_time: "2024-01-01 10:00:00"
+
+test_int_first_last_commit_to_github_repository_filter_non_commits:
+  model: oso.int_first_last_commit_to_github_repository
+  inputs:
+    oso.int_events__github:
+      rows:
+        - time: "2024-01-01 10:00:00"
+          from_artifact_id: user_mixed
+          from_artifact_source_id: github_999
+          from_artifact_namespace: user_mixed
+          from_artifact_name: user_mixed
+          to_artifact_id: repo_mixed
+          to_artifact_source_id: github_repo_mixed
+          to_artifact_namespace: owner_mixed
+          to_artifact_name: repo_mixed
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          event_source_id: commit_1
+          amount: 1
+        - time: "2024-01-02 12:00:00"
+          from_artifact_id: user_mixed
+          from_artifact_source_id: github_999
+          from_artifact_namespace: user_mixed
+          from_artifact_name: user_mixed
+          to_artifact_id: repo_mixed
+          to_artifact_source_id: github_repo_mixed
+          to_artifact_namespace: owner_mixed
+          to_artifact_name: repo_mixed
+          event_type: ISSUE_OPENED
+          event_source: GITHUB
+          event_source_id: issue_1
+          amount: 1
+        - time: "2024-01-03 14:00:00"
+          from_artifact_id: user_mixed
+          from_artifact_source_id: github_999
+          from_artifact_namespace: user_mixed
+          from_artifact_name: user_mixed
+          to_artifact_id: repo_mixed
+          to_artifact_source_id: github_repo_mixed
+          to_artifact_namespace: owner_mixed
+          to_artifact_name: repo_mixed
+          event_type: PULL_REQUEST_OPENED
+          event_source: GITHUB
+          event_source_id: pr_1
+          amount: 1
+        - time: "2024-01-04 16:00:00"
+          from_artifact_id: user_mixed
+          from_artifact_source_id: github_999
+          from_artifact_namespace: user_mixed
+          from_artifact_name: user_mixed
+          to_artifact_id: repo_mixed
+          to_artifact_source_id: github_repo_mixed
+          to_artifact_namespace: owner_mixed
+          to_artifact_name: repo_mixed
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          event_source_id: commit_2
+          amount: 1
+  outputs:
+    query:
+      rows:
+        - artifact_id: repo_mixed
+          artifact_source_id: github_repo_mixed
+          artifact_namespace: owner_mixed
+          artifact_name: repo_mixed
+          first_commit_time: "2024-01-01 10:00:00"
+          last_commit_time: "2024-01-04 16:00:00"

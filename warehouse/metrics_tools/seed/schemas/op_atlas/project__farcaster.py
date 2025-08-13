@@ -16,16 +16,22 @@ seed = SeedConfig(
     base=ProjectFarcaster,
     rows=[
         ProjectFarcaster(
-            value="farcaster1",
-            dlt_parent_id="parent1",
-            dlt_list_idx=1,
-            dlt_id="dlt1",
+            value="https://warpcast.com/velodrome",
+            dlt_parent_id="yMTcvWZwiZs5LA",
+            dlt_list_idx=0,
+            dlt_id="UPtGQKfLn/99BQ",
         ),
         ProjectFarcaster(
-            value="farcaster2",
-            dlt_parent_id="parent2",
-            dlt_list_idx=2,
-            dlt_id="dlt2",
+            value="https://warpcast.com/soliditylang.eth",
+            dlt_parent_id="vh0m30QNSQHp1g",
+            dlt_list_idx=0,
+            dlt_id="UYi1SKkAkAE48w",
+        ),
+        ProjectFarcaster(
+            value="https://warpcast.com/soliditylang.eth",
+            dlt_parent_id="w7iRlKxZn25cdg",
+            dlt_list_idx=0,
+            dlt_id="aI9RBZA78rcfPA",
         ),
     ],
 )

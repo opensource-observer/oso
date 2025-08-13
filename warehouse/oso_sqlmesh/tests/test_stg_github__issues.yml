@@ -1,0 +1,161 @@
+test_stg_github__issues_basic:
+  model: oso.stg_github__issues
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-05
+  inputs:
+    oso.stg_github__events:
+      rows:
+      - id: "event_1"
+        created_at: "2024-01-01 10:00:00"
+        type: "IssuesEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1001
+          login: "user1"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1001"
+          url: "https://api.github.com/users/user1"
+        org: null
+        other: ""
+        payload: '{"action": "opened", "issue": {"number": 1, "created_at": "2024-01-01T10:00:00Z", "updated_at": "2024-01-01T10:00:00Z", "closed_at": null, "state": "open", "comments": 0}}'
+      - id: "event_2"
+        created_at: "2024-01-02 14:30:00"
+        type: "IssuesEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1002
+          login: "user2"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1002"
+          url: "https://api.github.com/users/user2"
+        org: null
+        other: ""
+        payload: '{"action": "closed", "issue": {"number": 1, "created_at": "2024-01-01T10:00:00Z", "updated_at": "2024-01-02T14:30:00Z", "closed_at": "2024-01-02T14:30:00Z", "state": "closed", "comments": 2}}'
+      - id: "event_3"
+        created_at: "2024-01-03 16:15:00"
+        type: "IssuesEvent"
+        public: true
+        repo:
+          id: 67890
+          name: "owner2/repo2"
+          url: "https://api.github.com/repos/owner2/repo2"
+        actor:
+          id: 1003
+          login: "user3"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1003"
+          url: "https://api.github.com/users/user3"
+        org: null
+        other: ""
+        payload: '{"action": "reopened", "issue": {"number": 5, "created_at": "2024-01-02T12:00:00Z", "updated_at": "2024-01-03T16:15:00Z", "closed_at": null, "state": "open", "comments": 1}}'
+      - id: "event_4"
+        created_at: "2024-01-04 11:45:00"
+        type: "IssuesEvent"
+        public: true
+        repo:
+          id: 67890
+          name: "owner2/repo2"
+          url: "https://api.github.com/repos/owner2/repo2"
+        actor:
+          id: 1004
+          login: "user4"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1004"
+          url: "https://api.github.com/users/user4"
+        org: null
+        other: ""
+        payload: '{"action": "assigned", "issue": {"number": 8, "created_at": "2024-01-03T09:00:00Z", "updated_at": "2024-01-04T11:45:00Z", "closed_at": null, "state": "open", "comments": 3}}'
+      - id: "event_5"
+        created_at: "2024-01-04 15:00:00"
+        type: "PullRequestEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1005
+          login: "user5"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1005"
+          url: "https://api.github.com/users/user5"
+        org: null
+        other: ""
+        payload: '{"action": "opened", "pull_request": {"number": 10, "created_at": "2024-01-04T15:00:00Z", "updated_at": "2024-01-04T15:00:00Z", "merged_at": null, "closed_at": null, "state": "open", "comments": 0}}'
+      - id: "event_6"
+        created_at: "2024-01-06 12:00:00"
+        type: "IssuesEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1006
+          login: "user6"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1006"
+          url: "https://api.github.com/users/user6"
+        org: null
+        other: ""
+        payload: '{"action": "opened", "issue": {"number": 15, "created_at": "2024-01-06T12:00:00Z", "updated_at": "2024-01-06T12:00:00Z", "closed_at": null, "state": "open", "comments": 0}}'
+  outputs:
+    query:
+      rows:
+      - id: "event_1"
+        event_time: "2024-01-01 10:00:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1001
+        actor_login: "user1"
+        type: "ISSUE_OPENED"
+        number: 1
+        created_at: "2024-01-01 10:00:00"
+        closed_at: null
+        state: "open"
+        comments: 0.0
+      - id: "event_2"
+        event_time: "2024-01-02 14:30:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1002
+        actor_login: "user2"
+        type: "ISSUE_CLOSED"
+        number: 1
+        created_at: "2024-01-01 10:00:00"
+        closed_at: "2024-01-02 14:30:00"
+        state: "closed"
+        comments: 2.0
+      - id: "event_3"
+        event_time: "2024-01-03 16:15:00"
+        repository_id: 67890
+        repository_name: "owner2/repo2"
+        actor_id: 1003
+        actor_login: "user3"
+        type: "ISSUE_REOPENED"
+        number: 5
+        created_at: "2024-01-02 12:00:00"
+        closed_at: null
+        state: "open"
+        comments: 1.0
+      - id: "event_4"
+        event_time: "2024-01-04 11:45:00"
+        repository_id: 67890
+        repository_name: "owner2/repo2"
+        actor_id: 1004
+        actor_login: "user4"
+        type: "ISSUE_ASSIGNED"
+        number: 8
+        created_at: "2024-01-03 09:00:00"
+        closed_at: null
+        state: "open"
+        comments: 3.0

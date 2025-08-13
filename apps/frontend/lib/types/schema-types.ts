@@ -86,6 +86,30 @@ export type DynamicTableContextsUpdate = z.infer<
 export type DynamicTableContextsRelationships = z.infer<
   typeof generated.dynamicTableContextsRelationshipsSchema
 >;
+export type OrganizationCreditTransactionsRow = z.infer<
+  typeof generated.organizationCreditTransactionsRowSchema
+>;
+export type OrganizationCreditTransactionsInsert = z.infer<
+  typeof generated.organizationCreditTransactionsInsertSchema
+>;
+export type OrganizationCreditTransactionsUpdate = z.infer<
+  typeof generated.organizationCreditTransactionsUpdateSchema
+>;
+export type OrganizationCreditTransactionsRelationships = z.infer<
+  typeof generated.organizationCreditTransactionsRelationshipsSchema
+>;
+export type OrganizationCreditsRow = z.infer<
+  typeof generated.organizationCreditsRowSchema
+>;
+export type OrganizationCreditsInsert = z.infer<
+  typeof generated.organizationCreditsInsertSchema
+>;
+export type OrganizationCreditsUpdate = z.infer<
+  typeof generated.organizationCreditsUpdateSchema
+>;
+export type OrganizationCreditsRelationships = z.infer<
+  typeof generated.organizationCreditsRelationshipsSchema
+>;
 export type OrganizationsRow = z.infer<typeof generated.organizationsRowSchema>;
 export type OrganizationsInsert = z.infer<
   typeof generated.organizationsInsertSchema
@@ -104,6 +128,19 @@ export type PurchaseIntentsInsert = z.infer<
 >;
 export type PurchaseIntentsUpdate = z.infer<
   typeof generated.purchaseIntentsUpdateSchema
+>;
+export type PurchaseIntentsRelationships = z.infer<
+  typeof generated.purchaseIntentsRelationshipsSchema
+>;
+export type SavedQueriesRow = z.infer<typeof generated.savedQueriesRowSchema>;
+export type SavedQueriesInsert = z.infer<
+  typeof generated.savedQueriesInsertSchema
+>;
+export type SavedQueriesUpdate = z.infer<
+  typeof generated.savedQueriesUpdateSchema
+>;
+export type SavedQueriesRelationships = z.infer<
+  typeof generated.savedQueriesRelationshipsSchema
 >;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
@@ -135,11 +172,29 @@ export type AddCreditsArgs = z.infer<typeof generated.addCreditsArgsSchema>;
 export type AddCreditsReturns = z.infer<
   typeof generated.addCreditsReturnsSchema
 >;
+export type AddOrganizationCreditsArgs = z.infer<
+  typeof generated.addOrganizationCreditsArgsSchema
+>;
+export type AddOrganizationCreditsReturns = z.infer<
+  typeof generated.addOrganizationCreditsReturnsSchema
+>;
 export type DeductCreditsArgs = z.infer<
   typeof generated.deductCreditsArgsSchema
 >;
 export type DeductCreditsReturns = z.infer<
   typeof generated.deductCreditsReturnsSchema
+>;
+export type DeductOrganizationCreditsArgs = z.infer<
+  typeof generated.deductOrganizationCreditsArgsSchema
+>;
+export type DeductOrganizationCreditsReturns = z.infer<
+  typeof generated.deductOrganizationCreditsReturnsSchema
+>;
+export type GetOrganizationCreditsArgs = z.infer<
+  typeof generated.getOrganizationCreditsArgsSchema
+>;
+export type GetOrganizationCreditsReturns = z.infer<
+  typeof generated.getOrganizationCreditsReturnsSchema
 >;
 export type GetUserCreditsArgs = z.infer<
   typeof generated.getUserCreditsArgsSchema
@@ -158,4 +213,10 @@ export type PreviewDeductCreditsArgs = z.infer<
 >;
 export type PreviewDeductCreditsReturns = z.infer<
   typeof generated.previewDeductCreditsReturnsSchema
+>;
+export type PreviewDeductOrganizationCreditsArgs = z.infer<
+  typeof generated.previewDeductOrganizationCreditsArgsSchema
+>;
+export type PreviewDeductOrganizationCreditsReturns = z.infer<
+  typeof generated.previewDeductOrganizationCreditsReturnsSchema
 >;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { ReactElement, useEffect, useRef, useState } from "react";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import ReactMarkdown from "react-markdown";
@@ -12,10 +13,19 @@ interface OSOChatProps {
   children?: ReactElement; // Show this
 }
 
-export function OSOChat(props: OSOChatProps) {
+const OSOChatMeta: CodeComponentMeta<OSOChatProps> = {
+  name: "OSOChat",
+  description: "LLM-powered chat overlay",
+  props: {
+    children: "slot",
+  },
+};
+
+function OSOChat(props: OSOChatProps) {
   const { className, children } = props;
   const supabaseState = useSupabaseState();
-  const session = supabaseState?.session;
+  const session =
+    supabaseState._type === "loggedIn" ? supabaseState.session : null;
   const {
     messages,
     input,
@@ -233,7 +243,7 @@ export function OSOChat(props: OSOChatProps) {
                 value={input}
                 onChange={handleInputChange}
                 placeholder="Ask about OSO data..."
-                className="flex-1 px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none min-h-[44px] max-h-[120px] overflow-y-auto"
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-md focus:outline-hidden focus:ring-1 focus:ring-blue-500 resize-none min-h-[44px] max-h-[120px] overflow-y-auto"
                 disabled={status === "streaming" || status === "submitted"}
                 rows={1}
                 onKeyDown={(e) => {
@@ -299,3 +309,5 @@ export function OSOChat(props: OSOChatProps) {
     </>
   );
 }
+
+export { OSOChat, OSOChatMeta };

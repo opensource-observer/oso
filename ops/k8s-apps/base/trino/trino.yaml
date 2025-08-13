@@ -35,6 +35,8 @@ spec:
     remediation:
       retries: 3
   values:
+    image:
+      tag: "476"
     additionalNodeProperties:
       - log.format=json
       - log.console-format=json

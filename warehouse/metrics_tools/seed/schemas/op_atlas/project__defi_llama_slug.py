@@ -16,10 +16,16 @@ seed = SeedConfig(
     base=ProjectDefiLlamaSlug,
     rows=[
         ProjectDefiLlamaSlug(
-            value="slug1", dlt_parent_id="parent1", dlt_list_idx=1, dlt_id="dlt1"
+            value="velodrome-v2", 
+            dlt_parent_id="yMTcvWZwiZs5LA", 
+            dlt_list_idx=0, 
+            dlt_id="8QToGGq1GAv9vw"
         ),
         ProjectDefiLlamaSlug(
-            value="slug2", dlt_parent_id="parent2", dlt_list_idx=2, dlt_id="dlt2"
+            value="velodrome-v1", 
+            dlt_parent_id="yMTcvWZwiZs5LA", 
+            dlt_list_idx=0, 
+            dlt_id="zWQDRjRUnCoBQg"
         ),
     ],
 )

@@ -24,7 +24,7 @@ Dependents can be categorized as:
 OSO indexes software dependencies using multiple data sources:
 
 1. **GitHub Software Bill of Materials (SBOMs)**
-   - Extracted via [GitHub’s SBOM API](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository)
+   - Extracted via [GitHub's SBOM API](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository)
    - Includes direct and indirect dependencies
    - Does not support all languages, but is largely complete for JavaScript/TypeScript, Python, Rust, and Go.
 2. **Package Metadata and Historical Events**
@@ -62,4 +62,4 @@ Dependency data is not always complete. Here are some of the limitations:
 
 There is a vast amount that can be done on top of these data sources!
 
-To contribute new metrics and models, please see our guide [here](../../contribute-models/data-models)
+To contribute new metrics and models, please see our guide [here](../../contribute-models/sqlmesh)

@@ -1,7 +1,7 @@
 import React from "react";
 import _ from "lodash";
 import useSWR from "swr";
-import { RegistrationProps } from "@/lib/types/plasmic";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
@@ -38,23 +38,26 @@ type OsoDataProviderProps = CommonDataProviderProps & {
   dataFetches?: { [name: string]: Partial<DataFetch> };
 };
 
-const OsoDataProviderRegistration: RegistrationProps<OsoDataProviderProps> = {
-  ...CommonDataProviderRegistration,
-  dataFetches: {
-    type: "object",
-    helpText:
-      "e.g. { members: { method: 'getOrganizationMembers', args: { orgId: 'ORG_ID_HERE' } } }",
+const OsoDataProviderMeta: CodeComponentMeta<OsoDataProviderProps> = {
+  name: "OsoDataProvider",
+  description: "OSO data provider",
+  props: {
+    ...CommonDataProviderRegistration,
+    dataFetches: {
+      type: "object",
+      helpText:
+        "e.g. { members: { method: 'getOrganizationMembers', args: { orgId: 'ORG_ID_HERE' } } }",
+    },
   },
+  providesData: true,
 };
 
 function OsoDataProvider(props: OsoDataProviderProps) {
-  const { dataFetches, variableName, testData, useTestData } = props;
+  const { dataFetches, variableName } = props;
   const key = genKey(props);
   const { client } = useOsoAppClient();
   const { data, mutate, error, isLoading } = useSWR(key, async () => {
-    if (useTestData) {
-      return testData;
-    } else if (!dataFetches || _.isEmpty(dataFetches)) {
+    if (!dataFetches || _.isEmpty(dataFetches)) {
       return;
     } else if (!client) {
       throw new Error("No Supabase client found");
@@ -91,5 +94,5 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   );
 }
 
-export { OsoDataProviderRegistration, OsoDataProvider };
+export { OsoDataProvider, OsoDataProviderMeta };
 export type { OsoDataProviderProps };

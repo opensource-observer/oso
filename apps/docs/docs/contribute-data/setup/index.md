@@ -41,6 +41,12 @@ Copy `.env.example` to `.env`, and fill it in with the required environment vari
 DAGSTER_HOME=/tmp/dagster-home
 ```
 
+Some assets require a BigQuery connection. Run this to authenticate:
+
+```sh
+gcloud auth application-default login
+```
+
 Lastly, we need to configure `dagster.yaml` to disable concurrency. Our example
 is located at `/tmp/dagster-home/dagster.yaml`:
 

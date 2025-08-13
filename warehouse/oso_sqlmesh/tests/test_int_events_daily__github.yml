@@ -1,0 +1,81 @@
+test_int_events_daily__github:
+  model: oso.int_events_daily__github
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-05
+  inputs:
+    oso.int_events__github:
+      rows:
+        - time: "2024-01-01 10:00:00"
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          event_source_id: commit_1
+          to_artifact_name: repo_1
+          to_artifact_namespace: owner_1
+          to_artifact_source_id: github_repo_123
+          from_artifact_name: user_1
+          from_artifact_namespace: user_1
+          from_artifact_source_id: github_user_123
+          amount: 1
+        - time: "2024-01-01 14:30:00"
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          event_source_id: commit_2
+          to_artifact_name: repo_1
+          to_artifact_namespace: owner_1
+          to_artifact_source_id: github_repo_123
+          from_artifact_name: user_1
+          from_artifact_namespace: user_1
+          from_artifact_source_id: github_user_123
+          amount: 1
+        - time: "2024-01-02 09:15:00"
+          from_artifact_id: user_2
+          to_artifact_id: repo_1
+          event_source: GITHUB
+          event_type: ISSUE_OPENED
+          event_source_id: issue_1
+          to_artifact_name: repo_1
+          to_artifact_namespace: owner_1
+          to_artifact_source_id: github_repo_123
+          from_artifact_name: user_2
+          from_artifact_namespace: user_2
+          from_artifact_source_id: github_user_456
+          amount: 1
+        - time: "2024-01-03 16:45:00"
+          from_artifact_id: user_1
+          to_artifact_id: repo_2
+          event_source: GITHUB
+          event_type: PULL_REQUEST_OPENED
+          event_source_id: pr_1
+          to_artifact_name: repo_2
+          to_artifact_namespace: owner_2
+          to_artifact_source_id: github_repo_456
+          from_artifact_name: user_1
+          from_artifact_namespace: user_1
+          from_artifact_source_id: github_user_123
+          amount: 1
+  outputs:
+    query:
+      rows:
+        - bucket_day: 2024-01-01
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          amount: 2
+        - bucket_day: 2024-01-02
+          from_artifact_id: user_2
+          to_artifact_id: repo_1
+          event_source: GITHUB
+          event_type: ISSUE_OPENED
+          amount: 1
+        - bucket_day: 2024-01-03
+          from_artifact_id: user_1
+          to_artifact_id: repo_2
+          event_source: GITHUB
+          event_type: PULL_REQUEST_OPENED
+          amount: 1

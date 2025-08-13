@@ -1,0 +1,140 @@
+test_int_first_contribution_to_project:
+  model: oso.int_first_contribution_to_project
+  inputs:
+    oso.int_first_contribution_to_artifact:
+      rows:
+        - time: "2024-01-01 10:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+        - time: "2024-01-02 11:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_2
+        - time: "2024-01-03 12:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_artifact_id: repo_1
+        - time: "2024-01-04 13:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_artifact_id: repo_3
+        - time: "2024-01-05 14:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_3
+          to_artifact_id: repo_2
+        - time: "2024-01-01 09:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_3
+    oso.artifacts_by_project_v1:
+      rows:
+        - artifact_id: repo_1
+          project_id: project_1
+        - artifact_id: repo_2
+          project_id: project_1
+        - artifact_id: repo_3
+          project_id: project_2
+  outputs:
+    query:
+      rows:
+        - time: 2024-01-01
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_project_id: project_1
+        - time: 2024-01-01
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_project_id: project_2
+        - time: 2024-01-03
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_project_id: project_1
+        - time: 2024-01-04
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_project_id: project_2
+        - time: 2024-01-05
+          event_source: GITHUB
+          from_artifact_id: user_3
+          to_project_id: project_1
+
+test_int_first_contribution_to_project_multiple_event_sources:
+  model: oso.int_first_contribution_to_project
+  inputs:
+    oso.int_first_contribution_to_artifact:
+      rows:
+        - time: "2024-01-01 10:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+        - time: "2024-01-02 11:00:00"
+          event_source: GITLAB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+        - time: "2024-01-03 12:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_artifact_id: repo_2
+        - time: "2024-01-04 13:00:00"
+          event_source: GITLAB
+          from_artifact_id: user_2
+          to_artifact_id: repo_2
+    oso.artifacts_by_project_v1:
+      rows:
+        - artifact_id: repo_1
+          project_id: project_1
+        - artifact_id: repo_2
+          project_id: project_1
+  outputs:
+    query:
+      rows:
+        - time: 2024-01-01
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_project_id: project_1
+        - time: 2024-01-02
+          event_source: GITLAB
+          from_artifact_id: user_1
+          to_project_id: project_1
+        - time: 2024-01-03
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_project_id: project_1
+        - time: 2024-01-04
+          event_source: GITLAB
+          from_artifact_id: user_2
+          to_project_id: project_1
+
+test_int_first_contribution_to_project_aggregation:
+  model: oso.int_first_contribution_to_project
+  inputs:
+    oso.int_first_contribution_to_artifact:
+      rows:
+        - time: "2024-01-05 10:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+        - time: "2024-01-03 11:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_2
+        - time: "2024-01-07 12:00:00"
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_3
+    oso.artifacts_by_project_v1:
+      rows:
+        - artifact_id: repo_1
+          project_id: project_1
+        - artifact_id: repo_2
+          project_id: project_1
+        - artifact_id: repo_3
+          project_id: project_1
+  outputs:
+    query:
+      rows:
+        - time: 2024-01-03
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_project_id: project_1

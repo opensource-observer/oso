@@ -20,7 +20,7 @@ SELECT DISTINCT
   projects_by_collection.collection_source,
   projects_by_collection.collection_namespace,
   projects_by_collection.collection_name
-FROM oso.int_all_artifacts AS artifacts
+FROM oso.int_artifacts_by_project AS artifacts
 LEFT JOIN oso.int_projects_by_collection AS projects_by_collection
   ON artifacts.project_id = projects_by_collection.project_id
 WHERE

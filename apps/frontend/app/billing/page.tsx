@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
@@ -15,7 +15,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   message = "Loading...",
 }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="flex flex-col items-center p-8">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 text-gray-600 dark:text-gray-300 font-medium">
@@ -31,7 +31,7 @@ const AuthWarning: React.FC = () => {
     <div className="max-w-4xl mx-auto mt-12 px-4">
       <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-md">
         <div className="flex">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <svg
               className="h-5 w-5 text-amber-400"
               viewBox="0 0 20 20"
@@ -88,7 +88,7 @@ const Alert: React.FC<AlertProps> = ({ type, message, onDismiss }) => {
       className={`mb-6 ${bgColor} border-l-4 ${borderColor} p-4 rounded-r-md relative`}
     >
       <div className="flex">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <svg
             className={`h-5 w-5 ${iconColor}`}
             viewBox="0 0 20 20"
@@ -124,13 +124,186 @@ const Alert: React.FC<AlertProps> = ({ type, message, onDismiss }) => {
   );
 };
 
-interface CreditBalanceProps {
-  balance: number | null;
+interface CustomSelectProps {
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
 }
 
-const CreditBalance: React.FC<CreditBalanceProps> = ({ balance }) => {
+const CustomSelect: React.FC<CustomSelectProps> = ({
+  options,
+  value,
+  onChange,
+  placeholder = "Select an option",
+  disabled = false,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((option) => option.value === value);
+
   return (
-    <div className="mb-8 overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className="
+          block w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 dark:border-gray-600
+          bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-left
+          focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+          disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed
+          transition-colors duration-200 shadow-xs hover:border-gray-400 dark:hover:border-gray-500
+        "
+      >
+        <span
+          className={
+            selectedOption
+              ? "text-gray-900 dark:text-white"
+              : "text-gray-500 dark:text-gray-400"
+          }
+        >
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+          <svg
+            className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+      </button>
+
+      {isOpen && !disabled && (
+        <div
+          className="
+          absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg
+          border border-gray-200 dark:border-gray-600 rounded-lg
+          max-h-60 overflow-auto
+        "
+        >
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className="
+                w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700
+                focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-hidden
+                text-gray-900 dark:text-white first:rounded-t-lg last:rounded-b-lg
+                transition-colors duration-150
+              "
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface OrganizationSelectorProps {
+  organizations: Array<{ id: string; org_name: string }>;
+  selectedOrgId: string | null;
+  onOrganizationSelect: (orgId: string) => void;
+  loading?: boolean;
+}
+
+const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
+  organizations,
+  selectedOrgId,
+  onOrganizationSelect,
+  loading = false,
+}) => {
+  const selectedOrg = organizations.find((org) => org.id === selectedOrgId);
+
+  return (
+    <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-center mb-4">
+        <svg
+          className="h-6 w-6 text-gray-500 dark:text-gray-400 mr-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+          />
+        </svg>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Organization
+        </h2>
+      </div>
+
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        Select organization to manage credits
+      </label>
+
+      <CustomSelect
+        options={organizations.map((org) => ({
+          value: org.id,
+          label: org.org_name,
+        }))}
+        value={selectedOrgId || ""}
+        onChange={onOrganizationSelect}
+        placeholder={
+          loading ? "Loading organizations..." : "Select an organization"
+        }
+        disabled={loading}
+      />
+
+      {selectedOrg && (
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            <span className="font-medium">Current organization:</span>{" "}
+            {selectedOrg.org_name}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface CreditBalanceProps {
+  balance: number | null;
+  organizationName?: string;
+}
+
+const CreditBalance: React.FC<CreditBalanceProps> = ({
+  balance,
+  organizationName,
+}) => {
+  return (
+    <div className="mb-8 overflow-hidden bg-linear-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
       <div className="px-8 py-10">
         <div className="flex items-center">
           <svg
@@ -148,7 +321,7 @@ const CreditBalance: React.FC<CreditBalanceProps> = ({ balance }) => {
           </svg>
           <div className="ml-5">
             <p className="text-sm font-medium text-blue-100">
-              Available Credits
+              Available Credits {organizationName && `for ${organizationName}`}
             </p>
             <p className="text-4xl font-bold text-white">
               {balance?.toLocaleString() ?? "0"}
@@ -320,7 +493,7 @@ const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ history }) => {
           {history.map((purchase) => (
             <div
               key={purchase.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-xs border border-gray-200 dark:border-gray-700 overflow-hidden"
             >
               <div className="p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between">
@@ -400,7 +573,7 @@ const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ history }) => {
 
 const TestPaymentInfo: React.FC = () => {
   return (
-    <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="rounded-xl bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white">
           Test Payment Information
@@ -474,6 +647,16 @@ function TestCreditsPageContent() {
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [selectedPackageId, setSelectedPackageId] = useState<string>("");
   const [purchaseHistory, setPurchaseHistory] = useState<Array<any>>([]);
+  const [orgId, setOrgId] = useState<string | null>(null);
+  const [organizations, setOrganizations] = useState<
+    Array<{ id: string; org_name: string }>
+  >([]);
+  const [selectedOrganization, setSelectedOrganization] = useState<{
+    id: string;
+    org_name: string;
+  } | null>(null);
+  const session =
+    supabaseState._type === "loggedIn" ? supabaseState.session : null;
 
   useEffect(() => {
     if (supabaseState?.supabaseClient) {
@@ -492,17 +675,37 @@ function TestCreditsPageContent() {
         const isRedirectFromPurchase =
           searchParams.get("purchase") === "success";
 
-        if (isRedirectFromPurchase && !supabaseState?.session) {
-          await supabaseState?.revalidate?.();
+        if (
+          isRedirectFromPurchase &&
+          !session &&
+          supabaseState._type !== "loading"
+        ) {
+          await supabaseState.revalidate();
         }
 
-        if (!supabaseState?.session && !isRedirectFromPurchase) {
+        if (!session && !isRedirectFromPurchase) {
           setLoading(false);
           return;
         }
 
+        // Get user's organizations
+        const userOrganizations = await client.getMyOrganizations();
+
+        if (userOrganizations.length === 0) {
+          setError("You must be part of an organization to manage credits");
+          setLoading(false);
+          return;
+        }
+
+        setOrganizations(userOrganizations);
+
+        // Set the first organization as default selected
+        const defaultOrg = userOrganizations[0];
+        setOrgId(defaultOrg.id);
+        setSelectedOrganization(defaultOrg);
+
         const [balance, history] = await Promise.all([
-          client.getMyCredits(),
+          client.getOrganizationCredits({ orgId: defaultOrg.id }),
           client.getMyPurchaseHistory(),
         ]);
 
@@ -519,20 +722,54 @@ function TestCreditsPageContent() {
     };
 
     void loadData();
-  }, [client, supabaseState?.session, searchParams, supabaseState?.revalidate]);
+  }, [client, session, searchParams, supabaseState]);
 
   useEffect(() => {
     const purchase = searchParams.get("purchase");
     if (purchase === "success") {
       setSuccess("Payment successful! Your credits have been added.");
 
-      if (client && supabaseState?.session) {
-        client.getMyCredits().then(setCreditBalance).catch(logger.error);
+      if (client && session && orgId) {
+        client
+          .getOrganizationCredits({ orgId })
+          .then(setCreditBalance)
+          .catch(logger.error);
       }
     } else if (purchase === "cancelled") {
       setError("Payment cancelled. No charges were made.");
     }
-  }, [searchParams, client, supabaseState?.session]);
+  }, [searchParams, client, session, orgId]);
+
+  const handleOrganizationChange = async (newOrgId: string) => {
+    if (!client || newOrgId === orgId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const selectedOrg = organizations.find((org) => org.id === newOrgId);
+      if (!selectedOrg) {
+        setError("Selected organization not found");
+        return;
+      }
+
+      setOrgId(newOrgId);
+      setSelectedOrganization(selectedOrg);
+
+      // Load credits for the new organization
+      const balance = await client.getOrganizationCredits({ orgId: newOrgId });
+      setCreditBalance(balance);
+    } catch (err) {
+      logger.error("Error loading organization credits:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load organization credits",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBuyCredits = async () => {
     if (!client || !selectedPackageId) {
@@ -543,7 +780,15 @@ function TestCreditsPageContent() {
     try {
       setPurchasing(true);
       setError(null);
-      const result = await client.buyCredits({ packageId: selectedPackageId });
+      if (!orgId) {
+        setError("No organization selected");
+        return;
+      }
+
+      const result = await client.buyCredits({
+        packageId: selectedPackageId,
+        orgId,
+      });
 
       if (result.url) {
         window.location.href = result.url;
@@ -563,11 +808,7 @@ function TestCreditsPageContent() {
     return <LoadingSpinner message="Loading your credits..." />;
   }
 
-  if (
-    !supabaseState?.session &&
-    !authLoading &&
-    !searchParams.get("purchase")
-  ) {
+  if (!session && !authLoading && !searchParams.get("purchase")) {
     return <AuthWarning />;
   }
 
@@ -589,12 +830,24 @@ function TestCreditsPageContent() {
         />
       )}
 
-      <CreditBalance balance={creditBalance} />
+      <CreditBalance
+        balance={creditBalance}
+        organizationName={selectedOrganization?.org_name}
+      />
+
+      {organizations.length > 0 && (
+        <OrganizationSelector
+          organizations={organizations}
+          selectedOrgId={orgId}
+          onOrganizationSelect={(orgId) => void handleOrganizationChange(orgId)}
+          loading={loading}
+        />
+      )}
 
       <CreditPackageSelector
         selectedPackageId={selectedPackageId}
         onPackageSelect={setSelectedPackageId}
-        onBuyCredits={handleBuyCredits}
+        onBuyCredits={() => void handleBuyCredits()}
         purchasing={purchasing}
       />
 

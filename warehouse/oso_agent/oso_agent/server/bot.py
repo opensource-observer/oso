@@ -14,16 +14,16 @@ logger = logging.getLogger(__name__)
 
 COMMAND_PREFIX = "!"
 
-def response_to_str(response: WrappedResponse) -> str:
+def response_to_str(wrapped: WrappedResponse) -> str:
     """Convert a WrappedResponse to a string representation."""
-    if response.response.type == "str":
-        return response.response.blob
-    elif response.response.type == "semantic":
-        return f"Semantic Query: {response.response.query}"
-    elif response.response.type == "sql":
-        return f"SQL Query: {response.response.query.query}"
-    elif response.response.type == "error":
-        return f"Error: {response.response.message} - {response.response.details}"
+    if wrapped.response.type == "str":
+        return wrapped.response.blob
+    elif wrapped.response.type == "semantic":
+        return f"Semantic Query: {wrapped.response.query}"
+    elif wrapped.response.type == "sql":
+        return f"SQL Query: {wrapped.response.query.query}"
+    elif wrapped.response.type == "error":
+        return f"Error: {wrapped.response.message} - {wrapped.response.details}"
     else:
         return "Unknown response type"
 

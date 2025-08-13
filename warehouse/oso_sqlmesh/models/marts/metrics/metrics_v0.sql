@@ -24,13 +24,7 @@ MODEL (
   )
 );
 
-/* TODO: We currenly hardcode a set of key metrics coming from OP Atlas */
-WITH op_atlas_metric_names AS (
-  SELECT DISTINCT
-    metric
-  FROM oso.int_superchain_s7_m1_rewards
-),
-unioned_metric_names AS (
+WITH unioned_metric_names AS (
   SELECT
     *
   FROM oso.int_metric_names_from_artifact
@@ -54,25 +48,6 @@ unioned_metric_names AS (
   SELECT
     *
   FROM oso.int_key_metric_names_from_collection
-  UNION ALL
-  SELECT
-    *
-  FROM op_atlas_metric_names
-), 
-op_atlas_metrics_metadata AS (
-  SELECT
-    'S7_M1_devtooling_reward' AS metric,
-    'S7 M1 Dev Tooling Reward' AS display_name,
-    'Rewards for Retro Funding S7 - Measurement Period 1 (Feb 2025) - Dev Tooling' AS description,
-    'warehouse/oso_sqlmesh/models/intermediate/superchain/s7/rewards/int_superchain_s7_m1_rewards.sql' AS sql_source_path,
-    ARRAY['SELECT * FROM oso.int_superchain_s7_m1_rewards WHERE metric = ''S7_M1_devtooling_reward'''] AS rendered_sql
-  UNION ALL
-  SELECT
-    'S7_M1_onchain_builder_reward' AS metric,
-    'S7 M1 Onchain Builder Reward' AS display_name,
-    'Rewards for Retro Funding S7 - Measurement Period 1 (Feb 2025) - Onchain Builder' AS description,
-    'warehouse/oso_sqlmesh/models/intermediate/superchain/s7/rewards/int_superchain_s7_m1_rewards.sql' AS sql_source_path,
-    ARRAY['SELECT * FROM oso.int_superchain_s7_m1_rewards WHERE metric = ''S7_M1_onchain_builder_reward'''] AS rendered_sql
 ),
 all_timeseries_metric_names AS (
   SELECT DISTINCT
@@ -86,14 +61,6 @@ all_timeseries_metric_names AS (
     sql_source_path,
     rendered_sql
   FROM oso.metrics_metadata
-  UNION ALL
-  SELECT
-    metric,
-    display_name,
-    description,
-    sql_source_path,
-    rendered_sql
-  FROM op_atlas_metrics_metadata
 ), metrics_v0_no_casting AS (
   SELECT
     @oso_id('OSO', 'oso', t.metric) AS metric_id,

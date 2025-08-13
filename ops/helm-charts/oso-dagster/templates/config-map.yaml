@@ -25,6 +25,7 @@ data:
   DAGSTER_MCS_K8S_SERVICE_NAME: "{{ .Values.sqlmesh.mcs.k8s.serviceName }}"
   DAGSTER_MCS_K8S_NAMESPACE: "{{ .Values.sqlmesh.mcs.k8s.namespace }}"
   DAGSTER_SQLMESH_GATEWAY: "{{ .Values.sqlmesh.gateway }}"
+  DAGSTER_EAGERLY_LOAD_SQL_TABLES: "{{ .Values.osoDagster.eagerlyLoadSqlTables }}"
   SQLMESH_POSTGRES_INSTANCE_CONNECTION_STRING: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresInstanceStringConnectionString }}"
   SQLMESH_POSTGRES_USER: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresUser }}"
   SQLMESH_POSTGRES_PASSWORD: "{{ .Values.configMap.secretPrefix }}-{{ .Values.secretmanagerKeys.sqlmeshPostgresPassword }}"
@@ -47,3 +48,5 @@ data:
   SQLMESH_MCS_CLUSTER_MAX_SIZE: "{{ .Values.sqlmesh.mcs.cluster.maxSize }}"
   SQLMESH_MCS_DEFAULT_SLOTS: "{{ .Values.sqlmesh.mcs.defaultSlots }}"
   SQLMESH_MCS_SKIP_ROLLING: "{{- if .Values.sqlmesh.mcs.skipRolling -}}1{{- else -}}0{{- end -}}"
+  DAGSTER_ASSET_CACHE_DIR: "{{ .Values.osoDagster.assetCacheDir }}"
+  OSO_ENABLE_JSON_LOGS: "{{- if .Values.osoDagster.enableJsonLogs -}}1{{- else -}}0{{- end -}}"

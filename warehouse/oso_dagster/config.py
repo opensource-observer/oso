@@ -17,10 +17,25 @@ def get_project_id() -> str:
     return project_id
 
 
+def get_repo_sha() -> str:
+    """If the repo_sha file exists, return its contents."""
+    if os.path.exists("/oso.repo_sha.txt"):
+        with open("/oso.repo_sha.txt", "r") as f:
+            return f.read().strip()
+    return "unknown"
+
+
 class DagsterConfig(BaseSettings):
     """OSO's dagster configuration"""
 
     model_config = SettingsConfigDict(env_prefix="dagster_")
+
+    # We have a `run_mode` so that some processes can be run in different modes
+    # Particularly this is useful for things like our preemptive caching at
+    # build time for dagster assets
+    run_mode: t.Literal["serve", "build"] = "serve"
+
+    repo_sha: str = Field(default_factory=get_repo_sha)
 
     project_id: str = Field(alias="GOOGLE_PROJECT_ID", default_factory=get_project_id)
 
@@ -60,6 +75,9 @@ class DagsterConfig(BaseSettings):
     sqlmesh_catalog: str = "iceberg"
     sqlmesh_schema: str = "oso"
     sqlmesh_bq_export_dataset_id: str = "oso"
+    asset_cache_enabled: bool = False
+    asset_cache_dir: str = ""
+    asset_cache_default_ttl_seconds: int = 60 * 15
 
     enable_k8s_executor: bool = False
 
@@ -83,6 +101,16 @@ class DagsterConfig(BaseSettings):
     mcs_k8s_deployment_name: str = ""
     mcs_connect_timeout: int = 240
 
+    # This is a bit of a legacy configuration that we need to remove
+    cbt_search_paths: list[str] = Field(
+        default_factory=lambda: [os.path.join(os.path.dirname(__file__), "models")]
+    )
+
+    clickhouse_importer_secret_group_name: str = "clickhouse_importer"
+    clickhouse_secret_group_name: str = "clickhouse"
+
+    eagerly_load_sql_tables: bool = False
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         """Handles any configurations that can be generated from other configuration values"""
@@ -103,3 +131,8 @@ class DagsterConfig(BaseSettings):
 
     def initialize(self):
         Path(self.dagster_home).mkdir(exist_ok=True)
+
+    @property
+    def in_deployed_container(self) -> bool:
+        """If the repo_sha is not unknown, we are in a deployed container."""
+        return self.repo_sha != "unknown"

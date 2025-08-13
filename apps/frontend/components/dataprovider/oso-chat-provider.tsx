@@ -1,11 +1,11 @@
 import React from "react";
 import { useChat } from "@ai-sdk/react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
 } from "@/components/dataprovider/provider-view";
-import { RegistrationProps } from "@/lib/types/plasmic";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
 import { logger } from "@/lib/logger";
@@ -24,24 +24,29 @@ type OsoChatProviderProps = CommonDataProviderProps & {
   chatId?: string;
 };
 
-const OsoChatProviderRegistration: RegistrationProps<OsoChatProviderProps> = {
-  ...CommonDataProviderRegistration,
-  agentName: {
-    type: "string",
-    helpText: "The agent's name (e.g. function_text2sql)",
+const OsoChatProviderMeta: CodeComponentMeta<OsoChatProviderProps> = {
+  name: "OsoChatProvider",
+  props: {
+    ...CommonDataProviderRegistration,
+    agentName: {
+      type: "string",
+      helpText: "The agent's name (e.g. function_text2sql)",
+    },
+    chatId: {
+      type: "string",
+      helpText: "The chat 'id' to save to in Supabase",
+    },
   },
-  chatId: {
-    type: "string",
-    helpText: "The chat 'id' to save to in Supabase",
-  },
+  providesData: true,
 };
 
 function OsoChatProvider(props: OsoChatProviderProps) {
-  const { agentName, chatId, variableName, testData, useTestData } = props;
+  const { agentName, chatId, variableName, useTestData } = props;
   const supabaseState = useSupabaseState();
   const [firstLoad, setFirstLoad] = React.useState<boolean>(true);
   const { client } = useOsoAppClient();
-  const session = supabaseState?.session;
+  const session =
+    supabaseState._type === "loggedIn" ? supabaseState.session : null;
   const headers: Record<string, string> = {};
 
   if (session) {
@@ -54,6 +59,9 @@ function OsoChatProvider(props: OsoChatProviderProps) {
   const chatData = useChat({
     api: CHAT_PATH,
     headers: headers,
+    body: {
+      chatId: chatId,
+    },
   });
 
   React.useEffect(() => {
@@ -94,7 +102,6 @@ function OsoChatProvider(props: OsoChatProviderProps) {
   }, [firstLoad, client, useTestData, chatId, chatData.messages]);
 
   const key = variableName ?? DEFAULT_PLASMIC_KEY;
-  const displayMessages = useTestData ? testData : chatData.messages;
   //console.log(data);
   //console.log(JSON.stringify(data, null, 2));
   //console.log(error);
@@ -105,12 +112,12 @@ function OsoChatProvider(props: OsoChatProviderProps) {
       variableName={key}
       formattedData={{
         ...chatData,
-        messages: displayMessages,
+        messages: chatData.messages,
       }}
       loading={false}
     />
   );
 }
 
-export { OsoChatProviderRegistration, OsoChatProvider };
+export { OsoChatProvider, OsoChatProviderMeta };
 export type { OsoChatProviderProps };

@@ -1,0 +1,157 @@
+---
+title: Analyze Contract Activity
+sidebar_position: 8
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+Analyze the onchain activity of smart contracts and determine their eligibility for funding programs.
+New to OSO? Check out our [Getting Started guide](../get-started/index.md)
+to set up your API access.
+
+:::tip
+You can [view this tutorial in Colab](https://colab.research.google.com/drive/1AJ-r9IfJOrLTzpA5p68WYFphSDk0TOUO) to run the code in a notebook environment.
+:::
+
+This tutorial shows how to:
+- Check if a contract is associated with known projects in OSO or Atlas
+- Analyze contract activity metrics to determine funding eligibility
+- Look up contract deployment information for ownership verification
+
+## Getting Started
+
+Before running any analysis, you'll need to set up your environment:
+
+```python
+from dotenv import load_dotenv
+import os
+from pyoso import Client
+
+load_dotenv()
+OSO_API_KEY = os.environ['OSO_API_KEY']
+client = Client(api_key=OSO_API_KEY)
+```
+
+For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
+
+## Step 1: Define the Contract to Analyze
+
+Start by specifying the contract address and chain you want to analyze:
+
+```python
+CONTRACT_ADDRESS = '0x2416092f143378750bb29b79ed961ab195cceea5'
+CHAIN_NAME = 'OPTIMISM'
+```
+
+This example uses a contract on Optimism, but you can analyze contracts on any supported chain.
+
+## Step 2: Check Project Association
+
+First, let's check if this contract is already associated with any known projects in OSO or Atlas. This helps identify if the contract is part of an existing project ecosystem:
+
+```python
+result = client.to_pandas(f"""
+  SELECT
+    abp.artifact_id,
+    p.project_source,
+    p.project_id,
+    p.project_name,
+    p.display_name
+  FROM artifacts_by_project_v1 AS abp
+  JOIN projects_v1 AS p ON abp.project_id = p.project_id
+  WHERE
+    abp.artifact_name = LOWER('{CONTRACT_ADDRESS}')
+    AND abp.artifact_source = UPPER('{CHAIN_NAME}')
+""")
+result
+```
+
+This query returns:
+- **artifact_id**: Unique identifier for the contract
+- **project_source**: Where the project is registered (e.g., OP_ATLAS, GITHUB)
+- **project_id**: Internal project identifier
+- **project_name**: Technical name of the project
+- **display_name**: Human-readable project name
+
+If the contract is associated with a project, we can extract the artifact ID for further analysis:
+
+```python
+if not result.empty:
+    ARTIFACT_ID = result['artifact_id'].values[0]
+ARTIFACT_ID
+```
+
+In this case, the contract is associated with a project because the artifact_id is not empty.
+
+## Step 3: Analyze Contract Activity
+
+Now let's check if the contract has sufficient activity to qualify for funding programs. This analysis uses timeseries metrics to evaluate contract usage over time:
+
+:::warning
+This query accesses a large dataset and may take a few minutes to process.
+:::
+
+```python
+START_DATE = '2024-12-01'
+END_DATE = '2025-06-01'
+
+metrics = client.to_pandas(f"""
+  SELECT
+    SUM(tm.amount) AS transaction_count,
+    COUNT(DISTINCT tm.sample_date) AS active_days
+  FROM timeseries_metrics_by_artifact_v0 AS tm
+  JOIN metrics_v0 AS m ON tm.metric_id = m.metric_id
+  WHERE
+    m.metric_name = '{CHAIN_NAME}_contract_invocations_daily'
+    AND tm.artifact_id = '{ARTIFACT_ID}'
+    AND tm.sample_date BETWEEN DATE('{START_DATE}') AND DATE('{END_DATE}')
+""")
+```
+
+This query calculates:
+- **transaction_count**: Total number of contract invocations in the period
+- **active_days**: Number of unique days with activity
+
+Now let's evaluate if the contract meets typical funding eligibility criteria:
+
+```python
+TRANSACTION_THRESHOLD = 1000
+ACTIVE_DAYS_THRESHOLD = 10
+
+if metrics['transaction_count'].max() >= TRANSACTION_THRESHOLD and metrics['active_days'].max() >= ACTIVE_DAYS_THRESHOLD:
+    print("Eligible")
+else:
+    print("Not eligible")
+```
+
+In this case, the contract is eligible for funding programs because it has more than 1000 transactions and has been active for more than 10 days.
+
+## Step 4: Look Up Contract Deployment Information
+
+Finally, let's retrieve the contract's deployment information to understand ownership and verification requirements:
+
+```python
+contract = client.to_pandas(f"""
+  SELECT *
+  FROM contracts_v0
+  WHERE
+    contract_address = '{CONTRACT_ADDRESS}'
+    AND contract_namespace = '{CHAIN_NAME}'
+""")
+contract.T
+```
+
+This query returns comprehensive contract metadata including:
+- **contract_address**: The contract's address
+- **root_deployer_address**: The address that deployed the contract
+- **contract_namespace**: The blockchain network
+
+## Next Steps
+
+- **Extend the analysis window**: Modify the date range to analyze longer periods
+- **Compare multiple contracts**: Run this analysis across multiple contracts to identify patterns
+- **Add gas fee analysis**: Include gas consumption metrics to understand economic impact
+- **Cross-reference with funding data**: Correlate contract activity with funding received
+
+For more examples of contract analysis, check out our [Insights Repo](https://github.com/opensource-observer/insights).

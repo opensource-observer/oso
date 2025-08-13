@@ -21,6 +21,7 @@ spec:
         name: flux-system
         namespace: flux-system
   interval: 50m
+  timeout: 10m
   install:
     remediation:
       retries: 3
@@ -33,11 +34,20 @@ spec:
         - --directory
         - warehouse/oso_agent
         - agent
+        - -vvv
         - serve
         - --host
         - "0.0.0.0"
         - --port
         - "8000"
+      livenessProbe:
+        httpGet:
+          path: /status
+          port: 8000
+        initialDelaySeconds: 300 
+        successThreshold: 1
+        failureThreshold: 12
+        periodSeconds: 10
       hostEnvVar: "AGENT_HOST"
       portEnvVar: "AGENT_PORT"
       envVars:

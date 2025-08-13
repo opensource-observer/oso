@@ -1,3 +1,4 @@
+import functools
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -6,21 +7,24 @@ from typing import (
     Callable,
     Concatenate,
     Dict,
+    Generator,
     List,
     Optional,
     ParamSpec,
     Set,
+    Tuple,
     TypeVar,
     cast,
 )
 
 import dlt
 from dagster import AssetExecutionContext
+from dlt.extract.resource import DltResource
 from gql import Client, gql
 from gql.transport.exceptions import TransportError
 from gql.transport.requests import RequestsHTTPTransport
-
-from .dlt import dlt_factory
+from oso_dagster.config import DagsterConfig
+from oso_dagster.utils.redis import redis_cache
 
 # The maximum depth of the introspection query.
 FRAGMENT_MAX_DEPTH = 10
@@ -145,6 +149,11 @@ class PaginationConfig:
     stop_condition: Optional[Callable[[Dict[str, Any], int], bool]] = None
 
 
+type GraphQLDependencyCallable = Callable[
+    [AssetExecutionContext, DagsterConfig, Any], Generator[DltResource, Any, Any]
+]
+
+
 @dataclass
 class GraphQLResourceConfig:
     """
@@ -160,9 +169,15 @@ class GraphQLResourceConfig:
         transform_fn: The function to transform the result of the query.
         parameters: The parameters to include in the introspection query.
         pagination: The pagination configuration.
+        exclude: Fields to exclude from the GraphQL schema expansion.
+        deps_rate_limit_seconds: Seconds to wait between dependency calls.
+        deps: Dependencies for the GraphQL resource. If provided, the main query results
+              will be used as intermediate data to feed the dependencies, and those
+              intermediate rows will be skipped from the final output. The factory can
+              only return one consistent data shape, so deps serve as a means to transform
+              the intermediate data into the final desired output format.
     """
 
-    # TODO(jabolo): Add ability to pass secrets
     name: str
     endpoint: str
     target_type: str
@@ -172,6 +187,9 @@ class GraphQLResourceConfig:
     transform_fn: Optional[Callable[[Any], Any]] = None
     parameters: Optional[Dict[str, Dict[str, Any]]] = None
     pagination: Optional[PaginationConfig] = None
+    exclude: Optional[List[str]] = None
+    deps_rate_limit_seconds: float = 0.0
+    deps: Optional[List[GraphQLDependencyCallable]] = None
 
 
 def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
@@ -196,21 +214,28 @@ def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
     return f"kind name ofType {{ {create_fragment(depth - 1)} }}"
 
 
-def get_graphql_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
+def _get_graphql_introspection(
+    endpoint: str,
+    headers_tuple: Optional[Tuple[Tuple[str, str], ...]],
+    max_depth: int,
+) -> Dict[str, Any]:
     """
     Fetch the GraphQL introspection query from the given endpoint.
 
     Args:
-        config: The configuration for the GraphQL resource.
+        endpoint: The GraphQL endpoint URL.
+        headers_tuple: Headers as a tuple of tuples for hashability.
+        max_depth: Maximum depth for the introspection query.
 
     Returns:
         The introspection query result.
     """
+    headers_dict = dict(headers_tuple) if headers_tuple else None
 
     transport = RequestsHTTPTransport(
-        url=config.endpoint,
+        url=endpoint,
         use_json=True,
-        headers=config.headers,
+        headers=headers_dict,
         timeout=300,
     )
 
@@ -220,14 +245,14 @@ def get_graphql_introspection(config: GraphQLResourceConfig) -> Dict[str, Any]:
     )
 
     populated_query = INTROSPECTION_QUERY.replace(
-        "{{ DEPTH }}", create_fragment(config.max_depth + 5)
+        "{{ DEPTH }}", create_fragment(max_depth + 5)
     )
 
     try:
         return client.execute(gql(populated_query))
     except TransportError as exception:
         raise ValueError(
-            f"Failed to fetch GraphQL introspection query from {config.endpoint}.",
+            f"Failed to fetch GraphQL introspection query from {endpoint}.",
         ) from exception
 
 
@@ -377,12 +402,14 @@ class FieldExpander:
         types_dict: Dict[str, Dict[str, Any]],
         max_depth: int,
         pagination_config: Optional[PaginationConfig] = None,
+        exclude_fields: Optional[List[str]] = None,
     ):
         self.context = context
         self.types_dict = types_dict
         self.max_depth = max_depth
         self.visited_paths: Set[str] = set()
         self.pagination_config = pagination_config
+        self.exclude_fields = exclude_fields or []
 
     def should_expand_pagination_field(self, field_path: str) -> bool:
         """Check if a field is needed for pagination."""
@@ -414,7 +441,11 @@ class FieldExpander:
         return False
 
     def expand_field(
-        self, field: Dict[str, Any], current_path: str = "", depth: int = 0
+        self,
+        field: Dict[str, Any],
+        current_path: str = "",
+        depth: int = 0,
+        field_path: str = "",
     ) -> Optional[str]:
         """
         Expand a field in the introspection query, handling cycles and max depth.
@@ -424,6 +455,7 @@ class FieldExpander:
             field: The field to expand.
             current_path: The current path in the query (for cycle detection).
             depth: Current depth in the query.
+            field_path: The dot-separated path of field names for exclusion checking.
 
         Returns:
             The expanded field as a GraphQL query string, or None if field should be skipped.
@@ -432,10 +464,20 @@ class FieldExpander:
         if not field_name:
             return None
 
-        # TODO(jabolo): Handle field arguments
-        field_args = field.get("args", [])
-        if field_args:
-            return None
+        full_field_path = f"{field_path}.{field_name}" if field_path else field_name
+
+        for exclude_pattern in self.exclude_fields:
+            if full_field_path == exclude_pattern or full_field_path.startswith(
+                exclude_pattern + "."
+            ):
+                return None
+
+        for arg in field.get("args", []):
+            if arg.get("type", {}).get("kind") == "NON_NULL":
+                self.context.log.warning(
+                    f"GraphQLFactory: Skipping field '{field_name}' because it has a required argument '{arg['name']}' that cannot be provided."
+                )
+                return None
 
         field_type_obj = field.get("type", {})
         if not field_type_obj:
@@ -476,8 +518,7 @@ class FieldExpander:
 
         expanded_fields = []
         for subfield in type_fields:
-            next_depth = depth + 1 if not is_pagination_field else depth
-            expanded = self.expand_field(subfield, new_path, next_depth)
+            expanded = self.expand_field(subfield, new_path, depth + 1, full_field_path)
             if expanded:
                 expanded_fields.append(expanded)
 
@@ -537,9 +578,9 @@ def get_query_parameters(
         return "", ""
 
     param_defs = ", ".join(
-        [f'${key}: {value["type"]}' for key, value in all_params.items()]
+        [f"${key}: {value['type']}" for key, value in all_params.items()]
     )
-    param_refs = ", ".join([f"{key}: ${key}" for key in all_params.keys()])
+    param_refs = ", ".join([f"{key}: ${key}" for key in all_params])
 
     return f"({param_defs})", f"({param_refs})"
 
@@ -611,10 +652,15 @@ def extract_data_for_pagination(
 Q = ParamSpec("Q")
 T = TypeVar("T")
 
+type GraphQLFactoryCallable[**P] = Callable[
+    Concatenate[GraphQLResourceConfig, DagsterConfig, AssetExecutionContext, P],
+    DltResource,
+]
+
 
 def _graphql_factory(
     _resource: Callable[Q, T],
-) -> Callable[Concatenate[GraphQLResourceConfig, Q], T]:
+) -> GraphQLFactoryCallable[Q]:
     """
     This factory creates a DLT asset from a GraphQL resource, automatically
     wiring the introspection query to the target query and generating a Pydantic model.
@@ -623,12 +669,22 @@ def _graphql_factory(
         resource: The function to decorate.
     """
 
-    def _factory(config: GraphQLResourceConfig, /, *_args: Q.args, **kwargs: Q.kwargs):
+    @functools.wraps(_resource)
+    def _factory(
+        config: GraphQLResourceConfig,
+        global_config: DagsterConfig,
+        context: AssetExecutionContext,
+        /,
+        *_args: Q.args,
+        **kwargs: Q.kwargs,
+    ):
         """
         Wrap the decorated function with the GraphQLFactory.
 
         Args:
             config: The configuration for the GraphQL resource.
+            global_config: The global dagster configuration.
+            context: The execution context for the Dagster asset.
             *_args: The arguments for the decorated function.
             **kwargs: The keyword arguments for the decorated function.
 
@@ -646,19 +702,25 @@ def _graphql_factory(
                 "Target type not specified in the GraphQL resource config."
             )
 
-        @dlt_factory(name=config.name, **kwargs)
-        def _dlt_graphql_asset(context: AssetExecutionContext):
-            """
-            The GraphQLFactory for the DLT asset.
+        get_graphql_introspection = redis_cache(
+            context, global_config.http_cache, _get_graphql_introspection
+        )
 
-            Args:
-                context: The asset execution context.
+        @dlt.resource(name=config.name, **kwargs)
+        def _execute_query():
+            """
+            Execute the GraphQL query.
 
             Returns:
-                The DLT asset.
+                The GraphQL query result
             """
 
-            introspection = get_graphql_introspection(config)
+            headers_tuple = (
+                tuple(sorted(config.headers.items())) if config.headers else None
+            )
+            introspection = get_graphql_introspection(
+                config.endpoint, headers_tuple, config.max_depth
+            )
 
             available_types = introspection["__schema"]["types"]
             if not available_types:
@@ -674,191 +736,203 @@ def _graphql_factory(
                     f"Target type '{config.target_type}' not found in the introspection query."
                 )
 
-            type_to_python = TypeToPython(available_types)
+            target_field = next(
+                (
+                    f
+                    for f in target_object.get("fields", [])
+                    if f["name"] == config.target_query
+                ),
+                None,
+            )
+            if not target_field:
+                raise ValueError(
+                    f"Target query '{config.target_query}' not found in type '{config.target_type}'."
+                )
+
+            type_info = get_type_info(target_field.get("type", {}))
+            return_type_name = type_info.get("name")
+            if not return_type_name:
+                raise ValueError(
+                    f"Could not determine return type for query '{config.target_query}'."
+                )
+
+            return_type_def = dictionary_types.get(return_type_name)
+            if not return_type_def:
+                raise ValueError(f"Type '{return_type_name}' not found in schema.")
 
             field_expander = FieldExpander(
-                context, dictionary_types, config.max_depth, config.pagination
+                context,
+                dictionary_types,
+                config.max_depth,
+                config.pagination,
+                config.exclude,
             )
 
             expanded_fields = []
-            field_types = []
-
-            context.log.info(
-                f"Starting field expansion for type '{config.target_type}'"
-            )
-
-            for field in target_object.get("fields", []):
-                expanded = field_expander.expand_field(field)
-
-                if expanded:
-                    expanded_fields.append(expanded)
-                    field_types.append(
-                        (
-                            field.get("name"),
-                            resolve_type(field.get("type"), type_to_python),
-                        )
-                    )
-                else:
-                    field_name = field.get("name", "")
-                    context.log.warning(
-                        f"GraphQLFactory: Field '{field_name}' was skipped in the query."
-                    )
+            if return_type_def.get("fields"):
+                for field in return_type_def.get("fields", []):
+                    expanded = field_expander.expand_field(field, "", 0, "")
+                    if expanded:
+                        expanded_fields.append(expanded)
 
             query_parameters, query_variables = get_query_parameters(
                 config.parameters, config.pagination
             )
 
-            generated_body = f"{{ {config.target_query} {query_variables} {{ {' '.join(expanded_fields)} }} }}"
+            selection_set = ""
+            if expanded_fields:
+                selection_set = f" {{ {' '.join(expanded_fields)} }}"
+            elif return_type_def.get("kind") == "OBJECT":
+                raise ValueError(
+                    f"Could not expand any fields for query '{config.target_query}' with return type '{return_type_name}'. "
+                    "This might be because all sub-fields require arguments, are excluded, or max_depth is too low."
+                )
+
+            generated_body = (
+                f"{{ {config.target_query}{query_variables}{selection_set} }}"
+            )
             generated_query = f"query {query_parameters} {generated_body}"
 
-            # TODO(jabolo): Pass dynamic DLT config
-            @dlt.resource(name=config.name, max_table_nesting=0)
-            def _execute_query():
-                """
-                Execute the GraphQL query.
+            transport = RequestsHTTPTransport(
+                url=config.endpoint,
+                use_json=True,
+                headers=config.headers,
+            )
 
-                Returns:
-                    The GraphQL query result
-                """
-                transport = RequestsHTTPTransport(
-                    url=config.endpoint,
-                    use_json=True,
-                    headers=config.headers,
-                )
+            client = Client(transport=transport)
 
-                client = Client(transport=transport)
+            context.log.info(f"GraphQLFactory: fetching data from {config.endpoint}")
+            context.log.info(f"GraphQLFactory: generated query:\n\n{generated_query}")
 
-                context.log.info(
-                    f"GraphQLFactory: fetching data from {config.endpoint}"
-                )
-                context.log.info(
-                    f"GraphQLFactory: generated query:\n\n{generated_query}"
-                )
+            variables = {
+                key: param["value"] for key, param in (config.parameters or {}).items()
+            }
 
-                variables = {
-                    key: param["value"]
-                    for key, param in (config.parameters or {}).items()
-                }
+            page_count = 0
+            total_items = 0
+            has_more = True
 
-                page_count = 0
-                total_items = 0
-                has_more = True
-
-                while has_more:
-                    try:
-                        if config.pagination:
-                            if config.pagination.type == PaginationType.OFFSET:
-                                variables[config.pagination.offset_field] = (
-                                    page_count * config.pagination.page_size
-                                )
-                                variables[config.pagination.limit_field] = (
-                                    config.pagination.page_size
-                                )
-                            elif config.pagination.type in (
-                                PaginationType.CURSOR,
-                                PaginationType.RELAY,
-                            ):
-                                if page_count > 0 or variables.get(
-                                    config.pagination.cursor_field
-                                ):
-                                    pass
-                                else:
-                                    variables[config.pagination.cursor_field] = None
-                                variables[config.pagination.page_size_field] = (
-                                    config.pagination.page_size
-                                )
-
-                        result = client.execute(
-                            gql(generated_query),
-                            variable_values=variables,
-                        )
-
-                        data_items, pagination_info = extract_data_for_pagination(
-                            result, config
-                        )
-
-                        if isinstance(data_items, list):
-                            for item in data_items:
-                                total_items += 1
-                                yield item
-                        else:
-                            total_items += 1
-                            yield data_items
-
-                        page_count += 1
-
-                        if not config.pagination:
-                            has_more = False
-                        elif config.pagination.stop_condition:
-                            has_more = not config.pagination.stop_condition(
-                                result, page_count
+            while has_more:
+                try:
+                    if config.pagination:
+                        if config.pagination.type == PaginationType.OFFSET:
+                            variables[config.pagination.offset_field] = (
+                                page_count * config.pagination.page_size
                             )
-                        elif (
-                            config.pagination.max_pages
-                            and page_count >= config.pagination.max_pages
-                        ):
-                            has_more = False
-                            context.log.info(
-                                f"GraphQLFactory: Reached max pages limit ({config.pagination.max_pages})"
+                            variables[config.pagination.limit_field] = (
+                                config.pagination.page_size
                             )
-                        elif config.pagination.type == PaginationType.OFFSET:
-                            if (
-                                pagination_info
-                                and pagination_info.get("total_count") is not None
-                            ):
-                                current_offset = (
-                                    page_count * config.pagination.page_size
-                                )
-                                has_more = (
-                                    current_offset < pagination_info["total_count"]
-                                )
-                            else:
-                                has_more = (
-                                    len(data_items) == config.pagination.page_size
-                                )
                         elif config.pagination.type in (
                             PaginationType.CURSOR,
                             PaginationType.RELAY,
                         ):
-                            if pagination_info:
-                                has_more = bool(
-                                    pagination_info.get("has_next", False)
-                                    and pagination_info.get("next_cursor")
-                                )
-                                if has_more:
-                                    variables[config.pagination.cursor_field] = (
-                                        pagination_info["next_cursor"]
-                                    )
+                            if page_count > 0 or variables.get(
+                                config.pagination.cursor_field
+                            ):
+                                pass
                             else:
-                                has_more = False
+                                variables[config.pagination.cursor_field] = None
+                            variables[config.pagination.page_size_field] = (
+                                config.pagination.page_size
+                            )
 
-                        if (
-                            has_more
-                            and config.pagination
-                            and config.pagination.rate_limit_seconds > 0
-                        ):
-                            time.sleep(config.pagination.rate_limit_seconds)
+                    result = client.execute(
+                        gql(generated_query),
+                        variable_values=variables,
+                    )
 
-                        context.log.info(
-                            f"GraphQLFactory: Fetched page {page_count} with {len(data_items)} items "
-                            f"(total: {total_items})"
+                    data_items, pagination_info = extract_data_for_pagination(
+                        result, config
+                    )
+
+                    if isinstance(data_items, list):
+                        for item_idx, item in enumerate(data_items):
+                            total_items += 1
+                            if config.deps:
+                                if item_idx > 0 and config.deps_rate_limit_seconds > 0:
+                                    time.sleep(config.deps_rate_limit_seconds)
+                                for i, dep in enumerate(config.deps):
+                                    if i > 0 and config.deps_rate_limit_seconds > 0:
+                                        time.sleep(config.deps_rate_limit_seconds)
+                                    yield from dep(context, global_config, item)
+                            else:
+                                yield item
+                    else:
+                        total_items += 1
+                        if config.deps:
+                            for i, dep in enumerate(config.deps):
+                                if i > 0 and config.deps_rate_limit_seconds > 0:
+                                    time.sleep(config.deps_rate_limit_seconds)
+                                yield from dep(context, global_config, data_items)
+                        else:
+                            yield data_items
+
+                    page_count += 1
+
+                    if not config.pagination:
+                        has_more = False
+                    elif config.pagination.stop_condition:
+                        has_more = not config.pagination.stop_condition(
+                            result, page_count
                         )
+                    elif (
+                        config.pagination.max_pages
+                        and page_count >= config.pagination.max_pages
+                    ):
+                        has_more = False
+                        context.log.info(
+                            f"GraphQLFactory: Reached max pages limit ({config.pagination.max_pages})"
+                        )
+                    elif config.pagination.type == PaginationType.OFFSET:
+                        if (
+                            pagination_info
+                            and pagination_info.get("total_count") is not None
+                        ):
+                            current_offset = page_count * config.pagination.page_size
+                            has_more = current_offset < pagination_info["total_count"]
+                        else:
+                            has_more = len(data_items) == config.pagination.page_size
+                    elif config.pagination.type in (
+                        PaginationType.CURSOR,
+                        PaginationType.RELAY,
+                    ):
+                        if pagination_info:
+                            has_more = bool(
+                                pagination_info.get("has_next", False)
+                                and pagination_info.get("next_cursor")
+                            )
+                            if has_more:
+                                variables[config.pagination.cursor_field] = (
+                                    pagination_info["next_cursor"]
+                                )
+                        else:
+                            has_more = False
 
-                    except TransportError as e:
-                        context.log.error(f"GraphQL query execution failed: {str(e)}")
-                        raise ValueError(
-                            f"Failed to execute GraphQL query: {str(e)}"
-                        ) from e
+                    if (
+                        has_more
+                        and config.pagination
+                        and config.pagination.rate_limit_seconds > 0
+                    ):
+                        time.sleep(config.pagination.rate_limit_seconds)
 
-                context.log.info(
-                    f"GraphQLFactory: Completed fetching {total_items} total items"
-                )
+                    context.log.info(
+                        f"GraphQLFactory: Fetched page {page_count} with {len(data_items)} items "
+                        f"(total: {total_items})"
+                    )
 
-            yield _execute_query
+                except TransportError as e:
+                    context.log.error(f"GraphQL query execution failed: {str(e)}")
+                    raise ValueError(
+                        f"Failed to execute GraphQL query: {str(e)}"
+                    ) from e
 
-        return _dlt_graphql_asset
+            context.log.info(
+                f"GraphQLFactory: Completed fetching {total_items} total items"
+            )
 
-    return cast(Callable[Concatenate[GraphQLResourceConfig, Q], T], _factory)
+        return _execute_query
+
+    return cast(GraphQLFactoryCallable[Q], _factory)
 
 
-graphql_factory = _graphql_factory(dlt_factory)
+graphql_factory = _graphql_factory(dlt.resource)

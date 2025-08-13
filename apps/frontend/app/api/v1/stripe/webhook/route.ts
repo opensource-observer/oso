@@ -2,12 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { getStripeClient, extractIntentString } from "@/lib/clients/stripe";
-import { createPrivilegedSupabaseClient } from "@/lib/clients/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { STRIPE_WEBHOOK_SECRET } from "@/lib/config";
 
 const stripe = getStripeClient();
-const supabase = createPrivilegedSupabaseClient();
+const supabase = createAdminClient();
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -47,10 +47,11 @@ export async function POST(req: NextRequest) {
 
         if (fetchError || !purchaseIntent) {
           const userId = session.client_reference_id;
+          const orgId = session.metadata?.orgId;
           const packageId = session.metadata?.packageId;
           const credits = parseInt(session.metadata?.credits || "0");
 
-          if (!userId || !packageId || !credits) {
+          if (!userId || !orgId || !packageId || !credits) {
             logger.error("Missing required data in webhook:", { session });
             return NextResponse.json(
               { error: "Missing data" },
@@ -58,7 +59,8 @@ export async function POST(req: NextRequest) {
             );
           }
 
-          const { error: creditError } = await supabase.rpc("add_credits", {
+          const rpcParams = {
+            p_org_id: orgId,
             p_user_id: userId,
             p_amount: credits,
             p_transaction_type: "purchase",
@@ -70,7 +72,12 @@ export async function POST(req: NextRequest) {
               package_id: packageId,
               recovered: true,
             },
-          });
+          };
+
+          const { error: creditError } = await supabase.rpc(
+            "add_organization_credits",
+            rpcParams,
+          );
 
           if (creditError) {
             logger.error("Failed to add credits (recovery):", creditError);
@@ -81,7 +88,7 @@ export async function POST(req: NextRequest) {
           }
 
           logger.info(
-            `Credits added via recovery: ${credits} for user ${userId}`,
+            `Credits added via recovery: ${credits} for org ${orgId}`,
           );
         } else {
           const { error: updateError } = await supabase
@@ -103,7 +110,16 @@ export async function POST(req: NextRequest) {
             logger.error("Failed to update purchase intent:", updateError);
           }
 
-          const { error: creditError } = await supabase.rpc("add_credits", {
+          if (!purchaseIntent.org_id) {
+            logger.error("Missing org_id in purchase intent:", purchaseIntent);
+            return NextResponse.json(
+              { error: "Missing org_id" },
+              { status: 400 },
+            );
+          }
+
+          const rpcParams = {
+            p_org_id: purchaseIntent.org_id,
             p_user_id: purchaseIntent.user_id,
             p_amount: purchaseIntent.credits_amount,
             p_transaction_type: "purchase",
@@ -115,7 +131,12 @@ export async function POST(req: NextRequest) {
               purchase_intent_id: purchaseIntent.id,
               package_id: purchaseIntent.package_id,
             },
-          });
+          };
+
+          const { error: creditError } = await supabase.rpc(
+            "add_organization_credits",
+            rpcParams,
+          );
 
           if (creditError) {
             logger.error("Failed to add credits:", creditError);
@@ -126,7 +147,7 @@ export async function POST(req: NextRequest) {
           }
 
           logger.info(
-            `Credits added: ${purchaseIntent.credits_amount} for user ${purchaseIntent.user_id}`,
+            `Credits added: ${purchaseIntent.credits_amount} for org ${purchaseIntent.org_id}`,
           );
         }
 
