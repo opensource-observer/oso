@@ -16,8 +16,7 @@ WITH metadata AS (
     CASE
       WHEN parent_protocol IS NULL OR parent_protocol = '' THEN slug 
       ELSE REPLACE(parent_protocol, 'parent#', '') 
-    END AS project_name,
-    category AS project_display_name
+    END AS project_name
   FROM oso.stg_defillama__protocol_metadata
 ),
 

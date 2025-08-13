@@ -19,7 +19,7 @@ WITH projects_by_category AS (
     category AS collection_display_name,
     @to_entity_name(category) AS collection_name,
     project_source AS collection_source,
-    project_namespace AS collection_namespace,
+    project_namespace AS collection_namespace
   FROM oso.int_artifacts_by_project_in_defillama
 )
   
