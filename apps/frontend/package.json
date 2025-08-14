@@ -40,7 +40,7 @@
     "@as-integrations/next": "^3.2.0",
     "@clickhouse/client": "^1.11.2",
     "@datalayer/icons-react": "^1.0.6",
-    "@datalayer/jupyter-react": "^1.0.5",
+    "@datalayer/jupyter-react": "^1.0.7",
     "@datalayer/primer-addons": "^1.0.3",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
