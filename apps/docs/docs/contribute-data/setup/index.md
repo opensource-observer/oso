@@ -41,12 +41,6 @@ Copy `.env.example` to `.env`, and fill it in with the required environment vari
 DAGSTER_HOME=/tmp/dagster-home
 ```
 
-Some assets require a BigQuery connection. Run this to authenticate:
-
-```sh
-gcloud auth application-default login
-```
-
 Lastly, we need to configure `dagster.yaml` to disable concurrency. Our example
 is located at `/tmp/dagster-home/dagster.yaml`:
 
@@ -61,7 +55,8 @@ for more information.
 
 ## Running Dagster
 
-Now that we have everything set up, we can run the Dagster instance:
+Now that we have everything set up, we can run the Dagster instance. Call this
+command from the root of the repository:
 
 ```sh
 uv run dagster dev
@@ -112,12 +107,10 @@ Here you'll be able to monitor the logs to debug any issues with
 the data fetching.
 
 :::warning
-Unless your Dagster instance is configured with a Google account that
-has write access to OSO BigQuery datasets, you
-should expect an error message when the asset tries to write.
-Focus on debugging any issues with fetching data.
-When you're ready, work with a core team member to test
-the asset in production.
+Unless your Dagster instance is configured with a Google account that has write
+access to OSO BigQuery datasets, some dagster assets will fail to materialize.
+Focus on debugging any issues with fetching data. When you're ready, work with a
+core team member to test the asset in production.
 :::
 
 ## Add your asset to production
@@ -177,3 +170,53 @@ on [Discord](https://www.opensource.observer/discord)
 with an estimate of costs, especially if it involves large BigQuery scans.
 We will reject or disable any jobs that lead to
 increased infrastructure instability or unexpected costs.
+
+## Advanced Topics
+
+### Asset Code Locations
+
+In order to improve the usability of our dagster setup locally, we've actually
+split the organization of dagster assets into multiple "code locations." A code
+location is a dagster abstraction that allows you to have different asset
+definitions in entire different code paths. In our case, we maintain everything
+in the same code base but simply organize assets into different code locations
+for deployment. For the most part you shouldn't need to worry about the specific
+code location for your dagster asset as the current code locations use a set of
+filters to determine which assets are included in each location, anything not
+included in that filtering is in a default code location we call "legacy" as we
+are looking to better organize all assets over time. The filtering for these
+code locations is handled by a special `__oso_tags__: dict[str, str]` variable
+in an asset's python module. If that variable is not present, it will be assumed
+that the tags are and empty dictionary `{}`
+
+#### Available Code Locations
+
+At this moment, the available code locations can be found in the repository at
+`warehouse/oso_dagster/definitions/`):
+
+- `sqlmesh`: This is the code location for _any_ assets
+  related to sqlmesh. This is essentially anything that depends on the
+  `dagster-sqlmesh` package.
+- `ops`: This code location contains no assets, instead
+  it is used for defining overarching "ops" related things like alert sensors,
+  scheduling, etc.
+- `legacy`: The default code location for all remaining
+  assets that do not fit into the other categories.
+
+#### Running different code locations
+
+To run these different code locations is nearly identical to how we run the
+`legacy` code location. You just need to specify the code location's python
+module path when running your Dagster jobs. To run the `sqlmesh` or `ops` code
+location for example:
+
+```bash
+uv run dagster dev -m oso_dagster.definitions.sqlmesh
+# ... or for the ops code location ...
+uv run dagster dev -m oso_dagster.definitions.ops
+```
+
+Notice that after `-m` the code location's module path is specified. It is
+useful to note for newcomers that the `warehouse/` path in the repository is not
+considered a python module as it does not contain a `__init__.py` file and does
+not appear as a python module in the root `pyproject.toml`
