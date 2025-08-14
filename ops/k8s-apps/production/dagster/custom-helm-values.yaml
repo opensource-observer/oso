@@ -8,6 +8,12 @@ spec:
     # timing data
     osoDagster:
       eagerlyLoadSqlTables: 0
+      env: "production"
+
+      testAssets:
+        # This should normally be off, but if we need to test some failure
+        # scenarios on production enable this
+        enabled: true
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
       port: "5432"
