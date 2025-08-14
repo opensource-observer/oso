@@ -9,6 +9,8 @@ from sqlglot import exp
 
 from ..factories import dlt_factory
 
+__oso_tags__ = {"code_location": "sqlmesh"}
+
 
 @dlt.resource(
     primary_key="model_name",
@@ -31,7 +33,9 @@ def get_rendered_models(
     Yields:
         Dict: Information about each rendered model
     """
-    controller = sqlmesh.get_controller(context_factory=DEFAULT_CONTEXT_FACTORY, log_override=context.log)
+    controller = sqlmesh.get_controller(
+        context_factory=DEFAULT_CONTEXT_FACTORY, log_override=context.log
+    )
 
     with controller.instance(environment, "model_renderer") as mesh:
         models = mesh.models()

@@ -254,7 +254,7 @@ def defillama_tvl_assets(
         write_disposition="replace",
     )
 
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(
             resource,
             partition="time",
@@ -408,7 +408,7 @@ def defillama_volume_assets(
         primary_key=["slug", "chain", "time"],
         write_disposition="replace",
     )
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(resource, partition="time", cluster=["slug", "chain"])
     yield resource
 
@@ -487,7 +487,7 @@ def defillama_fee_assets(
         primary_key=["slug", "chain", "time"],
         write_disposition="replace",
     )
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(resource, partition="time", cluster=["slug", "chain"])
     yield resource
 
@@ -566,7 +566,7 @@ def defillama_protocol_metadata_assets(
         primary_key=["slug"],
         write_disposition="replace",
     )
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(resource, cluster=["slug"])
     yield resource
 
@@ -668,7 +668,7 @@ def defillama_historical_chain_tvl_assets(
         primary_key=["chain", "time"],
         write_disposition="replace",
     )
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(resource, partition="time", cluster=["chain"])
     yield resource
 
@@ -742,6 +742,6 @@ def defillama_chains_assets(
         primary_key=["name"],
         write_disposition="replace",
     )
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(resource, cluster=["name"])
     yield resource

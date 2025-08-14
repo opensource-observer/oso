@@ -28,7 +28,7 @@ def build():
 
     def run_build(resources: ResourcesContext):
         load_all_assets_from_package(
-            assets, resources, matching_tags={"run_at_build": "true"}
+            assets, resources, include_tags={"run_at_build": "true"}
         )
 
     run_with_default_resources(run_build, override_resources=[injected_dagster_config])

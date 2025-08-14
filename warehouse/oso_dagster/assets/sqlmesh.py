@@ -29,6 +29,8 @@ from pydantic import BaseModel
 
 from ..factories import AssetFactoryResponse, cacheable_asset_factory
 
+__oso_tags__ = {"code_location": "sqlmesh"}
+
 
 class SQLMeshRunConfig(dg.Config):
     # Set this to True to restate the selected models
