@@ -2,13 +2,13 @@ MODEL (
   name oso.stg_open_collective__projects,
   dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
-    time_column time,
+    time_column created_at,
     batch_size 365,
     batch_concurrency 2,
     lookback 31,
     forward_only true,
   ),
-  partitioned_by (DAY("time")),
+  partitioned_by (DAY(created_at)),
   start '2015-01-01',
   cron '@weekly',
   audits (
@@ -33,14 +33,9 @@ WITH social_links AS (
 )
 
 SELECT
-  created_at AS time,
+  created_at,
   LOWER(JSON_EXTRACT_SCALAR(to_account, '$.slug')) as account_slug,
-  LOWER(JSON_EXTRACT_SCALAR(link, '$.url')) as artifact_url,
-  REGEXP_EXTRACT(LOWER(JSON_EXTRACT_SCALAR(link, '$.url')), 'github\\.com/([a-z0-9-]+)') as artifact_namespace,
-  REGEXP_EXTRACT(
-    LOWER(JSON_EXTRACT_SCALAR(link, '$.url')), 
-    'github\\.com/[a-z0-9-]+/([a-z0-9-._]+)'
-  ) as artifact_name,
+  LOWER(JSON_EXTRACT_SCALAR(link, '$.url')) as social_link_url,
   JSON_EXTRACT_SCALAR(to_account, '$.name') AS account_name,
   JSON_EXTRACT_SCALAR(to_account, '$.type') AS account_type,
   JSON_EXTRACT_SCALAR(to_account, '$.id') AS account_id
