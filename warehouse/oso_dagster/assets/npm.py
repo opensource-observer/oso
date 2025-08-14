@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Dict, Generator, List, Optional, Any
+from typing import Any, Dict, Generator, List, Optional
 
 import dlt
 import requests
@@ -72,7 +72,9 @@ TRANSFORMATIONS = {
     "funding": lambda value: (
         [{"type": "url", "url": value}]
         if isinstance(value, str)
-        else [value] if isinstance(value, dict) else value
+        else [value]
+        if isinstance(value, dict)
+        else value
     ),
     "exports": lambda value: {".": value} if isinstance(value, str) else value,
     "bin": lambda value: {"path": value} if isinstance(value, str) else value,
@@ -161,7 +163,7 @@ def get_npm_package_downloads(
     if len(days_between) > 0:
         raise ValueError(
             f"Missing data for {package_name} between {date_from} and {date_to}: {
-                ", ".join(str(day) for day in days_between)
+                ', '.join(str(day) for day in days_between)
             }"
         )
 
@@ -278,7 +280,6 @@ def get_all_manifests(
     key_prefix="npm",
     partitions_def=WeeklyPartitionsDefinition(
         start_date=NPM_EPOCH.split("T", maxsplit=1)[0],
-        end_offset=1,
     ),
     deps=[AssetKey(["dbt", "production", "artifacts_v1"])],
 )
