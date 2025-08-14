@@ -12,4 +12,5 @@ ignoredBuiltDependencies:
 
 onlyBuiltDependencies:
   - '@apollo/rover'
+  - '@tailwindcss/oxide'
   - supabase

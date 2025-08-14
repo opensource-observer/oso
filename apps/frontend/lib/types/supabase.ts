@@ -7,7 +7,7 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.0.2 (a4e00ff)";
@@ -661,41 +661,41 @@ export type Database = {
     Functions: {
       add_credits: {
         Args: {
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_metadata?: Json;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
       add_organization_credits: {
         Args: {
-          p_org_id: string;
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_metadata?: Json;
+          p_org_id: string;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
       deduct_credits: {
         Args: {
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_api_endpoint?: string;
           p_metadata?: Json;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
       deduct_organization_credits: {
         Args: {
-          p_org_id: string;
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_api_endpoint?: string;
           p_metadata?: Json;
+          p_org_id: string;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
@@ -713,22 +713,22 @@ export type Database = {
       };
       preview_deduct_credits: {
         Args: {
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_api_endpoint?: string;
           p_metadata?: Json;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
       preview_deduct_organization_credits: {
         Args: {
-          p_org_id: string;
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_api_endpoint?: string;
           p_metadata?: Json;
+          p_org_id: string;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
