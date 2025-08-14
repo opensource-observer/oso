@@ -1,18 +1,19 @@
 import React from "react";
 import _ from "lodash";
 import useSWR from "swr";
-import { RegistrationProps } from "../../lib/types/plasmic";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
-} from "./provider-view";
-import { useOsoAppClient } from "../hooks/oso-app";
+} from "@/components/dataprovider/provider-view";
+import { useOsoAppClient } from "@/components/hooks/oso-app";
 
 // The name used to pass data into the Plasmic DataProvider
+const DEFAULT_PLASMIC_KEY = "osoData";
 const KEY_PREFIX = "oso";
 const genKey = (props: OsoDataProviderProps) =>
-  `${KEY_PREFIX}:${JSON.stringify(props)}`;
+  `${KEY_PREFIX}:${JSON.stringify(props.dataFetches)}`;
 
 type DataFetch = {
   method: string;
@@ -37,23 +38,26 @@ type OsoDataProviderProps = CommonDataProviderProps & {
   dataFetches?: { [name: string]: Partial<DataFetch> };
 };
 
-const OsoDataProviderRegistration: RegistrationProps<OsoDataProviderProps> = {
-  ...CommonDataProviderRegistration,
-  dataFetches: {
-    type: "object",
-    helpText:
-      "e.g. { members: { method: 'getOrganizationMembers', args: { orgId: 'ORG_ID_HERE' } } }",
+const OsoDataProviderMeta: CodeComponentMeta<OsoDataProviderProps> = {
+  name: "OsoDataProvider",
+  description: "OSO data provider",
+  props: {
+    ...CommonDataProviderRegistration,
+    dataFetches: {
+      type: "object",
+      helpText:
+        "e.g. { members: { method: 'getOrganizationMembers', args: { orgId: 'ORG_ID_HERE' } } }",
+    },
   },
+  providesData: true,
 };
 
 function OsoDataProvider(props: OsoDataProviderProps) {
-  const { dataFetches, variableName, testData, useTestData } = props;
-  const key = variableName ?? genKey(props);
+  const { dataFetches, variableName } = props;
+  const key = genKey(props);
   const { client } = useOsoAppClient();
   const { data, mutate, error, isLoading } = useSWR(key, async () => {
-    if (useTestData) {
-      return testData;
-    } else if (!dataFetches || _.isEmpty(dataFetches)) {
+    if (!dataFetches || _.isEmpty(dataFetches)) {
       return;
     } else if (!client) {
       throw new Error("No Supabase client found");
@@ -82,6 +86,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   return (
     <DataProviderView
       {...props}
+      variableName={variableName ?? DEFAULT_PLASMIC_KEY}
       formattedData={{ ...data, revalidate: mutate }}
       loading={isLoading}
       error={error}
@@ -89,5 +94,5 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   );
 }
 
-export { OsoDataProviderRegistration, OsoDataProvider };
+export { OsoDataProvider, OsoDataProviderMeta };
 export type { OsoDataProviderProps };

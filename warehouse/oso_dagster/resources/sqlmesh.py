@@ -2,11 +2,13 @@
 Auxiliary resources for sqlmesh
 """
 
-import logging
+import abc
+import json
 import math
 import typing as t
 from itertools import batched
 
+import structlog
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -17,42 +19,44 @@ from dagster import (
 )
 from dagster_sqlmesh import SQLMeshDagsterTranslator
 from dagster_sqlmesh.controller.base import SQLMeshInstance
-from metrics_service.types import TableReference
+from metrics_service.types import TableMetadata, TableReference
 from metrics_tools.transfer.coordinator import Destination, Source, transfer
 from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
 from oso_dagster.resources.duckdb import DuckDBExporterResource, DuckDBImporterResource
 from oso_dagster.resources.trino import TrinoExporterResource
+from pydantic import BaseModel, Field
 from sqlglot import exp
 from sqlmesh import Context
 from sqlmesh.core.dialect import parse_one
 from sqlmesh.core.model import Model
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 BIGQUERY_BATCH_SIZE = 10000
 
 
-class SQLMeshExporter:
-    name: str
-
-    def create_export_asset(
-        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
-    ) -> AssetsDefinition:
-        raise NotImplementedError("Not implemented")
-
-
 class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
-    def __init__(self, prefix: str):
+    def __init__(self, prefix: str, default_catalog: str):
         self._prefix = prefix
+        self._default_catalog = default_catalog
 
-    def get_asset_key_fqn(self, context: Context, fqn: str) -> AssetKey:
-        key = super().get_asset_key_fqn(context, fqn)
-        return key.with_prefix("production").with_prefix("dbt")
+    def get_asset_key(self, context: Context, fqn: str) -> AssetKey:
+        table = exp.to_table(fqn)  # Ensure fqn is a valid table expression
+        if table.catalog in ["bigquery", self._default_catalog]:
+            # For BigQuery and Iceberg, we use the db and table name
+            if table.db == "oso":
+                path = [self._prefix, table.name]
+            else:
+                path = [table.db, table.name]
+        else:
+            # For other catalogs, we use catalog, db, and table name (these are likely external things)
+            path = [table.catalog, table.db, table.name]
 
-    def get_asset_key_from_model(self, context: Context, model: Model) -> AssetKey:
-        key = super().get_asset_key_from_model(context, model)
-        return key.with_prefix(self._prefix)
+        return AssetKey(path)
+
+    def get_group_name(self, context, model):
+        return "sqlmesh"
 
     def get_tags(self, context: Context, model: Model) -> t.Dict[str, str]:
         """Loads tags for a model.
@@ -62,6 +66,19 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
 
         If the tag is a string with a `:` it will be split on the `:` and the
         key will be the left side the value will be the right side.
+
+        Skipped tags: index, order_by
+        """
+        tags: t.Dict[str, str] = self.get_unfiltered_tags(context, model)
+        for blocked_tag in ["index", "order_by"]:
+            if blocked_tag in tags:
+                del tags[blocked_tag]
+        return tags
+
+    def get_unfiltered_tags(self, context: Context, model: Model) -> t.Dict[str, str]:
+        """Loads unfiltered tags for a model.
+
+        This is similar to get_tags but does not filter out the index and order_by tags.
         """
         tags: t.Dict[str, str] = {}
         for tag in model.tags:
@@ -71,6 +88,98 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
             else:
                 tags[tag] = "true"
         return tags
+
+
+class SQLMeshExportedAssetDefinition(BaseModel):
+    outs: t.Dict[str, str]
+    internal_asset_deps: t.Mapping[str, t.Set[str]]
+    deps: t.List[str]
+    extras: t.Dict[str, t.Any] = Field(default_factory=dict)
+
+    @classmethod
+    def from_dagster_objs(
+        cls,
+        outs: t.Dict[str, AssetKey],
+        internal_asset_deps: t.Mapping[str, t.Set[AssetKey]],
+        deps: t.List[AssetKey],
+        extras: t.Dict[str, t.Any] | None = None,
+    ):
+        processed_outs = {name: out.to_user_string() for name, out in outs.items()}
+        processed_internal_asset_deps = {
+            name: {dep.to_user_string() for dep in deps_set}
+            for name, deps_set in internal_asset_deps.items()
+        }
+        processed_deps = [dep.to_user_string() for dep in deps]
+        return cls(
+            outs=processed_outs,
+            internal_asset_deps=processed_internal_asset_deps,
+            deps=processed_deps,
+            extras=extras or {},
+        )
+
+    def outs_as_dagster_obj(self) -> t.Dict[str, AssetOut]:
+        """Converts the outs to AssetOuts."""
+        return {
+            name: AssetOut(key=AssetKey.from_user_string(self.outs[name]))
+            for name in self.outs
+        }
+
+    def internal_asset_deps_as_dagster_obj(self) -> t.Mapping[str, t.Set[AssetKey]]:
+        """Converts the internal asset deps to AssetDeps."""
+        return {
+            name: {AssetKey.from_user_string(dep) for dep in deps_set}
+            for name, deps_set in self.internal_asset_deps.items()
+        }
+
+    def deps_as_dagster_obj(self) -> t.List[AssetKey]:
+        """Converts the deps to AssetKeys."""
+        return [AssetKey.from_user_string(dep) for dep in self.deps]
+
+
+class SQLMeshExporter(abc.ABC):
+    @abc.abstractmethod
+    def name(self) -> str:
+        """Returns the name of the exporter."""
+        raise NotImplementedError("Not implemented")
+
+    @abc.abstractmethod
+    def create_export_asset(
+        self,
+        mesh: SQLMeshInstance,
+        translator: PrefixedSQLMeshTranslator,
+        to_export: t.List[t.Tuple[Model, AssetKey]],
+    ) -> SQLMeshExportedAssetDefinition:
+        """This creates an export asset that can be cached"""
+        raise NotImplementedError("Not implemented")
+
+    def asset_from_definition(
+        self,
+        definition: SQLMeshExportedAssetDefinition,
+    ) -> AssetsDefinition:
+        """Converts the exported asset definition to a Dagster AssetsDefinition."""
+        outs = definition.outs_as_dagster_obj()
+        internal_asset_deps = definition.internal_asset_deps_as_dagster_obj()
+        deps = definition.deps_as_dagster_obj()
+
+        return multi_asset(
+            outs=outs,
+            internal_asset_deps=internal_asset_deps,
+            deps=deps,
+            **self.asset_options(definition),
+        )(self.asset_function(definition))
+
+    def asset_options(
+        self, definition: SQLMeshExportedAssetDefinition
+    ) -> t.Dict[str, t.Any]:
+        """Returns the options for the asset."""
+        return dict(
+            compute_kind="sqlmesh-export",
+            can_subset=True,
+        )
+
+    @abc.abstractmethod
+    def asset_function(self, definition: SQLMeshExportedAssetDefinition) -> t.Callable:
+        raise NotImplementedError("Not implemented")
 
 
 class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
@@ -91,6 +200,9 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
         self._source_catalog = source_catalog
         self._source_schema = source_schema
 
+    def name(self) -> str:
+        return "trino2clickhouse"
+
     def trino_destination_table(self, table_name: str):
         return f"{self._destination_catalog}.{self._destination_schema}.{table_name}"
 
@@ -100,15 +212,17 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
     def trino_source_table(self, table_name: str):
         return f"{self._source_catalog}.{self._source_schema}.{table_name}"
 
-    def convert_model_key_to_clickhouse_out(self, key: AssetKey) -> AssetOut:
-        return AssetOut(
-            key_prefix=self._prefix,
-            is_required=False,
+    def convert_model_key_to_clickhouse_out(self, key: AssetKey) -> AssetKey:
+        return AssetKey(
+            path=[*self._prefix, key.path[-1]],
         )
 
     def create_export_asset(
-        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
-    ) -> AssetsDefinition:
+        self,
+        mesh: SQLMeshInstance,
+        translator: PrefixedSQLMeshTranslator,
+        to_export: t.List[t.Tuple[Model, AssetKey]],
+    ) -> SQLMeshExportedAssetDefinition:
         clickhouse_outs = {
             key.path[-1]: self.convert_model_key_to_clickhouse_out(key)
             for _, key in to_export
@@ -117,14 +231,33 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
             key.path[-1]: {key} for _, key in to_export
         }
         deps = [key for _, key in to_export]
+        table_metadata: dict[str, dict] = {}
 
-        @multi_asset(
+        for model, asset_key in to_export:
+            tags = translator.get_unfiltered_tags(mesh.context, model)
+            index = "index" in tags and json.loads(tags["index"]) or None
+            order_by = "order_by" in tags and json.loads(tags["order_by"]) or None
+            table_metadata[asset_key.path[-1]] = TableMetadata(
+                index=index,
+                order_by=order_by,
+            ).model_dump()
+        extras = dict(table_metadata=table_metadata)
+
+        return SQLMeshExportedAssetDefinition.from_dagster_objs(
             outs=clickhouse_outs,
             internal_asset_deps=internal_asset_deps,
             deps=deps,
-            compute_kind="sqlmesh-export",
-            can_subset=True,
+            extras=extras,
         )
+
+    def asset_function(self, definition: SQLMeshExportedAssetDefinition):
+        table_metadata = {
+            name: TableMetadata.model_validate(raw_metadata)
+            for name, raw_metadata in definition.extras.get(
+                "table_metadata", {}
+            ).items()
+        }
+
         async def trino_clickhouse_export(
             context: AssetExecutionContext,
             trino_exporter: TrinoExporterResource,
@@ -139,6 +272,10 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                         context.op_execution_context.selected_output_names
                     )
                     for table_name in selected_output_names:
+                        metadata = table_metadata.get(table_name, TableMetadata())
+                        logger.info(
+                            f"Exporting table {table_name} with metadata: {metadata}"
+                        )
                         await transfer(
                             Source(
                                 exporter=exporter,
@@ -153,6 +290,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
                                 table=TableReference(
                                     schema_name=self._destination_schema,
                                     table_name=table_name,
+                                    metadata=metadata,
                                 ),
                             ),
                             log_override=context.log,
@@ -241,18 +379,23 @@ class Trino2BigQuerySQLMeshExporter(SQLMeshExporter):
         self._source_catalog = source_catalog
         self._source_schema = source_schema
 
+    def name(self) -> str:
+        return "trino2bigquery"
+
     def bigquery_destination_table(self, table_name: str) -> str:
         return f"`{self._project_id}.{self._dataset_id}.{table_name}`"
 
-    def convert_model_key_to_bigquery_out(self, _key: AssetKey) -> AssetOut:
-        return AssetOut(
-            key_prefix=self._prefix,
-            is_required=False,
+    def convert_model_key_to_bigquery_out(self, key: AssetKey) -> AssetKey:
+        return AssetKey(
+            path=[*self._prefix, key.path[-1]],
         )
 
     def create_export_asset(
-        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
-    ) -> AssetsDefinition:
+        self,
+        mesh: SQLMeshInstance,
+        translator: SQLMeshDagsterTranslator,
+        to_export: t.List[t.Tuple[Model, AssetKey]],  # Added translator parameter
+    ) -> SQLMeshExportedAssetDefinition:
         bigquery_outs = {
             key.path[-1]: self.convert_model_key_to_bigquery_out(key)
             for _, key in to_export
@@ -262,13 +405,13 @@ class Trino2BigQuerySQLMeshExporter(SQLMeshExporter):
         }
         deps = [key for _, key in to_export]
 
-        @multi_asset(
+        return SQLMeshExportedAssetDefinition.from_dagster_objs(
             outs=bigquery_outs,
             internal_asset_deps=internal_asset_deps,
             deps=deps,
-            compute_kind="sqlmesh-export",
-            can_subset=True,
         )
+
+    def asset_function(self, definition: SQLMeshExportedAssetDefinition):
         async def trino_bigquery_export(
             context: AssetExecutionContext,
             trino_exporter: TrinoExporterResource,
@@ -405,18 +548,23 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
         self._dataset_id = dataset_id
         self._bucket_name = bucket_name
 
+    def name(self) -> str:
+        return "duckdb2bigquery"
+
     def bigquery_destination_table(self, table_name: str) -> str:
         return f"`{self._project_id}.{self._dataset_id}.{table_name}`"
 
-    def convert_model_key_to_bigquery_out(self, _key: AssetKey) -> AssetOut:
-        return AssetOut(
-            key_prefix=self._prefix,
-            is_required=False,
+    def convert_model_key_to_bigquery_out(self, key: AssetKey) -> AssetKey:
+        return AssetKey(
+            path=[*self._prefix, key.path[-1]],
         )
 
     def create_export_asset(
-        self, mesh: SQLMeshInstance, to_export: t.List[t.Tuple[Model, AssetKey]]
-    ) -> AssetsDefinition:
+        self,
+        mesh: SQLMeshInstance,
+        translator: SQLMeshDagsterTranslator,
+        to_export: t.List[t.Tuple[Model, AssetKey]],  # Added translator parameter
+    ) -> SQLMeshExportedAssetDefinition:
         bigquery_outs = {
             key.path[-1]: self.convert_model_key_to_bigquery_out(key)
             for _, key in to_export
@@ -426,13 +574,13 @@ class DuckDB2BigQuerySQLMeshExporter(SQLMeshExporter):
         }
         deps = [key for _, key in to_export]
 
-        @multi_asset(
+        return SQLMeshExportedAssetDefinition.from_dagster_objs(
             outs=bigquery_outs,
             internal_asset_deps=internal_asset_deps,
             deps=deps,
-            compute_kind="sqlmesh-export",
-            can_subset=True,
         )
+
+    def asset_function(self, definition: SQLMeshExportedAssetDefinition):
         async def duckdb_bigquery_export(
             context: AssetExecutionContext,
             duckdb_exporter: DuckDBExporterResource,
@@ -572,17 +720,20 @@ class Trino2DuckDBSQLMeshExporter(SQLMeshExporter):
         self._source_catalog = source_catalog
         self._source_schema = source_schema
 
-    def convert_model_key_to_duckdb_out(self, _key: AssetKey) -> AssetOut:
-        return AssetOut(
-            key_prefix=self._prefix,
-            is_required=False,
+    def name(self) -> str:
+        return "trino2duckdb"
+
+    def convert_model_key_to_duckdb_out(self, key: AssetKey) -> AssetKey:
+        return AssetKey(
+            path=[*self._prefix, key.path[-1]],
         )
 
     def create_export_asset(
         self,
         mesh: SQLMeshInstance,
+        translator: SQLMeshDagsterTranslator,  # Added translator parameter
         to_export: t.List[t.Tuple[Model, AssetKey]],
-    ) -> AssetsDefinition:
+    ) -> SQLMeshExportedAssetDefinition:
         duckdb_outs = {
             key.path[-1]: self.convert_model_key_to_duckdb_out(key)
             for _, key in to_export
@@ -592,13 +743,13 @@ class Trino2DuckDBSQLMeshExporter(SQLMeshExporter):
         }
         deps = [key for _, key in to_export]
 
-        @multi_asset(
+        return SQLMeshExportedAssetDefinition.from_dagster_objs(
             outs=duckdb_outs,
             internal_asset_deps=internal_asset_deps,
             deps=deps,
-            compute_kind="sqlmesh-export",
-            can_subset=True,
         )
+
+    def asset_function(self, definition: SQLMeshExportedAssetDefinition):
         async def trino_duckdb_export(
             context: AssetExecutionContext,
             trino_exporter: TrinoExporterResource,

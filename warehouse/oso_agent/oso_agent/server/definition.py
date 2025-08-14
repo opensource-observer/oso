@@ -53,7 +53,14 @@ class ChatRequest(BaseModel):
             )
             for message in self.messages
         ]
-    
+
+
+class ToolsRequest(BaseModel):
+    """Request to proxy one of the agent's tool"""
+
+    tool: str
+    params: list[t.Any]
+
 
 class BotConfig(AgentConfig):
     """Configuration for the bot."""
@@ -82,6 +89,11 @@ class AgentServerConfig(AgentConfig):
     host: str = Field(
         default="127.0.0.1",
         description="Host for the server to run on",
+    )
+
+    enable_discord_bot: bool = Field(
+        default=False,
+        description="Enable the Discord bot for the agent",
     )
 
 

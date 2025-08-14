@@ -18,6 +18,7 @@ MODEL (
       time_column := block_timestamp,
       no_gap_date_part := 'day',
       ignore_before := @superchain_audit_start,
+      ignore_after := @superchain_audit_end,
       missing_rate_min_threshold := 0.95,
     ),
   ),
@@ -34,11 +35,15 @@ SELECT
   to_address,
   gas AS gas_used,
   gas_price,
+  receipt_gas_used,
+  receipt_effective_gas_price,
+  receipt_l1_fee,
+  receipt_status,
   value_lossless,
-  @chain_name(chain) AS chain
+  @chain_name(chain) AS chain,
+  transaction_type
 FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.transactions')
 WHERE
   network = 'mainnet'
-  AND receipt_status = 1
   AND gas > 0
   AND /* Bigquery requires we specify partitions to filter for this data source */ dt BETWEEN @start_dt AND @end_dt

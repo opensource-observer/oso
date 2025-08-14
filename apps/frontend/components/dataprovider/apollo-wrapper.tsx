@@ -7,8 +7,8 @@ import {
   ApolloClient,
   SSRMultipartLink,
 } from "@apollo/experimental-nextjs-app-support";
-import { useSupabaseState } from "../hooks/supabase";
-import { DB_GRAPHQL_URL } from "../../lib/config";
+import { useSupabaseState } from "@/components/hooks/supabase";
+import { DB_GRAPHQL_URL } from "@/lib/config";
 
 function ApolloWrapper({ children }: React.PropsWithChildren) {
   const supabaseState = useSupabaseState();
@@ -16,11 +16,12 @@ function ApolloWrapper({ children }: React.PropsWithChildren) {
     //console.log(userToken);
     const httpLink = new HttpLink({
       uri: DB_GRAPHQL_URL,
-      headers: supabaseState?.session?.access_token
-        ? {
-            Authorization: `Bearer ${supabaseState.session.access_token}`,
-          }
-        : {},
+      headers:
+        supabaseState._type === "loggedIn"
+          ? {
+              Authorization: `Bearer ${supabaseState.session.access_token}`,
+            }
+          : {},
     });
     return httpLink;
   };

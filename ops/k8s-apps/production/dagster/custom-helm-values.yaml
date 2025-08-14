@@ -4,6 +4,10 @@ metadata:
   name: production-dagster
 spec:
   values:
+    # We should eventually set this to 0, but we are setting it to 1 to gather
+    # timing data
+    osoDagster:
+      eagerlyLoadSqlTables: 0
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
       port: "5432"
@@ -29,22 +33,24 @@ spec:
         runRetries:
           enabled: true
           maxRetries: 3
+        runMonitoring:
+          startTimeoutSeconds: 600
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
             value: "1"
         resources:
           limits:
-            memory: 768Mi
+            memory: 1280Mi
           requests:
-            cpu: 100m
-            memory: 512Mi
+            cpu: 200m
+            memory: 640Mi
       dagsterWebserver:
         env:
           - name: DAGSTER_DBT_GENERATE_AND_AUTH_GCP
             value: "1"
         resources:
           limits:
-            memory: 768Mi
+            memory: 1024Mi
           requests:
             cpu: 100m
             memory: 512Mi
@@ -72,14 +78,16 @@ spec:
           - name: "oso-dagster"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250602173302-39e4415 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250814001314-aa3f9a9 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
-              - "oso_dagster.definitions"
+              - "oso_dagster.definitions.legacy"
+              - "--log-format"
+              - "json"
             includeConfigInLaunchedRuns:
               enabled: false
     sqlmesh:

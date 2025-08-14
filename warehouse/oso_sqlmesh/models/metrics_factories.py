@@ -43,12 +43,19 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     if "funding" in config["table_name"]:
         # Hack for now, ignore these until we fix the audit
         return None
-    
+
     if "releases" in config["table_name"]:
         return None
-    
+
+    if "worldchain_users_aggregation" in config["table_name"]:
+        return None
+
+    if "new_contributors" in config["table_name"]:
+        return None
+
     if "data_category=blockchain" in config["additional_tags"]:
         options["ignore_before"] = constants.superchain_audit_start
+        options["ignore_after"] = constants.superchain_audit_end
         options["missing_rate_min_threshold"] = 0.95
 
     return (
@@ -68,10 +75,12 @@ timeseries_metrics(
         "int_events_daily__blockchain",
         "int_events_daily__blockchain_token_transfers",
         "int_events_daily__4337",
-        "int_events_daily__defillama_tvl",
+        "int_events_daily__defillama",
         "int_events_daily__github",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
+        "int_events_aux_prs",
+        "int_worldchain_events_by_project",
     ],
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
@@ -213,6 +222,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Contributors",
                 description="Metrics related to GitHub contributors",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "new_contributors": MetricQueryDef(
+            ref="code/new_contributors.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="New Contributors",
+                description="Metrics related to new GitHub contributors identified by author_association = 'FIRST_TIME_CONTRIBUTOR'",
             ),
             additional_tags=["data_category=code"],
         ),
@@ -396,6 +423,78 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
+        "issue_age_avg": MetricQueryDef(
+            ref="code/issue_age_avg.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Average Issue Age",
+                description="Average age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_max": MetricQueryDef(
+            ref="code/issue_age_max.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Maximum Issue Age",
+                description="Maximum age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_min": MetricQueryDef(
+            ref="code/issue_age_min.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Minimum Issue Age",
+                description="Minimum age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "issue_age_median": MetricQueryDef(
+            ref="code/issue_age_median.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Median Issue Age",
+                description="Median age of issues in seconds since creation",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         # "avg_prs_time_to_merge": MetricQueryDef(
         #     ref="code/prs_time_to_merge.sql",
         #     time_aggregations=[
@@ -410,20 +509,20 @@ timeseries_metrics(
         #     ),
         #     additional_tags=["data_category=code"],
         # ),
-        # "avg_time_to_first_response": MetricQueryDef(
-        #     ref="code/time_to_first_response.sql",
-        #     time_aggregations=[
-        #         "quarterly",
-        #         "biannually",
-        #     ],
-        #     entity_types=["artifact", "project", "collection"],
-        #     over_all_time=True,
-        #     metadata=MetricMetadata(
-        #         display_name="Average Time to First Response",
-        #         description="Metrics related to average time to first response",
-        #     ),
-        #     additional_tags=["data_category=code"],
-        # ),
+        "avg_time_to_first_response": MetricQueryDef(
+            ref="code/time_to_first_response.sql",
+            time_aggregations=[
+                "quarterly",
+                "biannually",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Average Time to First Response",
+                description="Metrics related to average time to first response",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         "active_addresses_aggregation": MetricQueryDef(
             ref="blockchain/active_addresses.sql",
             vars={
@@ -444,6 +543,24 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=blockchain"],
         ),
+        "worldchain_users_aggregation": MetricQueryDef(
+            ref="blockchain/worldchain_users.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Worldchain Users Aggregation",
+                description="Metrics related to Worldchain users",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
         "gas_fees": MetricQueryDef(
             ref="blockchain/gas_fees.sql",
             time_aggregations=[
@@ -459,6 +576,24 @@ timeseries_metrics(
             metadata=MetricMetadata(
                 display_name="Gas Fees",
                 description="Metrics related to blockchain gas fees",
+            ),
+            additional_tags=["data_category=blockchain"],
+        ),
+        "gas_fees_internal": MetricQueryDef(
+            ref="blockchain/gas_fees_internal.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["project"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Gas Fees (Including Internal Transactions)",
+                description="Metrics related to blockchain gas fees (including internal transactions)",
             ),
             additional_tags=["data_category=blockchain"],
         ),
@@ -535,24 +670,67 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=defillama"],
         ),
-        # "contributors_lifecycle": MetricQueryDef(
-        #     ref="code/lifecycle.sql",
-        #     vars={
-        #         "activity_event_types": [
-        #             "COMMIT_CODE",
-        #             "ISSUE_OPENED",
-        #             "PULL_REQUEST_OPENED",
-        #             "PULL_REQUEST_MERGED",
-        #         ],
-        #     },
-        #     time_aggregations=["monthly", "quarterly", "biannually", "yearly"],
-        #     entity_types=["artifact", "project", "collection"],
-        #     metadata=MetricMetadata(
-        #         display_name="Contributors Lifecycle",
-        #         description="Metrics related to contributor lifecycle",
-        #     ),
-        #     additional_tags=["data_category=code"],
-        # ),
+        "defillama_trading_volume": MetricQueryDef(
+            ref="blockchain/defillama_trading_volume.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            incremental=False,
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Defillama Trading Volume",
+                description="Metrics related to daily trading volume reported by Defillama",
+            ),
+            additional_tags=["data_category=defillama"],
+        ),
+        "defillama_lp_fee": MetricQueryDef(
+            ref="blockchain/defillama_lp_fee.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            incremental=False,
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Defillama LP Fees",
+                description="Metrics related to daily LP fees reported by Defillama",
+            ),
+            additional_tags=["data_category=defillama"],
+        ),
+        "contributors_lifecycle": MetricQueryDef(
+            ref="code/lifecycle.sql",
+            vars={
+                "activity_event_types": [
+                    "COMMIT_CODE",
+                    "ISSUE_OPENED",
+                    "PULL_REQUEST_OPENED",
+                    "PULL_REQUEST_MERGED",
+                ],
+            },
+            time_aggregations=[
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            metadata=MetricMetadata(
+                display_name="Contributors Lifecycle",
+                description="Metrics related to contributor lifecycle",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         "funding_received": MetricQueryDef(
             ref="funding/funding_received.sql",
             time_aggregations=[
@@ -609,5 +787,119 @@ timeseries_metrics(
         #         "data_category=dependencies",
         #     ],
         # ),
+        "bot_activity": MetricQueryDef(
+            ref="code/bot_activity.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Bot Activity",
+                description="Metrics related to bot activity on GitHub",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "burstiness": MetricQueryDef(
+            ref="code/burstiness.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Burstiness",
+                description="Metrics related to GitHub repository burstiness",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "contributor_absence_factor": MetricQueryDef(
+            ref="code/contributor_absence_factor.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Contributor Absence Factor",
+                description="Measures the minimum number of contributors responsible for 50% of total contributions. Lower values indicate higher risk if key contributors leave. Previously known as Bus Factor.",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "prs_comments": MetricQueryDef(
+            ref="code/prs_comments.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Pull Request Comments",
+                description="Metrics related to GitHub pull request review comments",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "project_velocity": MetricQueryDef(
+            ref="code/project_velocity.sql",
+            vars={
+                "weight_issues_closed": 1,
+                "weight_commits": 1,
+                "weight_pr_reviews": 1,
+                "weight_contributors": 2,
+            },
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Project Velocity",
+                description="Measures development speed through a weighted combination of issues closed, commits, pull request reviews, and contributors. Provides insight into project innovation and activity levels.",
+            ),
+            additional_tags=["data_category=code"],
+        ),
+        "self_merge_rates": MetricQueryDef(
+            ref="code/self_merge_rates.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="Self Merge Rates",
+                description="Metrics related to self-merged pull requests without comments as a ratio of total merged pull requests",
+            ),
+            additional_tags=["data_category=code"],
+        ),
     },
 )

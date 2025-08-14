@@ -4,6 +4,8 @@ app:
   # name: "oso" # This must be set
   # command: []
   # args: []
+  # By default we enable json logs via the OSO_ENABLE_JSON_LOGS env var
+  enableJsonLogs: true
   ingress:
     enabled: false
     className: "default"
@@ -35,3 +37,4 @@ app:
   rawEnvVars: [] 
   volumes: []
   volumeMounts: []
+  livenessProbe: {}

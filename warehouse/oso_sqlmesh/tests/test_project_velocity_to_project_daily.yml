@@ -1,0 +1,154 @@
+test_project_velocity_to_project_daily:
+  model: oso.project_velocity_to_project_daily
+  vars:
+    start: 2024-01-01
+    end: 2024-01-31
+  inputs:
+    oso.closed_issues_to_project_daily:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: closed_issues_daily
+        amount: 2
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: closed_issues_daily
+        amount: 1
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: closed_issues_daily
+        amount: 1
+    oso.commits_to_project_daily:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: commits_daily
+        amount: 7
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: commits_daily
+        amount: 4
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: commits_daily
+        amount: 1
+    oso.prs_comments_to_project_daily:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: prs_comments_daily
+        amount: 3
+    oso.contributors_to_project_daily:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: contributors_daily
+        amount: 2
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: contributors_daily
+        amount: 2
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: contributors_daily
+        amount: 1
+  outputs:
+    query:
+      rows:
+      # Project 1, Day 1: 2 issues + 7 commits + 3 reviews + 2 contributors*2 = 2 + 7 + 3 + 4 = 16
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: project_velocity_daily
+        amount: 16.0
+      # Project 1, Day 2: 1 issue + 4 commits + 0 reviews + 2 contributors*2 = 1 + 4 + 0 + 4 = 9
+      - metrics_sample_date: 2024-01-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: project_velocity_daily
+        amount: 9.0
+      # Project 2, Day 1: 1 issue + 1 commit + 0 reviews + 1 contributor*2 = 1 + 1 + 0 + 2 = 4
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: project_velocity_daily
+        amount: 4.0
+
+test_project_velocity_to_project_daily_edge_cases:
+  model: oso.project_velocity_to_project_daily
+  vars:
+    start: 2024-02-01
+    end: 2024-02-05
+  inputs:
+    oso.closed_issues_to_project_daily:
+      rows: []
+    oso.commits_to_project_daily:
+      rows:
+      - metrics_sample_date: 2024-02-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: commits_daily
+        amount: 10
+      - metrics_sample_date: 2024-02-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_4
+        from_artifact_id: ''
+        metric: commits_daily
+        amount: 3
+    oso.prs_comments_to_project_daily:
+      rows: []
+    oso.contributors_to_project_daily:
+      rows:
+      - metrics_sample_date: 2024-02-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: contributors_daily
+        amount: 1
+      - metrics_sample_date: 2024-02-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_4
+        from_artifact_id: ''
+        metric: contributors_daily
+        amount: 3
+  outputs:
+    query:
+      rows:
+      # Project 3, Day 1: 0 issues + 10 commits + 0 reviews + 1 contributor*2 = 0 + 10 + 0 + 2 = 12
+      - metrics_sample_date: 2024-02-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_3
+        from_artifact_id: ''
+        metric: project_velocity_daily
+        amount: 12.0
+      # Project 4, Day 2: 0 issues + 3 commits + 0 reviews + 3 contributors*2 = 0 + 3 + 0 + 6 = 9
+      - metrics_sample_date: 2024-02-02
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_4
+        from_artifact_id: ''
+        metric: project_velocity_daily
+        amount: 9.0

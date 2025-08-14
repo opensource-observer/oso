@@ -1,0 +1,121 @@
+test_int_last_of_event_from_artifact__github:
+  model: oso.int_last_of_event_from_artifact__github
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+        - to_artifact_id: repo_1
+          from_artifact_id: user_1
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          bucket_day: 2024-01-01
+          amount: 5
+        - to_artifact_id: repo_1
+          from_artifact_id: user_1
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          bucket_day: 2024-01-03
+          amount: 3
+        - to_artifact_id: repo_1
+          from_artifact_id: user_1
+          event_source: GITHUB
+          event_type: ISSUE_OPENED
+          bucket_day: 2024-01-02
+          amount: 2
+        - to_artifact_id: repo_2
+          from_artifact_id: user_1
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          bucket_day: 2024-01-05
+          amount: 1
+        - to_artifact_id: repo_1
+          from_artifact_id: user_2
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          bucket_day: 2024-01-04
+          amount: 4
+        - to_artifact_id: repo_1
+          from_artifact_id: user_1
+          event_source: GITLAB
+          event_type: COMMIT_CODE
+          bucket_day: 2024-01-06
+          amount: 2
+  outputs:
+    query:
+      rows:
+        - time: 2024-01-03
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+        - time: 2024-01-02
+          event_type: ISSUE_OPENED
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+        - time: 2024-01-05
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          from_artifact_id: user_1
+          to_artifact_id: repo_2
+        - time: 2024-01-04
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          from_artifact_id: user_2
+          to_artifact_id: repo_1
+        - time: 2024-01-06
+          event_type: COMMIT_CODE
+          event_source: GITLAB
+          from_artifact_id: user_1
+          to_artifact_id: repo_1
+
+test_int_last_of_event_from_artifact__github_single_events:
+  model: oso.int_last_of_event_from_artifact__github
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+        - to_artifact_id: repo_single
+          from_artifact_id: user_single
+          event_source: GITHUB
+          event_type: PULL_REQUEST_OPENED
+          bucket_day: 2024-01-01
+          amount: 1
+  outputs:
+    query:
+      rows:
+        - time: 2024-01-01
+          event_type: PULL_REQUEST_OPENED
+          event_source: GITHUB
+          from_artifact_id: user_single
+          to_artifact_id: repo_single
+
+test_int_last_of_event_from_artifact__github_multiple_events_same_group:
+  model: oso.int_last_of_event_from_artifact__github
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+        - to_artifact_id: repo_test
+          from_artifact_id: user_test
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          bucket_day: 2024-01-05
+          amount: 3
+        - to_artifact_id: repo_test
+          from_artifact_id: user_test
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          bucket_day: 2024-01-02
+          amount: 2
+        - to_artifact_id: repo_test
+          from_artifact_id: user_test
+          event_source: GITHUB
+          event_type: COMMIT_CODE
+          bucket_day: 2024-01-08
+          amount: 1
+  outputs:
+    query:
+      rows:
+        - time: 2024-01-08
+          event_type: COMMIT_CODE
+          event_source: GITHUB
+          from_artifact_id: user_test
+          to_artifact_id: repo_test

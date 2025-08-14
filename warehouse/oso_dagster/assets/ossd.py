@@ -27,7 +27,6 @@ from oso_dagster.dlt_sources.github_repos import (
     GithubURLType,
     oss_directory_github_funding_resource,
     oss_directory_github_repositories_resource,
-    oss_directory_github_sbom_relationships_resource,
     oss_directory_github_sbom_resource,
 )
 from oso_dagster.factories import dlt_factory
@@ -355,50 +354,6 @@ def sbom(
         ChunkedResourceConfig(
             fetch_data_fn=fetch_fn,
             resource=oss_directory_github_sbom_resource,
-            to_serializable_fn=methodcaller("model_dump"),
-            gcs_bucket_name=global_config.gcs_bucket,
-            context=context,
-        ),
-        gh_token,
-    )
-
-
-@dlt_factory(
-    key_prefix="ossd",
-    deps=[AssetKey(["ossd", "repositories"])],
-    tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
-    op_tags={"dagster-k8s/config": K8S_CONFIG},
-    retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
-)
-def sbom_relationships(
-    global_config: ResourceParam[DagsterConfig],
-    context: AssetExecutionContext,
-    cbt: CBTResource,
-    gh_token: str = secret_ref_arg(group_name="ossd", key="github_token"),
-):
-    max_sbom_age_days = context.get_tag("max-sbom-age-days") or "7"
-
-    try:
-        max_sbom_age_days = int(max_sbom_age_days)
-    except ValueError:
-        context.log.error(
-            f"Invalid value for `max-sbom-age-days`: {max_sbom_age_days}. Using default value of 7 days"
-        )
-        max_sbom_age_days = 7
-
-    fetch_fn = create_sbom_fetch_function(
-        context=context,
-        cbt=cbt,
-        gh_token=gh_token,
-        max_sbom_age_days=max_sbom_age_days,
-        table_name="ossd.sbom",
-        data_type="SBOM relationships",
-    )
-
-    return process_chunked_resource(
-        ChunkedResourceConfig(
-            fetch_data_fn=fetch_fn,
-            resource=oss_directory_github_sbom_relationships_resource,
             to_serializable_fn=methodcaller("model_dump"),
             gcs_bucket_name=global_config.gcs_bucket,
             context=context,

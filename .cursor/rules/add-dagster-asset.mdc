@@ -1,0 +1,186 @@
+---
+description: Use this rule when creating new Dagster assets
+alwaysApply: false
+---
+
+# Cursor Rules – Adding a Dagster Asset to OSO
+
+These project-specific rules teach the Cursor AI how to scaffold, extend, and refactor Dagster assets in `warehouse/oso_dagster/assets`. Follow them exactly.
+
+## 1. File placement & naming
+
+- Place each asset in its own module under `warehouse/oso_dagster/assets/`.
+- Use lowercase snake_case for filenames (e.g. `l2beat_stats.py`).
+- Keep all public constants (API_URL, TABLE_NAME) in the module; avoid global mutable state.
+
+## 2. Imports
+
+- Order imports: stdlib, third-party, then oso_* internals.
+- Never use wildcard imports.
+
+**Example:**
+```python
+import os
+import json
+from datetime import datetime
+
+import pandas as pd
+import requests
+from dagster import asset, AssetExecutionContext, MaterializeResult, MetadataValue
+
+from oso_dagster.resources.bigquery import BigQueryResource
+```
+
+## 3. Asset signature
+
+- Always decorate exactly one function with `@asset` per file unless creating an asset factory.
+- Accept a `context: AssetExecutionContext` as first arg, followed by required resources (BigQueryResource, etc.).
+- Set `key_prefix` to a stable namespace (e.g. "defillama", "growthepie").
+- Name the asset with the destination table (e.g. `defillama_protocol_tvl`).
+
+## 4. Fetch → transform → load pattern
+
+1. **Fetch data** from the source API or upstream table.
+2. **Transform** into a tidy `pd.DataFrame`.
+3. **Load** via the provided BigQuery resource:
+
+```python
+bigquery.load_dataframe(
+    df, 
+    dataset="defillama", 
+    table="protocol_tvl", 
+    write_disposition="WRITE_TRUNCATE"
+)
+```
+
+## 5. Return value & metadata
+
+- Return `MaterializeResult(metadata={"row_count": len(df), "sample": MetadataValue.md(df.head().to_markdown(index=False))})`.
+- Include at least `row_count`; add source URL and last updated timestamp when available.
+
+## 6. Idempotency
+
+- The asset must be idempotent: multiple runs on the same partition should yield identical BigQuery state.
+- Prefer `WRITE_TRUNCATE` over incremental inserts unless a proper merge strategy is implemented.
+
+## 7. Configuration & secrets
+
+- Read API keys from environment variables (`os.getenv("<VAR>")`).
+- Fail fast with a clear error if required variables are missing.
+
+## 8. Logging & error handling
+
+- Use `context.log.info()` for high-level milestones (fetched rows, upload time).
+- Catch and raise descriptive errors; avoid broad `except`.
+
+## 9. Tests
+
+- Add a lightweight pytest under `tests/assets/` that mocks the external API and asserts the DataFrame schema.
+
+## 10. Scheduling & sensors
+
+- Do not add schedules or sensors inside the asset file.
+- Coordinate any automation with OSO DevOps; leave the asset manual-only by default.
+
+## 11. Style
+
+- Use type hints everywhere.
+- Max line length 100 chars.
+- Prefer f-strings; never use % formatting.
+- Avoid unnecessary abstraction—concision over cleverness.
+
+## 12. Examples to emulate
+
+- **`defillama.py`**: BigQuery I/O manager pattern for REST JSON → DataFrame → BQ.
+- **`growthepie.py`**: SQL-only asset that executes a templated query via BigQuery resource.
+- **`openlabelsinitiative.py`**: Demonstrates merging multiple API pages into a single DataFrame.
+- **`eas_optimism.py`**: Shows partitioning by block range and emitting per-partition metadata.
+- **`chainlist.py`**: Minimal scrape example using requests with URL version pinning.
+
+## 13. Asset Factory Patterns
+
+For complex assets, use the factory patterns:
+
+### DLT Factory (for REST APIs)
+```python
+@dlt_factory(
+    key_prefix="your_source",
+    name="your_asset_name",
+    op_tags={
+        "dagster/concurrency_key": "your_concurrency_key",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def your_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    # Implementation
+```
+
+### REST Factory (for simple REST APIs)
+```python
+config: RESTAPIConfig = {
+    "client": {
+        "base_url": "https://api.example.com/v1",
+    },
+    "resource_defaults": {
+        "write_disposition": "replace",
+    },
+    "resources": [
+        {
+            "name": "your_resource",
+            "endpoint": {
+                "path": "endpoint.json",
+                "data_selector": "$",
+            },
+        }
+    ],
+}
+
+dlt_assets = create_rest_factory_asset(config=config)
+your_assets = dlt_assets(key_prefix="your_source", name="your_asset_name")
+```
+
+### Archive2BQ Factory (for file downloads)
+```python
+@early_resources_asset_factory()
+def your_data(global_config: DagsterConfig) -> AssetFactoryResponse:
+    asset = create_archive2bq_asset(
+        Archive2BqAssetConfig(
+            key_prefix="your_source",
+            dataset_id="your_dataset",            
+            asset_name="your_asset",
+            source_url="https://api.example.com/data.parquet",
+            source_format=SourceFormat.PARQUET,
+            staging_bucket=global_config.staging_bucket_url,
+            skip_uncompression=True,
+            deps=[],
+        )
+    )
+    return asset
+```
+
+## 14. K8S Configuration
+
+Include K8S config for resource-intensive assets:
+```python
+K8S_CONFIG = {
+    "merge_behavior": "SHALLOW",
+    "container_config": {
+        "resources": {
+            "requests": {"cpu": "2000m", "memory": "3584Mi"},
+            "limits": {"memory": "7168Mi"},
+        },
+    },
+}
+```
+
+## 15. Commit checklist
+
+- [ ] File in correct path & snake_case name
+- [ ] Pass ruff, black (line length 100)
+- [ ] Tests green locally (`pytest -q`)
+- [ ] Asset visible in `uv run dagster dev` UI under correct prefix
+
+---

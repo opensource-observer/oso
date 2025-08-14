@@ -1,46 +1,49 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getTrinoClient, TrinoError } from "../../../../lib/clients/trino";
+import { getTrinoClient } from "@/lib/clients/trino";
 import type { QueryResult, Iterator } from "trino-client";
-import { getTableNamesFromSql } from "../../../../lib/parsing";
-import { getUser } from "../../../../lib/auth/auth";
+import { getTableNamesFromSql } from "@/lib/parsing";
+import { getUser } from "@/lib/auth/auth";
+import { trackServerEvent } from "@/lib/analytics/track";
+import { logger } from "@/lib/logger";
+import { AuthUser } from "@/lib/types/user";
+import { EVENTS } from "@/lib/types/posthog";
+import { CreditsService, TransactionType } from "@/lib/services/credits";
+import { TRINO_JWT_SECRET } from "@/lib/config";
+import { SignJWT } from "jose";
 import {
-  CreditsService,
-  TransactionType,
-} from "../../../../lib/services/credits";
-import { trackServerEvent } from "../../../../lib/analytics/track";
-import { logger } from "../../../../lib/logger";
-import * as jsonwebtoken from "jsonwebtoken";
-import { AuthUser } from "../../../../lib/types/user";
-import { EVENTS } from "../../../../lib/types/posthog";
+  AssetMaterialization,
+  safeGetAssetsMaterializations,
+} from "@/lib/dagster/assets";
+import { z } from "zod";
 
 // Next.js route control
 export const revalidate = 0;
 export const maxDuration = 300;
 
-const QUERY = "query";
-const FORMAT = "format";
+const RequestBodySchema = z.object({
+  query: z.string(),
+  format: z.enum(["json", "minimal"]).default("json"),
+  includeAnalytics: z.boolean().default(false),
+});
 
 const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
-function signJWT(user: AuthUser) {
-  const secret = process.env.TRINO_JWT_SECRET;
+async function signJWT(user: AuthUser) {
+  const secret = TRINO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
   }
-  // TODO: make subject use organization name
-  return jsonwebtoken.sign(
-    {
-      userId: user.userId,
-    },
-    secret,
-    {
-      algorithm: "HS256",
-      subject: `jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`,
-      audience: "consumer-trino",
-      issuer: "opensource-observer",
-    },
-  );
+
+  return new SignJWT({
+    userId: user.userId,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(`jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`)
+    .setAudience("consumer-trino")
+    .setIssuer("opensource-observer")
+    .setExpirationTime("1h")
+    .sign(new TextEncoder().encode(secret));
 }
 
 /**
@@ -51,9 +54,9 @@ function signJWT(user: AuthUser) {
  * @returns
  */
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const query = body?.[QUERY];
-  const format = body?.[FORMAT] ?? "json";
+  const { query, format, includeAnalytics } = RequestBodySchema.parse(
+    await request.json(),
+  );
   const user = await getUser(request);
   await using tracker = trackServerEvent(user);
 
@@ -68,41 +71,60 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  const creditsDeducted = await CreditsService.checkAndDeductCredits(
-    user,
-    TransactionType.SQL_QUERY,
-    "/api/v1/sql",
-    { query },
-  );
+  const orgId = user.orgId;
 
-  if (!creditsDeducted) {
-    logger.log(`/api/sql: Insufficient credits for user ${user.userId}`);
-    return makeErrorResponse("Insufficient credits", 402);
+  if (orgId) {
+    try {
+      await CreditsService.checkAndDeductOrganizationCredits(
+        user,
+        orgId,
+        TransactionType.SQL_QUERY,
+        "/api/v1/sql",
+        { query },
+      );
+    } catch (error) {
+      logger.error(
+        `/api/sql: Error tracking usage for user ${user.userId}:`,
+        error,
+      );
+    }
   }
 
-  const jwt = signJWT(user);
+  const jwt = await signJWT(user);
+  const tables = getTableNamesFromSql(query);
 
   try {
     tracker.track(EVENTS.API_CALL, {
       type: "sql",
-      models: getTableNamesFromSql(query),
+      models: tables,
       query: query,
       apiKeyName: user.keyName,
       host: user.host,
     });
 
     const client = getTrinoClient(jwt);
-    const [firstRow, rows] = await client.query(query);
-    const readableStream = mapToReadableStream(firstRow, rows, format);
+    const [trinoData, assets] = await Promise.all([
+      client.query(query),
+      includeAnalytics
+        ? safeGetAssetsMaterializations(tables)
+        : Promise.resolve([]),
+    ]);
+    const { data, error } = trinoData;
+    if (error) {
+      return makeErrorResponse(error.message, 400);
+    }
+    const readableStream = mapToReadableStream(
+      data.firstRow,
+      data.iterator,
+      assets,
+      format,
+    );
     return new NextResponse(readableStream, {
       headers: {
         "Content-Type": "application/x-ndjson",
       },
     });
   } catch (e) {
-    if (e instanceof TrinoError) {
-      return makeErrorResponse(e.message, 400);
-    }
     logger.log(e);
     return makeErrorResponse("Unknown error", 500);
   }
@@ -111,6 +133,7 @@ export async function POST(request: NextRequest) {
 function mapToReadableStream(
   firstRow: QueryResult,
   rows: Iterator<QueryResult>,
+  assets: AssetMaterialization[],
   format: "json" | "minimal",
 ) {
   const textEncoder = new TextEncoder();
@@ -140,6 +163,11 @@ function mapToReadableStream(
   return new ReadableStream({
     async start(controller) {
       try {
+        if (assets.length > 0) {
+          controller.enqueue(
+            textEncoder.encode(JSON.stringify({ assetStatus: assets }) + "\n"),
+          );
+        }
         controller.enqueue(
           textEncoder.encode(
             JSON.stringify(mapToFormat(firstRow.data, true)) + "\n",

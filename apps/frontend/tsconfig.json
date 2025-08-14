@@ -18,7 +18,11 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": [
     "next-env.d.ts",
@@ -29,7 +33,8 @@
     "jest.config.ts",
     "babel.config.testing.js",
     "tailwind.config.js",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".storybook/*.ts"
   ],
   "exclude": ["node_modules"]
 }

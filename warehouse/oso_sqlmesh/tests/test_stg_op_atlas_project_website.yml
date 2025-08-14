@@ -1,0 +1,66 @@
+test_stg_op_atlas_project_website:
+  gateway: local
+  model: oso.stg_op_atlas_project_website
+  vars:
+    start: 2024-01-01
+    end: 2024-02-01
+  inputs:
+    bigquery.op_atlas.project:
+      rows:
+      - comment: "Mock for @oso_source"
+    bigquery.bq_op_atlas.project:
+      rows:
+      - comment: "Mock for @oso_source"
+    sources__bigquery__op_atlas.project:
+      rows:
+      - id: "proj_web1"
+        _dlt_id: "dlt_pw1"
+        updated_at: "2025-01-15T00:00:00Z" # Newer
+      - id: "proj_web1" # Same project_id, to test ROW_NUMBER
+        _dlt_id: "dlt_pw1_older" # Different dlt_id for project source, but maps to same project_id
+        updated_at: "2025-01-01T00:00:00Z" # Older
+      - id: "proj_web2"
+        _dlt_id: "dlt_pw2"
+        updated_at: "2025-01-20T00:00:00Z"
+
+    bigquery.op_atlas.project__website:
+      rows:
+      - comment: "Mock for @oso_source"
+    bigquery.bq_op_atlas.project__website:
+      rows:
+      - comment: "Mock for @oso_source"
+    sources__bigquery__op_atlas.project__website:
+      rows:
+      # Website for proj_web1, linked to newer project entry
+      - _dlt_parent_id: "dlt_pw1"
+        value: "https://example.com/site1"
+        _dlt_id: "dlt_web1"
+      # Same website for proj_web1, but linked to older project entry (should be filtered by ROW_NUMBER if updated_at was on this table)
+      # However, updated_at is from project table, so this specific scenario tests distinctness of website_url for a given project_id
+      - _dlt_parent_id: "dlt_pw1_older"
+        value: "https://example.com/site1" # Same URL
+        _dlt_id: "dlt_web2"
+      # Different website for proj_web1
+      - _dlt_parent_id: "dlt_pw1"
+        value: "HTTPS://EXAMPLE.COM/SITE_ALPHA" # Will be lowercased
+        _dlt_id: "dlt_web3"
+      # Website for proj_web2
+      - _dlt_parent_id: "dlt_pw2"
+        value: "http://test.org/page"
+        _dlt_id: "dlt_web4"
+
+  outputs:
+    query:
+      rows:
+      # For proj_web1, 'https://example.com/site1' is associated with both dlt_pw1 (newer) and dlt_pw1_older.
+      # The ROW_NUMBER() PARTITION BY project_id, website_url ORDER BY updated_at DESC
+      # will pick the one associated with the newer 'updated_at' from the project table.
+      - atlas_id: "proj_web1"
+        website_url: "https://example.com/site1"
+        updated_at: "2025-01-15"
+      - atlas_id: "proj_web1"
+        website_url: "https://example.com/site_alpha" # Lowercased
+        updated_at: "2025-01-15"
+      - atlas_id: "proj_web2"
+        website_url: "http://test.org/page"
+        updated_at: "2025-01-20"

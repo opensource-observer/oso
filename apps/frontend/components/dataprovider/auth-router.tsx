@@ -1,12 +1,12 @@
 import { ReactNode } from "react";
 import { usePostHog } from "posthog-js/react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   CommonDataProviderProps,
   CommonDataProviderRegistration,
   DataProviderView,
-} from "./provider-view";
-import { RegistrationProps } from "../../lib/types/plasmic";
-import { useSupabaseState } from "../hooks/supabase";
+} from "@/components/dataprovider/provider-view";
+import { useSupabaseState } from "@/components/hooks/supabase";
 
 const DEFAULT_PLASMIC_VARIABLE = "auth";
 
@@ -16,25 +16,29 @@ type AuthRouterProps = CommonDataProviderProps & {
   testNoAuth?: boolean;
 };
 
-const AuthRouterRegistration: RegistrationProps<AuthRouterProps> = {
-  ...CommonDataProviderRegistration,
-  noAuthChildren: {
-    type: "slot",
-    defaultValue: {
-      type: "text",
-      value: "Placeholder",
+const AuthRouterMeta: CodeComponentMeta<AuthRouterProps> = {
+  name: "AuthRouter",
+  props: {
+    ...CommonDataProviderRegistration,
+    noAuthChildren: {
+      type: "slot",
+      defaultValue: {
+        type: "text",
+        value: "Placeholder",
+      },
+    },
+    ignoreNoAuth: {
+      type: "boolean",
+      advanced: true,
+      helpText: "Always render children",
+    },
+    testNoAuth: {
+      type: "boolean",
+      editOnly: true,
+      advanced: true,
     },
   },
-  ignoreNoAuth: {
-    type: "boolean",
-    advanced: true,
-    helpText: "Always render children",
-  },
-  testNoAuth: {
-    type: "boolean",
-    editOnly: true,
-    advanced: true,
-  },
+  providesData: true,
 };
 
 function AuthRouter(props: AuthRouterProps) {
@@ -43,7 +47,6 @@ function AuthRouter(props: AuthRouterProps) {
     className,
     variableName,
     useTestData,
-    testData,
     noAuthChildren,
     ignoreNoAuth,
     testNoAuth,
@@ -52,24 +55,20 @@ function AuthRouter(props: AuthRouterProps) {
   const supabaseState = useSupabaseState();
   const posthog = usePostHog();
 
-  const data = useTestData
-    ? testData
-    : {
-        user: supabaseState?.session?.user,
-        session: supabaseState?.session,
-        supabase: supabaseState?.supabaseClient,
-      };
-
-  if (!useTestData && data.user) {
-    posthog?.identify(data.user.id, {
-      name: data.user.user_metadata?.name,
-      email: data.user.email,
+  if (!useTestData && supabaseState._type === "loggedIn") {
+    const user = supabaseState.session.user;
+    posthog?.identify(user.id, {
+      name: user.user_metadata?.name,
+      email: user.email,
     });
   }
   //console.log("AuthRouter: ", data);
 
   // Show unauthenticated view
-  if (testNoAuth || (!ignoreNoAuth && !data?.user)) {
+  if (
+    testNoAuth ||
+    (!useTestData && !ignoreNoAuth && supabaseState._type === "loggedOut")
+  ) {
     return <div className={className}>{noAuthChildren}</div>;
   }
 
@@ -77,12 +76,20 @@ function AuthRouter(props: AuthRouterProps) {
     <DataProviderView
       {...props}
       variableName={key}
-      formattedData={data}
-      loading={false}
-      error={null}
+      formattedData={{
+        user:
+          supabaseState._type === "loggedIn"
+            ? supabaseState.session.user
+            : null,
+        session:
+          supabaseState._type === "loggedIn" ? supabaseState.session : null,
+        supabase: supabaseState.supabaseClient,
+      }}
+      loading={supabaseState._type === "loading"}
+      error={supabaseState._type === "error" ? supabaseState.error : null}
     />
   );
 }
 
-export { AuthRouter, AuthRouterRegistration };
+export { AuthRouter, AuthRouterMeta };
 export type { AuthRouterProps };

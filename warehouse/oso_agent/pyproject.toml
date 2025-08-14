@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "OSO Team", email = "opensource-observer@googlegroups.com" }]
 dependencies = [
-    "arize-phoenix-otel==0.10.1",
-    "arize-phoenix[evals]==10.1.0",
+    "arize-phoenix-otel>=0.10.1",
+    "arize-phoenix[evals]==11.0.0",
     "discord-py>=2.5.2",
     "dotenv>=0.9.9",
     "llama-index>=0.12.29",
@@ -15,15 +15,21 @@ dependencies = [
     "llama-index-embeddings-ollama>=0.6.0",
     "llama-index-llms-google-genai>=0.1.12",
     "llama-index-llms-ollama>=0.5.4",
+    "llama-index-llms-vertex>=0.5.0",
     "llama-index-tools-mcp>=0.1.1",
+    "llama-index-vector-stores-vertexaivectorsearch>=0.2.0",
     "openinference-instrumentation-llama-index>=4.3.0",
+    "oso-semantic",
+    "pyoso",
     "pytest>=8.3.5",
     "pytest-asyncio>=0.26.0",
+    "scikit-learn>=1.6.1",
     "sqlglot[rs]>=26.16.4",
     "uvicorn[standard]>=0.34.2",
 ]
 
 [tool.uv.sources]
+oso-semantic = { workspace = true }
 pyoso = { workspace = true }
 
 [project.scripts]

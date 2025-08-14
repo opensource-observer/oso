@@ -1,6 +1,6 @@
 {
     "**/!(.eslintrc)*.{js,jsx,ts,tsx,sol}": [
-        "eslint --ignore-path .gitignore --max-warnings 0",
+        "eslint --fix --ignore-path .gitignore --max-warnings 0",
         "prettier --ignore-path .gitignore --write",
         "prettier --ignore-path .gitignore --log-level warn --check"
     ],
@@ -9,12 +9,9 @@
         "prettier --ignore-path .gitignore --log-level warn --check"
     ],
     "**/*.py": [
+        "uv run ruff format",
         "uv run ruff check --fix --force-exclude",
         "uv run isort",
         "pnpm pyright"
-    ],
-    "warehouse/dbt/**/*.sql": [
-        "uv run sqlfluff fix -f",
-        "uv run sqlfluff lint"
     ]
 }

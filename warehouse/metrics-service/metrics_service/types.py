@@ -96,10 +96,16 @@ class ColumnsDefinition(BaseModel):
         ]
 
 
+class TableMetadata(BaseModel):
+    index: dict[str, list[str]] | None = None
+    order_by: list[str] | None = None
+
+
 class TableReference(BaseModel):
     catalog_name: t.Optional[str] = None
     schema_name: t.Optional[str] = None
     table_name: str
+    metadata: TableMetadata = Field(default_factory=TableMetadata)
 
     @property
     def fqn(self) -> str:

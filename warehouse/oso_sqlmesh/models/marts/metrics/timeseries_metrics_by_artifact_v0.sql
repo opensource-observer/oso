@@ -1,9 +1,7 @@
 MODEL (
   name oso.timeseries_metrics_by_artifact_v0,
-  kind FULL,
-  partitioned_by year(sample_date),
+  kind VIEW,
   tags (
-    'export',
     'model_type=full',
     'model_category=metrics',
     'model_stage=mart'

@@ -1,56 +1,99 @@
-import logging
 import typing as t
 
-from dagster import AssetKey, ResourceParam
-from dagster_sqlmesh import (
-    DagsterSQLMeshController,
-    SQLMeshContextConfig,
-    SQLMeshDagsterTranslator,
-)
+import structlog
+from dagster import AssetKey, AssetsDefinition, ResourceParam
+from dagster_sqlmesh import DagsterSQLMeshController, SQLMeshContextConfig
 from dagster_sqlmesh.controller.base import DEFAULT_CONTEXT_FACTORY
+from oso_core.cache.types import CacheMetadataOptions
+from oso_dagster.config import DagsterConfig
+from oso_dagster.factories.common import CacheableDagsterContext
+from oso_dagster.resources.sqlmesh import SQLMeshExportedAssetDefinition
+from pydantic import BaseModel
 from sqlmesh.core.model import Model
 
-from ..factories import AssetFactoryResponse, early_resources_asset_factory
-from ..resources import SQLMeshExporter
+from ..factories import AssetFactoryResponse, cacheable_asset_factory
+from ..resources import PrefixedSQLMeshTranslator, SQLMeshExporter
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
-@early_resources_asset_factory()
+class SQLMeshExportedAssetsCollection(BaseModel):
+    """A collection of SQLMesh exported assets."""
+
+    assets_map: dict[str, SQLMeshExportedAssetDefinition]
+
+
+@cacheable_asset_factory(tags=dict(run_at_build="true"))
 def sqlmesh_export_factory(
-    sqlmesh_infra_config: dict,
-    sqlmesh_config: SQLMeshContextConfig,
-    sqlmesh_translator: SQLMeshDagsterTranslator,
-    sqlmesh_exporters: ResourceParam[t.List[SQLMeshExporter]],
+    global_config: DagsterConfig,
+    cache_context: CacheableDagsterContext,
 ):
-    environment = sqlmesh_infra_config["environment"]
-
-    controller = DagsterSQLMeshController.setup_with_config(
-        config=sqlmesh_config,
-        context_factory=DEFAULT_CONTEXT_FACTORY,
+    @cache_context.register_generator(
+        cacheable_type=SQLMeshExportedAssetsCollection,
+        extra_cache_key_metadata=dict(
+            sqlmesh_gateway=global_config.sqlmesh_gateway,
+        ),
+        cache_metadata_options=CacheMetadataOptions.with_no_expiration_if(
+            global_config.run_mode == "build" and global_config.in_deployed_container
+        ),
     )
-    assets = []
+    def cacheable_exported_assets_defs(
+        sqlmesh_infra_config: dict,
+        sqlmesh_context_config: SQLMeshContextConfig,
+        sqlmesh_translator: PrefixedSQLMeshTranslator,
+        sqlmesh_exporters: ResourceParam[t.List[SQLMeshExporter]],
+    ) -> SQLMeshExportedAssetsCollection:
+        environment = sqlmesh_infra_config["environment"]
 
-    with controller.instance(environment) as mesh:
-        models = mesh.models()
-        models_to_export: t.List[t.Tuple[Model, AssetKey]] = []
-        for name, model in models.items():
-            if "export" not in model.tags:
-                continue
-            models_to_export.append(
-                (
-                    model,
-                    sqlmesh_translator.get_asset_key_from_model(mesh.context, model),
+        controller = DagsterSQLMeshController.setup_with_config(
+            config=sqlmesh_context_config,
+            context_factory=DEFAULT_CONTEXT_FACTORY,
+        )
+        assets_map: dict[str, SQLMeshExportedAssetDefinition] = {}
+
+        with controller.instance(environment) as mesh:
+            models = mesh.models()
+            models_to_export: t.List[t.Tuple[Model, AssetKey]] = []
+            for name, model in models.items():
+                if "export" not in model.tags:
+                    continue
+                models_to_export.append(
+                    (
+                        model,
+                        sqlmesh_translator.get_asset_key(mesh.context, model.fqn),
+                    )
                 )
-            )
 
-        # Create a export assets for this
+            # Create a export assets for this
+            for exporter in sqlmesh_exporters:
+                asset_def = exporter.create_export_asset(
+                    mesh,
+                    sqlmesh_translator,
+                    to_export=models_to_export,
+                )
+                assets_map[exporter.name()] = asset_def
+
+        return SQLMeshExportedAssetsCollection(assets_map=assets_map)
+
+    @cache_context.register_hydrator()
+    def hydrate_exported_assets_defs(
+        cacheable_exported_assets_defs: SQLMeshExportedAssetsCollection,
+        sqlmesh_exporters: ResourceParam[t.List[SQLMeshExporter]],
+    ) -> AssetFactoryResponse:
+        """hydrate the exported assets definitions."""
+        hydrated_assets: list[AssetsDefinition] = []
         for exporter in sqlmesh_exporters:
-            asset_def = exporter.create_export_asset(
-                mesh,
-                to_export=models_to_export,
-            )
-            assets.append(asset_def)
-            logger.debug(f"exporting for {exporter.__class__.__name__}")
+            if exporter.name() in cacheable_exported_assets_defs.assets_map:
+                asset_def = cacheable_exported_assets_defs.assets_map[exporter.name()]
+                hydrated_assets.append(exporter.asset_from_definition(asset_def))
+            else:
+                logger.warning(
+                    "Exporter not found in cached assets",
+                    exporter_name=exporter.name(),
+                )
 
-    return AssetFactoryResponse(assets=assets)
+        return AssetFactoryResponse(
+            assets=hydrated_assets,
+        )
+
+    return cache_context

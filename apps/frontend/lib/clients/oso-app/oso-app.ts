@@ -1,13 +1,25 @@
 import _ from "lodash";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { ensure } from "@opensource-observer/utils";
-import { Database, Tables } from "../../types/supabase";
-import { MissingDataError, AuthError } from "../../types/errors";
+import { assert, ensure } from "@opensource-observer/utils";
+import { Database, Tables } from "@/lib/types/supabase";
+import { MissingDataError, AuthError } from "@/lib/types/errors";
 import {
+  dynamicColumnContextsRowSchema,
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
-} from "../../types/schema";
-import type { DynamicConnectorsInsert } from "../../types/schema-types";
+  dynamicTableContextsRowSchema,
+  connectorRelationshipsInsertSchema,
+} from "@/lib/types/schema";
+import type {
+  ConnectorRelationshipsRow,
+  ConnectorRelationshipsInsert,
+  DynamicColumnContextsRow,
+  DynamicConnectorsInsert,
+  DynamicConnectorsRow,
+  DynamicTableContextsRow,
+} from "@/lib/types/schema-types";
+import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
+import { DEFAULT_OSO_TABLE_ID } from "@/lib/types/dynamic-connector";
 
 /**
  * OsoAppClient is the client library for the OSO app.
@@ -100,12 +112,13 @@ class OsoAppClient {
     console.log("createApiKey: ", args.name);
     const name = ensure(args.name, "Missing name argument");
     const apiKey = ensure(args.apiKey, "Missing apiKey argument");
+    const orgId = ensure(args.orgId, "Missing orgId argument");
     const user = await this.getUser();
     const { error } = await this.supabaseClient.from("api_keys").insert({
       name,
       api_key: apiKey,
       user_id: user.id,
-      org_id: args.orgId,
+      org_id: orgId,
     });
     if (error) {
       throw error;
@@ -128,6 +141,21 @@ class OsoAppClient {
       throw error;
     } else if (!data) {
       throw new MissingDataError(`Unable to find API keys for id=${user.id}`);
+    }
+    return data;
+  }
+
+  async getApiKeysByOrgId(args: { orgId: string }) {
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("api_keys")
+      .select("id, name, user_id, created_at, org_id")
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find API keys for org_id=${orgId}`);
     }
     return data;
   }
@@ -422,48 +450,263 @@ class OsoAppClient {
   }
 
   /**
-   * Gets the current credit balance for the logged in user.
+   * Creates a new chat session
+   * - Chats are stored under an organization
+   * @param args
+   * @returns
+   */
+  async createChat(args: Partial<{ orgId: string }>) {
+    console.log("createChat: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const user = await this.getUser();
+
+    const { data: chatData, error: chatError } = await this.supabaseClient
+      .from("chat_history")
+      .insert({
+        org_id: orgId,
+        display_name: new Date().toLocaleString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (chatError) {
+      throw chatError;
+    } else if (!chatData) {
+      throw new MissingDataError("Failed to create chat");
+    }
+
+    return chatData;
+  }
+
+  async getChatsByOrgId(args: Partial<{ orgId: string }>) {
+    console.log("getChatsByOrgId: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("chat_history")
+      .select(
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+      )
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find chats for orgId=${orgId}`);
+    }
+    return data;
+  }
+
+  async getChatById(args: Partial<{ chatId: string }>) {
+    console.log("getChatById: ", args);
+    const chatId = ensure(args.chatId, "Missing chatId argument");
+    const { data, error } = await this.supabaseClient
+      .from("chat_history")
+      .select()
+      .eq("id", chatId)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find chat for chatId=${chatId}`);
+    }
+    return data;
+  }
+
+  /**
+   * Update chat data
+   * @param args
+   */
+  async updateChat(
+    args: Partial<Database["public"]["Tables"]["chat_history"]["Update"]>,
+  ) {
+    console.log("updateChat: ", args);
+    const chatId = ensure(args.id, "Missing chat 'id' argument");
+    const { error } = await this.supabaseClient
+      .from("chat_history")
+      .update({ ...args })
+      .eq("id", chatId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a chat
+   * - We use `deleted_at` to mark the chat as removed instead of deleting the row
+   * @param args
+   */
+  async deleteChat(args: Partial<{ chatId: string }>): Promise<void> {
+    console.log("deleteChat: ", args);
+    const chatId = ensure(args.chatId, "Missing chatId argument");
+    const { error } = await this.supabaseClient
+      .from("chat_history")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", chatId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Creates a new saved query
+   * - Chats are stored under an organization
+   * @param args
+   * @returns
+   */
+  async createSqlQuery(args: Partial<{ orgId: string }>) {
+    console.log("createSqlQuery: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const user = await this.getUser();
+
+    const { data: queryData, error: queryError } = await this.supabaseClient
+      .from("saved_queries")
+      .insert({
+        org_id: orgId,
+        display_name: new Date().toLocaleString(),
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (queryError) {
+      throw queryError;
+    } else if (!queryData) {
+      throw new MissingDataError("Failed to create SQL query");
+    }
+
+    return queryData;
+  }
+
+  async getSqlQueriesByOrgId(args: Partial<{ orgId: string }>) {
+    console.log("getSqlQueriesByOrgId: ", args);
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const { data, error } = await this.supabaseClient
+      .from("saved_queries")
+      .select(
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+      )
+      .eq("org_id", orgId)
+      .is("deleted_at", null);
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find SQL queries for orgId=${orgId}`,
+      );
+    }
+    return data;
+  }
+
+  async getSqlQueryById(args: Partial<{ queryId: string }>) {
+    console.log("getSqlQueryById: ", args);
+    const queryId = ensure(args.queryId, "Missing queryId argument");
+    const { data, error } = await this.supabaseClient
+      .from("saved_queries")
+      .select()
+      .eq("id", queryId)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find SQL query for queryId=${queryId}`,
+      );
+    }
+    return data;
+  }
+
+  /**
+   * Update SQL query data
+   * @param args
+   */
+  async updateSqlQuery(
+    args: Partial<Database["public"]["Tables"]["saved_queries"]["Update"]>,
+  ) {
+    console.log("updateSqlQuery: ", args);
+    const queryId = ensure(args.id, "Missing SQL query 'id' argument");
+    const { error } = await this.supabaseClient
+      .from("saved_queries")
+      .update({ ...args })
+      .eq("id", queryId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Removes a SQL query
+   * - We use `deleted_at` to mark the query as removed instead of deleting the row
+   * @param args
+   */
+  async deleteSqlQuery(args: Partial<{ queryId: string }>): Promise<void> {
+    console.log("deleteSqlQuery: ", args);
+    const queryId = ensure(args.queryId, "Missing queryId argument");
+    const { error } = await this.supabaseClient
+      .from("saved_queries")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", queryId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the current credit balance for an organization.
+   * @param orgId - The organization ID
    * @returns Promise<number> - The current credit balance
    */
-  async getMyCredits(): Promise<number> {
-    console.log("getMyCredits");
-    const user = await this.getUser();
+  async getOrganizationCredits(
+    args: Partial<{ orgId: string }>,
+  ): Promise<number> {
+    const id = ensure(
+      args.orgId,
+      "orgId is required to get organization credits",
+    );
+    console.log("getOrganizationCredits for org:", id);
     const { data, error } = await this.supabaseClient
-      .from("user_credits")
+      .from("organization_credits")
       .select("credits_balance")
-      .eq("user_id", user.id)
+      .eq("org_id", id)
       .single();
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credits for user id=${user.id}`,
+        `Unable to find credits for organization id=${id}`,
       );
     }
     return data.credits_balance;
   }
 
   /**
-   * Gets the credit transaction history for the logged in user.
+   * Gets the credit transaction history for an organization.
+   * @param orgId - The organization ID
    * @param args - Optional parameters for pagination and filtering
-   * @returns Promise<Array> - Array of credit transactions
+   * @returns Promise<Array> - Array of organization credit transactions
    */
-  async getMyCreditTransactions(
+  async getOrganizationCreditTransactions(
     args: Partial<{
+      orgId: string;
       limit: number;
       offset: number;
       transactionType?: string;
     }> = {},
   ) {
-    console.log("getMyCreditTransactions: ", args);
-    const user = await this.getUser();
+    const id = ensure(
+      args.orgId,
+      "orgId is required to get organization credit transactions",
+    );
+    console.log("getOrganizationCreditTransactions for org:", id, args);
     const { limit = 50, offset = 0, transactionType } = args;
 
     let query = this.supabaseClient
-      .from("credit_transactions")
+      .from("organization_credit_transactions")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("org_id", id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -477,7 +720,7 @@ class OsoAppClient {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credit transactions for user id=${user.id}`,
+        `Unable to find credit transactions for organization id=${id}`,
       );
     }
     return data;
@@ -500,6 +743,32 @@ class OsoAppClient {
 
     if (error) {
       throw error;
+    }
+
+    return data;
+  }
+
+  /**
+   * Gets a specific dynamic connector by ID.
+   * @param args - Contains the connector ID
+   * @returns Promise<DynamicConnectorsRow> - The connector data
+   */
+  async getConnectorById(
+    args: Partial<{ id: string }>,
+  ): Promise<DynamicConnectorsRow> {
+    const id = ensure(args.id, "id is required");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_connectors")
+      .select("*")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .single();
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(`Unable to find connector with id=${id}`);
     }
 
     return data;
@@ -572,6 +841,325 @@ class OsoAppClient {
     if (!response.ok) {
       throw new Error("Error deleting connector: " + json.error);
     }
+  }
+
+  /**
+   * Syncs a dynamic connector to refresh its schema and metadata.
+   * @param id
+   */
+  async syncConnector(args: Partial<{ id: string }>): Promise<void> {
+    const id = ensure(args.id, "id is required to sync connector");
+
+    const customHeaders = await this.createSupabaseAuthHeaders();
+    const searchParams = new URLSearchParams({ id });
+
+    const response = await fetch(
+      `/api/v1/connector/sync?${searchParams.toString()}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...customHeaders,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Error syncing connector: ${error.error}`);
+    }
+
+    return;
+  }
+
+  /**
+   * Gets dynamic connectors and contextual information.
+   * @param id
+   * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
+   * - Returns the tables context and an array of column contexts for the connector
+   */
+  async getDynamicConnectorAndContextsByOrgId(args: { orgId: string }): Promise<
+    {
+      connector: DynamicConnectorsRow;
+      contexts: {
+        table: DynamicTableContextsRow;
+        columns: DynamicColumnContextsRow[];
+      }[];
+    }[]
+  > {
+    const orgId = ensure(args.orgId, "id is required to get contexts");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_connectors")
+      .select("*, dynamic_table_contexts(*, dynamic_column_contexts(*))")
+      .eq("org_id", orgId);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find connectors for org_id=${orgId}`,
+      );
+    }
+
+    return data.map((dynamicConnector) => {
+      const { dynamic_table_contexts: _, ...unparsedConnector } =
+        dynamicConnector;
+      const connector = dynamicConnectorsRowSchema.parse(unparsedConnector);
+      const contexts = dynamicConnector.dynamic_table_contexts.map(
+        (tableContext) => {
+          const { dynamic_column_contexts: columns, ...table } = tableContext;
+          return {
+            table: dynamicTableContextsRowSchema.parse(table),
+            columns: columns.map((c) =>
+              dynamicColumnContextsRowSchema.parse(c),
+            ),
+          };
+        },
+      );
+      return { connector, contexts };
+    });
+  }
+
+  /**
+   * Gets contextual information for a dynamic connector's tables and columns.
+   * @param id
+   * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
+   * - Returns the tables context and an array of column contexts for the connector
+   */
+  async getDynamicConnectorContexts(args: { id: string }): Promise<
+    {
+      table: DynamicTableContextsRow;
+      columns: DynamicColumnContextsRow[];
+    }[]
+  > {
+    const id = ensure(args.id, "id is required to get contexts");
+
+    const { data, error } = await this.supabaseClient
+      .from("dynamic_table_contexts")
+      .select("*, dynamic_column_contexts(*)")
+      .eq("connector_id", id);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find contexts for connector id=${id}`,
+      );
+    }
+    return data.map((row) => {
+      const { dynamic_column_contexts: columns, ...table } = row;
+      return { table, columns };
+    });
+  }
+
+  /**
+   * Upserts dynamic connector contexts for a given connector.
+   * - This will insert or update the table and column contexts
+   * @param args - Contains the table and columns data to upsert
+   */
+  async upsertDynamicConnectorContexts(
+    args: Partial<{
+      table: DynamicTableContextsRow | null;
+      columns: DynamicColumnContextsRow[] | null;
+    }>,
+  ) {
+    const table = args.table
+      ? dynamicTableContextsRowSchema.parse(args.table)
+      : null;
+    const columns = args.columns
+      ? args.columns.map((col) => {
+          return dynamicColumnContextsRowSchema.parse(col);
+        })
+      : null;
+    if (table) {
+      const { error: tableError } = await this.supabaseClient
+        .from("dynamic_table_contexts")
+        .upsert(table);
+      if (tableError) {
+        throw tableError;
+      }
+    }
+    if (columns && columns.length > 0) {
+      const { error: columnsError } = await this.supabaseClient
+        .from("dynamic_column_contexts")
+        .upsert(columns);
+      if (columnsError) {
+        throw columnsError;
+      }
+    }
+  }
+
+  /**
+   * Gets connector relationships for an organization.
+   * @param orgId
+   */
+  async getConnectorRelationships(args: {
+    orgId: string;
+  }): Promise<ConnectorRelationshipsRow[]> {
+    const orgId = ensure(args.orgId, "orgId is required to get relationships");
+
+    const { data, error } = await this.supabaseClient
+      .from("connector_relationships")
+      .select("*")
+      .eq("org_id", orgId);
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find connector relationships for org_id=${orgId}`,
+      );
+    }
+
+    return data;
+  }
+
+  /**
+   * Creates a new connector relationship.
+   * @param args
+   */
+  async createConnectorRelationship(
+    args: Partial<{
+      data: ConnectorRelationshipsInsert;
+    }>,
+  ): Promise<ConnectorRelationshipsRow> {
+    const data = connectorRelationshipsInsertSchema.parse(args.data);
+
+    // For OSO default entities, we store it in the target_oso_entity field,
+    // e.g: artifact_id, project_id, etc.
+    if (data.target_table_id === DEFAULT_OSO_TABLE_ID) {
+      data.target_oso_entity = data.target_column_name;
+      data.target_table_id = null;
+      data.target_column_name = null;
+    }
+
+    assert(
+      (data.source_table_id && data.source_column_name) ||
+        data.target_oso_entity,
+      "Either source_table_id and source_column_name or target_oso_entity must be provided",
+    );
+
+    assert(
+      data.source_table_id !== data.target_table_id,
+      "Source and target table IDs must be different",
+    );
+
+    const { data: relationshipData, error } = await this.supabaseClient
+      .from("connector_relationships")
+      .insert(data)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    } else if (!relationshipData) {
+      throw new MissingDataError("Failed to create connector relationship");
+    }
+
+    return relationshipData;
+  }
+
+  /**
+   * Deletes a connector relationship by its ID.
+   * @param args
+   */
+  async deleteConnectorRelationship(
+    args: Partial<{ id: string }>,
+  ): Promise<void> {
+    const id = ensure(
+      args.id,
+      "id is required to delete connector relationship",
+    );
+
+    const { error } = await this.supabaseClient
+      .from("connector_relationships")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Initiates a Stripe checkout session to buy credits.
+   * @param args - Contains the packageId to purchase and required orgId
+   * @returns Promise<{ sessionId: string; url: string }> - Stripe checkout session info
+   */
+  async buyCredits(
+    args: Partial<{
+      packageId: string;
+      orgId: string;
+    }>,
+  ): Promise<{ sessionId: string; url: string; publishableKey: string }> {
+    console.log("buyCredits: ", args);
+    const packageId = ensure(args.packageId, "Missing packageId argument");
+    const orgId = ensure(args.orgId, "Missing orgId argument");
+
+    const {
+      data: { session },
+    } = await this.supabaseClient.auth.getSession();
+    if (!session) {
+      throw new AuthError("No active session");
+    }
+
+    const body: { packageId: string; orgId: string } = { packageId, orgId };
+
+    const response = await fetch("/api/v1/stripe/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create checkout session");
+    }
+
+    const data = await response.json();
+    return {
+      sessionId: data.sessionId,
+      url: data.url,
+      publishableKey: data.publishableKey,
+    };
+  }
+
+  /**
+   * Gets available credit packages for purchase.
+   * @returns Array of credit packages with pricing
+   */
+  async getCreditPackages() {
+    console.log("getCreditPackages");
+    return CREDIT_PACKAGES.map((pkg) => ({
+      id: pkg.id,
+      name: pkg.name,
+      credits: pkg.credits,
+      price: pkg.price,
+      displayPrice: `$${(pkg.price / 100).toFixed(2)}`,
+    }));
+  }
+
+  /**
+   * Gets the user's purchase history.
+   * @returns Promise<Array> - Array of purchase intents
+   */
+  async getMyPurchaseHistory() {
+    console.log("getMyPurchaseHistory");
+    const user = await this.getUser();
+    const { data, error } = await this.supabaseClient
+      .from("purchase_intents")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+    return data || [];
   }
 
   private async createSupabaseAuthHeaders() {

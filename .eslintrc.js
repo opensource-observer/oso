@@ -17,6 +17,7 @@ module.exports = {
     "**/utilities/**",
     "**/.eslintrc.js",
     "**/postcss.config.js",
+    "!.storybook",
     //"**/next.config.js",
     //"**/tailwind.config.js",
     //"**/.env",
@@ -31,7 +32,7 @@ module.exports = {
     tsconfigRootDir: __dirname,
     project: "./tsconfig.json",
   },
-  plugins: ["@typescript-eslint", "react"],
+  plugins: ["unused-imports", "@typescript-eslint", "react"],
   settings: {
     react: {
       version: "detect",
@@ -42,9 +43,14 @@ module.exports = {
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-expressions": "off",
-    "@typescript-eslint/no-unused-vars": [
+    "@typescript-eslint/no-unused-vars": "off",
+    "unused-imports/no-unused-imports": "error",
+    "unused-imports/no-unused-vars": [
       "warn",
       {
+        vars: "all",
+        varsIgnorePattern: "^_",
+        args: "after-used",
         argsIgnorePattern: "^_",
       },
     ],

@@ -1041,6 +1041,16 @@
       }
     },
     {
+      "name": "max-width",
+      "type": "spacing",
+      "value": "1200px",
+      "category": "spacing",
+      "meta": {
+        "projectId": "2CtczDeUz9jL9qnFi6NWuQ",
+        "id": "8kk5Z0tGoVl6"
+      }
+    },
+    {
       "name": "white",
       "type": "color",
       "value": "#ffffff",

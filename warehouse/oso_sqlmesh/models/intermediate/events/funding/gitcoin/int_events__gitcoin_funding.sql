@@ -111,7 +111,7 @@ enriched_events AS (
     events.round_id,
     events.round_number,
     events.chain_id,
-    @chain_id_to_chain_name(events.chain_id) AS chain,
+    cl.oso_chain_name AS chain,
     events.round_name,
     events.gitcoin_project_id,
     events.gitcoin_project_name,
@@ -125,6 +125,8 @@ enriched_events AS (
   FROM unioned_events AS events
   LEFT JOIN project_lookup
     ON events.gitcoin_project_id = project_lookup.gitcoin_project_id
+  JOIN oso.int_chainlist AS cl
+    ON events.chain_id = cl.chain_id
 )
 
 SELECT

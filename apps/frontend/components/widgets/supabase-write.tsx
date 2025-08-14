@@ -1,26 +1,20 @@
 import React, { ReactNode } from "react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { useRouter } from "next/navigation";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
-import { ADT } from "ts-adt";
+import { toast, ExternalToast } from "sonner";
 import { HttpError, assertNever, spawn } from "@opensource-observer/utils";
 import { usePostHog } from "posthog-js/react";
-import { EVENTS } from "../../lib/types/posthog";
-import { RegistrationProps } from "../../lib/types/plasmic";
-import { useSupabaseState } from "../hooks/supabase";
+import { EVENTS } from "@/lib/types/posthog";
+import { useSupabaseState } from "@/components/hooks/supabase";
 
-type SnackbarState = ADT<{
-  closed: Record<string, unknown>;
-  success: Record<string, unknown>;
-  error: {
-    code: string;
-    message: string;
-  };
-}>;
 type DbActionType = "insert" | "update" | "upsert" | "delete";
 const REQUIRES_DATA: DbActionType[] = ["insert", "update", "upsert"];
 const REQUIRES_FILTERS: DbActionType[] = ["update", "delete"];
-const AUTO_HIDE_DURATION = 5000; // in milliseconds
+const DEFAULT_TOAST_OPTIONS: ExternalToast = {
+  closeButton: true,
+  duration: 5000, // in milliseconds
+};
+const SUCCESS_MESSAGE = "Done!";
 
 /**
  * Generic Supabase write component.
@@ -41,33 +35,36 @@ type SupabaseWriteProps = {
   errorCodeMap?: any; // Map of error codes to error messages
 };
 
-const SupabaseWriteRegistration: RegistrationProps<SupabaseWriteProps> = {
-  children: "slot",
-  actionType: {
-    type: "choice",
-    options: ["insert", "update", "upsert", "delete"],
-  },
-  tableName: {
-    type: "string",
-    helpText: "Supabase table name",
-  },
-  data: {
-    type: "object",
-    defaultValue: {},
-    helpText: "Data to insert",
-  },
-  filters: {
-    type: "object",
-    defaultValue: [],
-    helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
-    hidden: (props) =>
-      props.actionType === "insert" || props.actionType === "upsert",
-  },
-  redirectOnComplete: "string",
-  errorCodeMap: {
-    type: "object",
-    defaultValue: {},
-    helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
+const SupabaseWriteMeta: CodeComponentMeta<SupabaseWriteProps> = {
+  name: "SupabaseWrite",
+  props: {
+    children: "slot",
+    actionType: {
+      type: "choice",
+      options: ["insert", "update", "upsert", "delete"],
+    },
+    tableName: {
+      type: "string",
+      helpText: "Supabase table name",
+    },
+    data: {
+      type: "object",
+      defaultValue: {},
+      helpText: "Data to insert",
+    },
+    filters: {
+      type: "object",
+      defaultValue: [],
+      helpText: "e.g. [['id', 'lt', 10], ['name', 'eq', 'foobar']]",
+      hidden: (props) =>
+        props.actionType === "insert" || props.actionType === "upsert",
+    },
+    redirectOnComplete: "string",
+    errorCodeMap: {
+      type: "object",
+      defaultValue: {},
+      helpText: "Error code to message (e.g. {'23505': 'Duplicate username'})",
+    },
   },
 };
 
@@ -86,19 +83,7 @@ function SupabaseWrite(props: SupabaseWriteProps) {
   const posthog = usePostHog();
   const supabaseState = useSupabaseState();
   const router = useRouter();
-  const [snackbarState, setSnackbarState] = React.useState<SnackbarState>({
-    _type: "closed",
-  });
 
-  const handleClose = (
-    _event?: React.SyntheticEvent | Event,
-    reason?: string,
-  ) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setSnackbarState({ _type: "closed" });
-  };
   const clickHandler = async () => {
     if (!supabaseState?.supabaseClient) {
       return console.warn("SupabaseWrite: Supabase client not initialized yet");
@@ -147,7 +132,10 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     });
     if (error) {
       console.warn("SupabaseWrite error: ", error);
-      setSnackbarState({ _type: "error", ...error });
+      toast.error(
+        errorCodeMap[error.code] ?? `${error.code}: ${error.message}`,
+        DEFAULT_TOAST_OPTIONS,
+      );
       return;
       //throw error;
     } else if (status > 300) {
@@ -155,7 +143,7 @@ function SupabaseWrite(props: SupabaseWriteProps) {
     }
 
     // Success!
-    setSnackbarState({ _type: "success" });
+    toast.success(SUCCESS_MESSAGE, DEFAULT_TOAST_OPTIONS);
     if (redirectOnComplete) {
       router.push(redirectOnComplete);
     } else {
@@ -166,38 +154,11 @@ function SupabaseWrite(props: SupabaseWriteProps) {
   };
 
   return (
-    <div>
-      <div className={className} onClick={() => spawn(clickHandler())}>
-        {children}
-      </div>
-      <Snackbar
-        open={snackbarState._type !== "closed"}
-        autoHideDuration={AUTO_HIDE_DURATION}
-        onClose={handleClose}
-      >
-        <Alert
-          onClose={handleClose}
-          severity={
-            snackbarState._type === "success"
-              ? "success"
-              : snackbarState._type === "error"
-                ? "error"
-                : "info"
-          }
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          {snackbarState._type === "success"
-            ? "Done!"
-            : snackbarState._type === "error"
-              ? errorCodeMap[snackbarState.code] ??
-                `${snackbarState.code}: ${snackbarState.message}`
-              : ""}
-        </Alert>
-      </Snackbar>
+    <div className={className} onClick={() => spawn(clickHandler())}>
+      {children}
     </div>
   );
 }
 
-export { SupabaseWriteRegistration, SupabaseWrite };
+export { SupabaseWrite, SupabaseWriteMeta };
 export type { SupabaseWriteProps };

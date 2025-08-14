@@ -8,19 +8,19 @@ import {
   ensure,
   uncheckedCast,
 } from "@opensource-observer/utils";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import {
   GET_TIMESERIES_METRICS_BY_ARTIFACT,
   GET_TIMESERIES_METRICS_BY_PROJECT,
   GET_TIMESERIES_METRICS_BY_COLLECTION,
-} from "../../lib/graphql/queries";
-import { eventTimeToLabel } from "../../lib/parsing";
-import { RegistrationProps } from "../../lib/types/plasmic";
-import type { EventData } from "../../lib/types/db";
+} from "@/lib/graphql/oso_queries";
+import { eventTimeToLabel } from "@/lib/parsing";
+import type { EventData } from "@/lib/types/db";
 import {
   DataProviderView,
   CommonDataProviderRegistration,
-} from "./provider-view";
-import type { CommonDataProviderProps } from "./provider-view";
+} from "@/components/dataprovider/provider-view";
+import type { CommonDataProviderProps } from "@/components/dataprovider/provider-view";
 
 // Types used in the Plasmic registration
 type ChartType = "areaChart" | "barList";
@@ -49,10 +49,12 @@ type MetricsDataProviderProps = CommonDataProviderProps & {
 };
 
 /**
- * Plasmic component registration
+ * Plasmic component meta
  */
-const MetricsDataProviderRegistration: RegistrationProps<MetricsDataProviderProps> =
-  {
+const MetricsDataProviderMeta: CodeComponentMeta<MetricsDataProviderProps> = {
+  name: "MetricsDataProvider",
+  description: "Data context for metrics",
+  props: {
     ...CommonDataProviderRegistration,
     chartType: {
       type: "choice",
@@ -85,7 +87,9 @@ const MetricsDataProviderRegistration: RegistrationProps<MetricsDataProviderProp
       type: "string",
       helpText: "YYYY-MM-DD",
     },
-  };
+  },
+  providesData: true,
+};
 
 /**
  * Choose a bucket width based on the number of data points
@@ -513,5 +517,5 @@ function CollectionMetricsDataProvider(props: MetricsDataProviderProps) {
   );
 }
 
-export { MetricsDataProviderRegistration, MetricsDataProvider };
+export { MetricsDataProvider, MetricsDataProviderMeta };
 export type { MetricsDataProviderProps };

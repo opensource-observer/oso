@@ -15,132 +15,6 @@ from ossdirectory import fetch_data
 
 logger = logging.getLogger(__name__)
 
-LEGACY_DEFILLAMA_PROTOCOLS = [
-    "aave",
-    "aave-v1",
-    "aave-v2",
-    "aave-v3",
-    "across",
-    "acryptos",
-    "aera",
-    "aerodrome-slipstream",
-    "aerodrome-v1",
-    "aktionariat",
-    "alchemix",
-    "alien-base-v2",
-    "alien-base-v3",
-    "amped-finance",
-    "arcadia-v2",
-    "aura",
-    "avantis",
-    "bakerfi",
-    "balancer-v2",
-    "balancer-v3",
-    "baseswap",
-    "baseswap-v2",
-    "bedrock-unibtc",
-    "bedrock-brbtc",
-    "bedrock-unieth",
-    "bedrock-uniiotx",
-    "beefy",
-    "blueshift",
-    "bmx",
-    "bmx-classic-perps",
-    "bmx-freestyle",
-    "bmx-classic-amm",
-    "bsx-exchange",
-    "clusters",
-    "compound-v3",
-    "contango-v2",
-    "curve-dex",
-    "dackieswap",
-    "derive-v1",
-    "derive-v2",
-    "dforce",
-    "dhedge",
-    "exactly",
-    "extra-finance-leverage-farming",
-    "gains-network",
-    "harvest-finance",
-    "hermes-v2",
-    "hop-protocol",
-    "idle",
-    "infinitypools",
-    "intentx",
-    "ionic-protocol",
-    "javsphere",
-    "jumper-exchange",
-    "kelp",
-    "kim-exchange-v3",
-    "kromatika",
-    "krystal",
-    "lets-get-hai",
-    "lombard-vault",
-    "meme-wallet",
-    "meson",
-    "mint-club",
-    "mint-club-v1",
-    "mint-club-v2",
-    "mintswap-finance",
-    "moonwell",
-    "morpho",
-    "morpho-blue",
-    "mux-perps",
-    "okx",
-    "optimism-bridge",
-    "origin-protocol",
-    "overnight-finance",
-    "pendle",
-    "perpetual-protocol",
-    "pinto",
-    "polynomial-trade",
-    "pooltogether-v5",
-    "pyth-network",
-    "rainbow",
-    "renzo",
-    "reserve-protocol",
-    "sablier",
-    "sablier-lockup",
-    "sablier-legacy",
-    "seamless-protocol",
-    "silo-v1",
-    "solidly-v3",
-    "sommelier",
-    "sonus-exchange",
-    "sonus-exchange-amm",
-    "sonus-exchange-clmm",
-    "stargate-v1",
-    "stargate-v2",
-    "superswap-ink",
-    "sushi",
-    "sushiswap",
-    "sushiswap-v3",
-    "swapbased",
-    "swapbased-amm",
-    "swapbased-concentrated-liquidity",
-    "swapbased-perp",
-    "swapmode",
-    "swapmode-v2",
-    "swapmode-v3",
-    "synapse",
-    "synfutures-v3",
-    "synthetix",
-    "synthetix-v3",
-    "tarot",
-    "team-finance",
-    "tlx-finance",
-    "toros",
-    "velodrome-v2",
-    "woo-x",
-    "woofi",
-    "woofi-earn",
-    "yearn-finance",
-    "zerolend",
-]
-
-DEFILLAMA_PROTOCOLS = ["aave", "sushiswap"]
-
-DEFILLAMA_TVL_EPOCH = "2021-10-01T00:00:00.000Z"
 
 K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
@@ -153,44 +27,22 @@ K8S_CONFIG = {
 }
 
 
-def defillama_slug_to_name(slug: str) -> str:
+def get_valid_defillama_chains() -> Set[str]:
     """
-    Parse a defillama slug into a protocol name, replacing dashes
-    with underscores and periods with '__dot__'.
-
-    Args:
-        slug (str): The defillama slug to parse.
-
-    Returns:
-        str: The parsed protocol name
+    Get all valid defillama chain identifiers from the defillama.chains table.
+    """
+    client = bigquery.Client()
+    query = """
+        SELECT DISTINCT name
+        FROM `opensource-observer.defillama.chains`
     """
 
-    return f"{slug.replace('-', '_').replace(".", '__dot__')}_protocol"
-
-
-def defillama_chain_mappings(chain: str) -> str:
-    """
-    Map defillama chains to their canonical names.
-
-    Args:
-        chain (str): The chain to map.
-
-    Returns:
-        str: The mapped chain or the original chain if no mapping is found.
-    """
-
-    chain = chain.lower()
-    return {
-        "arbitrum": "arbitrum_one",
-        "ethereum": "mainnet",
-        "fraxtal": "frax",
-        "op mainnet": "optimism",
-        "polygon": "matic",
-        "polygon zkevm": "polygon_zkevm",
-        "swellchain": "swell",
-        "world chain": "worldchain",
-        "zksync era": "zksync_era",
-    }.get(chain, chain)
+    chains = set()
+    try:
+        chains.update({row["name"] for row in client.query(query).result()})
+    except Exception as e:
+        logger.warning(f"Failed to fetch valid Defillama chains: {e}")
+    return chains
 
 
 def get_valid_defillama_slugs() -> Set[str]:
@@ -214,7 +66,7 @@ def get_valid_defillama_slugs() -> Set[str]:
         op_atlas_data = [row["value"] for row in client.query(op_atlas_query).result()]
 
     except Forbidden as e:
-        logging.warning(f"Failed to fetch data from BigQuery, using fallback: {e}")
+        logger.warning(f"Failed to fetch data from BigQuery, using fallback: {e}")
 
         op_atlas_data = []
 
@@ -232,7 +84,6 @@ def get_valid_defillama_slugs() -> Set[str]:
     )
 
     ossd_defillama_parsed_urls.update(op_atlas_data)
-    ossd_defillama_parsed_urls.update(LEGACY_DEFILLAMA_PROTOCOLS)
 
     try:
         r = requests.get(
@@ -268,6 +119,7 @@ def extract_protocol(url: str) -> str:
 def parse_chain_tvl(
     protocol: str,
     parent_protocol: str,
+    category: str,
     chain_tvls_raw: Dict,
 ) -> Generator[Dict[str, Any], None, None]:
     """
@@ -277,6 +129,7 @@ def parse_chain_tvl(
     Args:
         protocol (str): The protocol slug
         parent_protocol (str): The parent protocol (if any)
+        category (str): The protocol category
         chain_tvls_raw (Dict): The raw chain TVL data
 
     Yields:
@@ -297,6 +150,8 @@ def parse_chain_tvl(
         for entry in tvl_history:
             try:
                 timestamp = pd.Timestamp(entry["date"], unit="s")
+                if not isinstance(timestamp, pd.Timestamp) or pd.isna(timestamp):
+                    continue
                 amount = float(entry["totalLiquidityUSD"])
 
                 event = {
@@ -304,7 +159,8 @@ def parse_chain_tvl(
                     "slug": protocol,
                     "protocol": protocol,
                     "parent_protocol": parent_protocol,
-                    "chain": defillama_chain_mappings(chain),
+                    "category": category,
+                    "chain": chain,
                     "token": "USD",
                     "tvl": amount,
                     "event_type": "TVL",
@@ -349,10 +205,15 @@ def get_defillama_tvl_events(
             if "parentProtocol" in protocol_data:
                 parent_protocol = protocol_data.get("parentProtocol", "")
 
+            category = ""
+            if "category" in protocol_data:
+                category = protocol_data.get("category", "")
+
             if "chainTvls" in protocol_data:
                 yield from parse_chain_tvl(
                     slug,
                     parent_protocol,
+                    category,
                     protocol_data["chainTvls"],
                 )
 
@@ -403,4 +264,484 @@ def defillama_tvl_assets(
             ],
         )
 
+    yield resource
+
+
+def parse_timeseries_events(
+    *,
+    slug: str,
+    parent_protocol: str,
+    raw: list,
+    event_type: str,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Parse and yield time series events from raw DefiLlama chart data.
+
+    Args:
+        slug (str): The slug identifying the protocol (e.g., "velodrome-v1").
+        parent_protocol (str): The parent protocol name, if available.
+        raw (list): A list of entries from a DefiLlama time series chart.
+            Each entry is [timestamp, value], where `value` is either a number
+            (for aggregated metrics) or a breakdown dict (by chain and source).
+        event_type (str): A string label indicating the type of metric
+            (e.g., "TRADING_VOLUME" or "LP_FEES").
+
+    Yields:
+        Dict[str, Any]: One parsed time series event per row with fields:
+            - time (ISO string)
+            - slug, protocol, parent_protocol
+            - chain (if available)
+            - token ("USD")
+            - event_type
+            - amount (float)
+    """
+
+    for ts, val in raw:
+        try:
+            dt = pd.Timestamp(ts, unit="s")
+            if not isinstance(dt, pd.Timestamp) or pd.isna(dt):
+                continue
+
+            if isinstance(val, (int, float)):
+                yield {
+                    "time": dt.isoformat(),
+                    "slug": slug,
+                    "protocol": slug,
+                    "parent_protocol": parent_protocol,
+                    "chain": "",
+                    "token": "USD",
+                    "event_type": event_type,
+                    "amount": float(val),
+                }
+
+            elif isinstance(val, dict):
+                for chain, nested in val.items():
+                    num = next(iter(nested.values()))
+                    yield {
+                        "time": dt.isoformat(),
+                        "slug": slug,
+                        "protocol": slug,
+                        "parent_protocol": parent_protocol,
+                        "chain": chain,
+                        "token": "USD",
+                        "event_type": event_type,
+                        "amount": float(num),
+                    }
+
+        except Exception as e:
+            logger.warning(f"{event_type}: could not parse {slug} entry {val}: {e}")
+
+
+def get_defillama_volume_events(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch and yield daily trading volume events for all valid DefiLlama protocols.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Parsed trading volume entries with slug, time, amount,
+        and other metadata fields.
+    """
+
+    session = Session(timeout=300)
+    valid_slugs = get_valid_defillama_slugs()
+
+    for i, slug in enumerate(valid_slugs):
+        url = (
+            f"https://api.llama.fi/summary/dexs/{slug}"
+            "?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=false"
+        )
+        try:
+            context.log.info(f"[Volumes] {i + 1}/{len(valid_slugs)} {slug}")
+            r = session.get(url)
+            r.raise_for_status()
+            data = r.json()
+
+            parent = data.get("parentProtocol", "")
+            chart = data.get("totalDataChartBreakdown", data.get("totalDataChart", []))
+
+            yield from parse_timeseries_events(
+                slug=slug,
+                parent_protocol=parent,
+                raw=chart,
+                event_type="TRADING_VOLUME",
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                continue
+            context.log.warning(f"Volumes: {slug}: {e}")
+        except Exception as e:
+            context.log.error(f"Volumes: {slug}: {e}")
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="trading_volume_events",
+    op_tags={
+        "dagster/concurrency_key": "defillama_volume",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_volume_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads daily trading volume data
+    from DefiLlama into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes trading volume rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_volume_events(context),
+        name="trading_volume_events",
+        primary_key=["slug", "chain", "time"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, partition="time", cluster=["slug", "chain"])
+    yield resource
+
+
+def get_defillama_fee_events(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch and yield daily liquidity provider (LP) fee events for all valid DefiLlama protocols.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Parsed LP fee entries with slug, time, amount,
+        and other metadata fields.
+    """
+
+    session = Session(timeout=300)
+    valid_slugs = get_valid_defillama_slugs()
+
+    for i, slug in enumerate(valid_slugs):
+        url = f"https://api.llama.fi/summary/fees/{slug}?dataType=dailyFees"
+        try:
+            context.log.info(f"[Fees] {i + 1}/{len(valid_slugs)} {slug}")
+            r = session.get(url)
+            r.raise_for_status()
+            data = r.json()
+
+            parent = data.get("parentProtocol", "")
+            chart = data.get("totalDataChartBreakdown", data.get("totalDataChart", []))
+
+            yield from parse_timeseries_events(
+                slug=slug,
+                parent_protocol=parent,
+                raw=chart,
+                event_type="LP_FEES",
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                continue
+            context.log.warning(f"LP Fees: {slug}: {e}")
+        except Exception as e:
+            context.log.error(f"LP Fees: {slug}: {e}")
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="lp_fee_events",
+    op_tags={
+        "dagster/concurrency_key": "defillama_fees",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_fee_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads daily LP fee data
+    from DefiLlama into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes LP fee rows
+        to the configured destination (e.g., BigQuery).
+    """
+
+    resource = dlt.resource(
+        get_defillama_fee_events(context),
+        name="lp_fee_events",
+        primary_key=["slug", "chain", "time"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, partition="time", cluster=["slug", "chain"])
+    yield resource
+
+
+def get_defillama_protocol_metadata(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch protocol metadata from the DefiLlama API.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Protocol metadata entries with fields like id, name,
+        address, symbol, url, description, logo, chain, category, twitter,
+        parentProtocol, and slug.
+    """
+    session = Session(timeout=300)
+
+    try:
+        context.log.info("Fetching protocol metadata from DefiLlama")
+        response = session.get("https://api.llama.fi/protocols")
+        response.raise_for_status()
+        protocols = response.json()
+
+        for protocol in protocols:
+            yield {
+                "id": str(protocol.get("id", "")),
+                "slug": str(protocol.get("slug", "")),
+                "name": str(protocol.get("name", "")),
+                "address": str(protocol.get("address", "")),
+                "symbol": str(protocol.get("symbol", "")),
+                "url": str(protocol.get("url", "")),
+                "description": str(protocol.get("description", "")),
+                "logo": str(protocol.get("logo", "")),
+                "chain": str(protocol.get("chain", "")),
+                "category": str(protocol.get("category", "")),
+                "twitter": str(protocol.get("twitter", "")),
+                "parent_protocol": str(protocol.get("parentProtocol", "")),
+            }
+
+    except requests.exceptions.RequestException as e:
+        context.log.error(f"Failed to fetch protocol metadata: {e}")
+        raise
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="protocol_metadata",
+    op_tags={
+        "dagster/concurrency_key": "defillama_metadata",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_protocol_metadata_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads protocol metadata from DefiLlama
+    into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes protocol metadata rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_protocol_metadata(context),
+        name="protocol_metadata",
+        primary_key=["slug"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, cluster=["slug"])
+    yield resource
+
+
+def get_defillama_historical_chain_tvl(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch historical chain TVL data for specified chains from DefiLlama API.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Historical chain TVL entries with chain, time, and tvl fields.
+    """
+    session = Session(timeout=300)
+
+    # Initial list of chains to fetch
+    initial_chains = {
+        "ethereum",
+        "polygon",
+        "arbitrum",
+        "celo",
+        "mint",
+        "base",
+        "optimism",
+        "unichain",
+    }
+    valid_chains = get_valid_defillama_chains()
+    chains = valid_chains if valid_chains else initial_chains
+
+    for i, chain in enumerate(chains):
+        try:
+            url = f"https://api.llama.fi/v2/historicalChainTvl/{chain}"
+            context.log.info(f"[Historical Chain TVL] {i + 1}/{len(chains)} {chain}")
+
+            response = session.get(url)
+            response.raise_for_status()
+            data = response.json()
+
+            # Parse the historical TVL data
+            for entry in data:
+                try:
+                    timestamp = pd.Timestamp(entry["date"], unit="s")
+                    if not isinstance(timestamp, pd.Timestamp) or pd.isna(timestamp):
+                        continue
+
+                    amount = float(entry["tvl"])
+
+                    event = {
+                        "time": timestamp.isoformat(),
+                        "chain": chain,
+                        "tvl": amount,
+                    }
+                    yield event
+
+                except (KeyError, ValueError) as e:
+                    context.log.warning(f"Error parsing TVL entry for {chain}: {e}")
+                    continue
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                context.log.warning(f"Chain {chain} not found (404)")
+                continue
+            context.log.warning(f"Historical Chain TVL: {chain}: {e}")
+        except Exception as e:
+            context.log.error(f"Historical Chain TVL: {chain}: {e}")
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="historical_chain_tvl",
+    op_tags={
+        "dagster/concurrency_key": "defillama_historical_chain_tvl",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_historical_chain_tvl_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads historical chain TVL data
+    from DefiLlama into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes historical chain TVL rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_historical_chain_tvl(context),
+        name="historical_chain_tvl",
+        primary_key=["chain", "time"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, partition="time", cluster=["chain"])
+    yield resource
+
+
+def get_defillama_chains(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch chain data from the DefiLlama API.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Chain data entries with fields like gecko_id, tvl,
+        tokenSymbol, cmcId, name, and chainId.
+    """
+    session = Session(timeout=300)
+
+    try:
+        context.log.info("Fetching chain data from DefiLlama")
+        response = session.get("https://api.llama.fi/v2/chains")
+        response.raise_for_status()
+        chains = response.json()
+
+        for chain in chains:
+            yield {
+                "gecko_id": chain.get("gecko_id", ""),
+                "tvl": float(chain.get("tvl", 0.0)),
+                "token_symbol": chain.get("tokenSymbol", ""),
+                "cmc_id": chain.get("cmcId", ""),
+                "name": chain.get("name", ""),
+                "chain_id": int(chain["chainId"])
+                if chain.get("chainId") is not None
+                else None,
+            }
+
+    except requests.exceptions.RequestException as e:
+        context.log.error(f"Failed to fetch chain data: {e}")
+        raise
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="chains",
+    op_tags={
+        "dagster/concurrency_key": "defillama_chains",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_chains_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads chain data from DefiLlama
+    into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes chain data rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_chains(context),
+        name="chains",
+        primary_key=["name"],
+        write_disposition="replace",
+    )
+    if global_config.enable_bigquery:
+        bigquery_adapter(resource, cluster=["name"])
     yield resource

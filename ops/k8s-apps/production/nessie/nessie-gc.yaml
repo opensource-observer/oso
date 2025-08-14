@@ -4,13 +4,15 @@ metadata:
   name: nessie-gc-job
 spec:
   schedule: "0 0 * * 3"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       template:
         spec:
           containers:
             - name: nessie-gc
-              image: ghcr.io/projectnessie/nessie-gc:0.103.3
+              image: ghcr.io/projectnessie/nessie-gc:0.104.3
               command:
                 - /bin/bash
                 - -c

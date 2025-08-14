@@ -35,6 +35,8 @@ export const DB_GRAPHQL_URL = requireEnv(
 export const HASURA_URL = process.env.HASURA_URL ?? "MISSING HASURA_URL";
 export const HASURA_PAT = process.env.HASURA_PAT ?? "MISSING HASURA_PAT";
 export const OSO_API_KEY = process.env.OSO_API_KEY ?? "MISSING OSO_API_KEY";
+export const DAGSTER_GRAPHQL_URL =
+  process.env.DAGSTER_GRAPHQL_URL ?? "MISSING DAGSTER_GRAPHQL_URL";
 
 export const SUPABASE_URL = requireEnv(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -63,6 +65,7 @@ export const TRINO_ADMIN_PASSWORD =
   process.env.TRINO_ADMIN_PASSWORD ?? "MISSING TRINO_PASSWORD";
 export const TRINO_CATALOG = process.env.TRINO_CATALOG ?? "iceberg";
 export const TRINO_SCHEMA = process.env.TRINO_SCHEMA ?? "oso";
+export const TRINO_JWT_SECRET = process.env.TRINO_JWT_SECRET;
 
 export const ALGOLIA_APPLICATION_ID =
   process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID ??
@@ -75,3 +78,17 @@ export const FEEDBACK_FARM_ID =
   process.env.NEXT_PUBLIC_FEEDBACK_FARM_ID ?? "MISSING FEEDBACK_FARM_ID";
 export const OSO_AGENT_URL =
   process.env.OSO_AGENT_URL ?? "MISSING OSO_AGENT_URL";
+export const STRIPE_SECRET_KEY =
+  process.env.STRIPE_SECRET_KEY ?? "MISSING STRIPE_SECRET_KEY";
+export const STRIPE_PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ??
+  "MISSING STRIPE_PUBLISHABLE_KEY";
+export const STRIPE_WEBHOOK_SECRET =
+  process.env.STRIPE_WEBHOOK_SECRET ?? "MISSING STRIPE_WEBHOOK_SECRET";
+export const OSO_JWT_SECRET = process.env.OSO_JWT_SECRET;
+export const OSO_ENTITIES_KEY = "oso_entities";
+export const OSO_ENTITIES = [
+  "artifact.artifact_id",
+  "project.project_id",
+  "metrics.metric_id",
+];

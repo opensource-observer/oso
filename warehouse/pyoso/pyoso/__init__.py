@@ -7,5 +7,6 @@ try:
 except PackageNotFoundError:
     __version__ = "unknown"
 
-from .client import Client
+from .analytics import DataAnalytics
+from .client import Client, QueryResponse
 from .exceptions import HTTPError, OsoError

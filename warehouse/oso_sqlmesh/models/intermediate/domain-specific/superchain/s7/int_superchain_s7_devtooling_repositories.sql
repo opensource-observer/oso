@@ -10,6 +10,7 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0)
   ),
+  enabled false,
 );
 
 @DEF(event_date_threshold, DATE('2024-01-01'));
@@ -33,7 +34,7 @@ WITH events AS (
 )
 
 SELECT DISTINCT
-  app.project_id,
+  @oso_entity_id('OP_ATLAS', '', app.atlas_id) AS project_id,
   repos.artifact_id AS repo_artifact_id,
   repos.artifact_namespace AS repo_artifact_namespace,
   repos.artifact_name AS repo_artifact_name,
@@ -45,11 +46,11 @@ SELECT DISTINCT
   repos.created_at,
   repos.updated_at
 FROM oso.stg_op_atlas_application AS app
-JOIN oso.stg_op_atlas_project_repository AS pr
-  ON app.project_id = pr.project_id
+JOIN oso.int_artifacts_by_project_in_op_atlas AS abp
+  ON app.atlas_id = abp.atlas_id
+  AND abp.artifact_source = 'GITHUB'
 JOIN oso.int_repositories_enriched AS repos
-  ON repos.artifact_namespace = pr.artifact_namespace
-  AND repos.artifact_name = pr.artifact_name
+  ON repos.artifact_id = abp.artifact_id
 LEFT JOIN events
   ON events.to_artifact_id = repos.artifact_id
 WHERE app.round_id = '7'
