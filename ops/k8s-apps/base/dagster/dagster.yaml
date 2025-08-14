@@ -78,7 +78,7 @@ spec:
                   limit: 1
       dagster-user-deployments:
         deployments:
-          - name: "oso-dagster"
+          - name: "legacy"
             image:
               repository: "ghcr.io/opensource-observer/oso"
               tag: latest
@@ -93,6 +93,36 @@ spec:
               - "json"
             includeConfigInLaunchedRuns:
               enabled: false
+          - name: "sqlmesh"
+            image:
+              repository: "ghcr.io/opensource-observer/oso"
+              tag: latest
+              pullPolicy: Always
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions.sqlmesh"
+              - "--log-format"
+              - "json"
+            includeConfigInLaunchedRuns:
+              enabled: false
+          - name: "ops"
+            image:
+              repository: "ghcr.io/opensource-observer/oso"
+              tag: latest
+              pullPolicy: Always
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions.ops"
+              - "--log-format"
+              - "json"
+            includeConfigInLaunchedRuns:
+              enabled: false        
 
   postRenderers:
     - kustomize:
