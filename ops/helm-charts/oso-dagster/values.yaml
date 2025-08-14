@@ -21,6 +21,10 @@ osoDagster:
   enableJsonLogs: true
   testAssets:
     enabled: false
+  gcp:
+    enabled: false
+    bigquery:
+      enabled: false
 
 global:
   dagsterInternalName: "dagster"

@@ -10,6 +10,11 @@ spec:
       eagerlyLoadSqlTables: 0
       env: "production"
 
+      gcp:
+        enabled: true
+        bigquery:
+          enabled: true
+
       testAssets:
         # This should normally be off, but if we need to test some failure
         # scenarios on production enable this
