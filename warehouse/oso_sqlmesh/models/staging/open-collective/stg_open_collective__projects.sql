@@ -29,7 +29,7 @@ WITH social_links AS (
     link
   FROM @oso_source('bigquery.open_collective.deposits'),
   UNNEST(@json_extract_from_array(to_account, '$.socialLinks')) as link
-  WHERE JSON_EXTRACT_SCALAR(link, '$.url') LIKE '%github.com%'
+  WHERE LOWER(JSON_EXTRACT_SCALAR(link, '$.url')) LIKE '%github.com%'
 )
 
 SELECT
