@@ -698,41 +698,41 @@ export const usersByOrganizationRelationshipsSchema = z.tuple([
 ]);
 
 export const addCreditsArgsSchema = z.object({
-  p_user_id: z.string(),
   p_amount: z.number(),
-  p_transaction_type: z.string(),
   p_metadata: jsonSchema.optional(),
+  p_transaction_type: z.string(),
+  p_user_id: z.string(),
 });
 
 export const addCreditsReturnsSchema = z.boolean();
 
 export const addOrganizationCreditsArgsSchema = z.object({
-  p_org_id: z.string(),
-  p_user_id: z.string(),
   p_amount: z.number(),
-  p_transaction_type: z.string(),
   p_metadata: jsonSchema.optional(),
+  p_org_id: z.string(),
+  p_transaction_type: z.string(),
+  p_user_id: z.string(),
 });
 
 export const addOrganizationCreditsReturnsSchema = z.boolean();
 
 export const deductCreditsArgsSchema = z.object({
-  p_user_id: z.string(),
   p_amount: z.number(),
-  p_transaction_type: z.string(),
   p_api_endpoint: z.string().optional(),
   p_metadata: jsonSchema.optional(),
+  p_transaction_type: z.string(),
+  p_user_id: z.string(),
 });
 
 export const deductCreditsReturnsSchema = z.boolean();
 
 export const deductOrganizationCreditsArgsSchema = z.object({
-  p_org_id: z.string(),
-  p_user_id: z.string(),
   p_amount: z.number(),
-  p_transaction_type: z.string(),
   p_api_endpoint: z.string().optional(),
   p_metadata: jsonSchema.optional(),
+  p_org_id: z.string(),
+  p_transaction_type: z.string(),
+  p_user_id: z.string(),
 });
 
 export const deductOrganizationCreditsReturnsSchema = z.boolean();
@@ -756,22 +756,22 @@ export const hasuraTokenHookArgsSchema = z.object({
 export const hasuraTokenHookReturnsSchema = jsonSchema;
 
 export const previewDeductCreditsArgsSchema = z.object({
-  p_user_id: z.string(),
   p_amount: z.number(),
-  p_transaction_type: z.string(),
   p_api_endpoint: z.string().optional(),
   p_metadata: jsonSchema.optional(),
+  p_transaction_type: z.string(),
+  p_user_id: z.string(),
 });
 
 export const previewDeductCreditsReturnsSchema = z.boolean();
 
 export const previewDeductOrganizationCreditsArgsSchema = z.object({
-  p_org_id: z.string(),
-  p_user_id: z.string(),
   p_amount: z.number(),
-  p_transaction_type: z.string(),
   p_api_endpoint: z.string().optional(),
   p_metadata: jsonSchema.optional(),
+  p_org_id: z.string(),
+  p_transaction_type: z.string(),
+  p_user_id: z.string(),
 });
 
 export const previewDeductOrganizationCreditsReturnsSchema = z.boolean();
