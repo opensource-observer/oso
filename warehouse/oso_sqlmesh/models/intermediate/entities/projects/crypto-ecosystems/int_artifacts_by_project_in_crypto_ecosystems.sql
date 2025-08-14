@@ -25,7 +25,7 @@ WITH parsed_artifacts AS (
   CROSS JOIN LATERAL @parse_github_repository_artifact(taxonomy.repo_url) AS parsed_url
   LEFT JOIN oso.int_artifacts__github AS gh_int
     ON gh_int.artifact_url = taxonomy.repo_url
-  WHERE taxonomy.repo_url NOT LIKE 'https://github.com%'
+  WHERE taxonomy.repo_url LIKE 'https://github.com%'
 ),
 
 eco_projects AS (

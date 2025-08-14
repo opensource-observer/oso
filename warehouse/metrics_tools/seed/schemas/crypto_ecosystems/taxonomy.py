@@ -72,6 +72,18 @@ seed = SeedConfig(
             eco_name="Optimism",
         ),
         Taxonomy(
+            repo_url="https://gitlab.com/thorchain/txscript",
+            branch=[],
+            tags=[],
+            eco_name="THORChain",
+        ),
+        Taxonomy(
+            repo_url="https://gfx.cafe/ip/app.git",
+            branch=["Movement", "Interest Protocol"],
+            tags=[],
+            eco_name="Move Stack",
+        ),
+        Taxonomy(
             repo_url="https://github.com/functionland/react-native-fula",
             branch=[
                 "Ethereum Virtual Machine Stack",
