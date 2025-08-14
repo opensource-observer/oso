@@ -9,11 +9,11 @@ def load_dlt_staging(global_config: DagsterConfig):
 
 
 def load_dlt_warehouse_destination(global_config: DagsterConfig):
-    if global_config.enable_bigquery:
-        assert global_config.project_id
+    if global_config.gcp_bigquery_enabled:
+        assert global_config.gcp_project_id
         return bigquery(
             credentials=GcpServiceAccountCredentials(
-                project_id=global_config.project_id
+                project_id=global_config.gcp_project_id
             ),
             truncate_tables_on_staging_destination_before_load=False,
         )

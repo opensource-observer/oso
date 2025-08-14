@@ -8,9 +8,9 @@ from .common import DefinitionsLoaderResponse, dagster_definitions
 logger = logging.getLogger(__name__)
 
 
-@dagster_definitions(name="legacy")
-@time_function(logger, override_name="legacy_definitions")
-def legacy_definitions(
+@dagster_definitions(name="sqlmesh")
+@time_function(logger, override_name="sqlmesh_definitions")
+def sqlmesh_definitions(
     resources: ResourcesContext,
 ) -> DefinitionsLoaderResponse:
     """This is the "legacy" definitions for oso_dagster. It is currently being
@@ -25,8 +25,8 @@ def legacy_definitions(
     asset_factories = load_all_assets_from_package(
         assets,
         resources,
-        exclude_module_tags={
-            "code_location": ".*",
+        include_module_tags={
+            "code_location": "sqlmesh",
         },
     )
 

@@ -67,7 +67,7 @@ def secrets_factory(
     if global_config.use_local_secrets:
         return LocalSecretResolver(prefix="DAGSTER")
     return GCPSecretResolver.connect_with_default_creds(
-        global_config.project_id, global_config.gcp_secrets_prefix
+        global_config.gcp_project_id, global_config.gcp_secrets_prefix
     )
 
 
@@ -75,7 +75,14 @@ def secrets_factory(
 @time_function(logger)
 def bigquery_resource_factory(global_config: DagsterConfig) -> BigQueryResource:
     """Factory function to create a BigQuery resource."""
-    return BigQueryResource(project=global_config.project_id)
+    if not global_config.gcp_bigquery_enabled:
+        # Return a fake bigquery resource that errors when you attempt to use it
+        class FakeBigqueryResource(BigQueryResource):
+            def get_client(self, *args, **kwargs):
+                raise ValueError("BigQuery is not enabled. Client cannot be created.")
+
+        return FakeBigqueryResource()
+    return BigQueryResource(project=global_config.gcp_project_id)
 
 
 @resource_factory("bigquery_datatransfer")
@@ -84,7 +91,7 @@ def bigquery_datatransfer_resource_factory(
     global_config: DagsterConfig,
 ) -> BigQueryDataTransferResource:
     """Factory function to create a BigQuery Data Transfer resource."""
-    return BigQueryDataTransferResource(project=global_config.project_id)
+    return BigQueryDataTransferResource(project=global_config.gcp_project_id)
 
 
 @resource_factory("clickhouse")
@@ -103,7 +110,7 @@ def clickhouse_resource_factory(
 @resource_factory("gcs")
 @time_function(logger)
 def gcs_resource_factory(global_config: DagsterConfig) -> GCSResource:
-    return GCSResource(project=global_config.project_id)
+    return GCSResource(project=global_config.gcp_project_id)
 
 
 @resource_factory("cache")
@@ -166,7 +173,7 @@ def sqlmesh_context_config_factory(
 @resource_factory("k8s")
 @time_function(logger)
 def k8s_resource_factory(global_config: DagsterConfig) -> K8sResource | K8sApiResource:
-    if not global_config.enable_k8s:
+    if not global_config.k8s_enabled:
         return K8sResource()
     return K8sApiResource()
 
@@ -176,7 +183,7 @@ def k8s_resource_factory(global_config: DagsterConfig) -> K8sResource | K8sApiRe
 def trino_resource_factory(
     global_config: DagsterConfig, k8s: K8sResource | K8sApiResource
 ) -> TrinoResource:
-    if not global_config.enable_k8s:
+    if not global_config.k8s_enabled:
         return TrinoRemoteResource()
     return TrinoK8sResource(
         k8s=k8s,
@@ -211,7 +218,7 @@ def sqlmesh_exporter_factory(global_config: DagsterConfig) -> t.List[SQLMeshExpo
         ),
         Trino2BigQuerySQLMeshExporter(
             ["bigquery_metrics"],
-            project_id=global_config.project_id,
+            project_id=global_config.gcp_project_id,
             dataset_id=global_config.sqlmesh_bq_export_dataset_id,
             source_catalog=global_config.sqlmesh_catalog,
             source_schema=global_config.sqlmesh_schema,
@@ -371,7 +378,7 @@ def alert_manager_factory(global_config: DagsterConfig) -> AlertManager:
 def time_ordered_storage_factory(
     global_config: DagsterConfig,
 ) -> TimeOrderedStorageResource:
-    if not global_config.enable_k8s:
+    if not global_config.k8s_enabled:
         return TimeOrderedStorageResource()
     return GCSTimeOrderedStorageResource(
         bucket_name=global_config.gcs_bucket,
