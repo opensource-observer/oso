@@ -1,4 +1,5 @@
 import functools
+import random
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -21,7 +22,11 @@ import dlt
 from dagster import AssetExecutionContext
 from dlt.extract.resource import DltResource
 from gql import Client, gql
-from gql.transport.exceptions import TransportError
+from gql.transport.exceptions import (
+    TransportError,
+    TransportQueryError,
+    TransportServerError,
+)
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.config import DagsterConfig
 from oso_dagster.utils.redis import redis_cache
@@ -155,6 +160,32 @@ type GraphQLDependencyCallable = Callable[
 
 
 @dataclass
+class RetryConfig:
+    """
+    Configuration for retry mechanism with exponential backoff and page size reduction.
+
+    Args:
+        max_retries: Maximum number of retry attempts (default: 3).
+        initial_delay: Initial delay in seconds before first retry (default: 1.0).
+        max_delay: Maximum delay in seconds between retries (default: 60.0).
+        backoff_multiplier: Multiplier for exponential backoff (default: 2.0).
+        jitter: Whether to add random jitter to delays (default: True).
+        reduce_page_size: Whether to reduce page size on failures (default: True).
+        min_page_size: Minimum page size when reducing (default: 10).
+        page_size_reduction_factor: Factor to reduce page size by (default: 0.5).
+    """
+
+    max_retries: int = 3
+    initial_delay: float = 1.0
+    max_delay: float = 60.0
+    backoff_multiplier: float = 2.0
+    jitter: bool = True
+    reduce_page_size: bool = True
+    min_page_size: int = 10
+    page_size_reduction_factor: float = 0.5
+
+
+@dataclass
 class GraphQLResourceConfig:
     """
     Configuration for a GraphQL resource.
@@ -176,6 +207,7 @@ class GraphQLResourceConfig:
               intermediate rows will be skipped from the final output. The factory can
               only return one consistent data shape, so deps serve as a means to transform
               the intermediate data into the final desired output format.
+        retry: Retry configuration for failed queries.
     """
 
     name: str
@@ -190,6 +222,7 @@ class GraphQLResourceConfig:
     exclude: Optional[List[str]] = None
     deps_rate_limit_seconds: float = 0.0
     deps: Optional[List[GraphQLDependencyCallable]] = None
+    retry: Optional[RetryConfig] = None
 
 
 def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
@@ -599,6 +632,161 @@ def get_nested_value(data: Dict[str, Any], path: str) -> Any:
     return value
 
 
+D = TypeVar("D")
+
+
+def execute_with_retry(
+    func: Callable[[], D],
+    retry_config: Optional[RetryConfig],
+    context: AssetExecutionContext,
+    operation_name: str = "GraphQL operation",
+) -> D:
+    """
+    Execute a function with retry mechanism and exponential backoff.
+
+    Args:
+        func: The function to execute.
+        retry_config: Retry configuration. If None, no retries are performed.
+        context: Execution context for logging.
+        operation_name: Name of the operation for logging.
+
+    Returns:
+        The result of the function execution.
+
+    Raises:
+        The last exception if all retries are exhausted.
+    """
+    if not retry_config:
+        return func()
+
+    for attempt in range(retry_config.max_retries + 1):
+        try:
+            return func()
+        except (TransportError, TransportServerError, TransportQueryError) as e:
+            if attempt == retry_config.max_retries:
+                context.log.error(
+                    f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
+                )
+                raise
+
+            delay = min(
+                retry_config.initial_delay * (retry_config.backoff_multiplier**attempt),
+                retry_config.max_delay,
+            )
+
+            if retry_config.jitter:
+                delay += random.uniform(0, delay * 0.1)
+
+            context.log.warning(
+                f"{operation_name} failed (attempt {attempt + 1}/{retry_config.max_retries + 1}): {e}. "
+                f"Retrying in {delay:.2f} seconds..."
+            )
+
+            time.sleep(delay)
+
+    raise RuntimeError("Retry loop exited without returning or raising")
+
+
+def execute_with_adaptive_retry(
+    func: Callable[[Optional[int]], D],
+    retry_config: Optional[RetryConfig],
+    context: AssetExecutionContext,
+    initial_page_size: Optional[int],
+    operation_name: str = "GraphQL operation",
+) -> D:
+    """
+    Execute a function with retry mechanism that reduces page size on failures.
+
+    Args:
+        func: Function that accepts optional page_size parameter.
+        retry_config: Retry configuration with page size reduction.
+        context: Execution context for logging.
+        initial_page_size: Initial page size to start with.
+        operation_name: Name of the operation for logging.
+
+    Returns:
+        The result of the function execution.
+
+    Raises:
+        The last exception if all retries are exhausted.
+    """
+    if not retry_config or not retry_config.reduce_page_size or not initial_page_size:
+        return execute_with_retry(
+            lambda: func(None),
+            retry_config,
+            context,
+            operation_name,
+        )
+
+    current_page_size = initial_page_size
+
+    for attempt in range(retry_config.max_retries + 1):
+        try:
+            context.log.debug(
+                f"{operation_name}: Attempting with page_size={current_page_size} (attempt {attempt + 1}/{retry_config.max_retries + 1})"
+            )
+            result = func(current_page_size)
+
+            if attempt > 0:
+                context.log.info(
+                    f"{operation_name}: SUCCESS after {attempt} retries with page_size={current_page_size} - resetting to original size {initial_page_size} for next page"
+                )
+            else:
+                context.log.debug(
+                    f"{operation_name}: SUCCESS on first attempt with page_size={current_page_size}"
+                )
+
+            return result
+        except (TransportError, TransportServerError, TransportQueryError) as e:
+            if attempt == retry_config.max_retries:
+                context.log.error(
+                    f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
+                )
+                raise
+
+            old_page_size = current_page_size
+            if current_page_size and retry_config.reduce_page_size:
+                new_page_size = max(
+                    int(current_page_size * retry_config.page_size_reduction_factor),
+                    retry_config.min_page_size,
+                )
+                if new_page_size < current_page_size:
+                    current_page_size = new_page_size
+                    context.log.warning(
+                        f"{operation_name}: FAILURE (attempt {attempt + 1}) - reducing page size from {old_page_size} to {current_page_size}"
+                    )
+                else:
+                    context.log.warning(
+                        f"{operation_name}: FAILURE (attempt {attempt + 1}) - keeping minimum page size {current_page_size}"
+                    )
+            else:
+                context.log.warning(
+                    f"{operation_name}: FAILURE (attempt {attempt + 1}) - keeping page size {current_page_size} (reduction disabled)"
+                )
+
+            delay = min(
+                retry_config.initial_delay * (retry_config.backoff_multiplier**attempt),
+                retry_config.max_delay,
+            )
+
+            if retry_config.jitter:
+                delay += random.uniform(0, delay * 0.1)
+
+            context.log.warning(
+                f"{operation_name}: Retrying in {delay:.2f} seconds... Error: {e}"
+            )
+
+            start_sleep = time.time()
+            time.sleep(delay)
+            actual_delay = time.time() - start_sleep
+
+            context.log.info(
+                f"{operation_name}: Waited {actual_delay:.2f} seconds, starting retry attempt {attempt + 2}"
+            )
+
+    raise RuntimeError("Retry loop exited without returning or raising")
+
+
 def extract_data_for_pagination(
     result: Dict[str, Any],
     config: GraphQLResourceConfig,
@@ -808,46 +996,75 @@ def _graphql_factory(
                 key: param["value"] for key, param in (config.parameters or {}).items()
             }
 
-            page_count = 0
+            successful_pages = 0
             total_items = 0
             has_more = True
 
             while has_more:
                 try:
-                    if config.pagination:
-                        if config.pagination.type == PaginationType.OFFSET:
-                            variables[config.pagination.offset_field] = (
-                                page_count * config.pagination.page_size
-                            )
-                            variables[config.pagination.limit_field] = (
-                                config.pagination.page_size
-                            )
-                        elif config.pagination.type in (
-                            PaginationType.CURSOR,
-                            PaginationType.RELAY,
-                        ):
-                            if page_count > 0 or variables.get(
-                                config.pagination.cursor_field
-                            ):
-                                pass
-                            else:
-                                variables[config.pagination.cursor_field] = None
-                            variables[config.pagination.page_size_field] = (
-                                config.pagination.page_size
+                    original_page_size = (
+                        config.pagination.page_size if config.pagination else None
+                    )
+
+                    context.log.info(
+                        f"GraphQLFactory: Starting page {successful_pages + 1} with original page size {original_page_size}"
+                    )
+
+                    def execute_query_with_page_size(
+                        page_size: Optional[int] = None,
+                    ) -> Dict[str, Any]:
+                        query_variables = variables.copy()
+                        effective_page_size = page_size or original_page_size
+
+                        if config.pagination:
+                            context.log.debug(
+                                f"GraphQLFactory: Executing query with page_size={effective_page_size}, offset={total_items}"
                             )
 
-                    result = client.execute(
-                        gql(generated_query),
-                        variable_values=variables,
+                            if config.pagination.type == PaginationType.OFFSET:
+                                query_variables[config.pagination.offset_field] = (
+                                    total_items
+                                )
+                                query_variables[config.pagination.limit_field] = (
+                                    effective_page_size
+                                )
+                            elif config.pagination.type in (
+                                PaginationType.CURSOR,
+                                PaginationType.RELAY,
+                            ):
+                                if successful_pages > 0 or query_variables.get(
+                                    config.pagination.cursor_field
+                                ):
+                                    pass
+                                else:
+                                    query_variables[config.pagination.cursor_field] = (
+                                        None
+                                    )
+                                query_variables[config.pagination.page_size_field] = (
+                                    effective_page_size
+                                )
+
+                        return client.execute(
+                            gql(generated_query),
+                            variable_values=query_variables,
+                        )
+
+                    result = execute_with_adaptive_retry(
+                        execute_query_with_page_size,
+                        config.retry,
+                        context,
+                        original_page_size if config.pagination else None,
+                        f"GraphQL query execution (page {successful_pages + 1})",
                     )
 
                     data_items, pagination_info = extract_data_for_pagination(
                         result, config
                     )
 
+                    items_in_page = 0
                     if isinstance(data_items, list):
+                        items_in_page = len(data_items)
                         for item_idx, item in enumerate(data_items):
-                            total_items += 1
                             if config.deps:
                                 if item_idx > 0 and config.deps_rate_limit_seconds > 0:
                                     time.sleep(config.deps_rate_limit_seconds)
@@ -858,7 +1075,7 @@ def _graphql_factory(
                             else:
                                 yield item
                     else:
-                        total_items += 1
+                        items_in_page = 1 if data_items else 0
                         if config.deps:
                             for i, dep in enumerate(config.deps):
                                 if i > 0 and config.deps_rate_limit_seconds > 0:
@@ -867,17 +1084,24 @@ def _graphql_factory(
                         else:
                             yield data_items
 
-                    page_count += 1
+                    total_items += items_in_page
+                    successful_pages += 1
+
+                    context.log.info(
+                        f"GraphQLFactory: Successfully completed page {successful_pages} with {items_in_page} items (total: {total_items})"
+                    )
 
                     if not config.pagination:
                         has_more = False
                     elif config.pagination.stop_condition:
                         has_more = not config.pagination.stop_condition(
-                            result, page_count
+                            result, successful_pages
                         )
+                        if not has_more:
+                            context.log.info("GraphQLFactory: Stop condition met")
                     elif (
                         config.pagination.max_pages
-                        and page_count >= config.pagination.max_pages
+                        and successful_pages >= config.pagination.max_pages
                     ):
                         has_more = False
                         context.log.info(
@@ -888,10 +1112,15 @@ def _graphql_factory(
                             pagination_info
                             and pagination_info.get("total_count") is not None
                         ):
-                            current_offset = page_count * config.pagination.page_size
-                            has_more = current_offset < pagination_info["total_count"]
+                            has_more = total_items < pagination_info["total_count"]
+                            context.log.debug(
+                                f"GraphQLFactory: total_items={total_items}, total_count={pagination_info['total_count']}, has_more={has_more}"
+                            )
                         else:
-                            has_more = len(data_items) == config.pagination.page_size
+                            has_more = items_in_page > 0
+                            context.log.debug(
+                                f"GraphQLFactory: No total_count available, has_more={has_more} based on items_in_page={items_in_page}"
+                            )
                     elif config.pagination.type in (
                         PaginationType.CURSOR,
                         PaginationType.RELAY,
@@ -905,6 +1134,9 @@ def _graphql_factory(
                                 variables[config.pagination.cursor_field] = (
                                     pagination_info["next_cursor"]
                                 )
+                            context.log.debug(
+                                f"GraphQLFactory: Cursor pagination has_more={has_more}"
+                            )
                         else:
                             has_more = False
 
@@ -913,12 +1145,10 @@ def _graphql_factory(
                         and config.pagination
                         and config.pagination.rate_limit_seconds > 0
                     ):
+                        context.log.debug(
+                            f"GraphQLFactory: Rate limiting for {config.pagination.rate_limit_seconds}s between pages"
+                        )
                         time.sleep(config.pagination.rate_limit_seconds)
-
-                    context.log.info(
-                        f"GraphQLFactory: Fetched page {page_count} with {len(data_items)} items "
-                        f"(total: {total_items})"
-                    )
 
                 except TransportError as e:
                     context.log.error(f"GraphQL query execution failed: {str(e)}")
@@ -927,7 +1157,7 @@ def _graphql_factory(
                     ) from e
 
             context.log.info(
-                f"GraphQLFactory: Completed fetching {total_items} total items"
+                f"GraphQLFactory: Completed fetching {total_items} total items across {successful_pages} successful pages"
             )
 
         return _execute_query
