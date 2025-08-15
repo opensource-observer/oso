@@ -5,7 +5,8 @@ locals {
 
   arbitrum_one_disk_name      = "arbitrum-one-archive-node-disk"
   arbitrum_one_startup_script = "${var.scripts_path}/archive-node-startup.sh"
-
+  ethereum_disk_name          = "ethereum-archive-node-disk"
+  ethereum_startup_script     = "${var.scripts_path}/archive-node-startup.sh"
 }
 
 # Network setup
@@ -60,6 +61,23 @@ resource "google_dns_policy" "tailnet_policy" {
   }
 }
 
+resource "google_compute_firewall" "allow_internal_rpc" {
+  name    = "allow-internal-rpc"
+  network = data.google_compute_network.archive_node_network.id
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8545", "8546"] # Standard Ethereum RPC ports (HTTP and WS)
+  }
+
+  allow {
+    protocol = "icmp"
+  }
+
+  source_tags = ["archive-node"]
+  target_tags = ["archive-node"]
+}
+
 # Arbitrum One Archive Node
 
 resource "google_service_account" "arbitrum_one_sa" {
@@ -67,16 +85,16 @@ resource "google_service_account" "arbitrum_one_sa" {
   display_name = "Custom SA for VM Instance"
 }
 
-resource "google_compute_disk" "arbitrum_one_disk" {
-  name = local.arbitrum_one_disk_name
+resource "google_compute_disk" "arbitrum_one_ssd_disk" {
+  name = "arbitrum-one-archive-node-ssd-disk"
   zone = var.zone
-  type = "pd-balanced"
-  size = 30000
+  type = "pd-ssd"
+  size = 16000
 }
 
 resource "google_compute_instance" "arbitrum_one" {
   name         = "arbitrum-one-archive-node"
-  machine_type = "n1-highmem-4"
+  machine_type = "n2-standard-8"
   zone         = var.zone
   tags = [
     "arbitrum-one",
@@ -90,9 +108,9 @@ resource "google_compute_instance" "arbitrum_one" {
   }
 
   attached_disk {
-    source      = local.arbitrum_one_disk_name
+    source      = google_compute_disk.arbitrum_one_ssd_disk.name
     mode        = "READ_WRITE"
-    device_name = "arbitrum-mainnet"
+    device_name = "arbitrum-mainnet-ssd"
   }
 
   network_interface {
@@ -110,6 +128,59 @@ resource "google_compute_instance" "arbitrum_one" {
   service_account {
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
     email  = google_service_account.arbitrum_one_sa.email
+    scopes = ["cloud-platform"]
+  }
+}
+
+# Ethereum Mainnet Archive Node
+
+resource "google_service_account" "ethereum_sa" {
+  account_id   = "ethereum-archive-node-sa"
+  display_name = "Custom SA for VM Instance"
+}
+
+resource "google_compute_disk" "ethereum_disk" {
+  name = local.ethereum_disk_name
+  zone = var.zone
+  type = "pd-ssd"
+  size = 16000
+}
+
+resource "google_compute_instance" "ethereum" {
+  name         = "ethereum-archive-node"
+  machine_type = "n2-highmem-8"
+  zone         = var.zone
+  tags = [
+    "ethereum",
+    "archive-node"
+  ]
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+    }
+  }
+
+  attached_disk {
+    source      = google_compute_disk.ethereum_disk.name
+    mode        = "READ_WRITE"
+    device_name = "ethereum-mainnet"
+  }
+
+  network_interface {
+    network    = data.google_compute_network.archive_node_network.id
+    subnetwork = google_compute_subnetwork.archive_node_subnet.id
+    access_config {
+
+    }
+  }
+
+  can_ip_forward = true
+
+  metadata_startup_script = file(local.ethereum_startup_script)
+
+  service_account {
+    email  = google_service_account.ethereum_sa.email
     scopes = ["cloud-platform"]
   }
 }
