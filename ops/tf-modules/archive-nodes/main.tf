@@ -61,6 +61,23 @@ resource "google_dns_policy" "tailnet_policy" {
   }
 }
 
+resource "google_compute_firewall" "allow_internal_rpc" {
+  name    = "allow-internal-rpc"
+  network = data.google_compute_network.archive_node_network.id
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8545", "8546"] # Standard Ethereum RPC ports (HTTP and WS)
+  }
+
+  allow {
+    protocol = "icmp"
+  }
+
+  source_tags = ["archive-node"]
+  target_tags = ["archive-node"]
+}
+
 # Arbitrum One Archive Node
 
 resource "google_service_account" "arbitrum_one_sa" {
@@ -72,12 +89,12 @@ resource "google_compute_disk" "arbitrum_one_ssd_disk" {
   name = "arbitrum-one-archive-node-ssd-disk"
   zone = var.zone
   type = "pd-ssd"
-  size = 10000
+  size = 16000
 }
 
 resource "google_compute_instance" "arbitrum_one" {
   name         = "arbitrum-one-archive-node"
-  machine_type = "n1-highmem-4"
+  machine_type = "n2-standard-8"
   zone         = var.zone
   tags = [
     "arbitrum-one",
@@ -90,65 +107,10 @@ resource "google_compute_instance" "arbitrum_one" {
     }
   }
 
-  # attached_disk {
-  #   source      = google_compute_disk.arbitrum_one_ssd_disk.name
-  #   mode        = "READ_WRITE"
-  #   device_name = "arbitrum-mainnet-ssd"
-  # }
-
-  network_interface {
-    network    = data.google_compute_network.archive_node_network.id
-    subnetwork = google_compute_subnetwork.archive_node_subnet.id
-    access_config {
-
-    }
-  }
-
-  can_ip_forward = true
-
-  metadata_startup_script = file(local.arbitrum_one_startup_script)
-
-  service_account {
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    email  = google_service_account.arbitrum_one_sa.email
-    scopes = ["cloud-platform"]
-  }
-}
-
-# Arbitrum One Archive Node (Large Scratch)
-# NOTE: This instance uses local SSDs for scratch space, which are ephemeral.
-# The data on them will be lost if the instance is stopped.
-# It also attaches the same persistent disk as the other arbitrum_one instance.
-# Only one of these instances can be running at a time to have read-write access to the disk.
-resource "google_compute_instance" "arbitrum_one_large_scratch" {
-  name         = "arbitrum-one-archive-node-large-scratch"
-  machine_type = "n1-highmem-4"
-  zone         = var.zone
-  tags = [
-    "arbitrum-one",
-    "archive-node",
-    "large-scratch"
-  ]
-
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-12"
-    }
-  }
-
   attached_disk {
     source      = google_compute_disk.arbitrum_one_ssd_disk.name
     mode        = "READ_WRITE"
-    device_name = "arbitrum-mainnet"
-  }
-
-  // n1-highmem-4 supports up to 24 local SSDs of 375GB each, for a total of 9TB.
-  // The user requested 10TB, so we are using the maximum available.
-  dynamic "scratch_disk" {
-    for_each = range(24)
-    content {
-      interface = "NVME"
-    }
+    device_name = "arbitrum-mainnet-ssd"
   }
 
   network_interface {
@@ -186,7 +148,7 @@ resource "google_compute_disk" "ethereum_disk" {
 
 resource "google_compute_instance" "ethereum" {
   name         = "ethereum-archive-node"
-  machine_type = "n1-highmem-4"
+  machine_type = "n2-highmem-8"
   zone         = var.zone
   tags = [
     "ethereum",
