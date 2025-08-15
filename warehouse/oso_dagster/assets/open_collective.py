@@ -18,6 +18,13 @@ from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from oso_dagster.utils.secrets import secret_ref_arg
 from pydantic import UUID4, BaseModel, Field
 
+from ..factories.graphql import (
+    GraphQLResourceConfig,
+    PaginationConfig,
+    PaginationType,
+    RetryConfig,
+    graphql_factory,
+)
 from ..utils.common import (
     QueryArguments,
     QueryConfig,
@@ -713,6 +720,75 @@ def deposits(
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
         write_disposition="merge",
+    )
+
+    if global_config.enable_bigquery:
+        bigquery_adapter(
+            resource,
+            partition="created_at",
+        )
+
+    yield resource
+
+
+@dlt_factory(
+    key_prefix="open_collective",
+)
+def accounts(
+    context: AssetExecutionContext,
+    global_config: DagsterConfig,
+    personal_token: str = secret_ref_arg(
+        group_name="open_collective", key="personal_token"
+    ),
+):
+    config = GraphQLResourceConfig(
+        name="accounts",
+        endpoint="https://api.opencollective.com/graphql/v2",
+        target_type="Query",
+        target_query="accounts",
+        transform_fn=lambda result: result["accounts"]["nodes"],
+        headers={
+            "Personal-Token": personal_token,
+        },
+        exclude=[
+            "nodes.activitySubscriptions",
+            "nodes.feed",
+            "nodes.parentAccount.activitySubscriptions",
+            "nodes.parentAccount.feed",
+            "nodes.stats.managedAmount",
+            "nodes.stats.activitySubscriptions",
+            "nodes.stats.contributionsAmountTimeSeries",
+            "nodes.stats.expensesTagsTimeSeries",
+            "nodes.stats.totalNetAmountReceivedTimeSeries",
+        ],
+        pagination=PaginationConfig(
+            type=PaginationType.OFFSET,
+            page_size=200,
+            offset_field="offset",
+            limit_field="limit",
+            total_count_path="totalCount",
+            rate_limit_seconds=1.0,
+        ),
+        max_depth=3,
+        retry=RetryConfig(
+            max_retries=10,
+            initial_delay=1.0,
+            max_delay=5.0,
+            backoff_multiplier=1.5,
+            jitter=True,
+            reduce_page_size=True,
+            min_page_size=10,
+            page_size_reduction_factor=0.6,
+        ),
+    )
+
+    resource = graphql_factory(
+        config,
+        global_config,
+        context,
+        max_table_nesting=0,
+        write_disposition="merge",
+        merge_key="id",
     )
 
     if global_config.enable_bigquery:
