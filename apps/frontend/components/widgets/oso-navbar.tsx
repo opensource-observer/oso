@@ -160,11 +160,11 @@ function OsoNavbar(props: OsoNavbarProps) {
               </NavigationMenuLink>
             </NavigationMenuItem>
           ) : item.type === "menu" ? (
-            <NavigationMenuItem className="relative" key={item.title}>
+            <NavigationMenuItem key={item.title}>
               <NavigationMenuTrigger className="bg-transparent">
                 {item.title}
               </NavigationMenuTrigger>
-              <NavigationMenuContent className="absolute top-0 left-100">
+              <NavigationMenuContent>
                 <ul className="w-80 grid grid-cols-1">
                   {item.items.map((listItem) => (
                     <li key={listItem.href}>
