@@ -1,17 +1,36 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Literal, Optional
 
 import dlt
-from dagster import AssetExecutionContext, ResourceParam, WeeklyPartitionsDefinition
+from dagster import (
+    AssetExecutionContext,
+    AssetObservation,
+    MetadataValue,
+    ResourceParam,
+    WeeklyPartitionsDefinition,
+)
 from dlt.destinations.adapters import bigquery_adapter
 from gql import Client, gql
+from gql.transport.exceptions import TransportQueryError
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from oso_dagster.utils.secrets import secret_ref_arg
 from pydantic import UUID4, BaseModel, Field
 
-from ..utils.common import QueryArguments, QueryConfig, query_with_retry
+from ..factories.graphql import (
+    GraphQLResourceConfig,
+    PaginationConfig,
+    PaginationType,
+    RetryConfig,
+    graphql_factory,
+)
+from ..utils.common import (
+    QueryArguments,
+    QueryConfig,
+    QueryRetriesExceeded,
+    query_with_retry,
+)
 
 
 class Host(BaseModel):
@@ -552,13 +571,45 @@ def get_open_collective_expenses(
         Generator: A generator that yields open collective data.
     """
 
-    start = datetime.strptime(context.partition_key, "%Y-%m-%d")
-    end = start + timedelta(weeks=1)
+    try:
+        start = datetime.strptime(context.partition_key, "%Y-%m-%d")
+        end = start + timedelta(weeks=1)
 
-    start_date = f"{start.isoformat().split(".")[0]}Z"
-    end_date = f"{end.isoformat().split(".")[0]}Z"
+        start_date = f"{start.isoformat().split('.')[0]}Z"
+        end_date = f"{end.isoformat().split('.')[0]}Z"
 
-    yield from get_open_collective_data(context, client, kind, start_date, end_date)
+        yield from get_open_collective_data(context, client, kind, start_date, end_date)
+
+    except (TransportQueryError, QueryRetriesExceeded) as e:
+        context.log.error(f"Open Collective {kind} data fetch failed: {str(e)}")
+
+        exception_chain = []
+        current_exception = e
+        while current_exception is not None:
+            exception_chain.append(str(current_exception))
+            current_exception = (
+                current_exception.__cause__ or current_exception.__context__
+            )
+
+        failure_reason = "\n".join(exception_chain)
+
+        context.log_event(
+            AssetObservation(
+                asset_key=context.asset_key,
+                partition=context.partition_key,
+                metadata={
+                    "failure_reason": MetadataValue.text(failure_reason),
+                    "failure_timestamp": MetadataValue.timestamp(
+                        datetime.now(timezone.utc)
+                    ),
+                    "partition_key": MetadataValue.text(context.partition_key),
+                    "status": MetadataValue.text("faulty_range"),
+                    "transaction_type": MetadataValue.text(kind),
+                },
+            )
+        )
+
+        return
 
 
 def base_open_collective_client(personal_token: str):
@@ -669,6 +720,75 @@ def deposits(
         columns=pydantic_to_dlt_nullable_columns(Transaction),
         primary_key="id",
         write_disposition="merge",
+    )
+
+    if global_config.enable_bigquery:
+        bigquery_adapter(
+            resource,
+            partition="created_at",
+        )
+
+    yield resource
+
+
+@dlt_factory(
+    key_prefix="open_collective",
+)
+def accounts(
+    context: AssetExecutionContext,
+    global_config: DagsterConfig,
+    personal_token: str = secret_ref_arg(
+        group_name="open_collective", key="personal_token"
+    ),
+):
+    config = GraphQLResourceConfig(
+        name="accounts",
+        endpoint="https://api.opencollective.com/graphql/v2",
+        target_type="Query",
+        target_query="accounts",
+        transform_fn=lambda result: result["accounts"]["nodes"],
+        headers={
+            "Personal-Token": personal_token,
+        },
+        exclude=[
+            "nodes.activitySubscriptions",
+            "nodes.feed",
+            "nodes.parentAccount.activitySubscriptions",
+            "nodes.parentAccount.feed",
+            "nodes.stats.managedAmount",
+            "nodes.stats.activitySubscriptions",
+            "nodes.stats.contributionsAmountTimeSeries",
+            "nodes.stats.expensesTagsTimeSeries",
+            "nodes.stats.totalNetAmountReceivedTimeSeries",
+        ],
+        pagination=PaginationConfig(
+            type=PaginationType.OFFSET,
+            page_size=200,
+            offset_field="offset",
+            limit_field="limit",
+            total_count_path="totalCount",
+            rate_limit_seconds=1.0,
+        ),
+        max_depth=3,
+        retry=RetryConfig(
+            max_retries=10,
+            initial_delay=1.0,
+            max_delay=5.0,
+            backoff_multiplier=1.5,
+            jitter=True,
+            reduce_page_size=True,
+            min_page_size=10,
+            page_size_reduction_factor=0.6,
+        ),
+    )
+
+    resource = graphql_factory(
+        config,
+        global_config,
+        context,
+        max_table_nesting=0,
+        write_disposition="merge",
+        merge_key="id",
     )
 
     if global_config.enable_bigquery:

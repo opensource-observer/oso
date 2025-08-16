@@ -31,6 +31,7 @@ from ..factories.graphql import (
     GraphQLResourceConfig,
     PaginationConfig,
     PaginationType,
+    RetryConfig,
     graphql_factory,
 )
 from ..factories.dlt import dlt_factory
@@ -68,11 +69,22 @@ config = GraphQLResourceConfig(
     ),
     exclude=["loggedInAccount", "me"],  # Exclude unnecessary fields
     transform_fn=lambda result: result["transactions"]["nodes"],
+    retry=RetryConfig(
+        max_retries=3,
+        initial_delay=2.0,
+        max_delay=30.0,
+        backoff_multiplier=2.0,
+        jitter=True,
+        reduce_page_size=True,
+        min_page_size=10,
+        page_size_reduction_factor=0.5,
+    ),
 )
 ```
 
 :::tip
-For the full `GraphQLResourceConfig` spec, see the [`source`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/graphql.py#L151)
+For the full `GraphQLResourceConfig` spec, see the
+[`source`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/graphql.py#L185)
 :::
 
 In this configuration, we define the following fields:
@@ -153,6 +165,12 @@ def transactions_with_accounts(context: AssetExecutionContext, global_config: Da
         exclude=["loggedInAccount", "me"],
         deps=[fetch_account_details],  # Dependencies to execute for each item
         deps_rate_limit_seconds=1.0,  # Rate limit between dependency calls
+        retry=RetryConfig(
+            max_retries=2,
+            initial_delay=1.0,
+            reduce_page_size=True,
+            min_page_size=5,
+        ),
     )
 
     # Return the configured resource
@@ -161,11 +179,11 @@ def transactions_with_accounts(context: AssetExecutionContext, global_config: Da
 
 :::tip
 The GraphQL factory function now takes a mandatory `config` argument,
-`global_config` (DagsterConfig), and `AssetExecutionContext`. The `global_config`
-is required for Redis caching functionality that stores GraphQL introspection
-results for 24 hours, preventing overwhelming of external services. Additional
-arguments are passed to the underlying `dlt.resource` function, allowing you to
-customize the behavior of the asset.
+`global_config` (DagsterConfig), and `AssetExecutionContext`. The
+`global_config` is required for Redis caching functionality that stores GraphQL
+introspection results for 24 hours, preventing overwhelming of external
+services. Additional arguments are passed to the underlying `dlt.resource`
+function, allowing you to customize the behavior of the asset.
 
 For the full reference of the allowed arguments, check out the DLT
 [`resource`](https://dlthub.com/docs/general-usage/resource) documentation.
@@ -204,12 +222,17 @@ When `deps` is provided, **DLT automatically handles different data shapes**:
 
 1. The main query executes and fetches data
 2. Each item from the main query is passed to dependency functions
-3. Dependency functions can execute additional GraphQL queries with different schemas
+3. Dependency functions can execute additional GraphQL queries with different
+   schemas
 4. **DLT merges different data shapes** from dependencies automatically
-5. **Only leaf nodes** (final dependency results) are included in the final output
+5. **Only leaf nodes** (final dependency results) are included in the final
+   output
 6. The main query data serves as intermediate processing data and is discarded
 
-This means you can have dependencies that return completely different data structures (e.g., transactions → accounts → users), and DLT will intelligently combine them into a coherent dataset, only preserving the final leaf data from your dependency tree.
+This means you can have dependencies that return completely different data
+structures (e.g., transactions → accounts → users), and DLT will intelligently
+combine them into a coherent dataset, only preserving the final leaf data from
+your dependency tree.
 
 ---
 
@@ -285,6 +308,79 @@ pagination_config = PaginationConfig(
 )
 ```
 
+### Error Handling and Retry Mechanism
+
+The GraphQL factory includes a sophisticated retry mechanism with configurable
+debounce that helps handle transient failures and rate limiting:
+
+```python
+from ..factories.graphql import RetryConfig
+
+retry_config = RetryConfig(
+    max_retries=3,                    # Maximum number of retry attempts
+    initial_delay=2.0,                # Initial delay in seconds before first retry
+    max_delay=30.0,                   # Maximum delay between retries
+    backoff_multiplier=2.0,           # Multiplier for exponential backoff
+    jitter=True,                      # Add random jitter to delays
+    reduce_page_size=True,            # Enable adaptive page size reduction
+    min_page_size=10,                 # Minimum page size when reducing
+    page_size_reduction_factor=0.5,   # Factor to reduce page size by (50%)
+)
+
+config = GraphQLResourceConfig(
+    # ... other configuration
+    retry=retry_config,
+)
+```
+
+#### Adaptive Page Size Reduction
+
+When `reduce_page_size=True`, the retry mechanism implements intelligent
+debounce behavior:
+
+1. **Initial Query**: Starts with configured page size (e.g., 50 items)
+2. **First Failure**: Waits 2 seconds, reduces to 25 items, retries
+3. **Second Failure**: Waits 4 seconds, reduces to 12 items, retries
+4. **Third Failure**: Waits 8 seconds, uses minimum 10 items, final retry
+
+**Key Benefits:**
+
+- **Temporary Reduction**: Page size reductions only apply to the current page's
+  retry attempts
+- **Automatic Reset**: After success, the next page returns to the original page
+  size
+- **Progressive Backoff**: More time waiting + fewer items = less aggressive on
+  failures
+- **Rate Limit Friendly**: Helps avoid overwhelming APIs during issues
+
+#### Example Behavior
+
+```
+Page 1: Start with 50 items
+  ❌ Fails → retry with 25 items
+  ❌ Fails → retry with 12 items
+  ✅ Succeeds with 12 items
+
+Page 2: RESETS to 50 items (not stuck at 12!)
+  ✅ Succeeds immediately with 50 items
+
+Page 3: Start with 50 items again
+  ✅ Succeeds immediately with 50 items
+```
+
+#### Retry Configuration Options
+
+- **max_retries**: Number of attempts before giving up
+- **initial_delay**: Base delay before first retry (seconds)
+- **max_delay**: Cap on delay duration to prevent excessive waits
+- **backoff_multiplier**: How aggressively delays increase (2.0 = double each
+  time)
+- **jitter**: Adds randomness to prevent thundering herd effects
+- **reduce_page_size**: Enable smart page size reduction on failures
+- **min_page_size**: Prevent page sizes from getting too small
+- **page_size_reduction_factor**: How much to reduce page size (0.5 = 50%
+  reduction)
+
 ---
 
 ## Conclusion
@@ -296,6 +392,8 @@ enhanced capabilities:
 - **Direct DLT integration**: Returns `dlt.resource` objects directly
 - **Dependency chaining**: Chain multiple GraphQL queries together
 - **Field exclusion**: Skip unnecessary fields to optimize queries
+- **Smart retry mechanism**: Configurable retry with adaptive page size
+  reduction
 - **Enhanced error handling**: Better logging and error reporting
 - **Flexible pagination**: Support for offset, cursor, and relay-style
   pagination
