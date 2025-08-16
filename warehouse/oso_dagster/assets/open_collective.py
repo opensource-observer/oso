@@ -676,7 +676,7 @@ def expenses(
         write_disposition="merge",
     )
 
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(
             resource,
             partition="created_at",
@@ -722,7 +722,7 @@ def deposits(
         write_disposition="merge",
     )
 
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(
             resource,
             partition="created_at",

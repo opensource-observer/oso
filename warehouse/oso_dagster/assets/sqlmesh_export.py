@@ -16,6 +16,8 @@ from ..resources import PrefixedSQLMeshTranslator, SQLMeshExporter
 
 logger = structlog.get_logger(__name__)
 
+__oso_tags__ = {"code_location": "sqlmesh"}
+
 
 class SQLMeshExportedAssetsCollection(BaseModel):
     """A collection of SQLMesh exported assets."""

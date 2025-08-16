@@ -21,7 +21,10 @@ K8S_CONFIG = {
     },
 }
 
-def get_chainlist_data(context: AssetExecutionContext) -> Generator[Dict[str, Any], None, None]:
+
+def get_chainlist_data(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
     """
     Fetch chain data from Chainlist.org and yield individual chain records.
 
@@ -33,13 +36,13 @@ def get_chainlist_data(context: AssetExecutionContext) -> Generator[Dict[str, An
     """
     session = Session(timeout=300)
     url = "https://chainlist.org/rpcs.json"
-    
+
     try:
         context.log.info("Fetching chain data from Chainlist.org")
         response = session.get(url)
         response.raise_for_status()
         data = response.json()
-        
+
         for chain in data:
             chain_info = {
                 "name": chain.get("name"),
@@ -50,17 +53,20 @@ def get_chainlist_data(context: AssetExecutionContext) -> Generator[Dict[str, An
                 "chain_slug": chain.get("chainSlug"),
                 "native_currency_name": chain.get("nativeCurrency", {}).get("name"),
                 "native_currency_symbol": chain.get("nativeCurrency", {}).get("symbol"),
-                "native_currency_decimals": chain.get("nativeCurrency", {}).get("decimals"),
+                "native_currency_decimals": chain.get("nativeCurrency", {}).get(
+                    "decimals"
+                ),
                 "info_url": chain.get("infoURL"),
             }
             yield chain_info
-            
+
     except requests.exceptions.RequestException as e:
         context.log.error(f"Failed to fetch data from Chainlist.org: {e}")
         raise
     except Exception as e:
         context.log.error(f"Error processing chain data: {e}")
         raise
+
 
 @dlt_factory(
     key_prefix="chainlist",
@@ -91,7 +97,7 @@ def chainlist_assets(
         write_disposition="replace",
     )
 
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(
             resource,
             cluster=["chain_id", "chain"],

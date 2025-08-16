@@ -1,5 +1,6 @@
 import importlib
 import pkgutil
+import re
 import typing as t
 from graphlib import TopologicalSorter
 from types import ModuleType
@@ -11,6 +12,39 @@ from oso_core.logging.utils import time_context
 from .common import AssetFactoryResponse, EarlyResourcesAssetFactory, ResourcesContext
 
 logger = structlog.get_logger(__name__)
+
+
+def any_tags_match(tags_to_match: dict[str, str], input: dict[str, str]) -> bool:
+    """Checks if any of the tags match from the tags_to_match against the input. If any match it returns True"""
+    for k, v in tags_to_match.items():
+        if k not in input:
+            continue
+        tag_val = input[k]
+        try:
+            if re.fullmatch(v, tag_val):
+                return True
+        except re.error:
+            if tag_val == v:
+                return True
+    return False
+
+
+def all_tags_match(tags_to_match: dict[str, str], input: dict[str, str]) -> bool:
+    """
+    Checks if all tags in the tags_to_match dictionary match the input dictionary.
+    The values can be regex patterns or exact string matches.
+    """
+    for k, v in tags_to_match.items():
+        if k not in input:
+            return False
+        tag_val = input[k]
+        try:
+            if not re.fullmatch(v, tag_val):
+                return False
+        except re.error:
+            if tag_val != v:
+                return False
+    return True
 
 
 class EarlyResourcesAssetFactoryDAG:
@@ -39,11 +73,26 @@ class EarlyResourcesAssetFactoryDAG:
 
         return self._sorted
 
-    def matching_tags(self, tags: dict[str, str]) -> "EarlyResourcesAssetFactoryDAG":
-        """Returns a subgraph of EarlyResourcesAssetFactory that match the given tags."""
+    def filter_tags(self, tags: dict[str, str]) -> "EarlyResourcesAssetFactoryDAG":
+        """
+        Returns a subgraph of EarlyResourcesAssetFactory that match the given tags.
+        Tag values can be regex patterns or exact string matches.
+        """
+
         subgraph = EarlyResourcesAssetFactoryDAG()
         for factory in self._graph.keys():
-            if all(factory.tags.get(k) == v for k, v in tags.items()):
+            if all_tags_match(tags, factory.tags):
+                subgraph.add(factory)
+        return subgraph
+
+    def exclude_tags(self, tags: dict[str, str]) -> "EarlyResourcesAssetFactoryDAG":
+        """
+        Returns a subgraph of EarlyResourcesAssetFactory that do not match the given tags.
+        Tag values can be regex patterns or exact string matches.
+        """
+        subgraph = EarlyResourcesAssetFactoryDAG()
+        for factory in self._graph.keys():
+            if not any_tags_match(tags, factory.tags):
                 subgraph.add(factory)
         return subgraph
 
@@ -51,7 +100,10 @@ class EarlyResourcesAssetFactoryDAG:
 def load_all_assets_from_package(
     package: ModuleType,
     resources: ResourcesContext,
-    matching_tags: dict[str, str] | None = None,
+    include_tags: dict[str, str] | None = None,
+    exclude_tags: dict[str, str] | None = None,
+    include_module_tags: dict[str, str] | None = None,
+    exclude_module_tags: dict[str, str] | None = None,
 ) -> AssetFactoryResponse:
     """Loads all assets and factories from a given package and any submodules it may have
 
@@ -59,7 +111,7 @@ def load_all_assets_from_package(
         package (ModuleType): The package to load assets and factories from.
         resources (ResourcesContext): The resources context to use for loading
             asset factories.
-        matching_tags (dict[str, str] | None): If provided, only assets and factories
+        include (dict[str, str] | None): If provided, only assets and factories
             with matching tags will be loaded. This only filters the early
             resources asset factories. This is useful for preprocessing early asset
             factories.
@@ -78,14 +130,49 @@ def load_all_assets_from_package(
             logger, f"loading module {module_name}", module_name=module_name
         ):
             module = importlib.import_module(module_name)
+            # If the module contains tags, we will consider that for this loader
+            module_tags = getattr(module, "__oso_tags__", {})
+            logger.info(
+                f"Checking module {module_name} for tags",
+                extra={
+                    "module_name": module_name,
+                },
+            )
+            assert isinstance(module_tags, dict)
+            if exclude_module_tags:
+                if any_tags_match(exclude_module_tags, module_tags):
+                    logger.info(
+                        f"Excluding module {module_name}. Had excluded tags",
+                        extra={
+                            "module_name": module_name,
+                            "exclude_module_tags": exclude_module_tags,
+                            "module_tags": module_tags,
+                        },
+                    )
+                    continue
+            if include_module_tags:
+                if not all_tags_match(include_module_tags, module_tags):
+                    logger.info(
+                        f"Excluding module {module_name}. Did not match tags",
+                        extra={
+                            "module_name": module_name,
+                            "include_module_tags": include_module_tags,
+                            "module_tags": module_tags,
+                        },
+                    )
+                    continue
             modules.append(module)
+
     factories = load_assets_factories_from_modules(modules, early_resources_dag)
 
     resolved_factories: t.Dict[EarlyResourcesAssetFactory, AssetFactoryResponse] = {}
 
-    if matching_tags:
-        logger.debug(f"Filtering early resources DAG with tags: {matching_tags}")
-        early_resources_dag = early_resources_dag.matching_tags(matching_tags)
+    if include_tags or exclude_tags:
+        logger.debug(f"Filtering early resources DAG with tags: {include_tags}")
+        if exclude_tags:
+            early_resources_dag = early_resources_dag.exclude_tags(exclude_tags)
+        if include_tags:
+            early_resources_dag = early_resources_dag.filter_tags(include_tags)
 
     # Resolve all early factories in topological order
     for early_factory, deps in early_resources_dag.sorted():
