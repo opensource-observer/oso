@@ -1,0 +1,501 @@
+test_contributors_lifecycle_to_project_monthly:
+  model: oso.contributors_lifecycle_to_project_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-03-31
+  inputs:
+    oso.contributor_classifications_to_project_monthly:
+      rows:
+      # January 2024 - Project 1 baseline
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 10
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 6
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 4
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 2
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: resurrected_contributors_monthly
+        amount: 1
+
+      # February 2024 - Project 1 changes
+      # Active: 10 -> 12 (+2)
+      # Full-time: 6 -> 7 (+1)
+      # Part-time: 4 -> 5 (+1)
+      # New: 2 -> 3 (+1)
+      # Resurrected: 1 -> 0 (-1)
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 12
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 7
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 5
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 3
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: resurrected_contributors_monthly
+        amount: 0
+
+      # March 2024 - Project 1 decline
+      # Active: 12 -> 8 (-4)
+      # Full-time: 7 -> 5 (-2)
+      # Part-time: 5 -> 3 (-2)
+      # New: 3 -> 1 (-2)
+      # Resurrected: 0 -> 2 (+2)
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 8
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 5
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 3
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 1
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: resurrected_contributors_monthly
+        amount: 2
+
+      # Project 2 data for comparison
+      # January 2024 - Project 2 baseline
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 5
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 3
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 2
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 1
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: resurrected_contributors_monthly
+        amount: 0
+
+      # February 2024 - Project 2 steady growth
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 6
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 4
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 2
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: resurrected_contributors_monthly
+        amount: 1
+
+  outputs:
+    query:
+      rows:
+      # January 2024 - First period results (LAG returns NULL for all metrics)
+      # Project 1 - All lifecycle metrics will be NULL for first period
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: null
+
+      # Project 2 - All lifecycle metrics will be NULL for first period
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: null
+
+      # February 2024 - Project 1 results (first period has LAG=NULL, so no output)
+      # Change in active contributors: previous(10) - current(12) = -2
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: -2
+      # Change in full-time contributors: previous(6) - current(7) = -1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: -1
+      # Change in part-time contributors: previous(4) - current(5) = -1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: -1
+      # Change in new contributors: previous(2) - current(3) = -1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: -1
+      # Churned contributors: previous_active(10) - (current_active(12) - new(3) - resurrected(0)) = 10 - 9 = 1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: 1
+
+      # March 2024 - Project 1 results
+      # Change in active contributors: previous(12) - current(8) = 4
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: 4
+      # Change in full-time contributors: previous(7) - current(5) = 2
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: 2
+      # Change in part-time contributors: previous(5) - current(3) = 2
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: 2
+      # Change in new contributors: previous(3) - current(1) = 2
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: 2
+      # Churned contributors: previous_active(12) - (current_active(8) - new(1) - resurrected(2)) = 12 - 5 = 7
+      - metrics_sample_date: 2024-03-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: 7
+
+      # February 2024 - Project 2 results
+      # Change in active contributors: previous(5) - current(6) = -1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: -1
+      # Change in full-time contributors: previous(3) - current(4) = -1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: -1
+      # Change in part-time contributors: previous(2) - current(2) = 0
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: 0
+      # Change in new contributors: previous(1) - current(1) = 0
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: 0
+      # Churned contributors: previous_active(5) - (current_active(6) - new(1) - resurrected(1)) = 5 - 4 = 1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_2
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: 1
+
+test_contributors_lifecycle_to_project_monthly_edge_cases:
+  model: oso.contributors_lifecycle_to_project_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-02-29
+  inputs:
+    oso.contributor_classifications_to_project_monthly:
+      rows:
+      # Single period test - should have no output since LAG returns NULL
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 5
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 3
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 2
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 1
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: resurrected_contributors_monthly
+        amount: 0
+
+      # Zero values test
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 0
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 0
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 0
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 0
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: resurrected_contributors_monthly
+        amount: 0
+
+  outputs:
+    query:
+      rows:
+      # January 2024 - First period results (LAG returns NULL)
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: null
+      - metrics_sample_date: 2024-01-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: null
+
+      # February results with zero values
+      # Change in active contributors: previous(5) - current(0) = 5
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: 5
+      # Change in full-time contributors: previous(3) - current(0) = 3
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: 3
+      # Change in part-time contributors: previous(2) - current(0) = 2
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: 2
+      # Change in new contributors: previous(1) - current(0) = 1
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: 1
+      # Churned contributors: previous_active(5) - (current_active(0) - new(0) - resurrected(0)) = 5 - 0 = 5
+      - metrics_sample_date: 2024-02-01
+        to_project_id: project_1
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: 5
