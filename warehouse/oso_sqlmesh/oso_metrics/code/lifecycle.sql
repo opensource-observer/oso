@@ -64,13 +64,13 @@ lifecycle as (
       'to_{entity_type}_id',
       table_alias := history
     ),
-    LAG(history.active) OVER ( 
+    LAG(history.active) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
         table_alias := history
       ), event_source
       ORDER BY history.metrics_sample_date
-    ) - history.active - history.new - history.resurrected as churn,
+    ) - (history.active - history.new - history.resurrected) as churn,
     LAG(history.full) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
@@ -107,7 +107,7 @@ lifecycle as (
 select lifecycle.metrics_sample_date,
   @metrics_entity_type_col(
     'to_{entity_type}_id',
-    table_alias := lifecycle 
+    table_alias := lifecycle
   ),
   lifecycle.event_source,
   '' as from_artifact_id,
