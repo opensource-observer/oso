@@ -15,22 +15,21 @@ from gql.transport.exceptions import TransportQueryError
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
-from oso_dagster.utils.secrets import secret_ref_arg
-from pydantic import UUID4, BaseModel, Field
-
-from ..factories.graphql import (
+from oso_dagster.factories.graphql import (
     GraphQLResourceConfig,
     PaginationConfig,
     PaginationType,
     RetryConfig,
     graphql_factory,
 )
-from ..utils.common import (
+from oso_dagster.utils.common import (
     QueryArguments,
     QueryConfig,
     QueryRetriesExceeded,
     query_with_retry,
 )
+from oso_dagster.utils.secrets import secret_ref_arg
+from pydantic import UUID4, BaseModel, Field
 
 
 class Host(BaseModel):
@@ -791,7 +790,7 @@ def accounts(
         merge_key="id",
     )
 
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         bigquery_adapter(
             resource,
             partition="created_at",
