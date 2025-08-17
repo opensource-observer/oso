@@ -130,37 +130,6 @@ def load_all_assets_from_package(
             logger, f"loading module {module_name}", module_name=module_name
         ):
             module = importlib.import_module(module_name)
-            # If the module contains tags, we will consider that for this loader
-            module_tags = getattr(module, "__oso_tags__", {})
-            logger.info(
-                f"Checking module {module_name} for tags",
-                extra={
-                    "module_name": module_name,
-                },
-            )
-            assert isinstance(module_tags, dict)
-            if exclude_module_tags:
-                if any_tags_match(exclude_module_tags, module_tags):
-                    logger.info(
-                        f"Excluding module {module_name}. Had excluded tags",
-                        extra={
-                            "module_name": module_name,
-                            "exclude_module_tags": exclude_module_tags,
-                            "module_tags": module_tags,
-                        },
-                    )
-                    continue
-            if include_module_tags:
-                if not all_tags_match(include_module_tags, module_tags):
-                    logger.info(
-                        f"Excluding module {module_name}. Did not match tags",
-                        extra={
-                            "module_name": module_name,
-                            "include_module_tags": include_module_tags,
-                            "module_tags": module_tags,
-                        },
-                    )
-                    continue
             modules.append(module)
 
     factories = load_assets_factories_from_modules(modules, early_resources_dag)
