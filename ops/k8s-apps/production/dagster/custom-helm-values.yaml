@@ -86,7 +86,7 @@ spec:
                     memory: 1024Mi
       dagster-user-deployments:
         deployments:
-          - name: "legacy"
+          - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
               tag: deploy-20250816133525-9bd7bf8 # {"$imagepolicy": "flux-system:oso:tag"}
@@ -96,7 +96,7 @@ spec:
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
-              - "oso_dagster.definitions.legacy"
+              - "oso_dagster.definitions.default"
               - "--log-format"
               - "json"
             includeConfigInLaunchedRuns:

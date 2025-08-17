@@ -78,7 +78,7 @@ spec:
                   limit: 1
       dagster-user-deployments:
         deployments:
-          - name: "legacy"
+          - name: "default"
             image:
               repository: "ghcr.io/opensource-observer/oso"
               tag: latest
@@ -88,7 +88,7 @@ spec:
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
-              - "oso_dagster.definitions.legacy"
+              - "oso_dagster.definitions.default"
               - "--log-format"
               - "json"
             includeConfigInLaunchedRuns:
