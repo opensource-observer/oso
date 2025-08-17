@@ -19,15 +19,12 @@ def sqlmesh_definitions(
     Imports are done here to attempt to get a notion of timing for import
     loading.
     """
-    from .. import assets
+    from ..assets import sqlmesh as sqlmesh_assets
     from ..factories import load_all_assets_from_package
 
     asset_factories = load_all_assets_from_package(
-        assets,
+        sqlmesh_assets,
         resources,
-        include_module_tags={
-            "code_location": "sqlmesh",
-        },
     )
 
     return DefinitionsLoaderResponse(
