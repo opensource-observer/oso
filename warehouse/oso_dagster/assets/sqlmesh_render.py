@@ -9,8 +9,6 @@ from sqlglot import exp
 
 from ..factories import dlt_factory
 
-__oso_tags__ = {"code_location": "sqlmesh"}
-
 
 @dlt.resource(
     primary_key="model_name",
