@@ -21,11 +21,9 @@ def ops_definitions(
     global_config: DagsterConfig,
     alert_manager: AlertManager,
 ) -> DefinitionsLoaderResponse:
-    """This is the "legacy" definitions for oso_dagster. It is currently being
-    decomposed to smaller sets of code locations.
-
-    Imports are done here to attempt to get a notion of timing for import
-    loading.
+    """This is the "ops" definitions for oso_dagster. This is not intended to
+    load any assets just jobs, ops, or schedules that we may use in the
+    dagster pipeline.
     """
     from ..factories.alerts import setup_alert_sensors
     from ..schedules import get_partitioned_schedules, schedules

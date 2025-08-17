@@ -13,11 +13,10 @@ logger = logging.getLogger(__name__)
 def sqlmesh_definitions(
     resources: ResourcesContext,
 ) -> DefinitionsLoaderResponse:
-    """This is the "legacy" definitions for oso_dagster. It is currently being
-    decomposed to smaller sets of code locations.
+    """This is the sqlmesh definitions for oso_dagster.
 
-    Imports are done here to attempt to get a notion of timing for import
-    loading.
+    sqlmesh is kept separately because it takes more time to load and we want to
+    make it easier to develop things locally.
     """
     from ..assets import sqlmesh as sqlmesh_assets
     from ..factories import load_all_assets_from_package

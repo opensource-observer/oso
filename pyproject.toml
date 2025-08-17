@@ -131,7 +131,7 @@ packages = [
 ]
 
 [tool.dagster]
-module_name = "oso_dagster.definitions.legacy"
+module_name = "oso_dagster.definitions.default"
 
 [tool.pyright]
 pythonVersion = "3.12"
