@@ -97,7 +97,7 @@ You can use one of the following guides and come back to this guide to test it.
 
 ## Test your asset locally
 
-Assets in `warehouse/oso_dagster/assets` should automatically show up in
+Assets in `warehouse/oso_dagster/assets/default` should automatically show up in
 the Dagster assets list at `http://localhost:3000/assets`.
 
 ![Dagster assets](./dagster_assets.png)
@@ -178,16 +178,11 @@ increased infrastructure instability or unexpected costs.
 In order to improve the usability of our dagster setup locally, we've actually
 split the organization of dagster assets into multiple "code locations." A code
 location is a dagster abstraction that allows you to have different asset
-definitions in entire different code paths. In our case, we maintain everything
-in the same code base but simply organize assets into different code locations
-for deployment. For the most part you shouldn't need to worry about the specific
-code location for your dagster asset as the current code locations use a set of
-filters to determine which assets are included in each location, anything not
-included in that filtering is in a default code location we call "legacy" as we
-are looking to better organize all assets over time. The filtering for these
-code locations is handled by a special `__oso_tags__: dict[str, str]` variable
-in an asset's python module. If that variable is not present, it will be assumed
-that the tags are and empty dictionary `{}`
+definitions in entire different code paths. Code locations for an asset are
+determined by the parent folder of the asset within
+`warehouse/oso_dagster/assets` that corresponds to a definitions file in
+`warehouse/oso_dagster/definitions/`. For _most_ new assets, they should be
+added to `warehouse/oso_dagster/assets/default/`.
 
 #### Available Code Locations
 
@@ -200,13 +195,13 @@ At this moment, the available code locations can be found in the repository at
 - `ops`: This code location contains no assets, instead
   it is used for defining overarching "ops" related things like alert sensors,
   scheduling, etc.
-- `legacy`: The default code location for all remaining
+- `default`: The default code location for all remaining
   assets that do not fit into the other categories.
 
 #### Running different code locations
 
 To run these different code locations is nearly identical to how we run the
-`legacy` code location. You just need to specify the code location's python
+`default` code location. You just need to specify the code location's python
 module path when running your Dagster jobs. To run the `sqlmesh` or `ops` code
 location for example:
 
