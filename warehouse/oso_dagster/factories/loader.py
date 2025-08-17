@@ -102,22 +102,24 @@ def load_all_assets_from_package(
     resources: ResourcesContext,
     include_tags: dict[str, str] | None = None,
     exclude_tags: dict[str, str] | None = None,
-    include_module_tags: dict[str, str] | None = None,
-    exclude_module_tags: dict[str, str] | None = None,
 ) -> AssetFactoryResponse:
-    """Loads all assets and factories from a given package and any submodules it may have
+    """Loads all assets and factories from a given package and any submodules
+    it may have
 
     Args:
         package (ModuleType): The package to load assets and factories from.
         resources (ResourcesContext): The resources context to use for loading
             asset factories.
-        include (dict[str, str] | None): If provided, only assets and factories
-            with matching tags will be loaded. This only filters the early
-            resources asset factories. This is useful for preprocessing early asset
-            factories.
+        include_tags (dict[str, str] | None): If provided, only early asset
+            factories with matching tags will be loaded. This only filters
+            the early resources asset factories. This is useful for preprocessing
+            early asset factories.
+        exclude_tags (dict[str, str] | None): If provided, early asset factories
+            with matching tags will be excluded.
 
     Returns:
-        AssetFactoryResponse: A response containing all loaded assets and factories.
+        AssetFactoryResponse: A response containing all loaded assets and
+        factories.
     """
     package_path = package.__path__
 
