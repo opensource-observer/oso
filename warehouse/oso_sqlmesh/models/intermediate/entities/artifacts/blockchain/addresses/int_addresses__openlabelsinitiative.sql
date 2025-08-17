@@ -30,7 +30,7 @@ WITH pivoted AS (
         WHEN tag_id = 'is_paymaster' THEN ['PAYMASTER']
         WHEN tag_id = 'is_safe_contract' THEN ['SAFE']
         WHEN tag_id = 'deployer_address' THEN ['DEPLOYER']
-        WHEN tag_id = 'erc_type' THEN [UPPER(tag_value)]
+        WHEN tag_id = 'erc_type' AND tag_value = '["erc20"]' THEN ['TOKEN']
         ELSE []
       END
     )) AS address_types
