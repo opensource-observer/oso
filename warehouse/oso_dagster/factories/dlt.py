@@ -161,7 +161,7 @@ def _dlt_factory[
                     assert global_config, (
                         "global_config resource is not loading correctly"
                     )
-                    if global_config.enable_bigquery:
+                    if global_config.gcp_bigquery_enabled:
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(
                             pipeline_name,
@@ -199,7 +199,7 @@ def _dlt_factory[
                         dlt_source.with_resources(*config.with_resources)
 
                     dlt_run_options: t.Dict[str, t.Any] = {}
-                    if global_config.enable_bigquery:
+                    if global_config.gcp_bigquery_enabled:
                         context.log.debug("dlt pipeline setup with bigquery and jsonl")
                         dlt_run_options["loader_file_format"] = "jsonl"
 

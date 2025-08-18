@@ -68,6 +68,9 @@ dependencies = [
     "structlog>=25.4.0",
     "pandas-gbq>=0.29.2",
     "dagster-sqlmesh>=0.19.0",
+    "oso-core",
+    "pyoso",
+    "metrics-service"
 ]
 name = "oso"
 version = "1.0.0"
@@ -128,7 +131,7 @@ packages = [
 ]
 
 [tool.dagster]
-module_name = "oso_dagster.definitions.legacy"
+module_name = "oso_dagster.definitions.default"
 
 [tool.pyright]
 pythonVersion = "3.12"

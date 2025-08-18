@@ -16,7 +16,7 @@ from .config import GoldskyNetworkConfig, NetworkAssetSourceConfig
 def goldsky_network_assets(config: GoldskyNetworkConfig):
     @early_resources_asset_factory(caller_depth=2)
     def _factory(global_config: DagsterConfig, staging_bucket: str):
-        project_id = global_config.project_id
+        project_id = global_config.gcp_project_id
         staging_bucket_name = gcs_to_bucket_name(staging_bucket)
 
         blocks_asset_config = NetworkAssetSourceConfig.with_defaults(
