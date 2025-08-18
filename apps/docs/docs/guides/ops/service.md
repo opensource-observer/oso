@@ -67,32 +67,33 @@ The following are the internal service level objectives (SLOs) for OSO. These ar
   - Metrics
     - Materialization Reliability:
       - Value
-        - 99.0% success rate
+        - 99.0% success rate for 30 days
       - Measurement interval
         - 30 days
       - Description
-        - Regardless of retries, we should not experience more than 99.0% failure rate for processes that materialize data.
+        - After retries, we should not experience more than 99.0%
+          failure rate for processes that materialize data.
     - Data freshness:
       - Value
-        - 99.0% of data should be fresh within some time interval at all times
+        - Data should be fresh within some time interval at all times. For
+          partitioned data, 99.0% of partitions should be materialized.
       - Measurement interval
         - Point in time
       - Description
-        - At any given time, core data should have a 99.0% freshness rate within some specified time interval. The time interval should be defined by each asset in the asset's configuration. These should be expressed as a timedelta.
-    - Data Audits (alias: dagster asset checks):
-      - Value
-        - 99.0% of all data audits should succeed.
-      - Measurement interval
-        - Point in time
-      - Description
-        - At any given time, core data should have a 99.0% success rate for data audits.
+        - At any given time, each core data should have a freshness rate within
+          some specified time interval. Freshness is determined by the time
+          since the last materialization, or by the success data audits for a
+          given asset. The time interval should be defined by each asset in the
+          asset's configuration. These should be expressed as a time delta.
 - Unstable Source Data
   - Description
-    - Unstable source data are assets that are not critical to the function
-      of the OSO warehouse. They are considered potentially unreliable and
-      have a significantly lower service level objective. If any given data
-      asset in this category of data falls below the established SLOs, it
-      may be subject to removal from the platform.
+    - Unstable source data are assets that are not critical to the function of
+      the OSO warehouse. They are considered potentially unreliable and have a
+      significantly lower service level objective. At this time the only SLOs
+      for this data type are related to the infrastructure that supports it. The
+      data itself has no guarantees. If any given data asset in this category of
+      data falls below the established SLOs, it may be subject to removal from
+      the platform.
   - Scope
     - All assets without a `core` label and not including sqlmesh assets
   - Metrics
@@ -102,21 +103,8 @@ The following are the internal service level objectives (SLOs) for OSO. These ar
       - Measurement interval
         - 30 days
       - Description
-        - Regardless of retries, we should not experience more than 85.0% failure rate for processes that materialize data.
-    - Data freshness:
-      - Value
-        - 75.0% of data should be fresh within some time interval at all times
-      - Measurement interval
-        - Point in time
-      - Description
-        - At any given time, experimental data should have an 85.0% freshness rate within some specified time interval. The time interval should be defined by each asset in the asset's configuration. These should be expressed as a timedelta.
-    - Data Audits (alias: dagster asset checks):
-      - Value
-        - 95.0% of all data audits should succeed.
-      - Measurement interval
-        - Point in time
-      - Description
-        - At any given time, experimental data should have a 95.0% success rate for data audits.
+        - After retries, we should not experience more than 85.0% failure rate
+          for processes that materialize data.
 - SQLMesh
   - Scope
     - The sqlmesh assets
