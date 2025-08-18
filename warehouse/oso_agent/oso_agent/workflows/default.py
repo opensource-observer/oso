@@ -40,6 +40,8 @@ async def workflow_resolver_factory(
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
 
     llm = resources.get_resource("llm")
+    embedding = resources.get_resource("embedding")
+    storage_context = resources.get_resource("storage_context")
 
     oso_client = OsoClient(
         workflow_config.oso_api_key.get_secret_value(),
@@ -53,6 +55,10 @@ async def workflow_resolver_factory(
         semantic_query_tool=semantic_query_tool,
         oso_client=oso_client,
         registry=oso_client.client.semantic,
+        agent_config=config,
+        llm=llm,
+        embedding=embedding,
+        storage_context=storage_context,
     )
 
 
