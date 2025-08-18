@@ -1,9 +1,7 @@
-from ..factories import (
-    bq_dts_asset,
-)
-from ..utils.bq import BigQueryDatasetConfig
-from ..utils.bq_dts import BqDtsSourceConfig
-from ..utils.common import TimeInterval, SourceMode
+from oso_dagster.factories import bq_dts_asset
+from oso_dagster.utils.bq import BigQueryDatasetConfig
+from oso_dagster.utils.bq_dts import BqDtsSourceConfig
+from oso_dagster.utils.common import SourceMode, TimeInterval
 
 lens_data = bq_dts_asset(
     key_prefix="lens",

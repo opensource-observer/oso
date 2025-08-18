@@ -35,9 +35,11 @@ class DagsterConfig(BaseSettings):
     # build time for dagster assets
     run_mode: t.Literal["serve", "build"] = "serve"
 
+    gcp_enabled: bool = Field(default=False)
+
     repo_sha: str = Field(default_factory=get_repo_sha)
 
-    project_id: str = Field(alias="GOOGLE_PROJECT_ID", default_factory=get_project_id)
+    gcp_project_id_override: str = Field(alias="GOOGLE_PROJECT_ID", default="")
 
     repo_dir: str = Field(
         default_factory=lambda: os.path.abspath(
@@ -45,7 +47,7 @@ class DagsterConfig(BaseSettings):
         )
     )
 
-    dagster_home: str = ""
+    dagster_home: str = Field(alias="DAGSTER_HOME", default="")
 
     main_dbt_project_dir: str = ""
     staging_bucket_url: str = ""
@@ -54,7 +56,7 @@ class DagsterConfig(BaseSettings):
     gcp_secrets_prefix: str = ""
     use_local_secrets: bool = False
     discord_webhook_url: t.Optional[str] = None
-    enable_tests: bool = False
+    test_assets_enabled: bool = False
     alerts_base_url: str = ""
 
     gcs_bucket: str = "oso-dataset-transfer-bucket"
@@ -68,7 +70,7 @@ class DagsterConfig(BaseSettings):
 
     env: str = "dev"
 
-    enable_bigquery: bool = False
+    gcp_bigquery_enabled: bool = False
 
     sqlmesh_dir: str = ""
     sqlmesh_gateway: str = "local"
@@ -79,12 +81,12 @@ class DagsterConfig(BaseSettings):
     asset_cache_dir: str = ""
     asset_cache_default_ttl_seconds: int = 60 * 15
 
-    enable_k8s_executor: bool = False
+    k8s_executor_enabled: bool = False
 
-    # Setting this is different than `enable_k8s_executor`
-    # `enable_k8s` is used to enable k8s resource control while
-    # `enable_k8s_executor` is used to enable k8s executor for dagster
-    enable_k8s: bool = False
+    # Setting this is different than `k8s_executor_enabled`
+    # `k8s_enabled` is used to enable k8s resource control while
+    # `k8s_executor_enabled` is used to enable k8s executor for dagster
+    k8s_enabled: bool = False
 
     k8s_use_port_forward: bool = False
 
@@ -121,16 +123,26 @@ class DagsterConfig(BaseSettings):
         if not self.sqlmesh_dir:
             self.sqlmesh_dir = os.path.join(self.repo_dir, "warehouse/oso_sqlmesh")
 
-        # If we happen to be in a kubernetes environment, enable_k8s enables the
+        # If we happen to be in a kubernetes environment, k8s_enabled enables the
         # K8sResource to control k8s resources
         k8s_service_host = os.environ.get("KUBERNETES_SERVICE_HOST")
-        if not self.enable_k8s and k8s_service_host is not None:
-            self.enable_k8s = True
+        if not self.k8s_enabled and k8s_service_host is not None:
+            self.k8s_enabled = True
 
         return self
 
     def initialize(self):
         Path(self.dagster_home).mkdir(exist_ok=True)
+
+    @property
+    def gcp_project_id(self):
+        if self.gcp_project_id_override:
+            return self.gcp_project_id_override
+        if not self.gcp_enabled:
+            raise ValueError(
+                "In order to automatically discover a project id you must explicitly enable gcp."
+            )
+        return get_project_id()
 
     @property
     def in_deployed_container(self) -> bool:

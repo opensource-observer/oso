@@ -8,6 +8,15 @@ spec:
     # timing data
     osoDagster:
       eagerlyLoadSqlTables: 0
+      env: "production"
+      gcp:
+        enabled: true
+        bigquery:
+          enabled: true
+      testAssets:
+        # This should normally be off, but if we need to test some failure
+        # scenarios on production enable this
+        enabled: true
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
       port: "5432"
@@ -75,17 +84,47 @@ spec:
                     memory: 1024Mi
       dagster-user-deployments:
         deployments:
-          - name: "oso-dagster"
+          - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250817215244-fd8899c # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250818170824-bf48865 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
-              - "oso_dagster.definitions.legacy"
+              - "oso_dagster.definitions.default"
+              - "--log-format"
+              - "json"
+            includeConfigInLaunchedRuns:
+              enabled: false
+          - name: "sqlmesh"
+            image:
+              repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+              tag: deploy-20250818170824-bf48865 # {"$imagepolicy": "flux-system:oso:tag"}
+              pullPolicy: Always
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions.sqlmesh"
+              - "--log-format"
+              - "json"
+            includeConfigInLaunchedRuns:
+              enabled: false
+          - name: "ops"
+            image:
+              repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+              tag: deploy-20250818170824-bf48865 # {"$imagepolicy": "flux-system:oso:tag"}
+              pullPolicy: Always
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions.ops"
               - "--log-format"
               - "json"
             includeConfigInLaunchedRuns:

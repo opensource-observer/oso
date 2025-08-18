@@ -1,8 +1,10 @@
 from google.cloud.bigquery import SourceFormat
 from oso_dagster.config import DagsterConfig
-
-from ..factories import AssetFactoryResponse, early_resources_asset_factory
-from ..factories.archive2bq import Archive2BqAssetConfig, create_archive2bq_asset
+from oso_dagster.factories import AssetFactoryResponse, early_resources_asset_factory
+from oso_dagster.factories.archive2bq import (
+    Archive2BqAssetConfig,
+    create_archive2bq_asset,
+)
 
 
 @early_resources_asset_factory()
