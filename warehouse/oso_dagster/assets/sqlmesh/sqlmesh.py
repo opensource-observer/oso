@@ -194,8 +194,10 @@ def sqlmesh_factory(
                         config.allow_destructive_models
                     )
 
-                # If we specify a dev_environment, we will first plan it for safety
-                if dev_environment:
+                # If we specify a dev_environment, we will first plan it for
+                # safety. Restatements are ignored as they may end up duplicating
+                # work based on how restatement in planning works.
+                if dev_environment and not config.restate_models:
                     context.log.info("Planning dev environment")
                     all(
                         sqlmesh.run(
