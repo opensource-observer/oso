@@ -9,12 +9,10 @@ spec:
     osoDagster:
       eagerlyLoadSqlTables: 0
       env: "production"
-
       gcp:
         enabled: true
         bigquery:
           enabled: true
-
       testAssets:
         # This should normally be off, but if we need to test some failure
         # scenarios on production enable this
@@ -89,7 +87,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250818144636-37f7e8d # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250818170824-bf48865 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -104,7 +102,7 @@ spec:
           - name: "sqlmesh"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250814001314-aa3f9a9 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250818170824-bf48865 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: Always
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -119,7 +117,7 @@ spec:
           - name: "ops"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250814001314-aa3f9a9 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250818170824-bf48865 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: Always
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -130,7 +128,7 @@ spec:
               - "--log-format"
               - "json"
             includeConfigInLaunchedRuns:
-              enabled: false   
+              enabled: false
     sqlmesh:
       gateway: "trino"
       trino:
