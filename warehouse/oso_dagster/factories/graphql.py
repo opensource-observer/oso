@@ -758,6 +758,7 @@ def execute_with_adaptive_retry(
     context: AssetExecutionContext,
     initial_page_size: Optional[int],
     operation_name: str = "GraphQL operation",
+    pagination_context: Optional[Dict[str, Any]] = None,
 ) -> Optional[D]:
     """
     Execute a function with retry mechanism that reduces page size on failures.
@@ -812,9 +813,7 @@ def execute_with_adaptive_retry(
                         retry_config.max_retries,
                         pagination_metadata={
                             "page_size_at_failure": current_page_size,
-                            "initial_page_size": initial_page_size,
-                            "reduction_factor": retry_config.page_size_reduction_factor,
-                            "min_page_size": retry_config.min_page_size,
+                            **(pagination_context or {}),
                         },
                     )
                     return None
@@ -1135,6 +1134,11 @@ def _graphql_factory(
                         context,
                         original_page_size if config.pagination else None,
                         f"GraphQL query execution (page {successful_pages + 1})",
+                        pagination_context={
+                            "page_number": successful_pages + 1,
+                            "total_items_processed": total_items,
+                            "successful_pages": successful_pages,
+                        },
                     )
 
                     if result is None:
