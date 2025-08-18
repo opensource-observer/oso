@@ -225,7 +225,7 @@ async def text2sql_experiment(
     experiment_metadata = collect_experiment_metadata(
         config=config,
         workflow_cls=BasicText2SQL,
-        additional_metadata={"agent_name": config.agent_name},
+        additional_metadata={"name": config.agent_name},
     )
 
     return await runner.run(
@@ -298,7 +298,7 @@ async def text2sql_semantic_experiment(
     experiment_metadata = collect_experiment_metadata(
         config=config,
         workflow_cls=SemanticText2SQLWorkflow,
-        additional_metadata={"agent_name": config.agent_name},
+        additional_metadata={"name": config.agent_name},
     )
 
     return await runner.run(
