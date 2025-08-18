@@ -22,12 +22,11 @@ from dagster_sqlmesh import (
 )
 from oso_core.cache.types import CacheMetadataOptions
 from oso_dagster.config import DagsterConfig
+from oso_dagster.factories import AssetFactoryResponse, cacheable_asset_factory
 from oso_dagster.factories.common import CacheableDagsterContext
 from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
 from pydantic import BaseModel
-
-from ..factories import AssetFactoryResponse, cacheable_asset_factory
 
 
 class SQLMeshRunConfig(dg.Config):

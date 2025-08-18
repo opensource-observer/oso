@@ -5,9 +5,8 @@ import sqlglot as sql
 from dagster import AssetExecutionContext
 from dagster_sqlmesh import SQLMeshResource
 from dagster_sqlmesh.controller.base import DEFAULT_CONTEXT_FACTORY
+from oso_dagster.factories import dlt_factory
 from sqlglot import exp
-
-from ..factories import dlt_factory
 
 
 @dlt.resource(
