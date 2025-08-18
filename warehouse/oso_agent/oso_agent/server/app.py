@@ -23,7 +23,6 @@ from oso_agent.util import WorkflowConfig
 from oso_agent.util.log import setup_logging
 from oso_agent.workflows.default import setup_default_workflow_registry
 from oso_agent.workflows.registry import WorkflowRegistry
-from oso_agent.workflows.text2sql.basic import BasicText2SQL
 from oso_agent.workflows.text2sql.events import Text2SQLStartEvent
 from oso_agent.workflows.text2sql.semantic import SemanticText2SQLWorkflow
 from pydantic import SecretStr
@@ -159,39 +158,22 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         )
         workflow_config = WorkflowConfig(oso_api_key=SecretStr(oso_api_key))
         workflow_registry = get_workflow_registry(request)
-        basic_workflow = await workflow_registry.get_workflow(
-            "basic_text2sql", workflow_config, workflow_type=BasicText2SQL
-        )
         semantic_workflow = await workflow_registry.get_workflow(
             "semantic_text2sql", workflow_config, workflow_type=SemanticText2SQLWorkflow
         )
 
-        # We trigger the workflows simultaneously using asyncio.create_task
         # NOTE: for now this workflow does not support chat history it only accepts the most recent message
-        sql_result_task = asyncio.create_task(
-            basic_workflow.wrapped_run(
-                Text2SQLStartEvent(
-                    input=chat_request.current_message.content,
-                    synthesize_response=False,
-                    execute_sql=False,
-                )
+        semantic_result = await semantic_workflow.wrapped_run(
+            Text2SQLStartEvent(
+                input=chat_request.current_message.content,
+                synthesize_response=False,
+                execute_sql=False,
             )
         )
 
-        semantic_result_task = asyncio.create_task(
-            semantic_workflow.wrapped_run(
-                Text2SQLStartEvent(
-                    input=chat_request.current_message.content,
-                )
-            )
-        )
+        sql = str(semantic_result.response)
 
-        # Wait for both tasks to complete
-        await asyncio.gather(sql_result_task, semantic_result_task)
-        sql = str(sql_result_task.result().response)
-        semantic = str(semantic_result_task.result().response)
-
-        return JSONResponse({"sql": sql, "semantic": semantic})
+        return JSONResponse({"sql": sql})
 
     @app.post("/v0/chat")
     async def chat(
