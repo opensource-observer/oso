@@ -47,7 +47,7 @@ class DagsterConfig(BaseSettings):
         )
     )
 
-    dagster_home: str = ""
+    dagster_home: str = Field(alias="DAGSTER_HOME", default="")
 
     main_dbt_project_dir: str = ""
     staging_bucket_url: str = ""
