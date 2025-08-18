@@ -674,6 +674,7 @@ def log_failure_and_continue(
                 "failure_timestamp": MetadataValue.timestamp(
                     datetime.now(timezone.utc)
                 ),
+                "run_id": MetadataValue.text(context.run_id),
                 "status": MetadataValue.text("faulty_range"),
                 "operation": MetadataValue.text(operation_name),
             },
