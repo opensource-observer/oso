@@ -30,6 +30,7 @@ from ..utils.common import (
     QueryConfig,
     QueryRetriesExceeded,
     query_with_retry,
+    stringify_large_integers,
 )
 
 
@@ -746,7 +747,9 @@ def accounts(
         endpoint="https://api.opencollective.com/graphql/v2",
         target_type="Query",
         target_query="accounts",
-        transform_fn=lambda result: result["accounts"]["nodes"],
+        transform_fn=lambda result: stringify_large_integers(
+            result["accounts"]["nodes"]
+        ),
         headers={
             "Personal-Token": personal_token,
         },
@@ -779,6 +782,7 @@ def accounts(
             reduce_page_size=True,
             min_page_size=10,
             page_size_reduction_factor=0.6,
+            continue_on_failure=True,
         ),
     )
 
