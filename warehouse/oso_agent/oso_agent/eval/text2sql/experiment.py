@@ -1,5 +1,6 @@
 import logging
 import typing as t
+from datetime import datetime, timezone
 
 import phoenix as px
 from llama_index.core.workflow import StartEvent, StopEvent, step
@@ -25,6 +26,7 @@ from ...datasets.text2sql import TEXT2SQL_DATASET
 from ...datasets.uploader import upload_dataset
 from ...util.asyncbase import setup_nest_asyncio
 from ...util.config import AgentConfig
+from ...util.metadata import collect_experiment_metadata
 from .evals import (
     check_valid_sql,
     check_valid_sql_result,
@@ -38,6 +40,13 @@ setup_nest_asyncio()
 
 BASE_EXPERIMENT_NAME = "text2sql-experiment"
 SEMANTIC_EXPERIMENT_NAME = "text2sql-semantic-experiment"
+
+
+def create_unique_experiment_name(base_name: str) -> str:
+    """Create a unique experiment name using timestamp to avoid overwrites."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    return f"{base_name}-{timestamp}"
+
 
 logger = logging.getLogger(__name__)
 
@@ -213,11 +222,17 @@ async def text2sql_experiment(
     runner.add_evaluator(result_exact_match)
     runner.add_evaluator(result_fuzzy_match)
 
+    experiment_metadata = collect_experiment_metadata(
+        config=config,
+        workflow_cls=BasicText2SQL,
+        additional_metadata={"agent_name": config.agent_name},
+    )
+
     return await runner.run(
         dataset=dataset,
         workflow_cls=BasicText2SQL,
-        experiment_name=BASE_EXPERIMENT_NAME,
-        experiment_metadata={"agent_name": config.agent_name},
+        experiment_name=create_unique_experiment_name(BASE_EXPERIMENT_NAME),
+        experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
             "start_event": Text2SQLStartEvent(
@@ -280,11 +295,17 @@ async def text2sql_semantic_experiment(
     runner.add_evaluator(result_exact_match)
     runner.add_evaluator(result_fuzzy_match)
 
+    experiment_metadata = collect_experiment_metadata(
+        config=config,
+        workflow_cls=SemanticText2SQLWorkflow,
+        additional_metadata={"agent_name": config.agent_name},
+    )
+
     return await runner.run(
         dataset=dataset,
         workflow_cls=SemanticText2SQLWorkflow,
-        experiment_name=SEMANTIC_EXPERIMENT_NAME,
-        experiment_metadata={"agent_name": config.agent_name},
+        experiment_name=create_unique_experiment_name(SEMANTIC_EXPERIMENT_NAME),
+        experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
             "start_event": Text2SQLStartEvent(
