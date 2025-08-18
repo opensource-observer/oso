@@ -1,6 +1,5 @@
 import logging
 import typing as t
-from datetime import datetime, timezone
 
 import phoenix as px
 from llama_index.core.workflow import StartEvent, StopEvent, step
@@ -40,12 +39,6 @@ setup_nest_asyncio()
 
 BASE_EXPERIMENT_NAME = "text2sql-experiment"
 SEMANTIC_EXPERIMENT_NAME = "text2sql-semantic-experiment"
-
-
-def create_unique_experiment_name(base_name: str) -> str:
-    """Create a unique experiment name using timestamp to avoid overwrites."""
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    return f"{base_name}-{timestamp}"
 
 
 logger = logging.getLogger(__name__)
@@ -231,7 +224,7 @@ async def text2sql_experiment(
     return await runner.run(
         dataset=dataset,
         workflow_cls=BasicText2SQL,
-        experiment_name=create_unique_experiment_name(BASE_EXPERIMENT_NAME),
+        experiment_name=BASE_EXPERIMENT_NAME,
         experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
@@ -304,7 +297,7 @@ async def text2sql_semantic_experiment(
     return await runner.run(
         dataset=dataset,
         workflow_cls=SemanticText2SQLWorkflow,
-        experiment_name=create_unique_experiment_name(SEMANTIC_EXPERIMENT_NAME),
+        experiment_name=SEMANTIC_EXPERIMENT_NAME,
         experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
