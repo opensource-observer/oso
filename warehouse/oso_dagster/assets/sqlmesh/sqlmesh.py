@@ -208,6 +208,7 @@ def sqlmesh_factory(
                             end=config.end,
                             restate_models=restate_models,
                             skip_run=True,
+                            materializations_enabled=False,
                         )
                     )
 
