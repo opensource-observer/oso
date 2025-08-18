@@ -643,6 +643,7 @@ def log_failure_and_continue(
     operation_name: str,
     exception: Exception,
     max_retries: int,
+    pagination_metadata: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Log a failure with detailed information and continue execution.
@@ -652,6 +653,7 @@ def log_failure_and_continue(
         operation_name: Name of the operation that failed.
         exception: The exception that caused the failure.
         max_retries: Maximum number of retries that were attempted.
+        pagination_metadata: Optional metadata related to pagination at the time of failure.
     """
     context.log.error(
         f"{operation_name} failed after {max_retries} retries: {exception}. "
@@ -666,18 +668,34 @@ def log_failure_and_continue(
 
     failure_reason = "\n".join(exception_chain)
 
+    metadata = {
+        "failure_reason": MetadataValue.text(failure_reason),
+        "failure_timestamp": MetadataValue.timestamp(datetime.now(timezone.utc)),
+        "run_id": MetadataValue.text(context.run_id),
+        "status": MetadataValue.text("faulty_range"),
+        "operation": MetadataValue.text(operation_name),
+        "max_retries": MetadataValue.int(max_retries),
+    }
+
+    if pagination_metadata:
+        type_map = {
+            dict: MetadataValue.json,
+            int: MetadataValue.int,
+            float: MetadataValue.float,
+            bool: lambda x: MetadataValue.text(str(x)),
+        }
+
+        for key, value in pagination_metadata.items():
+            if value is not None:
+                handler = type_map.get(
+                    type(value), lambda x: MetadataValue.text(str(x))
+                )
+                metadata[key] = handler(value)
+
     context.log_event(
         AssetObservation(
             asset_key=context.asset_key,
-            metadata={
-                "failure_reason": MetadataValue.text(failure_reason),
-                "failure_timestamp": MetadataValue.timestamp(
-                    datetime.now(timezone.utc)
-                ),
-                "run_id": MetadataValue.text(context.run_id),
-                "status": MetadataValue.text("faulty_range"),
-                "operation": MetadataValue.text(operation_name),
-            },
+            metadata=metadata,
         )
     )
 
@@ -788,14 +806,23 @@ def execute_with_adaptive_retry(
             if attempt == retry_config.max_retries:
                 if retry_config.continue_on_failure:
                     log_failure_and_continue(
-                        context, operation_name, e, retry_config.max_retries
+                        context,
+                        operation_name,
+                        e,
+                        retry_config.max_retries,
+                        pagination_metadata={
+                            "page_size_at_failure": current_page_size,
+                            "initial_page_size": initial_page_size,
+                            "reduction_factor": retry_config.page_size_reduction_factor,
+                            "min_page_size": retry_config.min_page_size,
+                        },
                     )
                     return None
-                else:
-                    context.log.error(
-                        f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
-                    )
-                    raise
+
+                context.log.error(
+                    f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
+                )
+                raise
 
             old_page_size = current_page_size
             if current_page_size and retry_config.reduce_page_size:
