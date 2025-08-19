@@ -24,6 +24,7 @@ async def default_resolver_factory(config: AgentConfig) -> ResourceResolver:
     storage_context = setup_storage_context(config, embed_model=embedding)
 
     return DefaultResourceResolver.from_resources(
+        agent_config=config,
         llm=llm,
         embedding=embedding,
         storage_context=storage_context,
