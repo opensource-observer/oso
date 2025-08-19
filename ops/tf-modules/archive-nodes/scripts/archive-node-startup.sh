@@ -14,6 +14,4 @@ echo \
 sudo apt-get update
 sudo apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-sudo tailscale up
-tailscale set --advertise-routes=10.1.0.0/24 --accept-dns=false
-tailscale set --ssh
+sudo tailscale up --advertise-tags=tag:vm --accept-dns=false --ssh

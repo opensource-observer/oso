@@ -130,6 +130,12 @@ resource "google_compute_instance" "arbitrum_one" {
     email  = google_service_account.arbitrum_one_sa.email
     scopes = ["cloud-platform"]
   }
+
+  lifecycle {
+    ignore_changes = [
+      metadata_startup_script
+    ]
+  }
 }
 
 # Ethereum Mainnet Archive Node
@@ -182,5 +188,11 @@ resource "google_compute_instance" "ethereum" {
   service_account {
     email  = google_service_account.ethereum_sa.email
     scopes = ["cloud-platform"]
+  }
+
+  lifecycle {
+    ignore_changes = [
+      metadata_startup_script
+    ]
   }
 }
