@@ -87,7 +87,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250819182813-0ae7880 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250819192836-424a2c3 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -102,7 +102,7 @@ spec:
           - name: "sqlmesh"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250819182813-0ae7880 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250819192836-424a2c3 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: Always
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -117,7 +117,7 @@ spec:
           - name: "ops"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250819182813-0ae7880 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250819192836-424a2c3 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: Always
             envConfigMaps:
               - name: dagster-oso-extra-env
