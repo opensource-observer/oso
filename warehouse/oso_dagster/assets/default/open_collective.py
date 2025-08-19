@@ -27,6 +27,7 @@ from oso_dagster.utils.common import (
     QueryConfig,
     QueryRetriesExceeded,
     query_with_retry,
+    stringify_large_integers,
 )
 from oso_dagster.utils.secrets import secret_ref_arg
 from pydantic import UUID4, BaseModel, Field
@@ -745,7 +746,9 @@ def accounts(
         endpoint="https://api.opencollective.com/graphql/v2",
         target_type="Query",
         target_query="accounts",
-        transform_fn=lambda result: result["accounts"]["nodes"],
+        transform_fn=lambda result: stringify_large_integers(
+            result["accounts"]["nodes"]
+        ),
         headers={
             "Personal-Token": personal_token,
         },
@@ -778,6 +781,7 @@ def accounts(
             reduce_page_size=True,
             min_page_size=10,
             page_size_reduction_factor=0.6,
+            continue_on_failure=True,
         ),
     )
 
