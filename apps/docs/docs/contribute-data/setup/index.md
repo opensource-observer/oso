@@ -215,3 +215,40 @@ Notice that after `-m` the code location's module path is specified. It is
 useful to note for newcomers that the `warehouse/` path in the repository is not
 considered a python module as it does not contain a `__init__.py` file and does
 not appear as a python module in the root `pyproject.toml`
+
+### Running dagster with sqlmesh locally
+
+This is mostly for the OSO team as most people should not need to run sqlmesh on
+the dagster UI in a local fashion. It should be enough for anyone looking to add
+models to run sqlmesh on it's own. The only reason to run sqlmesh locally is to
+ensure that the dagster-sqlmesh integration is working as expected with our
+particular pipeline.
+
+Some environment variables need to be set in your `.env`:
+
+```bash
+# While not strictly necessary, you likely want the sqlmesh dagster asset
+# caching enabled so restarting doesn't take so long.
+DAGSTER_ASSET_CACHE_ENABLED=1
+DAGSTER_ASSET_CACHE_DIR=/path/to/some/cache/dir # change this
+# You can set this number to anything reasonable for your testing use case
+DAGSTER_ASSET_CACHE_DEFAULT_TTL_SECONDS=3600
+# `local` uses duckdb
+# `local-trino` uses a locally deployed trino
+# Suggestion is to use `local` as it's faster. This doc assumes duckdb.
+DAGSTER_SQLMESH_GATEWAY=local
+SQLMESH_TESTING_ENABLED=1
+OSO_ENABLE_JSON_LOGS=0
+```
+
+Then you should run the sqlmesh local test setup to get your local sqlmesh
+duckdb initialized with oso local seed data.
+
+```bash
+uv run oso local sqlmesh-test --duckdb
+```
+
+Now it should be possible run sqlmesh and dagster locally. When materializing
+sqlmesh assets, it might complain about some out of date dependencies. Since we
+ran the local test setup, the data it's depending on should have been added by
+the oso local seed setup.
