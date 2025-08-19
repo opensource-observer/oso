@@ -2,6 +2,7 @@ import functools
 import random
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import Enum
 from typing import (
     Any,
@@ -19,7 +20,7 @@ from typing import (
 )
 
 import dlt
-from dagster import AssetExecutionContext
+from dagster import AssetExecutionContext, AssetObservation, MetadataValue
 from dlt.extract.resource import DltResource
 from gql import Client, gql
 from gql.transport.exceptions import (
@@ -173,6 +174,7 @@ class RetryConfig:
         reduce_page_size: Whether to reduce page size on failures (default: True).
         min_page_size: Minimum page size when reducing (default: 10).
         page_size_reduction_factor: Factor to reduce page size by (default: 0.5).
+        continue_on_failure: Whether to log failures and continue instead of raising (default: False).
     """
 
     max_retries: int = 3
@@ -183,6 +185,7 @@ class RetryConfig:
     reduce_page_size: bool = True
     min_page_size: int = 10
     page_size_reduction_factor: float = 0.5
+    continue_on_failure: bool = False
 
 
 @dataclass
@@ -635,6 +638,68 @@ def get_nested_value(data: Dict[str, Any], path: str) -> Any:
 D = TypeVar("D")
 
 
+def log_failure_and_continue(
+    context: AssetExecutionContext,
+    operation_name: str,
+    exception: Exception,
+    max_retries: int,
+    pagination_metadata: Optional[Dict[str, Any]] = None,
+) -> None:
+    """
+    Log a failure with detailed information and continue execution.
+
+    Args:
+        context: Execution context for logging.
+        operation_name: Name of the operation that failed.
+        exception: The exception that caused the failure.
+        max_retries: Maximum number of retries that were attempted.
+        pagination_metadata: Optional metadata related to pagination at the time of failure.
+    """
+    context.log.error(
+        f"{operation_name} failed after {max_retries} retries: {exception}. "
+        "Continuing due to continue_on_failure=True"
+    )
+
+    exception_chain = []
+    current_exception = exception
+    while current_exception is not None:
+        exception_chain.append(str(current_exception))
+        current_exception = current_exception.__cause__ or current_exception.__context__
+
+    failure_reason = "\n".join(exception_chain)
+
+    metadata = {
+        "failure_reason": MetadataValue.text(failure_reason),
+        "failure_timestamp": MetadataValue.timestamp(datetime.now(timezone.utc)),
+        "run_id": MetadataValue.text(context.run_id),
+        "status": MetadataValue.text("faulty_range"),
+        "operation": MetadataValue.text(operation_name),
+        "max_retries": MetadataValue.int(max_retries),
+    }
+
+    if pagination_metadata:
+        type_map = {
+            dict: MetadataValue.json,
+            int: MetadataValue.int,
+            float: MetadataValue.float,
+            bool: lambda x: MetadataValue.text(str(x)),
+        }
+
+        for key, value in pagination_metadata.items():
+            if value is not None:
+                handler = type_map.get(
+                    type(value), lambda x: MetadataValue.text(str(x))
+                )
+                metadata[key] = handler(value)
+
+    context.log_event(
+        AssetObservation(
+            asset_key=context.asset_key,
+            metadata=metadata,
+        )
+    )
+
+
 def execute_with_retry(
     func: Callable[[], D],
     retry_config: Optional[RetryConfig],
@@ -693,7 +758,8 @@ def execute_with_adaptive_retry(
     context: AssetExecutionContext,
     initial_page_size: Optional[int],
     operation_name: str = "GraphQL operation",
-) -> D:
+    pagination_context: Optional[Dict[str, Any]] = None,
+) -> Optional[D]:
     """
     Execute a function with retry mechanism that reduces page size on failures.
 
@@ -705,10 +771,10 @@ def execute_with_adaptive_retry(
         operation_name: Name of the operation for logging.
 
     Returns:
-        The result of the function execution.
+        The result of the function execution, or None if continue_on_failure is True and all retries are exhausted.
 
     Raises:
-        The last exception if all retries are exhausted.
+        The last exception if all retries are exhausted and continue_on_failure is False.
     """
     if not retry_config or not retry_config.reduce_page_size or not initial_page_size:
         return execute_with_retry(
@@ -739,6 +805,19 @@ def execute_with_adaptive_retry(
             return result
         except (TransportError, TransportServerError, TransportQueryError) as e:
             if attempt == retry_config.max_retries:
+                if retry_config.continue_on_failure:
+                    log_failure_and_continue(
+                        context,
+                        operation_name,
+                        e,
+                        retry_config.max_retries,
+                        pagination_metadata={
+                            "page_size_at_failure": current_page_size,
+                            **(pagination_context or {}),
+                        },
+                    )
+                    return None
+
                 context.log.error(
                     f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
                 )
@@ -1055,7 +1134,18 @@ def _graphql_factory(
                         context,
                         original_page_size if config.pagination else None,
                         f"GraphQL query execution (page {successful_pages + 1})",
+                        pagination_context={
+                            "page_number": successful_pages + 1,
+                            "total_items_processed": total_items,
+                            "successful_pages": successful_pages,
+                        },
                     )
+
+                    if result is None:
+                        context.log.info(
+                            f"GraphQL query execution (page {successful_pages + 1}) failed and was skipped due to continue_on_failure=True"
+                        )
+                        break
 
                     data_items, pagination_info = extract_data_for_pagination(
                         result, config

@@ -325,6 +325,7 @@ retry_config = RetryConfig(
     reduce_page_size=True,            # Enable adaptive page size reduction
     min_page_size=10,                 # Minimum page size when reducing
     page_size_reduction_factor=0.5,   # Factor to reduce page size by (50%)
+    continue_on_failure=True,         # Log failures and continue instead of raising
 )
 
 config = GraphQLResourceConfig(
@@ -357,15 +358,15 @@ debounce behavior:
 
 ```
 Page 1: Start with 50 items
-  ❌ Fails → retry with 25 items
-  ❌ Fails → retry with 12 items
-  ✅ Succeeds with 12 items
+  [FAIL] Fails → retry with 25 items
+  [FAIL] Fails → retry with 12 items
+  [SUCCESS] Succeeds with 12 items
 
 Page 2: RESETS to 50 items (not stuck at 12!)
-  ✅ Succeeds immediately with 50 items
+  [SUCCESS] Succeeds immediately with 50 items
 
 Page 3: Start with 50 items again
-  ✅ Succeeds immediately with 50 items
+  [SUCCESS] Succeeds immediately with 50 items
 ```
 
 #### Retry Configuration Options
@@ -380,6 +381,11 @@ Page 3: Start with 50 items again
 - **min_page_size**: Prevent page sizes from getting too small
 - **page_size_reduction_factor**: How much to reduce page size (0.5 = 50%
   reduction)
+- **continue_on_failure**: Log failures and continue execution instead of
+  raising exceptions when all retries are exhausted. Useful for APIs with
+  broken entries or when certain queries consistently timeout due to heavy
+  backend operations, allowing the run to complete by skipping problematic
+  sections
 
 ---
 

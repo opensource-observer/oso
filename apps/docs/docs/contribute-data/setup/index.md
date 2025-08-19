@@ -41,12 +41,6 @@ Copy `.env.example` to `.env`, and fill it in with the required environment vari
 DAGSTER_HOME=/tmp/dagster-home
 ```
 
-Some assets require a BigQuery connection. Run this to authenticate:
-
-```sh
-gcloud auth application-default login
-```
-
 Lastly, we need to configure `dagster.yaml` to disable concurrency. Our example
 is located at `/tmp/dagster-home/dagster.yaml`:
 
@@ -61,7 +55,8 @@ for more information.
 
 ## Running Dagster
 
-Now that we have everything set up, we can run the Dagster instance:
+Now that we have everything set up, we can run the Dagster instance. Call this
+command from the root of the repository:
 
 ```sh
 uv run dagster dev
@@ -102,7 +97,7 @@ You can use one of the following guides and come back to this guide to test it.
 
 ## Test your asset locally
 
-Assets in `warehouse/oso_dagster/assets` should automatically show up in
+Assets in `warehouse/oso_dagster/assets/default` should automatically show up in
 the Dagster assets list at `http://localhost:3000/assets`.
 
 ![Dagster assets](./dagster_assets.png)
@@ -112,12 +107,10 @@ Here you'll be able to monitor the logs to debug any issues with
 the data fetching.
 
 :::warning
-Unless your Dagster instance is configured with a Google account that
-has write access to OSO BigQuery datasets, you
-should expect an error message when the asset tries to write.
-Focus on debugging any issues with fetching data.
-When you're ready, work with a core team member to test
-the asset in production.
+Unless your Dagster instance is configured with a Google account that has write
+access to OSO BigQuery datasets, some dagster assets will fail to materialize.
+Focus on debugging any issues with fetching data. When you're ready, work with a
+core team member to test the asset in production.
 :::
 
 ## Add your asset to production
@@ -177,3 +170,85 @@ on [Discord](https://www.opensource.observer/discord)
 with an estimate of costs, especially if it involves large BigQuery scans.
 We will reject or disable any jobs that lead to
 increased infrastructure instability or unexpected costs.
+
+## Advanced Topics
+
+### Asset Code Locations
+
+In order to improve the usability of our dagster setup locally, we've actually
+split the organization of dagster assets into multiple "code locations." A code
+location is a dagster abstraction that allows you to have different asset
+definitions in entire different code paths. Code locations for an asset are
+determined by the parent folder of the asset within
+`warehouse/oso_dagster/assets` that corresponds to a definitions file in
+`warehouse/oso_dagster/definitions/`. For _most_ new assets, they should be
+added to `warehouse/oso_dagster/assets/default/`.
+
+#### Available Code Locations
+
+At this moment, the available code locations can be found in the repository at
+`warehouse/oso_dagster/definitions/`):
+
+- `sqlmesh`: This is the code location for _any_ assets
+  related to sqlmesh. This is essentially anything that depends on the
+  `dagster-sqlmesh` package.
+- `ops`: This code location contains no assets, instead
+  it is used for defining overarching "ops" related things like alert sensors,
+  scheduling, etc.
+- `default`: The default code location for all remaining
+  assets that do not fit into the other categories.
+
+#### Running different code locations
+
+To run these different code locations is nearly identical to how we run the
+`default` code location. You just need to specify the code location's python
+module path when running your Dagster jobs. To run the `sqlmesh` or `ops` code
+location for example:
+
+```bash
+uv run dagster dev -m oso_dagster.definitions.sqlmesh
+# ... or for the ops code location ...
+uv run dagster dev -m oso_dagster.definitions.ops
+```
+
+Notice that after `-m` the code location's module path is specified. It is
+useful to note for newcomers that the `warehouse/` path in the repository is not
+considered a python module as it does not contain a `__init__.py` file and does
+not appear as a python module in the root `pyproject.toml`
+
+### Running dagster with sqlmesh locally
+
+This is mostly for the OSO team as most people should not need to run sqlmesh on
+the dagster UI in a local fashion. It should be enough for anyone looking to add
+models to run sqlmesh on it's own. The only reason to run sqlmesh locally is to
+ensure that the dagster-sqlmesh integration is working as expected with our
+particular pipeline.
+
+Some environment variables need to be set in your `.env`:
+
+```bash
+# While not strictly necessary, you likely want the sqlmesh dagster asset
+# caching enabled so restarting doesn't take so long.
+DAGSTER_ASSET_CACHE_ENABLED=1
+DAGSTER_ASSET_CACHE_DIR=/path/to/some/cache/dir # change this
+# You can set this number to anything reasonable for your testing use case
+DAGSTER_ASSET_CACHE_DEFAULT_TTL_SECONDS=3600
+# `local` uses duckdb
+# `local-trino` uses a locally deployed trino
+# Suggestion is to use `local` as it's faster. This doc assumes duckdb.
+DAGSTER_SQLMESH_GATEWAY=local
+SQLMESH_TESTING_ENABLED=1
+OSO_ENABLE_JSON_LOGS=0
+```
+
+Then you should run the sqlmesh local test setup to get your local sqlmesh
+duckdb initialized with oso local seed data.
+
+```bash
+uv run oso local sqlmesh-test --duckdb
+```
+
+Now it should be possible run sqlmesh and dagster locally. When materializing
+sqlmesh assets, it might complain about some out of date dependencies. Since we
+ran the local test setup, the data it's depending on should have been added by
+the oso local seed setup.

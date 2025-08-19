@@ -22,12 +22,11 @@ from dagster_sqlmesh import (
 )
 from oso_core.cache.types import CacheMetadataOptions
 from oso_dagster.config import DagsterConfig
+from oso_dagster.factories import AssetFactoryResponse, cacheable_asset_factory
 from oso_dagster.factories.common import CacheableDagsterContext
 from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
 from pydantic import BaseModel
-
-from ..factories import AssetFactoryResponse, cacheable_asset_factory
 
 
 class SQLMeshRunConfig(dg.Config):
@@ -195,8 +194,10 @@ def sqlmesh_factory(
                         config.allow_destructive_models
                     )
 
-                # If we specify a dev_environment, we will first plan it for safety
-                if dev_environment:
+                # If we specify a dev_environment, we will first plan it for
+                # safety. Restatements are ignored as they may end up duplicating
+                # work based on how restatement in planning works.
+                if dev_environment and not config.restate_models:
                     context.log.info("Planning dev environment")
                     all(
                         sqlmesh.run(
@@ -207,6 +208,7 @@ def sqlmesh_factory(
                             end=config.end,
                             restate_models=restate_models,
                             skip_run=True,
+                            materializations_enabled=False,
                         )
                     )
 

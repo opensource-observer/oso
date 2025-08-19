@@ -1,6 +1,5 @@
 from dlt.sources.rest_api.typing import RESTAPIConfig
-
-from ..factories.rest import create_rest_factory_asset
+from oso_dagster.factories.rest import create_rest_factory_asset
 
 config: RESTAPIConfig = {
     "client": {
