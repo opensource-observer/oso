@@ -31,6 +31,7 @@ from gql.transport.exceptions import (
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.config import DagsterConfig
 from oso_dagster.utils.redis import redis_cache
+from requests.exceptions import ChunkedEncodingError
 
 # The maximum depth of the introspection query.
 FRAGMENT_MAX_DEPTH = 10
@@ -727,7 +728,12 @@ def execute_with_retry(
     for attempt in range(retry_config.max_retries + 1):
         try:
             return func()
-        except (TransportError, TransportServerError, TransportQueryError) as e:
+        except (
+            TransportError,
+            TransportServerError,
+            TransportQueryError,
+            ChunkedEncodingError,
+        ) as e:
             if attempt == retry_config.max_retries:
                 context.log.error(
                     f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
@@ -803,7 +809,12 @@ def execute_with_adaptive_retry(
                 )
 
             return result
-        except (TransportError, TransportServerError, TransportQueryError) as e:
+        except (
+            TransportError,
+            TransportServerError,
+            TransportQueryError,
+            ChunkedEncodingError,
+        ) as e:
             if attempt == retry_config.max_retries:
                 if retry_config.continue_on_failure:
                     log_failure_and_continue(
@@ -1240,7 +1251,7 @@ def _graphql_factory(
                         )
                         time.sleep(config.pagination.rate_limit_seconds)
 
-                except TransportError as e:
+                except (TransportError, ChunkedEncodingError) as e:
                     context.log.error(f"GraphQL query execution failed: {str(e)}")
                     raise ValueError(
                         f"Failed to execute GraphQL query: {str(e)}"
