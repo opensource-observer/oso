@@ -1156,7 +1156,27 @@ def _graphql_factory(
                         context.log.info(
                             f"GraphQL query execution (page {successful_pages + 1}) failed and was skipped due to continue_on_failure=True"
                         )
-                        break
+
+                        if config.pagination and config.pagination.type in (
+                            PaginationType.CURSOR,
+                            PaginationType.RELAY,
+                        ):
+                            context.log.info(
+                                "GraphQLFactory: Cannot continue cursor-based pagination after page failure. Stopping."
+                            )
+                            break
+
+                        if (
+                            config.pagination
+                            and config.pagination.type == PaginationType.OFFSET
+                        ):
+                            original_page_size = config.pagination.page_size
+                            total_items += original_page_size
+                            context.log.info(
+                                f"GraphQLFactory: Advancing offset by {original_page_size} to skip failed page. New offset: {total_items}"
+                            )
+
+                        continue
 
                     data_items, pagination_info = extract_data_for_pagination(
                         result, config
