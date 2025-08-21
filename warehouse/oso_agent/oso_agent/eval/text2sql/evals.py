@@ -28,24 +28,21 @@ def df_info_str(rows: t.List[t.Tuple]):
 
 
 # eval 1: check valid SQL (this will populate ExampleResult, clean and prepare SQL, and return if valid SQL has passed)
-async def check_valid_sql(
-    post_processed: ExampleResult
-) -> EvaluationResult:
+async def sql_syntax_validation(post_processed: ExampleResult) -> EvaluationResult:
+    """Check if the generated SQL query is syntactically valid."""
     return EvaluationResult(
         score=int(is_valid_sql(post_processed.actual_sql_query)),
-        label="is_agent_response_valid_sql",
-        explanation="Returns a boolean for if the agent's output query is valid (can be parsed by sqlglot)",
+        label="sql_syntax_valid",
+        explanation="Whether the generated SQL query is syntactically valid and can be parsed by sqlglot",
         metadata={
             "cleaned_agent_query": post_processed.actual_sql_query,
         },
     )
 
 
-
 # eval 2: if the above works then we will run check valid result (as metadata maybe print a .info())
-async def check_valid_sql_result(
-    post_processed: ExampleResult
-) -> EvaluationResult:
+async def sql_execution_success(post_processed: ExampleResult) -> EvaluationResult:
+    """Check if the SQL query executes successfully and returns results."""
     info_str = ""
     if post_processed.is_valid_sql_result:
         info_str = df_info_str(post_processed.actual_results_to_list_tuple())
@@ -54,24 +51,24 @@ async def check_valid_sql_result(
         info_str = "Query execution failed or table does not exist."
     return EvaluationResult(
         score=int(post_processed.is_valid_sql_result),
-        label="does_agent_query_return_valid_result",
-        explanation="Returns a boolean for if the agent's query returns a valid SQL table (empty table is considered equal)",
-        metadata={"agent_sql_result_info": info_str},
+        label="sql_execution_success",
+        explanation="Whether the SQL query executes successfully and returns a valid result set",
+        metadata={"sql_result_info": info_str},
     )
 
 
 # eval 3: query type comparison (metadata should be each set printed)
-async def sql_query_type_similarity(
+async def sql_function_types_match(
     post_processed: ExampleResult, metadata: dict[str, t.Any]
 ) -> EvaluationResult:
-
+    """Measure similarity of SQL function types used in queries."""
     output_query_types = set(determine_query_type(post_processed.actual_sql_query))
     expected_query_types = set(metadata.get("query_type") or [])
 
     return EvaluationResult(
         score=jaccard_similarity_set(output_query_types, expected_query_types),
-        label="query_type_similarity",
-        explanation="Jaccard's similarity over the types of functions present in each SQL query",
+        label="sql_function_types_match",
+        explanation="Similarity of SQL function types (SELECT, JOIN, etc.) between generated and expected queries",
         metadata={
             "output_query_types": sorted(output_query_types),
             "expected_query_types": sorted(expected_query_types),
@@ -80,10 +77,10 @@ async def sql_query_type_similarity(
 
 
 # eval 4: oso models used (metadata should be each set printed)
-async def sql_oso_models_used_similarity(
+async def oso_tables_match(
     post_processed: ExampleResult, metadata: dict[str, t.Any]
 ) -> EvaluationResult:
-
+    """Measure similarity of OSO database tables used in queries."""
     output_oso_models_used = set(
         determine_sql_models_used(post_processed.actual_sql_query)
     )
@@ -91,8 +88,8 @@ async def sql_oso_models_used_similarity(
 
     return EvaluationResult(
         score=jaccard_similarity_set(output_oso_models_used, expected_oso_models_used),
-        label="sql_models_used_similarity",
-        explanation="Jaccard's similarity over the tables each query uses",
+        label="oso_tables_match",
+        explanation="Similarity of OSO database tables referenced between generated and expected queries",
         metadata={
             "output_oso_models_used": sorted(output_oso_models_used),
             "expected_oso_models_used": sorted(expected_oso_models_used),
@@ -101,29 +98,26 @@ async def sql_oso_models_used_similarity(
 
 
 # eval 5: result exact match (.info() of each df?)
-async def result_exact_match(
-    post_processed: ExampleResult
-) -> EvaluationResult:
-
+async def results_exact_match(post_processed: ExampleResult) -> EvaluationResult:
+    """Check if query results match exactly with expected results."""
     if post_processed.is_valid_sql_result:
         try:
-            score = int(
-                result_eq_bool(
-                    post_processed.actual_results_to_list_tuple()[1:],
-                    post_processed.expected_results_to_list_tuple()[1:],
-                    order_matters=post_processed.order_matters,
-                )
+            exact_match = result_eq_bool(
+                post_processed.actual_results_to_list_tuple()[1:],
+                post_processed.expected_results_to_list_tuple()[1:],
+                order_matters=post_processed.order_matters,
             )
+            score = 1.0 if exact_match else 0.0
         except Exception as e:
             logger.exception(f"Result comparison failed: {e}")
-            score = -1
+            score = 0.0
     else:
-        score = -1
+        score = 0.0
 
     return EvaluationResult(
         score=score,
-        label="sql_result_exact_match",
-        explanation="A boolean that reflects if the pandas result of the agent's query EXACTLY matches the expected result",
+        label="results_exact_match",
+        explanation="Whether query results exactly match the expected results (1.0 = exact match, 0.0 = no match)",
         metadata={
             "agent_result_info": df_info_str(
                 post_processed.actual_results_to_list_tuple()
@@ -136,9 +130,8 @@ async def result_exact_match(
 
 
 # eval 6: result fuzzy match (.info() of each df?, maybe some info on why it's fuzzy)
-async def result_fuzzy_match(
-    post_processed: ExampleResult
-) -> EvaluationResult:
+async def results_similarity_score(post_processed: ExampleResult) -> EvaluationResult:
+    """Calculate fuzzy similarity between query results and expected results."""
     fuzzy_metadata = {}
 
     if post_processed.is_valid_sql_result:
@@ -148,18 +141,19 @@ async def result_fuzzy_match(
                 post_processed.expected_results_to_list_tuple()[1:],
                 order_matters=post_processed.order_matters,
             )
-            score = float(score)  # just to be safe
+            score = float(score)  # ensure it's a float
         except Exception as e:
             logger.exception(f"Result comparison failed: {e}")
-            score = -1
-            fuzzy_metadata = {}
+            score = 0.0
+            fuzzy_metadata = {"error": str(e)}
     else:
-        score = -1
+        score = 0.0
+        fuzzy_metadata = {"execution_failed": True}
 
     return EvaluationResult(
         score=score,
-        label="sql_result_fuzzy_match",
-        explanation="A float value that reflects how similar the result of the agent's query is to the expected result | 0 = no similarities, 1 = exact match",
+        label="results_similarity_score",
+        explanation="Similarity score between query results and expected results (0.0 = no match, 1.0 = exact match)",
         metadata={
             "agent_result_info": df_info_str(
                 post_processed.actual_results_to_list_tuple()
