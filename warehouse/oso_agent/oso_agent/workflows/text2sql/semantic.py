@@ -120,7 +120,7 @@ class SemanticText2SQLWorkflow(
                 logger.error("Exceeded max retries for semantic query translation")
                 return StopEvent(
                     result=ErrorResponse(
-                        message="Exceeded max retries for semantic query translation"
+                        message=f"Exceeded max retries for semantic query translation with error(s): {'; '.join(event.error_context)}"
                     )
                 )
 
