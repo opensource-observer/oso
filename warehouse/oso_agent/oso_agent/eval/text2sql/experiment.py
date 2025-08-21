@@ -29,8 +29,8 @@ from .evals import (
     oso_tables_match,
     results_exact_match,
     results_similarity_score,
+    sql_command_types_match,
     sql_execution_success,
-    sql_function_types_match,
     sql_syntax_validation,
 )
 
@@ -208,7 +208,7 @@ async def text2sql_experiment(
     )
     runner.add_evaluator(sql_syntax_validation)
     runner.add_evaluator(sql_execution_success)
-    runner.add_evaluator(sql_function_types_match)
+    runner.add_evaluator(sql_command_types_match)
     runner.add_evaluator(oso_tables_match)
     runner.add_evaluator(results_exact_match)
     runner.add_evaluator(results_similarity_score)
@@ -278,7 +278,7 @@ async def text2sql_semantic_experiment(
     )
     runner.add_evaluator(sql_syntax_validation)
     runner.add_evaluator(sql_execution_success)
-    runner.add_evaluator(sql_function_types_match)
+    runner.add_evaluator(sql_command_types_match)
     runner.add_evaluator(oso_tables_match)
     runner.add_evaluator(results_exact_match)
     runner.add_evaluator(results_similarity_score)

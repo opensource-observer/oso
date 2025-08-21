@@ -58,7 +58,7 @@ async def sql_execution_success(post_processed: ExampleResult) -> EvaluationResu
 
 
 # eval 3: query type comparison (metadata should be each set printed)
-async def sql_function_types_match(
+async def sql_command_types_match(
     post_processed: ExampleResult, metadata: dict[str, t.Any]
 ) -> EvaluationResult:
     """Measure similarity of SQL function types used in queries."""
@@ -67,8 +67,8 @@ async def sql_function_types_match(
 
     return EvaluationResult(
         score=jaccard_similarity_set(output_query_types, expected_query_types),
-        label="sql_function_types_match",
-        explanation="Similarity of SQL function types (SELECT, JOIN, etc.) between generated and expected queries",
+        label="sql_command_types_match",
+        explanation="Similarity of SQL command types (SELECT, JOIN, etc.) between generated and expected queries",
         metadata={
             "output_query_types": sorted(output_query_types),
             "expected_query_types": sorted(expected_query_types),
