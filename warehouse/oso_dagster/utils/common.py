@@ -219,3 +219,30 @@ def query_with_retry(
                     ) from exception
                 context.log.info(f"Retrying with limit: {limit}")
         break
+
+
+def stringify_large_integers(data: Any) -> Any:
+    """
+    Recursively convert integers exceeding 64-bit range to strings.
+
+    Args:
+        data: Array of objects, dict, list, or any primitive value
+
+    Returns:
+        Modified data with large integers converted to strings
+    """
+    MAX_64BIT: int = 2**63 - 1
+    MIN_64BIT: int = -(2**63)
+
+    def _convert_recursive(obj: Any) -> Any:
+        type_handlers = {
+            int: lambda x: str(x) if (x > MAX_64BIT or x < MIN_64BIT) else x,
+            dict: lambda x: {k: _convert_recursive(v) for k, v in x.items()},
+            list: lambda x: [_convert_recursive(item) for item in x],
+            tuple: lambda x: tuple(_convert_recursive(item) for item in x),
+        }
+
+        handler = type_handlers.get(type(obj), lambda x: x)
+        return handler(obj)
+
+    return _convert_recursive(data)

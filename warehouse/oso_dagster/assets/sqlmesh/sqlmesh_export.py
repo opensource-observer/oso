@@ -6,13 +6,12 @@ from dagster_sqlmesh import DagsterSQLMeshController, SQLMeshContextConfig
 from dagster_sqlmesh.controller.base import DEFAULT_CONTEXT_FACTORY
 from oso_core.cache.types import CacheMetadataOptions
 from oso_dagster.config import DagsterConfig
+from oso_dagster.factories import AssetFactoryResponse, cacheable_asset_factory
 from oso_dagster.factories.common import CacheableDagsterContext
+from oso_dagster.resources import PrefixedSQLMeshTranslator, SQLMeshExporter
 from oso_dagster.resources.sqlmesh import SQLMeshExportedAssetDefinition
 from pydantic import BaseModel
 from sqlmesh.core.model import Model
-
-from ..factories import AssetFactoryResponse, cacheable_asset_factory
-from ..resources import PrefixedSQLMeshTranslator, SQLMeshExporter
 
 logger = structlog.get_logger(__name__)
 

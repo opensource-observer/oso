@@ -24,7 +24,7 @@ The second table, `some_nonincremental_database`, does not have a way to be load
 incrementally and will force a full refresh upon every sync.
 
 To setup this database replication, you can add a new python file to
-`warehouse/oso_dagster/assets`. This file will have the following contents:
+`warehouse/oso_dagster/assets/default`. This file will have the following contents:
 
 ```python
 from oso_dagster.factories.sql import sql_assets

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any
+from typing import Any, Optional
 
 import pandas as pd
 import requests
@@ -21,7 +21,7 @@ except ImportError:
 
 
 class ClientConfig(BaseModel):
-    base_url: str | None
+    base_url: Optional[str]
 
 
 class QueryData(BaseModel):
@@ -79,7 +79,9 @@ class QueryResponse:
 
 class Client:
     def __init__(
-        self, api_key: str | None = None, client_opts: ClientConfig | None = None
+        self,
+        api_key: Optional[str] = None,
+        client_opts: Optional[ClientConfig] = None,
     ):
         self.__api_key = api_key if api_key else os.environ.get(OSO_API_KEY)
         if not self.__api_key:

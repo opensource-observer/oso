@@ -2,9 +2,8 @@ from typing import Any
 
 from dagster import AssetExecutionContext
 from oso_dagster.config import DagsterConfig
-
-from ..factories.dlt import dlt_factory
-from ..factories.graphql import (
+from oso_dagster.factories.dlt import dlt_factory
+from oso_dagster.factories.graphql import (
     GraphQLResourceConfig,
     PaginationConfig,
     PaginationType,
