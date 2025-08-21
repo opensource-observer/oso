@@ -11,6 +11,9 @@ spec:
             newTag: deploy-20250820193511-beaf0d1 # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
+      service:
+        annotations:
+          tailscale.com/expose: "true"
       ingress:
         enabled: true
         className: ingress-internal-cloudflare
