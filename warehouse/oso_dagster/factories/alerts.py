@@ -54,6 +54,7 @@ ALERTS_JOB_CONFIG = {
     },
 }
 
+
 def setup_alert_sensors(
     base_url: str, alert_manager: AlertManager, enable: bool = True
 ):
@@ -81,7 +82,10 @@ def setup_alert_sensors(
         status = DefaultSensorStatus.STOPPED
 
     @run_failure_sensor(
-        name="failure_alert", default_status=status, request_job=failure_job
+        name="failure_alert",
+        default_status=status,
+        request_job=failure_job,
+        monitor_all_code_locations=True,
     )
     def failure_sensor(context: RunFailureSensorContext):
         if context.failure_event.job_name not in [

@@ -31,6 +31,7 @@ from gql.transport.exceptions import (
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.config import DagsterConfig
 from oso_dagster.utils.redis import redis_cache
+from requests.exceptions import ChunkedEncodingError
 
 # The maximum depth of the introspection query.
 FRAGMENT_MAX_DEPTH = 10
@@ -727,7 +728,12 @@ def execute_with_retry(
     for attempt in range(retry_config.max_retries + 1):
         try:
             return func()
-        except (TransportError, TransportServerError, TransportQueryError) as e:
+        except (
+            TransportError,
+            TransportServerError,
+            TransportQueryError,
+            ChunkedEncodingError,
+        ) as e:
             if attempt == retry_config.max_retries:
                 context.log.error(
                     f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
@@ -803,7 +809,12 @@ def execute_with_adaptive_retry(
                 )
 
             return result
-        except (TransportError, TransportServerError, TransportQueryError) as e:
+        except (
+            TransportError,
+            TransportServerError,
+            TransportQueryError,
+            ChunkedEncodingError,
+        ) as e:
             if attempt == retry_config.max_retries:
                 if retry_config.continue_on_failure:
                     log_failure_and_continue(
@@ -1145,7 +1156,27 @@ def _graphql_factory(
                         context.log.info(
                             f"GraphQL query execution (page {successful_pages + 1}) failed and was skipped due to continue_on_failure=True"
                         )
-                        break
+
+                        if config.pagination and config.pagination.type in (
+                            PaginationType.CURSOR,
+                            PaginationType.RELAY,
+                        ):
+                            context.log.info(
+                                "GraphQLFactory: Cannot continue cursor-based pagination after page failure. Stopping."
+                            )
+                            break
+
+                        if (
+                            config.pagination
+                            and config.pagination.type == PaginationType.OFFSET
+                        ):
+                            original_page_size = config.pagination.page_size
+                            total_items += original_page_size
+                            context.log.info(
+                                f"GraphQLFactory: Advancing offset by {original_page_size} to skip failed page. New offset: {total_items}"
+                            )
+
+                        continue
 
                     data_items, pagination_info = extract_data_for_pagination(
                         result, config
@@ -1240,7 +1271,7 @@ def _graphql_factory(
                         )
                         time.sleep(config.pagination.rate_limit_seconds)
 
-                except TransportError as e:
+                except (TransportError, ChunkedEncodingError) as e:
                     context.log.error(f"GraphQL query execution failed: {str(e)}")
                     raise ValueError(
                         f"Failed to execute GraphQL query: {str(e)}"

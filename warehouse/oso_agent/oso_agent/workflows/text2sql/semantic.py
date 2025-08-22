@@ -205,17 +205,18 @@ class SemanticText2SQLWorkflow(
         Translate natural language to a structured SemanticQuery.
         This step can be called at the start of a workflow or as a retry attempt.
         """
-        retry_number = self.max_retries - event.remaining_tries + 1
-        logger.debug(
-            f"Retrying translation... attempt {retry_number}/{self.max_retries}, {event.remaining_tries} tries left"
-        )
-        if event.remaining_tries <= 0:
-            logger.error("Exceeded max retries for semantic query translation")
-            return StopEvent(
-                result=ErrorResponse(
-                    message="Exceeded max retries for semantic query translation"
-                )
+        if isinstance(event, RetrySemanticQueryEvent):
+            retry_number = self.max_retries - event.remaining_tries + 1
+            logger.debug(
+                f"Retrying translation... attempt {retry_number}/{self.max_retries}, {event.remaining_tries} tries left"
             )
+            if event.remaining_tries <= 0:
+                logger.error("Exceeded max retries for semantic query translation")
+                return StopEvent(
+                    result=ErrorResponse(
+                        message=f"Exceeded max retries for semantic query translation with error(s): {'; '.join(event.error_context)}"
+                    )
+                )
 
         natural_language_query = event.input_text
         error_feedback = str(event.error)

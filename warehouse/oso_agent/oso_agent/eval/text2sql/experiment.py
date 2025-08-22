@@ -27,12 +27,12 @@ from ...util.asyncbase import setup_nest_asyncio
 from ...util.config import AgentConfig
 from ...util.metadata import collect_experiment_metadata
 from .evals import (
-    check_valid_sql,
-    check_valid_sql_result,
-    result_exact_match,
-    result_fuzzy_match,
-    sql_oso_models_used_similarity,
-    sql_query_type_similarity,
+    oso_tables_match,
+    results_exact_match,
+    results_similarity_score,
+    sql_command_types_match,
+    sql_execution_success,
+    sql_syntax_validation,
 )
 
 setup_nest_asyncio()
@@ -208,12 +208,14 @@ async def text2sql_experiment(
         concurrent_evaluators=10,
         concurrent_runs=1,
     )
-    runner.add_evaluator(check_valid_sql)
-    runner.add_evaluator(check_valid_sql_result)
-    runner.add_evaluator(sql_query_type_similarity)
-    runner.add_evaluator(sql_oso_models_used_similarity)
-    runner.add_evaluator(result_exact_match)
-    runner.add_evaluator(result_fuzzy_match)
+    runner.add_evaluator(sql_syntax_validation)
+    runner.add_evaluator(sql_execution_success)
+    runner.add_evaluator(sql_command_types_match)
+    runner.add_evaluator(oso_tables_match)
+    runner.add_evaluator(results_exact_match)
+    runner.add_evaluator(results_similarity_score)
+
+    description = _raw_options.get("description", "")
 
     experiment_metadata = collect_experiment_metadata(
         config=config,
@@ -225,6 +227,7 @@ async def text2sql_experiment(
         dataset=dataset,
         workflow_cls=BasicText2SQL,
         experiment_name=BASE_EXPERIMENT_NAME,
+        experiment_description=description if description else None,
         experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
@@ -281,12 +284,14 @@ async def text2sql_semantic_experiment(
         concurrent_evaluators=10,
         concurrent_runs=1,
     )
-    runner.add_evaluator(check_valid_sql)
-    runner.add_evaluator(check_valid_sql_result)
-    runner.add_evaluator(sql_query_type_similarity)
-    runner.add_evaluator(sql_oso_models_used_similarity)
-    runner.add_evaluator(result_exact_match)
-    runner.add_evaluator(result_fuzzy_match)
+    runner.add_evaluator(sql_syntax_validation)
+    runner.add_evaluator(sql_execution_success)
+    runner.add_evaluator(sql_command_types_match)
+    runner.add_evaluator(oso_tables_match)
+    runner.add_evaluator(results_exact_match)
+    runner.add_evaluator(results_similarity_score)
+
+    description = _raw_options.get("description", "")
 
     experiment_metadata = collect_experiment_metadata(
         config=config,
@@ -298,6 +303,7 @@ async def text2sql_semantic_experiment(
         dataset=dataset,
         workflow_cls=SemanticText2SQLWorkflow,
         experiment_name=SEMANTIC_EXPERIMENT_NAME,
+        experiment_description=description if description else None,
         experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {

@@ -120,10 +120,11 @@ def dagster_definitions(name: str):
 
         caller_logger = logging.getLogger(caller_module_name)
         caller_logger.info(
-            f"Loading dagster definitions in {caller_module_name}",
+            f"Loading dagster definitions for {name} in {caller_module_name}",
             extra={
                 "event_type": "dagster_definitions",
                 "definitions_module": caller_module_name,
+                "dagster_definition": name,
             },
         )
 
