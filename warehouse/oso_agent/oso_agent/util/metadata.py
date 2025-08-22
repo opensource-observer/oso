@@ -3,18 +3,47 @@ import subprocess
 import sys
 import typing as t
 from datetime import datetime
+from pathlib import Path
 
 from ..util.config import AgentConfig
 
 logger = logging.getLogger(__name__)
 
 
+def _is_containerized() -> bool:
+    """Detect if running in a container with deployment metadata.
+
+    Returns:
+        bool: True if running in production (containerized)
+    """
+    return Path("/oso.repo_sha.txt").exists() and Path("/oso.ordered_tag.txt").exists()
+
+
+def _read_metadata_file(filepath: str) -> t.Optional[str]:
+    """Read content from a metadata file.
+
+    Args:
+        filepath: Path to the metadata file
+
+    Returns:
+        str: File content stripped of whitespace, or None if file doesn't exist
+    """
+    try:
+        return Path(filepath).read_text().strip()
+    except (FileNotFoundError, PermissionError, OSError):
+        logger.debug(f"Failed to read metadata file: {filepath}")
+        return None
+
+
 def get_git_commit_hash() -> t.Optional[str]:
     """Get the current git commit hash.
 
     Returns:
-        str: Git commit hash, or None if not in a git repository or git not available
+        str: Git commit hash, or None if not available
     """
+    if _is_containerized():
+        return _read_metadata_file("/oso.repo_sha.txt")
+
     try:
         hash_output = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, timeout=10
@@ -37,6 +66,9 @@ def get_git_branch() -> t.Optional[str]:
     Returns:
         str: Git branch name, or None if not available
     """
+    if _is_containerized():
+        return "main"
+
     try:
         branch_output = subprocess.check_output(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
@@ -59,6 +91,9 @@ def get_git_dirty_status() -> bool:
     Returns:
         bool: True if there are uncommitted changes, False otherwise
     """
+    if _is_containerized():
+        return False
+
     try:
         subprocess.check_output(
             ["git", "diff-index", "--quiet", "HEAD", "--"],
