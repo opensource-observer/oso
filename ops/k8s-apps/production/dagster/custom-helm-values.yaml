@@ -87,7 +87,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250820193511-beaf0d1 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250823025101-34ffd1c # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -95,36 +95,6 @@ spec:
             dagsterApiGrpcArgs:
               - "-m"
               - "oso_dagster.definitions.default"
-              - "--log-format"
-              - "json"
-            includeConfigInLaunchedRuns:
-              enabled: false
-          - name: "sqlmesh"
-            image:
-              repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250820193511-beaf0d1 # {"$imagepolicy": "flux-system:oso:tag"}
-              pullPolicy: Always
-            envConfigMaps:
-              - name: dagster-oso-extra-env
-            port: 3030
-            dagsterApiGrpcArgs:
-              - "-m"
-              - "oso_dagster.definitions.sqlmesh"
-              - "--log-format"
-              - "json"
-            includeConfigInLaunchedRuns:
-              enabled: false
-          - name: "ops"
-            image:
-              repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250820193511-beaf0d1 # {"$imagepolicy": "flux-system:oso:tag"}
-              pullPolicy: Always
-            envConfigMaps:
-              - name: dagster-oso-extra-env
-            port: 3030
-            dagsterApiGrpcArgs:
-              - "-m"
-              - "oso_dagster.definitions.ops"
               - "--log-format"
               - "json"
             includeConfigInLaunchedRuns:

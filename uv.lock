@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = "==3.12.*"
 resolution-markers = [
     "sys_platform != 'win32'",
@@ -240,7 +240,7 @@ wheels = [
 
 [[package]]
 name = "arize-phoenix"
-version = "11.0.0"
+version = "11.24.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioitertools" },
@@ -264,11 +264,14 @@ dependencies = [
     { name = "opentelemetry-proto" },
     { name = "opentelemetry-sdk" },
     { name = "opentelemetry-semantic-conventions" },
+    { name = "orjson" },
     { name = "pandas" },
+    { name = "prometheus-client" },
     { name = "protobuf" },
     { name = "psutil" },
     { name = "pyarrow" },
     { name = "pydantic" },
+    { name = "python-dateutil" },
     { name = "python-multipart" },
     { name = "scikit-learn" },
     { name = "scipy" },
@@ -281,9 +284,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/ac/461265fa101f5c928369b22c644c3c4663a0de90380868279c2eb4c96709/arize_phoenix-11.0.0.tar.gz", hash = "sha256:7576df5f735042b310858c55863625c589f2bad6c0d2896500e26f8559739126", size = 3887088, upload-time = "2025-06-25T00:32:42.9Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/ad/046da9f5e29f9649bb283916221401f0bf3966b2c819fa2f9f4d215a9fb8/arize_phoenix-11.24.0.tar.gz", hash = "sha256:7dcd2318201864b9d4dfc0703856c8fef5351a25278bb1fba7bee685faacb0a2", size = 2202020, upload-time = "2025-08-15T16:49:21.95Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/85/83/15fa45dbe51ba8426905649f0ab0fa20d7421bc50d99d85c800216565dbb/arize_phoenix-11.0.0-py3-none-any.whl", hash = "sha256:ad3873603cfd761156fd67bc390e1442c6e4f191bc5bbd04ff6ae2e52d9e7dbd", size = 4092871, upload-time = "2025-06-25T00:32:40.486Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/7a/4dabc856f1c93c5fb6852d7081c6a890f342cd9cd87aa1db665cab13eac5/arize_phoenix-11.24.0-py3-none-any.whl", hash = "sha256:2dc6e784938ae1ad25e33599a8bd410ca3563302793179b49e58002c5d8a0e1d", size = 2397857, upload-time = "2025-08-15T16:49:19.396Z" },
 ]
 
 [[package]]
@@ -1038,9 +1041,9 @@ dependencies = [
     { name = "pytest" },
     { name = "sqlmesh" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/4c/96dfe9713190c8a4ca1a0208ef9cfbdc3af6ef60841ff54a37e129a2c4c5/dagster_sqlmesh-0.20.0.tar.gz", hash = "sha256:8db2c520258187b8a66ba075f30cbd3a06d4d669fbb7462b9b04cd81b75c0f93", size = 166508 }
+sdist = { url = "https://files.pythonhosted.org/packages/c6/4c/96dfe9713190c8a4ca1a0208ef9cfbdc3af6ef60841ff54a37e129a2c4c5/dagster_sqlmesh-0.20.0.tar.gz", hash = "sha256:8db2c520258187b8a66ba075f30cbd3a06d4d669fbb7462b9b04cd81b75c0f93", size = 166508, upload-time = "2025-08-18T23:30:47.549Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/0f/81ad0b2bd4ab4453ec52c06f11a143271e4e24c5c6949656b6f96a0fdebc/dagster_sqlmesh-0.20.0-py3-none-any.whl", hash = "sha256:7b6227dfc078f5acfeae05a86a7c65831b2bc46123f89d90519a4c4f9993dc24", size = 37578 },
+    { url = "https://files.pythonhosted.org/packages/43/0f/81ad0b2bd4ab4453ec52c06f11a143271e4e24c5c6949656b6f96a0fdebc/dagster_sqlmesh-0.20.0-py3-none-any.whl", hash = "sha256:7b6227dfc078f5acfeae05a86a7c65831b2bc46123f89d90519a4c4f9993dc24", size = 37578, upload-time = "2025-08-18T23:30:46.32Z" },
 ]
 
 [[package]]
@@ -3841,7 +3844,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "arize-phoenix", extras = ["evals"], specifier = "==11.0.0" },
+    { name = "arize-phoenix", extras = ["evals"], specifier = "==11.24.0" },
     { name = "arize-phoenix-otel", specifier = ">=0.10.1" },
     { name = "discord-py", specifier = ">=2.5.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
@@ -4172,6 +4175,15 @@ wheels = [
 [package.optional-dependencies]
 pyarrow = [
     { name = "pyarrow" },
+]
+
+[[package]]
+name = "prometheus-client"
+version = "0.22.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/cf/40dde0a2be27cc1eb41e333d1a674a74ce8b8b0457269cc640fd42b07cf7/prometheus_client-0.22.1.tar.gz", hash = "sha256:190f1331e783cf21eb60bca559354e0a4d4378facecf78f5428c39b675d20d28", size = 69746, upload-time = "2025-06-02T14:29:01.152Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/ae/ec06af4fe3ee72d16973474f122541746196aaa16cea6f66d18b963c6177/prometheus_client-0.22.1-py3-none-any.whl", hash = "sha256:cca895342e308174341b2cbf99a56bef291fbc0ef7b9e5412a0f26d653ba7094", size = 58694, upload-time = "2025-06-02T14:29:00.068Z" },
 ]
 
 [[package]]

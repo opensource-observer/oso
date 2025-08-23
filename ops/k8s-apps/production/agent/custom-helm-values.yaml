@@ -8,9 +8,12 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20250820193511-beaf0d1 # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20250823025101-34ffd1c # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
+      service:
+        annotations:
+          tailscale.com/expose: "true"
       ingress:
         enabled: true
         className: ingress-internal-cloudflare

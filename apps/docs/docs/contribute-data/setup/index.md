@@ -184,6 +184,12 @@ determined by the parent folder of the asset within
 `warehouse/oso_dagster/definitions/`. For _most_ new assets, they should be
 added to `warehouse/oso_dagster/assets/default/`.
 
+:::Note
+At this time production is still using a _single_ code location. This is
+due to an issue with how dagster handles scheduling and jobs. See [this
+issue](https://github.com/opensource-observer/oso/issues/4840)
+:::
+
 #### Available Code Locations
 
 At this moment, the available code locations can be found in the repository at
@@ -192,9 +198,6 @@ At this moment, the available code locations can be found in the repository at
 - `sqlmesh`: This is the code location for _any_ assets
   related to sqlmesh. This is essentially anything that depends on the
   `dagster-sqlmesh` package.
-- `ops`: This code location contains no assets, instead
-  it is used for defining overarching "ops" related things like alert sensors,
-  scheduling, etc.
 - `default`: The default code location for all remaining
   assets that do not fit into the other categories.
 
@@ -207,8 +210,6 @@ location for example:
 
 ```bash
 uv run dagster dev -m oso_dagster.definitions.sqlmesh
-# ... or for the ops code location ...
-uv run dagster dev -m oso_dagster.definitions.ops
 ```
 
 Notice that after `-m` the code location's module path is specified. It is
