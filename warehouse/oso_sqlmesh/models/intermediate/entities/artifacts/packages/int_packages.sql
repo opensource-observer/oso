@@ -10,7 +10,7 @@ MODEL (
 /* TODO: Need a more robust way to order packages by semantic versioning */
 
 -- Extract and clean package data from staging
-WITH raw_packages AS (
+WITH github_packages AS (
   SELECT
     version AS package_version,
     system AS package_artifact_source,
@@ -18,31 +18,22 @@ WITH raw_packages AS (
     STR_SPLIT(project_name, '/')[@array_index(0)] AS package_github_owner,
     STR_SPLIT(project_name, '/')[@array_index(1)] AS package_github_repo
   FROM oso.stg_deps_dev__packages
+  WHERE project_type = 'GITHUB'
 ),
 
--- Map package sources to SBOM artifact sources
+-- Map package sources to SBOM artifact sources using macros
 package_source_mapping AS (
   SELECT
-    package_artifact_source,
-    package_artifact_name,
-    package_version,
-    package_github_owner,
-    package_github_repo,
-    CASE
-      WHEN package_artifact_source = 'CARGO' THEN 'RUST'
-      WHEN package_artifact_source = 'PYPI' THEN 'PIP'
-      ELSE package_artifact_source
-    END AS sbom_artifact_source,
-    CASE
-      WHEN package_artifact_source = 'NPM' THEN 'https://www.npmjs.com/package/' || package_artifact_name
-      WHEN package_artifact_source = 'PYPI' THEN 'https://pypi.org/project/' || package_artifact_name
-      WHEN package_artifact_source = 'CARGO' THEN 'https://crates.io/crates/' || package_artifact_name
-      WHEN package_artifact_source = 'GO' THEN 'https://pkg.go.dev/' || package_artifact_name
-      WHEN package_artifact_source = 'MAVEN' THEN 'https://mvnrepository.com/artifact/' || REPLACE(package_artifact_name, ':', '/')
-      WHEN package_artifact_source = 'NUGET' THEN 'https://www.nuget.org/packages/' || package_artifact_name
-      ELSE NULL
-    END AS package_url
-  FROM raw_packages
+    ghp.package_artifact_source,
+    ghp.package_artifact_name,
+    ghp.package_version,
+    ghp.package_github_owner,
+    ghp.package_github_repo,
+    sbom_details.artifact_source AS sbom_artifact_source,
+    pkg_details.artifact_url AS package_url
+  FROM github_packages AS ghp,
+  LATERAL @parse_depsdev_artifacts(ghp.package_artifact_source, ghp.package_artifact_name) AS pkg_details,
+  LATERAL @parse_sbom_artifacts(ghp.package_artifact_source, ghp.package_artifact_name) AS sbom_details
 ),
 
 -- Find the latest version for each package to determine current ownership
