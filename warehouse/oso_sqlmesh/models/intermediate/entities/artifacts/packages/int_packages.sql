@@ -10,7 +10,7 @@ MODEL (
 /* TODO: Need a more robust way to order packages by semantic versioning */
 
 -- Extract and clean package data from staging
-WITH raw_packages AS (
+WITH github_packages AS (
   SELECT
     version AS package_version,
     system AS package_artifact_source,
@@ -18,21 +18,22 @@ WITH raw_packages AS (
     STR_SPLIT(project_name, '/')[@array_index(0)] AS package_github_owner,
     STR_SPLIT(project_name, '/')[@array_index(1)] AS package_github_repo
   FROM oso.stg_deps_dev__packages
+  WHERE project_type = 'GITHUB'
 ),
 
 -- Map package sources to SBOM artifact sources using macros
 package_source_mapping AS (
   SELECT
-    rp.package_artifact_source,
-    rp.package_artifact_name,
-    rp.package_version,
-    rp.package_github_owner,
-    rp.package_github_repo,
+    ghp.package_artifact_source,
+    ghp.package_artifact_name,
+    ghp.package_version,
+    ghp.package_github_owner,
+    ghp.package_github_repo,
     sbom_details.artifact_source AS sbom_artifact_source,
     pkg_details.artifact_url AS package_url
-  FROM raw_packages AS rp,
-  LATERAL @parse_package_artifacts(rp.package_artifact_source, rp.package_artifact_name) AS pkg_details,
-  LATERAL @parse_sbom_artifacts(rp.package_artifact_source, rp.package_artifact_name) AS sbom_details
+  FROM github_packages AS ghp,
+  LATERAL @parse_depsdev_artifacts(ghp.package_artifact_source, ghp.package_artifact_name) AS pkg_details,
+  LATERAL @parse_sbom_artifacts(ghp.package_artifact_source, ghp.package_artifact_name) AS sbom_details
 ),
 
 -- Find the latest version for each package to determine current ownership
