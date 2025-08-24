@@ -91,7 +91,7 @@ def setup_mcp_app(config: MCPConfig):
         if not api_key:
             raise ValueError("OSO API key is not available in the context")
 
-        url = "https://www.opensource.observer/api/v1/text2sql"
+        url = config.text2sql_endpoint
         headers = {
             "Authorization": f"Bearer {api_key.get_secret_value()}",
             "Content-Type": "application/json",
