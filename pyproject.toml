@@ -70,7 +70,9 @@ dependencies = [
     "dagster-sqlmesh>=0.20.0",
     "oso-core",
     "pyoso",
-    "metrics-service"
+    "metrics-service",
+    "cryo>=0.3.2",
+    "web3>=7.13.0",
 ]
 name = "oso"
 version = "1.0.0"
