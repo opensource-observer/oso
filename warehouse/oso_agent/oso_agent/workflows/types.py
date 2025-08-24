@@ -113,6 +113,8 @@ class SemanticQueryEvent(Event):
     input_text: str
     remaining_tries: int = 5
     error_context: list[str] = []
+    synthesize_response: bool = True
+    execute_sql: bool = True
 
 
 class RetrySemanticQueryEvent(Event):
@@ -130,6 +132,8 @@ class RetrySemanticQueryEvent(Event):
     error: Exception
     remaining_tries: int
     error_context: list[str] = []
+    synthesize_response: bool = True
+    execute_sql: bool = True
 
 
 class StartQueryEngineEvent(Event):

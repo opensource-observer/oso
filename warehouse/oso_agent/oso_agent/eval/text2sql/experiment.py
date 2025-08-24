@@ -25,6 +25,7 @@ from ...datasets.text2sql import TEXT2SQL_DATASET
 from ...datasets.uploader import upload_dataset
 from ...util.asyncbase import setup_nest_asyncio
 from ...util.config import AgentConfig
+from ...util.metadata import collect_experiment_metadata
 from .evals import (
     oso_tables_match,
     results_exact_match,
@@ -38,6 +39,7 @@ setup_nest_asyncio()
 
 BASE_EXPERIMENT_NAME = "text2sql-experiment"
 SEMANTIC_EXPERIMENT_NAME = "text2sql-semantic-experiment"
+
 
 logger = logging.getLogger(__name__)
 
@@ -215,12 +217,18 @@ async def text2sql_experiment(
 
     description = _raw_options.get("description", "")
 
+    experiment_metadata = collect_experiment_metadata(
+        config=config,
+        workflow_cls=BasicText2SQL,
+        additional_metadata={"name": config.agent_name},
+    )
+
     return await runner.run(
         dataset=dataset,
         workflow_cls=BasicText2SQL,
         experiment_name=BASE_EXPERIMENT_NAME,
         experiment_description=description if description else None,
-        experiment_metadata={"agent_name": config.agent_name},
+        experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
             "start_event": Text2SQLStartEvent(
@@ -285,12 +293,18 @@ async def text2sql_semantic_experiment(
 
     description = _raw_options.get("description", "")
 
+    experiment_metadata = collect_experiment_metadata(
+        config=config,
+        workflow_cls=SemanticText2SQLWorkflow,
+        additional_metadata={"name": config.agent_name},
+    )
+
     return await runner.run(
         dataset=dataset,
         workflow_cls=SemanticText2SQLWorkflow,
         experiment_name=SEMANTIC_EXPERIMENT_NAME,
         experiment_description=description if description else None,
-        experiment_metadata={"agent_name": config.agent_name},
+        experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
             "start_event": Text2SQLStartEvent(
