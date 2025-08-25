@@ -7,14 +7,101 @@ from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def get_project_id() -> str:
+import logging
+from typing import Optional
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from requests.exceptions import RequestException, Timeout, ConnectionError
+
+logger = logging.getLogger(__name__)
+
+class GCPMetadataError(Exception):
+    """Custom exception for GCP metadata server errors."""
+    pass
+
+def create_requests_session(
+    retries: int = 3,
+    backoff_factor: float = 0.3,
+    status_forcelist: tuple = (500, 502, 503, 504),
+) -> requests.Session:
+    """Create a requests session with retry configuration.
+    
+    Args:
+        retries: Number of retries for failed requests
+        backoff_factor: Backoff factor between retries
+        status_forcelist: HTTP status codes to retry on
+        
+    Returns:
+        requests.Session: Configured session object
+    """
+    session = requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
+
+def get_project_id(timeout: int = 5, retries: int = 3) -> str:
+    """Retrieve GCP project ID from metadata server with robust error handling.
+    
+    Args:
+        timeout: Request timeout in seconds
+        retries: Number of retries for failed requests
+        
+    Returns:
+        str: GCP project ID
+        
+    Raises:
+        GCPMetadataError: If unable to retrieve project ID after retries
+    """
     project_id_url = (
         "http://metadata.google.internal/computeMetadata/v1/project/project-id"
     )
-    project_id = requests.get(
-        project_id_url, allow_redirects=True, headers={"Metadata-Flavor": "Google"}
-    ).content.decode("utf-8")
-    return project_id
+    headers = {
+        "Metadata-Flavor": "Google"
+    }
+    
+    session = create_requests_session(retries=retries)
+    
+    try:
+        response = session.get(
+            project_id_url,
+            timeout=timeout,
+            headers=headers,
+            allow_redirects=True
+        )
+        response.raise_for_status()
+        
+        project_id = response.content.decode("utf-8").strip()
+        if not project_id:
+            raise GCPMetadataError("Empty project ID received from metadata server")
+            
+        logger.debug(f"Successfully retrieved GCP project ID: {project_id}")
+        return project_id
+        
+    except Timeout:
+        error_msg = f"Timeout ({timeout}s) while connecting to GCP metadata server"
+        logger.error(error_msg)
+        raise GCPMetadataError(error_msg)
+        
+    except ConnectionError as e:
+        error_msg = f"Failed to connect to GCP metadata server: {str(e)}"
+        logger.error(error_msg)
+        raise GCPMetadataError(error_msg)
+        
+    except RequestException as e:
+        error_msg = f"Error retrieving GCP project ID: {str(e)}"
+        logger.error(error_msg)
+        raise GCPMetadataError(error_msg)
+        
+    finally:
+        session.close()
 
 
 def get_repo_sha() -> str:
@@ -72,15 +159,7 @@ class DagsterConfig(BaseSettings):
 
     gcp_bigquery_enabled: bool = False
 
-    sqlmesh_assets_on_default_code_location_enabled: bool = False
-    sqlmesh_dir: str = ""
-    sqlmesh_gateway: str = "local"
-    sqlmesh_catalog: str = "iceberg"
-    sqlmesh_schema: str = "oso"
-    sqlmesh_bq_export_dataset_id: str = "oso"
-    asset_cache_enabled: bool = False
-    asset_cache_dir: str = ""
-    asset_cache_default_ttl_seconds: int = 60 * 15
+  
 
     k8s_executor_enabled: bool = False
 
@@ -114,15 +193,7 @@ class DagsterConfig(BaseSettings):
 
     eagerly_load_sql_tables: bool = False
 
-    @model_validator(mode="after")
-    def handle_generated_config(self):
-        """Handles any configurations that can be generated from other configuration values"""
-        if not self.dagster_home:
-            self.dagster_home = os.path.join(self.repo_dir, ".dagster_local_home")
-        if not self.local_duckdb_path:
-            self.local_duckdb_path = os.path.join(self.dagster_home, "local.duckdb")
-        if not self.sqlmesh_dir:
-            self.sqlmesh_dir = os.path.join(self.repo_dir, "warehouse/oso_sqlmesh")
+   
 
         # If we happen to be in a kubernetes environment, k8s_enabled enables the
         # K8sResource to control k8s resources
