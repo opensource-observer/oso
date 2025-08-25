@@ -72,7 +72,7 @@ class DagsterConfig(BaseSettings):
 
     gcp_bigquery_enabled: bool = False
 
-    sqlmesh_assets_enabled: bool = False
+    sqlmesh_assets_on_default_code_location_enabled: bool = False
     sqlmesh_dir: str = ""
     sqlmesh_gateway: str = "local"
     sqlmesh_catalog: str = "iceberg"
