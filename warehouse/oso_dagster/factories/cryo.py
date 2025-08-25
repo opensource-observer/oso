@@ -1,7 +1,7 @@
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, Unpack
 
 import cryo
 import dlt
@@ -47,7 +47,7 @@ def cryo_resource_factory(global_config: DagsterConfig, config: CryoResourceConf
         write_disposition="replace",
     )
     async def cryo_resource():
-        resource_df, blocks_df = await collect_data(datatype, cryo_config)
+        resource_df, blocks_df = await collect_data(datatype, **cryo_config)
         resource_df = filter_data(resource_df, datatype)
         resource_df = enrich_data(resource_df, blocks_df)
 
@@ -63,17 +63,17 @@ def cryo_resource_factory(global_config: DagsterConfig, config: CryoResourceConf
 
 
 async def collect_data(
-    datatype: str, cryo_config: CryoCollectKwargs
+    datatype: str, **kwargs: Unpack[CryoCollectKwargs]
 ) -> tuple[pl.DataFrame, pl.DataFrame | None]:
     """Collects the main datatype and, if needed, the blocks data in parallel."""
     main_task = cryo.async_collect(
-        datatype=datatype, columns=["all"], include_columns=["all"], **cryo_config
+        datatype=datatype, columns=["all"], include_columns=["all"], **kwargs
     )
     if datatype != "blocks":
         blocks_task = cryo.async_collect(
             datatype="blocks",
             include_columns=["block_number", "timestamp"],
-            **cryo_config,
+            **kwargs,
         )
         main_df, blocks_df = await asyncio.gather(main_task, blocks_task)
         assert isinstance(main_df, pl.DataFrame)
