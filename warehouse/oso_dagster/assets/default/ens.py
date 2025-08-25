@@ -1,4 +1,3 @@
-import os
 from typing import Any
 
 from dagster import AssetExecutionContext
@@ -12,6 +11,12 @@ from oso_dagster.factories.graphql import (
     graphql_factory,
 )
 
+# TODO: the api key should be fetched from secrets utils (?)
+# TODO: The endpoint including API key will be logged in dagster.
+# TODO: if that's public, it could be a security risk.
+ENDPOINT = "https://api.goldsky.com/api/public/project_cmeb2e0d63tv701xhfnw8axvf/subgraphs/ens/1.0/gn"
+# ENDPOINT =f"https://gateway.thegraph.com/api/{os.environ['ENS_API_KEY']}/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH",
+
 
 def text_changeds_for_domain(
     context: AssetExecutionContext, global_config: DagsterConfig, data: Any
@@ -23,8 +28,7 @@ def text_changeds_for_domain(
 
     config = GraphQLResourceConfig(
         name=f"ens_text_changeds_for_resolver_{resolver_id}",
-        # TODO: the api key should be fetched from secrets utils (?)
-        endpoint=f"https://gateway.thegraph.com/api/{os.environ['ENS_API_KEY']}/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH",
+        endpoint=ENDPOINT,
         target_type="Query",
         target_query="textChangeds",
         max_depth=1,
@@ -72,11 +76,7 @@ def text_changeds_for_domain(
 def domains(context: AssetExecutionContext, global_config: DagsterConfig):
     config = GraphQLResourceConfig(
         name="domains",
-        # endpoint="https://api.goldsky.com/api/public/project_cmeb2e0d63tv701xhfnw8axvf/subgraphs/ens/1.0/gn",
-        # TODO: the api key should be fetched from secrets utils (?)
-        # TODO: The endpoint including API key will be logged in dagster.
-        # TODO: if that's public, it could be a security risk.
-        endpoint=f"https://gateway.thegraph.com/api/{os.environ['ENS_API_KEY']}/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH",
+        endpoint=ENDPOINT,
         target_type="Query",
         target_query="domains",
         max_depth=1,
