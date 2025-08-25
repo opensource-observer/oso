@@ -54,7 +54,7 @@ class DagsterConfig(BaseSettings):
     local_duckdb_path: str = ""
     dbt_profile_name: str = "opensource_observer"
     gcp_secrets_prefix: str = ""
-    use_local_secrets: bool = False
+    use_local_secrets: bool = True
     discord_webhook_url: t.Optional[str] = None
     test_assets_enabled: bool = False
     alerts_base_url: str = ""
@@ -72,6 +72,7 @@ class DagsterConfig(BaseSettings):
 
     gcp_bigquery_enabled: bool = False
 
+    sqlmesh_assets_on_default_code_location_enabled: bool = False
     sqlmesh_dir: str = ""
     sqlmesh_gateway: str = "local"
     sqlmesh_catalog: str = "iceberg"
@@ -128,6 +129,9 @@ class DagsterConfig(BaseSettings):
         k8s_service_host = os.environ.get("KUBERNETES_SERVICE_HOST")
         if not self.k8s_enabled and k8s_service_host is not None:
             self.k8s_enabled = True
+
+        if self.env == "production":
+            self.sqlmesh_assets_on_default_code_location_enabled = True
 
         return self
 

@@ -97,6 +97,30 @@ class EarlyResourcesAssetFactoryDAG:
         return subgraph
 
 
+def load_all_assets_from_packages(
+    packages: list[str],
+    resources: ResourcesContext,
+    include_tags: dict[str, str] | None = None,
+    exclude_tags: dict[str, str] | None = None,
+) -> AssetFactoryResponse:
+    """Loads all assets and factories from the given packages and any submodules
+    it they may have. The packages are referenced as a string and this allows
+    for lazy loading of packages so we can do conditional loading.
+
+    Args:
+        packages (list[str]): The packages to load assets and factories from.
+        resources (ResourcesContext): The resources context to use for loading
+            asset factories.
+    """
+    response: AssetFactoryResponse = AssetFactoryResponse([])
+    for package_str in packages:
+        package = importlib.import_module(package_str)
+        response += load_all_assets_from_package(
+            package, resources, include_tags, exclude_tags
+        )
+    return response
+
+
 def load_all_assets_from_package(
     package: ModuleType,
     resources: ResourcesContext,
