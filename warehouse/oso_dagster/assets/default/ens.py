@@ -31,7 +31,7 @@ def text_changeds_for_domain(
         parameters={
             "where": {
                 "type": "TextChangeds_filter!",
-                "value": {"resolver": {"id": resolver_id}},
+                "value": {"resolver_": {"id": resolver_id}},
             }
         },
         exclude=[
