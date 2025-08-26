@@ -1,0 +1,123 @@
+test_contributors_lifecycle_to_artifact_monthly:
+  model: oso.contributors_lifecycle_to_artifact_monthly
+  vars:
+    start: 2025-06-01
+    end: 2025-07-31
+  inputs:
+    oso.contributor_classifications_to_artifact_monthly:
+      rows:
+      # June 2025
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 1
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 9
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 6
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 3
+      # July 2025
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: full_time_contributors_monthly
+        amount: 6
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: new_contributors_monthly
+        amount: 3
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: active_contributors_monthly
+        amount: 13
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: part_time_contributors_monthly
+        amount: 7
+  outputs:
+    query:
+      rows:
+      # June 2025 - First period results (LAG returns NULL for all metrics, so COALESCE makes it 0)
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: 9
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: 6
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: 3
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: 1
+      - metrics_sample_date: '2025-06-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: -8 # 0 - (9 - 1 - 0)
+      # July 2025
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_active_contributors_monthly
+        amount: 4 # 13 - 9
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_full_time_contributors_monthly
+        amount: 0 # 6 - 6
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_part_time_contributors_monthly
+        amount: 4 # 7 - 3
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: change_in_new_contributors_monthly
+        amount: 2 # 3 - 1
+      - metrics_sample_date: '2025-07-01'
+        to_artifact_id: 'XGpq2zZsHiZbRLrEYibeOVMdBnNoWBTZalaRn9egwhI='
+        event_source: GITHUB
+        from_artifact_id: ''
+        metric: churned_contributors_monthly
+        amount: -1 # 9 - (13 - 3 - 0)
