@@ -150,3 +150,9 @@ class Client:
     def query(self, query: str, include_analytics: bool = True) -> QueryResponse:
         """Execute a SQL query and return the full response including analytics data."""
         return self.__query(query, include_analytics=include_analytics)
+
+    def dbapi_connection(self):
+        """Get a DBAPI 2.0 compatible connection."""
+        from .engine import PyosoDBApiConnection
+
+        return PyosoDBApiConnection(self)
