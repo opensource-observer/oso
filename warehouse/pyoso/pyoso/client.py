@@ -151,8 +151,24 @@ class Client:
         """Execute a SQL query and return the full response including analytics data."""
         return self.__query(query, include_analytics=include_analytics)
 
-    def dbapi_connection(self):
-        """Get a DBAPI 2.0 compatible connection."""
+    def dbapi_connection(self, force_without_pyodide: bool = False):
+        """Get a DBAPI 2.0 compatible connection.
+
+        This is experimental and incomplete. It will error unless forced right now.
+        """
+        if force_without_pyodide:
+            import warnings
+
+            warnings.warn(
+                "Forcing dbapi_connection without pyodide is not recommended."
+            )
+        else:
+            try:
+                import pyodide  # type: ignore # noqa: F401
+            except ImportError:
+                raise NotImplementedError(
+                    "dbapi_connection is not intended for use without pyodide. Please treat as not implemented."
+                )
         from .engine import PyosoDBApiConnection
 
         return PyosoDBApiConnection(self)
