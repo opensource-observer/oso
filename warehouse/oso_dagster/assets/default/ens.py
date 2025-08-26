@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 from dagster import AssetExecutionContext
@@ -11,45 +12,57 @@ from oso_dagster.factories.graphql import (
     graphql_factory,
 )
 
-# TODO: the api key should be fetched from secrets utils (?)
-# TODO: The endpoint including API key will be logged in dagster.
-# TODO: if that's public, it could be a security risk.
-ENDPOINT = "https://api.goldsky.com/api/public/project_cmeb2e0d63tv701xhfnw8axvf/subgraphs/ens/1.0/gn"
-# ENDPOINT =f"https://gateway.thegraph.com/api/{os.environ['ENS_API_KEY']}/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH",
+
+def get_endpoint():
+    # TODO: the api key should be fetched from secrets utils (?)
+    # TODO: The endpoint including API key will be logged in dagster.
+    # TODO: if that's public, it could be a security risk.
+    # ENDPOINT = "https://api.goldsky.com/api/public/project_cmeb2e0d63tv701xhfnw8axvf/subgraphs/ens/1.0/gn"
+    return f"https://gateway.thegraph.com/api/{os.environ['ENS_API_KEY']}/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH"
 
 
 def text_changeds_for_domain(
     context: AssetExecutionContext, global_config: DagsterConfig, data: Any
 ):
     if not (data and data.get("resolver")):
-        return
+        context.log.info(
+            f"No resolver for domain {data['name']}, skipping text_changeds."
+        )
+        # yield data
+        return None
 
     resolver_id = data["resolver"]["id"]
 
     config = GraphQLResourceConfig(
         name=f"ens_text_changeds_for_resolver_{resolver_id}",
-        endpoint=ENDPOINT,
+        endpoint=get_endpoint(),
         target_type="Query",
         target_query="textChangeds",
         max_depth=1,
         parameters={
             "where": {
-                "type": "TextChangeds_filter!",
+                "type": "TextChanged_filter!",
                 "value": {"resolver_": {"id": resolver_id}},
             }
         },
         exclude=[
             # "id",
-            "resolver",
+            # "resolver",
             # "blockNumer",
             # "transactionID",
             # "key",
             # "value",
         ],
-        transform_fn=lambda result: result["textChangeds"],
+        transform_fn=lambda result: (
+            context.log.info(f"Raw result for text_changeds: {result} on {data['id']}"),
+            [
+                {f"tc_{k}": v for k, v in item.items()}
+                for item in result["textChangeds"]
+            ],
+        )[1],
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
-            page_size=10,
+            page_size=100,
             max_pages=2,
             offset_field="skip",
             limit_field="first",
@@ -74,23 +87,25 @@ def text_changeds_for_domain(
     key_prefix="ens",
 )
 def domains(context: AssetExecutionContext, global_config: DagsterConfig):
+    context.log.info("ENS Fetcher version 1.0")
     config = GraphQLResourceConfig(
         name="domains",
-        endpoint=ENDPOINT,
+        endpoint=get_endpoint(),
         target_type="Query",
         target_query="domains",
-        max_depth=1,
+        max_depth=2,
         transform_fn=lambda result: result["domains"],
+        parameters={"orderBy": {"type": "Domain_orderBy", "value": "createdAt"}},
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
             page_size=10,
-            max_pages=2,  # this should be removed in production
+            max_pages=1,  # this should be removed in production
             offset_field="skip",
             limit_field="first",
             rate_limit_seconds=2.0,
         ),
         exclude=[
-            "id",
+            # "id",
             # "name",
             "labelhash",
             "labelName",
@@ -109,6 +124,7 @@ def domains(context: AssetExecutionContext, global_config: DagsterConfig):
             "registration",
             "wrappedDomain",
             "events",
+            "key",
         ],
         deps=[text_changeds_for_domain],
         retry=RetryConfig(

@@ -512,7 +512,8 @@ class FieldExpander:
         for arg in field.get("args", []):
             if arg.get("type", {}).get("kind") == "NON_NULL":
                 self.context.log.warning(
-                    f"GraphQLFactory: Skipping field '{field_name}' because it has a required argument '{arg['name']}' that cannot be provided."
+                    f"GraphQLFactory: Skipping field '{field_name}' in '{current_path}' "
+                    f"because it has a required argument '{arg['name']}' that cannot be provided."
                 )
                 return None
 
@@ -547,8 +548,8 @@ class FieldExpander:
         if depth >= self.max_depth and not is_pagination_field:
             if needs_expansion:
                 self.context.log.warning(
-                    f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' because it "
-                    f"requires subfields but reached max depth ({self.max_depth})."
+                    f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' in '{current_path}' "
+                    f"because it requires subfields but reached max depth ({self.max_depth})."
                 )
                 return None
             return field_name
@@ -561,7 +562,7 @@ class FieldExpander:
 
         if not expanded_fields and needs_expansion:
             self.context.log.warning(
-                f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' "
+                f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' in '{current_path}' "
                 f"because none of its subfields could be expanded."
             )
             return None
@@ -1150,6 +1151,11 @@ def _graphql_factory(
                             "total_items_processed": total_items,
                             "successful_pages": successful_pages,
                         },
+                    )
+
+                    # Log the result
+                    context.log.info(
+                        f"GraphQL query execution (page {successful_pages + 1}) succeeded with result: {result}"
                     )
 
                     if result is None:
