@@ -6,286 +6,291 @@ from pydantic import BaseModel
 
 
 class SocialLink(BaseModel):
-    created_at: Optional[str] = None
-    type: Optional[str] = None
-    updated_at: Optional[str] = None
-    url: Optional[str] = None
+    created_at: Optional[str] = Column("VARCHAR")
+    type: Optional[str] = Column("VARCHAR")
+    updated_at: Optional[str] = Column("VARCHAR")
+    url: Optional[str] = Column("VARCHAR")
 
 
 class Balance(BaseModel):
-    currency: Optional[str] = None
-    value: Optional[float] = None
-    value_in_cents: Optional[int] = None
+    currency: Optional[str] = Column("VARCHAR")
+    value: Optional[float] = Column("DOUBLE")
+    value_in_cents: Optional[int] = Column("BIGINT")
 
 
 class ActiveRecurringContributions(BaseModel):
-    collective_id: Optional[int] = None
-    monthly: Optional[int] = None
-    monthly_count: Optional[int] = None
-    yearly: Optional[int] = None
-    yearly_count: Optional[int] = None
+    collective_id: Optional[int] = Column("INTEGER")
+    monthly: Optional[int] = Column("INTEGER")
+    monthly_count: Optional[int] = Column("INTEGER")
+    yearly: Optional[int] = Column("INTEGER")
+    yearly_count: Optional[int] = Column("INTEGER")
 
 
 class Stats(BaseModel):
-    active_recurring_contributions: Optional[ActiveRecurringContributions] = None
-    balance: Optional[Balance] = None
-    total_amount_received: Optional[Balance] = None
+    active_recurring_contributions: Optional[ActiveRecurringContributions] = Column(
+        "ROW(?)"
+    )
+    balance: Optional[Balance] = Column("ROW(?)")
+    total_amount_received: Optional[Balance] = Column("ROW(?)")
 
 
 class Location(BaseModel):
-    address: Optional[str] = None
-    country: Optional[str] = None
-    id: Optional[str] = None
-    lat: Optional[float] = None
-    long: Optional[float] = None
-    name: Optional[str] = None
-    structured: Optional[str] = None
+    address: Optional[str] = Column("VARCHAR")
+    country: Optional[str] = Column("VARCHAR")
+    id: Optional[str] = Column("VARCHAR")
+    lat: Optional[float] = Column("DOUBLE")
+    long: Optional[float] = Column("DOUBLE")
+    name: Optional[str] = Column("VARCHAR")
+    structured: Optional[str] = Column("VARCHAR")
 
 
 class EarlyAccess(BaseModel):
-    crowdfunding_redesign: Optional[bool] = None
-    host_reports: Optional[bool] = None
+    crowdfunding_redesign: Optional[bool] = Column("BOOLEAN")
+    host_reports: Optional[bool] = Column("BOOLEAN")
 
 
 class Settings(BaseModel):
-    early_access: Optional[EarlyAccess] = None
+    early_access: Optional[EarlyAccess] = Column("ROW(?)")
 
 
 class Features(BaseModel):
-    about: Optional[str] = None
-    account_management: Optional[str] = None
-    agreements: Optional[str] = None
-    alipay: Optional[str] = None
-    all: Optional[str] = None
-    charge_hosting_fees: Optional[str] = None
-    chart_of_accounts: Optional[str] = None
-    collective_goals: Optional[str] = None
-    connected_accounts: Optional[str] = None
-    connect_bank_accounts: Optional[str] = None
-    contact_collective: Optional[str] = None
-    contact_form: Optional[str] = None
-    conversations: Optional[str] = None
-    create_collective: Optional[str] = None
-    email_notifications_panel: Optional[str] = None
-    emit_gift_cards: Optional[str] = None
-    events: Optional[str] = None
-    expected_funds: Optional[str] = None
-    expense_security_checks: Optional[str] = None
-    funds_grants_management: Optional[str] = None
-    host_dashboard: Optional[str] = None
-    multi_currency_expenses: Optional[str] = None
-    off_platform_transactions: Optional[str] = None
-    order: Optional[str] = None
-    paypal_donations: Optional[str] = None
-    paypal_payouts: Optional[str] = None
-    projects: Optional[str] = None
-    receive_expenses: Optional[str] = None
-    receive_financial_contributions: Optional[str] = None
-    receive_host_applications: Optional[str] = None
-    recurring_contributions: Optional[str] = None
-    request_virtual_cards: Optional[str] = None
-    restricted_funds: Optional[str] = None
-    stripe_payment_intent: Optional[str] = None
-    tax_forms: Optional[str] = None
-    team: Optional[str] = None
-    top_financial_contributors: Optional[str] = None
-    transactions: Optional[str] = None
-    transferwise: Optional[str] = None
-    updates: Optional[str] = None
-    use_expenses: Optional[str] = None
-    use_payment_methods: Optional[str] = None
-    vendors: Optional[str] = None
-    virtual_cards: Optional[str] = None
+    about: Optional[str] = Column("VARCHAR")
+    account_management: Optional[str] = Column("VARCHAR")
+    agreements: Optional[str] = Column("VARCHAR")
+    alipay: Optional[str] = Column("VARCHAR")
+    all: Optional[str] = Column("VARCHAR")
+    charge_hosting_fees: Optional[str] = Column("VARCHAR")
+    chart_of_accounts: Optional[str] = Column("VARCHAR")
+    collective_goals: Optional[str] = Column("VARCHAR")
+    connected_accounts: Optional[str] = Column("VARCHAR")
+    connect_bank_accounts: Optional[str] = Column("VARCHAR")
+    contact_collective: Optional[str] = Column("VARCHAR")
+    contact_form: Optional[str] = Column("VARCHAR")
+    conversations: Optional[str] = Column("VARCHAR")
+    create_collective: Optional[str] = Column("VARCHAR")
+    email_notifications_panel: Optional[str] = Column("VARCHAR")
+    emit_gift_cards: Optional[str] = Column("VARCHAR")
+    events: Optional[str] = Column("VARCHAR")
+    expected_funds: Optional[str] = Column("VARCHAR")
+    expense_security_checks: Optional[str] = Column("VARCHAR")
+    funds_grants_management: Optional[str] = Column("VARCHAR")
+    host_dashboard: Optional[str] = Column("VARCHAR")
+    multi_currency_expenses: Optional[str] = Column("VARCHAR")
+    off_platform_transactions: Optional[str] = Column("VARCHAR")
+    order: Optional[str] = Column("VARCHAR")
+    paypal_donations: Optional[str] = Column("VARCHAR")
+    paypal_payouts: Optional[str] = Column("VARCHAR")
+    projects: Optional[str] = Column("VARCHAR")
+    receive_expenses: Optional[str] = Column("VARCHAR")
+    receive_financial_contributions: Optional[str] = Column("VARCHAR")
+    receive_host_applications: Optional[str] = Column("VARCHAR")
+    recurring_contributions: Optional[str] = Column("VARCHAR")
+    request_virtual_cards: Optional[str] = Column("VARCHAR")
+    restricted_funds: Optional[str] = Column("VARCHAR")
+    stripe_payment_intent: Optional[str] = Column("VARCHAR")
+    tax_forms: Optional[str] = Column("VARCHAR")
+    team: Optional[str] = Column("VARCHAR")
+    top_financial_contributors: Optional[str] = Column("VARCHAR")
+    transactions: Optional[str] = Column("VARCHAR")
+    transferwise: Optional[str] = Column("VARCHAR")
+    updates: Optional[str] = Column("VARCHAR")
+    use_expenses: Optional[str] = Column("VARCHAR")
+    use_payment_methods: Optional[str] = Column("VARCHAR")
+    vendors: Optional[str] = Column("VARCHAR")
+    virtual_cards: Optional[str] = Column("VARCHAR")
 
 
 class CollectiveMinimumAdmins(BaseModel):
-    applies: Optional[str] = None
-    freeze: Optional[bool] = None
-    number_of_admins: Optional[int] = None
+    applies: Optional[str] = Column("VARCHAR")
+    freeze: Optional[bool] = Column("BOOLEAN")
+    number_of_admins: Optional[int] = Column("INTEGER")
 
 
 class Policies(BaseModel):
-    collective_minimum_admins: Optional[CollectiveMinimumAdmins] = None
+    collective_minimum_admins: Optional[CollectiveMinimumAdmins] = Column("ROW(?)")
 
 
 class AddFunds(BaseModel):
-    allowed: Optional[bool] = None
-    reason: Optional[str] = None
-    reason_details: Optional[str] = None
+    allowed: Optional[bool] = Column("BOOLEAN")
+    reason: Optional[str] = Column("VARCHAR")
+    reason_details: Optional[str] = Column("VARCHAR")
 
 
 class Permissions(BaseModel):
-    add_funds: Optional[AddFunds] = None
+    add_funds: Optional[AddFunds] = Column("ROW(?)")
 
 
 class TransactionReportNode(BaseModel):
-    date: Optional[str] = None
+    date: Optional[str] = Column("VARCHAR")
 
 
 class TransactionReports(BaseModel):
-    date_from: Optional[str] = None
-    date_to: Optional[str] = None
-    nodes: Optional[List[TransactionReportNode]] = None
-    time_unit: Optional[str] = None
+    date_from: Optional[str] = Column("VARCHAR")
+    date_to: Optional[str] = Column("VARCHAR")
+    nodes: Optional[List[TransactionReportNode]] = Column("ARRAY(ROW(?))")
+    time_unit: Optional[str] = Column("VARCHAR")
 
 
-# Complex nested structures for parent_account
 class ParentAccountFeatures(BaseModel):
-    about: Optional[str] = None
-    account_management: Optional[str] = None
-    agreements: Optional[str] = None
-    alipay: Optional[str] = None
-    all: Optional[str] = None
-    charge_hosting_fees: Optional[str] = None
-    chart_of_accounts: Optional[str] = None
-    collective_goals: Optional[str] = None
-    connected_accounts: Optional[str] = None
-    connect_bank_accounts: Optional[str] = None
-    contact_collective: Optional[str] = None
-    contact_form: Optional[str] = None
-    conversations: Optional[str] = None
-    create_collective: Optional[str] = None
-    email_notifications_panel: Optional[str] = None
-    emit_gift_cards: Optional[str] = None
-    events: Optional[str] = None
-    expected_funds: Optional[str] = None
-    expense_security_checks: Optional[str] = None
-    funds_grants_management: Optional[str] = None
-    host_dashboard: Optional[str] = None
-    multi_currency_expenses: Optional[str] = None
-    off_platform_transactions: Optional[str] = None
-    order: Optional[str] = None
-    paypal_donations: Optional[str] = None
-    paypal_payouts: Optional[str] = None
-    projects: Optional[str] = None
-    receive_expenses: Optional[str] = None
-    receive_financial_contributions: Optional[str] = None
-    receive_host_applications: Optional[str] = None
-    recurring_contributions: Optional[str] = None
-    request_virtual_cards: Optional[str] = None
-    restricted_funds: Optional[str] = None
-    stripe_payment_intent: Optional[str] = None
-    tax_forms: Optional[str] = None
-    team: Optional[str] = None
-    top_financial_contributors: Optional[str] = None
-    transactions: Optional[str] = None
-    transferwise: Optional[str] = None
-    updates: Optional[str] = None
-    use_expenses: Optional[str] = None
-    use_payment_methods: Optional[str] = None
-    vendors: Optional[str] = None
-    virtual_cards: Optional[str] = None
-    id: Optional[str] = None
+    about: Optional[str] = Column("VARCHAR")
+    account_management: Optional[str] = Column("VARCHAR")
+    agreements: Optional[str] = Column("VARCHAR")
+    alipay: Optional[str] = Column("VARCHAR")
+    all: Optional[str] = Column("VARCHAR")
+    charge_hosting_fees: Optional[str] = Column("VARCHAR")
+    chart_of_accounts: Optional[str] = Column("VARCHAR")
+    collective_goals: Optional[str] = Column("VARCHAR")
+    connected_accounts: Optional[str] = Column("VARCHAR")
+    connect_bank_accounts: Optional[str] = Column("VARCHAR")
+    contact_collective: Optional[str] = Column("VARCHAR")
+    contact_form: Optional[str] = Column("VARCHAR")
+    conversations: Optional[str] = Column("VARCHAR")
+    create_collective: Optional[str] = Column("VARCHAR")
+    email_notifications_panel: Optional[str] = Column("VARCHAR")
+    emit_gift_cards: Optional[str] = Column("VARCHAR")
+    events: Optional[str] = Column("VARCHAR")
+    expected_funds: Optional[str] = Column("VARCHAR")
+    expense_security_checks: Optional[str] = Column("VARCHAR")
+    funds_grants_management: Optional[str] = Column("VARCHAR")
+    host_dashboard: Optional[str] = Column("VARCHAR")
+    multi_currency_expenses: Optional[str] = Column("VARCHAR")
+    off_platform_transactions: Optional[str] = Column("VARCHAR")
+    order: Optional[str] = Column("VARCHAR")
+    paypal_donations: Optional[str] = Column("VARCHAR")
+    paypal_payouts: Optional[str] = Column("VARCHAR")
+    projects: Optional[str] = Column("VARCHAR")
+    receive_expenses: Optional[str] = Column("VARCHAR")
+    receive_financial_contributions: Optional[str] = Column("VARCHAR")
+    receive_host_applications: Optional[str] = Column("VARCHAR")
+    recurring_contributions: Optional[str] = Column("VARCHAR")
+    request_virtual_cards: Optional[str] = Column("VARCHAR")
+    restricted_funds: Optional[str] = Column("VARCHAR")
+    stripe_payment_intent: Optional[str] = Column("VARCHAR")
+    tax_forms: Optional[str] = Column("VARCHAR")
+    team: Optional[str] = Column("VARCHAR")
+    top_financial_contributors: Optional[str] = Column("VARCHAR")
+    transactions: Optional[str] = Column("VARCHAR")
+    transferwise: Optional[str] = Column("VARCHAR")
+    updates: Optional[str] = Column("VARCHAR")
+    use_expenses: Optional[str] = Column("VARCHAR")
+    use_payment_methods: Optional[str] = Column("VARCHAR")
+    vendors: Optional[str] = Column("VARCHAR")
+    virtual_cards: Optional[str] = Column("VARCHAR")
+    id: Optional[str] = Column("VARCHAR")
 
 
 class VATSettings(BaseModel):
-    type: Optional[str] = None
+    type: Optional[str] = Column("VARCHAR")
 
 
 class CollectivePageBackground(BaseModel):
-    crop_x: Optional[int] = None
-    crop_y: Optional[int] = None
-    is_aligned_right: Optional[bool] = None
-    media_size_height: Optional[int] = None
-    media_size_width: Optional[int] = None
-    zoom: Optional[str] = None
+    crop_x: Optional[int] = Column("INTEGER")
+    crop_y: Optional[int] = Column("INTEGER")
+    is_aligned_right: Optional[bool] = Column("BOOLEAN")
+    media_size_height: Optional[int] = Column("INTEGER")
+    media_size_width: Optional[int] = Column("INTEGER")
+    zoom: Optional[str] = Column("VARCHAR")
 
 
 class CollectivePage(BaseModel):
-    background: Optional[CollectivePageBackground] = None
+    background: Optional[CollectivePageBackground] = Column("ROW(?)")
 
 
 class ParentAccountSettings(BaseModel):
-    vat: Optional[VATSettings] = None
-    collective_page: Optional[CollectivePage] = None
+    vat: Optional[VATSettings] = Column("ROW(?)")
+    collective_page: Optional[CollectivePage] = Column("ROW(?)")
 
 
 class ParentAccountStats(BaseModel):
-    active_recurring_contributions: Optional[ActiveRecurringContributions] = None
-    contributions_count: Optional[int] = None
-    contributors_count: Optional[int] = None
-    id: Optional[str] = None
+    active_recurring_contributions: Optional[ActiveRecurringContributions] = Column(
+        "ROW(?)"
+    )
+    contributions_count: Optional[int] = Column("INTEGER")
+    contributors_count: Optional[int] = Column("INTEGER")
+    id: Optional[str] = Column("VARCHAR")
 
 
 class ParentAccountPolicies(BaseModel):
-    collective_admins_can_refund: Optional[str] = None
-    collective_admins_can_see_payout_methods: Optional[str] = None
-    expense_public_vendors: Optional[str] = None
-    require_2fa_for_admins: Optional[str] = None
-    id: Optional[str] = None
+    collective_admins_can_refund: Optional[str] = Column("VARCHAR")
+    collective_admins_can_see_payout_methods: Optional[str] = Column("VARCHAR")
+    expense_public_vendors: Optional[str] = Column("VARCHAR")
+    require_2fa_for_admins: Optional[str] = Column("VARCHAR")
+    id: Optional[str] = Column("VARCHAR")
 
 
 class ParentAccountPermissions(BaseModel):
-    id: Optional[str] = None
+    id: Optional[str] = Column("VARCHAR")
 
 
 class ParentAccount(BaseModel):
-    background_image_url: Optional[str] = None
-    can_have_changelog_updates: Optional[bool] = None
-    categories: Optional[List[str]] = None
-    connected_accounts: Optional[str] = None
-    created_at: Optional[str] = None
-    currency: Optional[str] = None
-    description: Optional[str] = None
-    duplicated_from_account: Optional[str] = None
-    emails: Optional[str] = None
-    expense_policy: Optional[str] = None
-    features: Optional[ParentAccountFeatures] = None
-    github_handle: Optional[str] = None
-    id: Optional[str] = None
-    image_url: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_admin: Optional[bool] = None
-    is_archived: Optional[bool] = None
-    is_frozen: Optional[bool] = None
-    is_host: Optional[bool] = None
-    is_incognito: Optional[bool] = None
-    is_suspended: Optional[bool] = None
-    is_verified: Optional[bool] = None
-    legacy_id: Optional[int] = None
-    legal_documents: Optional[str] = None
-    legal_name: Optional[str] = None
-    location: Optional[Location] = None
-    long_description: Optional[str] = None
-    member_invitations: Optional[str] = None
-    name: Optional[str] = None
-    parent_account: Optional[str] = None
-    payment_methods: Optional[str] = None
-    payment_methods_with_pending_confirmation: Optional[str] = None
-    payout_methods: Optional[str] = None
-    permissions: Optional[ParentAccountPermissions] = None
-    policies: Optional[ParentAccountPolicies] = None
-    repository_url: Optional[str] = None
-    settings: Optional[ParentAccountSettings] = None
-    slug: Optional[str] = None
-    social_links: Optional[List[SocialLink]] = None
-    stats: Optional[ParentAccountStats] = None
-    supported_expense_types: Optional[List[str]] = None
-    tags: Optional[List[str]] = None
-    transaction_reports: Optional[TransactionReports] = None
-    transferwise: Optional[str] = None
-    twitter_handle: Optional[str] = None
-    type: Optional[str] = None
-    updated_at: Optional[str] = None
-    website: Optional[str] = None
+    background_image_url: Optional[str] = Column("VARCHAR")
+    can_have_changelog_updates: Optional[bool] = Column("BOOLEAN")
+    categories: Optional[List[str]] = Column("ARRAY(VARCHAR)")
+    connected_accounts: Optional[str] = Column("VARCHAR")
+    created_at: Optional[str] = Column("VARCHAR")
+    currency: Optional[str] = Column("VARCHAR")
+    description: Optional[str] = Column("VARCHAR")
+    duplicated_from_account: Optional[str] = Column("VARCHAR")
+    emails: Optional[str] = Column("VARCHAR")
+    expense_policy: Optional[str] = Column("VARCHAR")
+    features: Optional[ParentAccountFeatures] = Column("ROW(?)")
+    github_handle: Optional[str] = Column("VARCHAR")
+    id: Optional[str] = Column("VARCHAR")
+    image_url: Optional[str] = Column("VARCHAR")
+    is_active: Optional[bool] = Column("BOOLEAN")
+    is_admin: Optional[bool] = Column("BOOLEAN")
+    is_archived: Optional[bool] = Column("BOOLEAN")
+    is_frozen: Optional[bool] = Column("BOOLEAN")
+    is_host: Optional[bool] = Column("BOOLEAN")
+    is_incognito: Optional[bool] = Column("BOOLEAN")
+    is_suspended: Optional[bool] = Column("BOOLEAN")
+    is_verified: Optional[bool] = Column("BOOLEAN")
+    legacy_id: Optional[int] = Column("INTEGER")
+    legal_documents: Optional[str] = Column("VARCHAR")
+    legal_name: Optional[str] = Column("VARCHAR")
+    location: Optional[Location] = Column("ROW(?)")
+    long_description: Optional[str] = Column("VARCHAR")
+    member_invitations: Optional[str] = Column("VARCHAR")
+    name: Optional[str] = Column("VARCHAR")
+    parent_account: Optional[str] = Column("VARCHAR")
+    payment_methods: Optional[str] = Column("VARCHAR")
+    payment_methods_with_pending_confirmation: Optional[str] = Column("VARCHAR")
+    payout_methods: Optional[str] = Column("VARCHAR")
+    permissions: Optional[ParentAccountPermissions] = Column("ROW(?)")
+    policies: Optional[ParentAccountPolicies] = Column("ROW(?)")
+    repository_url: Optional[str] = Column("VARCHAR")
+    settings: Optional[ParentAccountSettings] = Column("ROW(?)")
+    slug: Optional[str] = Column("VARCHAR")
+    social_links: Optional[List[SocialLink]] = Column("ARRAY(ROW(?))")
+    stats: Optional[ParentAccountStats] = Column("ROW(?)")
+    supported_expense_types: Optional[List[str]] = Column("ARRAY(VARCHAR)")
+    tags: Optional[List[str]] = Column("ARRAY(VARCHAR)")
+    transaction_reports: Optional[TransactionReports] = Column("ROW(?)")
+    transferwise: Optional[str] = Column("VARCHAR")
+    twitter_handle: Optional[str] = Column("VARCHAR")
+    type: Optional[str] = Column("VARCHAR")
+    updated_at: Optional[str] = Column("VARCHAR")
+    website: Optional[str] = Column("VARCHAR")
 
 
 class TransferwiseAvailableCurrency(BaseModel):
-    code: Optional[str] = None
-    min_invoice_amount: Optional[int] = None
+    code: Optional[str] = Column("VARCHAR")
+    min_invoice_amount: Optional[int] = Column("INTEGER")
 
 
 class TransferwiseBalance(BaseModel):
-    currency: Optional[str] = None
-    value: Optional[float] = None
-    value_in_cents: Optional[int] = None
+    currency: Optional[str] = Column("VARCHAR")
+    value: Optional[float] = Column("DOUBLE")
+    value_in_cents: Optional[int] = Column("BIGINT")
 
 
 class Transferwise(BaseModel):
-    amount_batched: Optional[float] = None
-    available_currencies: Optional[List[TransferwiseAvailableCurrency]] = None
-    balances: Optional[List[TransferwiseBalance]] = None
-    id: Optional[str] = None
+    amount_batched: Optional[float] = Column("DOUBLE")
+    available_currencies: Optional[List[TransferwiseAvailableCurrency]] = Column(
+        "ARRAY(ROW(?))"
+    )
+    balances: Optional[List[TransferwiseBalance]] = Column("ARRAY(ROW(?))")
+    id: Optional[str] = Column("VARCHAR")
 
 
 class Accounts(BaseModel):
@@ -311,269 +316,25 @@ class Accounts(BaseModel):
     is_active: bool | None = Column("BOOLEAN")
     is_host: bool | None = Column("BOOLEAN")
     is_admin: bool | None = Column("BOOLEAN")
-    settings: Settings | None = Column(
-        "ROW(early_access ROW(crowdfunding_redesign BOOLEAN, host_reports BOOLEAN))"
-    )
+    settings: Settings | None = Column("ROW(?)")
     supported_expense_types: List[str] | None = Column("ARRAY(VARCHAR)")
     categories: List[str] | None = Column("ARRAY(VARCHAR)")
-    stats: Stats | None = Column(
-        "ROW("
-        "active_recurring_contributions ROW("
-        "collective_id INTEGER, "
-        "monthly INTEGER, "
-        "monthly_count INTEGER, "
-        "yearly INTEGER, "
-        "yearly_count INTEGER"
-        "), "
-        "balance ROW(currency VARCHAR, value DOUBLE, value_in_cents BIGINT), "
-        "total_amount_received ROW("
-        "currency VARCHAR, "
-        "value DOUBLE, "
-        "value_in_cents BIGINT"
-        ")"
-        ")"
-    )
+    stats: Stats | None = Column("ROW(?)")
     can_have_changelog_updates: bool | None = Column("BOOLEAN")
-    features: Features | None = Column(
-        "ROW("
-        "about VARCHAR, "
-        "account_management VARCHAR, "
-        "agreements VARCHAR, "
-        "alipay VARCHAR, "
-        '"all" VARCHAR, '
-        "charge_hosting_fees VARCHAR, "
-        "chart_of_accounts VARCHAR, "
-        "collective_goals VARCHAR, "
-        "connected_accounts VARCHAR, "
-        "connect_bank_accounts VARCHAR, "
-        "contact_collective VARCHAR, "
-        "contact_form VARCHAR, "
-        "conversations VARCHAR, "
-        "create_collective VARCHAR, "
-        "email_notifications_panel VARCHAR, "
-        "emit_gift_cards VARCHAR, "
-        "events VARCHAR, "
-        "expected_funds VARCHAR, "
-        "expense_security_checks VARCHAR, "
-        "funds_grants_management VARCHAR, "
-        "host_dashboard VARCHAR, "
-        "multi_currency_expenses VARCHAR, "
-        "off_platform_transactions VARCHAR, "
-        '"order" VARCHAR, '
-        "paypal_donations VARCHAR, "
-        "paypal_payouts VARCHAR, "
-        "projects VARCHAR, "
-        "receive_expenses VARCHAR, "
-        "receive_financial_contributions VARCHAR, "
-        "receive_host_applications VARCHAR, "
-        "recurring_contributions VARCHAR, "
-        "request_virtual_cards VARCHAR, "
-        "restricted_funds VARCHAR, "
-        "stripe_payment_intent VARCHAR, "
-        "tax_forms VARCHAR, "
-        "team VARCHAR, "
-        "top_financial_contributors VARCHAR, "
-        "transactions VARCHAR, "
-        "transferwise VARCHAR, "
-        "updates VARCHAR, "
-        "use_expenses VARCHAR, "
-        "use_payment_methods VARCHAR, "
-        "vendors VARCHAR, "
-        "virtual_cards VARCHAR"
-        ")"
-    )
-    policies: Policies | None = Column(
-        "ROW("
-        "collective_minimum_admins ROW("
-        "applies VARCHAR, "
-        '"freeze" BOOLEAN, '
-        "number_of_admins INTEGER"
-        ")"
-        ")"
-    )
-    permissions: Permissions | None = Column(
-        "ROW(add_funds ROW(allowed BOOLEAN, reason VARCHAR, reason_details VARCHAR))"
-    )
-    transaction_reports: TransactionReports | None = Column(
-        "ROW("
-        "date_from VARCHAR, "
-        "date_to VARCHAR, "
-        "nodes ARRAY(ROW(date VARCHAR)), "
-        "time_unit VARCHAR"
-        ")"
-    )
+    features: Features | None = Column("ROW(?)")
+    policies: Policies | None = Column("ROW(?)")
+    permissions: Permissions | None = Column("ROW(?)")
+    transaction_reports: TransactionReports | None = Column("ROW(?)")
     description: str | None = Column("VARCHAR")
     website: str | None = Column("VARCHAR")
     background_image_url: str | None = Column("VARCHAR")
     tags: List[str] | None = Column("ARRAY(VARCHAR)")
     github_handle: str | None = Column("VARCHAR")
     repository_url: str | None = Column("VARCHAR")
-    location: Location | None = Column(
-        "ROW("
-        "address VARCHAR, "
-        "country VARCHAR, "
-        "id VARCHAR, "
-        "lat DOUBLE, "
-        "long DOUBLE, "
-        "name VARCHAR, "
-        "structured VARCHAR"
-        ")"
-    )
-    parent_account: ParentAccount | None = Column(
-        "ROW("
-        "background_image_url VARCHAR, "
-        "can_have_changelog_updates BOOLEAN, "
-        "categories ARRAY(VARCHAR), "
-        "connected_accounts VARCHAR, "
-        "created_at VARCHAR, "
-        "currency VARCHAR, "
-        "description VARCHAR, "
-        "duplicated_from_account VARCHAR, "
-        "emails VARCHAR, "
-        "expense_policy VARCHAR, "
-        "features ROW("
-        "about VARCHAR, "
-        "account_management VARCHAR, "
-        "agreements VARCHAR, "
-        "alipay VARCHAR, "
-        '"all" VARCHAR, '
-        "charge_hosting_fees VARCHAR, "
-        "chart_of_accounts VARCHAR, "
-        "collective_goals VARCHAR, "
-        "connected_accounts VARCHAR, "
-        "connect_bank_accounts VARCHAR, "
-        "contact_collective VARCHAR, "
-        "contact_form VARCHAR, "
-        "conversations VARCHAR, "
-        "create_collective VARCHAR, "
-        "email_notifications_panel VARCHAR, "
-        "emit_gift_cards VARCHAR, "
-        "events VARCHAR, "
-        "expected_funds VARCHAR, "
-        "expense_security_checks VARCHAR, "
-        "funds_grants_management VARCHAR, "
-        "host_dashboard VARCHAR, "
-        "multi_currency_expenses VARCHAR, "
-        "off_platform_transactions VARCHAR, "
-        '"order" VARCHAR, '
-        "paypal_donations VARCHAR, "
-        "paypal_payouts VARCHAR, "
-        "projects VARCHAR, "
-        "receive_expenses VARCHAR, "
-        "receive_financial_contributions VARCHAR, "
-        "receive_host_applications VARCHAR, "
-        "recurring_contributions VARCHAR, "
-        "request_virtual_cards VARCHAR, "
-        "restricted_funds VARCHAR, "
-        "stripe_payment_intent VARCHAR, "
-        "tax_forms VARCHAR, "
-        "team VARCHAR, "
-        "top_financial_contributors VARCHAR, "
-        "transactions VARCHAR, "
-        "transferwise VARCHAR, "
-        "updates VARCHAR, "
-        "use_expenses VARCHAR, "
-        "use_payment_methods VARCHAR, "
-        "vendors VARCHAR, "
-        "virtual_cards VARCHAR, "
-        "id VARCHAR"
-        "), "
-        "github_handle VARCHAR, "
-        "id VARCHAR, "
-        "image_url VARCHAR, "
-        "is_active BOOLEAN, "
-        "is_admin BOOLEAN, "
-        "is_archived BOOLEAN, "
-        "is_frozen BOOLEAN, "
-        "is_host BOOLEAN, "
-        "is_incognito BOOLEAN, "
-        "is_suspended BOOLEAN, "
-        "is_verified BOOLEAN, "
-        "legacy_id INTEGER, "
-        "legal_documents VARCHAR, "
-        "legal_name VARCHAR, "
-        "location ROW("
-        "address VARCHAR, "
-        "country VARCHAR, "
-        "id VARCHAR, "
-        "lat DOUBLE, "
-        "long DOUBLE, "
-        "name VARCHAR, "
-        "structured VARCHAR"
-        "), "
-        "long_description VARCHAR, "
-        "member_invitations VARCHAR, "
-        "name VARCHAR, "
-        "parent_account VARCHAR, "
-        "payment_methods VARCHAR, "
-        "payment_methods_with_pending_confirmation VARCHAR, "
-        "payout_methods VARCHAR, "
-        "permissions ROW(id VARCHAR), "
-        "policies ROW("
-        "collective_admins_can_refund VARCHAR, "
-        "collective_admins_can_see_payout_methods VARCHAR, "
-        "expense_public_vendors VARCHAR, "
-        "require_2fa_for_admins VARCHAR, "
-        "id VARCHAR"
-        "), "
-        "repository_url VARCHAR, "
-        "settings ROW("
-        "vat ROW(type VARCHAR), "
-        "collective_page ROW("
-        "background ROW("
-        "crop_x INTEGER, "
-        "crop_y INTEGER, "
-        "is_aligned_right BOOLEAN, "
-        "media_size_height INTEGER, "
-        "media_size_width INTEGER, "
-        "zoom VARCHAR"
-        ")"
-        ")"
-        "), "
-        "slug VARCHAR, "
-        "social_links ARRAY("
-        "ROW(created_at VARCHAR, type VARCHAR, updated_at VARCHAR, url VARCHAR)"
-        "), "
-        "stats ROW("
-        "active_recurring_contributions ROW("
-        "collective_id INTEGER, "
-        "monthly INTEGER, "
-        "monthly_count INTEGER, "
-        "yearly INTEGER, "
-        "yearly_count INTEGER"
-        "), "
-        "contributions_count INTEGER, "
-        "contributors_count INTEGER, "
-        "id VARCHAR"
-        "), "
-        "supported_expense_types ARRAY(VARCHAR), "
-        "tags ARRAY(VARCHAR), "
-        "transaction_reports ROW("
-        "date_from VARCHAR, "
-        "date_to VARCHAR, "
-        "nodes ARRAY(ROW(date VARCHAR)), "
-        "time_unit VARCHAR"
-        "), "
-        "transferwise VARCHAR, "
-        "twitter_handle VARCHAR, "
-        "type VARCHAR, "
-        "updated_at VARCHAR, "
-        "website VARCHAR"
-        ")"
-    )
+    location: Location | None = Column("ROW(?)")
+    parent_account: ParentAccount | None = Column("ROW(?)")
     twitter_handle: str | None = Column("VARCHAR")
-    transferwise: Transferwise | None = Column(
-        "ROW("
-        "amount_batched DOUBLE, "
-        "available_currencies ARRAY("
-        "ROW(code VARCHAR, min_invoice_amount INTEGER)"
-        "), "
-        "balances ARRAY("
-        "ROW(currency VARCHAR, value DOUBLE, value_in_cents BIGINT)"
-        "), "
-        "id VARCHAR"
-        ")"
-    )
+    transferwise: Transferwise | None = Column("ROW(?)")
     member_invitations: List[str] | None = Column("ARRAY(VARCHAR)")
     legal_documents: List[str] | None = Column("ARRAY(VARCHAR)")
     emails: List[str] | None = Column("ARRAY(VARCHAR)")
