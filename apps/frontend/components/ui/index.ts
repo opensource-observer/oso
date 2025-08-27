@@ -39,6 +39,8 @@ import {
   SidebarMenuSubItemMeta,
   SidebarMenuSubMeta,
   SidebarMeta,
+  SidebarProvider,
+  SidebarProviderMeta,
   SidebarRail,
   SidebarRailMeta,
   SidebarSeparator,
@@ -103,6 +105,7 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(Skeleton, SkeletonMeta);
   PLASMIC.registerComponent(ToolTip, ToolTipMeta);
   PLASMIC.registerComponent(Sidebar, SidebarMeta);
+  PLASMIC.registerComponent(SidebarProvider, SidebarProviderMeta);
   PLASMIC.registerComponent(SidebarContent, SidebarContentMeta);
   PLASMIC.registerComponent(SidebarHeader, SidebarHeaderMeta);
   PLASMIC.registerComponent(SidebarFooter, SidebarFooterMeta);
