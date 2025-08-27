@@ -64,41 +64,41 @@ lifecycle as (
       'to_{entity_type}_id',
       table_alias := history
     ),
-    LAG(history.active) OVER (
+    COALESCE(LAG(history.active) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
         table_alias := history
       ), event_source
       ORDER BY history.metrics_sample_date
-    ) - (history.active - history.new - history.resurrected) as churn,
-    LAG(history.full) OVER (
+    ), 0) - (history.active - history.new - history.resurrected) as churn,
+    history.full - COALESCE(LAG(history.full) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
         table_alias := history
       ), event_source
       ORDER BY history.metrics_sample_date
-    ) - history.full as change_in_full_time_contributors,
-    LAG(history.part) OVER (
+    ), 0) as change_in_full_time_contributors,
+    history.part - COALESCE(LAG(history.part) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
         table_alias := history
       ), event_source
       ORDER BY history.metrics_sample_date
-    ) - history.part as change_in_part_time_contributors,
-    LAG(history.new) OVER (
+    ), 0) as change_in_part_time_contributors,
+    history.new - COALESCE(LAG(history.new) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
         table_alias := history
       ), event_source
       ORDER BY history.metrics_sample_date
-    ) - history.new as change_in_new_contributors,
-    LAG(history.active) OVER (
+    ), 0) as change_in_new_contributors,
+    history.active - COALESCE(LAG(history.active) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
         table_alias := history
       ), event_source
       ORDER BY history.metrics_sample_date
-    ) - history.active as change_in_active_contributors
+    ), 0) as change_in_active_contributors
   from history as history
 )
 -- do a crappy unpivot for now because there's a bug with doing an unpivot with

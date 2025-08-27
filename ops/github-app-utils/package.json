@@ -27,7 +27,7 @@
     "@types/node": "^20.11.17",
     "dotenv": "^17.2.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "@types/libsodium-wrappers": "^0.7.13",
