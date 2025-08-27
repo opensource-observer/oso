@@ -1,5 +1,4 @@
 import os
-from typing import Any
 
 from dagster import AssetExecutionContext
 from oso_dagster.config import DagsterConfig
@@ -21,49 +20,31 @@ def get_endpoint():
     return f"https://gateway.thegraph.com/api/{os.environ['ENS_API_KEY']}/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH"
 
 
-def text_changeds_for_domain(
-    context: AssetExecutionContext, global_config: DagsterConfig, data: Any
-):
-    if not (data and data.get("resolver")):
-        context.log.info(
-            f"No resolver for domain {data['name']}, skipping text_changeds."
-        )
-        # yield data
-        return None
-
-    resolver_id = data["resolver"]["id"]
-
+@dlt_factory(
+    key_prefix="ens",
+)
+def text_changeds(context: AssetExecutionContext, global_config: DagsterConfig):
     config = GraphQLResourceConfig(
-        name=f"ens_text_changeds_for_resolver_{resolver_id}",
+        name="text_changeds",
         endpoint=get_endpoint(),
         target_type="Query",
         target_query="textChangeds",
         max_depth=1,
-        parameters={
-            "where": {
-                "type": "TextChanged_filter!",
-                "value": {"resolver_": {"id": resolver_id}},
-            }
-        },
-        exclude=[
-            # "id",
-            # "resolver",
-            # "blockNumer",
-            # "transactionID",
-            # "key",
-            # "value",
-        ],
-        transform_fn=lambda result: (
-            context.log.info(f"Raw result for text_changeds: {result} on {data['id']}"),
-            [
-                {f"tc_{k}": v for k, v in item.items()}
-                for item in result["textChangeds"]
-            ],
-        )[1],
+        parameters={"orderBy": {"type": "TextChanged_orderBy", "value": "blockNumber"}},
+        # exclude=[
+        # Keep all relevant fields for text changes
+        # "id",
+        # "resolver",
+        # "blockNumber",
+        # "transactionID",
+        # "key",
+        # "value",
+        # ],
+        transform_fn=lambda result: result["textChangeds"],
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
-            page_size=100,
-            max_pages=2,
+            page_size=500,
+            # max_pages=50,
             offset_field="skip",
             limit_field="first",
             rate_limit_seconds=2.0,
@@ -80,14 +61,16 @@ def text_changeds_for_domain(
         ),
     )
 
-    yield from graphql_factory(config, global_config, context)
+    yield graphql_factory(
+        config, global_config, context, max_table_nesting=0, write_disposition="replace"
+    )
 
 
 @dlt_factory(
     key_prefix="ens",
 )
 def domains(context: AssetExecutionContext, global_config: DagsterConfig):
-    context.log.info("ENS Fetcher version 1.0")
+    context.log.info("ENS Fetcher version 1.16")
     config = GraphQLResourceConfig(
         name="domains",
         endpoint=get_endpoint(),
@@ -98,35 +81,34 @@ def domains(context: AssetExecutionContext, global_config: DagsterConfig):
         parameters={"orderBy": {"type": "Domain_orderBy", "value": "createdAt"}},
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
-            page_size=10,
-            max_pages=1,  # this should be removed in production
+            page_size=50,
+            # max_pages=1,
             offset_field="skip",
             limit_field="first",
             rate_limit_seconds=2.0,
         ),
-        exclude=[
-            # "id",
-            # "name",
-            "labelhash",
-            "labelName",
-            "parent",
-            "subdomains",
-            "subdomainCount",
-            "resolvedAddress",
-            # "resolver",
-            "ttl",
-            "isMigrated",
-            # "createdAt",
-            # "owner",
-            "registrant",
-            "wrappedOwner",
-            "expiryDate",
-            "registration",
-            "wrappedDomain",
-            "events",
-            "key",
-        ],
-        deps=[text_changeds_for_domain],
+        # exclude=[
+        #     # "id",
+        #     # "name",
+        #     "labelhash",
+        #     "labelName",
+        #     "parent",
+        #     "subdomains",
+        #     "subdomainCount",
+        #     "resolvedAddress",
+        #     # "resolver",
+        #     "ttl",
+        #     "isMigrated",
+        #     # "createdAt",
+        #     # "owner",
+        #     "registrant",
+        #     "wrappedOwner",
+        #     "expiryDate",
+        #     "registration",
+        #     "wrappedDomain",
+        #     "events",
+        #     "key",
+        # ],
         retry=RetryConfig(
             max_retries=10,
             initial_delay=1.0,

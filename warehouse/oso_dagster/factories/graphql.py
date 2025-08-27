@@ -122,7 +122,8 @@ class PaginationConfig:
         For offset-based pagination:
         offset_field: Name of the offset field (default: "offset").
         limit_field: Name of the limit field (default: "limit").
-        total_count_path: Path to total count field (e.g., "totalCount").
+        total_count_path: (Optional) Path to total count field (e.g., "totalCount").
+            If not provided, the pagination will continue until the API returns no more data.
 
         For cursor-based pagination:
         cursor_field: Name of the cursor field (default: "after").
