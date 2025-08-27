@@ -1,0 +1,103 @@
+test_stg_ens__domains_with_github_basic:
+  model: oso.stg_ens__domains_with_github
+  inputs:
+    bigquery.ens.domains:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using trino gateway"
+    bigquery.ens.text_changeds:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using local-trino gateway"
+    sources__bigquery__domains:
+      rows:
+      - id: "domain_1"
+        name: "alice.eth"
+        resolver: '{"id": "resolver_1"}'
+        owner: '{"id": "owner_1"}'
+      - id: "domain_2"
+        name: "bob.eth"
+        resolver: '{"id": "resolver_2"}'
+        owner: '{"id": "owner_2"}'
+      - id: "domain_3"
+        name: "charlie.eth"
+        resolver: '{"id": "resolver_3"}'
+        owner: '{"id": "owner_3"}'
+    sources__bigquery__text_changeds:
+      rows:
+      - id: "text_1"
+        resolver: '{"id": "resolver_1"}'
+        blockNumber: 12345
+        transactionId: "tx_1"
+        key: "com.github"
+        value: "alice"
+      - id: "text_2"
+        resolver: '{"id": "resolver_2"}'
+        blockNumber: 12346
+        transactionId: "tx_2"
+        key: "com.github"
+        value: "bob-dev"
+      - id: "text_3"
+        resolver: '{"id": "resolver_3"}'
+        blockNumber: 12347
+        transactionId: "tx_3"
+        key: "email"
+        value: "charlie@example.com"
+      - id: "text_4"
+        resolver: '{"id": "resolver_2"}'
+        blockNumber: 12348
+        transactionId: "tx_4"
+        key: "com.github"
+        value: ""
+      - id: "text_5"
+        resolver: '{"id": "resolver_4"}'
+        blockNumber: 12349
+        transactionId: "tx_5"
+        key: "com.github"
+        value: "no-domain"
+  outputs:
+    query:
+      rows:
+      - domain_id: "domain_1"
+        domain_name: "alice.eth"
+        github_handle: "alice"
+      - domain_id: "domain_2"
+        domain_name: "bob.eth"
+        github_handle: "bob-dev"
+
+test_stg_ens__domains_with_github_edge_cases:
+  model: oso.stg_ens__domains_with_github
+  inputs:
+    bigquery.ens.domains:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using trino gateway"
+    bigquery.ens.text_changeds:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using local-trino gateway"
+    sources__bigquery__domains:
+      rows:
+      - id: "domain_1"
+        name: "test.eth"
+        resolver: '{"id": "resolver_1"}'
+        owner: '{"id": "owner_1"}'
+    sources__bigquery__text_changeds:
+      rows:
+      - id: "text_1"
+        resolver: '{"id": "resolver_1"}'
+        blockNumber: 12345
+        transactionId: "tx_1"
+        key: "com.github"
+        value: null
+      - id: "text_2"
+        resolver: '{"id": "resolver_1"}'
+        blockNumber: 12346
+        transactionId: "tx_2"
+        key: "com.github"
+        value: ""
+      - id: "text_3"
+        resolver: '{"id": "resolver_1"}'
+        blockNumber: 12347
+        transactionId: "tx_3"
+        key: "com.twitter"
+        value: "test_user"
+  outputs:
+    query:
+      rows: []
