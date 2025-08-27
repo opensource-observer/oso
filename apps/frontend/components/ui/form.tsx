@@ -12,6 +12,8 @@ import {
   type FieldValues,
 } from "react-hook-form";
 
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
+
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 
@@ -72,23 +74,36 @@ const FormItemContext = React.createContext<FormItemContextValue>(
   {} as FormItemContextValue,
 );
 
-const FormItem = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const id = React.useId();
+type FormItemProps = React.HTMLAttributes<HTMLDivElement>;
 
-  return (
-    <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn("space-y-2", className)} {...props} />
-    </FormItemContext.Provider>
-  );
-});
+const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(
+  ({ className, ...props }, ref) => {
+    const id = React.useId();
+
+    return (
+      <FormItemContext.Provider value={{ id }}>
+        <div ref={ref} className={cn("space-y-2", className)} {...props} />
+      </FormItemContext.Provider>
+    );
+  },
+);
 FormItem.displayName = "FormItem";
+
+const FormItemMeta: CodeComponentMeta<FormItemProps> = {
+  name: "FormItem",
+  description: "shadcn/ui FormItem component",
+  props: {
+    children: "slot",
+  },
+};
+
+type FormLabelProps = React.ComponentPropsWithoutRef<
+  typeof LabelPrimitive.Root
+>;
 
 const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
+  FormLabelProps
 >(({ className, ...props }, ref) => {
   const { error, formItemId } = useFormField();
 
@@ -103,9 +118,19 @@ const FormLabel = React.forwardRef<
 });
 FormLabel.displayName = "FormLabel";
 
+const FormLabelMeta: CodeComponentMeta<FormLabelProps> = {
+  name: "FormLabel",
+  description: "shadcn/ui FormLabel component",
+  props: {
+    children: "slot",
+  },
+};
+
+type FormControlProps = React.ComponentPropsWithoutRef<typeof Slot>;
+
 const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot>
+  FormControlProps
 >(({ ...props }, ref) => {
   const { error, formItemId, formDescriptionId, formMessageId } =
     useFormField();
@@ -126,9 +151,19 @@ const FormControl = React.forwardRef<
 });
 FormControl.displayName = "FormControl";
 
+const FormControlMeta: CodeComponentMeta<FormControlProps> = {
+  name: "FormControl",
+  description: "shadcn/ui FormControl component",
+  props: {
+    children: "slot",
+  },
+};
+
+type FormDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
+
 const FormDescription = React.forwardRef<
   HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
+  FormDescriptionProps
 >(({ className, ...props }, ref) => {
   const { formDescriptionId } = useFormField();
 
@@ -143,29 +178,46 @@ const FormDescription = React.forwardRef<
 });
 FormDescription.displayName = "FormDescription";
 
-const FormMessage = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField();
-  const body = error ? String(error?.message ?? "") : children;
+const FormDescriptionMeta: CodeComponentMeta<FormDescriptionProps> = {
+  name: "FormDescription",
+  description: "shadcn/ui FormDescription component",
+  props: {
+    children: "slot",
+  },
+};
 
-  if (!body) {
-    return null;
-  }
+type FormMessageProps = React.HTMLAttributes<HTMLParagraphElement>;
 
-  return (
-    <p
-      ref={ref}
-      id={formMessageId}
-      className={cn("text-[0.8rem] font-medium text-destructive", className)}
-      {...props}
-    >
-      {body}
-    </p>
-  );
-});
+const FormMessage = React.forwardRef<HTMLParagraphElement, FormMessageProps>(
+  ({ className, children, ...props }, ref) => {
+    const { error, formMessageId } = useFormField();
+    const body = error ? String(error?.message ?? "") : children;
+
+    if (!body) {
+      return null;
+    }
+
+    return (
+      <p
+        ref={ref}
+        id={formMessageId}
+        className={cn("text-[0.8rem] font-medium text-destructive", className)}
+        {...props}
+      >
+        {body}
+      </p>
+    );
+  },
+);
 FormMessage.displayName = "FormMessage";
+
+const FormMessageMeta: CodeComponentMeta<FormMessageProps> = {
+  name: "FormMessage",
+  description: "shadcn/ui FormMessage component",
+  props: {
+    children: "slot",
+  },
+};
 
 // Needed because of https://github.com/orgs/react-hook-form/discussions/8020
 function safeSubmit<T>(promise: (event: React.SyntheticEvent) => Promise<T>) {
@@ -182,10 +234,15 @@ export {
   useFormField,
   Form,
   FormItem,
+  FormItemMeta,
   FormLabel,
+  FormLabelMeta,
   FormControl,
+  FormControlMeta,
   FormDescription,
+  FormDescriptionMeta,
   FormMessage,
+  FormMessageMeta,
   FormField,
   safeSubmit,
 };

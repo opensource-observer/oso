@@ -80,6 +80,18 @@ import {
   DropdownMenuShortcut,
   DropdownMenuShortcutMeta,
 } from "@/components/ui/dropdown-menu";
+import {
+  FormItem,
+  FormItemMeta,
+  FormLabel,
+  FormLabelMeta,
+  FormControl,
+  FormControlMeta,
+  FormDescription,
+  FormDescriptionMeta,
+  FormMessage,
+  FormMessageMeta,
+} from "@/components/ui/form";
 import { ToolTip, ToolTipMeta } from "@/components/ui/tooltip";
 import {
   NavigationMenu,
@@ -156,4 +168,9 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
     NavigationMenuIndicator,
     NavigationMenuIndicatorMeta,
   );
+  PLASMIC.registerComponent(FormItem, FormItemMeta);
+  PLASMIC.registerComponent(FormLabel, FormLabelMeta);
+  PLASMIC.registerComponent(FormControl, FormControlMeta);
+  PLASMIC.registerComponent(FormDescription, FormDescriptionMeta);
+  PLASMIC.registerComponent(FormMessage, FormMessageMeta);
 }
