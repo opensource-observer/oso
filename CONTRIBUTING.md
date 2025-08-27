@@ -114,6 +114,14 @@ Our development environment is documented in our [README](https://github.com/ope
   - Provide some details on how the code was tested.
   - After you are nearing review (and definitely before merge) **squash commits into logical parts** (avoid squashing over merged commits, use rebase first!). Use proper commit messages which explain what was changed in the given commit and why.
 
+- **Disclose AI use:**
+
+  - If the PR was AI-generated, you must disclose the process that you used, including but not limited to:
+    - Which agent did you use? (e.g. Claude Code, Cursor, Gemini, etc)
+    - Which LLM model did you use? (e.g. GPT5, Sonnet, etc)
+    - What prompts did you use to generate the code?
+  - If we find that you did not take adequate measures to ensure the code quality of your submission, we will close your PR and ask you re-try.
+
 - **Get a code review:**
 
   - Code owners will be automatically assigned to review based on the files that were changed.
