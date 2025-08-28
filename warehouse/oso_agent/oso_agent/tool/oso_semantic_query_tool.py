@@ -372,6 +372,9 @@ The output `SemanticQuery` can be:
 # Error Feedback (if retrying after a previous failure)
 {error_feedback}
 
+# Entity Context (relevant entities from vector database)
+{entity_context}
+
 IMPORTANT FINAL INSTRUCTIONS:
 - Always return a valid JSON SemanticQuery object
 - Use only attributes and relationships defined in the semantic model above
@@ -389,6 +392,7 @@ async def _translate_nl_to_semantic(
     llm: LLM,
     semantic_model_description: str,
     error_feedback: Optional[str] = None,
+    entity_context: Optional[str] = None,
 ) -> Response:
     """
     The core logic for the tool. It uses a structured LLM to perform the translation.
@@ -398,6 +402,7 @@ async def _translate_nl_to_semantic(
         llm: The language model instance to use for translation
         semantic_model_description: Description of the available semantic models
         error_feedback: Optional feedback from previous failed attempts
+        entity_context: Optional context about relevant entities from vector database
 
     Returns:
         Response object containing the structured semantic query
@@ -411,6 +416,7 @@ async def _translate_nl_to_semantic(
         natural_language_query=natural_language_query,
         semantic_model_description=semantic_model_description,
         error_feedback=error_feedback or "",
+        entity_context=entity_context or "",
     )
 
     logger.debug(
