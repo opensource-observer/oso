@@ -28,19 +28,16 @@ class MCPConfig(BaseSettings):
             )
         ),
         description="API key for the OSO API",
-        json_schema_extra={
-            "required": True
-        },  # This is the key to make the field required
     )
 
     pyoso_base_url: str = Field(
         default="https://www.opensource.observer",
-        description="Base URL for the OSO pyoso client"
+        description="Base URL for the OSO pyoso client",
     )
 
     text2sql_endpoint: str = Field(
         default="https://www.opensource.observer/api/v1/text2sql",
-        description="URL endpoint for the OSO text2sql service"
+        description="URL endpoint for the OSO text2sql service",
     )
 
     host: str = Field(
@@ -77,7 +74,7 @@ class MCPConfig(BaseSettings):
             value = getattr(self, field_name)
 
             # Check if field is required by looking at custom metadata
-            json_extra = field_info.json_schema_extra
+            json_extra = getattr(field_info, 'json_schema_extra', None)
             is_required = isinstance(json_extra, dict) and json_extra.get(
                 "required", False
             )
@@ -119,7 +116,7 @@ class MCPConfig(BaseSettings):
             env_var = f"MCP_{field_name.upper()}"
 
             # Check if field is required by looking at custom metadata
-            json_extra = field_info.json_schema_extra
+            json_extra = getattr(field_info, 'json_schema_extra', None)
             is_required = isinstance(json_extra, dict) and json_extra.get(
                 "required_for_operation", False
             )
