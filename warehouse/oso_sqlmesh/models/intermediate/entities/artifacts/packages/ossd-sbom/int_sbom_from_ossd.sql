@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_sboms_from_ossd,
+  name oso.int_sbom_from_ossd,
   kind FULL,
   dialect trino,
   audits (

@@ -11,7 +11,7 @@ WITH latest_repo_snapshot AS (
   SELECT
     dependent_artifact_id,
     MAX(snapshot_at) AS snapshot_at
-  FROM oso.int_sboms_from_ossd
+  FROM oso.int_sbom_from_ossd
   GROUP BY 1
 )
 
@@ -27,7 +27,7 @@ SELECT DISTINCT
   sbom.package_artifact_name,
   sbom.package_artifact_url,
   sbom.package_version
-FROM oso.int_sboms_from_ossd AS sbom
+FROM oso.int_sbom_from_ossd AS sbom
 JOIN latest_repo_snapshot AS latest
   ON sbom.dependent_artifact_id = latest.dependent_artifact_id
   AND sbom.snapshot_at = latest.snapshot_at
