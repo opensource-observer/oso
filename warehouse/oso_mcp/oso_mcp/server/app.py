@@ -46,7 +46,10 @@ def default_lifespan(config: MCPConfig):
         """Manage application lifecycle with OSO client in context"""
         api_key = config.oso_api_key
 
-        client = Client(api_key.get_secret_value())
+        client = Client(
+        api_key=api_key.get_secret_value(),
+        client_opts={"base_url": config.pyoso_base_url}
+        )
         context = AppContext(oso_client=client)
 
         try:

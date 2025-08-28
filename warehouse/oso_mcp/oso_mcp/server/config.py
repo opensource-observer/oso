@@ -32,18 +32,16 @@ class MCPConfig(BaseSettings):
             "required": True
         },  # This is the key to make the field required
     )
-    
+
+    pyoso_base_url: str = Field(
+        default="https://www.opensource.observer",
+        description="Base URL for the OSO pyoso client"
+    )
+
     text2sql_endpoint: str = Field(
-    default="https://www.opensource.observer/api/v1/text2sql",
-    description="URL endpoint for the OSO text2sql service",
-    json_schema_extra={
-        "examples": [
-            "https://www.opensource.observer/api/v1/text2sql",  # production
-            "http://localhost:8080/api/v1/text2sql",           # local development
-            "https://staging.opensource.observer/api/v1/text2sql"  # staging
-        ]
-    }
-)
+        default="https://www.opensource.observer/api/v1/text2sql",
+        description="URL endpoint for the OSO text2sql service"
+    )
 
     host: str = Field(
         default="127.0.0.1",
