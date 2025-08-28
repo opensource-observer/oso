@@ -4,18 +4,33 @@ import * as React from "react";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+type DropdownMenuProps = React.ComponentProps<
+  typeof DropdownMenuPrimitive.Root
+> & {
+  testOpen?: boolean;
+};
 
-type DropdownMenuProps = React.ComponentProps<typeof DropdownMenu>;
+function DropdownMenu(props: DropdownMenuProps) {
+  // testOpen is an edit-time only prop to force the menu open in Plasmic Studio
+  const { testOpen, ...rest } = props;
+  // if open is explicitly set, respect that, otherwise use testOpen
+  const open = props.open || testOpen;
+
+  return <DropdownMenuPrimitive.Root {...rest} open={open} />;
+}
 
 const DropdownMenuMeta: CodeComponentMeta<DropdownMenuProps> = {
   name: "DropdownMenu",
   description: "shadcn/ui DropdownMenu component",
   props: {
     children: "slot",
+    testOpen: {
+      type: "boolean",
+      advanced: true,
+      editOnly: true,
+    },
   },
 };
 
@@ -30,6 +45,7 @@ const DropdownMenuTriggerMeta: CodeComponentMeta<DropdownMenuTriggerProps> = {
   description: "shadcn/ui DropdownMenuTrigger component",
   props: {
     children: "slot",
+    asChild: "boolean",
   },
 };
 
@@ -158,6 +174,15 @@ const DropdownMenuContentMeta: CodeComponentMeta<DropdownMenuContentProps> = {
   description: "shadcn/ui DropdownMenuContent component",
   props: {
     children: "slot",
+    align: {
+      type: "choice",
+      options: ["start", "center", "end"],
+    },
+    side: {
+      type: "choice",
+      options: ["top", "right", "bottom", "left"],
+    },
+    sideOffset: "number",
   },
 };
 
