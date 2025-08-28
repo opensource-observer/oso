@@ -99,6 +99,16 @@ import {
   NavigationMenuViewport,
   NavigationMenuViewportMeta,
 } from "@/components/ui/navigation-menu";
+import {
+  Tabs,
+  TabsContent,
+  TabsContentMeta,
+  TabsList,
+  TabsListMeta,
+  TabsMeta,
+  TabsTrigger,
+  TabsTriggerMeta,
+} from "@/components/ui/tabs";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -156,4 +166,8 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
     NavigationMenuIndicator,
     NavigationMenuIndicatorMeta,
   );
+  PLASMIC.registerComponent(Tabs, TabsMeta);
+  PLASMIC.registerComponent(TabsList, TabsListMeta);
+  PLASMIC.registerComponent(TabsTrigger, TabsTriggerMeta);
+  PLASMIC.registerComponent(TabsContent, TabsContentMeta);
 }

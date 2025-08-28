@@ -2,14 +2,24 @@
 
 import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
-
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { cn } from "@/lib/utils";
 
 const Tabs = TabsPrimitive.Root;
 
+type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>;
+
+export const TabsListMeta: CodeComponentMeta<TabsListProps> = {
+  name: "TabsList",
+  displayName: "TabsList",
+  props: {
+    children: "slot",
+  },
+};
+
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
+  TabsListProps
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
@@ -22,9 +32,22 @@ const TabsList = React.forwardRef<
 ));
 TabsList.displayName = TabsPrimitive.List.displayName;
 
+type TabsTriggerProps = React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.Trigger
+>;
+
+export const TabsTriggerMeta: CodeComponentMeta<TabsTriggerProps> = {
+  name: "TabsTrigger",
+  displayName: "TabsTrigger",
+  props: {
+    children: "slot",
+    value: "string",
+  },
+};
+
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+  TabsTriggerProps
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
@@ -37,9 +60,22 @@ const TabsTrigger = React.forwardRef<
 ));
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
+type TabsContentProps = React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.Content
+>;
+
+export const TabsContentMeta: CodeComponentMeta<TabsContentProps> = {
+  name: "TabsContent",
+  displayName: "TabsContent",
+  props: {
+    children: "slot",
+    value: "string",
+  },
+};
+
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+  TabsContentProps
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
@@ -51,5 +87,16 @@ const TabsContent = React.forwardRef<
   />
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
+
+type TabsProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>;
+
+export const TabsMeta: CodeComponentMeta<TabsProps> = {
+  name: "Tabs",
+  displayName: "Tabs",
+  props: {
+    children: "slot",
+    defaultValue: "string",
+  },
+};
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };
