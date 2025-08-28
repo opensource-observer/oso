@@ -39,6 +39,8 @@ import {
   SidebarMenuSubItemMeta,
   SidebarMenuSubMeta,
   SidebarMeta,
+  SidebarProvider,
+  SidebarProviderMeta,
   SidebarRail,
   SidebarRailMeta,
   SidebarSeparator,
@@ -79,12 +81,31 @@ import {
   DropdownMenuShortcutMeta,
 } from "@/components/ui/dropdown-menu";
 import { ToolTip, ToolTipMeta } from "@/components/ui/tooltip";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuContentMeta,
+  NavigationMenuIndicator,
+  NavigationMenuIndicatorMeta,
+  NavigationMenuItem,
+  NavigationMenuItemMeta,
+  NavigationMenuLink,
+  NavigationMenuLinkMeta,
+  NavigationMenuList,
+  NavigationMenuListMeta,
+  NavigationMenuMeta,
+  NavigationMenuTrigger,
+  NavigationMenuTriggerMeta,
+  NavigationMenuViewport,
+  NavigationMenuViewportMeta,
+} from "@/components/ui/navigation-menu";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
   PLASMIC.registerComponent(Skeleton, SkeletonMeta);
   PLASMIC.registerComponent(ToolTip, ToolTipMeta);
   PLASMIC.registerComponent(Sidebar, SidebarMeta);
+  PLASMIC.registerComponent(SidebarProvider, SidebarProviderMeta);
   PLASMIC.registerComponent(SidebarContent, SidebarContentMeta);
   PLASMIC.registerComponent(SidebarHeader, SidebarHeaderMeta);
   PLASMIC.registerComponent(SidebarFooter, SidebarFooterMeta);
@@ -124,4 +145,15 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(DropdownMenuLabel, DropdownMenuLabelMeta);
   PLASMIC.registerComponent(DropdownMenuSeparator, DropdownMenuSeparatorMeta);
   PLASMIC.registerComponent(DropdownMenuShortcut, DropdownMenuShortcutMeta);
+  PLASMIC.registerComponent(NavigationMenu, NavigationMenuMeta);
+  PLASMIC.registerComponent(NavigationMenuList, NavigationMenuListMeta);
+  PLASMIC.registerComponent(NavigationMenuItem, NavigationMenuItemMeta);
+  PLASMIC.registerComponent(NavigationMenuTrigger, NavigationMenuTriggerMeta);
+  PLASMIC.registerComponent(NavigationMenuContent, NavigationMenuContentMeta);
+  PLASMIC.registerComponent(NavigationMenuLink, NavigationMenuLinkMeta);
+  PLASMIC.registerComponent(NavigationMenuViewport, NavigationMenuViewportMeta);
+  PLASMIC.registerComponent(
+    NavigationMenuIndicator,
+    NavigationMenuIndicatorMeta,
+  );
 }

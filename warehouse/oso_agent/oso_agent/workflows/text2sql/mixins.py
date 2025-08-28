@@ -271,8 +271,8 @@ class SQLRowsResponseSynthesisMixin(MixableWorkflow):
         )
 
 
-class OsoQueryEngineWorkflowMixin(MixableWorkflow):
-    """Mixin class to enable OSO query engine functionality in agent workflows."""
+class OsoVectorDatabaseMixin(MixableWorkflow):
+    """Mixin class to enable OSO vector database functionality for context retrieval."""
 
     oso_client: ResourceDependency[OsoClient]
     llm: ResourceDependency[FunctionCallingLLM]
@@ -413,6 +413,10 @@ class OsoQueryEngineWorkflowMixin(MixableWorkflow):
             raise ValueError(
                 f"Row context retrieval failed for query[{event.id}]: {e}"
             ) from e
+
+
+class OsoQueryEngineWorkflowMixin(OsoVectorDatabaseMixin):
+    """Complete OSO query engine workflow combining vector database and SQL generation."""
 
     @step
     async def generate_sql_from_context(

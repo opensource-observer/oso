@@ -54,14 +54,32 @@ function useSidebar() {
   return context;
 }
 
-const SidebarProvider = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    defaultOpen?: boolean;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
-  }
->(
+type SidebarProviderProps = React.ComponentProps<"div"> & {
+  defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
+
+const SidebarProviderMeta: CodeComponentMeta<SidebarProviderProps> = {
+  name: "SidebarProvider",
+  description: "Provides sidebar state to its children.",
+  props: {
+    children: "slot",
+    defaultOpen: "boolean",
+    open: "boolean",
+    onOpenChange: {
+      type: "eventHandler",
+      argTypes: [
+        {
+          name: "open",
+          type: "boolean",
+        },
+      ],
+    },
+  },
+};
+
+const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
   (
     {
       defaultOpen = true,
@@ -1014,6 +1032,7 @@ export {
   SidebarTrigger,
   useSidebar,
   // Meta
+  SidebarProviderMeta,
   SidebarMeta,
   SidebarContentMeta,
   SidebarHeaderMeta,
