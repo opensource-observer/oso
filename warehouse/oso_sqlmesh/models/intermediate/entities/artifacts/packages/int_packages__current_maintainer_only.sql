@@ -6,13 +6,15 @@ MODEL (
   )
 );
 
-
 SELECT DISTINCT
+  package_owner_artifact_id,
+  package_owner_artifact_source,
+  package_owner_artifact_namespace,
+  package_owner_artifact_name,
+  package_artifact_id,
   package_artifact_source,
-  sbom_artifact_source,
+  package_artifact_namespace,
   package_artifact_name,
-  package_github_owner,
-  package_github_repo,
-  package_url
+  package_artifact_url
 FROM oso.int_packages
 WHERE is_current_owner = TRUE

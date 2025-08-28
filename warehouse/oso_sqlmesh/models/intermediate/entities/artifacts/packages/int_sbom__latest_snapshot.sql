@@ -9,26 +9,25 @@ MODEL (
 
 WITH latest_repo_snapshot AS (
   SELECT
-    dependent_repo_artifact_id,
-    MAX(snapshot_day) AS snapshot_day
-  FROM oso.int_sbom__snapshots
+    dependent_artifact_id,
+    MAX(snapshot_at) AS snapshot_at
+  FROM oso.int_sboms_from_ossd
   GROUP BY 1
 )
 
 SELECT DISTINCT
-  sbom.snapshot_day,
-  sbom.artifact_source,
-  sbom.artifact_namespace,
-  sbom.artifact_name,
-  sbom.package_source,
-  sbom.package,
-  sbom.package_version,
-  sbom.package_github_owner,
-  sbom.package_github_repo,
-  sbom.dependent_repo_artifact_id,
-  sbom.dependency_repo_artifact_id,
-  sbom.dependency_package_artifact_id
-FROM oso.int_sbom__snapshots AS sbom
+  sbom.snapshot_at,
+  sbom.dependent_artifact_id,
+  sbom.dependent_artifact_source,
+  sbom.dependent_artifact_namespace,
+  sbom.dependent_artifact_name,
+  sbom.package_artifact_id,
+  sbom.package_artifact_source,
+  sbom.package_artifact_namespace,
+  sbom.package_artifact_name,
+  sbom.package_artifact_url,
+  sbom.package_version
+FROM oso.int_sboms_from_ossd AS sbom
 JOIN latest_repo_snapshot AS latest
-  ON sbom.dependent_repo_artifact_id = latest.dependent_repo_artifact_id
-  AND sbom.snapshot_day >= (latest.snapshot_day - INTERVAL '1 DAY')
+  ON sbom.dependent_artifact_id = latest.dependent_artifact_id
+  AND sbom.snapshot_at = latest.snapshot_at
