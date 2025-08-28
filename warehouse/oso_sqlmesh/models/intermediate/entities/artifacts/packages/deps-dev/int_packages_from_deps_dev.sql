@@ -18,7 +18,7 @@ WITH enriched_packages AS (
     dd.project_type AS package_owner_project_type,
     dd.relationship_type AS package_owner_relationship_type
   FROM oso.stg_deps_dev__packages AS dd
-  LATERAL @parse_deps_dev_artifacts(dd.system, dd.name) AS pkg_details
+  CROSS JOIN LATERAL @parse_deps_dev_artifacts(dd.system, dd.name) AS pkg_details
 ),
 packages_with_ids AS (
   SELECT
@@ -30,7 +30,7 @@ packages_with_ids AS (
     package_owner_project_name,
     package_owner_project_type,
     package_owner_relationship_type,
-    @oso_entity_id(package_artifact_source, package_artifact_namespace, package_artifact_name) AS package_artifact_id,
+    @oso_entity_id(package_artifact_source, package_artifact_namespace, package_artifact_name) AS package_artifact_id
   FROM enriched_packages
 ),
 latest_packages_ranked AS (

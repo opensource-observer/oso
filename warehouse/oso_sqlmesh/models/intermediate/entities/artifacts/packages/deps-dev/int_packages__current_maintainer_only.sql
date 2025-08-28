@@ -16,5 +16,5 @@ SELECT DISTINCT
   package_artifact_namespace,
   package_artifact_name,
   package_artifact_url
-FROM oso.int_packages
+FROM oso.int_packages_from_deps_dev
 WHERE is_current_owner = TRUE
