@@ -9,7 +9,7 @@ MODEL (
 
 WITH enriched_packages AS (
   SELECT
-    pkg_details.artifact_source AS package_artifact_source,
+    psm.canonical_source AS package_artifact_source,
     pkg_details.artifact_namespace AS package_artifact_namespace,
     pkg_details.artifact_name AS package_artifact_name,
     pkg_details.artifact_url AS package_artifact_url,
@@ -18,7 +18,11 @@ WITH enriched_packages AS (
     dd.project_type AS package_owner_project_type,
     dd.relationship_type AS package_owner_relationship_type
   FROM oso.stg_deps_dev__packages AS dd
-  CROSS JOIN LATERAL @parse_deps_dev_artifacts(dd.system, dd.name) AS pkg_details
+  JOIN oso.seed_package_source_mapping AS psm
+    ON UPPER(dd.system) = psm.package_source
+  CROSS JOIN LATERAL @parse_package_artifacts(
+    psm.canonical_source, dd.name, psm.package_url_template
+  ) AS pkg_details
 ),
 packages_with_ids AS (
   SELECT
