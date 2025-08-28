@@ -198,6 +198,8 @@ class GraphQLResourceConfig:
     Args:
         name: The name of the GraphQL resource.
         endpoint: The endpoint of the GraphQL resource.
+        masked_endpoint: The masked endpoint of the GraphQL resource.
+            If exists, it will be used for logging instead of the real endpoint.
         target_type: The type to target in the introspection query.
         target_query: The query to target in the main query.
         max_depth: The maximum depth of the GraphQL query.
@@ -220,6 +222,7 @@ class GraphQLResourceConfig:
     target_type: str
     target_query: str
     max_depth: int = 5
+    masked_endpoint: Optional[str] = None
     headers: Optional[Dict[str, str]] = None
     transform_fn: Optional[Callable[[Any], Any]] = None
     parameters: Optional[Dict[str, Dict[str, Any]]] = None
@@ -1081,7 +1084,14 @@ def _graphql_factory(
 
             client = Client(transport=transport)
 
-            context.log.info(f"GraphQLFactory: fetching data from {config.endpoint}")
+            if config.masked_endpoint and config.masked_endpoint.strip():
+                context.log.info(
+                    f"GraphQLFactory: fetching data from {config.masked_endpoint}"
+                )
+            else:
+                context.log.info(
+                    f"GraphQLFactory: fetching data from {config.endpoint}"
+                )
             context.log.info(f"GraphQLFactory: generated query:\n\n{generated_query}")
 
             variables = {

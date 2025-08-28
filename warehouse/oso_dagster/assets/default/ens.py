@@ -12,11 +12,12 @@ from oso_dagster.factories.graphql import (
 )
 
 
-def get_endpoint():
+def get_endpoint(masked: bool = False) -> str:
     # TODO: the api key should be fetched from secrets utils (?)
-    # TODO: The endpoint including API key will be logged in dagster.
-    # TODO: if that's public, it could be a security risk.
     # ENDPOINT = "https://api.goldsky.com/api/public/project_cmeb2e0d63tv701xhfnw8axvf/subgraphs/ens/1.0/gn"
+    if masked:
+        return "https://gateway.thegraph.com/api/***/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH"
+
     return f"https://gateway.thegraph.com/api/{os.environ['ENS_API_KEY']}/subgraphs/id/5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH"
 
 
@@ -26,7 +27,8 @@ def get_endpoint():
 def text_changeds(context: AssetExecutionContext, global_config: DagsterConfig):
     config = GraphQLResourceConfig(
         name="text_changeds",
-        endpoint=get_endpoint(),
+        endpoint=get_endpoint(masked=False),
+        masked_endpoint=get_endpoint(masked=True),
         target_type="Query",
         target_query="textChangeds",
         max_depth=1,
