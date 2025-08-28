@@ -329,7 +329,7 @@ def _get_artifact_namespace_and_name(
 
 
 @macro()
-def parse_depsdev_artifacts(
+def parse_deps_dev_artifacts(
     evaluator: MacroEvaluator,
     package_source_expr: exp.Expression,
     package_name_expr: exp.Expression,
