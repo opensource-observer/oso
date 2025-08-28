@@ -100,6 +100,26 @@ INTROSPECTION_QUERY = """
 """
 
 
+def sanitize_error_message(
+    error_message: str, endpoint: str, masked_endpoint: Optional[str] = None
+) -> str:
+    """
+    Sanitize error messages by replacing the real endpoint with a masked endpoint to avoid exposing sensitive URLs.
+
+    Args:
+        error_message: The original error message that may contain URLs.
+        endpoint: The real endpoint URL to be replaced.
+        masked_endpoint: The masked endpoint URL to replace with. If None, no sanitization is performed.
+
+    Returns:
+        Sanitized error message with sensitive URLs replaced.
+    """
+    if not masked_endpoint or not masked_endpoint.strip():
+        return error_message
+
+    return error_message.replace(endpoint, masked_endpoint)
+
+
 class PaginationType(Enum):
     """Supported pagination types."""
 
@@ -650,6 +670,8 @@ def log_failure_and_continue(
     exception: Exception,
     max_retries: int,
     pagination_metadata: Optional[Dict[str, Any]] = None,
+    endpoint: Optional[str] = None,
+    masked_endpoint: Optional[str] = None,
 ) -> None:
     """
     Log a failure with detailed information and continue execution.
@@ -660,9 +682,14 @@ def log_failure_and_continue(
         exception: The exception that caused the failure.
         max_retries: Maximum number of retries that were attempted.
         pagination_metadata: Optional metadata related to pagination at the time of failure.
+        endpoint: The real endpoint URL for sanitization.
+        masked_endpoint: The masked endpoint URL for sanitization.
     """
+    sanitized_error = sanitize_error_message(
+        str(exception), endpoint or "", masked_endpoint
+    )
     context.log.error(
-        f"{operation_name} failed after {max_retries} retries: {exception}. "
+        f"{operation_name} failed after {max_retries} retries: {sanitized_error}. "
         "Continuing due to continue_on_failure=True"
     )
 
@@ -711,6 +738,8 @@ def execute_with_retry(
     retry_config: Optional[RetryConfig],
     context: AssetExecutionContext,
     operation_name: str = "GraphQL operation",
+    endpoint: Optional[str] = None,
+    masked_endpoint: Optional[str] = None,
 ) -> D:
     """
     Execute a function with retry mechanism and exponential backoff.
@@ -720,6 +749,8 @@ def execute_with_retry(
         retry_config: Retry configuration. If None, no retries are performed.
         context: Execution context for logging.
         operation_name: Name of the operation for logging.
+        endpoint: The real endpoint URL for sanitization.
+        masked_endpoint: The masked endpoint URL for sanitization.
 
     Returns:
         The result of the function execution.
@@ -739,9 +770,12 @@ def execute_with_retry(
             TransportQueryError,
             ChunkedEncodingError,
         ) as e:
+            sanitized_error = sanitize_error_message(
+                str(e), endpoint or "", masked_endpoint
+            )
             if attempt == retry_config.max_retries:
                 context.log.error(
-                    f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
+                    f"{operation_name} failed after {retry_config.max_retries} retries: {sanitized_error}"
                 )
                 raise
 
@@ -754,7 +788,7 @@ def execute_with_retry(
                 delay += random.uniform(0, delay * 0.1)
 
             context.log.warning(
-                f"{operation_name} failed (attempt {attempt + 1}/{retry_config.max_retries + 1}): {e}. "
+                f"{operation_name} failed (attempt {attempt + 1}/{retry_config.max_retries + 1}): {sanitized_error}. "
                 f"Retrying in {delay:.2f} seconds..."
             )
 
@@ -770,6 +804,8 @@ def execute_with_adaptive_retry(
     initial_page_size: Optional[int],
     operation_name: str = "GraphQL operation",
     pagination_context: Optional[Dict[str, Any]] = None,
+    endpoint: Optional[str] = None,
+    masked_endpoint: Optional[str] = None,
 ) -> Optional[D]:
     """
     Execute a function with retry mechanism that reduces page size on failures.
@@ -780,6 +816,9 @@ def execute_with_adaptive_retry(
         context: Execution context for logging.
         initial_page_size: Initial page size to start with.
         operation_name: Name of the operation for logging.
+        pagination_context: Optional pagination context for logging.
+        endpoint: The real endpoint URL for sanitization.
+        masked_endpoint: The masked endpoint URL for sanitization.
 
     Returns:
         The result of the function execution, or None if continue_on_failure is True and all retries are exhausted.
@@ -793,6 +832,8 @@ def execute_with_adaptive_retry(
             retry_config,
             context,
             operation_name,
+            endpoint,
+            masked_endpoint,
         )
 
     current_page_size = initial_page_size
@@ -831,11 +872,13 @@ def execute_with_adaptive_retry(
                             "page_size_at_failure": current_page_size,
                             **(pagination_context or {}),
                         },
+                        endpoint=endpoint,
+                        masked_endpoint=masked_endpoint,
                     )
                     return None
 
                 context.log.error(
-                    f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
+                    f"{operation_name} failed after {retry_config.max_retries} retries: {sanitize_error_message(str(e), endpoint or '', masked_endpoint)}"
                 )
                 raise
 
@@ -868,7 +911,7 @@ def execute_with_adaptive_retry(
                 delay += random.uniform(0, delay * 0.1)
 
             context.log.warning(
-                f"{operation_name}: Retrying in {delay:.2f} seconds... Error: {e}"
+                f"{operation_name}: Retrying in {delay:.2f} seconds... Error: {sanitize_error_message(str(e), endpoint or '', masked_endpoint)}"
             )
 
             start_sleep = time.time()
@@ -1162,10 +1205,11 @@ def _graphql_factory(
                             "total_items_processed": total_items,
                             "successful_pages": successful_pages,
                         },
+                        endpoint=config.endpoint,
+                        masked_endpoint=config.masked_endpoint,
                     )
 
-                    # Log the result
-                    context.log.info(
+                    context.log.debug(
                         f"GraphQL query execution (page {successful_pages + 1}) succeeded with result: {result}"
                     )
 
@@ -1289,9 +1333,14 @@ def _graphql_factory(
                         time.sleep(config.pagination.rate_limit_seconds)
 
                 except (TransportError, ChunkedEncodingError) as e:
-                    context.log.error(f"GraphQL query execution failed: {str(e)}")
+                    sanitized_error = sanitize_error_message(
+                        str(e), config.endpoint, config.masked_endpoint
+                    )
+                    context.log.error(
+                        f"GraphQL query execution failed: {sanitized_error}"
+                    )
                     raise ValueError(
-                        f"Failed to execute GraphQL query: {str(e)}"
+                        f"Failed to execute GraphQL query: {sanitized_error}"
                     ) from e
 
             context.log.info(
