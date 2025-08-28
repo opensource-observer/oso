@@ -44,7 +44,6 @@ def text_changeds(context: AssetExecutionContext, global_config: DagsterConfig):
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
             page_size=500,
-            # max_pages=50,
             offset_field="skip",
             limit_field="first",
             rate_limit_seconds=2.0,
@@ -82,7 +81,6 @@ def domains(context: AssetExecutionContext, global_config: DagsterConfig):
         pagination=PaginationConfig(
             type=PaginationType.OFFSET,
             page_size=50,
-            # max_pages=1,
             offset_field="skip",
             limit_field="first",
             rate_limit_seconds=2.0,
