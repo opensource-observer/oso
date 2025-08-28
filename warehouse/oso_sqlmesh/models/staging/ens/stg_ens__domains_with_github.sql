@@ -5,19 +5,14 @@ MODEL (
   kind FULL,
   audits (
     has_at_least_n_rows(threshold := 0)
-  ),
-  tags (
-    "staging"
   )
 );
 
 SELECT
-  domains.id AS domain_id,
-  domains.name AS domain_name,
-  text_changeds.value AS github_handle
-FROM @oso_source('bigquery.ens.domains') AS domains
-INNER JOIN @oso_source('bigquery.ens.text_changeds') AS text_changeds
-  ON JSON_EXTRACT_SCALAR(text_changeds.resolver, '$.id') = JSON_EXTRACT_SCALAR(domains.resolver, '$.id')
-WHERE text_changeds.key = 'com.github'
-  AND text_changeds.value IS NOT NULL
-  AND text_changeds.value != ''
+  d.id AS domain_id,
+  d.name AS domain_name,
+  tc.value AS github_handle
+FROM @oso_source('bigquery.ens.domains') AS d
+INNER JOIN @oso_source('bigquery.ens.text_changeds') AS tc
+  ON CAST(d.resolver->>'$.id' AS VARCHAR) = CAST(tc.resolver->>'$.id' AS VARCHAR)
+WHERE tc.key = 'com.github';
