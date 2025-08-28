@@ -316,9 +316,7 @@ type SidebarTriggerProps = React.ComponentProps<typeof Button>;
 const SidebarTriggerMeta: CodeComponentMeta<SidebarTriggerProps> = {
   name: "SidebarTrigger",
   description: "shadcn/ui SidebarTrigger component",
-  props: {
-    children: "slot",
-  },
+  props: {},
 };
 
 const SidebarTrigger = React.forwardRef<
