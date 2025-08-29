@@ -138,7 +138,7 @@ schedules: list[ScheduleDefinition] = [
     # Run daily source assets every day at midnight
     ScheduleDefinition(
         job=materialize_daily_source_assets,
-        cron_schedule="0 12 * * *",
+        cron_schedule="0 0 * * *",
         tags={
             "dagster/priority": "-1",
         },
