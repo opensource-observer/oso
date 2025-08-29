@@ -2,7 +2,7 @@ MODEL (
   name oso.int_artifacts_by_project_in_open_collective,
   kind FULL,
   dialect trino,
-  description "Unifies GitHub artifacts from Open Collective projects",
+  description "Unifies GitHub and wallet artifacts from Open Collective projects",
   tags (
     'entity_category=project'
   ),
@@ -12,59 +12,68 @@ MODEL (
   )
 );
 
-WITH github_urls AS (
+WITH filtered_accounts AS (
   SELECT
     id AS account_id,
     slug AS account_slug,
     name AS account_name,
     type AS account_type,
-    CASE 
-      WHEN github_handle IS NOT NULL THEN CONCAT('https://github.com/', github_handle)
-      WHEN repository_url IS NOT NULL THEN repository_url
-      ELSE NULL
-    END AS github_url
+    LOWER(github_handle) AS github_handle
   FROM oso.stg_open_collective__accounts
-  WHERE github_handle IS NOT NULL OR repository_url IS NOT NULL
+  WHERE
+    github_handle IS NOT NULL
+    AND repository_url IS NOT NULL
+    AND JSON_EXTRACT_SCALAR(stats, '$.total_amount_received.currency') = 'USD'
+    AND CAST(JSON_EXTRACT_SCALAR(stats, '$.total_amount_received.value') AS DOUBLE) >= 1000
+    AND type IN ('ORGANIZATION', 'INDIVIDUAL', 'COLLECTIVE')
 ),
 
-parsed_github_artifacts AS (
+-- GitHub artifacts (handles both owner-only and owner/repo patterns)
+github_artifacts AS (
   SELECT
-    github_urls.account_slug,
-    github_urls.account_name,
-    github_urls.account_type,
-    github_urls.account_id,
-    gh_int.artifact_source_id,
-    parsed.artifact_source,
-    parsed.artifact_namespace,
-    parsed.artifact_name,
-    parsed.artifact_url,
-    parsed.artifact_type
-  FROM github_urls
-  CROSS JOIN LATERAL @parse_github_repository_artifact(github_urls.github_url) AS parsed
-  LEFT JOIN oso.int_artifacts__github AS gh_int
-    ON gh_int.artifact_url = github_urls.github_url
-  WHERE github_urls.github_url IS NOT NULL
-    AND parsed.artifact_name IS NOT NULL
+    accounts.account_slug,
+    accounts.account_name,
+    accounts.account_type,
+    accounts.account_id,
+    gh.artifact_source_id,
+    'GITHUB' AS artifact_source,
+    gh.artifact_namespace,
+    gh.artifact_name,
+    gh.artifact_url,
+    gh.artifact_type
+  FROM filtered_accounts AS accounts
+  INNER JOIN oso.int_artifacts__github AS gh
+    ON (
+      -- Owner-only pattern (e.g., "codeforscience")
+      (accounts.github_handle NOT LIKE '%/%' AND gh.artifact_namespace = accounts.github_handle)
+      OR
+      -- Owner/repo pattern (e.g., "pastelsky/bundlephobia")
+      (accounts.github_handle LIKE '%/%' 
+       AND accounts.github_handle NOT LIKE '%/%/%'
+       AND gh.artifact_namespace = SPLIT(accounts.github_handle, '/')[1]
+       AND gh.artifact_name = SPLIT(accounts.github_handle, '/')[2])
+    )
 ),
 
+-- Wallet artifacts for all filtered accounts
 wallet_artifacts AS (
   SELECT
-    accounts.slug AS account_slug,
-    accounts.name AS account_name,
-    accounts.type AS account_type,
-    accounts.id AS account_id,
+    accounts.account_slug,
+    accounts.account_name,
+    accounts.account_type,
+    accounts.account_id,
     artifact_fields.artifact_url AS artifact_source_id,
     artifact_fields.artifact_source,
     artifact_fields.artifact_namespace,
     artifact_fields.artifact_name,
     artifact_fields.artifact_url,
     artifact_fields.artifact_type
-  FROM oso.stg_open_collective__accounts AS accounts
-  CROSS JOIN LATERAL @create_open_collective_wallet_artifact(accounts.slug) AS artifact_fields
+  FROM filtered_accounts AS accounts
+  CROSS JOIN LATERAL @create_open_collective_wallet_artifact(accounts.account_slug) AS artifact_fields
 ),
 
 all_artifacts AS (
-  SELECT * FROM parsed_github_artifacts
+  SELECT * FROM github_artifacts
   UNION ALL
   SELECT * FROM wallet_artifacts
 )
@@ -75,6 +84,7 @@ SELECT DISTINCT
   '' AS project_namespace,
   account_slug AS project_name,
   account_name AS project_display_name,
+  account_type AS project_type,
   @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
   artifact_source,
   artifact_namespace,
