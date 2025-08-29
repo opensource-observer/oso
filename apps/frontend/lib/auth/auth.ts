@@ -338,12 +338,12 @@ async function getUserByAmbigiousToken(
  * Main function to authenticate a user from a request
  */
 async function getUser(request: NextRequest): Promise<User> {
-  const userFromCookies = await getUserByCookies(request);
-  if (userFromCookies.role !== "anonymous") {
-    return userFromCookies;
-  }
   const userFromHttpHeader = await getUserByHttpHeader(request);
-  return userFromHttpHeader;
+  if (userFromHttpHeader.role !== "anonymous") {
+    return userFromHttpHeader;
+  }
+  const userFromCookies = await getUserByCookies(request);
+  return userFromCookies;
 }
 
 /**
