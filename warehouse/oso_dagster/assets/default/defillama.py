@@ -27,6 +27,15 @@ K8S_CONFIG = {
 }
 
 
+# Centralized configuration for DeFiLlama assets
+DEFILLAMA_BASE_CONFIG = {
+    "key_prefix": "defillama",
+    "tags": {
+        "opensource.observer/source": "stable",
+    },
+}
+
+
 def get_valid_defillama_chains() -> Set[str]:
     """
     Get all valid defillama chain identifiers from the defillama.chains table.
@@ -226,7 +235,7 @@ def get_defillama_tvl_events(
 
 
 @dlt_factory(
-    key_prefix="defillama",
+    **DEFILLAMA_BASE_CONFIG,
     name="tvl_events",
     op_tags={
         "dagster/concurrency_key": "defillama_tvl",
@@ -379,7 +388,7 @@ def get_defillama_volume_events(
 
 
 @dlt_factory(
-    key_prefix="defillama",
+    **DEFILLAMA_BASE_CONFIG,
     name="trading_volume_events",
     op_tags={
         "dagster/concurrency_key": "defillama_volume",
@@ -457,7 +466,7 @@ def get_defillama_fee_events(
 
 
 @dlt_factory(
-    key_prefix="defillama",
+    **DEFILLAMA_BASE_CONFIG,
     name="lp_fee_events",
     op_tags={
         "dagster/concurrency_key": "defillama_fees",
@@ -537,7 +546,7 @@ def get_defillama_protocol_metadata(
 
 
 @dlt_factory(
-    key_prefix="defillama",
+    **DEFILLAMA_BASE_CONFIG,
     name="protocol_metadata",
     op_tags={
         "dagster/concurrency_key": "defillama_metadata",
@@ -639,7 +648,7 @@ def get_defillama_historical_chain_tvl(
 
 
 @dlt_factory(
-    key_prefix="defillama",
+    **DEFILLAMA_BASE_CONFIG,
     name="historical_chain_tvl",
     op_tags={
         "dagster/concurrency_key": "defillama_historical_chain_tvl",
@@ -713,7 +722,7 @@ def get_defillama_chains(
 
 
 @dlt_factory(
-    key_prefix="defillama",
+    **DEFILLAMA_BASE_CONFIG,
     name="chains",
     op_tags={
         "dagster/concurrency_key": "defillama_chains",
