@@ -8,17 +8,13 @@ def to_entity_name(
     evaluator: MacroEvaluator, string_expr: exp.ExpOrStr
 ) -> exp.Expression:
     """
-    Takes a string expression, lowercases it and replaces spaces with underscores.
-    Useful for creating consistent entity names from display names.
+    Lowercase a string expression and replace spaces with underscores.
     """
-
-    # First lowercase the string
-    lowercased = exp.Lower(this=string_expr)
-
-    # Then replace spaces with underscores using REPLACE function
-    entity_name = exp.Anonymous(
-        this="REPLACE",
-        expressions=[lowercased, exp.Literal.string(" "), exp.Literal.string("_")],
+    arg = (
+        string_expr
+        if isinstance(string_expr, exp.Expression)
+        else evaluator.parse_one(str(string_expr))
     )
-
-    return entity_name
+    return exp.func(
+        "REPLACE", exp.Lower(this=arg), exp.Literal.string(" "), exp.Literal.string("_")
+    )

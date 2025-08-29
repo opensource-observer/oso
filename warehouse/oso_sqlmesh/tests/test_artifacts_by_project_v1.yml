@@ -1,0 +1,165 @@
+test_artifacts_by_project_v1_basic:
+  model: oso.artifacts_by_project_v1
+  inputs:
+    oso.int_artifacts_by_project:
+      rows:
+      # GitHub artifacts for project 1
+      - artifact_id: "artifact_1"
+        artifact_source_id: "github_repo_123"
+        artifact_source: "GITHUB"
+        artifact_namespace: "owner1"
+        artifact_name: "repo1"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project-1"
+      - artifact_id: "artifact_2"
+        artifact_source_id: "github_repo_456"
+        artifact_source: "GITHUB"
+        artifact_namespace: "owner1"
+        artifact_name: "repo2"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project-1"
+      
+      # NPM artifacts for project 2
+      - artifact_id: "artifact_3"
+        artifact_source_id: "npm_package_789"
+        artifact_source: "NPM"
+        artifact_namespace: "@owner2"
+        artifact_name: "package1"
+        project_id: "project_2"
+        project_source: "OP_ATLAS"
+        project_namespace: "op"
+        project_name: "test-project-2"
+      
+      # Blockchain artifact for project 2
+      - artifact_id: "artifact_4"
+        artifact_source_id: "0x1234567890abcdef"
+        artifact_source: "OPTIMISM"
+        artifact_namespace: ""
+        artifact_name: "0x1234567890abcdef"
+        project_id: "project_2"
+        project_source: "OP_ATLAS"
+        project_namespace: "op"
+        project_name: "test-project-2"
+        
+      # DefiLlama artifact for project 3
+      - artifact_id: "artifact_5"
+        artifact_source_id: "defillama_protocol_abc"
+        artifact_source: "DEFILLAMA"
+        artifact_namespace: ""
+        artifact_name: "uniswap-v3"
+        project_id: "project_3"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "uniswap"
+
+  outputs:
+    query:
+      rows:
+      # GitHub artifacts for project 1
+      - artifact_id: "artifact_1"
+        artifact_source_id: "github_repo_123"
+        artifact_source: "GITHUB"
+        artifact_namespace: "owner1"
+        artifact_name: "repo1"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project-1"
+      - artifact_id: "artifact_2"
+        artifact_source_id: "github_repo_456"
+        artifact_source: "GITHUB"
+        artifact_namespace: "owner1"
+        artifact_name: "repo2"
+        project_id: "project_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "test-project-1"
+      
+      # NPM artifacts for project 2
+      - artifact_id: "artifact_3"
+        artifact_source_id: "npm_package_789"
+        artifact_source: "NPM"
+        artifact_namespace: "@owner2"
+        artifact_name: "package1"
+        project_id: "project_2"
+        project_source: "OP_ATLAS"
+        project_namespace: "op"
+        project_name: "test-project-2"
+      
+      # Blockchain artifact for project 2
+      - artifact_id: "artifact_4"
+        artifact_source_id: "0x1234567890abcdef"
+        artifact_source: "OPTIMISM"
+        artifact_namespace: ""
+        artifact_name: "0x1234567890abcdef"
+        project_id: "project_2"
+        project_source: "OP_ATLAS"
+        project_namespace: "op"
+        project_name: "test-project-2"
+        
+      # DefiLlama artifact for project 3
+      - artifact_id: "artifact_5"
+        artifact_source_id: "defillama_protocol_abc"
+        artifact_source: "DEFILLAMA"
+        artifact_namespace: ""
+        artifact_name: "uniswap-v3"
+        project_id: "project_3"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: "oso"
+        project_name: "uniswap"
+
+test_artifacts_by_project_v1_edge_cases:
+  model: oso.artifacts_by_project_v1
+  inputs:
+    oso.int_artifacts_by_project:
+      rows:
+      # Empty namespace case
+      - artifact_id: "artifact_edge_1"
+        artifact_source_id: "edge_source_1"
+        artifact_source: "GITHUB"
+        artifact_namespace: ""
+        artifact_name: "standalone-repo"
+        project_id: "project_edge_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: ""
+        project_name: "standalone-project"
+      
+      # Special characters in names
+      - artifact_id: "artifact_edge_2"
+        artifact_source_id: "edge_source_2"
+        artifact_source: "NPM"
+        artifact_namespace: "@test-org"
+        artifact_name: "package-with-dashes"
+        project_id: "project_edge_2"
+        project_source: "OP_ATLAS"
+        project_namespace: "test"
+        project_name: "project-with-dashes"
+
+  outputs:
+    query:
+      rows:
+      # Empty namespace case
+      - artifact_id: "artifact_edge_1"
+        artifact_source_id: "edge_source_1"
+        artifact_source: "GITHUB"
+        artifact_namespace: ""
+        artifact_name: "standalone-repo"
+        project_id: "project_edge_1"
+        project_source: "OSS_DIRECTORY"
+        project_namespace: ""
+        project_name: "standalone-project"
+      
+      # Special characters in names
+      - artifact_id: "artifact_edge_2"
+        artifact_source_id: "edge_source_2"
+        artifact_source: "NPM"
+        artifact_namespace: "@test-org"
+        artifact_name: "package-with-dashes"
+        project_id: "project_edge_2"
+        project_source: "OP_ATLAS"
+        project_namespace: "test"
+        project_name: "project-with-dashes"

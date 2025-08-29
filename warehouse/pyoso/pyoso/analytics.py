@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -18,10 +19,10 @@ class PartitionStatus(BaseModel):
 
 
 class MaterializationStatus(BaseModel):
-    partition_status: PartitionStatus | None = Field(
+    partition_status: Optional[PartitionStatus] = Field(
         default=None, alias="partitionStatus"
     )
-    latest_materialization: datetime | None = Field(
+    latest_materialization: Optional[datetime] = Field(
         default=None, alias="latestMaterialization"
     )
 
@@ -99,11 +100,11 @@ class DataAnalytics:
             if len(status.dependencies) == 0
         ]
 
-    def get(self, key: str) -> DataStatus | None:
+    def get(self, key: str) -> Optional[DataStatus]:
         """Get analytics data for a specific key."""
         return self._analytics_data.get(key)
 
-    def print_tree(self, key: str | None = None):
+    def print_tree(self, key: Optional[str] = None):
         """Print analytics data as a tree structure.
 
         Args:

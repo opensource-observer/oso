@@ -1,16 +1,5 @@
 with
     first_of_activity_to_entity as (
-        -- We use this CTE to get the first of a specific type of event to a specific
-        -- entity.
-        -- select MIN(time) as `time`,
-        -- event_source,
-        -- from_artifact_id,
-        -- to_artifact_id
-        -- from oso.int_first_of_event_from_artifact
-        -- where event_type in @activity_event_types
-        -- group by event_source,
-        -- from_artifact_id,
-        -- to_artifact_id
         select
             "time",
             event_source,
@@ -25,46 +14,20 @@ with
                 'oso.int_first_contribution_to_{entity_type}'
             ) as first_contribution
     ),
-    filtered_first_of as (
-        -- Filtered first of events to just the current period we are measuring.
-        select distinct
-            event_source,
-            from_artifact_id,
-            @metrics_entity_type_col(
-                'to_{entity_type}_id', table_alias := fo, include_column_alias := true
-            )
-        from first_of_activity_to_entity as fo
-        where "fo"."time" between @metrics_start('DATE') and @metrics_end('DATE')
-    ),
     new_contributors as (
-        -- Only new contributors. we do this by joining on the filtered first of events
-        -- in this time range
         select
-            active.metrics_sample_date,
-            active.event_source,
+            @metrics_sample_date(fo.time) as metrics_sample_date,
+            event_source,
             @metrics_entity_type_col(
                 'to_{entity_type}_id',
-                table_alias := active,
-                include_column_alias := true,
+                table_alias := fo,
+                include_column_alias := true
             ),
             @metric_name('new_contributors') as metric,
-            count(distinct active.from_artifact_id) as amount
-        from
-            @metrics_peer_ref(
-                contributor_active_days,
-                time_aggregation := @time_aggregation
-            ) as active
-        inner join
-            filtered_first_of as ffo
-            on active.from_artifact_id = ffo.from_artifact_id
-            and active.event_source = ffo.event_source
-            and @metrics_entity_type_col('to_{entity_type}_id', table_alias := active)
-            = @metrics_entity_type_col('to_{entity_type}_id', table_alias := ffo)
-        group by
-            metric,
-            @metrics_entity_type_col('to_{entity_type}_id', table_alias := active),
-            active.event_source,
-            active.metrics_sample_date
+            count(distinct fo.from_artifact_id) as amount
+        from first_of_activity_to_entity as fo
+        where "fo"."time" between @metrics_start('DATE') and @metrics_end('DATE')
+        group by 1, 2, 3, 4
     ),
     lag_events_filtered as (
         -- This filters for lagged events of the activity types we care about
@@ -153,7 +116,7 @@ with
             last_event.last_event is not null
             and last_event.last_event
             <= DATE_ADD(
-              'DAY', 
+              'DAY',
               (-1 * @metrics_sample_interval_length(active.metrics_sample_date, 'day')),
               @metrics_start('DATE')
             )
@@ -174,7 +137,7 @@ select
     count(distinct active.from_artifact_id) as amount
 from
     @metrics_peer_ref(
-        contributor_active_days, 
+        contributor_active_days,
         time_aggregation := @time_aggregation,
     ) as active
 where

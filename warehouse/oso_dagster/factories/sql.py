@@ -156,7 +156,7 @@ def sql_assets(
                 pipeline_name=pipeline_name,
                 destination=bigquery(
                     credentials=GcpServiceAccountCredentials(
-                        project_id=global_config.project_id
+                        project_id=global_config.gcp_project_id
                     )
                 ),
                 dataset_name=source_name,

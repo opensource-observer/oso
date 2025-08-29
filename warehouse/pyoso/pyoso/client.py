@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any
+from typing import Any, Optional
 
 import pandas as pd
 import requests
@@ -21,7 +21,7 @@ except ImportError:
 
 
 class ClientConfig(BaseModel):
-    base_url: str | None
+    base_url: Optional[str]
 
 
 class QueryData(BaseModel):
@@ -79,7 +79,9 @@ class QueryResponse:
 
 class Client:
     def __init__(
-        self, api_key: str | None = None, client_opts: ClientConfig | None = None
+        self,
+        api_key: Optional[str] = None,
+        client_opts: Optional[ClientConfig] = None,
     ):
         self.__api_key = api_key if api_key else os.environ.get(OSO_API_KEY)
         if not self.__api_key:
@@ -148,3 +150,25 @@ class Client:
     def query(self, query: str, include_analytics: bool = True) -> QueryResponse:
         """Execute a SQL query and return the full response including analytics data."""
         return self.__query(query, include_analytics=include_analytics)
+
+    def dbapi_connection(self, force_without_pyodide: bool = False):
+        """Get a DBAPI 2.0 compatible connection.
+
+        This is experimental and incomplete. It will error unless forced right now.
+        """
+        if force_without_pyodide:
+            import warnings
+
+            warnings.warn(
+                "Forcing dbapi_connection without pyodide is not recommended."
+            )
+        else:
+            try:
+                import pyodide  # type: ignore # noqa: F401
+            except ImportError:
+                raise NotImplementedError(
+                    "dbapi_connection is not intended for use without pyodide. Please treat as not implemented."
+                )
+        from .engine import PyosoDBApiConnection
+
+        return PyosoDBApiConnection(self)

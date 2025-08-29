@@ -1,28 +1,124 @@
 "use client";
 
 import * as React from "react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+type DropdownMenuProps = React.ComponentProps<
+  typeof DropdownMenuPrimitive.Root
+> & {
+  testOpen?: boolean;
+};
+
+function DropdownMenu(props: DropdownMenuProps) {
+  // testOpen is an edit-time only prop to force the menu open in Plasmic Studio
+  const { testOpen, ...rest } = props;
+  // if open is explicitly set, respect that, otherwise use testOpen
+  const open = props.open || testOpen;
+
+  return <DropdownMenuPrimitive.Root {...rest} open={open} />;
+}
+
+const DropdownMenuMeta: CodeComponentMeta<DropdownMenuProps> = {
+  name: "DropdownMenu",
+  description: "shadcn/ui DropdownMenu component",
+  props: {
+    children: "slot",
+    testOpen: {
+      type: "boolean",
+      advanced: true,
+      editOnly: true,
+    },
+  },
+};
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
+type DropdownMenuTriggerProps = React.ComponentProps<
+  typeof DropdownMenuTrigger
+>;
+
+const DropdownMenuTriggerMeta: CodeComponentMeta<DropdownMenuTriggerProps> = {
+  name: "DropdownMenuTrigger",
+  description: "shadcn/ui DropdownMenuTrigger component",
+  props: {
+    children: "slot",
+    asChild: "boolean",
+  },
+};
+
 const DropdownMenuGroup = DropdownMenuPrimitive.Group;
+
+type DropdownMenuGroupProps = React.ComponentProps<typeof DropdownMenuGroup>;
+
+const DropdownMenuGroupMeta: CodeComponentMeta<DropdownMenuGroupProps> = {
+  name: "DropdownMenuGroup",
+  description: "shadcn/ui DropdownMenuGroup component",
+  props: {
+    children: "slot",
+  },
+};
 
 const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
 
+type DropdownMenuPortalProps = React.ComponentProps<typeof DropdownMenuPortal>;
+
+const DropdownMenuPortalMeta: CodeComponentMeta<DropdownMenuPortalProps> = {
+  name: "DropdownMenuPortal",
+  description: "shadcn/ui DropdownMenuPortal component",
+  props: {
+    children: "slot",
+  },
+};
+
 const DropdownMenuSub = DropdownMenuPrimitive.Sub;
+
+type DropdownMenuSubProps = React.ComponentProps<typeof DropdownMenuSub>;
+
+const DropdownMenuSubMeta: CodeComponentMeta<DropdownMenuSubProps> = {
+  name: "DropdownMenuSub",
+  description: "shadcn/ui DropdownMenuSub component",
+  props: {
+    children: "slot",
+  },
+};
 
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
 
+type DropdownMenuRadioGroupProps = React.ComponentProps<
+  typeof DropdownMenuRadioGroup
+>;
+
+const DropdownMenuRadioGroupMeta: CodeComponentMeta<DropdownMenuRadioGroupProps> =
+  {
+    name: "DropdownMenuRadioGroup",
+    description: "shadcn/ui DropdownMenuRadioGroup component",
+    props: {
+      children: "slot",
+    },
+  };
+
+type DropdownMenuSubTriggerProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.SubTrigger
+> & {
+  inset?: boolean;
+};
+
+const DropdownMenuSubTriggerMeta: CodeComponentMeta<DropdownMenuSubTriggerProps> =
+  {
+    name: "DropdownMenuSubTrigger",
+    description: "shadcn/ui DropdownMenuSubTrigger component",
+    props: {
+      children: "slot",
+      inset: "boolean",
+    },
+  };
+
 const DropdownMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
-    inset?: boolean;
-  }
+  DropdownMenuSubTriggerProps
 >(({ className, inset, children, ...props }, ref) => (
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
@@ -40,9 +136,22 @@ const DropdownMenuSubTrigger = React.forwardRef<
 DropdownMenuSubTrigger.displayName =
   DropdownMenuPrimitive.SubTrigger.displayName;
 
+type DropdownMenuSubContentProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.SubContent
+>;
+
+const DropdownMenuSubContentMeta: CodeComponentMeta<DropdownMenuSubContentProps> =
+  {
+    name: "DropdownMenuSubContent",
+    description: "shadcn/ui DropdownMenuSubContent component",
+    props: {
+      children: "slot",
+    },
+  };
+
 const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
+  DropdownMenuSubContentProps
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.SubContent
     ref={ref}
@@ -56,9 +165,30 @@ const DropdownMenuSubContent = React.forwardRef<
 DropdownMenuSubContent.displayName =
   DropdownMenuPrimitive.SubContent.displayName;
 
+type DropdownMenuContentProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.Content
+>;
+
+const DropdownMenuContentMeta: CodeComponentMeta<DropdownMenuContentProps> = {
+  name: "DropdownMenuContent",
+  description: "shadcn/ui DropdownMenuContent component",
+  props: {
+    children: "slot",
+    align: {
+      type: "choice",
+      options: ["start", "center", "end"],
+    },
+    side: {
+      type: "choice",
+      options: ["top", "right", "bottom", "left"],
+    },
+    sideOffset: "number",
+  },
+};
+
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
+  DropdownMenuContentProps
 >(({ className, sideOffset = 4, ...props }, ref) => (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
@@ -75,11 +205,24 @@ const DropdownMenuContent = React.forwardRef<
 ));
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
+type DropdownMenuItemProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.Item
+> & {
+  inset?: boolean;
+};
+
+const DropdownMenuItemMeta: CodeComponentMeta<DropdownMenuItemProps> = {
+  name: "DropdownMenuItem",
+  description: "shadcn/ui DropdownMenuItem component",
+  props: {
+    children: "slot",
+    inset: "boolean",
+  },
+};
+
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
-    inset?: boolean;
-  }
+  DropdownMenuItemProps
 >(({ className, inset, ...props }, ref) => (
   <DropdownMenuPrimitive.Item
     ref={ref}
@@ -93,9 +236,22 @@ const DropdownMenuItem = React.forwardRef<
 ));
 DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
 
+type DropdownMenuCheckboxItemProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.CheckboxItem
+>;
+
+const DropdownMenuCheckboxItemMeta: CodeComponentMeta<DropdownMenuCheckboxItemProps> =
+  {
+    name: "DropdownMenuCheckboxItem",
+    description: "shadcn/ui DropdownMenuCheckboxItem component",
+    props: {
+      children: "slot",
+    },
+  };
+
 const DropdownMenuCheckboxItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
+  DropdownMenuCheckboxItemProps
 >(({ className, children, checked, ...props }, ref) => (
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
@@ -117,9 +273,22 @@ const DropdownMenuCheckboxItem = React.forwardRef<
 DropdownMenuCheckboxItem.displayName =
   DropdownMenuPrimitive.CheckboxItem.displayName;
 
+type DropdownMenuRadioItemProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.RadioItem
+>;
+
+const DropdownMenuRadioItemMeta: CodeComponentMeta<DropdownMenuRadioItemProps> =
+  {
+    name: "DropdownMenuRadioItem",
+    description: "shadcn/ui DropdownMenuRadioItem component",
+    props: {
+      children: "slot",
+    },
+  };
+
 const DropdownMenuRadioItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
+  DropdownMenuRadioItemProps
 >(({ className, children, ...props }, ref) => (
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
@@ -139,11 +308,24 @@ const DropdownMenuRadioItem = React.forwardRef<
 ));
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
 
+type DropdownMenuLabelProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.Label
+> & {
+  inset?: boolean;
+};
+
+const DropdownMenuLabelMeta: CodeComponentMeta<DropdownMenuLabelProps> = {
+  name: "DropdownMenuLabel",
+  description: "shadcn/ui DropdownMenuLabel component",
+  props: {
+    children: "slot",
+    inset: "boolean",
+  },
+};
+
 const DropdownMenuLabel = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Label>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Label> & {
-    inset?: boolean;
-  }
+  DropdownMenuLabelProps
 >(({ className, inset, ...props }, ref) => (
   <DropdownMenuPrimitive.Label
     ref={ref}
@@ -157,9 +339,20 @@ const DropdownMenuLabel = React.forwardRef<
 ));
 DropdownMenuLabel.displayName = DropdownMenuPrimitive.Label.displayName;
 
+type DropdownMenuSeparatorProps = React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.Separator
+>;
+
+const DropdownMenuSeparatorMeta: CodeComponentMeta<DropdownMenuSeparatorProps> =
+  {
+    name: "DropdownMenuSeparator",
+    description: "shadcn/ui DropdownMenuSeparator component",
+    props: {},
+  };
+
 const DropdownMenuSeparator = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
+  DropdownMenuSeparatorProps
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Separator
     ref={ref}
@@ -182,6 +375,16 @@ const DropdownMenuShortcut = ({
 };
 DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
 
+type DropdownMenuShortcutProps = React.HTMLAttributes<HTMLSpanElement>;
+
+const DropdownMenuShortcutMeta: CodeComponentMeta<DropdownMenuShortcutProps> = {
+  name: "DropdownMenuShortcut",
+  description: "shadcn/ui DropdownMenuShortcut component",
+  props: {
+    children: "slot",
+  },
+};
+
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -198,4 +401,20 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuRadioGroup,
+  // Meta
+  DropdownMenuMeta,
+  DropdownMenuTriggerMeta,
+  DropdownMenuContentMeta,
+  DropdownMenuItemMeta,
+  DropdownMenuGroupMeta,
+  DropdownMenuPortalMeta,
+  DropdownMenuSubMeta,
+  DropdownMenuRadioGroupMeta,
+  DropdownMenuSubTriggerMeta,
+  DropdownMenuSubContentMeta,
+  DropdownMenuCheckboxItemMeta,
+  DropdownMenuRadioItemMeta,
+  DropdownMenuLabelMeta,
+  DropdownMenuSeparatorMeta,
+  DropdownMenuShortcutMeta,
 };

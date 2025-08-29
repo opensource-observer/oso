@@ -34,9 +34,9 @@ At a high-level, there are 2 possible pathways:
   it can lead to performance issues, especially if the data does not
   easily fit in memory.
 
-Assets should be added to `warehouse/oso_dagster/assets/`. All assets defined in
-this package are automatically loaded into Dagster from the main branch of the
-git repository.
+Most assets should be added to `warehouse/oso_dagster/assets/default`. All
+assets defined in this package are automatically loaded into Dagster from the
+main branch of the git repository.
 
 For an example of a custom Dagster asset, check out the
 [asset for oss-directory](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/assets/ossd.py),

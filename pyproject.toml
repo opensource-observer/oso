@@ -67,7 +67,12 @@ dependencies = [
     "kr8s==0.20.9",
     "structlog>=25.4.0",
     "pandas-gbq>=0.29.2",
-    "dagster-sqlmesh>=0.19.0",
+    "dagster-sqlmesh>=0.20.0",
+    "oso-core",
+    "pyoso",
+    "metrics-service",
+    "cryo>=0.3.2",
+    "web3>=7.13.0",
 ]
 name = "oso"
 version = "1.0.0"
@@ -88,7 +93,7 @@ oso_dagster = "oso_dagster.cli:cli"
 [dependency-groups]
 dev = [
     "dagster-webserver<2.0.0,>=1.7.2",
-    "ipython<9.0.0,>=8.21.0",
+    "ipython>=8.21.0,<10.0.0",
     "shandy-sqlfmt[jinjafmt]<1.0.0,>=0.21.1",
     "isort>=5.13.2,<7.0.0",
     "ruff>=0.10.0",
@@ -128,7 +133,7 @@ packages = [
 ]
 
 [tool.dagster]
-module_name = "oso_dagster.definitions.legacy"
+module_name = "oso_dagster.definitions.default"
 
 [tool.pyright]
 pythonVersion = "3.12"
