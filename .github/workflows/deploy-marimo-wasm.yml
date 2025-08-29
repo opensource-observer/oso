@@ -31,7 +31,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
           run_install: |
             - recursive: true
               args: [--frozen-lockfile, --strict-peer-dependencies]
@@ -42,8 +41,11 @@ jobs:
           cache: "pnpm"
           node-version: "22.x"
 
+      - name: Build the frontend components
+        run: pixi run make fe
+
       - name: Build the dist directory for marimo
-        run: pixi run bash scripts/build-production-wasm-artifacts.sh marimo.opensource.observer marimo_dist
+        run: pixi run bash scripts/build_production_marimo_wasm.sh marimo_dist marimo.opensource.observer
 
       - name: Install wrangler
         run: pnpm add -g wrangler
