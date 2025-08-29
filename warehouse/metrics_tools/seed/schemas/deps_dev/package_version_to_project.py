@@ -4,7 +4,7 @@ from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
 
-class PackageVersionToProject(BaseModel):
+class package_version_to_project(BaseModel):
     """Stores the mapping between package versions and projects"""
 
     SnapshotAt: datetime | None = Column(
@@ -30,9 +30,9 @@ seed = SeedConfig(
     catalog="bigquery_public_data",
     schema="deps_dev_v1",
     table="PackageVersionToProject",
-    base=PackageVersionToProject,
+    base=package_version_to_project,
     rows=[
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="CARGO",
             ProjectName="scrtlabs/cosmwasm",
@@ -41,7 +41,7 @@ seed = SeedConfig(
             Version="1.1.11",
             RelationType="SOURCE_REPO_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="GO",
             ProjectName="compass/compass",
@@ -50,7 +50,7 @@ seed = SeedConfig(
             Version="v0.6.9",
             RelationType="SOURCE_REPO_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="MAVEN",
             ProjectName="aspectran/aspectran",
@@ -59,7 +59,7 @@ seed = SeedConfig(
             Version="5.7.0",
             RelationType="ISSUE_TRACKER_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="MAVEN",
             ProjectName="eventoframework/evento-framework",
@@ -68,7 +68,7 @@ seed = SeedConfig(
             Version="ev1.8.1",
             RelationType="SOURCE_REPO_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="NPM",
             ProjectName="pngwn/mdsvex",
@@ -77,7 +77,7 @@ seed = SeedConfig(
             Version="0.5.3",
             RelationType="ISSUE_TRACKER_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="NPM",
             ProjectName="rlthomasgames/kitsune",
@@ -86,7 +86,7 @@ seed = SeedConfig(
             Version="0.0.34",
             RelationType="SOURCE_REPO_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="NUGET",
             ProjectName="matheusneder/graceterm",
@@ -95,7 +95,7 @@ seed = SeedConfig(
             Version="1.0.0-alpha-b0",
             RelationType="SOURCE_REPO_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="PYPI",
             ProjectName="home-assistant/core",
@@ -104,7 +104,7 @@ seed = SeedConfig(
             Version="2024.1.0b5",
             RelationType="ISSUE_TRACKER_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="PYPI",
             ProjectName="greytechno/gtci",
@@ -113,7 +113,7 @@ seed = SeedConfig(
             Version="1.0.6",
             RelationType="SOURCE_REPO_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="RUBYGEMS",
             ProjectName="fmmfonseca/work_queue",
@@ -122,7 +122,7 @@ seed = SeedConfig(
             Version="2.5.1",
             RelationType="ISSUE_TRACKER_TYPE",
         ),
-        PackageVersionToProject(
+        package_version_to_project(
             SnapshotAt=datetime.now(),
             System="RUBYGEMS",
             ProjectName="jarmo/watirsplash",
