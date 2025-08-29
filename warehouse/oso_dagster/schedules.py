@@ -12,6 +12,7 @@ from dagster import (
 )
 from oso_dagster.factories.common import AssetFactoryResponse
 from oso_dagster.utils.tags import (
+    daily_source_tag,
     experimental_tag,
     partitioned_assets,
     sbom_source_tag,
@@ -71,6 +72,7 @@ def get_partitioned_schedules(
 
     return [create_schedule(asset_key) for asset_key in resolved_assets]
 
+
 materialize_core_assets = define_asset_job(
     "materialize_core_assets_job",
     AssetSelection.all()
@@ -96,6 +98,10 @@ materialize_sbom_source_assets = define_asset_job(
     sbom_source_tag,
 )
 
+materialize_daily_source_assets = define_asset_job(
+    "materialize_daily_source_assets_job",
+    daily_source_tag,
+)
 
 schedules: list[ScheduleDefinition] = [
     # Run core pipeline assets once a month
@@ -125,6 +131,14 @@ schedules: list[ScheduleDefinition] = [
     ScheduleDefinition(
         job=materialize_sbom_source_assets,
         cron_schedule="0 6 * * 2,5",
+        tags={
+            "dagster/priority": "-1",
+        },
+    ),
+    # Run daily source assets every day at midnight
+    ScheduleDefinition(
+        job=materialize_daily_source_assets,
+        cron_schedule="0 12 * * *",
         tags={
             "dagster/priority": "-1",
         },

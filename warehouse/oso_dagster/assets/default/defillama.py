@@ -31,7 +31,7 @@ K8S_CONFIG = {
 DEFILLAMA_BASE_CONFIG = {
     "key_prefix": "defillama",
     "tags": {
-        "opensource.observer/source": "stable",
+        "opensource.observer/source": "daily",
     },
 }
 
