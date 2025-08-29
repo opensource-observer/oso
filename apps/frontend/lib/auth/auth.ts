@@ -300,24 +300,10 @@ async function getUserByJwt(token: string, host: string | null): Promise<User> {
   return makeNormalUser(data.user, DEFAULT_KEY_NAME, host, orgDetails);
 }
 
-/**
- * Main function to authenticate a user from a request
- */
-async function getUser(request: NextRequest): Promise<User> {
-  const headers = request.headers;
-  const host = getHost(request);
-  const auth = headers.get("authorization");
-
-  if (!auth) {
-    console.log(`auth: No token => anon`);
-    return makeAnonUser(host);
-  }
-
-  const trimmedAuth = auth.trim();
-  const token = trimmedAuth.toLowerCase().startsWith(AUTH_PREFIX)
-    ? trimmedAuth.slice(AUTH_PREFIX.length).trim()
-    : trimmedAuth;
-
+async function getUserByAmbigiousToken(
+  token: string,
+  host: string | null,
+): Promise<User> {
   const jwtUser = await getUserByJwt(token, host);
   const apiKeyUser =
     jwtUser.role === "anonymous" ? await getUserByApiKey(token, host) : jwtUser;
@@ -346,6 +332,60 @@ async function getUser(request: NextRequest): Promise<User> {
   }
 
   return user;
+}
+
+/**
+ * Main function to authenticate a user from a request
+ */
+async function getUser(request: NextRequest): Promise<User> {
+  const userFromHttpHeader = await getUserByHttpHeader(request);
+  if (userFromHttpHeader.role !== "anonymous") {
+    return userFromHttpHeader;
+  }
+  const userFromCookies = await getUserByCookies(request);
+  return userFromCookies;
+}
+
+/**
+ * Tries to identify a user from the HTTP Authorization header
+ * - Supports Bearer tokens that are either JWTs from Supabase or API keys
+ * @param request
+ * @returns
+ */
+async function getUserByHttpHeader(request: NextRequest): Promise<User> {
+  const headers = request.headers;
+  const host = getHost(request);
+  const auth = headers.get("authorization");
+
+  if (!auth) {
+    console.log(`auth: No token => anon`);
+    return makeAnonUser(host);
+  }
+
+  const trimmedAuth = auth.trim();
+  const token = trimmedAuth.toLowerCase().startsWith(AUTH_PREFIX)
+    ? trimmedAuth.slice(AUTH_PREFIX.length).trim()
+    : trimmedAuth;
+
+  return await getUserByAmbigiousToken(token, host);
+}
+
+/**
+ * Tries to identify a user from cookies (Supabase session)
+ * @param request
+ * @returns
+ */
+async function getUserByCookies(request: NextRequest): Promise<User> {
+  const host = getHost(request);
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+
+  if (error || !token) {
+    console.log("getUserByCookies: No valid session => anon", error);
+    return makeAnonUser(null);
+  }
+  return await getUserByAmbigiousToken(token, host);
 }
 
 async function signOsoJwt(
