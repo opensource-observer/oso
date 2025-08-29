@@ -969,6 +969,7 @@ const SidebarMenuSubButtonMeta: CodeComponentMeta<SidebarMenuSubButtonProps> = {
   name: "SidebarMenuSubButton",
   description: "shadcn/ui SidebarMenuSubButton component",
   props: {
+    children: "slot",
     asChild: "boolean",
     size: {
       type: "choice",
