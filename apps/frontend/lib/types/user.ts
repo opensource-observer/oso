@@ -30,13 +30,13 @@ export const NormalUserSchema = BaseUserSchema.extend({
   role: z.literal("user"),
 })
   .merge(UserDetailsSchema)
-  .merge(OrganizationDetailsSchema.partial());
+  .merge(OrganizationDetailsSchema);
 
 export const AdminUserSchema = BaseUserSchema.extend({
   role: z.literal("admin"),
 })
   .merge(UserDetailsSchema)
-  .merge(OrganizationDetailsSchema.partial());
+  .merge(OrganizationDetailsSchema);
 
 export const AuthUserSchema = z.union([NormalUserSchema, AdminUserSchema]);
 export const UserSchema = z.union([AnonUserSchema, AuthUserSchema]);
