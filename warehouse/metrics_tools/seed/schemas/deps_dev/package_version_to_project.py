@@ -29,7 +29,7 @@ class package_version_to_project(BaseModel):
 seed = SeedConfig(
     catalog="bigquery_public_data",
     schema="deps_dev_v1",
-    table="package_version_to_project",
+    table="PackageVersionToProject",
     base=package_version_to_project,
     rows=[
         package_version_to_project(
