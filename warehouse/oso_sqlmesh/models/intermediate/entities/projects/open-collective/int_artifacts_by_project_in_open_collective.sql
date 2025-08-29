@@ -23,8 +23,8 @@ WITH filtered_accounts AS (
   WHERE
     github_handle IS NOT NULL
     AND repository_url IS NOT NULL
-    AND JSON_EXTRACT_SCALAR(stats, '$.total_amount_received.currency') = 'USD'
-    AND CAST(JSON_EXTRACT_SCALAR(stats, '$.total_amount_received.value') AS DOUBLE) >= 1000
+    AND stats.total_amount_received.currency = 'USD'
+    AND CAST(stats.total_amount_received.value AS DOUBLE) >= 1000
     AND type IN ('ORGANIZATION', 'INDIVIDUAL', 'COLLECTIVE')
 ),
 
