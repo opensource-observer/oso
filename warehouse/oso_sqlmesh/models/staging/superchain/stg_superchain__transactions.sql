@@ -30,6 +30,9 @@ MODEL (
 
 SELECT
   @from_unix_timestamp(block_timestamp) AS block_timestamp,
+  block_number,
+  block_hash,
+  transaction_index,
   "hash" AS transaction_hash,
   from_address,
   to_address,
