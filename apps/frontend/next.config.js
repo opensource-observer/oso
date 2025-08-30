@@ -124,8 +124,6 @@ const nextConfig = {
   },
 };
 
-console.log("!!!", process.env.POSTHOG_PROJECT_ID);
-
 module.exports = withPostHogConfig(nextConfig, {
   personalApiKey:
     process.env.POSTHOG_PRIVATE_KEY ?? "MISSING POSTHOG_PRIVATE_KEY", // Personal API Key
