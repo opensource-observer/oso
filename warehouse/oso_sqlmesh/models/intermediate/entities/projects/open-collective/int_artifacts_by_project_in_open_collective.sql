@@ -9,7 +9,8 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0),
     not_null(columns := (artifact_id, project_id))
-  )
+  ),
+  enabled false
 );
 
 WITH filtered_accounts AS (
@@ -23,8 +24,8 @@ WITH filtered_accounts AS (
   WHERE
     github_handle IS NOT NULL
     AND repository_url IS NOT NULL
-    AND total_amount_received_currency = 'USD'
-    AND total_amount_received_value >= 1000
+    AND stats.total_amount_received.currency = 'USD'
+    AND CAST(stats.total_amount_received.value AS DOUBLE) >= 1000
     AND type IN ('ORGANIZATION', 'INDIVIDUAL', 'COLLECTIVE')
 ),
 
