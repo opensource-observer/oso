@@ -104,3 +104,54 @@ test_allow_anonymous_denied if {
 		"softwareStack": {"trinoVersion": "434"},
 	}}
 }
+
+test_allow_dynamic_catalog_allowed if {
+	trino.allow with input as {
+		"context": {
+			"identity": {"user": "jwt-some-id"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "SelectFromColumns",
+			"resource": {"table": {
+				"catalogName": "dynamic",
+				"schemaName": "some-id",
+				"tableName": "example_table",
+			}},
+		},
+	}
+}
+
+test_allow_dynamic_catalog_denied_wrong_schema if {
+	not trino.allow with input as {
+		"context": {
+			"identity": {"user": "jwt-some-id"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "SelectFromColumns",
+			"resource": {"table": {
+				"catalogName": "dynamic",
+				"schemaName": "another-id",
+				"tableName": "example_table",
+			}},
+		},
+	}
+}
+
+test_allow_dynamic_catalog_denied_wrong_catalog if {
+	not trino.allow with input as {
+		"context": {
+			"identity": {"user": "jwt-some-id"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "SelectFromColumns",
+			"resource": {"table": {
+				"catalogName": "another-catalog",
+				"schemaName": "some-id",
+				"tableName": "example_table",
+			}},
+		},
+	}
+}
