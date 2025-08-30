@@ -17,10 +17,6 @@ export const POSTHOG_HOST = "/ingest";
 export const POSTHOG_HOST_DIRECT = "https://us.i.posthog.com";
 export const POSTHOG_KEY =
   process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "MISSING POSTHOG_KEY";
-export const POSTHOG_PROJECT_ID = requireEnv(
-  process.env.POSTHOG_PROJECT_ID,
-  "POSTHOG_PROJECT_ID",
-);
 export const GOOGLE_ANALYTICS_KEY =
   process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_KEY ??
   "MISSING GOOGLE_ANALYTICS_KEY";

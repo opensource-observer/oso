@@ -1,7 +1,6 @@
 // @ts-check
-import { withPostHogConfig } from "@posthog/nextjs-config";
-import { POSTHOG_HOST, POSTHOG_KEY, POSTHOG_PROJECT_ID } from "@/lib/config";
-
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { withPostHogConfig } = require("@posthog/nextjs-config");
 /**
  * @type {import('next').NextConfig}
  **/
@@ -125,13 +124,17 @@ const nextConfig = {
   },
 };
 
+console.log("!!!", process.env.POSTHOG_PROJECT_ID);
+
 module.exports = withPostHogConfig(nextConfig, {
-  personalApiKey: POSTHOG_KEY, // Personal API Key
-  envId: POSTHOG_PROJECT_ID, // Environment ID
-  host: POSTHOG_HOST, // (optional), defaults to https://us.posthog.com
+  personalApiKey:
+    process.env.POSTHOG_PRIVATE_KEY ?? "MISSING POSTHOG_PRIVATE_KEY", // Personal API Key
+  envId: process.env.POSTHOG_PROJECT_ID ?? "MISSING POSTHOG_PROJECT_ID", // Environment ID
+  //host: POSTHOG_HOST, // (optional), defaults to https://us.posthog.com
   sourcemaps: {
     // (optional)
-    //enabled: true, // (optional) Enable sourcemaps generation and upload, default to true on production builds
+    // Only enable for production builds
+    enabled: process.env.VERCEL_ENV === "production", // (optional) Enable sourcemaps generation and upload, default to true on production builds
     //project: "my-application", // (optional) Project name, defaults to repository name
     //version: "1.0.0", // (optional) Release version, defaults to current git commit
     //deleteAfterUpload: true, // (optional) Delete sourcemaps after upload, defaults to true
