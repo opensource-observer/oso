@@ -39,7 +39,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "npm-check-updates": "^18.0.1",
-    "prettier": "^3.3.2",
+    "prettier": "^3.6.2",
     "pyright": "^1.1.390",
     "turbo": "^1.13.4"
   },
