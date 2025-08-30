@@ -156,6 +156,17 @@ class SchemaAnalysisEvent(Event):
     execute_sql: bool = True
 
 
+class TableSelectionEvent(Event):
+    """Event carrying table selection results for semantic query."""
+
+    id: str
+    input_text: str
+    selected_models: list[str]
+    filtered_registry_description: str
+    synthesize_response: bool = True
+    execute_sql: bool = True
+
+
 class RowContextEvent(Event):
     """Event carrying row context retrieval results."""
 
