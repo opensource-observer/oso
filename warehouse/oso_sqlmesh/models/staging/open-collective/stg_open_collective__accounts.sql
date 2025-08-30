@@ -31,6 +31,6 @@ SELECT
   repository_url,
   created_at,
   updated_at,
-  stats.total_amount_received.currency AS total_amount_received_currency,
-  CAST(stats.total_amount_received.value AS DOUBLE) AS total_amount_received_value
+  JSON_EXTRACT_SCALAR(stats, '$.total_amount_received.currency') AS total_amount_received_currency,
+  CAST(JSON_EXTRACT_SCALAR(stats, '$.total_amount_received.value') AS DOUBLE) AS total_amount_received_value
 FROM @oso_source('bigquery.open_collective.accounts')
