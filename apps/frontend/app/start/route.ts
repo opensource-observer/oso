@@ -7,11 +7,8 @@ export async function GET(req: NextRequest) {
 
   if (user.role === "anonymous") {
     logger.log(`/start: User is anonymous`);
-    return NextResponse.redirect("/login");
+    return NextResponse.redirect(new URL("/login", req.url));
   }
   const orgId = user.orgId;
-  if (!orgId) {
-    throw new Error("User has no orgId");
-  }
-  return NextResponse.redirect(`/orgs/${orgId}`);
+  return NextResponse.redirect(new URL(`/orgs/${orgId}`, req.url));
 }

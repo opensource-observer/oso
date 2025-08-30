@@ -9,7 +9,8 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0),
     not_null(columns := (artifact_id, project_id))
-  )
+  ),
+  enabled false
 );
 
 WITH filtered_accounts AS (
