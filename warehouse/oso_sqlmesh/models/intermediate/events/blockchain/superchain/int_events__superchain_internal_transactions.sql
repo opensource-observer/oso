@@ -29,7 +29,7 @@ MODEL (
 
 SELECT
   block_timestamp AS time,
-  'CONTRACT_INTERNAL_INVOCATION' AS event_type,
+  'INTERNAL_TRANSACTION' AS event_type,
   chain AS event_source,
   transaction_hash,
   @oso_id(chain, '', transaction_hash) AS event_source_id,

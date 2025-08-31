@@ -30,8 +30,8 @@ MODEL (
 SELECT
   block_timestamp AS time,
   CASE
-    WHEN receipt_status = 1 THEN 'CONTRACT_INVOCATION'
-    ELSE 'FAILED_CONTRACT_INVOCATION'
+    WHEN receipt_status = 1 THEN 'TRANSACTION'
+    ELSE 'FAILED_TRANSACTION'
   END AS event_type,
   chain AS event_source,
   @oso_id(chain, '', transaction_hash) AS event_source_id,
