@@ -34,7 +34,7 @@ SELECT
   from_address,
   to_address,
   gas_used,
-  @chain_name(chain) AS chain,
+  @chain_name(chain) AS chain
 FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.traces')
 WHERE
   network = 'mainnet'
