@@ -36,7 +36,7 @@ WITH metrics AS (
 ),
 
 projects AS (
-  SELECT DISTINCT project_id,
+  SELECT DISTINCT project_id
   FROM oso.projects_by_collection_v1
   WHERE collection_name LIKE '8-%'
 )
