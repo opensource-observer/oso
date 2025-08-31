@@ -30,18 +30,11 @@ MODEL (
 
 SELECT
   @from_unix_timestamp(block_timestamp) AS block_timestamp,
-  block_number,
-  block_hash,
-  transaction_index,
   transaction_hash,
   from_address,
   to_address,
-  gas,
   gas_used,
-  subtraces,
-  trace_address,
   @chain_name(chain) AS chain,
-  call_type
 FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.traces')
 WHERE
   network = 'mainnet'
