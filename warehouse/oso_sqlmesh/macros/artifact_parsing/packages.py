@@ -39,7 +39,9 @@ def _get_artifact_namespace_and_name(
 
     # Determine final namespace and name
     final_artifact_namespace_expr = (
-        exp.Case().when(is_maven_expr, maven_namespace_expr).else_(exp.Null())
+        exp.Case()
+        .when(is_maven_expr, maven_namespace_expr)
+        .else_(exp.Literal.string(""))
     )
 
     final_artifact_name_expr = (
