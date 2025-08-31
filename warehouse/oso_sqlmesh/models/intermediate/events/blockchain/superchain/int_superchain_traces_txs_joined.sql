@@ -11,6 +11,7 @@ MODEL (
   start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by (DAY("block_timestamp"), "chain"),
+  grain (block_timestamp, chain, transaction_hash, from_address_tx, from_address_trace, to_address_tx, to_address_trace),
   audits (
     has_at_least_n_rows(threshold := 0),
     no_gaps(
