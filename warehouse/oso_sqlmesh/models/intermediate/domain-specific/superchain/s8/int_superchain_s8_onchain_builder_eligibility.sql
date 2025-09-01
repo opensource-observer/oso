@@ -38,7 +38,7 @@ WITH
   daily_metrics AS (
     SELECT
       m.metric_id,
-      REPLACE(m.metric_name, '_daily', '') AS metric_group
+      m.display_name AS metric_group
     FROM oso.metrics_v0 AS m
     JOIN oso.int_superchain_chain_names AS c
       ON m.metric_name LIKE CONCAT(c.chain, '_%_daily')
@@ -68,7 +68,7 @@ WITH
     FROM project_measurement_dates AS pmd
     JOIN oso.timeseries_metrics_by_project_v0 AS tm
       ON tm.project_id = pmd.project_id
-     AND tm.sample_date BETWEEN pmd.measurement_date - INTERVAL '179' DAY
+     AND tm.sample_date BETWEEN pmd.measurement_date - INTERVAL '180' DAY
                             AND pmd.measurement_date
     JOIN daily_metrics AS dm
       ON tm.metric_id = dm.metric_id
@@ -81,8 +81,8 @@ WITH
       project_id,
       sample_date,
       -- TODO: replace this with "internal_transactions_daily"
-      COALESCE(MAX(CASE WHEN metric_group = 'contract_invocations' THEN amount END), 0) AS transaction_count,
-      COALESCE(MAX(CASE WHEN metric_group = 'contract_invocations' THEN active_days END), 0) AS active_days
+      COALESCE(MAX(CASE WHEN metric_group = 'Contract Invocations' THEN amount END), 0) AS transaction_count,
+      COALESCE(MAX(CASE WHEN metric_group = 'Contract Invocations' THEN active_days END), 0) AS active_days
     FROM project_metrics
     GROUP BY project_id, sample_date
     ORDER BY project_id, sample_date
