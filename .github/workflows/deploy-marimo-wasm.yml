@@ -45,7 +45,7 @@ jobs:
         run: pixi run make fe
 
       - name: Build the dist directory for marimo
-        run: pixi run bash scripts/build_production_marimo_wasm.sh marimo_dist marimo.opensource.observer
+        run: pixi run bash scripts/build_marimo_static_dist.sh marimo_dist marimo.opensource.observer
 
       - name: Install wrangler
         run: pnpm add -g wrangler
