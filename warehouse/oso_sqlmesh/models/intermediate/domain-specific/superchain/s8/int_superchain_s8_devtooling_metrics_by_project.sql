@@ -100,7 +100,7 @@ initial_metrics AS (
                         END),
       x -> x IS NOT NULL
     ) AS onchain_builder_op_atlas_ids,
-    m.developer_names AS trusted_developer_usernames,
+    m.developer_names AS trusted_developer_usernames
   FROM project_metrics m
   LEFT JOIN oso.int_superchain_s8_devtooling_graph g
     ON m.project_id = g.devtooling_project_id
