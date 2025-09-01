@@ -73,7 +73,6 @@ timeseries_metrics(
         "int_issue_event_time_deltas",
         "int_first_of_event_from_artifact__github",
         "int_events_daily__blockchain",
-        "int_events_daily__blockchain_token_transfers",
         "int_events_daily__4337",
         "int_events_daily__defillama",
         "int_events_daily__github",

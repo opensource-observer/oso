@@ -28,6 +28,7 @@ MODEL (
     "superchain",
     "incremental",
   ),
+  enabled false,
 );
 
 SELECT

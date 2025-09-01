@@ -1,6 +1,7 @@
+-- L2 internal transaction events
 MODEL (
-  name oso.int_events_daily__blockchain_token_transfers,
-  description "Intermediate table for daily blockchain token transfers",
+  name oso.int_events_daily__l2_internal_transactions,
+  description 'L2 internal transaction events',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_day,
     batch_size 180,
@@ -9,8 +10,7 @@ MODEL (
     forward_only true,
   ),
   start @blockchain_incremental_start,
-  cron '@weekly',
-  dialect trino,
+  cron '@daily',
   partitioned_by (DAY("bucket_day"), "event_type", "event_source"),
   grain (bucket_day, event_type, event_source, from_artifact_id, to_artifact_id),
   audits (
@@ -25,18 +25,19 @@ MODEL (
   ),
   tags (
     "incremental"
-  ),
-  enabled false,
+  )
 );
 
 
 SELECT
   DATE_TRUNC('DAY', time::DATE) AS bucket_day,
-  from_artifact_id::VARCHAR AS from_artifact_id,
-  to_artifact_id::VARCHAR AS to_artifact_id,
-  event_source::VARCHAR,
-  event_type::VARCHAR,
-  SUM(amount) AS amount
-FROM oso.int_events__blockchain_token_transfers
+  from_artifact_id,
+  to_artifact_id,
+  event_source,
+  event_type,
+  is_top_level_transaction,
+  APPROX_DISTINCT(transaction_hash) AS "count",
+  SUM(l2_gas_fee * share_of_transaction_gas)::DOUBLE AS amortized_l2_gas_fee
+FROM oso.int_events__superchain_internal_transactions
 WHERE time BETWEEN @start_dt AND @end_dt
-GROUP BY 1, 2, 3, 4, 5
+GROUP BY 1, 2, 3, 4, 5, 6
