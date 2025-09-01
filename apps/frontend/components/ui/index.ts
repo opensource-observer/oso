@@ -99,6 +99,34 @@ import {
   NavigationMenuViewport,
   NavigationMenuViewportMeta,
 } from "@/components/ui/navigation-menu";
+import {
+  Tabs,
+  TabsContent,
+  TabsContentMeta,
+  TabsList,
+  TabsListMeta,
+  TabsMeta,
+  TabsTrigger,
+  TabsTriggerMeta,
+} from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableBodyMeta,
+  TableCaption,
+  TableCaptionMeta,
+  TableCell,
+  TableCellMeta,
+  TableFooter,
+  TableFooterMeta,
+  TableHead,
+  TableHeadMeta,
+  TableHeader,
+  TableHeaderMeta,
+  TableMeta,
+  TableRow,
+  TableRowMeta,
+} from "@/components/ui/table";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -156,4 +184,16 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
     NavigationMenuIndicator,
     NavigationMenuIndicatorMeta,
   );
+  PLASMIC.registerComponent(Tabs, TabsMeta);
+  PLASMIC.registerComponent(TabsList, TabsListMeta);
+  PLASMIC.registerComponent(TabsTrigger, TabsTriggerMeta);
+  PLASMIC.registerComponent(TabsContent, TabsContentMeta);
+  PLASMIC.registerComponent(Table, TableMeta);
+  PLASMIC.registerComponent(TableHeader, TableHeaderMeta);
+  PLASMIC.registerComponent(TableBody, TableBodyMeta);
+  PLASMIC.registerComponent(TableFooter, TableFooterMeta);
+  PLASMIC.registerComponent(TableRow, TableRowMeta);
+  PLASMIC.registerComponent(TableHead, TableHeadMeta);
+  PLASMIC.registerComponent(TableCell, TableCellMeta);
+  PLASMIC.registerComponent(TableCaption, TableCaptionMeta);
 }

@@ -16,6 +16,7 @@ import {
 import { Database } from "@/lib/types/supabase";
 import { OSO_JWT_SECRET } from "@/lib/config";
 import { SignJWT, jwtVerify } from "jose";
+import { InvalidDataError } from "@/lib/types/errors";
 
 // Constants
 const DEFAULT_KEY_NAME = "login";
@@ -73,7 +74,7 @@ const makeNormalUser = (
   user: SupabaseUser,
   keyName: string,
   host: string | null,
-  orgDetails?: OrganizationDetails,
+  orgDetails: OrganizationDetails,
 ): NormalUser => {
   const normalUser: NormalUser = {
     role: "user",
@@ -82,13 +83,10 @@ const makeNormalUser = (
     keyName,
     email: user.email,
     name: user.user_metadata.name,
+    orgId: orgDetails.orgId,
+    orgName: orgDetails.orgName,
+    orgRole: orgDetails.orgRole,
   };
-
-  if (orgDetails) {
-    normalUser.orgId = orgDetails.orgId;
-    normalUser.orgName = orgDetails.orgName;
-    normalUser.orgRole = orgDetails.orgRole;
-  }
 
   return normalUser;
 };
@@ -107,9 +105,12 @@ const promoteAdmin = (user: AuthUser): AdminUser => ({
 async function fetchOrganizationDetails(
   userId: string,
   orgId?: string,
-): Promise<OrganizationDetails | undefined> {
+): Promise<OrganizationDetails> {
   if (orgId) {
-    return fetchSpecificOrganization(userId, orgId);
+    const org = await fetchSpecificOrganization(userId, orgId);
+    if (org) {
+      return org;
+    }
   }
 
   return fetchPrimaryOrganization(userId);
@@ -174,7 +175,7 @@ async function fetchSpecificOrganization(
  */
 async function fetchPrimaryOrganization(
   userId: string,
-): Promise<OrganizationDetails | undefined> {
+): Promise<OrganizationDetails> {
   const { data: createdOrg, error: createdOrgError } = await supabasePrivileged
     .from(TABLES.ORGANIZATIONS)
     .select(
@@ -214,7 +215,7 @@ async function fetchPrimaryOrganization(
     .single();
 
   if (membershipError || !membership || !membership.organizations) {
-    return undefined;
+    throw new InvalidDataError("User has no organization");
   }
 
   const roleValue = membership[COLUMNS.USERS_BY_ORG.ROLE] as string;
@@ -259,7 +260,7 @@ async function getUserByApiKey(
   }
 
   const activeKey = activeKeys[0];
-  const userId = activeKey[COLUMNS.API_KEYS.USER_ID] as string;
+  const userId = activeKey[COLUMNS.API_KEYS.USER_ID];
 
   const { data: userData, error: userError } =
     await supabasePrivileged.auth.admin.getUserById(userId);
@@ -268,10 +269,8 @@ async function getUserByApiKey(
     return makeAnonUser(host);
   }
 
-  const orgId = activeKey[COLUMNS.API_KEYS.ORG_ID] as string | undefined;
-  const orgDetails = orgId
-    ? await fetchOrganizationDetails(userId, orgId).catch(() => undefined)
-    : undefined;
+  const orgId = activeKey[COLUMNS.API_KEYS.ORG_ID];
+  const orgDetails = await fetchOrganizationDetails(userId, orgId);
 
   console.log(`auth: API key and user valid => user`);
   return makeNormalUser(
@@ -292,32 +291,23 @@ async function getUserByJwt(token: string, host: string | null): Promise<User> {
     return makeAnonUser(host);
   }
 
-  const orgDetails = await fetchOrganizationDetails(data.user.id).catch(
-    () => undefined,
-  );
+  const orgDetails = await fetchOrganizationDetails(data.user.id);
 
   console.log(`auth: JWT token valid => user`);
   return makeNormalUser(data.user, DEFAULT_KEY_NAME, host, orgDetails);
 }
 
 /**
- * Main function to authenticate a user from a request
+ * The token could be either a JWT or an API key, so try both
+ * - Sometimes we pass in the JWT token as an API key
+ * @param token
+ * @param host
+ * @returns
  */
-async function getUser(request: NextRequest): Promise<User> {
-  const headers = request.headers;
-  const host = getHost(request);
-  const auth = headers.get("authorization");
-
-  if (!auth) {
-    console.log(`auth: No token => anon`);
-    return makeAnonUser(host);
-  }
-
-  const trimmedAuth = auth.trim();
-  const token = trimmedAuth.toLowerCase().startsWith(AUTH_PREFIX)
-    ? trimmedAuth.slice(AUTH_PREFIX.length).trim()
-    : trimmedAuth;
-
+async function getUserByAmbigiousToken(
+  token: string,
+  host: string | null,
+): Promise<User> {
   const jwtUser = await getUserByJwt(token, host);
   const apiKeyUser =
     jwtUser.role === "anonymous" ? await getUserByApiKey(token, host) : jwtUser;
@@ -346,6 +336,65 @@ async function getUser(request: NextRequest): Promise<User> {
   }
 
   return user;
+}
+
+/**
+ * Main function to authenticate a user from a request
+ * - First tries to get user from HTTP header (Bearer token)
+ * - If that fails, tries to get user from cookies (Supabase session)
+ * @param request
+ * @returns
+ */
+async function getUser(request: NextRequest): Promise<User> {
+  const userFromHttpHeader = await getUserByHttpHeader(request);
+  if (userFromHttpHeader.role !== "anonymous") {
+    return userFromHttpHeader;
+  }
+  const userFromCookies = await getUserByCookies(request);
+  return userFromCookies;
+}
+
+/**
+ * Tries to identify a user from the HTTP Authorization header
+ * - Supports Bearer tokens that are either JWTs from Supabase or API keys
+ * @param request
+ * @returns
+ */
+async function getUserByHttpHeader(request: NextRequest): Promise<User> {
+  const headers = request.headers;
+  const host = getHost(request);
+  const auth = headers.get("authorization");
+
+  if (!auth) {
+    console.log(`auth: No token => anon`);
+    return makeAnonUser(host);
+  }
+
+  // Remove "Bearer " prefix if it exists
+  const trimmedAuth = auth.trim();
+  const token = trimmedAuth.toLowerCase().startsWith(AUTH_PREFIX)
+    ? trimmedAuth.slice(AUTH_PREFIX.length).trim()
+    : trimmedAuth;
+
+  return await getUserByAmbigiousToken(token, host);
+}
+
+/**
+ * Tries to identify a user from cookies (Supabase session)
+ * @param request
+ * @returns
+ */
+async function getUserByCookies(request: NextRequest): Promise<User> {
+  const host = getHost(request);
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+
+  if (error || !token) {
+    console.log("getUserByCookies: No valid session => anon", error);
+    return makeAnonUser(null);
+  }
+  return await getUserByAmbigiousToken(token, host);
 }
 
 async function signOsoJwt(
