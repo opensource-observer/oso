@@ -2,10 +2,10 @@
 This model creates a graph of interactions between developers and projects (both builder and devtooling).
 
 Key concepts:
-1. Qualified Developers: Developers who have committed code to any builder project since 2024-01-01
+1. Qualified Developers: Developers who have committed code to any builder project since 2024-07-01
 2. Project Types:
-   - Builder projects: Projects identified in int_superchain_s7_devtooling_onchain_builder_nodes
-   - Devtooling projects: Projects identified in int_superchain_s7_devtooling_repositories
+   - Builder projects: Projects identified in int_superchain_s8_devtooling_onchain_builder_nodes
+   - Devtooling projects: Projects identified in int_superchain_s8_devtooling_repositories
    - Some projects may appear in both categories
 
 Graph Construction Rules:
@@ -32,7 +32,7 @@ Example:
 */
 
 MODEL (
-  name oso.int_superchain_s7_devtooling_devs_to_projects_graph,
+  name oso.int_superchain_s8_devtooling_devs_to_projects_graph,
   description 'Maps relationships between trusted developers, onchain builder projects, and devtooling projects',
   dialect trino,
   kind full,
@@ -40,10 +40,9 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0)
   ),
-  enabled false,
 );
 
-@DEF(active_developer_date_threshold, DATE('2024-01-01'));
+@DEF(active_developer_date_threshold, DATE('2024-07-01'));
 @DEF(trusted_developer_min_months, 3);
 
 
@@ -54,7 +53,7 @@ builder_repos AS (
     repo_artifact_id,
     repo_artifact_namespace,
     project_id AS builder_project_id
-  FROM oso.int_superchain_s7_devtooling_onchain_builder_nodes
+  FROM oso.int_superchain_s8_devtooling_onchain_builder_nodes
 ),
 -- 2) devtool <> repo <> project
 devtool_repos AS (
@@ -62,7 +61,7 @@ devtool_repos AS (
     repo_artifact_id,
     repo_artifact_namespace,
     project_id AS devtool_project_id
-  FROM oso.int_superchain_s7_devtooling_repositories
+  FROM oso.int_superchain_s8_devtooling_repositories
 ),
 -- 3) link devtool projects back to related builder projects (via shared repo)
 related_projects AS (
