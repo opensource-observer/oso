@@ -19,7 +19,7 @@ All **collections** are defined as YAML files in [OSS Directory](https://github.
 Before running any analysis, you'll need to set up your environment:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 Start your Python notebook with the following:
 
@@ -33,6 +33,15 @@ client = Client(api_key=OSO_API_KEY)
 ```
 
 For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
+
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+from pyoso import Client
+
+oso = Client()
+```
 
 </TabItem>
 <TabItem value="graphql" label="GraphQL">
@@ -49,7 +58,7 @@ The following queries should work if you copy-paste them into our [GraphQL sandb
 Get the names of all collections on OSO:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -60,6 +69,16 @@ FROM collections_v1
 ORDER BY collection_name
 """
 df = client.to_pandas(query)
+```
+
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "collections.collection_name",
+    "collections.display_name",
+)
 ```
 
 </TabItem>
@@ -82,7 +101,7 @@ query Collections {
 Get the names of all projects in a collection:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -93,6 +112,18 @@ FROM projects_by_collection_v1
 WHERE collection_name = 'ethereum-github'
 """
 df = client.to_pandas(query)
+```
+
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "projects_by_collection.project_id",
+    "projects_by_collection.project_name",
+).where(
+    "projects_by_collection.collection_name = 'ethereum-github'"
+)
 ```
 
 </TabItem>
@@ -117,7 +148,7 @@ query ProjectsInCollection {
 Get onchain metrics for all projects in a collection:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -133,6 +164,19 @@ WHERE
 ORDER BY 1
 """
 df = client.to_pandas(query)
+```
+
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "timeseries_metrics_by_collection.sample_date",
+    "timeseries_metrics_by_collection.amount",
+).where(
+    "collections.collection_name = 'ethereum-github'",
+    "metrics.metric_name = 'GITHUB_commits_daily'"
+)
 ```
 
 </TabItem>
@@ -197,7 +241,7 @@ Using the IDs from the previous queries:
 Get onchain metrics for all projects in a collection:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -213,6 +257,19 @@ WHERE
 ORDER BY 1
 """
 df = client.to_pandas(query)
+```
+
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "timeseries_metrics_by_collection.sample_date",
+    "timeseries_metrics_by_collection.amount",
+).where(
+    "collections.collection_name = 'op-retrofunding-4'",
+    "metrics.metric_name = 'BASE_gas_fees_weekly'"
+)
 ```
 
 </TabItem>
