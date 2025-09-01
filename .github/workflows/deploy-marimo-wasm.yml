@@ -9,6 +9,9 @@ env:
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  schedule:
+    # Hack for now since we can't trigger off events in the marimo fork. Deploys every hour
+    - cron: '0 * * * *' 
 
 jobs:
   build-deploy:
