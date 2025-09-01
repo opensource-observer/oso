@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from typing import Any
 
 from dagster import DynamicPartitionsDefinition, SensorEvaluationContext
@@ -19,6 +20,10 @@ FROM dynamic_replications dr
 JOIN organizations o ON dr.org_id = o.id
 WHERE dr.replication_type = %s
 """
+
+
+class ReplicationType(Enum):
+    REST = "rest"
 
 
 class DynamicReplication(BaseModel):
@@ -71,7 +76,7 @@ def get_dynamic_replication(
 
 
 def get_dynamic_replications_partition_for_type(
-    postgres_conn: connection, replication_type: str
+    postgres_conn: connection, replication_type: ReplicationType
 ):
     cur = postgres_conn.cursor()
     cur.execute(

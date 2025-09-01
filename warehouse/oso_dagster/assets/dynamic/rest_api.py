@@ -1,3 +1,4 @@
+
 from dagster import (
     AssetExecutionContext,
     DynamicPartitionsDefinition,
@@ -14,6 +15,7 @@ from oso_dagster.factories import (
 )
 from oso_dagster.resources import PostgresResource
 from oso_dagster.utils import (
+    ReplicationType,
     get_credentials,
     get_dynamic_replication,
     get_dynamic_replications_partition_for_type,
@@ -82,7 +84,7 @@ def create_rest_api_sensor():
         """
         with postgres.get_connection() as conn:
             all_partition_keys = get_dynamic_replications_partition_for_type(
-                conn, "rest"
+                conn, ReplicationType.REST
             )
 
         sync_dynamic_partitions(

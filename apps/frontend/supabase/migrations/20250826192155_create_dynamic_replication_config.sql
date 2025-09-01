@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.dynamic_replications (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
-    config jsonb,
+    config jsonb NOT NULL,
     credentials_path text,
 
     CONSTRAINT replication_name_format CHECK ((replication_name ~ '^[a-z][a-z0-9_]*$'::text)),
@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS public.dynamic_replications (
     CONSTRAINT fk_created_by FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE CASCADE,
     CONSTRAINT unique_replication_name_per_org UNIQUE (org_id, replication_name, deleted_at)
 );
+
+CREATE INDEX dynamic_replications_org_type_idx ON public.dynamic_replications (org_id, replication_type) WHERE deleted_at IS NULL;
 
 ALTER TABLE public.dynamic_replications ENABLE ROW LEVEL SECURITY;
 
