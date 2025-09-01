@@ -1,29 +1,22 @@
+import json
 import logging
-import random
 import time
-from typing import Any, Dict, Generator
+from typing import Any, Dict
+from urllib.parse import urlparse
 
-import dlt
-import requests
-from dagster import AssetExecutionContext, ResourceParam
-from dlt.destinations.adapters import bigquery_adapter
-from dlt.sources.helpers.requests import Session
-from dlt.sources.rest_api.typing import RESTAPIConfig
-from oso_dagster.config import DagsterConfig
-from oso_dagster.factories import dlt_factory
+from dlt.sources.helpers.requests.retry import Client
+from dlt.sources.rest_api.typing import RESTAPIConfig, RESTAPIConfigBase
 from oso_dagster.factories.rest import create_rest_factory_asset
+from requests import Response
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://l2beat.com/api"
-DEFAULT_ACTIVITY_RANGE = "max"
-DEFAULT_TIMEOUT = 300
-DEFAULT_REQUEST_DELAY = 3.0
-DEFAULT_BASE_DELAY = 30.0
-DEFAULT_MAX_DELAY = 120.0
-DEFAULT_MAX_RETRIES = 3
+BASE_URL: str = "https://l2beat.com/api"
 
-K8S_CONFIG = {
+DELAY_SECONDS: int = 5
+REQUEST_TIMEOUT: int = 300
+
+K8S_CONFIG: Dict[str, Any] = {
     "merge_behavior": "SHALLOW",
     "container_config": {
         "resources": {
@@ -33,250 +26,206 @@ K8S_CONFIG = {
     },
 }
 
-config: RESTAPIConfig = {
+
+def _extract_project_slug(response: Response) -> str:
+    path_segments = urlparse(response.url).path.strip("/").split("/")
+    return path_segments[-1] if path_segments[-1] else path_segments[-2]
+
+
+def _transform_projects_response(response: Response) -> Response:
+    logger.info(
+        f"Transforming projects response from {response.url} (status: {response.status_code})"
+    )
+    try:
+        data = response.json()
+        projects = data.get("projects", {})
+        project_list = list(projects.values())
+        logger.info(f"Successfully got {len(project_list)} projects.")
+        response._content = json.dumps(project_list).encode("utf-8")
+    except Exception as e:
+        logger.error(f"Error transforming projects response: {e}")
+        response._content = json.dumps([]).encode("utf-8")
+    return response
+
+
+def _extract_project_keys(response: Response) -> Response:
+    logger.info(
+        f"Extracting project keys from {response.url} (status: {response.status_code})"
+    )
+    try:
+        data = response.json()
+        projects = data.get("projects", {})
+        project_slugs = [{"slug": slug} for slug in projects.keys()]
+        logger.info(f"Successfully got {len(project_slugs)} project slugs.")
+        response._content = json.dumps(project_slugs).encode("utf-8")
+    except Exception as e:
+        logger.error(f"Error extracting project keys: {e}")
+        response._content = json.dumps([]).encode("utf-8")
+    return response
+
+
+def _transform_chart_response(response: Response) -> Response:
+    project_slug = _extract_project_slug(response)
+    logger.info(
+        f"Transforming chart response for project '{project_slug}' from {response.url} (status: {response.status_code})"
+    )
+
+    try:
+        data = response.json()
+        if not data.get("success"):
+            logger.warning(f"Got unsuccessful response for {project_slug}: {data}")
+            response._content = json.dumps([]).encode("utf-8")
+            time.sleep(DELAY_SECONDS)
+            return response
+
+        chart = data.get("data", {}).get("chart", {})
+        types, data_points = chart.get("types", []), chart.get("data", [])
+
+        transformed = [
+            {"project_slug": project_slug, **dict(zip(types, point))}
+            for point in data_points
+            if len(point) == len(types)
+        ]
+
+        logger.info(
+            f"Successfully got {len(transformed)} transformed points for {project_slug}."
+        )
+        time.sleep(DELAY_SECONDS)
+
+        response._content = json.dumps(transformed).encode("utf-8")
+    except Exception as e:
+        logger.error(f"Error transforming chart response for {project_slug}: {e}")
+        response._content = json.dumps([]).encode("utf-8")
+
+    return response
+
+
+rest_client = Client(
+    request_timeout=REQUEST_TIMEOUT,
+    raise_for_status=False,
+    request_max_attempts=10,
+    request_backoff_factor=1.5,
+    request_max_retry_delay=30,
+    respect_retry_after_header=True,
+)
+
+_BASE_CONFIG: RESTAPIConfigBase = {
     "client": {
         "base_url": BASE_URL,
+        "session": rest_client.session,
     },
+    "resources": [],
+}
+
+projects_config: RESTAPIConfig = {
+    **_BASE_CONFIG,
     "resource_defaults": {
         "write_disposition": "replace",
+        "max_table_nesting": 0,
+        "endpoint": {
+            "response_actions": [
+                {"status_code": 404, "action": "ignore"},
+                {"status_code": 429, "action": "ignore"},
+            ],
+        },
     },
     "resources": [
         {
             "name": "projects",
             "endpoint": {
                 "path": "scaling/summary",
-                "data_selector": "$.projects",
+                "response_actions": [{"action": _transform_projects_response}],
             },
         }
     ],
 }
 
-dlt_assets = create_rest_factory_asset(
-    config=config,
+activity_config: RESTAPIConfig = {
+    **_BASE_CONFIG,
+    "resource_defaults": {
+        "write_disposition": "replace",
+        "max_table_nesting": 0,
+        "primary_key": ["project_slug", "timestamp"],
+        "endpoint": {
+            "params": {"range": "max"},
+            "response_actions": [
+                {"status_code": 404, "action": "ignore"},
+                {"status_code": 429, "action": "ignore"},
+            ],
+        },
+    },
+    "resources": [
+        {
+            "name": "projects_slugs",
+            "endpoint": {
+                "path": "scaling/summary",
+                "response_actions": [{"action": _extract_project_keys}],
+            },
+            "selected": False,
+        },
+        {
+            "name": "activity",
+            "endpoint": {
+                "path": "scaling/activity/{resources.projects_slugs.slug}",
+                "response_actions": [{"action": _transform_chart_response}],
+            },
+        },
+    ],
+}
+
+tvs_config: RESTAPIConfig = {
+    **_BASE_CONFIG,
+    "resource_defaults": {
+        "write_disposition": "replace",
+        "max_table_nesting": 0,
+        "primary_key": ["project_slug", "timestamp"],
+        "endpoint": {
+            "params": {"range": "max"},
+            "response_actions": [
+                {"status_code": 404, "action": "ignore"},
+                {"status_code": 429, "action": "ignore"},
+            ],
+        },
+    },
+    "resources": [
+        {
+            "name": "projects_slugs",
+            "endpoint": {
+                "path": "scaling/summary",
+                "response_actions": [{"action": _extract_project_keys}],
+            },
+            "selected": False,
+        },
+        {
+            "name": "tvs",
+            "endpoint": {
+                "path": "scaling/tvs/{resources.projects_slugs.slug}",
+                "response_actions": [{"action": _transform_chart_response}],
+            },
+        },
+    ],
+}
+
+_projects_factory = create_rest_factory_asset(
+    config=projects_config,
+)
+_activity_factory = create_rest_factory_asset(
+    config=activity_config,
+)
+_tvs_factory = create_rest_factory_asset(
+    config=tvs_config,
 )
 
-l2beat_projects_assets = dlt_assets(
+l2beat_projects_assets = _projects_factory(
     key_prefix="l2beat",
     name="projects",
+    op_tags={
+        "dagster/concurrency_key": "l2beat_projects",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
 )
 
-
-def make_request_with_backoff(
-    session: Session,
-    url: str,
-    context: AssetExecutionContext,
-    base_delay: float = DEFAULT_BASE_DELAY,
-    max_delay: float = DEFAULT_MAX_DELAY,
-    max_retries: int = DEFAULT_MAX_RETRIES,
-) -> requests.Response:
-    """
-    Make a request with exponential backoff retry logic for rate limiting.
-    """
-    for attempt in range(max_retries + 1):
-        try:
-            response = session.get(url)
-
-            if response.status_code == 429:
-                if attempt < max_retries:
-                    delay = min(base_delay * (2**attempt), max_delay)
-                    jitter = random.uniform(0.1, 0.3) * delay
-                    total_delay = delay + jitter
-
-                    context.log.warning(
-                        f"Rate limited (429) on attempt {attempt + 1}/{max_retries + 1}. "
-                        f"Retrying in {total_delay:.1f} seconds..."
-                    )
-                    time.sleep(total_delay)
-                    continue
-                else:
-                    context.log.error(
-                        f"Rate limited (429) after {max_retries} retries. Giving up."
-                    )
-                    response.raise_for_status()
-
-            response.raise_for_status()
-            return response
-
-        except requests.exceptions.RequestException as e:
-            if attempt < max_retries:
-                delay = min(base_delay * (2**attempt), max_delay)
-                jitter = random.uniform(0.1, 0.3) * delay
-                total_delay = delay + jitter
-
-                context.log.warning(
-                    f"Request failed on attempt {attempt + 1}/{max_retries + 1}: {e}. "
-                    f"Retrying in {total_delay:.1f} seconds..."
-                )
-                time.sleep(total_delay)
-                continue
-            else:
-                context.log.error(f"Request failed after {max_retries} retries: {e}")
-                raise
-
-    raise requests.exceptions.RequestException("Unexpected end of retry loop")
-
-
-def get_l2beat_activity_data(
-    context: AssetExecutionContext,
-    activity_range: str = DEFAULT_ACTIVITY_RANGE,
-    timeout: int = DEFAULT_TIMEOUT,
-    request_delay: float = DEFAULT_REQUEST_DELAY,
-    base_delay: float = DEFAULT_BASE_DELAY,
-    max_delay: float = DEFAULT_MAX_DELAY,
-    max_retries: int = DEFAULT_MAX_RETRIES,
-) -> Generator[Dict[str, Any], None, None]:
-    """
-    Fetch L2Beat activity data for all projects and yield individual activity records.
-    """
-    session = Session(timeout=timeout)
-
-    projects_url = f"{BASE_URL}/scaling/summary"
-
-    try:
-        context.log.info("Fetching L2Beat projects to get slugs")
-        response = session.get(projects_url)
-        response.raise_for_status()
-        projects_data = response.json()
-
-        projects = projects_data.get("projects", {})
-
-        slugs = list(projects.keys())
-
-        context.log.info(f"Found {len(slugs)} projects to fetch activity data for")
-
-        for i, slug in enumerate(slugs):
-            try:
-                if i > 0:
-                    time.sleep(request_delay)
-
-                activity_url = (
-                    f"{BASE_URL}/scaling/activity/{slug}?range={activity_range}"
-                )
-                context.log.info(
-                    f"Fetching activity data for {slug} ({i + 1}/{len(slugs)})"
-                )
-
-                response = make_request_with_backoff(
-                    session, activity_url, context, base_delay, max_delay, max_retries
-                )
-                activity_data = response.json()
-
-                if not activity_data.get("success"):
-                    context.log.warning(
-                        f"Failed to fetch activity data for {slug}: API returned success=false"
-                    )
-                    continue
-
-                chart_data = activity_data.get("data", {}).get("chart", {})
-                types = chart_data.get("types", [])
-                data_points = chart_data.get("data", [])
-
-                for data_point in data_points:
-                    if len(data_point) == len(types):
-                        activity_record = {
-                            "project_slug": slug,
-                            **dict(zip(types, data_point)),
-                        }
-                        yield activity_record
-                    else:
-                        context.log.warning(
-                            f"Data point length mismatch for {slug}: expected {len(types)}, got {len(data_point)}"
-                        )
-
-            except requests.exceptions.RequestException as e:
-                context.log.error(f"Failed to fetch activity data for {slug}: {e}")
-                continue
-            except Exception as e:
-                context.log.error(f"Error processing activity data for {slug}: {e}")
-                continue
-
-    except requests.exceptions.RequestException as e:
-        context.log.error(f"Failed to fetch projects from L2Beat API: {e}")
-        raise
-    except Exception as e:
-        context.log.error(f"Error processing L2Beat activity data: {e}")
-        raise
-
-
-def get_l2beat_tvs_data(
-    context: AssetExecutionContext,
-    tvs_range: str = DEFAULT_ACTIVITY_RANGE,
-    timeout: int = DEFAULT_TIMEOUT,
-    request_delay: float = DEFAULT_REQUEST_DELAY,
-    base_delay: float = DEFAULT_BASE_DELAY,
-    max_delay: float = DEFAULT_MAX_DELAY,
-    max_retries: int = DEFAULT_MAX_RETRIES,
-) -> Generator[Dict[str, Any], None, None]:
-    """
-    Fetch L2Beat TVS data for all projects and yield individual TVS records.
-    """
-    session = Session(timeout=timeout)
-
-    projects_url = f"{BASE_URL}/scaling/summary"
-
-    try:
-        context.log.info("Fetching L2Beat projects to get slugs")
-        response = session.get(projects_url)
-        response.raise_for_status()
-        projects_data = response.json()
-
-        projects = projects_data.get("projects", {})
-
-        slugs = list(projects.keys())
-
-        context.log.info(f"Found {len(slugs)} projects to fetch TVS data for")
-
-        for i, slug in enumerate(slugs):
-            try:
-                if i > 0:
-                    time.sleep(request_delay)
-
-                tvs_url = f"{BASE_URL}/scaling/tvs/{slug}?range={tvs_range}"
-                context.log.info(f"Fetching TVS data for {slug} ({i + 1}/{len(slugs)})")
-
-                response = make_request_with_backoff(
-                    session, tvs_url, context, base_delay, max_delay, max_retries
-                )
-                tvs_data = response.json()
-
-                if not tvs_data.get("success"):
-                    context.log.warning(
-                        f"Failed to fetch TVS data for {slug}: API returned success=false"
-                    )
-                    continue
-
-                chart_data = tvs_data.get("data", {}).get("chart", {})
-                types = chart_data.get("types", [])
-                data_points = chart_data.get("data", [])
-
-                for data_point in data_points:
-                    if len(data_point) == len(types):
-                        tvs_record = {
-                            "project_slug": slug,
-                            **dict(zip(types, data_point)),
-                        }
-                        yield tvs_record
-                    else:
-                        context.log.warning(
-                            f"Data point length mismatch for {slug}: expected {len(types)}, got {len(data_point)}"
-                        )
-
-            except requests.exceptions.RequestException as e:
-                context.log.error(f"Failed to fetch TVS data for {slug}: {e}")
-                continue
-            except Exception as e:
-                context.log.error(f"Error processing TVS data for {slug}: {e}")
-                continue
-
-    except requests.exceptions.RequestException as e:
-        context.log.error(f"Failed to fetch projects from L2Beat API: {e}")
-        raise
-    except Exception as e:
-        context.log.error(f"Error processing L2Beat TVS data: {e}")
-        raise
-
-
-@dlt_factory(
+l2beat_activity_assets = _activity_factory(
     key_prefix="l2beat",
     name="activity",
     op_tags={
@@ -284,30 +233,8 @@ def get_l2beat_tvs_data(
         "dagster-k8s/config": K8S_CONFIG,
     },
 )
-def l2beat_activity_assets(
-    context: AssetExecutionContext,
-    global_config: ResourceParam[DagsterConfig],
-):
-    """
-    Create and register a Dagster asset that materializes L2Beat activity data.
-    """
-    resource = dlt.resource(
-        get_l2beat_activity_data(context),
-        name="activity",
-        primary_key=["project_slug", "timestamp"],
-        write_disposition="replace",
-    )
 
-    if global_config.gcp_bigquery_enabled:
-        bigquery_adapter(
-            resource,
-            cluster=["project_slug", "timestamp"],
-        )
-
-    yield resource
-
-
-@dlt_factory(
+l2beat_tvs_assets = _tvs_factory(
     key_prefix="l2beat",
     name="tvs",
     op_tags={
@@ -315,24 +242,3 @@ def l2beat_activity_assets(
         "dagster-k8s/config": K8S_CONFIG,
     },
 )
-def l2beat_tvs_assets(
-    context: AssetExecutionContext,
-    global_config: ResourceParam[DagsterConfig],
-):
-    """
-    Create and register a Dagster asset that materializes L2Beat TVS data.
-    """
-    resource = dlt.resource(
-        get_l2beat_tvs_data(context),
-        name="tvs",
-        primary_key=["project_slug", "timestamp"],
-        write_disposition="replace",
-    )
-
-    if global_config.gcp_bigquery_enabled:
-        bigquery_adapter(
-            resource,
-            cluster=["project_slug", "timestamp"],
-        )
-
-    yield resource
