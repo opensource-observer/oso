@@ -34,29 +34,35 @@ project_measurement_dates AS (
   WHERE p.project_source IN ('OSS_DIRECTORY', 'OP_ATLAS')
 ),
 
--- Get all metric IDs for gas fees on Superchain chains
+-- Get all metric IDs for gas fees, contract invocations, and TVL on Superchain chains
 metrics AS (
-  SELECT DISTINCT m.metric_id
+  SELECT DISTINCT m.metric_id, m.metric_name
   FROM oso.metrics_v0 AS m
-  WHERE m.metric_name LIKE '%_gas_fees_daily'
+  WHERE (
+    m.metric_name LIKE '%_gas_fees_daily'
+    OR m.metric_name LIKE '%_contract_invocations_daily'
+  )
     AND EXISTS (
       SELECT 1
       FROM oso.int_superchain_chain_names AS c
-      WHERE m.metric_name = CONCAT(c.chain, '_gas_fees_daily')
+      WHERE
+        m.metric_name = CONCAT(c.chain, '_gas_fees_daily')
+        OR m.metric_name = CONCAT(c.chain, '_contract_invocations_daily')
     )
 ),
 
--- Calculate total gas fees for each project over a 180-day trailing window
+-- Calculate metrics for each project over a 180-day trailing window
 project_metrics AS (
   SELECT
     pmd.project_id,
     pmd.sample_date,
-    SUM(tm.amount) AS gas_fees
+    SUM(CASE WHEN m.metric_name LIKE '%_gas_fees_daily' THEN tm.amount ELSE 0 END) AS gas_fees,
+    SUM(CASE WHEN m.metric_name LIKE '%_contract_invocations_daily' THEN tm.amount ELSE 0 END) AS contract_invocations
   FROM project_measurement_dates AS pmd
   JOIN oso.timeseries_metrics_by_project_v0 AS tm
     ON tm.project_id = pmd.project_id
-   AND tm.sample_date BETWEEN pmd.measurement_date - INTERVAL '179' DAY AND pmd.measurement_date
-  WHERE tm.metric_id IN (SELECT metric_id FROM metrics)
+   AND tm.sample_date BETWEEN pmd.measurement_date - INTERVAL '180' DAY AND pmd.measurement_date
+  JOIN metrics AS m ON tm.metric_id = m.metric_id
   GROUP BY 1,2
 ),
 
@@ -78,7 +84,7 @@ ossd_repos AS (
     AND r.artifact_namespace != 'ethereum-optimism'
 ),
 
--- Assign gas fees to eligible repos at each measurement period
+-- Assign metrics to eligible repos at each measurement period
 eligible_repo_months AS (
   SELECT DISTINCT
     pm.sample_date,
@@ -87,6 +93,7 @@ eligible_repo_months AS (
     orp.artifact_namespace,
     orp.artifact_name,
     pm.gas_fees,
+    pm.contract_invocations,
     orp.language,
     orp.updated_at
   FROM project_metrics AS pm
@@ -117,7 +124,8 @@ SELECT
   e.updated_at,
   e.language,
   am.op_atlas_id AS op_atlas_project_name,
-  ROUND(e.gas_fees, 2) AS total_gas_fees
+  ROUND(e.gas_fees, 2) AS total_gas_fees,
+  contract_invocations AS total_transaction_count
 FROM eligible_repo_months AS e
 LEFT JOIN atlas_mappings AS am
   ON e.project_id = am.ossd_project_id
