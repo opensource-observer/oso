@@ -30,6 +30,31 @@ in that regard. The proxy allows us the following features while testing:
     can also generate updated wheel files for any uv based python project
     (this is extensible to other package management solutions in the future).
 
+## Background
+
+Marimo's wasm environment is a bit complex and requires a bit of knowledge of
+their codebase and some general understanding about python packaging.
+Additionally, it's important to understand how we use marimo and how we inject
+custom behavior.
+
+### Pyodide
+
+Pyodide is the wasm version of CPython, allowing you to run Python code in the
+browser. It is a key component of the marimo wasm environment. Marimo sets this
+up in what it calls a `WasmController`. This `WasmController` can be injected at
+runtime as long as there is a `/wasm/controller.js` endpoint available on the
+server hosting the wasm notebook. We currently provide our own in our marimo
+fork at `frontend/src/oso-extensions/wasm/controller.tsx`.
+
+### Python Wheel
+
+You will see "python wheels" referenced in pyodide and wasm quite a bit. A
+python wheel is a distribution format for Python packages. It is a binary
+package format that is actually a zip of all the files needed for a given
+execution platform. A pure python package will have `none` as the platform.
+Python wheel files look like:
+`<package_name>-<version>-<python_version>-<abi>-<platform>.whl`.
+
 ## Prerequisites
 
 Please ensure the following are installed:
