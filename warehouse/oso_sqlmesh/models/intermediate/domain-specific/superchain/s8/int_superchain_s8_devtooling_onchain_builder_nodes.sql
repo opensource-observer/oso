@@ -36,18 +36,24 @@ project_measurement_dates AS (
 
 -- Get all metric IDs for gas fees, contract invocations, and TVL on Superchain chains
 metrics AS (
-  SELECT DISTINCT m.metric_id, m.metric_name
+  SELECT DISTINCT
+    m.metric_id,
+    m.metric_name
   FROM oso.metrics_v0 AS m
   WHERE (
-    m.metric_name LIKE '%_gas_fees_daily'
-    OR m.metric_name LIKE '%_contract_invocations_daily'
+    m.metric_name LIKE '%_gas_fees_monthly'
+    OR m.metric_name LIKE '%_contract_invocations_monthly'
+    OR m.metric_name LIKE '%_defillama_tvl_monthly'
+    OR m.metric_name LIKE '%_active_addresses_aggregation_monthly'
   )
     AND EXISTS (
       SELECT 1
       FROM oso.int_superchain_chain_names AS c
       WHERE
-        m.metric_name = CONCAT(c.chain, '_gas_fees_daily')
-        OR m.metric_name = CONCAT(c.chain, '_contract_invocations_daily')
+        m.metric_name = CONCAT(c.chain, '_gas_fees_monthly')
+        OR m.metric_name = CONCAT(c.chain, '_contract_invocations_monthly')
+        OR m.metric_name = CONCAT(c.chain, '_defillama_tvl_monthly')
+        OR m.metric_name = CONCAT(c.chain, '_active_addresses_aggregation_monthly')
     )
 ),
 
@@ -56,8 +62,10 @@ project_metrics AS (
   SELECT
     pmd.project_id,
     pmd.sample_date,
-    SUM(CASE WHEN m.metric_name LIKE '%_gas_fees_daily' THEN tm.amount ELSE 0 END) AS gas_fees,
-    SUM(CASE WHEN m.metric_name LIKE '%_contract_invocations_daily' THEN tm.amount ELSE 0 END) AS contract_invocations
+    SUM(CASE WHEN m.metric_name LIKE '%_gas_fees_monthly' THEN tm.amount ELSE 0 END) AS gas_fees,
+    SUM(CASE WHEN m.metric_name LIKE '%_contract_invocations_monthly' THEN tm.amount ELSE 0 END) AS contract_invocations,
+    SUM(CASE WHEN m.metric_name LIKE '%_defillama_tvl_monthly' THEN tm.amount ELSE NULL END) AS defillama_tvl,
+    SUM(CASE WHEN m.metric_name LIKE '%_active_addresses_aggregation_monthly' THEN tm.amount ELSE NULL END) AS active_addresses
   FROM project_measurement_dates AS pmd
   JOIN oso.timeseries_metrics_by_project_v0 AS tm
     ON tm.project_id = pmd.project_id
@@ -94,6 +102,8 @@ eligible_repo_months AS (
     orp.artifact_name,
     pm.gas_fees,
     pm.contract_invocations,
+    pm.defillama_tvl,
+    pm.active_addresses,
     orp.language,
     orp.updated_at
   FROM project_metrics AS pm
@@ -124,8 +134,10 @@ SELECT
   e.updated_at,
   e.language,
   am.op_atlas_id AS op_atlas_project_name,
-  ROUND(e.gas_fees, 2) AS total_gas_fees,
-  contract_invocations AS total_transaction_count
+  e.gas_fees AS total_gas_fees,
+  e.contract_invocations AS total_transaction_count,
+  e.active_addresses AS total_active_addresses,
+  e.defillama_tvl AS average_defillama_tvl
 FROM eligible_repo_months AS e
 LEFT JOIN atlas_mappings AS am
   ON e.project_id = am.ossd_project_id
