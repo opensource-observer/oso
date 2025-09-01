@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_superchain_s7_devtooling_metrics_by_project,
-  description "S7 metrics by devtooling project (ready for JSON export)",
+  name oso.int_superchain_s8_devtooling_metrics_by_project,
+  description "S8 metrics by devtooling project (ready for JSON export)",
   dialect trino,
   kind full,
   tags (
@@ -9,13 +9,12 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0)
   ),
-  enabled false,
 );
 
 @DEF(min_package_connection_count, 3);
 @DEF(min_developer_connection_count, 5);
-@DEF(start_gas_date, DATE('2025-07-01'));
-@DEF(end_gas_date, DATE('2025-08-01'));
+@DEF(start_gas_date, DATE('2025-08-01'));
+@DEF(end_gas_date, DATE('2025-09-01'));
 
 WITH devtooling_projects AS (
   SELECT
@@ -25,7 +24,7 @@ WITH devtooling_projects AS (
     SUM(star_count) AS star_count,
     SUM(fork_count) AS fork_count,
     SUM(num_packages_in_deps_dev) AS num_packages_in_deps_dev
-  FROM oso.int_superchain_s7_devtooling_repositories
+  FROM oso.int_superchain_s8_devtooling_repositories
   GROUP BY project_id
 ),
 
@@ -35,7 +34,7 @@ package_connections AS (
     COUNT(DISTINCT deps_graph.onchain_builder_project_id) AS package_connection_count,
     ARRAY_AGG(DISTINCT CAST(deps_graph.onchain_builder_project_id AS VARCHAR))
       AS package_connection_ids
-  FROM oso.int_superchain_s7_devtooling_deps_to_projects_graph AS deps_graph
+  FROM oso.int_superchain_s8_devtooling_deps_to_projects_graph AS deps_graph
   GROUP BY deps_graph.devtooling_project_id
 ),
 
@@ -44,7 +43,7 @@ developer_connections AS (
     project_id,
     COUNT(DISTINCT developer_id) AS developer_connection_count,
     ARRAY_AGG(DISTINCT CAST(developer_name AS VARCHAR)) AS developer_names
-  FROM oso.int_superchain_s7_devtooling_devs_to_projects_graph
+  FROM oso.int_superchain_s8_devtooling_devs_to_projects_graph
   GROUP BY project_id
 ),
 
@@ -103,7 +102,7 @@ initial_metrics AS (
     ) AS onchain_builder_op_atlas_ids,
     m.developer_names AS trusted_developer_usernames,
   FROM project_metrics m
-  LEFT JOIN oso.int_superchain_s7_devtooling_graph g
+  LEFT JOIN oso.int_superchain_s8_devtooling_graph g
     ON m.project_id = g.devtooling_project_id
   GROUP BY
     m.project_name,
