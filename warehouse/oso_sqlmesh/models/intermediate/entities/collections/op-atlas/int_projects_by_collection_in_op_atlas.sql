@@ -28,7 +28,8 @@ WITH measurement_periods AS (
       ('3', DATE '2025-05-11'),
       ('4', DATE '2025-06-05'),
       ('5', DATE '2025-07-08'),
-      ('6', DATE '2025-08-01')
+      ('6', DATE '2025-08-01'),
+      ('7', DATE '2025-09-01')
   ) AS t(period_number, cutoff_date)
 ),
 
@@ -53,13 +54,12 @@ projects_by_collection AS (
     @collection_source AS collection_source,
     @collection_namespace AS collection_namespace,
     CONCAT(app.round_id, '-', mp.period_number) AS collection_name,
-    CASE
-      WHEN app.round_id = '7'
-      THEN 'Retro Funding S7: Developer Tooling'
-      WHEN app.round_id = '8'
-      THEN 'Retro Funding S7: Onchain Builders'
-      ELSE NULL
-    END AS collection_display_name,
+    CONCAT(
+      'Retro Funding ',
+      CASE WHEN mp.period_number IN ('1', '2', '3', '4', '5', '6') THEN 'S7' ELSE 'S8' END,
+      ': ',
+      CASE WHEN app.round_id = '7' THEN 'Developer Tooling' ELSE 'Onchain Builders' END
+    ) AS collection_display_name,
     'OP_ATLAS' AS project_source,
     '' AS project_namespace,
     projects.atlas_id AS project_name
