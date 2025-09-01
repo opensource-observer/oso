@@ -5,10 +5,10 @@ sidebar_position: 1
 
 In order to make wasm notebooks a possibility we utilize marimo's ability to run
 inside of the browser. For OSO, we've added some special configurations that are
-unique to the OSO platform. In order to support this, we created a tool (which
-we will open a pull request for upstream) that allows us to easily test changes
-in the python environment that is loaded into marimo. Additionally, it allows us
-to inject our own WASM controller so that we can provide a tailored experience.
+unique to the OSO platform. In order to support this, we created a tool that
+allows us to easily test changes in the python environment that is loaded into
+marimo. Additionally, it allows us to inject our own WASM controller so that we
+can provide a tailored experience.
 
 The primary tool for all of this is called `wasm-builder` and must currently be
 loaded from OSO's [marimo fork](https://github.com/opensource-observer/marimo).
