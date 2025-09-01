@@ -24,7 +24,8 @@ MODEL (
       ignore_after := @superchain_audit_end,
       missing_rate_min_threshold := 0.95
     )
-  )
+  ),
+  enabled false,
 );
 
 SELECT
