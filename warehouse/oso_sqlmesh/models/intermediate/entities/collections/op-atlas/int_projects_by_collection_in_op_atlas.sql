@@ -24,16 +24,16 @@ WITH measurement_periods AS (
   SELECT
     period_number,
     cutoff_date,
-    CASE WHEN period_number BETWEEN 1 AND 6 THEN 'S7' ELSE 'S8' END AS season
+    season
   FROM (VALUES
-    (1, DATE '2025-03-11'),
-    (2, DATE '2025-04-11'),
-    (3, DATE '2025-05-11'),
-    (4, DATE '2025-06-05'),
-    (5, DATE '2025-07-08'),
-    (6, DATE '2025-08-01'),
-    (7, DATE '2025-09-01')
-  ) AS t(period_number, cutoff_date)
+    (1, DATE '2025-03-11', 'S7'),
+    (2, DATE '2025-04-11', 'S7'),
+    (3, DATE '2025-05-11', 'S7'),
+    (4, DATE '2025-06-05', 'S7'),
+    (5, DATE '2025-07-08', 'S7'),
+    (6, DATE '2025-08-01', 'S7'),
+    (7, DATE '2025-09-01', 'S8')
+  ) AS t(period_number, cutoff_date, season)
 ),
 
 round_labels AS (
