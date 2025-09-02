@@ -32,14 +32,22 @@ We only aim to provide service availability for the following mature services:
 
 In addition to services that we maintain, OSO provides data that is not covered
 directly by the above services. These data assets are available for querying and
-usage within the warehouse and are materialized using dagster or sqlmesh. We categorize this data into three main types
+usage within the warehouse and are materialized using dagster or sqlmesh. We
+categorize this data into three main types
 
-- Core Source Data
+:::Note
+At this time the dagster assets aren't properly grouped. However, once they are
+we should use the global asset lineage as the source of truth for asset health.
+
+[See here](https://admin-dagster.opensource.observer/asset-groups)
+:::
+
+- [Core Source Data](https://admin-dagster.opensource.observer/locations/default/jobs/materialize_core_assets_job)
   - Project related data (oss-directory, op-atlas)
   - Github data
   - Superchain data
   - Anything labeled `core`
-- Unstable Source Data
+- [Unstable Source Data](https://admin-dagster.opensource.observer/locations/default/jobs/materialize_unstable_source_assets_job)
   - Some external 3rd party data that is not guaranteed to be reliable and may
     change without notice.
   - This is _generally_ experimental data or data that is not necessary to be
