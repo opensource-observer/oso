@@ -18,6 +18,7 @@ from oso_dagster.resources import (
     DuckDBResource,
     K8sApiResource,
     K8sResource,
+    PostgresResource,
     PrefixedSQLMeshTranslator,
     SQLMeshExporter,
     Trino2BigQuerySQLMeshExporter,
@@ -42,7 +43,7 @@ from oso_dagster.utils.alerts import (
     CanvasDiscordWebhookAlertManager,
     LogAlertManager,
 )
-from oso_dagster.utils.secrets import SecretResolver
+from oso_dagster.utils.secrets import SecretReference, SecretResolver
 from sqlmesh.core.config.connection import DuckDBConnectionConfig, TrinoConnectionConfig
 
 from ..config import DagsterConfig
@@ -385,6 +386,17 @@ def time_ordered_storage_factory(
     )
 
 
+@resource_factory("oso_app_db")
+@time_function(logger)
+def oso_app_db_factory(secrets: SecretResolver) -> PostgresResource:
+    """Factory function to create a Postgres DB resource."""
+    return PostgresResource(
+        connection_url=secrets.resolve_as_str(
+            SecretReference(group_name="postgres", key="connection_url")
+        ),
+    )
+
+
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
@@ -418,5 +430,6 @@ def default_resource_registry():
     registry.add(io_manager_factory)
     registry.add(alert_manager_factory)
     registry.add(time_ordered_storage_factory)
+    registry.add(oso_app_db_factory)
 
     return registry
