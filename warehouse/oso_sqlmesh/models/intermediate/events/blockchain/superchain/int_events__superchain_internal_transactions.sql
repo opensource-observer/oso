@@ -39,8 +39,8 @@ SELECT
   @oso_entity_id(chain, '', to_address_trace) AS to_artifact_id,
   '' AS to_artifact_namespace,
   to_address_trace AS to_artifact_name,
-  gas_used_tx * gas_price_tx AS l2_gas_fee,
-  COALESCE(gas_used_trace, 0) AS gas_used_trace,
+  gas_used_tx::DOUBLE * gas_price_tx::DOUBLE AS l2_gas_fee,
+  COALESCE(gas_used_trace, 0)::DOUBLE AS gas_used_trace,
   COALESCE(gas_used_trace, 0) / NULLIF(
     SUM(COALESCE(gas_used_trace, 0)) OVER (
       PARTITION BY chain, transaction_hash
