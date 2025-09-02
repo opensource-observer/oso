@@ -38,7 +38,7 @@ SELECT
   to_address,
   gas AS gas_used,
   gas_price,
-  receipt_gas_used AS receipt_gas_used,
+  receipt_gas_used,
   receipt_effective_gas_price,
   receipt_l1_fee,
   receipt_status,
