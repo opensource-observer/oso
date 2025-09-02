@@ -64,7 +64,7 @@ def get_dynamic_replication(
     cur = postgres_conn.cursor()
     cur.execute(
         DYNAMIC_REPLICATION_DATA_QUERY,
-        (org_name, resource_name),
+        [org_name, resource_name],
     )
     result = cur.fetchone()
     if not result:
@@ -81,7 +81,7 @@ def get_dynamic_replications_partition_for_type(
     cur = postgres_conn.cursor()
     cur.execute(
         PARTITION_KEY_FOR_TYPE_QUERY,
-        (replication_type,),
+        [replication_type.value],
     )
     results = cur.fetchall()
 
