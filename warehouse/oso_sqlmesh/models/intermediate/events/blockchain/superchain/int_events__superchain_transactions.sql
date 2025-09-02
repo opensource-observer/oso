@@ -42,8 +42,8 @@ SELECT
   '' AS to_artifact_namespace,
   to_address AS to_artifact_name,
   transaction_type,
-  receipt_effective_gas_price::DOUBLE * receipt_gas_used::DOUBLE AS l2_gas_fee,
-  receipt_l1_fee::DOUBLE AS l1_gas_fee,
+  receipt_effective_gas_price * receipt_gas_used AS l2_gas_fee,
+  receipt_l1_fee AS l1_gas_fee,
   transaction_hash
 FROM oso.stg_superchain__transactions
 WHERE
