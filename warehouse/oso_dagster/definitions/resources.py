@@ -386,9 +386,9 @@ def time_ordered_storage_factory(
     )
 
 
-@resource_factory("postgres")
+@resource_factory("oso_app_db")
 @time_function(logger)
-def postgres_resource_factory(secrets: SecretResolver) -> PostgresResource:
+def oso_app_db_factory(secrets: SecretResolver) -> PostgresResource:
     """Factory function to create a Postgres DB resource."""
     return PostgresResource(
         connection_url=secrets.resolve_as_str(
@@ -430,6 +430,6 @@ def default_resource_registry():
     registry.add(io_manager_factory)
     registry.add(alert_manager_factory)
     registry.add(time_ordered_storage_factory)
-    registry.add(postgres_resource_factory)
+    registry.add(oso_app_db_factory)
 
     return registry

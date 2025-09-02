@@ -1,4 +1,3 @@
-
 from dagster import (
     AssetExecutionContext,
     DynamicPartitionsDefinition,
@@ -41,7 +40,7 @@ rest_api_partitions = DynamicPartitionsDefinition(name="dynamic_rest_api")
 )
 def dynamic_rest_asset(
     context: AssetExecutionContext,
-    postgres: PostgresResource,
+    oso_app_db: PostgresResource,
     secrets: SecretResolver,
 ):
     """
@@ -50,7 +49,7 @@ def dynamic_rest_asset(
     Credentials for the database and the REST APIs are resolved via Dagster's
     SecretResolver resource, which is configured to use GCP Secret Manager.
     """
-    with postgres.get_connection() as conn:
+    with oso_app_db.get_connection() as conn:
         dynamic_replication = get_dynamic_replication(conn, context.partition_key)
 
     rest_api_config: RESTAPIConfig = dynamic_replication.config
@@ -76,13 +75,13 @@ def create_rest_api_sensor():
     @sensor(minimum_interval_seconds=1 * 60 * 60)
     def rest_api_sensor(
         context: SensorEvaluationContext,
-        postgres: PostgresResource,
+        oso_app_db: PostgresResource,
     ):
         """
         A sensor that queries the dynamic_replications table to find new, updated,
         or removed replication configurations and updates Dagster partitions accordingly.
         """
-        with postgres.get_connection() as conn:
+        with oso_app_db.get_connection() as conn:
             all_partition_keys = get_dynamic_replications_partition_for_type(
                 conn, ReplicationType.REST
             )
