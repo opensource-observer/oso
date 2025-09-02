@@ -125,12 +125,61 @@ these in the wasm environment. To do so, you need to add the following to the
 `.env` in the `wasm-builder`'s main directory:
 
 ```bash
-OTHER_UV_PACKAGES_TO_INCLUDE='[{"name": "pyoso", "projectDir": "/path/to/pyoso", "outputDir": "/path/to/oso/dist"},{"name": "oso_semantic", "projectDir": "/path/to/oso_semantic", "outputDir": "/path/to/oso/dist"} ]'
+OTHER_UV_PACKAGES_TO_INCLUDE='[{"name": "pyoso", "projectDir": "/path/to/oso/warehouse/pyoso", "outputDir": "/path/to/oso/dist"},{"name": "oso_semantic", "projectDir": "/path/to/oso/warehouse/oso_semantic", "outputDir": "/path/to/oso/dist"} ]'
 ```
 
-You may notice that `outputDir` says `/path/to/oso/dist`. This is supposed to be
-the path to where you store the `oso` monorepo and then the `/dist` subdirectory
-within (which is where the built artifacts will be placed by uv).
+In the this configuration you simply need to replace all the occurrences of the
+string `/path/to/oso` with the path on your system to the oso repository. This
+is supposed to be the path to where you store the `oso` monorepo and then the
+`/dist` subdirectory within (which is where the built artifacts will be placed
+by uv).
+
+## Adding additional packages to the wasm environment
+
+The previous section about pyoso and oso_semantic is a specific example of how
+to add additional packages to the wasm environment. To add a brand new package,
+you will need to update the `OTHER_UV_PACKAGES_TO_INCLUDE` variable in the
+`.env` file with the new package's information.
+
+The `OTHER_UV_PACKAGES_TO_INCLUDE` variable is a JSON array of objects, where each object
+contains the following fields:
+
+- `name`: The name of the package.
+- `projectDir`: The path to the package's source code.
+- `outputDir`: The path to the directory where the built artifacts will be placed.
+
+By default, all packages in the `OTHER_UV_PACKAGES_TO_INCLUDE` json object are
+loaded in the pyodide environment. If, however, you'd like to add these into the
+production build you'll need to change our fork of the wasm controller to inject
+the correct packages.
+
+Within OSO's marimo fork, you'd update the file
+`frontend/src/oso-extensions/wasm/controller.tsx`. The section that looks like this:
+
+```tsx
+private async loadNotebookDeps(code: string, foundPackages: Set<string>) {
+    const pyodide = this.requirePyodide;
+
+    foundPackages.add("pyoso>=0.6.4")
+```
+
+Adds, `pyoso>=0.6.4` into the environment. To add any additional packages just
+add them to the `foundPackages` set, like so:
+
+```tsx
+private async loadNotebookDeps(code: string, foundPackages: Set<string>) {
+    const pyodide = this.requirePyodide;
+
+    foundPackages.add("pyoso>=0.6.4")
+    foundPackages.add("mypackages")
+```
+
+You can specify any version that you require.
+
+:::Note
+As each package will add to the load time of the wasm notebook, we would suggest
+to try to limit the number of preloaded packages as much as possible.
+:::
 
 ## Manually testing the build
 
