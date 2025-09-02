@@ -45,6 +45,7 @@ SELECT
     SUM(COALESCE(gas_used_trace, 0)) OVER (
       PARTITION BY chain, transaction_hash
     ), 0
-  ) AS share_of_transaction_gas
+  ) AS share_of_transaction_gas,
+  (to_address_trace=to_address_tx) AS is_top_level_transaction
 FROM oso.int_superchain_traces_txs_joined
 WHERE block_timestamp BETWEEN @start_dt AND @end_dt
