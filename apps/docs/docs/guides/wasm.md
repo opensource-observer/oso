@@ -74,7 +74,14 @@ git clone https://github.com/opensource-observer/marimo.git
 cd marimo
 ```
 
-In one terminal start the frontend:
+Additionally, if you're on a macos with Apple Silicon, you may need to run the
+following command:
+
+```bash
+pixi workspace platform add linux-aarch64
+```
+
+Next, in one terminal start the frontend:
 
 ```bash
 pixi run hatch shell # Start a shell in the pixi environment
