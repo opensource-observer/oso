@@ -248,3 +248,9 @@ window.__fragmentStore.commit();
 
 Now if you refresh the browser, the `os.environ` in python will have your
 environment variable loaded.
+
+### How to make the environment and variables from code
+
+For more on how to set the environment, you will notice that we use `lz-string`
+inside of the
+[`FragmentStore`](https://github.com/opensource-observer/marimo/blob/main/frontend/src/oso-extensions/fragment-store.ts).
