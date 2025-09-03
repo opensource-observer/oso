@@ -55,6 +55,13 @@ def dynamic_rest_asset(
 
     rest_api_config: RESTAPIConfig = dynamic_replication.config
 
+    # Default mapping for primitive values
+    for resource_config in rest_api_config.get("resources", []):
+        if isinstance(resource_config, dict):
+            resource_config["processing_steps"] = [
+                {"map": lambda x: x if isinstance(x, dict) else {"value": x}}
+            ]
+
     credentials = get_credentials(secrets, dynamic_replication.credentials_path)
     # If credentials_path is provided, resolve it as a secret and add it to the config
     if credentials:
