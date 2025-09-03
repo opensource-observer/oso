@@ -27,6 +27,7 @@ from oso_agent.workflows.types import (
     SemanticQueryEvent,
     SQLResultSummaryResponseEvent,
     StartQueryEngineEvent,
+    TableSelectionEvent,
     Text2SQLGenerationEvent,
 )
 from oso_semantic import Registry
@@ -55,6 +56,7 @@ class SemanticText2SQLWorkflow(
 
     registry: ResourceDependency[Registry]
     semantic_query_tool: ResourceDependency[FunctionTool]
+    table_selector_tool: ResourceDependency[FunctionTool]
     enable_retries: bool = True
     max_retries: int = 5
 
@@ -74,6 +76,31 @@ class SemanticText2SQLWorkflow(
     def _get_semantic_tool(self) -> FunctionTool:
         """Get the semantic query tool from the resource resolver."""
         return self.resolver.get_resource("semantic_query_tool")
+
+    def _create_filtered_registry_description(
+        self, registry: Registry, selected_models: list[str]
+    ) -> str:
+        """Create a filtered registry description with only selected models."""
+        if not selected_models:
+            return str(registry)
+
+        model_descriptions = []
+        for model_name in selected_models:
+            try:
+                model = registry.get_model(model_name)
+                if model:
+                    model_descriptions.append(f"## {model_name}\n{model.description}")
+            except Exception as e:
+                logger.warning(f"Could not get description for model {model_name}: {e}")
+                continue
+
+        if not model_descriptions:
+            logger.debug(
+                "No valid model descriptions found for selected models, falling back to full registry"
+            )
+            return str(registry)
+
+        return "\n\n".join(model_descriptions)
 
     async def _get_vector_context_for_entities(self, query: str) -> str:
         """Retrieve relevant entity context from vector database to help semantic parsing."""
@@ -97,6 +124,9 @@ class SemanticText2SQLWorkflow(
 
                 nodes = await retriever.aretrieve(query)
                 if not nodes:
+                    logger.debug(
+                        f"No vector nodes found for table {table_name}, skipping"
+                    )
                     continue
 
                 table_context = f"\n{table_name.upper()} entities:\n"
@@ -104,10 +134,20 @@ class SemanticText2SQLWorkflow(
                     table_context += f"- {node.text}\n"
                 context_parts.append(table_context)
 
-            return "\n".join(context_parts) if context_parts else ""
+            context = "\n".join(context_parts) if context_parts else ""
+            if not context:
+                logger.debug("No entity context retrieved from vector database")
+            else:
+                logger.debug(
+                    f"Retrieved entity context for {len(context_parts)} tables"
+                )
+            return context
 
         except Exception as e:
             logger.warning(f"Could not retrieve vector context for entities: {e}")
+            logger.debug(
+                "Returning empty entity context due to vector retrieval failure"
+            )
             return ""
 
     def _parse_semantic_tool_output(self, tool_output: ToolResponse) -> SemanticQuery:
@@ -166,25 +206,67 @@ class SemanticText2SQLWorkflow(
         )
 
     @step
-    async def handle_row_context_for_semantic_translation(
+    async def select_relevant_tables(
         self, event: RowContextEvent
+    ) -> TableSelectionEvent:
+        """Select relevant tables/models from registry before semantic translation."""
+        logger.debug(f"Selecting relevant tables for query: {event.input_text}")
+
+        table_selector = self.resolver.get_resource("table_selector_tool")
+
+        try:
+            tool_output = await table_selector.acall(
+                natural_language_query=event.input_text
+            )
+            raw_output = tool_output.raw_output
+
+            if not raw_output.metadata or "table_selection" not in raw_output.metadata:
+                raise ValueError("No table selection results in tool output")
+
+            selection_response = raw_output.metadata["table_selection"]
+            selected_models = selection_response.selected_models
+
+            registry: Registry = self.resolver.get_resource("registry")
+            filtered_description = self._create_filtered_registry_description(
+                registry, selected_models
+            )
+
+            logger.info(
+                f"Selected {len(selected_models)} models for semantic query: {', '.join(selected_models)}"
+            )
+
+            return TableSelectionEvent(
+                id=event.id,
+                input_text=event.input_text,
+                selected_models=selected_models,
+                filtered_registry_description=filtered_description,
+                synthesize_response=event.synthesize_response,
+                execute_sql=event.execute_sql,
+            )
+        except Exception as e:
+            logger.warning(f"Table selection failed, using full registry: {e}")
+            fallback_registry: Registry = self.resolver.get_resource("registry")
+            full_description = str(fallback_registry)
+
+            return TableSelectionEvent(
+                id=event.id,
+                input_text=event.input_text,
+                selected_models=[],
+                filtered_registry_description=full_description,
+                synthesize_response=event.synthesize_response,
+                execute_sql=event.execute_sql,
+            )
+
+    @step
+    async def handle_row_context_for_semantic_translation(
+        self, event: TableSelectionEvent
     ) -> SemanticQueryEvent | RetrySemanticQueryEvent | StopEvent:
-        """Handle RowContextEvent and use vector context to enhance semantic translation."""
-        logger.debug(f"Processing RowContextEvent for semantic translation: {event.id}")
+        """Handle TableSelectionEvent and use focused context for semantic translation."""
+        logger.debug(
+            f"Processing TableSelectionEvent for semantic translation: {event.id}"
+        )
 
-        entity_context_parts = []
-        for table_name, retriever in event.row_retrievers.items():
-            try:
-                nodes = await retriever.aretrieve(event.input_text)
-                if nodes:
-                    table_context = f"\n{table_name.upper()} entities:\n"
-                    for node in nodes:
-                        table_context += f"- {node.text}\n"
-                    entity_context_parts.append(table_context)
-            except Exception as e:
-                logger.warning(f"Could not retrieve context from {table_name}: {e}")
-
-        entity_context = "\n".join(entity_context_parts) if entity_context_parts else ""
+        entity_context = await self._get_vector_context_for_entities(event.input_text)
 
         return await self._perform_semantic_translation(
             event.input_text,
@@ -193,6 +275,7 @@ class SemanticText2SQLWorkflow(
             event.execute_sql,
             remaining_tries=self.max_retries + 1,
             error_context=[],
+            filtered_registry_description=event.filtered_registry_description,
         )
 
     @step
@@ -298,6 +381,7 @@ class SemanticText2SQLWorkflow(
         remaining_tries: int,
         error_context: list[str],
         error_feedback: str | None = None,
+        filtered_registry_description: str | None = None,
     ) -> SemanticQueryEvent | RetrySemanticQueryEvent:
         """Core semantic translation logic with entity context."""
         tool = self._get_semantic_tool()
@@ -308,11 +392,16 @@ class SemanticText2SQLWorkflow(
             )
 
         try:
-            tool_output = await tool.acall(
-                natural_language_query=natural_language_query,
-                error_feedback=error_feedback,
-                entity_context=entity_context,
-            )
+            call_args = {
+                "natural_language_query": natural_language_query,
+                "error_feedback": error_feedback,
+                "entity_context": entity_context,
+            }
+
+            if filtered_registry_description:
+                call_args["custom_registry_description"] = filtered_registry_description
+
+            tool_output = await tool.acall(**call_args)
             raw_output = tool_output.raw_output
             assert isinstance(raw_output, ToolResponse)
             structured_query = self._parse_semantic_tool_output(raw_output)

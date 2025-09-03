@@ -131,6 +131,7 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
     from oso_agent.tool.embedding import create_embedding
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.storage_context import setup_storage_context
+    from oso_agent.tool.table_selector_tool import create_table_selector_tool
 
     oso_client = OsoClient(config.oso_api_key.get_secret_value())
     llm = create_llm(config)
@@ -148,13 +149,20 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
         synthesize_response=False,
     )
 
+    registry_description = oso_client.client.semantic.describe()
+
     semantic_query_tool = create_semantic_query_tool(
-        llm=llm, registry_description=oso_client.client.semantic.describe()
+        llm=llm, registry_description=registry_description
+    )
+
+    table_selector_tool = create_table_selector_tool(
+        llm=llm, available_models=registry_description
     )
 
     resolver = DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
         semantic_query_tool=semantic_query_tool,
+        table_selector_tool=table_selector_tool,
         oso_client=oso_client,
         keep_distinct=True,
         agent_name=config.agent_name,
