@@ -45,7 +45,7 @@ class SQLMeshRunConfig(dg.Config):
     start: str | None = None
     end: str | None = None
 
-    use_dev_environment: bool = True
+    use_dev_environment: bool = False
 
 
 op_tags = {
@@ -252,13 +252,13 @@ def sqlmesh_factory(
                     description="All assets in the sqlmesh project",
                 ),
                 define_asset_job(
-                    name="sqlmesh_all_assets_no_dev_environment",
+                    name="sqlmesh_all_assets_with_dev_environment",
                     selection=all_assets_selection,
-                    description="All assets in the sqlmesh project w/o dev environment",
+                    description="All assets in the sqlmesh project with dev environment",
                     config=RunConfig(
                         ops={
                             "sqlmesh_project": SQLMeshRunConfig(
-                                use_dev_environment=False,
+                                use_dev_environment=True,
                             ),
                         }
                     ),
