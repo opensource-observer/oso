@@ -19,3 +19,18 @@ def load_dlt_warehouse_destination(global_config: DagsterConfig):
         )
     else:
         return duckdb(global_config.local_duckdb_path)
+
+
+def load_dlt_dynamic_warehouse_destination(global_config: DagsterConfig):
+    if global_config.gcp_bigquery_enabled:
+        assert global_config.gcp_project_id
+        assert global_config.gcp_dynamic_project_id
+        return bigquery(
+            project_id=global_config.gcp_dynamic_project_id,
+            credentials=GcpServiceAccountCredentials(
+                project_id=global_config.gcp_project_id
+            ),
+            truncate_tables_on_staging_destination_before_load=False,
+        )
+    else:
+        return duckdb(global_config.local_duckdb_path)
