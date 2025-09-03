@@ -9,7 +9,7 @@ allowed-tools: Bash(git*), Read, Write, Glob, Grep, Task
 !git diff --name-only HEAD~1
 !git log --oneline -5
 
-Analyze the complete workflow architecture and create a comprehensive changelog in `assets/` directory. This command generates documentation matching the quality and depth of `assets/18-08-2025.md`.
+Analyze the complete workflow architecture and create a comprehensive changelog in `changelog/` directory. This command generates documentation matching the quality and depth of `changelog/18-08-2025.md`.
 
 ## Deep Analysis Requirements
 
@@ -42,7 +42,7 @@ For each workflow component:
 
 ## Changelog Generation
 
-Create `assets/DD-MM-YYYY.md` with this EXACT structure and formatting:
+Create `changelog/DD-MM-YYYY.md` with this EXACT structure and formatting:
 
 ### Header Format
 
@@ -155,14 +155,14 @@ style ComponentF fill:#b2dfdb,color:#000,stroke:#00695c,stroke-width:2px
 After creating the changelog:
 
 1. **Update CHANGELOG.md Index**
-   Add entry in this format to assets/CHANGELOG.md:
+   Add entry in this format to changelog/CHANGELOG.md:
 
    ```
    - [DD-MM-YYYY](./DD-MM-YYYY.md): Brief description of workflow changes
    ```
 
 2. **Validate Quality**
-   Compare generated file against `assets/18-08-2025.md` baseline for:
+   Compare generated file against `changelog/18-08-2025.md` baseline for:
    - Comprehensiveness of mermaid diagram
    - Depth of technical analysis
    - Formatting consistency

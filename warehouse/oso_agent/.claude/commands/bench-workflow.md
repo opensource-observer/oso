@@ -24,26 +24,24 @@ Extract workflow components from arguments:
 - Target iteration: Extract iteration from `$1` (everything after last '/')
 - Target results: `oso_agent/workflows/text2sql/semantic_iters/$1_results.json`
 - Baseline results: `oso_agent/workflows/text2sql/semantic_iters/$2_results.json`
-- Target README: `oso_agent/workflows/text2sql/semantic_iters/[target_directory]/README.md`
 
 Verify all required files exist before proceeding.
 
-### 2. Load Performance Data
+### 2. Discover Available Evaluation Metrics
 
-Read both JSON result files and extract `annotationSummaries` arrays containing:
+First, dynamically discover available evaluation metrics by reading `oso_agent/eval/text2sql/evals.py`:
 
-**Required Evaluation Metrics**:
+- Parse the file to find all async functions that return `EvaluationResult`
+- Extract function names and their docstrings for metric descriptions
+- Use the `label` field from each function's `EvaluationResult` return to identify metric keys
 
-- `sql_syntax_validation`: Syntactic SQL validity (0.0-1.0)
-- `sql_execution_success`: Query execution success rate (0.0-1.0)
-- `sql_command_types_match`: Command type similarity via Jaccard (0.0-1.0)
-- `oso_tables_match`: Table reference similarity via Jaccard (0.0-1.0)
-- `results_exact_match`: Exact result matching (0.0-1.0)
-- `results_similarity_score`: Fuzzy result similarity (0.0-1.0)
+### 3. Load Performance Data
 
-For each metric, extract the `meanScore` value from both target and baseline.
+Read both JSON result files and extract `annotationSummaries` arrays containing the discovered evaluation metrics.
 
-### 3. Calculate Performance Metrics
+For each discovered metric, extract the `meanScore` value from both target and baseline.
+
+### 4. Calculate Performance Metrics
 
 For each evaluation metric, compute:
 
@@ -54,7 +52,7 @@ For each evaluation metric, compute:
   - "REGRESSED" if difference < -0.005
   - "STABLE" if within ±0.005 range
 
-### 4. Generate Performance Analysis
+### 5. Generate Performance Analysis
 
 #### Create Summary Table
 
@@ -82,7 +80,7 @@ Calculate weighted improvement score:
 - Sum: (weight × percentage_change) for each metric
 - Overall status: "BETTER" (>0), "WORSE" (<0), or "MIXED" (≈0)
 
-### 5. Generate Analysis Content
+### 6. Generate Analysis Content
 
 #### Key Findings Analysis
 
@@ -102,7 +100,7 @@ For each significant change (>10%), provide context:
 - Why the change matters for workflow performance
 - Potential causes based on metric behavior patterns
 
-### 6. Generate Markdown Output
+### 7. Generate Markdown Output
 
 Print the complete benchmark analysis to console as formatted markdown:
 
