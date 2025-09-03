@@ -6,7 +6,8 @@ MODEL (
     batch_size 90,
     batch_concurrency 3,
     lookback 31,
-    forward_only true
+    forward_only true,
+    on_destructive_change warn
   ),
   start @blockchain_incremental_start,
   cron '@daily',
