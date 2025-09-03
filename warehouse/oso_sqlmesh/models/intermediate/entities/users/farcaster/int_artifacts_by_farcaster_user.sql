@@ -9,16 +9,19 @@ MODEL (
 
 WITH farcaster_addresses AS (
   SELECT DISTINCT
-    farcaster_id,
-    address
-  FROM oso.stg_farcaster__addresses
-  WHERE LENGTH(address) = 42
+    addresses.farcaster_id,
+    addresses.address,
+    chains.chain_name
+  FROM oso.stg_farcaster__addresses AS addresses
+  CROSS JOIN oso.seed_chain_id_to_chain_name AS chains
+  WHERE LENGTH(addresses.address) = 42
 ),
 
 custody_addresses AS (
   SELECT DISTINCT
     farcaster_id,
-    custody_address AS address
+    custody_address AS address,
+    'OPTIMISM' AS chain_name
   FROM oso.stg_farcaster__profiles
   WHERE custody_address IS NOT NULL
 ),
@@ -29,13 +32,35 @@ all_addresses AS (
   UNION ALL
   SELECT *
   FROM custody_addresses
+),
+
+artifacts_by_user AS (
+  SELECT
+    profiles.farcaster_id AS user_source_id,
+    'FARCASTER' AS user_source,
+    '' AS user_namespace,
+    profiles.farcaster_id::VARCHAR AS user_name,
+    profiles.username AS display_name,
+    UPPER(all_addresses.chain_name) AS artifact_source,
+    '' AS artifact_namespace,
+    all_addresses.address AS artifact_name,
+    all_addresses.address AS artifact_id,
+    'SOCIAL_HANDLE' AS artifact_type
+  FROM all_addresses
+  JOIN oso.stg_farcaster__profiles AS profiles
+    ON all_addresses.farcaster_id = profiles.farcaster_id
 )
 
-SELECT
-  @oso_entity_id('FARCASTER', '', profiles.farcaster_id) AS user_id,
-  profiles.farcaster_id,
-  profiles.username AS farcaster_username,
-  all_addresses.address
-FROM all_addresses
-JOIN oso.stg_farcaster__profiles AS profiles
-  ON all_addresses.farcaster_id = profiles.farcaster_id
+SELECT DISTINCT
+  @oso_entity_id(user_source, user_namespace, user_name) AS user_id,
+  user_source_id,
+  user_source,
+  user_namespace,
+  user_name,
+  display_name,
+  artifact_source,
+  artifact_namespace,
+  artifact_name,
+  @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
+  artifact_type
+FROM artifacts_by_user
