@@ -41,8 +41,8 @@ SELECT
   to_address_trace AS to_artifact_name,
   gas_used_tx::DOUBLE * gas_price_tx::DOUBLE AS l2_gas_fee,
   COALESCE(gas_used_trace, 0)::DOUBLE AS gas_used_trace,
-  COALESCE(gas_used_trace, 0) / NULLIF(
-    SUM(COALESCE(gas_used_trace, 0)) OVER (
+  COALESCE(gas_used_trace, 0)::DOUBLE / NULLIF(
+    SUM(COALESCE(gas_used_trace, 0)::DOUBLE) OVER (
       PARTITION BY chain, transaction_hash
     ), 0
   ) AS share_of_transaction_gas,
