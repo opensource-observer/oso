@@ -83,7 +83,7 @@ cd frontend
 # Start the frontend. You will want to set PYODIDE=true so that you can force the use of the
 # pyodide backend. Vite sometimes needs a bit more memory with the marimo frontend build.
 # Hence the `NODE_OPTIONS` setting.
-PYODIDE=true NODE_OPTIONS=--max-old-space-size=6144 pnpm vite --config oso.viteconfig.mts
+PYODIDE=true NODE_OPTIONS=--max-old-space-size=6144 pnpm vite --config oso.viteconfig.mts --host 127.0.0.1
 ```
 
 :::Note
@@ -106,10 +106,13 @@ The server will start listening on port 6008 by default.
 :::Note
 If you happen to be developing, using a remote development setup you will want
 to make sure you set the `PUBLIC_PACKAGES_HOST` to the correct host for your
-remote setup.
+remote setup. To ensure this set the `PUBLIC_PACKAGES_HOST` environment variable
+to the correct host. However, you _must_ access the proxy via this hostname in
+your browser or you may get cors or other unrelated domain errors and will cause
+errors on load.
 :::
 
-To access the notebook now, you can navigate to `http://localhost:6008/notebook` in your
+To access the notebook now, you can navigate to `http://127.0.0.1:6008/notebook` in your
 browser. The `/notebook` endpoint is specific to OSO's wasm environment.
 
 :::
