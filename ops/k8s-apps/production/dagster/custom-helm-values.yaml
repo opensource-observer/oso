@@ -87,7 +87,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250901144512-327aa94 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250903141833-04db655 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -95,6 +95,21 @@ spec:
             dagsterApiGrpcArgs:
               - "-m"
               - "oso_dagster.definitions.default"
+              - "--log-format"
+              - "json"
+            includeConfigInLaunchedRuns:
+              enabled: false
+          - name: "dynamic"
+            image:
+              repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+              tag: deploy-20250903141833-04db655 # {"$imagepolicy": "flux-system:oso:tag"}
+              pullPolicy: IfNotPresent
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions.dynamic"
               - "--log-format"
               - "json"
             includeConfigInLaunchedRuns:
