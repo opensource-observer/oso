@@ -45,6 +45,8 @@ class SQLMeshRunConfig(dg.Config):
     start: str | None = None
     end: str | None = None
 
+    use_dev_environment: bool = True
+
 
 op_tags = {
     "dagster-k8s/config": {
@@ -197,7 +199,11 @@ def sqlmesh_factory(
                 # If we specify a dev_environment, we will first plan it for
                 # safety. Restatements are ignored as they may end up duplicating
                 # work based on how restatement in planning works.
-                if dev_environment and not config.restate_models:
+                if (
+                    dev_environment
+                    and config.use_dev_environment
+                    and not config.restate_models
+                ):
                     context.log.info("Planning dev environment")
                     all(
                         sqlmesh.run(
@@ -244,6 +250,18 @@ def sqlmesh_factory(
                     name="sqlmesh_all_assets",
                     selection=all_assets_selection,
                     description="All assets in the sqlmesh project",
+                ),
+                define_asset_job(
+                    name="sqlmesh_all_assets_no_dev_environment",
+                    selection=all_assets_selection,
+                    description="All assets in the sqlmesh project w/o dev environment",
+                    config=RunConfig(
+                        ops={
+                            "sqlmesh_project": SQLMeshRunConfig(
+                                use_dev_environment=False,
+                            ),
+                        }
+                    ),
                 ),
                 # Job to restate all project and collection related assets
                 define_asset_job(
