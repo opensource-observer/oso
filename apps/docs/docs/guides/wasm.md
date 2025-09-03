@@ -223,3 +223,23 @@ Now you can go to your browser at http://localhost:6008/notebook.html.
 Python simple server does support reference html files without `.html`. This
 would be different behavior than something deployed on our production setup.
 :::
+
+### Loading environment into wasm notebook
+
+Both code and environment variables are loaded into the wasm notebook via the
+fragment identifier in the URL. The notebook treats anything in the fragment
+identifier as a set of query parameters. Testing this is a bit hard so we made a
+facility that should allow you to create the environment on manually via the
+browser debug console. Simply add the `debug=true` variable to the URL fragment
+and the `window.__fragmentStore` variable will be populated with the current
+`FragmentStore` instance for the notebook. This `FragmentStore` instance has a
+`setJSON` method you can use to add any json to the fragment identifier that
+you'd like. To add a `env` variable you do something like this:
+
+```javascript
+window.__fragmentStore.setJSON("env", { MY_ENV_VAR: "my_value" });
+window.__fragmentStore.commit();
+```
+
+Now if you refresh the browser, the `os.environ` in python will have your
+environment variable loaded.
