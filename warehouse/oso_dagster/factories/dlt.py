@@ -61,6 +61,7 @@ def _dlt_factory[
         tags: t.Optional[t.MutableMapping[str, str]] = None,
         op_tags: t.Optional[t.MutableMapping[str, t.Any]] = None,
         log_intermediate_results: bool = False,
+        use_dynamic_project: bool = False,
         *args: P.args,
         **kwargs: P.kwargs,
     ):
@@ -91,6 +92,7 @@ def _dlt_factory[
             def _factory(
                 dlt_staging_destination: Destination,
                 dlt_warehouse_destination: Destination,
+                dlt_dynamic_warehouse_destination: Destination,
                 secrets: SecretResolver,
             ):
                 # logger.info(f"Creating asset for {key_prefix} with {tags}")
@@ -169,7 +171,9 @@ def _dlt_factory[
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(
                             pipeline_name,
-                            destination=dlt_warehouse_destination,
+                            destination=dlt_warehouse_destination
+                            if not use_dynamic_project
+                            else dlt_dynamic_warehouse_destination,
                             staging=dlt_staging_destination,
                             dataset_name=dataset_name_str,
                         )

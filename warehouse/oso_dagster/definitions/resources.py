@@ -26,6 +26,7 @@ from oso_dagster.resources import (
     TrinoK8sResource,
     TrinoRemoteResource,
     TrinoResource,
+    load_dlt_dynamic_warehouse_destination,
     load_dlt_staging,
     load_dlt_warehouse_destination,
     load_io_manager,
@@ -246,6 +247,15 @@ def dlt_warehouse_destination_factory(
     return load_dlt_warehouse_destination(global_config)
 
 
+@resource_factory("dlt_dynamic_warehouse_destination")
+@time_function(logger)
+def dlt_dynamic_warehouse_destination_factory(
+    global_config: DagsterConfig,
+) -> Destination:
+    """Factory function to create a DLT warehouse destination for the dynamic project."""
+    return load_dlt_dynamic_warehouse_destination(global_config)
+
+
 @resource_factory("dlt")
 @time_function(logger)
 def dlt_resource_factory() -> DagsterDltResource:
@@ -418,6 +428,7 @@ def default_resource_registry():
     registry.add(sqlmesh_exporter_factory)
     registry.add(dlt_staging_destination_factory)
     registry.add(dlt_warehouse_destination_factory)
+    registry.add(dlt_dynamic_warehouse_destination_factory)
     registry.add(dlt_resource_factory)
     registry.add(cbt_resource_factory)
     registry.add(trino_exporter_factory)

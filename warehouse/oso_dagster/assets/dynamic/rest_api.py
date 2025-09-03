@@ -37,6 +37,7 @@ rest_api_partitions = DynamicPartitionsDefinition(name="dynamic_rest_api")
     partitions_def=rest_api_partitions,
     dataset_name=lambda ctx: parse_partition_key(ctx.partition_key)[0],
     log_intermediate_results=True,
+    use_dynamic_project=True,
 )
 def dynamic_rest_asset(
     context: AssetExecutionContext,
