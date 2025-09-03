@@ -74,13 +74,6 @@ git clone https://github.com/opensource-observer/marimo.git
 cd marimo
 ```
 
-Additionally, if you're on a macos with Apple Silicon, you may need to run the
-following command:
-
-```bash
-pixi workspace platform add linux-aarch64
-```
-
 Next, in one terminal start the frontend:
 
 ```bash
