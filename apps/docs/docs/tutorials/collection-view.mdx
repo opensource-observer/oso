@@ -40,7 +40,8 @@ For more details on setting up Python notebooks, see our guide on [writing Pytho
 ```python
 from pyoso import Client
 
-oso = Client()
+OSO_API_KEY = os.environ['OSO_API_KEY']
+oso = Client(api_key=OSO_API_KEY)
 ```
 
 </TabItem>
