@@ -74,13 +74,6 @@ git clone https://github.com/opensource-observer/marimo.git
 cd marimo
 ```
 
-Additionally, if you're on a macos with Apple Silicon, you may need to run the
-following command:
-
-```bash
-pixi workspace platform add linux-aarch64
-```
-
 Next, in one terminal start the frontend:
 
 ```bash
@@ -90,7 +83,7 @@ cd frontend
 # Start the frontend. You will want to set PYODIDE=true so that you can force the use of the
 # pyodide backend. Vite sometimes needs a bit more memory with the marimo frontend build.
 # Hence the `NODE_OPTIONS` setting.
-PYODIDE=true NODE_OPTIONS=--max-old-space-size=6144 pnpm vite --config oso.viteconfig.mts
+PYODIDE=true NODE_OPTIONS=--max-old-space-size=6144 pnpm vite --config oso.viteconfig.mts --host 127.0.0.1
 ```
 
 :::Note
@@ -113,10 +106,13 @@ The server will start listening on port 6008 by default.
 :::Note
 If you happen to be developing, using a remote development setup you will want
 to make sure you set the `PUBLIC_PACKAGES_HOST` to the correct host for your
-remote setup.
+remote setup. To ensure this set the `PUBLIC_PACKAGES_HOST` environment variable
+to the correct host. However, you _must_ access the proxy via this hostname in
+your browser or you may get cors or other unrelated domain errors and will cause
+errors on load.
 :::
 
-To access the notebook now, you can navigate to `http://localhost:6008/notebook` in your
+To access the notebook now, you can navigate to `http://127.0.0.1:6008/notebook` in your
 browser. The `/notebook` endpoint is specific to OSO's wasm environment.
 
 :::
@@ -230,3 +226,23 @@ Now you can go to your browser at http://localhost:6008/notebook.html.
 Python simple server does support reference html files without `.html`. This
 would be different behavior than something deployed on our production setup.
 :::
+
+### Loading environment into wasm notebook
+
+Both code and environment variables are loaded into the wasm notebook via the
+fragment identifier in the URL. The notebook treats anything in the fragment
+identifier as a set of query parameters. Testing this is a bit hard so we made a
+facility that should allow you to create the environment on manually via the
+browser debug console. Simply add the `debug=true` variable to the URL fragment
+and the `window.__fragmentStore` variable will be populated with the current
+`FragmentStore` instance for the notebook. This `FragmentStore` instance has a
+`setJSON` method you can use to add any json to the fragment identifier that
+you'd like. To add a `env` variable you do something like this:
+
+```javascript
+window.__fragmentStore.setJSON("env", { MY_ENV_VAR: "my_value" });
+window.__fragmentStore.commit();
+```
+
+Now if you refresh the browser, the `os.environ` in python will have your
+environment variable loaded.
