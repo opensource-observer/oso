@@ -51,7 +51,7 @@ gas_totals AS (
   SELECT
     chain,
     transaction_hash,
-    SUM(gas_used_d) AS total_gas_used_d
+    SUM(gas_used_d)::DOUBLE AS total_gas_used_d
   FROM traces_f
   GROUP BY 1, 2
 )
@@ -70,10 +70,12 @@ SELECT
   t.to_address AS to_artifact_name,
   x.receipt_gas_used_d * x.receipt_eff_gas_price_d AS l2_gas_fee,
   t.gas_used_d AS gas_used_trace,
-  CASE 
-    WHEN g.total_gas_used_d IS NULL OR g.total_gas_used_d = 0 THEN 0.0
-    ELSE t.gas_used_d / g.total_gas_used_d
-  END AS share_of_transaction_gas,
+  CAST(
+    CASE 
+      WHEN g.total_gas_used_d IS NULL OR g.total_gas_used_d = 0 THEN 0.0
+      ELSE t.gas_used_d / g.total_gas_used_d
+    END
+  AS DOUBLE) AS share_of_transaction_gas,
   (t.to_address = x.to_address) AS is_top_level_transaction
 FROM traces_f AS t
 JOIN gas_totals AS g
