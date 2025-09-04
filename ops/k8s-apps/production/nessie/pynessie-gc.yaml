@@ -4,6 +4,7 @@ metadata:
   name: pynessie-gc-job
 spec:
   schedule: "0 0 * * 2"
+  suspend: true
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   jobTemplate:
