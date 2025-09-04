@@ -14,7 +14,9 @@ WITH farcaster_addresses AS (
     chains.chain_name
   FROM oso.stg_farcaster__addresses AS addresses
   CROSS JOIN oso.seed_chain_id_to_chain_name AS chains
-  WHERE LENGTH(addresses.address) = 42
+  WHERE
+    LENGTH(addresses.address) = 42
+    AND addresses.address LIKE '0x%'
 ),
 
 custody_addresses AS (
