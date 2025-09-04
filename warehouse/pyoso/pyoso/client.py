@@ -190,10 +190,11 @@ class Client:
 
         headers = {
             "Content-Type": "application/json",
+            "Authorization": f"Bearer {self._get_api_key()}",
         }
         try:
             response = pyodide_post_json_request(
-                "/sql",
+                f"{self.__base_url}sql",
                 headers=headers,
                 body={
                     "query": translated_query,
