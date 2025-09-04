@@ -11,11 +11,7 @@ MODEL (
   ),
   start @blockchain_incremental_start,
   cron '@daily',
-  partitioned_by (
-    DAY("time"),
-    "event_source",
-    "event_type"
-  ),
+  partitioned_by (DAY("time"), "event_source", "event_type"),
   audits (
     has_at_least_n_rows(threshold := 0),
     no_gaps(
@@ -25,28 +21,65 @@ MODEL (
       ignore_after := @superchain_audit_end,
       missing_rate_min_threshold := 0.95
     )
-  ),
+  )
 );
 
+WITH traces_f AS (
+  SELECT
+    chain,
+    block_timestamp,
+    transaction_hash,
+    to_address,
+    CAST(COALESCE(gas_used, 0) AS DOUBLE) AS gas_used_d
+  FROM oso.stg_superchain__traces
+  WHERE block_timestamp BETWEEN @start_dt AND @end_dt
+),
+tx_f AS (
+  SELECT
+    chain,
+    block_timestamp,
+    transaction_hash,
+    from_address,
+    to_address,
+    CAST(receipt_gas_used AS DOUBLE) AS receipt_gas_used_d,
+    CAST(receipt_effective_gas_price AS DOUBLE) AS receipt_eff_gas_price_d
+  FROM oso.stg_superchain__transactions
+  WHERE block_timestamp BETWEEN @start_dt AND @end_dt
+    AND receipt_status = 1
+),
+gas_totals AS (
+  SELECT
+    chain,
+    transaction_hash,
+    SUM(gas_used_d) AS total_gas_used_d
+  FROM traces_f
+  GROUP BY 1, 2
+)
+
 SELECT
-  block_timestamp AS time,
+  t.block_timestamp AS time,
   'INTERNAL_TRANSACTION' AS event_type,
-  chain AS event_source,
-  transaction_hash,
-  @oso_id(chain, '', transaction_hash) AS event_source_id,
-  @oso_entity_id(chain, '', from_address_tx) AS from_artifact_id,
+  t.chain AS event_source,
+  t.transaction_hash,
+  @oso_id(t.chain, '', t.transaction_hash) AS event_source_id,
+  @oso_entity_id(t.chain, '', x.from_address) AS from_artifact_id,
   '' AS from_artifact_namespace,
-  from_address_tx AS from_artifact_name,
-  @oso_entity_id(chain, '', to_address_trace) AS to_artifact_id,
+  x.from_address AS from_artifact_name,
+  @oso_entity_id(t.chain, '', t.to_address) AS to_artifact_id,
   '' AS to_artifact_namespace,
-  to_address_trace AS to_artifact_name,
-  gas_used_tx::DOUBLE * gas_price_tx::DOUBLE AS l2_gas_fee,
-  COALESCE(gas_used_trace, 0)::DOUBLE AS gas_used_trace,
-  COALESCE(gas_used_trace, 0)::DOUBLE / NULLIF(
-    SUM(COALESCE(gas_used_trace, 0)::DOUBLE) OVER (
-      PARTITION BY chain, transaction_hash
-    ), 0
-  ) AS share_of_transaction_gas,
-  (to_address_trace=to_address_tx) AS is_top_level_transaction
-FROM oso.int_superchain_traces_txs_joined
-WHERE block_timestamp BETWEEN @start_dt AND @end_dt
+  t.to_address AS to_artifact_name,
+  x.receipt_gas_used_d * x.receipt_eff_gas_price_d AS l2_gas_fee,
+  t.gas_used_d AS gas_used_trace,
+  CASE 
+    WHEN g.total_gas_used_d IS NULL OR g.total_gas_used_d = 0 THEN 0.0
+    ELSE t.gas_used_d / g.total_gas_used_d
+  END AS share_of_transaction_gas,
+  (t.to_address = x.to_address) AS is_top_level_transaction
+FROM traces_f AS t
+JOIN gas_totals AS g
+  ON g.chain = t.chain 
+  AND g.transaction_hash = t.transaction_hash
+JOIN tx_f AS x
+  ON x.chain = t.chain 
+  AND x.transaction_hash = t.transaction_hash
+  
