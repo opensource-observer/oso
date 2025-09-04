@@ -9,6 +9,9 @@ env:
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  schedule:
+    # Hack for now since we can't trigger off events in the marimo fork. Deploys every hour
+    - cron: '0 * * * *' 
 
 jobs:
   build-deploy:
@@ -45,7 +48,7 @@ jobs:
         run: pixi run make fe
 
       - name: Build the dist directory for marimo
-        run: pixi run bash scripts/build_production_marimo_wasm.sh marimo_dist marimo.opensource.observer
+        run: pixi run bash scripts/build_marimo_static_dist.sh marimo_dist marimo.opensource.observer
 
       - name: Install wrangler
         run: pnpm add -g wrangler

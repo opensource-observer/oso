@@ -5,7 +5,7 @@ from oso_dagster.factories import AssetFactoryResponse, early_resources_asset_fa
 
 @early_resources_asset_factory()
 def fake_early_resources_asset(global_config: DagsterConfig) -> AssetFactoryResponse:
-    @asset(compute_kind="fake")
+    @asset(compute_kind="fake", tags={"opensource.observer/experimental": "true"})
     def fake_failing_asset() -> None:
         raise Exception("This fake asset only ever fails")
 

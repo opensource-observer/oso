@@ -38,7 +38,6 @@ This guide shows you how to set up a Google Sheets connector in the Open Source 
    | table_name      | sheet_id_and_tab            | owner        | notes           |
    | --------------- | --------------------------- | ------------ | --------------- |
    | `my_test_sheet` | `1A2B3C4D5E6F7G8H9I#Sheet1` | your-email@… | "Demo metadata" |
-
    - **table_name**: How the sheet will appear when you query via SQL (e.g., `my_test_sheet`).
    - **sheet_id_and_tab**: The spreadsheet’s ID (from its URL) followed by a `#` and the exact tab name.
    - **owner**: Your email (or the service account’s email).
@@ -213,12 +212,10 @@ Updates to your spreadsheet might take up to 10 minutes to be reflected in pyoso
 ## Troubleshooting
 
 - **Permission Denied**
-
   - Ensure you shared both the metadata sheet and each data sheet with your service account email.
   - Verify the Base64-encoded key matches the JSON key for that service account.
 
 - **Connector Not Found**
-
   - Check that you used the exact sheet ID (not the full URL) when you created the metadata sheet entry.
   - Confirm the `#TabName` suffix matches a tab that actually exists in the spreadsheet.
 
