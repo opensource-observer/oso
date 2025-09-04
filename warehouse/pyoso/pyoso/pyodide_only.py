@@ -16,7 +16,7 @@ def pyodide_post_json_request(url: str, headers: dict[str, str], body: dict, **k
 
 
 async def pyodide_fetch(url: str, **kwargs):
-    from pyodide.http import pyfetch  # type: ignore
+    from pyodide.http import pyfetch
 
     response = await pyfetch(url, **kwargs)
     return await response.text()

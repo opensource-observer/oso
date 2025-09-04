@@ -18,9 +18,6 @@ dependencies = [
 semantic = [
     "oso-semantic",
 ]
-pyodide = [
-    "pyodide-py>=0.27.7",
-]
 
 [build-system]
 requires = ["hatchling"]
@@ -31,6 +28,7 @@ dev = [
     "oso-semantic",
     "pandas-stubs>=2.2.3.250308",
     "pip>=25.2",
+    "pyodide-py>=0.27.7",
     "pytest-pyodide>=0.58.6",
 ]
 
