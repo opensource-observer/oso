@@ -84,9 +84,13 @@ class QueryResponse:
 @lru_cache(maxsize=1)
 def is_pyodide() -> bool:
     try:
+        import sys
+
         import pyodide  # type: ignore # noqa: F401
 
-        return True
+        if sys.platform == "emscripten":
+            return True
+        return False
     except ImportError:
         return False
 
