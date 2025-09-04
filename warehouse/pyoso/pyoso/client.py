@@ -114,13 +114,18 @@ class Client:
             )
 
     def _get_api_key(self) -> str:
+        """We wrap the api key retreival here so that can lazily load the api
+        key in a pyodide environment.
+
+        This is in case the environment variable is not set immediately on
+        startup (which can happen).
+        """
         if self.__api_key:
             return self.__api_key
-        print("local environ")
-        print(os.environ)
         key = os.environ.get(OSO_API_KEY)
         if not key:
             raise OsoError("API key is required.")
+        self.__api_key = key
         return key
 
     def __query(
