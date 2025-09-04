@@ -3,8 +3,7 @@ kind: CronJob
 metadata:
   name: pynessie-gc-job
 spec:
-  schedule: "0 0 * * 2"
-  suspend: true
+  schedule: "0 0 * * 6"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   jobTemplate:
