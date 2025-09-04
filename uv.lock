@@ -4938,9 +4938,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-pyodide = [
-    { name = "pyodide-py" },
-]
 semantic = [
     { name = "oso-semantic" },
 ]
@@ -4950,6 +4947,7 @@ dev = [
     { name = "oso-semantic" },
     { name = "pandas-stubs" },
     { name = "pip" },
+    { name = "pyodide-py" },
     { name = "pytest-pyodide" },
 ]
 
@@ -4958,17 +4956,17 @@ requires-dist = [
     { name = "oso-semantic", marker = "extra == 'semantic'", editable = "warehouse/oso_semantic" },
     { name = "pandas", specifier = ">=1.2.0" },
     { name = "pydantic", specifier = ">=2.10.5" },
-    { name = "pyodide-py", marker = "extra == 'pyodide'", specifier = ">=0.27.7" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "sqlglot", specifier = ">=26.6.0" },
 ]
-provides-extras = ["semantic", "pyodide"]
+provides-extras = ["semantic"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "oso-semantic", editable = "warehouse/oso_semantic" },
     { name = "pandas-stubs", specifier = ">=2.2.3.250308" },
     { name = "pip", specifier = ">=25.2" },
+    { name = "pyodide-py", specifier = ">=0.27.7" },
     { name = "pytest-pyodide", specifier = ">=0.58.6" },
 ]
 
