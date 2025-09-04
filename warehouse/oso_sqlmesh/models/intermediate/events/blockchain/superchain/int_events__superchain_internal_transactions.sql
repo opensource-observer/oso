@@ -42,10 +42,12 @@ SELECT
   traces.to_address AS to_artifact_name,
   transactions.receipt_gas_used::DOUBLE * transactions.receipt_effective_gas_price::DOUBLE AS l2_gas_fee,
   COALESCE(traces.gas_used, 0)::DOUBLE AS gas_used_trace,
-  CASE 
-    WHEN gas_totals.total_gas_used = 0 OR gas_totals.total_gas_used IS NULL THEN 0.0
-    ELSE (COALESCE(traces.gas_used, 0)::DOUBLE / gas_totals.total_gas_used::DOUBLE)
-  END AS share_of_transaction_gas,
+  CAST(
+    CASE 
+      WHEN gas_totals.total_gas_used = 0 OR gas_totals.total_gas_used IS NULL THEN 0.0
+      ELSE (COALESCE(traces.gas_used, 0)::DOUBLE / gas_totals.total_gas_used::DOUBLE)
+    END AS DOUBLE
+  ) AS share_of_transaction_gas,
   (traces.to_address = transactions.to_address) AS is_top_level_transaction
 FROM oso.stg_superchain__traces AS traces
 JOIN oso.stg_superchain__transactions AS transactions
