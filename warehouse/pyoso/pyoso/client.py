@@ -113,6 +113,16 @@ class Client:
                 self.__base_url, self.__api_key, self.to_pandas
             )
 
+    def _get_api_key(self) -> str:
+        if self.__api_key:
+            return self.__api_key
+        print("local environ")
+        print(os.environ)
+        key = os.environ.get(OSO_API_KEY)
+        if not key:
+            raise OsoError("API key is required.")
+        return key
+
     def __query(
         self,
         query: str,
@@ -152,8 +162,7 @@ class Client:
         headers = {
             "Content-Type": "application/json",
         }
-        if self.__api_key:
-            headers["Authorization"] = f"Bearer {self.__api_key}"
+        headers["Authorization"] = f"Bearer {self._get_api_key()}"
         try:
             response = requests.post(
                 f"{self.__base_url}sql",
