@@ -29,24 +29,32 @@ MODEL (
 );
 
 SELECT
-  block_timestamp AS time,
+  traces.block_timestamp AS time,
   'INTERNAL_TRANSACTION' AS event_type,
-  chain AS event_source,
-  transaction_hash,
-  @oso_id(chain, '', transaction_hash) AS event_source_id,
-  @oso_entity_id(chain, '', from_address_tx) AS from_artifact_id,
+  traces.chain AS event_source,
+  traces.transaction_hash,
+  @oso_id(traces.chain, '', traces.transaction_hash) AS event_source_id,
+  @oso_entity_id(traces.chain, '', transactions.from_address) AS from_artifact_id,
   '' AS from_artifact_namespace,
-  from_address_tx AS from_artifact_name,
-  @oso_entity_id(chain, '', to_address_trace) AS to_artifact_id,
+  transactions.from_address AS from_artifact_name,
+  @oso_entity_id(traces.chain, '', traces.to_address) AS to_artifact_id,
   '' AS to_artifact_namespace,
-  to_address_trace AS to_artifact_name,
-  gas_used_tx::DOUBLE * gas_price_tx::DOUBLE AS l2_gas_fee,
-  COALESCE(gas_used_trace, 0)::DOUBLE AS gas_used_trace,
-  COALESCE(gas_used_trace, 0)::DOUBLE / NULLIF(
-    SUM(COALESCE(gas_used_trace, 0)::DOUBLE) OVER (
-      PARTITION BY chain, transaction_hash
-    ), 0
-  ) AS share_of_transaction_gas,
-  (to_address_trace=to_address_tx) AS is_top_level_transaction
-FROM oso.int_superchain_traces_txs_joined
-WHERE block_timestamp BETWEEN @start_dt AND @end_dt
+  traces.to_address AS to_artifact_name,
+  transactions.receipt_gas_used::DOUBLE * transactions.receipt_effective_gas_price::DOUBLE AS l2_gas_fee,
+  COALESCE(traces.gas_used, 0)::DOUBLE AS gas_used_trace,
+  CASE 
+    WHEN gas_totals.total_gas_used = 0 OR gas_totals.total_gas_used IS NULL THEN 0.0
+    ELSE (COALESCE(traces.gas_used, 0)::DOUBLE / gas_totals.total_gas_used::DOUBLE)
+  END AS share_of_transaction_gas,
+  (traces.to_address = transactions.to_address) AS is_top_level_transaction
+FROM oso.stg_superchain__traces AS traces
+JOIN oso.stg_superchain__transactions AS transactions
+  ON transactions.transaction_hash = traces.transaction_hash
+  AND transactions.chain = traces.chain
+JOIN oso.int_superchain_traces_gas_used AS gas_totals
+  ON gas_totals.transaction_hash = traces.transaction_hash
+  AND gas_totals.chain = traces.chain
+WHERE
+  transactions.block_timestamp BETWEEN @start_dt AND @end_dt
+  AND traces.block_timestamp BETWEEN @start_dt AND @end_dt
+  AND transactions.receipt_status = 1
