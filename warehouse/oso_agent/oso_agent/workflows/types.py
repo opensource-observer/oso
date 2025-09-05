@@ -109,6 +109,7 @@ class SemanticQueryEvent(Event):
     better context to the LLM for retry attempts.
     """
 
+    id: str
     structured_query: SemanticQuery
     input_text: str
     remaining_tries: int = 5
@@ -128,6 +129,7 @@ class RetrySemanticQueryEvent(Event):
     better context to the LLM for retry attempts.
     """
 
+    id: str
     input_text: str
     error: Exception
     remaining_tries: int
