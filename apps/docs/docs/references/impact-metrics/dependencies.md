@@ -28,14 +28,12 @@ OSO indexes software dependencies using multiple data sources:
    - Includes direct and indirect dependencies
    - Does not support all languages, but is largely complete for JavaScript/TypeScript, Python, Rust, and Go.
 2. **Package Metadata and Historical Events**
-
    - Retrieved from the [deps.dev](https://deps.dev) public dataset.
    - Used to map package versions to their maintainers and track add/remove events between packages.
    - Covers major package registries (npm, PyPI, Crates.io, Go modules).
    - Includes dependency depth charts up to 10 levels deep; we typically only use the first 3 levels.
 
 3. **Downloads from Package Registries**
-
    - Fetched by API from npm and from public datasets for PyPI and Crates.io.
    - Track downloads and fetch metadata from select package registries
    - Artifacts must be listed in a project's OSS Directory file in order to have these metrics indexed.

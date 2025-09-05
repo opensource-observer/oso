@@ -95,7 +95,7 @@ async function getAssetsMaterializedData(
         : undefined;
       const latestMaterialization =
         latestRun?.__typename === "Run"
-          ? latestRun.endTime ?? undefined
+          ? (latestRun.endTime ?? undefined)
           : undefined;
       acc[key] = {
         partitionStatus,
