@@ -41,6 +41,7 @@ from ..config import DagsterConfig
 config = GraphQLResourceConfig(
     name="transactions",
     endpoint="https://api.opencollective.com/graphql/v2",
+    masked_endpoint="***",
     target_type="Query",
     target_query="transactions",
     max_depth=2,  # Limit the introspection depth
@@ -91,6 +92,7 @@ In this configuration, we define the following fields:
 
 - **name**: A unique identifier for the dagster asset.
 - **endpoint**: The URL of the GraphQL API.
+- **masked_endpoint**: The masked URL of the GraphQL API. If exists, it will be used for logging instead of the real endpoint.
 - **target_type**: The GraphQL type containing the target query (usually
   "Query").
 - **target_query**: The name of the query to execute.
@@ -121,6 +123,7 @@ def fetch_account_details(context: AssetExecutionContext, global_config: Dagster
     account_config = GraphQLResourceConfig(
         name=f"account_{transaction_data['fromAccount']['id']}",
         endpoint="https://api.opencollective.com/graphql/v2",
+        masked_endpoint="***",
         target_type="Query",
         target_query="account",
         parameters={
@@ -147,6 +150,7 @@ def transactions_with_accounts(context: AssetExecutionContext, global_config: Da
     config = GraphQLResourceConfig(
         name="transactions_with_accounts",
         endpoint="https://api.opencollective.com/graphql/v2",
+        masked_endpoint="***",
         target_type="Query",
         target_query="transactions",
         parameters={
