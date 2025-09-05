@@ -111,7 +111,7 @@ spec:
         iceberg.max-commit-retry=10
         iceberg.catalog.type=rest
         iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
-        iceberg.rest-catalog.prefix=restate
+        iceberg.rest-catalog.prefix=main
         iceberg.rest-catalog.warehouse=gs://oso-iceberg-usc1/warehouse/
         iceberg.use-file-size-from-metadata=false
         iceberg.max-partitions-per-writer=1000
