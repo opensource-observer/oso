@@ -25,36 +25,37 @@ class Thought(BaseModel):
 
 
 class ThoughtsCollector:
-    """Thread-safe collector for capturing thoughts during workflow execution."""
+    """Collector for capturing thoughts during workflow execution."""
 
     def __init__(self, session_id: str, max_size: int = 1000):
         self.session_id = session_id
-        self.thoughts: list[Thought] = []
-        self.max_size = max_size
-        self._lock = asyncio.Lock()
+        self.thoughts: asyncio.Queue[Thought] = asyncio.Queue(maxsize=max_size)
 
     async def add_thought(
         self, category: str, content: str, metadata: dict[str, t.Any] | None = None
     ) -> None:
         """Add a thought to the collector."""
-        async with self._lock:
-            thought = Thought(
-                category=category, content=content, metadata=metadata or {}
-            )
-            self.thoughts.append(thought)
-
-            if len(self.thoughts) > self.max_size:
-                self.thoughts = self.thoughts[-self.max_size :]
+        thought = Thought(category=category, content=content, metadata=metadata or {})
+        await self.thoughts.put(thought)
 
     async def get_thoughts(self) -> list[Thought]:
-        """Get all collected thoughts."""
-        async with self._lock:
-            return self.thoughts.copy()
+        """Get and consume all collected thoughts."""
+        thoughts = []
+        while not self.thoughts.empty():
+            try:
+                thought = self.thoughts.get_nowait()
+                thoughts.append(thought)
+            except asyncio.QueueEmpty:
+                break
+        return thoughts
 
     async def clear(self) -> None:
         """Clear all thoughts."""
-        async with self._lock:
-            self.thoughts.clear()
+        while not self.thoughts.empty():
+            try:
+                self.thoughts.get_nowait()
+            except asyncio.QueueEmpty:
+                break
 
 
 class ChatCompletionRequest(BaseModel):
