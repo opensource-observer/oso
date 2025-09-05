@@ -13,26 +13,40 @@ MODEL(
   ),
 );
 
+WITH metric_names AS (
+  SELECT metric_name FROM (
+    VALUES 
+      ('contract_invocations'),
+      ('layer2_gas_fees'),
+      ('layer2_gas_fees_amortized'),
+      ('defillama_tvl'),
+      ('farcaster_users'),
+      ('worldchain_users'),
+      ('active_addresses_aggregation'),
+      ('upgraded_eoa_users'),
+      ('userops'),
+      ('qualified_addresses')
+      
+  ) AS t(metric_name)
+),
 
-WITH metrics AS (
+target_metrics AS (
+  SELECT
+    c.chain,
+    mn.metric_name,
+    CONCAT(c.chain, '_', mn.metric_name, '_monthly') AS full_metric_name
+  FROM oso.int_superchain_chain_names AS c
+  CROSS JOIN metric_names AS mn
+),
+
+metrics AS (
   SELECT
     m.metric_id,
-    c.chain,
-    REPLACE(m.metric_name, c.chain || '_', '') AS metric_name
+    tm.chain,
+    tm.metric_name
   FROM oso.metrics_v0 AS m
-  JOIN oso.int_superchain_chain_names AS c
-    ON m.metric_name LIKE CONCAT(c.chain, '_%_monthly')      
-  WHERE
-    -- TODO: replace these with the correct metric names
-    m.metric_name LIKE '%_contract_invocations_monthly'
-    OR m.metric_name LIKE '%_gas_fees_monthly'
-    OR m.metric_name LIKE '%_defillama_tvl_monthly'
-    OR m.metric_name LIKE '%_userops_monthly'
-    OR m.metric_name LIKE '%_farcaster_users_monthly'
-    OR m.metric_name LIKE '%_worldchain_verified_users_monthly'
-    OR m.metric_name LIKE '%_upgraded_eoa_users_monthly'
-    OR m.metric_name LIKE '%_qualified_addresses_monthly'
-    OR m.metric_name LIKE '%_active_addresses_aggregation_monthly'
+  JOIN target_metrics AS tm
+    ON m.metric_name = tm.full_metric_name
 ),
 
 projects AS (
@@ -46,7 +60,10 @@ SELECT DISTINCT
   metrics.chain,
   tm.sample_date,
   metrics.metric_name,
-  tm.amount
+  CASE
+    WHEN metrics.metric_name LIKE '%_gas_fees%' THEN tm.amount / 1e18
+    ELSE tm.amount END
+  AS amount
 FROM oso.timeseries_metrics_by_project_v0 AS tm
 JOIN metrics
   ON tm.metric_id = metrics.metric_id

@@ -34,27 +34,36 @@ project_measurement_dates AS (
   WHERE p.project_source IN ('OSS_DIRECTORY', 'OP_ATLAS')
 ),
 
+-- Define the metric names we're interested in
+metric_names AS (
+  SELECT metric_name FROM (
+    VALUES 
+      ('layer2_gas_fees'),
+      ('contract_invocations'),
+      ('defillama_tvl'),
+      ('active_addresses_aggregation')
+  ) AS t(metric_name)
+),
+
+-- Generate expected metric names by combining chains with metric names
+target_metrics AS (
+  SELECT
+    c.chain,
+    mn.metric_name,
+    CONCAT(c.chain, '_', mn.metric_name, '_monthly') AS full_metric_name
+  FROM oso.int_superchain_chain_names AS c
+  CROSS JOIN metric_names AS mn
+),
+
 -- Get all metric IDs for gas fees, contract invocations, and TVL on Superchain chains
 metrics AS (
-  SELECT DISTINCT
+  SELECT
     m.metric_id,
-    m.metric_name
+    tm.chain,
+    tm.metric_name
   FROM oso.metrics_v0 AS m
-  WHERE (
-    m.metric_name LIKE '%_gas_fees_monthly'
-    OR m.metric_name LIKE '%_contract_invocations_monthly'
-    OR m.metric_name LIKE '%_defillama_tvl_monthly'
-    OR m.metric_name LIKE '%_active_addresses_aggregation_monthly'
-  )
-    AND EXISTS (
-      SELECT 1
-      FROM oso.int_superchain_chain_names AS c
-      WHERE
-        m.metric_name = CONCAT(c.chain, '_gas_fees_monthly')
-        OR m.metric_name = CONCAT(c.chain, '_contract_invocations_monthly')
-        OR m.metric_name = CONCAT(c.chain, '_defillama_tvl_monthly')
-        OR m.metric_name = CONCAT(c.chain, '_active_addresses_aggregation_monthly')
-    )
+  JOIN target_metrics AS tm
+    ON m.metric_name = tm.full_metric_name
 ),
 
 -- Calculate metrics for each project over a 180-day trailing window
@@ -62,10 +71,10 @@ project_metrics AS (
   SELECT
     pmd.project_id,
     pmd.sample_date,
-    SUM(CASE WHEN m.metric_name LIKE '%_gas_fees_monthly' THEN tm.amount ELSE 0 END) AS gas_fees,
-    SUM(CASE WHEN m.metric_name LIKE '%_contract_invocations_monthly' THEN tm.amount ELSE 0 END) AS contract_invocations,
-    SUM(CASE WHEN m.metric_name LIKE '%_defillama_tvl_monthly' THEN tm.amount ELSE NULL END) AS defillama_tvl,
-    SUM(CASE WHEN m.metric_name LIKE '%_active_addresses_aggregation_monthly' THEN tm.amount ELSE NULL END) AS active_addresses
+    SUM(CASE WHEN m.metric_name = 'layer2_gas_fees' THEN tm.amount / 1e18 ELSE 0 END) AS gas_fees,
+    SUM(CASE WHEN m.metric_name = 'contract_invocations' THEN tm.amount ELSE 0 END) AS contract_invocations,
+    SUM(CASE WHEN m.metric_name = 'defillama_tvl' THEN tm.amount ELSE NULL END) AS defillama_tvl,
+    SUM(CASE WHEN m.metric_name = 'active_addresses_aggregation' THEN tm.amount ELSE NULL END) AS active_addresses
   FROM project_measurement_dates AS pmd
   JOIN oso.timeseries_metrics_by_project_v0 AS tm
     ON tm.project_id = pmd.project_id
