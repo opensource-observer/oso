@@ -40,6 +40,7 @@ async def workflow_resolver_factory(
     from oso_agent.clients.oso_client import OsoClient
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.table_selector_tool import create_table_selector_tool
+    from oso_agent.types.streaming import ThoughtsCollector
 
     llm = resources.get_resource("llm")
     embedding = resources.get_resource("embedding")
@@ -59,6 +60,8 @@ async def workflow_resolver_factory(
         llm=llm, available_models=registry_description
     )
 
+    thoughts_collector = ThoughtsCollector(session_id="workflow_session")
+
     return DefaultResourceResolver.from_resources(
         semantic_query_tool=semantic_query_tool,
         table_selector_tool=table_selector_tool,
@@ -68,6 +71,7 @@ async def workflow_resolver_factory(
         llm=llm,
         embedding=embedding,
         storage_context=storage_context,
+        thoughts_collector=thoughts_collector,
     )
 
 
