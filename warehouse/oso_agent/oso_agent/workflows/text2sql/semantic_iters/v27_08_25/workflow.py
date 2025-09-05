@@ -269,6 +269,7 @@ class SemanticText2SQLWorkflow(
         entity_context = await self._get_vector_context_for_entities(event.input_text)
 
         return await self._perform_semantic_translation(
+            event.id,
             event.input_text,
             entity_context,
             event.synthesize_response,
@@ -309,6 +310,7 @@ class SemanticText2SQLWorkflow(
         )
 
         return await self._perform_semantic_translation(
+            event.id,
             natural_language_query,
             entity_context,
             event.synthesize_response,
@@ -352,6 +354,7 @@ class SemanticText2SQLWorkflow(
             logger.debug(f"Error building SQL from structured query: {e}")
             error_context = event.error_context + [f"SQL generation error: {str(e)}"]
             return RetrySemanticQueryEvent(
+                id=event.id,
                 input_text=event.input_text,
                 error=e,
                 remaining_tries=event.remaining_tries - 1,
@@ -374,6 +377,7 @@ class SemanticText2SQLWorkflow(
 
     async def _perform_semantic_translation(
         self,
+        id: str,
         natural_language_query: str,
         entity_context: str,
         synthesize_response: bool,
@@ -411,6 +415,7 @@ class SemanticText2SQLWorkflow(
             )
 
             return SemanticQueryEvent(
+                id=id,
                 structured_query=structured_query,
                 input_text=natural_language_query,
                 remaining_tries=remaining_tries,
@@ -424,6 +429,7 @@ class SemanticText2SQLWorkflow(
             new_error_context = error_context + [f"Translation error: {str(e)}"]
 
             return RetrySemanticQueryEvent(
+                id=id,
                 input_text=natural_language_query,
                 error=e,
                 remaining_tries=remaining_tries - 1,
