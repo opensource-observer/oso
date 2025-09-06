@@ -18,6 +18,7 @@ from oso_dagster.resources import (
     DuckDBResource,
     K8sApiResource,
     K8sResource,
+    PostgresResource,
     PrefixedSQLMeshTranslator,
     SQLMeshExporter,
     Trino2BigQuerySQLMeshExporter,
@@ -25,6 +26,7 @@ from oso_dagster.resources import (
     TrinoK8sResource,
     TrinoRemoteResource,
     TrinoResource,
+    load_dlt_dynamic_warehouse_destination,
     load_dlt_staging,
     load_dlt_warehouse_destination,
     load_io_manager,
@@ -42,7 +44,7 @@ from oso_dagster.utils.alerts import (
     CanvasDiscordWebhookAlertManager,
     LogAlertManager,
 )
-from oso_dagster.utils.secrets import SecretResolver
+from oso_dagster.utils.secrets import SecretReference, SecretResolver
 from sqlmesh.core.config.connection import DuckDBConnectionConfig, TrinoConnectionConfig
 
 from ..config import DagsterConfig
@@ -245,6 +247,15 @@ def dlt_warehouse_destination_factory(
     return load_dlt_warehouse_destination(global_config)
 
 
+@resource_factory("dlt_dynamic_warehouse_destination")
+@time_function(logger)
+def dlt_dynamic_warehouse_destination_factory(
+    global_config: DagsterConfig,
+) -> Destination:
+    """Factory function to create a DLT warehouse destination for the dynamic project."""
+    return load_dlt_dynamic_warehouse_destination(global_config)
+
+
 @resource_factory("dlt")
 @time_function(logger)
 def dlt_resource_factory() -> DagsterDltResource:
@@ -385,6 +396,17 @@ def time_ordered_storage_factory(
     )
 
 
+@resource_factory("oso_app_db")
+@time_function(logger)
+def oso_app_db_factory(secrets: SecretResolver) -> PostgresResource:
+    """Factory function to create a Postgres DB resource."""
+    return PostgresResource(
+        connection_url=secrets.resolve_as_str(
+            SecretReference(group_name="postgres", key="connection_url")
+        ),
+    )
+
+
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
@@ -406,6 +428,7 @@ def default_resource_registry():
     registry.add(sqlmesh_exporter_factory)
     registry.add(dlt_staging_destination_factory)
     registry.add(dlt_warehouse_destination_factory)
+    registry.add(dlt_dynamic_warehouse_destination_factory)
     registry.add(dlt_resource_factory)
     registry.add(cbt_resource_factory)
     registry.add(trino_exporter_factory)
@@ -418,5 +441,6 @@ def default_resource_registry():
     registry.add(io_manager_factory)
     registry.add(alert_manager_factory)
     registry.add(time_ordered_storage_factory)
+    registry.add(oso_app_db_factory)
 
     return registry

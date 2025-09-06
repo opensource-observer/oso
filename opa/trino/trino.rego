@@ -19,10 +19,22 @@ current_catalog_name := name if {
 	name := input.action.resource.schema.catalogName
 }
 
+current_schema_name := name if {
+	name := input.action.resource.schema.schemaName
+} else := name if {
+	name := input.action.resource.table.schemaName
+}
+
 allow if {
 	input.action.operation == "ExecuteQuery"
 }
 
+# Allow access for admin and sqlmesh users.
+allow if {
+	user in admin_users
+}
+
+# When trying to query a private catalog
 allow if {
 	startswith(user, "jwt-")
 	org_id := substring(user, count("jwt-"), -1)
@@ -41,7 +53,24 @@ allow if {
 	x
 }
 
-# Allow access for admin and sqlmesh users.
+# When trying to query a private replication
 allow if {
-	user in admin_users
+	input.action.resource.catalog.name == "dynamic"
+}
+
+# Allow users to see the schema and tables inside the dynamic catalog
+allow if {
+	current_catalog_name == "dynamic"
+	current_schema_name == "information_schema"
+}
+
+# Give permission only to the organization's schema
+allow if {
+	startswith(user, "jwt-")
+	org_id := substring(user, count("jwt-"), -1)
+
+	org_id # Ensure org_id is not empty
+
+	current_catalog_name == "dynamic"
+	current_schema_name == org_id
 }

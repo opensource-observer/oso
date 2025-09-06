@@ -40,6 +40,9 @@ class DagsterConfig(BaseSettings):
     repo_sha: str = Field(default_factory=get_repo_sha)
 
     gcp_project_id_override: str = Field(alias="GOOGLE_PROJECT_ID", default="")
+    gcp_dynamic_project_id_override: str = Field(
+        alias="GOOGLE_DYNAMIC_PROJECT_ID", default="oso-dynamic"
+    )
 
     repo_dir: str = Field(
         default_factory=lambda: os.path.abspath(
@@ -142,6 +145,16 @@ class DagsterConfig(BaseSettings):
     def gcp_project_id(self):
         if self.gcp_project_id_override:
             return self.gcp_project_id_override
+        if not self.gcp_enabled:
+            raise ValueError(
+                "In order to automatically discover a project id you must explicitly enable gcp."
+            )
+        return get_project_id()
+
+    @property
+    def gcp_dynamic_project_id(self):
+        if self.gcp_dynamic_project_id_override:
+            return self.gcp_dynamic_project_id_override
         if not self.gcp_enabled:
             raise ValueError(
                 "In order to automatically discover a project id you must explicitly enable gcp."

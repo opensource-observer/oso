@@ -1,5 +1,7 @@
 import json
 import os
+import typing as t
+from functools import lru_cache
 from typing import Any, Optional
 
 import pandas as pd
@@ -53,7 +55,9 @@ class QueryResponse:
         return self._data
 
     @staticmethod
-    def from_response_chunks(response_chunks) -> "QueryResponse":
+    def from_response_chunks(
+        response_chunks: t.Iterable[t.Union[bytes, str]],
+    ) -> "QueryResponse":
         """Parse HTTP response chunks into QueryResponse."""
         columns = []
         data = []
@@ -77,14 +81,28 @@ class QueryResponse:
         return QueryResponse(data=query_data, analytics=DataAnalytics(analytics))
 
 
+@lru_cache(maxsize=1)
+def is_pyodide() -> bool:
+    try:
+        import sys
+
+        import pyodide  # type: ignore # noqa: F401
+
+        if sys.platform == "emscripten":
+            return True
+        return False
+    except ImportError:
+        return False
+
+
 class Client:
     def __init__(
         self,
         api_key: Optional[str] = None,
         client_opts: Optional[ClientConfig] = None,
     ):
-        self.__api_key = api_key if api_key else os.environ.get(OSO_API_KEY)
-        if not self.__api_key:
+        self.__api_key = api_key if api_key else os.environ.get(OSO_API_KEY, "")
+        if not self.__api_key and not is_pyodide():
             raise OsoError(
                 "API key is required. Either set it in the environment variable OSO_API_KEY or pass it as an argument."
             )
@@ -98,6 +116,21 @@ class Client:
             self.semantic = create_registry(
                 self.__base_url, self.__api_key, self.to_pandas
             )
+
+    def _get_api_key(self) -> str:
+        """We wrap the api key retreival here so that can lazily load the api
+        key in a pyodide environment.
+
+        This is in case the environment variable is not set immediately on
+        startup (which can happen).
+        """
+        if self.__api_key:
+            return self.__api_key
+        key = os.environ.get(OSO_API_KEY)
+        if not key:
+            raise OsoError("API key is required.")
+        self.__api_key = key
+        return key
 
     def __query(
         self,
@@ -119,27 +152,68 @@ class Client:
         query_expression = parsed_query[0]
         assert query_expression is not None, "query could not be parsed"
 
+        if is_pyodide():
+            return self._pyodide_make_sql_request(
+                translated_query=query_expression.sql(dialect=output_dialect),
+                include_analytics=include_analytics,
+            )
+        else:
+            return self._make_sql_request(
+                translated_query=query_expression.sql(dialect=output_dialect),
+                include_analytics=include_analytics,
+            )
+
+    def _make_sql_request(
+        self,
+        translated_query: str,
+        include_analytics: bool = True,
+    ) -> QueryResponse:
         headers = {
             "Content-Type": "application/json",
         }
-        if self.__api_key:
-            headers["Authorization"] = f"Bearer {self.__api_key}"
+        headers["Authorization"] = f"Bearer {self._get_api_key()}"
         try:
             response = requests.post(
                 f"{self.__base_url}sql",
                 headers=headers,
                 json={
-                    "query": query_expression.sql(dialect=output_dialect),
+                    "query": translated_query,
                     "format": "minimal",
                     "includeAnalytics": include_analytics,
                 },
                 stream=True,
             )
             response.raise_for_status()
-
             return QueryResponse.from_response_chunks(
                 response.iter_lines(chunk_size=None)
             )
+        except requests.HTTPError as e:
+            raise OsoHTTPError(e, response=e.response) from None
+
+    def _pyodide_make_sql_request(
+        self,
+        translated_query: str,
+        include_analytics: bool = True,
+    ) -> QueryResponse:
+        from pyoso.pyodide_only import pyodide_post_json_request
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self._get_api_key()}",
+        }
+        try:
+            response = pyodide_post_json_request(
+                f"{self.__base_url}sql",
+                headers=headers,
+                body={
+                    "query": translated_query,
+                    "format": "minimal",
+                    "includeAnalytics": include_analytics,
+                },
+                credentials="same-origin",
+            )
+
+            return QueryResponse.from_response_chunks(response.split("\n"))
         except requests.HTTPError as e:
             raise OsoHTTPError(e, response=e.response) from None
 

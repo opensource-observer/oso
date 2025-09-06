@@ -109,6 +109,7 @@ class SemanticQueryEvent(Event):
     better context to the LLM for retry attempts.
     """
 
+    id: str
     structured_query: SemanticQuery
     input_text: str
     remaining_tries: int = 5
@@ -128,6 +129,7 @@ class RetrySemanticQueryEvent(Event):
     better context to the LLM for retry attempts.
     """
 
+    id: str
     input_text: str
     error: Exception
     remaining_tries: int
@@ -152,6 +154,17 @@ class SchemaAnalysisEvent(Event):
     input_text: str
     sql_database: OsoSqlDatabase
     relevant_tables: list[str]
+    synthesize_response: bool = True
+    execute_sql: bool = True
+
+
+class TableSelectionEvent(Event):
+    """Event carrying table selection results for semantic query."""
+
+    id: str
+    input_text: str
+    selected_models: list[str]
+    filtered_registry_description: str
     synthesize_response: bool = True
     execute_sql: bool = True
 

@@ -2,9 +2,13 @@ version = 1
 revision = 3
 requires-python = "==3.12.*"
 resolution-markers = [
-    "sys_platform != 'win32'",
-    "platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "platform_machine != 'ARM64' and sys_platform == 'win32'",
+    "platform_python_implementation != 'PyPy' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "platform_python_implementation == 'PyPy' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "sys_platform == 'emscripten'",
+    "platform_machine == 'ARM64' and platform_python_implementation != 'PyPy' and sys_platform == 'win32'",
+    "platform_machine == 'ARM64' and platform_python_implementation == 'PyPy' and sys_platform == 'win32'",
+    "platform_machine != 'ARM64' and platform_python_implementation != 'PyPy' and sys_platform == 'win32'",
+    "platform_machine != 'ARM64' and platform_python_implementation == 'PyPy' and sys_platform == 'win32'",
 ]
 
 [manifest]
@@ -1366,7 +1370,7 @@ wheels = [
 
 [[package]]
 name = "dlt"
-version = "1.11.0"
+version = "1.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -1376,8 +1380,7 @@ dependencies = [
     { name = "hexbytes" },
     { name = "humanize" },
     { name = "jsonpath-ng" },
-    { name = "makefun" },
-    { name = "orjson", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "orjson", marker = "sys_platform != 'emscripten'" },
     { name = "packaging" },
     { name = "pathvalidate" },
     { name = "pendulum" },
@@ -1398,9 +1401,9 @@ dependencies = [
     { name = "tzdata" },
     { name = "win-precise-time", marker = "os_name == 'nt'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f2/33/a9254d9ffa33c7d28239a0f17895463227c2485ada02a6de9a8151176708/dlt-1.11.0.tar.gz", hash = "sha256:54ac0fb746b447e2f0a5d2cbe98a2054dc9c7cdc11410925b486660fd51e540c", size = 737849, upload-time = "2025-05-15T10:45:05.216Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/78/62/0ec88b393e5e00a1b15bdc72216893a29261489475671c4d6d23fc2388a5/dlt-1.15.0.tar.gz", hash = "sha256:3dff1419649c984c183ba2ae53bfa60f4d0d7cf3590c1388997886dbe7bfee97", size = 790948, upload-time = "2025-08-05T17:48:18.886Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ae/05/21b22c20779f0e7a78c2b20b8dbb2e74783d06c392b86ae324979f5a72d4/dlt-1.11.0-py3-none-any.whl", hash = "sha256:1120dd92e365aa9a2b9cd0dff9707149605fc25038f50ee1e6d551f49292b72c", size = 926019, upload-time = "2025-05-15T10:45:01.148Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/a8/37c8f5888cb41ab9460356c43be36f16cf987f9673274833e8777b847de0/dlt-1.15.0-py3-none-any.whl", hash = "sha256:fdc1e8a47b6daae9d7f235de1146427a40518960f46089c3ae2b3c7ce5f66cd9", size = 1009448, upload-time = "2025-08-05T17:48:15.23Z" },
 ]
 
 [[package]]
@@ -3197,15 +3200,6 @@ wheels = [
 ]
 
 [[package]]
-name = "makefun"
-version = "1.16.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7b/cf/6780ab8bc3b84a1cce3e4400aed3d64b6db7d5e227a2f75b6ded5674701a/makefun-1.16.0.tar.gz", hash = "sha256:e14601831570bff1f6d7e68828bcd30d2f5856f24bad5de0ccb22921ceebc947", size = 73565, upload-time = "2025-05-09T15:00:42.313Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/c0/4bc973defd1270b89ccaae04cef0d5fa3ea85b59b108ad2c08aeea9afb76/makefun-1.16.0-py2.py3-none-any.whl", hash = "sha256:43baa4c3e7ae2b17de9ceac20b669e9a67ceeadff31581007cca20a07bbe42c4", size = 22923, upload-time = "2025-05-09T15:00:41.042Z" },
-]
-
-[[package]]
 name = "mako"
 version = "1.3.10"
 source = { registry = "https://pypi.org/simple" }
@@ -4924,8 +4918,17 @@ wheels = [
 ]
 
 [[package]]
+name = "pyodide-py"
+version = "0.27.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9d/99/d7b3c9137de5a76a63f2ef89d43c878dcb4dce8118866fb58d26290698f9/pyodide_py-0.27.7.tar.gz", hash = "sha256:afb68f8abf503f691a4ab5d2ffdbf6dd05117920508e1161e04a34737c649d36", size = 52051, upload-time = "2025-06-05T04:10:49.791Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/c5/825f73fb815a17838bef3342999247bea1100a0b2e576e5c17b2bdd68766/pyodide_py-0.27.7-py3-none-any.whl", hash = "sha256:2fa7db63a14720e548eb6174d492643424f8b5f21d43b7c9fecb6d712187fe6a", size = 57930, upload-time = "2025-06-05T04:10:48.789Z" },
+]
+
+[[package]]
 name = "pyoso"
-version = "0.6.4"
+version = "0.6.5"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
@@ -4944,6 +4947,7 @@ dev = [
     { name = "oso-semantic" },
     { name = "pandas-stubs" },
     { name = "pip" },
+    { name = "pyodide-py" },
     { name = "pytest-pyodide" },
 ]
 
@@ -4962,6 +4966,7 @@ dev = [
     { name = "oso-semantic", editable = "warehouse/oso_semantic" },
     { name = "pandas-stubs", specifier = ">=2.2.3.250308" },
     { name = "pip", specifier = ">=25.2" },
+    { name = "pyodide-py", specifier = ">=0.27.7" },
     { name = "pytest-pyodide", specifier = ">=0.58.6" },
 ]
 

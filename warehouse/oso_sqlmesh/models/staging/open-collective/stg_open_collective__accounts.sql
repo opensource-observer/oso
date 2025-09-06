@@ -19,7 +19,8 @@ MODEL (
   ),
   tags (
     "incremental"
-  )
+  ),
+  enabled false
 );
 
 SELECT

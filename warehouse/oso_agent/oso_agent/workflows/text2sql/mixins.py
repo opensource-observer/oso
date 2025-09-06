@@ -134,6 +134,7 @@ class PyosoWorkflow(MixableWorkflow):
                     f"SQL execution failed on retry {retry_number}/{self.max_retries}. Error context: {'; '.join(error_context)}"
                 )
                 return RetrySemanticQueryEvent(
+                    id=query.id,
                     input_text=query.input_text,
                     error=e,
                     remaining_tries=query.remaining_tries - 1,
@@ -206,6 +207,7 @@ class OsoDBWorkflow(MixableWorkflow):
                     f"SQL execution failed on retry {retry_number}/{self.max_retries}. Error context: {'; '.join(error_context)}"
                 )
                 return RetrySemanticQueryEvent(
+                    id=query.id,
                     input_text=query.input_text,
                     error=e,
                     remaining_tries=query.remaining_tries - 1,

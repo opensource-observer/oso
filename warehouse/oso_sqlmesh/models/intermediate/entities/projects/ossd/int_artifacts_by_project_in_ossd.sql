@@ -103,10 +103,11 @@ github_artifacts AS (
 ),
 
 -- =============================================================================
--- BLOCKCHAIN ARTIFACTS
+-- BLOCKCHAIN ARTIFACTS (INCLUDING BRIDGES)
 -- =============================================================================
 
 blockchain_artifacts AS (
+  -- Regular blockchain artifacts
   SELECT
     projects.project_id,
     artifact_fields.artifact_name AS artifact_source_id,
@@ -120,6 +121,23 @@ blockchain_artifacts AS (
   CROSS JOIN UNNEST(unnested_blockchain.networks) AS @unnested_array_ref(unnested_network)
   CROSS JOIN UNNEST(unnested_blockchain.tags) AS @unnested_array_ref(unnested_tag)
   CROSS JOIN LATERAL @parse_blockchain_artifact(unnested_blockchain.address) AS artifact_fields
+  
+  UNION ALL
+  
+  -- Bridge artifacts (EOA bridges)
+  SELECT
+    projects.project_id,
+    artifact_fields.artifact_name AS artifact_source_id,
+    bridges.chain AS artifact_source,
+    artifact_fields.artifact_namespace,
+    artifact_fields.artifact_name,
+    artifact_fields.artifact_url,
+    'BRIDGE' AS artifact_type
+  FROM projects
+  CROSS JOIN UNNEST(projects.blockchain) AS @unnested_struct_ref(unnested_blockchain)
+  INNER JOIN oso.int_addresses__bridges AS bridges
+    ON unnested_blockchain.address = bridges.address
+  CROSS JOIN LATERAL @parse_blockchain_artifact(bridges.address) AS artifact_fields
 ),
 
 -- =============================================================================

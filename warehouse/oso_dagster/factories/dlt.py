@@ -53,7 +53,7 @@ def _dlt_factory[
 ](c: t.Callable[P, t.Any], config_type: t.Type[C] = DltAssetConfig):
     def dlt_factory(
         config_type: t.Type[C] = config_type,
-        dataset_name: str = "",
+        dataset_name: str | t.Callable[[AssetExecutionContext], str] = "",
         name: str = "",
         key_prefix: t.Optional[AssetKeyPrefixParam] = None,
         deps: t.Optional[AssetDeps] = None,
@@ -61,6 +61,7 @@ def _dlt_factory[
         tags: t.Optional[t.MutableMapping[str, str]] = None,
         op_tags: t.Optional[t.MutableMapping[str, t.Any]] = None,
         log_intermediate_results: bool = False,
+        use_dynamic_project: bool = False,
         *args: P.args,
         **kwargs: P.kwargs,
     ):
@@ -81,7 +82,6 @@ def _dlt_factory[
                 key_prefix_str = key_prefix
             else:
                 key_prefix_str = "_".join(key_prefix)
-        dataset_name = dataset_name or key_prefix_str
 
         def _decorator(
             f: t.Callable[..., t.Iterator[DltResource]],
@@ -92,6 +92,7 @@ def _dlt_factory[
             def _factory(
                 dlt_staging_destination: Destination,
                 dlt_warehouse_destination: Destination,
+                dlt_dynamic_warehouse_destination: Destination,
                 secrets: SecretResolver,
             ):
                 # logger.info(f"Creating asset for {key_prefix} with {tags}")
@@ -141,6 +142,11 @@ def _dlt_factory[
                     config: config_type,  # type: ignore[valid-type]
                     **extra_source_args,
                 ) -> t.Iterable[R]:
+                    dataset_name_str = (
+                        dataset_name or key_prefix_str
+                        if isinstance(dataset_name, str)
+                        else dataset_name(context)
+                    )
                     pipeline_name = f"{key_prefix_str}_{name}_{uuid4()}"
 
                     # Hack for now. Staging cannot be used if running locally.
@@ -150,7 +156,7 @@ def _dlt_factory[
                     pipeline = dltlib.pipeline(
                         pipeline_name,
                         destination=dlt_warehouse_destination,
-                        dataset_name=dataset_name,
+                        dataset_name=dataset_name_str,
                     )
 
                     # When using the `required_resource_keys` we need to
@@ -165,9 +171,11 @@ def _dlt_factory[
                         context.log.debug("dlt pipeline setup to use staging")
                         pipeline = dltlib.pipeline(
                             pipeline_name,
-                            destination=dlt_warehouse_destination,
+                            destination=dlt_warehouse_destination
+                            if not use_dynamic_project
+                            else dlt_dynamic_warehouse_destination,
                             staging=dlt_staging_destination,
-                            dataset_name=dataset_name,
+                            dataset_name=dataset_name_str,
                         )
 
                     dlt = t.cast(DagsterDltResource, getattr(context.resources, "dlt"))

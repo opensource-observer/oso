@@ -1,6 +1,6 @@
 [project]
 name = "pyoso"
-version = "0.6.4"
+version = "0.6.5"
 description = ""
 readme = "README.md"
 requires-python = ">=3.8"
@@ -28,6 +28,7 @@ dev = [
     "oso-semantic",
     "pandas-stubs>=2.2.3.250308",
     "pip>=25.2",
+    "pyodide-py>=0.27.7",
     "pytest-pyodide>=0.58.6",
 ]
 
