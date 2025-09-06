@@ -112,8 +112,10 @@ your browser or you may get cors or other unrelated domain errors and will cause
 errors on load.
 :::
 
-To access the notebook now, you can navigate to `http://127.0.0.1:6008/notebook` in your
-browser. The `/notebook` endpoint is specific to OSO's wasm environment.
+To access the notebook now, you can navigate to `http://127.0.0.1:6008/notebook`
+in your browser. The `/notebook` endpoint is specific to OSO's wasm environment.
+If you have set `PUBLIC_PACKAGES_HOST` to a different host, you will need to
+access the proxy via that hostname instead.
 
 :::
 Note: If you access the frontend without the proxy, you will not be
@@ -246,3 +248,9 @@ window.__fragmentStore.commit();
 
 Now if you refresh the browser, the `os.environ` in python will have your
 environment variable loaded.
+
+### How to make the environment and variables from code
+
+For more on how to set the environment, you will notice that we use `lz-string`
+inside of the
+[`FragmentStore`](https://github.com/opensource-observer/marimo/blob/main/frontend/src/oso-extensions/fragment-store.ts).
