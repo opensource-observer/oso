@@ -32,7 +32,6 @@ This MCP server allows you to connect your local IDE with our production text2sq
 
 4. **Set up your environment**: Refer to the `.env.example` file in the `oso_mcp` folder, but here's essentially what you need (see the [Setting up your environment](#setting-up-your-environment) section below for details).
 
-
 ## Setting up your environment
 
 You'll need to set up the following environment variables. You can create a `.env` file in the `warehouse/oso_mcp` directory:
@@ -43,8 +42,9 @@ You'll need to set up the following environment variables. You can create a `.en
 - `MCP_TRANSPORT` (default: `sse`) - Transport method (`sse` or `stdio`)
 - `MCP_PYOSO_BASE_URL` (default: `https://www.opensource.observer`) - Base URL for the OSO pyoso client
   - For local development: `http://localhost:8080`
-- `MCP_TEXT2SQL_ENDPOINT` (default: `https://www.opensource.observer/api/v1/text2sql`) - The OSO text2sql service endpoint  
+- `MCP_TEXT2SQL_ENDPOINT` (default: `https://www.opensource.observer/api/v1/text2sql`) - The OSO text2sql service endpoint
   - For local development: `http://localhost:8080/api/v1/text2sql`
+
 ### Getting your OSO API key
 
 Navigate to [https://docs.opensource.observer/docs/get-started/python](https://docs.opensource.observer/docs/get-started/python) and follow the steps in the "Generate an API key" section.
