@@ -6,7 +6,7 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import requests
 from mcp.server.fastmcp import Context, FastMCP
-from pyoso import Client
+from pyoso import Client, ClientConfig
 
 from .config import MCPConfig
 
@@ -48,7 +48,7 @@ def default_lifespan(config: MCPConfig):
 
         client = Client(
             api_key=api_key.get_secret_value(),
-            client_opts={"base_url": config.pyoso_base_url}
+            client_opts=ClientConfig(base_url=config.pyoso_base_url),
         )
         context = AppContext(oso_client=client)
 
