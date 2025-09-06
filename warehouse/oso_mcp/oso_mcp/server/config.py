@@ -28,6 +28,9 @@ class MCPConfig(BaseSettings):
             )
         ),
         description="API key for the OSO API",
+        json_schema_extra={
+            "required": True
+        },  # This is the key to make the field required
     )
 
     pyoso_base_url: str = Field(
@@ -74,7 +77,7 @@ class MCPConfig(BaseSettings):
             value = getattr(self, field_name)
 
             # Check if field is required by looking at custom metadata
-            json_extra = getattr(field_info, 'json_schema_extra', None)
+            json_extra = field_info.json_schema_extra
             is_required = isinstance(json_extra, dict) and json_extra.get(
                 "required", False
             )
@@ -116,7 +119,7 @@ class MCPConfig(BaseSettings):
             env_var = f"MCP_{field_name.upper()}"
 
             # Check if field is required by looking at custom metadata
-            json_extra = getattr(field_info, 'json_schema_extra', None)
+            json_extra = field_info.json_schema_extra
             is_required = isinstance(json_extra, dict) and json_extra.get(
                 "required_for_operation", False
             )
