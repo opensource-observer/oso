@@ -120,14 +120,15 @@ initial_metrics AS (
 downstream_gas AS (
   SELECT
     im.project_id,
-    SUM(tm.amount) AS downstream_gas
+    SUM(tm.amount / 1e18) AS downstream_gas
   FROM initial_metrics AS im
   CROSS JOIN UNNEST(im.onchain_builder_oso_project_ids) AS b(builder_id)
   JOIN oso.timeseries_metrics_by_project_v0 AS tm
     ON tm.project_id = b.builder_id
+  CROSS JOIN oso.int_superchain_s8_chains AS c
   JOIN oso.metrics_v0 AS m
     ON tm.metric_id = m.metric_id
-   AND m.display_name = 'Gas Fees'
+    AND m.metric_name = CONCAT(c.chain, '_layer2_gas_fees_daily')
   WHERE
     tm.sample_date >= @start_gas_date
     AND tm.sample_date < @end_gas_date

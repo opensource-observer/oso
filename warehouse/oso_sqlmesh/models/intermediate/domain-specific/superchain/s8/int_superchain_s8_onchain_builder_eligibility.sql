@@ -40,7 +40,7 @@ WITH
       m.metric_id,
       m.display_name AS metric_group
     FROM oso.metrics_v0 AS m
-    JOIN oso.int_superchain_chain_names AS c
+    JOIN oso.int_superchain_s8_chains AS c
       ON m.metric_name LIKE CONCAT(c.chain, '_%_daily')
       -- TODO: replace this with "internal_transactions_daily"
     WHERE m.metric_name LIKE '%_contract_invocations_daily'
