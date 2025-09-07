@@ -51,7 +51,7 @@ target_metrics AS (
     c.chain,
     mn.metric_name,
     CONCAT(c.chain, '_', mn.metric_name, '_monthly') AS full_metric_name
-  FROM oso.int_superchain_chain_names AS c
+  FROM oso.int_superchain_s8_chains AS c
   CROSS JOIN metric_names AS mn
 ),
 
