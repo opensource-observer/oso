@@ -13,6 +13,7 @@ export enum TransactionType {
   TEXT2SQL = "text2sql",
   ADMIN_GRANT = "admin_grant",
   PURCHASE = "purchase",
+  AGENT_QUERY = "agent_query",
 }
 
 export interface OrganizationCreditTransaction {
