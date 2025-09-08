@@ -55,38 +55,6 @@ with
     from farcaster
   ),
 
-  lens_users as (
-    with
-      lens as (
-        select
-          first_time_addresses.address,
-          lens_profiles.lens_profile_id as user_source_id,
-          'LENS' as user_source,
-          'LENS_USER' as user_type,
-          lens_profiles.full_name as user_name,
-          upper(first_time_addresses.chain_name) as chain_name
-        from oso.int_first_time_addresses as first_time_addresses
-        inner join
-          oso.stg_lens__owners as lens_owners
-          on first_time_addresses.address = lens_owners.owned_by
-        inner join
-          oso.stg_lens__profiles as lens_profiles
-          on lens_owners.profile_id = lens_profiles.lens_profile_id
-      )
-
-    select
-      address as artifact_source_id,
-      chain_name as artifact_source,
-      address as artifact_name,
-      user_source_id,
-      user_source,
-      user_type,
-      user_name,
-      lower(chain_name) as artifact_namespace,
-      lower(user_source) as user_namespace
-    from lens
-  ),
-
   all_normalized_users as (
     select
       artifact_source_id,
