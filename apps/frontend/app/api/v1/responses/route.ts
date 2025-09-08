@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Accept-Encoding": "identity",
     },
     body: JSON.stringify(body),
   });
