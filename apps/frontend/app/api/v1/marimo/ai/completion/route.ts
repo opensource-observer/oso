@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { logger } from "@/lib/logger";
-import { OSO_API_KEY } from "@/lib/config";
+import { getUser } from "@/lib/auth/auth";
+import { trackServerEvent } from "@/lib/analytics/track";
+import { EVENTS } from "@/lib/types/posthog";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -69,12 +71,18 @@ async function createResponse(openai: OpenAI, content: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const user = await getUser(req);
   const baseURL = new URL("/api/v1/", req.url).href;
   const { searchParams } = new URL(req.url);
   const useResponses = searchParams.get("api") === "responses";
+  await using tracker = trackServerEvent(user);
+
+  const userApiKey = req.headers
+    .get("authorization")
+    ?.replace(/^bearer\s+/i, "");
 
   const openai = new OpenAI({
-    apiKey: OSO_API_KEY,
+    apiKey: userApiKey,
     baseURL,
     defaultHeaders: {
       "Accept-Encoding": "identity",
@@ -82,11 +90,25 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    const { prompt: content }: MarimoCompletionRequest = await req.json();
+    const {
+      prompt,
+      includeOtherCode,
+      language,
+      code,
+    }: MarimoCompletionRequest = await req.json();
+
+    tracker.track(EVENTS.API_CALL, {
+      type: "marimo_ai_completion",
+      useResponses,
+      prompt,
+      includeOtherCode,
+      language,
+      code,
+    });
 
     const result = useResponses
-      ? await createResponse(openai, content)
-      : await createChatCompletion(openai, content);
+      ? await createResponse(openai, prompt)
+      : await createChatCompletion(openai, prompt);
 
     return NextResponse.json(result);
   } catch (error: any) {
