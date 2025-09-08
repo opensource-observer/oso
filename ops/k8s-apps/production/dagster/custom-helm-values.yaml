@@ -134,3 +134,5 @@ spec:
           deploymentName: production-mcs
           serviceName: production-mcs
           namespace: production-mcs
+    nessie:
+      url: "http://production-nessie.production-nessie.svc.cluster.local:19120/api/v1"
