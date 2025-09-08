@@ -77,9 +77,6 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const clone = response.clone();
-  console.log(await clone.text());
-
   return new Response(await response.text(), {
     status: response.status,
     headers: response.headers,
