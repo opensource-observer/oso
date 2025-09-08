@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { logger } from "@/lib/logger";
-import { OSO_API_KEY, OSO_AGENT_URL } from "@/lib/config";
+import { OSO_AGENT_URL, OSO_API_KEY } from "@/lib/config";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -22,12 +22,44 @@ const openai = new OpenAI({
   baseURL: OPENAI_BASE_URL,
 });
 
+interface MarimoCompletionRequest {
+  prompt: string;
+  includeOtherCode: string;
+  context: {
+    plainText: string;
+    schema: SchemaTable[];
+    variables: VariableContext[];
+  };
+  language: "python" | "sql" | "markdown";
+  code: string;
+}
+
+interface SchemaTable {
+  name: string;
+  columns: {
+    name: string;
+    type: string;
+    sample_values: unknown[];
+  }[];
+}
+
+interface VariableContext {
+  name: string;
+  value_type: string;
+  preview_value: unknown;
+}
+
 const createCompletionHandler =
   (): RouteHandler["handler"] =>
   async ({ req }) => {
     try {
-      const body = await req.json().catch(() => ({}));
-      const completion = await openai.chat.completions.create(body);
+      const marimoRequest: MarimoCompletionRequest = await req.json();
+      const completion = await openai.chat.completions.create({
+        messages: [{ role: "user", content: marimoRequest.prompt }],
+        model: "oso/semantic",
+        stream: false,
+      });
+
       return NextResponse.json(completion);
     } catch (error: any) {
       logger.error?.("Completion error", error);
