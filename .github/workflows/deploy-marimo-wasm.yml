@@ -50,6 +50,10 @@ jobs:
       - name: Build the dist directory for marimo
         run: pixi run bash scripts/build_marimo_static_dist.sh marimo_dist marimo.opensource.observer
 
+      - name: Create _redirects file for Cloudflare Pages
+        run: |
+          echo "/notebook/api/* https://www.opensource.observer/api/v1/marimo/:splat 302" > marimo_dist/_redirects
+
       - name: Install wrangler
         run: pnpm add -g wrangler
 
