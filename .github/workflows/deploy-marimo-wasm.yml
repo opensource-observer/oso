@@ -52,7 +52,7 @@ jobs:
 
       - name: Create _redirects file for Cloudflare Pages
         run: |
-          echo "/notebook/api/* https://www.opensource.observer/api/v1/marimo/:splat 302" > marimo_dist/_redirects
+          echo "/notebook/api/* https://www.opensource.observer/api/v1/marimo/:splat 307" > marimo_dist/_redirects
 
       - name: Install wrangler
         run: pnpm add -g wrangler
