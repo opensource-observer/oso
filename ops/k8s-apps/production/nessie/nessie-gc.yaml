@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: nessie-gc-job
+spec:
   schedule: "0 0 * * 0"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
