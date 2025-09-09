@@ -54,4 +54,4 @@ data:
   DAGSTER_ASSET_CACHE_ENABLED: "{{- if .Values.osoDagster.assetCache.enabled -}}1{{- else -}}0{{- end -}}"
   DAGSTER_ASSET_CACHE_DIR: "{{ .Values.osoDagster.assetCache.dir }}"
   OSO_ENABLE_JSON_LOGS: "{{- if .Values.osoDagster.enableJsonLogs -}}1{{- else -}}0{{- end -}}"
-  DAGSTER_NESSIE_URL: "{{ .Values.osoDagster.nessie.url }}"
+  DAGSTER_NESSIE_URL: "{{ .Values.nessie.url }}"
