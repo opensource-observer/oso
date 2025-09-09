@@ -77,12 +77,16 @@ export async function POST(req: NextRequest) {
   const useResponses = searchParams.get("api") === "responses";
   await using tracker = trackServerEvent(user);
 
-  const userApiKey = req.headers
-    .get("authorization")
-    ?.replace(/^bearer\s+/i, "");
+  const {
+    prompt,
+    includeOtherCode,
+    language,
+    code,
+    osoApiKey: apiKey,
+  }: MarimoCompletionRequest & { osoApiKey?: string } = await req.json();
 
   const openai = new OpenAI({
-    apiKey: userApiKey,
+    apiKey,
     baseURL,
     defaultHeaders: {
       "Accept-Encoding": "identity",
@@ -90,13 +94,6 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    const {
-      prompt,
-      includeOtherCode,
-      language,
-      code,
-    }: MarimoCompletionRequest = await req.json();
-
     tracker.track(EVENTS.API_CALL, {
       type: "marimo_ai_completion",
       useResponses,
