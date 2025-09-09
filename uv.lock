@@ -800,6 +800,18 @@ wheels = [
 ]
 
 [[package]]
+name = "confuse"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a7/77/05e2284baff5f2106f74b528b9930caf764d6c400733eb42e617c4234a7d/confuse-2.0.1.tar.gz", hash = "sha256:7379a2ad49aaa862b79600cc070260c1b7974d349f4fa5e01f9afa6c4dd0611f", size = 50872, upload-time = "2023-04-01T23:26:58.031Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/1f/cf496479814d41fc252004482deeb90b740b4a6a391a3355c0b11d7e0abf/confuse-2.0.1-py3-none-any.whl", hash = "sha256:9b9e5bbc70e2cb9b318bcab14d917ec88e21bf1b724365e3815eb16e37aabd2a", size = 24750, upload-time = "2023-04-01T23:26:55.321Z" },
+]
+
+[[package]]
 name = "connectorx"
 version = "0.4.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1289,6 +1301,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/98/97/06afe62762c9a8a86af0cfb7bfdab22a43ad17138b07af5b1a58442690a2/deprecated-1.2.18.tar.gz", hash = "sha256:422b6f6d859da6f2ef57857761bfb392480502a64c3028ca9bbe86085d72115d", size = 2928744, upload-time = "2025-01-27T10:46:25.7Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6e/c6/ac0b6c1e2d138f1002bcf799d330bd6d85084fece321e662a14223794041/Deprecated-1.2.18-py2.py3-none-any.whl", hash = "sha256:bd5011788200372a32418f888e326a09ff80d0214bd961147cfed01b5c018eec", size = 9998, upload-time = "2025-01-27T10:46:09.186Z" },
+]
+
+[[package]]
+name = "desert"
+version = "2022.9.22"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "marshmallow" },
+    { name = "typing-inspect" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/b3/919b5483c66ddae7f0fbbdc04cac9930e163aef9c86641a77585b5d7fda0/desert-2022.9.22.tar.gz", hash = "sha256:0f45e098915e16452a269a1da0bcbbf31df0af2173899f1c097fb2e3b0265d89", size = 66701, upload-time = "2022-09-23T00:14:37.955Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/48/060b6678ede661cfaf4ffaed176b4bae51c88bb915200d56f5bc9d721d9e/desert-2022.9.22-py3-none-any.whl", hash = "sha256:cad7b6f1936448d26bde403882ec6855786b4d24d38d0ed4400e505ac8c5591f", size = 10924, upload-time = "2022-09-23T00:14:35.101Z" },
 ]
 
 [[package]]
@@ -3290,6 +3316,18 @@ wheels = [
 ]
 
 [[package]]
+name = "marshmallow-oneofschema"
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "marshmallow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bb/42/a0e00dea6a831acfe9d3fe664d695b7cefc02c27dd69d9ccb4bdc3c3d1a7/marshmallow_oneofschema-3.2.0.tar.gz", hash = "sha256:c06c8d9f14d51ffff152d66d85bd5f27d55cff10752a3b1f8c1f948bf5f597a0", size = 9096, upload-time = "2025-05-08T13:49:34.798Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/15/52d6ac14dcfe381e4f1c204c9c287623b8b462bc27c6cc468dba0560ed4c/marshmallow_oneofschema-3.2.0-py3-none-any.whl", hash = "sha256:19c87e6124ef05e2831e5c631168c909a50a8fe399921b9841b75fef3785be8c", size = 5898, upload-time = "2025-05-08T13:49:33.26Z" },
+]
+
+[[package]]
 name = "matplotlib-inline"
 version = "0.1.7"
 source = { registry = "https://pypi.org/simple" }
@@ -3955,6 +3993,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyee" },
     { name = "pyiceberg", extra = ["hive", "s3fs"] },
+    { name = "pynessie" },
     { name = "pyoso" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -4041,6 +4080,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.7.0,<3.0.0" },
     { name = "pyee", specifier = ">=12.1.1,<14.0.0" },
     { name = "pyiceberg", extras = ["hive", "s3fs"], specifier = ">=0.8.1,<1.0.0" },
+    { name = "pynessie", specifier = ">=0.67.0" },
     { name = "pyoso", editable = "warehouse/pyoso" },
     { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0,<2.0.0" },
@@ -4850,6 +4890,28 @@ wheels = [
 ]
 
 [[package]]
+name = "pynessie"
+version = "0.67.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "botocore" },
+    { name = "click" },
+    { name = "confuse" },
+    { name = "desert" },
+    { name = "marshmallow" },
+    { name = "marshmallow-oneofschema" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "requests-aws4auth" },
+    { name = "simplejson" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/be/d6/2e3d168061e3b1075c4b487d753ff37bad02d28d0322837ebe36cd09383e/pynessie-0.67.0.tar.gz", hash = "sha256:cb46e072542e5978d4a27e2115294e3828414d1527fca70d84b6f0f585f6ac1a", size = 64988, upload-time = "2024-02-09T16:42:49.72Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/ed/c1422f7513a7d1d4dc2da6bc02707efa474c205935ad0e443c65e21b7c32/pynessie-0.67.0-py2.py3-none-any.whl", hash = "sha256:b1de9013f7c5a3ca5fa8ad179cf06cc3d81860b54a925f47968c363e21aa5bd2", size = 59536, upload-time = "2024-02-09T16:42:47.071Z" },
+]
+
+[[package]]
 name = "pynessie-gc"
 version = "0.1.0"
 source = { editable = "warehouse/pynessie-gc" }
@@ -5262,6 +5324,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e1/0a/929373653770d8a0d7ea76c37de6e41f11eb07559b103b1c02cafb3f7cf8/requests-2.32.4.tar.gz", hash = "sha256:27d0316682c8a29834d3264820024b62a36942083d52caf2f14c0591336d3422", size = 135258, upload-time = "2025-06-09T16:43:07.34Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7c/e4/56027c4a6b4ae70ca9de302488c5ca95ad4a39e190093d6c1a8ace08341b/requests-2.32.4-py3-none-any.whl", hash = "sha256:27babd3cda2a6d50b30443204ee89830707d396671944c998b5975b031ac2b2c", size = 64847, upload-time = "2025-06-09T16:43:05.728Z" },
+]
+
+[[package]]
+name = "requests-aws4auth"
+version = "1.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e5/0e/af3754c15e79a6279df256b56a805f8c7512f641839f68c2aa63dafc8f3c/requests_aws4auth-1.3.1.tar.gz", hash = "sha256:b6ad4882310e03ba2538ebf94d1f001ca9feabc5c52618539cf1eb6d5af76791", size = 25886, upload-time = "2024-07-21T21:29:15.383Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/57/41/bd1b81fd1e5a59c3afdf50c678a028498dd7c4197637f27406be0d1b55d2/requests_aws4auth-1.3.1-py3-none-any.whl", hash = "sha256:2969b5379ae6e60ee666638caf6cb94a32d67033f6bfcf0d50c95cd5474f2419", size = 24584, upload-time = "2024-07-21T21:29:14.216Z" },
 ]
 
 [[package]]
