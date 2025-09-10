@@ -9,12 +9,12 @@ lens_data = bq_dts_asset(
     display_name="lens",
     destination_config=BigQueryDatasetConfig(
         project_id="opensource-observer",
-        dataset_name="lens_v2_polygon",
+        dataset_name="lens-chain-mainnet",
         service_account=None,
     ),
     source_config=BqDtsSourceConfig(
-        project_id="lens-public-data",
-        dataset_name="v2_polygon",
+        project_id="lens-chain-mainnet",
+        dataset_name="public",
         service_account=None,
     ),
     copy_interval=TimeInterval.Weekly,
