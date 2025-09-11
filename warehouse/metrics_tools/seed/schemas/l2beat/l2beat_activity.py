@@ -13,8 +13,8 @@ class L2beatActivity(BaseModel):
     timestamp: int | None = Column(
         "INTEGER", description="Unix timestamp of the data point"
     )
-    count: int | None = Column("INTEGER", description="Number of transactions")
-    uops_count: int | None = Column("INTEGER", description="Number of user operations")
+    count: int | None = Column("BIGINT", description="Number of transactions")
+    uops_count: int | None = Column("BIGINT", description="Number of user operations")
 
 
 seed = SeedConfig(
