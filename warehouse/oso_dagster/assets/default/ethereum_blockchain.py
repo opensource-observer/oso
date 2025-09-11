@@ -4,7 +4,6 @@ import dagster as dg
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import dlt_factory
 from oso_dagster.factories.cryo import CryoResourceConfig, cryo_resource_factory
-from oso_dagster.utils import SecretReference, SecretResolver
 
 ETHEREUM_START_DATE = datetime.strptime("2015-07-30", "%Y-%m-%d")
 ETHEREUM_PARTITION = dg.DailyPartitionsDefinition(start_date=ETHEREUM_START_DATE)
@@ -14,15 +13,12 @@ ETHEREUM_PARTITION = dg.DailyPartitionsDefinition(start_date=ETHEREUM_START_DATE
 def ethereum_blocks(
     context: dg.AssetExecutionContext,
     global_config: DagsterConfig,
-    secrets: SecretResolver,
 ):
     yield cryo_resource_factory(
         global_config,
         CryoResourceConfig(
             datatype="blocks",
-            rpc_url=secrets.resolve_as_str(
-                SecretReference(group_name="ethereum", key="rpc_url")
-            ),
+            rpc_url=global_config.ethereum_rpc_url,
             primary_key=["block_number"],
             start_date=ETHEREUM_START_DATE,
             partition_date=datetime.strptime(context.partition_key, "%Y-%m-%d"),
@@ -37,15 +33,12 @@ def ethereum_blocks(
 def ethereum_transactions(
     context: dg.AssetExecutionContext,
     global_config: DagsterConfig,
-    secrets: SecretResolver,
 ):
     yield cryo_resource_factory(
         global_config,
         CryoResourceConfig(
             datatype="transactions",
-            rpc_url=secrets.resolve_as_str(
-                SecretReference(group_name="ethereum", key="rpc_url")
-            ),
+            rpc_url=global_config.ethereum_rpc_url,
             primary_key=["block_number", "transaction_index"],
             start_date=ETHEREUM_START_DATE,
             partition_date=datetime.strptime(context.partition_key, "%Y-%m-%d"),
@@ -58,15 +51,12 @@ def ethereum_transactions(
 def ethereum_logs(
     context: dg.AssetExecutionContext,
     global_config: DagsterConfig,
-    secrets: SecretResolver,
 ):
     yield cryo_resource_factory(
         global_config,
         CryoResourceConfig(
             datatype="logs",
-            rpc_url=secrets.resolve_as_str(
-                SecretReference(group_name="ethereum", key="rpc_url")
-            ),
+            rpc_url=global_config.ethereum_rpc_url,
             primary_key=["block_number", "log_index"],
             start_date=ETHEREUM_START_DATE,
             partition_date=datetime.strptime(context.partition_key, "%Y-%m-%d"),
@@ -79,15 +69,12 @@ def ethereum_logs(
 def ethereum_traces(
     context: dg.AssetExecutionContext,
     global_config: DagsterConfig,
-    secrets: SecretResolver,
 ):
     yield cryo_resource_factory(
         global_config,
         CryoResourceConfig(
             datatype="traces",
-            rpc_url=secrets.resolve_as_str(
-                SecretReference(group_name="ethereum", key="rpc_url")
-            ),
+            rpc_url=global_config.ethereum_rpc_url,
             primary_key=["block_number", "transaction_index", "trace_address"],
             start_date=ETHEREUM_START_DATE,
             partition_date=datetime.strptime(context.partition_key, "%Y-%m-%d"),
