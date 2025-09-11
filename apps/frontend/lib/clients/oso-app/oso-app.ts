@@ -561,7 +561,7 @@ class OsoAppClient {
     const user = await this.getUser();
 
     const { data: queryData, error: queryError } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .insert({
         org_id: orgId,
         display_name: new Date().toLocaleString(),
@@ -579,11 +579,11 @@ class OsoAppClient {
     return queryData;
   }
 
-  async getSqlQueriesByOrgId(args: Partial<{ orgId: string }>) {
-    console.log("getSqlQueriesByOrgId: ", args);
+  async getNotebooksByOrgId(args: Partial<{ orgId: string }>) {
+    console.log("getNotebooksByOrgId: ", args);
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const { data, error } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .select(
         "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
       )
@@ -592,62 +592,60 @@ class OsoAppClient {
     if (error) {
       throw error;
     } else if (!data) {
-      throw new MissingDataError(
-        `Unable to find SQL queries for orgId=${orgId}`,
-      );
+      throw new MissingDataError(`Unable to find notebooks for orgId=${orgId}`);
     }
     return data;
   }
 
-  async getSqlQueryById(args: Partial<{ queryId: string }>) {
-    console.log("getSqlQueryById: ", args);
-    const queryId = ensure(args.queryId, "Missing queryId argument");
+  async getNotebookById(args: Partial<{ notebookId: string }>) {
+    console.log("getNotebookById: ", args);
+    const notebookId = ensure(args.notebookId, "Missing notebookId argument");
     const { data, error } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .select()
-      .eq("id", queryId)
+      .eq("id", notebookId)
       .is("deleted_at", null)
       .single();
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find SQL query for queryId=${queryId}`,
+        `Unable to find notebook for notebookId=${notebookId}`,
       );
     }
     return data;
   }
 
   /**
-   * Update SQL query data
+   * Update notebook data
    * @param args
    */
-  async updateSqlQuery(
-    args: Partial<Database["public"]["Tables"]["saved_queries"]["Update"]>,
+  async updateNotebook(
+    args: Partial<Database["public"]["Tables"]["notebooks"]["Update"]>,
   ) {
-    console.log("updateSqlQuery: ", args);
-    const queryId = ensure(args.id, "Missing SQL query 'id' argument");
+    console.log("updateNotebook: ", args);
+    const notebookId = ensure(args.id, "Missing notebook 'id' argument");
     const { error } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .update({ ...args })
-      .eq("id", queryId);
+      .eq("id", notebookId);
     if (error) {
       throw error;
     }
   }
 
   /**
-   * Removes a SQL query
-   * - We use `deleted_at` to mark the query as removed instead of deleting the row
+   * Removes a notebook
+   * - We use `deleted_at` to mark the notebook as removed instead of deleting the row
    * @param args
    */
-  async deleteSqlQuery(args: Partial<{ queryId: string }>): Promise<void> {
-    console.log("deleteSqlQuery: ", args);
-    const queryId = ensure(args.queryId, "Missing queryId argument");
+  async deleteNotebook(args: Partial<{ notebookId: string }>): Promise<void> {
+    console.log("deleteNotebook: ", args);
+    const notebookId = ensure(args.notebookId, "Missing notebookId argument");
     const { error } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", queryId);
+      .eq("id", notebookId);
     if (error) {
       throw error;
     }

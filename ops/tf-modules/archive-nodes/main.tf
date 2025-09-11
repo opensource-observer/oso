@@ -74,7 +74,6 @@ resource "google_compute_firewall" "allow_internal_rpc" {
     protocol = "icmp"
   }
 
-  source_tags = ["archive-node"]
   target_tags = ["archive-node"]
 }
 

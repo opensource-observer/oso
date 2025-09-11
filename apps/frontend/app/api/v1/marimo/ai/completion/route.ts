@@ -39,35 +39,45 @@ async function createChatCompletion(openai: OpenAI, content: string) {
   return await openai.chat.completions.create({
     messages: [{ role: "user", content }],
     model: "oso/semantic",
-    stream: false,
+    stream: true,
   });
 }
 
 async function createResponse(openai: OpenAI, content: string) {
-  const response = await openai.responses.create({
+  return await openai.responses.create({
     input: content,
     model: "oso/semantic",
     store: false,
+    stream: true,
+  });
+}
+
+function createStreamingResponse<T>(
+  stream: AsyncIterable<T>,
+  extractContent: (chunk: T) => string | null,
+): Response {
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const chunk of stream) {
+          const content = extractContent(chunk);
+          if (content) {
+            controller.enqueue(encoder.encode(content));
+          }
+        }
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      }
+    },
   });
 
-  return {
-    id: response.id,
-    object: "chat.completion",
-    created: Math.floor(response.created_at / 1000),
-    model: response.model,
-    choices: [
-      {
-        index: 0,
-        message: {
-          role: "assistant",
-          content: response.output_text || "",
-          refusal: null,
-        },
-        finish_reason: "stop",
-      },
-    ],
-    usage: response.usage,
-  };
+  return new Response(readable, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -77,12 +87,16 @@ export async function POST(req: NextRequest) {
   const useResponses = searchParams.get("api") === "responses";
   await using tracker = trackServerEvent(user);
 
-  const userApiKey = req.headers
-    .get("authorization")
-    ?.replace(/^bearer\s+/i, "");
+  const {
+    prompt,
+    includeOtherCode,
+    language,
+    code,
+    osoApiKey: apiKey,
+  }: MarimoCompletionRequest & { osoApiKey?: string } = await req.json();
 
   const openai = new OpenAI({
-    apiKey: userApiKey,
+    apiKey,
     baseURL,
     defaultHeaders: {
       "Accept-Encoding": "identity",
@@ -90,13 +104,6 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    const {
-      prompt,
-      includeOtherCode,
-      language,
-      code,
-    }: MarimoCompletionRequest = await req.json();
-
     tracker.track(EVENTS.API_CALL, {
       type: "marimo_ai_completion",
       useResponses,
@@ -106,11 +113,20 @@ export async function POST(req: NextRequest) {
       code,
     });
 
-    const result = useResponses
-      ? await createResponse(openai, prompt)
-      : await createChatCompletion(openai, prompt);
+    if (useResponses) {
+      const stream = await createResponse(openai, prompt);
 
-    return NextResponse.json(result);
+      return createStreamingResponse(stream, (chunk) =>
+        chunk.type === "response.output_text.delta" ? chunk.delta : null,
+      );
+    }
+
+    const stream = await createChatCompletion(openai, prompt);
+
+    return createStreamingResponse(
+      stream,
+      (chunk) => chunk.choices[0]?.delta?.content || null,
+    );
   } catch (error: any) {
     logger.error("Completion error", error);
     return NextResponse.json(
