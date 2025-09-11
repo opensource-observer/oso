@@ -25,6 +25,7 @@ These project-specific rules teach the Cursor AI how to scaffold, extend, and re
 
 ### Imports
 ```python
+from datetime import datetime
 from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 ```
@@ -114,6 +115,7 @@ FROM @oso_source('bigquery.source_name.table_name')
 
 ### Special Cases
 - **Chain IDs**: Use `BIGINT` for large chain IDs
+- **Large integers**: Use `BIGINT` for values that exceed INT32 range (e.g., TVS values, large transaction counts)
 - **Decimals**: Use `INTEGER` for currency decimals
 - **JSON**: Use `TEXT` for JSON strings
 - **IPFS Hashes**: Use `TEXT` for IPFS content
@@ -126,8 +128,93 @@ FROM @oso_source('bigquery.source_name.table_name')
 - Use realistic but anonymized data.
 - Include edge cases (NULL values, special characters).
 
+### Dynamic Timestamps
+- **Always use current timestamps**: Use `int(datetime.now().timestamp())` for Unix timestamp fields instead of hardcoded dates.
+- **Import datetime**: Always include `from datetime import datetime` in seed files with timestamp fields.
+- **Realistic data**: This ensures sample data uses current timestamps and remains realistic.
+
+### DLT Fields in Seed Models
+- **Exclude DLT fields**: Do not include DLT fields (`_dlt_load_id`, `_dlt_id`) in Pydantic model definitions.
+- **Pydantic restriction**: Pydantic doesn't allow field names starting with underscores, which causes validation errors.
+- **Internal fields**: DLT fields are internal to the data loading process and should not be exposed in seed models.
+
+### Trino Type Inference Gotcha
+- **Critical**: Trino infers column types from the first non-NULL row of seed data, completely ignoring explicit Pydantic Column types.
+- **BIGINT issue**: If the first row has NULL for a field that should be BIGINT, Trino defaults to INTEGER, causing later large values to fail.
+- **Solution**: Always put a row with the largest expected value first in seed data to force the correct type.
+- **Table recreation**: Once a table is created with the wrong type, you must drop and recreate it - fixing seed data alone isn't enough.
+- **Order matters**: Seed data row order is critical for type inference, not just for testing scenarios.
+
 ### Sample Data Examples
 ```python
+# Good - dynamic timestamp, no DLT fields, largest values first
+L2beatTvs(
+    project_slug="base",  # Put largest values first to force BIGINT type
+    timestamp=int(datetime.now().timestamp()),
+    native=5369497088,  # Large value forces BIGINT type inference
+    canonical=4251012352,
+    external=5025510912,
+    eth_price=4352.6973,
+    # ... other fields
+),
+L2beatTvs(
+    project_slug="arbitrum",
+    timestamp=int(datetime.now().timestamp()),
+    native=3639896832,
+    canonical=5670418944,
+    external=9844511744,
+    eth_price=4352.6973,
+    # ... other fields
+),
+L2beatTvs(
+    project_slug="hpp",  # NULL values after type is established
+    timestamp=int(datetime.now().timestamp()),
+    native=None,
+    canonical=None,
+    external=None,
+    eth_price=None,
+    # ... other fields
+),
+
+# Bad - NULL values first (causes INTEGER type inference)
+L2beatTvs(
+    project_slug="hpp",  # NULL values first = INTEGER type
+    timestamp=int(datetime.now().timestamp()),
+    native=None,  # This NULL forces INTEGER type
+    canonical=None,
+    external=None,
+    eth_price=None,
+    # ... other fields
+),
+L2beatTvs(
+    project_slug="base",  # Large values fail due to INTEGER type
+    timestamp=int(datetime.now().timestamp()),
+    native=5369497088,  # ERROR: Value too large for INTEGER
+    canonical=4251012352,
+    external=5025510912,
+    eth_price=4352.6973,
+    # ... other fields
+),
+
+# Bad - hardcoded timestamp
+L2beatActivity(
+    project_slug="mantle",
+    timestamp=1756598400,  # Don't use hardcoded dates
+    count=192429,
+    uops_count=193054,
+    # ... other fields
+),
+
+# Bad - DLT fields in model (causes Pydantic error)
+L2beatActivity(
+    project_slug="mantle",
+    timestamp=int(datetime.now().timestamp()),
+    count=192429,
+    uops_count=193054,
+    _dlt_load_id="1756751563.243608",  # Don't include DLT fields
+    _dlt_id="Cr6N7KVVYJtTXQ",  # Don't include DLT fields
+),
+
 # Active label
 LabelsDecoded(
     id="0x1234567890abcdef...",
@@ -147,7 +234,7 @@ LabelsDecoded(
     tag_id="is_eoa",
     tag_value="true",
     revoked=True,
-    revocation_time=1744237338,
+    revocation_time=int(datetime.now().timestamp()),  # Use dynamic timestamp
     # ... other fields
 ),
 ```
@@ -317,6 +404,11 @@ FROM @oso_source('bigquery.defillama.historical_chain_tvl')
 - [ ] Model class has descriptive docstring
 - [ ] All fields have proper type hints and Column annotations
 - [ ] Sample data covers representative scenarios
+- [ ] Use `int(datetime.now().timestamp())` for timestamp fields instead of hardcoded dates
+- [ ] Import `from datetime import datetime` when using timestamps
+- [ ] Exclude DLT fields (`_dlt_load_id`, `_dlt_id`) from Pydantic model definitions
+- [ ] **CRITICAL**: Put rows with largest values first to force correct type inference (BIGINT, DOUBLE, etc.)
+- [ ] **CRITICAL**: Never put NULL values first for fields that need large types (BIGINT, DOUBLE)
 - [ ] Pass ruff, black (line length 100)
 
 ### Staging Models
