@@ -10,8 +10,8 @@ This quickstart guide will help you set
 up a development Dagster instance locally, with a [`duckdb`](http://duckdb.org/) backend,
 in order to follow along with our tutorials in the next sections.
 
-If you want to check out what Dagster looks like in production, check out  
-[https://dagster.opensource.observer](https://dagster.opensource.observer)  
+If you want to check out what Dagster looks like in production, check out
+[https://dagster.opensource.observer](https://dagster.opensource.observer)
 Admins can trigger runs
 [here](https://admin-dagster.opensource.observer/)
 
@@ -61,6 +61,10 @@ command from the root of the repository:
 ```sh
 uv run dagster dev
 ```
+
+:::tip
+Alternatively, you can use the `pnpm dev:dagster` command, which automates the setup process by creating the necessary directory and configuration file for you.
+:::
 
 :::tip
 You may need to run the development server in legacy mode on resource-constrained machines.

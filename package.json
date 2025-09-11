@@ -22,6 +22,7 @@
     "deploy:hasura": "turbo run deploy --filter=@opensource-observer/hasura-clickhouse",
     "deploy:site": "turbo run build --filter=@opensource-observer/docs --filter=@opensource-observer/frontend && turbo run deploy --filter=@opensource-observer/frontend && pnpm copy",
     "dev:docs": "turbo run dev --filter=@opensource-observer/docs --parallel",
+    "dev:dagster": "mkdir -p /tmp/dagster-home && echo 'run_queue:\\n  max_concurrent_runs: 1' > /tmp/dagster-home/dagster.yaml && uv run dagster dev",
     "dev:frontend": "turbo run dev --filter=@opensource-observer/frontend --parallel",
     "format:staged": "lint-staged",
     "lint": "turbo run lint --concurrency=100%",

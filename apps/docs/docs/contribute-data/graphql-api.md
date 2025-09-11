@@ -312,6 +312,22 @@ pagination_config = PaginationConfig(
 )
 ```
 
+### Keyset-Based Pagination
+
+For APIs that use keyset-based pagination (also known as seek-based pagination):
+
+```python
+pagination_config = PaginationConfig(
+    type=PaginationType.KEYSET,
+    page_size=100,
+    order_by_field="id",
+    order_direction="asc",
+    last_value_field="id_gt",
+    cursor_key="id",
+    page_size_field="first",
+)
+```
+
 ### Error Handling and Retry Mechanism
 
 The GraphQL factory includes a sophisticated retry mechanism with configurable
@@ -405,7 +421,7 @@ enhanced capabilities:
 - **Smart retry mechanism**: Configurable retry with adaptive page size
   reduction
 - **Enhanced error handling**: Better logging and error reporting
-- **Flexible pagination**: Support for offset, cursor, and relay-style
+- **Flexible pagination**: Support for offset, cursor, relay, and keyset-style
   pagination
 
 This allows you to focus on the data you need and the transformations you want
