@@ -147,6 +147,10 @@ spec:
         bigquery.credentials-key=${ENV:TRINO_GCP_CREDENTIALS_JSON}
         bigquery.case-insensitive-name-matching=true
         bigquery.arrow-serialization.max-allocation=65536MB
+      bigquery_oso_dynamic: |
+        connector.name=bigquery
+        bigquery.project-id=oso-dynamic
+        bigquery.arrow-serialization.max-allocation=65536MB
       github_archive: |
         connector.name=bigquery
         bigquery.parent-project-id=opensource-observer
