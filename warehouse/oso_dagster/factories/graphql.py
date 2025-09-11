@@ -159,6 +159,7 @@ class PaginationConfig:
 
         For keyset-style pagination:
         order_by_field: Name of the orderBy field (default: "id").
+        order_direction: Order direction, either "asc" or "desc" (default: "asc").
         last_value_field: Name of the field to filter by for the next page (e.g., "id_gt").
         cursor_key: The key in the result item to use as the cursor value (e.g., "id").
         page_size_field: Name of the page size field (default: "first").
@@ -184,6 +185,7 @@ class PaginationConfig:
     order_by_field: str = "id"
     last_value_field: str = "id_gt"
     cursor_key: str = "id"
+    order_direction: str = "asc"
 
     stop_condition: Optional[Callable[[Dict[str, Any], int], bool]] = None
 
@@ -650,6 +652,10 @@ def get_query_parameters(
             all_params["orderBy"] = {
                 "type": "String!",
                 "value": None,
+            }
+            all_params["orderDirection"] = {
+                "type": "String!",
+                "value": pagination_config.order_direction,
             }
             all_params[pagination_config.page_size_field] = {
                 "type": "Int!",
@@ -1213,11 +1219,14 @@ def _graphql_factory(
                                     effective_page_size
                                 )
                             elif config.pagination.type == PaginationType.KEYSET:
-                                context.log.debug("pagination keyset")
                                 query_variables["orderBy"] = (
                                     config.pagination.order_by_field
                                 )
-                                query_variables["orderDirection"] = "asc"
+
+                                query_variables["orderDirection"] = (
+                                    config.pagination.order_direction
+                                )
+
                                 query_variables[config.pagination.page_size_field] = (
                                     effective_page_size
                                 )
@@ -1260,10 +1269,6 @@ def _graphql_factory(
                         },
                         endpoint=config.endpoint,
                         masked_endpoint=config.masked_endpoint,
-                    )
-
-                    context.log.debug(
-                        f"GraphQL query execution (page {successful_pages + 1}) succeeded with result: {result}"
                     )
 
                     if result is None:
@@ -1376,15 +1381,9 @@ def _graphql_factory(
                             has_more = False
                     elif config.pagination.type == PaginationType.KEYSET:
                         if items_in_page > 0:
-                            context.log.debug(
-                                f"GraphQLFactory: Keyset pagination fetched {items_in_page} items, checking for cursor key '{config.pagination.cursor_key}' in last item"
-                            )
                             last_item = data_items[-1]
                             cursor_key = config.pagination.cursor_key
                             if cursor_key in last_item:
-                                variables[config.pagination.last_value_field] = (
-                                    last_item[cursor_key]
-                                )
                                 has_more = True
                             else:
                                 context.log.warning(

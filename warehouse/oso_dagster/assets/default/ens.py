@@ -46,12 +46,13 @@ def text_changeds(
         transform_fn=lambda result: result["textChangeds"],
         pagination=PaginationConfig(
             type=PaginationType.KEYSET,
-            page_size=1000,
+            page_size=500,
             rate_limit_seconds=2.0,
             order_by_field="id",
             last_value_field="id_gt",
             cursor_key="id",
             page_size_field="first",
+            order_direction="asc",
         ),
         retry=RetryConfig(
             max_retries=10,
@@ -88,12 +89,13 @@ def domains(
         transform_fn=lambda result: result["domains"],
         pagination=PaginationConfig(
             type=PaginationType.KEYSET,
-            page_size=5,
+            page_size=500,
             rate_limit_seconds=2.0,
             order_by_field="id",
             last_value_field="id_gt",
             cursor_key="id",
             page_size_field="first",
+            order_direction="asc",
         ),
         exclude=[
             # "id",
