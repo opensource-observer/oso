@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 
 from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
@@ -64,16 +65,20 @@ seed = SeedConfig(
             company_legal_name="Oso Inc.",
             website="https://opensource.observer",
             website_alias=[],
-            twitter_url=["https://twitter.com/oso"],
+            twitter_url=["https://twitter.com/oso", "https://x.com/oso_labs"],
             crunchbase_url="https://www.crunchbase.com/organization/oso",
-            github_url=["https://github.com/oso"],
+            github_url=[
+                "https://github.com/oso",
+                "https://github.com/oso-labs",
+                "https://github.com/opensource-observer/oso",
+            ],
             dlt_load_id="dlt_load_1",
             dlt_id="dlt_id_1",
             funding_rounds=json.dumps(
                 [
                     FundingRound(
                         name="Seed",
-                        announced_date="2020-01-01",
+                        announced_date=datetime.now().strftime("%Y-%m-%d"),
                         lead_investors=["Investor A", "Investor B"],
                         amount_raised=5000000,
                         amount_raised_currency="USD",
@@ -86,6 +91,26 @@ seed = SeedConfig(
                         amount_raised=15000000,
                         amount_raised_currency="USD",
                         num_investors=3,
+                    ),
+                    FundingRound(
+                        name="Series B",
+                        announced_date=(datetime.now() - timedelta(days=2)).strftime(
+                            "%Y-%m-%d"
+                        ),
+                        lead_investors=["Investor D", "Investor E"],
+                        amount_raised=25000000,
+                        amount_raised_currency="USD",
+                        num_investors=4,
+                    ),
+                    FundingRound(
+                        name="Bridge Round",
+                        announced_date=(datetime.now() - timedelta(days=4)).strftime(
+                            "%Y-%m-%d"
+                        ),
+                        lead_investors=["Investor F"],
+                        amount_raised=8000000,
+                        amount_raised_currency="USD",
+                        num_investors=2,
                     ),
                 ],
                 default=lambda x: x.dict(),
