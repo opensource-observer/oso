@@ -136,7 +136,7 @@ def map_values_to_sql(instance: BaseModel, columns_to_types: dict[str, exp.DataT
     for column, value in instance.model_dump().items():
         column_type = columns_to_types.get(column)
         if (
-            isinstance(value, dict)
+            not isinstance(value, str)
             and column_type
             and column_type.is_type(exp.DataType.Type.JSON)
         ):
