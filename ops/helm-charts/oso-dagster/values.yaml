@@ -85,3 +85,5 @@ sqlmesh:
       namespace: "default"
 nessie:
   url: ""
+rpc:
+  ethereum: ""
