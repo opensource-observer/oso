@@ -14,8 +14,8 @@ WITH base_data AS (
     company_name::VARCHAR AS name,
     website::VARCHAR AS website,
     crunchbase_url::VARCHAR AS crunchbase_url,
-    CAST(JSON_EXTRACT_ARRAY(twitter_url, '$') AS ARRAY(VARCHAR)) AS twitter_urls,
-    CAST(JSON_EXTRACT_ARRAY(github_url, '$') AS ARRAY(VARCHAR)) AS github_urls
+    CAST(JSON_EXTRACT(twitter_url, '$') AS ARRAY(VARCHAR)) AS twitter_urls,
+    CAST(JSON_EXTRACT(github_url, '$') AS ARRAY(VARCHAR)) AS github_urls
   FROM @oso_source('bigquery_oso_dynamic.oso.coresignal_company_data')
 )
 
