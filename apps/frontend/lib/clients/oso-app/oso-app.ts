@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { v4 as uuid4 } from "uuid";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { assert, ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "@/lib/types/supabase";
@@ -592,7 +593,7 @@ class OsoAppClient {
     console.log("createNotebook: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const notebookName =
-      args.notebookName || "notebook_" + `${Math.random()}`.substring(2, 5);
+      args.notebookName || `notebook_${uuid4().substring(0, 5)}`;
     const user = await this.getUser();
     const org = await this.getOrganizationByName({ orgName });
 
