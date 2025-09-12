@@ -9,6 +9,6 @@ export async function GET(req: NextRequest) {
     logger.log(`/start: User is anonymous`);
     return NextResponse.redirect(new URL("/login", req.url));
   }
-  const orgId = user.orgId;
-  return NextResponse.redirect(new URL(`/orgs/${orgId}`, req.url));
+  const orgName = user.orgName;
+  return NextResponse.redirect(new URL(`/${orgName}`, req.url));
 }
