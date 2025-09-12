@@ -835,6 +835,7 @@ def defillama_raises_assets(
         name="raises",
         primary_key=["name", "date"],
         write_disposition="replace",
+        max_table_nesting=0,
     )
     if global_config.gcp_bigquery_enabled:
         bigquery_adapter(resource, cluster=["name"])
