@@ -150,6 +150,13 @@ export type PurchaseIntentsUpdate = z.infer<
 export type PurchaseIntentsRelationships = z.infer<
   typeof generated.purchaseIntentsRelationshipsSchema
 >;
+export type ReservedNamesRow = z.infer<typeof generated.reservedNamesRowSchema>;
+export type ReservedNamesInsert = z.infer<
+  typeof generated.reservedNamesInsertSchema
+>;
+export type ReservedNamesUpdate = z.infer<
+  typeof generated.reservedNamesUpdateSchema
+>;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
   typeof generated.userCreditsInsertSchema
