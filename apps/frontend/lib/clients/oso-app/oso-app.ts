@@ -152,9 +152,7 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("api_keys")
-      .select(
-        "id, name, user_id, created_at, org_id, organizations!inner(org_name)",
-      )
+      .select("*,organizations!inner(org_name)")
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
@@ -341,9 +339,7 @@ class OsoAppClient {
     // Get the members of the organization
     const { data: memberData, error: memberError } = await this.supabaseClient
       .from("users_by_organization")
-      .select(
-        "user_id, user_role, org_id, organizations!inner(org_name), organizations!inner(created_by)",
-      )
+      .select("*,organizations!inner(org_name, created_by)")
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     // Map the user ids to their roles
@@ -490,9 +486,10 @@ class OsoAppClient {
    * @param args
    * @returns
    */
-  async createChat(args: Partial<{ orgName: string }>) {
+  async createChat(args: Partial<{ orgName: string; displayName: string }>) {
     console.log("createChat: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
+    const displayName = args.displayName || new Date().toLocaleString();
     const user = await this.getUser();
     const org = await this.getOrganizationByName({ orgName });
 
@@ -500,7 +497,7 @@ class OsoAppClient {
       .from("chat_history")
       .insert({
         org_id: org.id,
-        display_name: new Date().toLocaleString(),
+        display_name: displayName,
         created_by: user.id,
       })
       .select()
@@ -520,9 +517,7 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("chat_history")
-      .select(
-        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name,organizations!inner(org_name)",
-      )
+      .select("*,organizations!inner(org_name)")
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
@@ -596,7 +591,8 @@ class OsoAppClient {
   ) {
     console.log("createNotebook: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const notebookName = args.notebookName || new Date().toLocaleString();
+    const notebookName =
+      args.notebookName || "notebook_" + `${Math.random()}`.substring(2, 5);
     const user = await this.getUser();
     const org = await this.getOrganizationByName({ orgName });
 
@@ -624,9 +620,7 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("notebooks")
-      .select(
-        "id,org_id,created_at,updated_at,deleted_at,created_by,notebook_name,organizations!inner(org_name)",
-      )
+      .select("*,organizations!inner(org_name)")
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
@@ -773,14 +767,14 @@ class OsoAppClient {
    * @param orgId
    */
   async getConnectors(
-    args: Partial<{ orgId: string }>,
+    args: Partial<{ orgName: string }>,
   ): Promise<Tables<"dynamic_connectors">[]> {
-    const orgId = ensure(args.orgId, "org_id is required");
+    const orgName = ensure(args.orgName, "orgName is required");
 
     const { data, error } = await this.supabaseClient
       .from("dynamic_connectors")
-      .select("*")
-      .eq("org_id", orgId)
+      .select("*,organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
 
     if (error) {
