@@ -591,9 +591,12 @@ class OsoAppClient {
    * @param args
    * @returns
    */
-  async createNotebook(args: Partial<{ orgName: string }>) {
+  async createNotebook(
+    args: Partial<{ orgName: string; notebookName: string }>,
+  ) {
     console.log("createNotebook: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
+    const notebookName = args.notebookName || new Date().toLocaleString();
     const user = await this.getUser();
     const org = await this.getOrganizationByName({ orgName });
 
@@ -601,7 +604,7 @@ class OsoAppClient {
       .from("notebooks")
       .insert({
         org_id: org.id,
-        notebook_name: new Date().toLocaleString(),
+        notebook_name: notebookName,
         created_by: user.id,
       })
       .select()
@@ -622,7 +625,7 @@ class OsoAppClient {
     const { data, error } = await this.supabaseClient
       .from("notebooks")
       .select(
-        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name,organizations!inner(org_name)",
+        "id,org_id,created_at,updated_at,deleted_at,created_by,notebook_name,organizations!inner(org_name)",
       )
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
