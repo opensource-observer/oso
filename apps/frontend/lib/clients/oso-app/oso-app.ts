@@ -150,11 +150,12 @@ class OsoAppClient {
 
   async getApiKeysByOrgName(args: { orgName: string }) {
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const org = await this.getOrganizationByName({ orgName });
     const { data, error } = await this.supabaseClient
       .from("api_keys")
-      .select("id, name, user_id, created_at, org_id")
-      .eq("org_id", org.id)
+      .select(
+        "id, name, user_id, created_at, org_id, organizations!inner(org_name)",
+      )
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
       throw error;
@@ -300,7 +301,7 @@ class OsoAppClient {
 
   /**
    * Gets the organization details by org_name.
-   * @param orgId
+   * @param orgName
    * @returns
    */
   async getOrganizationByName(
@@ -337,16 +338,20 @@ class OsoAppClient {
   ) {
     console.log("getOrganizationMembers: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const org = await this.getOrganizationByName({ orgName });
     // Get the members of the organization
     const { data: memberData, error: memberError } = await this.supabaseClient
       .from("users_by_organization")
-      .select("user_id, user_role")
-      .eq("org_id", org.id)
+      .select(
+        "user_id, user_role, org_id, organizations!inner(org_name), organizations!inner(created_by)",
+      )
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     // Map the user ids to their roles
     const userRoleMap = _.fromPairs([
-      [org.created_by, ADMIN_USER_ROLE],
+      ...(memberData ?? []).map((x) => [
+        x.organizations.created_by,
+        ADMIN_USER_ROLE,
+      ]),
       ...(memberData ?? []).map((x) => [x.user_id, x.user_role]),
     ]);
     // Get all user profiles
@@ -513,13 +518,12 @@ class OsoAppClient {
   async getChatsByOrgName(args: Partial<{ orgName: string }>) {
     console.log("getChatsByOrgName: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const org = await this.getOrganizationByName({ orgName });
     const { data, error } = await this.supabaseClient
       .from("chat_history")
       .select(
-        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name,organizations!inner(org_name)",
       )
-      .eq("org_id", org.id)
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
       throw error;
@@ -615,13 +619,12 @@ class OsoAppClient {
   async getNotebooksByOrgName(args: Partial<{ orgName: string }>) {
     console.log("getNotebooksByOrgName: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const org = await this.getOrganizationByName({ orgName });
     const { data, error } = await this.supabaseClient
       .from("notebooks")
       .select(
-        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
+        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name,organizations!inner(org_name)",
       )
-      .eq("org_id", org.id)
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
       throw error;
