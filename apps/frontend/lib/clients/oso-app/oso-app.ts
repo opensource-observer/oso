@@ -564,7 +564,7 @@ class OsoAppClient {
       .from("notebooks")
       .insert({
         org_id: orgId,
-        display_name: new Date().toLocaleString(),
+        notebook_name: new Date().toLocaleString(),
         created_by: user.id,
       })
       .select()
