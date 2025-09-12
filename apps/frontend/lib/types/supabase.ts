@@ -402,8 +402,8 @@ export type Database = {
           created_by: string;
           data: string | null;
           deleted_at: string | null;
-          display_name: string;
           id: string;
+          notebook_name: string;
           org_id: string;
           updated_at: string;
         };
@@ -412,8 +412,8 @@ export type Database = {
           created_by: string;
           data?: string | null;
           deleted_at?: string | null;
-          display_name: string;
           id?: string;
+          notebook_name: string;
           org_id: string;
           updated_at?: string;
         };
@@ -422,8 +422,8 @@ export type Database = {
           created_by?: string;
           data?: string | null;
           deleted_at?: string | null;
-          display_name?: string;
           id?: string;
+          notebook_name?: string;
           org_id?: string;
           updated_at?: string;
         };
@@ -602,6 +602,21 @@ export type Database = {
           },
         ];
       };
+      reserved_names: {
+        Row: {
+          created_at: string;
+          name: string;
+        };
+        Insert: {
+          created_at?: string;
+          name: string;
+        };
+        Update: {
+          created_at?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
       user_credits: {
         Row: {
           created_at: string;
@@ -633,7 +648,6 @@ export type Database = {
           full_name: string | null;
           id: string;
           updated_at: string | null;
-          username: string | null;
           website: string | null;
         };
         Insert: {
@@ -642,7 +656,6 @@ export type Database = {
           full_name?: string | null;
           id: string;
           updated_at?: string | null;
-          username?: string | null;
           website?: string | null;
         };
         Update: {
@@ -651,7 +664,6 @@ export type Database = {
           full_name?: string | null;
           id?: string;
           updated_at?: string | null;
-          username?: string | null;
           website?: string | null;
         };
         Relationships: [];

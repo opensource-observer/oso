@@ -434,8 +434,8 @@ export const notebooksRowSchema = z.object({
   created_by: z.string(),
   data: z.string().nullable(),
   deleted_at: z.string().nullable(),
-  display_name: z.string(),
   id: z.string(),
+  notebook_name: z.string(),
   org_id: z.string(),
   updated_at: z.string(),
 });
@@ -445,8 +445,8 @@ export const notebooksInsertSchema = z.object({
   created_by: z.string(),
   data: z.string().optional().nullable(),
   deleted_at: z.string().optional().nullable(),
-  display_name: z.string(),
   id: z.string().optional(),
+  notebook_name: z.string(),
   org_id: z.string(),
   updated_at: z.string().optional(),
 });
@@ -456,8 +456,8 @@ export const notebooksUpdateSchema = z.object({
   created_by: z.string().optional(),
   data: z.string().optional().nullable(),
   deleted_at: z.string().optional().nullable(),
-  display_name: z.string().optional(),
   id: z.string().optional(),
+  notebook_name: z.string().optional(),
   org_id: z.string().optional(),
   updated_at: z.string().optional(),
 });
@@ -645,6 +645,21 @@ export const purchaseIntentsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const reservedNamesRowSchema = z.object({
+  created_at: z.string(),
+  name: z.string(),
+});
+
+export const reservedNamesInsertSchema = z.object({
+  created_at: z.string().optional(),
+  name: z.string(),
+});
+
+export const reservedNamesUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  name: z.string().optional(),
+});
+
 export const userCreditsRowSchema = z.object({
   created_at: z.string(),
   credits_balance: z.number(),
@@ -675,7 +690,6 @@ export const userProfilesRowSchema = z.object({
   full_name: z.string().nullable(),
   id: z.string(),
   updated_at: z.string().nullable(),
-  username: z.string().nullable(),
   website: z.string().nullable(),
 });
 
@@ -685,7 +699,6 @@ export const userProfilesInsertSchema = z.object({
   full_name: z.string().optional().nullable(),
   id: z.string(),
   updated_at: z.string().optional().nullable(),
-  username: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
 });
 
@@ -695,7 +708,6 @@ export const userProfilesUpdateSchema = z.object({
   full_name: z.string().optional().nullable(),
   id: z.string().optional(),
   updated_at: z.string().optional().nullable(),
-  username: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
 });
 
