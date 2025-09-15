@@ -153,7 +153,9 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("api_keys")
-      .select("*,organizations!inner(org_name)")
+      .select(
+        "id, name, user_id, created_at, org_id, organizations!inner(org_name)",
+      )
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
