@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 import dagster as dg
 from oso_dagster.config import DagsterConfig
@@ -8,8 +9,25 @@ from oso_dagster.factories.cryo import CryoResourceConfig, cryo_resource_factory
 ETHEREUM_START_DATE = datetime.strptime("2015-07-30", "%Y-%m-%d")
 ETHEREUM_PARTITION = dg.DailyPartitionsDefinition(start_date=ETHEREUM_START_DATE)
 
+K8S_CONFIG: dict[str, Any] = {
+    "merge_behavior": "SHALLOW",
+    "container_config": {
+        "resources": {
+            "requests": {"cpu": "200m", "memory": "3584Mi"},
+            "limits": {"memory": "7168Mi"},
+        },
+    },
+}
 
-@dlt_factory(key_prefix="ethereum", name="blocks", partitions_def=ETHEREUM_PARTITION)
+
+@dlt_factory(
+    key_prefix="ethereum",
+    name="blocks",
+    partitions_def=ETHEREUM_PARTITION,
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
 def ethereum_blocks(
     context: dg.AssetExecutionContext,
     global_config: DagsterConfig,
@@ -28,7 +46,12 @@ def ethereum_blocks(
 
 
 @dlt_factory(
-    key_prefix="ethereum", name="transactions", partitions_def=ETHEREUM_PARTITION
+    key_prefix="ethereum",
+    name="transactions",
+    partitions_def=ETHEREUM_PARTITION,
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
 )
 def ethereum_transactions(
     context: dg.AssetExecutionContext,
@@ -47,7 +70,14 @@ def ethereum_transactions(
     )
 
 
-@dlt_factory(key_prefix="ethereum", name="logs", partitions_def=ETHEREUM_PARTITION)
+@dlt_factory(
+    key_prefix="ethereum",
+    name="logs",
+    partitions_def=ETHEREUM_PARTITION,
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
 def ethereum_logs(
     context: dg.AssetExecutionContext,
     global_config: DagsterConfig,
@@ -65,7 +95,14 @@ def ethereum_logs(
     )
 
 
-@dlt_factory(key_prefix="ethereum", name="traces", partitions_def=ETHEREUM_PARTITION)
+@dlt_factory(
+    key_prefix="ethereum",
+    name="traces",
+    partitions_def=ETHEREUM_PARTITION,
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
 def ethereum_traces(
     context: dg.AssetExecutionContext,
     global_config: DagsterConfig,
