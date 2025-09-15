@@ -329,7 +329,7 @@ class OsoAppClient {
 
   /**
    * Gets all users in an organization.
-   * @param orgId
+   * @param orgName
    * @returns
    */
   async getOrganizationMembers(
@@ -440,22 +440,23 @@ class OsoAppClient {
   /**
    * Removes a user from an organization.
    * - We use `deleted_at` to mark the user as removed instead of deleting the row
-   * @param orgId
+   * @param orgName
    * @param userId
    */
   async removeUserFromOrganization(
     args: Partial<{
-      orgId: string;
+      orgName: string;
       userId: string;
     }>,
   ) {
     console.log("removeUserFromOrganization: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const orgName = ensure(args.orgName, "Missing orgId argument");
     const userId = ensure(args.userId, "Missing userId argument");
+    const org = await this.getOrganizationByName({ orgName });
     const { error } = await this.supabaseClient
       .from("users_by_organization")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("org_id", orgId)
+      .eq("org_id", org.id)
       .eq("user_id", userId);
     if (error) {
       throw error;
@@ -465,7 +466,7 @@ class OsoAppClient {
   /**
    * Removes an organization.
    * - We use `deleted_at` to mark the organization as removed instead of deleting the row
-   * @param orgId
+   * @param orgName
    */
   async deleteOrganizationByName(
     args: Partial<{
@@ -655,6 +656,56 @@ class OsoAppClient {
     return data;
   }
 
+  async getNotebookByName(
+    args: Partial<{ orgName: string; notebookName: string }>,
+  ) {
+    console.log("getNotebookByName: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const notebookName = ensure(
+      args.notebookName,
+      "Missing notebookName argument",
+    );
+    const { data, error } = await this.supabaseClient
+      .from("notebooks")
+      .select("*,organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
+      .eq("notebook_name", notebookName)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find notebook for orgName=${orgName}, notebookName=${notebookName}`,
+      );
+    }
+    return data;
+  }
+
+  /**
+   * Update notebook data
+   * @param args
+   */
+  async renameNotebook(
+    args: Partial<{ orgName: string; oldName: string; newName: string }>,
+  ) {
+    console.log("updateNotebook: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const oldName = ensure(args.oldName, "Missing notebook 'oldName' argument");
+    const newName = ensure(args.newName, "Missing notebook 'newName' argument");
+    const notebook = await this.getNotebookByName({
+      orgName: orgName,
+      notebookName: oldName,
+    });
+    const { error } = await this.supabaseClient
+      .from("notebooks")
+      .update({ notebook_name: newName })
+      .eq("id", notebook.id);
+    if (error) {
+      throw error;
+    }
+  }
+
   /**
    * Update notebook data
    * @param args
@@ -694,28 +745,28 @@ class OsoAppClient {
 
   /**
    * Gets the current credit balance for an organization.
-   * @param orgId - The organization ID
+   * @param orgName - The unique organization name
    * @returns Promise<number> - The current credit balance
    */
   async getOrganizationCredits(
-    args: Partial<{ orgId: string }>,
+    args: Partial<{ orgName: string }>,
   ): Promise<number> {
-    const id = ensure(
-      args.orgId,
-      "orgId is required to get organization credits",
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to get organization credits",
     );
-    console.log("getOrganizationCredits for org:", id);
+    console.log("getOrganizationCredits for orgName=", orgName);
     const { data, error } = await this.supabaseClient
       .from("organization_credits")
-      .select("credits_balance")
-      .eq("org_id", id)
+      .select("credits_balance, organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .single();
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credits for organization id=${id}`,
+        `Unable to find credits for organization orgName=${orgName}`,
       );
     }
     return data.credits_balance;
@@ -723,29 +774,33 @@ class OsoAppClient {
 
   /**
    * Gets the credit transaction history for an organization.
-   * @param orgId - The organization ID
+   * @param orgName - The unique organization name
    * @param args - Optional parameters for pagination and filtering
    * @returns Promise<Array> - Array of organization credit transactions
    */
   async getOrganizationCreditTransactions(
     args: Partial<{
-      orgId: string;
+      orgName: string;
       limit: number;
       offset: number;
       transactionType?: string;
     }> = {},
   ) {
-    const id = ensure(
-      args.orgId,
-      "orgId is required to get organization credit transactions",
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to get organization credit transactions",
     );
-    console.log("getOrganizationCreditTransactions for org:", id, args);
+    console.log(
+      "getOrganizationCreditTransactions for orgName=",
+      orgName,
+      args,
+    );
     const { limit = 50, offset = 0, transactionType } = args;
 
     let query = this.supabaseClient
       .from("organization_credit_transactions")
-      .select("*")
-      .eq("org_id", id)
+      .select("*, organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -759,7 +814,7 @@ class OsoAppClient {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credit transactions for organization id=${id}`,
+        `Unable to find credit transactions for organization orgName=${orgName}`,
       );
     }
     return data;
@@ -767,7 +822,7 @@ class OsoAppClient {
 
   /**
    * Gets the dynamic connector client for the current organization.
-   * @param orgId
+   * @param orgName
    */
   async getConnectors(
     args: Partial<{ orgName: string }>,
@@ -913,11 +968,13 @@ class OsoAppClient {
 
   /**
    * Gets dynamic connectors and contextual information.
-   * @param id
+   * @param orgName
    * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
    * - Returns the tables context and an array of column contexts for the connector
    */
-  async getDynamicConnectorAndContextsByOrgId(args: { orgId: string }): Promise<
+  async getDynamicConnectorAndContextsByOrgId(args: {
+    orgName: string;
+  }): Promise<
     {
       connector: DynamicConnectorsRow;
       contexts: {
@@ -926,18 +983,20 @@ class OsoAppClient {
       }[];
     }[]
   > {
-    const orgId = ensure(args.orgId, "id is required to get contexts");
+    const orgName = ensure(args.orgName, "orgName is required to get contexts");
 
     const { data, error } = await this.supabaseClient
       .from("dynamic_connectors")
-      .select("*, dynamic_table_contexts(*, dynamic_column_contexts(*))")
-      .eq("org_id", orgId);
+      .select(
+        "*, organizations!inner(org_name), dynamic_table_contexts(*, dynamic_column_contexts(*))",
+      )
+      .eq("organizations.org_name", orgName);
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find connectors for org_id=${orgId}`,
+        `Unable to find connectors for orgName=${orgName}`,
       );
     }
 
@@ -1031,23 +1090,26 @@ class OsoAppClient {
 
   /**
    * Gets connector relationships for an organization.
-   * @param orgId
+   * @param orgName
    */
   async getConnectorRelationships(args: {
-    orgId: string;
+    orgName: string;
   }): Promise<ConnectorRelationshipsRow[]> {
-    const orgId = ensure(args.orgId, "orgId is required to get relationships");
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to get relationships",
+    );
 
     const { data, error } = await this.supabaseClient
       .from("connector_relationships")
-      .select("*")
-      .eq("org_id", orgId);
+      .select("*, organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName);
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find connector relationships for org_id=${orgId}`,
+        `Unable to find connector relationships for orgName=${orgName}`,
       );
     }
 

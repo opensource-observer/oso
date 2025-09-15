@@ -50,6 +50,8 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "createNotebook",
   "getNotebooksByOrgName",
   "getNotebookById",
+  "getNotebookByName",
+  "renameNotebook",
   "updateNotebook",
   "deleteNotebookById",
   "getOrganizationCredits",
