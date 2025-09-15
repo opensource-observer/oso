@@ -87,7 +87,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250907182902-3c73e19 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250912235538-a6368ac # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -102,7 +102,7 @@ spec:
           - name: "dynamic"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250907182902-3c73e19 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250912235538-a6368ac # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -134,3 +134,7 @@ spec:
           deploymentName: production-mcs
           serviceName: production-mcs
           namespace: production-mcs
+    nessie:
+      url: "http://production-nessie.production-nessie.svc.cluster.local:19120/api/v1"
+    rpc:
+      ethereum: "http://ethereum-archive-node.c.opensource-observer.internal:8545"

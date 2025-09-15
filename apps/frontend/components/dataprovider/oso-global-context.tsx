@@ -4,6 +4,7 @@ import {
   DataProvider,
   GlobalActionsProvider,
 } from "@plasmicapp/loader-nextjs";
+import _ from "lodash";
 import { toast, ExternalToast } from "sonner";
 import * as config from "@/lib/config";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
@@ -24,56 +25,56 @@ type ExtractMethods<T> = {
   [K in ExtractMethodNames<T>]: any;
 };
 
-const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = {
-  updateMyUserProfile: { parameters: [{ name: "args", type: "object" }] },
-  createApiKey: { parameters: [{ name: "args", type: "object" }] },
-  deleteApiKey: { parameters: [{ name: "args", type: "object" }] },
-  getApiKeysByOrgId: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  createOrganization: { parameters: [{ name: "args", type: "object" }] },
-  addUserToOrganizationByEmail: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  changeUserRole: { parameters: [{ name: "args", type: "object" }] },
-  removeUserFromOrganization: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  deleteOrganization: { parameters: [{ name: "args", type: "object" }] },
-  createChat: { parameters: [{ name: "args", type: "object" }] },
-  updateChat: { parameters: [{ name: "args", type: "object" }] },
-  deleteChat: { parameters: [{ name: "args", type: "object" }] },
-  createSqlQuery: { parameters: [{ name: "args", type: "object" }] },
-  updateSqlQuery: { parameters: [{ name: "args", type: "object" }] },
-  deleteSqlQuery: { parameters: [{ name: "args", type: "object" }] },
-  getConnectors: { parameters: [{ name: "args", type: "object" }] },
-  getConnectorById: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  createConnector: { parameters: [{ name: "args", type: "object" }] },
-  deleteConnector: { parameters: [{ name: "args", type: "object" }] },
-  syncConnector: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  getDynamicConnectorAndContextsByOrgId: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  getDynamicConnectorContexts: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  upsertDynamicConnectorContexts: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  getConnectorRelationships: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  createConnectorRelationship: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-  deleteConnectorRelationship: {
-    parameters: [{ name: "args", type: "object" }],
-  },
-};
+const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
+  "getUser",
+  "getMyUserProfile",
+  "updateMyUserProfile",
+  "createApiKey",
+  "getMyApiKeys",
+  "getApiKeysByOrgName",
+  "deleteApiKeyById",
+  "createOrganization",
+  "getMyOrganizations",
+  "getOrganizationById",
+  "getOrganizationByName",
+  "getOrganizationMembers",
+  "addUserToOrganizationByEmail",
+  "changeUserRole",
+  "removeUserFromOrganization",
+  "deleteOrganizationByName",
+  "createChat",
+  "getChatsByOrgName",
+  "getChatById",
+  "updateChat",
+  "deleteChatById",
+  "createNotebook",
+  "getNotebooksByOrgName",
+  "getNotebookById",
+  "updateNotebook",
+  "deleteNotebookById",
+  "getOrganizationCredits",
+  "getOrganizationCreditTransactions",
+  "getConnectors",
+  "getConnectorById",
+  "createConnector",
+  "deleteConnector",
+  "syncConnector",
+  "getDynamicConnectorAndContextsByOrgId",
+  "getDynamicConnectorContexts",
+  "upsertDynamicConnectorContexts",
+  "getConnectorRelationships",
+  "createConnectorRelationship",
+  "deleteConnectorRelationship",
+  "buyCredits",
+  "getCreditPackages",
+  "getMyPurchaseHistory",
+];
+const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
+  OsoGlobalActionNames.map((name) => [
+    name,
+    { parameters: [{ name: "args", type: "object" }] },
+  ]),
+);
 
 // Users will be able to set these props in Studio.
 interface OsoGlobalContextProps {
@@ -122,87 +123,14 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
   };
 
   const actions = React.useMemo(
-    () => ({
-      updateMyUserProfile: (args: any) =>
-        client!
-          .updateMyUserProfile(args)
-          .then(handleSuccess)
-          .catch(handleError),
-      createApiKey: (args: any) =>
-        client!.createApiKey(args).then(handleSuccess).catch(handleError),
-      deleteApiKey: (args: any) =>
-        client!.deleteApiKey(args).then(handleSuccess).catch(handleError),
-      getApiKeysByOrgId: (args: any) =>
-        client!.getApiKeysByOrgId(args).then(handleSuccess).catch(handleError),
-      createOrganization: (args: any) =>
-        client!.createOrganization(args).then(handleSuccess).catch(handleError),
-      addUserToOrganizationByEmail: (args: any) =>
-        client!
-          .addUserToOrganizationByEmail(args)
-          .then(handleSuccess)
-          .catch(handleError),
-      changeUserRole: (args: any) =>
-        client!.changeUserRole(args).then(handleSuccess).catch(handleError),
-      removeUserFromOrganization: (args: any) =>
-        client!
-          .removeUserFromOrganization(args)
-          .then(handleSuccess)
-          .catch(handleError),
-      deleteOrganization: (args: any) =>
-        client!.deleteOrganization(args).then(handleSuccess).catch(handleError),
-      createChat: (args: any) =>
-        client!.createChat(args).then(handleSuccess).catch(handleError),
-      updateChat: (args: any) =>
-        client!.updateChat(args).then(handleSuccess).catch(handleError),
-      deleteChat: (args: any) =>
-        client!.deleteChat(args).then(handleSuccess).catch(handleError),
-      createSqlQuery: (args: any) =>
-        client!.createSqlQuery(args).then(handleSuccess).catch(handleError),
-      updateSqlQuery: (args: any) =>
-        client!.updateSqlQuery(args).then(handleSuccess).catch(handleError),
-      deleteSqlQuery: (args: any) =>
-        client!.deleteSqlQuery(args).then(handleSuccess).catch(handleError),
-      getConnectors: (args: any) =>
-        client!.getConnectors(args).then(handleSuccess).catch(handleError),
-      getConnectorById: (args: any) =>
-        client!.getConnectorById(args).then(handleSuccess).catch(handleError),
-      createConnector: (args: any) =>
-        client!.createConnector(args).then(handleSuccess).catch(handleError),
-      deleteConnector: (args: any) =>
-        client!.deleteConnector(args).then(handleSuccess).catch(handleError),
-      syncConnector: (args: any) =>
-        client!.syncConnector(args).then(handleSuccess).catch(handleError),
-      getDynamicConnectorAndContextsByOrgId: (args: any) =>
-        client!
-          .getDynamicConnectorAndContextsByOrgId(args)
-          .then(handleSuccess)
-          .catch(handleError),
-      getDynamicConnectorContexts: (args: any) =>
-        client!
-          .getDynamicConnectorContexts(args)
-          .then(handleSuccess)
-          .catch(handleError),
-      upsertDynamicConnectorContexts: (args: any) =>
-        client!
-          .upsertDynamicConnectorContexts(args)
-          .then(handleSuccess)
-          .catch(handleError),
-      getConnectorRelationships: (args: any) =>
-        client!
-          .getConnectorRelationships(args)
-          .then(handleSuccess)
-          .catch(handleError),
-      createConnectorRelationship: (args: any) =>
-        client!
-          .createConnectorRelationship(args)
-          .then(handleSuccess)
-          .catch(handleError),
-      deleteConnectorRelationship: (args: any) =>
-        client!
-          .deleteConnectorRelationship(args)
-          .then(handleSuccess)
-          .catch(handleError),
-    }),
+    () =>
+      _.fromPairs(
+        OsoGlobalActionNames.map((method) => [
+          method,
+          (args: any) =>
+            client![method](args).then(handleSuccess).catch(handleError),
+        ]),
+      ),
     [client],
   );
 

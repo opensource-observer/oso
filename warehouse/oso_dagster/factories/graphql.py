@@ -126,6 +126,7 @@ class PaginationType(Enum):
     OFFSET = "offset"
     CURSOR = "cursor"
     RELAY = "relay"
+    KEYSET = "keyset"
 
 
 @dataclass
@@ -155,6 +156,13 @@ class PaginationConfig:
         Uses cursor-based fields but expects standard Relay connection structure.
         edge_path: Path to edges array (default: "edges").
         node_path: Path to node within edge (default: "node").
+
+        For keyset-style pagination:
+        order_by_field: Name of the orderBy field (default: "id").
+        order_direction: Order direction, either "asc" or "desc" (default: "asc").
+        last_value_field: Name of the field to filter by for the next page (e.g., "id_gt").
+        cursor_key: The key in the result item to use as the cursor value (e.g., "id").
+        page_size_field: Name of the page size field (default: "first").
     """
 
     type: PaginationType
@@ -173,6 +181,11 @@ class PaginationConfig:
 
     edge_path: str = "edges"
     node_path: str = "node"
+
+    order_by_field: str = "id"
+    last_value_field: str = "id_gt"
+    cursor_key: str = "id"
+    order_direction: str = "asc"
 
     stop_condition: Optional[Callable[[Dict[str, Any], int], bool]] = None
 
@@ -634,6 +647,23 @@ def get_query_parameters(
             all_params[pagination_config.page_size_field] = {
                 "type": "Int!",
                 "value": pagination_config.page_size,
+            }
+        elif pagination_config.type == PaginationType.KEYSET:
+            all_params["orderBy"] = {
+                "type": "String!",
+                "value": None,
+            }
+            all_params["orderDirection"] = {
+                "type": "String!",
+                "value": pagination_config.order_direction,
+            }
+            all_params[pagination_config.page_size_field] = {
+                "type": "Int!",
+                "value": pagination_config.page_size,
+            }
+            all_params["where"] = {
+                "type": "Domain_filter",
+                "value": {pagination_config.order_by_field: 0},
             }
 
     if not all_params:
@@ -1188,7 +1218,39 @@ def _graphql_factory(
                                 query_variables[config.pagination.page_size_field] = (
                                     effective_page_size
                                 )
+                            elif config.pagination.type == PaginationType.KEYSET:
+                                query_variables["orderBy"] = (
+                                    config.pagination.order_by_field
+                                )
 
+                                query_variables["orderDirection"] = (
+                                    config.pagination.order_direction
+                                )
+
+                                query_variables[config.pagination.page_size_field] = (
+                                    effective_page_size
+                                )
+
+                                # Initialize where clause if not present
+                                query_variables.setdefault("where", {})
+
+                                if successful_pages > 0:
+                                    last_item = data_items[-1]
+                                    last_value = get_nested_value(
+                                        last_item, config.pagination.cursor_key
+                                    )
+                                    # Update the where clause for the next page
+                                    query_variables["where"][
+                                        config.pagination.last_value_field
+                                    ] = last_value
+                                else:
+                                    # For the first page, ensure the initial value is set if not provided
+                                    query_variables["where"].setdefault(
+                                        config.pagination.last_value_field, "0"
+                                    )
+                                context.log.debug(
+                                    f"GraphQLFactory: Keyset pagination variables for page {successful_pages + 1}: {query_variables}"
+                                )
                         return client.execute(
                             gql(generated_query),
                             variable_values=query_variables,
@@ -1207,10 +1269,6 @@ def _graphql_factory(
                         },
                         endpoint=config.endpoint,
                         masked_endpoint=config.masked_endpoint,
-                    )
-
-                    context.log.debug(
-                        f"GraphQL query execution (page {successful_pages + 1}) succeeded with result: {result}"
                     )
 
                     if result is None:
@@ -1319,6 +1377,20 @@ def _graphql_factory(
                             context.log.debug(
                                 f"GraphQLFactory: Cursor pagination has_more={has_more}"
                             )
+                        else:
+                            has_more = False
+                    elif config.pagination.type == PaginationType.KEYSET:
+                        if items_in_page > 0:
+                            last_item = data_items[-1]
+                            cursor_key = config.pagination.cursor_key
+                            if cursor_key in last_item:
+                                has_more = True
+                            else:
+                                context.log.warning(
+                                    f"Pagination cursor key '{cursor_key}' not found in last item of page {successful_pages}. "
+                                    "Stopping pagination."
+                                )
+                                has_more = False
                         else:
                             has_more = False
 

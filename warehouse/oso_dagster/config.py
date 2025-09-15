@@ -107,6 +107,10 @@ class DagsterConfig(BaseSettings):
     mcs_k8s_deployment_name: str = ""
     mcs_connect_timeout: int = 240
 
+    nessie_url: str = "http://localhost:19120/api/v1"
+
+    ethereum_rpc_url: str = "http://ethereum-archive-node:8545"
+
     # This is a bit of a legacy configuration that we need to remove
     cbt_search_paths: list[str] = Field(
         default_factory=lambda: [os.path.join(os.path.dirname(__file__), "models")]

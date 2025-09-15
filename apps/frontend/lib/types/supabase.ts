@@ -320,6 +320,53 @@ export type Database = {
           },
         ];
       };
+      dynamic_replications: {
+        Row: {
+          config: Json;
+          created_at: string;
+          created_by: string;
+          credentials_path: string | null;
+          deleted_at: string | null;
+          id: string;
+          org_id: string;
+          replication_name: string;
+          replication_type: string;
+          updated_at: string;
+        };
+        Insert: {
+          config: Json;
+          created_at?: string;
+          created_by: string;
+          credentials_path?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          org_id: string;
+          replication_name: string;
+          replication_type: string;
+          updated_at?: string;
+        };
+        Update: {
+          config?: Json;
+          created_at?: string;
+          created_by?: string;
+          credentials_path?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          org_id?: string;
+          replication_name?: string;
+          replication_type?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_org_id";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       dynamic_table_contexts: {
         Row: {
           connector_id: string;
@@ -345,6 +392,54 @@ export type Database = {
             columns: ["connector_id"];
             isOneToOne: false;
             referencedRelation: "dynamic_connectors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notebooks: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          data: string | null;
+          deleted_at: string | null;
+          id: string;
+          notebook_name: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          data?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          notebook_name: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          data?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          notebook_name?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "saved_queries_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "saved_queries_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
         ];
@@ -507,53 +602,20 @@ export type Database = {
           },
         ];
       };
-      saved_queries: {
+      reserved_names: {
         Row: {
           created_at: string;
-          created_by: string;
-          data: string | null;
-          deleted_at: string | null;
-          display_name: string;
-          id: string;
-          org_id: string;
-          updated_at: string;
+          name: string;
         };
         Insert: {
           created_at?: string;
-          created_by: string;
-          data?: string | null;
-          deleted_at?: string | null;
-          display_name: string;
-          id?: string;
-          org_id: string;
-          updated_at?: string;
+          name: string;
         };
         Update: {
           created_at?: string;
-          created_by?: string;
-          data?: string | null;
-          deleted_at?: string | null;
-          display_name?: string;
-          id?: string;
-          org_id?: string;
-          updated_at?: string;
+          name?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: "saved_queries_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "user_profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "saved_queries_org_id_fkey";
-            columns: ["org_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
       user_credits: {
         Row: {
@@ -586,7 +648,6 @@ export type Database = {
           full_name: string | null;
           id: string;
           updated_at: string | null;
-          username: string | null;
           website: string | null;
         };
         Insert: {
@@ -595,7 +656,6 @@ export type Database = {
           full_name?: string | null;
           id: string;
           updated_at?: string | null;
-          username?: string | null;
           website?: string | null;
         };
         Update: {
@@ -604,7 +664,6 @@ export type Database = {
           full_name?: string | null;
           id?: string;
           updated_at?: string | null;
-          username?: string | null;
           website?: string | null;
         };
         Relationships: [];

@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { v4 as uuid4 } from "uuid";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { assert, ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "@/lib/types/supabase";
@@ -20,6 +21,8 @@ import type {
 } from "@/lib/types/schema-types";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
 import { DEFAULT_OSO_TABLE_ID } from "@/lib/types/dynamic-connector";
+
+const ADMIN_USER_ROLE = "admin";
 
 /**
  * OsoAppClient is the client library for the OSO app.
@@ -106,19 +109,20 @@ class OsoAppClient {
     args: Partial<{
       name: string;
       apiKey: string;
-      orgId: string;
+      orgName: string;
     }>,
   ) {
     console.log("createApiKey: ", args.name);
     const name = ensure(args.name, "Missing name argument");
     const apiKey = ensure(args.apiKey, "Missing apiKey argument");
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const orgName = ensure(args.orgName, "Missing orgName argument");
     const user = await this.getUser();
+    const org = await this.getOrganizationByName({ orgName });
     const { error } = await this.supabaseClient.from("api_keys").insert({
       name,
       api_key: apiKey,
       user_id: user.id,
-      org_id: orgId,
+      org_id: org.id,
     });
     if (error) {
       throw error;
@@ -145,17 +149,19 @@ class OsoAppClient {
     return data;
   }
 
-  async getApiKeysByOrgId(args: { orgId: string }) {
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+  async getApiKeysByOrgName(args: { orgName: string }) {
+    const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("api_keys")
-      .select("id, name, user_id, created_at, org_id")
-      .eq("org_id", orgId)
+      .select("*,organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
       throw error;
     } else if (!data) {
-      throw new MissingDataError(`Unable to find API keys for org_id=${orgId}`);
+      throw new MissingDataError(
+        `Unable to find API keys for org_name=${orgName}`,
+      );
     }
     return data;
   }
@@ -165,12 +171,12 @@ class OsoAppClient {
    * - We use `deleted_at` to mark the key as removed instead of deleting the row
    * @param orgId
    */
-  async deleteApiKey(
+  async deleteApiKeyById(
     args: Partial<{
       keyId: string;
     }>,
   ) {
-    console.log("deleteApiKey: ", args);
+    console.log("deleteApiKeyById: ", args);
     const keyId = ensure(args.keyId, "Missing keyId argument");
     const { error } = await this.supabaseClient
       .from("api_keys")
@@ -293,31 +299,56 @@ class OsoAppClient {
   }
 
   /**
+   * Gets the organization details by org_name.
+   * @param orgName
+   * @returns
+   */
+  async getOrganizationByName(
+    args: Partial<{
+      orgName: string;
+    }>,
+  ) {
+    console.log("getOrganizationByName: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const { data, error } = await this.supabaseClient
+      .from("organizations")
+      .select("*")
+      .eq("org_name", orgName)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find organization with org_name=${orgName}`,
+      );
+    }
+    return data;
+  }
+
+  /**
    * Gets all users in an organization.
    * @param orgId
    * @returns
    */
   async getOrganizationMembers(
     args: Partial<{
-      orgId: string;
+      orgName: string;
     }>,
   ) {
     console.log("getOrganizationMembers: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
-    // Get the owner/creator of the organization
-    const { data: creatorData, error: creatorError } = await this.supabaseClient
-      .from("organizations")
-      .select("created_by")
-      .eq("id", orgId);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
     // Get the members of the organization
     const { data: memberData, error: memberError } = await this.supabaseClient
       .from("users_by_organization")
-      .select("user_id, user_role")
-      .eq("org_id", orgId)
+      .select("*,organizations!inner(org_name, created_by)")
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     // Map the user ids to their roles
     const userRoleMap = _.fromPairs([
-      ...(creatorData ?? []).map((x) => [x.created_by, "owner"]),
+      ...(memberData ?? []).map((x) => [
+        x.organizations.created_by,
+        ADMIN_USER_ROLE,
+      ]),
       ...(memberData ?? []).map((x) => [x.user_id, x.user_role]),
     ]);
     // Get all user profiles
@@ -325,11 +356,11 @@ class OsoAppClient {
       .from("user_profiles")
       .select("*")
       .in("id", _.keys(userRoleMap));
-    if (creatorError || memberError || userError) {
-      throw creatorError || memberError || userError;
+    if (memberError || userError) {
+      throw memberError || userError;
     } else if (!userData) {
       throw new MissingDataError(
-        `Unable to find members for organization id=${orgId}`,
+        `Unable to find members for organization org_name=${orgName}`,
       );
     }
     // Make sure to include the `user_role`
@@ -345,15 +376,16 @@ class OsoAppClient {
    */
   async addUserToOrganizationByEmail(
     args: Partial<{
-      orgId: string;
+      orgName: string;
       email: string;
       role: string;
     }>,
   ) {
     console.log("addUserToOrganizationByEmail: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const orgName = ensure(args.orgName, "Missing orgName argument");
     const email = ensure(args.email, "Missing email argument");
     const role = ensure(args.role, "Missing role argument");
+    const org = await this.getOrganizationByName({ orgName });
     const { data: profileData, error: profileError } = await this.supabaseClient
       .from("user_profiles")
       .select("*")
@@ -369,7 +401,7 @@ class OsoAppClient {
     // Get the members of the organization
     const { error } = await this.supabaseClient
       .from("users_by_organization")
-      .insert({ org_id: orgId, user_id: userId, user_role: role });
+      .insert({ org_id: org.id, user_id: userId, user_role: role });
     if (error) {
       throw error;
     }
@@ -433,17 +465,17 @@ class OsoAppClient {
    * - We use `deleted_at` to mark the organization as removed instead of deleting the row
    * @param orgId
    */
-  async deleteOrganization(
+  async deleteOrganizationByName(
     args: Partial<{
-      orgId: string;
+      orgName: string;
     }>,
   ) {
-    console.log("deleteOrganization: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+    console.log("deleteOrganizationByName: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
     const { error } = await this.supabaseClient
       .from("organizations")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", orgId);
+      .eq("org_name", orgName);
     if (error) {
       throw error;
     }
@@ -455,16 +487,18 @@ class OsoAppClient {
    * @param args
    * @returns
    */
-  async createChat(args: Partial<{ orgId: string }>) {
+  async createChat(args: Partial<{ orgName: string; displayName: string }>) {
     console.log("createChat: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const displayName = args.displayName || new Date().toLocaleString();
     const user = await this.getUser();
+    const org = await this.getOrganizationByName({ orgName });
 
     const { data: chatData, error: chatError } = await this.supabaseClient
       .from("chat_history")
       .insert({
-        org_id: orgId,
-        display_name: new Date().toLocaleString(),
+        org_id: org.id,
+        display_name: displayName,
         created_by: user.id,
       })
       .select()
@@ -479,20 +513,18 @@ class OsoAppClient {
     return chatData;
   }
 
-  async getChatsByOrgId(args: Partial<{ orgId: string }>) {
-    console.log("getChatsByOrgId: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+  async getChatsByOrgName(args: Partial<{ orgName: string }>) {
+    console.log("getChatsByOrgName: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("chat_history")
-      .select(
-        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
-      )
-      .eq("org_id", orgId)
+      .select("*,organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
       throw error;
     } else if (!data) {
-      throw new MissingDataError(`Unable to find chats for orgId=${orgId}`);
+      throw new MissingDataError(`Unable to find chats for orgName=${orgName}`);
     }
     return data;
   }
@@ -537,8 +569,8 @@ class OsoAppClient {
    * - We use `deleted_at` to mark the chat as removed instead of deleting the row
    * @param args
    */
-  async deleteChat(args: Partial<{ chatId: string }>): Promise<void> {
-    console.log("deleteChat: ", args);
+  async deleteChatById(args: Partial<{ chatId: string }>): Promise<void> {
+    console.log("deleteChatById: ", args);
     const chatId = ensure(args.chatId, "Missing chatId argument");
     const { error } = await this.supabaseClient
       .from("chat_history")
@@ -555,16 +587,21 @@ class OsoAppClient {
    * @param args
    * @returns
    */
-  async createSqlQuery(args: Partial<{ orgId: string }>) {
-    console.log("createSqlQuery: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+  async createNotebook(
+    args: Partial<{ orgName: string; notebookName: string }>,
+  ) {
+    console.log("createNotebook: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const notebookName =
+      args.notebookName || `notebook_${uuid4().substring(0, 5)}`;
     const user = await this.getUser();
+    const org = await this.getOrganizationByName({ orgName });
 
     const { data: queryData, error: queryError } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .insert({
-        org_id: orgId,
-        display_name: new Date().toLocaleString(),
+        org_id: org.id,
+        notebook_name: notebookName,
         created_by: user.id,
       })
       .select()
@@ -573,81 +610,81 @@ class OsoAppClient {
     if (queryError) {
       throw queryError;
     } else if (!queryData) {
-      throw new MissingDataError("Failed to create SQL query");
+      throw new MissingDataError("Failed to create notebook");
     }
 
     return queryData;
   }
 
-  async getSqlQueriesByOrgId(args: Partial<{ orgId: string }>) {
-    console.log("getSqlQueriesByOrgId: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+  async getNotebooksByOrgName(args: Partial<{ orgName: string }>) {
+    console.log("getNotebooksByOrgName: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
-      .from("saved_queries")
-      .select(
-        "id,org_id,created_at,updated_at,deleted_at,created_by,display_name",
-      )
-      .eq("org_id", orgId)
+      .from("notebooks")
+      .select("*,organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find SQL queries for orgId=${orgId}`,
+        `Unable to find notebooks for orgName=${orgName}`,
       );
     }
     return data;
   }
 
-  async getSqlQueryById(args: Partial<{ queryId: string }>) {
-    console.log("getSqlQueryById: ", args);
-    const queryId = ensure(args.queryId, "Missing queryId argument");
+  async getNotebookById(args: Partial<{ notebookId: string }>) {
+    console.log("getNotebookById: ", args);
+    const notebookId = ensure(args.notebookId, "Missing notebookId argument");
     const { data, error } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .select()
-      .eq("id", queryId)
+      .eq("id", notebookId)
       .is("deleted_at", null)
       .single();
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find SQL query for queryId=${queryId}`,
+        `Unable to find notebook for notebookId=${notebookId}`,
       );
     }
     return data;
   }
 
   /**
-   * Update SQL query data
+   * Update notebook data
    * @param args
    */
-  async updateSqlQuery(
-    args: Partial<Database["public"]["Tables"]["saved_queries"]["Update"]>,
+  async updateNotebook(
+    args: Partial<Database["public"]["Tables"]["notebooks"]["Update"]>,
   ) {
-    console.log("updateSqlQuery: ", args);
-    const queryId = ensure(args.id, "Missing SQL query 'id' argument");
+    console.log("updateNotebook: ", args);
+    const notebookId = ensure(args.id, "Missing notebook 'id' argument");
     const { error } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .update({ ...args })
-      .eq("id", queryId);
+      .eq("id", notebookId);
     if (error) {
       throw error;
     }
   }
 
   /**
-   * Removes a SQL query
-   * - We use `deleted_at` to mark the query as removed instead of deleting the row
+   * Removes a notebook
+   * - We use `deleted_at` to mark the notebook as removed instead of deleting the row
    * @param args
    */
-  async deleteSqlQuery(args: Partial<{ queryId: string }>): Promise<void> {
-    console.log("deleteSqlQuery: ", args);
-    const queryId = ensure(args.queryId, "Missing queryId argument");
+  async deleteNotebookById(
+    args: Partial<{ notebookId: string }>,
+  ): Promise<void> {
+    console.log("deleteNotebookById: ", args);
+    const notebookId = ensure(args.notebookId, "Missing notebookId argument");
     const { error } = await this.supabaseClient
-      .from("saved_queries")
+      .from("notebooks")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", queryId);
+      .eq("id", notebookId);
     if (error) {
       throw error;
     }
@@ -731,14 +768,14 @@ class OsoAppClient {
    * @param orgId
    */
   async getConnectors(
-    args: Partial<{ orgId: string }>,
+    args: Partial<{ orgName: string }>,
   ): Promise<Tables<"dynamic_connectors">[]> {
-    const orgId = ensure(args.orgId, "org_id is required");
+    const orgName = ensure(args.orgName, "orgName is required");
 
     const { data, error } = await this.supabaseClient
       .from("dynamic_connectors")
-      .select("*")
-      .eq("org_id", orgId)
+      .select("*,organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
 
     if (error) {

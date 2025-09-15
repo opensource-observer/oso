@@ -118,6 +118,18 @@ spec:
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
         parquet.max-buffer-size=32768MB
+      iceberg_consumer: |
+        connector.name=iceberg
+        iceberg.max-commit-retry=10
+        iceberg.catalog.type=rest
+        iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
+        iceberg.rest-catalog.prefix=consumer
+        iceberg.rest-catalog.warehouse=gs://oso-iceberg-usc1/warehouse/
+        iceberg.use-file-size-from-metadata=false
+        iceberg.max-partitions-per-writer=1000
+        fs.native-gcs.enabled=true
+        gcs.project-id=opensource-observer
+        parquet.max-buffer-size=32768MB
       source: |
         connector.name=hive
         hive.metastore.uri=thrift://10.145.192.30:9083
@@ -134,6 +146,10 @@ spec:
         bigquery.project-id=bigquery-public-data
         bigquery.credentials-key=${ENV:TRINO_GCP_CREDENTIALS_JSON}
         bigquery.case-insensitive-name-matching=true
+        bigquery.arrow-serialization.max-allocation=65536MB
+      bigquery_oso_dynamic: |
+        connector.name=bigquery
+        bigquery.project-id=oso-dynamic
         bigquery.arrow-serialization.max-allocation=65536MB
       github_archive: |
         connector.name=bigquery

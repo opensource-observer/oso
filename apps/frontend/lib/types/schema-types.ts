@@ -74,6 +74,18 @@ export type DynamicConnectorsUpdate = z.infer<
 export type DynamicConnectorsRelationships = z.infer<
   typeof generated.dynamicConnectorsRelationshipsSchema
 >;
+export type DynamicReplicationsRow = z.infer<
+  typeof generated.dynamicReplicationsRowSchema
+>;
+export type DynamicReplicationsInsert = z.infer<
+  typeof generated.dynamicReplicationsInsertSchema
+>;
+export type DynamicReplicationsUpdate = z.infer<
+  typeof generated.dynamicReplicationsUpdateSchema
+>;
+export type DynamicReplicationsRelationships = z.infer<
+  typeof generated.dynamicReplicationsRelationshipsSchema
+>;
 export type DynamicTableContextsRow = z.infer<
   typeof generated.dynamicTableContextsRowSchema
 >;
@@ -85,6 +97,12 @@ export type DynamicTableContextsUpdate = z.infer<
 >;
 export type DynamicTableContextsRelationships = z.infer<
   typeof generated.dynamicTableContextsRelationshipsSchema
+>;
+export type NotebooksRow = z.infer<typeof generated.notebooksRowSchema>;
+export type NotebooksInsert = z.infer<typeof generated.notebooksInsertSchema>;
+export type NotebooksUpdate = z.infer<typeof generated.notebooksUpdateSchema>;
+export type NotebooksRelationships = z.infer<
+  typeof generated.notebooksRelationshipsSchema
 >;
 export type OrganizationCreditTransactionsRow = z.infer<
   typeof generated.organizationCreditTransactionsRowSchema
@@ -132,15 +150,12 @@ export type PurchaseIntentsUpdate = z.infer<
 export type PurchaseIntentsRelationships = z.infer<
   typeof generated.purchaseIntentsRelationshipsSchema
 >;
-export type SavedQueriesRow = z.infer<typeof generated.savedQueriesRowSchema>;
-export type SavedQueriesInsert = z.infer<
-  typeof generated.savedQueriesInsertSchema
+export type ReservedNamesRow = z.infer<typeof generated.reservedNamesRowSchema>;
+export type ReservedNamesInsert = z.infer<
+  typeof generated.reservedNamesInsertSchema
 >;
-export type SavedQueriesUpdate = z.infer<
-  typeof generated.savedQueriesUpdateSchema
->;
-export type SavedQueriesRelationships = z.infer<
-  typeof generated.savedQueriesRelationshipsSchema
+export type ReservedNamesUpdate = z.infer<
+  typeof generated.reservedNamesUpdateSchema
 >;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
