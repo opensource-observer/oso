@@ -76,7 +76,9 @@ function OsoDataProvider(props: OsoDataProviderProps) {
     return result;
   });
   //console.log(JSON.stringify(data, null, 2));
-  //console.log(error);
+  if (error) {
+    console.log("OsoDataProvider error:", error);
+  }
 
   // Error messages are currently rendered in the component
   if (!dataFetches || _.isEmpty(dataFetches)) {
