@@ -13,9 +13,22 @@ K8S_CONFIG: dict[str, Any] = {
     "merge_behavior": "SHALLOW",
     "container_config": {
         "resources": {
-            "requests": {"cpu": "200m", "memory": "3584Mi"},
+            "requests": {"cpu": "400m", "memory": "3584Mi"},
             "limits": {"memory": "7168Mi"},
         },
+    },
+    "pod_spec_config": {
+        "node_selector": {
+            "pool_type": "spot",
+        },
+        "tolerations": [
+            {
+                "key": "pool_type",
+                "operator": "Equal",
+                "value": "spot",
+                "effect": "NoSchedule",
+            }
+        ],
     },
 }
 
