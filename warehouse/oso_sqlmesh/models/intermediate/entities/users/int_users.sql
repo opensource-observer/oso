@@ -18,16 +18,6 @@ WITH farcaster_users AS (
     bio,
     url
   FROM oso.stg_farcaster__profiles
-), lens_users AS (
-  SELECT
-    user_id,
-    lens_profile_id AS user_source_id,
-    'LENS' AS user_source,
-    full_name AS display_name,
-    profile_picture_url,
-    bio,
-    '' AS url
-  FROM oso.stg_lens__profiles
 ), github_users AS (
   SELECT
     from_artifact_id AS user_id,
