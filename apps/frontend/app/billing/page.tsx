@@ -729,9 +729,9 @@ function TestCreditsPageContent() {
     if (purchase === "success") {
       setSuccess("Payment successful! Your credits have been added.");
 
-      if (client && session && orgId) {
+      if (client && session && selectedOrganization) {
         client
-          .getOrganizationCredits({ orgName: selectedOrganization?.org_name })
+          .getOrganizationCredits({ orgName: selectedOrganization.org_name })
           .then(setCreditBalance)
           .catch(logger.error);
       }
