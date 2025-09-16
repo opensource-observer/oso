@@ -705,7 +705,7 @@ function TestCreditsPageContent() {
         setSelectedOrganization(defaultOrg);
 
         const [balance, history] = await Promise.all([
-          client.getOrganizationCredits({ orgId: defaultOrg.id }),
+          client.getOrganizationCredits({ orgName: defaultOrg.org_name }),
           client.getMyPurchaseHistory(),
         ]);
 
@@ -731,7 +731,7 @@ function TestCreditsPageContent() {
 
       if (client && session && orgId) {
         client
-          .getOrganizationCredits({ orgId })
+          .getOrganizationCredits({ orgName: selectedOrganization?.org_name })
           .then(setCreditBalance)
           .catch(logger.error);
       }
@@ -757,7 +757,9 @@ function TestCreditsPageContent() {
       setSelectedOrganization(selectedOrg);
 
       // Load credits for the new organization
-      const balance = await client.getOrganizationCredits({ orgId: newOrgId });
+      const balance = await client.getOrganizationCredits({
+        orgName: selectedOrg.org_name,
+      });
       setCreditBalance(balance);
     } catch (err) {
       logger.error("Error loading organization credits:", err);
