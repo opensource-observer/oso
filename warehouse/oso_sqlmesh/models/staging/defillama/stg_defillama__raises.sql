@@ -11,7 +11,7 @@ MODEL (
 WITH base_raises AS (
   SELECT
     date::TIMESTAMP AS announced_date,
-    name::VARCHAR AS company_name,
+    name::VARCHAR AS protocol,
     round::VARCHAR AS funding_round_name,
     amount::DOUBLE AS amount_raised,
     CAST(JSON_EXTRACT(chains, '$') AS ARRAY(VARCHAR)) AS chains,
@@ -46,7 +46,7 @@ other_investors_unpacked AS (
 
 SELECT
   announced_date,
-  company_name,
+  protocol,
   funding_round_name,
   amount_raised,
   chains,
@@ -64,7 +64,7 @@ UNION ALL
 
 SELECT
   announced_date,
-  company_name,
+  protocol,
   funding_round_name,
   amount_raised,
   chains,
