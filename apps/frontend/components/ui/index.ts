@@ -127,6 +127,36 @@ import {
   TableRow,
   TableRowMeta,
 } from "@/components/ui/table";
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuCheckboxItemMeta,
+  ContextMenuContent,
+  ContextMenuContentMeta,
+  ContextMenuGroup,
+  ContextMenuGroupMeta,
+  ContextMenuItem,
+  ContextMenuItemMeta,
+  ContextMenuLabel,
+  ContextMenuLabelMeta,
+  ContextMenuMeta,
+  ContextMenuRadioGroup,
+  ContextMenuRadioGroupMeta,
+  ContextMenuRadioItem,
+  ContextMenuRadioItemMeta,
+  ContextMenuSeparator,
+  ContextMenuSeparatorMeta,
+  ContextMenuShortcut,
+  ContextMenuShortcutMeta,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubContentMeta,
+  ContextMenuSubMeta,
+  ContextMenuSubTrigger,
+  ContextMenuSubTriggerMeta,
+  ContextMenuTrigger,
+  ContextMenuTriggerMeta,
+} from "@/components/ui/context-menu";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -196,4 +226,21 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(TableHead, TableHeadMeta);
   PLASMIC.registerComponent(TableCell, TableCellMeta);
   PLASMIC.registerComponent(TableCaption, TableCaptionMeta);
+  PLASMIC.registerComponent(ContextMenu, ContextMenuMeta);
+  PLASMIC.registerComponent(ContextMenuTrigger, ContextMenuTriggerMeta);
+  PLASMIC.registerComponent(ContextMenuContent, ContextMenuContentMeta);
+  PLASMIC.registerComponent(ContextMenuItem, ContextMenuItemMeta);
+  PLASMIC.registerComponent(
+    ContextMenuCheckboxItem,
+    ContextMenuCheckboxItemMeta,
+  );
+  PLASMIC.registerComponent(ContextMenuRadioGroup, ContextMenuRadioGroupMeta);
+  PLASMIC.registerComponent(ContextMenuRadioItem, ContextMenuRadioItemMeta);
+  PLASMIC.registerComponent(ContextMenuLabel, ContextMenuLabelMeta);
+  PLASMIC.registerComponent(ContextMenuSeparator, ContextMenuSeparatorMeta);
+  PLASMIC.registerComponent(ContextMenuShortcut, ContextMenuShortcutMeta);
+  PLASMIC.registerComponent(ContextMenuGroup, ContextMenuGroupMeta);
+  PLASMIC.registerComponent(ContextMenuSub, ContextMenuSubMeta);
+  PLASMIC.registerComponent(ContextMenuSubContent, ContextMenuSubContentMeta);
+  PLASMIC.registerComponent(ContextMenuSubTrigger, ContextMenuSubTriggerMeta);
 }
