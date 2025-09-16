@@ -3,26 +3,91 @@
 import * as React from "react";
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
-
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { cn } from "@/lib/utils";
 
 const ContextMenu = ContextMenuPrimitive.Root;
 
+export const ContextMenuMeta: CodeComponentMeta<
+  React.ComponentProps<typeof ContextMenu>
+> = {
+  name: "ContextMenu",
+  description: "shadcn/ui ContextMenu component",
+  props: {
+    children: "slot",
+  },
+};
+
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger;
 
+export const ContextMenuTriggerMeta: CodeComponentMeta<
+  React.ComponentProps<typeof ContextMenuTrigger>
+> = {
+  name: "ContextMenuTrigger",
+  description: "shadcn/ui ContextMenuTrigger component",
+  props: {
+    children: "slot",
+  },
+};
+
 const ContextMenuGroup = ContextMenuPrimitive.Group;
+
+export const ContextMenuGroupMeta: CodeComponentMeta<
+  React.ComponentProps<typeof ContextMenuGroup>
+> = {
+  name: "ContextMenuGroup",
+  description: "shadcn/ui ContextMenuGroup component",
+  props: {
+    children: "slot",
+  },
+};
 
 const ContextMenuPortal = ContextMenuPrimitive.Portal;
 
 const ContextMenuSub = ContextMenuPrimitive.Sub;
 
+export const ContextMenuSubMeta: CodeComponentMeta<
+  React.ComponentProps<typeof ContextMenuSub>
+> = {
+  name: "ContextMenuSub",
+  description: "shadcn/ui ContextMenuSub component",
+  props: {
+    children: "slot",
+  },
+};
+
 const ContextMenuRadioGroup = ContextMenuPrimitive.RadioGroup;
+
+export const ContextMenuRadioGroupMeta: CodeComponentMeta<
+  React.ComponentProps<typeof ContextMenuRadioGroup>
+> = {
+  name: "ContextMenuRadioGroup",
+  description: "shadcn/ui ContextMenuRadioGroup component",
+  props: {
+    children: "slot",
+    value: "string",
+  },
+};
+
+type ContextMenuSubTriggerProps = React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.SubTrigger
+> & {
+  inset?: boolean;
+};
+
+export const ContextMenuSubTriggerMeta: CodeComponentMeta<ContextMenuSubTriggerProps> =
+  {
+    name: "ContextMenuSubTrigger",
+    description: "shadcn/ui ContextMenuSubTrigger component",
+    props: {
+      children: "slot",
+      inset: "boolean",
+    },
+  };
 
 const ContextMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.SubTrigger>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubTrigger> & {
-    inset?: boolean;
-  }
+  ContextMenuSubTriggerProps
 >(({ className, inset, children, ...props }, ref) => (
   <ContextMenuPrimitive.SubTrigger
     ref={ref}
@@ -39,9 +104,22 @@ const ContextMenuSubTrigger = React.forwardRef<
 ));
 ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName;
 
+type ContextMenuSubContentProps = React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.SubContent
+>;
+
+export const ContextMenuSubContentMeta: CodeComponentMeta<ContextMenuSubContentProps> =
+  {
+    name: "ContextMenuSubContent",
+    description: "shadcn/ui ContextMenuSubContent component",
+    props: {
+      children: "slot",
+    },
+  };
+
 const ContextMenuSubContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.SubContent>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubContent>
+  ContextMenuSubContentProps
 >(({ className, ...props }, ref) => (
   <ContextMenuPrimitive.SubContent
     ref={ref}
@@ -54,9 +132,22 @@ const ContextMenuSubContent = React.forwardRef<
 ));
 ContextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName;
 
+type ContextMenuContentProps = React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.Content
+>;
+
+export const ContextMenuContentMeta: CodeComponentMeta<ContextMenuContentProps> =
+  {
+    name: "ContextMenuContent",
+    description: "shadcn/ui ContextMenuContent component",
+    props: {
+      children: "slot",
+    },
+  };
+
 const ContextMenuContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content>
+  ContextMenuContentProps
 >(({ className, ...props }, ref) => (
   <ContextMenuPrimitive.Portal>
     <ContextMenuPrimitive.Content
@@ -71,11 +162,24 @@ const ContextMenuContent = React.forwardRef<
 ));
 ContextMenuContent.displayName = ContextMenuPrimitive.Content.displayName;
 
+type ContextMenuItemProps = React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.Item
+> & {
+  inset?: boolean;
+};
+
+export const ContextMenuItemMeta: CodeComponentMeta<ContextMenuItemProps> = {
+  name: "ContextMenuItem",
+  description: "shadcn/ui ContextMenuItem component",
+  props: {
+    children: "slot",
+    inset: "boolean",
+  },
+};
+
 const ContextMenuItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
-    inset?: boolean;
-  }
+  ContextMenuItemProps
 >(({ className, inset, ...props }, ref) => (
   <ContextMenuPrimitive.Item
     ref={ref}
@@ -89,9 +193,23 @@ const ContextMenuItem = React.forwardRef<
 ));
 ContextMenuItem.displayName = ContextMenuPrimitive.Item.displayName;
 
+type ContextMenuCheckboxItemProps = React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.CheckboxItem
+>;
+
+export const ContextMenuCheckboxItemMeta: CodeComponentMeta<ContextMenuCheckboxItemProps> =
+  {
+    name: "ContextMenuCheckboxItem",
+    description: "shadcn/ui ContextMenuCheckboxItem component",
+    props: {
+      children: "slot",
+      checked: "boolean",
+    },
+  };
+
 const ContextMenuCheckboxItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.CheckboxItem>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.CheckboxItem>
+  ContextMenuCheckboxItemProps
 >(({ className, children, checked, ...props }, ref) => (
   <ContextMenuPrimitive.CheckboxItem
     ref={ref}
@@ -113,9 +231,23 @@ const ContextMenuCheckboxItem = React.forwardRef<
 ContextMenuCheckboxItem.displayName =
   ContextMenuPrimitive.CheckboxItem.displayName;
 
+type ContextMenuRadioItemProps = React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.RadioItem
+>;
+
+export const ContextMenuRadioItemMeta: CodeComponentMeta<ContextMenuRadioItemProps> =
+  {
+    name: "ContextMenuRadioItem",
+    description: "shadcn/ui ContextMenuRadioItem component",
+    props: {
+      children: "slot",
+      value: "string",
+    },
+  };
+
 const ContextMenuRadioItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.RadioItem>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.RadioItem>
+  ContextMenuRadioItemProps
 >(({ className, children, ...props }, ref) => (
   <ContextMenuPrimitive.RadioItem
     ref={ref}
@@ -135,11 +267,24 @@ const ContextMenuRadioItem = React.forwardRef<
 ));
 ContextMenuRadioItem.displayName = ContextMenuPrimitive.RadioItem.displayName;
 
+type ContextMenuLabelProps = React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.Label
+> & {
+  inset?: boolean;
+};
+
+export const ContextMenuLabelMeta: CodeComponentMeta<ContextMenuLabelProps> = {
+  name: "ContextMenuLabel",
+  description: "shadcn/ui ContextMenuLabel component",
+  props: {
+    children: "slot",
+    inset: "boolean",
+  },
+};
+
 const ContextMenuLabel = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Label>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Label> & {
-    inset?: boolean;
-  }
+  ContextMenuLabelProps
 >(({ className, inset, ...props }, ref) => (
   <ContextMenuPrimitive.Label
     ref={ref}
@@ -153,9 +298,20 @@ const ContextMenuLabel = React.forwardRef<
 ));
 ContextMenuLabel.displayName = ContextMenuPrimitive.Label.displayName;
 
+type ContextMenuSeparatorProps = React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.Separator
+>;
+
+export const ContextMenuSeparatorMeta: CodeComponentMeta<ContextMenuSeparatorProps> =
+  {
+    name: "ContextMenuSeparator",
+    description: "shadcn/ui ContextMenuSeparator component",
+    props: {},
+  };
+
 const ContextMenuSeparator = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Separator>
+  ContextMenuSeparatorProps
 >(({ className, ...props }, ref) => (
   <ContextMenuPrimitive.Separator
     ref={ref}
@@ -165,10 +321,21 @@ const ContextMenuSeparator = React.forwardRef<
 ));
 ContextMenuSeparator.displayName = ContextMenuPrimitive.Separator.displayName;
 
+type ContextMenuShortcutProps = React.HTMLAttributes<HTMLSpanElement>;
+
+export const ContextMenuShortcutMeta: CodeComponentMeta<ContextMenuShortcutProps> =
+  {
+    name: "ContextMenuShortcut",
+    description: "shadcn/ui ContextMenuShortcut component",
+    props: {
+      children: "slot",
+    },
+  };
+
 const ContextMenuShortcut = ({
   className,
   ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
+}: ContextMenuShortcutProps) => {
   return (
     <span
       className={cn(
