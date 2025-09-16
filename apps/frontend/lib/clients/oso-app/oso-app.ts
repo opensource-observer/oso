@@ -19,6 +19,7 @@ import type {
   DynamicConnectorsRow,
   DynamicTableContextsRow,
 } from "@/lib/types/schema-types";
+import { NotebookKey } from "@/lib/types/db";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
 import { DEFAULT_OSO_TABLE_ID } from "@/lib/types/dynamic-connector";
 
@@ -585,14 +586,12 @@ class OsoAppClient {
   }
 
   /**
-   * Creates a new saved query
-   * - Chats are stored under an organization
+   * Creates a new notebook
+   * - Notebooks are stored under an organization
    * @param args
    * @returns
    */
-  async createNotebook(
-    args: Partial<{ orgName: string; notebookName: string }>,
-  ) {
+  async createNotebook(args: Partial<NotebookKey>) {
     console.log("createNotebook: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const notebookName =
@@ -606,6 +605,65 @@ class OsoAppClient {
         org_id: org.id,
         notebook_name: notebookName,
         created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (queryError) {
+      throw queryError;
+    } else if (!queryData) {
+      throw new MissingDataError("Failed to create notebook");
+    }
+
+    return queryData;
+  }
+
+  /**
+   * Forks an existing notebook to create a new one
+   * - For now just copies the data
+   * - Notebooks are stored under an organization
+   * @param source.orgName
+   * @param source.notebookName
+   * @param destination.orgName
+   * @param destination.notebookName - optional, will auto-generate if not provided
+   * @returns
+   */
+  async forkNotebook(
+    args: Partial<{
+      source: Partial<NotebookKey>;
+      destination: Partial<NotebookKey>;
+    }>,
+  ) {
+    console.log("forkNotebook: ", args);
+    const srcOrgName = ensure(
+      args.source?.orgName,
+      "Missing source.orgName argument",
+    );
+    const srcNotebookName = ensure(
+      args.source?.notebookName,
+      "Missing source.notebookName argument",
+    );
+    const dstOrgName = ensure(
+      args.destination?.orgName,
+      "Missing destination.orgName argument",
+    );
+    const dstNotebookName =
+      args.destination?.notebookName ||
+      `copy_${srcNotebookName}_${uuid4().substring(0, 5)}`;
+    const dstOrg = await this.getOrganizationByName({ orgName: dstOrgName });
+    const srcNotebook = await this.getNotebookByName({
+      orgName: srcOrgName,
+      notebookName: srcNotebookName,
+    });
+    const user = await this.getUser();
+
+    const { data: queryData, error: queryError } = await this.supabaseClient
+      .from("notebooks")
+      .insert({
+        org_id: dstOrg.id,
+        notebook_name: dstNotebookName,
+        created_by: user.id,
+        data: srcNotebook.data,
       })
       .select()
       .single();
@@ -656,9 +714,7 @@ class OsoAppClient {
     return data;
   }
 
-  async getNotebookByName(
-    args: Partial<{ orgName: string; notebookName: string }>,
-  ) {
+  async getNotebookByName(args: Partial<NotebookKey>) {
     console.log("getNotebookByName: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const notebookName = ensure(
@@ -683,24 +739,45 @@ class OsoAppClient {
   }
 
   /**
-   * Update notebook data
-   * @param args
+   * Moves a notebook
+   * - Could be within the same org or to a different org
+   * @param source.orgName
+   * @param source.notebookName
+   * @param destination.orgName
+   * @param destination.notebookName
    */
-  async renameNotebook(
-    args: Partial<{ orgName: string; oldName: string; newName: string }>,
+  async moveNotebook(
+    args: Partial<{
+      source: Partial<NotebookKey>;
+      destination: Partial<NotebookKey>;
+    }>,
   ) {
-    console.log("updateNotebook: ", args);
-    const orgName = ensure(args.orgName, "Missing orgName argument");
-    const oldName = ensure(args.oldName, "Missing notebook 'oldName' argument");
-    const newName = ensure(args.newName, "Missing notebook 'newName' argument");
-    const notebook = await this.getNotebookByName({
-      orgName: orgName,
-      notebookName: oldName,
+    console.log("moveNotebook: ", args);
+    const srcOrgName = ensure(
+      args.source?.orgName,
+      "Missing source.orgName argument",
+    );
+    const srcNotebookName = ensure(
+      args.source?.notebookName,
+      "Missing source.notebookName argument",
+    );
+    const dstOrgName = ensure(
+      args.destination?.orgName,
+      "Missing destination.orgName argument",
+    );
+    const dstNotebookName = ensure(
+      args.destination?.notebookName,
+      "Missing destination.notebookName argument",
+    );
+    const dstOrg = await this.getOrganizationByName({ orgName: dstOrgName });
+    const srcNotebook = await this.getNotebookByName({
+      orgName: srcOrgName,
+      notebookName: srcNotebookName,
     });
     const { error } = await this.supabaseClient
       .from("notebooks")
-      .update({ notebook_name: newName })
-      .eq("id", notebook.id);
+      .update({ org_id: dstOrg.id, notebook_name: dstNotebookName })
+      .eq("id", srcNotebook.id);
     if (error) {
       throw error;
     }
