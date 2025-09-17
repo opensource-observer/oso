@@ -8,8 +8,8 @@ MODEL (
   )
 );
 
-@DEF(twitter_regex, '(?:twitter|x)\\.com/([^/?#]+)');
-@DEF(github_regex, 'github\\.com/([^/?#]+)');
+@DEF(twitter_regex, '(?:twitter|x)\.com/([^/?#]+)');
+@DEF(github_regex, 'github\.com/([^/?#]+)');
 
 WITH social AS (
   SELECT DISTINCT
