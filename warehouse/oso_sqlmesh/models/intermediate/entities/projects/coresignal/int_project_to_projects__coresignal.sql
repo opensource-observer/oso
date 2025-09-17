@@ -8,7 +8,6 @@ MODEL (
   )
 );
 
-@DEF(ignore_words, ['ethereum']);
 @DEF(twitter_regex, '(?:twitter|x)\\.com/([^/?#]+)');
 @DEF(github_regex, 'github\\.com/([^/?#]+)');
 
@@ -70,7 +69,7 @@ project_matches AS (
   ON
     social.artifact_source = abp.artifact_source
     AND social.artifact_owner = abp.artifact_owner
-  WHERE social.artifact_owner NOT IN (SELECT UNNEST(@ignore_words))
+  WHERE social.artifact_owner NOT IN ('ethereum')
 ),
 -- Apply business logic to rank projects and identify best match
 project_priority AS (
