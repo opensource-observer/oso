@@ -11,7 +11,7 @@ MODEL (
 WITH base_data AS (
   SELECT
     id::BIGINT AS id,
-    company_name::VARCHAR AS name,
+    company_name::VARCHAR AS company_name,
     website::VARCHAR AS website,
     crunchbase_url::VARCHAR AS crunchbase_url,
     CAST(JSON_EXTRACT(twitter_url, '$') AS ARRAY(VARCHAR)) AS twitter_urls,
@@ -21,7 +21,7 @@ WITH base_data AS (
 
 SELECT DISTINCT
   id,
-  name,
+  company_name,
   'TWITTER'::VARCHAR AS url_type,
   TRIM(BOTH '"' FROM twitter_url_value::VARCHAR) AS url
 FROM base_data
@@ -32,7 +32,7 @@ UNION ALL
 
 SELECT DISTINCT
   id,
-  name,
+  company_name,
   'GITHUB'::VARCHAR AS url_type,
   TRIM(BOTH '"' FROM github_url_value::VARCHAR) AS url
 FROM base_data
@@ -43,7 +43,7 @@ UNION ALL
 
 SELECT DISTINCT
   id,
-  name,
+  company_name,
   'CRUNCHBASE'::VARCHAR AS url_type,
   TRIM(BOTH '"' FROM crunchbase_url::VARCHAR) AS url
 FROM base_data
@@ -53,7 +53,7 @@ UNION ALL
 
 SELECT DISTINCT
   id,
-  name,
+  company_name,
   'WEBSITE'::VARCHAR AS url_type,
   TRIM(BOTH '"' FROM website::VARCHAR) AS url
 FROM base_data
