@@ -9,6 +9,7 @@ MODEL (
   tags (
     "venture",
   ),
+  enabled false,
 );
 
 SELECT
