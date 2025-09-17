@@ -38,7 +38,7 @@ enriched_events AS (
 SELECT
   @oso_id(event_source, funding_round_name, coresignal_company_id, time)
     AS event_id,
-  time,    
+  time,
   event_source,
   event_type,
   funding_round_name,

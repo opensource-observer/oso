@@ -49,7 +49,7 @@ SELECT
   company_name,
   funding_round_name,
   amount_raised,
-  valuation,  
+  valuation,
   sector,
   category,
   category_group,

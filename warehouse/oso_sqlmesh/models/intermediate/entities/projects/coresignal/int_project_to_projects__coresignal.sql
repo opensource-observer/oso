@@ -75,7 +75,7 @@ project_priority AS (
   FROM project_matches
 )
 
-SELECT
+SELECT DISTINCT
   coresignal_company_id,
   coresignal_company_name,
   artifact_source,
