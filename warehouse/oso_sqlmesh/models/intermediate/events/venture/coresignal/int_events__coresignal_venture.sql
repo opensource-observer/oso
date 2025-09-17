@@ -80,6 +80,7 @@ enriched_events AS (
     ON all_events.company_id = p2p.coresignal_company_id
   CROSS JOIN LATERAL @create_ossd_funding_wallet_artifact(p2p.oso_project_name)
     AS artifact_fields
+  WHERE p2p.is_best_match = TRUE
 )
 
 SELECT
