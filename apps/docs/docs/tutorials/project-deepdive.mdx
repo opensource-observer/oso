@@ -19,7 +19,7 @@ All **projects** are defined as YAML files in [OSS Directory](https://github.com
 Before running any analysis, you'll need to set up your environment:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 Start your Python notebook with the following:
 
@@ -35,6 +35,17 @@ client = Client(api_key=OSO_API_KEY)
 For more details on setting up Python notebooks, see our guide on [writing Python notebooks](../guides/notebooks/index.mdx).
 
 </TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+import os
+from pyoso import Client
+
+OSO_API_KEY = os.environ['OSO_API_KEY']
+oso = Client(api_key=OSO_API_KEY)
+```
+
+</TabItem>
 <TabItem value="graphql" label="GraphQL">
 
 The following queries should work if you copy-paste them into our [GraphQL sandbox](https://www.opensource.observer/graphql). For more information on how to use the GraphQL API, check out our [GraphQL guide](../integrate/api.md).
@@ -47,7 +58,7 @@ The following queries should work if you copy-paste them into our [GraphQL sandb
 Search for projects by name:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -59,6 +70,19 @@ FROM projects_v1
 WHERE lower(display_name) LIKE lower('%merkle%')
 """
 df = client.to_pandas(query)
+```
+
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "projects.project_id",
+    "projects.project_name",
+    "projects.display_name",
+).where(
+    "projects.display_name LIKE '%merkle%'"
+)
 ```
 
 </TabItem>
@@ -82,7 +106,7 @@ query FindProject {
 Find projects associated with specific artifacts:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -98,6 +122,21 @@ WHERE
 """
 df = client.to_pandas(query)
 ```
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "artifacts_by_project.project_id",
+    "artifacts_by_project.project_name",
+    "artifacts_by_project.artifact_namespace",
+    "artifacts_by_project.artifact_name",
+).where(
+    "artifacts_by_project.artifact_source = 'GITHUB'",
+    "artifacts_by_project.artifact_namespace LIKE '%uniswap%'"
+)
+```
+
 
 </TabItem>
 <TabItem value="graphql" label="GraphQL">
@@ -126,7 +165,7 @@ query FindProjectByArtifact {
 Get code metrics for a specific project:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -151,6 +190,20 @@ ORDER BY tm.sample_date DESC
 """
 df = client.to_pandas(query)
 ```
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "timeseries_metrics_by_project.sample_date",
+    "metrics.metric_name",
+    "timeseries_metrics_by_project.amount",
+).where(
+    "projects.project_name = 'opensource-observer'",
+    "metrics.metric_name IN ('GITHUB_stars_daily','GITHUB_forks_daily','GITHUB_commits_daily','GITHUB_contributors_daily')"
+)
+```
+
 
 </TabItem>
 <TabItem value="graphql" label="GraphQL">
@@ -218,7 +271,7 @@ Using the IDs from the previous query:
 Get historical metrics for a project:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -236,6 +289,19 @@ ORDER BY sample_date DESC
 """
 df = client.to_pandas(query)
 ```
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "timeseries_metrics_by_project.sample_date",
+    "metrics.metric_name",
+    "timeseries_metrics_by_project.amount",
+).where(
+    "projects.project_name = 'wevm'"
+)
+```
+
 
 </TabItem>
 <TabItem value="graphql" label="GraphQL">
@@ -291,7 +357,7 @@ Using the project ID from the previous query:
 Get a snapshot of a project's GitHub repositories:
 
 <Tabs>
-<TabItem value="python" label="Python">
+<TabItem value="python-sql" label="Python">
 
 ```python
 query = """
@@ -309,6 +375,21 @@ WHERE
 ORDER BY r.star_count DESC
 """
 df = client.to_pandas(query)
+```
+
+</TabItem>
+<TabItem value="python-semantic" label="Semantic Layer">
+
+```python
+query = oso.semantic.select(
+    "repositories.artifact_url",
+    "repositories.star_count",
+    "repositories.fork_count",
+    "repositories.license_name",
+    "repositories.language",
+).where(
+    "projects.project_name = 'wevm'"
+)
 ```
 
 </TabItem>
