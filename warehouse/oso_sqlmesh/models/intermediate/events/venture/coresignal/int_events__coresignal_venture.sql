@@ -75,7 +75,6 @@ enriched_events AS (
   FROM all_events
   LEFT JOIN oso.int_project_to_projects__coresignal AS p2p
     ON all_events.coresignal_company_id = p2p.coresignal_company_id
-    AND p2p.is_best_match = true
 )
 
 SELECT

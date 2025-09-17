@@ -96,6 +96,6 @@ SELECT DISTINCT
   artifact_url,
   oso_project_id,
   oso_project_name,
-  oso_project_source,
-  CASE WHEN project_rank = 1 THEN true ELSE false END AS is_best_match
+  oso_project_source
 FROM project_priority
+WHERE project_rank = 1
