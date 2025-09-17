@@ -70,7 +70,7 @@ project_matches AS (
   ON
     social.artifact_source = abp.artifact_source
     AND social.artifact_owner = abp.artifact_owner
-  WHERE social.artifact_owner NOT IN @ignore_words
+  WHERE social.artifact_owner NOT IN (SELECT UNNEST(@ignore_words))
 ),
 -- Apply business logic to rank projects and identify best match
 project_priority AS (
