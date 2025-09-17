@@ -14,8 +14,8 @@ MODEL (
 WITH base_events AS (
   SELECT DISTINCT
     announced_date AS time,
-    company_id AS coresignal_company_id,
-    company_name AS coresignal_company_name,
+    company_id,
+    company_name,
     'CORESIGNAL' AS event_source,
     UPPER(REPLACE(funding_round_name, ' ', '_')) AS funding_round_name,
     amount_raised,
@@ -31,15 +31,16 @@ WITH base_events AS (
 investment_events AS (
   SELECT
     time,
-    coresignal_company_id,
-    coresignal_company_name,
+    company_id,
+    company_name,
     event_source,
     'INVESTMENT_RECEIVED' AS event_type,
     funding_round_name,
     amount_raised,
     amount_raised_currency,
     num_investors,
-    NULL AS lead_investor
+    NULL AS investor_name,
+    NULL AS investor_id
   FROM base_events
 ),
 
@@ -47,18 +48,19 @@ investment_events AS (
 round_events AS (
   SELECT
     time,
-    coresignal_company_id,
-    coresignal_company_name,
+    company_id,
+    company_name,
     event_source,
     'INVESTMENT_MADE' AS event_type,
     funding_round_name,
     amount_raised,
     amount_raised_currency,
     num_investors,
-    TRIM(BOTH '"' FROM lead_investor::VARCHAR) AS lead_investor
+    TRIM(BOTH '"' FROM investor_name::VARCHAR) AS investor_name,
+    NULL AS investor_id
   FROM base_events
-  CROSS JOIN UNNEST(lead_investors) AS t(lead_investor)
-  WHERE lead_investor IS NOT NULL
+  CROSS JOIN UNNEST(lead_investors) AS t(investor_name)
+  WHERE investor_name IS NOT NULL
 ),
 
 all_events AS (
@@ -71,25 +73,31 @@ enriched_events AS (
   SELECT
     all_events.*,
     p2p.oso_project_id,
-    p2p.oso_project_name
+    p2p.oso_project_name,
+    @oso_entity_id(artifact_fields.artifact_source, artifact_fields.artifact_namespace, artifact_fields.artifact_name) AS oso_artifact_id
   FROM all_events
   LEFT JOIN oso.int_project_to_projects__coresignal AS p2p
-    ON all_events.coresignal_company_id = p2p.coresignal_company_id
+    ON all_events.company_id = p2p.coresignal_company_id
+  CROSS JOIN LATERAL @create_ossd_funding_wallet_artifact(p2p.oso_project_name)
+    AS artifact_fields
 )
 
 SELECT
-  @oso_id(event_source, event_type, funding_round_name, coresignal_company_id, time)
+  @oso_id(event_source, event_type, funding_round_name, company_id, time)
     AS event_id,
   time,
   event_source,
   event_type,
   funding_round_name,
-  lead_investor,
-  num_investors,
-  coresignal_company_id,
-  coresignal_company_name,
-  oso_project_id,
-  oso_project_name,
+  investor_name AS from_investor_name,
+  investor_id AS from_investor_id,
+  NULL AS from_artifact_id,
+  company_id AS to_company_id,
+  company_name AS to_company_name,
+  oso_project_id AS to_oso_project_id,
+  oso_project_name AS to_oso_project_name,
+  oso_artifact_id AS to_artifact_id,
   amount_raised,
-  amount_raised_currency
+  amount_raised_currency,
+  num_investors
 FROM enriched_events
