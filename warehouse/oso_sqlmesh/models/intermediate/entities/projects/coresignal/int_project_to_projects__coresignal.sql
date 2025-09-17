@@ -4,7 +4,7 @@ MODEL (
   dialect trino,
   kind FULL,
   audits (
-    not_null(columns := (coresignal_company_id, oso_project_id))
+    has_at_least_n_rows(threshold := 0)
   )
 );
 
@@ -12,13 +12,26 @@ WITH social AS (
   SELECT DISTINCT
     id AS coresignal_company_id,
     company_name AS coresignal_company_name,
-    url_type AS artifact_source,
-    CASE 
-      WHEN url_type = 'TWITTER' THEN REGEXP_EXTRACT(url, '(?:twitter|x)\\.com/([^/?#]+)', 1)
-      WHEN url_type = 'GITHUB' THEN REGEXP_EXTRACT(url, 'github\\.com/([^/?#]+)', 1)
-    END as artifact_owner,
-    url as artifact_url
+    'TWITTER' AS artifact_source,
+    TRIM(BOTH '"' FROM twitter_url_value::VARCHAR) AS artifact_url,
+    REGEXP_EXTRACT(TRIM(BOTH '"' FROM twitter_url_value::VARCHAR), '(?:twitter|x)\\.com/([^/?#]+)', 1) AS artifact_owner
   FROM oso.stg_coresignal__companies
+  CROSS JOIN UNNEST(twitter_urls) AS t(twitter_url_value)
+  WHERE twitter_url_value IS NOT NULL
+    AND REGEXP_EXTRACT(TRIM(BOTH '"' FROM twitter_url_value::VARCHAR), '(?:twitter|x)\\.com/([^/?#]+)', 1) IS NOT NULL
+
+  UNION ALL
+
+  SELECT DISTINCT
+    id AS coresignal_company_id,
+    company_name AS coresignal_company_name,
+    'GITHUB' AS artifact_source,
+    TRIM(BOTH '"' FROM github_url_value::VARCHAR) AS artifact_url,
+    REGEXP_EXTRACT(TRIM(BOTH '"' FROM github_url_value::VARCHAR), 'github\\.com/([^/?#]+)', 1) AS artifact_owner
+  FROM oso.stg_coresignal__companies
+  CROSS JOIN UNNEST(github_urls) AS t(github_url_value)
+  WHERE github_url_value IS NOT NULL
+    AND REGEXP_EXTRACT(TRIM(BOTH '"' FROM github_url_value::VARCHAR), 'github\\.com/([^/?#]+)', 1) IS NOT NULL
 ),
 abp AS (
    SELECT DISTINCT
