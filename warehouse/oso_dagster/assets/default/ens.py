@@ -18,12 +18,6 @@ MAX_RETRY_COUNT = 25
 
 K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
-    "container_config": {
-        "resources": {
-            "requests": {"cpu": "2000m", "memory": "3584Mi"},
-            "limits": {"memory": "7168Mi"},
-        },
-    },
     "pod_spec_config": {
         "node_selector": {
             "pool_type": "spot",
