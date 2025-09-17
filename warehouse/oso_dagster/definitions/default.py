@@ -48,6 +48,7 @@ def default_definitions(
 
     chunked_state_cleanup_sensor = setup_chunked_state_cleanup_sensor(
         global_config.gcs_bucket,
+        max_age_hours=24 * 14,
     )
 
     asset_factories = asset_factories + chunked_state_cleanup_sensor
