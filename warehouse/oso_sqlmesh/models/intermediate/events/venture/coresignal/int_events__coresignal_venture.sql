@@ -51,7 +51,7 @@ round_events AS (
     company_id,
     company_name,
     event_source,
-    'INVESTMENT_MADE' AS event_type,
+    'LED_INVESTMENT_ROUND' AS event_type,
     funding_round_name,
     amount_raised,
     amount_raised_currency,
