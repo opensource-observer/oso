@@ -529,6 +529,232 @@ def load_pagination_manifest(
         return None
 
 
+@dataclass
+class ChunkedStateLoadResult:
+    """
+    Result of loading chunked state and data.
+
+    Args:
+        data_generator: Generator yielding existing chunk data.
+        successful_pages: Number of pages already processed.
+        total_items: Total items already processed.
+        variables_updates: Updates to apply to query variables for resuming pagination.
+        bucket: GCS bucket for saving new chunks (None if chunking disabled/failed).
+        manifest: Current manifest state (None if starting fresh).
+    """
+
+    data_generator: Generator[Any, None, None]
+    successful_pages: int
+    total_items: int
+    variables_updates: Dict[str, Any]
+    bucket: Optional[storage.Bucket]
+    manifest: Optional[GraphQLChunkedManifest]
+
+
+def load_chunked_state_and_data(
+    config: GraphQLResourceConfig,
+    global_config: DagsterConfig,
+    context: AssetExecutionContext,
+) -> ChunkedStateLoadResult:
+    """
+    Load existing chunked state and data for resuming a GraphQL resource.
+
+    Args:
+        config: GraphQL resource configuration.
+        global_config: Global Dagster configuration.
+        context: Execution context for logging.
+
+    Returns:
+        ChunkedStateLoadResult with loaded data and state information.
+    """
+    empty_generator = (item for item in [])
+
+    if not config.enable_chunked_resume:
+        return ChunkedStateLoadResult(
+            data_generator=empty_generator,
+            successful_pages=0,
+            total_items=0,
+            variables_updates={},
+            bucket=None,
+            manifest=None,
+        )
+
+    try:
+        bucket = storage.Client().get_bucket(global_config.gcs_bucket)
+        existing_manifest = load_pagination_manifest(
+            bucket, config.chunk_gcs_prefix, config.name, context
+        )
+
+        if not existing_manifest:
+            context.log.info(
+                "GraphQLChunkedResource: No existing manifest found, starting fresh"
+            )
+            return ChunkedStateLoadResult(
+                data_generator=empty_generator,
+                successful_pages=0,
+                total_items=0,
+                variables_updates={},
+                bucket=bucket,
+                manifest=None,
+            )
+
+        context.log.info(
+            f"GraphQLChunkedResource: Found existing manifest with {len(existing_manifest.completed_chunks)} chunks, "
+            f"resuming from checkpoint: {existing_manifest.pagination_state.last_checkpoint_value}"
+        )
+
+        data_generator = load_existing_chunks(
+            bucket,
+            config.chunk_gcs_prefix,
+            config.name,
+            existing_manifest.completed_chunks,
+            context,
+        )
+
+        successful_pages = existing_manifest.pagination_state.successful_pages
+        total_items = existing_manifest.pagination_state.total_processed
+
+        variables_updates = {}
+        if (
+            config.pagination
+            and existing_manifest.pagination_state.last_cursor is not None
+        ):
+            if config.pagination.type == PaginationType.OFFSET:
+                pass
+            elif config.pagination.type in (
+                PaginationType.CURSOR,
+                PaginationType.RELAY,
+            ):
+                variables_updates[config.pagination.cursor_field] = (
+                    existing_manifest.pagination_state.last_cursor
+                )
+            elif config.pagination.type == PaginationType.KEYSET:
+                if existing_manifest.pagination_state.last_checkpoint_value is not None:
+                    variables_updates.setdefault("where", {})
+                    variables_updates["where"][config.pagination.last_value_field] = (
+                        existing_manifest.pagination_state.last_checkpoint_value
+                    )
+
+        return ChunkedStateLoadResult(
+            data_generator=data_generator,
+            successful_pages=successful_pages,
+            total_items=total_items,
+            variables_updates=variables_updates,
+            bucket=bucket,
+            manifest=existing_manifest,
+        )
+
+    except Exception as e:
+        context.log.error(
+            f"GraphQLChunkedResource: Failed to initialize chunked resume: {e}, continuing without chunking"
+        )
+        return ChunkedStateLoadResult(
+            data_generator=empty_generator,
+            successful_pages=0,
+            total_items=0,
+            variables_updates={},
+            bucket=None,
+            manifest=None,
+        )
+
+
+def save_chunked_state_and_data(
+    config: GraphQLResourceConfig,
+    context: AssetExecutionContext,
+    data_items: List[Any],
+    pagination_info: Optional[Dict[str, Any]],
+    successful_pages: int,
+    total_items: int,
+    bucket: storage.Bucket,
+    existing_manifest: Optional[GraphQLChunkedManifest],
+) -> Optional[GraphQLChunkedManifest]:
+    """
+    Save the current page's data as a chunk and update the pagination manifest.
+
+    Args:
+        config: GraphQL resource configuration.
+        context: Execution context for logging.
+        data_items: Data items from the current page to save.
+        pagination_info: Pagination information from the current page response.
+        successful_pages: Current number of successful pages.
+        total_items: Current total number of items processed.
+        bucket: GCS bucket for storing chunks.
+        existing_manifest: Current manifest to update, or None for new manifest.
+
+    Returns:
+        Updated manifest, or None if saving failed.
+    """
+    try:
+        checkpoint_value = None
+        last_cursor = None
+
+        if isinstance(data_items, list) and len(data_items) > 0:
+            last_item = data_items[-1]
+            if config.checkpoint_field in last_item:
+                checkpoint_value = last_item[config.checkpoint_field]
+
+            if config.pagination:
+                if config.pagination.type == PaginationType.OFFSET:
+                    last_cursor = total_items
+                elif config.pagination.type in (
+                    PaginationType.CURSOR,
+                    PaginationType.RELAY,
+                ):
+                    if pagination_info:
+                        last_cursor = pagination_info.get("next_cursor")
+                elif config.pagination.type == PaginationType.KEYSET:
+                    last_cursor = checkpoint_value
+
+        chunk_name = save_page_chunk(
+            bucket,
+            config.chunk_gcs_prefix,
+            config.name,
+            data_items if isinstance(data_items, list) else [data_items],
+            successful_pages,
+            context,
+        )
+
+        pagination_state = GraphQLPaginationState(
+            last_cursor=last_cursor,
+            pagination_type=(
+                config.pagination.type if config.pagination else PaginationType.KEYSET
+            ),
+            checkpoint_field=config.checkpoint_field,
+            total_processed=total_items,
+            successful_pages=successful_pages,
+            last_checkpoint_value=checkpoint_value,
+        )
+
+        update_pagination_manifest(
+            bucket,
+            config.chunk_gcs_prefix,
+            config.name,
+            pagination_state,
+            chunk_name,
+            existing_manifest,
+            context,
+        )
+
+        if existing_manifest:
+            existing_manifest.completed_chunks.append(chunk_name)
+            existing_manifest.pagination_state = pagination_state
+            existing_manifest.updated_at = datetime.now().isoformat()
+            return existing_manifest
+        else:
+            return GraphQLChunkedManifest(
+                updated_at=datetime.now().isoformat(),
+                created_at=datetime.now().isoformat(),
+                pagination_state=pagination_state,
+                completed_chunks=[chunk_name],
+            )
+
+    except Exception as e:
+        context.log.error(
+            f"GraphQLChunkedResource: Failed to save chunk for page {successful_pages}: {e}"
+        )
+        return existing_manifest
+
+
 def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
     """
     Create a fragment for the GraphQL introspection query
@@ -1434,75 +1660,21 @@ def _graphql_factory(
                 key: param["value"] for key, param in (config.parameters or {}).items()
             }
 
-            successful_pages = 0
-            total_items = 0
             has_more = True
             data_items = []
 
-            chunked_bucket = None
-            existing_manifest = None
-            if config.enable_chunked_resume:
-                try:
-                    chunked_bucket = storage.Client().get_bucket(
-                        global_config.gcs_bucket
-                    )
-                    existing_manifest = load_pagination_manifest(
-                        chunked_bucket, config.chunk_gcs_prefix, config.name, context
-                    )
+            chunked_load_result = load_chunked_state_and_data(
+                config, global_config, context
+            )
 
-                    if existing_manifest:
-                        context.log.info(
-                            f"GraphQLChunkedResource: Found existing manifest with {len(existing_manifest.completed_chunks)} chunks, "
-                            f"resuming from checkpoint: {existing_manifest.pagination_state.last_checkpoint_value}"
-                        )
+            yield from chunked_load_result.data_generator
 
-                        yield from load_existing_chunks(
-                            chunked_bucket,
-                            config.chunk_gcs_prefix,
-                            config.name,
-                            existing_manifest.completed_chunks,
-                            context,
-                        )
+            successful_pages = chunked_load_result.successful_pages
+            total_items = chunked_load_result.total_items
+            chunked_bucket = chunked_load_result.bucket
+            existing_manifest = chunked_load_result.manifest
 
-                        successful_pages = (
-                            existing_manifest.pagination_state.successful_pages
-                        )
-                        total_items = existing_manifest.pagination_state.total_processed
-
-                        if (
-                            config.pagination
-                            and existing_manifest.pagination_state.last_cursor
-                            is not None
-                        ):
-                            if config.pagination.type == PaginationType.OFFSET:
-                                pass
-                            elif config.pagination.type in (
-                                PaginationType.CURSOR,
-                                PaginationType.RELAY,
-                            ):
-                                variables[config.pagination.cursor_field] = (
-                                    existing_manifest.pagination_state.last_cursor
-                                )
-                            elif config.pagination.type == PaginationType.KEYSET:
-                                if (
-                                    existing_manifest.pagination_state.last_checkpoint_value
-                                    is not None
-                                ):
-                                    variables.setdefault("where", {})
-                                    variables["where"][
-                                        config.pagination.last_value_field
-                                    ] = existing_manifest.pagination_state.last_checkpoint_value
-                    else:
-                        context.log.info(
-                            "GraphQLChunkedResource: No existing manifest found, starting fresh"
-                        )
-
-                except Exception as e:
-                    context.log.error(
-                        f"GraphQLChunkedResource: Failed to initialize chunked resume: {e}, continuing without chunking"
-                    )
-                    chunked_bucket = None
-                    existing_manifest = None
+            variables.update(chunked_load_result.variables_updates)
 
             while has_more:
                 try:
@@ -1652,88 +1824,17 @@ def _graphql_factory(
                         f"GraphQLFactory: Successfully completed page {successful_pages} with {items_in_page} items (total: {total_items})"
                     )
 
-                    if config.enable_chunked_resume and chunked_bucket:
-                        try:
-                            checkpoint_value = None
-                            last_cursor = None
-
-                            if isinstance(data_items, list) and len(data_items) > 0:
-                                last_item = data_items[-1]
-                                if config.checkpoint_field in last_item:
-                                    checkpoint_value = last_item[
-                                        config.checkpoint_field
-                                    ]
-
-                                if config.pagination:
-                                    if config.pagination.type == PaginationType.OFFSET:
-                                        last_cursor = total_items
-                                    elif config.pagination.type in (
-                                        PaginationType.CURSOR,
-                                        PaginationType.RELAY,
-                                    ):
-                                        if pagination_info:
-                                            last_cursor = pagination_info.get(
-                                                "next_cursor"
-                                            )
-                                    elif (
-                                        config.pagination.type == PaginationType.KEYSET
-                                    ):
-                                        last_cursor = checkpoint_value
-
-                            chunk_name = save_page_chunk(
-                                chunked_bucket,
-                                config.chunk_gcs_prefix,
-                                config.name,
-                                (
-                                    data_items
-                                    if isinstance(data_items, list)
-                                    else [data_items]
-                                ),
-                                successful_pages,
-                                context,
-                            )
-
-                            pagination_state = GraphQLPaginationState(
-                                last_cursor=last_cursor,
-                                pagination_type=(
-                                    config.pagination.type
-                                    if config.pagination
-                                    else PaginationType.KEYSET
-                                ),
-                                checkpoint_field=config.checkpoint_field,
-                                total_processed=total_items,
-                                successful_pages=successful_pages,
-                                last_checkpoint_value=checkpoint_value,
-                            )
-
-                            update_pagination_manifest(
-                                chunked_bucket,
-                                config.chunk_gcs_prefix,
-                                config.name,
-                                pagination_state,
-                                chunk_name,
-                                existing_manifest,
-                                context,
-                            )
-
-                            if existing_manifest:
-                                existing_manifest.completed_chunks.append(chunk_name)
-                                existing_manifest.pagination_state = pagination_state
-                                existing_manifest.updated_at = (
-                                    datetime.now().isoformat()
-                                )
-                            else:
-                                existing_manifest = GraphQLChunkedManifest(
-                                    updated_at=datetime.now().isoformat(),
-                                    created_at=datetime.now().isoformat(),
-                                    pagination_state=pagination_state,
-                                    completed_chunks=[chunk_name],
-                                )
-
-                        except Exception as e:
-                            context.log.error(
-                                f"GraphQLChunkedResource: Failed to save chunk for page {successful_pages}: {e}"
-                            )
+                    if chunked_bucket:
+                        existing_manifest = save_chunked_state_and_data(
+                            config,
+                            context,
+                            data_items,
+                            pagination_info,
+                            successful_pages,
+                            total_items,
+                            chunked_bucket,
+                            existing_manifest,
+                        )
 
                     if not config.pagination:
                         has_more = False
