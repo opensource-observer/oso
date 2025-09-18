@@ -5,9 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
-import { CreditBalance } from "@/apps/frontend/components/widgets/billing/credit-balance-widget";
-import { CreditPackageSelector } from "@/apps/frontend/components/widgets/billing/credit-package-selector-widget";
-import { PurchaseHistory } from "@/apps/frontend/components/widgets/billing/purchase-history-widget";
+import { CreditBalance } from "@/components/widgets/billing/credit-balance-widget";
+import { CreditPackageSelector } from "@/components/widgets/billing/credit-package-selector-widget";
+import { PurchaseHistory } from "@/components/widgets/billing/purchase-history-widget";
 import { logger } from "@/lib/logger";
 
 interface BillingProps {
