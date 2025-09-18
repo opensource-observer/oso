@@ -4,7 +4,11 @@ import { getUser } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
+import {
+  CreditsService,
+  InsufficientCreditsError,
+  TransactionType,
+} from "@/lib/services/credits";
 
 export const maxDuration = 60;
 const TEXT2SQL_PATH = "/v0/text2sql";
@@ -44,6 +48,9 @@ export async function POST(req: NextRequest) {
         { message: getLatestMessage(prompt.messages) },
       );
     } catch (error) {
+      if (error instanceof InsufficientCreditsError) {
+        return NextResponse.json({ error: error.message }, { status: 402 });
+      }
       logger.error(
         `/api/v1/text2sql: Error tracking usage for user ${user.userId}:`,
         error,
