@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
         const { error } = await supabase
           .from("purchase_intents")
           .update({ status: "failed" })
-          .eq("stripe_payment_intent_id", paymentIntent.id);
+          .like("metadata->stripe_payment_intent", `${paymentIntent.id}%`);
 
         if (error) {
           logger.error("Failed to update failed payment intent:", error);
@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
         const { error } = await supabase
           .from("purchase_intents")
           .update({ status: "cancelled" })
-          .eq("stripe_payment_intent_id", paymentIntent.id);
+          .like("metadata->stripe_payment_intent", `${paymentIntent.id}%`);
 
         if (error) {
           logger.error("Failed to update cancelled payment intent:", error);
