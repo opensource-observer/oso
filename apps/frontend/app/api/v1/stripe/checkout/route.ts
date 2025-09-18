@@ -48,6 +48,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const { data: orgData, error: orgError } = await supabase
+      .from("organizations")
+      .select("org_name")
+      .eq("id", orgId)
+      .single();
+
+    if (orgError || !orgData) {
+      logger.error("Failed to fetch organization:", orgError);
+      return NextResponse.json(
+        { error: "Invalid organization" },
+        { status: 400 },
+      );
+    }
+
     const PROTOCOL = DOMAIN.includes("localhost") ? "http" : "https";
 
     const session = await stripe.checkout.sessions.create({
@@ -66,8 +80,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: "payment",
-      success_url: `${PROTOCOL}://${DOMAIN}/billing?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${PROTOCOL}://${DOMAIN}/billing?purchase=cancelled`,
+      success_url: `${PROTOCOL}://${DOMAIN}/${orgData.org_name}/settings/billing?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${PROTOCOL}://${DOMAIN}/${orgData.org_name}/settings/billing?purchase=cancelled`,
       client_reference_id: user.userId,
       metadata: {
         userId: user.userId,
