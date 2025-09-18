@@ -168,6 +168,48 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+
+        const { error } = await supabase
+          .from("purchase_intents")
+          .update({ status: "failed" })
+          .eq("stripe_session_id", session.id);
+
+        if (error) {
+          logger.error("Failed to update failed payment session:", error);
+        }
+        break;
+      }
+
+      case "payment_intent.payment_failed": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+        const { error } = await supabase
+          .from("purchase_intents")
+          .update({ status: "failed" })
+          .eq("stripe_payment_intent_id", paymentIntent.id);
+
+        if (error) {
+          logger.error("Failed to update failed payment intent:", error);
+        }
+        break;
+      }
+
+      case "payment_intent.canceled": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+        const { error } = await supabase
+          .from("purchase_intents")
+          .update({ status: "cancelled" })
+          .eq("stripe_payment_intent_id", paymentIntent.id);
+
+        if (error) {
+          logger.error("Failed to update cancelled payment intent:", error);
+        }
+        break;
+      }
+
       default:
         logger.info(`Unhandled event type: ${event.type}`);
     }
