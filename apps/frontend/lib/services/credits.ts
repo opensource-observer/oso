@@ -36,7 +36,12 @@ export interface OrganizationCredits {
   updated_at: string;
 }
 
-const COST_PER_API_CALL = 1;
+export interface OrganizationPlan {
+  org_id: string;
+  org_name: string;
+  plan_name: string;
+  price_per_credit: number;
+}
 
 export class InsufficientCreditsError extends Error {
   constructor(
@@ -100,6 +105,43 @@ export class CreditsService {
     return data || [];
   }
 
+  static async getOrganizationPlan(
+    orgId: string,
+  ): Promise<OrganizationPlan | null> {
+    const supabaseClient = await createServerClient();
+    const { data, error } = await supabaseClient
+      .from("organizations")
+      .select(
+        `
+        id,
+        org_name,
+        pricing_plan!inner(
+          plan_name,
+          price_per_credit
+        )
+      `,
+      )
+      .eq("id", orgId)
+      .single();
+
+    if (error) {
+      logger.error("Error fetching organization plan:", error);
+      return null;
+    }
+
+    if (!data?.pricing_plan) {
+      logger.error("Organization plan data is missing");
+      return null;
+    }
+
+    return {
+      org_id: data.id,
+      org_name: data.org_name,
+      plan_name: data.pricing_plan.plan_name,
+      price_per_credit: data.pricing_plan.price_per_credit,
+    };
+  }
+
   static async checkAndDeductOrganizationCredits(
     user: User,
     orgId: string,
@@ -110,6 +152,9 @@ export class CreditsService {
     if (CreditsService.isAnonymousUser(user)) {
       return CREDITS_PREVIEW_MODE;
     }
+
+    const orgPlan = await CreditsService.getOrganizationPlan(orgId);
+    const costPerCall = orgPlan?.price_per_credit || 1;
 
     const supabaseClient = await createServerClient();
     const rpcFunction = CREDITS_PREVIEW_MODE
@@ -128,7 +173,7 @@ export class CreditsService {
       supabaseClient.rpc(rpcFunction, {
         p_org_id: orgId,
         p_user_id: user.userId,
-        p_amount: COST_PER_API_CALL,
+        p_amount: costPerCall,
         p_transaction_type: transactionType,
         p_api_endpoint: apiEndpoint,
         p_metadata: metadata,
