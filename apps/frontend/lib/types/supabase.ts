@@ -524,6 +524,7 @@ export type Database = {
           deleted_at: string | null;
           id: string;
           org_name: string;
+          plan_id: string | null;
           updated_at: string;
         };
         Insert: {
@@ -532,6 +533,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           org_name: string;
+          plan_id?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -540,6 +542,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           org_name?: string;
+          plan_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -550,7 +553,38 @@ export type Database = {
             referencedRelation: "user_profiles";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "organizations_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "pricing_plan";
+            referencedColumns: ["plan_id"];
+          },
         ];
+      };
+      pricing_plan: {
+        Row: {
+          created_at: string;
+          plan_id: string;
+          plan_name: string;
+          price_per_credit: number;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          plan_id?: string;
+          plan_name: string;
+          price_per_credit: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          plan_id?: string;
+          plan_name?: string;
+          price_per_credit?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       purchase_intents: {
         Row: {
