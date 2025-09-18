@@ -23,7 +23,8 @@ WITH base_events AS (
     num_investors,
     lead_investors
   FROM oso.stg_coresignal__funding_rounds
-  WHERE announced_date IS NOT NULL
+  WHERE
+    announced_date IS NOT NULL
     AND funding_round_name IS NOT NULL
 ),
 
@@ -84,8 +85,7 @@ enriched_events AS (
 )
 
 SELECT
-  @oso_id(event_source, event_type, funding_round_name, company_id, time)
-    AS event_id,
+  @oso_id(event_source, funding_round_name, company_id, time) AS event_id,
   time,
   event_source,
   event_type,

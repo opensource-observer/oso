@@ -22,6 +22,6 @@ SELECT
 FROM oso.int_events__coresignal_venture
 WHERE
   event_type = 'INVESTMENT_RECEIVED'
-  AND amount_raised_currency = 'USD'
+  AND amount_raised_currency IN ('USD', '$')
   AND to_oso_project_name IS NOT NULL
 GROUP BY 1, 2, 3, 4, 5
