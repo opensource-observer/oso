@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import type { AnonUser, User } from "@/lib/types/user";
 import type { Json } from "@/lib/types/supabase";
+import { DOMAIN } from "@/lib/config";
 
 // TODO(jabolo): Disable this once we transition to the new credits system
 const CREDITS_PREVIEW_MODE = true;
@@ -36,6 +37,24 @@ export interface OrganizationCredits {
 }
 
 const COST_PER_API_CALL = 1;
+
+export class InsufficientCreditsError extends Error {
+  constructor(
+    public orgName: string,
+    public billingUrl: string,
+    message?: string,
+  ) {
+    const defaultMessage = `Insufficient credits to complete this request. Please add more credits at ${billingUrl}`;
+    super(message || defaultMessage);
+    this.name = "InsufficientCreditsError";
+  }
+
+  static create(orgName: string): InsufficientCreditsError {
+    const PROTOCOL = DOMAIN.includes("localhost") ? "http" : "https";
+    const billingUrl = `${PROTOCOL}://${DOMAIN}/${orgName}/settings/billing`;
+    return new InsufficientCreditsError(orgName, billingUrl);
+  }
+}
 
 export class CreditsService {
   static isAnonymousUser(user: User): user is AnonUser {
@@ -92,32 +111,44 @@ export class CreditsService {
       return CREDITS_PREVIEW_MODE;
     }
 
+    const supabaseClient = await createServerClient();
     const rpcFunction = CREDITS_PREVIEW_MODE
       ? "preview_deduct_organization_credits"
       : "deduct_organization_credits";
 
-    const supabaseClient = await createServerClient();
-    const { data, error } = await supabaseClient.rpc(rpcFunction, {
-      p_org_id: orgId,
-      p_user_id: user.userId,
-      p_amount: COST_PER_API_CALL,
-      p_transaction_type: transactionType,
-      p_api_endpoint: apiEndpoint,
-      p_metadata: metadata,
-    });
+    const orgNamePromise = CREDITS_PREVIEW_MODE
+      ? Promise.resolve(null)
+      : supabaseClient
+          .from("organizations")
+          .select("org_name")
+          .eq("id", orgId)
+          .single();
 
-    if (error) {
-      logger.error(
-        `Error ${CREDITS_PREVIEW_MODE ? "previewing" : "deducting"} organization credits:`,
-        error,
-      );
-      return false;
-    }
+    const [{ data, error }, orgResult] = await Promise.all([
+      supabaseClient.rpc(rpcFunction, {
+        p_org_id: orgId,
+        p_user_id: user.userId,
+        p_amount: COST_PER_API_CALL,
+        p_transaction_type: transactionType,
+        p_api_endpoint: apiEndpoint,
+        p_metadata: metadata,
+      }),
+      orgNamePromise,
+    ]);
 
     if (CREDITS_PREVIEW_MODE) {
       logger.log(
         `Preview organization credit usage tracked for user ${user.userId} in org ${orgId} on ${transactionType} at ${apiEndpoint}`,
       );
+      return true;
+    }
+
+    if (error || !data) {
+      if (error) {
+        logger.error("Error deducting organization credits:", error);
+      }
+      const orgName = orgResult?.data?.org_name || "unknown";
+      throw InsufficientCreditsError.create(orgName);
     }
 
     return data;

@@ -1,13 +1,17 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getTrinoClient } from "@/lib/clients/trino";
-import type { QueryResult, Iterator } from "trino-client";
+import type { Iterator, QueryResult } from "trino-client";
 import { getTableNamesFromSql } from "@/lib/parsing";
 import { getUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
 import { AuthUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
+import {
+  CreditsService,
+  InsufficientCreditsError,
+  TransactionType,
+} from "@/lib/services/credits";
 import { TRINO_JWT_SECRET } from "@/lib/config";
 import { SignJWT } from "jose";
 import {
@@ -83,6 +87,9 @@ export async function POST(request: NextRequest) {
         { query },
       );
     } catch (error) {
+      if (error instanceof InsufficientCreditsError) {
+        return makeErrorResponse(error.message, 402);
+      }
       logger.error(
         `/api/sql: Error tracking usage for user ${user.userId}:`,
         error,
