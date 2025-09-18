@@ -8,6 +8,9 @@ import { POSTHOG_HOST_DIRECT, POSTHOG_KEY } from "@/lib/config";
  * @returns
  */
 function PostHogClient() {
+  if (!POSTHOG_KEY) {
+    return;
+  }
   const posthogClient = new PostHog(POSTHOG_KEY, {
     // You must send server-side events directly to PostHog.
     // The redirect URL doesn't seem to work for server-side events
@@ -24,12 +27,12 @@ function PostHogClient() {
  * @param fn
  * @param request
  */
-async function withPostHog(fn: (posthog: PostHog) => Promise<void>) {
+async function withPostHog(fn: (posthog?: PostHog) => Promise<void>) {
   //console.log(user);
   const posthog = PostHogClient();
   await fn(posthog);
   // TODO: this seems to be taking many seconds
-  await posthog.shutdown();
+  await posthog?.shutdown();
 }
 
 export { PostHogClient, withPostHog };

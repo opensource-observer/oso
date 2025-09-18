@@ -15,8 +15,7 @@ export const NODE_ENV = process.env.NODE_ENV ?? "development";
 export const STATIC_EXPORT = !!process.env.STATIC_EXPORT;
 export const POSTHOG_HOST = "/ingest";
 export const POSTHOG_HOST_DIRECT = "https://us.i.posthog.com";
-export const POSTHOG_KEY =
-  process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "MISSING POSTHOG_KEY";
+export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 export const GOOGLE_ANALYTICS_KEY =
   process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_KEY ??
   "MISSING GOOGLE_ANALYTICS_KEY";
@@ -57,6 +56,16 @@ export const CLICKHOUSE_USERNAME =
 export const CLICKHOUSE_PASSWORD =
   process.env.CLICKHOUSE_PASSWORD ?? "MISSING CLICKHOUSE_PASSWORD";
 export const CLICKHOUSE_DB_NAME = process.env.CLICKHOUSE_DB_NAME ?? "default";
+
+export const CLOUDFLARE_R2_API_ENDPOINT =
+  process.env.CLOUDFLARE_R2_API_ENDPOINT ??
+  "MISSING CLOUDFLARE_R2_API_ENDPOINT";
+export const CLOUDFLARE_R2_API_ACCESS_KEY_ID =
+  process.env.CLOUDFLARE_R2_API_ACCESS_KEY_ID ??
+  "MISSING CLOUDFLARE_R2_API_ACCESS_KEY_ID";
+export const CLOUDFLARE_R2_API_SECRET_ACCESS_KEY =
+  process.env.CLOUDFLARE_R2_API_SECRET_ACCESS_KEY ??
+  "MISSING CLOUDFLARE_R2_API_SECRET_ACCESS_KEY";
 
 export const TRINO_URL = process.env.TRINO_URL ?? "MISSING TRINO_URL";
 export const TRINO_ADMIN_USER =
