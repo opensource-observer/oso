@@ -31,7 +31,7 @@
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",
     "@ai-sdk/react": "^1.2.12",
-    "@apollo/client": "^3.13.9",
+    "@apollo/client": "^4.0.5",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
     "@apollo/gateway": "^2.11.2",
     "@apollo/sandbox": "^2.7.1",
