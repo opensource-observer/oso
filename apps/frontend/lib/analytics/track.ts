@@ -3,14 +3,14 @@ import { PostHog } from "posthog-node";
 import { PostHogClient } from "@/lib/clients/posthog";
 
 export class PostHogTracker {
-  private client: PostHog;
+  private client: PostHog | undefined;
   private user: User;
 
   constructor(user: User) {
     this.client = PostHogClient();
     this.user = user;
     if (user.role !== "anonymous") {
-      this.client.identify({
+      this.client?.identify({
         distinctId: user.userId,
         properties: {
           name: user.name,
@@ -25,7 +25,7 @@ export class PostHogTracker {
       return;
     }
 
-    this.client.capture({
+    this.client?.capture({
       distinctId: this.user.userId,
       event: eventName,
       properties: {
@@ -38,7 +38,7 @@ export class PostHogTracker {
   }
 
   async [Symbol.asyncDispose]() {
-    await this.client.shutdown();
+    await this.client?.shutdown();
   }
 }
 
