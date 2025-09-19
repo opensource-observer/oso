@@ -3,6 +3,7 @@ import {
   DOMAIN,
   MAILJET_API_KEY,
   MAILJET_API_SECRET,
+  MAILJET_FROM_EMAIL,
 } from "@/apps/frontend/lib/config";
 
 const client = mailjet.apiConnect(MAILJET_API_KEY, MAILJET_API_SECRET);
@@ -98,7 +99,7 @@ export async function sendInvitationEmail({
     Messages: [
       {
         From: {
-          Email: `no-reply@opensource.observer`,
+          Email: MAILJET_FROM_EMAIL,
           Name: "OSO - Open Source Observer",
         },
         To: [
