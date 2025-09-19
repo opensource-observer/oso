@@ -429,6 +429,75 @@ export const dynamicTableContextsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const invitationsRowSchema = z.object({
+  accepted_at: z.string().nullable(),
+  accepted_by: z.string().nullable(),
+  created_at: z.string(),
+  deleted_at: z.string().nullable(),
+  email: z.string(),
+  expires_at: z.string(),
+  id: z.string(),
+  invited_by: z.string(),
+  org_id: z.string(),
+  org_name: z.string(),
+  status: z.string(),
+  updated_at: z.string(),
+});
+
+export const invitationsInsertSchema = z.object({
+  accepted_at: z.string().optional().nullable(),
+  accepted_by: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  email: z.string(),
+  expires_at: z.string().optional(),
+  id: z.string().optional(),
+  invited_by: z.string(),
+  org_id: z.string(),
+  org_name: z.string(),
+  status: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const invitationsUpdateSchema = z.object({
+  accepted_at: z.string().optional().nullable(),
+  accepted_by: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  email: z.string().optional(),
+  expires_at: z.string().optional(),
+  id: z.string().optional(),
+  invited_by: z.string().optional(),
+  org_id: z.string().optional(),
+  org_name: z.string().optional(),
+  status: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const invitationsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("invitations_accepted_by_fkey"),
+    columns: z.tuple([z.literal("accepted_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("invitations_invited_by_fkey"),
+    columns: z.tuple([z.literal("invited_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("invitations_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const notebooksRowSchema = z.object({
   created_at: z.string(),
   created_by: z.string(),
@@ -792,6 +861,13 @@ export const usersByOrganizationRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const acceptInvitationArgsSchema = z.object({
+  p_invitation_id: z.string(),
+  p_user_id: z.string(),
+});
+
+export const acceptInvitationReturnsSchema = z.boolean();
+
 export const addCreditsArgsSchema = z.object({
   p_amount: z.number(),
   p_metadata: jsonSchema.optional(),
@@ -810,6 +886,10 @@ export const addOrganizationCreditsArgsSchema = z.object({
 });
 
 export const addOrganizationCreditsReturnsSchema = z.boolean();
+
+export const cleanupOrphanedInvitationsArgsSchema = z.object({});
+
+export const cleanupOrphanedInvitationsReturnsSchema = z.undefined();
 
 export const deductCreditsArgsSchema = z.object({
   p_amount: z.number(),
@@ -831,6 +911,10 @@ export const deductOrganizationCreditsArgsSchema = z.object({
 });
 
 export const deductOrganizationCreditsReturnsSchema = z.boolean();
+
+export const expireOldInvitationsArgsSchema = z.object({});
+
+export const expireOldInvitationsReturnsSchema = z.undefined();
 
 export const getOrganizationCreditsArgsSchema = z.object({
   p_org_id: z.string(),

@@ -101,3 +101,10 @@ export const OSO_ENTITIES = [
   "project.project_id",
   "metrics.metric_id",
 ];
+
+export const MAILJET_API_KEY =
+  process.env.MJ_API_KEY ?? "MISSING MAILJET_API_KEY";
+export const MAILJET_API_SECRET =
+  process.env.MJ_SECRET_KEY ?? "MISSING MAILJET_API_SECRET";
+export const MAILJET_FROM_EMAIL =
+  process.env.MJ_FROM_EMAIL ?? "MISSING MAILJET_FROM_EMAIL";
