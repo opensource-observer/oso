@@ -562,6 +562,7 @@ export const organizationsRowSchema = z.object({
   deleted_at: z.string().nullable(),
   id: z.string(),
   org_name: z.string(),
+  plan_id: z.string().nullable(),
   updated_at: z.string(),
 });
 
@@ -571,6 +572,7 @@ export const organizationsInsertSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string(),
+  plan_id: z.string().optional().nullable(),
   updated_at: z.string().optional(),
 });
 
@@ -580,6 +582,7 @@ export const organizationsUpdateSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string().optional(),
+  plan_id: z.string().optional().nullable(),
   updated_at: z.string().optional(),
 });
 
@@ -591,7 +594,38 @@ export const organizationsRelationshipsSchema = z.tuple([
     referencedRelation: z.literal("user_profiles"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
+  z.object({
+    foreignKeyName: z.literal("organizations_plan_id_fkey"),
+    columns: z.tuple([z.literal("plan_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("pricing_plan"),
+    referencedColumns: z.tuple([z.literal("plan_id")]),
+  }),
 ]);
+
+export const pricingPlanRowSchema = z.object({
+  created_at: z.string(),
+  plan_id: z.string(),
+  plan_name: z.string(),
+  price_per_credit: z.number(),
+  updated_at: z.string(),
+});
+
+export const pricingPlanInsertSchema = z.object({
+  created_at: z.string().optional(),
+  plan_id: z.string().optional(),
+  plan_name: z.string(),
+  price_per_credit: z.number(),
+  updated_at: z.string().optional(),
+});
+
+export const pricingPlanUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  plan_id: z.string().optional(),
+  plan_name: z.string().optional(),
+  price_per_credit: z.number().optional(),
+  updated_at: z.string().optional(),
+});
 
 export const purchaseIntentsRowSchema = z.object({
   completed_at: z.string().nullable(),
