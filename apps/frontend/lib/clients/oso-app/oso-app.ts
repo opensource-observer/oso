@@ -1340,6 +1340,190 @@ class OsoAppClient {
     return data || [];
   }
 
+  /**
+   * Creates an invitation to join an organization
+   * @param args - Contains the organization name and email (invitees are always assigned 'member' role)
+   * @returns Promise<any> - The created invitation
+   */
+  async createInvitation(
+    args: Partial<{
+      orgName: string;
+      email: string;
+    }>,
+  ) {
+    console.log("createInvitation: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const email = ensure(args.email, "Missing email argument");
+
+    const response = await fetch("/api/v1/invitations/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orgName,
+        email,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Failed to create invitation");
+    }
+
+    return result.invitation;
+  }
+
+  /**
+   * Lists all invitations for an organization
+   * @param args - Contains the organization name
+   * @returns Promise<any[]> - Array of invitations
+   */
+  async listInvitationsForOrg(
+    args: Partial<{
+      orgName: string;
+    }>,
+  ) {
+    console.log("listInvitationsForOrg: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+
+    const { data, error } = await this.supabaseClient
+      .from("invitations")
+      .select(
+        `
+        *,
+        inviter:user_profiles!invited_by(id, email, full_name),
+        organization:organizations!org_id(org_name)
+      `,
+      )
+      .eq("organizations.org_name", orgName)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  }
+
+  /**
+   * Accepts an invitation using the invitation ID
+   * @param args - Contains the invitation ID
+   * @returns Promise<boolean> - Success status
+   */
+  async acceptInvitation(
+    args: Partial<{
+      invitationId: string;
+    }>,
+  ) {
+    console.log("acceptInvitation: ", args);
+    const invitationId = ensure(
+      args.invitationId,
+      "Missing invitationId argument",
+    );
+
+    const user = await this.getUser();
+
+    const { data, error } = await this.supabaseClient.rpc("accept_invitation", {
+      p_invitation_id: invitationId,
+      p_user_id: user.id,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
+  /**
+   * Gets an invitation by its ID
+   * @param args - Contains the invitation id
+   * @returns Promise<object> - The invitation details
+   */
+  async getInviteById(
+    args: Partial<{
+      inviteId: string;
+    }>,
+  ) {
+    console.log("getInviteById: ", args);
+    const inviteId = ensure(args.inviteId, "Missing inviteId argument");
+
+    const { data, error } = await this.supabaseClient
+      .from("invitations")
+      .select(
+        `
+        id,
+        email,
+        org_id,
+        status,
+        expires_at,
+        created_at,
+        inviter:user_profiles!invited_by(email),
+        organization:organizations!org_id(org_name)
+      `,
+      )
+      .eq("id", inviteId)
+      .is("deleted_at", null)
+      .single();
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find invitation with id=${inviteId}`,
+      );
+    }
+
+    return {
+      invite_id: data.id,
+      inviter_email: data.inviter?.email,
+      invitee_email: data.email,
+      org_id: data.org_id,
+      org_name: data.organization?.org_name,
+      status: data.status,
+      expires_at: data.expires_at,
+      created_at: data.created_at,
+    };
+  }
+
+  /**
+   * Deletes/revokes an invitation, only by the user who created it
+   * @param args - Contains the invitation id
+   * @returns Promise<boolean> - Returns true if revoked, false if invitation not found or not pending
+   */
+  async deleteInvitation(
+    args: Partial<{
+      invitationId: string;
+    }>,
+  ) {
+    console.log("deleteInvitation: ", args);
+    const invitationId = ensure(
+      args.invitationId,
+      "Missing invitationId argument",
+    );
+
+    const user = await this.getUser();
+
+    const { error } = await this.supabaseClient
+      .from("invitations")
+      .update({
+        status: "revoked",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", invitationId)
+      .eq("invited_by", user.id)
+      .eq("status", "pending");
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  }
+
   private async createSupabaseAuthHeaders() {
     const { data: sessionData, error } =
       await this.supabaseClient.auth.getSession();

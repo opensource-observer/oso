@@ -71,6 +71,11 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "buyCredits",
   "getCreditPackages",
   "getMyPurchaseHistory",
+  "createInvitation",
+  "listInvitationsForOrg",
+  "acceptInvitation",
+  "deleteInvitation",
+  "getInviteById",
 ];
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [
