@@ -396,6 +396,73 @@ export type Database = {
           },
         ];
       };
+      invitations: {
+        Row: {
+          accepted_at: string | null;
+          accepted_by: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string;
+          org_id: string;
+          org_name: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          invited_by: string;
+          org_id: string;
+          org_name: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string;
+          org_id?: string;
+          org_name?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invitations_accepted_by_fkey";
+            columns: ["accepted_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitations_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitations_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notebooks: {
         Row: {
           created_at: string;
@@ -752,6 +819,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accept_invitation: {
+        Args: { p_invitation_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       add_credits: {
         Args: {
           p_amount: number;
@@ -770,6 +841,10 @@ export type Database = {
           p_user_id: string;
         };
         Returns: boolean;
+      };
+      cleanup_orphaned_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
       };
       deduct_credits: {
         Args: {
@@ -791,6 +866,10 @@ export type Database = {
           p_user_id: string;
         };
         Returns: boolean;
+      };
+      expire_old_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
       };
       get_organization_credits: {
         Args: { p_org_id: string };

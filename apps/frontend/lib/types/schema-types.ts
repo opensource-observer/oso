@@ -98,6 +98,16 @@ export type DynamicTableContextsUpdate = z.infer<
 export type DynamicTableContextsRelationships = z.infer<
   typeof generated.dynamicTableContextsRelationshipsSchema
 >;
+export type InvitationsRow = z.infer<typeof generated.invitationsRowSchema>;
+export type InvitationsInsert = z.infer<
+  typeof generated.invitationsInsertSchema
+>;
+export type InvitationsUpdate = z.infer<
+  typeof generated.invitationsUpdateSchema
+>;
+export type InvitationsRelationships = z.infer<
+  typeof generated.invitationsRelationshipsSchema
+>;
 export type NotebooksRow = z.infer<typeof generated.notebooksRowSchema>;
 export type NotebooksInsert = z.infer<typeof generated.notebooksInsertSchema>;
 export type NotebooksUpdate = z.infer<typeof generated.notebooksUpdateSchema>;
@@ -190,6 +200,12 @@ export type UsersByOrganizationUpdate = z.infer<
 export type UsersByOrganizationRelationships = z.infer<
   typeof generated.usersByOrganizationRelationshipsSchema
 >;
+export type AcceptInvitationArgs = z.infer<
+  typeof generated.acceptInvitationArgsSchema
+>;
+export type AcceptInvitationReturns = z.infer<
+  typeof generated.acceptInvitationReturnsSchema
+>;
 export type AddCreditsArgs = z.infer<typeof generated.addCreditsArgsSchema>;
 export type AddCreditsReturns = z.infer<
   typeof generated.addCreditsReturnsSchema
@@ -199,6 +215,12 @@ export type AddOrganizationCreditsArgs = z.infer<
 >;
 export type AddOrganizationCreditsReturns = z.infer<
   typeof generated.addOrganizationCreditsReturnsSchema
+>;
+export type CleanupOrphanedInvitationsArgs = z.infer<
+  typeof generated.cleanupOrphanedInvitationsArgsSchema
+>;
+export type CleanupOrphanedInvitationsReturns = z.infer<
+  typeof generated.cleanupOrphanedInvitationsReturnsSchema
 >;
 export type DeductCreditsArgs = z.infer<
   typeof generated.deductCreditsArgsSchema
@@ -211,6 +233,12 @@ export type DeductOrganizationCreditsArgs = z.infer<
 >;
 export type DeductOrganizationCreditsReturns = z.infer<
   typeof generated.deductOrganizationCreditsReturnsSchema
+>;
+export type ExpireOldInvitationsArgs = z.infer<
+  typeof generated.expireOldInvitationsArgsSchema
+>;
+export type ExpireOldInvitationsReturns = z.infer<
+  typeof generated.expireOldInvitationsReturnsSchema
 >;
 export type GetOrganizationCreditsArgs = z.infer<
   typeof generated.getOrganizationCreditsArgsSchema
