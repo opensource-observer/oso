@@ -3,6 +3,7 @@ MODEL(
   description 'Chain metrics',
   dialect trino,
   kind full,
+  partitioned_by (DAY("sample_date"), "chain", "metric_name"),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
@@ -34,6 +35,16 @@ defillama_metrics AS (
     AND chain_alias.source = 'defillama'
 ),
 
+l2beat_metrics AS (
+  SELECT
+    sample_date,
+    'L2BEAT' AS source,
+    chain,
+    metric_name,
+    amount
+  FROM oso.int_chain_metrics_from_l2beat
+),
+
 oso_metrics AS (
   SELECT
     sample_date,
@@ -42,12 +53,19 @@ oso_metrics AS (
     metric_name,
     amount
   FROM oso.int_chain_metrics_from_oso
+  WHERE (
+    -- TODO: remove once we have support for custom gas tokens
+    chain != 'CELO'
+    AND metric_name != 'LAYER2_GAS_FEES'
+  )
 ),
 
 union_metrics AS (
   SELECT * FROM gtp_metrics
   UNION ALL
   SELECT * FROM defillama_metrics
+  UNION ALL
+  SELECT * FROM l2beat_metrics
   UNION ALL
   SELECT * FROM oso_metrics
 )
