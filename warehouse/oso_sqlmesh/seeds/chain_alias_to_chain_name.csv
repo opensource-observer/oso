@@ -13,3 +13,11 @@ defillama,zksync era,ZKSYNC_ERA
 growthepie,arbitrum,ARBITRUM_ONE
 growthepie,ethereum,MAINNET
 growthepie,fraxtal,FRAX
+l2beat,op-mainnet,OPTIMISM
+l2beat,polygonzkevm,POLYGON_ZKEVM
+l2beat,fraxtal,FRAX
+l2beat,derive,LYRA
+l2beat,world,WORLDCHAIN
+l2beat,arbitrum,ARBITRUM_ONE
+l2beat,polygon-pos,MATIC
+l2beat,zksync-era,ZKSYNC_ERA

@@ -34,6 +34,30 @@ WITH contract_metrics AS (
   GROUP BY 1, 2
 ),
 
+layer2_gas_fees AS (
+  SELECT
+    bucket_day AS sample_date,
+    event_source AS chain,
+    'LAYER2_GAS_FEES' AS metric_name,
+    SUM(l2_gas_fee / 1e18) AS amount
+  FROM oso.int_events_daily__l2_transactions
+  WHERE
+    bucket_day BETWEEN @start_dt AND @end_dt
+  GROUP BY 1, 2, 3
+),
+
+layer1_gas_fees AS (
+  SELECT
+    bucket_day AS sample_date,
+    event_source AS chain,
+    'LAYER1_GAS_FEES' AS metric_name,
+    SUM(l1_gas_fee / 1e18) AS amount
+  FROM oso.int_events_daily__l2_transactions
+  WHERE
+    bucket_day BETWEEN @start_dt AND @end_dt
+  GROUP BY 1, 2, 3
+),
+
 deployer_metrics AS (
   SELECT
     DATE_TRUNC('DAY', deployment_timestamp::DATE) AS sample_date,
@@ -126,6 +150,10 @@ union_metrics AS (
   SELECT * FROM worldchain_userops
   UNION ALL
   SELECT * FROM worldchain_users
+  UNION ALL
+  SELECT * FROM layer2_gas_fees
+  UNION ALL
+  SELECT * FROM layer1_gas_fees
 )
 
 SELECT
