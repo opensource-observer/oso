@@ -3,7 +3,6 @@ MODEL (
   description "Chain-level metrics from L2Beat",
   kind FULL,
   dialect trino,
-  partitioned_by (DAY("sample_date"), "chain", "metric_name"),
   audits (
     has_at_least_n_rows(threshold := 0)
   )

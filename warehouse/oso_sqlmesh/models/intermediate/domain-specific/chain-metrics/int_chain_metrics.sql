@@ -3,7 +3,7 @@ MODEL(
   description 'Chain metrics',
   dialect trino,
   kind full,
-  partitioned_by (DAY("sample_date"), "chain", "metric_name"),
+  partitioned_by "metric_name",
   audits (
     has_at_least_n_rows(threshold := 0)
   )
