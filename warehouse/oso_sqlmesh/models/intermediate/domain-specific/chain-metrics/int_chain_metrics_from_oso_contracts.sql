@@ -11,7 +11,6 @@ MODEL (
   start @blockchain_incremental_start,
   cron '@daily',
   dialect trino,
-  partitioned_by (DAY("sample_date"), "chain", "metric_name"),
   grain (sample_date, chain, metric_name),
   audits (
     has_at_least_n_rows(threshold := 0),
