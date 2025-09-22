@@ -1,159 +1,48 @@
 MODEL (
   name oso.int_chain_metrics_from_oso,
   description "Chain-level metrics from OSO",
-  kind INCREMENTAL_BY_TIME_RANGE (
-    time_column sample_date,
-    batch_size 180,
-    batch_concurrency 2,
-    lookback 31,
-    forward_only true,
-  ),
-  start @blockchain_incremental_start,
-  cron '@daily',
+  kind FULL,
   dialect trino,
   partitioned_by (DAY("sample_date"), "chain", "metric_name"),
   grain (sample_date, chain, metric_name),
   audits (
     has_at_least_n_rows(threshold := 0),
   ),
-  ignored_rules (
-    "incrementalmusthaveforwardonly",
-    "incrementalmustdefinenogapsaudit",
-  )
 );
 
 WITH contract_metrics AS (
   SELECT
-    DATE_TRUNC('DAY', deployment_timestamp::DATE) AS sample_date,
-    contract_namespace AS chain,
-    'CONTRACTS_DEPLOYED' AS metric_name,
-    COUNT(DISTINCT contract_address) AS amount
-  FROM oso.int_contracts_overview
-  WHERE
-    deployment_timestamp BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2
-),
-
-layer2_gas_fees AS (
-  SELECT
-    bucket_day AS sample_date,
-    event_source AS chain,
-    'LAYER2_GAS_FEES' AS metric_name,
-    SUM(l2_gas_fee / 1e18) AS amount
-  FROM oso.int_events_daily__l2_transactions
-  WHERE
-    bucket_day BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2, 3
-),
-
-layer1_gas_fees AS (
-  SELECT
-    bucket_day AS sample_date,
-    event_source AS chain,
-    'LAYER1_GAS_FEES' AS metric_name,
-    SUM(l1_gas_fee / 1e18) AS amount
-  FROM oso.int_events_daily__l2_transactions
-  WHERE
-    bucket_day BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2, 3
-),
-
-deployer_metrics AS (
-  SELECT
-    DATE_TRUNC('DAY', deployment_timestamp::DATE) AS sample_date,
-    contract_namespace AS chain,
-    'ACTIVE_DEPLOYERS' AS metric_name,
-    COUNT(DISTINCT originating_address) AS amount
-  FROM oso.int_contracts_overview
-  WHERE
-    deployment_timestamp BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2
-),
-
-userops_4337 AS (
-  SELECT
-    bucket_day AS sample_date,
-    event_source AS chain,
-    '4337_USEROPS' AS metric_name,
-    SUM(count) AS amount
-  FROM oso.int_events_daily__4337
-  WHERE
-    event_type = 'CONTRACT_INVOCATION_VIA_USEROP'
-    AND bucket_day BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2, 3
-),
-
-active_accounts_4337 AS (
-  SELECT
-    bucket_day AS sample_date,
-    event_source AS chain,
-    '4337_ACTIVE_ACCOUNTS' AS metric_name,
-    APPROX_DISTINCT(from_artifact_id) AS amount
-  FROM oso.int_events_daily__4337
-  WHERE
-    event_type = 'CONTRACT_INVOCATION_VIA_USEROP'
-    AND from_artifact_id IS NOT NULL
-    AND bucket_day BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2, 3
-),
-
-upgrades_7702 AS (
-  SELECT
-    DATE_TRUNC('DAY', block_timestamp::DATE) AS sample_date,
+    sample_date,
     chain,
-    '7702_EOA_UPGRADES' AS metric_name,
-    COUNT(DISTINCT from_address) AS amount
-  FROM oso.stg_superchain__7702_transactions
-  WHERE
-    to_address = from_address
-    AND block_timestamp BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2, 3
+    metric_name,
+    amount
+  FROM oso.int_chain_metrics_from_oso_contracts
 ),
 
-worldchain_userops AS (
+l2_transactions_metrics AS (
   SELECT
-    bucket_day AS sample_date,
-    event_source AS chain,
-    event_type AS metric_name,
-    SUM(count) AS amount
-  FROM oso.int_events_daily__worldchain_userops
-  WHERE
-    event_type = 'WORLDCHAIN_VERIFIED_USEROP'
-    AND bucket_day BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2, 3
+    sample_date,
+    chain,
+    metric_name,
+    amount
+  FROM oso.int_chain_metrics_from_oso_l2_transactions
 ),
 
-worldchain_users AS (
+l2_4337_userops_metrics AS (
   SELECT
-    bucket_day AS sample_date,
-    event_source AS chain,
-    'WORLDCHAIN_VERIFIED_USERS' AS metric_name,
-    COUNT(DISTINCT from_artifact_id) AS amount
-  FROM oso.int_events_daily__worldchain_userops
-  WHERE
-    event_type = 'WORLDCHAIN_VERIFIED_USEROP'
-    AND bucket_day BETWEEN @start_dt AND @end_dt
-  GROUP BY 1, 2, 3
+    sample_date,
+    chain,
+    metric_name,
+    amount
+  FROM oso.int_chain_metrics_from_oso_4337_userops
 ),
 
 union_metrics AS (
   SELECT * FROM contract_metrics
   UNION ALL
-  SELECT * FROM deployer_metrics
+  SELECT * FROM l2_transactions_metrics
   UNION ALL
-  SELECT * FROM userops_4337
-  UNION ALL
-  SELECT * FROM active_accounts_4337
-  UNION ALL
-  SELECT * FROM upgrades_7702
-  UNION ALL
-  SELECT * FROM worldchain_userops
-  UNION ALL
-  SELECT * FROM worldchain_users
-  UNION ALL
-  SELECT * FROM layer2_gas_fees
-  UNION ALL
-  SELECT * FROM layer1_gas_fees
+  SELECT * FROM l2_4337_userops_metrics
 )
 
 SELECT
