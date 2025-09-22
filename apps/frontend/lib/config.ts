@@ -73,7 +73,8 @@ export const TRINO_ADMIN_PASSWORD =
   process.env.TRINO_ADMIN_PASSWORD ?? "MISSING TRINO_PASSWORD";
 export const TRINO_CATALOG = process.env.TRINO_CATALOG ?? "iceberg";
 export const TRINO_SCHEMA = process.env.TRINO_SCHEMA ?? "oso";
-export const TRINO_JWT_SECRET = process.env.TRINO_JWT_SECRET;
+export const TRINO_JWT_SECRET =
+  process.env.TRINO_JWT_SECRET ?? "MISSING TRINO_JWT_SECRET";
 
 export const ALGOLIA_APPLICATION_ID =
   process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID ??

@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { Readable } from "node:stream";
 import { ReadableStream as WebReadableStream } from "node:stream/web";
-import cloneable from "cloneable-readable";
 import { getTrinoClient } from "@/lib/clients/trino";
 import type { Iterator, QueryResult } from "trino-client";
 import { getTableNamesFromSql } from "@/lib/parsing";
@@ -81,6 +79,7 @@ export async function POST(request: NextRequest) {
     //console.log(objResponse);
     if (objResponse.Body) {
       const respStream = WebReadableStream.from(objResponse.Body);
+      logger.log(`/api/sql: Public cache hit, short-circuiting`);
       return new NextResponse(respStream as ReadableStream, {
         headers: {
           "Content-Type": "application/x-ndjson",
@@ -132,11 +131,14 @@ export async function POST(request: NextRequest) {
       //console.log(objResponse);
       if (objResponse.Body) {
         const respStream = WebReadableStream.from(objResponse.Body);
+        logger.log(`/api/sql: Private cache hit, short-circuiting`);
         return new NextResponse(respStream as ReadableStream, {
           headers: {
             "Content-Type": "application/x-ndjson",
           },
         });
+      } else {
+        logger.log(`/api/sql: No private cache hit (no body)`);
       }
     } catch (error) {
       logger.log(`/api/sql: No private cache hit, ${error}`);
@@ -175,20 +177,15 @@ export async function POST(request: NextRequest) {
       assets,
       format,
     );
+    const [responseStream, cacheStream] = readableStream.tee();
 
-    // This is necessary because Next.js does not expect node:stream/web
-    const nodeReadable = Readable.fromWeb(readableStream as WebReadableStream);
-    const cloneableStream = cloneable(nodeReadable);
-    const responseStream = WebReadableStream.from(cloneableStream.clone());
     // Auto-caching is only available for Enterprise plan users
     if (orgPlan?.plan_name === ENTERPRISE_PLAN_NAME) {
-      const cacheStream = cloneableStream.clone();
       await putObjectByQuery(user.orgName, reqBody, cacheStream);
       logger.log(`/api/sql: Cached SQL query response`);
     }
 
-    // This is necessary because Next.js does not expect node:stream/web
-    return new NextResponse(responseStream as ReadableStream, {
+    return new NextResponse(responseStream, {
       headers: {
         "Content-Type": "application/x-ndjson",
       },
