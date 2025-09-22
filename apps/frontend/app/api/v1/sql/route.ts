@@ -181,8 +181,13 @@ export async function POST(request: NextRequest) {
 
     // Auto-caching is only available for Enterprise plan users
     if (orgPlan?.plan_name === ENTERPRISE_PLAN_NAME) {
-      await putObjectByQuery(user.orgName, reqBody, cacheStream);
-      logger.log(`/api/sql: Cached SQL query response`);
+      // Puts are best-effort
+      try {
+        await putObjectByQuery(user.orgName, reqBody, cacheStream);
+        logger.log(`/api/sql: Cached SQL query response`);
+      } catch (error) {
+        logger.warn(`/api/sql: Failed to cache SQL query response: ${error}`);
+      }
     }
 
     return new NextResponse(responseStream, {
