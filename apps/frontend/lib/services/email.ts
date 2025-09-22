@@ -22,7 +22,7 @@ export async function sendInvitationEmail({
   inviterName,
 }: InvitationEmailData): Promise<void> {
   const PROTOCOL = DOMAIN.includes("localhost") ? "http" : "https";
-  const inviteUrl = `${PROTOCOL}://${DOMAIN}/invite/${inviteToken}`;
+  const loginUrl = `${PROTOCOL}://${DOMAIN}/login?next=${`/invite/${inviteToken}`}`;
 
   const subject = `${
     inviterName || "Someone"
@@ -64,14 +64,14 @@ export async function sendInvitationEmail({
 
                   <!-- CTA Button -->
                   <div style="text-align: center; margin: 40px 0;">
-                    <a href="${inviteUrl}"
+                    <a href="${loginUrl}"
                        style="display: inline-block; background: #000000 !important; color: #ffffff !important; text-decoration: none; padding: 12px 24px; font-weight: 400; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;">
                       Accept Invitation
                     </a>
                   </div>
 
                   <p style="font-size: 12px; color: #999999; margin: 40px 0 0; line-height: 1.5; text-align: center;">
-                    Or visit: ${inviteUrl}
+                    Or visit: ${loginUrl}
                   </p>
                 </td>
               </tr>

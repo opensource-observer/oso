@@ -56,25 +56,28 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   const { dataFetches, variableName } = props;
   const key = genKey(props);
   const { client } = useOsoAppClient();
-  const { data, mutate, error, isLoading } = useSWR(key, async () => {
-    if (!dataFetches || _.isEmpty(dataFetches)) {
-      return;
-    } else if (!client) {
-      throw new Error("No Supabase client found");
-    }
-    const result: Record<string, any> = {};
-    for (const [key, { method, args }] of Object.entries(dataFetches)) {
-      if (!method) {
-        throw new Error(`No method provided for data fetch ${name}`);
+  const { data, mutate, error, isLoading } = useSWR(
+    client ? key : null,
+    async () => {
+      if (!dataFetches || _.isEmpty(dataFetches)) {
+        return;
+      } else if (!client) {
+        throw new Error("No Supabase client found");
       }
-      if (!args) {
-        throw new Error(`No args provided for data fetch ${name}`);
+      const result: Record<string, any> = {};
+      for (const [key, { method, args }] of Object.entries(dataFetches)) {
+        if (!method) {
+          throw new Error(`No method provided for data fetch ${name}`);
+        }
+        if (!args) {
+          throw new Error(`No args provided for data fetch ${name}`);
+        }
+        result[key] = await (client as any)[method](args);
       }
-      result[key] = await (client as any)[method](args);
-    }
-    console.log("OsoDataProvider:", props, data);
-    return result;
-  });
+      console.log("OsoDataProvider:", props, data);
+      return result;
+    },
+  );
   //console.log(JSON.stringify(data, null, 2));
   if (error) {
     console.log("OsoDataProvider error:", error);
@@ -90,7 +93,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
       {...props}
       variableName={variableName ?? DEFAULT_PLASMIC_KEY}
       formattedData={{ ...data, revalidate: mutate }}
-      loading={isLoading}
+      loading={isLoading || client == null}
       error={error}
     />
   );
