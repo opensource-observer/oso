@@ -1,4 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { Readable } from "node:stream";
+import { ReadableStream as WebReadableStream } from "node:stream/web";
+import cloneable from "cloneable-readable";
 import { getTrinoClient } from "@/lib/clients/trino";
 import type { Iterator, QueryResult } from "trino-client";
 import { getTableNamesFromSql } from "@/lib/parsing";
@@ -8,8 +11,10 @@ import { logger } from "@/lib/logger";
 import { AuthUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
 import {
+  PlanName,
   CreditsService,
   InsufficientCreditsError,
+  OrganizationPlan,
   TransactionType,
 } from "@/lib/services/credits";
 import { TRINO_JWT_SECRET } from "@/lib/config";
@@ -19,10 +24,18 @@ import {
   safeGetAssetsMaterializations,
 } from "@/lib/dagster/assets";
 import { z } from "zod";
+import {
+  getObjectByQuery,
+  putObjectByQuery,
+} from "@/lib/clients/cloudflare-r2";
 
 // Next.js route control
 export const revalidate = 0;
 export const maxDuration = 300;
+
+// Globals
+const PUBLIC_SQL_BUCKET = "public-sql";
+const ENTERPRISE_PLAN_NAME: PlanName = "ENTERPRISE";
 
 const RequestBodySchema = z.object({
   query: z.string(),
@@ -58,9 +71,26 @@ async function signJWT(user: AuthUser) {
  * @returns
  */
 export async function POST(request: NextRequest) {
-  const { query, format, includeAnalytics } = RequestBodySchema.parse(
-    await request.json(),
-  );
+  const reqBody = RequestBodySchema.parse(await request.json());
+  const { query, format, includeAnalytics } = reqBody;
+  logger.log(`/api/sql: ${query}`);
+
+  // First try to serve from a public cache (anon is okay)
+  try {
+    const objResponse = await getObjectByQuery(PUBLIC_SQL_BUCKET, reqBody);
+    //console.log(objResponse);
+    if (objResponse.Body) {
+      const respStream = WebReadableStream.from(objResponse.Body);
+      return new NextResponse(respStream as ReadableStream, {
+        headers: {
+          "Content-Type": "application/x-ndjson",
+        },
+      });
+    }
+  } catch (error) {
+    logger.log(`/api/sql: No public cache hit, ${error}`);
+  }
+
   const user = await getUser(request);
   await using tracker = trackServerEvent(user);
 
@@ -75,28 +105,45 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  const orgId = user.orgId;
+  console.log(`Org: ${user.orgName}`);
+  let orgPlan: OrganizationPlan | null = null;
+  try {
+    orgPlan = await CreditsService.checkAndDeductOrganizationCredits(
+      user,
+      user.orgId,
+      TransactionType.SQL_QUERY,
+      "/api/v1/sql",
+      { query },
+    );
+  } catch (error) {
+    if (error instanceof InsufficientCreditsError) {
+      return makeErrorResponse(error.message, 402);
+    }
+    logger.error(
+      `/api/sql: Error tracking usage for user ${user.userId}:`,
+      error,
+    );
+  }
 
-  if (orgId) {
+  // Try to get from private organization cache
+  if (orgPlan?.plan_name === ENTERPRISE_PLAN_NAME) {
     try {
-      await CreditsService.checkAndDeductOrganizationCredits(
-        user,
-        orgId,
-        TransactionType.SQL_QUERY,
-        "/api/v1/sql",
-        { query },
-      );
-    } catch (error) {
-      if (error instanceof InsufficientCreditsError) {
-        return makeErrorResponse(error.message, 402);
+      const objResponse = await getObjectByQuery(user.orgName, reqBody);
+      //console.log(objResponse);
+      if (objResponse.Body) {
+        const respStream = WebReadableStream.from(objResponse.Body);
+        return new NextResponse(respStream as ReadableStream, {
+          headers: {
+            "Content-Type": "application/x-ndjson",
+          },
+        });
       }
-      logger.error(
-        `/api/sql: Error tracking usage for user ${user.userId}:`,
-        error,
-      );
+    } catch (error) {
+      logger.log(`/api/sql: No private cache hit, ${error}`);
     }
   }
 
+  // Trino query
   const jwt = await signJWT(user);
   const tables = getTableNamesFromSql(query);
 
@@ -120,13 +167,28 @@ export async function POST(request: NextRequest) {
     if (error) {
       return makeErrorResponse(error.message, 400);
     }
+
+    // Clone the response stream for caching
     const readableStream = mapToReadableStream(
       data.firstRow,
       data.iterator,
       assets,
       format,
     );
-    return new NextResponse(readableStream, {
+
+    // This is necessary because Next.js does not expect node:stream/web
+    const nodeReadable = Readable.fromWeb(readableStream as WebReadableStream);
+    const cloneableStream = cloneable(nodeReadable);
+    const responseStream = WebReadableStream.from(cloneableStream.clone());
+    // Auto-caching is only available for Enterprise plan users
+    if (orgPlan?.plan_name === ENTERPRISE_PLAN_NAME) {
+      const cacheStream = cloneableStream.clone();
+      await putObjectByQuery(user.orgName, reqBody, cacheStream);
+      logger.log(`/api/sql: Cached SQL query response`);
+    }
+
+    // This is necessary because Next.js does not expect node:stream/web
+    return new NextResponse(responseStream as ReadableStream, {
       headers: {
         "Content-Type": "application/x-ndjson",
       },
