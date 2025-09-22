@@ -6,6 +6,8 @@ import { DOMAIN } from "@/lib/config";
 
 // TODO(jabolo): Disable this once we transition to the new credits system
 const CREDITS_PREVIEW_MODE = true;
+export const PLAN_NAMES = ["FREE", "STARTER", "PRO", "ENTERPRISE"] as const;
+export type PlanName = (typeof PLAN_NAMES)[number];
 
 export enum TransactionType {
   SQL_QUERY = "sql_query",
@@ -148,9 +150,9 @@ export class CreditsService {
     transactionType: TransactionType,
     apiEndpoint?: string,
     metadata?: Record<string, any>,
-  ): Promise<boolean> {
+  ): Promise<OrganizationPlan | null> {
     if (CreditsService.isAnonymousUser(user)) {
-      return CREDITS_PREVIEW_MODE;
+      return null;
     }
 
     const orgPlan = await CreditsService.getOrganizationPlan(orgId);
@@ -185,7 +187,7 @@ export class CreditsService {
       logger.log(
         `Preview organization credit usage tracked for user ${user.userId} in org ${orgId} on ${transactionType} at ${apiEndpoint}`,
       );
-      return true;
+      return orgPlan;
     }
 
     if (error || !data) {
@@ -196,6 +198,6 @@ export class CreditsService {
       throw InsufficientCreditsError.create(orgName);
     }
 
-    return data;
+    return orgPlan;
   }
 }
