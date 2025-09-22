@@ -36,10 +36,6 @@ export class PostHogTracker {
       },
     });
   }
-
-  async [Symbol.asyncDispose]() {
-    await this.client?.shutdown();
-  }
 }
 
 export function trackServerEvent(user: User) {

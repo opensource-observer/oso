@@ -4,13 +4,14 @@ import { sendInvitationEmail } from "@/lib/services/email";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { v4 as uuid4 } from "uuid";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 const CreateInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
   orgName: z.string().min(1, "Organization name is required"),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withPostHogTracking(async (request: NextRequest) => {
   try {
     const supabase = await createServerClient();
     const {
@@ -191,4 +192,4 @@ export async function POST(request: NextRequest) {
       },
     );
   }
-}
+});

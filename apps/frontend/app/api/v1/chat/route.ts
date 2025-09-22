@@ -10,6 +10,7 @@ import {
   TransactionType,
 } from "@/lib/services/credits";
 import { createServerClient } from "@/lib/supabase/server";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 export const maxDuration = 60;
 const CHAT_PATH = "/v0/chat";
@@ -24,11 +25,11 @@ const getLatestMessage = (messages: any[]) => {
   return content || "Message not found";
 };
 
-export async function POST(req: NextRequest) {
+export const POST = withPostHogTracking(async (req: NextRequest) => {
   const supabaseClient = await createServerClient();
   const user = await getUser(req);
   const { chatId, ...prompt } = await req.json();
-  await using tracker = trackServerEvent(user);
+  const tracker = trackServerEvent(user);
 
   if (user.role === "anonymous") {
     logger.log(`/api/chat: User is anonymous`);
@@ -101,4 +102,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

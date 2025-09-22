@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { getUser } from "@/lib/auth/auth";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
-export async function GET(req: NextRequest) {
+export const GET = withPostHogTracking(async (req: NextRequest) => {
   const user = await getUser(req);
 
   if (user.role === "anonymous") {
@@ -11,4 +12,4 @@ export async function GET(req: NextRequest) {
   }
   const orgName = user.orgName;
   return NextResponse.redirect(new URL(`/${orgName}`, req.url));
-}
+});
