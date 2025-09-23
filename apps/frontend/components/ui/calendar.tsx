@@ -190,7 +190,10 @@ const CalendarMeta: CodeComponentMeta<CalendarProps> = {
     },
     defaultMonth: "object",
     month: "object",
-    onMonthChange: "object",
+    onMonthChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "month", type: "object" }],
+    },
     numberOfMonths: "number",
     showOutsideDays: "boolean",
     disabled: "boolean",
