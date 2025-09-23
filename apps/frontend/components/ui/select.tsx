@@ -3,18 +3,88 @@
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 import { cn } from "@/lib/utils";
 
 const Select = SelectPrimitive.Root;
 
+const SelectMeta: CodeComponentMeta<React.ComponentProps<typeof Select>> = {
+  name: "Select",
+  description: "shadcn/ui Select component",
+  props: {
+    children: "slot",
+    defaultValue: "string",
+    value: "string",
+    onValueChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "value", type: "string" }],
+    },
+    defaultOpen: "boolean",
+    open: "boolean",
+    onOpenChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "open", type: "boolean" }],
+    },
+    name: "string",
+    disabled: "boolean",
+    required: "boolean",
+  },
+  states: {
+    value: {
+      type: "writable",
+      valueProp: "value",
+      variableType: "text",
+      onChangeProp: "onValueChange",
+    },
+    open: {
+      type: "writable",
+      valueProp: "open",
+      variableType: "boolean",
+      onChangeProp: "onOpenChange",
+    },
+  },
+};
+
 const SelectGroup = SelectPrimitive.Group;
+
+const SelectGroupMeta: CodeComponentMeta<
+  React.ComponentProps<typeof SelectGroup>
+> = {
+  name: "SelectGroup",
+  description: "shadcn/ui SelectGroup component",
+  props: {
+    children: "slot",
+  },
+};
 
 const SelectValue = SelectPrimitive.Value;
 
+const SelectValueMeta: CodeComponentMeta<
+  React.ComponentProps<typeof SelectValue>
+> = {
+  name: "SelectValue",
+  description: "shadcn/ui SelectValue component",
+  props: {
+    placeholder: "string",
+  },
+};
+
+type SelectTriggerProps = React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Trigger
+>;
+
+const SelectTriggerMeta: CodeComponentMeta<SelectTriggerProps> = {
+  name: "SelectTrigger",
+  description: "shadcn/ui SelectTrigger component",
+  props: {
+    children: "slot",
+  },
+};
+
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+  SelectTriggerProps
 >(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
@@ -67,11 +137,37 @@ const SelectScrollDownButton = React.forwardRef<
 SelectScrollDownButton.displayName =
   SelectPrimitive.ScrollDownButton.displayName;
 
+type SelectContentProps = React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Content
+> & {
+  usePortal?: boolean;
+};
+
+const SelectContentMeta: CodeComponentMeta<SelectContentProps> = {
+  name: "SelectContent",
+  description: "shadcn/ui SelectContent component",
+  props: {
+    children: "slot",
+    side: {
+      type: "choice",
+      options: ["top", "right", "bottom", "left"],
+    },
+    sideOffset: "number",
+    align: {
+      type: "choice",
+      options: ["start", "center", "end"],
+    },
+    alignOffset: "number",
+    sticky: {
+      type: "choice",
+      options: ["partial", "always"],
+    },
+  },
+};
+
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & {
-    usePortal?: boolean;
-  }
+  SelectContentProps
 >(
   (
     { className, children, position = "popper", usePortal = true, ...props },
@@ -109,9 +205,21 @@ const SelectContent = React.forwardRef<
 );
 SelectContent.displayName = SelectPrimitive.Content.displayName;
 
+type SelectLabelProps = React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Label
+>;
+
+const SelectLabelMeta: CodeComponentMeta<SelectLabelProps> = {
+  name: "SelectLabel",
+  description: "shadcn/ui SelectLabel component",
+  props: {
+    children: "slot",
+  },
+};
+
 const SelectLabel = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Label>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+  SelectLabelProps
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
@@ -121,9 +229,26 @@ const SelectLabel = React.forwardRef<
 ));
 SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
+type SelectItemProps = React.ComponentPropsWithoutRef<
+  typeof SelectPrimitive.Item
+>;
+
+const SelectItemMeta: CodeComponentMeta<SelectItemProps> = {
+  name: "SelectItem",
+  description: "shadcn/ui SelectItem component",
+  props: {
+    children: "slot",
+    value: {
+      type: "string",
+      required: true,
+    },
+    disabled: "boolean",
+  },
+};
+
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+  SelectItemProps
 >(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Item
     ref={ref}
@@ -166,4 +291,12 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
+  // Meta
+  SelectMeta,
+  SelectGroupMeta,
+  SelectValueMeta,
+  SelectTriggerMeta,
+  SelectContentMeta,
+  SelectLabelMeta,
+  SelectItemMeta,
 };
