@@ -157,6 +157,7 @@ import {
   ContextMenuTrigger,
   ContextMenuTriggerMeta,
 } from "@/components/ui/context-menu";
+import { DataTable, DataTableMeta } from "@/components/ui/data-table";
 import {
   Select,
   SelectContent,
@@ -270,6 +271,7 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(ContextMenuSub, ContextMenuSubMeta);
   PLASMIC.registerComponent(ContextMenuSubContent, ContextMenuSubContentMeta);
   PLASMIC.registerComponent(ContextMenuSubTrigger, ContextMenuSubTriggerMeta);
+  PLASMIC.registerComponent(DataTable, DataTableMeta);
   PLASMIC.registerComponent(Select, SelectMeta);
   PLASMIC.registerComponent(SelectGroup, SelectGroupMeta);
   PLASMIC.registerComponent(SelectValue, SelectValueMeta);
