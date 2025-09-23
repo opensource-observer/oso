@@ -1394,7 +1394,7 @@ class OsoAppClient {
         `
         *,
         inviter:user_profiles!invited_by(id, email, full_name),
-        organizations!inner(org_name),
+        organizations!inner(org_name)
       `,
       )
       .eq("organizations.org_name", orgName)
@@ -1508,6 +1508,258 @@ class OsoAppClient {
     }
 
     return true;
+  }
+
+  /**
+   * Checks if the current user has permission to access a resource
+   * @param resourceType
+   * @param resourceId
+   */
+  async checkResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ): Promise<{
+    hasAccess: boolean;
+    accessType:
+      | "public_access"
+      | "authenticated_access"
+      | "authenticated_no_access"
+      | "no_access";
+    permissionLevel: "read" | "write" | "admin" | "owner" | null;
+    isOwner?: boolean;
+    resourceId: string;
+  }> {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    try {
+      const { data, error } = await this.supabaseClient.rpc(
+        "check_resource_permission",
+        {
+          p_resource_type: resourceType,
+          p_resource_id: resourceId,
+        },
+      );
+
+      if (error || !data) {
+        console.log("Error checking resource permission:", error);
+        return {
+          hasAccess: false,
+          accessType: "no_access" as const,
+          permissionLevel: null,
+          resourceId: "unknown",
+        };
+      }
+
+      return data as {
+        hasAccess: boolean;
+        accessType:
+          | "public_access"
+          | "authenticated_access"
+          | "authenticated_no_access"
+          | "no_access";
+        permissionLevel: "read" | "write" | "admin" | "owner" | null;
+        isOwner?: boolean;
+        resourceId: string;
+      };
+    } catch (error) {
+      console.log("Error checking resource permission:", error);
+      return {
+        hasAccess: false,
+        accessType: "no_access" as const,
+        permissionLevel: null,
+        resourceId: resourceId,
+      };
+    }
+  }
+
+  /**
+   * Grants permission to a user on a resource
+   * @param resourceType
+   * @param resourceId
+   * @param targetUserId
+   * @param permissionLevel
+   */
+  async grantResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+      targetUserId: string;
+      permissionLevel: "read" | "write" | "admin" | "owner";
+    }>,
+  ) {
+    const { resourceType, resourceId, targetUserId, permissionLevel } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+      targetUserId: ensure(args.targetUserId, "Missing targetUserId argument"),
+      permissionLevel: ensure(
+        args.permissionLevel,
+        "Missing permissionLevel argument",
+      ),
+    };
+
+    const user = await this.getUser();
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    console.log(
+      `Granting ${permissionLevel} permission on ${resourceType} ${resourceId} to user ${targetUserId} by ${user.id}`,
+    );
+
+    const { data: updateData } = await this.supabaseClient
+      .from("resource_permissions")
+      .update({
+        permission_level: permissionLevel,
+        granted_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", targetUserId)
+      .eq(column, resourceId)
+      .is("revoked_at", null)
+      .select()
+      .throwOnError();
+
+    if (updateData && updateData.length > 0) {
+      console.log("Permission updated successfully:", updateData);
+      return;
+    }
+
+    const { data } = await this.supabaseClient
+      .from("resource_permissions")
+      .insert({
+        user_id: targetUserId,
+        permission_level: permissionLevel,
+        granted_by: user.id,
+        [column]: resourceId,
+      })
+      .select()
+      .throwOnError();
+
+    console.log("Permission granted successfully:", data);
+  }
+
+  /**
+   * Makes a resource public by granting read access to everyone
+   */
+  async makeResourcePublic(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ) {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const user = await this.getUser();
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    const { data } = await this.supabaseClient
+      .from("resource_permissions")
+      .insert({
+        user_id: null,
+        permission_level: "read",
+        granted_by: user.id,
+        [column]: resourceId,
+      })
+      .select()
+      .throwOnError();
+
+    return data;
+  }
+
+  /**
+   * Makes a resource private by removing public access
+   */
+  async makeResourcePrivate(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ) {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    await this.supabaseClient
+      .from("resource_permissions")
+      .update({ revoked_at: new Date().toISOString() })
+      .is("user_id", null)
+      .eq(column, resourceId)
+      .throwOnError();
+  }
+
+  /**
+   * Revokes permission from a user on a resource
+   * @param resourceType
+   * @param resourceId
+   * @param targetUserId
+   */
+  async revokeResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+      targetUserId: string;
+    }>,
+  ) {
+    const { resourceType, resourceId, targetUserId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+      targetUserId: ensure(args.targetUserId, "Missing targetUserId argument"),
+    };
+
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    await this.supabaseClient
+      .from("resource_permissions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("user_id", targetUserId)
+      .eq(column, resourceId)
+      .throwOnError();
+  }
+
+  /**
+   * Lists all permissions for a resource
+   * @param resourceType
+   * @param resourceId
+   */
+  async listResourcePermissions(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ) {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    const { data, error } = await this.supabaseClient
+      .from("resource_permissions")
+      .select(
+        `
+        *,
+        user:user_profiles!user_id(id, email, full_name),
+        granted_by_user:user_profiles!granted_by(id, email, full_name)
+      `,
+      )
+      .eq(column, resourceId)
+      .is("revoked_at", null);
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
   }
 
   private async createSupabaseAuthHeaders() {
