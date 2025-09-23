@@ -190,6 +190,28 @@ class OsoAppClient {
     }
   }
 
+  async getOsoJwt(
+    args: Partial<{ orgName: string }>,
+  ): Promise<{ token: string }> {
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+
+    const searchParams = new URLSearchParams({ orgName });
+
+    const response = await fetch(`/api/v1/jwt?${searchParams.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Error syncing connector: ${error.error}`);
+    }
+    const result = await response.json();
+    ensure(result.token, "Missing token in response");
+    return result;
+  }
+
   /**
    * Creates a new organization and adds the creator as admin member
    * @param orgName

@@ -400,6 +400,7 @@ async function getUserByCookies(request: NextRequest): Promise<User> {
 async function signOsoJwt(
   user: AuthUser,
   org: Omit<OrganizationDetails, "orgRole">,
+  expirationTime: string = "1h",
 ): Promise<string> {
   const secret = OSO_JWT_SECRET;
   if (!secret) {
@@ -417,7 +418,7 @@ async function signOsoJwt(
     .setProtectedHeader({ alg: "HS256" })
     .setAudience("opensource-observer")
     .setIssuer("opensource-observer")
-    .setExpirationTime("1h")
+    .setExpirationTime(expirationTime)
     .sign(new TextEncoder().encode(secret));
 }
 
