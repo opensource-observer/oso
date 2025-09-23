@@ -44,7 +44,7 @@
     "@emotion/styled": "^11.14.1",
     "@feedbackfarm/react": "^4.0.10",
     "@headlessui/tailwindcss": "^0.2.2",
-    "@hookform/resolvers": "^5.2.1",
+    "@hookform/resolvers": "^5.2.2",
     "@monaco-editor/react": "^4.7.0",
     "@opensource-observer/utils": "workspace:*",
     "@plasmicapp/loader-nextjs": "^1.0.435",
