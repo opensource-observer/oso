@@ -174,6 +174,18 @@ export type ReservedNamesInsert = z.infer<
 export type ReservedNamesUpdate = z.infer<
   typeof generated.reservedNamesUpdateSchema
 >;
+export type ResourcePermissionsRow = z.infer<
+  typeof generated.resourcePermissionsRowSchema
+>;
+export type ResourcePermissionsInsert = z.infer<
+  typeof generated.resourcePermissionsInsertSchema
+>;
+export type ResourcePermissionsUpdate = z.infer<
+  typeof generated.resourcePermissionsUpdateSchema
+>;
+export type ResourcePermissionsRelationships = z.infer<
+  typeof generated.resourcePermissionsRelationshipsSchema
+>;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
   typeof generated.userCreditsInsertSchema
@@ -215,6 +227,24 @@ export type AddOrganizationCreditsArgs = z.infer<
 >;
 export type AddOrganizationCreditsReturns = z.infer<
   typeof generated.addOrganizationCreditsReturnsSchema
+>;
+export type CheckOrgAdminArgs = z.infer<
+  typeof generated.checkOrgAdminArgsSchema
+>;
+export type CheckOrgAdminReturns = z.infer<
+  typeof generated.checkOrgAdminReturnsSchema
+>;
+export type CheckOrgMembershipArgs = z.infer<
+  typeof generated.checkOrgMembershipArgsSchema
+>;
+export type CheckOrgMembershipReturns = z.infer<
+  typeof generated.checkOrgMembershipReturnsSchema
+>;
+export type CheckResourcePermissionArgs = z.infer<
+  typeof generated.checkResourcePermissionArgsSchema
+>;
+export type CheckResourcePermissionReturns = z.infer<
+  typeof generated.checkResourcePermissionReturnsSchema
 >;
 export type CleanupOrphanedInvitationsArgs = z.infer<
   typeof generated.cleanupOrphanedInvitationsArgsSchema

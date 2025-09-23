@@ -440,7 +440,6 @@ export const invitationsRowSchema = z.object({
   invited_by: z.string(),
   org_id: z.string(),
   org_name: z.string(),
-  status: z.string(),
   updated_at: z.string(),
 });
 
@@ -455,7 +454,6 @@ export const invitationsInsertSchema = z.object({
   invited_by: z.string(),
   org_id: z.string(),
   org_name: z.string(),
-  status: z.string().optional(),
   updated_at: z.string().optional(),
 });
 
@@ -470,7 +468,6 @@ export const invitationsUpdateSchema = z.object({
   invited_by: z.string().optional(),
   org_id: z.string().optional(),
   org_name: z.string().optional(),
-  status: z.string().optional(),
   updated_at: z.string().optional(),
 });
 
@@ -499,6 +496,7 @@ export const invitationsRelationshipsSchema = z.tuple([
 ]);
 
 export const notebooksRowSchema = z.object({
+  accessed_at: z.string().nullable(),
   created_at: z.string(),
   created_by: z.string(),
   data: z.string().nullable(),
@@ -510,6 +508,7 @@ export const notebooksRowSchema = z.object({
 });
 
 export const notebooksInsertSchema = z.object({
+  accessed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string(),
   data: z.string().optional().nullable(),
@@ -521,6 +520,7 @@ export const notebooksInsertSchema = z.object({
 });
 
 export const notebooksUpdateSchema = z.object({
+  accessed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   data: z.string().optional().nullable(),
@@ -626,6 +626,7 @@ export const organizationCreditsRelationshipsSchema = z.tuple([
 ]);
 
 export const organizationsRowSchema = z.object({
+  accessed_at: z.string().nullable(),
   created_at: z.string(),
   created_by: z.string(),
   deleted_at: z.string().nullable(),
@@ -636,6 +637,7 @@ export const organizationsRowSchema = z.object({
 });
 
 export const organizationsInsertSchema = z.object({
+  accessed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string(),
   deleted_at: z.string().optional().nullable(),
@@ -646,6 +648,7 @@ export const organizationsInsertSchema = z.object({
 });
 
 export const organizationsUpdateSchema = z.object({
+  accessed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
@@ -762,6 +765,73 @@ export const reservedNamesUpdateSchema = z.object({
   created_at: z.string().optional(),
   name: z.string().optional(),
 });
+
+export const resourcePermissionsRowSchema = z.object({
+  chat_id: z.string().nullable(),
+  created_at: z.string(),
+  granted_by: z.string().nullable(),
+  id: z.string(),
+  notebook_id: z.string().nullable(),
+  permission_level: z.string(),
+  revoked_at: z.string().nullable(),
+  updated_at: z.string(),
+  user_id: z.string().nullable(),
+});
+
+export const resourcePermissionsInsertSchema = z.object({
+  chat_id: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  granted_by: z.string().optional().nullable(),
+  id: z.string().optional(),
+  notebook_id: z.string().optional().nullable(),
+  permission_level: z.string(),
+  revoked_at: z.string().optional().nullable(),
+  updated_at: z.string().optional(),
+  user_id: z.string().optional().nullable(),
+});
+
+export const resourcePermissionsUpdateSchema = z.object({
+  chat_id: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  granted_by: z.string().optional().nullable(),
+  id: z.string().optional(),
+  notebook_id: z.string().optional().nullable(),
+  permission_level: z.string().optional(),
+  revoked_at: z.string().optional().nullable(),
+  updated_at: z.string().optional(),
+  user_id: z.string().optional().nullable(),
+});
+
+export const resourcePermissionsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("resource_permissions_chat_id_fkey"),
+    columns: z.tuple([z.literal("chat_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("chat_history"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("resource_permissions_granted_by_fkey"),
+    columns: z.tuple([z.literal("granted_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("resource_permissions_notebook_id_fkey"),
+    columns: z.tuple([z.literal("notebook_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("notebooks"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("resource_permissions_user_id_fkey"),
+    columns: z.tuple([z.literal("user_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
 
 export const userCreditsRowSchema = z.object({
   created_at: z.string(),
@@ -886,6 +956,27 @@ export const addOrganizationCreditsArgsSchema = z.object({
 });
 
 export const addOrganizationCreditsReturnsSchema = z.boolean();
+
+export const checkOrgAdminArgsSchema = z.object({
+  check_org_id: z.string(),
+  check_user_id: z.string(),
+});
+
+export const checkOrgAdminReturnsSchema = z.boolean();
+
+export const checkOrgMembershipArgsSchema = z.object({
+  check_org_id: z.string(),
+  check_user_id: z.string(),
+});
+
+export const checkOrgMembershipReturnsSchema = z.boolean();
+
+export const checkResourcePermissionArgsSchema = z.object({
+  p_resource_id: z.string(),
+  p_resource_type: z.string(),
+});
+
+export const checkResourcePermissionReturnsSchema = jsonSchema;
 
 export const cleanupOrphanedInvitationsArgsSchema = z.object({});
 
