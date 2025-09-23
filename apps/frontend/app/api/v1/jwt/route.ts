@@ -22,7 +22,7 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   const { data, error } = await supabaseClient
     .from("organizations")
     .select("id")
-    .eq("org_name", user.orgName)
+    .eq("org_name", orgName)
     .single();
 
   if (error) {
@@ -39,7 +39,7 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
     user,
     {
       orgId: data.id,
-      orgName: user.orgName,
+      orgName: orgName,
     },
     JWT_EXPIRATION,
   );
