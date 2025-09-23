@@ -19,6 +19,7 @@ interface MarimoCompletionRequest {
   };
   language: "python" | "sql" | "markdown";
   code: string;
+  model: string;
 }
 
 interface SchemaTable {
@@ -36,18 +37,22 @@ interface VariableContext {
   preview_value: unknown;
 }
 
-async function createChatCompletion(openai: OpenAI, content: string) {
+async function createChatCompletion(
+  openai: OpenAI,
+  content: string,
+  model: string,
+) {
   return await openai.chat.completions.create({
     messages: [{ role: "user", content }],
-    model: "oso/semantic",
+    model: model,
     stream: true,
   });
 }
 
-async function createResponse(openai: OpenAI, content: string) {
+async function createResponse(openai: OpenAI, content: string, model: string) {
   return await openai.responses.create({
     input: content,
-    model: "oso/semantic",
+    model: model,
     store: false,
     stream: true,
   });
@@ -94,6 +99,7 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
     language,
     code,
     osoApiKey: apiKey,
+    model,
   }: MarimoCompletionRequest & { osoApiKey?: string } = await req.json();
 
   const openai = new OpenAI({
@@ -115,14 +121,14 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
     });
 
     if (useResponses) {
-      const stream = await createResponse(openai, prompt);
+      const stream = await createResponse(openai, prompt, model);
 
       return createStreamingResponse(stream, (chunk) =>
         chunk.type === "response.output_text.delta" ? chunk.delta : null,
       );
     }
 
-    const stream = await createChatCompletion(openai, prompt);
+    const stream = await createChatCompletion(openai, prompt, model);
 
     return createStreamingResponse(
       stream,
