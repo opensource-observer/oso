@@ -25,11 +25,12 @@ const TextareaMeta: CodeComponentMeta<TextareaProps> = {
   name: "Textarea",
   description: "shadcn/ui Textarea component",
   props: {
+    defaultValue: "string",
     value: "string",
     placeholder: "string",
     onChange: {
       type: "eventHandler",
-      argTypes: [{ name: "event", type: "string" }],
+      argTypes: [{ name: "event", type: "object" }],
     },
     disabled: "boolean",
   },
@@ -39,6 +40,7 @@ const TextareaMeta: CodeComponentMeta<TextareaProps> = {
       valueProp: "value",
       variableType: "text",
       onChangeProp: "onChange",
+      onChangeArgsToValue: (event) => event.target.value,
     },
   },
 };

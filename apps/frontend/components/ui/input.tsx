@@ -7,7 +7,7 @@ type InputProps = React.ComponentProps<"input"> & {
   onPressEnter?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
 };
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, onPressEnter, ...props }, ref) => {
     return (
       <input
         type={type}
@@ -17,8 +17,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         ref={ref}
         onKeyUp={(e) => {
-          if (e.key === "Enter" && props.onPressEnter) {
-            props.onPressEnter(e);
+          if (e.key === "Enter" && onPressEnter) {
+            onPressEnter(e);
           }
         }}
         {...props}
@@ -37,11 +37,12 @@ const InputMeta: CodeComponentMeta<InputProps> = {
       options: ["text", "email", "date", "password", "number", "file", "url"],
       defaultValue: "text",
     },
+    defaultValue: "string",
     value: "string",
     placeholder: "string",
     onChange: {
       type: "eventHandler",
-      argTypes: [{ name: "event", type: "string" }],
+      argTypes: [{ name: "event", type: "object" }],
     },
     onPressEnter: {
       type: "eventHandler",
@@ -55,6 +56,7 @@ const InputMeta: CodeComponentMeta<InputProps> = {
       valueProp: "value",
       variableType: "text",
       onChangeProp: "onChange",
+      onChangeArgsToValue: (event) => event.target.value,
     },
   },
 };
