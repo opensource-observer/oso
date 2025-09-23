@@ -278,8 +278,9 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
         )
         workflow_config = WorkflowConfig(oso_api_key=SecretStr(oso_api_key))
         workflow_registry = get_workflow_registry(request)
-        semantic_workflow = await workflow_registry.get_workflow(
-            "semantic_text2sql", workflow_config, workflow_type=SemanticText2SQLWorkflow
+        semantic_workflow = t.cast(
+            SemanticText2SQLWorkflow,
+            await workflow_registry.get_workflow("semantic_text2sql", workflow_config),
         )
 
         # NOTE: for now this workflow does not support chat history it only accepts the most recent message
@@ -381,24 +382,31 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
             workflow_config = WorkflowConfig(oso_api_key=config.oso_api_key)
             workflow_registry = get_workflow_registry(request)
 
-            semantic_workflow = await workflow_registry.get_workflow(
-                "semantic_text2sql",
+            # Models from marimo have a `oso/` prefix
+            model = model.removeprefix("oso/")
+
+            logger.debug(
+                f"Starting streaming completion for {model} model...",
+                extra={
+                    "model": model,
+                },
+            )
+
+            workflow = await workflow_registry.get_workflow(
+                model,
                 workflow_config,
-                workflow_type=SemanticText2SQLWorkflow,
             )
 
             workflow_task = asyncio.create_task(
-                semantic_workflow.wrapped_run(
-                    Text2SQLStartEvent(
-                        input=user_query,
-                        synthesize_response=True,
-                        execute_sql=False,
-                    )
+                workflow.wrapped_run_from_kwargs(
+                    input=user_query,
+                    synthesize_response=True,
+                    execute_sql=False,
                 )
             )
 
             async def generate_stream():
-                thoughts_collector = semantic_workflow.resolver.get_resource(
+                thoughts_collector = workflow.resolver.get_resource(
                     "thoughts_collector"
                 )
                 async for chunk in stream_thoughts_and_response(
@@ -461,10 +469,12 @@ def setup_app(config: AgentServerConfig, lifespan: t.Callable[[FastAPI], t.Any])
             workflow_config = WorkflowConfig(oso_api_key=SecretStr(oso_api_key))
             workflow_registry = get_workflow_registry(request)
 
-            semantic_workflow = await workflow_registry.get_workflow(
-                "semantic_text2sql",
-                workflow_config,
-                workflow_type=SemanticText2SQLWorkflow,
+            semantic_workflow = t.cast(
+                SemanticText2SQLWorkflow,
+                await workflow_registry.get_workflow(
+                    "semantic_text2sql",
+                    workflow_config,
+                ),
             )
 
             semantic_result = await semantic_workflow.wrapped_run(
