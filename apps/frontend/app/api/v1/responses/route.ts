@@ -9,6 +9,7 @@ import {
   InsufficientCreditsError,
   TransactionType,
 } from "@/lib/services/credits";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 export const maxDuration = 60;
 const RESPONSES_PATH = "/v0/responses";
@@ -23,10 +24,10 @@ const getLatestMessage = (messages: any[]) => {
   return content || "Message not found";
 };
 
-export async function POST(req: NextRequest) {
+export const POST = withPostHogTracking(async (req: NextRequest) => {
   const user = await getUser(req);
   const body = await req.json();
-  await using tracker = trackServerEvent(user);
+  const tracker = trackServerEvent(user);
 
   if (user.role === "anonymous") {
     logger.log(`/api/v1/chat/responses: User is anonymous`);
@@ -88,4 +89,4 @@ export async function POST(req: NextRequest) {
     status: response.status,
     headers: response.headers,
   });
-}
+});

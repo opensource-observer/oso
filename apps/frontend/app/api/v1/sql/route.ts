@@ -26,6 +26,7 @@ import {
   getObjectByQuery,
   putObjectByQuery,
 } from "@/lib/clients/cloudflare-r2";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 // Next.js route control
 export const revalidate = 0;
@@ -68,7 +69,7 @@ async function signJWT(user: AuthUser) {
  * @param request
  * @returns
  */
-export async function POST(request: NextRequest) {
+export const POST = withPostHogTracking(async (request: NextRequest) => {
   const reqBody = RequestBodySchema.parse(await request.json());
   const { query, format, includeAnalytics } = reqBody;
   logger.log(`/api/sql: ${query}`);
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
   }
 
   const user = await getUser(request);
-  await using tracker = trackServerEvent(user);
+  const tracker = trackServerEvent(user);
 
   // If no query provided, short-circuit
   if (!query) {
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
     logger.log(e);
     return makeErrorResponse("Unknown error", 500);
   }
-}
+});
 
 function mapToReadableStream(
   firstRow: QueryResult,

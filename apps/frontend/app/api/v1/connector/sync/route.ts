@@ -6,6 +6,7 @@ import { getCatalogName } from "@/lib/dynamic-connectors";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/lib/types/supabase";
 import { logger } from "@/lib/logger";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 const IGNORED_SCHEMAS = new Set(["information_schema", "system"]);
 
@@ -138,7 +139,7 @@ async function syncSchema(
   return { tables: tableNames, success: result.every((res) => res) };
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withPostHogTracking(async (request: NextRequest) => {
   const supabaseClient = await createServerClient();
   const trinoClient = getTrinoAdminClient();
   const auth = await setSupabaseSession(supabaseClient, request);
@@ -231,4 +232,4 @@ export async function POST(request: NextRequest) {
     message: `Successfully synced ${schemas.length} schemas`,
     schemas: schemas,
   });
-}
+});

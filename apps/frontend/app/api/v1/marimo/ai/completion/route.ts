@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 import { getUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -80,12 +81,12 @@ function createStreamingResponse<T>(
   });
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withPostHogTracking(async (req: NextRequest) => {
   const user = await getUser(req);
   const baseURL = new URL("/api/v1/", req.url).href;
   const { searchParams } = new URL(req.url);
   const useResponses = searchParams.get("api") === "responses";
-  await using tracker = trackServerEvent(user);
+  const tracker = trackServerEvent(user);
 
   const {
     prompt,
@@ -134,4 +135,4 @@ export async function POST(req: NextRequest) {
       { status: error?.status || 500 },
     );
   }
-}
+});

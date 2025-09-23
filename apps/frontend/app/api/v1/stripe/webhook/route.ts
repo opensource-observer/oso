@@ -5,11 +5,12 @@ import { getStripeClient, extractIntentString } from "@/lib/clients/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { STRIPE_WEBHOOK_SECRET } from "@/lib/config";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 const stripe = getStripeClient();
 const supabase = createAdminClient();
 
-export async function POST(req: NextRequest) {
+export const POST = withPostHogTracking(async (req: NextRequest) => {
   const body = await req.text();
   const headersList = await headers();
   const signature = headersList.get("stripe-signature");
@@ -222,4 +223,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});
