@@ -176,8 +176,6 @@ BEGIN
       END
     )
     RETURNING id INTO org_id;
-    INSERT INTO public.users_by_organization (user_id, org_id, user_role)
-    VALUES (NEW.id, org_id, 'admin');
   END IF;
   RETURN NEW;
 END;
