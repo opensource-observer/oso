@@ -110,10 +110,10 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
 
     const { data: existingInvitation } = await supabase
       .from("invitations")
-      .select("id, status, expires_at")
+      .select("id, expires_at")
       .eq("org_id", org.id)
       .ilike("email", normalizedEmail)
-      .eq("status", "pending")
+      .is("accepted_at", null)
       .is("deleted_at", null)
       .single();
 
@@ -129,7 +129,10 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
 
       await supabase
         .from("invitations")
-        .update({ status: "expired", updated_at: new Date().toISOString() })
+        .update({
+          deleted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", existingInvitation.id);
     }
 
@@ -160,7 +163,6 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
         org_name: org.org_name,
         org_id: org.id,
         invited_by: userProfile.id,
-        status: "pending",
       })
       .select()
       .single();
