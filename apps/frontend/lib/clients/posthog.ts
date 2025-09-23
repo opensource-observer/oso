@@ -40,7 +40,7 @@ function withPostHogTracking(
   return async (request: NextRequest, ...args: any[]) => {
     const posthog = PostHogClient();
     try {
-      await fn(request, ...args);
+      return await fn(request, ...args);
     } catch (error) {
       posthog?.captureException(error);
       throw error;
