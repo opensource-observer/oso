@@ -4,6 +4,7 @@ import {
   CreateMultipartUploadCommand,
   CompleteMultipartUploadCommand,
   UploadPartCommand,
+  CompletedPart,
 } from "@aws-sdk/client-s3";
 import type { NodeJsClient } from "@smithy/types";
 import { createHash } from "node:crypto";
@@ -12,6 +13,9 @@ import {
   CLOUDFLARE_R2_ACCESS_KEY_ID,
   CLOUDFLARE_R2_SECRET_ACCESS_KEY,
 } from "@/lib/config";
+import { assert } from "@opensource-observer/utils";
+
+const PART_SIZE = 10 * 1024 * 1024; // 10MB
 
 const S3 = new S3Client({
   region: "auto",
@@ -67,7 +71,6 @@ async function putObject(
     Key: objectKey,
   });
   const createResponse = await S3.send(createCommand);
-  //console.log(createResponse);
   const uploadId = createResponse.UploadId;
 
   if (!uploadId) {
@@ -75,26 +78,59 @@ async function putObject(
   }
 
   const reader = body.getReader();
+  const partETags: CompletedPart[] = [];
+  const buffer = new Uint8Array(PART_SIZE);
+  let bufferPosition = 0;
   let partNumber = 1;
-  let part = await reader.read();
-  const partETags = [];
-  while (!part.done) {
+
+  const uploadPart = async (data: Uint8Array) => {
     const partCommand = new UploadPartCommand({
       Bucket: bucketName,
       Key: objectKey,
       UploadId: uploadId,
       PartNumber: partNumber,
-      Body: part.value,
-      ContentLength: part.value.length,
+      Body: data,
+      ContentLength: data.length,
     });
     const partResponse = await S3.send(partCommand);
     partETags.push({
       PartNumber: partNumber,
       ETag: partResponse.ETag,
     });
-    //console.log(partResponse);
     partNumber++;
-    part = await reader.read();
+  };
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      if (bufferPosition > 0) {
+        await uploadPart(buffer.slice(0, bufferPosition));
+      }
+      break;
+    }
+
+    let valuePosition = 0;
+    while (valuePosition < value.length) {
+      const spaceLeft = PART_SIZE - bufferPosition;
+      const chunk = value.slice(
+        valuePosition,
+        valuePosition + Math.min(value.length - valuePosition, spaceLeft),
+      );
+      buffer.set(chunk, bufferPosition);
+      bufferPosition += chunk.length;
+      valuePosition += chunk.length;
+
+      if (bufferPosition === PART_SIZE) {
+        await uploadPart(buffer);
+        bufferPosition = 0;
+      }
+      assert(
+        bufferPosition < PART_SIZE,
+        "Buffer position should be less than part size",
+      );
+    }
   }
 
   const completeCommand = new CompleteMultipartUploadCommand({
@@ -106,7 +142,6 @@ async function putObject(
     },
   });
   const completeResponse = await S3.send(completeCommand);
-  //console.log(completeResponse);
   return completeResponse;
 }
 
