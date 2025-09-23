@@ -157,6 +157,7 @@ import {
   ContextMenuTrigger,
   ContextMenuTriggerMeta,
 } from "@/components/ui/context-menu";
+import { DataTable, DataTableMeta } from "@/components/ui/data-table";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -243,4 +244,5 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(ContextMenuSub, ContextMenuSubMeta);
   PLASMIC.registerComponent(ContextMenuSubContent, ContextMenuSubContentMeta);
   PLASMIC.registerComponent(ContextMenuSubTrigger, ContextMenuSubTriggerMeta);
+  PLASMIC.registerComponent(DataTable, DataTableMeta);
 }
