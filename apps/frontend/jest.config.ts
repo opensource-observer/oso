@@ -1,17 +1,13 @@
 import type { Config } from "jest";
+import nextJest from "next/jest.js";
 
-const esModules = ["@opensource-observer/utils", "jose"].join("|");
+const createJestConfig = nextJest({
+  dir: "./",
+});
 
 const config: Config = {
-  preset: "ts-jest",
-  testEnvironment: "node",
-  transform: {
-    "^.+\\.js?$": ["babel-jest", { configFile: "./babel.config.testing.js" }],
-  },
-  transformIgnorePatterns: [`node_modules/(?!.*(?:${esModules}))`],
-  moduleNameMapper: {
-    "^@/(.*)": "<rootDir>/$1",
-  },
+  coverageProvider: "v8",
+  testEnvironment: "jsdom",
 };
 
-export default config;
+export default createJestConfig(config);
