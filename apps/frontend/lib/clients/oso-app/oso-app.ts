@@ -476,13 +476,22 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgId argument");
     const userId = ensure(args.userId, "Missing userId argument");
     const org = await this.getOrganizationByName({ orgName });
-    const { error } = await this.supabaseClient
+    const deletedAt = new Date().toISOString();
+    const { error: orgError } = await this.supabaseClient
       .from("users_by_organization")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: deletedAt })
       .eq("org_id", org.id)
       .eq("user_id", userId);
-    if (error) {
-      throw error;
+    if (orgError) {
+      throw orgError;
+    }
+    const { error: apiKeyError } = await this.supabaseClient
+      .from("api_keys")
+      .update({ deleted_at: deletedAt })
+      .eq("org_id", org.id)
+      .eq("user_id", userId);
+    if (apiKeyError) {
+      throw apiKeyError;
     }
   }
 
