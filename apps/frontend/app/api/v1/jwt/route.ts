@@ -2,8 +2,11 @@ import { getUser, signOsoJwt } from "@/lib/auth/auth";
 import { withPostHogTracking } from "@/lib/clients/posthog";
 import { logger } from "@/lib/logger";
 import { createServerClient } from "@/lib/supabase/server";
-import { NextRequest } from "next/dist/server/web/spec-extension/request";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+const JWT_EXPIRATION = "1w";
 
 export const GET = withPostHogTracking(async (req: NextRequest) => {
   const orgName = req.nextUrl.searchParams.get("orgName");
@@ -12,7 +15,7 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   }
 
   const user = await getUser(req);
-  if (!user || user.role === "anonymous") {
+  if (user.role === "anonymous") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const supabaseClient = await createServerClient();
@@ -38,7 +41,7 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
       orgId: data.id,
       orgName: user.orgName,
     },
-    "1w",
+    JWT_EXPIRATION,
   );
 
   return NextResponse.json({ token: jwt });

@@ -205,7 +205,7 @@ class OsoAppClient {
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(`Error syncing connector: ${error.error}`);
+      throw new Error(`Error fetching JWT: ${error?.error ?? error}`);
     }
     const result = await response.json();
     ensure(result.token, "Missing token in response");
