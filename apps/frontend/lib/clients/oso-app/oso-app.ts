@@ -288,7 +288,7 @@ class OsoAppClient {
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const { data, error } = await this.supabaseClient
       .from("organizations")
-      .select("*")
+      .select("*,pricing_plan!inner(plan_name)")
       .eq("id", orgId)
       .single();
     if (error) {
@@ -315,7 +315,7 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("organizations")
-      .select("*")
+      .select("*,pricing_plan!inner(plan_name)")
       .eq("org_name", orgName)
       .single();
     if (error) {
@@ -1394,11 +1394,12 @@ class OsoAppClient {
         `
         *,
         inviter:user_profiles!invited_by(id, email, full_name),
-        organization:organizations!org_id(org_name)
+        organizations!inner(org_name),
       `,
       )
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null)
+      .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -1454,16 +1455,7 @@ class OsoAppClient {
     const { data, error } = await this.supabaseClient
       .from("invitations")
       .select(
-        `
-        id,
-        email,
-        org_id,
-        status,
-        expires_at,
-        created_at,
-        inviter:user_profiles!invited_by(email),
-        organization:organizations!org_id(org_name)
-      `,
+        `*, inviter:user_profiles!invited_by(email), organizations!inner(org_name)`,
       )
       .eq("id", inviteId)
       .is("deleted_at", null)
@@ -1482,8 +1474,7 @@ class OsoAppClient {
       inviter_email: data.inviter?.email,
       invitee_email: data.email,
       org_id: data.org_id,
-      org_name: data.organization?.org_name,
-      status: data.status,
+      org_name: data.organizations?.org_name,
       expires_at: data.expires_at,
       created_at: data.created_at,
     };
@@ -1505,17 +1496,12 @@ class OsoAppClient {
       "Missing invitationId argument",
     );
 
-    const user = await this.getUser();
-
     const { error } = await this.supabaseClient
       .from("invitations")
       .update({
-        status: "revoked",
-        updated_at: new Date().toISOString(),
+        deleted_at: new Date().toISOString(),
       })
-      .eq("id", invitationId)
-      .eq("invited_by", user.id)
-      .eq("status", "pending");
+      .eq("id", invitationId);
 
     if (error) {
       throw error;
