@@ -3,6 +3,8 @@ import { logger } from "@/lib/logger";
 import { getUser } from "@/lib/auth/auth";
 import { withPostHogTracking } from "@/lib/clients/posthog";
 
+export const dynamic = "force-dynamic";
+
 export const GET = withPostHogTracking(async (req: NextRequest) => {
   const user = await getUser(req);
 
