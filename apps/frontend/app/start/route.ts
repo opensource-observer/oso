@@ -62,7 +62,8 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
     throw notebookError;
   } else if (!notebookData || notebookData.length <= 0) {
     // We proxy instead of redirect to keep us on /start
-    return NextResponse.rewrite(new URL("/examples", req.url));
+    // TODO: enable this once we have wired up public notebooks
+    //return NextResponse.rewrite(new URL("/examples", req.url));
   }
 
   // Default logged-in case - redirect to organization dashboard
