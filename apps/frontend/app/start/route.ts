@@ -57,7 +57,9 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
     // We only show the onboarding wizard in production
     if (NODE_ENV === "production") {
       // We proxy instead of redirect to keep us on /start
-      return NextResponse.rewrite(new URL("/examples", req.url));
+      return NextResponse.rewrite(
+        new URL(`/examples?orgName=${org.org_name}`, req.url),
+      );
     }
   }
 
