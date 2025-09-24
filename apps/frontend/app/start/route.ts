@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import _ from "lodash";
 import { logger } from "@/lib/logger";
 import { getUser } from "@/lib/auth/auth";
 import { createServerClient } from "@/lib/supabase/server";
@@ -19,7 +20,9 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   // Check if the user is part of any any organizations
   const { data: joinedOrgs, error: joinError } = await supabaseClient
     .from("users_by_organization")
-    .select("org_id")
+    .select(
+      "*, organizations!inner(id, org_name, created_at, pricing_plan!inner(price_per_credit))",
+    )
     .eq("user_id", user.userId)
     .is("deleted_at", null);
 
@@ -31,26 +34,15 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   }
 
   // Find the user's highest tier organization
-  const { data: org, error: orgError } = await supabaseClient
-    .from("organizations")
-    .select("id,org_name,pricing_plan!inner(price_per_credit)")
-    .in(
-      "id",
-      joinedOrgs.map((o) => o.org_id),
-    )
-    .is("deleted_at", null)
-    // TODO: this is a hack to find the highest tier plan
-    .order("pricing_plan.price_per_credit", {
-      ascending: true,
-      nullsFirst: false,
-    })
-    .single();
-  if (orgError) {
-    throw orgError;
-  } else if (!org) {
-    // We proxy instead of redirect to keep us on /start
-    return NextResponse.rewrite(new URL("/create-org", req.url));
-  }
+  // TODO: this is a hack to find the highest tier plan
+  const flattened = joinedOrgs.map((x) => ({
+    id: x.organizations.id,
+    org_name: x.organizations.org_name,
+    price_per_credit: x.organizations.pricing_plan.price_per_credit,
+    created_at: x.organizations.created_at,
+  }));
+  const sorted = _.sortBy(flattened, ["price_per_credit", "created_at"]);
+  const org = sorted[0];
 
   // Look for any existing notebooks
   const { data: notebookData, error: notebookError } = await supabaseClient
