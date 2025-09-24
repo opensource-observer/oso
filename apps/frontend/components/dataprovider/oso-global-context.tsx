@@ -33,6 +33,7 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "getMyApiKeys",
   "getApiKeysByOrgName",
   "deleteApiKeyById",
+  "getOsoJwt",
   "createOrganization",
   "getMyOrganizations",
   "getOrganizationById",

@@ -194,6 +194,28 @@ class OsoAppClient {
     }
   }
 
+  async getOsoJwt(
+    args: Partial<{ orgName: string }>,
+  ): Promise<{ token: string }> {
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+
+    const searchParams = new URLSearchParams({ orgName });
+
+    const response = await fetch(`/api/v1/jwt?${searchParams.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Error fetching JWT: ${error?.error ?? error}`);
+    }
+    const result = await response.json();
+    ensure(result.token, "Missing token in response");
+    return result;
+  }
+
   /**
    * Creates a new organization and adds the creator as admin member
    * @param orgName
@@ -458,13 +480,22 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgId argument");
     const userId = ensure(args.userId, "Missing userId argument");
     const org = await this.getOrganizationByName({ orgName });
-    const { error } = await this.supabaseClient
+    const deletedAt = new Date().toISOString();
+    const { error: orgError } = await this.supabaseClient
       .from("users_by_organization")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: deletedAt })
       .eq("org_id", org.id)
       .eq("user_id", userId);
-    if (error) {
-      throw error;
+    if (orgError) {
+      throw orgError;
+    }
+    const { error: apiKeyError } = await this.supabaseClient
+      .from("api_keys")
+      .update({ deleted_at: deletedAt })
+      .eq("org_id", org.id)
+      .eq("user_id", userId);
+    if (apiKeyError) {
+      throw apiKeyError;
     }
   }
 

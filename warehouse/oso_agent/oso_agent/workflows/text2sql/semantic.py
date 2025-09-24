@@ -61,6 +61,8 @@ class SemanticText2SQLWorkflow(
     enable_retries: bool = True
     max_retries: int = 5
 
+    event_cls = Text2SQLStartEvent
+
     def __init__(
         self,
         resolver: ResourceResolver,

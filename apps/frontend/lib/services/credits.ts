@@ -1,6 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import type { AnonUser, User } from "@/lib/types/user";
+import type { AnonUser, OrgUser, User } from "@/lib/types/user";
 import type { Json } from "@/lib/types/supabase";
 import { DOMAIN } from "@/lib/config";
 
@@ -64,7 +64,7 @@ export class InsufficientCreditsError extends Error {
 }
 
 export class CreditsService {
-  static isAnonymousUser(user: User): user is AnonUser {
+  static isAnonymousUser(user: OrgUser | User): user is AnonUser {
     return user.role === "anonymous";
   }
 
@@ -145,7 +145,7 @@ export class CreditsService {
   }
 
   static async checkAndDeductOrganizationCredits(
-    user: User,
+    user: OrgUser | User,
     orgId: string,
     transactionType: TransactionType,
     apiEndpoint?: string,

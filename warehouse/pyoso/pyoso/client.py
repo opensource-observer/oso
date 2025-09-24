@@ -152,16 +152,10 @@ class Client:
         query_expression = parsed_query[0]
         assert query_expression is not None, "query could not be parsed"
 
-        if is_pyodide():
-            return self._pyodide_make_sql_request(
-                translated_query=query_expression.sql(dialect=output_dialect),
-                include_analytics=include_analytics,
-            )
-        else:
-            return self._make_sql_request(
-                translated_query=query_expression.sql(dialect=output_dialect),
-                include_analytics=include_analytics,
-            )
+        return self._make_sql_request(
+            translated_query=query_expression.sql(dialect=output_dialect),
+            include_analytics=include_analytics,
+        )
 
     def _make_sql_request(
         self,
@@ -190,33 +184,6 @@ class Client:
         except requests.HTTPError as e:
             raise OsoHTTPError(e, response=e.response) from None
 
-    def _pyodide_make_sql_request(
-        self,
-        translated_query: str,
-        include_analytics: bool = True,
-    ) -> QueryResponse:
-        from pyoso.pyodide_only import pyodide_post_json_request
-
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self._get_api_key()}",
-        }
-        try:
-            response = pyodide_post_json_request(
-                f"{self.__base_url}sql",
-                headers=headers,
-                body={
-                    "query": translated_query,
-                    "format": "minimal",
-                    "includeAnalytics": include_analytics,
-                },
-                credentials="same-origin",
-            )
-
-            return QueryResponse.from_response_chunks(response.split("\n"))
-        except requests.HTTPError as e:
-            raise OsoHTTPError(e, response=e.response) from None
-
     def to_pandas(self, query: str):
         query_response = self.__query(query)
         return query_response.to_pandas()
@@ -225,24 +192,11 @@ class Client:
         """Execute a SQL query and return the full response including analytics data."""
         return self.__query(query, include_analytics=include_analytics)
 
-    def dbapi_connection(self, force_without_pyodide: bool = False):
+    def dbapi_connection(self):
         """Get a DBAPI 2.0 compatible connection.
 
         This is experimental and incomplete. It will error unless forced right now.
         """
-        if force_without_pyodide:
-            import warnings
-
-            warnings.warn(
-                "Forcing dbapi_connection without pyodide is not recommended."
-            )
-        else:
-            try:
-                import pyodide  # type: ignore # noqa: F401
-            except ImportError:
-                raise NotImplementedError(
-                    "dbapi_connection is not intended for use without pyodide. Please treat as not implemented."
-                )
         from .engine import PyosoDBApiConnection
 
         return PyosoDBApiConnection(self)

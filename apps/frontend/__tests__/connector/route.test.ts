@@ -40,6 +40,7 @@
 //         email: userEmail,
 //         password: "password",
 //         email_confirm: true,
+//         user_metadata: { name: "Test User" },
 //       });
 //     if (userError)
 //       throw new Error(`User creation failed: ${userError.message}`);
