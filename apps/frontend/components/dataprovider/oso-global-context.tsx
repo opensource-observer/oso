@@ -77,6 +77,12 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "acceptInvitation",
   "deleteInvitation",
   "getInviteById",
+  "checkResourcePermission",
+  "grantResourcePermission",
+  "revokeResourcePermission",
+  "grantPublicPermission",
+  "listResourcePermissions",
+  "revokePublicPermission",
 ];
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [

@@ -408,7 +408,6 @@ export type Database = {
           invited_by: string;
           org_id: string;
           org_name: string;
-          status: string;
           updated_at: string;
         };
         Insert: {
@@ -422,7 +421,6 @@ export type Database = {
           invited_by: string;
           org_id: string;
           org_name: string;
-          status?: string;
           updated_at?: string;
         };
         Update: {
@@ -436,7 +434,6 @@ export type Database = {
           invited_by?: string;
           org_id?: string;
           org_name?: string;
-          status?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -465,6 +462,7 @@ export type Database = {
       };
       notebooks: {
         Row: {
+          accessed_at: string | null;
           created_at: string;
           created_by: string;
           data: string | null;
@@ -475,6 +473,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          accessed_at?: string | null;
           created_at?: string;
           created_by: string;
           data?: string | null;
@@ -485,6 +484,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          accessed_at?: string | null;
           created_at?: string;
           created_by?: string;
           data?: string | null;
@@ -586,6 +586,7 @@ export type Database = {
       };
       organizations: {
         Row: {
+          accessed_at: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -595,6 +596,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          accessed_at?: string | null;
           created_at?: string;
           created_by: string;
           deleted_at?: string | null;
@@ -604,6 +606,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          accessed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -717,6 +720,71 @@ export type Database = {
           name?: string;
         };
         Relationships: [];
+      };
+      resource_permissions: {
+        Row: {
+          chat_id: string | null;
+          created_at: string;
+          granted_by: string | null;
+          id: string;
+          notebook_id: string | null;
+          permission_level: string;
+          revoked_at: string | null;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          chat_id?: string | null;
+          created_at?: string;
+          granted_by?: string | null;
+          id?: string;
+          notebook_id?: string | null;
+          permission_level: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          chat_id?: string | null;
+          created_at?: string;
+          granted_by?: string | null;
+          id?: string;
+          notebook_id?: string | null;
+          permission_level?: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "resource_permissions_chat_id_fkey";
+            columns: ["chat_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_history";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_notebook_id_fkey";
+            columns: ["notebook_id"];
+            isOneToOne: false;
+            referencedRelation: "notebooks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       user_credits: {
         Row: {
@@ -841,6 +909,28 @@ export type Database = {
           p_user_id: string;
         };
         Returns: boolean;
+      };
+      can_grant_permission: {
+        Args: {
+          granter_id: string;
+          permission_to_grant: string;
+          target_resource_id: string;
+          target_resource_type: string;
+          target_user_id?: string;
+        };
+        Returns: boolean;
+      };
+      check_org_admin: {
+        Args: { check_org_id: string; check_user_id: string };
+        Returns: boolean;
+      };
+      check_org_membership: {
+        Args: { check_org_id: string; check_user_id: string };
+        Returns: boolean;
+      };
+      check_resource_permission: {
+        Args: { p_resource_id: string; p_resource_type: string };
+        Returns: Json;
       };
       cleanup_orphaned_invitations: {
         Args: Record<PropertyKey, never>;

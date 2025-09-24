@@ -110,27 +110,19 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
 
     const { data: existingInvitation } = await supabase
       .from("invitations")
-      .select("id, status, expires_at")
+      .select("id, expires_at")
       .eq("org_id", org.id)
       .ilike("email", normalizedEmail)
-      .eq("status", "pending")
+      .is("accepted_at", null)
       .is("deleted_at", null)
+      .gt("expires_at", new Date())
       .single();
 
     if (existingInvitation) {
-      if (new Date(existingInvitation.expires_at) > new Date()) {
-        return NextResponse.json(
-          {
-            error: "An active invitation already exists for this email",
-          },
-          { status: 400 },
-        );
-      }
-
-      await supabase
-        .from("invitations")
-        .update({ status: "expired", updated_at: new Date().toISOString() })
-        .eq("id", existingInvitation.id);
+      return NextResponse.json(
+        { error: "An active invitation already exists for this email" },
+        { status: 400 },
+      );
     }
 
     const invitationId = uuid4();
@@ -160,7 +152,6 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
         org_name: org.org_name,
         org_id: org.id,
         invited_by: userProfile.id,
-        status: "pending",
       })
       .select()
       .single();
