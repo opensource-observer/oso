@@ -5,7 +5,7 @@ import { ALLOWED_CONNECTORS } from "@/lib/types/dynamic-connector";
 import { dynamicConnectorsInsertSchema } from "@/lib/types/schema";
 import type { DynamicConnectorsInsert } from "@/lib/types/schema-types";
 import { ensure } from "@opensource-observer/utils";
-import { getUser, setSupabaseSession } from "@/lib/auth/auth";
+import { getOrgUser, setSupabaseSession } from "@/lib/auth/auth";
 import { Tables } from "@/lib/types/supabase";
 import { getCatalogName } from "@/lib/dynamic-connectors";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -206,8 +206,8 @@ interface TableSemanticData {
 
 export const GET = withPostHogTracking(async (request: NextRequest) => {
   const supabaseClient = await createAdminClient();
-  const user = await getUser(request);
-  if (user.role === "anonymous" || user.orgId == null) {
+  const user = await getOrgUser(request);
+  if (user.role === "anonymous") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

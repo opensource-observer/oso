@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
-import { getUser } from "@/lib/auth/auth";
+import { getOrgUser } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
@@ -25,7 +25,7 @@ const getLatestMessage = (messages: any[]) => {
 };
 
 export const POST = withPostHogTracking(async (req: NextRequest) => {
-  const user = await getUser(req);
+  const user = await getOrgUser(req);
   const prompt = await req.json();
   const tracker = trackServerEvent(user);
 

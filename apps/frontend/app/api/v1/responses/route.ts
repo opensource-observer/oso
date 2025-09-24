@@ -25,6 +25,7 @@ const getLatestMessage = (messages: any[]) => {
 };
 
 export const POST = withPostHogTracking(async (req: NextRequest) => {
+  // TODO: Make this getOrgUser when the org is sent in the body
   const user = await getUser(req);
   const body = await req.json();
   const tracker = trackServerEvent(user);

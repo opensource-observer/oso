@@ -3,10 +3,10 @@ import { ReadableStream as WebReadableStream } from "node:stream/web";
 import { getTrinoClient } from "@/lib/clients/trino";
 import type { Iterator, QueryResult } from "trino-client";
 import { getTableNamesFromSql } from "@/lib/parsing";
-import { getUser } from "@/lib/auth/auth";
+import { getOrgUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
-import { AuthUser } from "@/lib/types/user";
+import { AuthOrgUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
 import {
   PlanName,
@@ -45,7 +45,7 @@ const RequestBodySchema = z.object({
 const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
-async function signJWT(user: AuthUser) {
+async function signJWT(user: AuthOrgUser) {
   const secret = TRINO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
@@ -91,7 +91,7 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     logger.log(`/api/sql: No public cache hit, ${error}`);
   }
 
-  const user = await getUser(request);
+  const user = await getOrgUser(request);
   const tracker = trackServerEvent(user);
 
   // If no query provided, short-circuit
