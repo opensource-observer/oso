@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
-import { getOrgUser } from "@/lib/auth/auth";
+import { getUser } from "@/lib/auth/auth";
 import { createServerClient } from "@/lib/supabase/server";
 import { withPostHogTracking } from "@/lib/clients/posthog";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = withPostHogTracking(async (req: NextRequest) => {
   const supabaseClient = await createServerClient();
-  const user = await getOrgUser(req);
+  const user = await getUser(req);
 
   // Check if user is anonymous
   if (user.role === "anonymous") {
@@ -17,24 +17,29 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   }
 
   // Check if the user has created any organizations
-  const { data: createdOrgs, error: createdError } = await supabaseClient
+  const { data: org, error: orgError } = await supabaseClient
     .from("organizations")
-    .select("id")
+    .select("id,org_name,pricing_plan!inner(price_per_credit)")
     .eq("created_by", user.userId)
-    .is("deleted_at", null);
-  if (createdError) {
-    throw createdError;
-  } else if (!createdOrgs || createdOrgs.length <= 0) {
+    .is("deleted_at", null)
+    // TODO: this is a hack to find the highest tier plan
+    .order("pricing_plan.price_per_credit", {
+      ascending: true,
+      nullsFirst: false,
+    })
+    .single();
+  if (orgError) {
+    throw orgError;
+  } else if (!org) {
     // We proxy instead of redirect to keep us on /start
     return NextResponse.rewrite(new URL("/create-org", req.url));
   }
 
   // Look for any existing notebooks
-  const orgName = user.orgName;
   const { data: notebookData, error: notebookError } = await supabaseClient
     .from("notebooks")
-    .select("*,organizations!inner(org_name)")
-    .eq("organizations.org_name", orgName)
+    .select("*")
+    .eq("org_id", org.id)
     .is("deleted_at", null);
   if (notebookError) {
     throw notebookError;
@@ -44,5 +49,5 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   }
 
   // Default logged-in case - redirect to organization dashboard
-  return NextResponse.redirect(new URL(`/${orgName}`, req.url));
+  return NextResponse.redirect(new URL(`/${org.org_name}`, req.url));
 });
