@@ -112,6 +112,7 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
       user,
       user.orgId,
       TransactionType.SQL_QUERY,
+      tracker,
       "/api/v1/sql",
       { query },
     );

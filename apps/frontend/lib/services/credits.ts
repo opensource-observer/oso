@@ -3,6 +3,8 @@ import { logger } from "@/lib/logger";
 import type { AnonUser, OrgUser, User } from "@/lib/types/user";
 import type { Json } from "@/lib/types/supabase";
 import { DOMAIN } from "@/lib/config";
+import { PostHogTracker } from "@/lib/analytics/track";
+import { EVENTS } from "@/lib/types/posthog";
 
 // TODO(jabolo): Disable this once we transition to the new credits system
 const CREDITS_PREVIEW_MODE = true;
@@ -148,6 +150,7 @@ export class CreditsService {
     user: OrgUser | User,
     orgId: string,
     transactionType: TransactionType,
+    tracker: PostHogTracker,
     apiEndpoint?: string,
     metadata?: Record<string, any>,
   ): Promise<OrganizationPlan | null> {
@@ -195,6 +198,9 @@ export class CreditsService {
         logger.error("Error deducting organization credits:", error);
       }
       const orgName = orgResult?.data?.org_name || "unknown";
+      tracker.track(EVENTS.INSUFFICIENT_CREDITS, {
+        type: transactionType,
+      });
       throw InsufficientCreditsError.create(orgName);
     }
 
