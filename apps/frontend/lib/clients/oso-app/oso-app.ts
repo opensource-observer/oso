@@ -229,32 +229,18 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const user = await this.getUser();
 
-    const { data: orgData, error: orgError } = await this.supabaseClient
+    const { data: orgData } = await this.supabaseClient
       .from("organizations")
       .insert({
         org_name: orgName,
         created_by: user.id,
       })
       .select()
-      .single();
+      .single()
+      .throwOnError();
 
-    if (orgError) {
-      throw orgError;
-    }
     if (!orgData) {
       throw new MissingDataError("Failed to create organization");
-    }
-
-    const { error: memberError } = await this.supabaseClient
-      .from("users_by_organization")
-      .insert({
-        org_id: orgData.id,
-        user_id: user.id,
-        user_role: "admin",
-      });
-
-    if (memberError) {
-      throw memberError;
     }
 
     return orgData;
