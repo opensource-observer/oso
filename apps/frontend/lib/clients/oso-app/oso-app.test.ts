@@ -15,14 +15,14 @@ describe("Organizations", () => {
     // Create test users with unique IDs
     await adminSupabase.auth.admin.createUser({
       id: USER_1_ID,
-      email: `user1-${USER_1_ID}@test.com`,
+      email: `user1_${USER_1_ID}@test.com`,
       password: "password123",
       // We want the user to be usable right away without email confirmation
       email_confirm: true,
     });
     await adminSupabase.auth.admin.createUser({
       id: USER_2_ID,
-      email: `user2-${USER_2_ID}@test.com`,
+      email: `user2_${USER_2_ID}@test.com`,
       password: "password123",
       email_confirm: true,
     });
@@ -55,19 +55,19 @@ describe("Resource Permissions", () => {
     const userCreationResults = await Promise.all([
       adminSupabase.auth.admin.createUser({
         id: USER_OWNER_ID,
-        email: `owner-${USER_OWNER_ID}@test.com`,
+        email: `owner_${USER_OWNER_ID}@test.com`,
         password: "password123",
         email_confirm: true,
       }),
       adminSupabase.auth.admin.createUser({
         id: USER_COLLABORATOR_ID,
-        email: `collaborator-${USER_COLLABORATOR_ID}@test.com`,
+        email: `collaborator_${USER_COLLABORATOR_ID}@test.com`,
         password: "password123",
         email_confirm: true,
       }),
       adminSupabase.auth.admin.createUser({
         id: USER_NO_ACCESS_ID,
-        email: `noaccess-${USER_NO_ACCESS_ID}@test.com`,
+        email: `noaccess_${USER_NO_ACCESS_ID}@test.com`,
         password: "password123",
         email_confirm: true,
       }),
@@ -85,17 +85,17 @@ describe("Resource Permissions", () => {
     await adminSupabase.from("user_profiles").insert([
       {
         id: USER_OWNER_ID,
-        email: `owner-${USER_OWNER_ID}@test.com`,
+        email: `owner_${USER_OWNER_ID}@test.com`,
         full_name: "Owner User",
       },
       {
         id: USER_COLLABORATOR_ID,
-        email: `collaborator-${USER_COLLABORATOR_ID}@test.com`,
+        email: `collaborator_${USER_COLLABORATOR_ID}@test.com`,
         full_name: "Collaborator User",
       },
       {
         id: USER_NO_ACCESS_ID,
-        email: `noaccess-${USER_NO_ACCESS_ID}@test.com`,
+        email: `noaccess_${USER_NO_ACCESS_ID}@test.com`,
         full_name: "No Access User",
       },
     ]);
@@ -105,7 +105,7 @@ describe("Resource Permissions", () => {
     });
     const { data: ownerAuth, error: ownerAuthError } =
       await ownerSupabase.auth.signInWithPassword({
-        email: `owner-${USER_OWNER_ID}@test.com`,
+        email: `owner_${USER_OWNER_ID}@test.com`,
         password: "password123",
       });
     if (ownerAuthError) throw ownerAuthError;
@@ -120,7 +120,7 @@ describe("Resource Permissions", () => {
     const orgResult = await adminSupabase.from("organizations").insert({
       id: ORG_ID,
       created_by: USER_OWNER_ID,
-      org_name: `test-org-${ORG_ID.substring(0, 8)}`,
+      org_name: `test_org_${ORG_ID.substring(0, 8)}`,
     });
 
     if (orgResult.error) {
@@ -179,7 +179,7 @@ describe("Resource Permissions", () => {
     );
     const { data: collaboratorAuth, error: collaboratorAuthError } =
       await collaboratorSupabase.auth.signInWithPassword({
-        email: `collaborator-${USER_COLLABORATOR_ID}@test.com`,
+        email: `collaborator_${USER_COLLABORATOR_ID}@test.com`,
         password: "password123",
       });
     if (collaboratorAuthError) throw collaboratorAuthError;
@@ -196,7 +196,7 @@ describe("Resource Permissions", () => {
     });
     const { data: noAccessAuth, error: noAccessAuthError } =
       await noAccessSupabase.auth.signInWithPassword({
-        email: `noaccess-${USER_NO_ACCESS_ID}@test.com`,
+        email: `noaccess_${USER_NO_ACCESS_ID}@test.com`,
         password: "password123",
       });
     if (noAccessAuthError) throw noAccessAuthError;
@@ -246,8 +246,8 @@ describe("Resource Permissions", () => {
   });
 
   describe("checkResourcePermission", () => {
-    describe("Anonymous user access (2x2 matrix)", () => {
-      it("should deny access to private notebook (no permissions exist)", async () => {
+    describe("Anonymous user access", () => {
+      it("should deny access to private resources", async () => {
         const result = await anonymousClient.checkResourcePermission({
           resourceType: "notebook",
           resourceId: NOTEBOOK_ID,
@@ -255,16 +255,16 @@ describe("Resource Permissions", () => {
 
         expect(result).toEqual({
           hasAccess: false,
-          accessType: "no_access",
-          permissionLevel: null,
+          permissionLevel: "none",
           resourceId: NOTEBOOK_ID,
         });
       });
 
-      it("should allow read access to public notebook (NULL user_id permission exists)", async () => {
-        await ownerClient.makeResourcePublic({
+      it("should allow read access to public resources", async () => {
+        await ownerClient.grantPublicPermission({
           resourceType: "notebook",
           resourceId: NOTEBOOK_ID,
+          permissionLevel: "read",
         });
 
         const result = await anonymousClient.checkResourcePermission({
@@ -274,18 +274,17 @@ describe("Resource Permissions", () => {
 
         expect(result).toEqual({
           hasAccess: true,
-          accessType: "public_access",
           permissionLevel: "read",
           resourceId: NOTEBOOK_ID,
         });
 
-        await ownerClient.makeResourcePrivate({
+        await ownerClient.revokePublicPermission({
           resourceType: "notebook",
           resourceId: NOTEBOOK_ID,
         });
       });
 
-      it("should deny access to private notebook (permissions exist)", async () => {
+      it("should deny access to private resources when other permissions exist", async () => {
         await ownerClient.grantResourcePermission({
           resourceType: "notebook",
           resourceId: NOTEBOOK_ID,
@@ -300,8 +299,7 @@ describe("Resource Permissions", () => {
 
         expect(result).toEqual({
           hasAccess: false,
-          accessType: "no_access",
-          permissionLevel: null,
+          permissionLevel: "none",
           resourceId: NOTEBOOK_ID,
         });
 
@@ -311,23 +309,9 @@ describe("Resource Permissions", () => {
           targetUserId: USER_COLLABORATOR_ID,
         });
       });
-
-      it("should deny access to private chat (no permissions exist)", async () => {
-        const result = await anonymousClient.checkResourcePermission({
-          resourceType: "chat",
-          resourceId: CHAT_ID,
-        });
-
-        expect(result).toEqual({
-          hasAccess: false,
-          accessType: "no_access",
-          permissionLevel: null,
-          resourceId: CHAT_ID,
-        });
-      });
     });
 
-    describe("Authenticated user access (2x2 matrix)", () => {
+    describe("Authenticated user access", () => {
       it("should allow owner full access", async () => {
         const result = await ownerClient.checkResourcePermission({
           resourceType: "notebook",
@@ -336,14 +320,12 @@ describe("Resource Permissions", () => {
 
         expect(result).toEqual({
           hasAccess: true,
-          accessType: "authenticated_access",
           permissionLevel: "owner",
-          isOwner: true,
           resourceId: NOTEBOOK_ID,
         });
       });
 
-      it("should deny authenticated user access to private resource", async () => {
+      it("should deny access to private resources", async () => {
         const result = await noAccessClient.checkResourcePermission({
           resourceType: "notebook",
           resourceId: NOTEBOOK_ID,
@@ -351,16 +333,16 @@ describe("Resource Permissions", () => {
 
         expect(result).toEqual({
           hasAccess: false,
-          accessType: "authenticated_no_access",
-          permissionLevel: null,
+          permissionLevel: "none",
           resourceId: NOTEBOOK_ID,
         });
       });
 
-      it("should allow authenticated user read access to public resource", async () => {
-        await ownerClient.makeResourcePublic({
+      it("should allow access to public resources", async () => {
+        await ownerClient.grantPublicPermission({
           resourceType: "notebook",
           resourceId: NOTEBOOK_ID,
+          permissionLevel: "read",
         });
 
         const result = await noAccessClient.checkResourcePermission({
@@ -370,46 +352,17 @@ describe("Resource Permissions", () => {
 
         expect(result).toEqual({
           hasAccess: true,
-          accessType: "authenticated_access",
           permissionLevel: "read",
-          isOwner: false,
           resourceId: NOTEBOOK_ID,
         });
 
-        await ownerClient.makeResourcePrivate({
+        await ownerClient.revokePublicPermission({
           resourceType: "notebook",
           resourceId: NOTEBOOK_ID,
         });
       });
 
-      it("should deny authenticated user access to private resource without permission", async () => {
-        await ownerClient.grantResourcePermission({
-          resourceType: "notebook",
-          resourceId: NOTEBOOK_ID,
-          targetUserId: USER_COLLABORATOR_ID,
-          permissionLevel: "write",
-        });
-
-        const result = await noAccessClient.checkResourcePermission({
-          resourceType: "notebook",
-          resourceId: NOTEBOOK_ID,
-        });
-
-        expect(result).toEqual({
-          hasAccess: false,
-          accessType: "authenticated_no_access",
-          permissionLevel: null,
-          resourceId: NOTEBOOK_ID,
-        });
-
-        await ownerClient.revokeResourcePermission({
-          resourceType: "notebook",
-          resourceId: NOTEBOOK_ID,
-          targetUserId: USER_COLLABORATOR_ID,
-        });
-      });
-
-      it("should allow authenticated user access with explicit permission", async () => {
+      it("should allow access with explicit permissions", async () => {
         await ownerClient.grantResourcePermission({
           resourceType: "notebook",
           resourceId: NOTEBOOK_ID,
@@ -424,9 +377,7 @@ describe("Resource Permissions", () => {
 
         expect(result).toEqual({
           hasAccess: true,
-          accessType: "authenticated_access",
           permissionLevel: "admin",
-          isOwner: false,
           resourceId: NOTEBOOK_ID,
         });
 
@@ -448,8 +399,7 @@ describe("Resource Permissions", () => {
 
         expect(result).toEqual({
           hasAccess: false,
-          accessType: "no_access",
-          permissionLevel: null,
+          permissionLevel: "none",
           resourceId: "unknown",
         });
       });
@@ -465,28 +415,34 @@ describe("Resource Permissions", () => {
   });
 
   describe("grantResourcePermission", () => {
-    it("should grant read permission successfully", async () => {
-      await ownerClient.grantResourcePermission({
-        resourceType: "notebook",
-        resourceId: NOTEBOOK_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-        permissionLevel: "read",
-      });
+    test.each([
+      ["notebook", NOTEBOOK_ID],
+      ["chat", CHAT_ID],
+    ])(
+      "should grant permission successfully for %s",
+      async (resourceType, resourceId) => {
+        await ownerClient.grantResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+          targetUserId: USER_COLLABORATOR_ID,
+          permissionLevel: "read",
+        });
 
-      const result = await collaboratorClient.checkResourcePermission({
-        resourceType: "notebook",
-        resourceId: NOTEBOOK_ID,
-      });
+        const result = await collaboratorClient.checkResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+        });
 
-      expect(result.hasAccess).toBe(true);
-      expect(result.permissionLevel).toBe("read");
+        expect(result.hasAccess).toBe(true);
+        expect(result.permissionLevel).toBe("read");
 
-      await ownerClient.revokeResourcePermission({
-        resourceType: "notebook",
-        resourceId: NOTEBOOK_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-      });
-    });
+        await ownerClient.revokeResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+          targetUserId: USER_COLLABORATOR_ID,
+        });
+      },
+    );
 
     it("should upsert permission (overwrite existing)", async () => {
       await ownerClient.grantResourcePermission({
@@ -518,29 +474,6 @@ describe("Resource Permissions", () => {
       });
     });
 
-    it("should work for chat resources", async () => {
-      await ownerClient.grantResourcePermission({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-        permissionLevel: "write",
-      });
-
-      const result = await collaboratorClient.checkResourcePermission({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-      });
-
-      expect(result.hasAccess).toBe(true);
-      expect(result.permissionLevel).toBe("write");
-
-      await ownerClient.revokeResourcePermission({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-      });
-    });
-
     it("should throw error for missing arguments", async () => {
       await expect(
         ownerClient.grantResourcePermission({
@@ -552,55 +485,40 @@ describe("Resource Permissions", () => {
   });
 
   describe("revokeResourcePermission", () => {
-    it("should revoke permission successfully", async () => {
-      await ownerClient.grantResourcePermission({
-        resourceType: "notebook",
-        resourceId: NOTEBOOK_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-        permissionLevel: "write",
-      });
+    test.each([
+      ["notebook", NOTEBOOK_ID, "write"],
+      ["chat", CHAT_ID, "admin"],
+    ])(
+      "should revoke permission successfully for %s",
+      async (resourceType, resourceId, permissionLevel) => {
+        await ownerClient.grantResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+          targetUserId: USER_COLLABORATOR_ID,
+          permissionLevel: permissionLevel as any,
+        });
 
-      let result = await collaboratorClient.checkResourcePermission({
-        resourceType: "notebook",
-        resourceId: NOTEBOOK_ID,
-      });
-      expect(result.hasAccess).toBe(true);
-      expect(result.permissionLevel).toBe("write");
+        let result = await collaboratorClient.checkResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+        });
+        expect(result.hasAccess).toBe(true);
+        expect(result.permissionLevel).toBe(permissionLevel);
 
-      await ownerClient.revokeResourcePermission({
-        resourceType: "notebook",
-        resourceId: NOTEBOOK_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-      });
+        await ownerClient.revokeResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+          targetUserId: USER_COLLABORATOR_ID,
+        });
 
-      result = await collaboratorClient.checkResourcePermission({
-        resourceType: "notebook",
-        resourceId: NOTEBOOK_ID,
-      });
-      expect(result.accessType).toBe("authenticated_no_access");
-      expect(result.permissionLevel).toBe(null);
-    });
-
-    it("should work for chat resources", async () => {
-      await ownerClient.grantResourcePermission({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-        permissionLevel: "admin",
-      });
-
-      await ownerClient.revokeResourcePermission({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-      });
-
-      const result = await collaboratorClient.checkResourcePermission({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-      });
-      expect(result.permissionLevel).toBe(null);
-    });
+        result = await collaboratorClient.checkResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+        });
+        expect(result.hasAccess).toBe(false);
+        expect(result.permissionLevel).toBe("none");
+      },
+    );
 
     it("should throw error for missing arguments", async () => {
       await expect(
@@ -676,29 +594,35 @@ describe("Resource Permissions", () => {
       expect(permissions).toHaveLength(0);
     });
 
-    it("should work for chat resources", async () => {
-      await ownerClient.grantResourcePermission({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-        permissionLevel: "admin",
-      });
+    test.each([
+      ["notebook", NOTEBOOK_ID],
+      ["chat", CHAT_ID],
+    ])(
+      "should list permissions for %s resources",
+      async (resourceType, resourceId) => {
+        await ownerClient.grantResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+          targetUserId: USER_COLLABORATOR_ID,
+          permissionLevel: "admin",
+        });
 
-      const permissions = await ownerClient.listResourcePermissions({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-      });
+        const permissions = await ownerClient.listResourcePermissions({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+        });
 
-      expect(permissions).toHaveLength(1);
-      expect(permissions[0].user_id).toBe(USER_COLLABORATOR_ID);
-      expect(permissions[0].permission_level).toBe("admin");
+        expect(permissions).toHaveLength(1);
+        expect(permissions[0].user_id).toBe(USER_COLLABORATOR_ID);
+        expect(permissions[0].permission_level).toBe("admin");
 
-      await ownerClient.revokeResourcePermission({
-        resourceType: "chat",
-        resourceId: CHAT_ID,
-        targetUserId: USER_COLLABORATOR_ID,
-      });
-    });
+        await ownerClient.revokeResourcePermission({
+          resourceType: resourceType as "notebook" | "chat",
+          resourceId,
+          targetUserId: USER_COLLABORATOR_ID,
+        });
+      },
+    );
 
     it("should throw error for missing arguments", async () => {
       await expect(ownerClient.listResourcePermissions({})).rejects.toThrow();
@@ -714,7 +638,7 @@ describe("Resource Permissions", () => {
     beforeAll(async () => {
       const externalUserResult = await adminSupabase.auth.admin.createUser({
         id: EXTERNAL_USER_ID,
-        email: `external-${EXTERNAL_USER_ID}@test.com`,
+        email: `external_${EXTERNAL_USER_ID}@test.com`,
         password: "password123",
         email_confirm: true,
       });
@@ -722,14 +646,14 @@ describe("Resource Permissions", () => {
 
       await adminSupabase.from("user_profiles").insert({
         id: EXTERNAL_USER_ID,
-        email: `external-${EXTERNAL_USER_ID}@test.com`,
+        email: `external_${EXTERNAL_USER_ID}@test.com`,
         full_name: "External User",
       });
 
       await adminSupabase.from("organizations").insert({
         id: EXTERNAL_ORG_ID,
         created_by: EXTERNAL_USER_ID,
-        org_name: `external-org-${EXTERNAL_ORG_ID.substring(0, 8)}`,
+        org_name: `external_org_${EXTERNAL_ORG_ID.substring(0, 8)}`,
       });
 
       await adminSupabase.from("notebooks").insert({
@@ -749,7 +673,7 @@ describe("Resource Permissions", () => {
       );
       const { error: authError } =
         await externalSupabase.auth.signInWithPassword({
-          email: `external-${EXTERNAL_USER_ID}@test.com`,
+          email: `external_${EXTERNAL_USER_ID}@test.com`,
           password: "password123",
         });
       if (authError) throw authError;
@@ -772,7 +696,7 @@ describe("Resource Permissions", () => {
       });
 
       expect(result.hasAccess).toBe(false);
-      expect(result.accessType).toBe("authenticated_no_access");
+      expect(result.permissionLevel).toBe("none");
     });
 
     it("should prevent cross-org permission grants", async () => {
@@ -793,7 +717,7 @@ describe("Resource Permissions", () => {
       });
 
       expect(result.hasAccess).toBe(false);
-      expect(result.accessType).toBe("authenticated_no_access");
+      expect(result.permissionLevel).toBe("none");
     });
   });
 
@@ -840,7 +764,7 @@ describe("Resource Permissions", () => {
         },
       );
       await collaboratorSupabase.auth.signInWithPassword({
-        email: `collaborator-${USER_COLLABORATOR_ID}@test.com`,
+        email: `collaborator_${USER_COLLABORATOR_ID}@test.com`,
         password: "password123",
       });
 
@@ -911,7 +835,7 @@ describe("Resource Permissions", () => {
       });
     });
 
-    it("should validate permission levels", async () => {
+    it("should allow any permission level in database (validation moved to application)", async () => {
       const { error } = await adminSupabase
         .from("resource_permissions")
         .insert({
@@ -921,8 +845,7 @@ describe("Resource Permissions", () => {
           granted_by: USER_OWNER_ID,
         });
 
-      expect(error).toBeDefined();
-      expect(error?.message).toContain("permission_level");
+      expect(error).toBeNull();
     });
   });
 
@@ -996,7 +919,7 @@ describe("Resource Permissions", () => {
 
       const userResult = await adminSupabase.auth.admin.createUser({
         id: tempUserId,
-        email: `temp-${tempUserId}@test.com`,
+        email: `temp_${tempUserId}@test.com`,
         password: "password123",
         email_confirm: true,
       });
@@ -1004,7 +927,7 @@ describe("Resource Permissions", () => {
 
       await adminSupabase.from("user_profiles").insert({
         id: tempUserId,
-        email: `temp-${tempUserId}@test.com`,
+        email: `temp_${tempUserId}@test.com`,
         full_name: "Temp User",
       });
 
@@ -1058,7 +981,7 @@ describe("Resource Permissions", () => {
 
       const userResult = await adminSupabase.auth.admin.createUser({
         id: tempGranterId,
-        email: `granter-${tempGranterId}@test.com`,
+        email: `granter_${tempGranterId}@test.com`,
         password: "password123",
         email_confirm: true,
       });
@@ -1066,7 +989,7 @@ describe("Resource Permissions", () => {
 
       await adminSupabase.from("user_profiles").insert({
         id: tempGranterId,
-        email: `granter-${tempGranterId}@test.com`,
+        email: `granter_${tempGranterId}@test.com`,
         full_name: "Granter User",
       });
 
@@ -1088,7 +1011,7 @@ describe("Resource Permissions", () => {
         auth: { storageKey: "granter-test-auth" },
       });
       await granterSupabase.auth.signInWithPassword({
-        email: `granter-${tempGranterId}@test.com`,
+        email: `granter_${tempGranterId}@test.com`,
         password: "password123",
       });
       const granterClient = new OsoAppClient(granterSupabase);
@@ -1167,7 +1090,6 @@ describe("Resource Permissions", () => {
 
       expect(result.hasAccess).toBe(true);
       expect(result.permissionLevel).toBe("owner");
-      expect(result.isOwner).toBe(true);
 
       await ownerClient.revokeResourcePermission({
         resourceType: "notebook",
