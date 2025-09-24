@@ -8,6 +8,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.workflow import Context, StopEvent, step
 from oso_agent.types.response import StrResponse
+from oso_agent.util.responses import ensure_no_code_block
 from oso_agent.workflows.common import GenericStartEvent
 
 from ...resources import ResourceDependency
@@ -73,8 +74,7 @@ class NotebookWorkflow(
         )
 
         # Remove markdown style code blocks if present
-        if response.startswith("```") and response.endswith("```"):
-            response = "\n".join(response.split("\n")[1:-1]).strip()
+        response = ensure_no_code_block(response)
 
         return StopEvent(
             result=StrResponse(blob=response),
