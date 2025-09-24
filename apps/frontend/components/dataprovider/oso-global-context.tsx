@@ -79,9 +79,9 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "checkResourcePermission",
   "grantResourcePermission",
   "revokeResourcePermission",
-  "makeResourcePublic",
-  "makeResourcePrivate",
+  "grantPublicPermission",
   "listResourcePermissions",
+  "revokePublicPermission",
 ];
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [
