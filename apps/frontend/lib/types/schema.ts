@@ -957,6 +957,16 @@ export const addOrganizationCreditsArgsSchema = z.object({
 
 export const addOrganizationCreditsReturnsSchema = z.boolean();
 
+export const canGrantPermissionArgsSchema = z.object({
+  granter_id: z.string(),
+  permission_to_grant: z.string(),
+  target_resource_id: z.string(),
+  target_resource_type: z.string(),
+  target_user_id: z.string().optional(),
+});
+
+export const canGrantPermissionReturnsSchema = z.boolean();
+
 export const checkOrgAdminArgsSchema = z.object({
   check_org_id: z.string(),
   check_user_id: z.string(),

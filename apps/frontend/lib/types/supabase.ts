@@ -910,6 +910,16 @@ export type Database = {
         };
         Returns: boolean;
       };
+      can_grant_permission: {
+        Args: {
+          granter_id: string;
+          permission_to_grant: string;
+          target_resource_id: string;
+          target_resource_type: string;
+          target_user_id?: string;
+        };
+        Returns: boolean;
+      };
       check_org_admin: {
         Args: { check_org_id: string; check_user_id: string };
         Returns: boolean;
