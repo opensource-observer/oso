@@ -1,7 +1,7 @@
 CREATE TABLE resource_permissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
-  permission_level TEXT NOT NULL CHECK (permission_level IN ('read', 'write', 'admin', 'owner')),
+  permission_level TEXT NOT NULL,
   granted_by UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -16,16 +16,13 @@ CREATE TABLE resource_permissions (
   )
 );
 
-CREATE INDEX idx_resource_permissions_user_notebook ON resource_permissions(user_id, notebook_id) WHERE notebook_id IS NOT NULL;
-CREATE INDEX idx_resource_permissions_user_chat ON resource_permissions(user_id, chat_id) WHERE chat_id IS NOT NULL;
-CREATE INDEX idx_resource_permissions_notebook ON resource_permissions(notebook_id) WHERE notebook_id IS NOT NULL;
-CREATE INDEX idx_resource_permissions_chat ON resource_permissions(chat_id) WHERE chat_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_unique_notebook_user ON resource_permissions(notebook_id, user_id)
+  WHERE notebook_id IS NOT NULL AND revoked_at IS NULL;
+CREATE UNIQUE INDEX idx_unique_chat_user ON resource_permissions(chat_id, user_id)
+  WHERE chat_id IS NOT NULL AND revoked_at IS NULL;
 
-CREATE UNIQUE INDEX idx_unique_user_notebook ON resource_permissions(user_id, notebook_id) WHERE notebook_id IS NOT NULL AND revoked_at IS NULL;
-CREATE UNIQUE INDEX idx_unique_user_chat ON resource_permissions(user_id, chat_id) WHERE chat_id IS NOT NULL AND revoked_at IS NULL;
-
-CREATE UNIQUE INDEX idx_unique_public_notebook ON resource_permissions(notebook_id) WHERE notebook_id IS NOT NULL AND user_id IS NULL AND revoked_at IS NULL;
-CREATE UNIQUE INDEX idx_unique_public_chat ON resource_permissions(chat_id) WHERE chat_id IS NOT NULL AND user_id IS NULL AND revoked_at IS NULL;
+CREATE INDEX idx_resource_permissions_user ON resource_permissions(user_id)
+  WHERE revoked_at IS NULL;
 
 ALTER TABLE resource_permissions ENABLE ROW LEVEL SECURITY;
 
@@ -42,55 +39,96 @@ CREATE POLICY "Users can view permissions" ON resource_permissions
     ))
   );
 
-CREATE POLICY "Resource owners can grant permissions" ON resource_permissions
+CREATE OR REPLACE FUNCTION can_grant_permission(
+  granter_id uuid,
+  target_resource_type text,
+  target_resource_id uuid,
+  permission_to_grant text,
+  target_user_id uuid DEFAULT NULL
+)
+RETURNS boolean AS $$
+DECLARE
+  granter_permission_level text;
+  resource_org_id uuid;
+BEGIN
+  IF target_resource_type = 'notebook' THEN
+    IF EXISTS (SELECT 1 FROM notebooks WHERE id = target_resource_id AND created_by = granter_id AND deleted_at IS NULL) THEN
+      granter_permission_level := 'owner';
+      SELECT org_id INTO resource_org_id FROM notebooks WHERE id = target_resource_id;
+    ELSE
+      SELECT permission_level INTO granter_permission_level
+      FROM resource_permissions
+      WHERE user_id = granter_id AND notebook_id = target_resource_id AND revoked_at IS NULL;
+      SELECT org_id INTO resource_org_id FROM notebooks WHERE id = target_resource_id;
+    END IF;
+  ELSIF target_resource_type = 'chat' THEN
+    IF EXISTS (SELECT 1 FROM chat_history WHERE id = target_resource_id AND created_by = granter_id AND deleted_at IS NULL) THEN
+      granter_permission_level := 'owner';
+      SELECT org_id INTO resource_org_id FROM chat_history WHERE id = target_resource_id;
+    ELSE
+      SELECT permission_level INTO granter_permission_level
+      FROM resource_permissions
+      WHERE user_id = granter_id AND chat_id = target_resource_id AND revoked_at IS NULL;
+      SELECT org_id INTO resource_org_id FROM chat_history WHERE id = target_resource_id;
+    END IF;
+  ELSE
+    RETURN false;
+  END IF;
+
+  IF granter_permission_level IS NULL THEN
+    RETURN false;
+  END IF;
+
+  IF target_user_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM users_by_organization
+    WHERE user_id = target_user_id AND org_id = resource_org_id AND deleted_at IS NULL
+  ) THEN
+    RETURN false;
+  END IF;
+
+  RETURN CASE granter_permission_level
+    WHEN 'owner' THEN permission_to_grant IN ('owner', 'admin', 'write', 'read')
+    WHEN 'admin' THEN permission_to_grant IN ('admin', 'write', 'read')
+    WHEN 'write' THEN permission_to_grant IN ('write', 'read')
+    WHEN 'read' THEN permission_to_grant = 'read'
+    ELSE false
+  END;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE POLICY "Users can grant permissions they have" ON resource_permissions
   FOR INSERT WITH CHECK (
-    auth.uid() = granted_by AND (
-      (notebook_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM notebooks n
-        WHERE n.id = notebook_id AND n.created_by = auth.uid()
-          AND (user_id IS NULL OR EXISTS (
-            SELECT 1 FROM users_by_organization target_ubo
-            WHERE target_ubo.user_id = resource_permissions.user_id
-              AND target_ubo.org_id = n.org_id AND target_ubo.deleted_at IS NULL
-          ))
-      )) OR
-      (chat_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM chat_history c
-        WHERE c.id = chat_id AND c.created_by = auth.uid()
-          AND (user_id IS NULL OR EXISTS (
-            SELECT 1 FROM users_by_organization target_ubo
-            WHERE target_ubo.user_id = resource_permissions.user_id
-              AND target_ubo.org_id = c.org_id AND target_ubo.deleted_at IS NULL
-          ))
-      ))
+    auth.uid() = granted_by AND
+    can_grant_permission(
+      auth.uid(),
+      CASE WHEN notebook_id IS NOT NULL THEN 'notebook' ELSE 'chat' END,
+      COALESCE(notebook_id, chat_id),
+      permission_level,
+      user_id
     )
   );
 
-CREATE POLICY "Users can update granted permissions" ON resource_permissions
+CREATE POLICY "Users can update permissions they control" ON resource_permissions
   FOR UPDATE USING (
-    auth.uid() = granted_by AND (
-      (notebook_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM notebooks n
-        WHERE n.id = notebook_id AND n.created_by = auth.uid()
-      )) OR
-      (chat_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM chat_history c
-        WHERE c.id = chat_id AND c.created_by = auth.uid()
-      ))
+    auth.uid() = granted_by AND
+    can_grant_permission(
+      auth.uid(),
+      CASE WHEN notebook_id IS NOT NULL THEN 'notebook' ELSE 'chat' END,
+      COALESCE(notebook_id, chat_id),
+      permission_level,
+      user_id
     )
   );
 
-CREATE POLICY "Users can delete granted permissions" ON resource_permissions
+CREATE POLICY "Users can delete permissions they control" ON resource_permissions
   FOR DELETE USING (
-    auth.uid() = granted_by AND (
-      (notebook_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM notebooks n
-        WHERE n.id = notebook_id AND n.created_by = auth.uid()
-      )) OR
-      (chat_id IS NOT NULL AND EXISTS (
-        SELECT 1 FROM chat_history c
-        WHERE c.id = chat_id AND c.created_by = auth.uid()
-      ))
+    auth.uid() = granted_by AND
+    can_grant_permission(
+      auth.uid(),
+      CASE WHEN notebook_id IS NOT NULL THEN 'notebook' ELSE 'chat' END,
+      COALESCE(notebook_id, chat_id),
+      permission_level,
+      user_id
     )
   );
 
@@ -112,7 +150,7 @@ ALTER TABLE organizations
 DROP CONSTRAINT IF EXISTS org_name_format;
 
 ALTER TABLE organizations
-ADD CONSTRAINT "org_name_format" CHECK (("org_name" ~ '^[a-zA-Z][a-zA-Z0-9_-]*$'::"text"));
+ADD CONSTRAINT "org_name_format" CHECK ("org_name" ~ '^[a-zA-Z][a-zA-Z0-9_]*[a-zA-Z0-9]$');
 
 ALTER TABLE invitations DROP COLUMN IF EXISTS status CASCADE;
 
@@ -430,7 +468,6 @@ BEGIN
   IF NOT resource_exists THEN
     RETURN json_build_object(
       'hasAccess', false,
-      'accessType', 'no_access',
       'permissionLevel', null,
       'resourceId', 'unknown'
     );
@@ -451,17 +488,25 @@ BEGIN
   END IF;
 
   IF current_user_id IS NULL THEN
-    IF has_any_permissions THEN
+    IF p_resource_type = 'notebook' THEN
+      SELECT permission_level INTO user_permission_level
+      FROM resource_permissions
+      WHERE notebook_id = p_resource_id AND user_id IS NULL AND revoked_at IS NULL;
+    ELSIF p_resource_type = 'chat' THEN
+      SELECT permission_level INTO user_permission_level
+      FROM resource_permissions
+      WHERE chat_id = p_resource_id AND user_id IS NULL AND revoked_at IS NULL;
+    END IF;
+
+    IF user_permission_level IS NOT NULL THEN
       RETURN json_build_object(
         'hasAccess', true,
-        'accessType', 'public_access',
-        'permissionLevel', 'read',
+        'permissionLevel', user_permission_level,
         'resourceId', p_resource_id
       );
     ELSE
       RETURN json_build_object(
         'hasAccess', false,
-        'accessType', 'no_access',
         'permissionLevel', null,
         'resourceId', p_resource_id
       );
@@ -470,9 +515,7 @@ BEGIN
   IF current_user_id = resource_owner_id THEN
     RETURN json_build_object(
       'hasAccess', true,
-      'accessType', 'authenticated_access',
       'permissionLevel', 'owner',
-      'isOwner', true,
       'resourceId', p_resource_id
     );
   END IF;
@@ -496,9 +539,7 @@ BEGIN
   IF user_permission_level IS NOT NULL THEN
     RETURN json_build_object(
       'hasAccess', true,
-      'accessType', 'authenticated_access',
       'permissionLevel', user_permission_level,
-      'isOwner', false,
       'resourceId', p_resource_id
     );
   END IF;
@@ -506,15 +547,12 @@ BEGIN
   IF has_any_permissions THEN
     RETURN json_build_object(
       'hasAccess', true,
-      'accessType', 'authenticated_access',
       'permissionLevel', 'read',
-      'isOwner', false,
       'resourceId', p_resource_id
     );
   ELSE
     RETURN json_build_object(
       'hasAccess', false,
-      'accessType', 'authenticated_no_access',
       'permissionLevel', null,
       'resourceId', p_resource_id
     );
