@@ -16,11 +16,28 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Check if the user has created any organizations
+  // Check if the user is part of any any organizations
+  const { data: joinedOrgs, error: joinError } = await supabaseClient
+    .from("users_by_organization")
+    .select("org_id")
+    .eq("user_id", user.userId)
+    .is("deleted_at", null);
+
+  if (joinError) {
+    throw joinError;
+  } else if (!joinedOrgs || joinedOrgs.length <= 0) {
+    // We proxy instead of redirect to keep us on /start
+    return NextResponse.rewrite(new URL("/create-org", req.url));
+  }
+
+  // Find the user's highest tier organization
   const { data: org, error: orgError } = await supabaseClient
     .from("organizations")
     .select("id,org_name,pricing_plan!inner(price_per_credit)")
-    .eq("created_by", user.userId)
+    .in(
+      "id",
+      joinedOrgs.map((o) => o.org_id),
+    )
     .is("deleted_at", null)
     // TODO: this is a hack to find the highest tier plan
     .order("pricing_plan.price_per_credit", {
