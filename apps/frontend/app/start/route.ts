@@ -30,8 +30,7 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   if (joinError) {
     throw joinError;
   } else if (!joinedOrgs || joinedOrgs.length <= 0) {
-    // We proxy instead of redirect to keep us on /start
-    return NextResponse.rewrite(new URL("/create-org", req.url));
+    return NextResponse.redirect(new URL("/create-org", req.url));
   }
 
   // Find the user's highest tier organization
@@ -56,8 +55,7 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   } else if (!notebookData || notebookData.length <= 0) {
     // We only show the onboarding wizard in production
     if (NODE_ENV === "production") {
-      // We proxy instead of redirect to keep us on /start
-      return NextResponse.rewrite(
+      return NextResponse.redirect(
         new URL(`/examples?orgName=${org.org_name}`, req.url),
       );
     }
