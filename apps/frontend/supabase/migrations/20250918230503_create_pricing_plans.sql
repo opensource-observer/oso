@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS public.pricing_plan (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT pricing_plan_pkey PRIMARY KEY (plan_id),
     CONSTRAINT pricing_plan_plan_name_key UNIQUE (plan_name),
-    CONSTRAINT positive_price_per_credit CHECK ((price_per_credit > 0))
+    CONSTRAINT positive_price_per_credit CHECK ((price_per_credit >= 0))
 );
 
 COMMENT ON TABLE public.pricing_plan IS 'Defines pricing plans and their cost per credit';
