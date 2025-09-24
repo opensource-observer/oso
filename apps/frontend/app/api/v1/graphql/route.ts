@@ -89,6 +89,7 @@ const customHandler = async (req: NextRequest) => {
 
   const user = await getUser(req);
   const requestClone = req.clone();
+  const tracker = trackServerEvent(user);
 
   let operation = "unknown";
   let query = "";
@@ -118,6 +119,7 @@ const customHandler = async (req: NextRequest) => {
           user,
           orgId,
           TransactionType.GRAPHQL_QUERY,
+          tracker,
           "/api/v1/graphql",
           { operation, query },
         );

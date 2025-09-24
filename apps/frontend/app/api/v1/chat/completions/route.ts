@@ -45,6 +45,7 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
         user,
         orgId,
         TransactionType.AGENT_QUERY,
+        tracker,
         "/api/v1/chat/completions",
         { message: getLatestMessage(body.messages) },
       );

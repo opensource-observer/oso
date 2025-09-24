@@ -45,6 +45,7 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
         user,
         orgId,
         TransactionType.TEXT2SQL,
+        tracker,
         "/api/v1/text2sql",
         { message: getLatestMessage(prompt.messages) },
       );
