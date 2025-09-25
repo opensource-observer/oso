@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       "Interactive data analysis and visualization";
     const authorAvatar =
       searchParams.get("avatar") ??
-      "https://avatars.githubusercontent.com/u/74559859?v=4";
+      "https://avatars.githubusercontent.com/u/145079657?s=200&v=4";
     const likes = searchParams.get("likes") ?? "1";
     const forks = searchParams.get("forks") ?? "0";
 
