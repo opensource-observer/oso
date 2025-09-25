@@ -276,6 +276,12 @@ export type ExpireOldInvitationsArgs = z.infer<
 export type ExpireOldInvitationsReturns = z.infer<
   typeof generated.expireOldInvitationsReturnsSchema
 >;
+export type GetOgImageInfoArgs = z.infer<
+  typeof generated.getOgImageInfoArgsSchema
+>;
+export type GetOgImageInfoReturns = z.infer<
+  typeof generated.getOgImageInfoReturnsSchema
+>;
 export type GetOrganizationCreditsArgs = z.infer<
   typeof generated.getOrganizationCreditsArgsSchema
 >;
@@ -305,4 +311,10 @@ export type PreviewDeductOrganizationCreditsArgs = z.infer<
 >;
 export type PreviewDeductOrganizationCreditsReturns = z.infer<
   typeof generated.previewDeductOrganizationCreditsReturnsSchema
+>;
+export type ValidateOwnershipLimitsArgs = z.infer<
+  typeof generated.validateOwnershipLimitsArgsSchema
+>;
+export type ValidateOwnershipLimitsReturns = z.infer<
+  typeof generated.validateOwnershipLimitsReturnsSchema
 >;

@@ -501,6 +501,7 @@ export const notebooksRowSchema = z.object({
   created_by: z.string(),
   data: z.string().nullable(),
   deleted_at: z.string().nullable(),
+  description: z.string().nullable(),
   id: z.string(),
   notebook_name: z.string(),
   org_id: z.string(),
@@ -513,6 +514,7 @@ export const notebooksInsertSchema = z.object({
   created_by: z.string(),
   data: z.string().optional().nullable(),
   deleted_at: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   id: z.string().optional(),
   notebook_name: z.string(),
   org_id: z.string(),
@@ -525,6 +527,7 @@ export const notebooksUpdateSchema = z.object({
   created_by: z.string().optional(),
   data: z.string().optional().nullable(),
   deleted_at: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   id: z.string().optional(),
   notebook_name: z.string().optional(),
   org_id: z.string().optional(),
@@ -1017,6 +1020,13 @@ export const expireOldInvitationsArgsSchema = z.object({});
 
 export const expireOldInvitationsReturnsSchema = z.undefined();
 
+export const getOgImageInfoArgsSchema = z.object({
+  p_notebook_name: z.string(),
+  p_org_name: z.string(),
+});
+
+export const getOgImageInfoReturnsSchema = jsonSchema;
+
 export const getOrganizationCreditsArgsSchema = z.object({
   p_org_id: z.string(),
 });
@@ -1055,3 +1065,12 @@ export const previewDeductOrganizationCreditsArgsSchema = z.object({
 });
 
 export const previewDeductOrganizationCreditsReturnsSchema = z.boolean();
+
+export const validateOwnershipLimitsArgsSchema = z.object({
+  p_current_record_id: z.string().optional(),
+  p_new_role: z.string(),
+  p_old_role: z.string().optional(),
+  p_user_id: z.string(),
+});
+
+export const validateOwnershipLimitsReturnsSchema = z.boolean();
