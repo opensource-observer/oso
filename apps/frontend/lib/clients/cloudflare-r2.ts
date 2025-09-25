@@ -5,6 +5,7 @@ import {
   CompleteMultipartUploadCommand,
   UploadPartCommand,
   CompletedPart,
+  CopyObjectCommand,
 } from "@aws-sdk/client-s3";
 import type { NodeJsClient } from "@smithy/types";
 import { createHash } from "node:crypto";
@@ -16,6 +17,11 @@ import {
 import { assert } from "@opensource-observer/utils";
 
 const PART_SIZE = 10 * 1024 * 1024; // 10MB
+
+type ObjectLocation = {
+  bucketName: string;
+  objectKey: string;
+};
 
 const S3 = new S3Client({
   region: "auto",
@@ -36,7 +42,7 @@ function queryToKey(queryBody: any): string {
 
 async function getObjectByQuery(orgName: string, queryBody: any) {
   const key = queryToKey(queryBody);
-  return getObject(orgName, key);
+  return getObject({ bucketName: orgName, objectKey: key });
 }
 
 async function putObjectByQuery(
@@ -45,30 +51,26 @@ async function putObjectByQuery(
   body: ReadableStream,
 ) {
   const key = queryToKey(queryBody);
-  return putObject(orgName, key, body);
+  return putObject({ bucketName: orgName, objectKey: key }, body);
 }
 
-async function getObject(bucketName: string, objectKey: string) {
+async function getObject(loc: ObjectLocation) {
   const command = new GetObjectCommand({
-    Bucket: bucketName,
-    Key: objectKey,
+    Bucket: loc.bucketName,
+    Key: loc.objectKey,
   });
   const response = await S3.send(command);
   return response;
 }
 
-async function putObject(
-  bucketName: string,
-  objectKey: string,
-  body: ReadableStream,
-) {
+async function putObject(loc: ObjectLocation, body: ReadableStream) {
   // https://developers.cloudflare.com/r2/objects/multipart-objects/
   // Part sizes must be at least 5 MB in size, except for the last part.
   // Part sizes must be less than 5 GB
   // Part sizes must be the same size except for the last part
   const createCommand = new CreateMultipartUploadCommand({
-    Bucket: bucketName,
-    Key: objectKey,
+    Bucket: loc.bucketName,
+    Key: loc.objectKey,
   });
   const createResponse = await S3.send(createCommand);
   const uploadId = createResponse.UploadId;
@@ -85,8 +87,8 @@ async function putObject(
 
   const uploadPart = async (data: Uint8Array) => {
     const partCommand = new UploadPartCommand({
-      Bucket: bucketName,
-      Key: objectKey,
+      Bucket: loc.bucketName,
+      Key: loc.objectKey,
       UploadId: uploadId,
       PartNumber: partNumber,
       Body: data,
@@ -134,8 +136,8 @@ async function putObject(
   }
 
   const completeCommand = new CompleteMultipartUploadCommand({
-    Bucket: bucketName,
-    Key: objectKey,
+    Bucket: loc.bucketName,
+    Key: loc.objectKey,
     UploadId: uploadId,
     MultipartUpload: {
       Parts: partETags,
@@ -145,4 +147,14 @@ async function putObject(
   return completeResponse;
 }
 
-export { getObjectByQuery, putObjectByQuery };
+async function copyObject(source: ObjectLocation, destination: ObjectLocation) {
+  const command = new CopyObjectCommand({
+    CopySource: `${source.bucketName}/${source.objectKey}`,
+    Bucket: destination.bucketName,
+    Key: destination.objectKey,
+  });
+  const response = await S3.send(command);
+  return response;
+}
+
+export { getObjectByQuery, putObjectByQuery, copyObject };
