@@ -717,7 +717,9 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("notebooks")
-      .select("*,organizations!inner(org_name)")
+      .select(
+        "id,created_at,updated_at,notebook_name,organizations!inner(id,org_name)",
+      )
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
@@ -728,6 +730,10 @@ class OsoAppClient {
       );
     }
     return data;
+  }
+
+  async listNotebooksByOrgName(args: Partial<{ orgName: string }>) {
+    return await this.getNotebooksByOrgName(args);
   }
 
   async getNotebookById(args: Partial<{ notebookId: string }>) {
