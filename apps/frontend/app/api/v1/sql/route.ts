@@ -25,6 +25,7 @@ import { z } from "zod";
 import {
   getObjectByQuery,
   putObjectByQuery,
+  copyObject,
 } from "@/lib/clients/cloudflare-r2";
 import { withPostHogTracking } from "@/lib/clients/posthog";
 
@@ -185,7 +186,16 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     if (orgPlan?.plan_name === ENTERPRISE_PLAN_NAME) {
       // Puts are best-effort
       try {
-        await putObjectByQuery(user.orgName, reqBody, cacheStream);
+        const cacheResponse = await putObjectByQuery(
+          user.orgName,
+          reqBody,
+          cacheStream,
+        );
+        // TODO: this should be controlled by a `publishQuery` option
+        await copyObject(
+          { bucketName: cacheResponse.Bucket!, objectKey: cacheResponse.Key! },
+          { bucketName: PUBLIC_SQL_BUCKET, objectKey: cacheResponse.Key! },
+        );
         logger.log(`/api/sql: Cached SQL query response`);
       } catch (error) {
         logger.warn(`/api/sql: Failed to cache SQL query response: ${error}`);
