@@ -33,6 +33,306 @@ describe("Organizations", () => {
   });
 });
 
+describe("Organization Ownership", () => {
+  const REGULAR_USER_ID = crypto.randomUUID();
+  const ADMIN_USER_ID = crypto.randomUUID();
+  const FIRST_ORG_ID = crypto.randomUUID();
+  const SECOND_ORG_ID = crypto.randomUUID();
+  const THIRD_ORG_ID = crypto.randomUUID();
+
+  let adminSupabase: ReturnType<typeof createClient>;
+
+  beforeAll(async () => {
+    adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { storageKey: "org-ownership-admin-test-auth" },
+    });
+
+    const userCreationResults = await Promise.all([
+      adminSupabase.auth.admin.createUser({
+        id: REGULAR_USER_ID,
+        email: `regular_${REGULAR_USER_ID}@test.com`,
+        password: "password123",
+        email_confirm: true,
+      }),
+      adminSupabase.auth.admin.createUser({
+        id: ADMIN_USER_ID,
+        email: `admin_${ADMIN_USER_ID}@test.com`,
+        password: "password123",
+        email_confirm: true,
+      }),
+    ]);
+
+    userCreationResults.forEach((result, index) => {
+      const userType = ["regular", "admin"][index];
+      if (result.error) {
+        logger.error(`Failed to create ${userType} user:`, result.error);
+        throw result.error;
+      }
+    });
+
+    await adminSupabase.from("user_profiles").insert([
+      {
+        id: REGULAR_USER_ID,
+        email: `regular_${REGULAR_USER_ID}@test.com`,
+        full_name: "Regular User",
+      },
+      {
+        id: ADMIN_USER_ID,
+        email: `admin_${ADMIN_USER_ID}@test.com`,
+        full_name: "Admin User",
+      },
+    ]);
+
+    await adminSupabase.from("admin_users").insert({
+      user_id: ADMIN_USER_ID,
+      name: "Test Admin",
+      description: "Test admin user for org ownership tests",
+    });
+
+    const regularSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { storageKey: "regular-org-test-auth" },
+    });
+    const { error: regularAuthError } =
+      await regularSupabase.auth.signInWithPassword({
+        email: `regular_${REGULAR_USER_ID}@test.com`,
+        password: "password123",
+      });
+    if (regularAuthError) throw regularAuthError;
+
+    const adminUserSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { storageKey: "admin-org-test-auth" },
+    });
+    const { error: adminAuthError } =
+      await adminUserSupabase.auth.signInWithPassword({
+        email: `admin_${ADMIN_USER_ID}@test.com`,
+        password: "password123",
+      });
+    if (adminAuthError) throw adminAuthError;
+  });
+
+  afterAll(async () => {
+    await Promise.all([
+      adminSupabase
+        .from("users_by_organization")
+        .delete()
+        .in("org_id", [FIRST_ORG_ID, SECOND_ORG_ID, THIRD_ORG_ID]),
+      adminSupabase
+        .from("organizations")
+        .delete()
+        .in("id", [FIRST_ORG_ID, SECOND_ORG_ID, THIRD_ORG_ID]),
+      adminSupabase.from("admin_users").delete().eq("user_id", ADMIN_USER_ID),
+      adminSupabase
+        .from("user_profiles")
+        .delete()
+        .in("id", [REGULAR_USER_ID, ADMIN_USER_ID]),
+      adminSupabase.auth.admin.deleteUser(REGULAR_USER_ID),
+      adminSupabase.auth.admin.deleteUser(ADMIN_USER_ID),
+    ]);
+  });
+
+  afterEach(async () => {
+    await Promise.all([
+      adminSupabase
+        .from("users_by_organization")
+        .delete()
+        .in("org_id", [FIRST_ORG_ID, SECOND_ORG_ID, THIRD_ORG_ID]),
+      adminSupabase
+        .from("organizations")
+        .delete()
+        .in("id", [FIRST_ORG_ID, SECOND_ORG_ID, THIRD_ORG_ID]),
+    ]);
+  });
+
+  it("should allow regular user to create their first organization", async () => {
+    const { error } = await adminSupabase.from("organizations").insert({
+      id: FIRST_ORG_ID,
+      created_by: REGULAR_USER_ID,
+      org_name: `regular_first_${FIRST_ORG_ID.substring(0, 8)}`,
+    });
+
+    expect(error).toBeNull();
+
+    const { data: ownership } = await adminSupabase
+      .from("users_by_organization")
+      .select("*")
+      .eq("user_id", REGULAR_USER_ID)
+      .eq("org_id", FIRST_ORG_ID)
+      .eq("user_role", "owner")
+      .is("deleted_at", null);
+
+    expect(ownership).toHaveLength(1);
+  });
+
+  it("should prevent regular user from creating a second organization", async () => {
+    await adminSupabase.from("organizations").insert({
+      id: FIRST_ORG_ID,
+      created_by: REGULAR_USER_ID,
+      org_name: `regular_first_${FIRST_ORG_ID.substring(0, 8)}`,
+    });
+    const { error: orgError } = await adminSupabase
+      .from("organizations")
+      .insert({
+        id: SECOND_ORG_ID,
+        created_by: REGULAR_USER_ID,
+        org_name: `regular_second_${SECOND_ORG_ID.substring(0, 8)}`,
+      });
+
+    expect(orgError).toBeDefined();
+  });
+
+  it("should allow admin user to create multiple organizations", async () => {
+    const { error: firstError } = await adminSupabase
+      .from("organizations")
+      .insert({
+        id: FIRST_ORG_ID,
+        created_by: ADMIN_USER_ID,
+        org_name: `admin_first_${FIRST_ORG_ID.substring(0, 8)}`,
+      });
+
+    expect(firstError).toBeNull();
+
+    const { error: secondError } = await adminSupabase
+      .from("organizations")
+      .insert({
+        id: SECOND_ORG_ID,
+        created_by: ADMIN_USER_ID,
+        org_name: `admin_second_${SECOND_ORG_ID.substring(0, 8)}`,
+      });
+
+    expect(secondError).toBeNull();
+
+    const { data: ownerships } = await adminSupabase
+      .from("users_by_organization")
+      .select("*")
+      .eq("user_id", ADMIN_USER_ID)
+      .eq("user_role", "owner")
+      .is("deleted_at", null);
+
+    expect(ownerships).toHaveLength(2);
+  });
+
+  it("should prevent promoting regular user to owner of second organization", async () => {
+    await adminSupabase.from("organizations").insert({
+      id: FIRST_ORG_ID,
+      created_by: REGULAR_USER_ID,
+      org_name: `regular_first_${FIRST_ORG_ID.substring(0, 8)}`,
+    });
+
+    await adminSupabase.from("organizations").insert({
+      id: SECOND_ORG_ID,
+      created_by: ADMIN_USER_ID,
+      org_name: `admin_second_${SECOND_ORG_ID.substring(0, 8)}`,
+    });
+
+    await adminSupabase.from("users_by_organization").insert({
+      user_id: REGULAR_USER_ID,
+      org_id: SECOND_ORG_ID,
+      user_role: "member",
+    });
+
+    const { error } = await adminSupabase
+      .from("users_by_organization")
+      .update({ user_role: "owner" })
+      .eq("user_id", REGULAR_USER_ID)
+      .eq("org_id", SECOND_ORG_ID);
+
+    expect(error).toBeDefined();
+  });
+
+  it("should allow promoting admin user to owner of multiple organizations", async () => {
+    await adminSupabase.from("organizations").insert({
+      id: FIRST_ORG_ID,
+      created_by: REGULAR_USER_ID,
+      org_name: `regular_first_${FIRST_ORG_ID.substring(0, 8)}`,
+    });
+
+    const tempUserId = crypto.randomUUID();
+    await adminSupabase.auth.admin.createUser({
+      id: tempUserId,
+      email: `temp_${tempUserId}@test.com`,
+      password: "password123",
+      email_confirm: true,
+    });
+    await adminSupabase.from("user_profiles").insert({
+      id: tempUserId,
+      email: `temp_${tempUserId}@test.com`,
+      full_name: "Temp User",
+    });
+
+    await adminSupabase.from("organizations").insert({
+      id: SECOND_ORG_ID,
+      created_by: tempUserId,
+      org_name: `temp_second_${SECOND_ORG_ID.substring(0, 8)}`,
+    });
+
+    await adminSupabase.from("users_by_organization").insert([
+      {
+        user_id: ADMIN_USER_ID,
+        org_id: FIRST_ORG_ID,
+        user_role: "member",
+      },
+      {
+        user_id: ADMIN_USER_ID,
+        org_id: SECOND_ORG_ID,
+        user_role: "member",
+      },
+    ]);
+
+    const { error: firstPromotion } = await adminSupabase
+      .from("users_by_organization")
+      .update({ user_role: "owner" })
+      .eq("user_id", ADMIN_USER_ID)
+      .eq("org_id", FIRST_ORG_ID);
+
+    expect(firstPromotion).toBeNull();
+
+    const { error: secondPromotion } = await adminSupabase
+      .from("users_by_organization")
+      .update({ user_role: "owner" })
+      .eq("user_id", ADMIN_USER_ID)
+      .eq("org_id", SECOND_ORG_ID);
+
+    expect(secondPromotion).toBeNull();
+
+    const { data: ownerships } = await adminSupabase
+      .from("users_by_organization")
+      .select("*")
+      .eq("user_id", ADMIN_USER_ID)
+      .eq("user_role", "owner")
+      .is("deleted_at", null);
+
+    expect(ownerships).toHaveLength(2);
+
+    await adminSupabase
+      .from("users_by_organization")
+      .delete()
+      .eq("user_id", tempUserId);
+    await adminSupabase
+      .from("organizations")
+      .delete()
+      .eq("created_by", tempUserId);
+    await adminSupabase.from("user_profiles").delete().eq("id", tempUserId);
+    await adminSupabase.auth.admin.deleteUser(tempUserId);
+  });
+
+  it("should allow existing owner to update their ownership record", async () => {
+    await adminSupabase.from("organizations").insert({
+      id: FIRST_ORG_ID,
+      created_by: REGULAR_USER_ID,
+      org_name: `regular_update_${FIRST_ORG_ID.substring(0, 8)}`,
+    });
+
+    const { error } = await adminSupabase
+      .from("users_by_organization")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("user_id", REGULAR_USER_ID)
+      .eq("org_id", FIRST_ORG_ID)
+      .eq("user_role", "owner");
+
+    expect(error).toBeNull();
+  });
+});
+
 describe("Resource Permissions", () => {
   const USER_OWNER_ID = crypto.randomUUID();
   const USER_COLLABORATOR_ID = crypto.randomUUID();
