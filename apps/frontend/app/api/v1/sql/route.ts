@@ -191,6 +191,7 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
           reqBody,
           cacheStream,
         );
+        // TODO: this should be controlled by a `publishQuery` option
         await copyObject(
           { bucketName: cacheResponse.Bucket!, objectKey: cacheResponse.Key! },
           { bucketName: PUBLIC_SQL_BUCKET, objectKey: cacheResponse.Key! },
