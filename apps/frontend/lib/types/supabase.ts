@@ -467,6 +467,7 @@ export type Database = {
           created_by: string;
           data: string | null;
           deleted_at: string | null;
+          description: string | null;
           id: string;
           notebook_name: string;
           org_id: string;
@@ -478,6 +479,7 @@ export type Database = {
           created_by: string;
           data?: string | null;
           deleted_at?: string | null;
+          description?: string | null;
           id?: string;
           notebook_name: string;
           org_id: string;
@@ -489,6 +491,7 @@ export type Database = {
           created_by?: string;
           data?: string | null;
           deleted_at?: string | null;
+          description?: string | null;
           id?: string;
           notebook_name?: string;
           org_id?: string;
@@ -961,6 +964,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
+      get_og_image_info: {
+        Args: { p_notebook_name: string; p_org_name: string };
+        Returns: Json;
+      };
       get_organization_credits: {
         Args: { p_org_id: string };
         Returns: number;
@@ -990,6 +997,15 @@ export type Database = {
           p_metadata?: Json;
           p_org_id: string;
           p_transaction_type: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
+      validate_ownership_limits: {
+        Args: {
+          p_current_record_id?: string;
+          p_new_role: string;
+          p_old_role?: string;
           p_user_id: string;
         };
         Returns: boolean;
