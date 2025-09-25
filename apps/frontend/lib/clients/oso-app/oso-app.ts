@@ -26,6 +26,11 @@ import type {
 import { NotebookKey } from "@/lib/types/db";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
 import { DEFAULT_OSO_TABLE_ID } from "@/lib/types/dynamic-connector";
+import {
+  uniqueNamesGenerator,
+  adjectives,
+  animals,
+} from "unique-names-generator";
 
 const ADMIN_USER_ROLE = "admin";
 
@@ -606,6 +611,14 @@ class OsoAppClient {
     }
   }
 
+  private randomNotebookName() {
+    return uniqueNamesGenerator({
+      dictionaries: [adjectives, animals],
+      length: 2,
+      separator: "_",
+    });
+  }
+
   /**
    * Creates a new notebook
    * - Notebooks are stored under an organization
@@ -615,8 +628,7 @@ class OsoAppClient {
   async createNotebook(args: Partial<NotebookKey>) {
     console.log("createNotebook: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const notebookName =
-      args.notebookName || `notebook_${uuid4().substring(0, 5)}`;
+    const notebookName = args.notebookName || this.randomNotebookName();
     const user = await this.getUser();
     const org = await this.getOrganizationByName({ orgName });
 
