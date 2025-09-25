@@ -25,7 +25,7 @@ type ExtractMethods<T> = {
   [K in ExtractMethodNames<T>]: any;
 };
 
-const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
+const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "getUser",
   "getMyUserProfile",
   "updateMyUserProfile",
@@ -51,6 +51,7 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "createNotebook",
   "forkNotebook",
   "getNotebooksByOrgName",
+  "listNotebooksByOrgName",
   "getNotebookById",
   "getNotebookByName",
   "moveNotebook",
@@ -83,7 +84,7 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "grantPublicPermission",
   "listResourcePermissions",
   "revokePublicPermission",
-];
+]);
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [
     name,
