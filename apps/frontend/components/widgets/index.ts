@@ -44,6 +44,7 @@ import {
   Billing,
   BillingMeta,
 } from "@/components/widgets/billing";
+import { Notebook, NotebookMeta } from "@/components/widgets/notebook";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -70,4 +71,5 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(CreditPackageSelector, CreditPackageSelectorMeta);
   PLASMIC.registerComponent(PurchaseHistory, PurchaseHistoryMeta);
   PLASMIC.registerComponent(Billing, BillingMeta);
+  PLASMIC.registerComponent(Notebook, NotebookMeta);
 }
