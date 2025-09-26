@@ -13,16 +13,37 @@ Our main data models are materialized using SQLMesh. In most cases, you can trig
 
 ### Restatements
 
-If you need to run a restatement, you will need to edit the configuration of the `sqlmesh_all_assets` job. There are two ways to specify which models to restate:
+:::warning
+**DO NOT RESTATE SQLMesh models without approval!**
+:::
+
+If you need to run a restatement, you will need to edit the configuration of the `sqlmesh_all_assets` job. Select the dropdown menu next to the **Materialize all** button and click **Open launchpad**.
+
+There are two ways to specify which models to restate:
 
 - **By Entity Category**: Set `restate_by_entity_category: true` and specify a list of categories to restate. You can assign categories to models using the `entity_category=category_name` tag.
-- **By Model Name**: Provide a list of model names under the `restate_models` configuration. Remember to prefix the model name with `oso.`, for example: `oso.int_events__superchain_internal_transactions`.
+- **By Model Name**: Provide a list of model names under the `restate_models` configuration. Remember to prefix the model name with `oso.`, for example: `oso.int_events__superchain_internal_transactions`. When using this method, all SQLMesh [model selection features](https://sqlmesh.readthedocs.io/en/stable/guides/model_selection/) can be used.
 
 Dagster jobs have a default of three retry attempts. However, retries use the same configuration. If a job fails mid-process, cancel the retry and trigger a new run with the correct configuration to avoid restating models multiple times.
 
+An example configuration:
+
+```yaml
+ops:
+  sqlmesh_project:
+    config:
+      restate_by_entity_category: false
+      restate_models:
+        - oso.stg_github__XYZ
+      skip_tests: false
+      use_dev_environment: false
+```
+
+This will restate the `stg_github__XYZ` staging models and all downstream SQLMesh models in the warehouse.
+
 ### Branching with Tags
 
-We use Nessie's branching feature to ensure data consumers always have access to stable data. We maintain a `consumer` tag that points to a stable version of the data, while the `main` branch is actively updated.
+We use Nessie's branching feature to ensure data consumers always have access to stable data. We maintain a `consumer` tag that points to a stable version of the data for public API consumers, while the `main` branch is actively updated.
 
 Our producer, Trino, has two catalogs:
 
