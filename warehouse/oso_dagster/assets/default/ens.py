@@ -117,6 +117,9 @@ def domains(
         target_type="Query",
         target_query="domains",
         max_depth=2,
+        parameters={
+            "where": {"type": "Domain_filter", "value": {"registrant_not": None}}
+        },
         transform_fn=lambda result: result["domains"],
         pagination=PaginationConfig(
             type=PaginationType.KEYSET,
