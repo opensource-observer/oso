@@ -197,7 +197,7 @@ issue](https://github.com/opensource-observer/oso/issues/4840)
 #### Available Code Locations
 
 At this moment, the available code locations can be found in the repository at
-`warehouse/oso_dagster/definitions/`):
+`warehouse/oso_dagster/definitions/`:
 
 - `sqlmesh`: This is the code location for _any_ assets
   related to sqlmesh. This is essentially anything that depends on the
@@ -257,3 +257,35 @@ Now it should be possible run sqlmesh and dagster locally. When materializing
 sqlmesh assets, it might complain about some out of date dependencies. Since we
 ran the local test setup, the data it's depending on should have been added by
 the oso local seed setup.
+
+### Seed and Staging data
+
+When creating new Dagster assets, it's important to also write a seed file before integrating it into a SQLMesh staging model.
+
+The workflow is as follows:
+
+1.  **Write the Asset**:
+    - Follow the cursor rules for creating new assets.
+    - Keep column names consistent with the original source.
+    - Perform minimal normalization and unnesting.
+
+2.  **Run Dagster Locally**:
+    - Confirm that you can materialize the source correctly.
+
+3.  **Submit and Merge a PR**:
+    - Submit a pull request with your changes and merge it into production.
+
+4.  **Materialize in Production**:
+    - Materialize the asset in the production Dagster environment.
+
+5.  **Verify Data**:
+    - Sample the data in BigQuery to confirm it's correct.
+
+6.  **Create Seed File and Staging Model**:
+    - Follow the cursor rules for creating seed files and staging models.
+    - Use a sample of 5-10 rows of real data from BigQuery that cover multiple cases.
+    - If there are date fields, set them to `datetime.now()`.
+    - Test locally with SQLMesh until there are no errors.
+
+7.  **Submit and Merge a PR**:
+    - Submit a pull request with the seed file and staging model and merge it into production.
