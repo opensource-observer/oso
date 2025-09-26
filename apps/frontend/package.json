@@ -34,7 +34,7 @@
     "@apollo/client": "^3.13.9",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
     "@apollo/gateway": "^2.11.2",
-    "@apollo/sandbox": "^2.7.1",
+    "@apollo/sandbox": "^2.7.2",
     "@apollo/server": "^5.0.0",
     "@apollo/subgraph": "^2.11.2",
     "@as-integrations/next": "^4.0.0",
