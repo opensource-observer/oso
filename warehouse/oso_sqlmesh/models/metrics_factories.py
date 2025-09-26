@@ -245,6 +245,23 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
+        "first_time_contributor": MetricQueryDef(
+            ref="code/first_time_contributor.sql",
+            time_aggregations=[
+                "daily",
+                "weekly",
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            over_all_time=True,
+            metadata=MetricMetadata(
+                display_name="First Time Contributors",
+                description="Metrics related to first time GitHub contributors",
+            ),
+            additional_tags=["data_category=code"],
+        ),
         # This defines something with a rolling option that allows you to look back
         # to some arbitrary window. So you specify the window and specify the unit.
         # The unit and the window are used to pass in variables to the query. So it's
