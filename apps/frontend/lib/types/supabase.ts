@@ -7,7 +7,7 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.0.2 (a4e00ff)";
@@ -320,6 +320,53 @@ export type Database = {
           },
         ];
       };
+      dynamic_replications: {
+        Row: {
+          config: Json;
+          created_at: string;
+          created_by: string;
+          credentials_path: string | null;
+          deleted_at: string | null;
+          id: string;
+          org_id: string;
+          replication_name: string;
+          replication_type: string;
+          updated_at: string;
+        };
+        Insert: {
+          config: Json;
+          created_at?: string;
+          created_by: string;
+          credentials_path?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          org_id: string;
+          replication_name: string;
+          replication_type: string;
+          updated_at?: string;
+        };
+        Update: {
+          config?: Json;
+          created_at?: string;
+          created_by?: string;
+          credentials_path?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          org_id?: string;
+          replication_name?: string;
+          replication_type?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fk_org_id";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       dynamic_table_contexts: {
         Row: {
           connector_id: string;
@@ -345,6 +392,124 @@ export type Database = {
             columns: ["connector_id"];
             isOneToOne: false;
             referencedRelation: "dynamic_connectors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invitations: {
+        Row: {
+          accepted_at: string | null;
+          accepted_by: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string;
+          org_id: string;
+          org_name: string;
+          updated_at: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          invited_by: string;
+          org_id: string;
+          org_name: string;
+          updated_at?: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string;
+          org_id?: string;
+          org_name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invitations_accepted_by_fkey";
+            columns: ["accepted_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitations_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invitations_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notebooks: {
+        Row: {
+          accessed_at: string | null;
+          created_at: string;
+          created_by: string;
+          data: string | null;
+          deleted_at: string | null;
+          description: string | null;
+          id: string;
+          notebook_name: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          accessed_at?: string | null;
+          created_at?: string;
+          created_by: string;
+          data?: string | null;
+          deleted_at?: string | null;
+          description?: string | null;
+          id?: string;
+          notebook_name: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          accessed_at?: string | null;
+          created_at?: string;
+          created_by?: string;
+          data?: string | null;
+          deleted_at?: string | null;
+          description?: string | null;
+          id?: string;
+          notebook_name?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "saved_queries_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "saved_queries_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
         ];
@@ -424,27 +589,33 @@ export type Database = {
       };
       organizations: {
         Row: {
+          accessed_at: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
           id: string;
           org_name: string;
+          plan_id: string | null;
           updated_at: string;
         };
         Insert: {
+          accessed_at?: string | null;
           created_at?: string;
           created_by: string;
           deleted_at?: string | null;
           id?: string;
           org_name: string;
+          plan_id?: string | null;
           updated_at?: string;
         };
         Update: {
+          accessed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
           id?: string;
           org_name?: string;
+          plan_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -455,7 +626,38 @@ export type Database = {
             referencedRelation: "user_profiles";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "organizations_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "pricing_plan";
+            referencedColumns: ["plan_id"];
+          },
         ];
+      };
+      pricing_plan: {
+        Row: {
+          created_at: string;
+          plan_id: string;
+          plan_name: string;
+          price_per_credit: number;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          plan_id?: string;
+          plan_name: string;
+          price_per_credit: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          plan_id?: string;
+          plan_name?: string;
+          price_per_credit?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       purchase_intents: {
         Row: {
@@ -507,50 +709,82 @@ export type Database = {
           },
         ];
       };
-      saved_queries: {
+      reserved_names: {
         Row: {
           created_at: string;
-          created_by: string;
-          data: string | null;
-          deleted_at: string | null;
-          display_name: string;
-          id: string;
-          org_id: string;
-          updated_at: string;
+          name: string;
         };
         Insert: {
           created_at?: string;
-          created_by: string;
-          data?: string | null;
-          deleted_at?: string | null;
-          display_name: string;
-          id?: string;
-          org_id: string;
-          updated_at?: string;
+          name: string;
         };
         Update: {
           created_at?: string;
-          created_by?: string;
-          data?: string | null;
-          deleted_at?: string | null;
-          display_name?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
+      resource_permissions: {
+        Row: {
+          chat_id: string | null;
+          created_at: string;
+          granted_by: string | null;
+          id: string;
+          notebook_id: string | null;
+          permission_level: string;
+          revoked_at: string | null;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          chat_id?: string | null;
+          created_at?: string;
+          granted_by?: string | null;
           id?: string;
-          org_id?: string;
+          notebook_id?: string | null;
+          permission_level: string;
+          revoked_at?: string | null;
           updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          chat_id?: string | null;
+          created_at?: string;
+          granted_by?: string | null;
+          id?: string;
+          notebook_id?: string | null;
+          permission_level?: string;
+          revoked_at?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: "saved_queries_created_by_fkey";
-            columns: ["created_by"];
+            foreignKeyName: "resource_permissions_chat_id_fkey";
+            columns: ["chat_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_history";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_granted_by_fkey";
+            columns: ["granted_by"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "saved_queries_org_id_fkey";
-            columns: ["org_id"];
+            foreignKeyName: "resource_permissions_notebook_id_fkey";
+            columns: ["notebook_id"];
             isOneToOne: false;
-            referencedRelation: "organizations";
+            referencedRelation: "notebooks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "resource_permissions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -586,7 +820,6 @@ export type Database = {
           full_name: string | null;
           id: string;
           updated_at: string | null;
-          username: string | null;
           website: string | null;
         };
         Insert: {
@@ -595,7 +828,6 @@ export type Database = {
           full_name?: string | null;
           id: string;
           updated_at?: string | null;
-          username?: string | null;
           website?: string | null;
         };
         Update: {
@@ -604,7 +836,6 @@ export type Database = {
           full_name?: string | null;
           id?: string;
           updated_at?: string | null;
-          username?: string | null;
           website?: string | null;
         };
         Relationships: [];
@@ -659,45 +890,83 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accept_invitation: {
+        Args: { p_invitation_id: string; p_user_id: string };
+        Returns: boolean;
+      };
       add_credits: {
         Args: {
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_metadata?: Json;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
       add_organization_credits: {
         Args: {
-          p_org_id: string;
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_metadata?: Json;
+          p_org_id: string;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
+      can_grant_permission: {
+        Args: {
+          granter_id: string;
+          permission_to_grant: string;
+          target_resource_id: string;
+          target_resource_type: string;
+          target_user_id?: string;
+        };
+        Returns: boolean;
+      };
+      check_org_admin: {
+        Args: { check_org_id: string; check_user_id: string };
+        Returns: boolean;
+      };
+      check_org_membership: {
+        Args: { check_org_id: string; check_user_id: string };
+        Returns: boolean;
+      };
+      check_resource_permission: {
+        Args: { p_resource_id: string; p_resource_type: string };
+        Returns: Json;
+      };
+      cleanup_orphaned_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       deduct_credits: {
         Args: {
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_api_endpoint?: string;
           p_metadata?: Json;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
       deduct_organization_credits: {
         Args: {
-          p_org_id: string;
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_api_endpoint?: string;
           p_metadata?: Json;
+          p_org_id: string;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
+      };
+      expire_old_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      get_og_image_info: {
+        Args: { p_notebook_name: string; p_org_name: string };
+        Returns: Json;
       };
       get_organization_credits: {
         Args: { p_org_id: string };
@@ -713,22 +982,31 @@ export type Database = {
       };
       preview_deduct_credits: {
         Args: {
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_api_endpoint?: string;
           p_metadata?: Json;
+          p_transaction_type: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };
       preview_deduct_organization_credits: {
         Args: {
-          p_org_id: string;
-          p_user_id: string;
           p_amount: number;
-          p_transaction_type: string;
           p_api_endpoint?: string;
           p_metadata?: Json;
+          p_org_id: string;
+          p_transaction_type: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
+      validate_ownership_limits: {
+        Args: {
+          p_current_record_id?: string;
+          p_new_role: string;
+          p_old_role?: string;
+          p_user_id: string;
         };
         Returns: boolean;
       };

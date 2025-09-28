@@ -18,6 +18,8 @@ from oso_dagster.resources import (
     DuckDBResource,
     K8sApiResource,
     K8sResource,
+    NessieResource,
+    PostgresResource,
     PrefixedSQLMeshTranslator,
     SQLMeshExporter,
     Trino2BigQuerySQLMeshExporter,
@@ -25,6 +27,7 @@ from oso_dagster.resources import (
     TrinoK8sResource,
     TrinoRemoteResource,
     TrinoResource,
+    load_dlt_dynamic_warehouse_destination,
     load_dlt_staging,
     load_dlt_warehouse_destination,
     load_io_manager,
@@ -42,7 +45,7 @@ from oso_dagster.utils.alerts import (
     CanvasDiscordWebhookAlertManager,
     LogAlertManager,
 )
-from oso_dagster.utils.secrets import SecretResolver
+from oso_dagster.utils.secrets import SecretReference, SecretResolver
 from sqlmesh.core.config.connection import DuckDBConnectionConfig, TrinoConnectionConfig
 
 from ..config import DagsterConfig
@@ -67,7 +70,7 @@ def secrets_factory(
     if global_config.use_local_secrets:
         return LocalSecretResolver(prefix="DAGSTER")
     return GCPSecretResolver.connect_with_default_creds(
-        global_config.project_id, global_config.gcp_secrets_prefix
+        global_config.gcp_project_id, global_config.gcp_secrets_prefix
     )
 
 
@@ -75,7 +78,14 @@ def secrets_factory(
 @time_function(logger)
 def bigquery_resource_factory(global_config: DagsterConfig) -> BigQueryResource:
     """Factory function to create a BigQuery resource."""
-    return BigQueryResource(project=global_config.project_id)
+    if not global_config.gcp_bigquery_enabled:
+        # Return a fake bigquery resource that errors when you attempt to use it
+        class FakeBigqueryResource(BigQueryResource):
+            def get_client(self, *args, **kwargs):
+                raise ValueError("BigQuery is not enabled. Client cannot be created.")
+
+        return FakeBigqueryResource()
+    return BigQueryResource(project=global_config.gcp_project_id)
 
 
 @resource_factory("bigquery_datatransfer")
@@ -84,7 +94,7 @@ def bigquery_datatransfer_resource_factory(
     global_config: DagsterConfig,
 ) -> BigQueryDataTransferResource:
     """Factory function to create a BigQuery Data Transfer resource."""
-    return BigQueryDataTransferResource(project=global_config.project_id)
+    return BigQueryDataTransferResource(project=global_config.gcp_project_id)
 
 
 @resource_factory("clickhouse")
@@ -103,7 +113,7 @@ def clickhouse_resource_factory(
 @resource_factory("gcs")
 @time_function(logger)
 def gcs_resource_factory(global_config: DagsterConfig) -> GCSResource:
-    return GCSResource(project=global_config.project_id)
+    return GCSResource(project=global_config.gcp_project_id)
 
 
 @resource_factory("cache")
@@ -166,7 +176,7 @@ def sqlmesh_context_config_factory(
 @resource_factory("k8s")
 @time_function(logger)
 def k8s_resource_factory(global_config: DagsterConfig) -> K8sResource | K8sApiResource:
-    if not global_config.enable_k8s:
+    if not global_config.k8s_enabled:
         return K8sResource()
     return K8sApiResource()
 
@@ -176,7 +186,7 @@ def k8s_resource_factory(global_config: DagsterConfig) -> K8sResource | K8sApiRe
 def trino_resource_factory(
     global_config: DagsterConfig, k8s: K8sResource | K8sApiResource
 ) -> TrinoResource:
-    if not global_config.enable_k8s:
+    if not global_config.k8s_enabled:
         return TrinoRemoteResource()
     return TrinoK8sResource(
         k8s=k8s,
@@ -211,7 +221,7 @@ def sqlmesh_exporter_factory(global_config: DagsterConfig) -> t.List[SQLMeshExpo
         ),
         Trino2BigQuerySQLMeshExporter(
             ["bigquery_metrics"],
-            project_id=global_config.project_id,
+            project_id=global_config.gcp_project_id,
             dataset_id=global_config.sqlmesh_bq_export_dataset_id,
             source_catalog=global_config.sqlmesh_catalog,
             source_schema=global_config.sqlmesh_schema,
@@ -236,6 +246,15 @@ def dlt_warehouse_destination_factory(
 ) -> Destination:
     """Factory function to create a DLT warehouse destination."""
     return load_dlt_warehouse_destination(global_config)
+
+
+@resource_factory("dlt_dynamic_warehouse_destination")
+@time_function(logger)
+def dlt_dynamic_warehouse_destination_factory(
+    global_config: DagsterConfig,
+) -> Destination:
+    """Factory function to create a DLT warehouse destination for the dynamic project."""
+    return load_dlt_dynamic_warehouse_destination(global_config)
 
 
 @resource_factory("dlt")
@@ -371,11 +390,28 @@ def alert_manager_factory(global_config: DagsterConfig) -> AlertManager:
 def time_ordered_storage_factory(
     global_config: DagsterConfig,
 ) -> TimeOrderedStorageResource:
-    if not global_config.enable_k8s:
+    if not global_config.k8s_enabled:
         return TimeOrderedStorageResource()
     return GCSTimeOrderedStorageResource(
         bucket_name=global_config.gcs_bucket,
     )
+
+
+@resource_factory("oso_app_db")
+@time_function(logger)
+def oso_app_db_factory(secrets: SecretResolver) -> PostgresResource:
+    """Factory function to create a Postgres DB resource."""
+    return PostgresResource(
+        connection_url=secrets.resolve_as_str(
+            SecretReference(group_name="postgres", key="connection_url")
+        ),
+    )
+
+
+@resource_factory("nessie")
+@time_function(logger)
+def nessie_factory(global_config: DagsterConfig):
+    return NessieResource(url=global_config.nessie_url)
 
 
 def default_resource_registry():
@@ -384,6 +420,7 @@ def default_resource_registry():
 
     registry = ResourcesRegistry()
 
+    registry.add(nessie_factory)
     registry.add(global_config_factory)
     registry.add(secrets_factory)
     registry.add(bigquery_resource_factory)
@@ -399,6 +436,7 @@ def default_resource_registry():
     registry.add(sqlmesh_exporter_factory)
     registry.add(dlt_staging_destination_factory)
     registry.add(dlt_warehouse_destination_factory)
+    registry.add(dlt_dynamic_warehouse_destination_factory)
     registry.add(dlt_resource_factory)
     registry.add(cbt_resource_factory)
     registry.add(trino_exporter_factory)
@@ -411,5 +449,6 @@ def default_resource_registry():
     registry.add(io_manager_factory)
     registry.add(alert_manager_factory)
     registry.add(time_ordered_storage_factory)
+    registry.add(oso_app_db_factory)
 
     return registry

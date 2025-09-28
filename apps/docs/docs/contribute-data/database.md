@@ -24,7 +24,7 @@ The second table, `some_nonincremental_database`, does not have a way to be load
 incrementally and will force a full refresh upon every sync.
 
 To setup this database replication, you can add a new python file to
-`warehouse/oso_dagster/assets`. This file will have the following contents:
+`warehouse/oso_dagster/assets/default`. This file will have the following contents:
 
 ```python
 from oso_dagster.factories.sql import sql_assets
@@ -70,7 +70,6 @@ The `sql_assets` factory takes 3 arguments:
 - The second argument must be a `SecretReference` object that will be used to
   retrieve the credentials that you will provide at a later step to the OSO
   team. The `SecretReference` object has two required keyword arguments:
-
   - `group_name` - Generally this should be the same as the asset key prefix.
     This is an organizational key for the secret manager to use when locating
     the secrets.
@@ -78,7 +77,6 @@ The `sql_assets` factory takes 3 arguments:
 
 - The third argument is a list of dictionaries that define options for tables
   that should be replicated into OSO.
-
   - `table` - The source table name
   - `destination_table_name` - The destination table name to use in the OSO data lake
   - `incremental` - An `incremental` object that defines time/date based column

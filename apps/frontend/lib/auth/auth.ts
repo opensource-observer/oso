@@ -5,13 +5,19 @@ import { createServerClient } from "@/lib/supabase/server";
 import { SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js";
 import {
   AnonUser,
+  NormalOrgUser,
+  AdminOrgUser,
+  AuthOrgUser,
+  OrgUser,
+  OrganizationDetails,
+  OrgRole,
+  AuthOrgUserSchema,
+  User,
   NormalUser,
   AdminUser,
   AuthUser,
-  User,
-  OrganizationDetails,
-  OrgRole,
-  AuthUserSchema,
+  OrgUserSchema,
+  UserSchema,
 } from "@/lib/types/user";
 import { Database } from "@/lib/types/supabase";
 import { OSO_JWT_SECRET } from "@/lib/config";
@@ -73,8 +79,24 @@ const makeNormalUser = (
   user: SupabaseUser,
   keyName: string,
   host: string | null,
-  orgDetails?: OrganizationDetails,
-): NormalUser => {
+  orgDetails: OrganizationDetails | undefined,
+): NormalOrgUser | NormalUser => {
+  if (orgDetails) {
+    const normalOrgUser: NormalOrgUser = {
+      role: "user",
+      host,
+      userId: user.id,
+      keyName,
+      email: user.email,
+      name: user.user_metadata.name,
+      orgId: orgDetails.orgId,
+      orgName: orgDetails.orgName,
+      orgRole: orgDetails.orgRole,
+    };
+
+    return normalOrgUser;
+  }
+
   const normalUser: NormalUser = {
     role: "user",
     host,
@@ -84,22 +106,17 @@ const makeNormalUser = (
     name: user.user_metadata.name,
   };
 
-  if (orgDetails) {
-    normalUser.orgId = orgDetails.orgId;
-    normalUser.orgName = orgDetails.orgName;
-    normalUser.orgRole = orgDetails.orgRole;
-  }
-
   return normalUser;
 };
 
 /**
  * Promote a user to admin role
  */
-const promoteAdmin = (user: AuthUser): AdminUser => ({
-  ...user,
-  role: "admin",
-});
+function promoteAdmin(user: AuthUser): AdminUser;
+function promoteAdmin(user: AuthOrgUser): AdminOrgUser;
+function promoteAdmin(user: AuthUser | AuthOrgUser): AdminUser | AdminOrgUser {
+  return { ...user, role: "admin" };
+}
 
 /**
  * Fetch organization details for a user
@@ -109,16 +126,18 @@ async function fetchOrganizationDetails(
   orgId?: string,
 ): Promise<OrganizationDetails | undefined> {
   if (orgId) {
-    return fetchSpecificOrganization(userId, orgId);
+    const org = await fetchOrganization(userId, orgId);
+    if (org) {
+      return org;
+    }
   }
-
-  return fetchPrimaryOrganization(userId);
+  return undefined;
 }
 
 /**
  * Fetch a specific organization by ID
  */
-async function fetchSpecificOrganization(
+async function fetchOrganization(
   userId: string,
   orgId: string,
 ): Promise<OrganizationDetails | undefined> {
@@ -170,70 +189,12 @@ async function fetchSpecificOrganization(
 }
 
 /**
- * Fetch the primary organization for a user
- */
-async function fetchPrimaryOrganization(
-  userId: string,
-): Promise<OrganizationDetails | undefined> {
-  const { data: createdOrg, error: createdOrgError } = await supabasePrivileged
-    .from(TABLES.ORGANIZATIONS)
-    .select(
-      `
-      ${COLUMNS.ORGANIZATIONS.ID},
-      ${COLUMNS.ORGANIZATIONS.NAME}
-    `,
-    )
-    .eq(COLUMNS.ORGANIZATIONS.CREATED_BY, userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (!createdOrgError && createdOrg) {
-    return {
-      orgId: createdOrg[COLUMNS.ORGANIZATIONS.ID] as string,
-      orgName: createdOrg[COLUMNS.ORGANIZATIONS.NAME] as string,
-      orgRole: "admin",
-    };
-  }
-
-  const { data: membership, error: membershipError } = await supabasePrivileged
-    .from(TABLES.USERS_BY_ORG)
-    .select(
-      `
-      ${COLUMNS.USERS_BY_ORG.ROLE},
-      organizations (
-        ${COLUMNS.ORGANIZATIONS.ID},
-        ${COLUMNS.ORGANIZATIONS.NAME}
-      )
-    `,
-    )
-    .eq(COLUMNS.USERS_BY_ORG.USER_ID, userId)
-    .is(COLUMNS.USERS_BY_ORG.DELETED_AT, null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (membershipError || !membership || !membership.organizations) {
-    return undefined;
-  }
-
-  const roleValue = membership[COLUMNS.USERS_BY_ORG.ROLE] as string;
-  const orgRole: OrgRole = roleValue === "admin" ? "admin" : "member";
-
-  return {
-    orgId: membership.organizations[COLUMNS.ORGANIZATIONS.ID] as string,
-    orgName: membership.organizations[COLUMNS.ORGANIZATIONS.NAME] as string,
-    orgRole,
-  };
-}
-
-/**
  * Authenticate a user via API key
  */
 async function getUserByApiKey(
   token: string,
   host: string | null,
-): Promise<User> {
+): Promise<OrgUser | User> {
   const { data: keyData, error: keyError } = await supabasePrivileged
     .from(TABLES.API_KEYS)
     .select(
@@ -259,7 +220,7 @@ async function getUserByApiKey(
   }
 
   const activeKey = activeKeys[0];
-  const userId = activeKey[COLUMNS.API_KEYS.USER_ID] as string;
+  const userId = activeKey[COLUMNS.API_KEYS.USER_ID];
 
   const { data: userData, error: userError } =
     await supabasePrivileged.auth.admin.getUserById(userId);
@@ -268,10 +229,8 @@ async function getUserByApiKey(
     return makeAnonUser(host);
   }
 
-  const orgId = activeKey[COLUMNS.API_KEYS.ORG_ID] as string | undefined;
-  const orgDetails = orgId
-    ? await fetchOrganizationDetails(userId, orgId).catch(() => undefined)
-    : undefined;
+  const orgId = activeKey[COLUMNS.API_KEYS.ORG_ID];
+  const orgDetails = await fetchOrganizationDetails(userId, orgId);
 
   console.log(`auth: API key and user valid => user`);
   return makeNormalUser(
@@ -285,39 +244,33 @@ async function getUserByApiKey(
 /**
  * Authenticate a user via JWT token
  */
-async function getUserByJwt(token: string, host: string | null): Promise<User> {
+async function getUserByJwt(
+  token: string,
+  host: string | null,
+): Promise<OrgUser | User> {
   const supabase = await createServerClient();
   const { data, error } = await supabase.auth.getUser(token);
   if (error) {
     return makeAnonUser(host);
   }
 
-  const orgDetails = await fetchOrganizationDetails(data.user.id).catch(
-    () => undefined,
-  );
+  const orgDetails = await fetchOrganizationDetails(data.user.id);
 
   console.log(`auth: JWT token valid => user`);
   return makeNormalUser(data.user, DEFAULT_KEY_NAME, host, orgDetails);
 }
 
 /**
- * Main function to authenticate a user from a request
+ * The token could be either a JWT or an API key, so try both
+ * - Sometimes we pass in the JWT token as an API key
+ * @param token
+ * @param host
+ * @returns
  */
-async function getUser(request: NextRequest): Promise<User> {
-  const headers = request.headers;
-  const host = getHost(request);
-  const auth = headers.get("authorization");
-
-  if (!auth) {
-    console.log(`auth: No token => anon`);
-    return makeAnonUser(host);
-  }
-
-  const trimmedAuth = auth.trim();
-  const token = trimmedAuth.toLowerCase().startsWith(AUTH_PREFIX)
-    ? trimmedAuth.slice(AUTH_PREFIX.length).trim()
-    : trimmedAuth;
-
+async function getUserByAmbigiousToken(
+  token: string,
+  host: string | null,
+): Promise<OrgUser | User> {
   const jwtUser = await getUserByJwt(token, host);
   const apiKeyUser =
     jwtUser.role === "anonymous" ? await getUserByApiKey(token, host) : jwtUser;
@@ -348,16 +301,108 @@ async function getUser(request: NextRequest): Promise<User> {
   return user;
 }
 
+/**
+ * Main function to authenticate a user from a request
+ * - First tries to get user from HTTP header (Bearer token)
+ * - If that fails, tries to get user from cookies (Supabase session)
+ * If the user is not linked to an organization, returns anonymous user.
+ * If you want to allow non-org users, use getUser() instead.
+ * @param request
+ * @returns
+ */
+async function getOrgUser(request: NextRequest): Promise<OrgUser> {
+  const user = await getUserInternal(request);
+  const maybeOrgUserSchema = OrgUserSchema.safeParse(user);
+  if (!maybeOrgUserSchema.success) {
+    return makeAnonUser(getHost(request));
+  }
+
+  return maybeOrgUserSchema.data;
+}
+/**
+ * Main function to authenticate a user from a request
+ * - First tries to get user from HTTP header (Bearer token)
+ * - If that fails, tries to get user from cookies (Supabase session)
+ * This may or may not contain organization details. If you require org details,
+ * use getOrgUser() instead.
+ * @param request
+ * @returns
+ */
+async function getUser(request: NextRequest): Promise<User> {
+  const user = await getUserInternal(request);
+  const maybeUserSchema = UserSchema.safeParse(user);
+  if (!maybeUserSchema.success) {
+    return makeAnonUser(getHost(request));
+  }
+
+  return maybeUserSchema.data;
+}
+
+async function getUserInternal(request: NextRequest): Promise<OrgUser | User> {
+  const userFromHttpHeader = await getUserByHttpHeader(request);
+  if (userFromHttpHeader.role !== "anonymous") {
+    return userFromHttpHeader;
+  }
+  const userFromCookies = await getUserByCookies(request);
+  return userFromCookies;
+}
+
+/**
+ * Tries to identify a user from the HTTP Authorization header
+ * - Supports Bearer tokens that are either JWTs from Supabase or API keys
+ * @param request
+ * @returns
+ */
+async function getUserByHttpHeader(
+  request: NextRequest,
+): Promise<OrgUser | User> {
+  const headers = request.headers;
+  const host = getHost(request);
+  const auth = headers.get("authorization");
+
+  if (!auth) {
+    console.log(`auth: No token => anon`);
+    return makeAnonUser(host);
+  }
+
+  // Remove "Bearer " prefix if it exists
+  const trimmedAuth = auth.trim();
+  const token = trimmedAuth.toLowerCase().startsWith(AUTH_PREFIX)
+    ? trimmedAuth.slice(AUTH_PREFIX.length).trim()
+    : trimmedAuth;
+
+  return await getUserByAmbigiousToken(token, host);
+}
+
+/**
+ * Tries to identify a user from cookies (Supabase session)
+ * @param request
+ * @returns
+ */
+async function getUserByCookies(request: NextRequest): Promise<OrgUser | User> {
+  const host = getHost(request);
+  const supabase = await createServerClient();
+  const { data, error } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+
+  if (error || !token) {
+    console.log("getUserByCookies: No valid session => anon", error);
+    return makeAnonUser(null);
+  }
+  return await getUserByAmbigiousToken(token, host);
+}
+
 async function signOsoJwt(
-  user: AuthUser,
+  user: AuthOrgUser | AuthUser,
   org: Omit<OrganizationDetails, "orgRole">,
+  expirationTime: string = "1h",
 ): Promise<string> {
   const secret = OSO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
   }
 
-  const authUser: AuthUser = {
+  const authUser: AuthOrgUser = {
     ...user,
     ...org,
     role: "user",
@@ -368,20 +413,20 @@ async function signOsoJwt(
     .setProtectedHeader({ alg: "HS256" })
     .setAudience("opensource-observer")
     .setIssuer("opensource-observer")
-    .setExpirationTime("1h")
+    .setExpirationTime(expirationTime)
     .sign(new TextEncoder().encode(secret));
 }
 
 async function verifyOsoJwt(
   token: string,
   host: string | null,
-): Promise<AuthUser | AnonUser> {
+): Promise<AuthOrgUser | AnonUser> {
   const secret = OSO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
   }
   try {
-    const { payload } = await jwtVerify<AuthUser>(
+    const { payload } = await jwtVerify<AuthOrgUser>(
       token,
       new TextEncoder().encode(secret),
       {
@@ -391,7 +436,7 @@ async function verifyOsoJwt(
       },
     );
 
-    return AuthUserSchema.parse(payload);
+    return AuthOrgUserSchema.parse(payload);
   } catch (e: unknown) {
     console.log(
       `auth: Invalid JWT token: ${e instanceof Error ? e.message : ""} => anon`,
@@ -428,4 +473,4 @@ async function setSupabaseSession(
   return { data, error: null };
 }
 
-export { getUser, setSupabaseSession, signOsoJwt, verifyOsoJwt };
+export { getOrgUser, getUser, setSupabaseSession, signOsoJwt, verifyOsoJwt };

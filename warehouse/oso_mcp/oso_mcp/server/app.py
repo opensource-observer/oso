@@ -6,7 +6,7 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import requests
 from mcp.server.fastmcp import Context, FastMCP
-from pyoso import Client
+from pyoso import Client, ClientConfig
 
 from .config import MCPConfig
 
@@ -46,7 +46,10 @@ def default_lifespan(config: MCPConfig):
         """Manage application lifecycle with OSO client in context"""
         api_key = config.oso_api_key
 
-        client = Client(api_key.get_secret_value())
+        client = Client(
+            api_key=api_key.get_secret_value(),
+            client_opts=ClientConfig(base_url=config.pyoso_base_url),
+        )
         context = AppContext(oso_client=client)
 
         try:
@@ -91,7 +94,7 @@ def setup_mcp_app(config: MCPConfig):
         if not api_key:
             raise ValueError("OSO API key is not available in the context")
 
-        url = "https://www.opensource.observer/api/v1/text2sql"
+        url = config.text2sql_endpoint
         headers = {
             "Authorization": f"Bearer {api_key.get_secret_value()}",
             "Content-Type": "application/json",

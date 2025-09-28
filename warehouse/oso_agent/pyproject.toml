@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 authors = [{ name = "OSO Team", email = "opensource-observer@googlegroups.com" }]
 dependencies = [
     "arize-phoenix-otel>=0.10.1",
-    "arize-phoenix[evals]==11.0.0",
+    "arize-phoenix[evals]==11.28.0",
     "discord-py>=2.5.2",
     "dotenv>=0.9.9",
     "llama-index>=0.12.29",
@@ -18,6 +18,7 @@ dependencies = [
     "llama-index-llms-vertex>=0.5.0",
     "llama-index-tools-mcp>=0.1.1",
     "llama-index-vector-stores-vertexaivectorsearch>=0.2.0",
+    "markdown-it-py>=3.0.0",
     "openinference-instrumentation-llama-index>=4.3.0",
     "oso-semantic",
     "pyoso",

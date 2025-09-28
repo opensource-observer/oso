@@ -1,0 +1,230 @@
+test_contributor_active_days_to_project_monthly:
+  model: oso.contributor_active_days_to_project_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-01-31
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # Contributor 1 - Active on 4 different days with multiple event types
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 5
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-02
+        amount: 3
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-01-05
+        amount: 1
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-10
+        amount: 2
+      # Same day, different event type - should not double count the day
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-10
+        amount: 1
+      
+      # Contributor 2 - Active on 3 different days, same repo
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-03
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-01-08
+        amount: 1
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-01-15
+        amount: 1
+      
+      # Contributor 3 - Active on repo_2 (different project)
+      - to_artifact_id: repo_2
+        from_artifact_id: contributor_3
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 1
+      - to_artifact_id: repo_2
+        from_artifact_id: contributor_3
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-02
+        amount: 2
+      - to_artifact_id: repo_2
+        from_artifact_id: contributor_3
+        event_source: GITHUB
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-01-20
+        amount: 1
+      
+      # Contributor 4 - Active across both repos (should appear in both projects)
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_4
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-12
+        amount: 1
+      - to_artifact_id: repo_2
+        from_artifact_id: contributor_4
+        event_source: GITHUB
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-01-25
+        amount: 1
+      
+      # Events that should NOT be counted (non-activity event types)
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        event_type: STAR
+        bucket_day: 2024-01-20
+        amount: 1
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        event_type: FORK
+        bucket_day: 2024-01-22
+        amount: 1
+      
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+        
+  outputs:
+    query:
+      rows:
+      # Project 1 results (repo_1)
+      # contributor_1: 4 active days (2024-01-01, 01-02, 01-05, 01-10)
+      - to_project_id: project_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days_monthly
+        amount: 4
+      # contributor_2: 3 active days (2024-01-03, 01-08, 01-15)
+      - to_project_id: project_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days_monthly
+        amount: 3
+      # contributor_4: 1 active day on repo_1 (2024-01-12)
+      - to_project_id: project_1
+        from_artifact_id: contributor_4
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days_monthly
+        amount: 1
+      
+      # Project 2 results (repo_2)
+      # contributor_3: 3 active days (2024-01-01, 01-02, 01-20)
+      - to_project_id: project_2
+        from_artifact_id: contributor_3
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days_monthly
+        amount: 3
+      # contributor_4: 1 active day on repo_2 (2024-01-25)
+      - to_project_id: project_2
+        from_artifact_id: contributor_4
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days_monthly
+        amount: 1
+
+test_contributor_active_days_to_project_monthly_edge_cases:
+  model: oso.contributor_active_days_to_project_monthly
+  vars:
+    start: 2024-02-01
+    end: 2024-02-29  # February (leap year)
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      # Contributor with no activity - should not appear in results
+      
+      # Contributor active only on boundary dates
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-02-01  # First day of period
+        amount: 1
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-02-29  # Last day of period
+        amount: 1
+      
+      # Contributor with intense activity on single day (multiple events)
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        event_type: COMMIT_CODE
+        bucket_day: 2024-02-15
+        amount: 10
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-02-15
+        amount: 3
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-02-15
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-02-15
+        amount: 1
+        
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+        
+  outputs:
+    query:
+      rows:
+      # contributor_1: 2 active days (boundary dates)
+      - to_project_id: project_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-02-01
+        metric: contributor_active_days_monthly
+        amount: 2
+      # contributor_2: 1 active day (multiple events on same day count as 1)
+      - to_project_id: project_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-02-01
+        metric: contributor_active_days_monthly
+        amount: 1

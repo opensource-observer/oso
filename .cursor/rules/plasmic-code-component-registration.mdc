@@ -1,0 +1,118 @@
+---
+description: Use this rule when registering new Plasmic code components.
+alwaysApply: false
+---
+
+# Cursor Rules – Plasmic Code Component Registration
+
+These project-specific rules teach the AI agent how to register new components from the `apps/frontend/components/ui/` directory for use in Plasmic. Follow them exactly.
+
+## 1. Component File Modification
+
+For each component that needs to be registered, you must modify its source file (e.g., `apps/frontend/components/ui/sidebar.tsx`).
+
+### a. Import `CodeComponentMeta`
+
+Ensure the following import is present at the top of the file:
+
+```typescript
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
+```
+
+### b. Create a Prop Type Alias
+
+For clarity and consistency, create a type alias for the component's props.
+
+**Example (`sidebar.tsx`):**
+```typescript
+type SidebarHeaderProps = React.ComponentProps<"div">;
+```
+
+### c. Define the `...Meta` Object
+
+Create a `const` variable for the `CodeComponentMeta`. The name must be the component's name suffixed with `Meta` (e.g., `SidebarHeaderMeta`).
+
+- `name`: The string name of the component.
+- `description`: A brief, helpful description.
+- `props`: An object defining the component's props for Plasmic. Use `"slot"` for `children` and appropriate types like `"boolean"` or `"string"` for others.
+
+**Example (`sidebar.tsx`):**
+```typescript
+const SidebarHeaderMeta: CodeComponentMeta<SidebarHeaderProps> = {
+  name: "SidebarHeader",
+  description: "shadcn/ui SidebarHeader component",
+  props: {
+    children: "slot",
+  },
+};
+```
+
+For exact reference documentation on how to define the registration,
+you can read the [Plasmic documentation](https://docs.plasmic.app/learn/code-components-ref/)
+
+### d. Update Component Signature
+
+Refactor the component to use the newly created prop type alias.
+
+**Example (`sidebar.tsx`):**
+```typescript
+const SidebarHeader = React.forwardRef<HTMLDivElement, SidebarHeaderProps>(
+  ({ className, ...props }, ref) => {
+    // ... component implementation
+  },
+);
+```
+
+### e. Export the `...Meta` Object
+
+Add the new `...Meta` object to the `export` statement at the end of the file.
+
+**Example (`sidebar.tsx`):**
+```typescript
+export {
+  // ... other exports
+  SidebarHeader,
+  // Meta
+  SidebarHeaderMeta,
+};
+```
+
+## 2. Global Registration in `index.ts`
+
+After modifying the component file, you must register the component globally in `apps/frontend/components/ui/index.ts`.
+
+### a. Import the Component and its Meta
+
+Add the component and its `...Meta` object to the import statement for that file.
+
+**Example (`index.ts`):**
+```typescript
+import {
+  // ... other sidebar imports
+  SidebarHeader,
+  SidebarHeaderMeta,
+} from "@/components/ui/sidebar";
+```
+
+### b. Register the Component
+
+Inside the `registerAllUi` function, add a new line to register the component.
+
+**Example (`index.ts`):**
+```typescript
+export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
+  // ... other registrations
+  PLASMIC.registerComponent(SidebarHeader, SidebarHeaderMeta);
+}
+```
+
+## 3. Verification
+
+After completing the registration, run the appropriate linting or build command to ensure there are no type errors or other issues.
+
+```bash
+pnpm build:frontend
+```
+
+---
+**If the agent proposes code that violates these rules, regenerate.**

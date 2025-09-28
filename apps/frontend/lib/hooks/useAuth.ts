@@ -1,17 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
-import { User } from "@/lib/types/user";
+import { UserDetails } from "@/lib/types/user";
 import { useRouter } from "next/navigation";
 import { logger } from "@/lib/logger";
 
 const supabaseClient = createBrowserClient();
 
 export function useAuth() {
-  const [user, setUser] = useState<User>({
-    role: "anonymous",
-    host: null,
-  });
+  const [user, setUser] = useState<UserDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -26,12 +23,10 @@ export function useAuth() {
           const { data: userData } = await supabaseClient.auth.getUser();
           if (userData.user) {
             setUser({
-              role: "user",
               userId: userData.user.id,
+              keyName: "login",
               email: userData.user.email,
               name: userData.user.user_metadata?.name || "User",
-              keyName: "login",
-              host: window.location.hostname,
             });
           }
         }
@@ -49,18 +44,13 @@ export function useAuth() {
     } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setUser({
-          role: "user",
           userId: session.user.id,
+          keyName: "login",
           email: session.user.email,
           name: session.user.user_metadata?.name || "User",
-          keyName: "login",
-          host: window.location.hostname,
         });
       } else {
-        setUser({
-          role: "anonymous",
-          host: window.location.hostname,
-        });
+        setUser(null);
       }
       setLoading(false);
     });
@@ -79,6 +69,6 @@ export function useAuth() {
     user,
     loading,
     signOut,
-    isAuthenticated: user.role !== "anonymous",
+    isAuthenticated: !!user,
   };
 }

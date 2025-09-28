@@ -6,7 +6,7 @@ import {
 import { logger } from "@/lib/logger";
 import { ApolloClient } from "@apollo/client";
 
-const ASSET_PREFIX = "oso";
+const ASSET_PREFIX = "sqlmesh";
 
 type AssetId = string;
 type AssetKey = { path: string[] };
@@ -95,7 +95,7 @@ async function getAssetsMaterializedData(
         : undefined;
       const latestMaterialization =
         latestRun?.__typename === "Run"
-          ? latestRun.endTime ?? undefined
+          ? (latestRun.endTime ?? undefined)
           : undefined;
       acc[key] = {
         partitionStatus,

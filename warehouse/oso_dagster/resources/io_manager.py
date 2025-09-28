@@ -7,9 +7,9 @@ logger = structlog.get_logger(__name__)
 
 
 def load_io_manager(global_config: DagsterConfig):
-    if global_config.enable_bigquery:
+    if global_config.gcp_bigquery_enabled:
         logger.info("Using PolarsBigQueryIOManager")
-        return PolarsBigQueryIOManager(project=global_config.project_id)
+        return PolarsBigQueryIOManager(project=global_config.gcp_project_id)
 
     logger.info("Using DuckDBPolarsIOManager")
     return DuckDBPolarsIOManager(database=global_config.local_duckdb_path)

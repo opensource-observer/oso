@@ -7,28 +7,28 @@ from oso_agent.types.response import WrappedResponse
 from ..resources import ResolverFactory
 from ..util.config import AgentConfig, WorkflowConfig
 from ..util.errors import AgentConfigError, AgentMissingError
-from .base import MixableWorkflow, ResourceResolver
+from .base import MixableWorkflow, ResourceResolver, StartingWorkflow
 
 # Setup logging
 logger = logging.getLogger(__name__)
 
 # Type alias for a dictionary of agents
-WorkflowDict = t.Dict[str, MixableWorkflow]
+WorkflowDict = t.Dict[str, StartingWorkflow[t.Any]]
 
 WorkflowFactory = t.Callable[
-    [AgentConfig, ResourceResolver], t.Awaitable[MixableWorkflow]
+    [AgentConfig, ResourceResolver], t.Awaitable[StartingWorkflow[t.Any]]
 ]
 ResponseWrapper = t.Callable[[t.Any], WrappedResponse]
 
 
 def default_workflow_factory(
-    cls: t.Type[MixableWorkflow],
+    cls: t.Type[StartingWorkflow[t.Any]],
 ):
     """Default workflow factory that raises an error if no specific factory is provided."""
 
     async def _factory(
         config: AgentConfig, resolver: ResourceResolver
-    ) -> MixableWorkflow:
+    ) -> StartingWorkflow[t.Any]:
         return cls(resolver, timeout=config.workflow_timeout)
 
     return _factory
@@ -53,13 +53,13 @@ class WorkflowRegistry:
         self.workflow_resolver_factory = workflow_resolver_factory
 
     def add_workflow(
-        self, name: str, workflow: WorkflowFactory | t.Type[MixableWorkflow]
+        self, name: str, workflow: WorkflowFactory | t.Type[StartingWorkflow]
     ):
         """Add a workflow to the registry."""
         if name in self.workflow_factories:
             raise AgentConfigError(f"Workflow '{name}' already exists in the registry.")
         if inspect.isclass(workflow):
-            if not issubclass(workflow, MixableWorkflow):
+            if not issubclass(workflow, StartingWorkflow):
                 raise AgentConfigError(
                     f"Workflow '{name}' must be a subclass of MixableWorkflow."
                 )
@@ -71,12 +71,24 @@ class WorkflowRegistry:
         self.workflow_factories[name] = factory
         logger.info(f"Workflow factory '{name}' added to the registry.")
 
+    def add_alias(self, alias: str, original: str):
+        """Add an alias for an existing workflow."""
+        if alias in self.workflow_factories:
+            raise AgentConfigError(
+                f"Workflow '{alias}' already exists in the registry."
+            )
+        if original not in self.workflow_factories:
+            raise AgentConfigError(
+                f"Original workflow '{original}' does not exist in the registry."
+            )
+        self.workflow_factories[alias] = self.workflow_factories[original]
+        logger.info(f"Workflow alias '{alias}' added for '{original}'.")
+
     async def get_workflow(
         self,
         name: str,
         workflow_config: WorkflowConfig,
-        workflow_type: t.Optional[t.Type[T]] = None,
-    ) -> T:
+    ) -> StartingWorkflow[t.Any]:
         """Get a workflow instance of specific type."""
         if name not in self.workflow_factories:
             raise AgentMissingError(f"Workflow '{name}' not found in the registry.")
@@ -91,4 +103,4 @@ class WorkflowRegistry:
         )
         logger.debug(f"Created workflow '{name}' of type {type(workflow).__name__}")
 
-        return t.cast(T, workflow)
+        return workflow

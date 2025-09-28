@@ -39,7 +39,7 @@ Set up a cron job to regularly dump new time-partitioned data. Common schedules 
 
 ### Basic Structure
 
-Create a new asset file in `warehouse/oso_dagster/assets/` that uses the GCS asset factory. Here's the basic structure:
+Create a new asset file in `warehouse/oso_dagster/assets/default` that uses the GCS asset factory. Here's the basic structure:
 
 ```python
 from ..factories import (

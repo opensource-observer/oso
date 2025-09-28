@@ -6,15 +6,27 @@ class LabelsDecoded(BaseModel):
     """Stores decoded labels from the Open Labels Initiative"""
 
     id: str | None = Column("VARCHAR", description="Unique identifier for the label")
-    chain_id: str | None = Column("VARCHAR", description="Chain identifier in eip155 format")
+    chain_id: str | None = Column(
+        "VARCHAR", description="Chain identifier in eip155 format"
+    )
     address: str | None = Column("VARCHAR", description="The address being labeled")
     tag_id: str | None = Column("VARCHAR", description="The type of label")
     tag_value: str | None = Column("VARCHAR", description="The value of the label")
-    attester: str | None = Column("VARCHAR", description="Address of the entity that attested the label")
-    time_created: int | None = Column("INTEGER", description="Unix timestamp when the label was created")
-    revocation_time: int | None = Column("INTEGER", description="Unix timestamp when the label was revoked")
-    revoked: bool | None = Column("BOOLEAN", description="Whether the label has been revoked")
-    is_offchain: bool | None = Column("BOOLEAN", description="Whether the label is stored offchain")
+    attester: str | None = Column(
+        "VARCHAR", description="Address of the entity that attested the label"
+    )
+    time_created: int | None = Column(
+        "INTEGER", description="Unix timestamp when the label was created"
+    )
+    revocation_time: int | None = Column(
+        "INTEGER", description="Unix timestamp when the label was revoked"
+    )
+    revoked: bool | None = Column(
+        "BOOLEAN", description="Whether the label has been revoked"
+    )
+    is_offchain: bool | None = Column(
+        "BOOLEAN", description="Whether the label is stored offchain"
+    )
 
 
 seed = SeedConfig(
@@ -119,7 +131,7 @@ seed = SeedConfig(
             chain_id="eip155:1",
             address="0x6B175474E89094C44Da98b954EedeAC495271d0F",
             tag_id="erc_type",
-            tag_value="erc20",
+            tag_value='["erc20"]',
             attester="0xA725646c05e6Bb813d98C5aBB4E72DF4bcF00B56",
             time_created=1744237337,
             revocation_time=0,
@@ -150,6 +162,18 @@ seed = SeedConfig(
             time_created=1744237337,
             revocation_time=1744237338,
             revoked=True,
+            is_offchain=True,
+        ),
+        LabelsDecoded(
+            id="0xd16d9ca932c3263c17df8a2b7618fde52b66e8194287a06de0cf205dc49e6bcf",
+            chain_id="eip155:1",
+            address="0x6b175474e89094c44da98b954eedeac495271d0f",
+            tag_id="usage_category",
+            tag_value="stablecoin",
+            attester="0xa725646c05e6bb813d98c5abb4e72df4bcf00b56",
+            time_created=1744237337,
+            revocation_time=0,
+            revoked=False,
             is_offchain=True,
         ),
     ],

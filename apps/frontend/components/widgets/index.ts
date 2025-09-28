@@ -16,17 +16,13 @@ import {
   FeedbackWrapper,
   FeedbackWrapperMeta,
 } from "@/components/widgets/feedback-farm";
-import {
-  JupyterRootMeta,
-  JupyterNotebookMeta,
-  JupyterConsoleMeta,
-} from "@/components/widgets/jupyter/jupyter-meta";
 import { Markdown, MarkdownMeta } from "@/components/widgets/markdown";
 import {
   MonacoEditor,
   MonacoEditorMeta,
 } from "@/components/widgets/monaco-editor";
-import { Navbar, NavbarMeta } from "@/components/widgets/navbar";
+import { OsoNavbar, OsoNavbarMeta } from "@/components/widgets/oso-navbar";
+import { OsoSidebar, OsoSidebarMeta } from "@/components/widgets/oso-sidebar";
 import { OSOChat, OSOChatMeta } from "@/components/widgets/oso-chat";
 import {
   SupabaseWrite,
@@ -38,6 +34,16 @@ import {
   BarList,
   BarListMeta,
 } from "@/components/widgets/tremor";
+import {
+  CreditBalance,
+  CreditBalanceMeta,
+  CreditPackageSelector,
+  CreditPackageSelectorMeta,
+  PurchaseHistory,
+  PurchaseHistoryMeta,
+  Billing,
+  BillingMeta,
+} from "@/components/widgets/billing";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -46,32 +52,22 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
     dynamic(() => import("./algolia"), { ssr: false }),
     AlgoliaSearchListMeta,
   );
-  PLASMIC.registerComponent(
-    dynamic(() => import("./jupyter/jupyter-root"), { ssr: false }),
-    JupyterRootMeta,
-  );
-  PLASMIC.registerComponent(
-    dynamic(() => import("./jupyter/jupyter-notebook"), { ssr: false }),
-    JupyterNotebookMeta,
-  );
-  PLASMIC.registerComponent(
-    dynamic(() => import("./jupyter/jupyter-console"), { ssr: false }),
-    JupyterConsoleMeta,
-  );
 
   PLASMIC.registerComponent(AuthActions, AuthActionsMeta);
   PLASMIC.registerComponent(AuthForm, AuthFormMeta);
   PLASMIC.registerComponent(DynamicConnectorForm, DynamicConnectorFormMeta);
   PLASMIC.registerComponent(FeedbackWrapper, FeedbackWrapperMeta);
-  //PLASMIC.registerComponent(JupyterRoot, JupyterRootMeta);
-  //PLASMIC.registerComponent(JupyterNotebook, JupyterNotebookMeta);
-  //PLASMIC.registerComponent(JupyterConsole, JupyterConsoleMeta);
   PLASMIC.registerComponent(Markdown, MarkdownMeta);
   PLASMIC.registerComponent(MonacoEditor, MonacoEditorMeta);
-  PLASMIC.registerComponent(Navbar, NavbarMeta);
+  PLASMIC.registerComponent(OsoNavbar, OsoNavbarMeta);
+  PLASMIC.registerComponent(OsoSidebar, OsoSidebarMeta);
   PLASMIC.registerComponent(OSOChat, OSOChatMeta);
   PLASMIC.registerComponent(SupabaseWrite, SupabaseWriteMeta);
   PLASMIC.registerComponent(TallyPopup, TallyPopupMeta);
   PLASMIC.registerComponent(BarList, BarListMeta);
   PLASMIC.registerComponent(AreaChart, AreaChartMeta);
+  PLASMIC.registerComponent(CreditBalance, CreditBalanceMeta);
+  PLASMIC.registerComponent(CreditPackageSelector, CreditPackageSelectorMeta);
+  PLASMIC.registerComponent(PurchaseHistory, PurchaseHistoryMeta);
+  PLASMIC.registerComponent(Billing, BillingMeta);
 }

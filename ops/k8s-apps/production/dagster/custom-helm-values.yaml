@@ -8,6 +8,15 @@ spec:
     # timing data
     osoDagster:
       eagerlyLoadSqlTables: 0
+      env: "production"
+      gcp:
+        enabled: true
+        bigquery:
+          enabled: true
+      testAssets:
+        # This should normally be off, but if we need to test some failure
+        # scenarios on production enable this
+        enabled: true
     pg:
       host: production-cloudsql-proxy-gcloud-sqlproxy.production-cloudsql-proxy.svc.cluster.local
       port: "5432"
@@ -75,17 +84,32 @@ spec:
                     memory: 1024Mi
       dagster-user-deployments:
         deployments:
-          - name: "oso-dagster"
+          - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20250811163625-e31a81f # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20250925223432-748130e # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
             port: 3030
             dagsterApiGrpcArgs:
               - "-m"
-              - "oso_dagster.definitions.legacy"
+              - "oso_dagster.definitions.default"
+              - "--log-format"
+              - "json"
+            includeConfigInLaunchedRuns:
+              enabled: false
+          - name: "dynamic"
+            image:
+              repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+              tag: deploy-20250925223432-748130e # {"$imagepolicy": "flux-system:oso:tag"}
+              pullPolicy: IfNotPresent
+            envConfigMaps:
+              - name: dagster-oso-extra-env
+            port: 3030
+            dagsterApiGrpcArgs:
+              - "-m"
+              - "oso_dagster.definitions.dynamic"
               - "--log-format"
               - "json"
             includeConfigInLaunchedRuns:
@@ -110,3 +134,7 @@ spec:
           deploymentName: production-mcs
           serviceName: production-mcs
           namespace: production-mcs
+    nessie:
+      url: "http://production-nessie.production-nessie.svc.cluster.local:19120/api/v1"
+    rpc:
+      ethereum: "http://ethereum-archive-node.c.opensource-observer.internal:8545"

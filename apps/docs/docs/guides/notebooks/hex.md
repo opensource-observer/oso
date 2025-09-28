@@ -12,7 +12,6 @@ To get started with OSO in Hex:
 1. Create a new Hex project or open an existing one.
 
 2. Add your OSO API key as an environment variable:
-
    - Go to the **Environment** tab in your Hex project.
    - Click **+ Add environment variable**.
    - Name it `OSO_API_KEY` and paste your API key as the value.

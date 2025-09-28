@@ -15,8 +15,7 @@ export const NODE_ENV = process.env.NODE_ENV ?? "development";
 export const STATIC_EXPORT = !!process.env.STATIC_EXPORT;
 export const POSTHOG_HOST = "/ingest";
 export const POSTHOG_HOST_DIRECT = "https://us.i.posthog.com";
-export const POSTHOG_KEY =
-  process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "MISSING POSTHOG_KEY";
+export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 export const GOOGLE_ANALYTICS_KEY =
   process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_KEY ??
   "MISSING GOOGLE_ANALYTICS_KEY";
@@ -58,6 +57,15 @@ export const CLICKHOUSE_PASSWORD =
   process.env.CLICKHOUSE_PASSWORD ?? "MISSING CLICKHOUSE_PASSWORD";
 export const CLICKHOUSE_DB_NAME = process.env.CLICKHOUSE_DB_NAME ?? "default";
 
+export const CLOUDFLARE_R2_ENDPOINT =
+  process.env.CLOUDFLARE_R2_ENDPOINT ?? "MISSING CLOUDFLARE_R2_ENDPOINT";
+export const CLOUDFLARE_R2_ACCESS_KEY_ID =
+  process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ??
+  "MISSING CLOUDFLARE_R2_ACCESS_KEY_ID";
+export const CLOUDFLARE_R2_SECRET_ACCESS_KEY =
+  process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ??
+  "MISSING CLOUDFLARE_R2_SECRET_ACCESS_KEY";
+
 export const TRINO_URL = process.env.TRINO_URL ?? "MISSING TRINO_URL";
 export const TRINO_ADMIN_USER =
   process.env.TRINO_ADMIN_USER ?? "MISSING TRINO_USERNAME";
@@ -65,7 +73,8 @@ export const TRINO_ADMIN_PASSWORD =
   process.env.TRINO_ADMIN_PASSWORD ?? "MISSING TRINO_PASSWORD";
 export const TRINO_CATALOG = process.env.TRINO_CATALOG ?? "iceberg";
 export const TRINO_SCHEMA = process.env.TRINO_SCHEMA ?? "oso";
-export const TRINO_JWT_SECRET = process.env.TRINO_JWT_SECRET;
+export const TRINO_JWT_SECRET =
+  process.env.TRINO_JWT_SECRET ?? "MISSING TRINO_JWT_SECRET";
 
 export const ALGOLIA_APPLICATION_ID =
   process.env.NEXT_PUBLIC_ALGOLIA_APPLICATION_ID ??
@@ -92,3 +101,13 @@ export const OSO_ENTITIES = [
   "project.project_id",
   "metrics.metric_id",
 ];
+
+export const MAILJET_API_KEY =
+  process.env.MJ_API_KEY ?? "MISSING MAILJET_API_KEY";
+export const MAILJET_API_SECRET =
+  process.env.MJ_SECRET_KEY ?? "MISSING MAILJET_API_SECRET";
+export const MAILJET_FROM_EMAIL =
+  process.env.MJ_FROM_EMAIL ?? "MISSING MAILJET_FROM_EMAIL";
+
+export const MARIMO_URL =
+  process.env.NEXT_PUBLIC_MARIMO_URL ?? "MISSING NEXT_PUBLIC_MARIMO_URL";

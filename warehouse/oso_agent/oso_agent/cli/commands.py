@@ -211,12 +211,20 @@ class JsonType(click.ParamType):
     help="Comma-separated list of example IDs to run (e.g. 12,13,14).",
     default="",
 )
+@click.option(
+    "--description",
+    "-d",
+    type=str,
+    help="Description for the experiment",
+    default="",
+)
 @pass_config
 def experiment(
     config: AgentConfig,
     experiment_name: str,
     experiment_options: dict[str, t.Any],
     example_ids: str,
+    description: str,
 ):
     """Run a single experiment through the agent.
 
@@ -229,6 +237,7 @@ def experiment(
             experiment_options = {
                 **experiment_options,
                 "example_ids": [s.strip() for s in example_ids.split(",") if s.strip()],
+                "description": description,
             }
 
             response = asyncio.run(

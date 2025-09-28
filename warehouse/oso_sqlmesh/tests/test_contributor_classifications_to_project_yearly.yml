@@ -1,0 +1,118 @@
+test_contributor_classifications_to_project_yearly:
+  model: oso.contributor_classifications_to_project_yearly
+  vars:
+    start: 2024-01-01
+    end: 2024-12-31
+  inputs:
+    oso.contributor_active_days_to_project_yearly:
+      rows:
+      # Full-time contributor (300 active days out of 366 in 2024)
+      - to_project_id: project_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 300
+      # Part-time contributor (50 active days out of 366)
+      - to_project_id: project_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 50
+      # Another full-time contributor (250 active days)
+      - to_project_id: project_2
+        from_artifact_id: contributor_3
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 250
+    oso.int_first_contribution_to_project:
+      rows:
+      # First contribution for contributor_1 was in 2023 (not new)
+      - time: 2023-03-15 10:00:00
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_project_id: project_1
+      # First contribution for contributor_2 was in current year (new contributor)
+      - time: 2024-06-20 14:30:00
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_project_id: project_1
+      # First contribution for contributor_3 was in current year (new contributor)
+      - time: 2024-02-10 09:20:00
+        event_source: GITHUB
+        from_artifact_id: contributor_3
+        to_project_id: project_2
+    oso.int_events_daily__github_with_lag:
+      rows:
+      # contributor_1 was active in 2023 but was dormant before current year
+      - bucket_day: 2023-10-15
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: repo_1
+        event_type: COMMIT_CODE
+        last_event: 2023-10-15
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+  outputs:
+    query:
+      partial: true
+      rows:
+      # Full-time contributors (active_days / 366 >= 10/30 = 0.33)
+      # contributor_1: 300/366 = 0.82 >= 0.33 (full-time)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: full_time_contributors_yearly
+        amount: 1
+      # contributor_3: 250/366 = 0.68 >= 0.33 (full-time)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: full_time_contributors_yearly
+        amount: 1
+      # Part-time contributors (active_days / 366 < 10/30 = 0.33)
+      # contributor_2: 50/366 = 0.14 < 0.33 (part-time)
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: part_time_contributors_yearly
+        amount: 1
+      # New contributors (first contribution in current year)
+      # contributor_2 in project_1
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: new_contributors_yearly
+        amount: 1
+      # contributor_3 in project_2
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: new_contributors_yearly
+        amount: 1
+      # Active contributors (all contributors)
+      # project_1 has 2 active contributors
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: active_contributors_yearly
+        amount: 2
+      # project_2 has 1 active contributor
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: active_contributors_yearly
+        amount: 1

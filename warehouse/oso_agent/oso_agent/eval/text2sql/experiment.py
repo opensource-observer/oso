@@ -25,19 +25,21 @@ from ...datasets.text2sql import TEXT2SQL_DATASET
 from ...datasets.uploader import upload_dataset
 from ...util.asyncbase import setup_nest_asyncio
 from ...util.config import AgentConfig
+from ...util.metadata import collect_experiment_metadata
 from .evals import (
-    check_valid_sql,
-    check_valid_sql_result,
-    result_exact_match,
-    result_fuzzy_match,
-    sql_oso_models_used_similarity,
-    sql_query_type_similarity,
+    oso_tables_match,
+    results_exact_match,
+    results_similarity_score,
+    sql_command_types_match,
+    sql_execution_success,
+    sql_syntax_validation,
 )
 
 setup_nest_asyncio()
 
 BASE_EXPERIMENT_NAME = "text2sql-experiment"
 SEMANTIC_EXPERIMENT_NAME = "text2sql-semantic-experiment"
+
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +131,7 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
     from oso_agent.tool.embedding import create_embedding
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
     from oso_agent.tool.storage_context import setup_storage_context
+    from oso_agent.tool.table_selector_tool import create_table_selector_tool
 
     oso_client = OsoClient(config.oso_api_key.get_secret_value())
     llm = create_llm(config)
@@ -146,13 +149,20 @@ async def resolver_factory(config: AgentConfig) -> ResourceResolver:
         synthesize_response=False,
     )
 
+    registry_description = oso_client.client.semantic.describe()
+
     semantic_query_tool = create_semantic_query_tool(
-        llm=llm, registry_description=oso_client.client.semantic.describe()
+        llm=llm, registry_description=registry_description
+    )
+
+    table_selector_tool = create_table_selector_tool(
+        llm=llm, available_models=registry_description
     )
 
     resolver = DefaultResourceResolver.from_resources(
         query_engine_tool=query_engine_tool,
         semantic_query_tool=semantic_query_tool,
+        table_selector_tool=table_selector_tool,
         oso_client=oso_client,
         keep_distinct=True,
         agent_name=config.agent_name,
@@ -206,18 +216,27 @@ async def text2sql_experiment(
         concurrent_evaluators=10,
         concurrent_runs=1,
     )
-    runner.add_evaluator(check_valid_sql)
-    runner.add_evaluator(check_valid_sql_result)
-    runner.add_evaluator(sql_query_type_similarity)
-    runner.add_evaluator(sql_oso_models_used_similarity)
-    runner.add_evaluator(result_exact_match)
-    runner.add_evaluator(result_fuzzy_match)
+    runner.add_evaluator(sql_syntax_validation)
+    runner.add_evaluator(sql_execution_success)
+    runner.add_evaluator(sql_command_types_match)
+    runner.add_evaluator(oso_tables_match)
+    runner.add_evaluator(results_exact_match)
+    runner.add_evaluator(results_similarity_score)
+
+    description = _raw_options.get("description", "")
+
+    experiment_metadata = collect_experiment_metadata(
+        config=config,
+        workflow_cls=BasicText2SQL,
+        additional_metadata={"name": config.agent_name},
+    )
 
     return await runner.run(
         dataset=dataset,
         workflow_cls=BasicText2SQL,
         experiment_name=BASE_EXPERIMENT_NAME,
-        experiment_metadata={"agent_name": config.agent_name},
+        experiment_description=description if description else None,
+        experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
             "start_event": Text2SQLStartEvent(
@@ -273,18 +292,27 @@ async def text2sql_semantic_experiment(
         concurrent_evaluators=10,
         concurrent_runs=1,
     )
-    runner.add_evaluator(check_valid_sql)
-    runner.add_evaluator(check_valid_sql_result)
-    runner.add_evaluator(sql_query_type_similarity)
-    runner.add_evaluator(sql_oso_models_used_similarity)
-    runner.add_evaluator(result_exact_match)
-    runner.add_evaluator(result_fuzzy_match)
+    runner.add_evaluator(sql_syntax_validation)
+    runner.add_evaluator(sql_execution_success)
+    runner.add_evaluator(sql_command_types_match)
+    runner.add_evaluator(oso_tables_match)
+    runner.add_evaluator(results_exact_match)
+    runner.add_evaluator(results_similarity_score)
+
+    description = _raw_options.get("description", "")
+
+    experiment_metadata = collect_experiment_metadata(
+        config=config,
+        workflow_cls=SemanticText2SQLWorkflow,
+        additional_metadata={"name": config.agent_name},
+    )
 
     return await runner.run(
         dataset=dataset,
         workflow_cls=SemanticText2SQLWorkflow,
         experiment_name=SEMANTIC_EXPERIMENT_NAME,
-        experiment_metadata={"agent_name": config.agent_name},
+        experiment_description=description if description else None,
+        experiment_metadata=experiment_metadata,
         post_process_result=post_process_result,
         input_generator=lambda x: {
             "start_event": Text2SQLStartEvent(

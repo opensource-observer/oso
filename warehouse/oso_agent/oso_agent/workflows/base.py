@@ -4,12 +4,13 @@ import logging
 import typing as t
 import uuid
 
-from llama_index.core.workflow import Event, StartEvent, StopEvent, Workflow, step
+from llama_index.core.workflow import Event, StopEvent, Workflow, step
 from llama_index.core.workflow.decorators import StepConfig
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import WorkflowMeta
 from opentelemetry import trace
 from oso_agent.types.response import AnyResponse, ResponseType
+from oso_agent.workflows.common import GenericStartEvent
 from oso_agent.workflows.types import ExceptionEvent
 
 from ..resources import ResourceDependency, ResourceResolver
@@ -324,11 +325,13 @@ class MixableWorkflow(Workflow, metaclass=WorkflowMixer):
         return StopEvent(result=ErrorResponse(message=str(event.error)))
 
 
-S = t.TypeVar("S", bound=StartEvent)
+S = t.TypeVar("S", bound=GenericStartEvent)
 
 
 class StartingWorkflow(MixableWorkflow, t.Generic[S]):
     """A workflow that enforces typed start events and returns WrappedResponse."""
+
+    event_cls: t.Type[S]
 
     def run(self, start_event: S, **kwargs) -> WorkflowHandler:
         """Run the workflow with a typed start event."""
@@ -344,3 +347,8 @@ class StartingWorkflow(MixableWorkflow, t.Generic[S]):
             return raw_response
 
         return self.ensure_wrapped_response(handler)
+
+    async def wrapped_run_from_kwargs(self, **kwargs) -> WrappedResponse:
+        """Run the workflow with a generic start event and return a WrappedResponse."""
+        start_event = self.event_cls.create_from_kwargs(**kwargs)
+        return await self.wrapped_run(start_event)

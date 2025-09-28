@@ -28,44 +28,34 @@ _Important: If you are interested in participating in the bounty, please join ou
 The auditor is expected to audit the following components of the impact metrics model:
 
 1. Unified events model
-
    1. Audit the primary event models (eg, [Events Daily to Project](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_events_daily_to_project), [4337 Events](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_4337_events)), upstream source data (eg, [Base Transactions](https://models.opensource.observer/#!/model/model.opensource_observer.int_base_transactions), [Base Traces](https://models.opensource.observer/#!/model/model.opensource_observer.int_base_traces)), and the dbt macros used for intermediate processing (eg, [contract_invocation_events](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/macros/models/contract_invocation_events_with_l1.sql), [filtered_blockchain_events](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/macros/models/filtered_blockchain_events.sql)).
    2. Comment on the following aspects:
-
       1. Completeness and accuracy of underlying transaction and trace data for the six relevant chains
       2. Correct and consistent implementation of the RF4 transaction window (2023-10-01 to 2024-06-01)
       3. Correct and consistent implementation of the relevant RF4 onchain event types (eg, gas fees, contract interactions, etc.)
       4. Implementation of "special cases" for 4337 interactions (see [here](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/models/marts/superchain/rf4_4337_events.sql)) and EOA bridges (see [here](https://github.com/opensource-observer/oso/blob/main/warehouse/dbt/macros/models/contract_invocation_events_with_l1.sql#L5))
 
 2. Contract discovery and attribution model
-
    1. Audit the contract discovery logic (eg, [Derived Contracts](https://models.opensource.observer/#!/model/model.opensource_observer.int_derived_contracts), [Contracts by Project](https://models.opensource.observer/#!/model/model.opensource_observer.int_contracts_by_project)) and upstream logic for identifying factories, deployers, and deterministic deployments
    2. Comment on the following aspects:
-
       1. Completeness and accuracy of the [Contract by Project](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/retrofunding4/data/op_rf4_contracts_by_project.parquet) database, including efforts to de-dupe contracts deployed by creator factories such as Zora's and pool factories such as Aerodrome's
       2. Correct attribution of all contract artifacts included in approved project's applications (see [here](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/retrofunding4/data/op_rf4_contracts_by_application.csv))
 
 3. Trusted user model
-
    1. Audit the trusted user model logic (see [here](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_trusted_users)) and upstream source data (from Farcaster and reputation data providers)
    2. Comment on the following aspects:
-
       1. Completeness and accuracy of underlying source data
       2. Correct implementation of the trusted user model heuristics
 
 4. Impact metric implementation
-
    1. Audit the logic of the [Impact Metrics by Project](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project) model and the 13 upstream models that power individual metrics
    2. Comment on the following aspects:
-
       1. Correct and consistent implementation of all 13 underlying metrics models and 3 log-transformed metrics models
       2. Correct and consistent implementation of the summary model that aggregates all 16 metrics and links them with project applications
 
 5. Open Source labeling
-
    1. Audit that project labels (see [here](https://docs.google.com/spreadsheets/d/1f6zQCCR2OmaM7bsjVU22YcVP4J_JmLaEKLc-YIDjCkw/edit?gid=88938804#gid=88938804)) have been applied correctly based on the stated logic. Note that these checks are not implemented in SQL. You can replicate the API calls used for these checks [here](https://docs.google.com/document/d/187487ksRqjD2hNVtxCFwomP58gvAN0Gz_sXyO5NsJA0/edit?usp=sharing).
    2. Comment on the following aspects:
-
       1. Repo age checked correctly
       2. Repo license discovered correctly
 

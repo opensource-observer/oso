@@ -9,6 +9,8 @@ services:
   nessie:
     hostname: nessie
     image: "ghcr.io/projectnessie/nessie:0.102.0"
+    ports:
+      - "19120:19120"
     environment:
       nessie.version.store.type: IN_MEMORY
       nessie.catalog.default-warehouse: warehouse

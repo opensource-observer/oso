@@ -9,22 +9,16 @@ MODEL (
 
 WITH packages AS (
   SELECT DISTINCT
-    package_github_owner,
-    package_github_repo,
+    package_owner_artifact_id,
     COUNT(DISTINCT package_artifact_name) AS num_packages_in_deps_dev
-  FROM oso.int_packages
-  WHERE
-    is_current_owner = TRUE
-  GROUP BY
-    package_github_owner,
-    package_github_repo
+  FROM oso.int_packages__current_maintainer_only
+  GROUP BY 1
 ), deps AS (
   SELECT
-    dependency_artifact_id,
+    package_owner_artifact_id,
     COUNT(DISTINCT dependent_artifact_id) AS num_dependent_repos_in_oso
-  FROM oso.int_code_dependencies
-  GROUP BY
-    dependency_artifact_id
+  FROM oso.int_sbom_to_packages
+  GROUP BY 1
 )
 SELECT DISTINCT
   repos.project_id,
@@ -44,7 +38,6 @@ SELECT DISTINCT
   COALESCE(deps.num_dependent_repos_in_oso, 0) AS num_dependent_repos_in_oso
 FROM oso.int_repositories AS repos
 LEFT JOIN packages
-  ON repos.artifact_namespace = packages.package_github_owner
-  AND repos.artifact_name = packages.package_github_repo
+  ON repos.artifact_id = packages.package_owner_artifact_id
 LEFT JOIN deps
-  ON repos.artifact_id = deps.dependency_artifact_id
+  ON repos.artifact_id = deps.package_owner_artifact_id

@@ -133,7 +133,6 @@ Our dbt models are located in `warehouse/dbt/models/` and follow these conventio
 ## Development Workflow
 
 1. **Write Your Model**
-
    - Add SQL files to appropriate directory in `warehouse/dbt/models/`
    - Use existing models as references
 

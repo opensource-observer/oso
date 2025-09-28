@@ -1,10 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
-import { getUser } from "@/lib/auth/auth";
+import { getOrgUser } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
+import {
+  CreditsService,
+  InsufficientCreditsError,
+  TransactionType,
+} from "@/lib/services/credits";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 export const maxDuration = 60;
 const TEXT2SQL_PATH = "/v0/text2sql";
@@ -19,10 +24,10 @@ const getLatestMessage = (messages: any[]) => {
   return content || "Message not found";
 };
 
-export async function POST(req: NextRequest) {
-  const user = await getUser(req);
+export const POST = withPostHogTracking(async (req: NextRequest) => {
+  const user = await getOrgUser(req);
   const prompt = await req.json();
-  await using tracker = trackServerEvent(user);
+  const tracker = trackServerEvent(user);
 
   if (user.role === "anonymous") {
     logger.log(`/api/v1/text2sql: User is anonymous`);
@@ -40,10 +45,14 @@ export async function POST(req: NextRequest) {
         user,
         orgId,
         TransactionType.TEXT2SQL,
+        tracker,
         "/api/v1/text2sql",
         { message: getLatestMessage(prompt.messages) },
       );
     } catch (error) {
+      if (error instanceof InsufficientCreditsError) {
+        return NextResponse.json({ error: error.message }, { status: 402 });
+      }
       logger.error(
         `/api/v1/text2sql: Error tracking usage for user ${user.userId}:`,
         error,
@@ -75,4 +84,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

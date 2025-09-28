@@ -8,5 +8,5 @@ except PackageNotFoundError:
     __version__ = "unknown"
 
 from .analytics import DataAnalytics
-from .client import Client, QueryResponse
+from .client import Client, ClientConfig, QueryResponse
 from .exceptions import HTTPError, OsoError

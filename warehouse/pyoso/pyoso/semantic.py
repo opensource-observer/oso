@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 
 import pandas as pd
 import requests
@@ -9,7 +9,7 @@ from pyoso.exceptions import OsoHTTPError
 class SemanticColumn(BaseModel):
     name: str
     type: str
-    description: str | None
+    description: Optional[str]
 
 
 class SemanticRelationship(BaseModel):
@@ -20,7 +20,7 @@ class SemanticRelationship(BaseModel):
 
 class SemanticTableResponse(BaseModel):
     name: str
-    description: str | None
+    description: Optional[str]
     columns: list[SemanticColumn] = Field(default_factory=list)
     relationships: list[SemanticRelationship] = Field(default_factory=list)
 

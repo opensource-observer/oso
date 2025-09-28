@@ -24,18 +24,18 @@
   },
   "keywords": [],
   "devDependencies": {
-    "@types/jest": "^29.5.14",
-    "@types/node": "^20.14.10",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.2.1",
+    "jest": "^30.0.5",
+    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.3"
+    "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@google-cloud/bigquery": "^7.8.0",
-    "@types/lodash": "^4.17.6",
+    "@google-cloud/bigquery": "^8.1.1",
+    "@types/lodash": "^4.17.20",
     "graphql-request": "^7.2.0",
     "lodash": "^4.17.21",
-    "viem": "^2.32.1"
+    "viem": "^2.33.3"
   }
 }

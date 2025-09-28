@@ -75,7 +75,7 @@ def ensure[T](x: Optional[T], msg: str) -> T:
     """
     if x is None:
         raise NullOrUndefinedValueError(
-            f"Value must not be undefined or null{f" - {msg}" if msg else ""}"
+            f"Value must not be undefined or null{f' - {msg}' if msg else ''}"
         )
     else:
         y: T = x
@@ -148,6 +148,12 @@ class QueryConfig(BaseModel):
     )
 
 
+class QueryRetriesExceeded(Exception):
+    """
+    Exception raised when the maximum number of query retries is exceeded.
+    """
+
+
 def query_with_retry(
     client: Client,
     context: AssetExecutionContext,
@@ -208,8 +214,44 @@ def query_with_retry(
                 steps = list(generate_steps(total_count, limit))
                 current_index *= 2
                 if limit < config.minimum_limit:
-                    raise ValueError(
+                    raise QueryRetriesExceeded(
                         f"Query failed after reaching the minimum limit of {limit}."
                     ) from exception
                 context.log.info(f"Retrying with limit: {limit}")
         break
+
+
+def stringify_large_integers(data: Any) -> Any:
+    """
+    Recursively convert integers exceeding 64-bit range to strings.
+
+    Args:
+        data: Array of objects, dict, list, or any primitive value
+
+    Returns:
+        Modified data with large integers converted to strings
+    """
+    MAX_64BIT: int = 2**63 - 1
+    MIN_64BIT: int = -(2**63)
+
+    def _convert_recursive(obj: Any) -> Any:
+        type_handlers = {
+            int: lambda x: str(x) if (x > MAX_64BIT or x < MIN_64BIT) else x,
+            dict: lambda x: {k: _convert_recursive(v) for k, v in x.items()},
+            list: lambda x: [_convert_recursive(item) for item in x],
+            tuple: lambda x: tuple(_convert_recursive(item) for item in x),
+        }
+
+        handler = type_handlers.get(type(obj), lambda x: x)
+        return handler(obj)
+
+    return _convert_recursive(data)
+
+
+def is_number(s) -> bool:
+    """Return True if s can be converted to a float."""
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False

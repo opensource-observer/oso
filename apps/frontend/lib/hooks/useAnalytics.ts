@@ -23,9 +23,9 @@ export function useAnalytics() {
 
       try {
         posthog.capture(eventName, {
-          distinctId: user.role !== "anonymous" ? user.userId : undefined,
+          distinctId: user ? user.userId : undefined,
           ...options?.properties,
-          userRole: user.role,
+          userRole: user ? "user" : "anonymous",
           apiEndpoint: options?.apiEndpoint,
         });
 

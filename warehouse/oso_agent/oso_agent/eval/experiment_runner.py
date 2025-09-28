@@ -8,6 +8,7 @@ from datetime import datetime
 from httpx import HTTPStatusError
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import Span
+from oso_agent.types.eval import ExampleResult
 from oso_agent.types.response import ErrorResponse
 from oso_agent.util.config import AgentConfig
 from oso_agent.workflows.base import MixableWorkflow, ResourceResolver
@@ -36,7 +37,7 @@ from phoenix.utilities.client import VersionedAsyncClient
 from phoenix.utilities.json import jsonify
 
 logger = logging.getLogger(__name__)
-#tracer = trace.get_tracer(__name__)
+# tracer = trace.get_tracer(__name__)
 
 
 class EvalResultEvaluator(CodeEvaluator):
@@ -78,7 +79,7 @@ class EvalResultEvaluator(CodeEvaluator):
         bound_signature = sig.bind(**bound_params)
         bound_signature.apply_defaults()
         return bound_signature
-    
+
 
 @dataclass(kw_only=True)
 class _ExperimentWorkflowResult:
@@ -104,7 +105,11 @@ class ExperimentRunner:
     """
 
     def __init__(
-        self, *, config: AgentConfig, resolver_factory: t.Callable[[AgentConfig], t.Awaitable[ResourceResolver]], evaluators: Evaluators | None = None, 
+        self,
+        *,
+        config: AgentConfig,
+        resolver_factory: t.Callable[[AgentConfig], t.Awaitable[ResourceResolver]],
+        evaluators: Evaluators | None = None,
         concurrent_evaluators: int = 5,
         concurrent_runs: int = 2,
         concurrent_reporting_requests: int = 2,
@@ -115,12 +120,17 @@ class ExperimentRunner:
         self._eval_result_evalutors: list[EvalResultEvaluator] = []
         self._phoenix_client: VersionedAsyncClient | None = None
         self._evaluators_semaphore = asyncio.Semaphore(concurrent_evaluators)
-        self._reporting_requests_semaphore = asyncio.Semaphore(concurrent_reporting_requests)
+        self._reporting_requests_semaphore = asyncio.Semaphore(
+            concurrent_reporting_requests
+        )
         self._run_semaphore = asyncio.Semaphore(concurrent_runs)
 
-    def add_evaluator(self, func: t.Callable[..., t.Awaitable[EvaluationResult]], 
-                      name: str = "", 
-                      kind: AnnotatorKind = AnnotatorKind.CODE) -> None:
+    def add_evaluator(
+        self,
+        func: t.Callable[..., t.Awaitable[EvaluationResult]],
+        name: str = "",
+        kind: AnnotatorKind = AnnotatorKind.CODE,
+    ) -> None:
         """Add an evaluator to the experiment runner that can support receiving
         the result and post processed result of an EvalWorkflow run."""
         evaluator = EvalResultEvaluator.create(func=func, name=name, kind=kind)
@@ -144,7 +154,6 @@ class ExperimentRunner:
         )(resolver=resolver, **kwargs)
         return workflow
 
-    
     async def run_workflow(
         self,
         *,
@@ -153,14 +162,21 @@ class ExperimentRunner:
         workflow: EvalWorkflow,
         example: Example,
         input_generator: t.Callable[[ExampleInput], t.Dict[str, t.Any]],
-        post_process_result: t.Callable[[Example, EvalWorkflowResult, ResourceResolver], t.Awaitable[t.Any]] | None = None,
+        post_process_result: t.Callable[
+            [Example, EvalWorkflowResult, ResourceResolver], t.Awaitable[t.Any]
+        ]
+        | None = None,
     ) -> _ExperimentWorkflowResult:
         """Run the experiment with the given workflow and return the results."""
 
-        logger.debug(f"waiting for semaphore to run experiment for example {example.id} in experiment {experiment.id}")
+        logger.debug(
+            f"waiting for semaphore to run experiment for example {example.id} in experiment {experiment.id}"
+        )
         async with self._run_semaphore:
-            logger.info(f"Running experiment for example {example.id} in experiment {experiment.id}")
-            start_time = datetime.now() 
+            logger.info(
+                f"Running experiment for example {example.id} in experiment {experiment.id}"
+            )
+            start_time = datetime.now()
             try:
                 eval_workflow_result, span = await self._run_workflow(
                     experiment=experiment,
@@ -170,19 +186,39 @@ class ExperimentRunner:
                 )
                 end_time = datetime.now()
             except Exception as e:
-                logger.error(f"Error running workflow for example {example.id} in experiment {experiment.id}: {e}")
+                logger.error(
+                    f"Error running workflow for example {example.id} in experiment {experiment.id}: {e}"
+                )
                 raise e
 
             if not eval_workflow_result:
-                logger.warning(f"No result for example {example.id} in experiment {experiment.id}. Skipped")
+                logger.warning(
+                    f"No result for example {example.id} in experiment {experiment.id}. Skipped"
+                )
                 raise Exception("No result for example in experiment")
-            
+
             post_processed = None
             if post_process_result:
-                logger.info(f"Post processing result for example {example.id} in experiment {experiment.id}")
-                post_processed = await post_process_result(example, eval_workflow_result, main_thread_resolver)
+                logger.info(
+                    f"Post processing result for example {example.id} in experiment {experiment.id}"
+                )
+                post_processed = await post_process_result(
+                    example, eval_workflow_result, main_thread_resolver
+                )
 
-            output = eval_workflow_result.final_result.response if eval_workflow_result.final_result else None
+            response_text = (
+                eval_workflow_result.final_result.response
+                if eval_workflow_result.final_result
+                else ""
+            )
+
+            output = (
+                f"{post_processed.actual_sql_query}\n\n{'=' * 120}\n\n{response_text}"
+                if post_processed
+                and isinstance(post_processed, ExampleResult)
+                and post_processed.actual_sql_query
+                else response_text
+            )
 
             error = None
             if isinstance(eval_workflow_result.final_result, ErrorResponse):
@@ -206,7 +242,9 @@ class ExperimentRunner:
             )
 
             try:
-                logger.info(f"Creating experiment run for example {example.id} in experiment {experiment.id}")
+                logger.info(
+                    f"Creating experiment run for example {example.id} in experiment {experiment.id}"
+                )
                 resp = await self.phoenix_request(
                     f"/v1/experiments/{experiment.id}/runs",
                     exp_run,
@@ -237,7 +275,9 @@ class ExperimentRunner:
         expected = example.output
         metadata = example.metadata if hasattr(example, "metadata") else {}
         experiment = workflow_result.experiment
-        logger.debug(f"beginning evaluations for example {example.id} in experiment {experiment.id}")
+        logger.debug(
+            f"beginning evaluations for example {example.id} in experiment {experiment.id}"
+        )
 
         # Evaluate the result using registered evaluators
         evaluation_results: t.Iterable[asyncio.Task[ExperimentEvaluationRun]] = []
@@ -247,22 +287,24 @@ class ExperimentRunner:
         evaluators_by_name.update(more_evaluators_by_name)
 
         for name, evaluator in evaluators_by_name.items():
-            logger.info(f"running evaluator {name} for example {example.id} in experiment {experiment.id}")
-                
+            logger.info(
+                f"running evaluator {name} for example {example.id} in experiment {experiment.id}"
+            )
+
             evaluation_result = asyncio.create_task(
                 self._evaluate_results(
-                name=name,
-                kind=AnnotatorKind.CODE,
-                experiment=experiment,
-                example=example,
-                evaluator=evaluator,
-                experiment_run=workflow_result.experiment_run,
-                output=str(workflow_result.output),
-                input=input,
-                expected=expected,
-                metadata=metadata,
-                result=workflow_result.eval_workflow_result,
-                post_processed=workflow_result.post_processed_result,
+                    name=name,
+                    kind=AnnotatorKind.CODE,
+                    experiment=experiment,
+                    example=example,
+                    evaluator=evaluator,
+                    experiment_run=workflow_result.experiment_run,
+                    output=str(workflow_result.output),
+                    input=input,
+                    expected=expected,
+                    metadata=metadata,
+                    result=workflow_result.eval_workflow_result,
+                    post_processed=workflow_result.post_processed_result,
                 )
             )
             evaluation_results.append(evaluation_result)
@@ -276,28 +318,27 @@ class ExperimentRunner:
             eval_run = replace(eval_run, id=resp["data"]["id"])
             return eval_run
 
-        for completed in asyncio.as_completed(evaluation_results): 
+        for completed in asyncio.as_completed(evaluation_results):
             try:
                 eval_workflow_result = await completed
                 reporting_tasks.append(
-                    asyncio.create_task(
-                        _report_eval_to_phoenix(eval_workflow_result)
-                    )
+                    asyncio.create_task(_report_eval_to_phoenix(eval_workflow_result))
                 )
             except Exception as e:
                 logger.error(f"Error during evaluation: {e}")
                 # Handle the error, e.g., log it or raise a custom exception
                 continue
 
-        for completed in asyncio.as_completed(reporting_tasks): 
+        for completed in asyncio.as_completed(reporting_tasks):
             try:
                 eval_workflow_result = await completed
-                logger.info(f"Experiment evaluation run submitted to Phoenix: {eval_workflow_result.id}")
+                logger.info(
+                    f"Experiment evaluation run submitted to Phoenix: {eval_workflow_result.id}"
+                )
             except Exception as e:
                 logger.error(f"Error during reporting: {e}")
                 # Handle the error, e.g., log it or raise a custom exception
                 continue
-
 
     async def _run_workflow(
         self,
@@ -310,23 +351,24 @@ class ExperimentRunner:
         """Run the workflow with the given input and return the result."""
         tracer, resource = _get_tracer(experiment.project_name)
         root_span_name = f"experiment_run_{experiment.id}"
-        #root_span_kind = "CHAIN"
+        # root_span_kind = "CHAIN"
 
         with ExitStack() as stack:
             span = t.cast(
                 Span,
                 stack.enter_context(
                     tracer.start_as_current_span(root_span_name, context=Context())
-                )
+                ),
             )
             stack.enter_context(capture_spans(resource))
             try:
                 result = await workflow.run_for_evals(**input_processor(input))
             except Exception as e:
-                logger.error(f"Error running workflow for experiment {experiment.id}: {e}")
+                logger.error(
+                    f"Error running workflow for experiment {experiment.id}: {e}"
+                )
                 raise e
         return result, span
-
 
     async def _evaluate_results(
         self,
@@ -363,7 +405,7 @@ class ExperimentRunner:
                 metadata={},
             )
         end_time = datetime.now()
-        
+
         return ExperimentEvaluationRun(
             experiment_run_id=experiment_run.id,
             start_time=start_time,
@@ -373,24 +415,26 @@ class ExperimentRunner:
             error=None,
             result=eval_result,
         )
-        
-        
+
     async def phoenix_request(self, endpoint, data: t.Any):
         """Asynchronously call the phoenix client by queuing requests"""
         async with self._reporting_requests_semaphore:
-            resp =  await self.phoenix_client.post(
+            resp = await self.phoenix_client.post(
                 endpoint,
                 json=jsonify(data),
             )
             resp.raise_for_status()
             return resp.json()
-        
+
     async def run(
         self,
         *,
         dataset: Dataset,
         workflow_cls: type[MixableWorkflow],
-        post_process_result: t.Callable[[Example, EvalWorkflowResult, ResourceResolver], t.Awaitable[t.Any]] | None = None,
+        post_process_result: t.Callable[
+            [Example, EvalWorkflowResult, ResourceResolver], t.Awaitable[t.Any]
+        ]
+        | None = None,
         input_generator: t.Callable[[ExampleInput], t.Dict[str, t.Any]] = lambda x: {
             "input": x["question"]
         },
@@ -447,7 +491,7 @@ class ExperimentRunner:
                 asyncio.create_task(
                     self.run_workflow(
                         main_thread_resolver=main_thread_resolver,
-                        experiment=experiment, 
+                        experiment=experiment,
                         workflow=workflow,
                         example=example,
                         input_generator=input_generator,
@@ -457,7 +501,7 @@ class ExperimentRunner:
             )
 
         # For each example in the dataset, run the experiment and collect results
-        
+
         workflow_results: list[_ExperimentWorkflowResult] = []
 
         for completed in asyncio.as_completed(workflow_results_tasks):
@@ -482,7 +526,6 @@ class ExperimentRunner:
         if not self._phoenix_client:
             self._phoenix_client = VersionedAsyncClient(
                 base_url=self.config.arize_phoenix_base_url,
-                #api_key=self.config.arize_phoenix_api_key.get_secret_value(),
+                # api_key=self.config.arize_phoenix_api_key.get_secret_value(),
             )
         return self._phoenix_client
-        

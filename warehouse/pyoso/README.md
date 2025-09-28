@@ -75,6 +75,15 @@ response.analytics.print_tree()
 
 This will output a tree structure showing how the final `artifacts_v1` table was constructed from its upstream dependencies, helping you understand the data's origin and freshness.
 
+## Using in notebooks
+
+pyoso also has special support for notebooks. Specifically, we provide a helper function to create a database connection to the OSO dataset that can be used with `marimo`. To use this, we suggest you make a cell at the start of your notebook with the following code:
+
+```python
+from pyoso.notebook import marimo_db
+pyoso_db_conn = marimo_db()
+```
+
 ## Documentation
 
 For detailed documentation about the OSO dataset, please refer to the [official documentation](https://docs.opensource.observer/docs/integrate/datasets/).
@@ -82,3 +91,58 @@ For detailed documentation about the OSO dataset, please refer to the [official 
 ## Future Plans
 
 - Create DataFrame wrapper for creating SQL query from data transforms
+
+## Manually testing with pyodide
+
+We need to add pyodide to CI, but for now to manually run tests do the following:
+
+### Get current pyodide version
+
+You will need to do this from the pyoso directory.
+
+```bash
+PYODIDE_EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version)
+```
+
+### Install emscripten
+
+Choose a place to store the code and git clone `emsdk`:
+
+```bash
+cd some/base/directory
+git clone https://github.com/emscripten-core/emsdk
+cd emsdk
+
+./emsdk install ${PYODIDE_EMSCRIPTEN_VERSION}
+./emsdk activate ${PYODIDE_EMSCRIPTEN_VERSION}
+source emsdk_env.sh
+```
+
+### Build pyodide wheel
+
+Now go back to the `pyoso` directory
+
+```bash
+cd oso/warehouse/pyoso
+uv run pyodide build
+```
+
+This will generate a `.whl` file in `dist`
+
+### Download pyodide version
+
+Download the recent pyodide version (at the time of writing is 0.27.2):
+
+```bash
+cd dist/
+wget https://github.com/pyodide/pyodide/releases/download/0.27.2/pyodide-0.27.2.tar.bz2
+tar xjf pyodide-0.27.2.tar.bz2
+```
+
+This will now have generated a `dist/pyodide` directory.
+
+### Run pytest
+
+```bash
+uv run pytest --run-in-pyodide . --runtime node --dist-dir=./dist
+```

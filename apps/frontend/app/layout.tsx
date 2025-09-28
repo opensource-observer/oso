@@ -1,6 +1,6 @@
-import Script from "next/script";
 import { ApolloWrapper } from "@/components/dataprovider/apollo-wrapper";
 import { PostHogProvider } from "@/components/dataprovider/posthog-provider";
+import { DebugProvider } from "@/components/dataprovider/debug-provider";
 import { SupabaseProvider } from "@/components/hooks/supabase";
 import { GoogleAnalytics } from "@/components/widgets/google-analytics";
 import { Toaster } from "@/components/ui/sonner";
@@ -19,14 +19,13 @@ export default function RootLayout({
       <body>
         <Toaster />
         <SupabaseProvider>
+          <DebugProvider />
           <PostHogProvider>
             <ApolloWrapper>{children}</ApolloWrapper>
           </PostHogProvider>
         </SupabaseProvider>
       </body>
       <GoogleAnalytics />
-      {/** Require.js is necessary for Jupyter */}
-      <Script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.7/require.min.js" />
     </html>
   );
 }

@@ -26,6 +26,7 @@ spec:
       - http-server.authentication.allow-insecure-over-http=true
       - retry-policy=QUERY
       - catalog.management=dynamic
+      - hide-inaccessible-columns=true
     ingress:
       enabled: true
       className: ingress-internal-cloudflare

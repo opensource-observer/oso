@@ -4,7 +4,7 @@ select
     events.to_artifact_id,
     '' as from_artifact_id,
     @metric_name() as metric,
-    count(distinct events.from_artifact_id) as amount
+    approx_distinct(events.from_artifact_id) as amount
 from oso.int_events_daily__blockchain as events
 where
     event_type in @activity_event_types

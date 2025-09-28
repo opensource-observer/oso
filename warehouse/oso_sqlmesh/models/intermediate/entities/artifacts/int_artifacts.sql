@@ -38,12 +38,12 @@ WITH all_artifacts AS (
   UNION ALL
   SELECT
     package_artifact_name AS artifact_source_id,
-    sbom_artifact_source AS artifact_source,
-    '' AS artifact_namespace,
+    package_artifact_source AS artifact_source,
+    package_artifact_namespace AS artifact_namespace,
     package_artifact_name AS artifact_name,
-    package_url AS artifact_url,
+    package_artifact_url AS artifact_url,
     'PACKAGE' AS artifact_type
-  FROM oso.int_packages
+  FROM oso.int_packages__current_maintainer_only
 )
 
 SELECT DISTINCT
