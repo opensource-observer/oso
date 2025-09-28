@@ -1,0 +1,28 @@
+name: New Ingest Asset
+description: Ask Copilot to add a REST/GraphQL/DB asset following our pinned rules
+title: "ingest: <provider>/<entity> asset"
+labels: ["ingest","copilot"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Source type
+      options: ["REST","GraphQL","DB"]
+  - type: input
+    id: provider
+    attributes: { label: Provider/engine, placeholder: "jsonplaceholder | countries | postgres | ..." }
+  - type: input
+    id: entity
+    attributes: { label: Entity/table, placeholder: "posts | countries | orders | ..." }
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Endpoints/queries, paging keys, expected fields, and (if DB) the incremental column.
+  - type: checkboxes
+    id: ok
+    attributes:
+      label: Confirm
+      options:
+        - label: I want file/func names exactly per .github/copilot-instructions.md
+          required: true

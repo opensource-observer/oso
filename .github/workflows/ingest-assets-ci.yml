@@ -1,0 +1,35 @@
+name: Ingest assets CI
+on:
+  pull_request:
+    paths:
+      - 'warehouse/oso_dagster/**'
+      - '.github/copilot-instructions.md'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install
+      - run: uv sync --frozen
+      - name: List assets
+        run: uv run dagster asset list -m warehouse.oso_dagster.assets.ingest.defs_sandbox
+      - name: Seed SQLite
+        run: |
+          uv run python - <<'PY'
+          from sqlalchemy import create_engine, text
+          e = create_engine("sqlite:///demo.db")
+          with e.begin() as c:
+              c.execute(text("CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY, updated_at TEXT)"))
+              c.execute(text("INSERT INTO orders(updated_at) VALUES (datetime('now'))"))
+          PY
+      - name: Materialize DB asset (SQLite smoke)
+        env:
+          DAGSTER__POSTGRES__URI: sqlite:///demo.db
+          DAGSTER__POSTGRES__SINCE: 1970-01-01
+        run: uv run dagster asset materialize --select replicate_postgres_orders -m warehouse.oso_dagster.assets.ingest.defs_sandbox
+      - name: Materialize public REST sample (no auth)
+        run: uv run dagster asset materialize --select fetch_jsonplaceholder_posts -m warehouse.oso_dagster.assets.ingest.defs_sandbox
+      - name: Materialize public GraphQL sample (no auth)
+        run: uv run dagster asset materialize --select fetch_countries_countries -m warehouse.oso_dagster.assets.ingest.defs_sandbox

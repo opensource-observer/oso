@@ -1,0 +1,28 @@
+name: Ingest Scaffolding CI
+on:
+  pull_request:
+    paths:
+      - "warehouse/oso_dagster/assets/ingest/**"
+      - ".github/copilot-instructions.md"
+      - ".github/workflows/ingest_ci.yml"
+      - "scripts/ci/check_ingest_assets.sh"
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+      - name: Run checks
+        env:
+          PYTHONWARNINGS: "ignore:pkg_resources is deprecated:UserWarning"
+        run: scripts/ci/check_ingest_assets.sh
