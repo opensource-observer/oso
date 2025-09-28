@@ -79,3 +79,5 @@ core.1
 
 # opa
 opa/**/bundle.tar.gz
+warehouse/oso_dagster/tmp/
+.tmp_dagster_home_*
