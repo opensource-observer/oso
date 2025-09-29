@@ -13,7 +13,7 @@ class ENSDomains(BaseModel):
 seed = SeedConfig(
     catalog="bigquery",
     schema="ens",
-    table="domains",
+    table="domains_tmp",
     base=ENSDomains,
     rows=[
         ENSDomains(
