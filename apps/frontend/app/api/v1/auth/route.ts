@@ -34,7 +34,7 @@ const makeAdminRole = (userId: string) => ({
  * @param request
  * @returns
  */
-export async function GET(request: NextRequest) {
+export const GET = async (request: NextRequest) => {
   const user = await getUser(request);
   if (user.role === "anonymous") {
     return NextResponse.json(makeAnonRole());
@@ -45,4 +45,4 @@ export async function GET(request: NextRequest) {
   } else {
     assertNever(user);
   }
-}
+};

@@ -1,15 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { ReadableStream as WebReadableStream } from "node:stream/web";
 import { getTrinoClient } from "@/lib/clients/trino";
 import type { Iterator, QueryResult } from "trino-client";
 import { getTableNamesFromSql } from "@/lib/parsing";
-import { getUser } from "@/lib/auth/auth";
+import { getOrgUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
-import { AuthUser } from "@/lib/types/user";
+import { AuthOrgUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
 import {
+  PlanName,
   CreditsService,
   InsufficientCreditsError,
+  OrganizationPlan,
   TransactionType,
 } from "@/lib/services/credits";
 import { TRINO_JWT_SECRET } from "@/lib/config";
@@ -19,10 +22,20 @@ import {
   safeGetAssetsMaterializations,
 } from "@/lib/dagster/assets";
 import { z } from "zod";
+import {
+  getObjectByQuery,
+  putObjectByQuery,
+  copyObject,
+} from "@/lib/clients/cloudflare-r2";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 // Next.js route control
 export const revalidate = 0;
 export const maxDuration = 300;
+
+// Globals
+const PUBLIC_SQL_BUCKET = "public-sql";
+const ENTERPRISE_PLAN_NAME: PlanName = "ENTERPRISE";
 
 const RequestBodySchema = z.object({
   query: z.string(),
@@ -33,7 +46,7 @@ const RequestBodySchema = z.object({
 const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
-async function signJWT(user: AuthUser) {
+async function signJWT(user: AuthOrgUser) {
   const secret = TRINO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
@@ -57,12 +70,30 @@ async function signJWT(user: AuthUser) {
  * @param request
  * @returns
  */
-export async function POST(request: NextRequest) {
-  const { query, format, includeAnalytics } = RequestBodySchema.parse(
-    await request.json(),
-  );
-  const user = await getUser(request);
-  await using tracker = trackServerEvent(user);
+export const POST = withPostHogTracking(async (request: NextRequest) => {
+  const reqBody = RequestBodySchema.parse(await request.json());
+  const { query, format, includeAnalytics } = reqBody;
+  logger.log(`/api/sql: ${query}`);
+
+  // First try to serve from a public cache (anon is okay)
+  try {
+    const objResponse = await getObjectByQuery(PUBLIC_SQL_BUCKET, reqBody);
+    //console.log(objResponse);
+    if (objResponse.Body) {
+      const respStream = WebReadableStream.from(objResponse.Body);
+      logger.log(`/api/sql: Public cache hit, short-circuiting`);
+      return new NextResponse(respStream as ReadableStream, {
+        headers: {
+          "Content-Type": "application/x-ndjson",
+        },
+      });
+    }
+  } catch (error) {
+    logger.log(`/api/sql: No public cache hit, ${error}`);
+  }
+
+  const user = await getOrgUser(request);
+  const tracker = trackServerEvent(user);
 
   // If no query provided, short-circuit
   if (!query) {
@@ -75,28 +106,49 @@ export async function POST(request: NextRequest) {
     return makeErrorResponse("Authentication required", 401);
   }
 
-  const orgId = user.orgId;
+  console.log(`Org: ${user.orgName}`);
+  let orgPlan: OrganizationPlan | null = null;
+  try {
+    orgPlan = await CreditsService.checkAndDeductOrganizationCredits(
+      user,
+      user.orgId,
+      TransactionType.SQL_QUERY,
+      tracker,
+      "/api/v1/sql",
+      { query },
+    );
+  } catch (error) {
+    if (error instanceof InsufficientCreditsError) {
+      return makeErrorResponse(error.message, 402);
+    }
+    logger.error(
+      `/api/sql: Error tracking usage for user ${user.userId}:`,
+      error,
+    );
+  }
 
-  if (orgId) {
+  // Try to get from private organization cache
+  if (orgPlan?.plan_name === ENTERPRISE_PLAN_NAME) {
     try {
-      await CreditsService.checkAndDeductOrganizationCredits(
-        user,
-        orgId,
-        TransactionType.SQL_QUERY,
-        "/api/v1/sql",
-        { query },
-      );
-    } catch (error) {
-      if (error instanceof InsufficientCreditsError) {
-        return makeErrorResponse(error.message, 402);
+      const objResponse = await getObjectByQuery(user.orgName, reqBody);
+      //console.log(objResponse);
+      if (objResponse.Body) {
+        const respStream = WebReadableStream.from(objResponse.Body);
+        logger.log(`/api/sql: Private cache hit, short-circuiting`);
+        return new NextResponse(respStream as ReadableStream, {
+          headers: {
+            "Content-Type": "application/x-ndjson",
+          },
+        });
+      } else {
+        logger.log(`/api/sql: No private cache hit (no body)`);
       }
-      logger.error(
-        `/api/sql: Error tracking usage for user ${user.userId}:`,
-        error,
-      );
+    } catch (error) {
+      logger.log(`/api/sql: No private cache hit, ${error}`);
     }
   }
 
+  // Trino query
   const jwt = await signJWT(user);
   const tables = getTableNamesFromSql(query);
 
@@ -120,13 +172,37 @@ export async function POST(request: NextRequest) {
     if (error) {
       return makeErrorResponse(error.message, 400);
     }
+
+    // Clone the response stream for caching
     const readableStream = mapToReadableStream(
       data.firstRow,
       data.iterator,
       assets,
       format,
     );
-    return new NextResponse(readableStream, {
+    const [responseStream, cacheStream] = readableStream.tee();
+
+    // Auto-caching is only available for Enterprise plan users
+    if (orgPlan?.plan_name === ENTERPRISE_PLAN_NAME) {
+      // Puts are best-effort
+      try {
+        const cacheResponse = await putObjectByQuery(
+          user.orgName,
+          reqBody,
+          cacheStream,
+        );
+        // TODO: this should be controlled by a `publishQuery` option
+        await copyObject(
+          { bucketName: cacheResponse.Bucket!, objectKey: cacheResponse.Key! },
+          { bucketName: PUBLIC_SQL_BUCKET, objectKey: cacheResponse.Key! },
+        );
+        logger.log(`/api/sql: Cached SQL query response`);
+      } catch (error) {
+        logger.warn(`/api/sql: Failed to cache SQL query response: ${error}`);
+      }
+    }
+
+    return new NextResponse(responseStream, {
       headers: {
         "Content-Type": "application/x-ndjson",
       },
@@ -135,7 +211,7 @@ export async function POST(request: NextRequest) {
     logger.log(e);
     return makeErrorResponse("Unknown error", 500);
   }
-}
+});
 
 function mapToReadableStream(
   firstRow: QueryResult,

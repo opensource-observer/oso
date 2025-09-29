@@ -54,12 +54,14 @@ const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
 function ToolTip(props: ToolTipProps) {
   const { className, trigger, content, side } = props;
   return (
-    <TooltipRoot>
-      <TooltipTrigger asChild>
-        <div className={className}>{trigger}</div>
-      </TooltipTrigger>
-      <TooltipContent side={side}>{content}</TooltipContent>
-    </TooltipRoot>
+    <TooltipProvider>
+      <TooltipRoot>
+        <TooltipTrigger asChild>
+          <div className={className}>{trigger}</div>
+        </TooltipTrigger>
+        <TooltipContent side={side}>{content}</TooltipContent>
+      </TooltipRoot>
+    </TooltipProvider>
   );
 }
 

@@ -6,6 +6,7 @@ import logging
 
 from ..resources import DefaultResourceResolver, ResolverFactory, ResourceResolver
 from ..util.config import AgentConfig, WorkflowConfig
+from .notebook import NotebookWorkflow
 from .registry import WorkflowRegistry
 from .text2sql.basic import BasicText2SQL
 from .text2sql.semantic import SemanticText2SQLWorkflow
@@ -85,6 +86,10 @@ async def setup_default_workflow_registry(
 
     registry.add_workflow("basic_text2sql", BasicText2SQL)
     registry.add_workflow("semantic_text2sql", SemanticText2SQLWorkflow)
+    registry.add_alias("text2sql", "semantic_text2sql")
+
+    registry.add_workflow("notebook", NotebookWorkflow)
+    registry.add_alias("gemini", "notebook")
 
     logger.info("Default agent registry setup complete.")
     return registry

@@ -1,12 +1,12 @@
-import { User } from "@/lib/types/user";
+import { OrgUser, User } from "@/lib/types/user";
 import { PostHog } from "posthog-node";
 import { PostHogClient } from "@/lib/clients/posthog";
 
 export class PostHogTracker {
   private client: PostHog | undefined;
-  private user: User;
+  private user: OrgUser | User;
 
-  constructor(user: User) {
+  constructor(user: OrgUser | User) {
     this.client = PostHogClient();
     this.user = user;
     if (user.role !== "anonymous") {
@@ -36,12 +36,8 @@ export class PostHogTracker {
       },
     });
   }
-
-  async [Symbol.asyncDispose]() {
-    await this.client?.shutdown();
-  }
 }
 
-export function trackServerEvent(user: User) {
+export function trackServerEvent(user: OrgUser | User) {
   return new PostHogTracker(user);
 }

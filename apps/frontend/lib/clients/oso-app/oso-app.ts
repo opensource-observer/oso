@@ -5,6 +5,10 @@ import { assert, ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "@/lib/types/supabase";
 import { MissingDataError, AuthError } from "@/lib/types/errors";
 import {
+  resourcePermissionResponseSchema,
+  type ResourcePermissionResponse,
+} from "@/lib/types/permissions";
+import {
   dynamicColumnContextsRowSchema,
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
@@ -22,6 +26,11 @@ import type {
 import { NotebookKey } from "@/lib/types/db";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
 import { DEFAULT_OSO_TABLE_ID } from "@/lib/types/dynamic-connector";
+import {
+  uniqueNamesGenerator,
+  adjectives,
+  animals,
+} from "unique-names-generator";
 
 const ADMIN_USER_ROLE = "admin";
 
@@ -190,6 +199,28 @@ class OsoAppClient {
     }
   }
 
+  async getOsoJwt(
+    args: Partial<{ orgName: string }>,
+  ): Promise<{ token: string }> {
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+
+    const searchParams = new URLSearchParams({ orgName });
+
+    const response = await fetch(`/api/v1/jwt?${searchParams.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Error fetching JWT: ${error?.error ?? error}`);
+    }
+    const result = await response.json();
+    ensure(result.token, "Missing token in response");
+    return result;
+  }
+
   /**
    * Creates a new organization and adds the creator as admin member
    * @param orgName
@@ -203,32 +234,18 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const user = await this.getUser();
 
-    const { data: orgData, error: orgError } = await this.supabaseClient
+    const { data: orgData } = await this.supabaseClient
       .from("organizations")
       .insert({
         org_name: orgName,
         created_by: user.id,
       })
       .select()
-      .single();
+      .single()
+      .throwOnError();
 
-    if (orgError) {
-      throw orgError;
-    }
     if (!orgData) {
       throw new MissingDataError("Failed to create organization");
-    }
-
-    const { error: memberError } = await this.supabaseClient
-      .from("users_by_organization")
-      .insert({
-        org_id: orgData.id,
-        user_id: user.id,
-        user_role: "admin",
-      });
-
-    if (memberError) {
-      throw memberError;
     }
 
     return orgData;
@@ -288,7 +305,7 @@ class OsoAppClient {
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const { data, error } = await this.supabaseClient
       .from("organizations")
-      .select("*")
+      .select("*,pricing_plan!inner(plan_name)")
       .eq("id", orgId)
       .single();
     if (error) {
@@ -315,7 +332,7 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("organizations")
-      .select("*")
+      .select("*,pricing_plan!inner(plan_name)")
       .eq("org_name", orgName)
       .single();
     if (error) {
@@ -454,13 +471,22 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgId argument");
     const userId = ensure(args.userId, "Missing userId argument");
     const org = await this.getOrganizationByName({ orgName });
-    const { error } = await this.supabaseClient
+    const deletedAt = new Date().toISOString();
+    const { error: orgError } = await this.supabaseClient
       .from("users_by_organization")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: deletedAt })
       .eq("org_id", org.id)
       .eq("user_id", userId);
-    if (error) {
-      throw error;
+    if (orgError) {
+      throw orgError;
+    }
+    const { error: apiKeyError } = await this.supabaseClient
+      .from("api_keys")
+      .update({ deleted_at: deletedAt })
+      .eq("org_id", org.id)
+      .eq("user_id", userId);
+    if (apiKeyError) {
+      throw apiKeyError;
     }
   }
 
@@ -585,6 +611,14 @@ class OsoAppClient {
     }
   }
 
+  private randomNotebookName() {
+    return uniqueNamesGenerator({
+      dictionaries: [adjectives, animals],
+      length: 2,
+      separator: "_",
+    });
+  }
+
   /**
    * Creates a new notebook
    * - Notebooks are stored under an organization
@@ -594,8 +628,7 @@ class OsoAppClient {
   async createNotebook(args: Partial<NotebookKey>) {
     console.log("createNotebook: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const notebookName =
-      args.notebookName || `notebook_${uuid4().substring(0, 5)}`;
+    const notebookName = args.notebookName || this.randomNotebookName();
     const user = await this.getUser();
     const org = await this.getOrganizationByName({ orgName });
 
@@ -682,7 +715,9 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("notebooks")
-      .select("*,organizations!inner(org_name)")
+      .select(
+        "id,created_at,updated_at,notebook_name,organizations!inner(id,org_name)",
+      )
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
@@ -693,6 +728,10 @@ class OsoAppClient {
       );
     }
     return data;
+  }
+
+  async listNotebooksByOrgName(args: Partial<{ orgName: string }>) {
+    return await this.getNotebooksByOrgName(args);
   }
 
   async getNotebookById(args: Partial<{ notebookId: string }>) {
@@ -1394,11 +1433,12 @@ class OsoAppClient {
         `
         *,
         inviter:user_profiles!invited_by(id, email, full_name),
-        organization:organizations!org_id(org_name)
+        organizations!inner(org_name)
       `,
       )
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null)
+      .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -1454,16 +1494,7 @@ class OsoAppClient {
     const { data, error } = await this.supabaseClient
       .from("invitations")
       .select(
-        `
-        id,
-        email,
-        org_id,
-        status,
-        expires_at,
-        created_at,
-        inviter:user_profiles!invited_by(email),
-        organization:organizations!org_id(org_name)
-      `,
+        `*, inviter:user_profiles!invited_by(email), organizations!inner(org_name)`,
       )
       .eq("id", inviteId)
       .is("deleted_at", null)
@@ -1482,8 +1513,7 @@ class OsoAppClient {
       inviter_email: data.inviter?.email,
       invitee_email: data.email,
       org_id: data.org_id,
-      org_name: data.organization?.org_name,
-      status: data.status,
+      org_name: data.organizations?.org_name,
       expires_at: data.expires_at,
       created_at: data.created_at,
     };
@@ -1505,23 +1535,248 @@ class OsoAppClient {
       "Missing invitationId argument",
     );
 
-    const user = await this.getUser();
-
     const { error } = await this.supabaseClient
       .from("invitations")
       .update({
-        status: "revoked",
-        updated_at: new Date().toISOString(),
+        deleted_at: new Date().toISOString(),
       })
-      .eq("id", invitationId)
-      .eq("invited_by", user.id)
-      .eq("status", "pending");
+      .eq("id", invitationId);
 
     if (error) {
       throw error;
     }
 
     return true;
+  }
+
+  /**
+   * Checks if the current user has permission to access a resource
+   * @param resourceType
+   * @param resourceId
+   */
+  async checkResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ): Promise<ResourcePermissionResponse> {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const { data, error } = await this.supabaseClient.rpc(
+      "check_resource_permission",
+      {
+        p_resource_type: resourceType,
+        p_resource_id: resourceId,
+      },
+    );
+
+    if (error || !data) {
+      console.log("Error checking resource permission:", error);
+      return {
+        hasAccess: false,
+        permissionLevel: "none",
+        resourceId: "unknown",
+      };
+    }
+
+    return resourcePermissionResponseSchema.parse(data);
+  }
+
+  /**
+   * Grants permission to a user on a resource
+   * @param resourceType
+   * @param resourceId
+   * @param targetUserId - null for public permissions, string for specific user
+   * @param permissionLevel
+   */
+  async grantResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+      targetUserId?: string | null;
+      permissionLevel: "read" | "write" | "admin" | "owner";
+    }>,
+  ) {
+    const { resourceType, resourceId, permissionLevel } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+      permissionLevel: ensure(
+        args.permissionLevel,
+        "Missing permissionLevel argument",
+      ),
+    };
+
+    const targetUserId =
+      "targetUserId" in args
+        ? args.targetUserId
+        : ensure(args.targetUserId, "Missing targetUserId argument");
+
+    if (targetUserId === undefined) {
+      throw new Error(
+        "Please provide a targetUserId explicitly, use null for public permissions",
+      );
+    }
+
+    const user = await this.getUser();
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    const targetDescription =
+      targetUserId === null ? "public" : `user ${targetUserId}`;
+    console.log(
+      `Granting ${permissionLevel} permission on ${resourceType} ${resourceId} to ${targetDescription} by ${user.id}`,
+    );
+
+    const updateQuery = this.supabaseClient
+      .from("resource_permissions")
+      .update({
+        permission_level: permissionLevel,
+        granted_by: user.id,
+        updated_at: new Date().toISOString(),
+      });
+
+    const finalUpdateQuery =
+      targetUserId === null
+        ? updateQuery.is("user_id", null)
+        : updateQuery.eq("user_id", targetUserId);
+
+    const { data: updateData } = await finalUpdateQuery
+      .eq(column, resourceId)
+      .is("revoked_at", null)
+      .select()
+      .throwOnError();
+
+    if (updateData && updateData.length > 0) {
+      console.log("Permission updated successfully:", updateData);
+      return updateData;
+    }
+
+    const { data } = await this.supabaseClient
+      .from("resource_permissions")
+      .insert({
+        user_id: targetUserId,
+        permission_level: permissionLevel,
+        granted_by: user.id,
+        [column]: resourceId,
+      })
+      .select()
+      .throwOnError();
+
+    console.log("Permission granted successfully:", data);
+    return data;
+  }
+
+  /**
+   * Makes a resource public by granting permissions to everyone
+   */
+  async grantPublicPermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+      permissionLevel: "read" | "write" | "admin" | "owner";
+    }>,
+  ) {
+    return this.grantResourcePermission({
+      ...args,
+      targetUserId: null,
+    });
+  }
+
+  /**
+   * Revokes permission from a user on a resource
+   * @param resourceType
+   * @param resourceId
+   * @param targetUserId - null for public permissions, string for specific user
+   */
+  async revokeResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+      targetUserId?: string | null;
+    }>,
+  ) {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const targetUserId =
+      "targetUserId" in args
+        ? args.targetUserId
+        : ensure(args.targetUserId, "Missing targetUserId argument");
+
+    if (targetUserId === undefined) {
+      throw new Error(
+        "Please provide a targetUserId explicitly, use null for public permissions",
+      );
+    }
+
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    const revokeQuery = this.supabaseClient
+      .from("resource_permissions")
+      .update({ revoked_at: new Date().toISOString() });
+
+    const finalRevokeQuery =
+      targetUserId === null
+        ? revokeQuery.is("user_id", null)
+        : revokeQuery.eq("user_id", targetUserId);
+
+    await finalRevokeQuery.eq(column, resourceId).throwOnError();
+  }
+
+  /**
+   * Makes a resource private by removing public access
+   */
+  async revokePublicPermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ) {
+    return this.revokeResourcePermission({
+      ...args,
+      targetUserId: null,
+    });
+  }
+
+  /**
+   * Lists all permissions for a resource
+   * @param resourceType
+   * @param resourceId
+   */
+  async listResourcePermissions(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ) {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    const { data, error } = await this.supabaseClient
+      .from("resource_permissions")
+      .select(
+        `
+        *,
+        user:user_profiles!user_id(id, email, full_name),
+        granted_by_user:user_profiles!granted_by(id, email, full_name)
+      `,
+      )
+      .eq(column, resourceId)
+      .is("revoked_at", null);
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
   }
 
   private async createSupabaseAuthHeaders() {

@@ -157,6 +157,34 @@ import {
   ContextMenuTrigger,
   ContextMenuTriggerMeta,
 } from "@/components/ui/context-menu";
+import { DataTable, DataTableMeta } from "@/components/ui/data-table";
+import {
+  Select,
+  SelectContent,
+  SelectContentMeta,
+  SelectGroup,
+  SelectGroupMeta,
+  SelectItem,
+  SelectItemMeta,
+  SelectLabel,
+  SelectLabelMeta,
+  SelectMeta,
+  SelectTrigger,
+  SelectTriggerMeta,
+  SelectValue,
+  SelectValueMeta,
+} from "@/components/ui/select";
+import { Input, InputMeta } from "@/components/ui/input";
+import { Textarea, TextareaMeta } from "@/components/ui/textarea";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleContentMeta,
+  CollapsibleMeta,
+  CollapsibleTrigger,
+  CollapsibleTriggerMeta,
+} from "@/components/ui/collapsible";
+import { Calendar, CalendarMeta } from "@/components/ui/calendar";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -243,4 +271,18 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(ContextMenuSub, ContextMenuSubMeta);
   PLASMIC.registerComponent(ContextMenuSubContent, ContextMenuSubContentMeta);
   PLASMIC.registerComponent(ContextMenuSubTrigger, ContextMenuSubTriggerMeta);
+  PLASMIC.registerComponent(DataTable, DataTableMeta);
+  PLASMIC.registerComponent(Select, SelectMeta);
+  PLASMIC.registerComponent(SelectGroup, SelectGroupMeta);
+  PLASMIC.registerComponent(SelectValue, SelectValueMeta);
+  PLASMIC.registerComponent(SelectTrigger, SelectTriggerMeta);
+  PLASMIC.registerComponent(SelectContent, SelectContentMeta);
+  PLASMIC.registerComponent(SelectLabel, SelectLabelMeta);
+  PLASMIC.registerComponent(SelectItem, SelectItemMeta);
+  PLASMIC.registerComponent(Input, InputMeta);
+  PLASMIC.registerComponent(Textarea, TextareaMeta);
+  PLASMIC.registerComponent(Collapsible, CollapsibleMeta);
+  PLASMIC.registerComponent(CollapsibleContent, CollapsibleContentMeta);
+  PLASMIC.registerComponent(CollapsibleTrigger, CollapsibleTriggerMeta);
+  PLASMIC.registerComponent(Calendar, CalendarMeta);
 }

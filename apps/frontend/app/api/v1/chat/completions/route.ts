@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
-import { getUser } from "@/lib/auth/auth";
+import { getOrgUser } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
@@ -9,6 +9,7 @@ import {
   InsufficientCreditsError,
   TransactionType,
 } from "@/lib/services/credits";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 export const maxDuration = 60;
 const COMPLETIONS_PATH = "/v0/chat/completions";
@@ -23,10 +24,10 @@ const getLatestMessage = (messages: any[]) => {
   return content || "Message not found";
 };
 
-export async function POST(req: NextRequest) {
-  const user = await getUser(req);
+export const POST = withPostHogTracking(async (req: NextRequest) => {
+  const user = await getOrgUser(req);
   const body = await req.json();
-  await using tracker = trackServerEvent(user);
+  const tracker = trackServerEvent(user);
 
   if (user.role === "anonymous") {
     logger.log(`/api/v1/chat/completions: User is anonymous`);
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
         user,
         orgId,
         TransactionType.AGENT_QUERY,
+        tracker,
         "/api/v1/chat/completions",
         { message: getLatestMessage(body.messages) },
       );
@@ -88,4 +90,4 @@ export async function POST(req: NextRequest) {
     status: response.status,
     headers: response.headers,
   });
-}
+});

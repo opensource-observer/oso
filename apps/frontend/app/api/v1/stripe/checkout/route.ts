@@ -11,14 +11,15 @@ import { logger } from "@/lib/logger";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
 import { DOMAIN, STRIPE_PUBLISHABLE_KEY } from "@/lib/config";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 const stripe = getStripeClient();
 const supabase = createAdminClient();
 
-export async function POST(req: NextRequest) {
+export const POST = withPostHogTracking(async (req: NextRequest) => {
   try {
     const user = await getUser(req);
-    await using tracker = trackServerEvent(user);
+    const tracker = trackServerEvent(user);
 
     if (user.role === "anonymous") {
       return NextResponse.json(
@@ -129,4 +130,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

@@ -1,11 +1,15 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import type { AnonUser, User } from "@/lib/types/user";
+import type { AnonUser, OrgUser, User } from "@/lib/types/user";
 import type { Json } from "@/lib/types/supabase";
 import { DOMAIN } from "@/lib/config";
+import { PostHogTracker } from "@/lib/analytics/track";
+import { EVENTS } from "@/lib/types/posthog";
 
 // TODO(jabolo): Disable this once we transition to the new credits system
 const CREDITS_PREVIEW_MODE = true;
+export const PLAN_NAMES = ["FREE", "STARTER", "PRO", "ENTERPRISE"] as const;
+export type PlanName = (typeof PLAN_NAMES)[number];
 
 export enum TransactionType {
   SQL_QUERY = "sql_query",
@@ -62,7 +66,7 @@ export class InsufficientCreditsError extends Error {
 }
 
 export class CreditsService {
-  static isAnonymousUser(user: User): user is AnonUser {
+  static isAnonymousUser(user: OrgUser | User): user is AnonUser {
     return user.role === "anonymous";
   }
 
@@ -143,14 +147,15 @@ export class CreditsService {
   }
 
   static async checkAndDeductOrganizationCredits(
-    user: User,
+    user: OrgUser | User,
     orgId: string,
     transactionType: TransactionType,
+    tracker: PostHogTracker,
     apiEndpoint?: string,
     metadata?: Record<string, any>,
-  ): Promise<boolean> {
+  ): Promise<OrganizationPlan | null> {
     if (CreditsService.isAnonymousUser(user)) {
-      return CREDITS_PREVIEW_MODE;
+      return null;
     }
 
     const orgPlan = await CreditsService.getOrganizationPlan(orgId);
@@ -185,7 +190,7 @@ export class CreditsService {
       logger.log(
         `Preview organization credit usage tracked for user ${user.userId} in org ${orgId} on ${transactionType} at ${apiEndpoint}`,
       );
-      return true;
+      return orgPlan;
     }
 
     if (error || !data) {
@@ -193,9 +198,12 @@ export class CreditsService {
         logger.error("Error deducting organization credits:", error);
       }
       const orgName = orgResult?.data?.org_name || "unknown";
+      tracker.track(EVENTS.INSUFFICIENT_CREDITS, {
+        type: transactionType,
+      });
       throw InsufficientCreditsError.create(orgName);
     }
 
-    return data;
+    return orgPlan;
   }
 }
