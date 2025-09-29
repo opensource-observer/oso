@@ -714,6 +714,46 @@ export const pricingPlanUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
+export const publishedNotebooksRowSchema = z.object({
+  created_at: z.string(),
+  data: z.string(),
+  deleted_at: z.string().nullable(),
+  id: z.string(),
+  notebook_id: z.string(),
+  published_by: z.string(),
+  updated_at: z.string(),
+});
+
+export const publishedNotebooksInsertSchema = z.object({
+  created_at: z.string().optional(),
+  data: z.string(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  notebook_id: z.string(),
+  published_by: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const publishedNotebooksUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  data: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  notebook_id: z.string().optional(),
+  published_by: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const publishedNotebooksRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("published_notebooks_notebook_id_fkey"),
+    columns: z.tuple([z.literal("notebook_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("notebooks"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const purchaseIntentsRowSchema = z.object({
   completed_at: z.string().nullable(),
   created_at: z.string(),
@@ -1023,6 +1063,23 @@ export const getOrganizationCreditsArgsSchema = z.object({
 });
 
 export const getOrganizationCreditsReturnsSchema = z.number();
+
+export const getPublishedNotebookByNamesArgsSchema = z.object({
+  p_notebook_name: z.string(),
+  p_org_name: z.string(),
+});
+
+export const getPublishedNotebookByNamesReturnsSchema = z.array(
+  z.object({
+    created_at: z.string(),
+    data: z.string(),
+    deleted_at: z.string().nullable(),
+    id: z.string(),
+    notebook_id: z.string(),
+    published_by: z.string(),
+    updated_at: z.string(),
+  }),
+);
 
 export const getUserCreditsArgsSchema = z.object({
   p_user_id: z.string(),
