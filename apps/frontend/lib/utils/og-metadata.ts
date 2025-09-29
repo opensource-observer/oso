@@ -38,11 +38,14 @@ export async function generateNotebookMetadata(
 
     const previousImages = (await parent).openGraph?.images || [];
     const title = `${orgName}/${notebookName}`;
-    const description = "Interactive data analysis and visualization";
+    const description =
+      validation.data.description ||
+      "Interactive data analysis and visualization";
 
     return {
       title,
       description,
+      themeColor: "#ffffff",
       openGraph: {
         title,
         description,
