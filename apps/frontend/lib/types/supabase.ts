@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.0.2 (a4e00ff)";
-  };
   public: {
     Tables: {
       admin_users: {
@@ -671,6 +666,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      published_notebooks: {
+        Row: {
+          created_at: string;
+          data: string;
+          deleted_at: string | null;
+          id: string;
+          notebook_id: string;
+          published_by: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          data: string;
+          deleted_at?: string | null;
+          id?: string;
+          notebook_id: string;
+          published_by: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          data?: string;
+          deleted_at?: string | null;
+          id?: string;
+          notebook_id?: string;
+          published_by?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "published_notebooks_notebook_id_fkey";
+            columns: ["notebook_id"];
+            isOneToOne: false;
+            referencedRelation: "notebooks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       purchase_intents: {
         Row: {
           completed_at: string | null;
@@ -962,6 +995,18 @@ export type Database = {
       get_organization_credits: {
         Args: { p_org_id: string };
         Returns: number;
+      };
+      get_published_notebook_by_names: {
+        Args: { p_notebook_name: string; p_org_name: string };
+        Returns: {
+          created_at: string;
+          data: string;
+          deleted_at: string | null;
+          id: string;
+          notebook_id: string;
+          published_by: string;
+          updated_at: string;
+        }[];
       };
       get_user_credits: {
         Args: { p_user_id: string };

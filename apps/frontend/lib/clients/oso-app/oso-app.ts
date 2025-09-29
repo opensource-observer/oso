@@ -14,6 +14,7 @@ import {
   dynamicConnectorsRowSchema,
   dynamicTableContextsRowSchema,
   connectorRelationshipsInsertSchema,
+  publishedNotebooksRowSchema,
 } from "@/lib/types/schema";
 import type {
   ConnectorRelationshipsRow,
@@ -22,6 +23,8 @@ import type {
   DynamicConnectorsInsert,
   DynamicConnectorsRow,
   DynamicTableContextsRow,
+  NotebooksRow,
+  PublishedNotebooksRow,
 } from "@/lib/types/schema-types";
 import { NotebookKey } from "@/lib/types/db";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
@@ -857,6 +860,71 @@ class OsoAppClient {
     if (error) {
       throw error;
     }
+  }
+
+  async publishNotebook(
+    args: Partial<{ notebook: NotebooksRow; data: string }>,
+  ) {
+    console.log("publishNotebook: ", args);
+    const notebook = ensure(args.notebook, "Missing notebook argument");
+    const data = ensure(args.data, "Missing data argument");
+    const user = await this.getUser();
+    const { error } = await this.supabaseClient
+      .from("published_notebooks")
+      .upsert(
+        {
+          notebook_id: notebook.id,
+          published_by: user.id,
+          data: data,
+          updated_at: new Date().toISOString(),
+          deleted_at: null,
+        },
+        { onConflict: "notebook_id" },
+      );
+    if (error) {
+      throw error;
+    }
+  }
+
+  async unpublishNotebook(args: Partial<{ notebookId: string }>) {
+    console.log("unpublishNotebook: ", args);
+    const notebookId = ensure(args.notebookId, "Missing notebookId argument");
+    const user = await this.getUser();
+    const { error } = await this.supabaseClient
+      .from("published_notebooks")
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        published_by: user.id,
+      })
+      .eq("notebook_id", notebookId)
+      .select();
+    if (error) {
+      throw error;
+    }
+  }
+
+  async getPublishedNotebookByNames(
+    args: Partial<{ notebookName: string; orgName: string }>,
+  ): Promise<PublishedNotebooksRow | null> {
+    console.log("getPublishedNotebook: ", args);
+    const notebookName = ensure(
+      args.notebookName,
+      "Missing notebookName argument",
+    );
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const { data, error } = await this.supabaseClient
+      .rpc("get_published_notebook_by_names", {
+        p_notebook_name: notebookName,
+        p_org_name: orgName,
+      })
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      return null;
+    }
+    return publishedNotebooksRowSchema.parse(data);
   }
 
   /**
