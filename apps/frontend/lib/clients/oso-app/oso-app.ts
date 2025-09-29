@@ -22,6 +22,7 @@ import type {
   DynamicConnectorsInsert,
   DynamicConnectorsRow,
   DynamicTableContextsRow,
+  NotebooksRow,
 } from "@/lib/types/schema-types";
 import { NotebookKey } from "@/lib/types/db";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
@@ -854,6 +855,30 @@ class OsoAppClient {
       .from("notebooks")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", notebookId);
+    if (error) {
+      throw error;
+    }
+  }
+
+  async publishNotebook(
+    args: Partial<{ notebook: NotebooksRow; data: string }>,
+  ) {
+    console.log("publishNotebook: ", args);
+    const notebook = ensure(args.notebook, "Missing notebook argument");
+    const data = ensure(args.data, "Missing data argument");
+    const user = await this.getUser();
+    const { error } = await this.supabaseClient
+      .from("published_notebooks")
+      .upsert(
+        {
+          notebook_id: notebook.id,
+          name: notebook.notebook_name,
+          published_by: user.id,
+          data: data,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "notebook_id" },
+      );
     if (error) {
       throw error;
     }

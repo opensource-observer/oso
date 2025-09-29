@@ -155,6 +155,18 @@ export type PricingPlanInsert = z.infer<
 export type PricingPlanUpdate = z.infer<
   typeof generated.pricingPlanUpdateSchema
 >;
+export type PublishedNotebooksRow = z.infer<
+  typeof generated.publishedNotebooksRowSchema
+>;
+export type PublishedNotebooksInsert = z.infer<
+  typeof generated.publishedNotebooksInsertSchema
+>;
+export type PublishedNotebooksUpdate = z.infer<
+  typeof generated.publishedNotebooksUpdateSchema
+>;
+export type PublishedNotebooksRelationships = z.infer<
+  typeof generated.publishedNotebooksRelationshipsSchema
+>;
 export type PurchaseIntentsRow = z.infer<
   typeof generated.purchaseIntentsRowSchema
 >;
