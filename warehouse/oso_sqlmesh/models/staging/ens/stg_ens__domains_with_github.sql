@@ -12,7 +12,7 @@ SELECT
   d.id AS domain_id,
   d.name AS domain_name,
   tc.value AS github_handle
-FROM @oso_source('bigquery.ens.domains') AS d
+FROM @oso_source('bigquery.ens.domains_tmp') AS d
 INNER JOIN @oso_source('bigquery.ens.text_changeds') AS tc
   ON CAST(d.resolver->>'$.id' AS VARCHAR) = CAST(tc.resolver->>'$.id' AS VARCHAR)
 WHERE tc.key = 'com.github';
