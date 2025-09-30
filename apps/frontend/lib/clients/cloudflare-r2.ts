@@ -147,6 +147,18 @@ async function putObject(loc: ObjectLocation, body: ReadableStream) {
   return completeResponse;
 }
 
+async function copyObjectByQuery(
+  orgName: string,
+  queryBody: any,
+  destinationBucket: string,
+) {
+  const key = queryToKey(queryBody);
+  return copyObject(
+    { bucketName: orgName, objectKey: key },
+    { bucketName: destinationBucket, objectKey: key },
+  );
+}
+
 async function copyObject(source: ObjectLocation, destination: ObjectLocation) {
   const command = new CopyObjectCommand({
     CopySource: encodeURIComponent(`/${source.bucketName}/${source.objectKey}`),
@@ -157,4 +169,4 @@ async function copyObject(source: ObjectLocation, destination: ObjectLocation) {
   return response;
 }
 
-export { getObjectByQuery, putObjectByQuery, copyObject };
+export { getObjectByQuery, putObjectByQuery, copyObjectByQuery };
