@@ -130,10 +130,11 @@ For more details on contributing to OSO, check out
 
 ### Verify deployment
 
-Our Dagster deployment should automatically recognize the asset
-after merging your pull request to the main branch.
-You should be able to find your new asset
-in the [global asset list](https://dagster.opensource.observer/assets).
+After your pull request is merged into the `main` branch, a new Dagster deployment is automatically triggered. This process typically takes 10-15 minutes.
+
+You can monitor the deployment status and check the last update time for each code location in the [Deployment tab](https://dagster.opensource.observer/locations).
+
+Once the deployment is complete, Dagster will automatically recognize your new asset, and it will appear in the [Global Asset List](https://dagster.opensource.observer/assets).
 
 ![Dagster assets](./dagster_assets.png)
 
