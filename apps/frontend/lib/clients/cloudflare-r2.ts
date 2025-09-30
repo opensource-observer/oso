@@ -161,7 +161,7 @@ async function copyObjectByQuery(
 
 async function copyObject(source: ObjectLocation, destination: ObjectLocation) {
   const command = new CopyObjectCommand({
-    CopySource: encodeURIComponent(`/${source.bucketName}/${source.objectKey}`),
+    CopySource: encodeURIComponent(`${source.bucketName}/${source.objectKey}`),
     Bucket: destination.bucketName,
     Key: destination.objectKey,
   });
