@@ -20,7 +20,7 @@ DROP CONSTRAINT IF EXISTS org_name_format;
 ALTER TABLE organizations
 ADD CONSTRAINT org_name_format
 CHECK (
-  org_name ~ '^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$'
+  org_name ~ '^[a-zA-Z0-9][a-zA-Z0-9_]*[a-zA-Z0-9]$'
   OR org_name ~ '^[a-zA-Z0-9]{1,3}$'
 );
 
@@ -42,10 +42,6 @@ CHECK (char_length(name) >= 3 AND char_length(name) <= 100);
 
 ALTER TABLE api_keys
 DROP CONSTRAINT IF EXISTS api_key_name_format;
-
-ALTER TABLE api_keys
-ADD CONSTRAINT api_key_name_format
-CHECK (name ~ '^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$' OR name ~ '^[a-zA-Z0-9]{1,3}$');
 
 ALTER TABLE notebooks
 DROP CONSTRAINT IF EXISTS notebook_name_length;
@@ -73,13 +69,6 @@ CHECK (char_length(display_name) >= 3 AND char_length(display_name) <= 255);
 
 ALTER TABLE chat_history
 DROP CONSTRAINT IF EXISTS display_name_format;
-
-ALTER TABLE chat_history
-ADD CONSTRAINT display_name_format
-CHECK (
-  display_name ~ '^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$'
-  OR display_name ~ '^[a-zA-Z0-9]{1,3}$'
-);
 
 UPDATE users_by_organization ubo
 SET
