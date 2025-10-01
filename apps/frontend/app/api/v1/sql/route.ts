@@ -25,7 +25,7 @@ import { z } from "zod";
 import {
   getObjectByQuery,
   putObjectByQuery,
-  copyObject,
+  copyObjectByQuery,
 } from "@/lib/clients/cloudflare-r2";
 import { withPostHogTracking } from "@/lib/clients/posthog";
 
@@ -135,6 +135,10 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
       if (objResponse.Body) {
         const respStream = WebReadableStream.from(objResponse.Body);
         logger.log(`/api/sql: Private cache hit, short-circuiting`);
+
+        // TODO: this should be controlled by a `publishQuery` option
+        await copyObjectByQuery(user.orgName, reqBody, PUBLIC_SQL_BUCKET);
+
         return new NextResponse(respStream as ReadableStream, {
           headers: {
             "Content-Type": "application/x-ndjson",
@@ -186,16 +190,9 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     if (orgPlan?.plan_name === ENTERPRISE_PLAN_NAME) {
       // Puts are best-effort
       try {
-        const cacheResponse = await putObjectByQuery(
-          user.orgName,
-          reqBody,
-          cacheStream,
-        );
+        await putObjectByQuery(user.orgName, reqBody, cacheStream);
         // TODO: this should be controlled by a `publishQuery` option
-        await copyObject(
-          { bucketName: cacheResponse.Bucket!, objectKey: cacheResponse.Key! },
-          { bucketName: PUBLIC_SQL_BUCKET, objectKey: cacheResponse.Key! },
-        );
+        await copyObjectByQuery(user.orgName, reqBody, PUBLIC_SQL_BUCKET);
         logger.log(`/api/sql: Cached SQL query response`);
       } catch (error) {
         logger.warn(`/api/sql: Failed to cache SQL query response: ${error}`);
