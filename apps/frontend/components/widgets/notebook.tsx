@@ -177,7 +177,7 @@ function Notebook(props: NotebookProps) {
     queryParams.append("aiPrompt", aiPrompt);
   }
   if (initialCode) {
-    queryParams.append("", initialCode);
+    queryParams.append("code", initialCode);
   }
   queryParams.append("env", envString);
 
