@@ -36,6 +36,7 @@ SELECT
   tx.receipt_gas_used AS gas_used_tx,
   tx.receipt_effective_gas_price AS gas_price_tx,
   tx.receipt_l1_fee AS l1_fee,
+  sc.trace_address,
   sc.depth
 FROM oso.int_superchain_static_calls_with_depth AS sc
 JOIN oso.stg_superchain__transactions AS tx
