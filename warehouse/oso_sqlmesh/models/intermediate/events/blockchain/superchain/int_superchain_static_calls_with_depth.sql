@@ -30,8 +30,10 @@ SELECT
   transaction_hash,
   from_address,
   to_address,
-  trace_address,
   gas_used,
+  trace_address,
+  -- Trace depth is the number of elements in the trace_address string
+  -- Example: trace_address = '16,2,2,6' -> Trace depth is 4
   cardinality(filter(split(regexp_replace(trace_address,'\\s',''),','),x->x<>'')) AS depth
 FROM oso.stg_superchain__static_calls
 WHERE block_timestamp BETWEEN @start_dt AND @end_dt
