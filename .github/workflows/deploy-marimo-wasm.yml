@@ -54,15 +54,16 @@ jobs:
         run: |
           echo "/notebook/api/* https://www.opensource.observer/api/v1/marimo/:splat 307" > marimo_dist/_redirects
 
+      - name: Create _headers file for Cloudflare Pages for CORS
+        run: |
+          echo "/*" > marimo_dist/_headers
+          echo "  Access-Control-Allow-Origin: *" >> marimo_dist/_headers
+          echo "  Access-Control-Allow-Methods: GET, OPTIONS" >> marimo_dist/_headers
+          echo "  Access-Control-Allow-Headers: Content-Type" >> marimo_dist/_headers
+          echo "  Access-Control-Max-Age: 86400" >> marimo_dist/_headers
+
       - name: Install wrangler
         run: pnpm add -g wrangler
 
       - name: Publish
         run: wrangler pages deploy marimo_dist --project-name=marimo
-
-#      - name: Publish
-#        uses: cloudflare/wrangler-action@v3
-#        with:
-#          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-#          workingDirectory: "apps/docs"
-#          command: pages deploy build --project-name=docs-opensource-observer
