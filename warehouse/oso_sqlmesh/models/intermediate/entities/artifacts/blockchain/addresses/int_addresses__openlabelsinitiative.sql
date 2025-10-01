@@ -15,7 +15,7 @@ WITH pivoted AS (
     CASE 
       WHEN chain_id LIKE '%:any' THEN 1
       WHEN chain_id LIKE '%:%'
-        THEN CAST(SPLIT_PART(chain_id, ':', 2) AS INTEGER)
+        THEN CAST(SPLIT_PART(chain_id, ':', 2) AS BIGINT)
       ELSE NULL
     END AS chain_id,
     MAX(CASE WHEN tag_id = 'owner_project' THEN tag_value ELSE NULL END)

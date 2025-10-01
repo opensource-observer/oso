@@ -1,4 +1,3 @@
-
 from metrics_tools.seed.types import Column, SeedConfig
 from pydantic import BaseModel
 
@@ -8,14 +7,24 @@ class Chainlist(BaseModel):
 
     name: str | None = Column("VARCHAR", description="The name of the chain")
     chain: str | None = Column("VARCHAR", description="The chain identifier")
-    chain_id: int | None = Column("INTEGER", description="The chain ID")
-    network_id: int | None = Column("INTEGER", description="The network ID")
+    chain_id: int | None = Column("BIGINT", description="The chain ID")
+    network_id: int | None = Column("BIGINT", description="The network ID")
     short_name: str | None = Column("VARCHAR", description="Short name for the chain")
-    chain_slug: str | None = Column("VARCHAR", description="The slug identifier for the chain")
-    native_currency_name: str | None = Column("VARCHAR", description="Name of the native currency")
-    native_currency_symbol: str | None = Column("VARCHAR", description="Symbol of the native currency")
-    native_currency_decimals: int | None = Column("INTEGER", description="Decimals for the native currency")
-    info_url: str | None = Column("VARCHAR", description="URL with more information about the chain")
+    chain_slug: str | None = Column(
+        "VARCHAR", description="The slug identifier for the chain"
+    )
+    native_currency_name: str | None = Column(
+        "VARCHAR", description="Name of the native currency"
+    )
+    native_currency_symbol: str | None = Column(
+        "VARCHAR", description="Symbol of the native currency"
+    )
+    native_currency_decimals: int | None = Column(
+        "INTEGER", description="Decimals for the native currency"
+    )
+    info_url: str | None = Column(
+        "VARCHAR", description="URL with more information about the chain"
+    )
 
 
 seed = SeedConfig(
@@ -47,6 +56,18 @@ seed = SeedConfig(
             native_currency_symbol="ETH",
             native_currency_decimals=18,
             info_url="https://base.org",
+        ),
+        Chainlist(
+            name="DCHAIN",
+            chain="dchainmainnet",
+            chain_id=2716446429837000,
+            network_id=2716446429837000,
+            short_name="dchainmainnet",
+            chain_slug="dchain",
+            native_currency_name="Ether",
+            native_currency_symbol="ETH",
+            native_currency_decimals=18,
+            info_url="https://www.dchain.foundation",
         ),
     ],
 )
