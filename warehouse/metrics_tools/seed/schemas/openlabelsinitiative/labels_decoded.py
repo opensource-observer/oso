@@ -176,5 +176,18 @@ seed = SeedConfig(
             revoked=False,
             is_offchain=True,
         ),
+        # Bigint chain ID
+        LabelsDecoded(
+            id="0x22794c72a3d32a23be4345a026273f46cd6e8dfbc668de7e1435b759af1a25bb",
+            chain_id="eip155:37714555429",
+            address="0xadA64b312e22FFF9bcaEccDcCC101bDa3F856E8F",
+            tag_id="is_contract",
+            tag_value="true",
+            attester="0x8DbaE854e53AEdFc3b8D78F7c1Add53935939192",
+            time_created=1756893043,
+            revocation_time=0,
+            revoked=False,
+            is_offchain=True,
+        ),
     ],
 )
