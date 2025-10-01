@@ -11,7 +11,7 @@ MODEL (
   start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by (DAY("block_timestamp"), "chain"),
-  grain (block_timestamp, chain, transaction_hash, from_address_tx, from_address_trace, to_address_tx, to_address_trace, trace_address, depth),
+  grain (block_timestamp, chain, transaction_hash, from_address_tx, from_address_trace, to_address_tx, to_address_trace, trace_address),
   audits (
     has_at_least_n_rows(threshold := 0),
     no_gaps(
@@ -37,13 +37,12 @@ SELECT
   tx.receipt_effective_gas_price AS gas_price_tx,
   tx.receipt_l1_fee AS l1_fee,
   sc.trace_address,
-  sc.depth
-FROM oso.int_superchain_static_calls_with_depth AS sc
+  sc.subtraces
+FROM oso.stg_superchain__static_calls AS sc
 JOIN oso.stg_superchain__transactions AS tx
   ON
     sc.transaction_hash = tx.transaction_hash
     AND sc.chain = tx.chain
 WHERE
   sc.block_timestamp BETWEEN @start_dt AND @end_dt
-  AND sc.depth > 0
   AND tx.receipt_status = 1
