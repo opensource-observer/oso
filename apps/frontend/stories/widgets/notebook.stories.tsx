@@ -28,6 +28,7 @@ type Story = StoryObj<typeof meta>;
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 export const Primary: Story = {
   args: {
+    notebookId: "test-notebook-id",
     className: "h-full w-full",
     hostControls: {
       saveNotebook: async (contents: string) => {
