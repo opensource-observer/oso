@@ -448,7 +448,7 @@ describe("Resource Permissions", () => {
 
     const notebookResult = await adminSupabase.from("notebooks").insert({
       id: NOTEBOOK_ID,
-      notebook_name: "Test Notebook",
+      notebook_name: "Test_Notebook",
       created_by: USER_OWNER_ID,
       data: JSON.stringify({ cells: [] }),
       org_id: ORG_ID,
@@ -958,7 +958,7 @@ describe("Resource Permissions", () => {
 
       await adminSupabase.from("notebooks").insert({
         id: EXTERNAL_NOTEBOOK_ID,
-        notebook_name: "External Notebook",
+        notebook_name: "External_Notebook",
         created_by: EXTERNAL_USER_ID,
         data: JSON.stringify({ cells: [] }),
         org_id: EXTERNAL_ORG_ID,
@@ -1052,6 +1052,30 @@ describe("Resource Permissions", () => {
         resourceType: "notebook",
         resourceId: NOTEBOOK_ID,
         targetUserId: USER_COLLABORATOR_ID,
+      });
+    });
+
+    it("should allow org members to view permissions for resources in their org", async () => {
+      await ownerClient.grantResourcePermission({
+        resourceType: "notebook",
+        resourceId: NOTEBOOK_ID,
+        targetUserId: USER_OWNER_ID,
+        permissionLevel: "read",
+      });
+
+      const permissions = await collaboratorClient.listResourcePermissions({
+        resourceType: "notebook",
+        resourceId: NOTEBOOK_ID,
+      });
+
+      expect(permissions).toHaveLength(1);
+      expect(permissions[0].user_id).toBe(USER_OWNER_ID);
+      expect(permissions[0].permission_level).toBe("read");
+
+      await ownerClient.revokeResourcePermission({
+        resourceType: "notebook",
+        resourceId: NOTEBOOK_ID,
+        targetUserId: USER_OWNER_ID,
       });
     });
 
@@ -1155,7 +1179,7 @@ describe("Resource Permissions", () => {
 
       await adminSupabase.from("notebooks").insert({
         id: tempNotebookId,
-        notebook_name: "Temp Notebook",
+        notebook_name: "Temp_Notebook",
         created_by: USER_OWNER_ID,
         data: JSON.stringify({ cells: [] }),
         org_id: ORG_ID,
@@ -1295,7 +1319,7 @@ describe("Resource Permissions", () => {
 
       await adminSupabase.from("notebooks").insert({
         id: tempNotebookId,
-        notebook_name: "Granter Notebook",
+        notebook_name: "Granter_Notebook",
         created_by: tempGranterId,
         data: JSON.stringify({ cells: [] }),
         org_id: ORG_ID,
@@ -1407,6 +1431,73 @@ describe("Resource Permissions", () => {
           permissionLevel: "admin",
         }),
       ).rejects.toThrow();
+    });
+  });
+
+  describe("user profile visibility", () => {
+    it("should allow users to view their own profile", async () => {
+      const ownerSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+        auth: { storageKey: "owner-profile-test" },
+      });
+      await ownerSupabase.auth.signInWithPassword({
+        email: `owner_${USER_OWNER_ID}@test.com`,
+        password: "password123",
+      });
+
+      const { data, error } = await ownerSupabase
+        .from("user_profiles")
+        .select("*")
+        .eq("id", USER_OWNER_ID)
+        .single();
+
+      expect(error).toBeNull();
+      expect(data).toBeDefined();
+      expect(data?.id).toBe(USER_OWNER_ID);
+    });
+
+    it("should allow users to view profiles of users in the same organization", async () => {
+      const ownerSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+        auth: { storageKey: "owner-profile-view-test" },
+      });
+      await ownerSupabase.auth.signInWithPassword({
+        email: `owner_${USER_OWNER_ID}@test.com`,
+        password: "password123",
+      });
+
+      const { data, error } = await ownerSupabase
+        .from("user_profiles")
+        .select("*")
+        .eq("id", USER_COLLABORATOR_ID)
+        .single();
+
+      expect(error).toBeNull();
+      expect(data).toBeDefined();
+      expect(data?.id).toBe(USER_COLLABORATOR_ID);
+    });
+
+    it("should allow viewing multiple profiles in the same organization", async () => {
+      const collaboratorSupabase = createClient(
+        SUPABASE_URL,
+        SUPABASE_SERVICE_KEY,
+        {
+          auth: { storageKey: "collaborator-profiles-view-test" },
+        },
+      );
+      await collaboratorSupabase.auth.signInWithPassword({
+        email: `collaborator_${USER_COLLABORATOR_ID}@test.com`,
+        password: "password123",
+      });
+
+      const { data, error } = await collaboratorSupabase
+        .from("user_profiles")
+        .select("*")
+        .in("id", [USER_OWNER_ID, USER_COLLABORATOR_ID]);
+
+      expect(error).toBeNull();
+      expect(data).toHaveLength(2);
+      expect(data?.map((p) => p.id).sort()).toEqual(
+        [USER_OWNER_ID, USER_COLLABORATOR_ID].sort(),
+      );
     });
   });
 });
