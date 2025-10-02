@@ -4,8 +4,13 @@ import { getUser, signOsoJwt } from "@/lib/auth/auth";
 import { OSO_AGENT_URL } from "@/lib/config";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
-import { CreditsService, TransactionType } from "@/lib/services/credits";
+import {
+  CreditsService,
+  InsufficientCreditsError,
+  TransactionType,
+} from "@/lib/services/credits";
 import { createServerClient } from "@/lib/supabase/server";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 export const maxDuration = 60;
 const CHAT_PATH = "/v0/chat";
@@ -20,11 +25,11 @@ const getLatestMessage = (messages: any[]) => {
   return content || "Message not found";
 };
 
-export async function POST(req: NextRequest) {
+export const POST = withPostHogTracking(async (req: NextRequest) => {
   const supabaseClient = await createServerClient();
   const user = await getUser(req);
   const { chatId, ...prompt } = await req.json();
-  await using tracker = trackServerEvent(user);
+  const tracker = trackServerEvent(user);
 
   if (user.role === "anonymous") {
     logger.log(`/api/chat: User is anonymous`);
@@ -56,10 +61,14 @@ export async function POST(req: NextRequest) {
       user,
       org.id,
       TransactionType.CHAT_QUERY,
+      tracker,
       "/api/v1/chat",
       { message: getLatestMessage(prompt.messages) },
     );
   } catch (error) {
+    if (error instanceof InsufficientCreditsError) {
+      return NextResponse.json({ error: error.message }, { status: 402 });
+    }
     logger.error(
       `/api/chat: Error tracking usage for user ${user.userId}:`,
       error,
@@ -94,4 +103,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

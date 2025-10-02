@@ -14,6 +14,7 @@ import { getUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
 import { CreditsService, TransactionType } from "@/lib/services/credits";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 // https://vercel.com/guides/loading-static-file-nextjs-api-route
 const supergraphPath = path.join(
@@ -53,7 +54,7 @@ class AuthenticatedDataSource extends RemoteGraphQLDataSource {
     const op = opts.incomingRequestContext.operation;
     const modelNames = getModelNames(op);
     const user = opts.context.user;
-    await using tracker = trackServerEvent(user);
+    const tracker = trackServerEvent(user);
 
     if (user && user.role !== "anonymous") {
       tracker.track(EVENTS.API_CALL, {
@@ -88,6 +89,7 @@ const customHandler = async (req: NextRequest) => {
 
   const user = await getUser(req);
   const requestClone = req.clone();
+  const tracker = trackServerEvent(user);
 
   let operation = "unknown";
   let query = "";
@@ -117,6 +119,7 @@ const customHandler = async (req: NextRequest) => {
           user,
           orgId,
           TransactionType.GRAPHQL_QUERY,
+          tracker,
           "/api/v1/graphql",
           { operation, query },
         );
@@ -138,4 +141,6 @@ const customHandler = async (req: NextRequest) => {
   return apolloHandler(req);
 };
 
-export { customHandler as GET, customHandler as POST };
+const wrappedHandler = withPostHogTracking(customHandler);
+
+export { wrappedHandler as GET, wrappedHandler as POST };

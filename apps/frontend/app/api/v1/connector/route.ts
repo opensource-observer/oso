@@ -5,10 +5,11 @@ import { ALLOWED_CONNECTORS } from "@/lib/types/dynamic-connector";
 import { dynamicConnectorsInsertSchema } from "@/lib/types/schema";
 import type { DynamicConnectorsInsert } from "@/lib/types/schema-types";
 import { ensure } from "@opensource-observer/utils";
-import { getUser, setSupabaseSession } from "@/lib/auth/auth";
+import { getOrgUser, setSupabaseSession } from "@/lib/auth/auth";
 import { Tables } from "@/lib/types/supabase";
 import { getCatalogName } from "@/lib/dynamic-connectors";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 export const revalidate = 0;
 export const maxDuration = 300;
@@ -44,7 +45,7 @@ function validateDynamicConnectorParams(
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withPostHogTracking(async (request: NextRequest) => {
   const supabaseClient = await createServerClient();
   const trinoClient = getTrinoAdminClient();
   const auth = await setSupabaseSession(supabaseClient, request);
@@ -126,9 +127,9 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(insertedConnector.data);
-}
+});
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withPostHogTracking(async (request: NextRequest) => {
   const supabaseClient = await createServerClient();
   const trinoClient = getTrinoAdminClient();
   const auth = await setSupabaseSession(supabaseClient, request);
@@ -186,7 +187,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   return NextResponse.json(deletedConnector.data);
-}
+});
 
 interface TableSemanticData {
   name: string;
@@ -203,10 +204,10 @@ interface TableSemanticData {
   }[];
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withPostHogTracking(async (request: NextRequest) => {
   const supabaseClient = await createAdminClient();
-  const user = await getUser(request);
-  if (user.role === "anonymous" || user.orgId == null) {
+  const user = await getOrgUser(request);
+  if (user.role === "anonymous") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -304,4 +305,4 @@ export async function GET(request: NextRequest) {
   return NextResponse.json<TableSemanticData[]>(
     Object.entries(tablesById).map(([_, table]) => table),
   );
-}
+});

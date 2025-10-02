@@ -1,6 +1,6 @@
 from typing import Optional
 
-from dagster import AssetExecutionContext
+from dagster import AssetExecutionContext, RetryPolicy
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories.dlt import dlt_factory
 from oso_dagster.factories.graphql import (
@@ -12,6 +12,27 @@ from oso_dagster.factories.graphql import (
 )
 from oso_dagster.utils.secrets import secret_ref_arg
 
+# NOTE: Since we are running on spot instances, we need to set a higher retry
+# count to account for the fact that spot instances can be terminated at any time.
+MAX_RETRY_COUNT = 25
+
+K8S_CONFIG = {
+    "merge_behavior": "SHALLOW",
+    "pod_spec_config": {
+        "node_selector": {
+            "pool_type": "spot",
+        },
+        "tolerations": [
+            {
+                "key": "pool_type",
+                "operator": "Equal",
+                "value": "spot",
+                "effect": "NoSchedule",
+            }
+        ],
+    },
+}
+
 
 def get_endpoint(ens_api_key: Optional[str] = None, masked: bool = False) -> str:
     if masked:
@@ -22,6 +43,10 @@ def get_endpoint(ens_api_key: Optional[str] = None, masked: bool = False) -> str
 
 @dlt_factory(
     key_prefix="ens",
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+    retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
 )
 def text_changeds(
     context: AssetExecutionContext,
@@ -64,6 +89,8 @@ def text_changeds(
             min_page_size=1,
             page_size_reduction_factor=0.6,
         ),
+        enable_chunked_resume=True,
+        checkpoint_field="blockNumber",
     )
 
     yield graphql_factory(
@@ -73,6 +100,10 @@ def text_changeds(
 
 @dlt_factory(
     key_prefix="ens",
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+    retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
 )
 def domains(
     context: AssetExecutionContext,
@@ -128,6 +159,8 @@ def domains(
             min_page_size=1,
             page_size_reduction_factor=0.6,
         ),
+        enable_chunked_resume=True,
+        checkpoint_field="id",
     )
 
     yield graphql_factory(

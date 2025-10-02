@@ -127,6 +127,64 @@ import {
   TableRow,
   TableRowMeta,
 } from "@/components/ui/table";
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuCheckboxItemMeta,
+  ContextMenuContent,
+  ContextMenuContentMeta,
+  ContextMenuGroup,
+  ContextMenuGroupMeta,
+  ContextMenuItem,
+  ContextMenuItemMeta,
+  ContextMenuLabel,
+  ContextMenuLabelMeta,
+  ContextMenuMeta,
+  ContextMenuRadioGroup,
+  ContextMenuRadioGroupMeta,
+  ContextMenuRadioItem,
+  ContextMenuRadioItemMeta,
+  ContextMenuSeparator,
+  ContextMenuSeparatorMeta,
+  ContextMenuShortcut,
+  ContextMenuShortcutMeta,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubContentMeta,
+  ContextMenuSubMeta,
+  ContextMenuSubTrigger,
+  ContextMenuSubTriggerMeta,
+  ContextMenuTrigger,
+  ContextMenuTriggerMeta,
+} from "@/components/ui/context-menu";
+import { DataTable, DataTableMeta } from "@/components/ui/data-table";
+import {
+  Select,
+  SelectContent,
+  SelectContentMeta,
+  SelectGroup,
+  SelectGroupMeta,
+  SelectItem,
+  SelectItemMeta,
+  SelectLabel,
+  SelectLabelMeta,
+  SelectMeta,
+  SelectTrigger,
+  SelectTriggerMeta,
+  SelectValue,
+  SelectValueMeta,
+} from "@/components/ui/select";
+import { Input, InputMeta } from "@/components/ui/input";
+import { Textarea, TextareaMeta } from "@/components/ui/textarea";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleContentMeta,
+  CollapsibleMeta,
+  CollapsibleTrigger,
+  CollapsibleTriggerMeta,
+} from "@/components/ui/collapsible";
+import { Calendar, CalendarMeta } from "@/components/ui/calendar";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -196,4 +254,35 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(TableHead, TableHeadMeta);
   PLASMIC.registerComponent(TableCell, TableCellMeta);
   PLASMIC.registerComponent(TableCaption, TableCaptionMeta);
+  PLASMIC.registerComponent(ContextMenu, ContextMenuMeta);
+  PLASMIC.registerComponent(ContextMenuTrigger, ContextMenuTriggerMeta);
+  PLASMIC.registerComponent(ContextMenuContent, ContextMenuContentMeta);
+  PLASMIC.registerComponent(ContextMenuItem, ContextMenuItemMeta);
+  PLASMIC.registerComponent(
+    ContextMenuCheckboxItem,
+    ContextMenuCheckboxItemMeta,
+  );
+  PLASMIC.registerComponent(ContextMenuRadioGroup, ContextMenuRadioGroupMeta);
+  PLASMIC.registerComponent(ContextMenuRadioItem, ContextMenuRadioItemMeta);
+  PLASMIC.registerComponent(ContextMenuLabel, ContextMenuLabelMeta);
+  PLASMIC.registerComponent(ContextMenuSeparator, ContextMenuSeparatorMeta);
+  PLASMIC.registerComponent(ContextMenuShortcut, ContextMenuShortcutMeta);
+  PLASMIC.registerComponent(ContextMenuGroup, ContextMenuGroupMeta);
+  PLASMIC.registerComponent(ContextMenuSub, ContextMenuSubMeta);
+  PLASMIC.registerComponent(ContextMenuSubContent, ContextMenuSubContentMeta);
+  PLASMIC.registerComponent(ContextMenuSubTrigger, ContextMenuSubTriggerMeta);
+  PLASMIC.registerComponent(DataTable, DataTableMeta);
+  PLASMIC.registerComponent(Select, SelectMeta);
+  PLASMIC.registerComponent(SelectGroup, SelectGroupMeta);
+  PLASMIC.registerComponent(SelectValue, SelectValueMeta);
+  PLASMIC.registerComponent(SelectTrigger, SelectTriggerMeta);
+  PLASMIC.registerComponent(SelectContent, SelectContentMeta);
+  PLASMIC.registerComponent(SelectLabel, SelectLabelMeta);
+  PLASMIC.registerComponent(SelectItem, SelectItemMeta);
+  PLASMIC.registerComponent(Input, InputMeta);
+  PLASMIC.registerComponent(Textarea, TextareaMeta);
+  PLASMIC.registerComponent(Collapsible, CollapsibleMeta);
+  PLASMIC.registerComponent(CollapsibleContent, CollapsibleContentMeta);
+  PLASMIC.registerComponent(CollapsibleTrigger, CollapsibleTriggerMeta);
+  PLASMIC.registerComponent(Calendar, CalendarMeta);
 }

@@ -12,4 +12,6 @@ type EventData = {
   amount: number;
 };
 
-export type { EventData };
+type NotebookKey = { orgName: string; notebookName: string };
+
+export type { EventData, NotebookKey };

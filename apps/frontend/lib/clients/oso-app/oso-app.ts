@@ -5,6 +5,10 @@ import { assert, ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "@/lib/types/supabase";
 import { MissingDataError, AuthError } from "@/lib/types/errors";
 import {
+  resourcePermissionResponseSchema,
+  type ResourcePermissionResponse,
+} from "@/lib/types/permissions";
+import {
   dynamicColumnContextsRowSchema,
   dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
@@ -19,8 +23,14 @@ import type {
   DynamicConnectorsRow,
   DynamicTableContextsRow,
 } from "@/lib/types/schema-types";
+import { NotebookKey } from "@/lib/types/db";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
 import { DEFAULT_OSO_TABLE_ID } from "@/lib/types/dynamic-connector";
+import {
+  uniqueNamesGenerator,
+  adjectives,
+  animals,
+} from "unique-names-generator";
 
 const ADMIN_USER_ROLE = "admin";
 
@@ -153,7 +163,9 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("api_keys")
-      .select("*,organizations!inner(org_name)")
+      .select(
+        "id, name, user_id, created_at, org_id, organizations!inner(org_name)",
+      )
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
@@ -187,6 +199,28 @@ class OsoAppClient {
     }
   }
 
+  async getOsoJwt(
+    args: Partial<{ orgName: string }>,
+  ): Promise<{ token: string }> {
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+
+    const searchParams = new URLSearchParams({ orgName });
+
+    const response = await fetch(`/api/v1/jwt?${searchParams.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Error fetching JWT: ${error?.error ?? error}`);
+    }
+    const result = await response.json();
+    ensure(result.token, "Missing token in response");
+    return result;
+  }
+
   /**
    * Creates a new organization and adds the creator as admin member
    * @param orgName
@@ -200,32 +234,18 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const user = await this.getUser();
 
-    const { data: orgData, error: orgError } = await this.supabaseClient
+    const { data: orgData } = await this.supabaseClient
       .from("organizations")
       .insert({
         org_name: orgName,
         created_by: user.id,
       })
       .select()
-      .single();
+      .single()
+      .throwOnError();
 
-    if (orgError) {
-      throw orgError;
-    }
     if (!orgData) {
       throw new MissingDataError("Failed to create organization");
-    }
-
-    const { error: memberError } = await this.supabaseClient
-      .from("users_by_organization")
-      .insert({
-        org_id: orgData.id,
-        user_id: user.id,
-        user_role: "admin",
-      });
-
-    if (memberError) {
-      throw memberError;
     }
 
     return orgData;
@@ -285,7 +305,7 @@ class OsoAppClient {
     const orgId = ensure(args.orgId, "Missing orgId argument");
     const { data, error } = await this.supabaseClient
       .from("organizations")
-      .select("*")
+      .select("*,pricing_plan!inner(plan_name)")
       .eq("id", orgId)
       .single();
     if (error) {
@@ -312,7 +332,7 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("organizations")
-      .select("*")
+      .select("*,pricing_plan!inner(plan_name)")
       .eq("org_name", orgName)
       .single();
     if (error) {
@@ -327,7 +347,7 @@ class OsoAppClient {
 
   /**
    * Gets all users in an organization.
-   * @param orgId
+   * @param orgName
    * @returns
    */
   async getOrganizationMembers(
@@ -438,32 +458,42 @@ class OsoAppClient {
   /**
    * Removes a user from an organization.
    * - We use `deleted_at` to mark the user as removed instead of deleting the row
-   * @param orgId
+   * @param orgName
    * @param userId
    */
   async removeUserFromOrganization(
     args: Partial<{
-      orgId: string;
+      orgName: string;
       userId: string;
     }>,
   ) {
     console.log("removeUserFromOrganization: ", args);
-    const orgId = ensure(args.orgId, "Missing orgId argument");
+    const orgName = ensure(args.orgName, "Missing orgId argument");
     const userId = ensure(args.userId, "Missing userId argument");
-    const { error } = await this.supabaseClient
+    const org = await this.getOrganizationByName({ orgName });
+    const deletedAt = new Date().toISOString();
+    const { error: orgError } = await this.supabaseClient
       .from("users_by_organization")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("org_id", orgId)
+      .update({ deleted_at: deletedAt })
+      .eq("org_id", org.id)
       .eq("user_id", userId);
-    if (error) {
-      throw error;
+    if (orgError) {
+      throw orgError;
+    }
+    const { error: apiKeyError } = await this.supabaseClient
+      .from("api_keys")
+      .update({ deleted_at: deletedAt })
+      .eq("org_id", org.id)
+      .eq("user_id", userId);
+    if (apiKeyError) {
+      throw apiKeyError;
     }
   }
 
   /**
    * Removes an organization.
    * - We use `deleted_at` to mark the organization as removed instead of deleting the row
-   * @param orgId
+   * @param orgName
    */
   async deleteOrganizationByName(
     args: Partial<{
@@ -581,19 +611,24 @@ class OsoAppClient {
     }
   }
 
+  private randomNotebookName() {
+    return uniqueNamesGenerator({
+      dictionaries: [adjectives, animals],
+      length: 2,
+      separator: "_",
+    });
+  }
+
   /**
-   * Creates a new saved query
-   * - Chats are stored under an organization
+   * Creates a new notebook
+   * - Notebooks are stored under an organization
    * @param args
    * @returns
    */
-  async createNotebook(
-    args: Partial<{ orgName: string; notebookName: string }>,
-  ) {
+  async createNotebook(args: Partial<NotebookKey>) {
     console.log("createNotebook: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const notebookName =
-      args.notebookName || `notebook_${uuid4().substring(0, 5)}`;
+    const notebookName = args.notebookName || this.randomNotebookName();
     const user = await this.getUser();
     const org = await this.getOrganizationByName({ orgName });
 
@@ -616,12 +651,73 @@ class OsoAppClient {
     return queryData;
   }
 
+  /**
+   * Forks an existing notebook to create a new one
+   * - For now just copies the data
+   * - Notebooks are stored under an organization
+   * @param source.orgName
+   * @param source.notebookName
+   * @param destination.orgName
+   * @param destination.notebookName - optional, will auto-generate if not provided
+   * @returns
+   */
+  async forkNotebook(
+    args: Partial<{
+      source: Partial<NotebookKey>;
+      destination: Partial<NotebookKey>;
+    }>,
+  ) {
+    console.log("forkNotebook: ", args);
+    const srcOrgName = ensure(
+      args.source?.orgName,
+      "Missing source.orgName argument",
+    );
+    const srcNotebookName = ensure(
+      args.source?.notebookName,
+      "Missing source.notebookName argument",
+    );
+    const dstOrgName = ensure(
+      args.destination?.orgName,
+      "Missing destination.orgName argument",
+    );
+    const dstNotebookName =
+      args.destination?.notebookName ||
+      `copy_${srcNotebookName}_${uuid4().substring(0, 5)}`;
+    const dstOrg = await this.getOrganizationByName({ orgName: dstOrgName });
+    const srcNotebook = await this.getNotebookByName({
+      orgName: srcOrgName,
+      notebookName: srcNotebookName,
+    });
+    const user = await this.getUser();
+
+    const { data: queryData, error: queryError } = await this.supabaseClient
+      .from("notebooks")
+      .insert({
+        org_id: dstOrg.id,
+        notebook_name: dstNotebookName,
+        created_by: user.id,
+        data: srcNotebook.data,
+      })
+      .select()
+      .single();
+
+    if (queryError) {
+      throw queryError;
+    } else if (!queryData) {
+      throw new MissingDataError("Failed to create notebook");
+    }
+
+    return queryData;
+  }
+
   async getNotebooksByOrgName(args: Partial<{ orgName: string }>) {
     console.log("getNotebooksByOrgName: ", args);
     const orgName = ensure(args.orgName, "Missing orgName argument");
     const { data, error } = await this.supabaseClient
       .from("notebooks")
-      .select("*,organizations!inner(org_name)")
+      .select(
+        "id,created_at,updated_at,notebook_name,organizations!inner(id,org_name)",
+      )
       .eq("organizations.org_name", orgName)
       .is("deleted_at", null);
     if (error) {
@@ -632,6 +728,10 @@ class OsoAppClient {
       );
     }
     return data;
+  }
+
+  async listNotebooksByOrgName(args: Partial<{ orgName: string }>) {
+    return await this.getNotebooksByOrgName(args);
   }
 
   async getNotebookById(args: Partial<{ notebookId: string }>) {
@@ -651,6 +751,75 @@ class OsoAppClient {
       );
     }
     return data;
+  }
+
+  async getNotebookByName(args: Partial<NotebookKey>) {
+    console.log("getNotebookByName: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const notebookName = ensure(
+      args.notebookName,
+      "Missing notebookName argument",
+    );
+    const { data, error } = await this.supabaseClient
+      .from("notebooks")
+      .select("*,organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
+      .eq("notebook_name", notebookName)
+      .is("deleted_at", null)
+      .single();
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find notebook for orgName=${orgName}, notebookName=${notebookName}`,
+      );
+    }
+    return data;
+  }
+
+  /**
+   * Moves a notebook
+   * - Could be within the same org or to a different org
+   * @param source.orgName
+   * @param source.notebookName
+   * @param destination.orgName
+   * @param destination.notebookName
+   */
+  async moveNotebook(
+    args: Partial<{
+      source: Partial<NotebookKey>;
+      destination: Partial<NotebookKey>;
+    }>,
+  ) {
+    console.log("moveNotebook: ", args);
+    const srcOrgName = ensure(
+      args.source?.orgName,
+      "Missing source.orgName argument",
+    );
+    const srcNotebookName = ensure(
+      args.source?.notebookName,
+      "Missing source.notebookName argument",
+    );
+    const dstOrgName = ensure(
+      args.destination?.orgName,
+      "Missing destination.orgName argument",
+    );
+    const dstNotebookName = ensure(
+      args.destination?.notebookName,
+      "Missing destination.notebookName argument",
+    );
+    const dstOrg = await this.getOrganizationByName({ orgName: dstOrgName });
+    const srcNotebook = await this.getNotebookByName({
+      orgName: srcOrgName,
+      notebookName: srcNotebookName,
+    });
+    const { error } = await this.supabaseClient
+      .from("notebooks")
+      .update({ org_id: dstOrg.id, notebook_name: dstNotebookName })
+      .eq("id", srcNotebook.id);
+    if (error) {
+      throw error;
+    }
   }
 
   /**
@@ -692,28 +861,28 @@ class OsoAppClient {
 
   /**
    * Gets the current credit balance for an organization.
-   * @param orgId - The organization ID
+   * @param orgName - The unique organization name
    * @returns Promise<number> - The current credit balance
    */
   async getOrganizationCredits(
-    args: Partial<{ orgId: string }>,
+    args: Partial<{ orgName: string }>,
   ): Promise<number> {
-    const id = ensure(
-      args.orgId,
-      "orgId is required to get organization credits",
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to get organization credits",
     );
-    console.log("getOrganizationCredits for org:", id);
+    console.log("getOrganizationCredits for orgName=", orgName);
     const { data, error } = await this.supabaseClient
       .from("organization_credits")
-      .select("credits_balance")
-      .eq("org_id", id)
+      .select("credits_balance, organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .single();
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credits for organization id=${id}`,
+        `Unable to find credits for organization orgName=${orgName}`,
       );
     }
     return data.credits_balance;
@@ -721,29 +890,33 @@ class OsoAppClient {
 
   /**
    * Gets the credit transaction history for an organization.
-   * @param orgId - The organization ID
+   * @param orgName - The unique organization name
    * @param args - Optional parameters for pagination and filtering
    * @returns Promise<Array> - Array of organization credit transactions
    */
   async getOrganizationCreditTransactions(
     args: Partial<{
-      orgId: string;
+      orgName: string;
       limit: number;
       offset: number;
       transactionType?: string;
     }> = {},
   ) {
-    const id = ensure(
-      args.orgId,
-      "orgId is required to get organization credit transactions",
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to get organization credit transactions",
     );
-    console.log("getOrganizationCreditTransactions for org:", id, args);
+    console.log(
+      "getOrganizationCreditTransactions for orgName=",
+      orgName,
+      args,
+    );
     const { limit = 50, offset = 0, transactionType } = args;
 
     let query = this.supabaseClient
       .from("organization_credit_transactions")
-      .select("*")
-      .eq("org_id", id)
+      .select("*, organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -757,7 +930,7 @@ class OsoAppClient {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find credit transactions for organization id=${id}`,
+        `Unable to find credit transactions for organization orgName=${orgName}`,
       );
     }
     return data;
@@ -765,7 +938,7 @@ class OsoAppClient {
 
   /**
    * Gets the dynamic connector client for the current organization.
-   * @param orgId
+   * @param orgName
    */
   async getConnectors(
     args: Partial<{ orgName: string }>,
@@ -911,11 +1084,13 @@ class OsoAppClient {
 
   /**
    * Gets dynamic connectors and contextual information.
-   * @param id
+   * @param orgName
    * @returns Promise<{ table: DynamicTableContextsRow; columns: DynamicColumnContextsRow[] }>
    * - Returns the tables context and an array of column contexts for the connector
    */
-  async getDynamicConnectorAndContextsByOrgId(args: { orgId: string }): Promise<
+  async getDynamicConnectorAndContextsByOrgId(args: {
+    orgName: string;
+  }): Promise<
     {
       connector: DynamicConnectorsRow;
       contexts: {
@@ -924,18 +1099,20 @@ class OsoAppClient {
       }[];
     }[]
   > {
-    const orgId = ensure(args.orgId, "id is required to get contexts");
+    const orgName = ensure(args.orgName, "orgName is required to get contexts");
 
     const { data, error } = await this.supabaseClient
       .from("dynamic_connectors")
-      .select("*, dynamic_table_contexts(*, dynamic_column_contexts(*))")
-      .eq("org_id", orgId);
+      .select(
+        "*, organizations!inner(org_name), dynamic_table_contexts(*, dynamic_column_contexts(*))",
+      )
+      .eq("organizations.org_name", orgName);
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find connectors for org_id=${orgId}`,
+        `Unable to find connectors for orgName=${orgName}`,
       );
     }
 
@@ -1029,23 +1206,26 @@ class OsoAppClient {
 
   /**
    * Gets connector relationships for an organization.
-   * @param orgId
+   * @param orgName
    */
   async getConnectorRelationships(args: {
-    orgId: string;
+    orgName: string;
   }): Promise<ConnectorRelationshipsRow[]> {
-    const orgId = ensure(args.orgId, "orgId is required to get relationships");
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to get relationships",
+    );
 
     const { data, error } = await this.supabaseClient
       .from("connector_relationships")
-      .select("*")
-      .eq("org_id", orgId);
+      .select("*, organizations!inner(org_name)")
+      .eq("organizations.org_name", orgName);
 
     if (error) {
       throw error;
     } else if (!data) {
       throw new MissingDataError(
-        `Unable to find connector relationships for org_id=${orgId}`,
+        `Unable to find connector relationships for orgName=${orgName}`,
       );
     }
 
@@ -1196,6 +1376,406 @@ class OsoAppClient {
     if (error) {
       throw error;
     }
+    return data || [];
+  }
+
+  /**
+   * Creates an invitation to join an organization
+   * @param args - Contains the organization name and email (invitees are always assigned 'member' role)
+   * @returns Promise<any> - The created invitation
+   */
+  async createInvitation(
+    args: Partial<{
+      orgName: string;
+      email: string;
+    }>,
+  ) {
+    console.log("createInvitation: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const email = ensure(args.email, "Missing email argument");
+
+    const response = await fetch("/api/v1/invitations/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orgName,
+        email,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Failed to create invitation");
+    }
+
+    return result.invitation;
+  }
+
+  /**
+   * Lists all invitations for an organization
+   * @param args - Contains the organization name
+   * @returns Promise<any[]> - Array of invitations
+   */
+  async listInvitationsForOrg(
+    args: Partial<{
+      orgName: string;
+    }>,
+  ) {
+    console.log("listInvitationsForOrg: ", args);
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+
+    const { data, error } = await this.supabaseClient
+      .from("invitations")
+      .select(
+        `
+        *,
+        inviter:user_profiles!invited_by(id, email, full_name),
+        organizations!inner(org_name)
+      `,
+      )
+      .eq("organizations.org_name", orgName)
+      .is("deleted_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  }
+
+  /**
+   * Accepts an invitation using the invitation ID
+   * @param args - Contains the invitation ID
+   * @returns Promise<boolean> - Success status
+   */
+  async acceptInvitation(
+    args: Partial<{
+      invitationId: string;
+    }>,
+  ) {
+    console.log("acceptInvitation: ", args);
+    const invitationId = ensure(
+      args.invitationId,
+      "Missing invitationId argument",
+    );
+
+    const user = await this.getUser();
+
+    const { data, error } = await this.supabaseClient.rpc("accept_invitation", {
+      p_invitation_id: invitationId,
+      p_user_id: user.id,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
+  /**
+   * Gets an invitation by its ID
+   * @param args - Contains the invitation id
+   * @returns Promise<object> - The invitation details
+   */
+  async getInviteById(
+    args: Partial<{
+      inviteId: string;
+    }>,
+  ) {
+    console.log("getInviteById: ", args);
+    const inviteId = ensure(args.inviteId, "Missing inviteId argument");
+
+    const { data, error } = await this.supabaseClient
+      .from("invitations")
+      .select(
+        `*, inviter:user_profiles!invited_by(email), organizations!inner(org_name)`,
+      )
+      .eq("id", inviteId)
+      .is("deleted_at", null)
+      .single();
+
+    if (error) {
+      throw error;
+    } else if (!data) {
+      throw new MissingDataError(
+        `Unable to find invitation with id=${inviteId}`,
+      );
+    }
+
+    return {
+      invite_id: data.id,
+      inviter_email: data.inviter?.email,
+      invitee_email: data.email,
+      org_id: data.org_id,
+      org_name: data.organizations?.org_name,
+      expires_at: data.expires_at,
+      created_at: data.created_at,
+    };
+  }
+
+  /**
+   * Deletes/revokes an invitation, only by the user who created it
+   * @param args - Contains the invitation id
+   * @returns Promise<boolean> - Returns true if revoked, false if invitation not found or not pending
+   */
+  async deleteInvitation(
+    args: Partial<{
+      invitationId: string;
+    }>,
+  ) {
+    console.log("deleteInvitation: ", args);
+    const invitationId = ensure(
+      args.invitationId,
+      "Missing invitationId argument",
+    );
+
+    const { error } = await this.supabaseClient
+      .from("invitations")
+      .update({
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", invitationId);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  }
+
+  /**
+   * Checks if the current user has permission to access a resource
+   * @param resourceType
+   * @param resourceId
+   */
+  async checkResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ): Promise<ResourcePermissionResponse> {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const { data, error } = await this.supabaseClient.rpc(
+      "check_resource_permission",
+      {
+        p_resource_type: resourceType,
+        p_resource_id: resourceId,
+      },
+    );
+
+    if (error || !data) {
+      console.log("Error checking resource permission:", error);
+      return {
+        hasAccess: false,
+        permissionLevel: "none",
+        resourceId: "unknown",
+      };
+    }
+
+    return resourcePermissionResponseSchema.parse(data);
+  }
+
+  /**
+   * Grants permission to a user on a resource
+   * @param resourceType
+   * @param resourceId
+   * @param targetUserId - null for public permissions, string for specific user
+   * @param permissionLevel
+   */
+  async grantResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+      targetUserId?: string | null;
+      permissionLevel: "read" | "write" | "admin" | "owner";
+    }>,
+  ) {
+    const { resourceType, resourceId, permissionLevel } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+      permissionLevel: ensure(
+        args.permissionLevel,
+        "Missing permissionLevel argument",
+      ),
+    };
+
+    const targetUserId =
+      "targetUserId" in args
+        ? args.targetUserId
+        : ensure(args.targetUserId, "Missing targetUserId argument");
+
+    if (targetUserId === undefined) {
+      throw new Error(
+        "Please provide a targetUserId explicitly, use null for public permissions",
+      );
+    }
+
+    const user = await this.getUser();
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    const targetDescription =
+      targetUserId === null ? "public" : `user ${targetUserId}`;
+    console.log(
+      `Granting ${permissionLevel} permission on ${resourceType} ${resourceId} to ${targetDescription} by ${user.id}`,
+    );
+
+    const updateQuery = this.supabaseClient
+      .from("resource_permissions")
+      .update({
+        permission_level: permissionLevel,
+        granted_by: user.id,
+        updated_at: new Date().toISOString(),
+      });
+
+    const finalUpdateQuery =
+      targetUserId === null
+        ? updateQuery.is("user_id", null)
+        : updateQuery.eq("user_id", targetUserId);
+
+    const { data: updateData } = await finalUpdateQuery
+      .eq(column, resourceId)
+      .is("revoked_at", null)
+      .select()
+      .throwOnError();
+
+    if (updateData && updateData.length > 0) {
+      console.log("Permission updated successfully:", updateData);
+      return updateData;
+    }
+
+    const { data } = await this.supabaseClient
+      .from("resource_permissions")
+      .insert({
+        user_id: targetUserId,
+        permission_level: permissionLevel,
+        granted_by: user.id,
+        [column]: resourceId,
+      })
+      .select()
+      .throwOnError();
+
+    console.log("Permission granted successfully:", data);
+    return data;
+  }
+
+  /**
+   * Makes a resource public by granting permissions to everyone
+   */
+  async grantPublicPermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+      permissionLevel: "read" | "write" | "admin" | "owner";
+    }>,
+  ) {
+    return this.grantResourcePermission({
+      ...args,
+      targetUserId: null,
+    });
+  }
+
+  /**
+   * Revokes permission from a user on a resource
+   * @param resourceType
+   * @param resourceId
+   * @param targetUserId - null for public permissions, string for specific user
+   */
+  async revokeResourcePermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+      targetUserId?: string | null;
+    }>,
+  ) {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const targetUserId =
+      "targetUserId" in args
+        ? args.targetUserId
+        : ensure(args.targetUserId, "Missing targetUserId argument");
+
+    if (targetUserId === undefined) {
+      throw new Error(
+        "Please provide a targetUserId explicitly, use null for public permissions",
+      );
+    }
+
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    const revokeQuery = this.supabaseClient
+      .from("resource_permissions")
+      .update({ revoked_at: new Date().toISOString() });
+
+    const finalRevokeQuery =
+      targetUserId === null
+        ? revokeQuery.is("user_id", null)
+        : revokeQuery.eq("user_id", targetUserId);
+
+    await finalRevokeQuery.eq(column, resourceId).throwOnError();
+  }
+
+  /**
+   * Makes a resource private by removing public access
+   */
+  async revokePublicPermission(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ) {
+    return this.revokeResourcePermission({
+      ...args,
+      targetUserId: null,
+    });
+  }
+
+  /**
+   * Lists all permissions for a resource
+   * @param resourceType
+   * @param resourceId
+   */
+  async listResourcePermissions(
+    args: Partial<{
+      resourceType: "notebook" | "chat";
+      resourceId: string;
+    }>,
+  ) {
+    const { resourceType, resourceId } = {
+      resourceType: ensure(args.resourceType, "Missing resourceType argument"),
+      resourceId: ensure(args.resourceId, "Missing resourceId argument"),
+    };
+
+    const column = resourceType === "notebook" ? "notebook_id" : "chat_id";
+
+    const { data, error } = await this.supabaseClient
+      .from("resource_permissions")
+      .select(
+        `
+        *,
+        user:user_profiles!user_id(id, email, full_name),
+        granted_by_user:user_profiles!granted_by(id, email, full_name)
+      `,
+      )
+      .eq(column, resourceId)
+      .is("revoked_at", null);
+
+    if (error) {
+      throw error;
+    }
+
     return data || [];
   }
 

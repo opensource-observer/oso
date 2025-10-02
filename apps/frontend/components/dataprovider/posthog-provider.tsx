@@ -12,11 +12,12 @@ const PostHogPageView = dynamic(() => import("../widgets/posthog-pageview"), {
 
 function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    posthog.init(POSTHOG_KEY, {
-      api_host: POSTHOG_HOST,
-      capture_pageview: false, // Disable automatic pageview capture, as we capture manually
-      capture_pageleave: true,
-    });
+    POSTHOG_KEY &&
+      posthog.init(POSTHOG_KEY, {
+        api_host: POSTHOG_HOST,
+        capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+        capture_pageleave: true,
+      });
   }, []);
 
   return (

@@ -55,7 +55,11 @@ def _extract_project_keys(response: Response) -> Response:
     try:
         data = response.json()
         projects = data.get("projects", {})
-        project_slugs = [{"slug": slug} for slug in projects.keys()]
+        project_slugs = [
+            {"slug": project_info.get("slug")}
+            for project_info in projects.values()
+            if project_info.get("slug")
+        ]
         logger.info(f"Successfully got {len(project_slugs)} project slugs.")
         response._content = json.dumps(project_slugs).encode("utf-8")
     except Exception as e:

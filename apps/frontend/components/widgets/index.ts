@@ -34,6 +34,16 @@ import {
   BarList,
   BarListMeta,
 } from "@/components/widgets/tremor";
+import {
+  CreditBalance,
+  CreditBalanceMeta,
+  CreditPackageSelector,
+  CreditPackageSelectorMeta,
+  PurchaseHistory,
+  PurchaseHistoryMeta,
+  Billing,
+  BillingMeta,
+} from "@/components/widgets/billing";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -56,4 +66,8 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(TallyPopup, TallyPopupMeta);
   PLASMIC.registerComponent(BarList, BarListMeta);
   PLASMIC.registerComponent(AreaChart, AreaChartMeta);
+  PLASMIC.registerComponent(CreditBalance, CreditBalanceMeta);
+  PLASMIC.registerComponent(CreditPackageSelector, CreditPackageSelectorMeta);
+  PLASMIC.registerComponent(PurchaseHistory, PurchaseHistoryMeta);
+  PLASMIC.registerComponent(Billing, BillingMeta);
 }

@@ -11,14 +11,15 @@ import { logger } from "@/lib/logger";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
 import { DOMAIN, STRIPE_PUBLISHABLE_KEY } from "@/lib/config";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 const stripe = getStripeClient();
 const supabase = createAdminClient();
 
-export async function POST(req: NextRequest) {
+export const POST = withPostHogTracking(async (req: NextRequest) => {
   try {
     const user = await getUser(req);
-    await using tracker = trackServerEvent(user);
+    const tracker = trackServerEvent(user);
 
     if (user.role === "anonymous") {
       return NextResponse.json(
@@ -48,6 +49,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const { data: orgData, error: orgError } = await supabase
+      .from("organizations")
+      .select("org_name")
+      .eq("id", orgId)
+      .single();
+
+    if (orgError || !orgData) {
+      logger.error("Failed to fetch organization:", orgError);
+      return NextResponse.json(
+        { error: "Invalid organization" },
+        { status: 400 },
+      );
+    }
+
     const PROTOCOL = DOMAIN.includes("localhost") ? "http" : "https";
 
     const session = await stripe.checkout.sessions.create({
@@ -66,8 +81,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: "payment",
-      success_url: `${PROTOCOL}://${DOMAIN}/billing?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${PROTOCOL}://${DOMAIN}/billing?purchase=cancelled`,
+      success_url: `${PROTOCOL}://${DOMAIN}/${orgData.org_name}/settings/billing?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${PROTOCOL}://${DOMAIN}/${orgData.org_name}/settings/billing?purchase=cancelled`,
       client_reference_id: user.userId,
       metadata: {
         userId: user.userId,
@@ -115,4 +130,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

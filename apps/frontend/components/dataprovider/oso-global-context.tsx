@@ -25,7 +25,7 @@ type ExtractMethods<T> = {
   [K in ExtractMethodNames<T>]: any;
 };
 
-const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
+const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "getUser",
   "getMyUserProfile",
   "updateMyUserProfile",
@@ -33,6 +33,7 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "getMyApiKeys",
   "getApiKeysByOrgName",
   "deleteApiKeyById",
+  "getOsoJwt",
   "createOrganization",
   "getMyOrganizations",
   "getOrganizationById",
@@ -48,8 +49,12 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "updateChat",
   "deleteChatById",
   "createNotebook",
+  "forkNotebook",
   "getNotebooksByOrgName",
+  "listNotebooksByOrgName",
   "getNotebookById",
+  "getNotebookByName",
+  "moveNotebook",
   "updateNotebook",
   "deleteNotebookById",
   "getOrganizationCredits",
@@ -68,7 +73,18 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = [
   "buyCredits",
   "getCreditPackages",
   "getMyPurchaseHistory",
-];
+  "createInvitation",
+  "listInvitationsForOrg",
+  "acceptInvitation",
+  "deleteInvitation",
+  "getInviteById",
+  "checkResourcePermission",
+  "grantResourcePermission",
+  "revokeResourcePermission",
+  "grantPublicPermission",
+  "listResourcePermissions",
+  "revokePublicPermission",
+]);
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [
     name,
