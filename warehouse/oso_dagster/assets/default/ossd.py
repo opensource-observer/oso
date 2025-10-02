@@ -322,7 +322,7 @@ def repositories(
     key_prefix="ossd",
     deps=[AssetKey(["ossd", "repositories"])],
     tags=dict(add_tags(common_tags, {"opensource.observer/source": "sbom"}).items()),
-    op_tags={"dagster-k8s/config": K8S_CONFIG},
+    # op_tags={"dagster-k8s/config": K8S_CONFIG},
     retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
 )
 def sbom(
