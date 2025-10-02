@@ -99,8 +99,9 @@ function Notebook(props: NotebookProps) {
       initialCode={initialCode}
       notebookUrl={notebookUrl}
       environment={environment}
+      notebookId={notebookId}
       aiPrompt={aiPrompt}
-      onNotebookLoaded={(session) => setRpcSession(session)}
+      onNotebookConnected={(session) => setRpcSession(session)}
       hostControls={notebookHostControlsHandler}
     />
   );

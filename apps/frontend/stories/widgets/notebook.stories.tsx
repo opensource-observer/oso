@@ -18,7 +18,7 @@ const meta = {
     //backgroundColor: { control: 'color' },
   },
   args: {
-    onNotebookLoaded: fn(),
+    onNotebookConnected: fn(),
   },
 } satisfies Meta<typeof ControllableNotebook>;
 
