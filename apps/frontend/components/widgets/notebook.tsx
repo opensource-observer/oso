@@ -13,7 +13,7 @@ import { logger } from "@/lib/logger";
 function Notebook(props: NotebookProps) {
   const {
     className,
-    accessToken,
+    osoApiKey,
     notebookId,
     initialCode,
     notebookUrl,
@@ -88,7 +88,7 @@ function Notebook(props: NotebookProps) {
 
   // Generate the environment for the notebook
   const environment = {
-    OSO_API_KEY: accessToken,
+    OSO_API_KEY: osoApiKey,
     OSO_NOTEBOOK_ID: notebookId,
     ...extraEnvironment,
   };

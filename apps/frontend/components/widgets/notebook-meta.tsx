@@ -1,10 +1,15 @@
+/**
+ * This meta file is separate to avoid an issue with importing `capnweb` when
+ * rendering the build. The build breaks otherwise. So please leave this file
+ * here for now until we remove capnweb or fix the build issue.
+ */
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 export interface NotebookProps {
   className?: string; // Plasmic CSS class
   enableSave: boolean;
   notebookId: string;
-  accessToken: string;
+  osoApiKey: string;
   initialCode?: string;
   notebookUrl: string;
   extraEnvironment: any;
