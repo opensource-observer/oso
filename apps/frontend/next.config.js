@@ -120,10 +120,6 @@ const nextConfig = {
     if (options.isServer) {
       config.plugins = [...config.plugins];
     }
-    config.experiments = {
-      ...config.experiments,
-      topLevelAwait: true,
-    };
     return config;
   },
 };
