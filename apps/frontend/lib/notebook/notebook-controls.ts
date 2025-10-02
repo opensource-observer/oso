@@ -1,4 +1,6 @@
-export interface NotebookPostMessageFilestore {
+import type { RpcStub } from "capnweb";
+
+export interface NotebookHostControls {
   // Save the contents of a notebook via the host
   saveNotebook: (contents: string) => Promise<void>;
   // Read the contents of a notebook via the host
@@ -9,9 +11,11 @@ export interface NotebookControls {
   createCell: (code: string) => void;
 
   triggerAlert: (message: string) => void;
-
-  registerNotebookFilestore: (fs: NotebookPostMessageFilestore) => void;
 }
+
+export type NotebookControlsStub = RpcStub<NotebookControls>;
+
+export type NotebookHostControlsStub = RpcStub<NotebookHostControls>;
 
 export type NotebookControlsKey = keyof Omit<
   NotebookControls,
@@ -23,7 +27,8 @@ export type NotebookControlsHandler<K extends NotebookControlsKey> =
 export type InitializationCommand = {
   command: "initialize";
   id: string;
-  port: MessagePort;
+  sendPort: MessagePort;
+  recvPort: MessagePort;
 };
 
 export type RequestConnectionCommand = {
