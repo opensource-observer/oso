@@ -6,7 +6,6 @@ import { newMessagePortRpcSession } from "capnweb";
 import {
   InitializationCommand,
   NotebookControls,
-  NotebookControlsStub,
   NotebookHostControls,
 } from "@/lib/notebook/notebook-controls";
 import { logger } from "@/lib/logger";
@@ -20,7 +19,7 @@ interface ControllableNotebookProps {
   environment: Record<string, string>;
   aiPrompt?: string;
   enablePostMessageStore?: boolean;
-  onNotebookConnected: (rpcSession: NotebookControlsStub) => void;
+  onNotebookConnected: (rpcSession: NotebookControls) => void;
   hostControls: NotebookHostControls;
   enableDebug?: boolean;
 }
@@ -80,7 +79,7 @@ class ConnectionState {
   private _notebookHostId: string;
 
   private onNotebookConnectedListener:
-    | ((session: NotebookControlsStub) => void)
+    | ((session: NotebookControls) => void)
     | null = null;
 
   constructor(hostRpc: NotebookHostRpc) {
@@ -112,7 +111,7 @@ class ConnectionState {
   }
 
   addOnNotebookConnectedListener(
-    listener: (session: NotebookControlsStub) => void,
+    listener: (session: NotebookControls) => void,
   ) {
     this.onNotebookConnectedListener = listener;
   }
@@ -121,7 +120,7 @@ class ConnectionState {
     this.onNotebookConnectedListener = null;
   }
 
-  emitNotebookConnected(session: NotebookControlsStub) {
+  emitNotebookConnected(session: NotebookControls) {
     if (this.onNotebookConnectedListener) {
       this.onNotebookConnectedListener(session);
     }
@@ -183,7 +182,7 @@ type ConnectedAction = {
   state: "CONNECTED";
   iframe: HTMLIFrameElement;
   notebookDetails: NotebookDetails;
-  session: NotebookControlsStub;
+  session: NotebookControls;
   sendPort: MessagePort;
   recvPort: MessagePort;
   dispatch: React.Dispatch<ConnectionAction>;
@@ -413,7 +412,7 @@ function changeConnectingState(
 
 // Very specific hook for controlling the state of the connection to the notebook
 function useNotebookConnection(
-  onNotebookConnected: (rpcSession: NotebookControlsStub) => void,
+  onNotebookConnected: (rpcSession: NotebookControls) => void,
 ): [ConnectionState, React.Dispatch<ConnectionAction>] {
   const [connectionState, updateConnectionState] = useReducer(
     changeConnectingState,
@@ -423,7 +422,7 @@ function useNotebookConnection(
   // If for whatever reason the onNotebookConnected changes we need to update
   // the state event listener
   const onNotebookConnectedCallback = useCallback(
-    (session: NotebookControlsStub) => {
+    (session: NotebookControls) => {
       onNotebookConnected(session);
     },
     [onNotebookConnected],
@@ -553,3 +552,4 @@ function ControllableNotebook(props: ControllableNotebookProps) {
 }
 
 export { ControllableNotebook, type ControllableNotebookProps };
+export default ControllableNotebook;
