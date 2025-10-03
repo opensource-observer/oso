@@ -124,7 +124,7 @@ function NotebookFactory() {
             mode = "edit",
             enablePresentMode,
           } = props;
-          const osoAppClient = useOsoAppClient();
+          const { client } = useOsoAppClient();
           // Uncomment this if you want to be able to call methods exposed by
           // the notebook
           // const [_rpcSession, setRpcSession] =
@@ -146,7 +146,7 @@ function NotebookFactory() {
                   return;
                 }
 
-                if (!osoAppClient.client) {
+                if (!client) {
                   throw new Error(
                     "No OsoAppClient available, cannot save notebook",
                   );
@@ -156,7 +156,7 @@ function NotebookFactory() {
                 }
 
                 try {
-                  await osoAppClient.client.updateNotebook({
+                  await client.updateNotebook({
                     id: notebookId,
                     data: contents,
                   });
@@ -175,7 +175,7 @@ function NotebookFactory() {
                 }
               },
               readNotebook: async () => {
-                if (!osoAppClient.client) {
+                if (!client) {
                   logger.error(
                     "No OsoAppClient available, cannot read notebook",
                   );
@@ -186,7 +186,7 @@ function NotebookFactory() {
                   return null;
                 }
                 try {
-                  const notebook = await osoAppClient.client.getNotebookById({
+                  const notebook = await client.getNotebookById({
                     notebookId,
                   });
                   if (!notebook) {
@@ -201,7 +201,7 @@ function NotebookFactory() {
                 }
               },
             });
-          }, [notebookId, enableSave]);
+          }, [client, notebookId, enableSave]);
 
           // Generate the environment for the notebook
           const environment = {
