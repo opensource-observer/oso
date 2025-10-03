@@ -201,7 +201,7 @@ function NotebookFactory() {
                 }
               },
             });
-          }, [client, notebookId, enableSave]);
+          }, [notebookId, enableSave]);
 
           // Generate the environment for the notebook
           const environment = {
