@@ -1,5 +1,3 @@
-import type { RpcStub } from "capnweb";
-
 export interface NotebookHostControls {
   // Save the contents of a notebook via the host
   saveNotebook: (contents: string) => Promise<void>;
@@ -8,14 +6,10 @@ export interface NotebookHostControls {
 }
 
 export interface NotebookControls {
-  createCell: (code: string) => void;
+  createCell: (code: string) => Promise<void>;
 
-  triggerAlert: (message: string) => void;
+  triggerAlert: (message: string) => Promise<void>;
 }
-
-export type NotebookControlsStub = RpcStub<NotebookControls>;
-
-export type NotebookHostControlsStub = RpcStub<NotebookHostControls>;
 
 export type NotebookControlsKey = keyof Omit<
   NotebookControls,

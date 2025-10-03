@@ -6,7 +6,6 @@ import { newMessagePortRpcSession } from "capnweb";
 import {
   InitializationCommand,
   NotebookControls,
-  NotebookControlsStub,
   NotebookHostControls,
 } from "@/lib/notebook/notebook-controls";
 import { logger } from "@/lib/logger";
@@ -19,8 +18,11 @@ interface ControllableNotebookProps {
   notebookUrl: string;
   environment: Record<string, string>;
   aiPrompt?: string;
+  mode: "read" | "edit";
+  enablePresentMode?: boolean;
+  extraFragmentParams?: Record<string, string>;
   enablePostMessageStore?: boolean;
-  onNotebookConnected: (rpcSession: NotebookControlsStub) => void;
+  onNotebookConnected?: (rpcSession: NotebookControls) => void;
   hostControls: NotebookHostControls;
   enableDebug?: boolean;
 }
@@ -80,7 +82,7 @@ class ConnectionState {
   private _notebookHostId: string;
 
   private onNotebookConnectedListener:
-    | ((session: NotebookControlsStub) => void)
+    | ((session: NotebookControls) => void)
     | null = null;
 
   constructor(hostRpc: NotebookHostRpc) {
@@ -112,7 +114,7 @@ class ConnectionState {
   }
 
   addOnNotebookConnectedListener(
-    listener: (session: NotebookControlsStub) => void,
+    listener: (session: NotebookControls) => void,
   ) {
     this.onNotebookConnectedListener = listener;
   }
@@ -121,7 +123,7 @@ class ConnectionState {
     this.onNotebookConnectedListener = null;
   }
 
-  emitNotebookConnected(session: NotebookControlsStub) {
+  emitNotebookConnected(session: NotebookControls) {
     if (this.onNotebookConnectedListener) {
       this.onNotebookConnectedListener(session);
     }
@@ -183,7 +185,6 @@ type ConnectedAction = {
   state: "CONNECTED";
   iframe: HTMLIFrameElement;
   notebookDetails: NotebookDetails;
-  session: NotebookControlsStub;
   sendPort: MessagePort;
   recvPort: MessagePort;
   dispatch: React.Dispatch<ConnectionAction>;
@@ -280,7 +281,7 @@ const reconnectingState = validStateTransition(
     const iframe = action.iframe;
     const connectionInterval = setInterval(() => {
       requestConnection({ hostRpc, notebookHostId, notebookUrl, iframe });
-    }, 500);
+    }, 2000);
 
     // Listen for the iframe to respond
     const handleConnectionResponse = (event: MessageEvent<any>) => {
@@ -303,14 +304,6 @@ const reconnectingState = validStateTransition(
           return;
         }
 
-        const sendPort: MessagePort = command.sendPort;
-        const session = newMessagePortRpcSession<NotebookControls>(sendPort);
-
-        // Listen on the recvPort
-        newMessagePortRpcSession(command.recvPort, hostRpc);
-
-        // Once the session is ready we notify the parent component
-
         // Stop listening for messages once we've connected
         window.removeEventListener("message", handleConnectionResponse);
 
@@ -323,7 +316,6 @@ const reconnectingState = validStateTransition(
           state: "CONNECTED",
           iframe: action.iframe,
           notebookDetails: action.notebookDetails,
-          session,
           sendPort: command.sendPort,
           recvPort: command.recvPort,
           dispatch: action.dispatch,
@@ -364,7 +356,13 @@ const notebookStateMachine: Record<
     CONNECTING: reconnectingState,
     CONNECTED: validStateTransition((state, action) => {
       // Notify the parent component that the notebook is connected
-      state.emitNotebookConnected(action.session);
+      const session = newMessagePortRpcSession<NotebookControls>(
+        action.sendPort,
+      );
+
+      // Listen on the recvPort
+      newMessagePortRpcSession(action.recvPort, state.hostRpc);
+      state.emitNotebookConnected(session);
 
       // Successfully connected to the iframe
       return state.update({
@@ -382,7 +380,7 @@ const notebookStateMachine: Record<
   CONNECTED: {
     LOADING: invalidStateTransition("CONNECTED", "LOADING"),
     CONNECTING: reconnectingState,
-    CONNECTED: invalidStateTransition("CONNECTED", "CONNECTED"),
+    CONNECTED: (state) => state, // No-op if already connected
     INITIAL: resetToInitialState,
   },
 };
@@ -413,7 +411,7 @@ function changeConnectingState(
 
 // Very specific hook for controlling the state of the connection to the notebook
 function useNotebookConnection(
-  onNotebookConnected: (rpcSession: NotebookControlsStub) => void,
+  onNotebookConnected: (rpcSession: NotebookControls) => void,
 ): [ConnectionState, React.Dispatch<ConnectionAction>] {
   const [connectionState, updateConnectionState] = useReducer(
     changeConnectingState,
@@ -423,7 +421,7 @@ function useNotebookConnection(
   // If for whatever reason the onNotebookConnected changes we need to update
   // the state event listener
   const onNotebookConnectedCallback = useCallback(
-    (session: NotebookControlsStub) => {
+    (session: NotebookControls) => {
       onNotebookConnected(session);
     },
     [onNotebookConnected],
@@ -439,15 +437,25 @@ function useNotebookConnection(
   return [connectionState, updateConnectionState];
 }
 
-function generateNotebooklUrl(
-  notebookUrl: string,
-  notebookId: string,
-  initialCode: string | undefined,
-  environment: Record<string, string>,
-  aiPrompt: string | undefined,
-  enablePostMessageStore: boolean,
-  enableDebug: boolean,
-) {
+type NotebookUrlOptions = Omit<
+  ControllableNotebookProps,
+  "onNotebookConnected" | "hostControls" | "className"
+>;
+
+function generateNotebooklUrl(options: NotebookUrlOptions) {
+  const {
+    notebookUrl,
+    notebookId,
+    initialCode,
+    environment,
+    aiPrompt,
+    enablePostMessageStore,
+    enableDebug,
+    mode,
+    enablePresentMode = false,
+    extraFragmentParams = {},
+  } = options;
+
   const envString = compressToEncodedURIComponent(JSON.stringify(environment));
   // Generate query params
   const queryParams = new URLSearchParams();
@@ -465,6 +473,17 @@ function generateNotebooklUrl(
   if (enableDebug) {
     queryParams.append("enableDebug", "true");
   }
+  if (enablePresentMode) {
+    queryParams.append("enablePresentMode", "true");
+  }
+
+  if (extraFragmentParams) {
+    for (const [key, value] of Object.entries(extraFragmentParams)) {
+      queryParams.append(key, value);
+    }
+  }
+
+  queryParams.append("mode", mode);
 
   const queryString = queryParams.toString();
   const fullNotebookUrl = `${notebookUrl}?notebook=${notebookId}#${queryString}`;
@@ -496,11 +515,15 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     onNotebookConnected,
     hostControls: handler,
     notebookId,
+    mode,
+    enablePresentMode,
+    extraFragmentParams = {},
   } = props;
   // We only need to set the hostRpc once, we can reconnect to different iframes
   // as needed
-  const [connectionState, updateConnectionState] =
-    useNotebookConnection(onNotebookConnected);
+  const [connectionState, updateConnectionState] = useNotebookConnection(
+    onNotebookConnected || (() => {}),
+  );
 
   useEffect(() => {
     connectionState.setRpcHandler(handler);
@@ -530,10 +553,10 @@ function ControllableNotebook(props: ControllableNotebookProps) {
         notebookDetails,
       });
     },
-    [notebookId, notebookUrl, onNotebookConnected],
+    [notebookId, notebookUrl],
   );
 
-  const fullNotebookUrl = generateNotebooklUrl(
+  const fullNotebookUrl = generateNotebooklUrl({
     notebookUrl,
     notebookId,
     initialCode,
@@ -541,7 +564,10 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     aiPrompt,
     enablePostMessageStore,
     enableDebug,
-  );
+    mode,
+    enablePresentMode,
+    extraFragmentParams,
+  });
 
   return (
     <iframe
@@ -553,3 +579,4 @@ function ControllableNotebook(props: ControllableNotebookProps) {
 }
 
 export { ControllableNotebook, type ControllableNotebookProps };
+export default ControllableNotebook;
