@@ -293,7 +293,6 @@ const reconnectingState = validStateTransition(
       }
 
       if (event.data.command === "initialize") {
-        console.log("Received initialize command from notebook iframe");
         console.log(event.data);
         const command = event.data as InitializationCommand;
 
