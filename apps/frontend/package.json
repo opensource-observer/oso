@@ -71,6 +71,7 @@
     "add": "^2.0.6",
     "ai": "^5.0.15",
     "algoliasearch": "^5.35.0",
+    "capnweb": "^0.1.0",
     "class-variance-authority": "^0.7.1",
     "cloneable-readable": "^3.0.0",
     "clsx": "^2.1.1",
