@@ -23,6 +23,7 @@ type AuthActionsProps = {
   provider?: Provider;
   scopes?: string;
   redirectOnComplete?: string; // URL to redirect to after completion;
+  redirectDomain: string;
 };
 
 const AuthActionsMeta: CodeComponentMeta<AuthActionsProps> = {
@@ -46,6 +47,11 @@ const AuthActionsMeta: CodeComponentMeta<AuthActionsProps> = {
       type: "string",
       helpText: "Must be an absolute path from this domain (e.g. /login)",
     },
+    redirectDomain: {
+      type: "string",
+      description: "The domain to redirect to after completion",
+      defaultValue: DOMAIN,
+    },
   },
 };
 
@@ -57,6 +63,7 @@ function AuthActions(props: AuthActionsProps) {
     provider,
     scopes,
     redirectOnComplete,
+    redirectDomain,
   } = props;
   const posthog = usePostHog();
   const router = useRouter();
@@ -66,7 +73,7 @@ function AuthActions(props: AuthActionsProps) {
   const redirectPath = rawRedirectPath.startsWith("/")
     ? rawRedirectPath
     : `/${rawRedirectPath}`;
-  const redirect = `${PROTOCOL}://${DOMAIN}${redirectPath}`;
+  const redirect = `${PROTOCOL}://${redirectDomain}${redirectPath}`;
   console.log(redirect);
   const signInWithOAuth = async () => {
     const ensureProvider = provider ?? DEFAULT_PROVIDER;
