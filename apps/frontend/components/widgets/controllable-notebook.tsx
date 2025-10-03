@@ -18,6 +18,9 @@ interface ControllableNotebookProps {
   notebookUrl: string;
   environment: Record<string, string>;
   aiPrompt?: string;
+  mode: "read" | "edit";
+  enablePresentMode?: boolean;
+  extraFragmentParams?: Record<string, string>;
   enablePostMessageStore?: boolean;
   onNotebookConnected: (rpcSession: NotebookControls) => void;
   hostControls: NotebookHostControls;
@@ -438,15 +441,25 @@ function useNotebookConnection(
   return [connectionState, updateConnectionState];
 }
 
-function generateNotebooklUrl(
-  notebookUrl: string,
-  notebookId: string,
-  initialCode: string | undefined,
-  environment: Record<string, string>,
-  aiPrompt: string | undefined,
-  enablePostMessageStore: boolean,
-  enableDebug: boolean,
-) {
+type NotebookUrlOptions = Omit<
+  ControllableNotebookProps,
+  "onNotebookConnected" | "hostControls" | "className"
+>;
+
+function generateNotebooklUrl(options: NotebookUrlOptions) {
+  const {
+    notebookUrl,
+    notebookId,
+    initialCode,
+    environment,
+    aiPrompt,
+    enablePostMessageStore,
+    enableDebug,
+    mode,
+    enablePresentMode = false,
+    extraFragmentParams = {},
+  } = options;
+
   const envString = compressToEncodedURIComponent(JSON.stringify(environment));
   // Generate query params
   const queryParams = new URLSearchParams();
@@ -464,6 +477,17 @@ function generateNotebooklUrl(
   if (enableDebug) {
     queryParams.append("enableDebug", "true");
   }
+  if (enablePresentMode) {
+    queryParams.append("enablePresentMode", "true");
+  }
+
+  if (extraFragmentParams) {
+    for (const [key, value] of Object.entries(extraFragmentParams)) {
+      queryParams.append(key, value);
+    }
+  }
+
+  queryParams.append("mode", mode);
 
   const queryString = queryParams.toString();
   const fullNotebookUrl = `${notebookUrl}?notebook=${notebookId}#${queryString}`;
@@ -495,6 +519,9 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     onNotebookConnected,
     hostControls: handler,
     notebookId,
+    mode,
+    enablePresentMode,
+    extraFragmentParams = {},
   } = props;
   // We only need to set the hostRpc once, we can reconnect to different iframes
   // as needed
@@ -532,7 +559,7 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     [notebookId, notebookUrl, onNotebookConnected],
   );
 
-  const fullNotebookUrl = generateNotebooklUrl(
+  const fullNotebookUrl = generateNotebooklUrl({
     notebookUrl,
     notebookId,
     initialCode,
@@ -540,7 +567,10 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     aiPrompt,
     enablePostMessageStore,
     enableDebug,
-  );
+    mode,
+    enablePresentMode,
+    extraFragmentParams,
+  });
 
   return (
     <iframe

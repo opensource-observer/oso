@@ -7,7 +7,6 @@ import {
   NotebookHostControls,
   NotebookControls,
 } from "@/lib/notebook/notebook-controls";
-//import { NotebookProps } from "@/components/widgets/notebook-meta";
 import { logger } from "@/lib/logger";
 import dynamic from "next/dynamic";
 
@@ -21,6 +20,8 @@ export interface NotebookProps {
   extraEnvironment: any;
   aiPrompt?: string;
   enableDebug?: boolean;
+  mode: "read" | "edit";
+  enablePresentMode?: boolean;
 }
 
 export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
@@ -40,10 +41,10 @@ export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
       description: "The ID of the notebook to load",
       defaultValue: "",
     },
-    accessToken: {
+    osoApiKey: {
       type: "string",
-      displayName: "Access Token",
-      description: "The access token for the notebook",
+      displayName: "OSO API Key",
+      description: "The API key for the notebook",
       defaultValue: "",
     },
     initialCode: {
@@ -77,6 +78,26 @@ export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
       description: "Enable debug logging in the notebook iframe",
       defaultValue: false,
     },
+    mode: {
+      type: "choice",
+      displayName: "Mode",
+      description: "The rendering mode for the notebook",
+      options: ["read", "edit"],
+    },
+    enablePresentMode: {
+      type: "boolean",
+      displayName: "Start the notebook in present mode",
+      description: "Whether to start the notebook in present mode",
+      defaultValue: false,
+    },
+    extraFragmentParams: {
+      type: "object",
+      displayName: "Extra Fragment Params",
+      description:
+        "Extra fragment parameters to pass to the notebook URL, useful for custom features",
+      defaultValue: {},
+      required: false,
+    },
   },
 };
 
@@ -100,6 +121,9 @@ function NotebookFactory() {
             extraEnvironment,
             aiPrompt,
             enableSave,
+            enableDebug,
+            mode,
+            enablePresentMode,
           } = props;
           const osoAppClient = useOsoAppClient();
           const [_rpcSession, setRpcSession] =
@@ -186,6 +210,10 @@ function NotebookFactory() {
               aiPrompt={aiPrompt}
               onNotebookConnected={(session) => setRpcSession(session)}
               hostControls={notebookHostControlsHandler}
+              enableDebug={enableDebug}
+              mode={mode}
+              enablePresentMode={enablePresentMode}
+              enablePostMessageStore={enableSave}
             />
           );
         }

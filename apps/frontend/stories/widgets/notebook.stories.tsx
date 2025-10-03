@@ -49,6 +49,7 @@ export const Primary: Story = {
     environment: {
       OSO_API_KEY: "test-api-key",
     },
+    mode: "edit",
   },
   decorators: [
     (Story) => (
