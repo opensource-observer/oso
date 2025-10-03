@@ -327,7 +327,7 @@ def repositories(
             destination_table_id=f"{global_config.gcp_project_id}.ossd.repositories",
             bq_schema=bq_schema,
             gcs_bucket_name=global_config.gcs_bucket,
-            write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE_DATA,
+            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
             context=context,
         ),
         gh_token,
