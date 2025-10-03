@@ -16,7 +16,9 @@ export class NotebookHostRpc extends RpcTarget implements NotebookHostControls {
   }
 
   async readNotebook(): Promise<string | null> {
-    // Reads don't fail if there's no handler, just return null
+    // Reads don't fail if there's no handler, just return null. This allows the
+    // notebook to fallback to other filestores, particularly, the fragment
+    // store.
     if (!this.handler) {
       return null;
     }
