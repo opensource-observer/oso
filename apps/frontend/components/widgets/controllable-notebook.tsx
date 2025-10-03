@@ -22,7 +22,7 @@ interface ControllableNotebookProps {
   enablePresentMode?: boolean;
   extraFragmentParams?: Record<string, string>;
   enablePostMessageStore?: boolean;
-  onNotebookConnected: (rpcSession: NotebookControls) => void;
+  onNotebookConnected?: (rpcSession: NotebookControls) => void;
   hostControls: NotebookHostControls;
   enableDebug?: boolean;
 }
@@ -185,7 +185,6 @@ type ConnectedAction = {
   state: "CONNECTED";
   iframe: HTMLIFrameElement;
   notebookDetails: NotebookDetails;
-  session: NotebookControls;
   sendPort: MessagePort;
   recvPort: MessagePort;
   dispatch: React.Dispatch<ConnectionAction>;
@@ -282,7 +281,7 @@ const reconnectingState = validStateTransition(
     const iframe = action.iframe;
     const connectionInterval = setInterval(() => {
       requestConnection({ hostRpc, notebookHostId, notebookUrl, iframe });
-    }, 500);
+    }, 2000);
 
     // Listen for the iframe to respond
     const handleConnectionResponse = (event: MessageEvent<any>) => {
@@ -294,6 +293,8 @@ const reconnectingState = validStateTransition(
       }
 
       if (event.data.command === "initialize") {
+        console.log("Received initialize command from notebook iframe");
+        console.log(event.data);
         const command = event.data as InitializationCommand;
 
         if (!command.recvPort) {
@@ -304,14 +305,6 @@ const reconnectingState = validStateTransition(
           logger.error("No sendPort provided in initialize command");
           return;
         }
-
-        const sendPort: MessagePort = command.sendPort;
-        const session = newMessagePortRpcSession<NotebookControls>(sendPort);
-
-        // Listen on the recvPort
-        newMessagePortRpcSession(command.recvPort, hostRpc);
-
-        // Once the session is ready we notify the parent component
 
         // Stop listening for messages once we've connected
         window.removeEventListener("message", handleConnectionResponse);
@@ -325,7 +318,6 @@ const reconnectingState = validStateTransition(
           state: "CONNECTED",
           iframe: action.iframe,
           notebookDetails: action.notebookDetails,
-          session,
           sendPort: command.sendPort,
           recvPort: command.recvPort,
           dispatch: action.dispatch,
@@ -366,7 +358,13 @@ const notebookStateMachine: Record<
     CONNECTING: reconnectingState,
     CONNECTED: validStateTransition((state, action) => {
       // Notify the parent component that the notebook is connected
-      state.emitNotebookConnected(action.session);
+      const session = newMessagePortRpcSession<NotebookControls>(
+        action.sendPort,
+      );
+
+      // Listen on the recvPort
+      newMessagePortRpcSession(action.recvPort, state.hostRpc);
+      state.emitNotebookConnected(session);
 
       // Successfully connected to the iframe
       return state.update({
@@ -384,7 +382,7 @@ const notebookStateMachine: Record<
   CONNECTED: {
     LOADING: invalidStateTransition("CONNECTED", "LOADING"),
     CONNECTING: reconnectingState,
-    CONNECTED: invalidStateTransition("CONNECTED", "CONNECTED"),
+    CONNECTED: (state) => state, // No-op if already connected
     INITIAL: resetToInitialState,
   },
 };
@@ -525,8 +523,9 @@ function ControllableNotebook(props: ControllableNotebookProps) {
   } = props;
   // We only need to set the hostRpc once, we can reconnect to different iframes
   // as needed
-  const [connectionState, updateConnectionState] =
-    useNotebookConnection(onNotebookConnected);
+  const [connectionState, updateConnectionState] = useNotebookConnection(
+    onNotebookConnected || (() => {}),
+  );
 
   useEffect(() => {
     connectionState.setRpcHandler(handler);
@@ -556,7 +555,7 @@ function ControllableNotebook(props: ControllableNotebookProps) {
         notebookDetails,
       });
     },
-    [notebookId, notebookUrl, onNotebookConnected],
+    [notebookId, notebookUrl],
   );
 
   const fullNotebookUrl = generateNotebooklUrl({

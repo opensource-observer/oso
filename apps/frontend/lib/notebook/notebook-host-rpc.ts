@@ -16,8 +16,9 @@ export class NotebookHostRpc extends RpcTarget implements NotebookHostControls {
   }
 
   async readNotebook(): Promise<string | null> {
+    // Reads don't fail if there's no handler, just return null
     if (!this.handler) {
-      throw new Error("No handler registered for host controls");
+      return null;
     }
     return this.handler.readNotebook();
   }

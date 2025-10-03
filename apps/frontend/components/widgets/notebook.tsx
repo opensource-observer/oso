@@ -3,10 +3,7 @@
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { useEffect, useState } from "react";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
-import {
-  NotebookHostControls,
-  NotebookControls,
-} from "@/lib/notebook/notebook-controls";
+import { NotebookHostControls } from "@/lib/notebook/notebook-controls";
 import { logger } from "@/lib/logger";
 import dynamic from "next/dynamic";
 
@@ -17,10 +14,10 @@ export interface NotebookProps {
   osoApiKey: string;
   initialCode?: string;
   notebookUrl: string;
-  extraEnvironment: any;
+  extraEnvironment?: any;
   aiPrompt?: string;
   enableDebug?: boolean;
-  mode: "read" | "edit";
+  mode?: "read" | "edit";
   enablePresentMode?: boolean;
 }
 
@@ -64,6 +61,7 @@ export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
       displayName: "Extra Environment",
       description: "Extra environment variables to pass to the notebook",
       defaultValue: {},
+      required: false,
     },
     aiPrompt: {
       type: "string",
@@ -83,6 +81,7 @@ export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
       displayName: "Mode",
       description: "The rendering mode for the notebook",
       options: ["read", "edit"],
+      defaultValue: "edit",
     },
     enablePresentMode: {
       type: "boolean",
@@ -122,12 +121,14 @@ function NotebookFactory() {
             aiPrompt,
             enableSave,
             enableDebug,
-            mode,
+            mode = "edit",
             enablePresentMode,
           } = props;
           const osoAppClient = useOsoAppClient();
-          const [_rpcSession, setRpcSession] =
-            useState<NotebookControls | null>(null);
+          // Uncomment this if you want to be able to call methods exposed by
+          // the notebook
+          // const [_rpcSession, setRpcSession] =
+          //   useState<NotebookControls | null>(null);
 
           const [notebookHostControlsHandler, setNotebookHostControlsHandler] =
             useState<NotebookHostControls>({
@@ -191,7 +192,7 @@ function NotebookFactory() {
                 }
               },
             });
-          }, [osoAppClient, notebookId, enableSave]);
+          }, [notebookId, enableSave]);
 
           // Generate the environment for the notebook
           const environment = {
@@ -208,7 +209,7 @@ function NotebookFactory() {
               environment={environment}
               notebookId={notebookId}
               aiPrompt={aiPrompt}
-              onNotebookConnected={(session) => setRpcSession(session)}
+              //onNotebookConnected={(session) => setRpcSession(session)}
               hostControls={notebookHostControlsHandler}
               enableDebug={enableDebug}
               mode={mode}
