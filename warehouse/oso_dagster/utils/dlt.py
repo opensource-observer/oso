@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
@@ -31,7 +32,7 @@ from dagster import (
     sensor,
 )
 from dlt.sources import DltResource
-from google.cloud import storage
+from google.cloud import bigquery, storage
 from google.cloud.exceptions import NotFound
 
 logger = logging.getLogger(__name__)
@@ -58,8 +59,7 @@ class ParallelizeConfig:
 
 def dlt_parallelize(config: ParallelizeConfig):
     """
-    Decorator that parallelizes the execution of coroutine tasks. It processes
-    coroutine tasks in parallel and yields results.
+    Decorator that parallelizes the execution of coroutine tasks.
 
     Args:
         config (ParallelizeConfig): Configuration object
@@ -97,10 +97,6 @@ def dlt_parallelize(config: ParallelizeConfig):
             if "_chunk_resource_update" in kwargs:
                 chunk_update_fn = kwargs.pop("_chunk_resource_update")
 
-            retrieve_failed_fn = None
-            if "_chunk_retrieve_failed" in kwargs:
-                retrieve_failed_fn = kwargs.pop("_chunk_retrieve_failed")
-
             tasks: List[Coroutine[Any, Any, R]] = [
                 task() for task in fn(*args, **kwargs)
             ]
@@ -116,7 +112,11 @@ def dlt_parallelize(config: ParallelizeConfig):
 
                 for future in asyncio.as_completed(group_coroutines):
                     try:
-                        results.append(await future)
+                        result = await future
+                        results.append(result)
+
+                        if not chunk_update_fn:
+                            yield result
                     except Exception as e:
                         log.error(f"DLTParallelize: Task failed with exception: {e}")
 
@@ -128,10 +128,6 @@ def dlt_parallelize(config: ParallelizeConfig):
                     chunk_update_fn(results, len(group_coroutines))
 
                 await asyncio.sleep(config.wait_interval)
-
-            if retrieve_failed_fn and isinstance(retrieve_failed_fn, Callable):
-                for retrieved in retrieve_failed_fn():
-                    yield retrieved
 
         return _wrapper
 
@@ -153,6 +149,10 @@ class ChunkedResourceConfig(Generic[T]):
         to_serializable_fn (Callable): Function that converts a single data unit
             to a serializable dictionary. For Pydantic models, this can be the model's
             `model_dump` method.
+        destination_table_id (str): BigQuery destination table ID in the format
+            'project.dataset.table' where chunked JSONL files will be loaded.
+        bq_schema (List[bigquery.SchemaField]): BigQuery schema for the destination table.
+            This is used by the BigQuery load job to enforce schema on load.
         gcs_bucket_name (str): Google Cloud Storage bucket name.
         gcs_prefix (str): Google Cloud Storage prefix for chunked data. Defaults
             to "dlt_chunked_state".
@@ -168,6 +168,8 @@ class ChunkedResourceConfig(Generic[T]):
         fetch_data_fn: Callable[[], List[T]],
         resource: DltResource,
         to_serializable_fn: Callable[..., Dict],
+        destination_table_id: str,
+        bq_schema: List[bigquery.SchemaField],
         gcs_bucket_name: str,
         gcs_prefix: str = "dlt_chunked_state",
         max_manifest_age: int = 60 * 60 * 24 * 3,
@@ -176,6 +178,8 @@ class ChunkedResourceConfig(Generic[T]):
         self.fetch_data_fn = fetch_data_fn
         self.resource = resource
         self.to_serializable_fn = to_serializable_fn
+        self.destination_table_id = destination_table_id
+        self.bq_schema = bq_schema
         self.gcs_bucket_name = gcs_bucket_name
         self.gcs_prefix = gcs_prefix
         self.max_manifest_age = max_manifest_age
@@ -189,51 +193,42 @@ def process_chunked_resource(
     **kwargs,
 ) -> Generator[DltResource, None, None]:
     """
-    This function configures a DLT resource to keep state checkpoints in Google Cloud Storage.
-    It processes the data in chunks and yields the resource object. It also exposes two
-    functions via the kwargs: `_chunk_resource_update` and `_chunk_retrieve_failed`.
-
-    The `_chunk_resource_update` function is used to update the state manifest and upload
-    the chunked data to GCS.
-    The `_chunk_retrieve_failed` function is used to retrieve all the stored chunks in GCS
-    which failed in previous runs.
-
-    The decorated function must use these functions to update the state manifest and upload
-    the chunked data to GCS. It must call `_chunk_resource_update` with the elements to be
-    uploaded to GCS after a successful yield. It must also call `_chunk_retrieve_failed` at the
-    end of the function to retrieve all the stored chunks in GCS which failed in previous runs.
+    Processes data in chunks, uploads JSONL files to GCS, and loads them to BigQuery.
+    Exposes `_chunk_resource_update` via kwargs for updating state after successful processing.
 
     Example:
     ```
     @dlt.resource(name="example", ...)
-    def resource(max: int, *args, **kwargs):
-        for i in range(max):
-            data: List = get_data(i)
+    def resource(pending_items: List, *args, **kwargs):
+        for item in pending_items:
+            data: List = get_data(item)
             yield data
-
-            # Update the state manifest and upload the data
             kwargs["_chunk_resource_update"]([data])
-
-        # Retrieve all the stored chunks in GCS from previous runs
-        yield from kwargs["_chunk_retrieve_failed"]()
 
     @dlt_factory(...)
     def example(
         context: AssetExecutionContext,
         global_config: ResourceParam[DagsterConfig]
     ):
-    ...
+        # Convert dlt columns to BigQuery schema
+        from oso_dagster.factories import pydantic_to_dlt_nullable_columns
+        from oso_dagster.utils.dlt import dlt_columns_to_bq_schema
 
-    return process_chunked_resource(
-        ChunkedResourceConfig(
-            fetch_data_fn=fetch_fn,
-            resource=resource,
-            to_serializable_fn=methodcaller("model_dump"),
-            gcs_bucket_name=global_config.gcs_bucket,
-            context=context,
-        ),
-        ..., # these will be forwarded to `resource`
-    )
+        dlt_cols = pydantic_to_dlt_nullable_columns(MyModel)
+        bq_schema = dlt_columns_to_bq_schema(dlt_cols)
+
+        return process_chunked_resource(
+            ChunkedResourceConfig(
+                fetch_data_fn=fetch_fn,
+                resource=resource,
+                to_serializable_fn=methodcaller("model_dump"),
+                destination_table_id="project.dataset.table",
+                bq_schema=bq_schema,
+                gcs_bucket_name=global_config.gcs_bucket,
+                context=context,
+            ),
+            ...,
+        )
     ```
 
     Args:
@@ -245,8 +240,9 @@ def process_chunked_resource(
         DltResource: The bound resource object.
     """
 
-    client = storage.Client()
-    bucket = client.get_bucket(config.gcs_bucket_name)
+    storage_client = storage.Client()
+    bq_client = bigquery.Client()
+    bucket = storage_client.get_bucket(config.gcs_bucket_name)
     state_blob = bucket.blob(f"{config.gcs_prefix}/{config.resource.name}/state.json")
 
     log = config.context.log if config.context else logger
@@ -273,40 +269,86 @@ def process_chunked_resource(
 
         state_blob.upload_from_string(json.dumps(current_data))
 
-        serialized_elems = [
-            config.to_serializable_fn(elem) for sublist in elements for elem in sublist
-        ]
+        chunk_id = str(uuid.uuid4())
+        load_id = str(time.time())
+
+        serialized_elems = []
+        for elem in (
+            config.to_serializable_fn(e) for sublist in elements for e in sublist
+        ):
+            elem["_dlt_load_id"] = load_id
+            elem["_dlt_id"] = f"$${chunk_id}"
+            serialized_elems.append(elem)
 
         new_blob = bucket.blob(
-            f"{config.gcs_prefix}/{config.resource.name}/chunk.{uuid.uuid4()}.json"
+            f"{config.gcs_prefix}/{config.resource.name}/chunk.{chunk_id}.jsonl"
         )
 
-        new_blob.upload_from_string(json.dumps(serialized_elems, default=str))
+        jsonl_content = "\n".join(
+            json.dumps(elem, default=str) for elem in serialized_elems
+        )
+        new_blob.upload_from_string(jsonl_content)
 
         log.info(f"ChunkedResource: Uploaded {count} elements to {new_blob.name}")
 
         if not current_data["pending_data"]:
-            log.info("ChunkedResource: No more pending data to process")
+            log.info("ChunkedResource: All chunks uploaded, firing BigQuery load job")
+            job_id = fire_load_job()
 
-    def retrieve_failed():
-        """
-        Retrieves all the stored chunks in GCS which failed in previous runs.
-        Does NOT delete the blobs - this will be handled by the cleanup sensor.
+            current_data["load_job_id"] = job_id
+            current_data["updated_at"] = datetime.now().isoformat()
+            state_blob.upload_from_string(json.dumps(current_data))
 
-        Yields:
-            Dict: The retrieved chunked data
-        """
+            log.info(f"ChunkedResource: Started load job {job_id}")
+            success = wait_for_load_job(job_id)
 
-        blobs = bucket.list_blobs(
-            prefix=f"{config.gcs_prefix}/{config.resource.name}/chunk."
+            if success:
+                log.info("ChunkedResource: Load job completed successfully")
+                current_data["pending_data"] = []
+                del current_data["load_job_id"]
+                state_blob.upload_from_string(json.dumps(current_data))
+            else:
+                raise RuntimeError(f"BigQuery load job {job_id} failed")
+
+    def fire_load_job() -> str:
+        """Fires a BigQuery load job for all JSONL files."""
+        uri_pattern = f"gs://{config.gcs_bucket_name}/{config.gcs_prefix}/{config.resource.name}/chunk.*.jsonl"
+
+        job_config = bigquery.LoadJobConfig(
+            schema=config.bq_schema,
+            source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
         )
 
-        for blob in blobs:
-            if blob.name.endswith(".json"):
-                log.info(f"ChunkedResource: Retrieving chunk {blob.name}")
-                yield from json.loads(blob.download_as_string())
+        log.info(
+            f"ChunkedResource: Starting load job from {uri_pattern} to {config.destination_table_id}"
+        )
 
-    kwargs["_chunk_retrieve_failed"] = retrieve_failed
+        load_job = bq_client.load_table_from_uri(
+            uri_pattern,
+            config.destination_table_id,
+            job_config=job_config,
+        )
+
+        if not load_job.job_id:
+            raise RuntimeError("Failed to start BigQuery load job")
+
+        return load_job.job_id
+
+    def wait_for_load_job(job_id: str) -> bool:
+        """Waits for a BigQuery load job to complete and returns success status."""
+        log.info(f"ChunkedResource: Waiting for load job {job_id}")
+
+        try:
+            job = bq_client.get_job(job_id)
+            job.result()
+            log.info(f"ChunkedResource: Load job {job_id} completed successfully")
+            return True
+        except Exception as e:
+            log.error(f"ChunkedResource: Load job {job_id} failed: {e}")
+            return False
+
+    kwargs["_chunk_resource_update"] = resource_update
 
     try:
         if not state_blob.exists():
@@ -324,16 +366,22 @@ def process_chunked_resource(
             log.info("ChunkedResource: State manifest is too old, resetting")
             manifest_data = None
 
+        if manifest_data and "load_job_id" in manifest_data:
+            job_id = manifest_data["load_job_id"]
+            log.info(f"ChunkedResource: Found existing load job {job_id}")
+
+            success = wait_for_load_job(job_id)
+
+            if success:
+                log.info("ChunkedResource: Previous load job completed successfully")
+                manifest_data["pending_data"] = []
+                state_blob.upload_from_string(json.dumps(manifest_data))
+            else:
+                log.error("ChunkedResource: Previous load job failed, will retry")
+
     except (NotFound, json.JSONDecodeError):
         log.info("ChunkedResource: No existing state found, creating new manifest")
-
-        manifest_data = {
-            "updated_at": datetime.now().isoformat(),
-            "created_at": datetime.now().isoformat(),
-            "pending_data": config.fetch_data_fn(),
-        }
-
-        state_blob.upload_from_string(json.dumps(manifest_data))
+        manifest_data = None
 
     if manifest_data is None:
         log.info("ChunkedResource: Processing input data")
@@ -347,13 +395,14 @@ def process_chunked_resource(
         log.info("ChunkedResource: Uploading initial manifest")
         state_blob.upload_from_string(json.dumps(manifest_data))
 
-    kwargs["_chunk_resource_update"] = resource_update
-
-    yield config.resource(
-        manifest_data["pending_data"],
-        *args,
-        **kwargs,
-    )
+    if manifest_data["pending_data"]:
+        yield config.resource(
+            manifest_data["pending_data"],
+            *args,
+            **kwargs,
+        )
+    else:
+        log.info("ChunkedResource: No pending data to process")
 
 
 CHUNKED_STATE_JOB_CONFIG = {
@@ -459,7 +508,10 @@ async def cleanup_chunks(
     blobs = list(bucket.list_blobs(prefix=prefix))
 
     chunk_blobs = [
-        blob for blob in blobs if "chunk." in blob.name and blob.name.endswith(".json")
+        blob
+        for blob in blobs
+        if "chunk." in blob.name
+        and (blob.name.endswith(".jsonl") or blob.name.endswith(".json"))
     ]
 
     context.log.info(f"Found {len(chunk_blobs)} chunk files")
@@ -607,3 +659,62 @@ def setup_chunked_state_cleanup_sensor(
         sensors=[cleanup_sensor],
         jobs=[cleanup_job],
     )
+
+
+def dlt_columns_to_bq_schema(
+    dlt_columns: Dict,
+    extra_fields: Optional[List[bigquery.SchemaField]] = None,
+) -> List[bigquery.SchemaField]:
+    """
+    Converts dlt table schema columns to BigQuery SchemaField list.
+
+    Args:
+        dlt_columns (Dict): Dictionary of dlt columns from pydantic_to_dlt_nullable_columns
+        extra_fields (Optional[List[bigquery.SchemaField]]): Additional fields to append to schema
+
+    Returns:
+        List[bigquery.SchemaField]: List of BigQuery SchemaField objects
+    """
+
+    type_mapping = {
+        "text": "STRING",
+        "varchar": "STRING",
+        "string": "STRING",
+        "bigint": "INT64",
+        "integer": "INT64",
+        "int": "INT64",
+        "double": "FLOAT64",
+        "float": "FLOAT64",
+        "decimal": "NUMERIC",
+        "bool": "BOOL",
+        "boolean": "BOOL",
+        "timestamp": "TIMESTAMP",
+        "date": "DATE",
+        "time": "TIME",
+        "binary": "BYTES",
+        "json": "JSON",
+        "complex": "JSON",
+    }
+
+    schema_fields = []
+
+    for column_name, column_def in dlt_columns.items():
+        data_type = column_def.get("data_type", "STRING")
+
+        bq_type = type_mapping.get(data_type.lower(), "STRING")
+
+        nullable = column_def.get("nullable", True)
+        mode = "NULLABLE" if nullable else "REQUIRED"
+
+        schema_fields.append(
+            bigquery.SchemaField(
+                name=column_name,
+                field_type=bq_type,
+                mode=mode,
+            )
+        )
+
+    if extra_fields:
+        schema_fields.extend(extra_fields)
+
+    return schema_fields
