@@ -162,6 +162,15 @@ function NotebookFactory() {
                   });
                   logger.info("Notebook saved successfully");
                 } catch (error) {
+                  const errWithMessage = error as { message: string };
+                  logger.error("Error saving notebook:", error);
+                  if (errWithMessage.message) {
+                    if (errWithMessage.message.includes("Failed to fetch")) {
+                      throw new Error(
+                        "Error saving notebook: disconnected from server",
+                      );
+                    }
+                  }
                   throw new Error("Error saving notebook: " + error);
                 }
               },
