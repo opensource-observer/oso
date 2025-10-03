@@ -6,6 +6,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
+from http.client import IncompleteRead, RemoteDisconnected
 from typing import (
     Any,
     Callable,
@@ -35,7 +36,7 @@ from gql.transport.exceptions import (
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.config import DagsterConfig
 from oso_dagster.utils.redis import redis_cache
-from requests.exceptions import ChunkedEncodingError
+from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
 
 # The maximum depth of the introspection query.
 FRAGMENT_MAX_DEPTH = 10
@@ -1288,6 +1289,10 @@ def execute_with_retry(
             TransportServerError,
             TransportQueryError,
             ChunkedEncodingError,
+            ConnectionError,
+            Timeout,
+            RemoteDisconnected,
+            IncompleteRead,
         ) as e:
             sanitized_error = sanitize_error_message(
                 str(e), endpoint or "", masked_endpoint
@@ -1379,6 +1384,10 @@ def execute_with_adaptive_retry(
             TransportServerError,
             TransportQueryError,
             ChunkedEncodingError,
+            ConnectionError,
+            Timeout,
+            RemoteDisconnected,
+            IncompleteRead,
         ) as e:
             if attempt == retry_config.max_retries:
                 if retry_config.continue_on_failure:
@@ -1916,7 +1925,14 @@ def _graphql_factory(
                         )
                         time.sleep(config.pagination.rate_limit_seconds)
 
-                except (TransportError, ChunkedEncodingError) as e:
+                except (
+                    TransportError,
+                    ChunkedEncodingError,
+                    ConnectionError,
+                    Timeout,
+                    RemoteDisconnected,
+                    IncompleteRead,
+                ) as e:
                     sanitized_error = sanitize_error_message(
                         str(e), config.endpoint, config.masked_endpoint
                     )
