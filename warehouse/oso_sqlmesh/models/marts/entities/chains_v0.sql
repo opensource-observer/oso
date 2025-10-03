@@ -17,7 +17,7 @@ MODEL (
 
 SELECT DISTINCT
   oso_chain_name::VARCHAR AS chain_name,
-  chain_id::INTEGER AS chain_id,
+  chain_id::BIGINT AS chain_id,
   display_name::VARCHAR AS display_name
 FROM oso.int_chainlist
 ORDER BY chain_name ASC
