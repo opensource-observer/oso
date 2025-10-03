@@ -293,7 +293,6 @@ const reconnectingState = validStateTransition(
       }
 
       if (event.data.command === "initialize") {
-        console.log(event.data);
         const command = event.data as InitializationCommand;
 
         if (!command.recvPort) {
