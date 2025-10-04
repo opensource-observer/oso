@@ -496,7 +496,6 @@ export const invitationsRelationshipsSchema = z.tuple([
 ]);
 
 export const notebooksRowSchema = z.object({
-  accessed_at: z.string().nullable(),
   created_at: z.string(),
   created_by: z.string(),
   data: z.string().nullable(),
@@ -509,7 +508,6 @@ export const notebooksRowSchema = z.object({
 });
 
 export const notebooksInsertSchema = z.object({
-  accessed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string(),
   data: z.string().optional().nullable(),
@@ -522,7 +520,6 @@ export const notebooksInsertSchema = z.object({
 });
 
 export const notebooksUpdateSchema = z.object({
-  accessed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   data: z.string().optional().nullable(),
@@ -629,7 +626,6 @@ export const organizationCreditsRelationshipsSchema = z.tuple([
 ]);
 
 export const organizationsRowSchema = z.object({
-  accessed_at: z.string().nullable(),
   created_at: z.string(),
   created_by: z.string(),
   deleted_at: z.string().nullable(),
@@ -640,7 +636,6 @@ export const organizationsRowSchema = z.object({
 });
 
 export const organizationsInsertSchema = z.object({
-  accessed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string(),
   deleted_at: z.string().optional().nullable(),
@@ -651,7 +646,6 @@ export const organizationsInsertSchema = z.object({
 });
 
 export const organizationsUpdateSchema = z.object({
-  accessed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
@@ -683,6 +677,7 @@ export const pricingPlanRowSchema = z.object({
   plan_id: z.string(),
   plan_name: z.string(),
   price_per_credit: z.number(),
+  priority: z.number(),
   updated_at: z.string(),
 });
 
@@ -691,6 +686,7 @@ export const pricingPlanInsertSchema = z.object({
   plan_id: z.string().optional(),
   plan_name: z.string(),
   price_per_credit: z.number(),
+  priority: z.number().optional(),
   updated_at: z.string().optional(),
 });
 
@@ -699,6 +695,7 @@ export const pricingPlanUpdateSchema = z.object({
   plan_id: z.string().optional(),
   plan_name: z.string().optional(),
   price_per_credit: z.number().optional(),
+  priority: z.number().optional(),
   updated_at: z.string().optional(),
 });
 
