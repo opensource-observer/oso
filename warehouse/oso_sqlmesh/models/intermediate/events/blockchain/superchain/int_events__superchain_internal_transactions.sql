@@ -5,7 +5,7 @@ MODEL (
     time_column time,
     batch_size 90,
     batch_concurrency 3,
-    lookback 31,
+    lookback 3,
     forward_only true,
     on_destructive_change warn
   ),
@@ -84,4 +84,3 @@ JOIN gas_totals AS g
 JOIN tx_f AS x
   ON x.chain = t.chain 
   AND x.transaction_hash = t.transaction_hash
-  

@@ -4,7 +4,7 @@ MODEL (
     time_column block_timestamp,
     batch_size 90,
     batch_concurrency 3,
-    lookback 31,
+    lookback 3,
     forward_only true,
   ),
   dialect trino,

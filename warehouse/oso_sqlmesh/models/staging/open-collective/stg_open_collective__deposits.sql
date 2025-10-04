@@ -5,7 +5,7 @@ MODEL (
     time_column time,
     batch_size 365,
     batch_concurrency 2,
-    lookback 31,
+    lookback 3,
     forward_only true,
   ),
   partitioned_by (DAY("time"), "event_type"),

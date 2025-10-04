@@ -6,7 +6,7 @@ MODEL (
     time_column bucket_day,
     batch_size 180,
     batch_concurrency 2,
-    lookback 31,
+    lookback 3,
     forward_only true,
   ),
   start @blockchain_incremental_start,
