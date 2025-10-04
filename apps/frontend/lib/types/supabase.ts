@@ -462,7 +462,6 @@ export type Database = {
       };
       notebooks: {
         Row: {
-          accessed_at: string | null;
           created_at: string;
           created_by: string;
           data: string | null;
@@ -474,7 +473,6 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          accessed_at?: string | null;
           created_at?: string;
           created_by: string;
           data?: string | null;
@@ -486,7 +484,6 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          accessed_at?: string | null;
           created_at?: string;
           created_by?: string;
           data?: string | null;
@@ -589,7 +586,6 @@ export type Database = {
       };
       organizations: {
         Row: {
-          accessed_at: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
@@ -599,7 +595,6 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          accessed_at?: string | null;
           created_at?: string;
           created_by: string;
           deleted_at?: string | null;
@@ -609,7 +604,6 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          accessed_at?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
@@ -641,6 +635,7 @@ export type Database = {
           plan_id: string;
           plan_name: string;
           price_per_credit: number;
+          priority: number;
           updated_at: string;
         };
         Insert: {
@@ -648,6 +643,7 @@ export type Database = {
           plan_id?: string;
           plan_name: string;
           price_per_credit: number;
+          priority?: number;
           updated_at?: string;
         };
         Update: {
@@ -655,6 +651,7 @@ export type Database = {
           plan_id?: string;
           plan_name?: string;
           price_per_credit?: number;
+          priority?: number;
           updated_at?: string;
         };
         Relationships: [];
