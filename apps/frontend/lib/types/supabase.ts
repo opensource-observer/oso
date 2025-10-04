@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.0.2 (a4e00ff)";
-  };
   public: {
     Tables: {
       admin_users: {
@@ -655,6 +650,47 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      published_notebooks: {
+        Row: {
+          created_at: string;
+          data: string;
+          deleted_at: string | null;
+          id: string;
+          name: string;
+          notebook_id: string;
+          published_by: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          data: string;
+          deleted_at?: string | null;
+          id?: string;
+          name: string;
+          notebook_id: string;
+          published_by: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          data?: string;
+          deleted_at?: string | null;
+          id?: string;
+          name?: string;
+          notebook_id?: string;
+          published_by?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "published_notebooks_notebook_id_fkey";
+            columns: ["notebook_id"];
+            isOneToOne: false;
+            referencedRelation: "notebooks";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       purchase_intents: {
         Row: {
