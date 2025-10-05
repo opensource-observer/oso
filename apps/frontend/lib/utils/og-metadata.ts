@@ -1,4 +1,4 @@
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import { createServerClient } from "@/lib/supabase/server";
 import { ogImageInfoSchema } from "@/lib/types/og-image";
 import { DOMAIN } from "@/lib/config";
@@ -7,7 +7,6 @@ import { logger } from "@/lib/logger";
 export async function generateNotebookMetadata(
   orgName: string,
   notebookName: string,
-  parent: ResolvingMetadata,
 ): Promise<Metadata | null> {
   try {
     const supabase = await createServerClient();
@@ -36,7 +35,6 @@ export async function generateNotebookMetadata(
       ogImageUrl.searchParams.set(key, value);
     }
 
-    const previousImages = (await parent).openGraph?.images || [];
     const title = `${orgName}/${notebookName}`;
     const description =
       validation.data.description ||
@@ -45,12 +43,11 @@ export async function generateNotebookMetadata(
     return {
       title,
       description,
-      themeColor: "#ffffff",
       openGraph: {
         title,
         description,
         type: "website",
-        images: [ogImageUrl.toString(), ...previousImages],
+        images: [ogImageUrl.toString()],
       },
       twitter: {
         card: "summary_large_image",

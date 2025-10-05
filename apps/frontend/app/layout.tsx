@@ -5,6 +5,42 @@ import { SupabaseProvider } from "@/components/hooks/supabase";
 import { GoogleAnalytics } from "@/components/widgets/google-analytics";
 import { Toaster } from "@/components/ui/sonner";
 import "@/app/globals.css";
+import type { Metadata, Viewport } from "next";
+
+const DEFAULT_TITLE = "Open Source Observer";
+const DEFAULT_DESCRIPTION =
+  "Open Source Observer is a free analytics suite that helps funders " +
+  "measure the impact of open source software contributions to the " +
+  "health of their ecosystem.";
+const DEFAULT_OG_IMAGE =
+  "https://site-assets.plasmic.app/f3b78cfc79ec5bae461de2a67cd2ff27.png";
+
+export const viewport: Viewport = {
+  themeColor: "#253494",
+};
+
+export const metadata: Metadata = {
+  title: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  openGraph: {
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    type: "website",
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE,
+        width: 874,
+        height: 437,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
+  },
+};
 
 export default function RootLayout({
   children,
