@@ -61,6 +61,18 @@ all_timeseries_metric_names AS (
     sql_source_path,
     rendered_sql
   FROM oso.metrics_metadata
+), time_aggregations AS (
+  SELECT
+    time_aggregation
+  FROM (VALUES
+    ('daily'),
+    ('weekly'),
+    ('monthly'),
+    ('quarterly'),
+    ('biannually'),
+    ('yearly'),
+    ('over_all_time')
+  ) AS t(time_aggregation)
 ), metrics_v0_no_casting AS (
   SELECT
     @oso_id('OSO', 'oso', t.metric) AS metric_id,
@@ -73,8 +85,9 @@ all_timeseries_metric_names AS (
     COALESCE(m.sql_source_path, 'TODO') AS sql_source_path,
     'UNKNOWN' AS aggregation_function
   FROM all_timeseries_metric_names AS t
+  CROSS JOIN time_aggregations AS ta
   LEFT JOIN all_metrics_metadata AS m
-    ON t.metric LIKE '%' || m.metric || '%'
+    ON t.metric LIKE '%' || m.metric || '_' || ta.time_aggregation
 )
 SELECT
   metric_id::VARCHAR,
