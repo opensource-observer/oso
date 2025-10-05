@@ -4,6 +4,7 @@ import { DebugProvider } from "@/components/dataprovider/debug-provider";
 import { SupabaseProvider } from "@/components/hooks/supabase";
 import { GoogleAnalytics } from "@/components/widgets/google-analytics";
 import { Toaster } from "@/components/ui/sonner";
+import { DOMAIN } from "@/lib/config";
 import "@/app/globals.css";
 import type { Metadata, Viewport } from "next";
 
@@ -12,8 +13,12 @@ const DEFAULT_DESCRIPTION =
   "Open Source Observer is a free analytics suite that helps funders " +
   "measure the impact of open source software contributions to the " +
   "health of their ecosystem.";
-const DEFAULT_OG_IMAGE =
-  "https://site-assets.plasmic.app/f3b78cfc79ec5bae461de2a67cd2ff27.png";
+
+const PROTOCOL = DOMAIN.includes("localhost") ? "http:" : "https:";
+const DEFAULT_OG_IMAGE = new URL(
+  "/img/oso-og-banner.png",
+  `${PROTOCOL}//${DOMAIN}`,
+).toString();
 
 export const viewport: Viewport = {
   themeColor: "#253494",
