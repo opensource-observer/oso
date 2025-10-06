@@ -9,7 +9,7 @@ lens_data = bq_dts_asset(
     display_name="lens",
     destination_config=BigQueryDatasetConfig(
         project_id="opensource-observer",
-        dataset_name="lens-chain-mainnet",
+        dataset_name="lens_chain_mainnet",
         service_account=None,
     ),
     source_config=BqDtsSourceConfig(
