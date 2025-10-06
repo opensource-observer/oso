@@ -228,6 +228,18 @@ export type AddOrganizationCreditsArgs = z.infer<
 export type AddOrganizationCreditsReturns = z.infer<
   typeof generated.addOrganizationCreditsReturnsSchema
 >;
+export type AdminAddOrganizationCreditsArgs = z.infer<
+  typeof generated.adminAddOrganizationCreditsArgsSchema
+>;
+export type AdminAddOrganizationCreditsReturns = z.infer<
+  typeof generated.adminAddOrganizationCreditsReturnsSchema
+>;
+export type AdminDeductOrganizationCreditsArgs = z.infer<
+  typeof generated.adminDeductOrganizationCreditsArgsSchema
+>;
+export type AdminDeductOrganizationCreditsReturns = z.infer<
+  typeof generated.adminDeductOrganizationCreditsReturnsSchema
+>;
 export type CanGrantPermissionArgs = z.infer<
   typeof generated.canGrantPermissionArgsSchema
 >;

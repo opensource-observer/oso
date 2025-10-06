@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.0.2 (a4e00ff)";
+    PostgrestVersion: "13.0.5";
   };
   public: {
     Tables: {
@@ -557,6 +557,7 @@ export type Database = {
           created_at: string;
           credits_balance: number;
           id: string;
+          last_refill_at: string | null;
           org_id: string;
           updated_at: string;
         };
@@ -564,6 +565,7 @@ export type Database = {
           created_at?: string;
           credits_balance?: number;
           id?: string;
+          last_refill_at?: string | null;
           org_id: string;
           updated_at?: string;
         };
@@ -571,6 +573,7 @@ export type Database = {
           created_at?: string;
           credits_balance?: number;
           id?: string;
+          last_refill_at?: string | null;
           org_id?: string;
           updated_at?: string;
         };
@@ -586,27 +589,36 @@ export type Database = {
       };
       organizations: {
         Row: {
+          billing_contact_email: string | null;
           created_at: string;
           created_by: string;
           deleted_at: string | null;
+          enterprise_support_channel: string | null;
+          enterprise_support_url: string | null;
           id: string;
           org_name: string;
           plan_id: string | null;
           updated_at: string;
         };
         Insert: {
+          billing_contact_email?: string | null;
           created_at?: string;
           created_by: string;
           deleted_at?: string | null;
+          enterprise_support_channel?: string | null;
+          enterprise_support_url?: string | null;
           id?: string;
           org_name: string;
           plan_id?: string | null;
           updated_at?: string;
         };
         Update: {
+          billing_contact_email?: string | null;
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
+          enterprise_support_channel?: string | null;
+          enterprise_support_url?: string | null;
           id?: string;
           org_name?: string;
           plan_id?: string | null;
@@ -632,26 +644,32 @@ export type Database = {
       pricing_plan: {
         Row: {
           created_at: string;
+          max_credits_per_cycle: number | null;
           plan_id: string;
           plan_name: string;
           price_per_credit: number;
           priority: number;
+          refill_cycle_days: number | null;
           updated_at: string;
         };
         Insert: {
           created_at?: string;
+          max_credits_per_cycle?: number | null;
           plan_id?: string;
           plan_name: string;
           price_per_credit: number;
           priority?: number;
+          refill_cycle_days?: number | null;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
+          max_credits_per_cycle?: number | null;
           plan_id?: string;
           plan_name?: string;
           price_per_credit?: number;
           priority?: number;
+          refill_cycle_days?: number | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -906,6 +924,24 @@ export type Database = {
           p_metadata?: Json;
           p_org_id: string;
           p_transaction_type: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
+      admin_add_organization_credits: {
+        Args: {
+          p_amount: number;
+          p_org_id: string;
+          p_reason?: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
+      admin_deduct_organization_credits: {
+        Args: {
+          p_amount: number;
+          p_org_id: string;
+          p_reason?: string;
           p_user_id: string;
         };
         Returns: boolean;
