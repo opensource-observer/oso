@@ -84,7 +84,7 @@ class IncrementalMustHaveLookback(Rule):
             if model.kind.lookback >= 1:
                 return None
             return self.violation(
-                f"Incremental by time range models must have a lookback of at least 3 day or 1 interval of time. Current lookback is {model.kind.lookback} {interval_unit.value}(s)."
+                f"Incremental by time range models must have a lookback of at least 3 days or 1 interval of time. Current lookback is {model.kind.lookback} {interval_unit.value}(s)."
             )
 
         lookback_seconds = model.kind.lookback * interval_seconds
