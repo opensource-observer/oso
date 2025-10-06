@@ -101,8 +101,9 @@ def enrich_data(
     elif "timestamp" in df.columns:
         timestamp_col = "timestamp"
 
-    if timestamp_col:
-        df = df.with_columns(pl.from_epoch(timestamp_col, time_unit="s").alias("dt"))
+    assert timestamp_col is not None, "No timestamp column found for enrichment"
+
+    df = df.with_columns(pl.from_epoch(timestamp_col, time_unit="s").alias("dt"))
 
     return df
 
