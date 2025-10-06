@@ -44,7 +44,7 @@ def cryo_resource_factory(global_config: DagsterConfig, config: CryoResourceConf
     @dlt.resource(
         name=config.datatype,
         primary_key=config.primary_key,
-        write_disposition="merge",
+        write_disposition={"disposition": "merge", "strategy": "upsert"},
     )
     async def cryo_resource():
         resource_df, blocks_df = await collect_data(datatype, **cryo_config)
