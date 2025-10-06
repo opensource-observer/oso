@@ -32,36 +32,18 @@ SELECT
   sc.to_address_tx,
   sc.from_address_trace,
   sc.to_address_trace,
-  sc.gas_used_trace,
-  sc.gas_used_tx,
-  sc.gas_price_tx,
-  oracle_addresses.project_name,
-  'STATIC_CALL' AS event_type
+  CAST(sc.gas_used_trace AS DOUBLE) AS gas_used_trace,
+  CAST(sc.gas_used_tx AS DOUBLE) AS gas_used_tx,
+  CAST(sc.gas_price_tx AS DOUBLE) AS gas_price_tx,
+  CAST(sc.trace_address AS DOUBLE) AS trace_address,
+  CAST(sc.l1_fee AS DOUBLE) AS l1_fee,
+  txs_per_block.txs_in_block,
+  oracle_addresses.project_name
 FROM oso.int_superchain_static_calls_txs_joined AS sc
 JOIN oso.int_optimism_oracle_addresses AS oracle_addresses
   ON oracle_addresses.artifact_name = sc.to_address_trace
+JOIN oso.int_optimism_txs_per_block AS txs_per_block
+  ON txs_per_block.block_timestamp = sc.block_timestamp
 WHERE
   sc.chain = 'OPTIMISM'
   AND sc.block_timestamp BETWEEN @start_dt AND @end_dt
-  
-UNION ALL
-
-SELECT
-  t.block_timestamp,
-  t.chain,
-  t.transaction_hash,
-  t.from_address_tx,
-  t.to_address_tx,
-  t.from_address_trace,
-  t.to_address_trace,
-  t.gas_used_trace,
-  t.gas_used_tx,
-  t.gas_price_tx,
-  oracle_addresses.project_name,
-  'INTERNAL_CALL' AS event_type
-FROM oso.int_superchain_traces_txs_joined AS t
-JOIN oso.int_optimism_oracle_addresses AS oracle_addresses
-  ON oracle_addresses.artifact_name = t.to_address_trace
-WHERE
-  t.chain = 'OPTIMISM'
-  AND t.block_timestamp BETWEEN @start_dt AND @end_dt

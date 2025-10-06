@@ -17,7 +17,10 @@ SELECT DISTINCT
 	artifact_id
 FROM oso.int_artifacts_by_project_all_sources
 WHERE
-  project_name IN ('chainlink', 'pyth-network')
-  AND project_source = 'OSS_DIRECTORY'
+  project_source = 'OSS_DIRECTORY'
   AND artifact_type = 'CONTRACT'
 	AND artifact_source = 'OPTIMISM'
+  AND (
+    project_name = 'chainlink'
+    OR artifact_name = '0xff1a0f4744e8582df1ae09d5611b887b6a12925c'
+  )
