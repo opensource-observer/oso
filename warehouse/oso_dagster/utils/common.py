@@ -246,3 +246,12 @@ def stringify_large_integers(data: Any) -> Any:
         return handler(obj)
 
     return _convert_recursive(data)
+
+
+def is_number(s) -> bool:
+    """Return True if s can be converted to a float."""
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False

@@ -11,6 +11,7 @@ from google.api_core.exceptions import Forbidden
 from google.cloud import bigquery
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import dlt_factory
+from oso_dagster.utils import is_number
 from ossdirectory import fetch_data
 
 logger = logging.getLogger(__name__)
@@ -741,6 +742,100 @@ def defillama_chains_assets(
         name="chains",
         primary_key=["name"],
         write_disposition="replace",
+    )
+    if global_config.gcp_bigquery_enabled:
+        bigquery_adapter(resource, cluster=["name"])
+    yield resource
+
+
+def get_defillama_raises(
+    context: AssetExecutionContext,
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Fetch fundraising data from the DefiLlama API.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context used
+            for logging and task coordination.
+
+    Yields:
+        Dict[str, Any]: Fundraising entries with fields like date, name,
+        round, amount, chains, sector, category, source, leadInvestors,
+        otherInvestors, valuation, and defillamaId.
+    """
+    session = Session(timeout=300)
+
+    try:
+        context.log.info("Fetching fundraising data from DefiLlama")
+        response = session.get("https://api.llama.fi/raises")
+        response.raise_for_status()
+        data = response.json()
+        raises = data.get("raises", [])
+
+        for raise_event in raises:
+            yield {
+                "date": pd.to_datetime(raise_event.get("date"), unit="s").isoformat()
+                if raise_event.get("date")
+                else None,
+                "name": str(raise_event.get("name", "")),
+                "round": str(raise_event.get("round", "")),
+                "amount": float(raise_event.get("amount")) * 1000000
+                if raise_event.get("amount") is not None
+                and is_number(raise_event.get("amount"))
+                else None,
+                "chains": [str(c) for c in raise_event.get("chains", [])],
+                "sector": str(raise_event.get("sector", "")),
+                "category": str(raise_event.get("category", "")),
+                "category_group": str(raise_event.get("categoryGroup", "")),
+                "source": str(raise_event.get("source", "")),
+                "lead_investors": [
+                    str(i) for i in raise_event.get("leadInvestors", [])
+                ],
+                "other_investors": [
+                    str(i) for i in raise_event.get("otherInvestors", [])
+                ],
+                "valuation": float(raise_event.get("valuation")) * 1000000
+                if raise_event.get("valuation") is not None
+                and is_number(raise_event.get("valuation"))
+                else None,
+                "defillama_id": str(raise_event.get("defillamaId", "")),
+            }
+
+    except requests.exceptions.RequestException as e:
+        context.log.error(f"Failed to fetch fundraising data: {e}")
+        raise
+
+
+@dlt_factory(
+    key_prefix="defillama",
+    name="raises",
+    op_tags={
+        "dagster/concurrency_key": "defillama_raises",
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def defillama_raises_assets(
+    context: AssetExecutionContext,
+    global_config: ResourceParam[DagsterConfig],
+):
+    """
+    Dagster asset that extracts and loads fundraising data from DefiLlama
+    into BigQuery via DLT.
+
+    Args:
+        context (AssetExecutionContext): The Dagster execution context.
+        global_config (DagsterConfig): Global configuration values including BigQuery toggle.
+
+    Yields:
+        DLT resource: A DLT stream that materializes fundraising data rows
+        to the configured destination (e.g., BigQuery).
+    """
+    resource = dlt.resource(
+        get_defillama_raises(context),
+        name="raises",
+        primary_key=["name", "date"],
+        write_disposition="replace",
+        max_table_nesting=0,
     )
     if global_config.gcp_bigquery_enabled:
         bigquery_adapter(resource, cluster=["name"])

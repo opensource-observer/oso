@@ -18,6 +18,7 @@ from oso_dagster.resources import (
     DuckDBResource,
     K8sApiResource,
     K8sResource,
+    NessieResource,
     PostgresResource,
     PrefixedSQLMeshTranslator,
     SQLMeshExporter,
@@ -407,12 +408,19 @@ def oso_app_db_factory(secrets: SecretResolver) -> PostgresResource:
     )
 
 
+@resource_factory("nessie")
+@time_function(logger)
+def nessie_factory(global_config: DagsterConfig):
+    return NessieResource(url=global_config.nessie_url)
+
+
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
 
     registry = ResourcesRegistry()
 
+    registry.add(nessie_factory)
     registry.add(global_config_factory)
     registry.add(secrets_factory)
     registry.add(bigquery_resource_factory)

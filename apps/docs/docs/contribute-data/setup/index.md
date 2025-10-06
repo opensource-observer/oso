@@ -10,8 +10,8 @@ This quickstart guide will help you set
 up a development Dagster instance locally, with a [`duckdb`](http://duckdb.org/) backend,
 in order to follow along with our tutorials in the next sections.
 
-If you want to check out what Dagster looks like in production, check out  
-[https://dagster.opensource.observer](https://dagster.opensource.observer)  
+If you want to check out what Dagster looks like in production, check out
+[https://dagster.opensource.observer](https://dagster.opensource.observer)
 Admins can trigger runs
 [here](https://admin-dagster.opensource.observer/)
 
@@ -61,6 +61,10 @@ command from the root of the repository:
 ```sh
 uv run dagster dev
 ```
+
+:::tip
+Alternatively, you can use the `pnpm dev:dagster` command, which automates the setup process by creating the necessary directory and configuration file for you.
+:::
 
 :::tip
 You may need to run the development server in legacy mode on resource-constrained machines.
@@ -126,10 +130,11 @@ For more details on contributing to OSO, check out
 
 ### Verify deployment
 
-Our Dagster deployment should automatically recognize the asset
-after merging your pull request to the main branch.
-You should be able to find your new asset
-in the [global asset list](https://dagster.opensource.observer/assets).
+After your pull request is merged into the `main` branch, a new Dagster deployment is automatically triggered. This process typically takes 10-15 minutes.
+
+You can monitor the deployment status and check the last update time for each code location in the [Deployment tab](https://dagster.opensource.observer/locations).
+
+Once the deployment is complete, Dagster will automatically recognize your new asset, and it will appear in the [Global Asset List](https://dagster.opensource.observer/assets).
 
 ![Dagster assets](./dagster_assets.png)
 
@@ -193,7 +198,7 @@ issue](https://github.com/opensource-observer/oso/issues/4840)
 #### Available Code Locations
 
 At this moment, the available code locations can be found in the repository at
-`warehouse/oso_dagster/definitions/`):
+`warehouse/oso_dagster/definitions/`:
 
 - `sqlmesh`: This is the code location for _any_ assets
   related to sqlmesh. This is essentially anything that depends on the
@@ -253,3 +258,35 @@ Now it should be possible run sqlmesh and dagster locally. When materializing
 sqlmesh assets, it might complain about some out of date dependencies. Since we
 ran the local test setup, the data it's depending on should have been added by
 the oso local seed setup.
+
+### Seed and Staging data
+
+When creating new Dagster assets, it's important to also write a seed file before integrating it into a SQLMesh staging model.
+
+The workflow is as follows:
+
+1.  **Write the Asset**:
+    - Follow the cursor rules for creating new assets.
+    - Keep column names consistent with the original source.
+    - Perform minimal normalization and unnesting.
+
+2.  **Run Dagster Locally**:
+    - Confirm that you can materialize the source correctly.
+
+3.  **Submit and Merge a PR**:
+    - Submit a pull request with your changes and merge it into production.
+
+4.  **Materialize in Production**:
+    - Materialize the asset in the production Dagster environment.
+
+5.  **Verify Data**:
+    - Sample the data in BigQuery to confirm it's correct.
+
+6.  **Create Seed File and Staging Model**:
+    - Follow the cursor rules for creating seed files and staging models.
+    - Use a sample of 5-10 rows of real data from BigQuery that cover multiple cases.
+    - If there are date fields, set them to `datetime.now()`.
+    - Test locally with SQLMesh until there are no errors.
+
+7.  **Submit and Merge a PR**:
+    - Submit a pull request with the seed file and staging model and merge it into production.

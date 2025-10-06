@@ -73,6 +73,7 @@ dependencies = [
     "metrics-service",
     "cryo>=0.3.2",
     "web3>=7.13.0",
+    "pynessie>=0.67.0",
 ]
 name = "oso"
 version = "1.0.0"

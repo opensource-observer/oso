@@ -16,22 +16,14 @@ MODEL (
 @DEF(days_with_onchain_activity_threshold, 10);
 
 WITH
-  -- Define measurement dates (e.g., end of each month)
+  -- Ranges from 2025-02-01 (S7) to 2026-01-01 (S8)
   measurement_dates AS (
     SELECT
-      measurement_date,
-      date_trunc('month', measurement_date) AS sample_date
-    FROM (
-      SELECT measurement_date
-      FROM (VALUES 
-        (DATE('2025-08-31')),
-        (DATE('2025-09-30')),
-        (DATE('2025-10-31')),
-        (DATE('2025-11-30')),
-        (DATE('2025-12-31')),
-        (DATE('2026-01-31'))
-      ) AS t(measurement_date)
-    )
+      last_day_of_month(d) AS measurement_date,
+      date_trunc('month', d) AS sample_date
+    FROM UNNEST(
+      SEQUENCE(DATE '2025-02-01', DATE '2026-01-01', INTERVAL '1' MONTH)
+    ) AS t(d)
   ),
 
   -- Get the daily metric IDs for the Superchain
@@ -40,7 +32,7 @@ WITH
       m.metric_id,
       m.display_name AS metric_group
     FROM oso.metrics_v0 AS m
-    JOIN oso.int_superchain_chain_names AS c
+    JOIN oso.int_superchain_s8_chains AS c
       ON m.metric_name LIKE CONCAT(c.chain, '_%_daily')
       -- TODO: replace this with "internal_transactions_daily"
     WHERE m.metric_name LIKE '%_contract_invocations_daily'

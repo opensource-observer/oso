@@ -75,6 +75,15 @@ response.analytics.print_tree()
 
 This will output a tree structure showing how the final `artifacts_v1` table was constructed from its upstream dependencies, helping you understand the data's origin and freshness.
 
+## Using in notebooks
+
+pyoso also has special support for notebooks. Specifically, we provide a helper function to create a database connection to the OSO dataset that can be used with `marimo`. To use this, we suggest you make a cell at the start of your notebook with the following code:
+
+```python
+from pyoso.notebook import marimo_db
+pyoso_db_conn = marimo_db()
+```
+
 ## Documentation
 
 For detailed documentation about the OSO dataset, please refer to the [official documentation](https://docs.opensource.observer/docs/integrate/datasets/).

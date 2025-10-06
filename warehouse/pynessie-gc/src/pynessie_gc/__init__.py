@@ -13,8 +13,10 @@ BUCKET = os.environ.get("BUCKET_NAME", "oso-iceberg-usc1")
 TRINO_HOST = os.environ.get("TRINO_HOST", "localhost")
 TRINO_PORT = os.environ.get("TRINO_PORT", "8080")
 TRINO_SCHEMA = os.environ.get("TRINO_SCHEMA", "sqlmesh__oso")
+CATALOGS = ["iceberg", "iceberg_consumer"]
 
 CONCURRENCY_LIMIT = int(os.environ.get("CONCURRENCY_LIMIT", "10"))
+
 
 def get_iceberg_table_name(path: str) -> str:
     parts = path.split("/")
@@ -45,9 +47,12 @@ async def _main():
 
     try:
         cur = await trino_client.cursor()
-        await cur.execute(f"SHOW TABLES FROM iceberg.{TRINO_SCHEMA}")
-        tables = await cur.fetchall()
-        tables_set = set([t[0] for t in tables])
+        tables_set = set()
+        for catalog in CATALOGS:
+            await cur.execute(f"SHOW TABLES FROM {catalog}.{TRINO_SCHEMA}")
+            tables = await cur.fetchall()
+            logger.info(f"Found {len(tables)} tables in {catalog}")
+            tables_set.update(t[0] for t in tables)
         await cur.close()
         logger.info(f"Found {len(tables_set)} tables in Trino")
 

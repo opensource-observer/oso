@@ -6,6 +6,7 @@ import logging
 
 from ..resources import DefaultResourceResolver, ResolverFactory, ResourceResolver
 from ..util.config import AgentConfig, WorkflowConfig
+from .notebook import NotebookWorkflow
 from .registry import WorkflowRegistry
 from .text2sql.basic import BasicText2SQL
 from .text2sql.semantic import SemanticText2SQLWorkflow
@@ -39,6 +40,8 @@ async def workflow_resolver_factory(
     """Resolver factory that creates a resolver for dependant resources for workflows."""
     from oso_agent.clients.oso_client import OsoClient
     from oso_agent.tool.oso_semantic_query_tool import create_semantic_query_tool
+    from oso_agent.tool.table_selector_tool import create_table_selector_tool
+    from oso_agent.types.streaming import ThoughtsCollector
 
     llm = resources.get_resource("llm")
     embedding = resources.get_resource("embedding")
@@ -48,18 +51,28 @@ async def workflow_resolver_factory(
         workflow_config.oso_api_key.get_secret_value(),
     )
 
+    registry_description = oso_client.client.semantic.describe()
+
     semantic_query_tool = create_semantic_query_tool(
-        llm=llm, registry_description=oso_client.client.semantic.describe()
+        llm=llm, registry_description=registry_description
     )
+
+    table_selector_tool = create_table_selector_tool(
+        llm=llm, available_models=registry_description
+    )
+
+    thoughts_collector = ThoughtsCollector(session_id="workflow_session")
 
     return DefaultResourceResolver.from_resources(
         semantic_query_tool=semantic_query_tool,
+        table_selector_tool=table_selector_tool,
         oso_client=oso_client,
         registry=oso_client.client.semantic,
         agent_config=config,
         llm=llm,
         embedding=embedding,
         storage_context=storage_context,
+        thoughts_collector=thoughts_collector,
     )
 
 
@@ -73,6 +86,10 @@ async def setup_default_workflow_registry(
 
     registry.add_workflow("basic_text2sql", BasicText2SQL)
     registry.add_workflow("semantic_text2sql", SemanticText2SQLWorkflow)
+    registry.add_alias("text2sql", "semantic_text2sql")
+
+    registry.add_workflow("notebook", NotebookWorkflow)
+    registry.add_alias("gemini", "notebook")
 
     logger.info("Default agent registry setup complete.")
     return registry

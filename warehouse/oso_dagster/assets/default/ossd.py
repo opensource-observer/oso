@@ -19,21 +19,25 @@ from dagster import (
     define_asset_job,
     multi_asset,
 )
+from google.cloud import bigquery
 from oso_dagster.cbt.cbt import CBTResource
 from oso_dagster.config import DagsterConfig
 from oso_dagster.dlt_sources.github_repos import (
     GithubClientConfig,
     GithubRepositoryResolver,
+    GithubRepositorySBOMItem,
     GithubURLType,
+    Repository,
     oss_directory_github_funding_resource,
     oss_directory_github_repositories_resource,
     oss_directory_github_sbom_resource,
 )
-from oso_dagster.factories import dlt_factory
+from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
 from oso_dagster.factories.common import AssetFactoryResponse
 from oso_dagster.factories.jobs import discoverable_jobs
 from oso_dagster.utils import (
     ChunkedResourceConfig,
+    dlt_columns_to_bq_schema,
     process_chunked_resource,
     secret_ref_arg,
 )
@@ -43,7 +47,7 @@ from ossdirectory.fetch import OSSDirectory
 
 # NOTE: Since we are running on spot instances, we need to set a higher retry
 # count to account for the fact that spot instances can be terminated at any time.
-MAX_RETRY_COUNT = 25
+MAX_RETRY_COUNT = 50
 
 K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
@@ -306,12 +310,24 @@ def repositories(
 
         return valid_urls
 
+    dlt_cols = pydantic_to_dlt_nullable_columns(Repository)
+    bq_schema = dlt_columns_to_bq_schema(
+        dlt_cols,
+        extra_fields=[
+            bigquery.SchemaField("_dlt_load_id", "STRING", mode="REQUIRED"),
+            bigquery.SchemaField("_dlt_id", "STRING", mode="REQUIRED"),
+        ],
+    )
+
     return process_chunked_resource(
         ChunkedResourceConfig(
             fetch_data_fn=fetch_fn,
             resource=oss_directory_github_repositories_resource,
             to_serializable_fn=methodcaller("model_dump"),
+            destination_table_id=f"{global_config.gcp_project_id}.ossd.repositories",
+            bq_schema=bq_schema,
             gcs_bucket_name=global_config.gcs_bucket,
+            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
             context=context,
         ),
         gh_token,
@@ -350,12 +366,24 @@ def sbom(
         data_type="SBOMs",
     )
 
+    dlt_cols = pydantic_to_dlt_nullable_columns(GithubRepositorySBOMItem)
+    bq_schema = dlt_columns_to_bq_schema(
+        dlt_cols,
+        extra_fields=[
+            bigquery.SchemaField("_dlt_load_id", "STRING"),
+            bigquery.SchemaField("_dlt_id", "STRING"),
+        ],
+    )
+
     return process_chunked_resource(
         ChunkedResourceConfig(
             fetch_data_fn=fetch_fn,
             resource=oss_directory_github_sbom_resource,
             to_serializable_fn=methodcaller("model_dump"),
+            destination_table_id=f"{global_config.gcp_project_id}.ossd.sbom",
+            bq_schema=bq_schema,
             gcs_bucket_name=global_config.gcs_bucket,
+            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
             context=context,
         ),
         gh_token,

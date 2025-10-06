@@ -349,6 +349,55 @@ export const dynamicConnectorsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const dynamicReplicationsRowSchema = z.object({
+  config: jsonSchema,
+  created_at: z.string(),
+  created_by: z.string(),
+  credentials_path: z.string().nullable(),
+  deleted_at: z.string().nullable(),
+  id: z.string(),
+  org_id: z.string(),
+  replication_name: z.string(),
+  replication_type: z.string(),
+  updated_at: z.string(),
+});
+
+export const dynamicReplicationsInsertSchema = z.object({
+  config: jsonSchema,
+  created_at: z.string().optional(),
+  created_by: z.string(),
+  credentials_path: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  replication_name: z.string(),
+  replication_type: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const dynamicReplicationsUpdateSchema = z.object({
+  config: jsonSchema.optional(),
+  created_at: z.string().optional(),
+  created_by: z.string().optional(),
+  credentials_path: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  replication_name: z.string().optional(),
+  replication_type: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const dynamicReplicationsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("fk_org_id"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const dynamicTableContextsRowSchema = z.object({
   connector_id: z.string(),
   description: z.string().nullable(),
@@ -376,6 +425,125 @@ export const dynamicTableContextsRelationshipsSchema = z.tuple([
     columns: z.tuple([z.literal("connector_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("dynamic_connectors"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const invitationsRowSchema = z.object({
+  accepted_at: z.string().nullable(),
+  accepted_by: z.string().nullable(),
+  created_at: z.string(),
+  deleted_at: z.string().nullable(),
+  email: z.string(),
+  expires_at: z.string(),
+  id: z.string(),
+  invited_by: z.string(),
+  org_id: z.string(),
+  org_name: z.string(),
+  updated_at: z.string(),
+});
+
+export const invitationsInsertSchema = z.object({
+  accepted_at: z.string().optional().nullable(),
+  accepted_by: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  email: z.string(),
+  expires_at: z.string().optional(),
+  id: z.string().optional(),
+  invited_by: z.string(),
+  org_id: z.string(),
+  org_name: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const invitationsUpdateSchema = z.object({
+  accepted_at: z.string().optional().nullable(),
+  accepted_by: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  email: z.string().optional(),
+  expires_at: z.string().optional(),
+  id: z.string().optional(),
+  invited_by: z.string().optional(),
+  org_id: z.string().optional(),
+  org_name: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const invitationsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("invitations_accepted_by_fkey"),
+    columns: z.tuple([z.literal("accepted_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("invitations_invited_by_fkey"),
+    columns: z.tuple([z.literal("invited_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("invitations_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const notebooksRowSchema = z.object({
+  created_at: z.string(),
+  created_by: z.string(),
+  data: z.string().nullable(),
+  deleted_at: z.string().nullable(),
+  description: z.string().nullable(),
+  id: z.string(),
+  notebook_name: z.string(),
+  org_id: z.string(),
+  updated_at: z.string(),
+});
+
+export const notebooksInsertSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string(),
+  data: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  id: z.string().optional(),
+  notebook_name: z.string(),
+  org_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const notebooksUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string().optional(),
+  data: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  id: z.string().optional(),
+  notebook_name: z.string().optional(),
+  org_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const notebooksRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("saved_queries_created_by_fkey"),
+    columns: z.tuple([z.literal("created_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("saved_queries_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
 ]);
@@ -463,6 +631,7 @@ export const organizationsRowSchema = z.object({
   deleted_at: z.string().nullable(),
   id: z.string(),
   org_name: z.string(),
+  plan_id: z.string().nullable(),
   updated_at: z.string(),
 });
 
@@ -472,6 +641,7 @@ export const organizationsInsertSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string(),
+  plan_id: z.string().optional().nullable(),
   updated_at: z.string().optional(),
 });
 
@@ -481,6 +651,7 @@ export const organizationsUpdateSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string().optional(),
+  plan_id: z.string().optional().nullable(),
   updated_at: z.string().optional(),
 });
 
@@ -492,7 +663,41 @@ export const organizationsRelationshipsSchema = z.tuple([
     referencedRelation: z.literal("user_profiles"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
+  z.object({
+    foreignKeyName: z.literal("organizations_plan_id_fkey"),
+    columns: z.tuple([z.literal("plan_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("pricing_plan"),
+    referencedColumns: z.tuple([z.literal("plan_id")]),
+  }),
 ]);
+
+export const pricingPlanRowSchema = z.object({
+  created_at: z.string(),
+  plan_id: z.string(),
+  plan_name: z.string(),
+  price_per_credit: z.number(),
+  priority: z.number(),
+  updated_at: z.string(),
+});
+
+export const pricingPlanInsertSchema = z.object({
+  created_at: z.string().optional(),
+  plan_id: z.string().optional(),
+  plan_name: z.string(),
+  price_per_credit: z.number(),
+  priority: z.number().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const pricingPlanUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  plan_id: z.string().optional(),
+  plan_name: z.string().optional(),
+  price_per_credit: z.number().optional(),
+  priority: z.number().optional(),
+  updated_at: z.string().optional(),
+});
 
 export const purchaseIntentsRowSchema = z.object({
   completed_at: z.string().nullable(),
@@ -546,52 +751,84 @@ export const purchaseIntentsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const savedQueriesRowSchema = z.object({
+export const reservedNamesRowSchema = z.object({
   created_at: z.string(),
-  created_by: z.string(),
-  data: z.string().nullable(),
-  deleted_at: z.string().nullable(),
-  display_name: z.string(),
+  name: z.string(),
+});
+
+export const reservedNamesInsertSchema = z.object({
+  created_at: z.string().optional(),
+  name: z.string(),
+});
+
+export const reservedNamesUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  name: z.string().optional(),
+});
+
+export const resourcePermissionsRowSchema = z.object({
+  chat_id: z.string().nullable(),
+  created_at: z.string(),
+  granted_by: z.string().nullable(),
   id: z.string(),
-  org_id: z.string(),
+  notebook_id: z.string().nullable(),
+  permission_level: z.string(),
+  revoked_at: z.string().nullable(),
   updated_at: z.string(),
+  user_id: z.string().nullable(),
 });
 
-export const savedQueriesInsertSchema = z.object({
+export const resourcePermissionsInsertSchema = z.object({
+  chat_id: z.string().optional().nullable(),
   created_at: z.string().optional(),
-  created_by: z.string(),
-  data: z.string().optional().nullable(),
-  deleted_at: z.string().optional().nullable(),
-  display_name: z.string(),
+  granted_by: z.string().optional().nullable(),
   id: z.string().optional(),
-  org_id: z.string(),
+  notebook_id: z.string().optional().nullable(),
+  permission_level: z.string(),
+  revoked_at: z.string().optional().nullable(),
   updated_at: z.string().optional(),
+  user_id: z.string().optional().nullable(),
 });
 
-export const savedQueriesUpdateSchema = z.object({
+export const resourcePermissionsUpdateSchema = z.object({
+  chat_id: z.string().optional().nullable(),
   created_at: z.string().optional(),
-  created_by: z.string().optional(),
-  data: z.string().optional().nullable(),
-  deleted_at: z.string().optional().nullable(),
-  display_name: z.string().optional(),
+  granted_by: z.string().optional().nullable(),
   id: z.string().optional(),
-  org_id: z.string().optional(),
+  notebook_id: z.string().optional().nullable(),
+  permission_level: z.string().optional(),
+  revoked_at: z.string().optional().nullable(),
   updated_at: z.string().optional(),
+  user_id: z.string().optional().nullable(),
 });
 
-export const savedQueriesRelationshipsSchema = z.tuple([
+export const resourcePermissionsRelationshipsSchema = z.tuple([
   z.object({
-    foreignKeyName: z.literal("saved_queries_created_by_fkey"),
-    columns: z.tuple([z.literal("created_by")]),
+    foreignKeyName: z.literal("resource_permissions_chat_id_fkey"),
+    columns: z.tuple([z.literal("chat_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("chat_history"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("resource_permissions_granted_by_fkey"),
+    columns: z.tuple([z.literal("granted_by")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("user_profiles"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
   z.object({
-    foreignKeyName: z.literal("saved_queries_org_id_fkey"),
-    columns: z.tuple([z.literal("org_id")]),
+    foreignKeyName: z.literal("resource_permissions_notebook_id_fkey"),
+    columns: z.tuple([z.literal("notebook_id")]),
     isOneToOne: z.literal(false),
-    referencedRelation: z.literal("organizations"),
+    referencedRelation: z.literal("notebooks"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("resource_permissions_user_id_fkey"),
+    columns: z.tuple([z.literal("user_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
 ]);
@@ -626,7 +863,6 @@ export const userProfilesRowSchema = z.object({
   full_name: z.string().nullable(),
   id: z.string(),
   updated_at: z.string().nullable(),
-  username: z.string().nullable(),
   website: z.string().nullable(),
 });
 
@@ -636,7 +872,6 @@ export const userProfilesInsertSchema = z.object({
   full_name: z.string().optional().nullable(),
   id: z.string(),
   updated_at: z.string().optional().nullable(),
-  username: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
 });
 
@@ -646,7 +881,6 @@ export const userProfilesUpdateSchema = z.object({
   full_name: z.string().optional().nullable(),
   id: z.string().optional(),
   updated_at: z.string().optional().nullable(),
-  username: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
 });
 
@@ -697,6 +931,13 @@ export const usersByOrganizationRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const acceptInvitationArgsSchema = z.object({
+  p_invitation_id: z.string(),
+  p_user_id: z.string(),
+});
+
+export const acceptInvitationReturnsSchema = z.boolean();
+
 export const addCreditsArgsSchema = z.object({
   p_amount: z.number(),
   p_metadata: jsonSchema.optional(),
@@ -715,6 +956,41 @@ export const addOrganizationCreditsArgsSchema = z.object({
 });
 
 export const addOrganizationCreditsReturnsSchema = z.boolean();
+
+export const canGrantPermissionArgsSchema = z.object({
+  granter_id: z.string(),
+  permission_to_grant: z.string(),
+  target_resource_id: z.string(),
+  target_resource_type: z.string(),
+  target_user_id: z.string().optional(),
+});
+
+export const canGrantPermissionReturnsSchema = z.boolean();
+
+export const checkOrgAdminArgsSchema = z.object({
+  check_org_id: z.string(),
+  check_user_id: z.string(),
+});
+
+export const checkOrgAdminReturnsSchema = z.boolean();
+
+export const checkOrgMembershipArgsSchema = z.object({
+  check_org_id: z.string(),
+  check_user_id: z.string(),
+});
+
+export const checkOrgMembershipReturnsSchema = z.boolean();
+
+export const checkResourcePermissionArgsSchema = z.object({
+  p_resource_id: z.string(),
+  p_resource_type: z.string(),
+});
+
+export const checkResourcePermissionReturnsSchema = jsonSchema;
+
+export const cleanupOrphanedInvitationsArgsSchema = z.object({});
+
+export const cleanupOrphanedInvitationsReturnsSchema = z.undefined();
 
 export const deductCreditsArgsSchema = z.object({
   p_amount: z.number(),
@@ -736,6 +1012,17 @@ export const deductOrganizationCreditsArgsSchema = z.object({
 });
 
 export const deductOrganizationCreditsReturnsSchema = z.boolean();
+
+export const expireOldInvitationsArgsSchema = z.object({});
+
+export const expireOldInvitationsReturnsSchema = z.undefined();
+
+export const getOgImageInfoArgsSchema = z.object({
+  p_notebook_name: z.string(),
+  p_org_name: z.string(),
+});
+
+export const getOgImageInfoReturnsSchema = jsonSchema;
 
 export const getOrganizationCreditsArgsSchema = z.object({
   p_org_id: z.string(),
@@ -775,3 +1062,12 @@ export const previewDeductOrganizationCreditsArgsSchema = z.object({
 });
 
 export const previewDeductOrganizationCreditsReturnsSchema = z.boolean();
+
+export const validateOwnershipLimitsArgsSchema = z.object({
+  p_current_record_id: z.string().optional(),
+  p_new_role: z.string(),
+  p_old_role: z.string().optional(),
+  p_user_id: z.string(),
+});
+
+export const validateOwnershipLimitsReturnsSchema = z.boolean();

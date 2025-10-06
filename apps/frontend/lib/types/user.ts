@@ -30,16 +30,28 @@ export const NormalUserSchema = BaseUserSchema.extend({
   role: z.literal("user"),
 })
   .merge(UserDetailsSchema)
-  .merge(OrganizationDetailsSchema);
+  .merge(OrganizationDetailsSchema.partial());
+export const NormalOrgUserSchema = NormalUserSchema.extend({}).merge(
+  OrganizationDetailsSchema,
+);
 
 export const AdminUserSchema = BaseUserSchema.extend({
   role: z.literal("admin"),
 })
   .merge(UserDetailsSchema)
-  .merge(OrganizationDetailsSchema);
+  .merge(OrganizationDetailsSchema.partial());
+export const AdminOrgUserSchema = AdminUserSchema.extend({}).merge(
+  OrganizationDetailsSchema,
+);
 
 export const AuthUserSchema = z.union([NormalUserSchema, AdminUserSchema]);
 export const UserSchema = z.union([AnonUserSchema, AuthUserSchema]);
+
+export const AuthOrgUserSchema = z.union([
+  NormalOrgUserSchema,
+  AdminOrgUserSchema,
+]);
+export const OrgUserSchema = z.union([AnonUserSchema, AuthOrgUserSchema]);
 
 // Exported types inferred from Zod schemas
 export type UserRole = z.infer<typeof UserRoleSchema>;
@@ -48,6 +60,12 @@ export type BaseUser = z.infer<typeof BaseUserSchema>;
 export type AnonUser = z.infer<typeof AnonUserSchema>;
 export type UserDetails = z.infer<typeof UserDetailsSchema>;
 export type OrganizationDetails = z.infer<typeof OrganizationDetailsSchema>;
+
+export type NormalOrgUser = z.infer<typeof NormalOrgUserSchema>;
+export type AdminOrgUser = z.infer<typeof AdminOrgUserSchema>;
+export type AuthOrgUser = z.infer<typeof AuthOrgUserSchema>;
+export type OrgUser = z.infer<typeof OrgUserSchema>;
+
 export type NormalUser = z.infer<typeof NormalUserSchema>;
 export type AdminUser = z.infer<typeof AdminUserSchema>;
 export type AuthUser = z.infer<typeof AuthUserSchema>;

@@ -83,3 +83,7 @@ sqlmesh:
       deploymentName: "mcs"
       serviceName: "mcs"
       namespace: "default"
+nessie:
+  url: ""
+rpc:
+  ethereum: ""

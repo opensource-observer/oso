@@ -1,9 +1,12 @@
 import functools
+import json
 import random
 import time
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
+from http.client import IncompleteRead, RemoteDisconnected
 from typing import (
     Any,
     Callable,
@@ -22,6 +25,8 @@ from typing import (
 import dlt
 from dagster import AssetExecutionContext, AssetObservation, MetadataValue
 from dlt.extract.resource import DltResource
+from google.cloud import storage
+from google.cloud.exceptions import NotFound
 from gql import Client, gql
 from gql.transport.exceptions import (
     TransportError,
@@ -31,7 +36,7 @@ from gql.transport.exceptions import (
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.config import DagsterConfig
 from oso_dagster.utils.redis import redis_cache
-from requests.exceptions import ChunkedEncodingError
+from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
 
 # The maximum depth of the introspection query.
 FRAGMENT_MAX_DEPTH = 10
@@ -100,12 +105,33 @@ INTROSPECTION_QUERY = """
 """
 
 
+def sanitize_error_message(
+    error_message: str, endpoint: str, masked_endpoint: Optional[str] = None
+) -> str:
+    """
+    Sanitize error messages by replacing the real endpoint with a masked endpoint to avoid exposing sensitive URLs.
+
+    Args:
+        error_message: The original error message that may contain URLs.
+        endpoint: The real endpoint URL to be replaced.
+        masked_endpoint: The masked endpoint URL to replace with. If None, no sanitization is performed.
+
+    Returns:
+        Sanitized error message with sensitive URLs replaced.
+    """
+    if not masked_endpoint or not masked_endpoint.strip():
+        return error_message
+
+    return error_message.replace(endpoint, masked_endpoint)
+
+
 class PaginationType(Enum):
     """Supported pagination types."""
 
     OFFSET = "offset"
     CURSOR = "cursor"
     RELAY = "relay"
+    KEYSET = "keyset"
 
 
 @dataclass
@@ -122,7 +148,8 @@ class PaginationConfig:
         For offset-based pagination:
         offset_field: Name of the offset field (default: "offset").
         limit_field: Name of the limit field (default: "limit").
-        total_count_path: Path to total count field (e.g., "totalCount").
+        total_count_path: (Optional) Path to total count field (e.g., "totalCount").
+            If not provided, the pagination will continue until the API returns no more data.
 
         For cursor-based pagination:
         cursor_field: Name of the cursor field (default: "after").
@@ -134,6 +161,13 @@ class PaginationConfig:
         Uses cursor-based fields but expects standard Relay connection structure.
         edge_path: Path to edges array (default: "edges").
         node_path: Path to node within edge (default: "node").
+
+        For keyset-style pagination:
+        order_by_field: Name of the orderBy field (default: "id").
+        order_direction: Order direction, either "asc" or "desc" (default: "asc").
+        last_value_field: Name of the field to filter by for the next page (e.g., "id_gt").
+        cursor_key: The key in the result item to use as the cursor value (e.g., "id").
+        page_size_field: Name of the page size field (default: "first").
     """
 
     type: PaginationType
@@ -152,6 +186,11 @@ class PaginationConfig:
 
     edge_path: str = "edges"
     node_path: str = "node"
+
+    order_by_field: str = "id"
+    last_value_field: str = "id_gt"
+    cursor_key: str = "id"
+    order_direction: str = "asc"
 
     stop_condition: Optional[Callable[[Dict[str, Any], int], bool]] = None
 
@@ -197,6 +236,8 @@ class GraphQLResourceConfig:
     Args:
         name: The name of the GraphQL resource.
         endpoint: The endpoint of the GraphQL resource.
+        masked_endpoint: The masked endpoint of the GraphQL resource.
+            If exists, it will be used for logging instead of the real endpoint.
         target_type: The type to target in the introspection query.
         target_query: The query to target in the main query.
         max_depth: The maximum depth of the GraphQL query.
@@ -212,6 +253,12 @@ class GraphQLResourceConfig:
               only return one consistent data shape, so deps serve as a means to transform
               the intermediate data into the final desired output format.
         retry: Retry configuration for failed queries.
+        enable_chunked_resume: Whether to enable chunked resumability for long-running processes.
+            When enabled, each successful page is stored as a chunk in GCS, allowing the process
+            to resume from where it left off after pre-emption without data loss.
+        chunk_gcs_prefix: GCS prefix for storing chunked data and pagination state.
+        checkpoint_field: Field name to use for tracking pagination progress
+            This field's value from the last processed item will be used to resume pagination.
     """
 
     name: str
@@ -219,6 +266,7 @@ class GraphQLResourceConfig:
     target_type: str
     target_query: str
     max_depth: int = 5
+    masked_endpoint: Optional[str] = None
     headers: Optional[Dict[str, str]] = None
     transform_fn: Optional[Callable[[Any], Any]] = None
     parameters: Optional[Dict[str, Dict[str, Any]]] = None
@@ -227,6 +275,485 @@ class GraphQLResourceConfig:
     deps_rate_limit_seconds: float = 0.0
     deps: Optional[List[GraphQLDependencyCallable]] = None
     retry: Optional[RetryConfig] = None
+    enable_chunked_resume: bool = False
+    chunk_gcs_prefix: str = "dlt_chunked_state"
+    checkpoint_field: str = "id"
+
+
+@dataclass
+class GraphQLPaginationState:
+    """
+    State information for resuming GraphQL pagination.
+
+    Args:
+        last_cursor: Last cursor/offset value used for pagination.
+        pagination_type: Type of pagination being used.
+        checkpoint_field: Field name being tracked for checkpointing.
+        total_processed: Total number of items processed so far.
+        successful_pages: Number of pages successfully completed.
+        last_checkpoint_value: Last value of the checkpoint field from processed data.
+    """
+
+    last_cursor: Optional[Any] = None
+    pagination_type: PaginationType = PaginationType.KEYSET
+    checkpoint_field: str = "id"
+    total_processed: int = 0
+    successful_pages: int = 0
+    last_checkpoint_value: Optional[Any] = None
+
+
+@dataclass
+class GraphQLChunkedManifest:
+    """
+    Manifest tracking the state of a chunked GraphQL resource.
+
+    Args:
+        updated_at: ISO timestamp of last update.
+        created_at: ISO timestamp of creation.
+        pagination_state: Current pagination state for resuming.
+        completed_chunks: List of chunk file names that have been stored in GCS.
+    """
+
+    updated_at: str
+    created_at: str
+    pagination_state: GraphQLPaginationState
+    completed_chunks: List[str]
+
+
+def save_page_chunk(
+    bucket: storage.Bucket,
+    gcs_prefix: str,
+    resource_name: str,
+    page_data: List[Any],
+    page_num: int,
+    context: AssetExecutionContext,
+) -> str:
+    """
+    Save a page's data as a chunk in GCS.
+
+    Args:
+        bucket: GCS bucket to store the chunk in.
+        gcs_prefix: GCS prefix for chunked data.
+        resource_name: Name of the GraphQL resource.
+        page_data: Data from the successful page to store.
+        page_num: Page number for logging purposes.
+        context: Execution context for logging.
+
+    Returns:
+        The name of the stored chunk file.
+    """
+    chunk_uuid = str(uuid.uuid4())
+    chunk_name = f"chunk.{chunk_uuid}.json"
+    chunk_blob = bucket.blob(f"{gcs_prefix}/{resource_name}/{chunk_name}")
+
+    serialized_data = json.dumps(page_data, default=str)
+    chunk_blob.upload_from_string(serialized_data)
+
+    context.log.info(
+        f"GraphQLChunkedResource: Saved page {page_num} with {len(page_data)} items to {chunk_blob.name}"
+    )
+
+    return chunk_name
+
+
+def load_existing_chunks(
+    bucket: storage.Bucket,
+    gcs_prefix: str,
+    resource_name: str,
+    completed_chunks: List[str],
+    context: AssetExecutionContext,
+) -> Generator[Any, None, None]:
+    """
+    Load all existing chunks from GCS and yield their data.
+
+    Note: Missing chunks are assumed to have been successfully processed
+    in a previous run and cleaned up by the cleanup job. This prevents
+    reprocessing data when resuming after cleanup.
+
+    Args:
+        bucket: GCS bucket to load chunks from.
+        gcs_prefix: GCS prefix for chunked data.
+        resource_name: Name of the GraphQL resource.
+        completed_chunks: List of chunk file names to load.
+        context: Execution context for logging.
+
+    Yields:
+        Individual items from the stored chunks.
+    """
+    chunks_found = 0
+    chunks_assumed_processed = 0
+
+    context.log.info(
+        f"GraphQLChunkedResource: Loading {len(completed_chunks)} existing chunks"
+    )
+
+    for chunk_name in completed_chunks:
+        chunk_blob = bucket.blob(f"{gcs_prefix}/{resource_name}/{chunk_name}")
+        try:
+            if chunk_blob.exists():
+                context.log.info(f"GraphQLChunkedResource: Loading chunk {chunk_name}")
+                chunk_data = json.loads(chunk_blob.download_as_string())
+                chunks_found += 1
+                yield from chunk_data
+            else:
+                context.log.info(
+                    f"GraphQLChunkedResource: Chunk {chunk_name} not found, assuming already processed and cleaned up"
+                )
+                chunks_assumed_processed += 1
+        except Exception as e:
+            context.log.error(
+                f"GraphQLChunkedResource: Failed to load chunk {chunk_name}: {e}"
+            )
+
+    context.log.info(
+        f"GraphQLChunkedResource: Resume summary, {chunks_found} chunks loaded, "
+        f"{chunks_assumed_processed} chunks assumed already processed"
+    )
+
+
+def update_pagination_manifest(
+    bucket: storage.Bucket,
+    gcs_prefix: str,
+    resource_name: str,
+    pagination_state: GraphQLPaginationState,
+    new_chunk_name: str,
+    existing_manifest: Optional[GraphQLChunkedManifest],
+    context: AssetExecutionContext,
+) -> None:
+    """
+    Update the pagination manifest with new state and chunk information.
+
+    Args:
+        bucket: GCS bucket to store the manifest in.
+        gcs_prefix: GCS prefix for chunked data.
+        resource_name: Name of the GraphQL resource.
+        pagination_state: Current pagination state.
+        new_chunk_name: Name of the newly created chunk.
+        existing_manifest: Existing manifest to update, or None for new manifest.
+        context: Execution context for logging.
+    """
+    manifest_blob = bucket.blob(f"{gcs_prefix}/{resource_name}/state.json")
+
+    now = datetime.now().isoformat()
+
+    if existing_manifest:
+        completed_chunks = existing_manifest.completed_chunks + [new_chunk_name]
+        created_at = existing_manifest.created_at
+    else:
+        completed_chunks = [new_chunk_name]
+        created_at = now
+
+    manifest = GraphQLChunkedManifest(
+        updated_at=now,
+        created_at=created_at,
+        pagination_state=pagination_state,
+        completed_chunks=completed_chunks,
+    )
+
+    manifest_dict = {
+        "updated_at": manifest.updated_at,
+        "created_at": manifest.created_at,
+        "pagination_state": {
+            "last_cursor": manifest.pagination_state.last_cursor,
+            "pagination_type": manifest.pagination_state.pagination_type.value,
+            "checkpoint_field": manifest.pagination_state.checkpoint_field,
+            "total_processed": manifest.pagination_state.total_processed,
+            "successful_pages": manifest.pagination_state.successful_pages,
+            "last_checkpoint_value": manifest.pagination_state.last_checkpoint_value,
+        },
+        "completed_chunks": manifest.completed_chunks,
+        "pending_data": True,
+    }
+
+    manifest_blob.upload_from_string(json.dumps(manifest_dict, default=str))
+
+    context.log.info(
+        f"GraphQLChunkedResource: Updated manifest with {len(completed_chunks)} chunks, "
+        f"last checkpoint: {pagination_state.last_checkpoint_value}"
+    )
+
+
+def load_pagination_manifest(
+    bucket: storage.Bucket,
+    gcs_prefix: str,
+    resource_name: str,
+    context: AssetExecutionContext,
+) -> Optional[GraphQLChunkedManifest]:
+    """
+    Load the pagination manifest from GCS.
+
+    Args:
+        bucket: GCS bucket to load the manifest from.
+        gcs_prefix: GCS prefix for chunked data.
+        resource_name: Name of the GraphQL resource.
+        context: Execution context for logging.
+
+    Returns:
+        The loaded manifest, or None if it doesn't exist or is invalid.
+    """
+    manifest_blob = bucket.blob(f"{gcs_prefix}/{resource_name}/state.json")
+
+    try:
+        if not manifest_blob.exists():
+            context.log.info("GraphQLChunkedResource: No existing manifest found")
+            return None
+
+        manifest_data = json.loads(manifest_blob.download_as_string())
+        context.log.info("GraphQLChunkedResource: Found existing manifest")
+
+        pagination_state = GraphQLPaginationState(
+            last_cursor=manifest_data["pagination_state"]["last_cursor"],
+            pagination_type=PaginationType(
+                manifest_data["pagination_state"]["pagination_type"]
+            ),
+            checkpoint_field=manifest_data["pagination_state"]["checkpoint_field"],
+            total_processed=manifest_data["pagination_state"]["total_processed"],
+            successful_pages=manifest_data["pagination_state"]["successful_pages"],
+            last_checkpoint_value=manifest_data["pagination_state"][
+                "last_checkpoint_value"
+            ],
+        )
+
+        manifest = GraphQLChunkedManifest(
+            updated_at=manifest_data["updated_at"],
+            created_at=manifest_data["created_at"],
+            pagination_state=pagination_state,
+            completed_chunks=manifest_data["completed_chunks"],
+        )
+
+        return manifest
+
+    except (NotFound, json.JSONDecodeError, KeyError) as e:
+        context.log.warning(
+            f"GraphQLChunkedResource: Failed to load manifest: {e}, starting fresh"
+        )
+        return None
+
+
+@dataclass
+class ChunkedStateLoadResult:
+    """
+    Result of loading chunked state and data.
+
+    Args:
+        data_generator: Generator yielding existing chunk data.
+        successful_pages: Number of pages already processed.
+        total_items: Total items already processed.
+        variables_updates: Updates to apply to query variables for resuming pagination.
+        bucket: GCS bucket for saving new chunks (None if chunking disabled/failed).
+        manifest: Current manifest state (None if starting fresh).
+    """
+
+    data_generator: Generator[Any, None, None]
+    successful_pages: int
+    total_items: int
+    variables_updates: Dict[str, Any]
+    bucket: Optional[storage.Bucket]
+    manifest: Optional[GraphQLChunkedManifest]
+
+
+def load_chunked_state_and_data(
+    config: GraphQLResourceConfig,
+    global_config: DagsterConfig,
+    context: AssetExecutionContext,
+) -> ChunkedStateLoadResult:
+    """
+    Load existing chunked state and data for resuming a GraphQL resource.
+
+    Args:
+        config: GraphQL resource configuration.
+        global_config: Global Dagster configuration.
+        context: Execution context for logging.
+
+    Returns:
+        ChunkedStateLoadResult with loaded data and state information.
+    """
+    empty_generator = (item for item in [])
+
+    if not config.enable_chunked_resume:
+        return ChunkedStateLoadResult(
+            data_generator=empty_generator,
+            successful_pages=0,
+            total_items=0,
+            variables_updates={},
+            bucket=None,
+            manifest=None,
+        )
+
+    try:
+        bucket = storage.Client().get_bucket(global_config.gcs_bucket)
+        existing_manifest = load_pagination_manifest(
+            bucket, config.chunk_gcs_prefix, config.name, context
+        )
+
+        if not existing_manifest:
+            context.log.info(
+                "GraphQLChunkedResource: No existing manifest found, starting fresh"
+            )
+            return ChunkedStateLoadResult(
+                data_generator=empty_generator,
+                successful_pages=0,
+                total_items=0,
+                variables_updates={},
+                bucket=bucket,
+                manifest=None,
+            )
+
+        context.log.info(
+            f"GraphQLChunkedResource: Found existing manifest with {len(existing_manifest.completed_chunks)} chunks, "
+            f"resuming from checkpoint: {existing_manifest.pagination_state.last_checkpoint_value}"
+        )
+
+        data_generator = load_existing_chunks(
+            bucket,
+            config.chunk_gcs_prefix,
+            config.name,
+            existing_manifest.completed_chunks,
+            context,
+        )
+
+        successful_pages = existing_manifest.pagination_state.successful_pages
+        total_items = existing_manifest.pagination_state.total_processed
+
+        variables_updates = {}
+        if (
+            config.pagination
+            and existing_manifest.pagination_state.last_cursor is not None
+        ):
+            if config.pagination.type == PaginationType.OFFSET:
+                pass
+            elif config.pagination.type in (
+                PaginationType.CURSOR,
+                PaginationType.RELAY,
+            ):
+                variables_updates[config.pagination.cursor_field] = (
+                    existing_manifest.pagination_state.last_cursor
+                )
+            elif config.pagination.type == PaginationType.KEYSET:
+                if existing_manifest.pagination_state.last_checkpoint_value is not None:
+                    variables_updates.setdefault("where", {})
+                    variables_updates["where"][config.pagination.last_value_field] = (
+                        existing_manifest.pagination_state.last_checkpoint_value
+                    )
+
+        return ChunkedStateLoadResult(
+            data_generator=data_generator,
+            successful_pages=successful_pages,
+            total_items=total_items,
+            variables_updates=variables_updates,
+            bucket=bucket,
+            manifest=existing_manifest,
+        )
+
+    except Exception as e:
+        context.log.error(
+            f"GraphQLChunkedResource: Failed to initialize chunked resume: {e}, continuing without chunking"
+        )
+        return ChunkedStateLoadResult(
+            data_generator=empty_generator,
+            successful_pages=0,
+            total_items=0,
+            variables_updates={},
+            bucket=None,
+            manifest=None,
+        )
+
+
+def save_chunked_state_and_data(
+    config: GraphQLResourceConfig,
+    context: AssetExecutionContext,
+    data_items: List[Any],
+    pagination_info: Optional[Dict[str, Any]],
+    successful_pages: int,
+    total_items: int,
+    bucket: storage.Bucket,
+    existing_manifest: Optional[GraphQLChunkedManifest],
+) -> Optional[GraphQLChunkedManifest]:
+    """
+    Save the current page's data as a chunk and update the pagination manifest.
+
+    Args:
+        config: GraphQL resource configuration.
+        context: Execution context for logging.
+        data_items: Data items from the current page to save.
+        pagination_info: Pagination information from the current page response.
+        successful_pages: Current number of successful pages.
+        total_items: Current total number of items processed.
+        bucket: GCS bucket for storing chunks.
+        existing_manifest: Current manifest to update, or None for new manifest.
+
+    Returns:
+        Updated manifest, or None if saving failed.
+    """
+    try:
+        checkpoint_value = None
+        last_cursor = None
+
+        if isinstance(data_items, list) and len(data_items) > 0:
+            last_item = data_items[-1]
+            if config.checkpoint_field in last_item:
+                checkpoint_value = last_item[config.checkpoint_field]
+
+            if config.pagination:
+                if config.pagination.type == PaginationType.OFFSET:
+                    last_cursor = total_items
+                elif config.pagination.type in (
+                    PaginationType.CURSOR,
+                    PaginationType.RELAY,
+                ):
+                    if pagination_info:
+                        last_cursor = pagination_info.get("next_cursor")
+                elif config.pagination.type == PaginationType.KEYSET:
+                    last_cursor = checkpoint_value
+
+        chunk_name = save_page_chunk(
+            bucket,
+            config.chunk_gcs_prefix,
+            config.name,
+            data_items if isinstance(data_items, list) else [data_items],
+            successful_pages,
+            context,
+        )
+
+        pagination_state = GraphQLPaginationState(
+            last_cursor=last_cursor,
+            pagination_type=(
+                config.pagination.type if config.pagination else PaginationType.KEYSET
+            ),
+            checkpoint_field=config.checkpoint_field,
+            total_processed=total_items,
+            successful_pages=successful_pages,
+            last_checkpoint_value=checkpoint_value,
+        )
+
+        update_pagination_manifest(
+            bucket,
+            config.chunk_gcs_prefix,
+            config.name,
+            pagination_state,
+            chunk_name,
+            existing_manifest,
+            context,
+        )
+
+        if existing_manifest:
+            existing_manifest.completed_chunks.append(chunk_name)
+            existing_manifest.pagination_state = pagination_state
+            existing_manifest.updated_at = datetime.now().isoformat()
+            return existing_manifest
+        else:
+            return GraphQLChunkedManifest(
+                updated_at=datetime.now().isoformat(),
+                created_at=datetime.now().isoformat(),
+                pagination_state=pagination_state,
+                completed_chunks=[chunk_name],
+            )
+
+    except Exception as e:
+        context.log.error(
+            f"GraphQLChunkedResource: Failed to save chunk for page {successful_pages}: {e}"
+        )
+        return existing_manifest
 
 
 def create_fragment(depth: int, max_depth=FRAGMENT_MAX_DEPTH) -> str:
@@ -512,7 +1039,8 @@ class FieldExpander:
         for arg in field.get("args", []):
             if arg.get("type", {}).get("kind") == "NON_NULL":
                 self.context.log.warning(
-                    f"GraphQLFactory: Skipping field '{field_name}' because it has a required argument '{arg['name']}' that cannot be provided."
+                    f"GraphQLFactory: Skipping field '{field_name}' in '{current_path}' "
+                    f"because it has a required argument '{arg['name']}' that cannot be provided."
                 )
                 return None
 
@@ -547,8 +1075,8 @@ class FieldExpander:
         if depth >= self.max_depth and not is_pagination_field:
             if needs_expansion:
                 self.context.log.warning(
-                    f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' because it "
-                    f"requires subfields but reached max depth ({self.max_depth})."
+                    f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' in '{current_path}' "
+                    f"because it requires subfields but reached max depth ({self.max_depth})."
                 )
                 return None
             return field_name
@@ -561,7 +1089,7 @@ class FieldExpander:
 
         if not expanded_fields and needs_expansion:
             self.context.log.warning(
-                f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' "
+                f"GraphQLFactory: Skipping field '{field_name}' of type '{field_type_name}' in '{current_path}' "
                 f"because none of its subfields could be expanded."
             )
             return None
@@ -610,6 +1138,23 @@ def get_query_parameters(
                 "type": "Int!",
                 "value": pagination_config.page_size,
             }
+        elif pagination_config.type == PaginationType.KEYSET:
+            all_params["orderBy"] = {
+                "type": "String!",
+                "value": None,
+            }
+            all_params["orderDirection"] = {
+                "type": "String!",
+                "value": pagination_config.order_direction,
+            }
+            all_params[pagination_config.page_size_field] = {
+                "type": "Int!",
+                "value": pagination_config.page_size,
+            }
+            all_params["where"] = {
+                "type": "Domain_filter",
+                "value": {pagination_config.order_by_field: 0},
+            }
 
     if not all_params:
         return "", ""
@@ -645,6 +1190,8 @@ def log_failure_and_continue(
     exception: Exception,
     max_retries: int,
     pagination_metadata: Optional[Dict[str, Any]] = None,
+    endpoint: Optional[str] = None,
+    masked_endpoint: Optional[str] = None,
 ) -> None:
     """
     Log a failure with detailed information and continue execution.
@@ -655,9 +1202,14 @@ def log_failure_and_continue(
         exception: The exception that caused the failure.
         max_retries: Maximum number of retries that were attempted.
         pagination_metadata: Optional metadata related to pagination at the time of failure.
+        endpoint: The real endpoint URL for sanitization.
+        masked_endpoint: The masked endpoint URL for sanitization.
     """
+    sanitized_error = sanitize_error_message(
+        str(exception), endpoint or "", masked_endpoint
+    )
     context.log.error(
-        f"{operation_name} failed after {max_retries} retries: {exception}. "
+        f"{operation_name} failed after {max_retries} retries: {sanitized_error}. "
         "Continuing due to continue_on_failure=True"
     )
 
@@ -706,6 +1258,8 @@ def execute_with_retry(
     retry_config: Optional[RetryConfig],
     context: AssetExecutionContext,
     operation_name: str = "GraphQL operation",
+    endpoint: Optional[str] = None,
+    masked_endpoint: Optional[str] = None,
 ) -> D:
     """
     Execute a function with retry mechanism and exponential backoff.
@@ -715,6 +1269,8 @@ def execute_with_retry(
         retry_config: Retry configuration. If None, no retries are performed.
         context: Execution context for logging.
         operation_name: Name of the operation for logging.
+        endpoint: The real endpoint URL for sanitization.
+        masked_endpoint: The masked endpoint URL for sanitization.
 
     Returns:
         The result of the function execution.
@@ -733,10 +1289,17 @@ def execute_with_retry(
             TransportServerError,
             TransportQueryError,
             ChunkedEncodingError,
+            ConnectionError,
+            Timeout,
+            RemoteDisconnected,
+            IncompleteRead,
         ) as e:
+            sanitized_error = sanitize_error_message(
+                str(e), endpoint or "", masked_endpoint
+            )
             if attempt == retry_config.max_retries:
                 context.log.error(
-                    f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
+                    f"{operation_name} failed after {retry_config.max_retries} retries: {sanitized_error}"
                 )
                 raise
 
@@ -749,7 +1312,7 @@ def execute_with_retry(
                 delay += random.uniform(0, delay * 0.1)
 
             context.log.warning(
-                f"{operation_name} failed (attempt {attempt + 1}/{retry_config.max_retries + 1}): {e}. "
+                f"{operation_name} failed (attempt {attempt + 1}/{retry_config.max_retries + 1}): {sanitized_error}. "
                 f"Retrying in {delay:.2f} seconds..."
             )
 
@@ -765,6 +1328,8 @@ def execute_with_adaptive_retry(
     initial_page_size: Optional[int],
     operation_name: str = "GraphQL operation",
     pagination_context: Optional[Dict[str, Any]] = None,
+    endpoint: Optional[str] = None,
+    masked_endpoint: Optional[str] = None,
 ) -> Optional[D]:
     """
     Execute a function with retry mechanism that reduces page size on failures.
@@ -775,6 +1340,9 @@ def execute_with_adaptive_retry(
         context: Execution context for logging.
         initial_page_size: Initial page size to start with.
         operation_name: Name of the operation for logging.
+        pagination_context: Optional pagination context for logging.
+        endpoint: The real endpoint URL for sanitization.
+        masked_endpoint: The masked endpoint URL for sanitization.
 
     Returns:
         The result of the function execution, or None if continue_on_failure is True and all retries are exhausted.
@@ -788,6 +1356,8 @@ def execute_with_adaptive_retry(
             retry_config,
             context,
             operation_name,
+            endpoint,
+            masked_endpoint,
         )
 
     current_page_size = initial_page_size
@@ -814,6 +1384,10 @@ def execute_with_adaptive_retry(
             TransportServerError,
             TransportQueryError,
             ChunkedEncodingError,
+            ConnectionError,
+            Timeout,
+            RemoteDisconnected,
+            IncompleteRead,
         ) as e:
             if attempt == retry_config.max_retries:
                 if retry_config.continue_on_failure:
@@ -826,11 +1400,13 @@ def execute_with_adaptive_retry(
                             "page_size_at_failure": current_page_size,
                             **(pagination_context or {}),
                         },
+                        endpoint=endpoint,
+                        masked_endpoint=masked_endpoint,
                     )
                     return None
 
                 context.log.error(
-                    f"{operation_name} failed after {retry_config.max_retries} retries: {e}"
+                    f"{operation_name} failed after {retry_config.max_retries} retries: {sanitize_error_message(str(e), endpoint or '', masked_endpoint)}"
                 )
                 raise
 
@@ -863,7 +1439,7 @@ def execute_with_adaptive_retry(
                 delay += random.uniform(0, delay * 0.1)
 
             context.log.warning(
-                f"{operation_name}: Retrying in {delay:.2f} seconds... Error: {e}"
+                f"{operation_name}: Retrying in {delay:.2f} seconds... Error: {sanitize_error_message(str(e), endpoint or '', masked_endpoint)}"
             )
 
             start_sleep = time.time()
@@ -1079,16 +1655,35 @@ def _graphql_factory(
 
             client = Client(transport=transport)
 
-            context.log.info(f"GraphQLFactory: fetching data from {config.endpoint}")
+            if config.masked_endpoint and config.masked_endpoint.strip():
+                context.log.info(
+                    f"GraphQLFactory: fetching data from {config.masked_endpoint}"
+                )
+            else:
+                context.log.info(
+                    f"GraphQLFactory: fetching data from {config.endpoint}"
+                )
             context.log.info(f"GraphQLFactory: generated query:\n\n{generated_query}")
 
             variables = {
                 key: param["value"] for key, param in (config.parameters or {}).items()
             }
 
-            successful_pages = 0
-            total_items = 0
             has_more = True
+            data_items = []
+
+            chunked_load_result = load_chunked_state_and_data(
+                config, global_config, context
+            )
+
+            yield from chunked_load_result.data_generator
+
+            successful_pages = chunked_load_result.successful_pages
+            total_items = chunked_load_result.total_items
+            chunked_bucket = chunked_load_result.bucket
+            existing_manifest = chunked_load_result.manifest
+
+            variables.update(chunked_load_result.variables_updates)
 
             while has_more:
                 try:
@@ -1133,7 +1728,31 @@ def _graphql_factory(
                                 query_variables[config.pagination.page_size_field] = (
                                     effective_page_size
                                 )
+                            elif config.pagination.type == PaginationType.KEYSET:
+                                query_variables["orderBy"] = (
+                                    config.pagination.order_by_field
+                                )
 
+                                query_variables["orderDirection"] = (
+                                    config.pagination.order_direction
+                                )
+
+                                query_variables[config.pagination.page_size_field] = (
+                                    effective_page_size
+                                )
+
+                                # Initialize where clause if not present
+                                query_variables.setdefault("where", {})
+
+                                # For the first page, ensure the initial value is set if not provided
+                                if successful_pages == 0:
+                                    query_variables["where"].setdefault(
+                                        config.pagination.last_value_field, "0"
+                                    )
+
+                                context.log.debug(
+                                    f"GraphQLFactory: Keyset pagination variables for page {successful_pages + 1}: {query_variables}"
+                                )
                         return client.execute(
                             gql(generated_query),
                             variable_values=query_variables,
@@ -1150,6 +1769,8 @@ def _graphql_factory(
                             "total_items_processed": total_items,
                             "successful_pages": successful_pages,
                         },
+                        endpoint=config.endpoint,
+                        masked_endpoint=config.masked_endpoint,
                     )
 
                     if result is None:
@@ -1212,6 +1833,18 @@ def _graphql_factory(
                         f"GraphQLFactory: Successfully completed page {successful_pages} with {items_in_page} items (total: {total_items})"
                     )
 
+                    if chunked_bucket:
+                        existing_manifest = save_chunked_state_and_data(
+                            config,
+                            context,
+                            data_items,
+                            pagination_info,
+                            successful_pages,
+                            total_items,
+                            chunked_bucket,
+                            existing_manifest,
+                        )
+
                     if not config.pagination:
                         has_more = False
                     elif config.pagination.stop_condition:
@@ -1260,6 +1893,27 @@ def _graphql_factory(
                             )
                         else:
                             has_more = False
+                    elif config.pagination.type == PaginationType.KEYSET:
+                        if items_in_page > 0:
+                            last_item = data_items[-1]
+                            cursor_key = config.pagination.cursor_key
+                            if cursor_key in last_item:
+                                has_more = True
+                                last_value = get_nested_value(
+                                    last_item, config.pagination.cursor_key
+                                )
+                                variables.setdefault("where", {})
+                                variables["where"][
+                                    config.pagination.last_value_field
+                                ] = last_value
+                            else:
+                                context.log.warning(
+                                    f"Pagination cursor key '{cursor_key}' not found in last item of page {successful_pages}. "
+                                    "Stopping pagination."
+                                )
+                                has_more = False
+                        else:
+                            has_more = False
 
                     if (
                         has_more
@@ -1271,10 +1925,22 @@ def _graphql_factory(
                         )
                         time.sleep(config.pagination.rate_limit_seconds)
 
-                except (TransportError, ChunkedEncodingError) as e:
-                    context.log.error(f"GraphQL query execution failed: {str(e)}")
+                except (
+                    TransportError,
+                    ChunkedEncodingError,
+                    ConnectionError,
+                    Timeout,
+                    RemoteDisconnected,
+                    IncompleteRead,
+                ) as e:
+                    sanitized_error = sanitize_error_message(
+                        str(e), config.endpoint, config.masked_endpoint
+                    )
+                    context.log.error(
+                        f"GraphQL query execution failed: {sanitized_error}"
+                    )
                     raise ValueError(
-                        f"Failed to execute GraphQL query: {str(e)}"
+                        f"Failed to execute GraphQL query: {sanitized_error}"
                     ) from e
 
             context.log.info(

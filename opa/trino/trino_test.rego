@@ -155,3 +155,48 @@ test_allow_dynamic_catalog_denied_wrong_catalog if {
 		},
 	}
 }
+
+test_allow_dynamic_catalog_direct_access_allowed if {
+	trino.allow with input as {
+		"context": {
+			"identity": {"user": "jwt-some-id"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "AccessCatalog",
+			"resource": {"catalog": {"name": "dynamic"}},
+		},
+	}
+}
+
+test_allow_dynamic_catalog_information_schema_allowed if {
+	trino.allow with input as {
+		"context": {
+			"identity": {"user": "jwt-some-id"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "ShowSchemas",
+			"resource": {"schema": {
+				"catalogName": "dynamic",
+				"schemaName": "information_schema",
+			}},
+		},
+	}
+}
+
+test_allow_dynamic_catalog_access_schema_allowed if {
+	trino.allow with input as {
+		"context": {
+			"identity": {"user": "jwt-some-id"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "ShowTables",
+			"resource": {"schema": {
+				"catalogName": "dynamic",
+				"schemaName": "some-id",
+			}},
+		},
+	}
+}

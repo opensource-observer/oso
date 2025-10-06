@@ -177,7 +177,6 @@ Each algorithm we present has a different weighting of these variants. For insta
 <summary>Show me an example</summary>
 
 - If a project's monthly **transaction count** was 10k last month and 15k this month:
-
   - **Adoption** = 15k
   - **Growth** = (15k - 10k) = 5k
   - **Retention** = min(10k, 15k) = 10k
@@ -196,18 +195,15 @@ Both have the same retention metric but different adoption and growth, so we can
 After we assemble the metrics and compute the variants, we apply the following algorithm-specific weights:
 
 1. **Chain Weights**
-
    - Potential to provide chain-specific weightings, e.g., to account for differences in project representation by chain.
    - These weights are applied before anything else, to the pre-normalized chain-level metrics by project.
    - Note: all chain activity is weighted equally in the current algorithm design.
 
 2. **Metric Weights**
-
    - Each metric (e.g., `amortized_gas_fee`, `monthly_active_farcaster_users`, `monthly_average_tvl`) has a base weight.
    - Setting a weight to 0 removes that metric from consideration.
 
 3. **Variant Weights**
-
    - Each variant (adoption, growth, retention) also has a base weight.
    - For example, we might put more emphasis on "growth" to reward rapidly rising projects.
 
@@ -239,11 +235,9 @@ To arrive at single project score, we take the power mean (with p=2) across all 
 The following steps are applied to finalize results and convert them into a reward amount:
 
 1. **Normalize Scores**
-
    - Normalize all project score values so that the sum across all eligible onchain builders = 1.
 
 2. **Reward Distribution**
-
    - We can optionally apply a min/max reward cap. Then each project's final score × pool size yields the reward, with amounts above or below the caps allocated to projects in the middle.
    - The reward distribution parameters are determined by the Optimism Foundation and are not algorithm-specific.
 

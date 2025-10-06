@@ -76,7 +76,6 @@ authenticate.
    Complete the OAuth flow in your browser to authenticate.
 
 2. **Authentication Options**:
-
    - **Login with Google** (Recommended): Provides access to the free tier of
      Gemini CLI, which allows for 60 requests/minute, 1000 model requests per
      day

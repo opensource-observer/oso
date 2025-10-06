@@ -142,51 +142,6 @@ $$;
 ALTER FUNCTION "public"."add_credits"("p_user_id" "uuid", "p_amount" integer, "p_transaction_type" "text", "p_metadata" "jsonb") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."create_default_organization"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $$
-DECLARE
-  org_id UUID;
-  user_name TEXT;
-  org_display_name TEXT;
-  new_org_name TEXT;
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM public.organizations o WHERE o.created_by = NEW.id
-  ) AND NOT EXISTS (
-    SELECT 1 FROM public.users_by_organization ubo 
-    WHERE ubo.user_id = NEW.id AND ubo.deleted_at IS NULL
-  ) THEN
-    user_name := NEW.raw_user_meta_data->>'name';
-    IF user_name IS NULL THEN
-      user_name := NEW.raw_user_meta_data->>'full_name';
-    END IF;
-    org_display_name := COALESCE(
-        NULLIF(user_name, '') || '_organization_' || substr(md5(random()::text), 1, 8),
-        'organization_' || substr(md5(random()::text), 1, 8)
-    );
-    new_org_name := regexp_replace(REPLACE(LOWER(org_display_name), ' ', '_'), '[^a-z0-9_-]', '', 'g');
-    INSERT INTO public.organizations (created_by, org_name)
-    VALUES (
-      NEW.id,
-      CASE
-        WHEN new_org_name ~ '^[a-z]'
-        THEN new_org_name
-        ELSE 'org_' || new_org_name
-      END
-    )
-    RETURNING id INTO org_id;
-    INSERT INTO public.users_by_organization (user_id, org_id, user_role)
-    VALUES (NEW.id, org_id, 'admin');
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."create_default_organization"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."deduct_credits"("p_user_id" "uuid", "p_amount" integer, "p_transaction_type" "text", "p_api_endpoint" "text" DEFAULT NULL::"text", "p_metadata" "jsonb" DEFAULT NULL::"jsonb") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1081,12 +1036,6 @@ GRANT ALL ON FUNCTION "public"."add_credits"("p_user_id" "uuid", "p_amount" inte
 
 
 
-GRANT ALL ON FUNCTION "public"."create_default_organization"() TO "anon";
-GRANT ALL ON FUNCTION "public"."create_default_organization"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."create_default_organization"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."deduct_credits"("p_user_id" "uuid", "p_amount" integer, "p_transaction_type" "text", "p_api_endpoint" "text", "p_metadata" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."deduct_credits"("p_user_id" "uuid", "p_amount" integer, "p_transaction_type" "text", "p_api_endpoint" "text", "p_metadata" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."deduct_credits"("p_user_id" "uuid", "p_amount" integer, "p_transaction_type" "text", "p_api_endpoint" "text", "p_metadata" "jsonb") TO "service_role";
@@ -1273,10 +1222,6 @@ CREATE OR REPLACE TRIGGER "on_auth_user_created" AFTER INSERT ON "auth"."users" 
 
 
 CREATE OR REPLACE TRIGGER "on_auth_user_created_add_credits" AFTER INSERT ON "auth"."users" FOR EACH ROW EXECUTE FUNCTION "public"."initialize_user_credits"();
-
-
-
-CREATE OR REPLACE TRIGGER "on_auth_user_created_create_org" AFTER INSERT ON "auth"."users" FOR EACH ROW EXECUTE FUNCTION "public"."create_default_organization"();
 
 
 

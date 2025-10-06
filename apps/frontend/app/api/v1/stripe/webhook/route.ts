@@ -5,11 +5,12 @@ import { getStripeClient, extractIntentString } from "@/lib/clients/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { STRIPE_WEBHOOK_SECRET } from "@/lib/config";
+import { withPostHogTracking } from "@/lib/clients/posthog";
 
 const stripe = getStripeClient();
 const supabase = createAdminClient();
 
-export async function POST(req: NextRequest) {
+export const POST = withPostHogTracking(async (req: NextRequest) => {
   const body = await req.text();
   const headersList = await headers();
   const signature = headersList.get("stripe-signature");
@@ -168,6 +169,48 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+
+        const { error } = await supabase
+          .from("purchase_intents")
+          .update({ status: "failed" })
+          .eq("stripe_session_id", session.id);
+
+        if (error) {
+          logger.error("Failed to update failed payment session:", error);
+        }
+        break;
+      }
+
+      case "payment_intent.payment_failed": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+        const { error } = await supabase
+          .from("purchase_intents")
+          .update({ status: "failed" })
+          .like("metadata->stripe_payment_intent", `${paymentIntent.id}%`);
+
+        if (error) {
+          logger.error("Failed to update failed payment intent:", error);
+        }
+        break;
+      }
+
+      case "payment_intent.canceled": {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+        const { error } = await supabase
+          .from("purchase_intents")
+          .update({ status: "cancelled" })
+          .like("metadata->stripe_payment_intent", `${paymentIntent.id}%`);
+
+        if (error) {
+          logger.error("Failed to update cancelled payment intent:", error);
+        }
+        break;
+      }
+
       default:
         logger.info(`Unhandled event type: ${event.type}`);
     }
@@ -180,4 +223,4 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+});

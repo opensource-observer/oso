@@ -74,6 +74,18 @@ export type DynamicConnectorsUpdate = z.infer<
 export type DynamicConnectorsRelationships = z.infer<
   typeof generated.dynamicConnectorsRelationshipsSchema
 >;
+export type DynamicReplicationsRow = z.infer<
+  typeof generated.dynamicReplicationsRowSchema
+>;
+export type DynamicReplicationsInsert = z.infer<
+  typeof generated.dynamicReplicationsInsertSchema
+>;
+export type DynamicReplicationsUpdate = z.infer<
+  typeof generated.dynamicReplicationsUpdateSchema
+>;
+export type DynamicReplicationsRelationships = z.infer<
+  typeof generated.dynamicReplicationsRelationshipsSchema
+>;
 export type DynamicTableContextsRow = z.infer<
   typeof generated.dynamicTableContextsRowSchema
 >;
@@ -85,6 +97,22 @@ export type DynamicTableContextsUpdate = z.infer<
 >;
 export type DynamicTableContextsRelationships = z.infer<
   typeof generated.dynamicTableContextsRelationshipsSchema
+>;
+export type InvitationsRow = z.infer<typeof generated.invitationsRowSchema>;
+export type InvitationsInsert = z.infer<
+  typeof generated.invitationsInsertSchema
+>;
+export type InvitationsUpdate = z.infer<
+  typeof generated.invitationsUpdateSchema
+>;
+export type InvitationsRelationships = z.infer<
+  typeof generated.invitationsRelationshipsSchema
+>;
+export type NotebooksRow = z.infer<typeof generated.notebooksRowSchema>;
+export type NotebooksInsert = z.infer<typeof generated.notebooksInsertSchema>;
+export type NotebooksUpdate = z.infer<typeof generated.notebooksUpdateSchema>;
+export type NotebooksRelationships = z.infer<
+  typeof generated.notebooksRelationshipsSchema
 >;
 export type OrganizationCreditTransactionsRow = z.infer<
   typeof generated.organizationCreditTransactionsRowSchema
@@ -120,6 +148,13 @@ export type OrganizationsUpdate = z.infer<
 export type OrganizationsRelationships = z.infer<
   typeof generated.organizationsRelationshipsSchema
 >;
+export type PricingPlanRow = z.infer<typeof generated.pricingPlanRowSchema>;
+export type PricingPlanInsert = z.infer<
+  typeof generated.pricingPlanInsertSchema
+>;
+export type PricingPlanUpdate = z.infer<
+  typeof generated.pricingPlanUpdateSchema
+>;
 export type PurchaseIntentsRow = z.infer<
   typeof generated.purchaseIntentsRowSchema
 >;
@@ -132,15 +167,24 @@ export type PurchaseIntentsUpdate = z.infer<
 export type PurchaseIntentsRelationships = z.infer<
   typeof generated.purchaseIntentsRelationshipsSchema
 >;
-export type SavedQueriesRow = z.infer<typeof generated.savedQueriesRowSchema>;
-export type SavedQueriesInsert = z.infer<
-  typeof generated.savedQueriesInsertSchema
+export type ReservedNamesRow = z.infer<typeof generated.reservedNamesRowSchema>;
+export type ReservedNamesInsert = z.infer<
+  typeof generated.reservedNamesInsertSchema
 >;
-export type SavedQueriesUpdate = z.infer<
-  typeof generated.savedQueriesUpdateSchema
+export type ReservedNamesUpdate = z.infer<
+  typeof generated.reservedNamesUpdateSchema
 >;
-export type SavedQueriesRelationships = z.infer<
-  typeof generated.savedQueriesRelationshipsSchema
+export type ResourcePermissionsRow = z.infer<
+  typeof generated.resourcePermissionsRowSchema
+>;
+export type ResourcePermissionsInsert = z.infer<
+  typeof generated.resourcePermissionsInsertSchema
+>;
+export type ResourcePermissionsUpdate = z.infer<
+  typeof generated.resourcePermissionsUpdateSchema
+>;
+export type ResourcePermissionsRelationships = z.infer<
+  typeof generated.resourcePermissionsRelationshipsSchema
 >;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
@@ -168,6 +212,12 @@ export type UsersByOrganizationUpdate = z.infer<
 export type UsersByOrganizationRelationships = z.infer<
   typeof generated.usersByOrganizationRelationshipsSchema
 >;
+export type AcceptInvitationArgs = z.infer<
+  typeof generated.acceptInvitationArgsSchema
+>;
+export type AcceptInvitationReturns = z.infer<
+  typeof generated.acceptInvitationReturnsSchema
+>;
 export type AddCreditsArgs = z.infer<typeof generated.addCreditsArgsSchema>;
 export type AddCreditsReturns = z.infer<
   typeof generated.addCreditsReturnsSchema
@@ -177,6 +227,36 @@ export type AddOrganizationCreditsArgs = z.infer<
 >;
 export type AddOrganizationCreditsReturns = z.infer<
   typeof generated.addOrganizationCreditsReturnsSchema
+>;
+export type CanGrantPermissionArgs = z.infer<
+  typeof generated.canGrantPermissionArgsSchema
+>;
+export type CanGrantPermissionReturns = z.infer<
+  typeof generated.canGrantPermissionReturnsSchema
+>;
+export type CheckOrgAdminArgs = z.infer<
+  typeof generated.checkOrgAdminArgsSchema
+>;
+export type CheckOrgAdminReturns = z.infer<
+  typeof generated.checkOrgAdminReturnsSchema
+>;
+export type CheckOrgMembershipArgs = z.infer<
+  typeof generated.checkOrgMembershipArgsSchema
+>;
+export type CheckOrgMembershipReturns = z.infer<
+  typeof generated.checkOrgMembershipReturnsSchema
+>;
+export type CheckResourcePermissionArgs = z.infer<
+  typeof generated.checkResourcePermissionArgsSchema
+>;
+export type CheckResourcePermissionReturns = z.infer<
+  typeof generated.checkResourcePermissionReturnsSchema
+>;
+export type CleanupOrphanedInvitationsArgs = z.infer<
+  typeof generated.cleanupOrphanedInvitationsArgsSchema
+>;
+export type CleanupOrphanedInvitationsReturns = z.infer<
+  typeof generated.cleanupOrphanedInvitationsReturnsSchema
 >;
 export type DeductCreditsArgs = z.infer<
   typeof generated.deductCreditsArgsSchema
@@ -189,6 +269,18 @@ export type DeductOrganizationCreditsArgs = z.infer<
 >;
 export type DeductOrganizationCreditsReturns = z.infer<
   typeof generated.deductOrganizationCreditsReturnsSchema
+>;
+export type ExpireOldInvitationsArgs = z.infer<
+  typeof generated.expireOldInvitationsArgsSchema
+>;
+export type ExpireOldInvitationsReturns = z.infer<
+  typeof generated.expireOldInvitationsReturnsSchema
+>;
+export type GetOgImageInfoArgs = z.infer<
+  typeof generated.getOgImageInfoArgsSchema
+>;
+export type GetOgImageInfoReturns = z.infer<
+  typeof generated.getOgImageInfoReturnsSchema
 >;
 export type GetOrganizationCreditsArgs = z.infer<
   typeof generated.getOrganizationCreditsArgsSchema
@@ -219,4 +311,10 @@ export type PreviewDeductOrganizationCreditsArgs = z.infer<
 >;
 export type PreviewDeductOrganizationCreditsReturns = z.infer<
   typeof generated.previewDeductOrganizationCreditsReturnsSchema
+>;
+export type ValidateOwnershipLimitsArgs = z.infer<
+  typeof generated.validateOwnershipLimitsArgsSchema
+>;
+export type ValidateOwnershipLimitsReturns = z.infer<
+  typeof generated.validateOwnershipLimitsReturnsSchema
 >;

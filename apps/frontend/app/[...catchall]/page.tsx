@@ -2,9 +2,11 @@ import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { notFound } from "next/navigation";
 import { PLASMIC } from "@/plasmic-init";
 import { PlasmicClientRootProvider } from "@/plasmic-init-client";
+import type { Metadata, Viewport } from "next";
+import { generateNotebookMetadata } from "@/lib/utils/og-metadata";
 
 // Use revalidate if you want incremental static regeneration
-export const dynamic = "force-static";
+// export const dynamic = "force-static";
 export const revalidate = false; // 3600 = 1 hour
 
 export default async function PlasmicLoaderPage({
@@ -46,6 +48,41 @@ async function fetchPlasmicComponentData(catchall: string[] | undefined) {
   }
 
   return { prefetchedData };
+}
+
+type MetadataProps = {
+  params: Promise<{ catchall?: string[] }>;
+};
+
+export async function generateMetadata({
+  params,
+}: MetadataProps): Promise<Metadata> {
+  const { catchall } = await params;
+
+  if (catchall?.length === 2) {
+    const [orgName, notebookName] = catchall;
+    const notebookMetadata = await generateNotebookMetadata(
+      orgName,
+      notebookName,
+    );
+    if (notebookMetadata) return notebookMetadata;
+  }
+
+  return {};
+}
+
+export async function generateViewport(
+  props: MetadataProps,
+): Promise<Viewport> {
+  const { catchall } = await props.params;
+
+  if (catchall?.length === 2) {
+    return {
+      themeColor: "#ffffff",
+    };
+  }
+
+  return {};
 }
 
 export async function generateStaticParams() {

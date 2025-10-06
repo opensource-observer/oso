@@ -114,18 +114,15 @@ There are three types of core **nodes** in the graph:
 Links between nodes, i.e., **edges**, are derived from the following relationships:
 
 1. **Onchain Projects → Devtooling Projects** (Package Dependencies)
-
    - For each package in the onchain project’s [Software Bill of Materials (SBOM)](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/exporting-a-software-bill-of-materials-for-your-repository), if that package is owned by a devtooling project, we add an edge from the onchain project to the devtooling project.
    - Note: Currently, all dependency edges are assigned the same `event_month` value based on the most recent developer event in the dataset. This effectively means all package dependencies share the same timestamp for time-decay calculations.
 
 2. **Onchain Projects → Developers** (Commits)
-
    - Whenever a developer commits code (or merges PRs) in an onchain project’s GitHub repository, we add an edge from the onchain project to that developer.
    - At present, the code lumps all commits in a monthly bucket. We do _not_ differentiate between 1 commit or 100 commits in that month—just that the developer contributed.
    - If a developer contributed to multiple onchain projects in the same month, each project → developer link is added.
 
 3. **Developers → Devtooling Projects** (GitHub Engagement)
-
    - Whenever a developer (from the set recognized above) engages with a devtooling project (commits, PRs, issues, forks, stars, or comments), we add an edge from that developer to the devtooling project.
    - As with onchain commits, these events are grouped by month—1 PR or 10 PRs is treated as “the developer engaged in that month.”
 
@@ -193,7 +190,6 @@ Metrics about projects and developers are used as a way of seeding the EigenTrus
 Pretrust metrics are applied to each node in the graph:
 
 1. **Onchain Projects**
-
    - Pretrust is derived from aggregated economic metrics like:
      - Transaction volume (count of Superchain transactions in the last 180 days)
      - Gas fees (cumulative L2 fees paid by users in the last 180 days)
@@ -203,13 +199,11 @@ Pretrust metrics are applied to each node in the graph:
    - We sum the weighted metrics for each onchain project, then normalize again so the total across all onchain projects = 1.
 
 2. **Devtooling Projects**
-
    - Pretrust is derived from the total number of published packages and GitHub metrics (stars, forks).
    - The importance of each metric is multiplied by algorithm-specific weights.
    - The same procedure of log-scaling, min-max normalization, weighting, and final normalization ensures the total across devtooling projects = 1.
 
 3. **Developer Reputation**
-
    - Pretrust is derived from the onchain project(s) a developer contributes to:
      1. Group the developer’s commit history by (`event_month`, `developer_id`).
      2. Identify which onchain projects they contributed to in that month.
@@ -245,19 +239,16 @@ Onchain activity numbers (transactions, gas, user counts) span large orders of m
 After constructing the graph and computing pretrust scores, we assign final weights to each edge before EigenTrust runs:
 
 1. **Alpha**
-
    - The alpha parameter controls the portion of the EigenTrust output taken from the pretrust values vs. the iterative trust propagation step. See [below](#eigentrust-propagation) for more details of setting alpha values.
    - Algorithms can specify separate alpha values in the YAML config.
 
 1. **Time Decay**
-
    - By default, we reference the latest `event_month` in the dataset as `time_ref` and compute `(time_ref - event_month)` in years.
    - We apply an exponential decay factor, i.e., `exp(-decay_factor * change_in_years)`.
    - Algorithms can specify separate decay factors for each type of link in the YAML config.
    - Package dependencies are typically set to the same “event timestamp,” meaning they all share the same date in practice, so they experience the same decay penalty (or none).
 
 1. **Link-Type Weights**
-
    - Each major link type (e.g. `PACKAGE_DEPENDENCY`, `DEVELOPER_TO_DEVTOOLING_PROJECT`) has a configurable base weight.
    - These weights have the effect of favoring one type of link over another.
 
@@ -289,19 +280,16 @@ We run the [EigenTrust](https://docs.openrank.com/openrank-sdk/sdk-references/ei
 1. **Implementation**
 
    Our current code runs **two** EigenTrust passes:
-
    - One pass on `PACKAGE_DEPENDENCY` edges only (onchain → devtooling).
    - A second pass on any developer-related edges (`ONCHAIN_PROJECT_TO_DEVELOPER` and `DEVELOPER_TO_DEVTOOLING_PROJECT`).
 
    Each pass yields a trust distribution over all nodes. We then extract only the devtooling-project results from each pass, scale them by `link_type_weights` (e.g. how much we want to emphasize package dependencies vs. developer engagement), and finally sum and normalize to get a single score per devtooling project.
 
 2. **Pretrust Vector**
-
    - We combine the onchain project pretrust, devtooling project pretrust, and developer reputation into one vector for each EigenTrust pass.
    - Example: If an onchain project `i` has pretrust 0.05, a devtooling project `j` has pretrust 0.01, and a developer `d` has 0.02, those are all entries in the same “seed” vector.
 
 3. **Weighted Adjacency Matrix**
-
    - Each row i in the adjacency matrix (for node i) has outgoing edges to j with final weight `v_final`.
    - EigenTrust normalizes each row so that the sum of outbound edges from node i is 1, distributing i’s trust proportionally to its outbound edges.
 
@@ -329,11 +317,9 @@ For more details, see [this original paper](https://nlp.stanford.edu/pubs/eigent
 When EigenTrust converges, we focus on scores for **devtooling projects** only:
 
 1. **Check Eligibility**
-
    - Any project that does **not** pass the thresholds for minimal usage (three onchain references, or ten active developer links) is marked ineligible and zeroed out.
 
 2. **Aggregate Scores**
-
    - For each devtooling project, we take its EigenTrust score (v). If it’s ineligible, we set it to 0.
    - We then normalize so that the sum of devtooling scores = 1. This is the final fraction of the available S7 devtooling funds.
 
