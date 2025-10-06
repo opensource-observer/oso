@@ -6,8 +6,7 @@ import { DOMAIN } from "@/lib/config";
 import { PostHogTracker } from "@/lib/analytics/track";
 import { EVENTS } from "@/lib/types/posthog";
 
-// TODO(jabolo): Disable this once we transition to the new credits system
-const CREDITS_PREVIEW_MODE = true;
+const CREDITS_PREVIEW_MODE = false;
 export const PLAN_NAMES = ["FREE", "STARTER", "PRO", "ENTERPRISE"] as const;
 export type PlanName = (typeof PLAN_NAMES)[number];
 
@@ -47,21 +46,58 @@ export interface OrganizationPlan {
   price_per_credit: number;
 }
 
+export interface CreditErrorContext {
+  orgName: string;
+  planName: string;
+  creditsBalance: number;
+  nextRefillDate?: string | null;
+  supportChannel?: string;
+  supportUrl?: string;
+  billingContactEmail?: string;
+}
+
 export class InsufficientCreditsError extends Error {
-  constructor(
-    public orgName: string,
-    public billingUrl: string,
-    message?: string,
-  ) {
-    const defaultMessage = `Insufficient credits to complete this request. Please add more credits at ${billingUrl}`;
-    super(message || defaultMessage);
+  public readonly billingUrl: string;
+  public readonly context: CreditErrorContext;
+
+  constructor(context: CreditErrorContext, customMessage?: string) {
+    const PROTOCOL = DOMAIN.includes("localhost") ? "http" : "https";
+    const billingUrl = `${PROTOCOL}://${DOMAIN}/${context.orgName}/settings/billing`;
+
+    let message = customMessage;
+    if (!message) {
+      const isEnterprise = context.planName === "ENTERPRISE";
+      const isFree = context.planName === "FREE";
+
+      if (isEnterprise) {
+        const supportInfo = context.supportUrl
+          ? `Contact your support team at ${context.supportUrl}`
+          : context.billingContactEmail
+            ? `Contact billing at ${context.billingContactEmail}`
+            : "Contact your account manager";
+
+        message = `Insufficient credits (${context.creditsBalance} remaining). ${supportInfo} or visit ${billingUrl} to add more credits.`;
+      } else if (isFree) {
+        const refillInfo = context.nextRefillDate
+          ? ` Your next credit refill is ${new Date(context.nextRefillDate).toLocaleDateString()}.`
+          : "";
+
+        message = `Insufficient credits (${context.creditsBalance} remaining).${refillInfo} Contact sales at ${billingUrl} to upgrade your plan.`;
+      } else {
+        message = `Insufficient credits (${context.creditsBalance} remaining). Visit ${billingUrl} to add more credits.`;
+      }
+    }
+
+    super(message);
     this.name = "InsufficientCreditsError";
+    this.billingUrl = billingUrl;
+    this.context = context;
   }
 
-  static create(orgName: string): InsufficientCreditsError {
-    const PROTOCOL = DOMAIN.includes("localhost") ? "http" : "https";
-    const billingUrl = `${PROTOCOL}://${DOMAIN}/${orgName}/settings/billing`;
-    return new InsufficientCreditsError(orgName, billingUrl);
+  static createWithContext(
+    context: CreditErrorContext,
+  ): InsufficientCreditsError {
+    return new InsufficientCreditsError(context);
   }
 }
 
@@ -166,15 +202,24 @@ export class CreditsService {
       ? "preview_deduct_organization_credits"
       : "deduct_organization_credits";
 
-    const orgNamePromise = CREDITS_PREVIEW_MODE
+    const orgDataPromise = CREDITS_PREVIEW_MODE
       ? Promise.resolve(null)
       : supabaseClient
           .from("organizations")
-          .select("org_name")
+          .select(
+            `
+            org_name,
+            enterprise_support_channel,
+            enterprise_support_url,
+            billing_contact_email,
+            pricing_plan!inner(plan_name, refill_cycle_days),
+            organization_credits(credits_balance, last_refill_at)
+          `,
+          )
           .eq("id", orgId)
           .single();
 
-    const [{ data, error }, orgResult] = await Promise.all([
+    const [{ data, error }, orgDataResult] = await Promise.all([
       supabaseClient.rpc(rpcFunction, {
         p_org_id: orgId,
         p_user_id: user.userId,
@@ -183,7 +228,7 @@ export class CreditsService {
         p_api_endpoint: apiEndpoint,
         p_metadata: metadata,
       }),
-      orgNamePromise,
+      orgDataPromise,
     ]);
 
     if (CREDITS_PREVIEW_MODE) {
@@ -197,11 +242,42 @@ export class CreditsService {
       if (error) {
         logger.error("Error deducting organization credits:", error);
       }
-      const orgName = orgResult?.data?.org_name || "unknown";
+
       tracker.track(EVENTS.INSUFFICIENT_CREDITS, {
         type: transactionType,
       });
-      throw InsufficientCreditsError.create(orgName);
+
+      if (orgDataResult?.data) {
+        const orgData = orgDataResult.data;
+        const credits = orgData.organization_credits;
+        const plan = orgData.pricing_plan;
+
+        let nextRefillDate: string | null = null;
+        if (credits?.last_refill_at && plan?.refill_cycle_days) {
+          const lastRefill = new Date(credits.last_refill_at);
+          nextRefillDate = new Date(
+            lastRefill.getTime() + plan.refill_cycle_days * 24 * 60 * 60 * 1000,
+          ).toISOString();
+        }
+
+        const errorContext: CreditErrorContext = {
+          orgName: orgData.org_name,
+          planName: plan?.plan_name || "UNKNOWN",
+          creditsBalance: credits?.credits_balance || 0,
+          nextRefillDate,
+          supportChannel: orgData.enterprise_support_channel || undefined,
+          supportUrl: orgData.enterprise_support_url || undefined,
+          billingContactEmail: orgData.billing_contact_email || undefined,
+        };
+
+        throw InsufficientCreditsError.createWithContext(errorContext);
+      } else {
+        throw InsufficientCreditsError.createWithContext({
+          orgName: "unknown",
+          planName: "UNKNOWN",
+          creditsBalance: 0,
+        });
+      }
     }
 
     return orgPlan;

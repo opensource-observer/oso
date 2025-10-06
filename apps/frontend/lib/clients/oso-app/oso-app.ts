@@ -889,6 +889,146 @@ class OsoAppClient {
   }
 
   /**
+   * Gets subscription and billing status for an organization.
+   * @param orgName
+   * @returns Promise<SubscriptionStatus>
+   */
+  async getSubscriptionStatus(args: Partial<{ orgName: string }>) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to get subscription status",
+    );
+
+    const { data } = await this.supabaseClient
+      .from("organizations")
+      .select(
+        `
+        id,
+        org_name,
+        created_at,
+        enterprise_support_channel,
+        enterprise_support_url,
+        billing_contact_email,
+        pricing_plan(
+          plan_id,
+          plan_name,
+          price_per_credit,
+          max_credits_per_cycle,
+          refill_cycle_days
+        ),
+        organization_credits(
+          credits_balance,
+          last_refill_at,
+          created_at,
+          updated_at
+        )
+      `,
+      )
+      .eq("org_name", orgName)
+      .maybeSingle()
+      .throwOnError();
+
+    if (!data) {
+      throw new MissingDataError(
+        `Unable to find subscription status for organization orgName=${orgName}`,
+      );
+    }
+
+    const credits = data.organization_credits;
+    const plan = data.pricing_plan;
+
+    const lastRefill = credits?.last_refill_at
+      ? new Date(credits.last_refill_at)
+      : null;
+    const cycleStartDate = lastRefill;
+    const cycleEndDate =
+      lastRefill && plan?.refill_cycle_days
+        ? new Date(
+            lastRefill.getTime() + plan.refill_cycle_days * 24 * 60 * 60 * 1000,
+          )
+        : null;
+
+    const daysUntilRefill = cycleEndDate
+      ? Math.max(
+          0,
+          Math.ceil(
+            (cycleEndDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000),
+          ),
+        )
+      : 0;
+
+    const isEnterprise = plan?.plan_name === "ENTERPRISE";
+    const isFree = plan?.plan_name === "FREE";
+    const isActive = true;
+
+    const features = {
+      maxCreditsPerCycle: plan?.max_credits_per_cycle || 0,
+      refillCycleDays: plan?.refill_cycle_days || 0,
+      pricePerCredit: plan?.price_per_credit || 0,
+      hasUnlimitedQueries: isEnterprise,
+      hasPrioritySupport: isEnterprise,
+      hasAdvancedAnalytics: isEnterprise,
+      canCreateCustomConnectors: isEnterprise,
+    };
+
+    const finalCreditsBalance = credits?.credits_balance || 0;
+
+    return {
+      orgId: data.id,
+      orgName: data.org_name,
+      planId: plan?.plan_id,
+      planName: plan?.plan_name,
+      planDescription: undefined,
+      tier: isEnterprise ? "enterprise" : isFree ? "free" : "unknown",
+      creditsBalance: finalCreditsBalance,
+      maxCreditsPerCycle: plan?.max_credits_per_cycle || 0,
+      billingCycle: {
+        cycleDays: plan?.refill_cycle_days || 0,
+        cycleStartDate: cycleStartDate?.toISOString() || null,
+        cycleEndDate: cycleEndDate?.toISOString() || null,
+        daysUntilRefill,
+        lastRefillAt: lastRefill?.toISOString() || null,
+      },
+      subscriptionStatus: {
+        isActive,
+        isEnterprise,
+        isFree,
+        paidUpUntil: isEnterprise ? null : cycleEndDate?.toISOString() || null,
+      },
+      features,
+      billingContact: {
+        email: data.billing_contact_email,
+        supportChannel:
+          data.enterprise_support_channel ||
+          (isEnterprise ? "enterprise-support" : "community"),
+        supportUrl: data.enterprise_support_url,
+      },
+      createdAt: data.created_at,
+      updatedAt: credits?.updated_at || data.created_at,
+    };
+  }
+
+  /**
+   * Gets plan details and feature access for an organization.
+   * @param orgName
+   * @returns Promise<PlanDetails>
+   */
+  async getPlanDetails(args: Partial<{ orgName: string }>) {
+    const subscriptionStatus = await this.getSubscriptionStatus(args);
+
+    return {
+      planName: subscriptionStatus.planName,
+      tier: subscriptionStatus.tier,
+      features: subscriptionStatus.features,
+      limits: {
+        maxCreditsPerCycle: subscriptionStatus.maxCreditsPerCycle,
+        refillCycleDays: subscriptionStatus.billingCycle.cycleDays,
+        pricePerCredit: subscriptionStatus.features.pricePerCredit,
+      },
+    };
+  }
+
+  /**
    * Gets the credit transaction history for an organization.
    * @param orgName - The unique organization name
    * @param args - Optional parameters for pagination and filtering
@@ -1777,6 +1917,312 @@ class OsoAppClient {
     }
 
     return data || [];
+  }
+
+  /**
+   * Check if the current user is an admin
+   * @private
+   */
+  private async checkAdminAccess() {
+    const user = await this.getUser();
+
+    const { data } = await this.supabaseClient
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .throwOnError();
+
+    if (!data) {
+      throw new Error("Admin access required");
+    }
+  }
+
+  /**
+   * Get list of all enterprise organizations with their credit balances
+   * @returns Promise<Array>
+   */
+  async getEnterpriseOrganizations() {
+    await this.checkAdminAccess();
+
+    const { data } = await this.supabaseClient
+      .from("organizations")
+      .select(
+        `
+        id,
+        org_name,
+        created_at,
+        pricing_plan!inner(plan_name, price_per_credit, max_credits_per_cycle, refill_cycle_days),
+        organization_credits(credits_balance, last_refill_at, updated_at)
+      `,
+      )
+      .eq("pricing_plan.plan_name", "ENTERPRISE")
+      .is("deleted_at", null)
+      .order("org_name")
+      .throwOnError();
+
+    return data || [];
+  }
+
+  /**
+   * Get list of all organizations with their credit balances (admin only)
+   * @returns Promise<Array>
+   */
+  async getAllOrganizationsWithCredits() {
+    await this.checkAdminAccess();
+
+    const { data } = await this.supabaseClient
+      .from("organizations")
+      .select(
+        `
+        id,
+        org_name,
+        created_at,
+        pricing_plan!inner(plan_name, price_per_credit, max_credits_per_cycle, refill_cycle_days),
+        organization_credits(credits_balance, last_refill_at, updated_at)
+      `,
+      )
+      .is("deleted_at", null)
+      .order("org_name")
+      .throwOnError();
+
+    return data || [];
+  }
+
+  /**
+   * Promote an existing organization to enterprise tier
+   * @param orgName
+   * @returns Promise<boolean>
+   */
+  async promoteOrganizationToEnterprise(args: Partial<{ orgName: string }>) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to promote organization to enterprise",
+    );
+    await this.checkAdminAccess();
+
+    const { data: enterprisePlan } = await this.supabaseClient
+      .from("pricing_plan")
+      .select("plan_id")
+      .eq("plan_name", "ENTERPRISE")
+      .single()
+      .throwOnError();
+
+    if (!enterprisePlan) {
+      throw new Error("Enterprise plan not found");
+    }
+
+    await this.supabaseClient
+      .from("organizations")
+      .update({ plan_id: enterprisePlan.plan_id })
+      .eq("org_name", orgName)
+      .throwOnError();
+
+    return true;
+  }
+
+  /**
+   * Demote an organization from enterprise tier to free tier
+   * @param orgName
+   * @returns Promise<boolean>
+   */
+  async demoteOrganizationFromEnterprise(args: Partial<{ orgName: string }>) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to demote organization from enterprise",
+    );
+    await this.checkAdminAccess();
+
+    const { data: freePlan } = await this.supabaseClient
+      .from("pricing_plan")
+      .select("plan_id")
+      .eq("plan_name", "FREE")
+      .single()
+      .throwOnError();
+
+    if (!freePlan) {
+      throw new Error("Free plan not found");
+    }
+
+    await this.supabaseClient
+      .from("organizations")
+      .update({ plan_id: freePlan.plan_id })
+      .eq("org_name", orgName)
+      .throwOnError();
+
+    return true;
+  }
+
+  /**
+   * Manually add credits to organization balance
+   * @param args
+   * @returns Promise<boolean>
+   */
+  async addOrganizationCredits(
+    args: Partial<{
+      orgName: string;
+      amount: number;
+      reason?: string;
+    }>,
+  ) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to add organization credits",
+    );
+    const { amount, reason } = args;
+    await this.checkAdminAccess();
+
+    if (!amount || amount <= 0) {
+      throw new Error("Amount must be a positive number");
+    }
+
+    const org = await this.getOrganizationByName({ orgName });
+    const user = await this.getUser();
+
+    const { data } = await this.supabaseClient
+      .rpc("admin_add_organization_credits", {
+        p_org_id: org.id,
+        p_user_id: user.id,
+        p_amount: amount,
+        p_reason: reason || "Manual admin credit addition",
+      })
+      .throwOnError();
+
+    if (!data) {
+      throw new Error("Failed to add credits");
+    }
+
+    return true;
+  }
+
+  /**
+   * Manually deduct credits from organization balance
+   * @param args
+   * @returns Promise<boolean>
+   */
+  async deductOrganizationCredits(
+    args: Partial<{
+      orgName: string;
+      amount: number;
+      reason?: string;
+    }>,
+  ) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to deduct organization credits",
+    );
+    const { amount, reason } = args;
+    await this.checkAdminAccess();
+
+    if (!amount || amount <= 0) {
+      throw new Error("Amount must be a positive number");
+    }
+
+    const org = await this.getOrganizationByName({ orgName });
+    const user = await this.getUser();
+
+    const { data } = await this.supabaseClient
+      .rpc("admin_deduct_organization_credits", {
+        p_org_id: org.id,
+        p_user_id: user.id,
+        p_amount: amount,
+        p_reason: reason || "Manual admin credit deduction",
+      })
+      .throwOnError();
+
+    if (!data) {
+      throw new Error(
+        "Failed to deduct credits - insufficient balance or other error",
+      );
+    }
+
+    return true;
+  }
+
+  /**
+   * Updates enterprise support channel information for an organization (admin only)
+   * @param args
+   * @returns Promise<boolean>
+   */
+  async updateOrganizationSupportInfo(
+    args: Partial<{
+      orgName: string;
+      supportChannel?: string;
+      supportUrl?: string;
+      billingContactEmail?: string;
+    }>,
+  ) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to update organization support info",
+    );
+    const { supportChannel, supportUrl, billingContactEmail } = args;
+    await this.checkAdminAccess();
+
+    const updateData: Record<string, any> = {};
+    if (supportChannel !== undefined)
+      updateData.enterprise_support_channel = supportChannel;
+    if (supportUrl !== undefined)
+      updateData.enterprise_support_url = supportUrl;
+    if (billingContactEmail !== undefined)
+      updateData.billing_contact_email = billingContactEmail;
+
+    if (Object.keys(updateData).length === 0) {
+      throw new Error("At least one field to update must be provided");
+    }
+
+    const org = await this.getOrganizationByName({ orgName });
+
+    await this.supabaseClient
+      .from("organizations")
+      .update(updateData)
+      .eq("id", org.id)
+      .throwOnError();
+
+    return true;
+  }
+
+  /**
+   * Gets enterprise support channel information for an organization
+   * @param orgName
+   * @returns Promise<object>
+   */
+  async getOrganizationSupportInfo(args: Partial<{ orgName: string }>) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to get organization support info",
+    );
+
+    const { data } = await this.supabaseClient
+      .from("organizations")
+      .select(
+        `
+        id,
+        org_name,
+        enterprise_support_channel,
+        enterprise_support_url,
+        billing_contact_email,
+        pricing_plan(plan_name)
+      `,
+      )
+      .eq("org_name", orgName)
+      .maybeSingle()
+      .throwOnError();
+
+    if (!data) {
+      throw new MissingDataError(
+        `Unable to find organization with orgName=${orgName}`,
+      );
+    }
+
+    return {
+      orgId: data.id,
+      orgName: data.org_name,
+      planName: data.pricing_plan?.plan_name,
+      supportChannel: data.enterprise_support_channel,
+      supportUrl: data.enterprise_support_url,
+      billingContactEmail: data.billing_contact_email,
+    };
   }
 
   private async createSupabaseAuthHeaders() {
