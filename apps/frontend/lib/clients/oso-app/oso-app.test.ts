@@ -12,6 +12,18 @@ describe("Organizations", () => {
   beforeAll(async () => {
     // Setup test data specific to this test suite
     const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // Clean up any existing test data first
+    await adminSupabase
+      .from("user_profiles")
+      .delete()
+      .in("id", [USER_1_ID, USER_2_ID]);
+
+    await Promise.all([
+      adminSupabase.auth.admin.deleteUser(USER_1_ID).catch(() => {}),
+      adminSupabase.auth.admin.deleteUser(USER_2_ID).catch(() => {}),
+    ]);
+
     // Create test users with unique IDs
     await adminSupabase.auth.admin.createUser({
       id: USER_1_ID,
@@ -46,6 +58,25 @@ describe("Organization Ownership", () => {
     adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { storageKey: "org-ownership-admin-test-auth" },
     });
+
+    // Clean up any existing test data first
+    await Promise.all([
+      adminSupabase
+        .from("users_by_organization")
+        .delete()
+        .in("org_id", [FIRST_ORG_ID, SECOND_ORG_ID, THIRD_ORG_ID]),
+      adminSupabase
+        .from("organizations")
+        .delete()
+        .in("id", [FIRST_ORG_ID, SECOND_ORG_ID, THIRD_ORG_ID]),
+      adminSupabase.from("admin_users").delete().eq("user_id", ADMIN_USER_ID),
+      adminSupabase
+        .from("user_profiles")
+        .delete()
+        .in("id", [REGULAR_USER_ID, ADMIN_USER_ID]),
+      adminSupabase.auth.admin.deleteUser(REGULAR_USER_ID).catch(() => {}),
+      adminSupabase.auth.admin.deleteUser(ADMIN_USER_ID).catch(() => {}),
+    ]);
 
     const userCreationResults = await Promise.all([
       adminSupabase.auth.admin.createUser({
@@ -351,6 +382,45 @@ describe("Resource Permissions", () => {
     adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { storageKey: "admin-test-auth" },
     });
+
+    // Clean up any existing test data first
+    await Promise.all([
+      adminSupabase
+        .from("resource_permissions")
+        .delete()
+        .in("user_id", [
+          USER_OWNER_ID,
+          USER_COLLABORATOR_ID,
+          USER_NO_ACCESS_ID,
+        ]),
+      adminSupabase
+        .from("resource_permissions")
+        .delete()
+        .eq("notebook_id", NOTEBOOK_ID),
+      adminSupabase
+        .from("resource_permissions")
+        .delete()
+        .eq("chat_id", CHAT_ID),
+    ]);
+
+    await Promise.all([
+      adminSupabase.from("notebooks").delete().eq("id", NOTEBOOK_ID),
+      adminSupabase.from("chat_history").delete().eq("id", CHAT_ID),
+      adminSupabase.from("users_by_organization").delete().eq("org_id", ORG_ID),
+    ]);
+
+    await adminSupabase.from("organizations").delete().eq("id", ORG_ID);
+
+    await adminSupabase
+      .from("user_profiles")
+      .delete()
+      .in("id", [USER_OWNER_ID, USER_COLLABORATOR_ID, USER_NO_ACCESS_ID]);
+
+    await Promise.all([
+      adminSupabase.auth.admin.deleteUser(USER_OWNER_ID).catch(() => {}),
+      adminSupabase.auth.admin.deleteUser(USER_COLLABORATOR_ID).catch(() => {}),
+      adminSupabase.auth.admin.deleteUser(USER_NO_ACCESS_ID).catch(() => {}),
+    ]);
 
     const userCreationResults = await Promise.all([
       adminSupabase.auth.admin.createUser({
@@ -1498,6 +1568,401 @@ describe("Resource Permissions", () => {
       expect(data?.map((p) => p.id).sort()).toEqual(
         [USER_OWNER_ID, USER_COLLABORATOR_ID].sort(),
       );
+    });
+  });
+});
+
+describe("Billing and Credits", () => {
+  const ADMIN_USER_ID = crypto.randomUUID();
+  const REGULAR_USER_ID = crypto.randomUUID();
+  const FREE_ORG_ID = crypto.randomUUID();
+  const ENTERPRISE_ORG_ID = crypto.randomUUID();
+
+  let adminSupabase: ReturnType<typeof createClient>;
+  let adminClient: OsoAppClient;
+  let regularClient: OsoAppClient;
+
+  beforeAll(async () => {
+    adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { storageKey: "billing-admin-test-auth" },
+    });
+
+    await Promise.all([
+      adminSupabase
+        .from("organization_credits")
+        .delete()
+        .in("org_id", [FREE_ORG_ID, ENTERPRISE_ORG_ID]),
+      adminSupabase
+        .from("users_by_organization")
+        .delete()
+        .in("org_id", [FREE_ORG_ID, ENTERPRISE_ORG_ID]),
+    ]);
+
+    await adminSupabase
+      .from("organizations")
+      .delete()
+      .in("id", [FREE_ORG_ID, ENTERPRISE_ORG_ID]);
+
+    await Promise.all([
+      adminSupabase.from("admin_users").delete().eq("user_id", ADMIN_USER_ID),
+      adminSupabase
+        .from("user_profiles")
+        .delete()
+        .in("id", [ADMIN_USER_ID, REGULAR_USER_ID]),
+    ]);
+
+    await Promise.all([
+      adminSupabase.auth.admin.deleteUser(ADMIN_USER_ID).catch(() => {}),
+      adminSupabase.auth.admin.deleteUser(REGULAR_USER_ID).catch(() => {}),
+    ]);
+
+    await Promise.all([
+      adminSupabase.auth.admin.createUser({
+        id: ADMIN_USER_ID,
+        email: `billing_admin_${ADMIN_USER_ID}@test.com`,
+        password: "password123",
+        email_confirm: true,
+      }),
+      adminSupabase.auth.admin.createUser({
+        id: REGULAR_USER_ID,
+        email: `billing_regular_${REGULAR_USER_ID}@test.com`,
+        password: "password123",
+        email_confirm: true,
+      }),
+    ]);
+
+    await adminSupabase.from("user_profiles").insert([
+      {
+        id: ADMIN_USER_ID,
+        email: `billing_admin_${ADMIN_USER_ID}@test.com`,
+        full_name: "Billing Admin",
+      },
+      {
+        id: REGULAR_USER_ID,
+        email: `billing_regular_${REGULAR_USER_ID}@test.com`,
+        full_name: "Billing Regular",
+      },
+    ]);
+
+    await adminSupabase
+      .from("admin_users")
+      .insert({
+        user_id: ADMIN_USER_ID,
+        name: "Billing Test Admin",
+        description: "Admin for billing tests",
+      })
+      .throwOnError();
+
+    const { data: freePlan } = await adminSupabase
+      .from("pricing_plan")
+      .select("plan_id")
+      .eq("plan_name", "FREE")
+      .single();
+
+    const { data: enterprisePlan } = await adminSupabase
+      .from("pricing_plan")
+      .select("plan_id")
+      .eq("plan_name", "ENTERPRISE")
+      .single();
+
+    await adminSupabase
+      .from("organizations")
+      .upsert(
+        [
+          {
+            id: FREE_ORG_ID,
+            created_by: REGULAR_USER_ID,
+            org_name: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+            plan_id: freePlan?.plan_id,
+          },
+          {
+            id: ENTERPRISE_ORG_ID,
+            created_by: ADMIN_USER_ID,
+            org_name: `enterprise_billing_${ENTERPRISE_ORG_ID.substring(0, 8)}`,
+            plan_id: enterprisePlan?.plan_id,
+            billing_contact_email: "enterprise@test.com",
+            enterprise_support_url: "https://support.test.com",
+            enterprise_support_channel: "slack",
+          },
+        ],
+        { onConflict: "id" },
+      )
+      .throwOnError();
+
+    await adminSupabase
+      .rpc("admin_add_organization_credits", {
+        p_org_id: FREE_ORG_ID,
+        p_user_id: ADMIN_USER_ID,
+        p_amount: 100,
+        p_reason: "Test setup - initial free credits",
+      })
+      .throwOnError();
+
+    await adminSupabase
+      .rpc("admin_add_organization_credits", {
+        p_org_id: ENTERPRISE_ORG_ID,
+        p_user_id: ADMIN_USER_ID,
+        p_amount: 10000,
+        p_reason: "Test setup - enterprise credits",
+      })
+      .throwOnError();
+
+    const adminUserSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { storageKey: "admin-billing-client-auth" },
+    });
+    await adminUserSupabase.auth.signInWithPassword({
+      email: `billing_admin_${ADMIN_USER_ID}@test.com`,
+      password: "password123",
+    });
+    adminClient = new OsoAppClient(adminUserSupabase);
+
+    const regularUserSupabase = createClient(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_KEY,
+      {
+        auth: { storageKey: "regular-billing-client-auth" },
+      },
+    );
+    await regularUserSupabase.auth.signInWithPassword({
+      email: `billing_regular_${REGULAR_USER_ID}@test.com`,
+      password: "password123",
+    });
+    regularClient = new OsoAppClient(regularUserSupabase);
+  });
+
+  afterAll(async () => {
+    await Promise.all([
+      adminSupabase
+        .from("organization_credits")
+        .delete()
+        .in("org_id", [FREE_ORG_ID, ENTERPRISE_ORG_ID]),
+      adminSupabase
+        .from("users_by_organization")
+        .delete()
+        .in("org_id", [FREE_ORG_ID, ENTERPRISE_ORG_ID]),
+      adminSupabase
+        .from("organizations")
+        .delete()
+        .in("id", [FREE_ORG_ID, ENTERPRISE_ORG_ID]),
+      adminSupabase.from("admin_users").delete().eq("user_id", ADMIN_USER_ID),
+      adminSupabase
+        .from("user_profiles")
+        .delete()
+        .in("id", [ADMIN_USER_ID, REGULAR_USER_ID]),
+      adminSupabase.auth.admin.deleteUser(ADMIN_USER_ID),
+      adminSupabase.auth.admin.deleteUser(REGULAR_USER_ID),
+    ]);
+  });
+
+  describe("getSubscriptionStatus", () => {
+    it("should return correct structure for FREE tier", async () => {
+      const status = await adminClient.getSubscriptionStatus({
+        orgName: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+      });
+
+      expect(status.tier).toBe("free");
+      expect(status.planName).toBe("FREE");
+      expect(status.creditsBalance).toBeGreaterThanOrEqual(0);
+      expect(status.subscriptionStatus.isFree).toBe(true);
+      expect(status.subscriptionStatus.isEnterprise).toBe(false);
+      expect(status.billingCycle.cycleStartDate).toBeDefined();
+      expect(status.billingCycle.cycleEndDate).toBeDefined();
+      expect(status.billingCycle.daysUntilRefill).toBeGreaterThanOrEqual(0);
+    });
+
+    it("should return correct structure for ENTERPRISE tier", async () => {
+      const status = await adminClient.getSubscriptionStatus({
+        orgName: `enterprise_billing_${ENTERPRISE_ORG_ID.substring(0, 8)}`,
+      });
+
+      expect(status.tier).toBe("enterprise");
+      expect(status.planName).toBe("ENTERPRISE");
+      expect(status.creditsBalance).toBeGreaterThanOrEqual(0);
+      expect(status.subscriptionStatus.isEnterprise).toBe(true);
+      expect(status.subscriptionStatus.isFree).toBe(false);
+      expect(status.billingContact.email).toBe("enterprise@test.com");
+      expect(status.billingContact.supportUrl).toBe("https://support.test.com");
+      expect(status.billingContact.supportChannel).toBe("slack");
+      expect(status.features.hasUnlimitedQueries).toBe(true);
+      expect(status.features.hasPrioritySupport).toBe(true);
+    });
+
+    it("should calculate next refill date correctly", async () => {
+      const status = await adminClient.getSubscriptionStatus({
+        orgName: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+      });
+
+      if (status.billingCycle.cycleStartDate && status.billingCycle.cycleDays) {
+        const startDate = new Date(status.billingCycle.cycleStartDate);
+        const expectedEndDate = new Date(
+          startDate.getTime() +
+            status.billingCycle.cycleDays * 24 * 60 * 60 * 1000,
+        );
+        const actualEndDate = new Date(status.billingCycle.cycleEndDate!);
+
+        expect(actualEndDate.getTime()).toBe(expectedEndDate.getTime());
+      }
+    });
+  });
+
+  describe("Admin operations - Access control", () => {
+    it("should allow admin to promote organization to enterprise", async () => {
+      const result = await adminClient.promoteOrganizationToEnterprise({
+        orgName: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+      });
+
+      expect(result).toBe(true);
+
+      const status = await adminClient.getSubscriptionStatus({
+        orgName: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+      });
+
+      expect(status.planName).toBe("ENTERPRISE");
+      expect(status.tier).toBe("enterprise");
+
+      await adminClient.demoteOrganizationFromEnterprise({
+        orgName: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+      });
+    });
+
+    it("should deny regular user from promoting organization", async () => {
+      await expect(
+        regularClient.promoteOrganizationToEnterprise({
+          orgName: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+        }),
+      ).rejects.toThrow("Admin access required");
+    });
+
+    it("should allow admin to add credits", async () => {
+      const orgName = `free_billing_${FREE_ORG_ID.substring(0, 8)}`;
+
+      const initialStatus = await adminClient.getSubscriptionStatus({
+        orgName,
+      });
+      const initialBalance = initialStatus.creditsBalance;
+
+      await adminClient.addOrganizationCredits({
+        orgName,
+        amount: 50,
+        reason: "Test credit addition",
+      });
+
+      const updatedStatus = await adminClient.getSubscriptionStatus({
+        orgName,
+      });
+
+      expect(updatedStatus.creditsBalance).toBe(initialBalance + 50);
+    });
+
+    it("should allow admin to deduct credits", async () => {
+      const orgName = `free_billing_${FREE_ORG_ID.substring(0, 8)}`;
+
+      const initialStatus = await adminClient.getSubscriptionStatus({
+        orgName,
+      });
+      const initialBalance = initialStatus.creditsBalance;
+
+      await adminClient.deductOrganizationCredits({
+        orgName,
+        amount: 25,
+        reason: "Test credit deduction",
+      });
+
+      const updatedStatus = await adminClient.getSubscriptionStatus({
+        orgName,
+      });
+
+      expect(updatedStatus.creditsBalance).toBe(initialBalance - 25);
+    });
+
+    it("should deny regular user from adding credits", async () => {
+      await expect(
+        regularClient.addOrganizationCredits({
+          orgName: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+          amount: 50,
+        }),
+      ).rejects.toThrow("Admin access required");
+    });
+  });
+
+  describe("Support info management", () => {
+    it("should allow admin to update support info", async () => {
+      const result = await adminClient.updateOrganizationSupportInfo({
+        orgName: `enterprise_billing_${ENTERPRISE_ORG_ID.substring(0, 8)}`,
+        supportChannel: "discord",
+        supportUrl: "https://discord.gg/test",
+        billingContactEmail: "billing-new@test.com",
+      });
+
+      expect(result).toBe(true);
+
+      const supportInfo = await adminClient.getOrganizationSupportInfo({
+        orgName: `enterprise_billing_${ENTERPRISE_ORG_ID.substring(0, 8)}`,
+      });
+
+      expect(supportInfo.supportChannel).toBe("discord");
+      expect(supportInfo.supportUrl).toBe("https://discord.gg/test");
+      expect(supportInfo.billingContactEmail).toBe("billing-new@test.com");
+    });
+
+    it("should allow anyone to read support info", async () => {
+      const supportInfo = await regularClient.getOrganizationSupportInfo({
+        orgName: `enterprise_billing_${ENTERPRISE_ORG_ID.substring(0, 8)}`,
+      });
+
+      expect(supportInfo.orgName).toBeDefined();
+      expect(supportInfo.planName).toBe("ENTERPRISE");
+    });
+  });
+
+  describe("Organization listing", () => {
+    it("should list enterprise organizations for admin", async () => {
+      const enterprises = await adminClient.getEnterpriseOrganizations();
+
+      expect(Array.isArray(enterprises)).toBe(true);
+      expect(enterprises.some((org) => org.id === ENTERPRISE_ORG_ID)).toBe(
+        true,
+      );
+    });
+
+    it("should deny regular user from listing enterprise orgs", async () => {
+      await expect(regularClient.getEnterpriseOrganizations()).rejects.toThrow(
+        "Admin access required",
+      );
+    });
+
+    it("should list all organizations with credits for admin", async () => {
+      const allOrgs = await adminClient.getAllOrganizationsWithCredits();
+
+      expect(Array.isArray(allOrgs)).toBe(true);
+      expect(allOrgs.length).toBeGreaterThanOrEqual(2);
+      expect(allOrgs.some((org) => org.id === FREE_ORG_ID)).toBe(true);
+      expect(allOrgs.some((org) => org.id === ENTERPRISE_ORG_ID)).toBe(true);
+    });
+  });
+
+  describe("Input validation", () => {
+    it("should require orgName for getSubscriptionStatus", async () => {
+      await expect(adminClient.getSubscriptionStatus({})).rejects.toThrow(
+        "orgName is required",
+      );
+    });
+
+    it("should require positive amount for adding credits", async () => {
+      await expect(
+        adminClient.addOrganizationCredits({
+          orgName: `free_billing_${FREE_ORG_ID.substring(0, 8)}`,
+          amount: -10,
+        }),
+      ).rejects.toThrow("Amount must be a positive number");
+    });
+
+    it("should require at least one field for support info update", async () => {
+      await expect(
+        adminClient.updateOrganizationSupportInfo({
+          orgName: `enterprise_billing_${ENTERPRISE_ORG_ID.substring(0, 8)}`,
+        }),
+      ).rejects.toThrow("At least one field to update must be provided");
     });
   });
 });
