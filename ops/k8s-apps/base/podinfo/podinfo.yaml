@@ -39,7 +39,7 @@ spec:
       enabled: true
       className: ingress-internal-cloudflare
       hosts:
-        - host: test-podinfo.opensource.observer
+        - host: test-podinfo.oso.xyz
           paths:
             - path: /
               pathType: Prefix
