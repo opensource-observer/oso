@@ -49,11 +49,11 @@ jobs:
         run: pixi run make fe
 
       - name: Build the dist directory for marimo
-        run: pixi run bash scripts/build_marimo_static_dist.sh marimo_dist marimo.opensource.observer
+        run: pixi run bash scripts/build_marimo_static_dist.sh marimo_dist marimo.oso.xyz
 
       - name: Create _redirects file for Cloudflare Pages
         run: |
-          echo "/notebook/api/* https://www.opensource.observer/api/v1/marimo/:splat 307" > marimo_dist/_redirects
+          echo "/notebook/api/* https://www.oso.xyz/api/v1/marimo/:splat 307" > marimo_dist/_redirects
 
       - name: Create _headers file for Cloudflare Pages for CORS
         run: |
