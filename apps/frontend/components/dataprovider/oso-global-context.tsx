@@ -84,6 +84,16 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "grantPublicPermission",
   "listResourcePermissions",
   "revokePublicPermission",
+  "getSubscriptionStatus",
+  "getPlanDetails",
+  "getEnterpriseOrganizations",
+  "getAllOrganizationsWithCredits",
+  "promoteOrganizationToEnterprise",
+  "demoteOrganizationFromEnterprise",
+  "addOrganizationCredits",
+  "deductOrganizationCredits",
+  "updateOrganizationSupportInfo",
+  "getOrganizationSupportInfo",
 ]);
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [
