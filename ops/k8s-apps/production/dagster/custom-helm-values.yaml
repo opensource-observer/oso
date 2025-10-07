@@ -25,7 +25,7 @@ spec:
     configMap:
       secretPrefix: "gcp:secretmanager:production-dagster"
     alerts:
-      baseUrl: "https://dagster.opensource.observer"
+      baseUrl: "https://dagster.oso.xyz"
     cache:
       uri: "redis://redis.production-redis.svc.cluster.local:6379?ttl=3600"
     dagster:
@@ -35,9 +35,9 @@ spec:
         enabled: true
         ingressClassName: ingress-internal-cloudflare
         dagsterWebserver:
-          host: admin-dagster.opensource.observer
+          host: admin-dagster.oso.xyz
         readOnlyDagsterWebserver:
-          host: dagster.opensource.observer
+          host: dagster.oso.xyz
       dagsterDaemon:
         runRetries:
           enabled: true
