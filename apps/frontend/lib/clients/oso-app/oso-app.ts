@@ -906,7 +906,6 @@ class OsoAppClient {
         id,
         org_name,
         created_at,
-        enterprise_support_channel,
         enterprise_support_url,
         billing_contact_email,
         pricing_plan(
@@ -998,9 +997,6 @@ class OsoAppClient {
       features,
       billingContact: {
         email: data.billing_contact_email,
-        supportChannel:
-          data.enterprise_support_channel ||
-          (isEnterprise ? "enterprise-support" : "community"),
         supportUrl: data.enterprise_support_url,
       },
       createdAt: data.created_at,
@@ -1920,31 +1916,10 @@ class OsoAppClient {
   }
 
   /**
-   * Check if the current user is an admin
-   * @private
-   */
-  private async checkAdminAccess() {
-    const user = await this.getUser();
-
-    const { data } = await this.supabaseClient
-      .from("admin_users")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .throwOnError();
-
-    if (!data) {
-      throw new Error("Admin access required");
-    }
-  }
-
-  /**
    * Get list of all enterprise organizations with their credit balances
    * @returns Promise<Array>
    */
   async getEnterpriseOrganizations() {
-    await this.checkAdminAccess();
-
     const { data } = await this.supabaseClient
       .from("organizations")
       .select(
@@ -1969,8 +1944,6 @@ class OsoAppClient {
    * @returns Promise<Array>
    */
   async getAllOrganizationsWithCredits() {
-    await this.checkAdminAccess();
-
     const { data } = await this.supabaseClient
       .from("organizations")
       .select(
@@ -1999,7 +1972,6 @@ class OsoAppClient {
       args.orgName,
       "orgName is required to promote organization to enterprise",
     );
-    await this.checkAdminAccess();
 
     const { data: enterprisePlan } = await this.supabaseClient
       .from("pricing_plan")
@@ -2031,7 +2003,6 @@ class OsoAppClient {
       args.orgName,
       "orgName is required to demote organization from enterprise",
     );
-    await this.checkAdminAccess();
 
     const { data: freePlan } = await this.supabaseClient
       .from("pricing_plan")
@@ -2070,7 +2041,6 @@ class OsoAppClient {
       "orgName is required to add organization credits",
     );
     const { amount, reason } = args;
-    await this.checkAdminAccess();
 
     if (!amount || amount <= 0) {
       throw new Error("Amount must be a positive number");
@@ -2079,18 +2049,45 @@ class OsoAppClient {
     const org = await this.getOrganizationByName({ orgName });
     const user = await this.getUser();
 
-    const { data } = await this.supabaseClient
-      .rpc("admin_add_organization_credits", {
-        p_org_id: org.id,
-        p_user_id: user.id,
-        p_amount: amount,
-        p_reason: reason || "Manual admin credit addition",
-      })
+    const { data: currentCredits } = await this.supabaseClient
+      .from("organization_credits")
+      .select("credits_balance")
+      .eq("org_id", org.id)
+      .maybeSingle()
       .throwOnError();
 
-    if (!data) {
-      throw new Error("Failed to add credits");
-    }
+    const currentBalance = currentCredits?.credits_balance || 0;
+    const newBalance = currentBalance + amount;
+
+    await this.supabaseClient
+      .from("organization_credits")
+      .upsert(
+        {
+          org_id: org.id,
+          credits_balance: newBalance,
+          last_refill_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "org_id" },
+      )
+      .throwOnError();
+
+    await this.supabaseClient
+      .from("organization_credit_transactions")
+      .insert({
+        org_id: org.id,
+        user_id: user.id,
+        amount: amount,
+        transaction_type: "admin_grant",
+        metadata: {
+          reason: reason || "Manual admin credit addition",
+          admin_action: true,
+          previous_balance: currentBalance,
+          new_balance: newBalance,
+        },
+        created_at: new Date().toISOString(),
+      })
+      .throwOnError();
 
     return true;
   }
@@ -2112,7 +2109,6 @@ class OsoAppClient {
       "orgName is required to deduct organization credits",
     );
     const { amount, reason } = args;
-    await this.checkAdminAccess();
 
     if (!amount || amount <= 0) {
       throw new Error("Amount must be a positive number");
@@ -2121,108 +2117,48 @@ class OsoAppClient {
     const org = await this.getOrganizationByName({ orgName });
     const user = await this.getUser();
 
-    const { data } = await this.supabaseClient
-      .rpc("admin_deduct_organization_credits", {
-        p_org_id: org.id,
-        p_user_id: user.id,
-        p_amount: amount,
-        p_reason: reason || "Manual admin credit deduction",
+    const { data: currentCredits } = await this.supabaseClient
+      .from("organization_credits")
+      .select("credits_balance")
+      .eq("org_id", org.id)
+      .single()
+      .throwOnError();
+
+    const currentBalance = currentCredits.credits_balance;
+
+    if (currentBalance < amount) {
+      throw new Error("Insufficient credits balance");
+    }
+
+    const newBalance = currentBalance - amount;
+
+    await this.supabaseClient
+      .from("organization_credits")
+      .update({
+        credits_balance: newBalance,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("org_id", org.id)
+      .throwOnError();
+
+    await this.supabaseClient
+      .from("organization_credit_transactions")
+      .insert({
+        org_id: org.id,
+        user_id: user.id,
+        amount: -amount,
+        transaction_type: "admin_deduct",
+        metadata: {
+          reason: reason || "Manual admin credit deduction",
+          admin_action: true,
+          previous_balance: currentBalance,
+          new_balance: newBalance,
+        },
+        created_at: new Date().toISOString(),
       })
       .throwOnError();
 
-    if (!data) {
-      throw new Error(
-        "Failed to deduct credits - insufficient balance or other error",
-      );
-    }
-
     return true;
-  }
-
-  /**
-   * Updates enterprise support channel information for an organization (admin only)
-   * @param args
-   * @returns Promise<boolean>
-   */
-  async updateOrganizationSupportInfo(
-    args: Partial<{
-      orgName: string;
-      supportChannel?: string;
-      supportUrl?: string;
-      billingContactEmail?: string;
-    }>,
-  ) {
-    const orgName = ensure(
-      args.orgName,
-      "orgName is required to update organization support info",
-    );
-    const { supportChannel, supportUrl, billingContactEmail } = args;
-    await this.checkAdminAccess();
-
-    const updateData: Record<string, any> = {};
-    if (supportChannel !== undefined)
-      updateData.enterprise_support_channel = supportChannel;
-    if (supportUrl !== undefined)
-      updateData.enterprise_support_url = supportUrl;
-    if (billingContactEmail !== undefined)
-      updateData.billing_contact_email = billingContactEmail;
-
-    if (Object.keys(updateData).length === 0) {
-      throw new Error("At least one field to update must be provided");
-    }
-
-    const org = await this.getOrganizationByName({ orgName });
-
-    await this.supabaseClient
-      .from("organizations")
-      .update(updateData)
-      .eq("id", org.id)
-      .throwOnError();
-
-    return true;
-  }
-
-  /**
-   * Gets enterprise support channel information for an organization
-   * @param orgName
-   * @returns Promise<object>
-   */
-  async getOrganizationSupportInfo(args: Partial<{ orgName: string }>) {
-    const orgName = ensure(
-      args.orgName,
-      "orgName is required to get organization support info",
-    );
-
-    const { data } = await this.supabaseClient
-      .from("organizations")
-      .select(
-        `
-        id,
-        org_name,
-        enterprise_support_channel,
-        enterprise_support_url,
-        billing_contact_email,
-        pricing_plan(plan_name)
-      `,
-      )
-      .eq("org_name", orgName)
-      .maybeSingle()
-      .throwOnError();
-
-    if (!data) {
-      throw new MissingDataError(
-        `Unable to find organization with orgName=${orgName}`,
-      );
-    }
-
-    return {
-      orgId: data.id,
-      orgName: data.org_name,
-      planName: data.pricing_plan?.plan_name,
-      supportChannel: data.enterprise_support_channel,
-      supportUrl: data.enterprise_support_url,
-      billingContactEmail: data.billing_contact_email,
-    };
   }
 
   private async createSupabaseAuthHeaders() {
