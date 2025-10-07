@@ -593,7 +593,6 @@ export type Database = {
           created_at: string;
           created_by: string;
           deleted_at: string | null;
-          enterprise_support_channel: string | null;
           enterprise_support_url: string | null;
           id: string;
           org_name: string;
@@ -605,7 +604,6 @@ export type Database = {
           created_at?: string;
           created_by: string;
           deleted_at?: string | null;
-          enterprise_support_channel?: string | null;
           enterprise_support_url?: string | null;
           id?: string;
           org_name: string;
@@ -617,7 +615,6 @@ export type Database = {
           created_at?: string;
           created_by?: string;
           deleted_at?: string | null;
-          enterprise_support_channel?: string | null;
           enterprise_support_url?: string | null;
           id?: string;
           org_name?: string;
@@ -924,24 +921,6 @@ export type Database = {
           p_metadata?: Json;
           p_org_id: string;
           p_transaction_type: string;
-          p_user_id: string;
-        };
-        Returns: boolean;
-      };
-      admin_add_organization_credits: {
-        Args: {
-          p_amount: number;
-          p_org_id: string;
-          p_reason?: string;
-          p_user_id: string;
-        };
-        Returns: boolean;
-      };
-      admin_deduct_organization_credits: {
-        Args: {
-          p_amount: number;
-          p_org_id: string;
-          p_reason?: string;
           p_user_id: string;
         };
         Returns: boolean;

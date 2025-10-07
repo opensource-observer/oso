@@ -633,7 +633,6 @@ export const organizationsRowSchema = z.object({
   created_at: z.string(),
   created_by: z.string(),
   deleted_at: z.string().nullable(),
-  enterprise_support_channel: z.string().nullable(),
   enterprise_support_url: z.string().nullable(),
   id: z.string(),
   org_name: z.string(),
@@ -646,7 +645,6 @@ export const organizationsInsertSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string(),
   deleted_at: z.string().optional().nullable(),
-  enterprise_support_channel: z.string().optional().nullable(),
   enterprise_support_url: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string(),
@@ -659,7 +657,6 @@ export const organizationsUpdateSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
-  enterprise_support_channel: z.string().optional().nullable(),
   enterprise_support_url: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string().optional(),
@@ -974,24 +971,6 @@ export const addOrganizationCreditsArgsSchema = z.object({
 });
 
 export const addOrganizationCreditsReturnsSchema = z.boolean();
-
-export const adminAddOrganizationCreditsArgsSchema = z.object({
-  p_amount: z.number(),
-  p_org_id: z.string(),
-  p_reason: z.string().optional(),
-  p_user_id: z.string(),
-});
-
-export const adminAddOrganizationCreditsReturnsSchema = z.boolean();
-
-export const adminDeductOrganizationCreditsArgsSchema = z.object({
-  p_amount: z.number(),
-  p_org_id: z.string(),
-  p_reason: z.string().optional(),
-  p_user_id: z.string(),
-});
-
-export const adminDeductOrganizationCreditsReturnsSchema = z.boolean();
 
 export const canGrantPermissionArgsSchema = z.object({
   granter_id: z.string(),
