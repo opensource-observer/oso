@@ -222,12 +222,6 @@ export type AddCreditsArgs = z.infer<typeof generated.addCreditsArgsSchema>;
 export type AddCreditsReturns = z.infer<
   typeof generated.addCreditsReturnsSchema
 >;
-export type AddOrganizationCreditsArgs = z.infer<
-  typeof generated.addOrganizationCreditsArgsSchema
->;
-export type AddOrganizationCreditsReturns = z.infer<
-  typeof generated.addOrganizationCreditsReturnsSchema
->;
 export type CanGrantPermissionArgs = z.infer<
   typeof generated.canGrantPermissionArgsSchema
 >;
@@ -264,12 +258,6 @@ export type DeductCreditsArgs = z.infer<
 export type DeductCreditsReturns = z.infer<
   typeof generated.deductCreditsReturnsSchema
 >;
-export type DeductOrganizationCreditsArgs = z.infer<
-  typeof generated.deductOrganizationCreditsArgsSchema
->;
-export type DeductOrganizationCreditsReturns = z.infer<
-  typeof generated.deductOrganizationCreditsReturnsSchema
->;
 export type ExpireOldInvitationsArgs = z.infer<
   typeof generated.expireOldInvitationsArgsSchema
 >;
@@ -305,12 +293,6 @@ export type PreviewDeductCreditsArgs = z.infer<
 >;
 export type PreviewDeductCreditsReturns = z.infer<
   typeof generated.previewDeductCreditsReturnsSchema
->;
-export type PreviewDeductOrganizationCreditsArgs = z.infer<
-  typeof generated.previewDeductOrganizationCreditsArgsSchema
->;
-export type PreviewDeductOrganizationCreditsReturns = z.infer<
-  typeof generated.previewDeductOrganizationCreditsReturnsSchema
 >;
 export type ValidateOwnershipLimitsArgs = z.infer<
   typeof generated.validateOwnershipLimitsArgsSchema

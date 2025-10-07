@@ -962,16 +962,6 @@ export const addCreditsArgsSchema = z.object({
 
 export const addCreditsReturnsSchema = z.boolean();
 
-export const addOrganizationCreditsArgsSchema = z.object({
-  p_amount: z.number(),
-  p_metadata: jsonSchema.optional(),
-  p_org_id: z.string(),
-  p_transaction_type: z.string(),
-  p_user_id: z.string(),
-});
-
-export const addOrganizationCreditsReturnsSchema = z.boolean();
-
 export const canGrantPermissionArgsSchema = z.object({
   granter_id: z.string(),
   permission_to_grant: z.string(),
@@ -1017,17 +1007,6 @@ export const deductCreditsArgsSchema = z.object({
 
 export const deductCreditsReturnsSchema = z.boolean();
 
-export const deductOrganizationCreditsArgsSchema = z.object({
-  p_amount: z.number(),
-  p_api_endpoint: z.string().optional(),
-  p_metadata: jsonSchema.optional(),
-  p_org_id: z.string(),
-  p_transaction_type: z.string(),
-  p_user_id: z.string(),
-});
-
-export const deductOrganizationCreditsReturnsSchema = z.boolean();
-
 export const expireOldInvitationsArgsSchema = z.object({});
 
 export const expireOldInvitationsReturnsSchema = z.undefined();
@@ -1066,17 +1045,6 @@ export const previewDeductCreditsArgsSchema = z.object({
 });
 
 export const previewDeductCreditsReturnsSchema = z.boolean();
-
-export const previewDeductOrganizationCreditsArgsSchema = z.object({
-  p_amount: z.number(),
-  p_api_endpoint: z.string().optional(),
-  p_metadata: jsonSchema.optional(),
-  p_org_id: z.string(),
-  p_transaction_type: z.string(),
-  p_user_id: z.string(),
-});
-
-export const previewDeductOrganizationCreditsReturnsSchema = z.boolean();
 
 export const validateOwnershipLimitsArgsSchema = z.object({
   p_current_record_id: z.string().optional(),

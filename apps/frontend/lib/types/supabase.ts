@@ -915,16 +915,6 @@ export type Database = {
         };
         Returns: boolean;
       };
-      add_organization_credits: {
-        Args: {
-          p_amount: number;
-          p_metadata?: Json;
-          p_org_id: string;
-          p_transaction_type: string;
-          p_user_id: string;
-        };
-        Returns: boolean;
-      };
       can_grant_permission: {
         Args: {
           granter_id: string;
@@ -961,17 +951,6 @@ export type Database = {
         };
         Returns: boolean;
       };
-      deduct_organization_credits: {
-        Args: {
-          p_amount: number;
-          p_api_endpoint?: string;
-          p_metadata?: Json;
-          p_org_id: string;
-          p_transaction_type: string;
-          p_user_id: string;
-        };
-        Returns: boolean;
-      };
       expire_old_invitations: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -997,17 +976,6 @@ export type Database = {
           p_amount: number;
           p_api_endpoint?: string;
           p_metadata?: Json;
-          p_transaction_type: string;
-          p_user_id: string;
-        };
-        Returns: boolean;
-      };
-      preview_deduct_organization_credits: {
-        Args: {
-          p_amount: number;
-          p_api_endpoint?: string;
-          p_metadata?: Json;
-          p_org_id: string;
           p_transaction_type: string;
           p_user_id: string;
         };
