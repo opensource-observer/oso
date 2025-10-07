@@ -51,7 +51,6 @@ export interface CreditErrorContext {
   planName: string;
   creditsBalance: number;
   nextRefillDate?: string | null;
-  supportChannel?: string;
   supportUrl?: string;
   billingContactEmail?: string;
 }
@@ -209,7 +208,6 @@ export class CreditsService {
           .select(
             `
             org_name,
-            enterprise_support_channel,
             enterprise_support_url,
             billing_contact_email,
             pricing_plan!inner(plan_name, refill_cycle_days),
@@ -265,7 +263,6 @@ export class CreditsService {
           planName: plan?.plan_name || "UNKNOWN",
           creditsBalance: credits?.credits_balance || 0,
           nextRefillDate,
-          supportChannel: orgData.enterprise_support_channel || undefined,
           supportUrl: orgData.enterprise_support_url || undefined,
           billingContactEmail: orgData.billing_contact_email || undefined,
         };
