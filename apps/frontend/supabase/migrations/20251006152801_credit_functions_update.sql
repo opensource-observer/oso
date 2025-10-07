@@ -1,30 +1,15 @@
--- Update deduct function to check for refill before deducting
-CREATE OR REPLACE FUNCTION public.deduct_organization_credits(
+-- Function to check and perform credit refill if eligible
+CREATE OR REPLACE FUNCTION public.check_and_refill_credits(
     p_org_id UUID,
-    p_user_id UUID,
-    p_amount INTEGER,
-    p_transaction_type TEXT,
-    p_api_endpoint TEXT DEFAULT NULL,
-    p_metadata JSONB DEFAULT NULL
-) RETURNS BOOLEAN AS $$
+    p_user_id UUID
+) RETURNS INTEGER AS $$
 DECLARE
     current_balance INTEGER;
-    new_balance INTEGER;
     v_max_credits INTEGER;
     v_refill_cycle_days INTEGER;
     v_last_refill TIMESTAMPTZ;
     v_days_since_refill NUMERIC;
 BEGIN
-    -- Check if user has access to the organization
-    IF NOT EXISTS (
-        SELECT 1 FROM public.users_by_organization
-        WHERE user_id = p_user_id
-        AND org_id = p_org_id
-        AND deleted_at IS NULL
-    ) THEN
-        RAISE EXCEPTION 'User does not have access to organization';
-    END IF;
-
     -- Get plan config and current balance
     SELECT
         pp.max_credits_per_cycle,
@@ -36,7 +21,7 @@ BEGIN
     LEFT JOIN public.organization_credits oc ON o.id = oc.org_id
     WHERE o.id = p_org_id;
 
-    -- Get current balance using existing function
+    -- Get current balance
     current_balance := public.get_organization_credits(p_org_id);
 
     -- Check for refill eligibility and perform refill if needed
@@ -62,6 +47,36 @@ BEGIN
             current_balance := public.get_organization_credits(p_org_id);
         END IF;
     END IF;
+
+    RETURN current_balance;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to deduct organization credits with refill check
+CREATE OR REPLACE FUNCTION public.deduct_organization_credits(
+    p_org_id UUID,
+    p_user_id UUID,
+    p_amount INTEGER,
+    p_transaction_type TEXT,
+    p_api_endpoint TEXT DEFAULT NULL,
+    p_metadata JSONB DEFAULT NULL
+) RETURNS BOOLEAN AS $$
+DECLARE
+    current_balance INTEGER;
+    new_balance INTEGER;
+BEGIN
+    -- Check if user has access to the organization
+    IF NOT EXISTS (
+        SELECT 1 FROM public.users_by_organization
+        WHERE user_id = p_user_id
+        AND org_id = p_org_id
+        AND deleted_at IS NULL
+    ) THEN
+        RAISE EXCEPTION 'User does not have access to organization';
+    END IF;
+
+    -- Check for refill eligibility and perform refill if needed
+    current_balance := public.check_and_refill_credits(p_org_id, p_user_id);
 
     -- Lock the row for deduction
     SELECT credits_balance INTO current_balance
