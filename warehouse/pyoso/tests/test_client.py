@@ -80,7 +80,7 @@ class TestClient(TestCase):
         df = client.to_pandas(query)
 
         mock_post.assert_called_once_with(
-            "https://www.opensource.observer/api/v1/sql",
+            "https://www.oso.xyz/api/v1/sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.DEFAULT_API_KEY}",
@@ -106,7 +106,7 @@ class TestClient(TestCase):
             client.to_pandas(query)
 
         mock_post.assert_called_once_with(
-            "https://www.opensource.observer/api/v1/sql",
+            "https://www.oso.xyz/api/v1/sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
@@ -156,7 +156,7 @@ class TestClient(TestCase):
 
         # Verify the connector endpoint was called
         mock_get.assert_called_once_with(
-            "https://www.opensource.observer/api/v1/connector",
+            "https://www.oso.xyz/api/v1/connector",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
@@ -165,7 +165,7 @@ class TestClient(TestCase):
 
         # Verify the SQL endpoint was called for the query
         mock_post.assert_called_once_with(
-            "https://www.opensource.observer/api/v1/sql",
+            "https://www.oso.xyz/api/v1/sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.CUSTOM_API_KEY}",

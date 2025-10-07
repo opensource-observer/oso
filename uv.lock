@@ -1396,7 +1396,7 @@ wheels = [
 
 [[package]]
 name = "dlt"
-version = "1.15.0"
+version = "1.17.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -1427,9 +1427,9 @@ dependencies = [
     { name = "tzdata" },
     { name = "win-precise-time", marker = "os_name == 'nt'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/78/62/0ec88b393e5e00a1b15bdc72216893a29261489475671c4d6d23fc2388a5/dlt-1.15.0.tar.gz", hash = "sha256:3dff1419649c984c183ba2ae53bfa60f4d0d7cf3590c1388997886dbe7bfee97", size = 790948, upload-time = "2025-08-05T17:48:18.886Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/4e/d2b40bb2e8d38fa9258d93782eb8efe66a23be13bd651acfab8f6c3c4f77/dlt-1.17.1.tar.gz", hash = "sha256:7ed958f8fdb180877393e1dfa3d208892a47cdcc917e27e5dd1dacf81d8b475a", size = 824830, upload-time = "2025-10-02T16:44:21.304Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/a8/37c8f5888cb41ab9460356c43be36f16cf987f9673274833e8777b847de0/dlt-1.15.0-py3-none-any.whl", hash = "sha256:fdc1e8a47b6daae9d7f235de1146427a40518960f46089c3ae2b3c7ce5f66cd9", size = 1009448, upload-time = "2025-08-05T17:48:15.23Z" },
+    { url = "https://files.pythonhosted.org/packages/10/e2/b82143a3f4ed530cc413762ddda42757b2318ec8e42f756fbcf120aabbc1/dlt-1.17.1-py3-none-any.whl", hash = "sha256:53f4df228ee3899cab674aa221370932e984dda9dc2b550aeac739a5592a8422", size = 1049155, upload-time = "2025-10-02T16:44:18.835Z" },
 ]
 
 [[package]]
@@ -4992,7 +4992,7 @@ wheels = [
 
 [[package]]
 name = "pyoso"
-version = "0.6.6"
+version = "0.7.0"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },

@@ -154,6 +154,8 @@ class ChunkedResourceConfig(Generic[T]):
         bq_schema (List[bigquery.SchemaField]): BigQuery schema for the destination table.
             This is used by the BigQuery load job to enforce schema on load.
         gcs_bucket_name (str): Google Cloud Storage bucket name.
+        write_disposition (str): BigQuery write disposition (e.g., WRITE_APPEND, WRITE_TRUNCATE).
+            Determines how to handle existing data in the table.
         gcs_prefix (str): Google Cloud Storage prefix for chunked data. Defaults
             to "dlt_chunked_state".
         max_manifest_age (int): Maximum age of the manifest file in seconds. If the
@@ -171,6 +173,7 @@ class ChunkedResourceConfig(Generic[T]):
         destination_table_id: str,
         bq_schema: List[bigquery.SchemaField],
         gcs_bucket_name: str,
+        write_disposition: str,
         gcs_prefix: str = "dlt_chunked_state",
         max_manifest_age: int = 60 * 60 * 24 * 3,
         context: AssetExecutionContext | None = None,
@@ -181,6 +184,7 @@ class ChunkedResourceConfig(Generic[T]):
         self.destination_table_id = destination_table_id
         self.bq_schema = bq_schema
         self.gcs_bucket_name = gcs_bucket_name
+        self.write_disposition = write_disposition
         self.gcs_prefix = gcs_prefix
         self.max_manifest_age = max_manifest_age
         self.context = context
@@ -225,6 +229,7 @@ def process_chunked_resource(
                 destination_table_id="project.dataset.table",
                 bq_schema=bq_schema,
                 gcs_bucket_name=global_config.gcs_bucket,
+                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
                 context=context,
             ),
             ...,
@@ -317,7 +322,7 @@ def process_chunked_resource(
         job_config = bigquery.LoadJobConfig(
             schema=config.bq_schema,
             source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+            write_disposition=config.write_disposition,
         )
 
         log.info(
