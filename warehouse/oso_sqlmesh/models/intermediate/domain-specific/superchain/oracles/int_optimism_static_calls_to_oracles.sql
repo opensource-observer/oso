@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_optimism_oracle_events,
-  description "Optimism oracle events",
+  name oso.int_optimism_static_calls_to_oracles,
+  description "Optimism static calls to oracles",
   dialect trino,
   kind incremental_by_time_range(
    time_column block_timestamp,
