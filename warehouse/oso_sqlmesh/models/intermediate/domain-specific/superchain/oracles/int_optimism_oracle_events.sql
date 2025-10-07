@@ -32,10 +32,10 @@ SELECT
   sc.to_address_tx,
   sc.from_address_trace,
   sc.to_address_trace,
+  sc.trace_address,
   CAST(sc.gas_used_trace AS DOUBLE) AS gas_used_trace,
   CAST(sc.gas_used_tx AS DOUBLE) AS gas_used_tx,
   CAST(sc.gas_price_tx AS DOUBLE) AS gas_price_tx,
-  CAST(sc.trace_address AS DOUBLE) AS trace_address,
   CAST(sc.l1_fee AS DOUBLE) AS l1_fee,
   txs_per_block.txs_in_block,
   oracle_addresses.project_name
