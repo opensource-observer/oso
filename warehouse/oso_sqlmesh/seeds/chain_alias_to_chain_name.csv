@@ -21,3 +21,22 @@ l2beat,world,WORLDCHAIN
 l2beat,arbitrum,ARBITRUM_ONE
 l2beat,polygon-pos,MATIC
 l2beat,zksync-era,ZKSYNC_ERA
+defillama,cronos zkevm,CRONOS_ZKEVM
+l2beat,cronoszkevm,CRONOS_ZKEVM
+defillama,hyperliquid l1,HYPERLIQUID_L1
+defillama,immutable zkevm,IMMUTABLE_ZKEVM
+l2beat,immutablezkevm,IMMUTABLE_ZKEVM
+l2beat,lachain,LACHAIN
+defillama,lachain network,LACHAIN
+defillama,manta,MANTA
+l2beat,mantapacific,MANTA
+defillama,plume mainnet,PLUME
+l2beat,plumenetwork,PLUME
+defillama,re.al,REAL
+l2beat,reya,REYA_NETWORK
+defillama,reya network,REYA_NETWORK
+defillama,wemix3.0,WEMIX
+defillama,x layer,X_LAYER
+l2beat,xlayer,X_LAYER
+defillama,xpr network,XPR_NETWORK
+defillama,zklink nova,ZLINK_NOVA
