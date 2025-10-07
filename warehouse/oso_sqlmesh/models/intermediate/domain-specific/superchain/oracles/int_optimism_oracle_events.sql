@@ -8,6 +8,7 @@ MODEL (
    batch_concurrency 2,
    lookback 31,
    forward_only true,
+   on_destructive_change warn,
   ),
   start '2024-09-01',
   cron '@daily',
