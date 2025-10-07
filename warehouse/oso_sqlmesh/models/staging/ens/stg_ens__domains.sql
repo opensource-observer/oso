@@ -18,4 +18,4 @@ SELECT
   registration,
   subdomains,
   "subdomainCount" AS subdomain_count
-FROM @oso_source('bigquery.ens.domains')
+FROM @oso_source('bigquery.ens.domains_tmp')
