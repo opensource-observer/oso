@@ -9,7 +9,7 @@ ADD COLUMN IF NOT EXISTS last_refill_at TIMESTAMPTZ;
 
 -- Configure FREE plan: 100 credits every 30 days
 UPDATE public.pricing_plan
-SET max_credits_per_cycle = 100, refill_cycle_days = 30
+SET max_credits_per_cycle = 1000, refill_cycle_days = 30
 WHERE plan_name = 'FREE';
 
 -- Configure ENTERPRISE: 10000 credits every 7 days
