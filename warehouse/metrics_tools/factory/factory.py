@@ -551,7 +551,7 @@ class TimeseriesMetrics:
         kind_common = {
             "batch_size": ref.get("batch_size", 365),
             "batch_concurrency": 1,
-            "lookback": 31,
+            "lookback": 3,
             "forward_only": True,
             "time_column": "metrics_sample_date",
             "on_destructive_change": "warn",
@@ -649,12 +649,12 @@ class TimeseriesMetrics:
             "batch_concurrency": 3,
             "forward_only": True,
         }
-        kind_options = {"lookback": 31, **kind_common}
+        kind_options = {"lookback": 3, **kind_common}
         partitioned_by = ("day(metrics_sample_date)",)
 
         if time_aggregation == "weekly":
             kind_options = {
-                "lookback": 31,
+                "lookback": 3,
                 "batch_size": 365,
                 **kind_common,
             }
