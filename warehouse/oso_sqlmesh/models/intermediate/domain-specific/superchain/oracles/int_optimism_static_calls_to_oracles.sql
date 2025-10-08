@@ -23,6 +23,7 @@ MODEL (
       missing_rate_min_threshold := 0.95,
     ),
   ),
+  enabled false,
 );
 
 SELECT
