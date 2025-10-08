@@ -5,8 +5,8 @@ MODEL (
   kind incremental_by_time_range(
    time_column block_timestamp,
    batch_size 60,
-   batch_concurrency 2,
-   lookback 31,
+   batch_concurrency 1,
+   lookback 14,
    forward_only true,
    on_destructive_change warn,
   ),
