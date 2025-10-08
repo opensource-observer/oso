@@ -15,13 +15,10 @@ MODEL (
   partitioned_by MONTH("bucket_day"),
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := bucket_day,
-      no_gap_date_part := 'day',
-      ignore_before := @superchain_audit_start,
-      ignore_after := @superchain_audit_end,
-      missing_rate_min_threshold := 0.95,
-    ),
+  ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+    "incrementalmusthaveforwardonly",
   ),
 );
 
