@@ -5,6 +5,7 @@ permissions:
 env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   VITE_ALLOWED_DOMAINS: oso.xyz,opensource.observer,www.oso.xyz,www.opensource.observer,marimo.oso.xyz,marimo.opensource.observer
+  VITE_POSTHOG_PUBLIC_API_KEY: ${{ secrets.POSTHOG_PUBLIC_API_KEY }}
 
 # Trigger the workflow when:
 on:
