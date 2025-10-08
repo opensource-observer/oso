@@ -9,4 +9,4 @@ except PackageNotFoundError:
 
 from .analytics import DataAnalytics
 from .client import Client, ClientConfig, QueryResponse
-from .exceptions import HTTPError, OsoError
+from .exceptions import HTTPError, InsufficientCreditError, OsoError

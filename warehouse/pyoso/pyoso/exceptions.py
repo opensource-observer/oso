@@ -1,3 +1,5 @@
+from typing import override
+
 from requests import HTTPError
 
 
@@ -10,3 +12,11 @@ class OsoHTTPError(HTTPError):
         str = super().__str__()
         response = self.response.json()
         return f"{str} - {response['error'] if response['error'] else response}"
+
+
+class InsufficientCreditError(OsoError):
+    """Raised when the user has insufficient credits to execute a query."""
+
+    @override
+    def __str__(self) -> str:
+        return self.args[0]
