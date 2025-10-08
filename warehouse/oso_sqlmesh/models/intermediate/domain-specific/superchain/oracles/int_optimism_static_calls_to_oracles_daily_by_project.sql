@@ -10,7 +10,7 @@ MODEL (
    forward_only true,
    on_destructive_change warn,
   ),
-  start '2024-09-01',
+  start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by MONTH("bucket_day"),
   audits (
@@ -57,3 +57,4 @@ LEFT JOIN apps AS from_apps
   ON from_apps.artifact_id = sc.from_artifact_id
 WHERE
   sc.bucket_day BETWEEN @start_dt AND @end_dt
+  AND sc.project_name != from_apps.app_name
