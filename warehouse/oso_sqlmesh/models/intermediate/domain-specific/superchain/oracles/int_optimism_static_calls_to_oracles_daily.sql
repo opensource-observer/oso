@@ -10,7 +10,7 @@ MODEL (
    forward_only true,
    on_destructive_change warn,
   ),
-  start '2024-09-01',
+  start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by MONTH("bucket_day"),
   audits (
