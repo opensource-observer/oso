@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import type { AnonUser, OrgUser, User } from "@/lib/types/user";
 import { DOMAIN } from "@/lib/config";
@@ -9,7 +9,7 @@ import type {
   OrganizationCreditsRow as OrganizationCredits,
 } from "@/lib/types/schema-types";
 
-type SupabaseClient = Awaited<ReturnType<typeof createServerClient>>;
+type SupabaseClient = Awaited<ReturnType<typeof createAdminClient>>;
 
 export const PLAN_NAMES = ["FREE", "STARTER", "PRO", "ENTERPRISE"] as const;
 export type PlanName = (typeof PLAN_NAMES)[number];
@@ -364,7 +364,7 @@ export class CreditsService {
   static async getOrganizationCredits(
     orgId: string,
   ): Promise<OrganizationCredits | null> {
-    const supabaseClient = await createServerClient();
+    const supabaseClient = createAdminClient();
     const { data, error } = await supabaseClient
       .from("organization_credits")
       .select("*")
@@ -384,7 +384,7 @@ export class CreditsService {
     limit = 50,
     offset = 0,
   ): Promise<OrganizationCreditTransaction[]> {
-    const supabaseClient = await createServerClient();
+    const supabaseClient = createAdminClient();
     const { data, error } = await supabaseClient
       .from("organization_credit_transactions")
       .select("*")
@@ -403,7 +403,7 @@ export class CreditsService {
   static async getOrganizationPlan(
     orgId: string,
   ): Promise<OrganizationPlan | null> {
-    const supabaseClient = await createServerClient();
+    const supabaseClient = createAdminClient();
     const { data, error } = await supabaseClient
       .from("organizations")
       .select(
@@ -449,7 +449,7 @@ export class CreditsService {
       return null;
     }
 
-    const client = await createServerClient();
+    const client = createAdminClient();
 
     await CreditsService.validateUserAccess(client, user.userId, orgId);
 
@@ -529,7 +529,7 @@ export class CreditsService {
     orgId: string,
     userId: string,
   ): Promise<number> {
-    const client = await createServerClient();
+    const client = createAdminClient();
 
     try {
       const refillData = await CreditsService.getOrganizationRefillData(
