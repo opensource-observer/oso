@@ -135,20 +135,35 @@ export class CreditsService {
 
   private static async validateUserAccess(
     client: SupabaseClient,
-    userId: string,
+    actingUserId: string,
     orgId: string,
   ): Promise<void> {
     const { data: userAccess, error: accessError } = await client
       .from("users_by_organization")
       .select("user_id")
-      .eq("user_id", userId)
+      .eq("user_id", actingUserId)
       .eq("org_id", orgId)
       .is("deleted_at", null)
       .single();
 
-    if (accessError || !userAccess) {
-      logger.error("User does not have access to organization:", accessError);
-      throw new Error("User does not have access to organization");
+    if (accessError) {
+      logger.error(`Database error while validating acting user access:`, {
+        actingUserId,
+        orgId,
+        error: accessError,
+      });
+      throw new Error("Failed to validate user access to organization");
+    }
+
+    if (!userAccess) {
+      logger.error(
+        `Access denied: Acting user is not a member of organization:`,
+        {
+          actingUserId,
+          orgId,
+        },
+      );
+      throw new Error("Acting user does not have access to organization");
     }
   }
 
