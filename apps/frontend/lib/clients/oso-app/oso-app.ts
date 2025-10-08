@@ -1977,6 +1977,8 @@ class OsoAppClient {
       .from("pricing_plan")
       .select("plan_id")
       .eq("plan_name", "ENTERPRISE")
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .single()
       .throwOnError();
 
@@ -2008,6 +2010,8 @@ class OsoAppClient {
       .from("pricing_plan")
       .select("plan_id")
       .eq("plan_name", "FREE")
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .single()
       .throwOnError();
 
