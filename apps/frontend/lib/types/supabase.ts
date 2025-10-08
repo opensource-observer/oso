@@ -673,8 +673,8 @@ export type Database = {
           deleted_at: string | null;
           id: string;
           notebook_id: string;
-          published_by: string;
           updated_at: string;
+          updated_by: string | null;
         };
         Insert: {
           created_at?: string;
@@ -682,8 +682,8 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           notebook_id: string;
-          published_by: string;
           updated_at?: string;
+          updated_by?: string | null;
         };
         Update: {
           created_at?: string;
@@ -691,8 +691,8 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           notebook_id?: string;
-          published_by?: string;
           updated_at?: string;
+          updated_by?: string | null;
         };
         Relationships: [
           {
@@ -995,18 +995,6 @@ export type Database = {
       get_organization_credits: {
         Args: { p_org_id: string };
         Returns: number;
-      };
-      get_published_notebook_by_names: {
-        Args: { p_notebook_name: string; p_org_name: string };
-        Returns: {
-          created_at: string;
-          data: string;
-          deleted_at: string | null;
-          id: string;
-          notebook_id: string;
-          published_by: string;
-          updated_at: string;
-        }[];
       };
       get_user_credits: {
         Args: { p_user_id: string };

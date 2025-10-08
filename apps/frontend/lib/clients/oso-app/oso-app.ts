@@ -869,39 +869,34 @@ class OsoAppClient {
     const notebook = ensure(args.notebook, "Missing notebook argument");
     const data = ensure(args.data, "Missing data argument");
     const user = await this.getUser();
-    const { error } = await this.supabaseClient
+    await this.supabaseClient
       .from("published_notebooks")
       .upsert(
         {
           notebook_id: notebook.id,
-          published_by: user.id,
+          updated_by: user.id,
           data: data,
           updated_at: new Date().toISOString(),
           deleted_at: null,
         },
         { onConflict: "notebook_id" },
-      );
-    if (error) {
-      throw error;
-    }
+      )
+      .throwOnError();
   }
 
   async unpublishNotebook(args: Partial<{ notebookId: string }>) {
     console.log("unpublishNotebook: ", args);
     const notebookId = ensure(args.notebookId, "Missing notebookId argument");
     const user = await this.getUser();
-    const { error } = await this.supabaseClient
+    await this.supabaseClient
       .from("published_notebooks")
       .update({
         deleted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        published_by: user.id,
+        updated_by: user.id,
       })
       .eq("notebook_id", notebookId)
-      .select();
-    if (error) {
-      throw error;
-    }
+      .throwOnError();
   }
 
   async getPublishedNotebookByNames(
@@ -913,18 +908,25 @@ class OsoAppClient {
       "Missing notebookName argument",
     );
     const orgName = ensure(args.orgName, "Missing orgName argument");
-    const { data, error } = await this.supabaseClient
-      .rpc("get_published_notebook_by_names", {
-        p_notebook_name: notebookName,
-        p_org_name: orgName,
-      })
-      .single();
-    if (error) {
-      throw error;
-    } else if (!data) {
-      return null;
+
+    const searchParams = new URLSearchParams({ orgName, notebookName });
+    const response = await fetch(
+      `/api/v1/published_notebooks?${searchParams}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      throw new Error("Error fetching published notebook: " + json.error);
     }
-    return publishedNotebooksRowSchema.parse(data);
+
+    return publishedNotebooksRowSchema.parse(json);
   }
 
   /**

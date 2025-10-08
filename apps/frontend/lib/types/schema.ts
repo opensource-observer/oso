@@ -720,8 +720,8 @@ export const publishedNotebooksRowSchema = z.object({
   deleted_at: z.string().nullable(),
   id: z.string(),
   notebook_id: z.string(),
-  published_by: z.string(),
   updated_at: z.string(),
+  updated_by: z.string().nullable(),
 });
 
 export const publishedNotebooksInsertSchema = z.object({
@@ -730,8 +730,8 @@ export const publishedNotebooksInsertSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   notebook_id: z.string(),
-  published_by: z.string(),
   updated_at: z.string().optional(),
+  updated_by: z.string().optional().nullable(),
 });
 
 export const publishedNotebooksUpdateSchema = z.object({
@@ -740,8 +740,8 @@ export const publishedNotebooksUpdateSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   notebook_id: z.string().optional(),
-  published_by: z.string().optional(),
   updated_at: z.string().optional(),
+  updated_by: z.string().optional().nullable(),
 });
 
 export const publishedNotebooksRelationshipsSchema = z.tuple([
@@ -1063,23 +1063,6 @@ export const getOrganizationCreditsArgsSchema = z.object({
 });
 
 export const getOrganizationCreditsReturnsSchema = z.number();
-
-export const getPublishedNotebookByNamesArgsSchema = z.object({
-  p_notebook_name: z.string(),
-  p_org_name: z.string(),
-});
-
-export const getPublishedNotebookByNamesReturnsSchema = z.array(
-  z.object({
-    created_at: z.string(),
-    data: z.string(),
-    deleted_at: z.string().nullable(),
-    id: z.string(),
-    notebook_id: z.string(),
-    published_by: z.string(),
-    updated_at: z.string(),
-  }),
-);
 
 export const getUserCreditsArgsSchema = z.object({
   p_user_id: z.string(),

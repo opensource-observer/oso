@@ -288,12 +288,6 @@ export type GetOrganizationCreditsArgs = z.infer<
 export type GetOrganizationCreditsReturns = z.infer<
   typeof generated.getOrganizationCreditsReturnsSchema
 >;
-export type GetPublishedNotebookByNamesArgs = z.infer<
-  typeof generated.getPublishedNotebookByNamesArgsSchema
->;
-export type GetPublishedNotebookByNamesReturns = z.infer<
-  typeof generated.getPublishedNotebookByNamesReturnsSchema
->;
 export type GetUserCreditsArgs = z.infer<
   typeof generated.getUserCreditsArgsSchema
 >;
