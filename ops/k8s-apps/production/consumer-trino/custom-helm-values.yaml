@@ -31,7 +31,7 @@ spec:
       enabled: true
       className: ingress-internal-cloudflare
       hosts:
-        - host: trino.opensource.observer
+        - host: trino.oso.xyz
           paths:
             - path: /
               pathType: Prefix
