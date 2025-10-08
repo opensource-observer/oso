@@ -10,6 +10,83 @@ import { withPostHogTracking } from "@/lib/clients/posthog";
 const stripe = getStripeClient();
 const supabase = createAdminClient();
 
+async function addCreditsToOrganization(
+  orgId: string,
+  userId: string,
+  credits: number,
+  sessionId: string,
+  paymentIntent: string | Stripe.PaymentIntent | null,
+  packageId: string,
+  isRecovery: boolean,
+  purchaseIntentId?: string,
+): Promise<void> {
+  const { data: currentCredits, error: fetchCreditsError } = await supabase
+    .from("organization_credits")
+    .select("credits_balance")
+    .eq("org_id", orgId)
+    .single();
+
+  if (fetchCreditsError) {
+    logger.error(
+      `Failed to fetch credits ${isRecovery ? "(recovery)" : ""}:`,
+      fetchCreditsError,
+    );
+    throw new Error("Failed to fetch credits");
+  }
+
+  const newBalance = currentCredits.credits_balance + credits;
+
+  const { error: creditsUpdateError } = await supabase
+    .from("organization_credits")
+    .update({
+      credits_balance: newBalance,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("org_id", orgId);
+
+  if (creditsUpdateError) {
+    logger.error(
+      `Failed to update credits ${isRecovery ? "(recovery)" : ""}:`,
+      creditsUpdateError,
+    );
+    throw new Error("Failed to update credits");
+  }
+
+  const transactionMetadata: Record<string, any> = {
+    stripe_session_id: sessionId,
+    stripe_payment_intent: extractIntentString(paymentIntent),
+    package_id: packageId,
+  };
+
+  if (isRecovery) {
+    transactionMetadata.recovered = true;
+  } else if (purchaseIntentId) {
+    transactionMetadata.purchase_intent_id = purchaseIntentId;
+  }
+
+  const { error: transactionError } = await supabase
+    .from("organization_credit_transactions")
+    .insert({
+      org_id: orgId,
+      user_id: userId,
+      amount: credits,
+      transaction_type: "purchase",
+      metadata: transactionMetadata,
+      created_at: new Date().toISOString(),
+    });
+
+  if (transactionError) {
+    logger.error(
+      `Failed to log transaction ${isRecovery ? "(recovery)" : ""}:`,
+      transactionError,
+    );
+  }
+
+  logger.info(
+    `Credits added${isRecovery ? " via recovery" : ""}: ${credits} for org ${orgId}`,
+  );
+}
+
 export const POST = withPostHogTracking(async (req: NextRequest) => {
   const body = await req.text();
   const headersList = headers();
@@ -60,73 +137,28 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
             );
           }
 
-          const { data: currentCredits, error: fetchCreditsError } =
-            await supabase
-              .from("organization_credits")
-              .select("credits_balance")
-              .eq("org_id", orgId)
-              .single();
-
-          if (fetchCreditsError) {
-            logger.error(
-              "Failed to fetch credits (recovery):",
-              fetchCreditsError,
+          try {
+            await addCreditsToOrganization(
+              orgId,
+              userId,
+              credits,
+              session.id,
+              session.payment_intent,
+              packageId,
+              true,
             );
+          } catch (error) {
+            logger.error("Failed to add credits (recovery):", error);
             return NextResponse.json(
-              { error: "Failed to fetch credits" },
-              { status: 500 },
-            );
-          }
-
-          const newBalance = currentCredits.credits_balance + credits;
-
-          const { error: creditsUpdateError } = await supabase
-            .from("organization_credits")
-            .update({
-              credits_balance: newBalance,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("org_id", orgId);
-
-          if (creditsUpdateError) {
-            logger.error(
-              "Failed to update credits (recovery):",
-              creditsUpdateError,
-            );
-            return NextResponse.json(
-              { error: "Failed to update credits" },
-              { status: 500 },
-            );
-          }
-
-          const { error: transactionError } = await supabase
-            .from("organization_credit_transactions")
-            .insert({
-              org_id: orgId,
-              user_id: userId,
-              amount: credits,
-              transaction_type: "purchase",
-              metadata: {
-                stripe_session_id: session.id,
-                stripe_payment_intent: extractIntentString(
-                  session.payment_intent,
-                ),
-                package_id: packageId,
-                recovered: true,
+              {
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to add credits",
               },
-              created_at: new Date().toISOString(),
-            });
-
-          if (transactionError) {
-            logger.error(
-              "Failed to log transaction (recovery):",
-              transactionError,
+              { status: 500 },
             );
           }
-
-          logger.info(
-            `Credits added via recovery: ${credits} for org ${orgId}`,
-          );
         } else {
           const { error: intentUpdateError } = await supabase
             .from("purchase_intents")
@@ -158,65 +190,29 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
             );
           }
 
-          const { data: currentCredits, error: fetchCreditsError } =
-            await supabase
-              .from("organization_credits")
-              .select("credits_balance")
-              .eq("org_id", purchaseIntent.org_id)
-              .single();
-
-          if (fetchCreditsError) {
-            logger.error("Failed to fetch credits:", fetchCreditsError);
-            return NextResponse.json(
-              { error: "Failed to fetch credits" },
-              { status: 500 },
+          try {
+            await addCreditsToOrganization(
+              purchaseIntent.org_id,
+              purchaseIntent.user_id,
+              purchaseIntent.credits_amount,
+              session.id,
+              session.payment_intent,
+              purchaseIntent.package_id,
+              false,
+              purchaseIntent.id,
             );
-          }
-
-          const newBalance =
-            currentCredits?.credits_balance + purchaseIntent.credits_amount;
-
-          const { error: creditsUpdateError } = await supabase
-            .from("organization_credits")
-            .update({
-              credits_balance: newBalance,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("org_id", purchaseIntent.org_id);
-
-          if (creditsUpdateError) {
-            logger.error("Failed to update credits:", creditsUpdateError);
+          } catch (error) {
+            logger.error("Failed to add credits:", error);
             return NextResponse.json(
-              { error: "Failed to update credits" },
-              { status: 500 },
-            );
-          }
-
-          const { error: transactionError } = await supabase
-            .from("organization_credit_transactions")
-            .insert({
-              org_id: purchaseIntent.org_id,
-              user_id: purchaseIntent.user_id,
-              amount: purchaseIntent.credits_amount,
-              transaction_type: "purchase",
-              metadata: {
-                stripe_session_id: session.id,
-                stripe_payment_intent: extractIntentString(
-                  session.payment_intent,
-                ),
-                purchase_intent_id: purchaseIntent.id,
-                package_id: purchaseIntent.package_id,
+              {
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to add credits",
               },
-              created_at: new Date().toISOString(),
-            });
-
-          if (transactionError) {
-            logger.error("Failed to log transaction:", transactionError);
+              { status: 500 },
+            );
           }
-
-          logger.info(
-            `Credits added: ${purchaseIntent.credits_amount} for org ${purchaseIntent.org_id}`,
-          );
         }
 
         break;
