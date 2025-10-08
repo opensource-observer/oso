@@ -4992,7 +4992,7 @@ wheels = [
 
 [[package]]
 name = "pyoso"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
