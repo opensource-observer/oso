@@ -5,7 +5,7 @@ import {
   CreditsService,
   TransactionType,
   InsufficientCreditsError,
-} from "@/apps/frontend/lib/services/credits";
+} from "@/lib/services/credits";
 import type { OrgUser } from "@/lib/types/user";
 import { PostHogTracker } from "@/lib/analytics/track";
 import type { Database } from "@/lib/types/supabase";
