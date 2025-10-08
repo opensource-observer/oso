@@ -5,7 +5,7 @@ locals {
 
   arbitrum_one_disk_name      = "arbitrum-one-archive-node-disk"
   arbitrum_one_startup_script = "${var.scripts_path}/archive-node-startup.sh"
-  ethereum_disk_name          = "ethereum-archive-node-disk"
+  ethereum_ssd_disk_name      = "ethereum-archive-ssd-disk"
   ethereum_startup_script     = "${var.scripts_path}/archive-node-startup.sh"
 }
 
@@ -77,66 +77,6 @@ resource "google_compute_firewall" "allow_internal_rpc" {
   target_tags = ["archive-node"]
 }
 
-# Arbitrum One Archive Node
-
-resource "google_service_account" "arbitrum_one_sa" {
-  account_id   = "arbitrum-one-archive-node-sa"
-  display_name = "Custom SA for VM Instance"
-}
-
-resource "google_compute_disk" "arbitrum_one_ssd_disk" {
-  name = "arbitrum-one-archive-node-ssd-disk"
-  zone = var.zone
-  type = "pd-ssd"
-  size = 16000
-}
-
-resource "google_compute_instance" "arbitrum_one" {
-  name         = "arbitrum-one-archive-node"
-  machine_type = "n2-standard-8"
-  zone         = var.zone
-  tags = [
-    "arbitrum-one",
-    "archive-node"
-  ]
-
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-12"
-    }
-  }
-
-  attached_disk {
-    source      = google_compute_disk.arbitrum_one_ssd_disk.name
-    mode        = "READ_WRITE"
-    device_name = "arbitrum-mainnet-ssd"
-  }
-
-  network_interface {
-    network    = data.google_compute_network.archive_node_network.id
-    subnetwork = google_compute_subnetwork.archive_node_subnet.id
-    access_config {
-
-    }
-  }
-
-  can_ip_forward = true
-
-  metadata_startup_script = file(local.arbitrum_one_startup_script)
-
-  service_account {
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    email  = google_service_account.arbitrum_one_sa.email
-    scopes = ["cloud-platform"]
-  }
-
-  lifecycle {
-    ignore_changes = [
-      metadata_startup_script
-    ]
-  }
-}
-
 # Ethereum Mainnet Archive Node
 
 resource "google_service_account" "ethereum_sa" {
@@ -144,16 +84,16 @@ resource "google_service_account" "ethereum_sa" {
   display_name = "Custom SA for VM Instance"
 }
 
-resource "google_compute_disk" "ethereum_disk" {
-  name = local.ethereum_disk_name
+resource "google_compute_disk" "ethereum_ssd_disk" {
+  name = local.ethereum_ssd_disk_name
   zone = var.zone
   type = "pd-ssd"
-  size = 16000
+  size = 6000
 }
 
 resource "google_compute_instance" "ethereum" {
   name         = "ethereum-archive-node"
-  machine_type = "n2-highmem-8"
+  machine_type = "n2-highmem-32"
   zone         = var.zone
   tags = [
     "ethereum",
@@ -167,9 +107,9 @@ resource "google_compute_instance" "ethereum" {
   }
 
   attached_disk {
-    source      = google_compute_disk.ethereum_disk.name
+    source      = google_compute_disk.ethereum_ssd_disk.name
     mode        = "READ_WRITE"
-    device_name = "ethereum-mainnet"
+    device_name = "ethereum-ssd"
   }
 
   network_interface {
