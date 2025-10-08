@@ -24,10 +24,10 @@ spec:
                 - name: TRINO_SCHEMA
                   value: sqlmesh__oso
                 - name: CONCURRENCY_LIMIT
-                  value: "3"
+                  value: "2"
               resources:
                 requests:
                   cpu: 1
-                  memory: 3Gi
+                  memory: 4Gi
           restartPolicy: Never
           serviceAccountName: production-nessie
