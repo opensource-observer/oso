@@ -9,7 +9,7 @@ MODEL (
    lookback 31,
    forward_only true,
   ),
-  start @blockchain_incremental_start,
+  start '2024-09-01',
   cron '@daily',
   partitioned_by MONTH("block_timestamp"),
   audits (
