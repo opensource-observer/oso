@@ -50,7 +50,7 @@ def ethereum_blocks(
         CryoResourceConfig(
             datatype="blocks",
             rpc_url=global_config.ethereum_rpc_url,
-            primary_key=["block_number", "dt"],
+            primary_key=["block_number"],
             start_date=ETHEREUM_START_DATE,
             partition_date=datetime.strptime(context.partition_key, "%Y-%m-%d"),
             partition_key="dt",
@@ -75,7 +75,7 @@ def ethereum_transactions(
         CryoResourceConfig(
             datatype="transactions",
             rpc_url=global_config.ethereum_rpc_url,
-            primary_key=["block_number", "transaction_index", "dt"],
+            primary_key=["block_number", "transaction_index"],
             start_date=ETHEREUM_START_DATE,
             partition_date=datetime.strptime(context.partition_key, "%Y-%m-%d"),
             partition_key="dt",
@@ -100,7 +100,7 @@ def ethereum_logs(
         CryoResourceConfig(
             datatype="logs",
             rpc_url=global_config.ethereum_rpc_url,
-            primary_key=["block_number", "log_index", "dt"],
+            primary_key=["block_number", "log_index"],
             start_date=ETHEREUM_START_DATE,
             partition_date=datetime.strptime(context.partition_key, "%Y-%m-%d"),
             partition_key="dt",
@@ -125,7 +125,7 @@ def ethereum_traces(
         CryoResourceConfig(
             datatype="traces",
             rpc_url=global_config.ethereum_rpc_url,
-            primary_key=["block_number", "transaction_index", "trace_address", "dt"],
+            primary_key=["block_number", "transaction_index", "trace_address"],
             start_date=ETHEREUM_START_DATE,
             partition_date=datetime.strptime(context.partition_key, "%Y-%m-%d"),
             partition_key="dt",
