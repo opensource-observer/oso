@@ -31,14 +31,24 @@ WITH events AS (
     transaction_hash
   FROM oso.int_optimism_static_calls_to_oracles
   WHERE block_timestamp BETWEEN @start_dt AND @end_dt
+),
+
+addresses_per_txn AS (
+  SELECT
+    transaction_hash,
+    COUNT(DISTINCT oracle_address) AS num_addresses
+  FROM events
+  GROUP BY 1
 )
 
 SELECT
-  bucket_day,
-  oracle_name,
-  oracle_address,
-  SUM(read_fees) AS read_fees,
-  COUNT(DISTINCT transaction_hash) AS transaction_count
-FROM events
+  e.bucket_day,
+  e.oracle_name,
+  e.oracle_address,
+  SUM(e.read_fees) AS read_fees,
+  SUM(1.0 / apt.num_addresses) AS transaction_count
+FROM events AS e
+JOIN addresses_per_txn AS apt
+  ON e.transaction_hash = apt.transaction_hash
 GROUP BY 1, 2, 3
 ORDER BY 1, 2
