@@ -14,6 +14,12 @@ unstable_source_tag = AssetSelection.tag("opensource.observer/source", "unstable
 
 sbom_source_tag = AssetSelection.tag("opensource.observer/source", "sbom")
 
+sqlmesh_source_tag = AssetSelection.tag("opensource.observer/source", "sqlmesh")
+
+# Things derived from sqlmesh models
+sqlmesh_source_downstream_tag = sqlmesh_source_tag.downstream()
+
+
 def add_tags(
     tags: t.Mapping[str, str], additional_tags: t.Mapping[str, str]
 ) -> t.Mapping[str, str]:
