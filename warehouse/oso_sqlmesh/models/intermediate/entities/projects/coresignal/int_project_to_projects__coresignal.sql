@@ -5,6 +5,9 @@ MODEL (
   kind FULL,
   audits (
     has_at_least_n_rows(threshold := 0)
+  ),
+  tags (
+    'entity_category=project'
   )
 );
 

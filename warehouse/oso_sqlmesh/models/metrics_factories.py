@@ -2,7 +2,7 @@ import os
 import typing as t
 
 from dotenv import load_dotenv
-from metrics_tools.definition import MetricMetadata
+from metrics_tools.definition import MetricMetadata, MetricMetadataModifiers
 from metrics_tools.factory import MetricQueryConfig, MetricQueryDef, timeseries_metrics
 from metrics_tools.models import constants
 from sqlglot import exp
@@ -22,13 +22,16 @@ TRANSLATE_TIME_AGGREGATION = {
 }
 
 
-def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
+def no_gaps_audit_factory(config: MetricQueryConfig) -> MetricMetadataModifiers:
     if not config["incremental"]:
-        return None
+        return {}
 
     time_aggregation = config["ref"].get("time_aggregation")
     if time_aggregation is None:
-        return None
+        return {}
+
+    if time_aggregation == "over_all_time":
+        return {}
 
     options: t.Dict[str, t.Any] = {
         "no_gap_date_part": TRANSLATE_TIME_AGGREGATION[time_aggregation],
@@ -38,30 +41,50 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> tuple[str, dict] | None:
     }
     if time_aggregation in ["biannually", "weekly", "quarterly"]:
         # Hack for now, ignore these until we fix the audit
-        return None
+        return {}
 
     if "funding" in config["table_name"]:
         # Hack for now, ignore these until we fix the audit
-        return None
+        return {}
 
     if "releases" in config["table_name"]:
-        return None
+        return {}
 
     if "worldchain_users_aggregation" in config["table_name"]:
-        return None
+        return {}
 
     if "new_contributors" in config["table_name"]:
-        return None
+        return {}
 
     if "data_category=blockchain" in config["additional_tags"]:
         options["ignore_before"] = constants.superchain_audit_start
         options["ignore_after"] = constants.superchain_audit_end
         options["missing_rate_min_threshold"] = 0.95
 
-    return (
-        "no_gaps",
-        options,
-    )
+    return {
+        "audits": [
+            (
+                "no_gaps",
+                options,
+            )
+        ],
+    }
+
+
+def add_project_and_collection_entity_category_tags(
+    config: MetricQueryConfig,
+) -> MetricMetadataModifiers:
+    ref = config["ref"]
+    response: MetricMetadataModifiers = {}
+    if ref["entity_type"] == "project":
+        response["tags"] = ["entity_category=project"]
+    elif ref["entity_type"] == "collection":
+        response["tags"] = ["entity_category=collection", "entity_category=project"]
+    if config["incremental"]:
+        response["kind_options"] = {
+            "auto_restatement_cron": "0 0 1,15 * *",
+        }
+    return response
 
 
 timeseries_metrics(
@@ -87,7 +110,10 @@ timeseries_metrics(
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
     ],
-    audit_factories=[no_gaps_audit_factory],
+    metadata_modifiers=[
+        no_gaps_audit_factory,
+        add_project_and_collection_entity_category_tags,
+    ],
     metric_queries={
         # This will automatically generate star counts for the given roll up periods.
         # A time_aggregation is just a simple addition of the aggregation. So basically we

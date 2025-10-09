@@ -3,12 +3,13 @@ MODEL (
   description "Optimism static calls to oracles daily by project",
   dialect trino,
   kind incremental_by_time_range(
-   time_column bucket_day,
-   batch_size 60,
-   batch_concurrency 1,
-   lookback 14,
-   forward_only true,
-   on_destructive_change warn,
+    time_column bucket_day,
+    batch_size 60,
+    batch_concurrency 1,
+    lookback 14,
+    forward_only true,
+    on_destructive_change warn,
+    auto_restatement_cron @default_auto_restatement_cron
   ),
   start @blockchain_incremental_start,
   cron '@daily',
@@ -20,6 +21,9 @@ MODEL (
     "incrementalmustdefinenogapsaudit",
     "incrementalmusthaveforwardonly",
   ),
+  tags (
+    'entity_category=project'
+  )
 );
 
 WITH apps AS (

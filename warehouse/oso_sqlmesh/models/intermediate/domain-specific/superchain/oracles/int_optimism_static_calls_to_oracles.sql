@@ -3,12 +3,12 @@ MODEL (
   description "Optimism static calls to oracles",
   dialect trino,
   kind incremental_by_time_range(
-   time_column block_timestamp,
-   batch_size 60,
-   batch_concurrency 1,
-   lookback 14,
-   forward_only true,
-   on_destructive_change warn,
+    time_column block_timestamp,
+    batch_size 60,
+    batch_concurrency 1,
+    lookback 14,
+    forward_only true,
+    on_destructive_change warn,
   ),
   start @blockchain_incremental_start,
   cron '@daily',
@@ -19,7 +19,7 @@ MODEL (
   ignored_rules (
     "incrementalmustdefinenogapsaudit",
     "incrementalmusthaveforwardonly",
-  ),
+  )
 );
 
 SELECT
