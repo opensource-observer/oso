@@ -39,16 +39,16 @@ addresses_per_txn AS (
     COUNT(DISTINCT oracle_address) AS num_addresses
   FROM events
   GROUP BY 1
-),
+)
 
 SELECT
-  bucket_day,
-  oracle_name,
-  oracle_address,
-  SUM(read_fees) AS read_fees,
-  SUM(1.0 / num_addresses) AS transaction_count
-FROM events
-JOIN addresses_per_txn
-  ON events.transaction_hash = addresses_per_txn.transaction_hash
+  e.bucket_day,
+  e.oracle_name,
+  e.oracle_address,
+  SUM(e.read_fees) AS read_fees,
+  SUM(1.0 / apt.num_addresses) AS transaction_count
+FROM events AS e
+JOIN addresses_per_txn AS apt
+  ON e.transaction_hash = apt.transaction_hash
 GROUP BY 1, 2, 3
 ORDER BY 1, 2
