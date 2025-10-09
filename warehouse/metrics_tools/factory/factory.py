@@ -144,11 +144,6 @@ class TimeseriesMetrics:
         return self._raw_options.get("audits", [])
 
     @property
-    def audit_factories(self):
-        """The audits to use for rendered queries"""
-        return self._raw_options.get("audit_factories", [])
-
-    @property
     def metadata_modifiers(self):
         """The metadata modifiers to use for rendered queries"""
         return self._raw_options.get("metadata_modifiers", [])
@@ -584,11 +579,6 @@ class TimeseriesMetrics:
         incremental_audits.extend(self.incremental_audits)
         audits.extend(incremental_audits)
 
-        for audit_factory in self.audit_factories:
-            audit = audit_factory(query_config)
-            if audit:
-                audits.append(audit)
-
         tags = [
             "model_type=incremental",
             "model_category=metrics",
@@ -718,11 +708,6 @@ class TimeseriesMetrics:
         query = query_config["query"]
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
-
-        for audit_factory in self.audit_factories:
-            audit = audit_factory(query_config)
-            if audit:
-                audits.append(audit)
 
         tags = [
             "model_category=metrics",

@@ -392,9 +392,6 @@ class TimeseriesMetricsOptions(t.TypedDict):
     enabled: t.NotRequired[bool]
     audits: t.NotRequired[list[tuple[str, dict]]]
     incremental_audits: t.NotRequired[list[tuple[str, dict]]]
-    audit_factories: t.NotRequired[
-        list[t.Callable[["MetricQueryConfig"], tuple[str, dict] | None]]
-    ]
     metadata_modifiers: t.NotRequired[
         t.List[t.Callable[["MetricQueryConfig"], MetricMetadataModifiers]]
     ]
