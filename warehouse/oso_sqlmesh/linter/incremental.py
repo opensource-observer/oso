@@ -131,7 +131,7 @@ class IncrementalProjectOrCollectionMustHaveAutoRestatement(Rule):
     """Incremental models in the 'project' or 'collection' must have auto_restatement set to True."""
 
     def check_model(self, model: Model) -> t.Optional[RuleViolation]:
-        # Rule violated if the model's owner field (`model.owner`) is not specified
+        # Ignore non-incremental models
         if not isinstance(model.kind, IncrementalByTimeRangeKind):
             return None
 
