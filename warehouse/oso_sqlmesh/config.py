@@ -34,6 +34,7 @@ config = Config(
             "incrementalmustdefinenogapsaudit",
             "incrementalmusthavelookback",
             "incrementalmusthaveforwardonly",
+            "incrementalprojectorcollectionmusthaveautorestatement",
             "timepartitionsmustbebucketed",
             "nomissingaudits",
             "entitycategorytagrequired",
