@@ -41,7 +41,7 @@ def default_definitions(
     alerts = setup_alert_sensors(
         global_config.alerts_base_url,
         alert_manager,
-        False,
+        enable=global_config.is_production,
     )
 
     asset_factories = asset_factories + alerts
@@ -49,6 +49,7 @@ def default_definitions(
     chunked_state_cleanup_sensor = setup_chunked_state_cleanup_sensor(
         global_config.gcs_bucket,
         max_age_hours=24 * 14,
+        enable=global_config.is_production,
     )
 
     asset_factories = asset_factories + chunked_state_cleanup_sensor

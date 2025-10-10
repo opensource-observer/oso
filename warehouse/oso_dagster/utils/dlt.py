@@ -596,7 +596,7 @@ def setup_chunked_state_cleanup_sensor(
     gcs_bucket_name: str,
     gcs_prefix: str = "dlt_chunked_state",
     max_age_hours: int = 48,
-    enable: bool = True,
+    enable: bool = False,
 ):
     """
     Sets up a sensor and job to clean up chunk files that are older than the specified age.

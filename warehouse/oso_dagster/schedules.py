@@ -83,8 +83,7 @@ materialize_core_assets = define_asset_job(
     - unstable_source_tag
     - sbom_source_tag
     - partitioned_assets
-    - sqlmesh_source_tag
-    - sqlmesh_source_downstream_tag,
+    - sqlmesh_source_tag,
 )
 
 materialize_sqlmesh_assets = define_asset_job(
@@ -120,7 +119,7 @@ def is_first_or_third_monday() -> bool:
     return today.weekday() == 0 and (1 <= today.day <= 7 or 15 <= today.day <= 21)
 
 
-@dg.schedule(target="*", cron_schedule="0 5 * * *")
+@dg.schedule(target=sqlmesh_and_downstream_assets, cron_schedule="0 5 * * *")
 def daily_sqlmesh_materialization_schedule():
     if not is_first_or_third_monday():
         return dg.RunRequest(
@@ -130,12 +129,11 @@ def daily_sqlmesh_materialization_schedule():
     # Run all downstream assets from sqlmesh on the first and third Monday of
     # each month. We run on a Monday so that we can fix issues in the morning as
     # the work week starts
-    return dg.RunRequest(
-        job_name=sqlmesh_and_downstream_assets.name,
-    )
+    return dg.RunRequest()
 
 
 schedules: list[ScheduleDefinition] = [
+    daily_sqlmesh_materialization_schedule,
     # Run sqlmesh assets every day at 05:00 UTC (12:00 AM EST)
     ScheduleDefinition(
         job=materialize_sqlmesh_assets,
