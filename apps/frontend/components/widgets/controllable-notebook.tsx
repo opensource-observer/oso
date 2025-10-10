@@ -9,7 +9,7 @@ import {
 } from "@/lib/notebook/notebook-controls";
 import { logger } from "@/lib/logger";
 import { NotebookHostRpc } from "@/lib/notebook/notebook-host-rpc";
-import { generateNotebooklUrl, NotebookUrlOptions } from "@/lib/notebook/utils";
+import { generateNotebookUrl, NotebookUrlOptions } from "@/lib/notebook/utils";
 
 interface ControllableNotebookProps extends NotebookUrlOptions {
   className?: string; // Plasmic CSS class
@@ -493,7 +493,7 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     [notebookId, notebookUrl],
   );
 
-  const fullNotebookUrl = generateNotebooklUrl({
+  const fullNotebookUrl = generateNotebookUrl({
     notebookUrl,
     notebookId,
     initialCode,

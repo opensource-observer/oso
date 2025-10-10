@@ -14,7 +14,7 @@ export type NotebookUrlOptions = {
   enableDebug?: boolean;
 };
 
-export function generateNotebooklUrl(options: NotebookUrlOptions) {
+export function generateNotebookUrl(options: NotebookUrlOptions) {
   const {
     notebookUrl,
     notebookId,
@@ -78,5 +78,5 @@ export function generatePublishedNotebookPath(
   notebookId: string,
   orgId: string,
 ) {
-  return `${orgId}/${notebookId}.html`;
+  return `${orgId}/${notebookId}.html.gz`;
 }

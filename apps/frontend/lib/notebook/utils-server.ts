@@ -1,36 +1,26 @@
 "use server";
 
-import puppeteer from "puppeteer-core";
+import puppeteer, { Browser } from "puppeteer-core";
 import chromium from "@sparticuz/chromium-min";
 import { NODE_ENV, PUPPETEER_CHROMIUM_PATH } from "@/lib/config";
 import { logger } from "@/lib/logger";
 
 export async function tryGenerateNotebookHtml(url: string) {
+  const browser = await createBrowserInstance();
   try {
-    return await generateNotebookHtml(url);
+    return await generateNotebookHtml(browser, url);
   } catch (error) {
     logger.error("Error rendering page with Puppeteer:", error);
     return null;
+  } finally {
+    await browser.close();
   }
 }
 
-async function generateNotebookHtml(url: string) {
-  const browser = await puppeteer.launch({
-    args: NODE_ENV === "production" ? chromium.args : puppeteer.defaultArgs(),
-    defaultViewport: {
-      width: 1280,
-      height: 720,
-    },
-    executablePath:
-      NODE_ENV === "production"
-        ? await chromium.executablePath(PUPPETEER_CHROMIUM_PATH)
-        : PUPPETEER_CHROMIUM_PATH,
-    headless: true,
-  });
-
+async function generateNotebookHtml(browser: Browser, url: string) {
   const page = await browser.newPage();
   const cssRules: string[] = [];
-  await page.goto(url, { timeout: 100 * 1000, waitUntil: "networkidle0" });
+  await page.goto(url, { timeout: 10 * 1000, waitUntil: "networkidle0" });
 
   const previewButton = await page.waitForSelector("[id='preview-button']", {
     timeout: 5000,
@@ -45,12 +35,12 @@ async function generateNotebookHtml(url: string) {
       const hasInactiveClass = button?.classList.contains("inactive-button");
 
       if (hasInactiveClass) {
-        if ((window as any).stableStart === undefined) {
-          (window as any).stableStart = Date.now();
+        if (window.stableStart === undefined) {
+          window.stableStart = Date.now();
         }
-        return Date.now() - (window as any).stableStart >= 10000;
+        return Date.now() - window.stableStart >= 10000;
       } else {
-        (window as any).stableStart = undefined;
+        window.stableStart = undefined;
         return false;
       }
     },
@@ -92,7 +82,6 @@ async function generateNotebookHtml(url: string) {
     }
     return walk(root);
   });
-  await browser.close();
 
   return `
       <style>
@@ -100,4 +89,30 @@ async function generateNotebookHtml(url: string) {
       </style>
       ${body}
     `;
+}
+
+async function createBrowserInstance() {
+  try {
+    return await puppeteer.launch({
+      args: NODE_ENV === "production" ? chromium.args : puppeteer.defaultArgs(),
+      defaultViewport: {
+        width: 1280,
+        height: 720,
+      },
+      executablePath:
+        NODE_ENV === "production"
+          ? await chromium.executablePath(PUPPETEER_CHROMIUM_PATH)
+          : PUPPETEER_CHROMIUM_PATH,
+      headless: true,
+    });
+  } catch (error) {
+    logger.error("Error launching Puppeteer browser:", error);
+    throw error;
+  }
+}
+
+declare global {
+  interface Window {
+    stableStart: number | undefined;
+  }
 }

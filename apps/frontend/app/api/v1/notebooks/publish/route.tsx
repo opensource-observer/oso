@@ -1,3 +1,4 @@
+import { gzipSync, gunzipSync } from "zlib";
 import { NextRequest, NextResponse } from "next/server";
 import { MARIMO_URL } from "@/lib/config";
 import { withPostHogTracking } from "@/lib/clients/posthog";
@@ -9,7 +10,7 @@ import { tryGenerateNotebookHtml } from "@/lib/notebook/utils-server";
 
 import { revalidateTag } from "next/cache";
 import {
-  generateNotebooklUrl,
+  generateNotebookUrl,
   generatePublishedNotebookPath,
 } from "@/lib/notebook/utils";
 
@@ -48,7 +49,7 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
     orgName: notebook.organizations.org_name,
   });
 
-  const url = generateNotebooklUrl({
+  const url = generateNotebookUrl({
     notebookId: notebook.id,
     notebookUrl: `${MARIMO_URL}/notebook`,
     initialCode: notebook.data ?? "",
@@ -70,11 +71,15 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
     notebookId,
     notebook.organizations.id,
   );
+  const compressedHtml = gzipSync(Buffer.from(html));
   const { error: uploadError } = await supabaseAdmin.storage
     .from("published-notebooks")
-    .upload(filePath, new Blob([html], { type: "text/html" }), {
+    .upload(filePath, compressedHtml, {
       upsert: true,
       contentType: "text/html",
+      headers: {
+        "Content-Encoding": "gzip",
+      },
       // 5 Minute CDN cache. We will also cache on Vercel side to control it with revalidateTag
       cacheControl: "300",
     });
@@ -159,21 +164,23 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
 
   const { notebooks: _, ...publishedNotebookData } = data;
 
-  const {
-    data: { publicUrl: notebookUrl },
-  } = await supabaseAdmin.storage
+  const { data: blob, error: downloadError } = await supabaseAdmin.storage
     .from("published-notebooks")
-    .getPublicUrl(data.data_path);
+    .download(data.data_path);
 
-  const html = await fetch(notebookUrl, {
-    method: "GET",
-    cache: "force-cache",
-    next: { tags: [publishedNotebookData.id] },
-  });
+  if (downloadError) {
+    logger.error(downloadError);
+    return NextResponse.json(
+      { error: "Error downloading published notebook" },
+      { status: 500 },
+    );
+  }
+
+  const html = gunzipSync(await blob.bytes()).toString();
 
   return NextResponse.json({
     ...publishedNotebookData,
-    html: await html.text(),
+    html: html.toString(),
   });
 });
 
