@@ -15,6 +15,7 @@ type MultiplayerUser = {
 interface MultiplayerUserProviderProps {
   children: ReactNode;
   room: string | null;
+  extraData?: Record<string, any>;
   testData?: MultiplayerUser[];
 }
 
@@ -28,6 +29,9 @@ export const MultiplayerUserProviderMeta: CodeComponentMeta<MultiplayerUserProvi
         type: "string",
         description: "The room identifier for the multiplayer session",
       },
+      extraData: {
+        type: "object",
+      },
       testData: {
         type: "object",
         editOnly: true,
@@ -39,13 +43,14 @@ export const MultiplayerUserProviderMeta: CodeComponentMeta<MultiplayerUserProvi
 function MultiplayerUserProvider({
   children,
   room,
+  extraData,
   testData,
 }: MultiplayerUserProviderProps) {
   const { client: osoApp } = useOsoAppClient();
   const [users, setUsers] = useState<MultiplayerUser[]>([]);
 
   useEffect(() => {
-    if (!osoApp || !room) {
+    if (testData || !osoApp || !room) {
       return;
     }
     let channel: RealtimeChannel;
@@ -54,6 +59,15 @@ function MultiplayerUserProvider({
       // We need user profile to be part of the presence state
       const profile = await osoApp.getMyUserProfile();
       channel = await osoApp.getRealtimeChannel(room);
+
+      const trackUser = async () => {
+        await channel.track({
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          email: profile.email,
+          ...(extraData ? { extraData } : {}),
+        });
+      };
 
       channel.on("presence", { event: "sync" }, () => {
         const newState = channel.presenceState<MultiplayerUser>();
@@ -68,11 +82,7 @@ function MultiplayerUserProvider({
           return;
         }
 
-        void channel.track({
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
-          email: profile.email,
-        });
+        void trackUser();
       });
     };
 
@@ -83,7 +93,7 @@ function MultiplayerUserProvider({
         void channel.unsubscribe();
       }
     };
-  }, [room, osoApp]);
+  }, [room, osoApp, extraData, testData]);
 
   return (
     <DataProvider name="users" data={testData ? testData : users}>
