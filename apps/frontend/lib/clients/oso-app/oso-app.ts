@@ -14,7 +14,6 @@ import {
   dynamicConnectorsRowSchema,
   dynamicTableContextsRowSchema,
   connectorRelationshipsInsertSchema,
-  publishedNotebooksRowSchema,
 } from "@/lib/types/schema";
 import type {
   ConnectorRelationshipsRow,
@@ -23,7 +22,6 @@ import type {
   DynamicConnectorsInsert,
   DynamicConnectorsRow,
   DynamicTableContextsRow,
-  NotebooksRow,
   PublishedNotebooksRow,
 } from "@/lib/types/schema-types";
 import { NotebookKey } from "@/lib/types/db";
@@ -862,46 +860,43 @@ class OsoAppClient {
     }
   }
 
-  async publishNotebook(
-    args: Partial<{ notebook: NotebooksRow; data: string }>,
-  ) {
+  async publishNotebook(args: Partial<{ notebookId: string }>) {
     console.log("publishNotebook: ", args);
-    const notebook = ensure(args.notebook, "Missing notebook argument");
-    const data = ensure(args.data, "Missing data argument");
-    const user = await this.getUser();
-    await this.supabaseClient
-      .from("published_notebooks")
-      .upsert(
-        {
-          notebook_id: notebook.id,
-          updated_by: user.id,
-          data: data,
-          updated_at: new Date().toISOString(),
-          deleted_at: null,
-        },
-        { onConflict: "notebook_id" },
-      )
-      .throwOnError();
+    const notebookId = ensure(args.notebookId, "Missing notebookId argument");
+    const response = await fetch("/api/v1/notebooks/publish", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ notebookId }),
+    });
+    const json = await response.json();
+    if (!response.ok) {
+      throw new Error("Error publishing notebook: " + json.error);
+    }
+    return true;
   }
 
   async unpublishNotebook(args: Partial<{ notebookId: string }>) {
     console.log("unpublishNotebook: ", args);
     const notebookId = ensure(args.notebookId, "Missing notebookId argument");
-    const user = await this.getUser();
-    await this.supabaseClient
-      .from("published_notebooks")
-      .update({
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        updated_by: user.id,
-      })
-      .eq("notebook_id", notebookId)
-      .throwOnError();
+    const response = await fetch("/api/v1/notebooks/publish", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ notebookId }),
+    });
+    const json = await response.json();
+    if (!response.ok) {
+      throw new Error("Error unpublishing notebook: " + json.error);
+    }
+    return true;
   }
 
   async getPublishedNotebookByNames(
     args: Partial<{ notebookName: string; orgName: string }>,
-  ): Promise<PublishedNotebooksRow | null> {
+  ): Promise<(PublishedNotebooksRow & { html: string }) | null> {
     console.log("getPublishedNotebook: ", args);
     const notebookName = ensure(
       args.notebookName,
@@ -910,15 +905,12 @@ class OsoAppClient {
     const orgName = ensure(args.orgName, "Missing orgName argument");
 
     const searchParams = new URLSearchParams({ orgName, notebookName });
-    const response = await fetch(
-      `/api/v1/published_notebooks?${searchParams}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+    const response = await fetch(`/api/v1/notebooks/publish?${searchParams}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+    });
 
     const json = await response.json();
 
@@ -926,7 +918,7 @@ class OsoAppClient {
       throw new Error("Error fetching published notebook: " + json.error);
     }
 
-    return publishedNotebooksRowSchema.parse(json);
+    return json;
   }
 
   /**
