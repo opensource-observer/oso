@@ -41,6 +41,8 @@ import {
   CreditPackageSelectorMeta,
   PurchaseHistory,
   PurchaseHistoryMeta,
+  EnterpriseContact,
+  EnterpriseContactMeta,
   Billing,
   BillingMeta,
 } from "@/components/widgets/billing";
@@ -70,6 +72,7 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(CreditBalance, CreditBalanceMeta);
   PLASMIC.registerComponent(CreditPackageSelector, CreditPackageSelectorMeta);
   PLASMIC.registerComponent(PurchaseHistory, PurchaseHistoryMeta);
+  PLASMIC.registerComponent(EnterpriseContact, EnterpriseContactMeta);
   PLASMIC.registerComponent(Billing, BillingMeta);
   PLASMIC.registerComponent(NotebookFactory(), NotebookMeta);
 }
