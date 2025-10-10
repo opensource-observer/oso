@@ -716,7 +716,7 @@ export const pricingPlanUpdateSchema = z.object({
 
 export const publishedNotebooksRowSchema = z.object({
   created_at: z.string(),
-  data: z.string(),
+  data_path: z.string(),
   deleted_at: z.string().nullable(),
   id: z.string(),
   notebook_id: z.string(),
@@ -726,7 +726,7 @@ export const publishedNotebooksRowSchema = z.object({
 
 export const publishedNotebooksInsertSchema = z.object({
   created_at: z.string().optional(),
-  data: z.string(),
+  data_path: z.string(),
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   notebook_id: z.string(),
@@ -736,7 +736,7 @@ export const publishedNotebooksInsertSchema = z.object({
 
 export const publishedNotebooksUpdateSchema = z.object({
   created_at: z.string().optional(),
-  data: z.string().optional(),
+  data_path: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
   notebook_id: z.string().optional(),
