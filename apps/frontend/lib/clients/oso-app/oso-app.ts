@@ -2165,6 +2165,24 @@ class OsoAppClient {
     return true;
   }
 
+  /**
+   * Get a Supabase realtime channel.
+   * @param channelName The name of the channel. Currently formatted as `<room_type>:<room_id>`.
+   * e.g: `notebook:notebook-id`
+   * @returns The Supabase realtime channel.
+   */
+  async getRealtimeChannel(channelName: string) {
+    const user = await this.getUser();
+    return this.supabaseClient.channel(channelName, {
+      config: {
+        private: true,
+        presence: {
+          key: user.id,
+        },
+      },
+    });
+  }
+
   private async createSupabaseAuthHeaders() {
     const { data: sessionData, error } =
       await this.supabaseClient.auth.getSession();
