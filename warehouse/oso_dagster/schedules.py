@@ -106,6 +106,7 @@ materialize_sbom_source_assets = define_asset_job(
     sbom_source_tag,
 )
 
+# This job materializes sqlmesh and all assets downstream of sqlmesh
 sqlmesh_and_downstream_assets = define_asset_job(
     "sqlmesh_and_downstream_assets",
     sqlmesh_source_downstream_tag,
