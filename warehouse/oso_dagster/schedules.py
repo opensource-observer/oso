@@ -134,14 +134,6 @@ def daily_sqlmesh_materialization_schedule():
 
 schedules: list[ScheduleDefinition] = [
     daily_sqlmesh_materialization_schedule,
-    # Run sqlmesh assets every day at 05:00 UTC (12:00 AM EST)
-    ScheduleDefinition(
-        job=materialize_sqlmesh_assets,
-        cron_schedule="0 5 * * *",
-        tags={
-            "dagster/priority": "-1",
-        },
-    ),
     # Run core pipeline assets once a month at 00:00 UTC
     ScheduleDefinition(
         job=materialize_core_assets,
