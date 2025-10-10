@@ -45,6 +45,10 @@ import {
   BillingMeta,
 } from "@/components/widgets/billing";
 import { NotebookMeta, NotebookFactory } from "@/components/widgets/notebook";
+import {
+  EmbeddedSandbox,
+  EmbeddedSandboxMeta,
+} from "@/components/widgets/apollo-sandbox";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -72,4 +76,5 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(PurchaseHistory, PurchaseHistoryMeta);
   PLASMIC.registerComponent(Billing, BillingMeta);
   PLASMIC.registerComponent(NotebookFactory(), NotebookMeta);
+  PLASMIC.registerComponent(EmbeddedSandbox, EmbeddedSandboxMeta);
 }
