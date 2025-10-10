@@ -3,7 +3,7 @@ create table "public"."published_notebooks" (
     "created_at" timestamp with time zone not null default now(),
     "updated_at" timestamp with time zone not null default now(),
     "deleted_at" timestamp with time zone,
-    "data" text not null,
+    "data_path" text not null,
     "updated_by" uuid,
     "notebook_id" uuid not null
 );
@@ -53,3 +53,8 @@ using (((( SELECT check_org_membership(auth.uid(), ( SELECT notebooks.org_id
            FROM notebooks
           WHERE (notebooks.id = published_notebooks.notebook_id)))) = true)))
 with check (( SELECT auth.uid() AS uid) = updated_by);
+
+insert into storage.buckets
+  (id, name, public)
+values
+  ('published-notebooks', 'published-notebooks', true);

@@ -669,7 +669,7 @@ export type Database = {
       published_notebooks: {
         Row: {
           created_at: string;
-          data: string;
+          data_path: string;
           deleted_at: string | null;
           id: string;
           notebook_id: string;
@@ -678,7 +678,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
-          data: string;
+          data_path: string;
           deleted_at?: string | null;
           id?: string;
           notebook_id: string;
@@ -687,7 +687,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
-          data?: string;
+          data_path?: string;
           deleted_at?: string | null;
           id?: string;
           notebook_id?: string;
