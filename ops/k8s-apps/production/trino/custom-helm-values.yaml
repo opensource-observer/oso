@@ -4,6 +4,27 @@ metadata:
   name: production-trino
 spec:
   values:
+    jmx:
+      enabled: true
+      exporter:
+        enabled: true
+        image: bitnamilegacy/jmx-exporter:1.1.0
+        configProperties: |-
+          hostPort: localhost:9080
+          startDelaySeconds: 0
+          ssl: false
+          lowercaseOutputName: false
+          lowercaseOutputLabelNames: false
+          includeObjectNames: ["java.lang:*", "trino.memory:*", "trino.execution:*", "trino.plugin:*"]
+          autoExcludeObjectNameAttributes: true
+          excludeObjectNameAttributes:
+            "java.lang:type=OperatingSystem":
+              - "ObjectName"
+            "java.lang:type=Runtime":
+              - "ClassPath"
+              - "SystemProperties"
+          rules:
+            - pattern: '.*'
     service:
       annotations:
         tailscale.com/expose: "true"

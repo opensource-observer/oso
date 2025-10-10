@@ -1,0 +1,50 @@
+# Setup GKE managed prometheus monitoring for Trino
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: production-trino-coordinator
+  namespace: production-trino
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: coordinator
+      app.kubernetes.io/instance: production-trino
+      app.kubernetes.io/name: trino
+  endpoints:
+  - port: jmx-exporter
+    path: /metrics
+    interval: 30s
+  targetLabels:
+    # We need to rename these labels because GCP does not allow '/' in label names
+    # Also some of the labels are reserved by GCP so we rename them to avoid conflicts
+    fromPod:
+      - from: app.kubernetes.io/component
+        to: oso_component
+      - from: app.kubernetes.io/instance
+        to: oso_instance
+      - from: app.kubernetes.io/name
+        to: oso_name
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: production-trino-worker
+  namespace: production-trino
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+      app.kubernetes.io/instance: production-trino
+      app.kubernetes.io/name: trino
+  endpoints:
+  - port: jmx-exporter
+    path: /metrics
+    interval: 30s
+  targetLabels:
+    fromPod:
+      - from: app.kubernetes.io/component
+        to: oso_component
+      - from: app.kubernetes.io/instance
+        to: oso_instance
+      - from: app.kubernetes.io/name
+        to: oso_name
