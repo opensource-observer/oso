@@ -141,6 +141,7 @@ const BillingMeta: CodeComponentMeta<BillingProps> = {
       type: "choice",
       options: ["FREE", "ENTERPRISE"],
       helpText: "Preview mode: set the plan type for testing in Plasmic",
+      editOnly: true,
     },
   },
 };

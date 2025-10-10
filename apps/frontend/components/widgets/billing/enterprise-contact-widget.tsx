@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { useSupabaseState } from "@/components/hooks/supabase";
-import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
 import { logger } from "@/lib/logger";
 import {
   Card,
@@ -13,6 +12,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useOsoAppClient } from "@/components/hooks/oso-app";
 
 interface EnterpriseContactProps {
   className?: string;
@@ -36,16 +36,19 @@ const EnterpriseContactMeta: CodeComponentMeta<EnterpriseContactProps> = {
       type: "boolean",
       defaultValue: false,
       helpText: "Enable preview mode with mock data for Plasmic testing",
+      editOnly: true,
     },
     previewSupportUrl: {
       type: "string",
       defaultValue: "https://oso.xyz/discord",
       helpText: "Mock support URL for preview mode",
+      editOnly: true,
     },
     previewContactEmail: {
       type: "string",
       defaultValue: "enterprise@oso.xyz",
       helpText: "Mock contact email for preview mode",
+      editOnly: true,
     },
   },
 };
@@ -60,20 +63,15 @@ function EnterpriseContact(props: EnterpriseContactProps) {
   } = props;
 
   const supabaseState = useSupabaseState();
-  const [client, setClient] = useState<OsoAppClient | null>(null);
   const [loading, setLoading] = useState(!previewMode);
   const [error, setError] = useState<string | null>(null);
   const [supportUrl, setSupportUrl] = useState<string | null>(null);
   const [contactEmail, setContactEmail] = useState<string | null>(null);
 
+  const { client } = useOsoAppClient();
+
   const session =
     supabaseState._type === "loggedIn" ? supabaseState.session : null;
-
-  useEffect(() => {
-    if (supabaseState?.supabaseClient && !previewMode) {
-      setClient(new OsoAppClient(supabaseState.supabaseClient));
-    }
-  }, [supabaseState, previewMode]);
 
   useEffect(() => {
     if (previewMode) {
