@@ -169,3 +169,7 @@ class DagsterConfig(BaseSettings):
     def in_deployed_container(self) -> bool:
         """If the repo_sha is not unknown, we are in a deployed container."""
         return self.repo_sha != "unknown"
+
+    @property
+    def is_production(self) -> bool:
+        return self.env == "production"
