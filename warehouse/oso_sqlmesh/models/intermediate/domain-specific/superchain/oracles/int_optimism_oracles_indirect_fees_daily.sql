@@ -37,7 +37,8 @@ WITH events AS (
 oracles_per_txn AS (
   SELECT
     transaction_hash,
-    COUNT(DISTINCT oracle_name) AS num_oracles
+    COUNT(DISTINCT oracle_name) AS num_oracles,
+    COUNT(*) AS num_traces_per_txn
   FROM events
   GROUP BY 1
 ),
@@ -46,7 +47,7 @@ amortized_events AS (
     bucket_day,
     oracle_name,
     to_address,
-    SUM(l2_tx_fees / num_oracles) AS l2_tx_fees,
+    SUM(l2_tx_fees / num_traces_per_txn / num_oracles) AS l2_tx_fees,
     SUM(1.0 / num_oracles) AS tx_count
   FROM events
   JOIN oracles_per_txn
