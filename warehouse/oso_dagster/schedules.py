@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Generator, Iterable, List, cast
 
 import dagster as dg
@@ -11,7 +12,8 @@ from dagster import (
     ScheduleEvaluationContext,
     define_asset_job,
 )
-from oso_dagster.factories.common import AssetFactoryResponse
+from oso_dagster.config import DagsterConfig
+from oso_dagster.factories.common import AssetFactoryResponse, FactoryJobDefinition
 from oso_dagster.utils.tags import (
     experimental_tag,
     partitioned_assets,
@@ -75,95 +77,119 @@ def get_partitioned_schedules(
     return [create_schedule(asset_key) for asset_key in resolved_assets]
 
 
-materialize_core_assets = define_asset_job(
-    "materialize_core_assets_job",
-    AssetSelection.all()
-    - experimental_tag
-    - stable_source_tag
-    - unstable_source_tag
-    - sbom_source_tag
-    - partitioned_assets
-    - sqlmesh_source_tag,
-)
-
-materialize_sqlmesh_assets = define_asset_job(
-    "materialize_sqlmesh_assets_job",
-    sqlmesh_source_tag,
-)
-
-materialize_stable_source_assets = define_asset_job(
-    "materialize_stable_source_assets_job",
-    stable_source_tag,
-)
-
-materialize_unstable_source_assets = define_asset_job(
-    "materialize_unstable_source_assets_job",
-    unstable_source_tag,
-)
-
-materialize_sbom_source_assets = define_asset_job(
-    "materialize_sbom_assets_job",
-    sbom_source_tag,
-)
-
-sqlmesh_and_downstream_assets = define_asset_job(
-    "sqlmesh_and_downstream_assets",
-    sqlmesh_source_downstream_tag,
-    description="Materializes all of sqlmesh and any assets downstream of sqlmesh",
-)
-
-
 def is_first_or_third_monday() -> bool:
-    from datetime import datetime, timezone
-
     today = datetime.now(timezone.utc)
     return today.weekday() == 0 and (1 <= today.day <= 7 or 15 <= today.day <= 21)
 
 
-@dg.schedule(target=sqlmesh_and_downstream_assets, cron_schedule="0 5 * * *")
-def daily_sqlmesh_materialization_schedule():
-    if not is_first_or_third_monday():
-        return dg.RunRequest(
-            job_name="sqlmesh_all_assets",
+def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
+    """Used to define the default schedules for the default code location. We
+    wrap this is a factory function because if sqlmesh is disabled, this will
+    fail to run correctly locally."""
+
+    core_assets = (
+        AssetSelection.all()
+        - experimental_tag
+        - stable_source_tag
+        - unstable_source_tag
+        - sbom_source_tag
+        - partitioned_assets
+    )
+
+    if global_config.sqlmesh_assets_on_default_code_location_enabled:
+        core_assets = core_assets - sqlmesh_source_downstream_tag
+
+    materialize_core_assets = define_asset_job(
+        "materialize_core_assets_job",
+        core_assets,
+    )
+
+    materialize_sqlmesh_assets = define_asset_job(
+        "materialize_sqlmesh_assets_job",
+        sqlmesh_source_tag,
+    )
+
+    materialize_stable_source_assets = define_asset_job(
+        "materialize_stable_source_assets_job",
+        stable_source_tag,
+    )
+
+    materialize_unstable_source_assets = define_asset_job(
+        "materialize_unstable_source_assets_job",
+        unstable_source_tag,
+    )
+
+    materialize_sbom_source_assets = define_asset_job(
+        "materialize_sbom_assets_job",
+        sbom_source_tag,
+    )
+
+    schedules: list[ScheduleDefinition] = [
+        # Run core pipeline assets once a month at 00:00 UTC
+        ScheduleDefinition(
+            job=materialize_core_assets,
+            cron_schedule="0 0 1 * *",
+            tags={
+                "dagster/priority": "-1",
+            },
+        ),
+        # Run source assets every day
+        ScheduleDefinition(
+            job=materialize_stable_source_assets,
+            cron_schedule="0 18 * * *",
+            tags={
+                "dagster/priority": "-1",
+            },
+        ),
+        ScheduleDefinition(
+            job=materialize_unstable_source_assets,
+            cron_schedule="0 12 * * *",
+            tags={
+                "dagster/priority": "-1",
+            },
+        ),
+        # Run SBOM assets on Tuesday and Friday at midnight, since they take too long
+        ScheduleDefinition(
+            job=materialize_sbom_source_assets,
+            cron_schedule="0 6 * * 2,5",
+            tags={
+                "dagster/priority": "-1",
+            },
+        ),
+    ]
+
+    jobs: list[FactoryJobDefinition] = [
+        materialize_core_assets,
+        materialize_stable_source_assets,
+        materialize_unstable_source_assets,
+        materialize_sbom_source_assets,
+        materialize_sqlmesh_assets,
+    ]
+
+    if global_config.sqlmesh_assets_on_default_code_location_enabled:
+        sqlmesh_and_downstream_assets = define_asset_job(
+            "sqlmesh_and_downstream_assets",
+            sqlmesh_source_downstream_tag,
+            description="Materializes all of sqlmesh and any assets downstream of sqlmesh",
         )
 
-    # Run all downstream assets from sqlmesh on the first and third Monday of
-    # each month. We run on a Monday so that we can fix issues in the morning as
-    # the work week starts
-    return dg.RunRequest()
+        @dg.schedule(target=sqlmesh_and_downstream_assets, cron_schedule="0 5 * * *")
+        def daily_sqlmesh_materialization_schedule():
+            if not is_first_or_third_monday():
+                return dg.RunRequest(
+                    job_name="sqlmesh_all_assets",
+                )
 
+            # Run all downstream assets from sqlmesh on the first and third Monday of
+            # each month. We run on a Monday so that we can fix issues in the morning as
+            # the work week starts
+            return dg.RunRequest()
 
-schedules: list[ScheduleDefinition] = [
-    daily_sqlmesh_materialization_schedule,
-    # Run core pipeline assets once a month at 00:00 UTC
-    ScheduleDefinition(
-        job=materialize_core_assets,
-        cron_schedule="0 0 1 * *",
-        tags={
-            "dagster/priority": "-1",
-        },
-    ),
-    # Run source assets every day
-    ScheduleDefinition(
-        job=materialize_stable_source_assets,
-        cron_schedule="0 18 * * *",
-        tags={
-            "dagster/priority": "-1",
-        },
-    ),
-    ScheduleDefinition(
-        job=materialize_unstable_source_assets,
-        cron_schedule="0 12 * * *",
-        tags={
-            "dagster/priority": "-1",
-        },
-    ),
-    # Run SBOM assets on Tuesday and Friday at midnight, since they take too long
-    ScheduleDefinition(
-        job=materialize_sbom_source_assets,
-        cron_schedule="0 6 * * 2,5",
-        tags={
-            "dagster/priority": "-1",
-        },
-    ),
-]
+        schedules.append(daily_sqlmesh_materialization_schedule)
+        jobs.append(sqlmesh_and_downstream_assets)
+
+    return AssetFactoryResponse(
+        assets=[],
+        jobs=jobs,
+        schedules=schedules,
+    )

@@ -4,6 +4,7 @@ import typing as t
 from dataclasses import dataclass, field
 from graphlib import TopologicalSorter
 
+import dagster as dg
 import structlog
 from dagster import (
     AssetChecksDefinition,
@@ -45,6 +46,7 @@ class AssetFactoryResponse:
     sensors: t.List[SensorDefinition] = field(default_factory=lambda: [])
     jobs: t.List[FactoryJobDefinition] = field(default_factory=lambda: [])
     checks: t.List[AssetChecksDefinition] = field(default_factory=lambda: [])
+    schedules: t.List[dg.ScheduleDefinition] = field(default_factory=lambda: [])
 
     def __add__(self, other: "AssetFactoryResponse") -> "AssetFactoryResponse":
         return AssetFactoryResponse(
@@ -52,6 +54,7 @@ class AssetFactoryResponse:
             sensors=list(self.sensors) + list(other.sensors),
             checks=list(self.checks) + list(other.checks),
             jobs=list(self.jobs) + list(other.jobs),
+            schedules=list(self.schedules) + list(other.schedules),
         )
 
     def filter_assets(

@@ -22,7 +22,7 @@ def default_definitions(
     """
     from ..factories import load_all_assets_from_packages
     from ..factories.alerts import setup_alert_sensors
-    from ..schedules import get_partitioned_schedules, schedules
+    from ..schedules import default_schedules, get_partitioned_schedules
     from ..utils import setup_chunked_state_cleanup_sensor
 
     packages = ["oso_dagster.assets.default"]
@@ -54,7 +54,9 @@ def default_definitions(
 
     asset_factories = asset_factories + chunked_state_cleanup_sensor
 
-    all_schedules = schedules + get_partitioned_schedules(asset_factories)
+    all_schedules = default_schedules(
+        global_config
+    ).schedules + get_partitioned_schedules(asset_factories)
 
     return DefinitionsLoaderResponse(
         asset_factory_response=asset_factories,
