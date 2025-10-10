@@ -144,9 +144,9 @@ class TimeseriesMetrics:
         return self._raw_options.get("audits", [])
 
     @property
-    def audit_factories(self):
-        """The audits to use for rendered queries"""
-        return self._raw_options.get("audit_factories", [])
+    def metadata_modifiers(self):
+        """The metadata modifiers to use for rendered queries"""
+        return self._raw_options.get("metadata_modifiers", [])
 
     @property
     def incremental_audits(self):
@@ -393,6 +393,7 @@ class TimeseriesMetrics:
                     "model_category=metrics",
                     "model_stage=intermediate",
                     "model_metrics_type=timeseries_union",
+                    f"entity_category={entity_type}",
                 ],
                 audits=self.audits,
             )(join_all_of_entity_type)
@@ -426,6 +427,7 @@ class TimeseriesMetrics:
                     "model_type=view",
                     "model_category=metrics",
                     "model_stage=intermediate",
+                    f"entity_category={entity_type}",
                 ],
                 audits=self.audits,
             )(join_all_of_entity_type)
@@ -478,7 +480,7 @@ class TimeseriesMetrics:
                 columns=constants.METRIC_METADATA_COLUMNS,
                 enabled=self._raw_options.get("enabled", True),
                 tags=[
-                    "model_type=incremental",
+                    "model_type=full",
                     "model_category=metrics",
                     "model_stage=intermediate",
                     "model_metrics_type=metrics_metadata",
@@ -499,7 +501,7 @@ class TimeseriesMetrics:
             columns=constants.METRIC_METADATA_COLUMNS,
             enabled=self._raw_options.get("enabled", True),
             tags=[
-                "model_type=incremental",
+                "model_type=full",
                 "model_category=metrics",
                 "model_stage=intermediate",
                 "model_metrics_type=metrics_metadata",
@@ -577,10 +579,27 @@ class TimeseriesMetrics:
         incremental_audits.extend(self.incremental_audits)
         audits.extend(incremental_audits)
 
-        for audit_factory in self.audit_factories:
-            audit = audit_factory(query_config)
-            if audit:
+        tags = [
+            "model_type=incremental",
+            "model_category=metrics",
+            "model_stage=intermediate",
+            "model_metrics_type=rolling_window",
+            *query_config["additional_tags"],
+        ]
+
+        for metadata_modifier in self.metadata_modifiers:
+            result = metadata_modifier(query_config)
+            additional_audits = result.get("audits", [])
+
+            for audit in additional_audits:
                 audits.append(audit)
+            additional_tags = result.get("tags", [])
+            for tag in additional_tags:
+                tags.append(tag)
+
+            additional_kind_options = result.get("kind_options", {})
+            for key, value in additional_kind_options.items():
+                kind_common[key] = value
 
         # Override the path and module so that sqlmesh generates the
         # proper python_env for the model
@@ -606,13 +625,7 @@ class TimeseriesMetrics:
             locals=self.serializable_config(query_config),
             override_module_path=override_module_path,
             override_path=override_path,
-            tags=[
-                "model_type=incremental",
-                "model_category=metrics",
-                "model_stage=intermediate",
-                "model_metrics_type=rolling_window",
-                *query_config["additional_tags"],
-            ],
+            tags=tags,
             audits=audits,
         )(generated_rolling_query_proxy)
 
@@ -696,10 +709,26 @@ class TimeseriesMetrics:
         audits = (query._source.audits or [])[:]
         audits.extend(self.audits)
 
-        for audit_factory in self.audit_factories:
-            audit = audit_factory(query_config)
-            if audit:
+        tags = [
+            "model_category=metrics",
+            "model_stage=intermediate",
+            "model_metrics_type=time_aggregation",
+            *query_config["additional_tags"],
+        ]
+
+        for metadata_modifier in self.metadata_modifiers:
+            result = metadata_modifier(query_config)
+            additional_audits = result.get("audits", [])
+
+            for audit in additional_audits:
                 audits.append(audit)
+            additional_tags = result.get("tags", [])
+            for tag in additional_tags:
+                tags.append(tag)
+
+            additional_kind_options = result.get("kind_options", {})
+            for key, value in additional_kind_options.items():
+                kind_options[key] = value
 
         ignored_rules: list[str] = []
         # Ignore these for now, we will need to fix this later
@@ -732,6 +761,7 @@ class TimeseriesMetrics:
             incremental_audits = (query._source.incremental_audits or [])[:]
             incremental_audits.extend(self.incremental_audits)
             audits.extend(incremental_audits)
+        tags.append(model_type_tag)
 
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
@@ -748,13 +778,7 @@ class TimeseriesMetrics:
             locals=self.serializable_config(query_config),
             override_module_path=override_module_path,
             override_path=override_path,
-            tags=[
-                model_type_tag,
-                "model_category=metrics",
-                "model_stage=intermediate",
-                "model_metrics_type=time_aggregation",
-                *query_config["additional_tags"],
-            ],
+            tags=tags,
             audits=audits,
             ignored_rules=ignored_rules,
         )(generated_query)
@@ -790,6 +814,23 @@ class TimeseriesMetrics:
         override_path = Path(inspect.getfile(generated_query))
         override_module_path = Path(os.path.dirname(inspect.getfile(generated_query)))
 
+        tags = [
+            "model_type=full",
+            "model_category=metrics",
+            "model_stage=intermediate",
+            "model_metrics_type=point_in_time",
+        ]
+
+        for metadata_modifier in self.metadata_modifiers:
+            result = metadata_modifier(query_config)
+            additional_audits = result.get("audits", [])
+
+            for audit in additional_audits:
+                audits.append(audit)
+            additional_tags = result.get("tags", [])
+            for tag in additional_tags:
+                tags.append(tag)
+
         return MacroOverridingModel(
             name=f"{self.schema}.{query_config['table_name']}",
             kind=ModelKindName.FULL,
@@ -803,12 +844,7 @@ class TimeseriesMetrics:
             locals=config,
             override_module_path=override_module_path,
             override_path=override_path,
-            tags=[
-                "model_type=full",
-                "model_category=metrics",
-                "model_stage=intermediate",
-                "model_metrics_type=point_in_time",
-            ],
+            tags=tags,
             audits=audits,
         )(generated_query)
 

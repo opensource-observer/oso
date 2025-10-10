@@ -34,6 +34,7 @@ config = Config(
             "incrementalmustdefinenogapsaudit",
             "incrementalmusthavelookback",
             "incrementalmusthaveforwardonly",
+            "incrementalprojectorcollectionmusthaveautorestatement",
             "timepartitionsmustbebucketed",
             "nomissingaudits",
             "entitycategorytagrequired",
@@ -127,6 +128,7 @@ config = Config(
     variables={
         "fulltime_dev_days": 10,
         "activity_window": 30,
+        "default_auto_restatement_cron": "0 0 1,15 * *",  # 1st and 15th of every month
         "blockchain_incremental_start": constants.blockchain_incremental_start,
         "deps_dev_incremental_start": constants.deps_dev_incremental_start,
         "github_incremental_start": constants.github_incremental_start,
