@@ -7,7 +7,8 @@ import { useTheme } from "next-themes";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
 import { DOMAIN } from "@/lib/config";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useAsync } from "react-use";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,101 +32,59 @@ const API_BASE = API_PROTOCOL + DOMAIN;
 const API_PATH = "/api/v1/graphql";
 const API_URL = new URL(API_PATH, API_BASE);
 
-type Organization = {
-  id: string;
-  org_name: string;
-};
-
 type EmbeddedSandboxProps = {
   className?: string;
 };
 
-async function fetchOrgToken(orgName: string): Promise<string | null> {
-  try {
-    const response = await fetch(
-      `/api/v1/jwt?orgName=${encodeURIComponent(orgName)}`,
-    );
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    return data.token;
-  } catch (error) {
-    logger.error("Error fetching JWT token:", error);
-    return null;
-  }
-}
-
-function useOrganizations() {
-  const supabaseState = useSupabaseState();
-  const { client } = useOsoAppClient();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const hasLoadedRef = useRef(false);
-
-  useEffect(() => {
-    if (supabaseState._type !== "loggedIn" || !client || hasLoadedRef.current)
-      return;
-
-    const loadOrganizations = async () => {
-      try {
-        const orgs = await client.getMyOrganizations();
-        setOrganizations(orgs);
-        hasLoadedRef.current = true;
-      } catch (error) {
-        logger.error("Error fetching organizations:", error);
-        setOrganizations([]);
-      }
-    };
-
-    void loadOrganizations();
-  }, [supabaseState._type]);
-
-  useEffect(() => {
-    if (supabaseState._type !== "loggedIn") {
-      hasLoadedRef.current = false;
-      setOrganizations([]);
-    }
-  }, [supabaseState._type]);
-
-  return organizations;
-}
-
-function useOrgToken(orgName: string) {
-  const supabaseState = useSupabaseState();
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!orgName || supabaseState._type !== "loggedIn") {
-      setToken(null);
-      return;
-    }
-
-    const loadToken = async () => {
-      const newToken = await fetchOrgToken(orgName);
-      setToken(newToken);
-    };
-
-    void loadToken();
-  }, [orgName, supabaseState._type]);
-
-  return token;
-}
-
 function EmbeddedSandboxContent(props: EmbeddedSandboxProps) {
   const { className } = props;
   const { resolvedTheme } = useTheme();
-  const organizations = useOrganizations();
+  const supabaseState = useSupabaseState();
+  const { client } = useOsoAppClient();
+
+  const clientRef = useRef(client);
+  useEffect(() => {
+    clientRef.current = client;
+  }, [client]);
+
   const [selectedOrg, setSelectedOrg] = useState<string>("");
   const [open, setOpen] = useState(false);
 
+  const { value: organizations } = useAsync(async () => {
+    if (supabaseState._type !== "loggedIn" || !clientRef.current) return [];
+
+    try {
+      return await clientRef.current.getMyOrganizations();
+    } catch (error) {
+      logger.error("Error fetching organizations:", error);
+      return [];
+    }
+  }, [supabaseState._type]);
+
   useEffect(() => {
-    if (organizations.length > 0 && !selectedOrg) {
+    if (organizations?.length && !selectedOrg) {
       setSelectedOrg(organizations[0].org_name);
     }
   }, [organizations, selectedOrg]);
 
-  const token = useOrgToken(selectedOrg);
-  const tokenRef = useRef<string | null>(null);
+  const { value: token } = useAsync(async () => {
+    if (!selectedOrg || supabaseState._type !== "loggedIn") return null;
 
+    try {
+      const response = await fetch(
+        `/api/v1/jwt?orgName=${encodeURIComponent(selectedOrg)}`,
+      );
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      return data.token;
+    } catch (error) {
+      logger.error("Error fetching JWT token:", error);
+      return null;
+    }
+  }, [selectedOrg, supabaseState._type]);
+
+  const tokenRef = useRef<string | null>(null);
   useEffect(() => {
     tokenRef.current = token;
   }, [token]);
@@ -145,9 +104,10 @@ function EmbeddedSandboxContent(props: EmbeddedSandboxProps) {
     [],
   );
 
-  const selectedOrgName = organizations.find(
-    (org) => org.org_name === selectedOrg,
-  )?.org_name;
+  const selectedOrgName = useMemo(
+    () => organizations?.find((org) => org.org_name === selectedOrg)?.org_name,
+    [organizations, selectedOrg],
+  );
 
   return (
     <div className="relative h-full w-full">
@@ -157,7 +117,7 @@ function EmbeddedSandboxContent(props: EmbeddedSandboxProps) {
         handleRequest={handleRequest}
       />
 
-      {organizations.length > 0 && (
+      {organizations && organizations.length > 0 && (
         <div
           className={cn(
             "absolute bottom-4 right-4 z-50",
@@ -234,12 +194,7 @@ function EmbeddedSandbox(props: EmbeddedSandboxProps) {
 const EmbeddedSandboxMeta: CodeComponentMeta<EmbeddedSandboxProps> = {
   name: "EmbeddedSandbox",
   description: "Apollo GraphQL Sandbox with organization selector",
-  props: {
-    className: {
-      type: "class",
-      helpText: "CSS classes to apply to the sandbox",
-    },
-  },
+  props: {},
   importPath: "@/components/widgets/apollo-sandbox",
 };
 

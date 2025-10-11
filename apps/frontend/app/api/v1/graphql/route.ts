@@ -48,15 +48,24 @@ function getModelNames(operation: OperationDefinitionNode): string[] {
 
 /**
  * Check if a GraphQL query is purely an introspection query
- * Introspection queries only contain fields starting with __
+ *
+ * Per the GraphQL spec, introspection fields are prefixed with "__" (two underscores):
+ * "Types and fields required by the GraphQL introspection system that are used in
+ * the same context as user defined types and fields are prefixed with "__" (two
+ * underscores), in order to avoid naming collisions with user defined GraphQL types."
+ *
+ * @see https://github.com/graphql/graphql-spec/blob/main/spec/Section%204%20--%20Introspection.md#reserved-names
  * @param queryString
- * @returns
+ * @returns true if query only contains introspection fields (starting with __)
  */
 function isIntrospectionQuery(queryString: string): boolean {
   try {
     const document = parse(queryString);
 
     for (const def of document.definitions) {
+      // Per GraphQL spec, ExecutableDefinition consists of OperationDefinition | FragmentDefinition
+      // We only check OperationDefinitions since introspection queries are operations
+      // @see https://github.com/graphql/graphql-spec/blob/main/spec/Section%202%20--%20Language.md#document
       if (def.kind !== "OperationDefinition") continue;
 
       for (const selection of def.selectionSet.selections) {
