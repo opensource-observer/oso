@@ -253,8 +253,8 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
-        "new_contributors": MetricQueryDef(
-            ref="code/new_contributors.sql",
+        "first_time_contributor": MetricQueryDef(
+            ref="code/first_time_contributor.sql",
             time_aggregations=[
                 "daily",
                 "weekly",
@@ -263,11 +263,10 @@ timeseries_metrics(
                 # "biannually",
                 "yearly",
             ],
-            entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
-                display_name="New Contributors",
-                description="Metrics related to new GitHub contributors identified by author_association = 'FIRST_TIME_CONTRIBUTOR'",
+                display_name="First Time Contributors",
+                description="Metrics related to first time GitHub contributors",
             ),
             additional_tags=["data_category=code"],
         ),
