@@ -16,14 +16,14 @@ class IncrementalMustHaveTimePartition(Rule):
         time_column = model.time_column
         if time_column is None:
             return self.violation(
-                "Incremental by time range models must have a time column."
+                f"Incremental by time range model {model.name} must have a time column."
             )
         for ex in model.partitioned_by:
             for column in ex.find_all(exp.Column):
                 if column.name == time_column.column.name:
                     return None
         return self.violation(
-            f"Incremental by time range models must have a time partition on {time_column.column.name}."
+            f"Incremental by time range model {model.name} must have a time partition on {time_column.column.name}."
         )
 
     def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
@@ -48,7 +48,7 @@ class IncrementalMustDefineNoGapsAudit(Rule):
             if name == "no_gaps":
                 return None
         return self.violation(
-            "Incremental by time range models must have a no_gaps audit."
+            f"Incremental by time range model {model.name} must have a no_gaps audit."
         )
 
     def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
@@ -76,7 +76,7 @@ class IncrementalMustHaveLookback(Rule):
 
         if model.kind.lookback is None:
             return self.violation(
-                f"Incremental by time range models must have a lookback defined of at least 3 days. At current settings this should be {minimum_lookback}"
+                f"Incremental by time range model {model.name} must have a lookback defined of at least 3 days. At current settings this should be {minimum_lookback}"
             )
 
         # Check if the lookback is at least 3 days
@@ -84,7 +84,7 @@ class IncrementalMustHaveLookback(Rule):
             if model.kind.lookback >= 1:
                 return None
             return self.violation(
-                f"Incremental by time range models must have a lookback of at least 3 days or 1 interval of time. Current lookback is {model.kind.lookback} {interval_unit.value}(s)."
+                f"Incremental by time range model {model.name} must have a lookback of at least 3 days or 1 interval of time. Current lookback is {model.kind.lookback} {interval_unit.value}(s)."
             )
 
         lookback_seconds = model.kind.lookback * interval_seconds
@@ -92,7 +92,7 @@ class IncrementalMustHaveLookback(Rule):
             return None
 
         return self.violation(
-            f"Incremental by time range models must have a lookback of at least 3 days. Current lookback is {model.kind.lookback} {interval_unit.value}(s)."
+            f"Incremental by time range model {model.name} must have a lookback of at least 3 days. Current lookback is {model.kind.lookback} {interval_unit.value}(s)."
         )
 
     def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
@@ -115,8 +115,36 @@ class IncrementalMustHaveForwardOnly(Rule):
         if model.forward_only:
             return None
         return self.violation(
-            "Incremental by time range models must have forward_only set to True or specifically ignore this rule."
+            f"Incremental by time range model {model.name} must have forward_only set to True or specifically ignore this rule."
         )
+
+    def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
+        # Create a RuleViolation object with the specified violation message
+        return RuleViolation(
+            rule=self,
+            violation_msg=violation_msg
+            or "Incremental models must have a time partition.",
+        )
+
+
+class IncrementalProjectOrCollectionMustHaveAutoRestatement(Rule):
+    """Incremental models in the 'project' or 'collection' must have auto_restatement set to True."""
+
+    def check_model(self, model: Model) -> t.Optional[RuleViolation]:
+        # Ignore non-incremental models
+        if not isinstance(model.kind, IncrementalByTimeRangeKind):
+            return None
+
+        if model.tags and (
+            "entity_category=project" in model.tags
+            or "entity_category=collection" in model.tags
+        ):
+            if not model.kind.auto_restatement_cron:
+                return self.violation(
+                    f"Incremental by time range model {model.name} in the 'project' or 'collection' must have auto_restatement_cron set."
+                )
+
+        return None
 
     def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
         # Create a RuleViolation object with the specified violation message

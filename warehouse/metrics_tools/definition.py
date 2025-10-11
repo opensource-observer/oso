@@ -62,7 +62,9 @@ class MetricModelDefinition(t.TypedDict):
     end: t.NotRequired[TimeLike]
     dialect: t.NotRequired[str]
 
+
 PeerMetricDependencyRef = MetricModelDefinition
+
 
 def to_actual_table_name(
     model_def: MetricModelDefinition, peer_table_map: t.Dict[str, str]
@@ -75,7 +77,9 @@ def model_def_to_str(model_def: MetricModelDefinition, actual_name: str = ""):
     name = actual_name or model_def["name"]
     result = f"{name}_to_{model_def['entity_type']}"
     suffix = time_suffix(
-        model_def.get("time_aggregation"), model_def.get("window"), model_def.get("unit")
+        model_def.get("time_aggregation"),
+        model_def.get("window"),
+        model_def.get("unit"),
     )
     return f"{result}_{suffix}"
 
@@ -105,6 +109,7 @@ class MetricMetadata:
 @dataclass(kw_only=True)
 class MetricQueryDef:
     """Defines the parameters for a given metric query"""
+
     # The relative path to the query in `oso_metrics`
     ref: str
 
@@ -370,6 +375,12 @@ class DailyTimeseriesRollingWindowOptions(t.TypedDict):
     model_options: t.NotRequired[t.Dict[str, t.Any]]
 
 
+class MetricMetadataModifiers(t.TypedDict):
+    kind_options: t.NotRequired[dict]
+    audits: t.NotRequired[list[tuple[str, dict]]]
+    tags: t.NotRequired[list[str]]
+
+
 class TimeseriesMetricsOptions(t.TypedDict):
     model_prefix: str
     schema: str
@@ -381,4 +392,6 @@ class TimeseriesMetricsOptions(t.TypedDict):
     enabled: t.NotRequired[bool]
     audits: t.NotRequired[list[tuple[str, dict]]]
     incremental_audits: t.NotRequired[list[tuple[str, dict]]]
-    audit_factories: t.NotRequired[list[t.Callable[["MetricQueryConfig"], tuple[str, dict] | None]]]
+    metadata_modifiers: t.NotRequired[
+        t.List[t.Callable[["MetricQueryConfig"], MetricMetadataModifiers]]
+    ]

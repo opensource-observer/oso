@@ -2,10 +2,11 @@ MODEL(
   name oso.int_superchain_s7_onchain_builder_events,
   description 'Unified model of all Superchain-related events with S7-specific event weights',
   kind incremental_by_time_range(
-   time_column time,
-   batch_size 60,
-   batch_concurrency 2,
-   lookback 31
+    time_column time,
+    batch_size 60,
+    batch_concurrency 2,
+    lookback 3,
+    auto_restatement_cron @default_auto_restatement_cron
   ),
   start '2024-09-01',
   cron '@daily',

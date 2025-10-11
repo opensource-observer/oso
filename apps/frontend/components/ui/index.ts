@@ -185,6 +185,20 @@ import {
   CollapsibleTriggerMeta,
 } from "@/components/ui/collapsible";
 import { Calendar, CalendarMeta } from "@/components/ui/calendar";
+import {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardMeta,
+  CardHeaderMeta,
+  CardFooterMeta,
+  CardTitleMeta,
+  CardDescriptionMeta,
+  CardContentMeta,
+} from "@/components/ui/card";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -285,4 +299,10 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(CollapsibleContent, CollapsibleContentMeta);
   PLASMIC.registerComponent(CollapsibleTrigger, CollapsibleTriggerMeta);
   PLASMIC.registerComponent(Calendar, CalendarMeta);
+  PLASMIC.registerComponent(Card, CardMeta);
+  PLASMIC.registerComponent(CardHeader, CardHeaderMeta);
+  PLASMIC.registerComponent(CardTitle, CardTitleMeta);
+  PLASMIC.registerComponent(CardDescription, CardDescriptionMeta);
+  PLASMIC.registerComponent(CardContent, CardContentMeta);
+  PLASMIC.registerComponent(CardFooter, CardFooterMeta);
 }

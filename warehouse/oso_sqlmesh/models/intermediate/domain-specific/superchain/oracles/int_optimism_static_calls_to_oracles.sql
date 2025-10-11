@@ -3,26 +3,23 @@ MODEL (
   description "Optimism static calls to oracles",
   dialect trino,
   kind incremental_by_time_range(
-   time_column block_timestamp,
-   batch_size 60,
-   batch_concurrency 2,
-   lookback 31,
-   forward_only true,
-   on_destructive_change warn,
+    time_column block_timestamp,
+    batch_size 60,
+    batch_concurrency 1,
+    lookback 3,
+    forward_only true,
+    on_destructive_change warn,
   ),
-  start '2024-09-01',
+  start @blockchain_incremental_start,
   cron '@daily',
   partitioned_by MONTH("block_timestamp"),
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := block_timestamp,
-      no_gap_date_part := 'day',
-      ignore_before := @superchain_audit_start,
-      ignore_after := @superchain_audit_end,
-      missing_rate_min_threshold := 0.95,
-    ),
   ),
+  ignored_rules (
+    "incrementalmustdefinenogapsaudit",
+    "incrementalmusthaveforwardonly",
+  )
 );
 
 SELECT

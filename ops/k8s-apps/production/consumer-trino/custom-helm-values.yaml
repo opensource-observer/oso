@@ -4,6 +4,29 @@ metadata:
   name: production-consumer-trino
 spec:
   values:
+    jmx:
+      enabled: true
+      exporter:
+        enabled: true
+        image: bitnamilegacy/jmx-exporter:1.1.0
+        # The array used in includeObjectNames does not seem to parse well 
+        # if we use YAML arrays, so we use a literal block scalar instead
+        configProperties: |-
+          hostPort: localhost:9080
+          startDelaySeconds: 0
+          ssl: false
+          lowercaseOutputName: false
+          lowercaseOutputLabelNames: false
+          includeObjectNames: ["java.lang:*", "trino.memory:*", "trino.execution:*", "trino.plugin:*", "trino.failuredetector:*"]
+          autoExcludeObjectNameAttributes: true
+          excludeObjectNameAttributes:
+            "java.lang:type=OperatingSystem":
+              - "ObjectName"
+            "java.lang:type=Runtime":
+              - "ClassPath"
+              - "SystemProperties"
+          rules:
+            - pattern: '.*'
     service:
       annotations:
         tailscale.com/expose: "true"
@@ -31,7 +54,7 @@ spec:
       enabled: true
       className: ingress-internal-cloudflare
       hosts:
-        - host: trino.opensource.observer
+        - host: trino.oso.xyz
           paths:
             - path: /
               pathType: Prefix
@@ -149,7 +172,7 @@ spec:
       workers: 1
       autoscaling:
         enabled: true
-        maxReplicas: 5
+        maxReplicas: 3
         targetCPUUtilizationPercentage: 20
         behavior:
           scaleDown:

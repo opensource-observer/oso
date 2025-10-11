@@ -2,6 +2,7 @@ MODEL (
   name oso.int_artifacts_by_collection,
   kind FULL,
   tags (
+    'entity_category=project',
     'entity_category=collection'
   ),
   audits (

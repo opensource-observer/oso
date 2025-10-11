@@ -73,6 +73,9 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
         for blocked_tag in ["index", "order_by"]:
             if blocked_tag in tags:
                 del tags[blocked_tag]
+
+        # Add the sqlmesh source tag
+        tags["opensource.observer/source"] = "sqlmesh"
         return tags
 
     def get_unfiltered_tags(self, context: Context, model: Model) -> t.Dict[str, str]:
@@ -120,7 +123,12 @@ class SQLMeshExportedAssetDefinition(BaseModel):
     def outs_as_dagster_obj(self) -> t.Dict[str, AssetOut]:
         """Converts the outs to AssetOuts."""
         return {
-            name: AssetOut(key=AssetKey.from_user_string(self.outs[name]))
+            name: AssetOut(
+                key=AssetKey.from_user_string(self.outs[name]),
+                tags={
+                    "opensource.observer/source": "sqlmesh-downstream",
+                },
+            )
             for name in self.outs
         }
 

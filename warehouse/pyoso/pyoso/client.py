@@ -9,7 +9,7 @@ import requests
 from pydantic import BaseModel
 from pyoso.analytics import DataAnalytics, DataStatus
 from pyoso.constants import DEFAULT_BASE_URL, OSO_API_KEY
-from pyoso.exceptions import OsoError, OsoHTTPError
+from pyoso.exceptions import InsufficientCreditError, OsoError, OsoHTTPError
 from pyoso.semantic import create_registry
 from sqlglot import parse
 
@@ -182,6 +182,9 @@ class Client:
                 response.iter_lines(chunk_size=None)
             )
         except requests.HTTPError as e:
+            if e.response.status_code == 402:
+                error_message = e.response.json()["error"]
+                raise InsufficientCreditError(error_message) from None
             raise OsoHTTPError(e, response=e.response) from None
 
     def to_pandas(self, query: str):

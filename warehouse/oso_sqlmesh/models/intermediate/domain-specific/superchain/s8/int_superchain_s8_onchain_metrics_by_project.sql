@@ -6,7 +6,8 @@ MODEL(
   partitioned_by (DAY("sample_date"), "metric_name", "chain"),
   grain(sample_date, chain, project_id, metric_name),
   tags (
-    'entity_category=project'
+    'entity_category=project',
+    'entity_category=collection',
   ),
   audits (
     has_at_least_n_rows(threshold := 0)

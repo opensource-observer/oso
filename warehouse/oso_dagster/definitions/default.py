@@ -22,7 +22,7 @@ def default_definitions(
     """
     from ..factories import load_all_assets_from_packages
     from ..factories.alerts import setup_alert_sensors
-    from ..schedules import get_partitioned_schedules, schedules
+    from ..schedules import default_schedules, get_partitioned_schedules
     from ..utils import setup_chunked_state_cleanup_sensor
 
     packages = ["oso_dagster.assets.default"]
@@ -41,7 +41,7 @@ def default_definitions(
     alerts = setup_alert_sensors(
         global_config.alerts_base_url,
         alert_manager,
-        False,
+        enable=global_config.is_production,
     )
 
     asset_factories = asset_factories + alerts
@@ -49,11 +49,14 @@ def default_definitions(
     chunked_state_cleanup_sensor = setup_chunked_state_cleanup_sensor(
         global_config.gcs_bucket,
         max_age_hours=24 * 14,
+        enable=global_config.is_production,
     )
 
     asset_factories = asset_factories + chunked_state_cleanup_sensor
 
-    all_schedules = schedules + get_partitioned_schedules(asset_factories)
+    all_schedules = default_schedules(
+        global_config
+    ).schedules + get_partitioned_schedules(asset_factories)
 
     return DefinitionsLoaderResponse(
         asset_factory_response=asset_factories,

@@ -5,6 +5,7 @@ import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
 import { logger } from "@/lib/logger";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface CreditBalanceProps {
   className?: string;
@@ -93,34 +94,27 @@ function CreditBalance(props: CreditBalanceProps) {
 
   if (loading) {
     return (
-      <div
-        className={`${className} mb-8 overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg animate-pulse`}
-      >
-        <div className="px-8 py-10">
-          <div className="flex items-center">
-            <div className="h-10 w-10 bg-white/20 rounded-full"></div>
-            <div className="ml-5 space-y-2">
-              <div className="h-4 w-32 bg-white/20 rounded"></div>
-              <div className="h-8 w-24 bg-white/20 rounded"></div>
+      <Card className={`${className} mb-6`}>
+        <CardHeader>
+          <div className="flex items-center space-x-4">
+            <div className="h-12 w-12 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="space-y-2 flex-1">
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
             </div>
           </div>
-        </div>
-        <div className="bg-blue-600/50 px-8 py-4">
-          <div className="h-4 w-28 bg-white/20 rounded"></div>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div
-        className={`${className} mb-8 overflow-hidden bg-gradient-to-r from-red-500 to-red-600 rounded-xl shadow-lg`}
-      >
-        <div className="px-8 py-10">
-          <div className="flex items-center">
+      <Card className={`${className} mb-6 border-red-200 bg-red-50/50`}>
+        <CardHeader>
+          <div className="flex items-start space-x-3">
             <svg
-              className="h-10 w-10 text-white opacity-75"
+              className="h-5 w-5 text-red-500 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -132,54 +126,35 @@ function CreditBalance(props: CreditBalanceProps) {
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
               />
             </svg>
-            <div className="ml-5">
-              <p className="text-sm font-medium text-red-100">
+            <div>
+              <p className="text-sm font-medium text-red-800">
                 Error Loading Credits
               </p>
-              <p className="text-2xl font-bold text-white">{error}</p>
+              <p className="text-sm text-red-600 mt-1">{error}</p>
             </div>
           </div>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
     );
   }
 
   return (
-    <div
-      className={`${className} mb-8 overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg`}
+    <Card
+      className={`${className} mb-6 border-[#2C7FB8]/20 bg-gradient-to-br from-white to-[#FFF2C2]/10`}
     >
-      <div className="px-8 py-10">
-        <div className="flex items-center">
-          <svg
-            className="h-10 w-10 text-white opacity-75"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div className="ml-5">
-            <p className="text-sm font-medium text-blue-100">
-              Available Credits{" "}
-              {showOrganizationName &&
-                resolvedOrgName &&
-                `for ${resolvedOrgName}`}
-            </p>
-            <p className="text-4xl font-bold text-white">
-              {creditBalance?.toLocaleString() ?? "0"}
-            </p>
-          </div>
+      <CardHeader>
+        <CardTitle className="text-sm font-medium text-[#253494]/70">
+          Available Credits
+          {showOrganizationName && resolvedOrgName && ` · ${resolvedOrgName}`}
+        </CardTitle>
+        <div className="flex items-baseline space-x-2">
+          <p className="text-4xl font-bold text-[#253494]">
+            {creditBalance?.toLocaleString() ?? "0"}
+          </p>
+          <p className="text-sm text-[#2C7FB8]">credits</p>
         </div>
-      </div>
-      <div className="bg-blue-600/50 px-8 py-4">
-        <p className="text-sm text-white">Top up your credits below</p>
-      </div>
-    </div>
+      </CardHeader>
+    </Card>
   );
 }
 
