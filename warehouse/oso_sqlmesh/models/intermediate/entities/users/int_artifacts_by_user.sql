@@ -87,6 +87,32 @@ with
     from lens
   ),
 
+  ens_users as (
+    with
+      ens as (
+        select
+          ens_domains.domain_id as user_source_id,
+          'ENS' as user_source,
+          'ENS_USER' as user_type,
+          ens_domains.domain_name as domain_name,
+          ens_domains.github_handle as user_name,
+          'GITHUB' as artifact_source
+        from oso.int_ens__domains_with_github as ens_domains
+      )
+
+    select
+      lower(user_name) as artifact_source_id,
+      artifact_source,
+      lower(user_name) as artifact_name,
+      user_source_id,
+      user_source,
+      user_type,
+      user_name,
+      'github' as artifact_namespace,
+      lower(user_source) as user_namespace
+    from ens
+  ),
+
   all_normalized_users as (
     select
       artifact_source_id,
@@ -123,6 +149,18 @@ with
       user_namespace,
       user_name
     from lens_users
+    union all
+    select
+      artifact_source_id,
+      artifact_source,
+      artifact_namespace,
+      artifact_name,
+      user_source_id,
+      user_source,
+      user_type,
+      user_namespace,
+      user_name
+    from ens_users
   )
 
 select distinct
