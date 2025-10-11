@@ -6,18 +6,25 @@ import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { useSupabaseState } from "@/components/hooks/supabase";
 import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
 import { CreditBalance } from "@/components/widgets/billing/credit-balance-widget";
-import { CreditPackageSelector } from "@/components/widgets/billing/credit-package-selector-widget";
-import { PurchaseHistory } from "@/components/widgets/billing/purchase-history-widget";
+import { EnterpriseContact } from "@/components/widgets/billing/enterprise-contact-widget";
+import { TallyPopup } from "@/components/widgets/tally";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { logger } from "@/lib/logger";
 
 interface BillingProps {
   className?: string;
   organizationName?: string;
   showCreditBalance?: boolean;
-  showPackageSelector?: boolean;
-  showPurchaseHistory?: boolean;
   handleUrlParams?: boolean;
   title?: string;
+  previewPlanName?: "FREE" | "ENTERPRISE";
 }
 
 interface AlertProps {
@@ -107,7 +114,7 @@ const LoadingSpinner: React.FC<{ message?: string }> = ({
 const BillingMeta: CodeComponentMeta<BillingProps> = {
   name: "Billing",
   description:
-    "Complete billing management interface with credit balance, package selection, and purchase history",
+    "Billing management interface that adapts based on pricing plan (FREE shows upgrade form, ENTERPRISE shows support contacts)",
   props: {
     organizationName: {
       type: "string",
@@ -119,26 +126,22 @@ const BillingMeta: CodeComponentMeta<BillingProps> = {
       defaultValue: true,
       helpText: "Whether to show the credit balance section",
     },
-    showPackageSelector: {
-      type: "boolean",
-      defaultValue: true,
-      helpText: "Whether to show the credit package selector",
-    },
-    showPurchaseHistory: {
-      type: "boolean",
-      defaultValue: true,
-      helpText: "Whether to show the purchase history section",
-    },
     handleUrlParams: {
       type: "boolean",
-      defaultValue: true,
+      defaultValue: false,
       helpText:
-        "Whether to handle URL parameters for payment success/cancel states",
+        "Whether to handle URL parameters for payment success/cancel states (legacy)",
     },
     title: {
       type: "string",
-      defaultValue: "Credit Management",
+      defaultValue: "Billing",
       helpText: "Title to display at the top of the widget",
+    },
+    previewPlanName: {
+      type: "choice",
+      options: ["FREE", "ENTERPRISE"],
+      helpText: "Preview mode: set the plan type for testing in Plasmic",
+      editOnly: true,
     },
   },
 };
@@ -148,10 +151,9 @@ function BillingContent(props: BillingProps) {
     className,
     organizationName,
     showCreditBalance = true,
-    showPackageSelector = true,
-    showPurchaseHistory = true,
-    handleUrlParams = true,
-    title = "Credit Management",
+    handleUrlParams = false,
+    title = "Billing",
+    previewPlanName,
   } = props;
 
   const supabaseState = useSupabaseState();
@@ -164,8 +166,11 @@ function BillingContent(props: BillingProps) {
   const [organization, setOrganization] = useState<{
     id: string;
     org_name: string;
+    pricing_plan?: {
+      plan_name: string;
+    };
   } | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [planName, setPlanName] = useState<string | null>(null);
 
   const session =
     supabaseState._type === "loggedIn" ? supabaseState.session : null;
@@ -212,10 +217,16 @@ function BillingContent(props: BillingProps) {
             setLoading(false);
             return;
           }
-          targetOrg = userOrganizations[0];
+          targetOrg = await client.getOrganizationById({
+            orgId: userOrganizations[0].id,
+          });
         }
 
         setOrganization(targetOrg);
+
+        const actualPlanName =
+          previewPlanName || targetOrg.pricing_plan?.plan_name || "FREE";
+        setPlanName(actualPlanName);
       } catch (err) {
         logger.error("Error loading organization:", err);
         if (!handleUrlParams || searchParams.get("purchase") !== "success") {
@@ -236,6 +247,7 @@ function BillingContent(props: BillingProps) {
     supabaseState,
     organizationName,
     handleUrlParams,
+    previewPlanName,
   ]);
 
   useEffect(() => {
@@ -244,20 +256,10 @@ function BillingContent(props: BillingProps) {
     const purchase = searchParams.get("purchase");
     if (purchase === "success") {
       setSuccess("Payment successful! Your credits have been added.");
-      setRefreshTrigger((prev) => prev + 1);
     } else if (purchase === "cancelled") {
       setError("Payment cancelled. No charges were made.");
     }
   }, [searchParams, handleUrlParams]);
-
-  const handlePurchaseComplete = (success: boolean, message?: string) => {
-    if (success) {
-      setSuccess(message || "Purchase completed successfully!");
-      setRefreshTrigger((prev) => prev + 1);
-    } else {
-      setError(message || "Purchase failed");
-    }
-  };
 
   if (
     loading &&
@@ -299,11 +301,12 @@ function BillingContent(props: BillingProps) {
     );
   }
 
+  const isFree = planName === "FREE";
+  const isEnterprise = planName === "ENTERPRISE";
+
   return (
     <div className={`${className} max-w-4xl mx-auto my-12 px-4`}>
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-        {title}
-      </h1>
+      <h1 className="text-3xl font-bold text-[#253494] mb-6">{title}</h1>
 
       {error && (
         <Alert type="error" message={error} onDismiss={() => setError(null)} />
@@ -318,21 +321,52 @@ function BillingContent(props: BillingProps) {
       )}
 
       {showCreditBalance && organization && (
-        <CreditBalance
-          organizationName={organization.org_name}
-          refreshTrigger={refreshTrigger}
-        />
+        <CreditBalance organizationName={organization.org_name} />
       )}
 
-      {showPackageSelector && organization && (
-        <CreditPackageSelector
-          organizationName={organization.org_name}
-          onPurchaseComplete={handlePurchaseComplete}
-        />
+      {isFree && (
+        <Card className="border-[#41B6C4]/30 bg-gradient-to-br from-white to-[#99D8C9]/5">
+          <CardHeader>
+            <CardTitle className="text-[#253494]">
+              Upgrade to Enterprise
+            </CardTitle>
+            <CardDescription className="text-[#253494]/70">
+              Need more credits or advanced features? Get in touch with our team
+              to learn about Enterprise plans with higher credit limits,
+              priority support, and more.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TallyPopup formId="wbb196" layout="modal" width="600">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto bg-[#253494] hover:bg-[#2C7FB8] text-white"
+              >
+                <svg
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                Request Enterprise Upgrade
+              </Button>
+            </TallyPopup>
+          </CardContent>
+        </Card>
       )}
 
-      {showPurchaseHistory && (
-        <PurchaseHistory refreshTrigger={refreshTrigger} />
+      {isEnterprise && organization && (
+        <EnterpriseContact
+          organizationName={organization.org_name}
+          previewMode={!!previewPlanName}
+        />
       )}
     </div>
   );

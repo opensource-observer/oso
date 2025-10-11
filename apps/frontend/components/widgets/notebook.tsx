@@ -19,6 +19,8 @@ export interface NotebookProps {
   enableDebug?: boolean;
   mode?: "read" | "edit";
   enablePresentMode?: boolean;
+  extraQueryParams?: Record<string, string>;
+  extraFragmentParams?: Record<string, string>;
 }
 
 export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
@@ -97,6 +99,14 @@ export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
       defaultValue: {},
       required: false,
     },
+    extraQueryParams: {
+      type: "object",
+      displayName: "Extra Query Params",
+      description:
+        "Extra query parameters to pass to the notebook URL, useful for custom features",
+      defaultValue: {},
+      required: false,
+    },
   },
 };
 
@@ -123,6 +133,8 @@ function NotebookFactory() {
             enableDebug,
             mode = "edit",
             enablePresentMode,
+            extraFragmentParams = {},
+            extraQueryParams = {},
           } = props;
           const { client } = useOsoAppClient();
           // Uncomment this if you want to be able to call methods exposed by
@@ -224,6 +236,8 @@ function NotebookFactory() {
               mode={mode}
               enablePresentMode={enablePresentMode}
               enablePostMessageStore={enableSave}
+              extraFragmentParams={extraFragmentParams}
+              extraQueryParams={extraQueryParams}
             />
           );
         }

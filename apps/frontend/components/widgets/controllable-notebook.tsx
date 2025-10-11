@@ -21,6 +21,7 @@ interface ControllableNotebookProps {
   mode: "read" | "edit";
   enablePresentMode?: boolean;
   extraFragmentParams?: Record<string, string>;
+  extraQueryParams?: Record<string, string>;
   enablePostMessageStore?: boolean;
   onNotebookConnected?: (rpcSession: NotebookControls) => void;
   hostControls: NotebookHostControls;
@@ -454,39 +455,50 @@ function generateNotebooklUrl(options: NotebookUrlOptions) {
     mode,
     enablePresentMode = false,
     extraFragmentParams = {},
+    extraQueryParams = {},
   } = options;
 
   const envString = compressToEncodedURIComponent(JSON.stringify(environment));
   // Generate query params
-  const queryParams = new URLSearchParams();
+  const fragmentParams = new URLSearchParams();
   if (aiPrompt) {
-    queryParams.append("aiPrompt", aiPrompt);
+    fragmentParams.append("aiPrompt", aiPrompt);
   }
   if (initialCode) {
-    queryParams.append("code", initialCode);
+    fragmentParams.append("code", initialCode);
   }
-  queryParams.append("env", envString);
+  fragmentParams.append("env", envString);
 
   if (enablePostMessageStore) {
-    queryParams.append("enablePostMessageStore", "true");
+    fragmentParams.append("enablePostMessageStore", "true");
   }
   if (enableDebug) {
-    queryParams.append("enableDebug", "true");
+    fragmentParams.append("enableDebug", "true");
   }
   if (enablePresentMode) {
-    queryParams.append("enablePresentMode", "true");
+    fragmentParams.append("enablePresentMode", "true");
   }
 
   if (extraFragmentParams) {
     for (const [key, value] of Object.entries(extraFragmentParams)) {
+      fragmentParams.append(key, value);
+    }
+  }
+  fragmentParams.append("mode", mode);
+
+  // Add any extra query params
+  const queryParams = new URLSearchParams();
+  queryParams.append("notebook", notebookId);
+  if (extraQueryParams) {
+    for (const [key, value] of Object.entries(extraQueryParams)) {
       queryParams.append(key, value);
     }
   }
 
-  queryParams.append("mode", mode);
+  const fragmentParamsString = fragmentParams.toString();
+  const queryParamsString = queryParams.toString();
 
-  const queryString = queryParams.toString();
-  const fullNotebookUrl = `${notebookUrl}?notebook=${notebookId}#${queryString}`;
+  const fullNotebookUrl = `${notebookUrl}?${queryParamsString}#${fragmentParamsString}`;
 
   return fullNotebookUrl;
 }
@@ -518,6 +530,7 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     mode,
     enablePresentMode,
     extraFragmentParams = {},
+    extraQueryParams = {},
   } = props;
   // We only need to set the hostRpc once, we can reconnect to different iframes
   // as needed
@@ -567,6 +580,7 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     mode,
     enablePresentMode,
     extraFragmentParams,
+    extraQueryParams,
   });
 
   return (

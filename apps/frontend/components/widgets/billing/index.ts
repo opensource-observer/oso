@@ -10,4 +10,9 @@ export {
   PurchaseHistoryMeta,
 } from "./purchase-history-widget";
 
+export {
+  EnterpriseContact,
+  EnterpriseContactMeta,
+} from "./enterprise-contact-widget";
+
 export { Billing, BillingMeta } from "./billing-widget";

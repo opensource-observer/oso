@@ -3,7 +3,7 @@ select
     events.event_source,
     events.to_artifact_id,
     '' as from_artifact_id,
-    @metric_name('layer2_gas_fees') as metric,
+    @metric_name() as metric,
     sum(events.l2_gas_fee) as amount
 from oso.int_events_daily__l2_transactions as events
 where

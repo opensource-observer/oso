@@ -595,6 +595,7 @@ export const organizationCreditsRowSchema = z.object({
   created_at: z.string(),
   credits_balance: z.number(),
   id: z.string(),
+  last_refill_at: z.string().nullable(),
   org_id: z.string(),
   updated_at: z.string(),
 });
@@ -603,6 +604,7 @@ export const organizationCreditsInsertSchema = z.object({
   created_at: z.string().optional(),
   credits_balance: z.number().optional(),
   id: z.string().optional(),
+  last_refill_at: z.string().optional().nullable(),
   org_id: z.string(),
   updated_at: z.string().optional(),
 });
@@ -611,6 +613,7 @@ export const organizationCreditsUpdateSchema = z.object({
   created_at: z.string().optional(),
   credits_balance: z.number().optional(),
   id: z.string().optional(),
+  last_refill_at: z.string().optional().nullable(),
   org_id: z.string().optional(),
   updated_at: z.string().optional(),
 });
@@ -626,9 +629,11 @@ export const organizationCreditsRelationshipsSchema = z.tuple([
 ]);
 
 export const organizationsRowSchema = z.object({
+  billing_contact_email: z.string().nullable(),
   created_at: z.string(),
   created_by: z.string(),
   deleted_at: z.string().nullable(),
+  enterprise_support_url: z.string().nullable(),
   id: z.string(),
   org_name: z.string(),
   plan_id: z.string().nullable(),
@@ -636,9 +641,11 @@ export const organizationsRowSchema = z.object({
 });
 
 export const organizationsInsertSchema = z.object({
+  billing_contact_email: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string(),
   deleted_at: z.string().optional().nullable(),
+  enterprise_support_url: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string(),
   plan_id: z.string().optional().nullable(),
@@ -646,9 +653,11 @@ export const organizationsInsertSchema = z.object({
 });
 
 export const organizationsUpdateSchema = z.object({
+  billing_contact_email: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
+  enterprise_support_url: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string().optional(),
   plan_id: z.string().optional().nullable(),
@@ -674,28 +683,34 @@ export const organizationsRelationshipsSchema = z.tuple([
 
 export const pricingPlanRowSchema = z.object({
   created_at: z.string(),
+  max_credits_per_cycle: z.number().nullable(),
   plan_id: z.string(),
   plan_name: z.string(),
   price_per_credit: z.number(),
   priority: z.number(),
+  refill_cycle_days: z.number().nullable(),
   updated_at: z.string(),
 });
 
 export const pricingPlanInsertSchema = z.object({
   created_at: z.string().optional(),
+  max_credits_per_cycle: z.number().optional().nullable(),
   plan_id: z.string().optional(),
   plan_name: z.string(),
   price_per_credit: z.number(),
   priority: z.number().optional(),
+  refill_cycle_days: z.number().optional().nullable(),
   updated_at: z.string().optional(),
 });
 
 export const pricingPlanUpdateSchema = z.object({
   created_at: z.string().optional(),
+  max_credits_per_cycle: z.number().optional().nullable(),
   plan_id: z.string().optional(),
   plan_name: z.string().optional(),
   price_per_credit: z.number().optional(),
   priority: z.number().optional(),
+  refill_cycle_days: z.number().optional().nullable(),
   updated_at: z.string().optional(),
 });
 
@@ -947,16 +962,6 @@ export const addCreditsArgsSchema = z.object({
 
 export const addCreditsReturnsSchema = z.boolean();
 
-export const addOrganizationCreditsArgsSchema = z.object({
-  p_amount: z.number(),
-  p_metadata: jsonSchema.optional(),
-  p_org_id: z.string(),
-  p_transaction_type: z.string(),
-  p_user_id: z.string(),
-});
-
-export const addOrganizationCreditsReturnsSchema = z.boolean();
-
 export const canGrantPermissionArgsSchema = z.object({
   granter_id: z.string(),
   permission_to_grant: z.string(),
@@ -1002,17 +1007,6 @@ export const deductCreditsArgsSchema = z.object({
 
 export const deductCreditsReturnsSchema = z.boolean();
 
-export const deductOrganizationCreditsArgsSchema = z.object({
-  p_amount: z.number(),
-  p_api_endpoint: z.string().optional(),
-  p_metadata: jsonSchema.optional(),
-  p_org_id: z.string(),
-  p_transaction_type: z.string(),
-  p_user_id: z.string(),
-});
-
-export const deductOrganizationCreditsReturnsSchema = z.boolean();
-
 export const expireOldInvitationsArgsSchema = z.object({});
 
 export const expireOldInvitationsReturnsSchema = z.undefined();
@@ -1051,17 +1045,6 @@ export const previewDeductCreditsArgsSchema = z.object({
 });
 
 export const previewDeductCreditsReturnsSchema = z.boolean();
-
-export const previewDeductOrganizationCreditsArgsSchema = z.object({
-  p_amount: z.number(),
-  p_api_endpoint: z.string().optional(),
-  p_metadata: jsonSchema.optional(),
-  p_org_id: z.string(),
-  p_transaction_type: z.string(),
-  p_user_id: z.string(),
-});
-
-export const previewDeductOrganizationCreditsReturnsSchema = z.boolean();
 
 export const validateOwnershipLimitsArgsSchema = z.object({
   p_current_record_id: z.string().optional(),

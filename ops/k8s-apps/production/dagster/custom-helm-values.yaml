@@ -25,7 +25,7 @@ spec:
     configMap:
       secretPrefix: "gcp:secretmanager:production-dagster"
     alerts:
-      baseUrl: "https://dagster.opensource.observer"
+      baseUrl: "https://dagster.oso.xyz"
     cache:
       uri: "redis://redis.production-redis.svc.cluster.local:6379?ttl=3600"
     dagster:
@@ -35,9 +35,9 @@ spec:
         enabled: true
         ingressClassName: ingress-internal-cloudflare
         dagsterWebserver:
-          host: admin-dagster.opensource.observer
+          host: admin-dagster.oso.xyz
         readOnlyDagsterWebserver:
-          host: dagster.opensource.observer
+          host: dagster.oso.xyz
       dagsterDaemon:
         runRetries:
           enabled: true
@@ -87,7 +87,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20251003233959-d19ff43 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20251011132422-aae87a4 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -102,7 +102,7 @@ spec:
           - name: "dynamic"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20251003233959-d19ff43 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20251011132422-aae87a4 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env

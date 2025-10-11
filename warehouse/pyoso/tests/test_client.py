@@ -80,7 +80,7 @@ class TestClient(TestCase):
         df = client.to_pandas(query)
 
         mock_post.assert_called_once_with(
-            "https://www.opensource.observer/api/v1/sql",
+            "https://www.oso.xyz/api/v1/sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.DEFAULT_API_KEY}",
@@ -96,7 +96,10 @@ class TestClient(TestCase):
     def test_to_pandas_http_error(self, mock_post: mock.Mock, mock_registry: mock.Mock):
         mock_registry.return_value = Registry()
         mock_response = mock.Mock()
-        mock_response.raise_for_status.side_effect = requests.HTTPError("HTTP Error")
+        mock_response.status_code = 500
+        http_error = requests.HTTPError("HTTP Error")
+        http_error.response = mock_response
+        mock_response.raise_for_status.side_effect = http_error
         mock_post.return_value = mock_response
 
         client = Client(api_key=self.CUSTOM_API_KEY)
@@ -106,7 +109,7 @@ class TestClient(TestCase):
             client.to_pandas(query)
 
         mock_post.assert_called_once_with(
-            "https://www.opensource.observer/api/v1/sql",
+            "https://www.oso.xyz/api/v1/sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
@@ -156,7 +159,7 @@ class TestClient(TestCase):
 
         # Verify the connector endpoint was called
         mock_get.assert_called_once_with(
-            "https://www.opensource.observer/api/v1/connector",
+            "https://www.oso.xyz/api/v1/connector",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
@@ -165,7 +168,7 @@ class TestClient(TestCase):
 
         # Verify the SQL endpoint was called for the query
         mock_post.assert_called_once_with(
-            "https://www.opensource.observer/api/v1/sql",
+            "https://www.oso.xyz/api/v1/sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.CUSTOM_API_KEY}",

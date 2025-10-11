@@ -5,6 +5,9 @@ MODEL (
   kind FULL,
   audits (
     not_null(columns := (gitcoin_project_id, oso_project_id))
+  ),
+  tags (
+    'entity_category=project'
   )
 );
 
