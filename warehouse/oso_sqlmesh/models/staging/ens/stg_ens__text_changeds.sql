@@ -11,8 +11,8 @@ MODEL (
 SELECT
   id,
   resolver,
-  blockNumber,
-  transactionID,
-  key,
-  value
+  blockNumber as block_number,
+  transactionID as transaction_id,
+  key as text_changed_key,
+  value as text_changed_value
 FROM @oso_source('bigquery.ens.text_changeds')
