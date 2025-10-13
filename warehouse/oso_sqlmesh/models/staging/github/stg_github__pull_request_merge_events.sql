@@ -1,6 +1,13 @@
 MODEL (
   name oso.stg_github__pull_request_merge_events,
-  kind FULL,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column event_time,
+    batch_size 90,
+    batch_concurrency 3,
+    lookback 7,
+    forward_only true,
+  ),
+  partitioned_by DAY(event_time),
   dialect duckdb,
   audits (
     has_at_least_n_rows(threshold := 0)
@@ -42,3 +49,4 @@ WHERE
   AND (
     pre.payload ->> '$.action'
   ) = 'closed'
+  AND pre.event_time BETWEEN @start_dt AND @end_dt
