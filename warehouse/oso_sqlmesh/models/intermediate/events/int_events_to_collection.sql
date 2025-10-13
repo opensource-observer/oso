@@ -5,7 +5,7 @@ MODEL (
     time_column time,
     batch_size 365,
     batch_concurrency 2,
-    lookback 3,
+    lookback 7,
     auto_restatement_cron @default_auto_restatement_cron
   ),
   start '2015-01-01',

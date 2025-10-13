@@ -5,7 +5,7 @@ MODEL (
     time_column created_at,
     batch_size 90,
     batch_concurrency 3,
-    lookback 3,
+    lookback 7,
     forward_only true,
   ),
   start @github_incremental_start,

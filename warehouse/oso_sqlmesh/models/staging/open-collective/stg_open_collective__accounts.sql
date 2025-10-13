@@ -5,7 +5,7 @@ MODEL (
     time_column created_at,
     batch_size 365,
     batch_concurrency 2,
-    lookback 3,
+    lookback 7,
     forward_only true,
   ),
   partitioned_by (DAY("created_at")),

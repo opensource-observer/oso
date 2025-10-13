@@ -4,7 +4,7 @@ MODEL (
     time_column event_time,
     batch_size 90,
     batch_concurrency 3,
-    lookback 3,
+    lookback 7,
     forward_only true,
   ),
   dialect "duckdb",
