@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import typing as t
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import duckdb
 import pyarrow as pa
@@ -25,7 +25,6 @@ from pyiceberg.catalog import Catalog
 from pyiceberg.typedef import Identifier
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
-from google.api_core.exceptions import DeadlineExceeded
 
 
 logger = logging.getLogger(__name__)
@@ -167,7 +166,7 @@ def bq_try_read_with_options(
     max_results_per_query: int,
 ):
     result = None
-    increment = timedelta(days=1)
+    # increment = timedelta(days=1)
     # Exponential increments for reading from bigquery, in case the initial
     # restriction is too small
     # while result is None:
