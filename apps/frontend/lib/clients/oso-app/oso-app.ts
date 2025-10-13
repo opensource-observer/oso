@@ -2029,6 +2029,62 @@ class OsoAppClient {
   }
 
   /**
+   * Update an organization's tier (FREE or ENTERPRISE)
+   * @param orgName
+   * @param tier
+   * @returns Promise<boolean>
+   */
+  async updateOrganizationTier(
+    args: Partial<{ orgName: string; tier: "FREE" | "ENTERPRISE" }>,
+  ) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to update organization tier",
+    );
+    const tier = ensure(
+      args.tier,
+      "tier is required to update organization tier",
+    );
+
+    if (tier !== "FREE" && tier !== "ENTERPRISE") {
+      throw new Error("Invalid tier. Must be either 'FREE' or 'ENTERPRISE'");
+    }
+
+    const { data: org } = await this.supabaseClient
+      .from("organizations")
+      .select("pricing_plan(plan_name)")
+      .eq("org_name", orgName)
+      .is("deleted_at", null)
+      .single()
+      .throwOnError();
+
+    if (!org) {
+      throw new MissingDataError(`Organization not found: ${orgName}`);
+    }
+
+    if (!org.pricing_plan) {
+      throw new MissingDataError(
+        `Pricing plan not found for organization: ${orgName}`,
+      );
+    }
+
+    const currentPlanName = org.pricing_plan.plan_name;
+
+    if (currentPlanName === tier) {
+      console.log(
+        `Organization ${orgName} is already on the ${tier} tier. No changes made.`,
+      );
+      return true;
+    }
+
+    if (tier === "ENTERPRISE") {
+      return this.promoteOrganizationToEnterprise({ orgName });
+    } else {
+      return this.demoteOrganizationFromEnterprise({ orgName });
+    }
+  }
+
+  /**
    * Manually add credits to organization balance
    * @param args
    * @returns Promise<boolean>
@@ -2085,6 +2141,69 @@ class OsoAppClient {
         transaction_type: "admin_grant",
         metadata: {
           reason: reason || "Manual admin credit addition",
+          admin_action: true,
+          previous_balance: currentBalance,
+          new_balance: newBalance,
+        },
+        created_at: new Date().toISOString(),
+      })
+      .throwOnError();
+
+    return true;
+  }
+
+  /**
+   * Manually set organization's credits to an exact amount
+   * @param args
+   * @return Promise<boolean>
+   */
+  async setOrganizationCredits(
+    args: Partial<{
+      orgName: string;
+      amount: number;
+      reason?: string;
+    }>,
+  ) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to set organization credits",
+    );
+    const { amount, reason } = args;
+
+    if (amount === undefined || amount < 0) {
+      throw new Error("Amount must be a non-negative number");
+    }
+
+    const org = await this.getOrganizationByName({ orgName });
+    const user = await this.getUser();
+
+    const currentBalance = await this.getOrganizationCredits({
+      orgName,
+    });
+
+    const newBalance = amount;
+
+    await this.supabaseClient
+      .from("organization_credits")
+      .upsert(
+        {
+          org_id: org.id,
+          credits_balance: newBalance,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "org_id" },
+      )
+      .throwOnError();
+
+    await this.supabaseClient
+      .from("organization_credit_transactions")
+      .insert({
+        org_id: org.id,
+        user_id: user.id,
+        amount: newBalance - currentBalance,
+        transaction_type: "admin_set",
+        metadata: {
+          reason: reason || "Manual admin credit set",
           admin_action: true,
           previous_balance: currentBalance,
           new_balance: newBalance,
