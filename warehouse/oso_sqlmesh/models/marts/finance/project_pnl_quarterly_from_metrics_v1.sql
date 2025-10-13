@@ -4,6 +4,7 @@ MODEL (
   dialect trino,
   kind FULL,
   partitioned_by year(quarter_start),
+  tags ('model_stage=mart', 'entity_category=project'),
   audits (HAS_AT_LEAST_N_ROWS(threshold := 0))
 );
 
