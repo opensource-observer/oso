@@ -4,10 +4,6 @@ MODEL (
   dialect trino,
   kind FULL,
   partitioned_by year(quarter_start),
-  tags (
-    'model_stage=mart',
-    'entity_category=project'
-  ),
   audits (HAS_AT_LEAST_N_ROWS(threshold := 0))
 );
 
@@ -17,14 +13,14 @@ WITH src AS (
       t.sample_date                                        AS sample_date,
       CAST(t.project_id AS VARCHAR)                        AS project_id,
       LOWER(COALESCE(p.project_name, 'unknown'))           AS project_name,
-      LOWER(m.metric)                                      AS metric_name,
+      LOWER(m.metric_name)                                      AS metric_name,
       TRY_CAST(t.amount AS DOUBLE)                         AS amount_usd
   FROM oso.timeseries_metrics_by_project_v0 t
   JOIN oso.metrics_v0 m
     ON m.metric_id = t.metric_id
   LEFT JOIN oso.projects_v1 p
     ON p.project_id = t.project_id
-  WHERE LOWER(m.metric) IN ('funding_received', 'funding_awarded')
+  WHERE LOWER(m.metric_name) IN ('funding_received', 'funding_awarded')
 ),
 
 q AS (
