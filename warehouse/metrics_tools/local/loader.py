@@ -25,6 +25,8 @@ from pyiceberg.catalog import Catalog
 from pyiceberg.typedef import Identifier
 from sqlglot import exp
 from sqlmesh.core.dialect import parse_one
+from google.api_core.exceptions import DeadlineExceeded
+
 
 logger = logging.getLogger(__name__)
 
@@ -168,10 +170,16 @@ def bq_try_read_with_options(
     increment = timedelta(days=1)
     # Exponential increments for reading from bigquery, in case the initial
     # restriction is too small
-    while result is None:
-        result = bq_read_with_options(start, end, source_table, dest, project_id)
-        start = start - increment
-        increment = increment * 2
+    # while result is None:
+    #     result = bq_read_with_options(start, end, source_table, dest, project_id)
+    #     start = start - increment
+    #     increment = increment * 2
+    
+    result = bq_read_with_options(start, end, source_table, dest, project_id)
+    if result is None:
+        logger.warning(f"No results for {source_table} in {start} → {end}. Skipping.")
+        return None
+
 
     return result.slice(
         0,
@@ -247,7 +255,16 @@ class BaseDestinationLoader(DestinationLoader):
         config = self._config
 
         # Load the schema from bigqouery
-        table_schema = self._bqclient.get_table(source_table).schema
+        # table_schema = self._bqclient.get_table(source_table).schema
+        # Load the schema from BigQuery
+        try:
+            table_schema = self._bqclient.get_table(source_table).schema
+        except Exception as e:
+            # Gracefully skip if table or project doesn't exist
+            if "Not found" in str(e) or "404" in str(e) or "Project" in str(e):
+                logger.warning(f"Skipping {source_table.path} — table not found in BigQuery")
+                return
+            raise
 
         if self.destination_table_exists(rewritten_destination):
             if self.has_schema_changed(rewritten_destination, table_schema):
@@ -298,7 +315,13 @@ class BaseDestinationLoader(DestinationLoader):
                 table_as_arrow = rows.to_arrow(
                     create_bqstorage_client=True
                 )  # noqa: F841
-
+        # ✅ GUARD: skip committing if no rows were read
+        if table_as_arrow is None:
+            logger.warning(
+                f"Skipping {source_name} -> {destination.table}: "
+                "no rows for the selected window/restrictions."
+            )
+            return
         # Load the table
         self.commit_table(
             source_name,
