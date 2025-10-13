@@ -294,6 +294,10 @@ export type PreviewDeductCreditsArgs = z.infer<
 export type PreviewDeductCreditsReturns = z.infer<
   typeof generated.previewDeductCreditsReturnsSchema
 >;
+export type UuidOrNullArgs = z.infer<typeof generated.uuidOrNullArgsSchema>;
+export type UuidOrNullReturns = z.infer<
+  typeof generated.uuidOrNullReturnsSchema
+>;
 export type ValidateOwnershipLimitsArgs = z.infer<
   typeof generated.validateOwnershipLimitsArgsSchema
 >;
