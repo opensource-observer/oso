@@ -1,44 +1,37 @@
+from datetime import datetime, timedelta
+
 from sqlglot import expressions as exp
 from sqlmesh import macro
-from sqlmesh.core.dialect import MacroFunc, MacroVar, parse_one
+from sqlmesh.core.dialect import MacroFunc
 from sqlmesh.core.macros import MacroEvaluator
-
-INTERVAL_CONVERSION: dict[str, str] = {
-    "daily": "day",
-    "weekly": "week",
-    "monthly": "month",
-    "quarterly": "month",
-    "biannually": "month",
-    "yearly": "year",
-    "day": "day",
-    "week": "week",
-    "month": "month",
-    "quarter": "month",
-    "biannual": "month",
-    "year": "year",
-}
 
 
 @macro()
 def extended_date_spine(
     evaluator: MacroEvaluator,
-    interval: str,
-    start: exp.Expression,
-    end: exp.Expression,
+    interval: exp.Expression,
+    start_ds: str,
+    end_ds: str,
+    minimum_days: int,
 ):
     """Date spine that supports larger intervals and offsetting."""
-    if evaluator.runtime_stage in ["loading", "creating"]:
-        return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
+    # We assume the start_ds and end_ds are in the format 'YYYY-MM-DD'
+    # Parse them to python dates
 
-    current_interval = INTERVAL_CONVERSION[interval]
+    start = datetime.strptime(start_ds, "%Y-%m-%d")
+    end = datetime.strptime(end_ds, "%Y-%m-%d")
+
+    minimum_start = end - timedelta(days=minimum_days)
+    if start > minimum_start:
+        start = minimum_start
 
     return MacroFunc(
         this=exp.Anonymous(
             this="date_spine",
             expressions=[
-                MacroVar(this=current_interval),
-                start,
-                end,
+                interval,
+                exp.Literal.string(start.strftime("%Y-%m-%d")),
+                exp.Literal.string(end.strftime("%Y-%m-%d")),
             ],
         )
     )
