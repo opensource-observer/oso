@@ -4,7 +4,7 @@ MODEL (
     time_column block_timestamp,
     batch_size 90,
     batch_concurrency 2,
-    lookback 7,
+    lookback @default_daily_incremental_lookback,
   ),
   dialect trino,
   start DATE('2024-08-27'),

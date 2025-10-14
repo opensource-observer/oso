@@ -6,7 +6,7 @@ MODEL (
     time_column snapshot_at,
     batch_size 180,
     batch_concurrency 2,
-    lookback 7,
+    lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
   cron '@weekly',
