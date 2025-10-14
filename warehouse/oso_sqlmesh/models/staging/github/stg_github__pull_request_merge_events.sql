@@ -7,6 +7,7 @@ MODEL (
     lookback 14,
     forward_only true,
   ),
+  start @github_incremental_start,
   partitioned_by DAY(event_time),
   dialect duckdb,
   audits (
