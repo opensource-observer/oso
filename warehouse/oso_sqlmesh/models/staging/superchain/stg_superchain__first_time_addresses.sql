@@ -4,7 +4,7 @@ model(
         time_column first_block_timestamp,
         batch_size 180,
         batch_concurrency 2,
-        lookback 3,
+        lookback @default_daily_incremental_lookback,
         forward_only true,
     ),
     start @blockchain_incremental_start,

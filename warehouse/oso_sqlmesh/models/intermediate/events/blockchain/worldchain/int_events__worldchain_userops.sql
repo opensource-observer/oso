@@ -5,7 +5,7 @@ MODEL (
    time_column time,
    batch_size 60,
    batch_concurrency 3,
-   lookback 3
+   lookback @default_daily_incremental_lookback,
   ),
   start '2024-09-01',
   cron '@daily',

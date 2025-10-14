@@ -6,7 +6,7 @@ MODEL (
     time_column block_timestamp,
     batch_size 60,
     batch_concurrency 1,
-    lookback 3,
+    lookback @default_daily_incremental_lookback,
     forward_only true,
     on_destructive_change warn,   
   ),
