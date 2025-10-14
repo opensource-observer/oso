@@ -1,9 +1,20 @@
 MODEL (
   name oso.stg_github__pull_request_merge_events,
-  kind FULL,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column event_time,
+    batch_size 90,
+    batch_concurrency 3,
+    lookback 14,
+    forward_only true,
+  ),
+  partitioned_by DAY(event_time),
   dialect duckdb,
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := event_time,
+      no_gap_date_part := 'day',
+    ),
   )
 );
 
@@ -13,6 +24,9 @@ WITH pull_request_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
+    -- We cast a wider net of pull request events to ensure we capture any
+    -- random changes for a single pullrequest in a given time range
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '15' DAY AND @end_dt + INTERVAL '1' DAY
 )
 SELECT DISTINCT
   pre.repo.id AS repository_id,
@@ -42,3 +56,4 @@ WHERE
   AND (
     pre.payload ->> '$.action'
   ) = 'closed'
+  AND STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
