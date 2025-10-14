@@ -4,7 +4,7 @@ MODEL (
     time_column event_time,
     batch_size 90,
     batch_concurrency 3,
-    lookback 7,
+    lookback 14,
     forward_only true,
   ),
   partitioned_by DAY(event_time),
@@ -24,6 +24,9 @@ WITH pull_request_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
+    -- We cast a wider net of pull request events to ensure we capture any
+    -- random changes for a single pullrequest in a given time range
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '15' DAY AND @end_dt + INTERVAL '1' DAY
 )
 SELECT DISTINCT
   pre.repo.id AS repository_id,
@@ -53,4 +56,4 @@ WHERE
   AND (
     pre.payload ->> '$.action'
   ) = 'closed'
-  AND pre.event_time BETWEEN @start_dt AND @end_dt
+  AND STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
