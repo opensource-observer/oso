@@ -2,7 +2,7 @@ MODEL (
   name oso.stg_github__pull_request_merge_events,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column event_time,
-    batch_size 90,
+    batch_size 365,
     batch_concurrency 3,
     lookback 14,
     forward_only true,
