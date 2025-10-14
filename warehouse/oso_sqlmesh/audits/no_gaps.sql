@@ -12,11 +12,10 @@ AUDIT (
   ),
 );
 
-@DEF(no_gap_start_ds, LEAST(@start_ds, @end_ds - INTERVAL @minimum_days_to_check DAY));
 @DEF(no_gap_start_dt, LEAST(@start_dt, @end_dt - INTERVAL @minimum_days_to_check DAY));
 
 WITH all_dates AS (
-  @date_spine(@no_gap_date_part, @no_gap_start_ds, @end_ds)
+  @extended_date_spine(@no_gap_date_part, @start_ds, @end_ds, @minimum_days_to_check)
 ), rows_per_day as (
   SELECT
     @time_aggregation_bucket(all_dates.date_@{no_gap_date_part}, @no_gap_date_part) as d,
