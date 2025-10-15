@@ -80,10 +80,13 @@ def add_project_and_collection_entity_category_tags(
         response["tags"] = ["entity_category=project"]
     elif ref["entity_type"] == "collection":
         response["tags"] = ["entity_category=collection", "entity_category=project"]
-    if ref["entity_type"] in ["project", "collection"] and config["incremental"]:
-        response["kind_options"] = {
-            "auto_restatement_cron": "0 0 1,15 * *",
-        }
+    else:
+        # If it's not project or collection, don't do anything
+        return {}
+
+    response["kind_options"] = {
+        "auto_restatement_cron": "0 0 1,15 * *",
+    }
     return response
 
 
