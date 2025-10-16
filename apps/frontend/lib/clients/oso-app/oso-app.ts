@@ -1973,24 +1973,28 @@ class OsoAppClient {
       "orgName is required to promote organization to enterprise",
     );
 
-    const { data: enterprisePlan } = await this.supabaseClient
-      .from("pricing_plan")
-      .select("plan_id")
-      .eq("plan_name", "ENTERPRISE")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .single()
-      .throwOnError();
+    const customHeaders = await this.createSupabaseAuthHeaders();
 
-    if (!enterprisePlan) {
-      throw new Error("Enterprise plan not found");
+    const response = await fetch("/api/v1/organizations/promote", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...customHeaders,
+      },
+      body: JSON.stringify({ orgName }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(
+        error.error || "Failed to promote organization to enterprise",
+      );
     }
 
-    await this.supabaseClient
-      .from("organizations")
-      .update({ plan_id: enterprisePlan.plan_id })
-      .eq("org_name", orgName)
-      .throwOnError();
+    const result = await response.json();
+    console.log(
+      `Organization ${orgName} promoted to enterprise. Bucket created: ${result.bucketCreated}`,
+    );
 
     return true;
   }
