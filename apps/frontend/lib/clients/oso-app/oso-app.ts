@@ -1968,22 +1968,16 @@ class OsoAppClient {
    * @returns Promise<boolean>
    */
   private async createEnterpriseOrgR2Bucket(orgName: string) {
-    try {
-      const customHeaders = await this.createSupabaseAuthHeaders();
+    const customHeaders = await this.createSupabaseAuthHeaders();
 
-      await fetch("/api/v1/organizations/create-bucket", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...customHeaders,
-        },
-        body: JSON.stringify({ orgName }),
-      });
-    } catch (error) {
-      console.warn(`Note: R2 bucket creation failed for ${orgName}`, error);
-      return false;
-    }
-    return true;
+    await fetch("/api/v1/organizations/create-bucket", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...customHeaders,
+      },
+      body: JSON.stringify({ orgName }),
+    });
   }
 
   /**
@@ -2016,14 +2010,9 @@ class OsoAppClient {
       .eq("org_name", orgName)
       .throwOnError();
 
-    try {
-      const hasFetch = typeof fetch === "function";
-      if (hasFetch) {
-        await this.createEnterpriseOrgR2Bucket(orgName);
-      }
-    } catch (error) {
-      console.warn(`Note: R2 bucket creation failed for ${orgName}`, error);
-      return false;
+    const hasFetch = typeof fetch === "function";
+    if (hasFetch) {
+      await this.createEnterpriseOrgR2Bucket(orgName);
     }
 
     return true;
