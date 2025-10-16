@@ -1963,6 +1963,30 @@ class OsoAppClient {
   }
 
   /**
+   * Creates an R2 bucket for an enterprise organization via API route
+   * @param orgName - organization name
+   * @returns Promise<boolean>
+   */
+  private async createEnterpriseOrgR2Bucket(orgName: string) {
+    try {
+      const customHeaders = await this.createSupabaseAuthHeaders();
+
+      await fetch("/api/v1/organizations/create-bucket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...customHeaders,
+        },
+        body: JSON.stringify({ orgName }),
+      });
+    } catch (error) {
+      console.warn(`Note: R2 bucket creation failed for ${orgName}`, error);
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Promote an existing organization to enterprise tier
    * @param orgName
    * @returns Promise<boolean>
@@ -1973,28 +1997,34 @@ class OsoAppClient {
       "orgName is required to promote organization to enterprise",
     );
 
-    const customHeaders = await this.createSupabaseAuthHeaders();
+    const { data: enterprisePlan } = await this.supabaseClient
+      .from("pricing_plan")
+      .select("plan_id")
+      .eq("plan_name", "ENTERPRISE")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single()
+      .throwOnError();
 
-    const response = await fetch("/api/v1/organizations/promote", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...customHeaders,
-      },
-      body: JSON.stringify({ orgName }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(
-        error.error || "Failed to promote organization to enterprise",
-      );
+    if (!enterprisePlan) {
+      throw new Error("Enterprise plan not found");
     }
 
-    const result = await response.json();
-    console.log(
-      `Organization ${orgName} promoted to enterprise. Bucket created: ${result.bucketCreated}`,
-    );
+    await this.supabaseClient
+      .from("organizations")
+      .update({ plan_id: enterprisePlan.plan_id })
+      .eq("org_name", orgName)
+      .throwOnError();
+
+    try {
+      const hasFetch = typeof fetch === "function";
+      if (hasFetch) {
+        await this.createEnterpriseOrgR2Bucket(orgName);
+      }
+    } catch (error) {
+      console.warn(`Note: R2 bucket creation failed for ${orgName}`, error);
+      return false;
+    }
 
     return true;
   }
