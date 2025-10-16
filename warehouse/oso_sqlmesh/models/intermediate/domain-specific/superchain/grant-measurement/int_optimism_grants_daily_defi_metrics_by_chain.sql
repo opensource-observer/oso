@@ -20,7 +20,7 @@ WITH base AS (
       WHEN cm.metric_name = 'L2BEAT_TVS_NATIVE' THEN 'tvs'
       WHEN cm.metric_name = 'L2BEAT_TVS_CANONICAL' THEN 'tvs'
     END as metric,
-    cm.amount
+    cm.amount::DOUBLE AS amount
   FROM oso.int_chain_metrics AS cm
   JOIN oso.int_chains AS c
     ON cm.chain = c.chain
