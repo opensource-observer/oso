@@ -6,7 +6,9 @@ DECLARE
 BEGIN
     SELECT COALESCE(pp.max_credits_per_cycle, 100) INTO initial_credits
     FROM pricing_plan pp
-    WHERE pp.plan_id = NEW.plan_id;
+    WHERE pp.plan_id = NEW.plan_id
+    ORDER BY pp.updated_at DESC
+    LIMIT 1;
 
     IF initial_credits IS NULL THEN
         initial_credits := 100;
