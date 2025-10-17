@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 import { cn } from "@/lib/utils";
 
@@ -29,5 +30,73 @@ const PopoverContent = React.forwardRef<
   </PopoverPrimitive.Portal>
 ));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
+
+type PopoverProps = React.ComponentProps<typeof PopoverPrimitive.Root>;
+type PopoverTriggerProps = React.ComponentProps<
+  typeof PopoverPrimitive.Trigger
+>;
+type PopoverContentProps = React.ComponentPropsWithoutRef<
+  typeof PopoverPrimitive.Content
+>;
+type PopoverAnchorProps = React.ComponentProps<typeof PopoverPrimitive.Anchor>;
+
+export const PopoverMeta: CodeComponentMeta<PopoverProps> = {
+  name: "Popover",
+  description: "Root popover container component",
+  props: {
+    children: "slot",
+    open: "boolean",
+    onOpenChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "open", type: "boolean" }],
+    },
+    defaultOpen: "boolean",
+  },
+};
+
+export const PopoverTriggerMeta: CodeComponentMeta<PopoverTriggerProps> = {
+  name: "PopoverTrigger",
+  description: "Button that triggers the popover",
+  props: {
+    children: "slot",
+    asChild: {
+      type: "boolean",
+      description: "Merge props with child element instead of wrapping",
+    },
+  },
+};
+
+export const PopoverContentMeta: CodeComponentMeta<PopoverContentProps> = {
+  name: "PopoverContent",
+  description: "Container for popover content",
+  props: {
+    children: "slot",
+    align: {
+      type: "choice",
+      options: ["start", "center", "end"],
+      defaultValue: "center",
+    },
+    side: {
+      type: "choice",
+      options: ["top", "right", "bottom", "left"],
+    },
+    sideOffset: {
+      type: "number",
+      defaultValue: 4,
+    },
+  },
+};
+
+export const PopoverAnchorMeta: CodeComponentMeta<PopoverAnchorProps> = {
+  name: "PopoverAnchor",
+  description: "Anchor element for popover positioning",
+  props: {
+    children: "slot",
+    asChild: {
+      type: "boolean",
+      description: "Merge props with child element instead of wrapping",
+    },
+  },
+};
 
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
