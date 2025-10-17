@@ -124,6 +124,13 @@ const server = new ApolloServer({
   introspection: true,
 });
 
+const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
+  context: async (req) => {
+    const user = await getOrgUser(req);
+    return { req, user };
+  },
+});
+
 const customHandler = async (req: NextRequest) => {
   if (req.method === "OPTIONS") {
     return new NextResponse(null, { status: 204 });
@@ -155,9 +162,6 @@ const customHandler = async (req: NextRequest) => {
   const isIntrospection = isIntrospectionQuery(query);
 
   if (isIntrospection) {
-    const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
-      context: async () => ({ req, user }),
-    });
     return apolloHandler(req);
   }
 
@@ -187,10 +191,6 @@ const customHandler = async (req: NextRequest) => {
       error,
     );
   }
-
-  const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
-    context: async () => ({ req, user }),
-  });
 
   return apolloHandler(req);
 };

@@ -1963,6 +1963,24 @@ class OsoAppClient {
   }
 
   /**
+   * Creates an R2 bucket for an enterprise organization via API route
+   * @param orgName - organization name
+   * @returns Promise<boolean>
+   */
+  private async createEnterpriseOrgR2Bucket(orgName: string) {
+    const customHeaders = await this.createSupabaseAuthHeaders();
+
+    await fetch("/api/v1/organizations/create-bucket", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...customHeaders,
+      },
+      body: JSON.stringify({ orgName }),
+    });
+  }
+
+  /**
    * Promote an existing organization to enterprise tier
    * @param orgName
    * @returns Promise<boolean>
@@ -1991,6 +2009,11 @@ class OsoAppClient {
       .update({ plan_id: enterprisePlan.plan_id })
       .eq("org_name", orgName)
       .throwOnError();
+
+    const hasFetch = typeof fetch === "function";
+    if (hasFetch) {
+      await this.createEnterpriseOrgR2Bucket(orgName);
+    }
 
     return true;
   }
