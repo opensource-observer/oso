@@ -8,7 +8,18 @@ MODEL (
   )
 );
 
-WITH daily AS (
+
+WITH base AS (
+  SELECT
+    sample_date,
+    chain,
+    oso_project_name,
+    metric,
+    SUM(amount::DOUBLE) AS amount
+  FROM oso.int_optimism_grants_daily_defi_metrics_by_chain
+  GROUP BY 1,2,3,4
+),
+daily AS (
   SELECT
     sample_date,
     chain,
@@ -17,7 +28,7 @@ WITH daily AS (
     SUM(CASE WHEN metric='fees' THEN amount ELSE 0 END) AS fees,
     SUM(CASE WHEN metric='revenue' THEN amount ELSE 0 END) AS revenue,
     SUM(CASE WHEN metric='userops' THEN amount ELSE 0 END) AS userops
-  FROM oso.int_optimism_grants_daily_defi_metrics_by_project
+  FROM base
   GROUP BY 1,2,3
 ),
 metrics_90day AS (
@@ -29,7 +40,7 @@ metrics_90day AS (
     SUM(CASE WHEN metric='fees_90day' THEN amount ELSE 0 END)*90.0 AS fees_90day,
     SUM(CASE WHEN metric='revenue_90day' THEN amount ELSE 0 END)*90.0 AS revenue_90day,
     SUM(CASE WHEN metric='userops_90day' THEN amount ELSE 0 END)*90.0 AS userops_90day
-  FROM oso.int_optimism_grants_daily_defi_metrics_by_project
+  FROM base
   GROUP BY 1,2,3
 ),
 metrics_alltime AS (
@@ -58,14 +69,14 @@ SELECT
   m.oso_project_name::VARCHAR AS oso_project_name,
   m.chain::VARCHAR AS chain,
   m.months_activity::DOUBLE AS months_activity,
-  d.tvl_90day::INTEGER AS tvl_90day,
+  d.tvl_90day::DOUBLE AS tvl_90day,
   d.fees_90day::DOUBLE AS fees_90day,
   d.revenue_90day::DOUBLE AS revenue_90day,
-  d.userops_90day::INTEGER AS userops_90day,
-  m.tvl_alltime::INTEGER AS tvl_alltime,
+  d.userops_90day::DOUBLE AS userops_90day,
+  m.tvl_alltime::DOUBLE AS tvl_alltime,
   m.fees_alltime::DOUBLE AS fees_alltime,
   m.revenue_alltime::DOUBLE AS revenue_alltime,
-  m.userops_alltime::INTEGER AS userops_alltime
+  m.userops_alltime::DOUBLE AS userops_alltime
 FROM metrics_alltime AS m
 JOIN metrics_90day AS d
   ON m.sample_date = d.sample_date
