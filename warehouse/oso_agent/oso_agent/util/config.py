@@ -35,7 +35,7 @@ class GoogleGenAILLMConfig(BaseModel):
 
     model: str = Field(default="gemini-2.0-flash")
 
-    embedding: str = Field(default="text-embedding-004")
+    embedding: str = Field(default="gemini-embedding-001")
 
     @property
     def api_key(self) -> str:
