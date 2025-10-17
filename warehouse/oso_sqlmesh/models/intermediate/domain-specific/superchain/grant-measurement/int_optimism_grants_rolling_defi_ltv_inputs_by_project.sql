@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_optimism_grants_daily_defi_ltv_metrics_by_project,
-  description 'LTV metrics for DeFi projects that received Optimism grants',
+  name oso.int_optimism_grants_rolling_defi_ltv_inputs_by_project,
+  description 'LTV inputs (TVL, fees, and userops) for DeFi projects that received Optimism grants',
   dialect trino,
   kind full,
   audits (
@@ -16,8 +16,8 @@ WITH base AS (
     chain,
     oso_project_name,
     metric,
-    SUM(amount::DOUBLE) AS amount
-  FROM oso.int_optimism_grants_daily_defi_metrics_by_project
+    SUM(amount) AS amount
+  FROM oso.int_optimism_grants_rolling_defi_metrics_by_project
   GROUP BY 1,2,3,4
 ),
 daily AS (
@@ -66,18 +66,18 @@ metrics_alltime AS (
 )
 
 SELECT
-  m.sample_date::DATE AS sample_date,
-  m.oso_project_name::VARCHAR AS oso_project_name,
-  m.chain::VARCHAR AS chain,
-  m.months_activity::DOUBLE AS months_activity,
-  d.tvl_90day::DOUBLE AS tvl_90day,
-  d.fees_90day::DOUBLE AS fees_90day,
-  d.revenue_90day::DOUBLE AS revenue_90day,
-  d.userops_90day::DOUBLE AS userops_90day,
-  m.tvl_alltime::DOUBLE AS tvl_alltime,
-  m.fees_alltime::DOUBLE AS fees_alltime,
-  m.revenue_alltime::DOUBLE AS revenue_alltime,
-  m.userops_alltime::DOUBLE AS userops_alltime
+  m.sample_date,
+  m.oso_project_name,
+  m.chain,
+  m.months_activity,
+  d.tvl_90day,
+  d.fees_90day,
+  d.revenue_90day,
+  d.userops_90day,
+  m.tvl_alltime,
+  m.fees_alltime,
+  m.revenue_alltime,
+  m.userops_alltime
 FROM metrics_alltime AS m
 JOIN metrics_90day AS d
   ON m.sample_date = d.sample_date

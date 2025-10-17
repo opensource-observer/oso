@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_optimism_grants_daily_defi_metrics_by_project,
-  description 'Curated daily DeFi metrics for projects that received Optimism grants',
+  name oso.int_optimism_grants_rolling_defi_metrics_by_project,
+  description 'Rolling DeFi metrics for projects that received Optimism grants',
   dialect trino,
   kind full,
   audits (

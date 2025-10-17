@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_optimism_grants_daily_defi_metrics_by_chain,
-  description 'Curated daily DeFi metrics by chain (Superchain only)',
+  name oso.int_optimism_grants_rolling_defi_metrics_by_chain,
+  description 'Rolling DeFi metrics by chain (Superchain only)',
   dialect trino,
   kind full,
   audits (
