@@ -23,6 +23,7 @@ interface ControllableNotebookProps {
   extraFragmentParams?: Record<string, string>;
   extraQueryParams?: Record<string, string>;
   enablePostMessageStore?: boolean;
+  iframeAllow?: string;
   onNotebookConnected?: (rpcSession: NotebookControls) => void;
   hostControls: NotebookHostControls;
   enableDebug?: boolean;
@@ -529,6 +530,7 @@ function ControllableNotebook(props: ControllableNotebookProps) {
     notebookId,
     mode,
     enablePresentMode,
+    iframeAllow = "",
     extraFragmentParams = {},
     extraQueryParams = {},
   } = props;
@@ -588,6 +590,7 @@ function ControllableNotebook(props: ControllableNotebookProps) {
       ref={refCallback}
       className={className}
       src={fullNotebookUrl}
+      allow={iframeAllow}
     ></iframe>
   );
 }
