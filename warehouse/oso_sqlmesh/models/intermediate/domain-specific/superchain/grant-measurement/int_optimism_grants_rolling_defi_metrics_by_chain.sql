@@ -34,7 +34,7 @@ grouped_metrics AS (
     sample_date,
     chain,
     metric,
-    SUM(amount)::DOUBLE AS amount
+    SUM(amount) AS amount
   FROM base
   GROUP BY 1,2,3
 ),
