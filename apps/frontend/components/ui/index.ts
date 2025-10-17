@@ -2,6 +2,33 @@ import { NextJsPlasmicComponentLoader } from "@plasmicapp/loader-nextjs";
 import { Skeleton, SkeletonMeta } from "@/components/ui/skeleton";
 import { Button, ButtonMeta } from "@/components/ui/button";
 import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+  BreadcrumbMeta,
+  BreadcrumbListMeta,
+  BreadcrumbItemMeta,
+  BreadcrumbLinkMeta,
+  BreadcrumbPageMeta,
+  BreadcrumbSeparatorMeta,
+  BreadcrumbEllipsisMeta,
+} from "@/components/ui/breadcrumb";
+import { Badge, BadgeMeta } from "@/components/ui/badge";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  AlertMeta,
+  AlertTitleMeta,
+  AlertDescriptionMeta,
+} from "@/components/ui/alert";
+import { Label, LabelMeta } from "@/components/ui/label";
+import { Separator, SeparatorMeta } from "@/components/ui/separator";
+import {
   Command,
   CommandDialog,
   CommandInput,
@@ -235,6 +262,19 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
   PLASMIC.registerComponent(Skeleton, SkeletonMeta);
   PLASMIC.registerComponent(Button, ButtonMeta);
+  PLASMIC.registerComponent(Breadcrumb, BreadcrumbMeta);
+  PLASMIC.registerComponent(BreadcrumbList, BreadcrumbListMeta);
+  PLASMIC.registerComponent(BreadcrumbItem, BreadcrumbItemMeta);
+  PLASMIC.registerComponent(BreadcrumbLink, BreadcrumbLinkMeta);
+  PLASMIC.registerComponent(BreadcrumbPage, BreadcrumbPageMeta);
+  PLASMIC.registerComponent(BreadcrumbSeparator, BreadcrumbSeparatorMeta);
+  PLASMIC.registerComponent(BreadcrumbEllipsis, BreadcrumbEllipsisMeta);
+  PLASMIC.registerComponent(Badge, BadgeMeta);
+  PLASMIC.registerComponent(Alert, AlertMeta);
+  PLASMIC.registerComponent(AlertTitle, AlertTitleMeta);
+  PLASMIC.registerComponent(AlertDescription, AlertDescriptionMeta);
+  PLASMIC.registerComponent(Label, LabelMeta);
+  PLASMIC.registerComponent(Separator, SeparatorMeta);
   PLASMIC.registerComponent(Command, CommandMeta);
   PLASMIC.registerComponent(CommandDialog, CommandDialogMeta);
   PLASMIC.registerComponent(CommandInput, CommandInputMeta);

@@ -55,7 +55,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = "Button";
 
-export const ButtonMeta: CodeComponentMeta<ButtonProps> = {
+type ButtonPropsWithMeta = ButtonProps;
+
+export const ButtonMeta: CodeComponentMeta<ButtonPropsWithMeta> = {
   name: "Button",
   description: "shadcn/ui Button component",
   props: {

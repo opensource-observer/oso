@@ -31,9 +31,16 @@ const PopoverContent = React.forwardRef<
 ));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-export const PopoverMeta: CodeComponentMeta<
-  React.ComponentProps<typeof PopoverPrimitive.Root>
-> = {
+type PopoverProps = React.ComponentProps<typeof PopoverPrimitive.Root>;
+type PopoverTriggerProps = React.ComponentProps<
+  typeof PopoverPrimitive.Trigger
+>;
+type PopoverContentProps = React.ComponentPropsWithoutRef<
+  typeof PopoverPrimitive.Content
+>;
+type PopoverAnchorProps = React.ComponentProps<typeof PopoverPrimitive.Anchor>;
+
+export const PopoverMeta: CodeComponentMeta<PopoverProps> = {
   name: "Popover",
   description: "Root popover container component",
   props: {
@@ -47,9 +54,7 @@ export const PopoverMeta: CodeComponentMeta<
   },
 };
 
-export const PopoverTriggerMeta: CodeComponentMeta<
-  React.ComponentProps<typeof PopoverPrimitive.Trigger>
-> = {
+export const PopoverTriggerMeta: CodeComponentMeta<PopoverTriggerProps> = {
   name: "PopoverTrigger",
   description: "Button that triggers the popover",
   props: {
@@ -61,9 +66,7 @@ export const PopoverTriggerMeta: CodeComponentMeta<
   },
 };
 
-export const PopoverContentMeta: CodeComponentMeta<
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
-> = {
+export const PopoverContentMeta: CodeComponentMeta<PopoverContentProps> = {
   name: "PopoverContent",
   description: "Container for popover content",
   props: {
@@ -84,9 +87,7 @@ export const PopoverContentMeta: CodeComponentMeta<
   },
 };
 
-export const PopoverAnchorMeta: CodeComponentMeta<
-  React.ComponentProps<typeof PopoverPrimitive.Anchor>
-> = {
+export const PopoverAnchorMeta: CodeComponentMeta<PopoverAnchorProps> = {
   name: "PopoverAnchor",
   description: "Anchor element for popover positioning",
   props: {

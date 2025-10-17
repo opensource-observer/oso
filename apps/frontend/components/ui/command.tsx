@@ -141,9 +141,29 @@ const CommandShortcut = ({
 };
 CommandShortcut.displayName = "CommandShortcut";
 
-export const CommandMeta: CodeComponentMeta<
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive>
-> = {
+type CommandProps = React.ComponentPropsWithoutRef<typeof CommandPrimitive>;
+type CommandDialogProps = DialogProps;
+type CommandInputProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Input
+>;
+type CommandListProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.List
+>;
+type CommandEmptyProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Empty
+>;
+type CommandGroupProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Group
+>;
+type CommandItemProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Item
+>;
+type CommandShortcutProps = React.HTMLAttributes<HTMLSpanElement>;
+type CommandSeparatorProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Separator
+>;
+
+export const CommandMeta: CodeComponentMeta<CommandProps> = {
   name: "Command",
   description: "Command menu container for search and navigation",
   props: {
@@ -151,7 +171,7 @@ export const CommandMeta: CodeComponentMeta<
   },
 };
 
-export const CommandDialogMeta: CodeComponentMeta<DialogProps> = {
+export const CommandDialogMeta: CodeComponentMeta<CommandDialogProps> = {
   name: "CommandDialog",
   description: "Command menu displayed in a dialog",
   props: {
@@ -164,9 +184,7 @@ export const CommandDialogMeta: CodeComponentMeta<DialogProps> = {
   },
 };
 
-export const CommandInputMeta: CodeComponentMeta<
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
-> = {
+export const CommandInputMeta: CodeComponentMeta<CommandInputProps> = {
   name: "CommandInput",
   description: "Search input for command menu",
   props: {
@@ -182,9 +200,7 @@ export const CommandInputMeta: CodeComponentMeta<
   },
 };
 
-export const CommandListMeta: CodeComponentMeta<
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
-> = {
+export const CommandListMeta: CodeComponentMeta<CommandListProps> = {
   name: "CommandList",
   description: "Container for command items with scrolling",
   props: {
@@ -192,9 +208,7 @@ export const CommandListMeta: CodeComponentMeta<
   },
 };
 
-export const CommandEmptyMeta: CodeComponentMeta<
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
-> = {
+export const CommandEmptyMeta: CodeComponentMeta<CommandEmptyProps> = {
   name: "CommandEmpty",
   description: "Message shown when no results are found",
   props: {
@@ -205,9 +219,7 @@ export const CommandEmptyMeta: CodeComponentMeta<
   },
 };
 
-export const CommandGroupMeta: CodeComponentMeta<
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
-> = {
+export const CommandGroupMeta: CodeComponentMeta<CommandGroupProps> = {
   name: "CommandGroup",
   description: "Group of related command items",
   props: {
@@ -216,9 +228,7 @@ export const CommandGroupMeta: CodeComponentMeta<
   },
 };
 
-export const CommandItemMeta: CodeComponentMeta<
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
-> = {
+export const CommandItemMeta: CodeComponentMeta<CommandItemProps> = {
   name: "CommandItem",
   description: "Individual selectable item in command menu",
   props: {
@@ -232,9 +242,7 @@ export const CommandItemMeta: CodeComponentMeta<
   },
 };
 
-export const CommandShortcutMeta: CodeComponentMeta<
-  React.HTMLAttributes<HTMLSpanElement>
-> = {
+export const CommandShortcutMeta: CodeComponentMeta<CommandShortcutProps> = {
   name: "CommandShortcut",
   description: "Keyboard shortcut indicator for command items",
   props: {
@@ -242,9 +250,7 @@ export const CommandShortcutMeta: CodeComponentMeta<
   },
 };
 
-export const CommandSeparatorMeta: CodeComponentMeta<
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
-> = {
+export const CommandSeparatorMeta: CodeComponentMeta<CommandSeparatorProps> = {
   name: "CommandSeparator",
   description: "Visual separator between command groups",
   props: {},
