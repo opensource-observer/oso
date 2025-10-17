@@ -21,9 +21,9 @@ WITH base AS (
     END AS metric,
     SUM(CASE
       WHEN metric_model = 'layer2_gas_fees_amortized'
-      THEN CAST(CAST(amount AS DECIMAL(38,0)) / DECIMAL '1000000000000000000' AS DECIMAL(38,18))
-      ELSE CAST(amount AS DECIMAL(38,18))
-    END) AS amount_dec
+      THEN amount / 1e18
+      ELSE amount
+    END) AS amount
   FROM oso.int_optimism_grants_metrics_by_project
   WHERE 
     metric_event_source_category = 'SUPERCHAIN'
@@ -42,7 +42,7 @@ base_with_revenue AS (
     chain,
     oso_project_name,
     metric,
-    amount_dec
+    amount
   FROM base
   UNION ALL
   SELECT
@@ -50,7 +50,7 @@ base_with_revenue AS (
     chain,
     oso_project_name,
     'revenue' AS metric,
-    CASE WHEN chain = 'OPTIMISM' THEN amount_dec ELSE amount_dec * DECIMAL '0.15' END AS amount_dec
+    CASE WHEN chain = 'OPTIMISM' THEN amount ELSE amount * 0.15 END AS amount
   FROM base
   WHERE metric = 'fees'
 ),
@@ -60,11 +60,11 @@ rolling_windows AS (
     chain,
     oso_project_name,
     metric || '_7day' AS metric,
-    SUM(amount_dec) OVER (
+    SUM(amount) OVER (
       PARTITION BY oso_project_name, chain, metric
       ORDER BY sample_date
       ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-    ) / DECIMAL '7' AS amount_dec
+    ) / 7.0 AS amount
   FROM base_with_revenue
   UNION ALL
   SELECT
@@ -72,11 +72,11 @@ rolling_windows AS (
     chain,
     oso_project_name,
     metric || '_30day' AS metric,
-    SUM(amount_dec) OVER (
+    SUM(amount) OVER (
       PARTITION BY oso_project_name, chain, metric
       ORDER BY sample_date
       ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
-    ) / DECIMAL '30' AS amount_dec
+    ) / 30.0 AS amount
   FROM base_with_revenue
   UNION ALL
   SELECT
@@ -84,11 +84,11 @@ rolling_windows AS (
     chain,
     oso_project_name,
     metric || '_90day' AS metric,
-    SUM(amount_dec) OVER (
+    SUM(amount) OVER (
       PARTITION BY oso_project_name, chain, metric
       ORDER BY sample_date
       ROWS BETWEEN 89 PRECEDING AND CURRENT ROW
-    ) / DECIMAL '90' AS amount_dec
+    ) / 90.0 AS amount
   FROM base_with_revenue
 ),
 final AS (
@@ -97,7 +97,7 @@ final AS (
     chain,
     oso_project_name,
     metric,
-    amount_dec
+    amount
   FROM base_with_revenue
   UNION ALL
   SELECT
@@ -105,7 +105,7 @@ final AS (
     chain,
     oso_project_name,
     metric,
-    amount_dec
+    amount
   FROM rolling_windows
 )
 
@@ -114,5 +114,5 @@ SELECT
   oso_project_name::VARCHAR AS oso_project_name,
   chain::VARCHAR AS chain,
   metric::VARCHAR AS metric,
-  amount_dec::DOUBLE AS amount
+  amount::DOUBLE AS amount
 FROM final
