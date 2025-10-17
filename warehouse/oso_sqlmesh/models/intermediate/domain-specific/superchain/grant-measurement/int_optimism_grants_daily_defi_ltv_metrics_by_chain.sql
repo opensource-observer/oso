@@ -29,7 +29,7 @@ metrics_alltime AS (
   SELECT
     m90.sample_date,
     m90.chain,
-    (m90.sample_date - MIN(m.sample_date)) / 30 AS months_activity,
+    date_diff('day', MIN(m.sample_date), m90.sample_date) / 30.0 AS months_activity,
     MAX(CASE WHEN m.metric = 'tvl' THEN m.amount ELSE 0 END)
       AS tvl_alltime,
     MAX(CASE WHEN m.metric = 'tvs' THEN m.amount ELSE 0 END)
@@ -42,7 +42,7 @@ metrics_alltime AS (
       AS userops_alltime
   FROM metrics_90day AS m90
   JOIN oso.int_optimism_grants_daily_defi_metrics_by_chain AS m
-    ON m90.sample_date <= m.sample_date
+    ON m.sample_date <= m90.sample_date
     AND m90.chain = m.chain
   GROUP BY 1,2
 )
