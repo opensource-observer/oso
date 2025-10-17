@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 import { cn } from "@/lib/utils";
 
@@ -29,5 +30,72 @@ const PopoverContent = React.forwardRef<
   </PopoverPrimitive.Portal>
 ));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
+
+export const PopoverMeta: CodeComponentMeta<
+  React.ComponentProps<typeof PopoverPrimitive.Root>
+> = {
+  name: "Popover",
+  description: "Root popover container component",
+  props: {
+    children: "slot",
+    open: "boolean",
+    onOpenChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "open", type: "boolean" }],
+    },
+    defaultOpen: "boolean",
+  },
+};
+
+export const PopoverTriggerMeta: CodeComponentMeta<
+  React.ComponentProps<typeof PopoverPrimitive.Trigger>
+> = {
+  name: "PopoverTrigger",
+  description: "Button that triggers the popover",
+  props: {
+    children: "slot",
+    asChild: {
+      type: "boolean",
+      description: "Merge props with child element instead of wrapping",
+    },
+  },
+};
+
+export const PopoverContentMeta: CodeComponentMeta<
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
+> = {
+  name: "PopoverContent",
+  description: "Container for popover content",
+  props: {
+    children: "slot",
+    align: {
+      type: "choice",
+      options: ["start", "center", "end"],
+      defaultValue: "center",
+    },
+    side: {
+      type: "choice",
+      options: ["top", "right", "bottom", "left"],
+    },
+    sideOffset: {
+      type: "number",
+      defaultValue: 4,
+    },
+  },
+};
+
+export const PopoverAnchorMeta: CodeComponentMeta<
+  React.ComponentProps<typeof PopoverPrimitive.Anchor>
+> = {
+  name: "PopoverAnchor",
+  description: "Anchor element for popover positioning",
+  props: {
+    children: "slot",
+    asChild: {
+      type: "boolean",
+      description: "Merge props with child element instead of wrapping",
+    },
+  },
+};
 
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };

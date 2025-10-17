@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 import { cn } from "@/lib/utils";
 
@@ -53,5 +54,45 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 Button.displayName = "Button";
+
+export const ButtonMeta: CodeComponentMeta<ButtonProps> = {
+  name: "Button",
+  description: "shadcn/ui Button component",
+  props: {
+    children: "slot",
+    variant: {
+      type: "choice",
+      options: [
+        "default",
+        "destructive",
+        "outline",
+        "secondary",
+        "ghost",
+        "link",
+      ],
+      defaultValue: "default",
+    },
+    size: {
+      type: "choice",
+      options: ["default", "sm", "lg", "icon"],
+      defaultValue: "default",
+    },
+    asChild: {
+      type: "boolean",
+      description: "Merge props with child element instead of wrapping",
+      advanced: true,
+    },
+    disabled: "boolean",
+    type: {
+      type: "choice",
+      options: ["button", "submit", "reset"],
+      defaultValue: "button",
+    },
+    onClick: {
+      type: "eventHandler",
+      argTypes: [{ name: "event", type: "object" }],
+    },
+  },
+};
 
 export { Button, buttonVariants };

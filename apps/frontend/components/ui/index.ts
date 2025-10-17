@@ -1,5 +1,36 @@
 import { NextJsPlasmicComponentLoader } from "@plasmicapp/loader-nextjs";
 import { Skeleton, SkeletonMeta } from "@/components/ui/skeleton";
+import { Button, ButtonMeta } from "@/components/ui/button";
+import {
+  Command,
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+  CommandSeparator,
+  CommandMeta,
+  CommandDialogMeta,
+  CommandInputMeta,
+  CommandListMeta,
+  CommandEmptyMeta,
+  CommandGroupMeta,
+  CommandItemMeta,
+  CommandShortcutMeta,
+  CommandSeparatorMeta,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverAnchor,
+  PopoverMeta,
+  PopoverTriggerMeta,
+  PopoverContentMeta,
+  PopoverAnchorMeta,
+} from "@/components/ui/popover";
 import {
   Sidebar,
   SidebarContent,
@@ -203,6 +234,20 @@ import {
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
   PLASMIC.registerComponent(Skeleton, SkeletonMeta);
+  PLASMIC.registerComponent(Button, ButtonMeta);
+  PLASMIC.registerComponent(Command, CommandMeta);
+  PLASMIC.registerComponent(CommandDialog, CommandDialogMeta);
+  PLASMIC.registerComponent(CommandInput, CommandInputMeta);
+  PLASMIC.registerComponent(CommandList, CommandListMeta);
+  PLASMIC.registerComponent(CommandEmpty, CommandEmptyMeta);
+  PLASMIC.registerComponent(CommandGroup, CommandGroupMeta);
+  PLASMIC.registerComponent(CommandItem, CommandItemMeta);
+  PLASMIC.registerComponent(CommandShortcut, CommandShortcutMeta);
+  PLASMIC.registerComponent(CommandSeparator, CommandSeparatorMeta);
+  PLASMIC.registerComponent(Popover, PopoverMeta);
+  PLASMIC.registerComponent(PopoverTrigger, PopoverTriggerMeta);
+  PLASMIC.registerComponent(PopoverContent, PopoverContentMeta);
+  PLASMIC.registerComponent(PopoverAnchor, PopoverAnchorMeta);
   PLASMIC.registerComponent(ToolTip, ToolTipMeta);
   PLASMIC.registerComponent(Sidebar, SidebarMeta);
   PLASMIC.registerComponent(SidebarProvider, SidebarProviderMeta);
