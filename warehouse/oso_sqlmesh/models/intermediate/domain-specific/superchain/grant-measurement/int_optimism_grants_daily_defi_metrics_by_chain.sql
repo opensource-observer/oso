@@ -43,14 +43,14 @@ base_with_revenue AS (
     chain,
     metric,
     amount
-  FROM base
+  FROM grouped_metrics
   UNION ALL
   SELECT
     sample_date,
     chain,
     'revenue' AS metric,
     CASE WHEN chain = 'OPTIMISM' THEN amount ELSE amount * 0.15 END AS amount
-  FROM base
+  FROM grouped_metrics
   WHERE metric = 'fees'
 ),
 rolling_windows AS (
@@ -58,21 +58,21 @@ rolling_windows AS (
     sample_date,
     chain,
     metric || '_7day' AS metric,
-    SUM(amount) OVER (PARTITION BY chain, metric ORDER BY sample_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) / 7 AS amount
+    SUM(amount) OVER (PARTITION BY chain, metric ORDER BY sample_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) / 7.0 AS amount
   FROM base_with_revenue
   UNION ALL
   SELECT
     sample_date,
     chain,
     metric || '_30day' AS metric,
-    SUM(amount) OVER (PARTITION BY chain, metric ORDER BY sample_date ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) / 30 AS amount
+    SUM(amount) OVER (PARTITION BY chain, metric ORDER BY sample_date ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) / 30.0 AS amount
   FROM base_with_revenue
   UNION ALL
   SELECT
     sample_date,
     chain,
     metric || '_90day' AS metric,
-    SUM(amount) OVER (PARTITION BY chain, metric ORDER BY sample_date ROWS BETWEEN 89 PRECEDING AND CURRENT ROW) / 90 AS amount
+    SUM(amount) OVER (PARTITION BY chain, metric ORDER BY sample_date ROWS BETWEEN 89 PRECEDING AND CURRENT ROW) / 90.0 AS amount
   FROM base_with_revenue
 ),
 final AS (

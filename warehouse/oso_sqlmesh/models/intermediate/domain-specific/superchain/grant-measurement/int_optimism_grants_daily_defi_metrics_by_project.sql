@@ -58,7 +58,7 @@ rolling_windows AS (
     chain,
     oso_project_name,
     metric || '_7day' AS metric,
-    SUM(amount) OVER (PARTITION BY oso_project_name, chain, metric ORDER BY sample_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) / 7 AS amount
+    SUM(amount) OVER (PARTITION BY oso_project_name, chain, metric ORDER BY sample_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) / 7.0 AS amount
   FROM base_with_revenue
   UNION ALL
   SELECT
@@ -66,7 +66,7 @@ rolling_windows AS (
     chain,
     oso_project_name,
     metric || '_30day' AS metric,
-    SUM(amount) OVER (PARTITION BY oso_project_name, chain, metric ORDER BY sample_date ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) / 30 AS amount
+    SUM(amount) OVER (PARTITION BY oso_project_name, chain, metric ORDER BY sample_date ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) / 30.0 AS amount
   FROM base_with_revenue
   UNION ALL
   SELECT
@@ -74,7 +74,7 @@ rolling_windows AS (
     chain,
     oso_project_name,
     metric || '_90day' AS metric,
-    SUM(amount) OVER (PARTITION BY oso_project_name, chain, metric ORDER BY sample_date ROWS BETWEEN 89 PRECEDING AND CURRENT ROW) / 90 AS amount
+    SUM(amount) OVER (PARTITION BY oso_project_name, chain, metric ORDER BY sample_date ROWS BETWEEN 89 PRECEDING AND CURRENT ROW) / 90.0 AS amount
   FROM base_with_revenue
 ),
 final AS (

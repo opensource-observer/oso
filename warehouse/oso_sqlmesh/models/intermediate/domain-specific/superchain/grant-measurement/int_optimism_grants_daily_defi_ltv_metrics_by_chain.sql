@@ -16,11 +16,11 @@ WITH metrics_90day AS (
       AS tvl_90day,
     SUM(CASE WHEN metric = 'tvs_90day' THEN amount ELSE 0 END)
       AS tvs_90day,
-    SUM(CASE WHEN metric = 'fees_90day' THEN amount ELSE 0 END) * 90
+    SUM(CASE WHEN metric = 'fees_90day' THEN amount ELSE 0 END) * 90.0
       AS fees_90day,
-    SUM(CASE WHEN metric = 'revenue_90day' THEN amount ELSE 0 END) * 90
+    SUM(CASE WHEN metric = 'revenue_90day' THEN amount ELSE 0 END) * 90.0
       AS revenue_90day,
-    SUM(CASE WHEN metric = 'userops_90day' THEN amount ELSE 0 END) * 90
+    SUM(CASE WHEN metric = 'userops_90day' THEN amount ELSE 0 END) * 90.0
       AS userops_90day
   FROM oso.int_optimism_grants_daily_defi_metrics_by_chain
   GROUP BY 1,2
