@@ -16,7 +16,7 @@ WITH base AS (
     oso_project_name,
     metric,
     SUM(amount::DOUBLE) AS amount
-  FROM oso.int_optimism_grants_daily_defi_metrics_by_chain
+  FROM oso.int_optimism_grants_daily_defi_metrics_by_project
   GROUP BY 1,2,3,4
 ),
 daily AS (
