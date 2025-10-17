@@ -18,6 +18,7 @@ export interface NotebookProps {
   aiPrompt?: string;
   enableDebug?: boolean;
   mode?: "read" | "edit";
+  iframeAllow?: string;
   enablePresentMode?: boolean;
   extraQueryParams?: Record<string, string>;
   extraFragmentParams?: Record<string, string>;
@@ -107,6 +108,14 @@ export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
       defaultValue: {},
       required: false,
     },
+    iframeAllow: {
+      type: "string",
+      displayName: "Iframe Allow Options",
+      description:
+        "The allow options for the iframe, e.g. 'camera; microphone; clipboard-read; clipboard-write'",
+      defaultValue: "",
+      required: false,
+    },
   },
 };
 
@@ -133,6 +142,7 @@ function NotebookFactory() {
             enableDebug,
             mode = "edit",
             enablePresentMode,
+            iframeAllow = "",
             extraFragmentParams = {},
             extraQueryParams = {},
           } = props;
@@ -238,6 +248,7 @@ function NotebookFactory() {
               enablePostMessageStore={enableSave}
               extraFragmentParams={extraFragmentParams}
               extraQueryParams={extraQueryParams}
+              iframeAllow={iframeAllow}
             />
           );
         }
