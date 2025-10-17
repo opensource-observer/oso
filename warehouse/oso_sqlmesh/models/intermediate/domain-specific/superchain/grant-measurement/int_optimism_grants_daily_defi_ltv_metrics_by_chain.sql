@@ -13,7 +13,7 @@ WITH base AS (
     sample_date,
     chain,
     metric,
-    SUM(amount) AS amount
+    SUM(amount::DOUBLE) AS amount
   FROM oso.int_optimism_grants_daily_defi_metrics_by_chain
   GROUP BY 1,2,3
 ),
@@ -71,16 +71,16 @@ SELECT
   m.sample_date::DATE AS sample_date,
   m.chain::VARCHAR AS chain,
   m.months_activity::DOUBLE AS months_activity,
-  d.tvl_90day::INTEGER AS tvl_90day,
+  d.tvl_90day::DOUBLE AS tvl_90day,
   d.fees_90day::DOUBLE AS fees_90day,
   d.revenue_90day::DOUBLE AS revenue_90day,
-  d.userops_90day::INTEGER AS userops_90day,
-  d.tvs_90day::INTEGER AS tvs_90day,
-  m.tvl_alltime::INTEGER AS tvl_alltime,
-  m.tvs_alltime::INTEGER AS tvs_alltime,
+  d.userops_90day::DOUBLE AS userops_90day,
+  d.tvs_90day::DOUBLE AS tvs_90day,
+  m.tvl_alltime::DOUBLE AS tvl_alltime,
+  m.tvs_alltime::DOUBLE AS tvs_alltime,
   m.fees_alltime::DOUBLE AS fees_alltime,
   m.revenue_alltime::DOUBLE AS revenue_alltime,
-  m.userops_alltime::INTEGER AS userops_alltime
+  m.userops_alltime::DOUBLE AS userops_alltime
 FROM metrics_alltime AS m
 JOIN metrics_90day AS d
   ON m.sample_date = d.sample_date
