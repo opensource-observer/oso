@@ -33,7 +33,7 @@ grouped_metrics AS (
     sample_date,
     chain,
     metric,
-    SUM(amount) AS amount
+    SUM(amount)::DOUBLE AS amount
   FROM base
   GROUP BY 1,2,3
 ),
@@ -49,7 +49,10 @@ base_with_revenue AS (
     sample_date,
     chain,
     'revenue' AS metric,
-    CASE WHEN chain = 'OPTIMISM' THEN amount ELSE amount * 0.15 END AS amount
+    CASE
+      WHEN chain = 'OPTIMISM' THEN amount
+      ELSE amount * 0.15
+    END AS amount
   FROM grouped_metrics
   WHERE metric = 'fees'
 ),
@@ -91,9 +94,8 @@ final AS (
   FROM rolling_windows
 )
 SELECT
-  sample_date,
-  chain,
-  metric,
-  amount
+  sample_date::DATE AS sample_date,
+  chain::VARCHAR AS chain,
+  metric::VARCHAR AS metric,
+  amount::DOUBLE AS amount
 FROM final
-ORDER BY 1,2,3
