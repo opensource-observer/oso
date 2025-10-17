@@ -8,7 +8,16 @@ MODEL (
   )
 );
 
-WITH metrics_90day AS (
+WITH base AS (
+  SELECT
+    sample_date,
+    chain,
+    metric,
+    SUM(amount) AS amount
+  FROM oso.int_optimism_grants_daily_defi_metrics_by_chain
+  GROUP BY 1,2,3
+),
+metrics_90day AS (
   SELECT
     sample_date,
     chain,
@@ -17,7 +26,7 @@ WITH metrics_90day AS (
     SUM(CASE WHEN metric='fees_90day' THEN amount ELSE 0 END)*90.0 AS fees_90day,
     SUM(CASE WHEN metric='revenue_90day' THEN amount ELSE 0 END)*90.0 AS revenue_90day,
     SUM(CASE WHEN metric='userops_90day' THEN amount ELSE 0 END)*90.0 AS userops_90day
-  FROM oso.int_optimism_grants_daily_defi_metrics_by_chain
+  FROM base
   GROUP BY 1,2
 ),
 metrics_alltime AS (

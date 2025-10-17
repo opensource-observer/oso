@@ -12,11 +12,18 @@ MODEL (
 );
 
 
-WITH projects_with_defi_category AS (
+WITH grantees AS (
+  SELECT DISTINCT
+    oso_project_id,
+    oso_project_name,
+    oso_project_display_name,
+  FROM oso.int_optimism_grants
+),
+projects_with_defi_category AS (
   SELECT
     g.oso_project_id,
     dl.category
-  FROM oso.int_optimism_grants AS g
+  FROM grantees AS g
   JOIN oso.int_artifacts_by_project_in_ossd AS abp
     ON abp.project_id = g.oso_project_id
     AND abp.artifact_type = 'DEFILLAMA_PROTOCOL'
@@ -26,20 +33,22 @@ WITH projects_with_defi_category AS (
 refined_categories AS (
   SELECT
     oso_project_id,
+    category,
     CASE
-      WHEN category IN ('bridge', 'lending', 'dexs') THEN category
-      WHEN category IN ('yield', 'yield_aggregator') THEN 'yield'
-      WHEN category IN ('synthetics', 'derivatives', 'options')
-        THEN 'derivatives'
-      ELSE 'other'
+      WHEN category IN ('Dexs', 'Lending', 'Liquid Staking') THEN category
+      WHEN category IN ('Cross Chain Bridge', 'Bridge') THEN 'Bridge'
+      WHEN category IN ('Yield', 'Yield Aggregator') THEN 'Yield'
+      WHEN category IN ('Synthetics', 'Derivatives', 'Options')
+        THEN 'Derivatives'
+      ELSE 'Other'
     END AS vertical
   FROM projects_with_defi_category
 ),
 grouped_verticals AS (
   SELECT
     oso_project_id,
-    array_agg(DISTINCT vertical) AS verts,
-    array_sort(array_agg(DISTINCT vertical)) AS all_verticals
+    array_sort(array_agg(DISTINCT vertical)) AS all_verticals,
+    array_sort(array_agg(DISTINCT category)) AS all_categories
   FROM refined_categories
   GROUP BY 1
 ),
@@ -47,13 +56,14 @@ vertical_tags AS (
   SELECT
     oso_project_id,
     CASE
-      WHEN cardinality(verts)=1 THEN verts[1]
+      WHEN cardinality(all_verticals)=1 THEN all_verticals[1]
       WHEN
-        cardinality(filter(verts, x -> x <> 'other'))=1
-        THEN (filter(verts, x -> x <> 'other'))[1]
-      ELSE 'multiple'
+        cardinality(filter(all_verticals, x -> x <> 'Other'))=1
+        THEN (filter(all_verticals, x -> x <> 'Other'))[1]
+      ELSE 'Multiple'
     END AS best_vertical,
-    all_verticals
+    all_verticals,
+    all_categories
   FROM grouped_verticals
 )
 
@@ -62,7 +72,8 @@ SELECT
   g.oso_project_name,
   g.oso_project_display_name,
   vt.best_vertical,
-  vt.all_verticals
-FROM oso.int_optimism_grants AS g
+  vt.all_verticals,
+  vt.all_categories
+FROM grantees AS g
 JOIN vertical_tags AS vt
   ON g.oso_project_id = vt.oso_project_id
