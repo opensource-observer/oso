@@ -5,7 +5,8 @@ MODEL (
   kind full,
   audits (
     HAS_AT_LEAST_N_ROWS(threshold := 0)
-  )
+  ),
+  enabled false
 );
 
 
