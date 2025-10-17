@@ -310,7 +310,6 @@ def process_chunked_resource(
             if success:
                 log.info("ChunkedResource: Load job completed successfully")
                 current_data["pending_data"] = []
-                del current_data["load_job_id"]
                 state_blob.upload_from_string(json.dumps(current_data))
             else:
                 raise RuntimeError(f"BigQuery load job {job_id} failed")
@@ -353,6 +352,36 @@ def process_chunked_resource(
             log.error(f"ChunkedResource: Load job {job_id} failed: {e}")
             return False
 
+    def check_and_handle_load_job(job_id: str) -> bool:
+        """
+        Checks the status of a load job and handles it appropriately.
+        Returns True if job completed successfully, False if failed.
+        Waits for completion if job is still running.
+        """
+        log.info(f"ChunkedResource: Checking status of load job {job_id}")
+
+        try:
+            job = bq_client.get_job(job_id)
+
+            if not job.done():
+                log.info(
+                    f"ChunkedResource: Load job {job_id} is still running, waiting..."
+                )
+                job.result()
+
+            if job.errors:
+                log.error(
+                    f"ChunkedResource: Load job {job_id} failed with errors: {job.errors}"
+                )
+                return False
+
+            log.info(f"ChunkedResource: Load job {job_id} completed successfully")
+            return True
+
+        except Exception as e:
+            log.error(f"ChunkedResource: Error checking load job {job_id}: {e}")
+            return False
+
     kwargs["_chunk_resource_update"] = resource_update
 
     try:
@@ -364,10 +393,17 @@ def process_chunked_resource(
 
         log.info("ChunkedResource: Found existing state manifest")
 
-        if (
+        updated_age = (
             datetime.now() - datetime.fromisoformat(manifest_data["updated_at"])
-            or datetime.now() - datetime.fromisoformat(manifest_data["created_at"])
-        ).total_seconds() > config.max_manifest_age:
+        ).total_seconds()
+        created_age = (
+            datetime.now() - datetime.fromisoformat(manifest_data["created_at"])
+        ).total_seconds()
+
+        if (
+            updated_age > config.max_manifest_age
+            or created_age > config.max_manifest_age
+        ):
             log.info("ChunkedResource: State manifest is too old, resetting")
             manifest_data = None
 
@@ -375,7 +411,7 @@ def process_chunked_resource(
             job_id = manifest_data["load_job_id"]
             log.info(f"ChunkedResource: Found existing load job {job_id}")
 
-            success = wait_for_load_job(job_id)
+            success = check_and_handle_load_job(job_id)
 
             if success:
                 log.info("ChunkedResource: Previous load job completed successfully")
@@ -383,6 +419,9 @@ def process_chunked_resource(
                 state_blob.upload_from_string(json.dumps(manifest_data))
             else:
                 log.error("ChunkedResource: Previous load job failed, will retry")
+                del manifest_data["load_job_id"]
+                state_blob.upload_from_string(json.dumps(manifest_data))
+                raise RuntimeError(f"BigQuery load job {job_id} failed")
 
     except (NotFound, json.JSONDecodeError):
         log.info("ChunkedResource: No existing state found, creating new manifest")
@@ -408,6 +447,52 @@ def process_chunked_resource(
         )
     else:
         log.info("ChunkedResource: No pending data to process")
+
+        if "load_job_id" in manifest_data:
+            job_id = manifest_data["load_job_id"]
+            log.info(
+                f"ChunkedResource: Found existing load job {job_id}, verifying status"
+            )
+
+            success = check_and_handle_load_job(job_id)
+
+            if not success:
+                log.error(f"ChunkedResource: Load job {job_id} failed, will retry")
+                del manifest_data["load_job_id"]
+                state_blob.upload_from_string(json.dumps(manifest_data))
+                raise RuntimeError(f"BigQuery load job {job_id} failed")
+
+            log.info("ChunkedResource: Load job completed, nothing more to do")
+        else:
+            log.info(
+                "ChunkedResource: No load job ID found, checking for orphaned chunks"
+            )
+
+            chunk_prefix = f"{config.gcs_prefix}/{config.resource.name}/chunk."
+            chunks = list(bucket.list_blobs(prefix=chunk_prefix))
+
+            if chunks:
+                log.warning(
+                    f"ChunkedResource: Found {len(chunks)} orphaned chunk files, firing load job"
+                )
+                job_id = fire_load_job()
+
+                manifest_data["load_job_id"] = job_id
+                manifest_data["updated_at"] = datetime.now().isoformat()
+                state_blob.upload_from_string(json.dumps(manifest_data))
+
+                log.info(f"ChunkedResource: Started load job {job_id}")
+                success = wait_for_load_job(job_id)
+
+                if success:
+                    log.info("ChunkedResource: Orphaned chunks loaded successfully")
+                    state_blob.upload_from_string(json.dumps(manifest_data))
+                else:
+                    raise RuntimeError(f"BigQuery load job {job_id} failed")
+            else:
+                log.info("ChunkedResource: No orphaned chunks found, nothing to do")
+
+        yield config.resource([], *args, **kwargs)
 
 
 CHUNKED_STATE_JOB_CONFIG = {
