@@ -13,52 +13,55 @@ WITH metrics_90day AS (
     sample_date,
     chain,
     oso_project_name,
-    SUM(CASE WHEN metric = 'tvl_90day' THEN amount ELSE 0 END)
-      AS tvl_90day,
-    SUM(CASE WHEN metric = 'fees_90day' THEN amount ELSE 0 END) * 90.0
-      AS fees_90day,
-    SUM(CASE WHEN metric = 'revenue_90day' THEN amount ELSE 0 END) * 90.0
-      AS revenue_90day,
-    SUM(CASE WHEN metric = 'userops_90day' THEN amount ELSE 0 END) * 90.0
-      AS userops_90day
+    SUM(CASE WHEN metric='tvl_90day' THEN amount ELSE 0 END) AS tvl_90day,
+    SUM(CASE WHEN metric='fees_90day' THEN amount ELSE 0 END)*90.0 AS fees_90day,
+    SUM(CASE WHEN metric='revenue_90day' THEN amount ELSE 0 END)*90.0 AS revenue_90day,
+    SUM(CASE WHEN metric='userops_90day' THEN amount ELSE 0 END)*90.0 AS userops_90day
   FROM oso.int_optimism_grants_daily_defi_metrics_by_project
   GROUP BY 1,2,3
 ),
 metrics_alltime AS (
   SELECT
-    m90.sample_date,
-    m90.chain,
-    m90.oso_project_name,
-    date_diff('day', MIN(m.sample_date), m90.sample_date) / 30.0 AS months_activity,
-    MAX(CASE WHEN m.metric = 'tvl' THEN m.amount ELSE 0 END)
-      AS tvl_alltime,
-    SUM(CASE WHEN m.metric = 'fees' THEN m.amount ELSE 0 END)
-      AS fees_alltime,
-    SUM(CASE WHEN m.metric = 'revenue' THEN m.amount ELSE 0 END)
-      AS revenue_alltime,
-    SUM(CASE WHEN m.metric = 'userops' THEN m.amount ELSE 0 END)
-      AS userops_alltime
-  FROM metrics_90day AS m90
-  JOIN oso.int_optimism_grants_daily_defi_metrics_by_project AS m
-    ON m.sample_date <= m90.sample_date
-    AND m90.chain = m.chain
-    AND m90.oso_project_name = m.oso_project_name
-  GROUP BY 1,2,3
+    sample_date,
+    chain,
+    oso_project_name,
+    -- months since first activity for this project on this chain
+    DATE_DIFF(
+      'day',
+      MIN(sample_date) OVER (PARTITION BY chain, oso_project_name),
+      sample_date
+    )/30.0 AS months_activity,
+
+    -- peak-to-date levels
+    MAX(CASE WHEN metric='tvl' THEN amount END)
+      OVER (PARTITION BY chain, oso_project_name ORDER BY sample_date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS tvl_alltime,
+
+    -- cumulative-to-date flows
+    SUM(CASE WHEN metric='fees' THEN amount END)
+      OVER (PARTITION BY chain, oso_project_name ORDER BY sample_date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS fees_alltime,
+    SUM(CASE WHEN metric='revenue' THEN amount END)
+      OVER (PARTITION BY chain, oso_project_name ORDER BY sample_date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS revenue_alltime,
+    SUM(CASE WHEN metric='userops' THEN amount END)
+      OVER (PARTITION BY chain, oso_project_name ORDER BY sample_date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS userops_alltime
+  FROM oso.int_optimism_grants_daily_defi_metrics_by_project
 )
 
 SELECT
-  sample_date,
-  oso_project_name,
-  chain,
-  months_activity,
-  tvl_90day,
-  fees_90day,
-  revenue_90day,
-  userops_90day,
-  tvl_alltime,
-  fees_alltime,
-  revenue_alltime,
-  userops_alltime
-FROM metrics_alltime
-JOIN metrics_90day USING (sample_date, chain, oso_project_name)
+  m.sample_date,
+  m.oso_project_name,
+  m.chain,
+  m.months_activity,
+  d.tvl_90day,
+  d.fees_90day,
+  d.revenue_90day,
+  d.userops_90day,
+  m.tvl_alltime,
+  m.fees_alltime,
+  m.revenue_alltime,
+  m.userops_alltime
+FROM metrics_alltime AS m
+JOIN metrics_90day AS d
+  ON m.sample_date = d.sample_date
+  AND m.chain = d.chain
+  AND m.oso_project_name = d.oso_project_name
 ORDER BY 1,2,3
