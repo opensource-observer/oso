@@ -981,6 +981,10 @@ export type Database = {
         };
         Returns: boolean;
       };
+      uuid_or_null: {
+        Args: { str: string };
+        Returns: string;
+      };
       validate_ownership_limits: {
         Args: {
           p_current_record_id?: string;

@@ -5,7 +5,7 @@ MODEL (
     time_column time,
     batch_size 90,
     batch_concurrency 2,
-    lookback 3
+    lookback @default_daily_incremental_lookback,
   ),
   start @funding_incremental_start,
   cron '@daily',

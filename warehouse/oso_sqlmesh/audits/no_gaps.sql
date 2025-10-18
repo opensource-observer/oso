@@ -2,16 +2,20 @@
 AUDIT (
   name no_gaps,
   dialect trino,
+  blocking false,
   defaults (
     no_gap_date_part = 'day',
     missing_rate_min_threshold = 1.0, -- 1 is 100% of all rows should be present
     ignore_before = '2015-01-01 00:00:00',
     ignore_after = 'now',
+    minimum_days_to_check = 14,
   ),
 );
 
+@DEF(no_gap_start_dt, LEAST(@start_dt, @end_dt - INTERVAL @minimum_days_to_check DAY));
+
 WITH all_dates AS (
-  @date_spine(@no_gap_date_part, @start_ds, @end_ds)
+  @extended_date_spine(@no_gap_date_part, @start_ds, @end_ds, @minimum_days_to_check)
 ), rows_per_day as (
   SELECT
     @time_aggregation_bucket(all_dates.date_@{no_gap_date_part}, @no_gap_date_part) as d,
@@ -23,7 +27,7 @@ WITH all_dates AS (
   LEFT JOIN @this_model AS current
     ON @time_aggregation_bucket(current.@time_column, @no_gap_date_part) = all_dates.date_@{no_gap_date_part}
   WHERE @AND(
-    all_dates.date_@{no_gap_date_part} BETWEEN @start_dt AND @end_dt,
+    all_dates.date_@{no_gap_date_part} BETWEEN @no_gap_start_dt AND @end_dt,
     all_dates.date_@{no_gap_date_part} >= @ignore_before::TIMESTAMP,
     @IF(
       @ignore_after != 'now', 

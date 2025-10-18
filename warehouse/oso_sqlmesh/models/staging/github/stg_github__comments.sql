@@ -4,7 +4,7 @@ MODEL (
     time_column event_time,
     batch_size 90,
     batch_concurrency 3,
-    lookback 3,
+    lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
   dialect "duckdb",
@@ -37,7 +37,7 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestReviewCommentEvent'
-    and ghe.created_at BETWEEN @start_dt  - INTERVAL '1' DAY AND @end_dt + INTERVAL '1' DAY
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '2' DAY AND @end_dt + INTERVAL '1' DAY
     and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 ), issue_comment_events AS (
   SELECT
@@ -60,6 +60,7 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssueCommentEvent'
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '2' DAY AND @end_dt + INTERVAL '1' DAY
     and STRPTIME(ghe.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 ), all_events as (
   SELECT

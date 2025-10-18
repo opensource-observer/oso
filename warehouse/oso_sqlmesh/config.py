@@ -129,6 +129,9 @@ config = Config(
         "fulltime_dev_days": 10,
         "activity_window": 30,
         "default_auto_restatement_cron": "0 0 1,15 * *",  # 1st and 15th of every month
+        "default_daily_incremental_lookback": 7,
+        "default_monthly_incremental_lookback": 1,
+        "default_yearly_incremental_lookback": 1,
         "blockchain_incremental_start": constants.blockchain_incremental_start,
         "deps_dev_incremental_start": constants.deps_dev_incremental_start,
         "github_incremental_start": constants.github_incremental_start,

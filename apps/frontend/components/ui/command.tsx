@@ -4,6 +4,7 @@ import * as React from "react";
 import { type DialogProps } from "@radix-ui/react-dialog";
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -139,6 +140,121 @@ const CommandShortcut = ({
   );
 };
 CommandShortcut.displayName = "CommandShortcut";
+
+type CommandProps = React.ComponentPropsWithoutRef<typeof CommandPrimitive>;
+type CommandDialogProps = DialogProps;
+type CommandInputProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Input
+>;
+type CommandListProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.List
+>;
+type CommandEmptyProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Empty
+>;
+type CommandGroupProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Group
+>;
+type CommandItemProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Item
+>;
+type CommandShortcutProps = React.HTMLAttributes<HTMLSpanElement>;
+type CommandSeparatorProps = React.ComponentPropsWithoutRef<
+  typeof CommandPrimitive.Separator
+>;
+
+export const CommandMeta: CodeComponentMeta<CommandProps> = {
+  name: "Command",
+  description: "Command menu container for search and navigation",
+  props: {
+    children: "slot",
+  },
+};
+
+export const CommandDialogMeta: CodeComponentMeta<CommandDialogProps> = {
+  name: "CommandDialog",
+  description: "Command menu displayed in a dialog",
+  props: {
+    children: "slot",
+    open: "boolean",
+    onOpenChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "open", type: "boolean" }],
+    },
+  },
+};
+
+export const CommandInputMeta: CodeComponentMeta<CommandInputProps> = {
+  name: "CommandInput",
+  description: "Search input for command menu",
+  props: {
+    placeholder: {
+      type: "string",
+      defaultValue: "Search...",
+    },
+    value: "string",
+    onValueChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "value", type: "string" }],
+    },
+  },
+};
+
+export const CommandListMeta: CodeComponentMeta<CommandListProps> = {
+  name: "CommandList",
+  description: "Container for command items with scrolling",
+  props: {
+    children: "slot",
+  },
+};
+
+export const CommandEmptyMeta: CodeComponentMeta<CommandEmptyProps> = {
+  name: "CommandEmpty",
+  description: "Message shown when no results are found",
+  props: {
+    children: {
+      type: "slot",
+      defaultValue: "No results found.",
+    },
+  },
+};
+
+export const CommandGroupMeta: CodeComponentMeta<CommandGroupProps> = {
+  name: "CommandGroup",
+  description: "Group of related command items",
+  props: {
+    children: "slot",
+    heading: "string",
+  },
+};
+
+export const CommandItemMeta: CodeComponentMeta<CommandItemProps> = {
+  name: "CommandItem",
+  description: "Individual selectable item in command menu",
+  props: {
+    children: "slot",
+    value: "string",
+    onSelect: {
+      type: "eventHandler",
+      argTypes: [{ name: "value", type: "string" }],
+    },
+    disabled: "boolean",
+  },
+};
+
+export const CommandShortcutMeta: CodeComponentMeta<CommandShortcutProps> = {
+  name: "CommandShortcut",
+  description: "Keyboard shortcut indicator for command items",
+  props: {
+    children: "slot",
+  },
+};
+
+export const CommandSeparatorMeta: CodeComponentMeta<CommandSeparatorProps> = {
+  name: "CommandSeparator",
+  description: "Visual separator between command groups",
+  props: {},
+};
 
 export {
   Command,

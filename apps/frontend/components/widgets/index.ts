@@ -51,6 +51,10 @@ import {
   EmbeddedSandbox,
   EmbeddedSandboxMeta,
 } from "@/components/widgets/apollo-sandbox";
+import {
+  MultiplayerUserProvider,
+  MultiplayerUserProviderMeta,
+} from "@/components/widgets/multiplayer-provider";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -80,4 +84,8 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(Billing, BillingMeta);
   PLASMIC.registerComponent(NotebookFactory(), NotebookMeta);
   PLASMIC.registerComponent(EmbeddedSandbox, EmbeddedSandboxMeta);
+  PLASMIC.registerComponent(
+    MultiplayerUserProvider,
+    MultiplayerUserProviderMeta,
+  );
 }

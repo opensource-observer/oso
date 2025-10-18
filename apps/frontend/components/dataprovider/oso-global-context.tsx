@@ -92,6 +92,8 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "demoteOrganizationFromEnterprise",
   "addOrganizationCredits",
   "deductOrganizationCredits",
+  "updateOrganizationTier",
+  "setOrganizationCredits",
 ]);
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [
