@@ -1,0 +1,51 @@
+test_stg_ens__text_changeds:
+  gateway: local
+  model: oso.stg_ens__text_changeds
+  inputs:
+    bigquery.ens.text_changeds:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using trino gateway"
+    bigquery.bq_ens.text_changeds:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using local-trino gateway"
+    sources__bigquery__ens.text_changeds:
+      rows:
+        - id: "0x0000000000000000000000000000000000000001"
+          resolver: '{"id": "0xresolver1"}'
+          block_number: 12345678
+          transaction_id: "0xtx1"
+          key: "com.github"
+          value: "testuser"
+        - id: "0x0000000000000000000000000000000000000002"
+          resolver: '{"id": "0xresolver2"}'
+          block_number: 12345679
+          transaction_id: "0xtx2"
+          key: "com.github"
+          value: "anotheruser"
+        - id: "0x0000000000000000000000000000000000000003"
+          resolver: '{"id": "0xresolver1"}'
+          block_number: 12345680
+          transaction_id: "0xtx3"
+          key: "com.twitter"
+          value: "testuser"
+  outputs:
+    query:
+      rows:
+        - id: "0x0000000000000000000000000000000000000001"
+          resolver: '{"id": "0xresolver1"}'
+          block_number: 12345678
+          transaction_id: "0xtx1"
+          text_changed_key: "com.github"
+          text_changed_value: "testuser"
+        - id: "0x0000000000000000000000000000000000000002"
+          resolver: '{"id": "0xresolver2"}'
+          block_number: 12345679
+          transaction_id: "0xtx2"
+          text_changed_key: "com.github"
+          text_changed_value: "anotheruser"
+        - id: "0x0000000000000000000000000000000000000003"
+          resolver: '{"id": "0xresolver1"}'
+          block_number: 12345680
+          transaction_id: "0xtx3"
+          text_changed_key: "com.twitter"
+          text_changed_value: "testuser"

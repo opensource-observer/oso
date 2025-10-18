@@ -1,0 +1,51 @@
+test_int_artifacts_by_ens_user:
+  model: oso.int_artifacts_by_ens_user
+  inputs:
+    oso.stg_ens__domains:
+      rows:
+        - name: 'test1.eth'
+          owner: '{"id": "0x1111111111111111111111111111111111111111"}'
+          registrant: '{"id": "0x2222222222222222222222222222222222222222"}'
+        - name: 'test1.eth' # Duplicate, should be handled
+          owner: '{"id": "0x1111111111111111111111111111111111111111"}'
+          registrant: '{"id": "0x2222222222222222222222222222222222222222"}'
+        - name: 'test2.eth' # Another valid user
+          owner: '{"id": "0x3333333333333333333333333333333333333333"}'
+          registrant: '{"id": "0x4444444444444444444444444444444444444444"}'
+        - name: 'null_owner.eth' # Null owner, should be filtered out
+          owner: null
+          registrant: '{"id": "0x5555555555555555555555555555555555555555"}'
+        - name: 'short_owner.eth' # Invalid owner address (too short), should be filtered out
+          owner: '{"id": "0x123"}'
+          registrant: '{"id": "0x6666666666666666666666666666666666666666"}'
+        - name: 'no_prefix_owner.eth' # Invalid owner address (no 0x prefix), should be filtered out
+          owner: '{"id": "7777777777777777777777777777777777777777"}'
+          registrant: '{"id": "0x7777777777777777777777777777777777777777"}'
+        - name: 'null_id_owner.eth' # Owner JSON has no 'id' field, should be filtered out
+          owner: '{"not_id": "0x8888888888888888888888888888888888888888"}'
+          registrant: '{"id": "0x8888888888888888888888888888888888888888"}'
+  outputs:
+    query:
+      rows:
+        - user_id: '4c1af79ddcc5aee9d287f9946eb66e391c36872650859b4a49da35842e71529e'
+          user_source_id: 'test1.eth'
+          user_source: 'ENS'
+          user_namespace: ''
+          user_name: 'test1.eth'
+          display_name: 'test1.eth'
+          artifact_source: 'ETHEREUM'
+          artifact_namespace: ''
+          artifact_name: '0x1111111111111111111111111111111111111111'
+          artifact_id: '0e3cd32d0a9886d3cf56d99875fc92260fddec590ece25f7e847fecc92c505b8'
+          artifact_type: 'NAME_SERVICE'
+        - user_id: 'b3fe8e1796fdf9b8d12bfd2e6f267dad283dedb2011fd33e177e51e914f086cb'
+          user_source_id: 'test2.eth'
+          user_source: 'ENS'
+          user_namespace: ''
+          user_name: 'test2.eth'
+          display_name: 'test2.eth'
+          artifact_source: 'ETHEREUM'
+          artifact_namespace: ''
+          artifact_name: '0x3333333333333333333333333333333333333333'
+          artifact_id: '78f31ae6f36d47996f9082f1181894d969c4bdd2c468a2d318d0dda316a60fb9'
+          artifact_type: 'NAME_SERVICE'

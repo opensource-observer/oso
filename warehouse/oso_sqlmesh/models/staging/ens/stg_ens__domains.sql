@@ -14,8 +14,8 @@ SELECT
   resolver,
   owner,
   registrant,
-  "expiryDate" AS expiry_date,
+  expiry_date,
   registration,
   subdomains,
-  "subdomainCount" AS subdomain_count
+  subdomain_count
 FROM @oso_source('bigquery.ens.domains_tmp')

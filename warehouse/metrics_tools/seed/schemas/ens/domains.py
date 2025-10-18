@@ -10,10 +10,10 @@ class ENSDomains(BaseModel):
     resolver: str = Column("VARCHAR", description="Resolver JSON")
     owner: str | None = Column("VARCHAR", description="Owner JSON")
     registrant: str | None = Column("VARCHAR", description="Registrant JSON")
-    expiryDate: str | None = Column("VARCHAR", description="Expiry date")
+    expiry_date: str | None = Column("VARCHAR", description="Expiry date")
     registration: str | None = Column("VARCHAR", description="Registration JSON")
     subdomains: str | None = Column("VARCHAR", description="Subdomains JSON")
-    subdomainCount: int | None = Column("INTEGER", description="Subdomain count")
+    subdomain_count: int | None = Column("INTEGER", description="Subdomain count")
 
 
 seed = SeedConfig(
@@ -28,10 +28,10 @@ seed = SeedConfig(
             resolver='{"id": "0xresolver1"}',
             owner='{"id": "0xowner1"}',
             registrant='{"id": "0xregistrant1"}',
-            expiryDate="1735689600",
+            expiry_date="1735689600",
             registration='{"id": "0xreg1"}',
             subdomains="[]",
-            subdomainCount=0,
+            subdomain_count=0,
         ),
         ENSDomains(
             id="0x0000000000000000000000000000000000000002",
@@ -39,10 +39,10 @@ seed = SeedConfig(
             resolver='{"id": "0xresolver2"}',
             owner='{"id": "0xowner2"}',
             registrant='{"id": "0xregistrant2"}',
-            expiryDate="1767225600",
+            expiry_date="1767225600",
             registration='{"id": "0xreg2"}',
             subdomains="[]",
-            subdomainCount=0,
+            subdomain_count=0,
         ),
     ],
 )
