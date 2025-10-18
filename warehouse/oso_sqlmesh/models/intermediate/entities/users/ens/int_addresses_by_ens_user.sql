@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_artifacts_by_ens_user,
+  name oso.int_addresses_by_ens_user,
   kind FULL,
   description "EVM addresses linked to ENS domains",
   audits (

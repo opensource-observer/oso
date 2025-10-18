@@ -1,5 +1,5 @@
-test_int_artifacts_by_ens_user:
-  model: oso.int_artifacts_by_ens_user
+test_int_addresses_by_ens_user:
+  model: oso.int_addresses_by_ens_user
   inputs:
     oso.stg_ens__domains:
       rows:
