@@ -63,6 +63,32 @@ SQLMesh will run these audits as part of its execution plan.
 
 For more complex validation logic, you can write tests in separate YAML files. These tests allow you to define inputs and expected outputs for a given model.
 
+For detailed guidance on the test syntax, please refer to the [official SQLMesh documentation](https://sqlmesh.readthedocs.io/en/latest/concepts/tests/). All tests should be placed in the `warehouse/oso_sqlmesh/tests/` directory.
+
+#### Mocking Bigquery sources
+
+For mocking BigQuery sources. Use the following structure:
+
+```yaml
+test_stg_<source_name>__<table_name>:
+  gateway: local
+  model: oso.stg_<source_name>__<table_name>
+  inputs:
+    bigquery.<schema>.<table_name>:
+      rows:
+        - comment: "This needs to exist for @oso_source in tests when using trino gateway"
+    bigquery.bq_<schema>.<table_name>:
+      rows:
+        - comment: "This needs to exist for @oso_source in tests when using local-trino gateway"
+    sources__bigquery__<schema>.<table_name>:
+      rows:
+        # - Add your mock data here
+  outputs:
+    query:
+      rows:
+        # - Add your expected output data here
+```
+
 ## Advanced Testing with Trino
 
 While DuckDB is recommended for most development, you can also test your models against a local Trino instance for more production-like validation. This requires more system resources but provides a more accurate representation of the production environment.
