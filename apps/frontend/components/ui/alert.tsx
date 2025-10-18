@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 import { cn } from "@/lib/utils";
 
@@ -55,5 +56,39 @@ const AlertDescription = React.forwardRef<
   />
 ));
 AlertDescription.displayName = "AlertDescription";
+
+type AlertProps = React.HTMLAttributes<HTMLDivElement> &
+  VariantProps<typeof alertVariants>;
+type AlertTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
+type AlertDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
+
+export const AlertMeta: CodeComponentMeta<AlertProps> = {
+  name: "Alert",
+  description: "shadcn/ui Alert component for displaying callouts",
+  props: {
+    children: "slot",
+    variant: {
+      type: "choice",
+      options: ["default", "destructive"],
+      defaultValue: "default",
+    },
+  },
+};
+
+export const AlertTitleMeta: CodeComponentMeta<AlertTitleProps> = {
+  name: "AlertTitle",
+  description: "Title for alert component",
+  props: {
+    children: "slot",
+  },
+};
+
+export const AlertDescriptionMeta: CodeComponentMeta<AlertDescriptionProps> = {
+  name: "AlertDescription",
+  description: "Description content for alert component",
+  props: {
+    children: "slot",
+  },
+};
 
 export { Alert, AlertTitle, AlertDescription };

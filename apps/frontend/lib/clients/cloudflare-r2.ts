@@ -6,6 +6,10 @@ import {
   UploadPartCommand,
   CompletedPart,
   CopyObjectCommand,
+  CreateBucketCommand,
+  HeadBucketCommand,
+  PutBucketLifecycleConfigurationCommand,
+  NotFound,
 } from "@aws-sdk/client-s3";
 import type { NodeJsClient } from "@smithy/types";
 import { createHash } from "node:crypto";
@@ -15,6 +19,7 @@ import {
   CLOUDFLARE_R2_SECRET_ACCESS_KEY,
 } from "@/lib/config";
 import { assert } from "@opensource-observer/utils";
+import { logger } from "@/lib/logger";
 
 const PART_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -169,4 +174,41 @@ async function copyObject(source: ObjectLocation, destination: ObjectLocation) {
   return response;
 }
 
-export { getObjectByQuery, putObjectByQuery, copyObjectByQuery };
+async function createBucketWithLifecycle(bucketName: string) {
+  try {
+    await S3.send(new HeadBucketCommand({ Bucket: bucketName }));
+    logger.log(`Bucket ${bucketName} already exists, skipping creation`);
+    return;
+  } catch (error) {
+    if (!(error instanceof NotFound)) {
+      throw error;
+    }
+  }
+
+  await S3.send(new CreateBucketCommand({ Bucket: bucketName }));
+  logger.log(`Created R2 bucket: ${bucketName}`);
+
+  await S3.send(
+    new PutBucketLifecycleConfigurationCommand({
+      Bucket: bucketName,
+      LifecycleConfiguration: {
+        Rules: [
+          {
+            ID: "expire-after-14-days",
+            Status: "Enabled",
+            Expiration: { Days: 14 },
+            Filter: {},
+          },
+        ],
+      },
+    }),
+  );
+  logger.log(`Set 14-day expiration policy on bucket: ${bucketName}`);
+}
+
+export {
+  getObjectByQuery,
+  putObjectByQuery,
+  copyObjectByQuery,
+  createBucketWithLifecycle,
+};

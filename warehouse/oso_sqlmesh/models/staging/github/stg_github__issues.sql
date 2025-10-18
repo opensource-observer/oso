@@ -5,7 +5,7 @@ MODEL (
     time_column event_time,
     batch_size 90,
     batch_concurrency 3,
-    lookback 3,
+    lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
   start @github_incremental_start,

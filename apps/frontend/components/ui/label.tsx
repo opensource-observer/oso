@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { cva, type VariantProps } from "class-variance-authority";
+import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 import { cn } from "@/lib/utils";
 
@@ -22,5 +23,20 @@ const Label = React.forwardRef<
   />
 ));
 Label.displayName = LabelPrimitive.Root.displayName;
+
+type LabelProps = React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+  VariantProps<typeof labelVariants>;
+
+export const LabelMeta: CodeComponentMeta<LabelProps> = {
+  name: "Label",
+  description: "shadcn/ui Label component for form labels",
+  props: {
+    children: "slot",
+    htmlFor: {
+      type: "string",
+      description: "The id of the form element this label is associated with",
+    },
+  },
+};
 
 export { Label };

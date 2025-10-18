@@ -4,7 +4,7 @@ MODEL (
     time_column time,
     batch_size 60,
     batch_concurrency 2,
-    lookback 3,
+    lookback @default_daily_incremental_lookback,
     auto_restatement_cron @default_auto_restatement_cron
   ),
   start '2024-09-01',

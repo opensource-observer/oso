@@ -1963,6 +1963,24 @@ class OsoAppClient {
   }
 
   /**
+   * Creates an R2 bucket for an enterprise organization via API route
+   * @param orgName - organization name
+   * @returns Promise<boolean>
+   */
+  private async createEnterpriseOrgR2Bucket(orgName: string) {
+    const customHeaders = await this.createSupabaseAuthHeaders();
+
+    await fetch("/api/v1/organizations/create-bucket", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...customHeaders,
+      },
+      body: JSON.stringify({ orgName }),
+    });
+  }
+
+  /**
    * Promote an existing organization to enterprise tier
    * @param orgName
    * @returns Promise<boolean>
@@ -1991,6 +2009,11 @@ class OsoAppClient {
       .update({ plan_id: enterprisePlan.plan_id })
       .eq("org_name", orgName)
       .throwOnError();
+
+    const hasFetch = typeof fetch === "function";
+    if (hasFetch) {
+      await this.createEnterpriseOrgR2Bucket(orgName);
+    }
 
     return true;
   }
@@ -2026,6 +2049,62 @@ class OsoAppClient {
       .throwOnError();
 
     return true;
+  }
+
+  /**
+   * Update an organization's tier (FREE or ENTERPRISE)
+   * @param orgName
+   * @param tier
+   * @returns Promise<boolean>
+   */
+  async updateOrganizationTier(
+    args: Partial<{ orgName: string; tier: "FREE" | "ENTERPRISE" }>,
+  ) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to update organization tier",
+    );
+    const tier = ensure(
+      args.tier,
+      "tier is required to update organization tier",
+    );
+
+    if (tier !== "FREE" && tier !== "ENTERPRISE") {
+      throw new Error("Invalid tier. Must be either 'FREE' or 'ENTERPRISE'");
+    }
+
+    const { data: org } = await this.supabaseClient
+      .from("organizations")
+      .select("pricing_plan(plan_name)")
+      .eq("org_name", orgName)
+      .is("deleted_at", null)
+      .single()
+      .throwOnError();
+
+    if (!org) {
+      throw new MissingDataError(`Organization not found: ${orgName}`);
+    }
+
+    if (!org.pricing_plan) {
+      throw new MissingDataError(
+        `Pricing plan not found for organization: ${orgName}`,
+      );
+    }
+
+    const currentPlanName = org.pricing_plan.plan_name;
+
+    if (currentPlanName === tier) {
+      console.log(
+        `Organization ${orgName} is already on the ${tier} tier. No changes made.`,
+      );
+      return true;
+    }
+
+    if (tier === "ENTERPRISE") {
+      return this.promoteOrganizationToEnterprise({ orgName });
+    } else {
+      return this.demoteOrganizationFromEnterprise({ orgName });
+    }
   }
 
   /**
@@ -2085,6 +2164,69 @@ class OsoAppClient {
         transaction_type: "admin_grant",
         metadata: {
           reason: reason || "Manual admin credit addition",
+          admin_action: true,
+          previous_balance: currentBalance,
+          new_balance: newBalance,
+        },
+        created_at: new Date().toISOString(),
+      })
+      .throwOnError();
+
+    return true;
+  }
+
+  /**
+   * Manually set organization's credits to an exact amount
+   * @param args
+   * @return Promise<boolean>
+   */
+  async setOrganizationCredits(
+    args: Partial<{
+      orgName: string;
+      amount: number;
+      reason?: string;
+    }>,
+  ) {
+    const orgName = ensure(
+      args.orgName,
+      "orgName is required to set organization credits",
+    );
+    const { amount, reason } = args;
+
+    if (amount === undefined || amount < 0) {
+      throw new Error("Amount must be a non-negative number");
+    }
+
+    const org = await this.getOrganizationByName({ orgName });
+    const user = await this.getUser();
+
+    const currentBalance = await this.getOrganizationCredits({
+      orgName,
+    });
+
+    const newBalance = amount;
+
+    await this.supabaseClient
+      .from("organization_credits")
+      .upsert(
+        {
+          org_id: org.id,
+          credits_balance: newBalance,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "org_id" },
+      )
+      .throwOnError();
+
+    await this.supabaseClient
+      .from("organization_credit_transactions")
+      .insert({
+        org_id: org.id,
+        user_id: user.id,
+        amount: newBalance - currentBalance,
+        transaction_type: "admin_set",
+        metadata: {
+          reason: reason || "Manual admin credit set",
           admin_action: true,
           previous_balance: currentBalance,
           new_balance: newBalance,
@@ -2163,6 +2305,24 @@ class OsoAppClient {
       .throwOnError();
 
     return true;
+  }
+
+  /**
+   * Get a Supabase realtime channel.
+   * @param channelName The name of the channel. Currently formatted as `<room_type>:<room_id>`.
+   * e.g: `notebook:notebook-id`
+   * @returns The Supabase realtime channel.
+   */
+  async getRealtimeChannel(channelName: string) {
+    const user = await this.getUser();
+    return this.supabaseClient.channel(channelName, {
+      config: {
+        private: true,
+        presence: {
+          key: user.id,
+        },
+      },
+    });
   }
 
   private async createSupabaseAuthHeaders() {

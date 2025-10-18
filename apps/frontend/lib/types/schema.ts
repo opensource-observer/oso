@@ -1046,6 +1046,12 @@ export const previewDeductCreditsArgsSchema = z.object({
 
 export const previewDeductCreditsReturnsSchema = z.boolean();
 
+export const uuidOrNullArgsSchema = z.object({
+  str: z.string(),
+});
+
+export const uuidOrNullReturnsSchema = z.string();
+
 export const validateOwnershipLimitsArgsSchema = z.object({
   p_current_record_id: z.string().optional(),
   p_new_role: z.string(),

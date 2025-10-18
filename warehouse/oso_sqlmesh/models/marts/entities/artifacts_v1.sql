@@ -3,7 +3,6 @@ MODEL (
   kind FULL,
   partitioned_by bucket(artifact_id, 256),
   tags (
-    'export',
     'index={"idx_artifact_id": ["artifact_id"], "idx_artifact_name": ["artifact_name"]}',
     'order_by=["artifact_id"]'
   ),
