@@ -86,51 +86,9 @@ export class InsufficientCreditsError extends Error {
   }
 }
 
-interface TransactionLogParams {
-  orgId: string;
-  userId: string;
-  amount: number;
-  transactionType: TransactionType;
-  apiEndpoint?: string;
-  metadata?: Record<string, any>;
-  error?: {
-    type: "insufficient_credits" | "transaction_failed";
-    details?: Record<string, any>;
-  };
-}
-
 export class CreditsService {
   static isAnonymousUser(user: OrgUser | User): user is AnonUser {
     return user.role === "anonymous";
-  }
-
-  private static async logTransaction(
-    client: SupabaseClient,
-    params: TransactionLogParams,
-  ): Promise<void> {
-    const {
-      orgId,
-      userId,
-      amount,
-      transactionType,
-      apiEndpoint,
-      metadata,
-      error,
-    } = params;
-
-    const finalMetadata = error
-      ? { error: error.type, ...error.details, ...metadata }
-      : metadata;
-
-    await client.from("organization_credit_transactions").insert({
-      org_id: orgId,
-      user_id: userId,
-      amount,
-      transaction_type: transactionType,
-      api_endpoint: apiEndpoint,
-      metadata: finalMetadata,
-      created_at: new Date().toISOString(),
-    });
   }
 
   private static async validateUserAccess(
@@ -457,8 +415,6 @@ export class CreditsService {
     orgId: string,
     transactionType: TransactionType,
     tracker: PostHogTracker,
-    apiEndpoint?: string,
-    metadata?: Record<string, any>,
   ): Promise<OrganizationPlan | null> {
     if (CreditsService.isAnonymousUser(user)) {
       return null;
@@ -485,22 +441,6 @@ export class CreditsService {
       );
 
       if (!deductionResult.success) {
-        await CreditsService.logTransaction(client, {
-          orgId,
-          userId: user.userId,
-          amount: -costPerCall,
-          transactionType,
-          apiEndpoint,
-          metadata,
-          error: {
-            type: "insufficient_credits",
-            details: {
-              attempted_amount: costPerCall,
-              current_balance: deductionResult.currentBalance,
-            },
-          },
-        });
-
         await CreditsService.handleInsufficientCredits(
           client,
           orgId,
@@ -509,32 +449,8 @@ export class CreditsService {
         );
       }
 
-      await CreditsService.logTransaction(client, {
-        orgId,
-        userId: user.userId,
-        amount: -costPerCall,
-        transactionType,
-        apiEndpoint,
-        metadata,
-      });
-
       return orgPlan;
     } catch (error) {
-      await CreditsService.logTransaction(client, {
-        orgId,
-        userId: user.userId,
-        amount: -costPerCall,
-        transactionType,
-        apiEndpoint,
-        metadata,
-        error: {
-          type: "transaction_failed",
-          details: {
-            sql_error: error instanceof Error ? error.message : String(error),
-          },
-        },
-      });
-
       logger.error("Exception in checkAndDeductOrganizationCredits:", error);
       throw error;
     }
