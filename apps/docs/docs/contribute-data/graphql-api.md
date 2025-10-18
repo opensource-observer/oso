@@ -253,7 +253,8 @@ structures (e.g., transactions → accounts → users), and DLT will intelligent
 combine them into a coherent dataset, only preserving the final leaf data from
 your dependency tree.
 
-:::note Naming Convention
+:::tip
+Column Name
 When loading data into the data warehouse (e.g., BigQuery), `dlt` automatically normalizes all field names to `snake_case`. This means that fields returned from the GraphQL API in `camelCase` (e.g., `fromAccount`) will be available in your SQL models as `snake_case` (e.g., `from_account`). Keep this in mind when writing downstream transformations.
 :::
 
