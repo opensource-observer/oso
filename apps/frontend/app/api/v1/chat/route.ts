@@ -62,8 +62,6 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
       org.id,
       TransactionType.CHAT_QUERY,
       tracker,
-      "/api/v1/chat",
-      { message: getLatestMessage(prompt.messages) },
     );
   } catch (error) {
     if (error instanceof InsufficientCreditsError) {

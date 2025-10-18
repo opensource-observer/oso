@@ -114,8 +114,6 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
       user.orgId,
       TransactionType.SQL_QUERY,
       tracker,
-      "/api/v1/sql",
-      { query },
     );
   } catch (error) {
     if (error instanceof InsufficientCreditsError) {

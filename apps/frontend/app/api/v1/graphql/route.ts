@@ -140,21 +140,11 @@ const customHandler = async (req: NextRequest) => {
   const requestClone = req.clone();
   const tracker = trackServerEvent(user);
 
-  let operation = "unknown";
   let query = "";
 
   try {
     const body = await requestClone.json();
     query = body.query || "";
-
-    // TODO(jabolo): Use a real parser to extract operation type and name
-    if (query.includes("query")) {
-      operation = "query";
-    } else if (query.includes("mutation")) {
-      operation = "mutation";
-    } else if (query.includes("subscription")) {
-      operation = "subscription";
-    }
   } catch (error) {
     logger.error("Error parsing GraphQL request body:", error);
   }
@@ -179,8 +169,6 @@ const customHandler = async (req: NextRequest) => {
       user.orgId,
       TransactionType.GRAPHQL_QUERY,
       tracker,
-      "/api/v1/graphql",
-      { operation, query },
     );
   } catch (error) {
     if (error instanceof InsufficientCreditsError) {

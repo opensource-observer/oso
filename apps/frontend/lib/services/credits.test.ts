@@ -165,7 +165,6 @@ describe("CreditsService", () => {
         TEST_ORG_ID,
         TransactionType.AGENT_QUERY,
         mockTracker,
-        "/api/test",
       );
 
       expect(result).toBeDefined();
@@ -178,18 +177,6 @@ describe("CreditsService", () => {
         .single();
 
       expect(credits?.credits_balance).toBe(100 - FREE_PLAN_COST);
-
-      const { data: transactions } = await adminSupabase
-        .from("organization_credit_transactions")
-        .select("*")
-        .eq("org_id", TEST_ORG_ID)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      expect(transactions?.[0]?.amount).toBe(-FREE_PLAN_COST);
-      expect(transactions?.[0]?.transaction_type).toBe(
-        TransactionType.AGENT_QUERY,
-      );
     });
 
     it("should throw InsufficientCreditsError when balance too low", async () => {
@@ -215,54 +202,10 @@ describe("CreditsService", () => {
           TEST_ORG_ID,
           TransactionType.AGENT_QUERY,
           mockTracker,
-          "/api/test",
         ),
       ).rejects.toThrow(InsufficientCreditsError);
 
       expect(mockTracker.track).toHaveBeenCalled();
-    });
-
-    it("should log failed transaction when insufficient credits", async () => {
-      await adminSupabase
-        .from("organization_credits")
-        .update({ credits_balance: 0 })
-        .eq("org_id", TEST_ORG_ID);
-
-      const user: OrgUser = {
-        userId: TEST_USER_ID,
-        role: "user",
-        orgId: TEST_ORG_ID,
-        orgName: "test",
-        orgRole: "admin",
-        name: "Test User",
-        keyName: "test-key",
-        host: null,
-      };
-
-      try {
-        await CreditsService.checkAndDeductOrganizationCredits(
-          user,
-          TEST_ORG_ID,
-          TransactionType.AGENT_QUERY,
-          mockTracker,
-          "/api/test",
-        );
-      } catch (err) {
-        void err;
-      }
-
-      const { data: transactions } = await adminSupabase
-        .from("organization_credit_transactions")
-        .select("*")
-        .eq("org_id", TEST_ORG_ID)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      expect(transactions).toHaveLength(1);
-      expect(transactions?.[0]?.amount).toBeLessThan(0);
-      expect(transactions?.[0]?.transaction_type).toBe(
-        TransactionType.AGENT_QUERY,
-      );
     });
 
     it("should return null for anonymous users", async () => {
@@ -273,7 +216,6 @@ describe("CreditsService", () => {
         TEST_ORG_ID,
         TransactionType.AGENT_QUERY,
         mockTracker,
-        "/api/test",
       );
 
       expect(result).toBeNull();
@@ -309,7 +251,6 @@ describe("CreditsService", () => {
         TEST_ORG_ID,
         TransactionType.AGENT_QUERY,
         mockTracker,
-        "/api/test",
       );
 
       const { data: credits } = await adminSupabase
@@ -367,7 +308,6 @@ describe("CreditsService", () => {
         TEST_ORG_ID,
         TransactionType.AGENT_QUERY,
         mockTracker,
-        "/api/test",
       );
 
       const { data: credits } = await adminSupabase
