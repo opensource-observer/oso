@@ -1,4 +1,3 @@
-
 import logging
 
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
@@ -9,13 +8,16 @@ from ..util.errors import AgentConfigError
 
 logger = logging.getLogger(__name__)
 
+
 def create_embedding(config: AgentConfig):
     """Setup the embedding model depending on the configuration"""
     match config.llm:
         case LocalLLMConfig(
             ollama_embedding=embedding, ollama_url=base_url, ollama_timeout=timeout
         ):
-            logger.info(f"Initializing Ollama embedding model {config.llm.ollama_model}")
+            logger.info(
+                f"Initializing Ollama embedding model {config.llm.ollama_model}"
+            )
             return OllamaEmbedding(
                 model_name=embedding,
                 base_url=base_url,
@@ -26,7 +28,10 @@ def create_embedding(config: AgentConfig):
             return GoogleGenAIEmbedding(
                 api_key=api_key,
                 model_name=embedding,
-                embed_batch_size=100,
+                embed_batch_size=30,
+                retries=10,
+                retry_min_seconds=30,
+                retry_max_seconds=300,
             )
         case _:
             raise AgentConfigError(f"Unsupported LLM type: {config.llm.type}")

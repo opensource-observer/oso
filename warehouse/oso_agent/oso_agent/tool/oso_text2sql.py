@@ -74,12 +74,27 @@ async def index_oso_tables(
     embed_model: BaseEmbedding,
     tables_to_index: dict[str, list[str]] | None = None,
     include_tables: list[str] | None = None,
+    insert_batch_size: int = 500,
+    show_progress: bool = False,
 ) -> VectorStoreIndex:
     """Index the given tables into a vector store index. Tables are separated by
     adding the table name to the metadata of the nodes.
 
     This is not intended to be run every time the agent runs. It should be
     called as a preprocessing step using the cli command `index-oso-tables`.
+
+    Args:
+        config: The agent configuration.
+        storage_context: The storage context to use for the index.
+        oso_client: The Oso client to use to access the database.
+        embed_model: The embedding model to use for the index.
+        tables_to_index: A mapping of table names to the list of columns to index.
+        include_tables: A list of tables to include in the OsoSqlDatabase.
+        insert_batch_size: The batch size to use when inserting nodes into the
+            vector store. For google's vector store, this should be less than
+            5000 though it seems that it's also about the file size of the resulant
+            embedding json. At this time, 500 seems to be a safe bet.
+        show_progress: Whether to show a progress bar when inserting nodes.
     """
 
     tables_to_index = tables_to_index or DEFAULT_TABLES_TO_INDEX
@@ -147,7 +162,8 @@ async def index_oso_tables(
             embed_model=embed_model,
             storage_context=storage_context,
             is_complete_overwrite=True,
-            insert_batch_size=100000,
+            insert_batch_size=insert_batch_size,
+            show_progress=show_progress,
         )
         return index
         # vector_store.add(nodes)
