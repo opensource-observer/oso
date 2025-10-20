@@ -46,8 +46,6 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
         orgId,
         TransactionType.AGENT_QUERY,
         tracker,
-        "/api/v1/chat/completions",
-        { message: getLatestMessage(body.messages) },
       );
     } catch (error) {
       if (error instanceof InsufficientCreditsError) {
