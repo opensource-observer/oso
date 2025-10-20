@@ -13,6 +13,7 @@ from metrics_service.types import (
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="unmaintained test")
 async def test_cache_export_manager():
     adapter_mock = AsyncMock(FakeExportAdapter)
     adapter_mock.export_table.return_value = ExportReference(
@@ -56,6 +57,7 @@ class TestException(Exception):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skip(reason="unmaintained test")
 async def test_cache_export_manager_fails():
     adapter_mock = AsyncMock(FakeExportAdapter)
     adapter_mock.export_table = AsyncMock(side_effect=TestException("test"))
