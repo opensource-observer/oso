@@ -475,7 +475,7 @@ export class CreditsService {
     logger.log(`Post-refill credits balance for org ${orgId}: ${credits}`);
 
     const orgPlan = await CreditsService.getOrganizationPlan(orgId);
-    const costPerCall = orgPlan?.price_per_credit || 1;
+    const costPerCall = orgPlan?.price_per_credit ?? 1;
 
     try {
       const deductionResult = await CreditsService.deductCreditsFromBalance(
