@@ -3,7 +3,6 @@ MODEL (
   kind FULL,
   partitioned_by bucket(artifact_id, 256),
   tags (
-    'export',
     'model_type=full',
     'model_category=metrics',
     'model_stage=mart',

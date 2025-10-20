@@ -1,5 +1,63 @@
 import { NextJsPlasmicComponentLoader } from "@plasmicapp/loader-nextjs";
 import { Skeleton, SkeletonMeta } from "@/components/ui/skeleton";
+import { Button, ButtonMeta } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+  BreadcrumbMeta,
+  BreadcrumbListMeta,
+  BreadcrumbItemMeta,
+  BreadcrumbLinkMeta,
+  BreadcrumbPageMeta,
+  BreadcrumbSeparatorMeta,
+  BreadcrumbEllipsisMeta,
+} from "@/components/ui/breadcrumb";
+import { Badge, BadgeMeta } from "@/components/ui/badge";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  AlertMeta,
+  AlertTitleMeta,
+  AlertDescriptionMeta,
+} from "@/components/ui/alert";
+import { Label, LabelMeta } from "@/components/ui/label";
+import { Separator, SeparatorMeta } from "@/components/ui/separator";
+import {
+  Command,
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+  CommandSeparator,
+  CommandMeta,
+  CommandDialogMeta,
+  CommandInputMeta,
+  CommandListMeta,
+  CommandEmptyMeta,
+  CommandGroupMeta,
+  CommandItemMeta,
+  CommandShortcutMeta,
+  CommandSeparatorMeta,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverAnchor,
+  PopoverMeta,
+  PopoverTriggerMeta,
+  PopoverContentMeta,
+  PopoverAnchorMeta,
+} from "@/components/ui/popover";
 import {
   Sidebar,
   SidebarContent,
@@ -203,6 +261,33 @@ import {
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
   PLASMIC.registerComponent(Skeleton, SkeletonMeta);
+  PLASMIC.registerComponent(Button, ButtonMeta);
+  PLASMIC.registerComponent(Breadcrumb, BreadcrumbMeta);
+  PLASMIC.registerComponent(BreadcrumbList, BreadcrumbListMeta);
+  PLASMIC.registerComponent(BreadcrumbItem, BreadcrumbItemMeta);
+  PLASMIC.registerComponent(BreadcrumbLink, BreadcrumbLinkMeta);
+  PLASMIC.registerComponent(BreadcrumbPage, BreadcrumbPageMeta);
+  PLASMIC.registerComponent(BreadcrumbSeparator, BreadcrumbSeparatorMeta);
+  PLASMIC.registerComponent(BreadcrumbEllipsis, BreadcrumbEllipsisMeta);
+  PLASMIC.registerComponent(Badge, BadgeMeta);
+  PLASMIC.registerComponent(Alert, AlertMeta);
+  PLASMIC.registerComponent(AlertTitle, AlertTitleMeta);
+  PLASMIC.registerComponent(AlertDescription, AlertDescriptionMeta);
+  PLASMIC.registerComponent(Label, LabelMeta);
+  PLASMIC.registerComponent(Separator, SeparatorMeta);
+  PLASMIC.registerComponent(Command, CommandMeta);
+  PLASMIC.registerComponent(CommandDialog, CommandDialogMeta);
+  PLASMIC.registerComponent(CommandInput, CommandInputMeta);
+  PLASMIC.registerComponent(CommandList, CommandListMeta);
+  PLASMIC.registerComponent(CommandEmpty, CommandEmptyMeta);
+  PLASMIC.registerComponent(CommandGroup, CommandGroupMeta);
+  PLASMIC.registerComponent(CommandItem, CommandItemMeta);
+  PLASMIC.registerComponent(CommandShortcut, CommandShortcutMeta);
+  PLASMIC.registerComponent(CommandSeparator, CommandSeparatorMeta);
+  PLASMIC.registerComponent(Popover, PopoverMeta);
+  PLASMIC.registerComponent(PopoverTrigger, PopoverTriggerMeta);
+  PLASMIC.registerComponent(PopoverContent, PopoverContentMeta);
+  PLASMIC.registerComponent(PopoverAnchor, PopoverAnchorMeta);
   PLASMIC.registerComponent(ToolTip, ToolTipMeta);
   PLASMIC.registerComponent(Sidebar, SidebarMeta);
   PLASMIC.registerComponent(SidebarProvider, SidebarProviderMeta);
