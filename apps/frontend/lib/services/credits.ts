@@ -14,6 +14,8 @@ type SupabaseClient = Awaited<ReturnType<typeof createAdminClient>>;
 export const PLAN_NAMES = ["FREE", "STARTER", "PRO", "ENTERPRISE"] as const;
 export type PlanName = (typeof PLAN_NAMES)[number];
 
+const DEFAULT_CREDIT_PRICE = 1;
+
 export enum TransactionType {
   SQL_QUERY = "sql_query",
   GRAPHQL_QUERY = "graphql_query",
@@ -239,7 +241,7 @@ export class CreditsService {
       const plan = orgData.pricing_plan;
 
       const nextRefillDate =
-        credits?.last_refill_at && plan?.refill_cycle_days
+        credits?.last_refill_at && plan.refill_cycle_days
           ? new Date(
               new Date(credits.last_refill_at).getTime() +
                 plan.refill_cycle_days * 24 * 60 * 60 * 1000,
@@ -248,7 +250,7 @@ export class CreditsService {
 
       const errorContext: CreditErrorContext = {
         orgName: orgData.org_name,
-        planName: plan?.plan_name || "UNKNOWN",
+        planName: plan.plan_name || "UNKNOWN",
         creditsBalance: credits?.credits_balance || 0,
         nextRefillDate,
         supportUrl: orgData.enterprise_support_url || undefined,
@@ -439,11 +441,6 @@ export class CreditsService {
       return null;
     }
 
-    if (!data?.pricing_plan) {
-      logger.error("Organization plan data is missing");
-      return null;
-    }
-
     return {
       org_id: data.id,
       org_name: data.org_name,
@@ -475,7 +472,7 @@ export class CreditsService {
     logger.log(`Post-refill credits balance for org ${orgId}: ${credits}`);
 
     const orgPlan = await CreditsService.getOrganizationPlan(orgId);
-    const costPerCall = orgPlan?.price_per_credit ?? 1;
+    const costPerCall = orgPlan?.price_per_credit ?? DEFAULT_CREDIT_PRICE;
 
     try {
       const deductionResult = await CreditsService.deductCreditsFromBalance(
