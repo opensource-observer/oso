@@ -20,16 +20,16 @@ worrying about pyright errors and it also makes it _very_ clear that
 you are using an internal dagster object/package/module/etc.
 """
 
-from dagster._core.definitions.asset_dep import (
-    CoercibleToAssetDep,  # pyright: ignore[reportPrivateImportUsage]
-)
 from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,  # pyright: ignore[reportPrivateImportUsage]
+)
+from dagster._core.definitions.assets.definition.asset_dep import (
+    CoercibleToAssetDep,  # pyright: ignore[reportPrivateImportUsage]
 )
 
 # This import is fragile but it can't be helped for the current typing.
 # Continuous deployment will have to save us here.
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     CacheableAssetsDefinition,  # pyright: ignore[reportPrivateImportUsage]
 )
 from dagster._core.definitions.unresolved_asset_job_definition import (

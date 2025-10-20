@@ -4,14 +4,15 @@ import logging
 import typing as t
 import uuid
 
-from llama_index.core.workflow import Event, StopEvent, Workflow, step
-from llama_index.core.workflow.decorators import StepConfig
-from llama_index.core.workflow.handler import WorkflowHandler
-from llama_index.core.workflow.workflow import WorkflowMeta
 from opentelemetry import trace
 from oso_agent.types.response import AnyResponse, ResponseType
 from oso_agent.workflows.common import GenericStartEvent
 from oso_agent.workflows.types import ExceptionEvent
+from workflows import Workflow, step
+from workflows.decorators import StepConfig
+from workflows.events import Event, StopEvent
+from workflows.handler import WorkflowHandler
+from workflows.workflow import WorkflowMeta
 
 from ..resources import ResourceDependency, ResourceResolver
 from ..types import ErrorResponse, WrappedResponse
