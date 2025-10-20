@@ -636,7 +636,7 @@ export const organizationsRowSchema = z.object({
   enterprise_support_url: z.string().nullable(),
   id: z.string(),
   org_name: z.string(),
-  plan_id: z.string().nullable(),
+  plan_id: z.string(),
   updated_at: z.string(),
 });
 
@@ -648,7 +648,7 @@ export const organizationsInsertSchema = z.object({
   enterprise_support_url: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string(),
-  plan_id: z.string().optional().nullable(),
+  plan_id: z.string().optional(),
   updated_at: z.string().optional(),
 });
 
@@ -660,7 +660,7 @@ export const organizationsUpdateSchema = z.object({
   enterprise_support_url: z.string().optional().nullable(),
   id: z.string().optional(),
   org_name: z.string().optional(),
-  plan_id: z.string().optional().nullable(),
+  plan_id: z.string().optional(),
   updated_at: z.string().optional(),
 });
 

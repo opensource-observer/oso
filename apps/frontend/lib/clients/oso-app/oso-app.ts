@@ -941,7 +941,7 @@ class OsoAppClient {
       : null;
     const cycleStartDate = lastRefill;
     const cycleEndDate =
-      lastRefill && plan?.refill_cycle_days
+      lastRefill && plan.refill_cycle_days
         ? new Date(
             lastRefill.getTime() + plan.refill_cycle_days * 24 * 60 * 60 * 1000,
           )
@@ -956,14 +956,14 @@ class OsoAppClient {
         )
       : 0;
 
-    const isEnterprise = plan?.plan_name === "ENTERPRISE";
-    const isFree = plan?.plan_name === "FREE";
+    const isEnterprise = plan.plan_name === "ENTERPRISE";
+    const isFree = plan.plan_name === "FREE";
     const isActive = true;
 
     const features = {
-      maxCreditsPerCycle: plan?.max_credits_per_cycle || 0,
-      refillCycleDays: plan?.refill_cycle_days || 0,
-      pricePerCredit: plan?.price_per_credit || 0,
+      maxCreditsPerCycle: plan.max_credits_per_cycle || 0,
+      refillCycleDays: plan.refill_cycle_days || 0,
+      pricePerCredit: plan.price_per_credit || 0,
       hasUnlimitedQueries: isEnterprise,
       hasPrioritySupport: isEnterprise,
       hasAdvancedAnalytics: isEnterprise,
@@ -975,14 +975,14 @@ class OsoAppClient {
     return {
       orgId: data.id,
       orgName: data.org_name,
-      planId: plan?.plan_id,
-      planName: plan?.plan_name,
+      planId: plan.plan_id,
+      planName: plan.plan_name,
       planDescription: undefined,
       tier: isEnterprise ? "enterprise" : isFree ? "free" : "unknown",
       creditsBalance: finalCreditsBalance,
-      maxCreditsPerCycle: plan?.max_credits_per_cycle || 0,
+      maxCreditsPerCycle: plan.max_credits_per_cycle || 0,
       billingCycle: {
-        cycleDays: plan?.refill_cycle_days || 0,
+        cycleDays: plan.refill_cycle_days || 0,
         cycleStartDate: cycleStartDate?.toISOString() || null,
         cycleEndDate: cycleEndDate?.toISOString() || null,
         daysUntilRefill,

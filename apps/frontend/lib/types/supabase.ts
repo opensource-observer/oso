@@ -596,7 +596,7 @@ export type Database = {
           enterprise_support_url: string | null;
           id: string;
           org_name: string;
-          plan_id: string | null;
+          plan_id: string;
           updated_at: string;
         };
         Insert: {
@@ -607,7 +607,7 @@ export type Database = {
           enterprise_support_url?: string | null;
           id?: string;
           org_name: string;
-          plan_id?: string | null;
+          plan_id?: string;
           updated_at?: string;
         };
         Update: {
@@ -618,7 +618,7 @@ export type Database = {
           enterprise_support_url?: string | null;
           id?: string;
           org_name?: string;
-          plan_id?: string | null;
+          plan_id?: string;
           updated_at?: string;
         };
         Relationships: [
