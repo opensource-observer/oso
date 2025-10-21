@@ -3,6 +3,7 @@ A simple heartbeat resource to indicate liveness of Dagster jobs.
 """
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timezone
 
@@ -10,6 +11,8 @@ import aiofiles
 import dagster as dg
 from pydantic import Field
 from redis.asyncio import Redis
+
+logger = logging.getLogger(__name__)
 
 
 class HeartBeatResource(dg.ConfigurableResource):
@@ -20,13 +23,24 @@ class HeartBeatResource(dg.ConfigurableResource):
         raise NotImplementedError()
 
     @asynccontextmanager
-    async def heartbeat(self, job_name: str, interval_seconds: int = 120):
+    async def heartbeat(
+        self,
+        job_name: str,
+        interval_seconds: int = 120,
+        log_override: logging.Logger | None = None,
+    ):
         """
         asynchronously run a heartbeat that updates every `interval_seconds`
         """
 
+        log_override = log_override or logger
+
         async def _beat_loop():
+            log_override.info(
+                f"Starting heartbeat for job {job_name} every {interval_seconds} seconds"
+            )
             while True:
+                log_override.info(f"Beating heartbeat for job {job_name}")
                 await self.beat(job_name)
                 await asyncio.sleep(interval_seconds)
 

@@ -236,7 +236,7 @@ def sqlmesh_factory(
             if "trino" in global_config.sqlmesh_gateway:
                 # Start a heartbeat to indicate that sqlmesh is running
                 async with heartbeat.heartbeat(
-                    job_name="sqlmesh", interval_seconds=300
+                    job_name="sqlmesh", interval_seconds=300, log_override=context.log
                 ):
                     async with multiple_async_contexts(
                         trino=trino.ensure_available(log_override=context.log),
