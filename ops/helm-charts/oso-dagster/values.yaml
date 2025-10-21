@@ -29,6 +29,11 @@ osoDagster:
 global:
   dagsterInternalName: "dagster"
 
+redis:
+  host: ""
+  port: 6379
+  ttlSeconds: 3600
+
 configMap:
   name: "dagster-extra-env-config-map"
   secretPrefix: "gcp:secretmanager:dagster"
@@ -53,8 +58,6 @@ pg:
   host: "127.0.0.1"
 alerts:
   baseUrl: ""
-cache:
-  uri: ""
 sqlmesh:
   gateway: ""
   trino:

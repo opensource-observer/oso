@@ -26,8 +26,10 @@ spec:
       secretPrefix: "gcp:secretmanager:production-dagster"
     alerts:
       baseUrl: "https://dagster.oso.xyz"
-    cache:
-      uri: "redis://redis.production-redis.svc.cluster.local:6379?ttl=3600"
+    redis:
+      host: "redis.production-redis.svc.cluster.local"
+      port: 6379
+      ttlSeconds: 3600
     dagster:
       global:
         serviceAccountName: production-dagster
@@ -87,7 +89,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20251021180515-8169fa8 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20251021225719-18b06bb # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -102,7 +104,7 @@ spec:
           - name: "dynamic"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20251021180515-8169fa8 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20251021225719-18b06bb # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
