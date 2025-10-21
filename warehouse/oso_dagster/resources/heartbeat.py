@@ -4,6 +4,7 @@ A simple heartbeat resource to indicate liveness of Dagster jobs.
 
 import asyncio
 import logging
+import typing as t
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timezone
 
@@ -57,19 +58,27 @@ class RedisHeartBeatResource(HeartBeatResource):
     host: str = Field(description="Redis host for heartbeat storage.")
     port: int = Field(default=6379, description="Redis port for heartbeat storage.")
 
+    @asynccontextmanager
+    async def redis_client(self) -> t.AsyncIterator[Redis]:
+        client = Redis(host=self.host, port=self.port)
+        try:
+            yield client
+        finally:
+            await client.aclose()
+
     async def get_last_heartbeat_for(self, job_name: str) -> datetime | None:
-        redis_client = Redis(host=self.host, port=self.port, decode_responses=True)
-        timestamp = await redis_client.get(f"heartbeat:{job_name}")
-        if isinstance(timestamp, str):
-            return datetime.fromisoformat(timestamp)
-        else:
-            return None
+        async with self.redis_client() as redis_client:
+            timestamp = await redis_client.get(f"heartbeat:{job_name}")
+            if isinstance(timestamp, str):
+                return datetime.fromisoformat(timestamp)
+            else:
+                return None
 
     async def beat(self, job_name: str) -> None:
-        redis_client = Redis(host=self.host, port=self.port, decode_responses=True)
-        await redis_client.set(
-            f"heartbeat:{job_name}", datetime.now(timezone.utc).isoformat()
-        )
+        async with self.redis_client() as redis_client:
+            await redis_client.set(
+                f"heartbeat:{job_name}", datetime.now(timezone.utc).isoformat()
+            )
 
 
 class FilebasedHeartBeatResource(HeartBeatResource):
