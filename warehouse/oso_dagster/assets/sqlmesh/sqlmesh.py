@@ -285,6 +285,7 @@ def sqlmesh_factory(
         return AssetFactoryResponse(
             assets=[sqlmesh_project],
             jobs=[
+                sqlmesh_heartbeat_monitor_job,
                 define_asset_job(
                     name="sqlmesh_all_assets",
                     selection=all_assets_selection,
