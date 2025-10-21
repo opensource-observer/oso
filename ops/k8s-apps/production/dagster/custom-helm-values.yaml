@@ -26,8 +26,10 @@ spec:
       secretPrefix: "gcp:secretmanager:production-dagster"
     alerts:
       baseUrl: "https://dagster.oso.xyz"
-    cache:
-      uri: "redis://redis.production-redis.svc.cluster.local:6379?ttl=3600"
+    redis:
+      host: "redis.production-redis.svc.cluster.local"
+      port: 6379
+      ttlSeconds: 3600
     dagster:
       global:
         serviceAccountName: production-dagster
