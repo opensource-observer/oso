@@ -257,9 +257,21 @@ import {
   CardDescriptionMeta,
   CardContentMeta,
 } from "@/components/ui/card";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarFallbackMeta,
+  AvatarImage,
+  AvatarImageMeta,
+  AvatarMeta,
+} from "@/components/ui/avatar";
+
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
+  PLASMIC.registerComponent(Avatar, AvatarMeta);
+  PLASMIC.registerComponent(AvatarImage, AvatarImageMeta);
+  PLASMIC.registerComponent(AvatarFallback, AvatarFallbackMeta);
   PLASMIC.registerComponent(Skeleton, SkeletonMeta);
   PLASMIC.registerComponent(Button, ButtonMeta);
   PLASMIC.registerComponent(Breadcrumb, BreadcrumbMeta);
