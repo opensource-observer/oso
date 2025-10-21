@@ -65,8 +65,8 @@ spec:
     worker:
       resources:
         requests:
-          cpu: 78000m
-          memory: 1700Gi
+          cpu: 63000m
+          memory: 409Gi
       tolerations:
         - key: pool_type
           operator: Equal
@@ -76,9 +76,9 @@ spec:
         pool_type: trino-worker
       config:
         query:
-          maxMemoryPerNode: 700GB
+          maxMemoryPerNode: 125GB
       jvm:
-        maxHeapSize: "1500G"
+        maxHeapSize: "330G"
       additionalJVMConfig:
         - "--add-opens=java.base/java.nio=ALL-UNNAMED"
 
@@ -105,7 +105,7 @@ spec:
         baseDir: gs://oso-iceberg-exchange-usc1/trino-exchange
       config:
         query:
-          maxMemory: "7000GB"
+          maxMemory: "500GB"
       workers: 1
       autoscaling:
         enabled: true
