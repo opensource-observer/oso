@@ -64,9 +64,7 @@ CREATE TABLE IF NOT EXISTS "public"."model_revision_snapshot" (
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE
 
-  PRIMARY KEY ("id"),
-  FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE
-)
+);
 
 
 -- Patches represent a delta from a previous snapshot or patch. Each patch is
@@ -94,7 +92,7 @@ CREATE TABLE IF NOT EXISTS "public"."model_revision_patch" (
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
   FOREIGN KEY ("revision_base_id") REFERENCES "public"."model_revision_snapshot"("id") ON DELETE CASCADE,
   FOREIGN KEY ("previous_patch") REFERENCES "public"."model_revision_patch"("id") ON DELETE CASCADE
-)
+);
 
 
 -- A specific release of a model. This means that the model will be materialized
