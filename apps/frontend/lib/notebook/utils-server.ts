@@ -4,6 +4,8 @@ import puppeteer, { Browser } from "puppeteer-core";
 import chromium from "@sparticuz/chromium-min";
 import { NODE_ENV, PUPPETEER_CHROMIUM_PATH } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { gunzipSync } from "zlib";
 
 export async function tryGenerateNotebookHtml(url: string) {
   const browser = await createBrowserInstance();
@@ -89,6 +91,56 @@ async function generateNotebookHtml(browser: Browser, url: string) {
       </style>
       ${body}
     `;
+}
+
+export async function getPublishedNotebookByNames(
+  orgName: string,
+  notebookName: string,
+) {
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .from("published_notebooks")
+    .select(
+      `
+        *,
+        notebooks!inner (
+          notebook_name,
+          organizations!inner (
+            org_name
+          )
+        )
+      `,
+    )
+    .eq("notebooks.notebook_name", notebookName)
+    .eq("notebooks.organizations.org_name", orgName)
+    .is("deleted_at", null)
+    .is("notebooks.deleted_at", null)
+    .single();
+
+  if (error) {
+    if (error.code !== "PGRST116") {
+      logger.error(error);
+    }
+    return undefined;
+  }
+
+  const { notebooks: _, ...publishedNotebookData } = data;
+
+  const { data: blob, error: downloadError } = await supabaseAdmin.storage
+    .from("published-notebooks")
+    .download(data.data_path);
+
+  if (downloadError) {
+    logger.error(downloadError);
+    return undefined;
+  }
+
+  const html = gunzipSync(await blob.bytes()).toString();
+
+  return {
+    ...publishedNotebookData,
+    html: html.toString(),
+  };
 }
 
 async function createBrowserInstance() {
