@@ -32,10 +32,9 @@ CREATE TABLE IF NOT EXISTS "public"."model" {
 }
 
 -- Model code is stored separately to track changing code independent of
--- configuration and vice versa. Additionally, code is immutable once created to
--- ensure version history integrity.
-
--- In order to reduce storage, clean up should happen periodically to remove old
+-- configuration and schema. Each code blob is immutable once created. 
+--
+-- In order to reduce storage, clean up should happen periodically to remove
 -- anything that no longer has a reference from model_revision. The hash can
 -- also be used to deduplicate code blobs if needed.
 CREATE TABLE IF NOT EXISTS "public"."model_code" (
@@ -49,6 +48,37 @@ CREATE TABLE IF NOT EXISTS "public"."model_code" (
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE
 )
 
+-- Model schema is stored separately to track changing schema independent of
+-- code and configuration. Each schema is immutable once created.
+--
+-- For non-sql models, it would be a requirement that the user _must_ provide
+-- the schema definition. For SQL models, we should be able to autogenerate this
+-- based on a model's dependencies.
+CREATE TABLE IF NOT EXISTS "public"."model_schema" (
+  "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
+  "org_id" uuid NOT NULL,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "schema" jsonb NOT NULL,
+  PRIMARY KEY ("id"),
+  FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE
+)
+
+CREATE TYPE model_dependency_type AS (
+  model_id uuid,
+  alias text
+)
+
+-- Model dependency list to track dependencies that are either explicitly defined
+-- in code or implicitly defined via analysis of code. This is separate from
+-- model_code to allow us to track dependencies over time as code changes.
+CREATE TABLE IF NOT EXISTS "public"."model_dependencies" (
+  "model_id" uuid NOT NULL,
+  "dependencies" model_dependency_type[] NOT NULL,
+  FOREIGN KEY ("model_id") REFERENCES "public"."model"("id") ON DELETE CASCADE
+);
+
+-- Model configuration is stored separately to track changing configuration
+-- independent of code and schema. Each configuration is immutable once created.
 CREATE TABLE IF NOT EXISTS "public"."model_config" (
   "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
   "org_id" uuid NOT NULL,
@@ -56,10 +86,15 @@ CREATE TABLE IF NOT EXISTS "public"."model_config" (
   "description" text,
   "type" text NOT NULL, -- e.g. ("incremental_by_time_range", "full", etc)
   "config" jsonb NOT NULL,
+  "cron" text NOT NULL, -- cron string (start with just @daily, @monthly, etc)
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE
 );
 
+-- Model revision tracks a specific revision of a model. Each time a model is
+-- updated (code, config, schema, or dependencies), a new revision is created.
+-- Each row is immutable once created, this allows us to track history of a
+-- model over time. 
 CREATE TABLE IF NOT EXISTS "public"."model_revision" (
   "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
   "org_id" uuid NOT NULL,
@@ -69,15 +104,20 @@ CREATE TABLE IF NOT EXISTS "public"."model_revision" (
   -- is a revision history.
   "revision_number" integer NOT NULL,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-  "code" uuid NOT NULL,
-  "config" uuid NOT NULL,
+  "code_id" uuid NOT NULL,
+  "config_id" uuid NOT NULL,
+  "schema_id" uuid NOT NULL,
 
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
-  FOREIGN KEY ("code") REFERENCES "public"."model_code"("id") ON DELETE CASCADE
-  FOREIGN KEY ("config") REFERENCES "public"."model_config"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("model_id") REFERENCES "public"."model"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("code_id") REFERENCES "public"."model_code"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("schema_id") REFERENCES "public"."model_schema"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("config_id") REFERENCES "public"."model_config"("id") ON DELETE CASCADE,
 );
 
+-- A specific release of a model. This means that the model will be materialized
+-- using this revision of the model.
 CREATE TABLE IF NOT EXISTS "public"."model_release" (
   "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
   "org_id" uuid NOT NULL,
@@ -85,8 +125,8 @@ CREATE TABLE IF NOT EXISTS "public"."model_release" (
   "model_revision_id" uuid NOT NULL,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
 
-  -- The semver string should be calculated by our application layer. It is
-  -- stored here for us to easily query and display.
+  -- The semver string should be calculated by our application layer. We can
+  -- calculate whether the change is breaking
   "semver" text NOT NULL,
 
   PRIMARY KEY ("id"),
@@ -94,3 +134,25 @@ CREATE TABLE IF NOT EXISTS "public"."model_release" (
   FOREIGN KEY ("model_id") REFERENCES "public"."model"("id") ON DELETE CASCADE,
   FOREIGN KEY ("model_revision_id") REFERENCES "public"."model_revision"("id") ON DELETE CASCADE,
 );
+
+-- A specific run of a model. Each time a model is materialized, a new run is
+-- created. This allows us to track history of model runs over time. We should
+-- only keep X number of runs in history.
+CREATE TABLE IF NOT EXISTS "public"."model_run" (
+  "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
+  "org_id" uuid NOT NULL,
+  "model_release_id" uuid NOT NULL,
+  "started_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "completed_at" timestamp with time zone,
+  "status" text NOT NULL DEFAULT 'running',
+  "log" text,
+  PRIMARY KEY ("id"),
+  FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("model_release_id") REFERENCES "public"."model_release"("id") ON DELETE CASCADE,
+  CONSTRAINT "valid_status" CHECK (status IN ('running', 'completed', 'failed', 'canceled'))
+)
+
+-- Model dependency graph. This is used to track the graph of model dependencies
+-- of _released_ models This graph is mutable but doesn't need to be perfectly
+-- up to date at every moment. This is specifically for scheduling purposes to
+-- be able to notify datasets when upstream models change.
