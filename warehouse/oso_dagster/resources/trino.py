@@ -133,7 +133,7 @@ class TrinoK8sResource(TrinoResource):
     )
 
     connect_timeout: int = Field(
-        default=240,
+        default=600,
         description="Timeout in seconds for waiting for the service to be online",
     )
 
@@ -203,6 +203,8 @@ class TrinoK8sResource(TrinoResource):
                     timeout=self.connect_timeout,
                     method="POST",
                     data="SELECT 1",
+                    # The user is required but can be anything
+                    headers={"X-Trino-User": "dagster-status-check"},
                 )
                 yield
 
