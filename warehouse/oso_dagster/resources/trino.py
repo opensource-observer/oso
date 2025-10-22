@@ -46,6 +46,10 @@ class TrinoResource(ConfigurableResource):
             "ensure_available not implemented on the base TrinoResource"
         )
 
+    async def ensure_shutdown(self):
+        """Ensures that any resources started by the resource are properly shutdown."""
+        pass
+
 
 class TrinoK8sResource(TrinoResource):
     """Resource for interacting with Trino deployed on kubernetes. By default
@@ -129,7 +133,7 @@ class TrinoK8sResource(TrinoResource):
     )
 
     connect_timeout: int = Field(
-        default=240,
+        default=600,
         description="Timeout in seconds for waiting for the service to be online",
     )
 
@@ -190,13 +194,33 @@ class TrinoK8sResource(TrinoResource):
                 self.service_port_name,
                 use_port_forward=self.use_port_forward,
             ) as (host, port):
-                # see: https://github.com/trinodb/trino/issues/14663
-                health_check_url = f"http://{host}:{port}/v1/status"
+                health_check_url = f"http://{host}:{port}/v1/statement"
 
                 logger.info(f"Wait for trino to be online at {health_check_url}")
-                # Wait for the status endpoint to return 200
-                # await wait_for_ok_async(health_check_url, timeout=self.connect_timeout)
+                # Wait for trino to be online with a simple `SELECT 1` query
+                await wait_for_ok_async(
+                    health_check_url,
+                    timeout=self.connect_timeout,
+                    method="POST",
+                    data="SELECT 1",
+                    # The user is required but can be anything
+                    headers={"X-Trino-User": "dagster-status-check"},
+                )
                 yield
+
+    async def ensure_shutdown(self):
+        """Ensures that trino deployments are scaled down to zero."""
+
+        await self.k8s.ensure_deployment_scale_down(
+            name=self.coordinator_deployment_name,
+            namespace=self.namespace,
+            max_replicas=0,
+        )
+        await self.k8s.ensure_deployment_scale_down(
+            name=self.worker_deployment_name,
+            namespace=self.namespace,
+            max_replicas=0,
+        )
 
 
 class TrinoRemoteResource(TrinoResource):

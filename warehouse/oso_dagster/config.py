@@ -67,6 +67,10 @@ class DagsterConfig(BaseSettings):
     # HTTP Caching used with the github repository resolver. This is a uri
     http_cache: t.Optional[str] = None
 
+    redis_host: t.Optional[str] = None
+    redis_port: int = 6379
+    redis_ttl_seconds: int = 3600
+
     gcp_impersonate_service_account: str = ""
 
     verbose_logs: bool = False
@@ -81,6 +85,10 @@ class DagsterConfig(BaseSettings):
     sqlmesh_catalog: str = "iceberg"
     sqlmesh_schema: str = "oso"
     sqlmesh_bq_export_dataset_id: str = "oso"
+
+    # How long to keep trino clusters alive without heartbeats
+    sqlmesh_trino_ttl_minutes: int = 30
+
     asset_cache_enabled: bool = False
     asset_cache_dir: str = ""
     asset_cache_default_ttl_seconds: int = 60 * 15
@@ -130,6 +138,9 @@ class DagsterConfig(BaseSettings):
             self.local_duckdb_path = os.path.join(self.dagster_home, "local.duckdb")
         if not self.sqlmesh_dir:
             self.sqlmesh_dir = os.path.join(self.repo_dir, "warehouse/oso_sqlmesh")
+
+        if not self.http_cache and self.redis_host:
+            self.http_cache = f"redis://{self.redis_host}:{self.redis_port}/?ttl={self.redis_ttl_seconds}"
 
         # If we happen to be in a kubernetes environment, k8s_enabled enables the
         # K8sResource to control k8s resources
