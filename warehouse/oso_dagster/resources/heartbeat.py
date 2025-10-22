@@ -69,13 +69,17 @@ class RedisHeartBeatResource(HeartBeatResource):
     async def get_last_heartbeat_for(self, job_name: str) -> datetime | None:
         async with self.redis_client() as redis_client:
             timestamp = await redis_client.get(f"heartbeat:{job_name}")
+            logger.info(f"Fetched heartbeat for job {job_name}: {timestamp}")
             if isinstance(timestamp, str):
                 return datetime.fromisoformat(timestamp)
+            elif isinstance(timestamp, bytes):
+                return datetime.fromisoformat(timestamp.decode("utf-8"))
             else:
                 return None
 
     async def beat(self, job_name: str) -> None:
         async with self.redis_client() as redis_client:
+            logger.info(f"Setting heartbeat for job {job_name}")
             await redis_client.set(
                 f"heartbeat:{job_name}", datetime.now(timezone.utc).isoformat()
             )
