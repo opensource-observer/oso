@@ -3,7 +3,10 @@ Mostly testing job for debugging heartbeat resource implementations.
 """
 
 import dagster as dg
-from oso_dagster.factories.common import AssetFactoryResponse
+from oso_dagster.factories.common import (
+    AssetFactoryResponse,
+    early_resources_asset_factory,
+)
 from oso_dagster.resources.heartbeat import HeartBeatResource
 
 
@@ -11,6 +14,7 @@ class HeartbeatConfig(dg.Config):
     job_name: str
 
 
+@early_resources_asset_factory()
 def heartbeat_factory() -> AssetFactoryResponse:
     @dg.op
     async def heartbeat_fake_beat(
