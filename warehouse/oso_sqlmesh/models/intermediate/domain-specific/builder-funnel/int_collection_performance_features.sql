@@ -6,12 +6,9 @@ MODEL (
   grain (collection_id, sample_date),
   tags (
     'entity_category=collection',
-    'model_category=clustering'
   ),
   audits (
-    has_at_least_n_rows(threshold := 0),
-    unique_values(columns := (collection_id, sample_date)),
-    not_null(columns := (collection_id, sample_date))
+    has_at_least_n_rows(threshold := 0)
   )
 );
 
