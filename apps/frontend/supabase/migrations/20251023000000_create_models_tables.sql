@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS "public"."model_run" (
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
   FOREIGN KEY ("model_release_id") REFERENCES "public"."model_release"("id") ON DELETE CASCADE,
   CONSTRAINT "valid_status" CHECK (status IN ('running', 'completed', 'failed', 'canceled'))
-)
+);
 
 -- Model dependency graph. This is used to track the graph of model dependencies
 -- of _released_ models This graph is mutable but doesn't need to be perfectly
