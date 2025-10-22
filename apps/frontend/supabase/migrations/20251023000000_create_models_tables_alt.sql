@@ -68,6 +68,9 @@ CREATE TABLE IF NOT EXISTS "public"."model_revision_snapshot" (
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE
 )
 
+
+-- Patches represent a delta from a previous snapshot or patch. Each patch is
+-- applied in order to reconstruct the full model definition.
 CREATE TABLE IF NOT EXISTS "public"."model_revision_patch" (
   "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
   "org_id" uuid NOT NULL,
@@ -76,12 +79,17 @@ CREATE TABLE IF NOT EXISTS "public"."model_revision_patch" (
   "previous_patch" uuid NOT NULL,
   "hash" text NOT NULL,
   "language" text,
+  "description" text,
+  "type" text, -- e.g. ("incremental_by_time_range", "full
   "cron" text,
   "code_patch" text,
   "schema_patch" json_patch,
   "config_patch" json_patch,
   "added_dependencies" model_dependency_type[],
   "removed_dependencies" model_dependency_type[],
+  -- Optional message describing the reason for the change this is useful for
+  -- tracking undo/redo operations.
+  "system_message" text,
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE
   FOREIGN KEY ("revision_base_id") REFERENCES "public"."model_revision_snapshot"("id") ON DELETE CASCADE
@@ -110,7 +118,8 @@ CREATE TABLE IF NOT EXISTS "public"."model_release" (
 
 -- A specific run of a model. Each time a model is materialized, a new run is
 -- created. This allows us to track history of model runs over time. We should
--- only keep X number of runs in history.
+-- only keep X number of runs in history which is probably decided by billing
+-- tier.
 CREATE TABLE IF NOT EXISTS "public"."model_run" (
   "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
   "org_id" uuid NOT NULL,
