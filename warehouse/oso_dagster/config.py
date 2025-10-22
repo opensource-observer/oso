@@ -85,6 +85,10 @@ class DagsterConfig(BaseSettings):
     sqlmesh_catalog: str = "iceberg"
     sqlmesh_schema: str = "oso"
     sqlmesh_bq_export_dataset_id: str = "oso"
+
+    # How long to keep trino clusters alive without heartbeats
+    sqlmesh_trino_ttl_minutes: int = 30
+
     asset_cache_enabled: bool = False
     asset_cache_dir: str = ""
     asset_cache_default_ttl_seconds: int = 60 * 15
