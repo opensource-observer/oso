@@ -72,6 +72,8 @@ class RedisHeartBeatResource(HeartBeatResource):
             logger.info(f"Fetched heartbeat for job {job_name}: {timestamp}")
             if isinstance(timestamp, str):
                 return datetime.fromisoformat(timestamp)
+            elif isinstance(timestamp, bytes):
+                return datetime.fromisoformat(timestamp.decode("utf-8"))
             else:
                 return None
 
