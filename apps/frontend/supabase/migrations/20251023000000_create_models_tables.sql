@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS "public"."dataset" (
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
   UNIQUE ("org_id", "name", "deleted_at")
-)
+);
 
 -- Model table is just a high level reference to a model. Each row is mutable
 CREATE TABLE IF NOT EXISTS "public"."model" {
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS "public"."model_schema" (
 CREATE TYPE model_dependency_type AS (
   model_id uuid,
   alias text
-)
+);
 
 -- Model dependency list to track dependencies that are either explicitly defined
 -- in code or implicitly defined via analysis of code. This is separate from
