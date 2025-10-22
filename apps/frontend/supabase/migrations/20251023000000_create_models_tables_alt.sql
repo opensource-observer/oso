@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS "public"."dataset" (
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
   UNIQUE ("org_id", "name", "deleted_at")
-)
+);
 
 -- Model table is just a high level reference to a model. Each row is mutable
 CREATE TABLE IF NOT EXISTS "public"."model" {
