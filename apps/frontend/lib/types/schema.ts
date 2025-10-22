@@ -236,36 +236,6 @@ export const connectorRelationshipsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const creditTransactionsRowSchema = z.object({
-  amount: z.number(),
-  api_endpoint: z.string().nullable(),
-  created_at: z.string(),
-  id: z.string(),
-  metadata: jsonSchema.nullable(),
-  transaction_type: z.string(),
-  user_id: z.string(),
-});
-
-export const creditTransactionsInsertSchema = z.object({
-  amount: z.number(),
-  api_endpoint: z.string().optional().nullable(),
-  created_at: z.string().optional(),
-  id: z.string().optional(),
-  metadata: jsonSchema.optional().nullable(),
-  transaction_type: z.string(),
-  user_id: z.string(),
-});
-
-export const creditTransactionsUpdateSchema = z.object({
-  amount: z.number().optional(),
-  api_endpoint: z.string().optional().nullable(),
-  created_at: z.string().optional(),
-  id: z.string().optional(),
-  metadata: jsonSchema.optional().nullable(),
-  transaction_type: z.string().optional(),
-  user_id: z.string().optional(),
-});
-
 export const dynamicColumnContextsRowSchema = z.object({
   column_name: z.string(),
   data_type: z.string(),
@@ -713,6 +683,46 @@ export const pricingPlanUpdateSchema = z.object({
   refill_cycle_days: z.number().optional().nullable(),
   updated_at: z.string().optional(),
 });
+
+export const publishedNotebooksRowSchema = z.object({
+  created_at: z.string(),
+  data_path: z.string(),
+  deleted_at: z.string().nullable(),
+  id: z.string(),
+  notebook_id: z.string(),
+  updated_at: z.string(),
+  updated_by: z.string().nullable(),
+});
+
+export const publishedNotebooksInsertSchema = z.object({
+  created_at: z.string().optional(),
+  data_path: z.string(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  notebook_id: z.string(),
+  updated_at: z.string().optional(),
+  updated_by: z.string().optional().nullable(),
+});
+
+export const publishedNotebooksUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  data_path: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  notebook_id: z.string().optional(),
+  updated_at: z.string().optional(),
+  updated_by: z.string().optional().nullable(),
+});
+
+export const publishedNotebooksRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("published_notebooks_notebook_id_fkey"),
+    columns: z.tuple([z.literal("notebook_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("notebooks"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
 
 export const purchaseIntentsRowSchema = z.object({
   completed_at: z.string().nullable(),

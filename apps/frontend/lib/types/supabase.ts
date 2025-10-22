@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.0.2 (a4e00ff)";
-  };
   public: {
     Tables: {
       admin_users: {
@@ -210,36 +205,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
-      };
-      credit_transactions: {
-        Row: {
-          amount: number;
-          api_endpoint: string | null;
-          created_at: string;
-          id: string;
-          metadata: Json | null;
-          transaction_type: string;
-          user_id: string;
-        };
-        Insert: {
-          amount: number;
-          api_endpoint?: string | null;
-          created_at?: string;
-          id?: string;
-          metadata?: Json | null;
-          transaction_type: string;
-          user_id: string;
-        };
-        Update: {
-          amount?: number;
-          api_endpoint?: string | null;
-          created_at?: string;
-          id?: string;
-          metadata?: Json | null;
-          transaction_type?: string;
-          user_id?: string;
-        };
-        Relationships: [];
       };
       dynamic_column_contexts: {
         Row: {
@@ -670,6 +635,44 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      published_notebooks: {
+        Row: {
+          created_at: string;
+          data_path: string;
+          deleted_at: string | null;
+          id: string;
+          notebook_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          data_path: string;
+          deleted_at?: string | null;
+          id?: string;
+          notebook_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          data_path?: string;
+          deleted_at?: string | null;
+          id?: string;
+          notebook_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "published_notebooks_notebook_id_fkey";
+            columns: ["notebook_id"];
+            isOneToOne: false;
+            referencedRelation: "notebooks";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       purchase_intents: {
         Row: {
