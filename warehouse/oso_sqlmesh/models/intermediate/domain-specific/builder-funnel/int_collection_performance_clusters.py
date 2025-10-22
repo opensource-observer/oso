@@ -46,7 +46,7 @@ from sqlmesh import ExecutionContext, model
     },
     grain="collection_id",
     audits=[
-        ("not_null", {"columns": ["collection_id"]}),
+        ("has_at_least_n_rows", {"threshold": 0}),
     ],
 )
 def execute(

@@ -6,7 +6,6 @@ MODEL (
   grain (segment),
   tags (
     'entity_category=collection',
-    'model_category=analysis'
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
