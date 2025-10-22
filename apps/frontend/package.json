@@ -49,6 +49,7 @@
     "@opensource-observer/utils": "workspace:*",
     "@plasmicapp/loader-nextjs": "^1.0.435",
     "@posthog/nextjs-config": "^1.2.0",
+    "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-context-menu": "^2.2.16",
     "@radix-ui/react-dialog": "^1.1.15",
