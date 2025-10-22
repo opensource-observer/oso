@@ -127,23 +127,6 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
 
     const invitationId = uuid4();
 
-    try {
-      await sendInvitationEmail({
-        to: normalizedEmail,
-        orgName: org.org_name,
-        inviteToken: invitationId,
-        inviterName: userProfile.full_name || userProfile.email || "Someone",
-      });
-    } catch (emailError) {
-      logger.error("Failed to send invitation email:", emailError);
-      return NextResponse.json(
-        {
-          error: "Failed to send invitation email",
-        },
-        { status: 500 },
-      );
-    }
-
     const { data: invitation, error } = await supabase
       .from("invitations")
       .insert({
@@ -159,6 +142,23 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     if (error) {
       logger.error("Database error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    try {
+      await sendInvitationEmail({
+        to: normalizedEmail,
+        orgName: org.org_name,
+        inviteToken: invitationId,
+        inviterName: userProfile.full_name || userProfile.email || "Someone",
+      });
+    } catch (emailError) {
+      logger.error("Failed to send invitation email:", emailError);
+      return NextResponse.json(
+        {
+          error: "Failed to send invitation email",
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
