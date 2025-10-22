@@ -284,7 +284,9 @@ def sqlmesh_factory(
             else:
                 context.log.info("Heartbeat detected for sqlmesh. No action needed.")
 
-        @dg.job()
+        # Use the in-process executor for the heartbeat monitor job to avoid
+        # the overhead of spinning up a new k8s pod in addition to the run launcher
+        @dg.job(executor_def=dg.in_process_executor)
         def sqlmesh_heartbeat_monitor_job():
             sqlmesh_heartbeat_checker()
 

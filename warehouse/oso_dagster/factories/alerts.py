@@ -1,19 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Mapping
 
-from dagster import (
-    DefaultSensorStatus,
-    MultiAssetSensorEvaluationContext,
-    OpExecutionContext,
-    RunConfig,
-    RunFailureSensorContext,
-    RunRequest,
-    SkipReason,
-    job,
-    multi_asset_sensor,
-    op,
-    run_failure_sensor,
-)
+import dagster as dg
 
 from ..utils import (
     AlertManager,
@@ -58,46 +46,46 @@ ALERTS_JOB_CONFIG = {
 def setup_alert_sensors(
     base_url: str, alert_manager: AlertManager, enable: bool = True
 ):
-    @op(name="failure_alert_op")
-    def failure_op(context: OpExecutionContext, config: AlertOpConfig) -> None:
+    @dg.op(name="failure_alert_op")
+    def failure_op(context: dg.OpExecutionContext, config: AlertOpConfig) -> None:
         alert_manager.failure_op(base_url, context, config)
 
-    @job(name="failure_alert_job")
+    @dg.job(name="failure_alert_job", executor_def=dg.in_process_executor)
     def failure_job():
         failure_op()
 
-    @op(name="freshness_alert_op")
+    @dg.op(name="freshness_alert_op")
     def freshness_alert_op(
-        context: OpExecutionContext, config: FreshnessOpConfig
+        context: dg.OpExecutionContext, config: FreshnessOpConfig
     ) -> None:
         alert_manager.freshness_op(base_url, config)
 
-    @job(name="freshness_alert_job")
+    @dg.job(name="freshness_alert_job", executor_def=dg.in_process_executor)
     def freshness_alert_job():
         freshness_alert_op()
 
     if enable:
-        status = DefaultSensorStatus.RUNNING
+        status = dg.DefaultSensorStatus.RUNNING
     else:
-        status = DefaultSensorStatus.STOPPED
+        status = dg.DefaultSensorStatus.STOPPED
 
-    @run_failure_sensor(
+    @dg.run_failure_sensor(
         name="failure_alert",
         default_status=status,
         request_job=failure_job,
         monitor_all_code_locations=True,
     )
-    def failure_sensor(context: RunFailureSensorContext):
+    def failure_sensor(context: dg.RunFailureSensorContext):
         if context.failure_event.job_name not in [
             "materialize_stable_source_assets_job",
             "materialize_core_assets_job",
         ]:
-            return SkipReason("Non critical job failure")
+            return dg.SkipReason("Non critical job failure")
 
-        return RunRequest(
+        return dg.RunRequest(
             tags=ALERTS_JOB_CONFIG,
             run_key=context.dagster_run.run_id,
-            run_config=RunConfig(
+            run_config=dg.RunConfig(
                 ops={
                     "failure_alert_op": {
                         "config": {
@@ -109,13 +97,13 @@ def setup_alert_sensors(
         )
 
     # Only validates assets that have materialized at least once successfully
-    @multi_asset_sensor(
+    @dg.multi_asset_sensor(
         monitored_assets=stable_source_tag | unstable_source_tag,
         job=freshness_alert_job,
         default_status=status,
         minimum_interval_seconds=259200,  # 3 days
     )
-    def freshness_check_sensor(context: MultiAssetSensorEvaluationContext):
+    def freshness_check_sensor(context: dg.MultiAssetSensorEvaluationContext):
         materialization_records = context.latest_materialization_records_by_key(
             context.asset_keys
         )
@@ -144,9 +132,9 @@ def setup_alert_sensors(
         for asset_key in context.asset_keys:
             context.advance_cursor({asset_key: None})
 
-        return RunRequest(
+        return dg.RunRequest(
             tags=ALERTS_JOB_CONFIG,
-            run_config=RunConfig(
+            run_config=dg.RunConfig(
                 ops={
                     "freshness_alert_op": {
                         "config": {
