@@ -127,7 +127,8 @@ def sqlmesh_factory(
             sqlmesh_gateway=global_config.sqlmesh_gateway,
         ),
         cache_metadata_options=CacheMetadataOptions.with_no_expiration_if(
-            global_config.run_mode == "build" and global_config.in_deployed_container
+            global_config.run_mode == "build" and global_config.in_deployed_container,
+            default_ttl_seconds=global_config.asset_cache_default_ttl_seconds,
         ),
     )
     def cacheable_sqlmesh_multi_asset_options(
