@@ -256,21 +256,29 @@ def sqlmesh_factory(
             global_config: ResourceParam[DagsterConfig],
             trino: TrinoResource,
             heartbeat: HeartBeatResource,
-        ):
+        ) -> None:
             from datetime import datetime, timedelta, timezone
+
+            now = datetime.now(timezone.utc)
 
             last_heartbeat = await heartbeat.get_last_heartbeat_for("sqlmesh")
             if last_heartbeat is None:
-                return
+                context.log.info(
+                    "No heartbeat found for sqlmesh now ensuring trino shutdown."
+                )
+                last_heartbeat = now - timedelta(
+                    minutes=global_config.sqlmesh_trino_ttl_minutes + 1
+                )
 
             # Only scale down trino if we're in a k8s environment
-            if global_config.k8s_enabled is False:
+            if not global_config.k8s_enabled:
                 return
 
-            now = datetime.now(timezone.utc)
-            if now - last_heartbeat > timedelta(minutes=30):
+            if now - last_heartbeat > timedelta(
+                minutes=global_config.sqlmesh_trino_ttl_minutes
+            ):
                 context.log.info(
-                    "No heartbeat detected for sqlmesh in the last 30 minutes. Ensuring that producer trino is scaled down."
+                    f"No heartbeat detected for sqlmesh in the last {global_config.sqlmesh_trino_ttl_minutes} minutes. Ensuring that producer trino is scaled down."
                 )
                 await trino.ensure_shutdown()
             else:
