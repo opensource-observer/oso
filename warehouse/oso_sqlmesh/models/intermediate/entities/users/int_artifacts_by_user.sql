@@ -87,20 +87,20 @@ with
     from lens
   ),
 
-  ens_users AS (
-    SELECT
+  ens_users as (
+    select
       user_source_id,
       user_source,
       user_namespace,
       user_name,
-      artifact_name AS artifact_source_id,
+      artifact_name as artifact_source_id,
       artifact_source,
       artifact_namespace,
       artifact_name,
-      'ENS_USER' AS user_type
-    FROM oso.int_addresses_by_ens_user
-    UNION ALL
-    SELECT
+      'ENS_USER' as user_type
+    from oso.int_addresses_by_ens_user
+    union all
+    select
       user_source_id,
       user_source,
       user_namespace,
@@ -109,12 +109,12 @@ with
       artifact_source,
       artifact_namespace,
       artifact_name,
-      'ENS_USER' AS user_type
-    FROM oso.int_github_users_by_ens_user
+      'ENS_USER' as user_type
+    from oso.int_github_users_by_ens_user
   ),
 
-  all_normalized_users AS (
-    SELECT
+  all_normalized_users as (
+    select
       artifact_source_id,
       artifact_source,
       artifact_namespace,
@@ -124,9 +124,9 @@ with
       user_type,
       user_namespace,
       user_name
-    FROM event_users
-    UNION ALL
-    SELECT
+    from event_users
+    union all
+    select
       artifact_source_id,
       artifact_source,
       artifact_namespace,
@@ -136,9 +136,9 @@ with
       user_type,
       user_namespace,
       user_name
-    FROM farcaster_users
-    UNION ALL
-    SELECT
+    from farcaster_users
+    union all
+    select
       artifact_source_id,
       artifact_source,
       artifact_namespace,
@@ -148,9 +148,9 @@ with
       user_type,
       user_namespace,
       user_name
-    FROM lens_users
-    UNION ALL
-    SELECT
+    from lens_users
+    union all
+    select
       artifact_source_id,
       artifact_source,
       artifact_namespace,
@@ -160,19 +160,19 @@ with
       user_type,
       user_namespace,
       user_name
-    FROM ens_users
+    from ens_users
   )
 
-SELECT DISTINCT
-  @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
+select distinct
+  @oso_entity_id(artifact_source, artifact_namespace, artifact_name) as artifact_id,
   artifact_source_id,
   artifact_source,
   artifact_namespace,
   artifact_name,
-  @oso_entity_id(user_source, user_namespace, user_name) AS user_id,
+  @oso_entity_id(user_source, user_namespace, user_name) as user_id,
   user_source_id,
   user_source,
   user_type,
   user_namespace,
   user_name
-FROM all_normalized_users
+from all_normalized_users

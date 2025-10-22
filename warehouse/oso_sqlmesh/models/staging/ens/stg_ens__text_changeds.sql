@@ -14,5 +14,5 @@ SELECT
   block_number,
   transaction_id,
   key AS text_changed_key,
-  value AS text_changed_value
+  LOWER(value) AS text_changed_value
 FROM @oso_source('bigquery.ens.text_changeds')

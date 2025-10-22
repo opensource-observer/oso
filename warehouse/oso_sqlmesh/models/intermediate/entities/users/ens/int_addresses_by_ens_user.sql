@@ -25,11 +25,11 @@ artifacts_by_user AS (
     '' AS user_namespace,
     owner_addresses.name AS user_name,
     owner_addresses.name AS display_name,
-    'ETHEREUM' AS artifact_source,
+    'MAINNET' AS artifact_source,
     '' AS artifact_namespace,
     owner_addresses.address AS artifact_name,
     owner_addresses.address AS artifact_id,
-    'NAME_SERVICE' AS artifact_type
+    'SOCIAL_HANDLE' AS artifact_type
   FROM owner_addresses
 )
 
