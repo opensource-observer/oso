@@ -206,36 +206,6 @@ export type Database = {
           },
         ];
       };
-      credit_transactions: {
-        Row: {
-          amount: number;
-          api_endpoint: string | null;
-          created_at: string;
-          id: string;
-          metadata: Json | null;
-          transaction_type: string;
-          user_id: string;
-        };
-        Insert: {
-          amount: number;
-          api_endpoint?: string | null;
-          created_at?: string;
-          id?: string;
-          metadata?: Json | null;
-          transaction_type: string;
-          user_id: string;
-        };
-        Update: {
-          amount?: number;
-          api_endpoint?: string | null;
-          created_at?: string;
-          id?: string;
-          metadata?: Json | null;
-          transaction_type?: string;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
       dynamic_column_contexts: {
         Row: {
           column_name: string;

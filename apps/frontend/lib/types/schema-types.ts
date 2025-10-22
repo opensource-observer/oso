@@ -41,15 +41,6 @@ export type ConnectorRelationshipsUpdate = z.infer<
 export type ConnectorRelationshipsRelationships = z.infer<
   typeof generated.connectorRelationshipsRelationshipsSchema
 >;
-export type CreditTransactionsRow = z.infer<
-  typeof generated.creditTransactionsRowSchema
->;
-export type CreditTransactionsInsert = z.infer<
-  typeof generated.creditTransactionsInsertSchema
->;
-export type CreditTransactionsUpdate = z.infer<
-  typeof generated.creditTransactionsUpdateSchema
->;
 export type DynamicColumnContextsRow = z.infer<
   typeof generated.dynamicColumnContextsRowSchema
 >;

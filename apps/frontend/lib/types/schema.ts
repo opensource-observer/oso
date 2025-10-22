@@ -236,36 +236,6 @@ export const connectorRelationshipsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const creditTransactionsRowSchema = z.object({
-  amount: z.number(),
-  api_endpoint: z.string().nullable(),
-  created_at: z.string(),
-  id: z.string(),
-  metadata: jsonSchema.nullable(),
-  transaction_type: z.string(),
-  user_id: z.string(),
-});
-
-export const creditTransactionsInsertSchema = z.object({
-  amount: z.number(),
-  api_endpoint: z.string().optional().nullable(),
-  created_at: z.string().optional(),
-  id: z.string().optional(),
-  metadata: jsonSchema.optional().nullable(),
-  transaction_type: z.string(),
-  user_id: z.string(),
-});
-
-export const creditTransactionsUpdateSchema = z.object({
-  amount: z.number().optional(),
-  api_endpoint: z.string().optional().nullable(),
-  created_at: z.string().optional(),
-  id: z.string().optional(),
-  metadata: jsonSchema.optional().nullable(),
-  transaction_type: z.string().optional(),
-  user_id: z.string().optional(),
-});
-
 export const dynamicColumnContextsRowSchema = z.object({
   column_name: z.string(),
   data_type: z.string(),
