@@ -91,8 +91,8 @@ CREATE TABLE IF NOT EXISTS "public"."model_revision_patch" (
   -- tracking undo/redo operations.
   "system_message" text,
   PRIMARY KEY ("id"),
-  FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE
-  FOREIGN KEY ("revision_base_id") REFERENCES "public"."model_revision_snapshot"("id") ON DELETE CASCADE
+  FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("revision_base_id") REFERENCES "public"."model_revision_snapshot"("id") ON DELETE CASCADE,
   FOREIGN KEY ("previous_patch") REFERENCES "public"."model_revision_patch"("id") ON DELETE CASCADE
 )
 
