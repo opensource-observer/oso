@@ -35,12 +35,12 @@ CREATE TABLE IF NOT EXISTS "public"."model" {
 CREATE TYPE model_dependency_type AS (
   model_id uuid,
   alias text
-)
+);
 
 CREATE TYPE json_patch AS (
   removed jsonb,
   modified jsonb
-)
+);
 
 -- Models are a combination of code, configuration, schema, and dependencies. In
 -- order to provide the user with the ability to time travel while they're
