@@ -3,6 +3,7 @@ A simple heartbeat resource to indicate liveness of Dagster jobs.
 """
 
 import asyncio
+import concurrent.futures
 import logging
 import typing as t
 from contextlib import asynccontextmanager, suppress
@@ -30,8 +31,9 @@ class HeartBeatResource(dg.ConfigurableResource):
         interval_seconds: int = 120,
         log_override: logging.Logger | None = None,
     ):
-        """
-        asynchronously run a heartbeat that updates every `interval_seconds`
+        """Asynchronously run a heartbeat that updates every `interval_seconds`. We
+        use a separate process which should only live as long as the entire pod
+        for the dagster job is alive.
         """
 
         log_override = log_override or logger
@@ -45,7 +47,12 @@ class HeartBeatResource(dg.ConfigurableResource):
                 await self.beat(job_name)
                 await asyncio.sleep(interval_seconds)
 
-        task = asyncio.create_task(_beat_loop())
+        async def _beat_process():
+            loop = asyncio.get_running_loop()
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as pool:
+                await loop.run_in_executor(pool, asyncio.run, _beat_loop())
+
+        task = asyncio.create_task(_beat_process())
         try:
             yield
         finally:
