@@ -64,12 +64,12 @@ export const AccordionMeta: CodeComponentMeta<AccordionProps> = {
     type: {
       type: "choice",
       options: ["single", "multiple"],
-      defaultValue: "single",
+      defaultValueHint: "single",
       helpText: "Whether the accordion should be single or multiple",
     },
     collapsible: {
       type: "boolean",
-      defaultValue: false,
+      defaultValueHint: false,
       helpText: "Whether the accordion should be collapsible",
     },
     defaultValue: "string",
@@ -80,19 +80,19 @@ export const AccordionMeta: CodeComponentMeta<AccordionProps> = {
     },
     disabled: {
       type: "boolean",
-      defaultValue: false,
+      defaultValueHint: false,
       helpText: "Whether the accordion should be disabled",
     },
     orientation: {
       type: "choice",
       options: ["horizontal", "vertical"],
-      defaultValue: "vertical",
+      defaultValueHint: "vertical",
       helpText: "The orientation of the accordion",
     },
     dir: {
       type: "choice",
       options: ["ltr", "rtl"],
-      defaultValue: "ltr",
+      defaultValueHint: "ltr",
       helpText: "The direction that the accordion should read",
     },
   },
