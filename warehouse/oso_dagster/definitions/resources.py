@@ -188,7 +188,9 @@ def k8s_resource_factory(global_config: DagsterConfig) -> K8sResource | K8sApiRe
 @resource_factory("trino")
 @time_function(logger)
 def trino_resource_factory(
-    global_config: DagsterConfig, k8s: K8sResource | K8sApiResource
+    global_config: DagsterConfig,
+    k8s: K8sResource | K8sApiResource,
+    heartbeat: HeartBeatResource,
 ) -> TrinoResource:
     if not global_config.k8s_enabled:
         return TrinoRemoteResource()
@@ -199,6 +201,7 @@ def trino_resource_factory(
         coordinator_deployment_name=global_config.trino_k8s_coordinator_deployment_name,
         worker_deployment_name=global_config.trino_k8s_worker_deployment_name,
         use_port_forward=global_config.k8s_use_port_forward,
+        heartbeat=heartbeat,
     )
 
 
@@ -281,7 +284,6 @@ def trino_exporter_factory(
     return TrinoExporterResource(
         trino=trino,
         time_ordered_storage=time_ordered_storage,
-        heartbeat=heartbeat,
     )
 
 

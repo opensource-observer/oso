@@ -24,7 +24,6 @@ from oso_core.cache.types import CacheMetadataOptions
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import AssetFactoryResponse, cacheable_asset_factory
 from oso_dagster.factories.common import CacheableDagsterContext
-from oso_dagster.resources.heartbeat import HeartBeatResource
 from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
 from pydantic import BaseModel
@@ -164,7 +163,6 @@ def sqlmesh_factory(
             global_config: ResourceParam[DagsterConfig],
             sqlmesh: SQLMeshResource,
             trino: TrinoResource,
-            heartbeat: HeartBeatResource,
             config: SQLMeshRunConfig,
         ):
             restate_models = config.restate_models[:] if config.restate_models else []
@@ -234,17 +232,11 @@ def sqlmesh_factory(
 
             # Trino can either be `local-trino` or `trino`
             if "trino" in global_config.sqlmesh_gateway:
-                # Start a heartbeat to indicate that sqlmesh is running
-                async with heartbeat.heartbeat(
-                    name="producer_trino",
-                    interval_seconds=300,
-                    log_override=context.log,
+                async with multiple_async_contexts(
+                    trino=trino.ensure_available(log_override=context.log),
                 ):
-                    async with multiple_async_contexts(
-                        trino=trino.ensure_available(log_override=context.log),
-                    ):
-                        for result in run_sqlmesh(context, sqlmesh, config):
-                            yield result
+                    for result in run_sqlmesh(context, sqlmesh, config):
+                        yield result
             else:
                 # If we are not running trino we are using duckdb
                 for result in run_sqlmesh(context, sqlmesh, config):
