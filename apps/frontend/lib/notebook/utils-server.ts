@@ -42,13 +42,13 @@ async function generateNotebookHtml(browser: Browser, url: string) {
     hidden: true,
   });
   logger.info("Spinner disappeared.");
-  const previewButton = await page.waitForSelector("[id='preview-button']", {
-    timeout: LONG_TIMEOUT_MS,
-  });
+  // const previewButton = await page.waitForSelector("[id='preview-button']", {
+  //   timeout: LONG_TIMEOUT_MS,
+  // });
 
-  await previewButton?.click();
+  // await previewButton?.click();
 
-  logger.info("Clicked preview button, waiting for interrupt button...");
+  // logger.info("Clicked preview button, waiting for interrupt button...");
   // Wait for the interrupt button to have the inactive-button class for at least 10 seconds
   await page.waitForFunction(
     () => {
