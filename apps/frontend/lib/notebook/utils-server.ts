@@ -24,21 +24,24 @@ async function generateNotebookHtml(browser: Browser, url: string) {
   const cssRules: string[] = [];
   await page.goto(url, { timeout: 10 * 1000, waitUntil: "networkidle0" });
 
+  logger.info("Page loaded, waiting for spinner...");
   // Wait for the spinner to appear and then disappear
   await page.waitForSelector("[data-testid='large-spinner']", {
     timeout: 10000,
   });
+  logger.info("Spinner appeared, waiting for it to disappear...");
   await page.waitForSelector("[data-testid='large-spinner']", {
-    timeout: 30000,
+    timeout: 250 * 1000,
     hidden: true,
   });
-
+  logger.info("Spinner disappeared.");
   const previewButton = await page.waitForSelector("[id='preview-button']", {
     timeout: 5000,
   });
 
   await previewButton?.click();
 
+  logger.info("Clicked preview button, waiting for interrupt button...");
   // Wait for the interrupt button to have the inactive-button class for at least 10 seconds
   await page.waitForFunction(
     () => {
@@ -59,6 +62,8 @@ async function generateNotebookHtml(browser: Browser, url: string) {
   );
 
   await new Promise((resolve) => setTimeout(resolve, 5 * 1000));
+
+  logger.info("Notebook execution appears stable, extracting HTML...");
 
   cssRules.push(
     ...(await page.evaluate(() => {
@@ -93,6 +98,7 @@ async function generateNotebookHtml(browser: Browser, url: string) {
     }
     return walk(root);
   });
+  logger.info("Extracted body HTML, returning result.");
 
   return `
       <style>
