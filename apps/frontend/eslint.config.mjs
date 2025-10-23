@@ -22,6 +22,9 @@ const compat = new FlatCompat({
 export default defineConfig(resolveFlatConfig([
     ...rootConfig,
     includeIgnoreFile(gitignorePath),
+    {
+        ignores: ["lib/graphql/generated/**"],
+    },
     ...fixupConfigRules(compat.extends(
         "next/core-web-vitals",
         "plugin:storybook/recommended",
@@ -65,12 +68,6 @@ export default defineConfig(resolveFlatConfig([
                 rootDir: ".",
                 prefix: "@",
             }],
-        },
-    },
-    {
-        files: ["lib/graphql/generated/**"],
-        rules: {
-            "no-relative-import-paths/no-relative-import-paths": "off",
         },
     },
 ]));
