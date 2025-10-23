@@ -58,6 +58,7 @@ import {
   PopoverContentMeta,
   PopoverAnchorMeta,
 } from "@/components/ui/popover";
+import { Progress, ProgressMeta } from "@/components/ui/progress";
 import {
   Sidebar,
   SidebarContent,
@@ -288,6 +289,7 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(PopoverTrigger, PopoverTriggerMeta);
   PLASMIC.registerComponent(PopoverContent, PopoverContentMeta);
   PLASMIC.registerComponent(PopoverAnchor, PopoverAnchorMeta);
+  PLASMIC.registerComponent(Progress, ProgressMeta);
   PLASMIC.registerComponent(ToolTip, ToolTipMeta);
   PLASMIC.registerComponent(Sidebar, SidebarMeta);
   PLASMIC.registerComponent(SidebarProvider, SidebarProviderMeta);
