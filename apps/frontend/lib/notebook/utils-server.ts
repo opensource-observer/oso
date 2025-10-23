@@ -19,6 +19,8 @@ export async function tryGenerateNotebookHtml(url: string) {
   }
 }
 
+const LONG_TIMEOUT_MS = 250 * 1000;
+
 async function generateNotebookHtml(browser: Browser, url: string) {
   const page = await browser.newPage();
   const cssRules: string[] = [];
@@ -27,16 +29,16 @@ async function generateNotebookHtml(browser: Browser, url: string) {
   logger.info("Page loaded, waiting for spinner...");
   // Wait for the spinner to appear and then disappear
   await page.waitForSelector("[data-testid='large-spinner']", {
-    timeout: 10000,
+    timeout: LONG_TIMEOUT_MS,
   });
   logger.info("Spinner appeared, waiting for it to disappear...");
   await page.waitForSelector("[data-testid='large-spinner']", {
-    timeout: 250 * 1000,
+    timeout: LONG_TIMEOUT_MS,
     hidden: true,
   });
   logger.info("Spinner disappeared.");
   const previewButton = await page.waitForSelector("[id='preview-button']", {
-    timeout: 5000,
+    timeout: LONG_TIMEOUT_MS,
   });
 
   await previewButton?.click();
@@ -58,7 +60,7 @@ async function generateNotebookHtml(browser: Browser, url: string) {
         return false;
       }
     },
-    { timeout: 250 * 1000, polling: 100 },
+    { timeout: LONG_TIMEOUT_MS, polling: 100 },
   );
 
   await new Promise((resolve) => setTimeout(resolve, 5 * 1000));
