@@ -737,6 +737,19 @@ const SidebarMenuButtonMeta: CodeComponentMeta<SidebarMenuButtonProps> = {
       type: "choice",
       options: ["default", "sm", "lg"],
     },
+    className: {
+      type: "class",
+      selectors: [
+        {
+          selector: ":hover",
+          label: "Hovered",
+        },
+        {
+          selector: ":active",
+          label: "Pressed",
+        },
+      ],
+    },
   },
 };
 
