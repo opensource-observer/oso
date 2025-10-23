@@ -190,13 +190,8 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
 
         @dg.schedule(target=sqlmesh_and_downstream_assets, cron_schedule="0 5 1,15 * *")
         def twice_monthly_sqlmesh_and_downstream_materialization_schedule():
-            if is_first_or_fifteenth_of_the_month():
-                return dg.RunRequest(
-                    job_name="sqlmesh_and_downstream_assets",
-                )
-
-            return dg.SkipReason(
-                skip_message="Not on first or fifteenth of the month, skipping sqlmesh and downstream assets"
+            return dg.RunRequest(
+                job_name="sqlmesh_and_downstream_assets",
             )
 
         schedules.append(daily_sqlmesh_materialization_schedule)
