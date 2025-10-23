@@ -3,7 +3,7 @@ import { NullOrUndefinedValueError, AssertionError } from "./errors.js";
  * Explicitly marks a promise as something we won't await
  * @param _promise
  */
-export function spawn(_promise: Promise<any>) {} // eslint-disable-line
+export function spawn(_promise: Promise<any>) {}
 
 /**
  * Explicitly mark that a cast is safe.
