@@ -2,9 +2,9 @@ MODEL (
   name oso.int_code_dependencies,
   description 'Maps GitHub artifacts to the GitHub artifacts they depend on',
   kind VIEW,
-  audits (
-    has_at_least_n_rows(threshold := 0)
-  )
+  ignored_rules (
+    "nomissingaudits",
+  ),
 );
 
 SELECT DISTINCT

@@ -351,7 +351,6 @@ class TimeseriesMetrics:
         )
 
         # Generate the models
-
         for _, query_config, dependencies in self.generate_ordered_queries():
             self.generate_model_for_rendered_query(
                 calling_file, query_config, dependencies
@@ -395,7 +394,11 @@ class TimeseriesMetrics:
                     "model_metrics_type=timeseries_union",
                     f"entity_category={entity_type}",
                 ],
-                audits=self.audits,
+                # We don't need to run the audits on the views so we are hackily
+                # disabling this for now. This needs a bigger refactor to clean
+                # this up
+                # audits=self.audits,
+                ignored_rules=["nomissingaudits"],
             )(join_all_of_entity_type)
 
         for entity_type, tables in self._key_metrics_marts_tables.items():
@@ -429,7 +432,11 @@ class TimeseriesMetrics:
                     "model_stage=intermediate",
                     f"entity_category={entity_type}",
                 ],
-                audits=self.audits,
+                # We don't need to run the audits on the views so we are hackily
+                # disabling this for now. This needs a bigger refactor to clean
+                # this up
+                # audits=self.audits,
+                ignored_rules=["nomissingaudits"],
             )(join_all_of_entity_type)
 
         raw_table_metadata = {

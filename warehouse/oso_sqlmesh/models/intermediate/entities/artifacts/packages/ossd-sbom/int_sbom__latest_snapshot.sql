@@ -2,9 +2,9 @@ MODEL (
   name oso.int_sbom__latest_snapshot,
   description 'The most recent snapshot of SBOMs linked to package owner GitHub repos',
   kind VIEW,
-  audits (
-    has_at_least_n_rows(threshold := 0)
-  )
+  ignored_rules (
+    "nomissingaudits",
+  ),
 );
 
 WITH latest_repo_snapshot AS (
