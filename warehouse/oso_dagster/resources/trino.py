@@ -279,10 +279,10 @@ class TrinoExporterResource(ConfigurableResource):
         self,
         export_prefix: str,
         log_override: t.Optional[logging.Logger] = None,
-        heartbeat_job_name: str = "sqlmesh",
+        heartbeat_name: str = "producer_trino",
     ) -> t.AsyncGenerator[TrinoExporter, None]:
         async with self.heartbeat.heartbeat(
-            job_name=heartbeat_job_name, log_override=log_override
+            name=heartbeat_name, log_override=log_override
         ):
             async with self.trino.ensure_available(log_override=log_override):
                 async with self.time_ordered_storage.get(export_prefix) as storage:

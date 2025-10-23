@@ -276,10 +276,12 @@ def cbt_resource_factory(
 def trino_exporter_factory(
     time_ordered_storage: TimeOrderedStorageResource,
     trino: TrinoResource,
+    heartbeat: HeartBeatResource,
 ):
     return TrinoExporterResource(
         trino=trino,
         time_ordered_storage=time_ordered_storage,
+        heartbeat=heartbeat,
     )
 
 

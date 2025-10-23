@@ -236,7 +236,9 @@ def sqlmesh_factory(
             if "trino" in global_config.sqlmesh_gateway:
                 # Start a heartbeat to indicate that sqlmesh is running
                 async with heartbeat.heartbeat(
-                    job_name="sqlmesh", interval_seconds=300, log_override=context.log
+                    name="producer_trino",
+                    interval_seconds=300,
+                    log_override=context.log,
                 ):
                     async with multiple_async_contexts(
                         trino=trino.ensure_available(log_override=context.log),
@@ -248,54 +250,11 @@ def sqlmesh_factory(
                 for result in run_sqlmesh(context, sqlmesh, config):
                     yield result
 
-        # Define a job that checks the heartbeat of sqlmesh runs. If the
-        # heartbeat is older than 30 minutes, we scale trino down to zero.
-        @dg.op
-        async def sqlmesh_heartbeat_checker(
-            context: dg.OpExecutionContext,
-            global_config: ResourceParam[DagsterConfig],
-            trino: TrinoResource,
-            heartbeat: HeartBeatResource,
-        ) -> None:
-            from datetime import datetime, timedelta, timezone
-
-            now = datetime.now(timezone.utc)
-
-            last_heartbeat = await heartbeat.get_last_heartbeat_for("sqlmesh")
-            if last_heartbeat is None:
-                context.log.info(
-                    "No heartbeat found for sqlmesh now ensuring trino shutdown."
-                )
-                last_heartbeat = now - timedelta(
-                    minutes=global_config.sqlmesh_trino_ttl_minutes + 1
-                )
-
-            # Only scale down trino if we're in a k8s environment
-            if not global_config.k8s_enabled:
-                return
-
-            if now - last_heartbeat > timedelta(
-                minutes=global_config.sqlmesh_trino_ttl_minutes
-            ):
-                context.log.info(
-                    f"No heartbeat detected for sqlmesh in the last {global_config.sqlmesh_trino_ttl_minutes} minutes. Ensuring that producer trino is scaled down."
-                )
-                await trino.ensure_shutdown()
-            else:
-                context.log.info("Heartbeat detected for sqlmesh. No action needed.")
-
-        # Use the in-process executor for the heartbeat monitor job to avoid
-        # the overhead of spinning up a new k8s pod in addition to the run launcher
-        @dg.job(executor_def=dg.in_process_executor)
-        def sqlmesh_heartbeat_monitor_job():
-            sqlmesh_heartbeat_checker()
-
         all_assets_selection = AssetSelection.assets(sqlmesh_project)
 
         return AssetFactoryResponse(
             assets=[sqlmesh_project],
             jobs=[
-                sqlmesh_heartbeat_monitor_job,
                 define_asset_job(
                     name="sqlmesh_all_assets",
                     selection=all_assets_selection,
@@ -355,13 +314,6 @@ def sqlmesh_factory(
                         }
                     ),
                 ),
-            ],
-            schedules=[
-                dg.ScheduleDefinition(
-                    name="sqlmesh_heartbeat_monitor_schedule",
-                    job=sqlmesh_heartbeat_monitor_job,
-                    cron_schedule="*/15 * * * *",
-                )
             ],
         )
 

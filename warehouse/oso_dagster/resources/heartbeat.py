@@ -45,16 +45,16 @@ class HeartBeatResource(dg.ConfigurableResource):
     def beat_loop_kwargs(self) -> dict[str, t.Any]:
         return {}
 
-    async def get_last_heartbeat_for(self, job_name: str) -> datetime | None:
+    async def get_last_heartbeat_for(self, name: str) -> datetime | None:
         raise NotImplementedError()
 
-    async def beat(self, job_name: str) -> None:
+    async def beat(self, heartbeat_name: str) -> None:
         raise NotImplementedError()
 
     @asynccontextmanager
     async def heartbeat(
         self,
-        job_name: str,
+        name: str,
         interval_seconds: int = 120,
         log_override: logging.Logger | None = None,
     ) -> t.AsyncIterator[None]:
@@ -62,7 +62,7 @@ class HeartBeatResource(dg.ConfigurableResource):
         loop = asyncio.get_running_loop()
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             kwargs = self.beat_loop_kwargs().copy()
-            kwargs.update({"job_name": job_name})
+            kwargs.update({"heartbeat_name": name})
             queue = Queue[bool]()
             beat_task = loop.run_in_executor(
                 executor,
@@ -90,10 +90,10 @@ async def async_redis_client(host: str, port: int) -> t.AsyncIterator[Redis]:
         await client.aclose()
 
 
-async def redis_send_heartbeat(*, host: str, port: int, job_name: str) -> None:
+async def redis_send_heartbeat(*, host: str, port: int, heartbeat_name: str) -> None:
     async with async_redis_client(host, port) as redis_client:
         await redis_client.set(
-            f"heartbeat:{job_name}", datetime.now(timezone.utc).isoformat()
+            f"heartbeat:{heartbeat_name}", datetime.now(timezone.utc).isoformat()
         )
 
 
@@ -107,10 +107,10 @@ class RedisHeartBeatResource(HeartBeatResource):
     def beat_loop_kwargs(self) -> dict[str, t.Any]:
         return {"host": self.host, "port": self.port}
 
-    async def get_last_heartbeat_for(self, job_name: str) -> datetime | None:
+    async def get_last_heartbeat_for(self, name: str) -> datetime | None:
         async with async_redis_client(self.host, self.port) as redis_client:
-            timestamp = await redis_client.get(f"heartbeat:{job_name}")
-            logger.info(f"Fetched heartbeat for job {job_name}: {timestamp}")
+            timestamp = await redis_client.get(f"heartbeat:{name}")
+            logger.info(f"Fetched heartbeat `{name}`: {timestamp}")
             if isinstance(timestamp, str):
                 return datetime.fromisoformat(timestamp)
             elif isinstance(timestamp, bytes):
@@ -118,18 +118,18 @@ class RedisHeartBeatResource(HeartBeatResource):
             else:
                 return None
 
-    async def beat(self, job_name: str) -> None:
+    async def beat(self, heartbeat_name: str) -> None:
         return await redis_send_heartbeat(
-            host=self.host, port=self.port, job_name=job_name
+            host=self.host, port=self.port, heartbeat_name=heartbeat_name
         )
 
 
-async def filebased_send_heartbeat(*, directory: str, job_name: str) -> None:
+async def filebased_send_heartbeat(*, directory: str, heartbeat_name: str) -> None:
     from pathlib import Path
 
     import aiofiles
 
-    filepath = Path(directory) / f"{job_name}_heartbeat.txt"
+    filepath = Path(directory) / f"{heartbeat_name}_heartbeat.txt"
     async with aiofiles.open(filepath, mode="w") as f:
         await f.write(datetime.now(timezone.utc).isoformat())
 
@@ -139,29 +139,29 @@ class FilebasedHeartBeatResource(HeartBeatResource):
 
     directory: str = Field(description="Directory to store heartbeat files.")
 
-    async def get_last_heartbeat_for(self, job_name: str) -> datetime | None:
+    async def get_last_heartbeat_for(self, name: str) -> datetime | None:
         from pathlib import Path
 
-        filepath = Path(self.directory) / f"{job_name}_heartbeat.txt"
+        filepath = Path(self.directory) / f"{name}_heartbeat.txt"
         if not filepath.exists():
             return None
         async with aiofiles.open(filepath, mode="r") as f:
             timestamp = await f.read()
             return datetime.fromisoformat(timestamp)
 
-    async def beat(self, job_name: str) -> None:
+    async def beat(self, heartbeat_name: str) -> None:
         from pathlib import Path
 
         import aiofiles
 
-        filepath = Path(self.directory) / f"{job_name}_heartbeat.txt"
+        filepath = Path(self.directory) / f"{heartbeat_name}_heartbeat.txt"
         async with aiofiles.open(filepath, mode="w") as f:
             await f.write(datetime.now(timezone.utc).isoformat())
 
     @asynccontextmanager
     async def heartbeat(
         self,
-        job_name: str,
+        name: str,
         interval_seconds: int = 120,
         log_override: logging.Logger | None = None,
     ) -> t.AsyncIterator[None]:
@@ -170,14 +170,12 @@ class FilebasedHeartBeatResource(HeartBeatResource):
         async def beat_loop():
             while True:
                 try:
-                    await self.beat(job_name)
+                    await self.beat(name)
                     logger_to_use.info(
-                        f"Heartbeat sent for job {job_name} at {datetime.now(timezone.utc).isoformat()}"
+                        f"Heartbeat sent for job {name} at {datetime.now(timezone.utc).isoformat()}"
                     )
                 except Exception as e:
-                    logger_to_use.error(
-                        f"Error sending heartbeat for job {job_name}: {e}"
-                    )
+                    logger_to_use.error(f"Error sending heartbeat for job {name}: {e}")
                 await asyncio.sleep(interval_seconds)
 
         beat_task = asyncio.create_task(beat_loop())
