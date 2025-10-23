@@ -118,7 +118,7 @@ def github_events(
 
     difference = end_arrow - start_arrow
     selects: t.List[exp.Select] = []
-    if difference.days < 10:
+    if difference.days <= 10:
         unit = "day"
         format = "YYYYMMDD"
     else:
