@@ -1,4 +1,4 @@
-import { gzipSync, gunzipSync } from "zlib";
+import { gzipSync } from "zlib";
 import { NextRequest, NextResponse } from "next/server";
 import { MARIMO_URL } from "@/lib/config";
 import { withPostHogTracking } from "@/lib/clients/posthog";
@@ -114,74 +114,6 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
 
   revalidateTag(publishedNotebook.id);
   return NextResponse.json({});
-});
-
-export const GET = withPostHogTracking(async (req: NextRequest) => {
-  const searchParams = req.nextUrl.searchParams;
-  const notebookName = searchParams.get("notebookName");
-  const orgName = searchParams.get("orgName");
-
-  if (!notebookName || !orgName) {
-    return NextResponse.json(
-      { error: "Missing notebookName or orgName" },
-      { status: 400 },
-    );
-  }
-
-  const supabaseAdmin = createAdminClient();
-  const { data, error } = await supabaseAdmin
-    .from("published_notebooks")
-    .select(
-      `
-      *,
-      notebooks!inner (
-        notebook_name,
-        organizations!inner (
-          org_name
-        )
-      )
-    `,
-    )
-    .eq("notebooks.notebook_name", notebookName)
-    .eq("notebooks.organizations.org_name", orgName)
-    .is("deleted_at", null)
-    .is("notebooks.deleted_at", null)
-    .single();
-
-  if (error) {
-    logger.error(error);
-    if (error.code === "PGRST116") {
-      return NextResponse.json(
-        { error: "Published notebook not found" },
-        { status: 404 },
-      );
-    }
-    return NextResponse.json(
-      { error: "Error fetching published notebook" },
-      { status: 500 },
-    );
-  }
-
-  const { notebooks: _, ...publishedNotebookData } = data;
-
-  const { data: blob, error: downloadError } = await supabaseAdmin.storage
-    .from("published-notebooks")
-    .download(data.data_path);
-
-  if (downloadError) {
-    logger.error(downloadError);
-    return NextResponse.json(
-      { error: "Error downloading published notebook" },
-      { status: 500 },
-    );
-  }
-
-  const html = gunzipSync(await blob.bytes()).toString();
-
-  return NextResponse.json({
-    ...publishedNotebookData,
-    html: html.toString(),
-  });
 });
 
 export const DELETE = withPostHogTracking(async (req: NextRequest) => {

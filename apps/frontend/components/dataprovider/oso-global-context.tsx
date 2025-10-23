@@ -59,7 +59,6 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "deleteNotebookById",
   "publishNotebook",
   "unpublishNotebook",
-  "getPublishedNotebookByNames",
   "getOrganizationCredits",
   "getOrganizationCreditTransactions",
   "getConnectors",

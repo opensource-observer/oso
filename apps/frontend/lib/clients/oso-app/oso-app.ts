@@ -22,7 +22,6 @@ import type {
   DynamicConnectorsInsert,
   DynamicConnectorsRow,
   DynamicTableContextsRow,
-  PublishedNotebooksRow,
 } from "@/lib/types/schema-types";
 import { NotebookKey } from "@/lib/types/db";
 import { CREDIT_PACKAGES } from "@/lib/clients/stripe";
@@ -892,33 +891,6 @@ class OsoAppClient {
       throw new Error("Error unpublishing notebook: " + json.error);
     }
     return true;
-  }
-
-  async getPublishedNotebookByNames(
-    args: Partial<{ notebookName: string; orgName: string }>,
-  ): Promise<(PublishedNotebooksRow & { html: string }) | null> {
-    console.log("getPublishedNotebook: ", args);
-    const notebookName = ensure(
-      args.notebookName,
-      "Missing notebookName argument",
-    );
-    const orgName = ensure(args.orgName, "Missing orgName argument");
-
-    const searchParams = new URLSearchParams({ orgName, notebookName });
-    const response = await fetch(`/api/v1/notebooks/publish?${searchParams}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    const json = await response.json();
-
-    if (!response.ok) {
-      throw new Error("Error fetching published notebook: " + json.error);
-    }
-
-    return json;
   }
 
   /**
