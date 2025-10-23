@@ -40,17 +40,17 @@ export const ProgressMeta: CodeComponentMeta<ProgressProps> = {
   props: {
     value: {
       type: "number",
-      description: "Progress value (0-100)",
-      defaultValue: 0,
+      helpText: "Progress value (0-100)",
+      defaultValueHint: 0,
     },
     max: {
       type: "number",
-      description: "Maximum value",
-      defaultValue: 100,
+      helpText: "Maximum value",
+      defaultValueHint: 100,
     },
     indicatorClassName: {
       type: "class",
-      description: "Styles for the progress indicator bar",
+      helpText: "Styles for the progress indicator bar",
     },
   },
 };
