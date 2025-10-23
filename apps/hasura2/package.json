@@ -20,7 +20,7 @@
     "build:ts": "tsc",
     "build": "pnpm build:ts && pnpm metadata:genTables",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
-    "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
+    "lint:eslint": "eslint --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
     "metadata:genTables": "dotenv -- node --loader ts-node/esm src/genTables.ts",
     "metadata:pull": "hasura metadata export",
