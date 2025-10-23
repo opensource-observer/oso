@@ -5,10 +5,10 @@ A simple heartbeat resource to indicate liveness of Dagster jobs.
 import asyncio
 import concurrent.futures
 import logging
+import threading
 import typing as t
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timezone
-from queue import Empty, Queue
 
 import aiofiles
 import dagster as dg
@@ -22,7 +22,7 @@ BeatLoopFunc = t.Callable[..., t.Coroutine[None, None, None]]
 
 def run_beat_loop(
     interval_seconds: int,
-    queue: Queue[bool],
+    stop: threading.Event,
     beat_loop_func: BeatLoopFunc,
     beat_loop_kwargs: dict[str, t.Any],
 ) -> None:
@@ -30,25 +30,24 @@ def run_beat_loop(
     while True:
         logger.info("Running heartbeat beat loop function")
         asyncio.run(beat_loop_func(**beat_loop_kwargs))
-        try:
-            if queue.get(timeout=interval_seconds):
-                logger.info("Stopping heartbeat beat loop")
-                break
-        except Empty:
-            continue
+        if stop.wait(timeout=float(interval_seconds)):
+            logger.info("Stopping heartbeat beat loop")
+            break
 
 
 class HeartBeatResource(dg.ConfigurableResource):
     def beat_loop_func(self) -> BeatLoopFunc:
+        """Return the function to be called in the heartbeat loop"""
         raise NotImplementedError()
 
     def beat_loop_kwargs(self) -> dict[str, t.Any]:
+        """Return the kwargs to be passed to the heartbeat loop function"""
         return {}
 
     async def get_last_heartbeat_for(self, name: str) -> datetime | None:
         raise NotImplementedError()
 
-    async def beat(self, heartbeat_name: str) -> None:
+    async def beat(self, name: str) -> None:
         raise NotImplementedError()
 
     @asynccontextmanager
@@ -63,19 +62,32 @@ class HeartBeatResource(dg.ConfigurableResource):
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             kwargs = self.beat_loop_kwargs().copy()
             kwargs.update({"heartbeat_name": name})
-            queue = Queue[bool]()
+            stop = threading.Event()
+
+            # The beat loop must run in a separate thread because dagster's
+            # async event loop tends to block despite being async. Using a
+            # thread ensures that the heartbeat will run assuming the process is
+            # alive and not completely blocked.
+            #
+            # So in order to make this work we must pass all of the context we
+            # need for the beat loop function as the function running in a
+            # separate thread might not have access to the same context.
+            # Additionally, this means changing this to be separate processes
+            # can be done in the future if needed. This is also why the
+            # functions used for the beat loop are not methods of the resource
+            # class implementations.
             beat_task = loop.run_in_executor(
                 executor,
                 run_beat_loop,
                 interval_seconds,
-                queue,
+                stop,
                 self.beat_loop_func(),
                 kwargs,
             )
             try:
                 yield
             finally:
-                queue.put(True)
+                stop.set()
                 beat_task.cancel()
                 with suppress(asyncio.CancelledError):
                     await beat_task
@@ -118,9 +130,9 @@ class RedisHeartBeatResource(HeartBeatResource):
             else:
                 return None
 
-    async def beat(self, heartbeat_name: str) -> None:
+    async def beat(self, name: str) -> None:
         return await redis_send_heartbeat(
-            host=self.host, port=self.port, heartbeat_name=heartbeat_name
+            host=self.host, port=self.port, heartbeat_name=name
         )
 
 
@@ -149,14 +161,10 @@ class FilebasedHeartBeatResource(HeartBeatResource):
             timestamp = await f.read()
             return datetime.fromisoformat(timestamp)
 
-    async def beat(self, heartbeat_name: str) -> None:
-        from pathlib import Path
-
-        import aiofiles
-
-        filepath = Path(self.directory) / f"{heartbeat_name}_heartbeat.txt"
-        async with aiofiles.open(filepath, mode="w") as f:
-            await f.write(datetime.now(timezone.utc).isoformat())
+    async def beat(self, name: str) -> None:
+        return await filebased_send_heartbeat(
+            directory=self.directory, heartbeat_name=name
+        )
 
     @asynccontextmanager
     async def heartbeat(
