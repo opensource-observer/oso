@@ -156,7 +156,7 @@
     "eslint-plugin-storybook": "^9.1.2",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
-    "playwright": "^1.54.2",
+    "playwright": "^1.55.1",
     "postcss": "^8.5.6",
     "storybook": "^9.1.2",
     "supabase": "^2.39.2",
