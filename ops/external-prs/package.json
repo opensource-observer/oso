@@ -21,8 +21,8 @@
   "scripts": {
     "build": "tsc",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
-    "lint:eslint": "eslint --ignore-path ../../.gitignore --max-warnings 0 .",
-    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,jsx,ts,tsx,sol,md,json}",
+    "lint:eslint": "eslint --max-warnings 0 .",
+    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,ts,md,json}",
     "tools": "node --loader ts-node/esm src/cli.ts"
   },
   "keywords": [],
