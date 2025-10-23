@@ -24,6 +24,15 @@ async function generateNotebookHtml(browser: Browser, url: string) {
   const cssRules: string[] = [];
   await page.goto(url, { timeout: 10 * 1000, waitUntil: "networkidle0" });
 
+  // Wait for the spinner to appear and then disappear
+  await page.waitForSelector("[data-testid='large-spinner']", {
+    timeout: 10000,
+  });
+  await page.waitForSelector("[data-testid='large-spinner']", {
+    timeout: 30000,
+    hidden: true,
+  });
+
   const previewButton = await page.waitForSelector("[id='preview-button']", {
     timeout: 5000,
   });
