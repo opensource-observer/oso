@@ -51,7 +51,7 @@ Remember to set `preview: true` in `plasmic-init.ts` if you want to see unpublis
 To create a production build (code+build):
 
 ```bash
-pnpm build
+pnpm build:prod
 ```
 
 You can also run codegen and the Next.js build separately:

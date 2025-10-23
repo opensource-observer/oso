@@ -25,6 +25,10 @@
       "env": ["PLASMIC_PROJECT_ID", "PLASMIC_PROJECT_API_TOKEN"],
       "cache": false
     },
+    "@opensource-observer/frontend#deploy": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
     "@opensource-observer/hasura-clickhouse#sync": {}
   }
 }
