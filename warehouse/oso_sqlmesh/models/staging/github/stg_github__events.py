@@ -30,14 +30,17 @@ from sqlmesh.core.model import ModelKindName
         "time_column": "created_at",
         "batch_size": 90,
         "batch_concurrency": 3,
-        "lookback": 31,
+        "lookback": 10,
         "forward_only": True,
     },
     partitioned_by=("day(created_at)",),
     physical_properties={"max_commit_retry": 15},
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
-        ("no_gaps", {"time_column": exp.to_column("created_at"), "no_gap_date_part": "day"}),
+        (
+            "no_gaps",
+            {"time_column": exp.to_column("created_at"), "no_gap_date_part": "day"},
+        ),
     ],
 )
 def github_events(
@@ -55,7 +58,7 @@ def github_events(
 
     import arrow
 
-    runtime_stage = context.var('runtime_stage')
+    runtime_stage = context.var("runtime_stage")
 
     if runtime_stage == "testing" or context.gateway != "trino":
         data = {
@@ -115,7 +118,7 @@ def github_events(
 
     difference = end_arrow - start_arrow
     selects: t.List[exp.Select] = []
-    if difference.days < 7:
+    if difference.days < 10:
         unit = "day"
         format = "YYYYMMDD"
     else:
