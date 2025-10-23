@@ -42,23 +42,28 @@ async function generateNotebookHtml(browser: Browser, url: string) {
     hidden: true,
   });
   logger.info("Spinner disappeared.");
-  // const previewButton = await page.waitForSelector("[id='preview-button']", {
-  //   timeout: LONG_TIMEOUT_MS,
-  // });
+  const previewButton = await page.waitForSelector("[id='preview-button']", {
+    timeout: LONG_TIMEOUT_MS,
+  });
 
-  // await previewButton?.click();
+  await previewButton?.click();
 
-  // logger.info("Clicked preview button, waiting for interrupt button...");
+  logger.info("Clicked preview button, waiting for interrupt button...");
   // Wait for the interrupt button to have the inactive-button class for at least 10 seconds
   await page.waitForFunction(
     () => {
       const spinner = document.querySelector(
         "[data-testid='loading-indicator']",
       );
-      const button = document.querySelector('[data-testid="interrupt-button"]');
-      const hasInactiveClass = button?.classList.contains("inactive-button");
+      const interruptButton = document.querySelector(
+        '[data-testid="interrupt-button"]',
+      );
+      const runButton = document.querySelector('[data-testid="run-button"]');
+      const needsToRun = runButton?.classList.contains("yellow");
+      const hasInactiveClass =
+        interruptButton?.classList.contains("inactive-button");
 
-      if (!hasInactiveClass || spinner) {
+      if (!hasInactiveClass || spinner || needsToRun) {
         window.stableStart = undefined;
         return false;
       } else {
