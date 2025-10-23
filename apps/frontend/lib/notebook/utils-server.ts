@@ -55,10 +55,15 @@ async function generateNotebookHtml(browser: Browser, url: string) {
       const spinner = document.querySelector(
         "[data-testid='loading-indicator']",
       );
-      const button = document.querySelector('[data-testid="interrupt-button"]');
-      const hasInactiveClass = button?.classList.contains("inactive-button");
+      const interruptButton = document.querySelector(
+        '[data-testid="interrupt-button"]',
+      );
+      const runButton = document.querySelector('[data-testid="run-button"]');
+      const needsToRun = runButton?.classList.contains("yellow");
+      const hasInactiveClass =
+        interruptButton?.classList.contains("inactive-button");
 
-      if (!hasInactiveClass || spinner) {
+      if (!hasInactiveClass || spinner || needsToRun) {
         window.stableStart = undefined;
         return false;
       } else {
