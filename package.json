@@ -46,7 +46,7 @@
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^16.4.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.2",
+    "lint-staged": "^16.2.6",
     "npm-check-updates": "^18.0.1",
     "prettier": "^3.6.2",
     "pyright": "^1.1.390",
