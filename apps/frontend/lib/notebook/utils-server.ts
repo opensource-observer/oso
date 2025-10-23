@@ -23,7 +23,12 @@ const LONG_TIMEOUT_MS = 250 * 1000;
 
 async function generateNotebookHtml(browser: Browser, url: string) {
   const page = await browser.newPage();
+  page.on("console", (msg) => {
+    logger.info(`Puppeteer console [${msg.type()}]: ${msg.text()}`);
+  });
   const cssRules: string[] = [];
+  logger.info("Navigating to notebook URL:", url);
+
   await page.goto(url, { timeout: 10 * 1000, waitUntil: "networkidle0" });
 
   logger.info("Page loaded, waiting for spinner...");
