@@ -415,15 +415,17 @@ def nessie_factory(global_config: DagsterConfig):
 @time_function(logger)
 def heartbeat_factory(global_config: DagsterConfig) -> HeartBeatResource:
     """Factory function to create a heartbeat resource."""
-    if global_config.k8s_enabled:
+    if global_config.k8s_enabled or global_config.redis_host:
         assert global_config.redis_host is not None, (
             "Redis host must be set for Redis heartbeat."
         )
+        logger.info("Using RedisHeartBeatResource for heartbeat.")
         return RedisHeartBeatResource(
             host=global_config.redis_host,
             port=global_config.redis_port,
         )
     else:
+        logger.info("Using FilebasedHeartBeatResource for heartbeat.")
         return FilebasedHeartBeatResource(
             directory=global_config.dagster_home,
         )

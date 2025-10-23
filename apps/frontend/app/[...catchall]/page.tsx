@@ -1,9 +1,11 @@
-import { PlasmicComponent } from "@plasmicapp/loader-nextjs";
+import { ComponentMeta, PlasmicComponent } from "@plasmicapp/loader-nextjs";
 import { notFound } from "next/navigation";
 import { PLASMIC } from "@/plasmic-init";
 import { PlasmicClientRootProvider } from "@/plasmic-init-client";
 import type { Metadata, Viewport } from "next";
 import { generateNotebookMetadata } from "@/lib/utils/og-metadata";
+import { logger } from "@/lib/logger";
+import { getPublishedNotebookByNames } from "@/lib/notebook/utils-server";
 
 // Use revalidate if you want incremental static regeneration
 // export const dynamic = "force-static";
@@ -29,13 +31,24 @@ export default async function PlasmicLoaderPage({
   }
 
   const pageMeta = prefetchedData.entryCompMetas[0];
+
+  let pageProps = {};
+  try {
+    pageProps = await getPageProps(pageMeta);
+  } catch (error) {
+    logger.error("Error fetching page props:", error);
+  }
+
   return (
     <PlasmicClientRootProvider
       prefetchedData={prefetchedData}
       pageParams={pageMeta.params}
       pageQuery={searchParams}
     >
-      <PlasmicComponent component={pageMeta.displayName} />
+      <PlasmicComponent
+        component={pageMeta.displayName}
+        componentProps={pageProps}
+      />
     </PlasmicClientRootProvider>
   );
 }
@@ -94,4 +107,24 @@ export async function generateStaticParams() {
       catchall,
     };
   });
+}
+
+async function getPageProps(
+  pageMeta: ComponentMeta & { params?: Record<string, string> },
+): Promise<Record<string, any>> {
+  const { params } = pageMeta;
+  if (pageMeta.name === "OrganizationNotebookPage") {
+    const { orgName, notebookName } = params || {};
+    if (!orgName || !notebookName) {
+      return {};
+    }
+    const publishedNotebook = await getPublishedNotebookByNames(
+      orgName,
+      notebookName,
+    );
+    return {
+      publishedHtml: publishedNotebook?.html,
+    };
+  }
+  return {};
 }
