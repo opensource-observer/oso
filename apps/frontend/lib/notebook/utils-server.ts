@@ -47,17 +47,20 @@ async function generateNotebookHtml(browser: Browser, url: string) {
   // Wait for the interrupt button to have the inactive-button class for at least 10 seconds
   await page.waitForFunction(
     () => {
+      const spinner = document.querySelector(
+        "[data-testid='loading-indicator']",
+      );
       const button = document.querySelector('[data-testid="interrupt-button"]');
       const hasInactiveClass = button?.classList.contains("inactive-button");
 
-      if (hasInactiveClass) {
+      if (!hasInactiveClass || spinner) {
+        window.stableStart = undefined;
+        return false;
+      } else {
         if (window.stableStart === undefined) {
           window.stableStart = Date.now();
         }
         return Date.now() - window.stableStart >= 10000;
-      } else {
-        window.stableStart = undefined;
-        return false;
       }
     },
     { timeout: LONG_TIMEOUT_MS, polling: 100 },
