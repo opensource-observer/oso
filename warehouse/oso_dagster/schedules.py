@@ -77,9 +77,11 @@ def get_partitioned_schedules(
     return [create_schedule(asset_key) for asset_key in resolved_assets]
 
 
-def is_first_or_third_monday() -> bool:
+def is_first_or_fifteenth_of_the_month() -> bool:
     today = datetime.now(timezone.utc)
-    return today.weekday() == 0 and (1 <= today.day <= 7 or 15 <= today.day <= 21)
+    if today.day in [1, 15]:
+        return True
+    return False
 
 
 def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
@@ -173,19 +175,32 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
             description="Materializes all of sqlmesh and any assets downstream of sqlmesh",
         )
 
-        @dg.schedule(target=sqlmesh_and_downstream_assets, cron_schedule="0 5 * * *")
+        # Run sqlmesh assets daily, but only materialize downstream assets every
+        # first or fifteenth of a month. Due to the nessie commit that is
+        # required to publish the final dataset, this should be a safe operation
+        @dg.schedule(job_name="sqlmesh_all_assets", cron_schedule="0 5 * * *")
         def daily_sqlmesh_materialization_schedule():
-            if not is_first_or_third_monday():
+            if is_first_or_fifteenth_of_the_month():
+                return dg.SkipReason(
+                    skip_message="On first or fifteenth of the month we run sqlmesh and downstream assets. Skipping this duplicate run."
+                )
+            return dg.RunRequest(
+                job_name="sqlmesh_all_assets",
+            )
+
+        @dg.schedule(target=sqlmesh_and_downstream_assets, cron_schedule="0 5 1,15 * *")
+        def twice_monthly_sqlmesh_and_downstream_materialization_schedule():
+            if is_first_or_fifteenth_of_the_month():
                 return dg.RunRequest(
-                    job_name="sqlmesh_all_assets",
+                    job_name="sqlmesh_and_downstream_assets",
                 )
 
-            # Run all downstream assets from sqlmesh on the first and third Monday of
-            # each month. We run on a Monday so that we can fix issues in the morning as
-            # the work week starts
-            return dg.RunRequest()
+            return dg.SkipReason(
+                skip_message="Not on first or fifteenth of the month, skipping sqlmesh and downstream assets"
+            )
 
         schedules.append(daily_sqlmesh_materialization_schedule)
+        schedules.append(twice_monthly_sqlmesh_and_downstream_materialization_schedule)
         jobs.append(sqlmesh_and_downstream_assets)
 
     return AssetFactoryResponse(
