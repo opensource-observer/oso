@@ -6,6 +6,7 @@ import aiotrino
 from aiotrino.dbapi import Connection as AsyncConnection
 from dagster import ConfigurableResource, ResourceDependency
 from metrics_tools.transfer.trino import TrinoExporter
+from oso_dagster.resources.heartbeat import HeartBeatResource
 from oso_dagster.resources.storage import TimeOrderedStorageResource
 from pydantic import Field
 from trino.dbapi import Connection
@@ -259,6 +260,8 @@ class TrinoRemoteResource(TrinoResource):
 class TrinoExporterResource(ConfigurableResource):
     trino: ResourceDependency[TrinoResource]
 
+    heartbeat: ResourceDependency[HeartBeatResource]
+
     time_ordered_storage: ResourceDependency[TimeOrderedStorageResource]
 
     hive_catalog: str = Field(
@@ -273,16 +276,23 @@ class TrinoExporterResource(ConfigurableResource):
 
     @asynccontextmanager
     async def get_exporter(
-        self, export_prefix: str, log_override: t.Optional[logging.Logger] = None
+        self,
+        export_prefix: str,
+        log_override: t.Optional[logging.Logger] = None,
+        heartbeat_job_name: str = "sqlmesh",
     ) -> t.AsyncGenerator[TrinoExporter, None]:
-        async with self.time_ordered_storage.get(export_prefix) as storage:
-            async with self.trino.async_get_client(
-                log_override=log_override
-            ) as connection:
-                yield TrinoExporter(
-                    hive_catalog=self.hive_catalog,
-                    hive_schema=self.hive_schema,
-                    time_ordered_storage=storage,
-                    connection=connection,
-                    log_override=log_override,
-                )
+        async with self.heartbeat.heartbeat(
+            job_name=heartbeat_job_name, log_override=log_override
+        ):
+            async with self.trino.ensure_available(log_override=log_override):
+                async with self.time_ordered_storage.get(export_prefix) as storage:
+                    async with self.trino.async_get_client(
+                        log_override=log_override
+                    ) as connection:
+                        yield TrinoExporter(
+                            hive_catalog=self.hive_catalog,
+                            hive_schema=self.hive_schema,
+                            time_ordered_storage=storage,
+                            connection=connection,
+                            log_override=log_override,
+                        )
