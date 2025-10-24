@@ -1003,7 +1003,7 @@ export const checkResourcePermissionArgsSchema = z.object({
 
 export const checkResourcePermissionReturnsSchema = jsonSchema;
 
-export const cleanupOrphanedInvitationsArgsSchema = z.object({});
+export const cleanupOrphanedInvitationsArgsSchema = z.never();
 
 export const cleanupOrphanedInvitationsReturnsSchema = z.undefined();
 
@@ -1017,7 +1017,7 @@ export const deductCreditsArgsSchema = z.object({
 
 export const deductCreditsReturnsSchema = z.boolean();
 
-export const expireOldInvitationsArgsSchema = z.object({});
+export const expireOldInvitationsArgsSchema = z.never();
 
 export const expireOldInvitationsReturnsSchema = z.undefined();
 
