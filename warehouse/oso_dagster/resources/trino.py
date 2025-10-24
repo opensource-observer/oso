@@ -6,6 +6,7 @@ import aiotrino
 from aiotrino.dbapi import Connection as AsyncConnection
 from dagster import ConfigurableResource, ResourceDependency
 from metrics_tools.transfer.trino import TrinoExporter
+from oso_dagster.resources.heartbeat import HeartBeatResource
 from oso_dagster.resources.storage import TimeOrderedStorageResource
 from pydantic import Field
 from trino.dbapi import Connection
@@ -92,6 +93,8 @@ class TrinoK8sResource(TrinoResource):
 
     k8s: ResourceDependency[K8sResource]
 
+    heartbeat: ResourceDependency[HeartBeatResource]
+
     user: str = Field(
         default="dagster",
         description="Trino user",
@@ -142,6 +145,16 @@ class TrinoK8sResource(TrinoResource):
         description="Use port forward to connect to trino - should only be used for testing",
     )
 
+    heartbeat_name: str = Field(
+        default="producer_trino",
+        description="Heartbeat name to use when ensuring trino is available",
+    )
+
+    heartbeat_interval_seconds: int = Field(
+        default=300,
+        description="Heartbeat interval in seconds when ensuring trino is available",
+    )
+
     @asynccontextmanager
     async def async_get_client(
         self,
@@ -173,40 +186,45 @@ class TrinoK8sResource(TrinoResource):
     async def ensure_available(self, log_override: t.Optional[logging.Logger] = None):
         """Ensures that the trino is deployed and available"""
         logger = log_override or module_logger
-        async with multiple_async_contexts(
-            coordinator=self.k8s.deployment_context(
-                name=self.coordinator_deployment_name,
-                namespace=self.namespace,
-                min_replicas=1,
-                log_override=log_override,
-            ),
-            worker=self.k8s.deployment_context(
-                name=self.worker_deployment_name,
-                namespace=self.namespace,
-                min_replicas=1,
-                log_override=log_override,
-            ),
+        async with self.heartbeat.heartbeat(
+            name=self.heartbeat_name,
+            interval_seconds=self.heartbeat_interval_seconds,
+            log_override=log_override,
         ):
-            # Check that the service is online
-            async with self.k8s.get_service_connection(
-                self.service_name,
-                self.namespace,
-                self.service_port_name,
-                use_port_forward=self.use_port_forward,
-            ) as (host, port):
-                health_check_url = f"http://{host}:{port}/v1/statement"
+            async with multiple_async_contexts(
+                coordinator=self.k8s.deployment_context(
+                    name=self.coordinator_deployment_name,
+                    namespace=self.namespace,
+                    min_replicas=1,
+                    log_override=log_override,
+                ),
+                worker=self.k8s.deployment_context(
+                    name=self.worker_deployment_name,
+                    namespace=self.namespace,
+                    min_replicas=1,
+                    log_override=log_override,
+                ),
+            ):
+                # Check that the service is online
+                async with self.k8s.get_service_connection(
+                    self.service_name,
+                    self.namespace,
+                    self.service_port_name,
+                    use_port_forward=self.use_port_forward,
+                ) as (host, port):
+                    health_check_url = f"http://{host}:{port}/v1/statement"
 
-                logger.info(f"Wait for trino to be online at {health_check_url}")
-                # Wait for trino to be online with a simple `SELECT 1` query
-                await wait_for_ok_async(
-                    health_check_url,
-                    timeout=self.connect_timeout,
-                    method="POST",
-                    data="SELECT 1",
-                    # The user is required but can be anything
-                    headers={"X-Trino-User": "dagster-status-check"},
-                )
-                yield
+                    logger.info(f"Wait for trino to be online at {health_check_url}")
+                    # Wait for trino to be online with a simple `SELECT 1` query
+                    await wait_for_ok_async(
+                        health_check_url,
+                        timeout=self.connect_timeout,
+                        method="POST",
+                        data="SELECT 1",
+                        # The user is required but can be anything
+                        headers={"X-Trino-User": "dagster-status-check"},
+                    )
+                    yield
 
     async def ensure_shutdown(self):
         """Ensures that trino deployments are scaled down to zero."""
@@ -273,16 +291,19 @@ class TrinoExporterResource(ConfigurableResource):
 
     @asynccontextmanager
     async def get_exporter(
-        self, export_prefix: str, log_override: t.Optional[logging.Logger] = None
+        self,
+        export_prefix: str,
+        log_override: t.Optional[logging.Logger] = None,
     ) -> t.AsyncGenerator[TrinoExporter, None]:
-        async with self.time_ordered_storage.get(export_prefix) as storage:
-            async with self.trino.async_get_client(
-                log_override=log_override
-            ) as connection:
-                yield TrinoExporter(
-                    hive_catalog=self.hive_catalog,
-                    hive_schema=self.hive_schema,
-                    time_ordered_storage=storage,
-                    connection=connection,
-                    log_override=log_override,
-                )
+        async with self.trino.ensure_available(log_override=log_override):
+            async with self.time_ordered_storage.get(export_prefix) as storage:
+                async with self.trino.async_get_client(
+                    log_override=log_override
+                ) as connection:
+                    yield TrinoExporter(
+                        hive_catalog=self.hive_catalog,
+                        hive_schema=self.hive_schema,
+                        time_ordered_storage=storage,
+                        connection=connection,
+                        log_override=log_override,
+                    )
