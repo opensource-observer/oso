@@ -109,47 +109,6 @@ export const invitationResolvers: GraphQLResolverMap<GraphQLContext> = {
       const { data: invitations } = await query;
       return invitations || [];
     },
-
-    osoApp_organizationInvitations: async (
-      _: unknown,
-      args: { orgName: string; status?: string },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const org = await getOrganizationByName(args.orgName);
-      await requireOrgMembership(authenticatedUser.userId, org.id);
-
-      const supabase = createAdminClient();
-      let query = supabase.from("invitations").select("*").eq("org_id", org.id);
-
-      if (args.status) {
-        switch (args.status) {
-          case "PENDING":
-            query = query
-              .is("accepted_at", null)
-              .is("deleted_at", null)
-              .gt("expires_at", new Date().toISOString());
-            break;
-          case "ACCEPTED":
-            query = query.not("accepted_at", "is", null);
-            break;
-          case "EXPIRED":
-            query = query
-              .is("accepted_at", null)
-              .is("deleted_at", null)
-              .lt("expires_at", new Date().toISOString());
-            break;
-          case "DELETED":
-            query = query.not("deleted_at", "is", null);
-            break;
-        }
-      } else {
-        query = query.is("deleted_at", null);
-      }
-
-      const { data: invitations } = await query;
-      return invitations || [];
-    },
   },
 
   Invitation: {

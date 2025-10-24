@@ -20,25 +20,6 @@ export const organizationResolvers: GraphQLResolverMap<GraphQLContext> = {
       await requireOrgMembership(authenticatedUser.userId, org.id);
       return org;
     },
-
-    osoApp_organizationMembers: async (
-      _: unknown,
-      { orgName }: { orgName: string },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const org = await getOrganizationByName(orgName);
-      await requireOrgMembership(authenticatedUser.userId, org.id);
-
-      const supabase = createAdminClient();
-      const { data: members } = await supabase
-        .from("users_by_organization")
-        .select("*")
-        .eq("org_id", org.id)
-        .is("deleted_at", null);
-
-      return members || [];
-    },
   },
 
   Organization: {

@@ -92,19 +92,6 @@ type Query {
   osoApp_myInvitations(status: InvitationStatus): [Invitation!]!
 
   """
-  Get invitations for a specific organization (requires membership)
-  """
-  osoApp_organizationInvitations(
-    orgName: String!
-    status: InvitationStatus
-  ): [Invitation!]!
-
-  """
-  Get members of a specific organization (requires membership)
-  """
-  osoApp_organizationMembers(orgName: String!): [OrganizationMember!]!
-
-  """
   Get a specific organization by name
   """
   osoApp_organization(orgName: String!): Organization
