@@ -2,6 +2,16 @@ import { NextJsPlasmicComponentLoader } from "@plasmicapp/loader-nextjs";
 import { Skeleton, SkeletonMeta } from "@/components/ui/skeleton";
 import { Button, ButtonMeta } from "@/components/ui/button";
 import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+  AccordionMeta,
+  AccordionItemMeta,
+  AccordionTriggerMeta,
+  AccordionContentMeta,
+} from "@/components/ui/accordion";
+import {
   Breadcrumb,
   BreadcrumbList,
   BreadcrumbItem,
@@ -58,6 +68,7 @@ import {
   PopoverContentMeta,
   PopoverAnchorMeta,
 } from "@/components/ui/popover";
+import { Progress, ProgressMeta } from "@/components/ui/progress";
 import {
   Sidebar,
   SidebarContent,
@@ -262,6 +273,10 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
   PLASMIC.registerComponent(Skeleton, SkeletonMeta);
   PLASMIC.registerComponent(Button, ButtonMeta);
+  PLASMIC.registerComponent(Accordion, AccordionMeta);
+  PLASMIC.registerComponent(AccordionItem, AccordionItemMeta);
+  PLASMIC.registerComponent(AccordionTrigger, AccordionTriggerMeta);
+  PLASMIC.registerComponent(AccordionContent, AccordionContentMeta);
   PLASMIC.registerComponent(Breadcrumb, BreadcrumbMeta);
   PLASMIC.registerComponent(BreadcrumbList, BreadcrumbListMeta);
   PLASMIC.registerComponent(BreadcrumbItem, BreadcrumbItemMeta);
@@ -288,6 +303,7 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(PopoverTrigger, PopoverTriggerMeta);
   PLASMIC.registerComponent(PopoverContent, PopoverContentMeta);
   PLASMIC.registerComponent(PopoverAnchor, PopoverAnchorMeta);
+  PLASMIC.registerComponent(Progress, ProgressMeta);
   PLASMIC.registerComponent(ToolTip, ToolTipMeta);
   PLASMIC.registerComponent(Sidebar, SidebarMeta);
   PLASMIC.registerComponent(SidebarProvider, SidebarProviderMeta);
