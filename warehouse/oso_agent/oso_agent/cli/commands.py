@@ -145,6 +145,7 @@ def initialize_vector_store(config: AgentConfig):
                 storage_context=storage_context,
                 oso_client=oso_client,
                 embed_model=embed,
+                show_progress=True,
             )
         )
 

@@ -46,8 +46,6 @@ export const POST = withPostHogTracking(async (req: NextRequest) => {
         orgId,
         TransactionType.TEXT2SQL,
         tracker,
-        "/api/v1/text2sql",
-        { message: getLatestMessage(prompt.messages) },
       );
     } catch (error) {
       if (error instanceof InsufficientCreditsError) {

@@ -68,7 +68,8 @@ op_tags = {
             ],
         },
         "merge_behavior": "SHALLOW",
-    }
+    },
+    "dagster/concurrency_key": "sqlmesh",
 }
 
 

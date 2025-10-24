@@ -127,7 +127,6 @@ const DEFAULT_MENU_ITEMS: NavBarItem[] = [
   },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type OsoNavbarProps = {
   className?: string; // Plasmic CSS class
   menuItems?: NavBarItem[]; // Override default menu items

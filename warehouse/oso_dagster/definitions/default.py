@@ -54,9 +54,11 @@ def default_definitions(
 
     asset_factories = asset_factories + chunked_state_cleanup_sensor
 
-    all_schedules = default_schedules(
-        global_config
-    ).schedules + get_partitioned_schedules(asset_factories)
+    all_schedules = (
+        default_schedules(global_config).schedules
+        + get_partitioned_schedules(asset_factories)
+        + asset_factories.schedules
+    )
 
     return DefinitionsLoaderResponse(
         asset_factory_response=asset_factories,

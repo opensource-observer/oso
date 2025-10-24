@@ -22,7 +22,6 @@ from oso_dagster.resources import (
     PostgresResource,
     PrefixedSQLMeshTranslator,
     SQLMeshExporter,
-    Trino2BigQuerySQLMeshExporter,
     Trino2ClickhouseSQLMeshExporter,
     TrinoK8sResource,
     TrinoRemoteResource,
@@ -35,6 +34,11 @@ from oso_dagster.resources import (
 from oso_dagster.resources.bq import BigQueryImporterResource
 from oso_dagster.resources.clickhouse import ClickhouseImporterResource
 from oso_dagster.resources.duckdb import DuckDBExporterResource
+from oso_dagster.resources.heartbeat import (
+    FilebasedHeartBeatResource,
+    HeartBeatResource,
+    RedisHeartBeatResource,
+)
 from oso_dagster.resources.storage import (
     GCSTimeOrderedStorageResource,
     TimeOrderedStorageResource,
@@ -184,7 +188,9 @@ def k8s_resource_factory(global_config: DagsterConfig) -> K8sResource | K8sApiRe
 @resource_factory("trino")
 @time_function(logger)
 def trino_resource_factory(
-    global_config: DagsterConfig, k8s: K8sResource | K8sApiResource
+    global_config: DagsterConfig,
+    k8s: K8sResource | K8sApiResource,
+    heartbeat: HeartBeatResource,
 ) -> TrinoResource:
     if not global_config.k8s_enabled:
         return TrinoRemoteResource()
@@ -195,6 +201,7 @@ def trino_resource_factory(
         coordinator_deployment_name=global_config.trino_k8s_coordinator_deployment_name,
         worker_deployment_name=global_config.trino_k8s_worker_deployment_name,
         use_port_forward=global_config.k8s_use_port_forward,
+        heartbeat=heartbeat,
     )
 
 
@@ -216,13 +223,6 @@ def sqlmesh_exporter_factory(global_config: DagsterConfig) -> t.List[SQLMeshExpo
             ["clickhouse_metrics"],
             destination_catalog="clickhouse",
             destination_schema="default",
-            source_catalog=global_config.sqlmesh_catalog,
-            source_schema=global_config.sqlmesh_schema,
-        ),
-        Trino2BigQuerySQLMeshExporter(
-            ["bigquery_metrics"],
-            project_id=global_config.gcp_project_id,
-            dataset_id=global_config.sqlmesh_bq_export_dataset_id,
             source_catalog=global_config.sqlmesh_catalog,
             source_schema=global_config.sqlmesh_schema,
         ),
@@ -414,6 +414,26 @@ def nessie_factory(global_config: DagsterConfig):
     return NessieResource(url=global_config.nessie_url)
 
 
+@resource_factory("heartbeat")
+@time_function(logger)
+def heartbeat_factory(global_config: DagsterConfig) -> HeartBeatResource:
+    """Factory function to create a heartbeat resource."""
+    if global_config.k8s_enabled or global_config.redis_host:
+        assert global_config.redis_host is not None, (
+            "Redis host must be set for Redis heartbeat."
+        )
+        logger.info("Using RedisHeartBeatResource for heartbeat.")
+        return RedisHeartBeatResource(
+            host=global_config.redis_host,
+            port=global_config.redis_port,
+        )
+    else:
+        logger.info("Using FilebasedHeartBeatResource for heartbeat.")
+        return FilebasedHeartBeatResource(
+            directory=global_config.dagster_home,
+        )
+
+
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
@@ -450,5 +470,6 @@ def default_resource_registry():
     registry.add(alert_manager_factory)
     registry.add(time_ordered_storage_factory)
     registry.add(oso_app_db_factory)
+    registry.add(heartbeat_factory)
 
     return registry

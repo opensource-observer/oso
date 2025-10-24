@@ -94,6 +94,19 @@ export const ButtonMeta: CodeComponentMeta<ButtonPropsWithMeta> = {
       type: "eventHandler",
       argTypes: [{ name: "event", type: "object" }],
     },
+    className: {
+      type: "class",
+      selectors: [
+        {
+          selector: ":hover",
+          label: "Hovered",
+        },
+        {
+          selector: ":active",
+          label: "Pressed",
+        },
+      ],
+    },
   },
 };
 

@@ -9,6 +9,7 @@ import { toast, ExternalToast } from "sonner";
 import * as config from "@/lib/config";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
 import { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
+import { usePostHog } from "posthog-js/react";
 
 const PLASMIC_KEY = "globals";
 const PLASMIC_CONTEXT_NAME = "OsoGlobalContext";
@@ -57,6 +58,8 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "moveNotebook",
   "updateNotebook",
   "deleteNotebookById",
+  "publishNotebook",
+  "unpublishNotebook",
   "getOrganizationCredits",
   "getOrganizationCreditTransactions",
   "getConnectors",
@@ -123,6 +126,7 @@ const OsoGlobalContextMeta: GlobalContextMeta<OsoGlobalContextProps> = {
 function OsoGlobalContext(props: OsoGlobalContextProps) {
   const { children, errorCodeMap } = props;
   const { client } = useOsoAppClient();
+  const posthog = usePostHog();
   const [actionResult, setResult] = React.useState<any>(null);
   const [actionError, setError] = React.useState<any>(null);
 
@@ -140,6 +144,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
   };
   const handleError = (error: any) => {
     console.log("Error: ", error);
+    posthog.captureException(error, { context: "OsoGlobalContext" });
     setError(error);
     toast.error(
       errorCodeMap[error.code] ?? `${error.code}: ${error.message}`,

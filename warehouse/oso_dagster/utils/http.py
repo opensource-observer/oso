@@ -88,12 +88,12 @@ def wait_for_ok(url: str, timeout: int = 60):
     raise TimeoutError(f"Failed to connect to {url} after {timeout} seconds")
 
 
-async def wait_for_ok_async(url: str, timeout: int = 60):
+async def wait_for_ok_async(url: str, timeout: int = 60, method="GET", **kwargs):
     start = time.time()
     async with httpx.AsyncClient() as client:
         while time.time() - start < timeout:
             try:
-                response = await client.get(url)
+                response = await client.request(method, url, **kwargs)
                 response.raise_for_status()
                 return
             except httpx.RequestError:

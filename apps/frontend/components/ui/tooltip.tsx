@@ -36,6 +36,7 @@ type ToolTipProps = {
   trigger?: React.ReactElement; // Show this
   content?: React.ReactElement; // Show this
   side?: ToolTipSide; // Position of the tooltip
+  forceOpen?: boolean; // Force the tooltip to show
 };
 
 const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
@@ -43,19 +44,27 @@ const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
   description: "shadcn/ui tooltip component",
   props: {
     trigger: "slot",
-    content: "slot",
+    content: {
+      type: "slot",
+      defaultValue: "Tooltip content",
+    },
     side: {
       type: "choice",
       options: ["top", "right", "bottom", "left"],
+    },
+    forceOpen: {
+      type: "boolean",
+      editOnly: true,
+      helpText: "Force the tooltip content to show.",
     },
   },
 };
 
 function ToolTip(props: ToolTipProps) {
-  const { className, trigger, content, side } = props;
+  const { className, trigger, content, side, forceOpen } = props;
   return (
     <TooltipProvider>
-      <TooltipRoot>
+      <TooltipRoot open={forceOpen}>
         <TooltipTrigger asChild>
           <div className={className}>{trigger}</div>
         </TooltipTrigger>

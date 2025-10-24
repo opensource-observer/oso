@@ -1,0 +1,2 @@
+ALTER TABLE organizations
+ALTER COLUMN plan_id SET NOT NULL;
