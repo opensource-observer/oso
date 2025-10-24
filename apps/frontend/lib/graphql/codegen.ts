@@ -3,7 +3,7 @@ import {
   DAGSTER_GRAPHQL_URL,
   HASURA_URL,
   OSO_API_KEY,
-  OSO_GRAPH_URL,
+  // OSO_GRAPH_URL,
 } from "@/lib/config";
 
 const SCHEMA: Record<string, any> = {};
@@ -13,7 +13,10 @@ SCHEMA[HASURA_URL] = {
   },
 };
 SCHEMA[DAGSTER_GRAPHQL_URL] = {};
-SCHEMA[OSO_GRAPH_URL] = {};
+// TODO(jabolo): Enable this whene oso graph is in production
+// so introspection does not fail (the endpoint is not accessible
+// until we merge into main for the first time).
+// SCHEMA[OSO_GRAPH_URL] = {};
 const config: CodegenConfig = {
   schema: SCHEMA,
   documents: [
