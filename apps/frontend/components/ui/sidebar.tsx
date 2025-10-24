@@ -55,6 +55,7 @@ function useSidebar() {
 }
 
 type SidebarProviderProps = React.ComponentProps<"div"> & {
+  name?: string;
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -66,6 +67,10 @@ const SidebarProviderMeta: CodeComponentMeta<SidebarProviderProps> = {
   props: {
     children: "slot",
     defaultOpen: "boolean",
+    name: {
+      type: "string",
+      defaultValueHint: "default",
+    },
     open: "boolean",
     onOpenChange: {
       type: "eventHandler",
@@ -88,6 +93,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
       className,
       style,
       children,
+      name = "default",
       ...props
     },
     ref,
@@ -109,7 +115,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
         }
 
         // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+        document.cookie = `${SIDEBAR_COOKIE_NAME}:${name}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
       },
       [setOpenProp, open],
     );
