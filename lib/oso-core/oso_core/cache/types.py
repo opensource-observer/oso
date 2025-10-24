@@ -26,10 +26,12 @@ class CacheMetadataOptions(BaseModel):
         return cls(ttl_seconds=0)
 
     @classmethod
-    def with_no_expiration_if(cls, condition: bool) -> t.Self:
+    def with_no_expiration_if(
+        cls, condition: bool, default_ttl_seconds: int = 900
+    ) -> t.Self:
         if condition:
             return cls.with_no_expiration()
-        return cls()
+        return cls(ttl_seconds=default_ttl_seconds)
 
 
 class CacheOptions(BaseModel):
