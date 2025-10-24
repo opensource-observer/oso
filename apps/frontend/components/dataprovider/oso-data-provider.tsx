@@ -8,6 +8,7 @@ import {
   DataProviderView,
 } from "@/components/dataprovider/provider-view";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
+import { usePostHog } from "posthog-js/react";
 
 // The name used to pass data into the Plasmic DataProvider
 const DEFAULT_PLASMIC_KEY = "osoData";
@@ -54,6 +55,7 @@ const OsoDataProviderMeta: CodeComponentMeta<OsoDataProviderProps> = {
 
 function OsoDataProvider(props: OsoDataProviderProps) {
   const { dataFetches, variableName } = props;
+  const posthog = usePostHog();
   const key = genKey(props);
   const { client } = useOsoAppClient();
   const { data, mutate, error, isLoading } = useSWR(
@@ -77,11 +79,14 @@ function OsoDataProvider(props: OsoDataProviderProps) {
       console.log("OsoDataProvider:", props, data);
       return result;
     },
+    {
+      onError: (err) => {
+        console.log("OsoDataProvider error:", err);
+        posthog.captureException(err, { context: "OsoDataProvider" });
+      },
+    },
   );
   //console.log(JSON.stringify(data, null, 2));
-  if (error) {
-    console.log("OsoDataProvider error:", error);
-  }
 
   // Error messages are currently rendered in the component
   if (!dataFetches || _.isEmpty(dataFetches)) {
