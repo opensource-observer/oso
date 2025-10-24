@@ -170,29 +170,43 @@ ddp_flags AS (
     ON fa.artifact_id = r.artifact_id
   LEFT JOIN ddp_first_last AS dfl
     ON dfl.artifact_id = r.artifact_id
+),
+
+deduped AS (
+  SELECT DISTINCT
+    r.artifact_id,
+    r.artifact_namespace,
+    r.artifact_name,
+    dfl.first_artifact_id,
+    dfl.first_artifact_namespace,
+    dfl.first_artifact_name,
+    dfl.last_artifact_id,
+    dfl.last_artifact_namespace,
+    dfl.last_artifact_name,
+    df.is_current_url,
+    df.has_aliases,
+    df.alias_count
+  FROM ddp_repos AS r
+  LEFT JOIN ddp_first_last_labeled AS dfl
+    ON dfl.artifact_id = r.artifact_id
+  LEFT JOIN ddp_flags AS df
+    ON df.artifact_id = r.artifact_id  
 )
 
 SELECT
-  r.artifact_id,
-  r.artifact_namespace,
-  r.artifact_name,
-  r.artifact_source_id,
-  r.first_commit_time,
-  r.last_commit_time,
+  d.artifact_id,
+  d.artifact_namespace,
+  d.artifact_name,
   dfl.first_artifact_id,
-  dfl.first_artifact_namespace,
-  dfl.first_artifact_name,
-  dfl.last_artifact_id,
-  dfl.last_artifact_namespace,
-  dfl.last_artifact_name,
-  df.is_current_url,
-  df.has_aliases,
-  df.alias_count,
+  d.first_artifact_namespace,
+  d.first_artifact_name,
+  d.last_artifact_id,
+  d.last_artifact_namespace,
+  d.last_artifact_name,
+  d.is_current_url,
+  d.has_aliases,
+  d.alias_count,
   fa.family_artifact_ids
-FROM registered_ranges AS r
-LEFT JOIN ddp_first_last_labeled AS dfl
-  ON dfl.artifact_id = r.artifact_id
-LEFT JOIN ddp_flags AS df
-  ON df.artifact_id = r.artifact_id
+FROM deduped AS d
 LEFT JOIN family_agg AS fa
-  ON fa.artifact_id = r.artifact_id
+  ON fa.artifact_id = d.artifact_id

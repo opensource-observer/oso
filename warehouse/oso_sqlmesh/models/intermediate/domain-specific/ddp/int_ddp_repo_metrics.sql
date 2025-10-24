@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_ddo_repo_metrics,
+  name oso.int_ddp_repo_metrics,
   description "Metrics for Developer Data Program repositories",
   kind FULL,
   dialect trino,
