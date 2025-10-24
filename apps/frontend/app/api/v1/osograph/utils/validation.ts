@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ValidationErrors } from "&/utils/errors";
+import { ValidationErrors } from "@/app/api/v1/osograph/utils/errors";
 
 export const CreateInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),

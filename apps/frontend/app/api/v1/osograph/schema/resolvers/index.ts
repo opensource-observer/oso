@@ -1,10 +1,10 @@
 import { GraphQLScalarType, Kind } from "graphql";
 import type { GraphQLResolverMap } from "@apollo/subgraph/dist/schema-helper/resolverMap";
-import type { GraphQLContext } from "&/utils/auth";
-import { organizationResolvers } from "&/schema/resolvers/organization";
-import { userResolvers } from "&/schema/resolvers/user";
-import { memberResolvers } from "&/schema/resolvers/member";
-import { invitationResolvers } from "&/schema/resolvers/invitation";
+import type { GraphQLContext } from "@/app/api/v1/osograph/utils/auth";
+import { organizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization";
+import { userResolvers } from "@/app/api/v1/osograph/schema/resolvers/user";
+import { memberResolvers } from "@/app/api/v1/osograph/schema/resolvers/member";
+import { invitationResolvers } from "@/app/api/v1/osograph/schema/resolvers/invitation";
 
 const dateTimeScalar = new GraphQLScalarType({
   name: "DateTime",

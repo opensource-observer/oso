@@ -4,8 +4,8 @@ import {
   getUserProfile,
   requireAuthentication,
   type GraphQLContext,
-} from "&/utils/auth";
-import { UserErrors, ServerErrors } from "&/utils/errors";
+} from "@/app/api/v1/osograph/utils/auth";
+import { UserErrors, ServerErrors } from "@/app/api/v1/osograph/utils/errors";
 
 export const userResolvers: GraphQLResolverMap<GraphQLContext> = {
   Query: {

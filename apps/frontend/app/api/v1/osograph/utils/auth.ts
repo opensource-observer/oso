@@ -4,7 +4,7 @@ import {
   AuthenticationErrors,
   UserErrors,
   OrganizationErrors,
-} from "&/utils/errors";
+} from "@/app/api/v1/osograph/utils/errors";
 
 export type AuthenticatedUser = Extract<OrgUser, { role: "user" }>;
 

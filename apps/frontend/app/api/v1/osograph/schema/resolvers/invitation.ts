@@ -10,14 +10,18 @@ import {
   getOrganization,
   getOrganizationByName,
   type GraphQLContext,
-} from "&/utils/auth";
+} from "@/app/api/v1/osograph/utils/auth";
 import {
   validateInput,
   CreateInvitationSchema,
   AcceptInvitationSchema,
   RevokeInvitationSchema,
-} from "&/utils/validation";
-import { InvitationErrors, UserErrors, ServerErrors } from "&/utils/errors";
+} from "@/app/api/v1/osograph/utils/validation";
+import {
+  InvitationErrors,
+  UserErrors,
+  ServerErrors,
+} from "@/app/api/v1/osograph/utils/errors";
 
 export const invitationResolvers: GraphQLResolverMap<GraphQLContext> = {
   Query: {

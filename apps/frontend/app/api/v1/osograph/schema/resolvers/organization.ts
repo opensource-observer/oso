@@ -6,7 +6,7 @@ import {
   getOrganization,
   getOrganizationByName,
   type GraphQLContext,
-} from "&/utils/auth";
+} from "@/app/api/v1/osograph/utils/auth";
 
 export const organizationResolvers: GraphQLResolverMap<GraphQLContext> = {
   Query: {

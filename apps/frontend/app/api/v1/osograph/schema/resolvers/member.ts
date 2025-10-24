@@ -7,20 +7,20 @@ import {
   getOrganization,
   getOrganizationByName,
   type GraphQLContext,
-} from "&/utils/auth";
+} from "@/app/api/v1/osograph/utils/auth";
 import {
   validateInput,
   RemoveMemberSchema,
   UpdateMemberRoleSchema,
   AddUserByEmailSchema,
-} from "&/utils/validation";
+} from "@/app/api/v1/osograph/utils/validation";
 import {
   OrganizationErrors,
   UserErrors,
   ServerErrors,
   createError,
   ErrorCode,
-} from "&/utils/errors";
+} from "@/app/api/v1/osograph/utils/errors";
 
 export const memberResolvers: GraphQLResolverMap<GraphQLContext> = {
   OrganizationMember: {

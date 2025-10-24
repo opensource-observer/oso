@@ -6,7 +6,7 @@ import { readFileSync } from "fs";
 import path from "path";
 import { gql } from "graphql-tag";
 import { getOrgUser } from "@/lib/auth/auth";
-import { resolvers } from "&/schema/resolvers";
+import { resolvers } from "@/app/api/v1/osograph/schema/resolvers";
 
 const schemaPath = path.join(
   process.cwd(),
