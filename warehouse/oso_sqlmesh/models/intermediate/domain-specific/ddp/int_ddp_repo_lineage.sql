@@ -197,7 +197,7 @@ SELECT
   d.artifact_id,
   d.artifact_namespace,
   d.artifact_name,
-  dfl.first_artifact_id,
+  d.first_artifact_id,
   d.first_artifact_namespace,
   d.first_artifact_name,
   d.last_artifact_id,
