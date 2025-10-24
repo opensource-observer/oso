@@ -36,6 +36,8 @@ export const HASURA_PAT = process.env.HASURA_PAT ?? "MISSING HASURA_PAT";
 export const OSO_API_KEY = process.env.OSO_API_KEY ?? "MISSING OSO_API_KEY";
 export const DAGSTER_GRAPHQL_URL =
   process.env.DAGSTER_GRAPHQL_URL ?? "MISSING DAGSTER_GRAPHQL_URL";
+export const OSO_GRAPH_URL =
+  process.env.OSO_GRAPH_URL ?? "http://localhost:3000/api/v1/osograph";
 
 export const SUPABASE_URL = requireEnv(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
