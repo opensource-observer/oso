@@ -67,7 +67,7 @@ SELECT
   tm.amount,
   RANK() OVER (
     PARTITION BY pbc.collection_id, tm.metric_id, tm.sample_date
-    ORDER BY tm.amount ASC
+    ORDER BY tm.amount DESC
   ) AS rank,
   PERCENT_RANK() OVER (
     PARTITION BY pbc.collection_id, tm.metric_id, tm.sample_date
