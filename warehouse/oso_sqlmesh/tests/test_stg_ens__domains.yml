@@ -1,0 +1,51 @@
+test_stg_ens__domains:
+  gateway: local
+  model: oso.stg_ens__domains
+  inputs:
+    bigquery.ens.domains_tmp:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using trino gateway"
+    bigquery.bq_ens.domains_tmp:
+      rows:
+      - comment: "This needs to exist for @oso_source in tests when using local-trino gateway"
+    sources__bigquery__ens.domains_tmp:
+      rows:
+        - id: "0x0000000000000000000000000000000000000001"
+          name: "test.eth"
+          resolver: '{"id": "0xresolver1"}'
+          owner: '{"id": "0xowner1"}'
+          registrant: '{"id": "0xregistrant1"}'
+          expiry_date: "1735689600"
+          registration: '{"id": "0xreg1"}'
+          subdomains: "[]"
+          subdomain_count: 0
+        - id: "0x0000000000000000000000000000000000000002"
+          name: "another.eth"
+          resolver: '{"id": "0xresolver2"}'
+          owner: '{"id": "0xowner2"}'
+          registrant: '{"id": "0xregistrant2"}'
+          expiry_date: "1767225600"
+          registration: '{"id": "0xreg2"}'
+          subdomains: "[]"
+          subdomain_count: 0
+  outputs:
+    query:
+      rows:
+        - id: "0x0000000000000000000000000000000000000001"
+          name: "test.eth"
+          resolver: '{"id": "0xresolver1"}'
+          owner: '{"id": "0xowner1"}'
+          registrant: '{"id": "0xregistrant1"}'
+          expiry_date: "1735689600"
+          registration: '{"id": "0xreg1"}'
+          subdomains: "[]"
+          subdomain_count: 0
+        - id: "0x0000000000000000000000000000000000000002"
+          name: "another.eth"
+          resolver: '{"id": "0xresolver2"}'
+          owner: '{"id": "0xowner2"}'
+          registrant: '{"id": "0xregistrant2"}'
+          expiry_date: "1767225600"
+          registration: '{"id": "0xreg2"}'
+          subdomains: "[]"
+          subdomain_count: 0
