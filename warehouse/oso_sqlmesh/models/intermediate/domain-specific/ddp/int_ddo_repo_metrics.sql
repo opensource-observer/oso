@@ -14,15 +14,13 @@ MODEL (
 
 SELECT
   artifact_id,
-  a.artifact_source_id,
   a.artifact_namespace,
   a.artifact_name,
   a.artifact_url,
+  km.sample_date AS metric_sample_date,
   m.metric_model AS metric_model,
   m.display_name AS metric_display_name,
-  km.amount AS metric_amount,
-  km.sample_date AS metric_sample_date
+  km.amount AS metric_amount
 FROM oso.int_ddp_repo_metadata AS a
 JOIN oso.key_metrics_by_artifact_v0 AS km USING (artifact_id)
 JOIN oso.metrics_v0 AS m USING (metric_id)
-

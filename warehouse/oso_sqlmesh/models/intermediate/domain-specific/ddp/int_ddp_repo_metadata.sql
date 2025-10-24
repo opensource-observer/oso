@@ -17,7 +17,6 @@ MODEL (
 WITH ossd AS (
   SELECT
     artifact_id,
-    MAX_BY(artifact_source_id, updated_at) AS artifact_source_id,
     MAX_BY(artifact_namespace, updated_at) AS artifact_namespace,
     MAX_BY(artifact_name, updated_at) AS artifact_name,
     MAX_BY(artifact_url, updated_at) AS artifact_url,
@@ -35,7 +34,6 @@ WITH ossd AS (
 ec_artifacts AS (
   SELECT DISTINCT
     artifact_id,
-    artifact_source_id,
     artifact_namespace,
     artifact_name,
     artifact_url
@@ -74,7 +72,7 @@ ec_pivot AS (
     CAST(SUM(1) FILTER (WHERE project_name = 'evm_compatible_layer_2s') > 0 AS BOOLEAN) AS is_evm_l2,
     CAST(SUM(1) FILTER (WHERE project_name = 'ethereum_virtual_machine_stack') > 0 AS BOOLEAN) AS is_evm_stack,
     CAST(SUM(1) FILTER (WHERE project_name = 'solana') > 0 AS BOOLEAN) AS is_solana,
-    COUNT(*) AS ecosystem_count
+    COUNT(DISTINCT project_name) AS ecosystem_count
   FROM ec_projects
   GROUP BY artifact_id
 ),
@@ -89,7 +87,6 @@ all_artifact_ids AS (
 SELECT
   a.artifact_id,
   -- Prefer OSSD metadata, fall back to crypto ecosystems metadata
-  COALESCE(o.artifact_source_id, e.artifact_source_id) AS artifact_source_id,
   COALESCE(o.artifact_namespace, e.artifact_namespace) AS artifact_namespace,
   COALESCE(o.artifact_name, e.artifact_name) AS artifact_name,
   COALESCE(o.artifact_url, e.artifact_url) AS artifact_url,
