@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ValidationErrors } from "./errors";
+import { ValidationErrors } from "&/utils/errors";
 
 export const CreateInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),

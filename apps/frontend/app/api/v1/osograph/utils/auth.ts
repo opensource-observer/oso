@@ -1,6 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { OrgUser } from "@/lib/types/user";
-import { AuthenticationErrors, UserErrors, OrganizationErrors } from "./errors";
+import {
+  AuthenticationErrors,
+  UserErrors,
+  OrganizationErrors,
+} from "&/utils/errors";
 
 export type AuthenticatedUser = Extract<OrgUser, { role: "user" }>;
 
