@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -27,12 +26,21 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
+  /** DateTime custom scalar type */
+  DateTime: { input: any; output: any };
   /**
    * The `GenericScalar` scalar type represents a generic
    * GraphQL scalar value that could be:
    * String, Boolean, Int, Float, List or Object.
    */
   GenericScalar: { input: any; output: any };
+  /**
+   * Allows use of a JSON String for input / output from the GraphQL schema.
+   *
+   * Use of this type is *not recommended* as you lose the benefits of having a defined, static
+   * schema (one of the key benefits of GraphQL).
+   */
+  JSONString: { input: any; output: any };
   Oso_Bool: { input: any; output: any };
   Oso_Date: { input: any; output: any };
   Oso_DateTime: { input: any; output: any };
@@ -48,6 +56,16 @@ export type Scalars = {
    *
    */
   RunConfigData: { input: any; output: any };
+  _Any: { input: any; output: any };
+  federation__FieldSet: { input: any; output: any };
+  link__Import: { input: any; output: any };
+};
+
+export type AcceptInvitationPayload = {
+  __typename?: "AcceptInvitationPayload";
+  member?: Maybe<OrganizationMember>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type AddDynamicPartitionResult =
@@ -60,6 +78,13 @@ export type AddDynamicPartitionSuccess = {
   __typename?: "AddDynamicPartitionSuccess";
   partitionKey: Scalars["String"]["output"];
   partitionsDefName: Scalars["String"]["output"];
+};
+
+export type AddUserByEmailPayload = {
+  __typename?: "AddUserByEmailPayload";
+  member?: Maybe<OrganizationMember>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type AlertFailureEvent = MessageEvent &
@@ -139,18 +164,33 @@ export type ArrayConfigType = ConfigType &
 
 export type Asset = {
   __typename?: "Asset";
+  assetEventHistory: AssetResultEventHistoryConnection;
+  assetHealth?: Maybe<AssetHealth>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition?: Maybe<AssetNode>;
+  freshnessStatusChangedTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  hasDefinitionOrRecord: Scalars["Boolean"]["output"];
   id: Scalars["String"]["output"];
   key: AssetKey;
+  latestEventSortKey?: Maybe<Scalars["ID"]["output"]>;
+  latestFailedToMaterializeTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  latestMaterializationTimestamp?: Maybe<Scalars["Float"]["output"]>;
+};
+
+export type AssetAssetEventHistoryArgs = {
+  afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
+  limit: Scalars["Int"]["input"];
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type AssetAssetMaterializationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
-  partitionInLast?: InputMaybe<Scalars["Int"]["input"]>;
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
@@ -158,7 +198,6 @@ export type AssetAssetObservationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
-  partitionInLast?: InputMaybe<Scalars["Int"]["input"]>;
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
@@ -376,6 +415,12 @@ export type AssetDependency = {
   partitionMapping?: Maybe<PartitionMapping>;
 };
 
+export enum AssetEventHistoryEventTypeSelector {
+  FailedToMaterialize = "FAILED_TO_MATERIALIZE",
+  Materialization = "MATERIALIZATION",
+  Observation = "OBSERVATION",
+}
+
 /** The event type of an asset event. */
 export enum AssetEventType {
   AssetMaterialization = "ASSET_MATERIALIZATION",
@@ -406,6 +451,78 @@ export type AssetGroupSelector = {
   repositoryName: Scalars["String"]["input"];
 };
 
+export type AssetHealth = {
+  __typename?: "AssetHealth";
+  assetChecksStatus: AssetHealthStatus;
+  assetChecksStatusMetadata?: Maybe<AssetHealthCheckMeta>;
+  assetHealth: AssetHealthStatus;
+  freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata?: Maybe<AssetHealthFreshnessMeta>;
+  materializationStatus: AssetHealthStatus;
+  materializationStatusMetadata?: Maybe<AssetHealthMaterializationMeta>;
+};
+
+export type AssetHealthCheckDegradedMeta = {
+  __typename?: "AssetHealthCheckDegradedMeta";
+  numFailedChecks: Scalars["Int"]["output"];
+  numWarningChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckUnknownMeta
+  | AssetHealthCheckWarningMeta;
+
+export type AssetHealthCheckUnknownMeta = {
+  __typename?: "AssetHealthCheckUnknownMeta";
+  numNotExecutedChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthCheckWarningMeta = {
+  __typename?: "AssetHealthCheckWarningMeta";
+  numWarningChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthFreshnessMeta = {
+  __typename?: "AssetHealthFreshnessMeta";
+  lastMaterializedTimestamp?: Maybe<Scalars["Float"]["output"]>;
+};
+
+export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationDegradedNotPartitionedMeta";
+  failedRunId: Scalars["String"]["output"];
+};
+
+export type AssetHealthMaterializationDegradedPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationDegradedPartitionedMeta";
+  numFailedPartitions: Scalars["Int"]["output"];
+  numMissingPartitions: Scalars["Int"]["output"];
+  totalNumPartitions: Scalars["Int"]["output"];
+};
+
+export type AssetHealthMaterializationHealthyPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationHealthyPartitionedMeta";
+  numMissingPartitions: Scalars["Int"]["output"];
+  totalNumPartitions: Scalars["Int"]["output"];
+};
+
+export type AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta;
+
+/** Enum for the health status of an asset. */
+export enum AssetHealthStatus {
+  Degraded = "DEGRADED",
+  Healthy = "HEALTHY",
+  NotApplicable = "NOT_APPLICABLE",
+  Unknown = "UNKNOWN",
+  Warning = "WARNING",
+}
+
 export type AssetKey = {
   __typename?: "AssetKey";
   path: Array<Scalars["String"]["output"]>;
@@ -430,6 +547,29 @@ export type AssetLineageInfo = {
   assetKey: AssetKey;
   partitions: Array<Scalars["String"]["output"]>;
 };
+
+/**
+ * Enumerate the reasons an asset may have failed to materialize. Can be used to provide more granular
+ *     information about the failure to the user.
+ *
+ */
+export enum AssetMaterializationFailureReason {
+  FailedToMaterialize = "FAILED_TO_MATERIALIZE",
+  RunTerminated = "RUN_TERMINATED",
+  Unknown = "UNKNOWN",
+  UpstreamFailedToMaterialize = "UPSTREAM_FAILED_TO_MATERIALIZE",
+}
+
+/**
+ * An asset can fail to materialize in two ways: an unexpected/unintentional failure that should update
+ *     the global state of the asset to Failed, and one that indicates that the asset not materializing
+ *     is expected (like an optional asset or a user canceled the run).
+ *
+ */
+export enum AssetMaterializationFailureType {
+  Failed = "FAILED",
+  Skipped = "SKIPPED",
+}
 
 export type AssetMaterializationPlannedEvent = MessageEvent &
   RunEvent & {
@@ -477,12 +617,15 @@ export type AssetNode = {
   description?: Maybe<Scalars["String"]["output"]>;
   freshnessInfo?: Maybe<AssetFreshnessInfo>;
   freshnessPolicy?: Maybe<FreshnessPolicy>;
+  freshnessStatusInfo?: Maybe<FreshnessStatusInfo>;
   graphName?: Maybe<Scalars["String"]["output"]>;
   groupName: Scalars["String"]["output"];
   hasAssetChecks: Scalars["Boolean"]["output"];
   hasMaterializePermission: Scalars["Boolean"]["output"];
   hasReportRunlessAssetEventPermission: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
+  internalFreshnessPolicy?: Maybe<InternalFreshnessPolicy>;
+  isAutoCreatedStub: Scalars["Boolean"]["output"];
   isExecutable: Scalars["Boolean"]["output"];
   isMaterializable: Scalars["Boolean"]["output"];
   isObservable: Scalars["Boolean"]["output"];
@@ -490,6 +633,7 @@ export type AssetNode = {
   jobNames: Array<Scalars["String"]["output"]>;
   jobs: Array<Pipeline>;
   kinds: Array<Scalars["String"]["output"]>;
+  lastAutoMaterializationEvaluationRecord?: Maybe<AutoMaterializeAssetEvaluationRecord>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
   latestRunForPartition?: Maybe<Run>;
   metadataEntries: Array<MetadataEntry>;
@@ -499,6 +643,7 @@ export type AssetNode = {
   opVersion?: Maybe<Scalars["String"]["output"]>;
   owners: Array<AssetOwner>;
   partitionDefinition?: Maybe<PartitionDefinition>;
+  partitionKeyConnection?: Maybe<PartitionKeyConnection>;
   partitionKeys: Array<Scalars["String"]["output"]>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats?: Maybe<PartitionStats>;
@@ -543,12 +688,22 @@ export type AssetNodeDataVersionByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
+export type AssetNodeLastAutoMaterializationEvaluationRecordArgs = {
+  asOfEvaluationId?: InputMaybe<Scalars["ID"]["input"]>;
+};
+
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type AssetNodeLatestRunForPartitionArgs = {
   partition: Scalars["String"]["input"];
+};
+
+export type AssetNodePartitionKeyConnectionArgs = {
+  ascending: Scalars["Boolean"]["input"];
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit: Scalars["Int"]["input"];
 };
 
 export type AssetNodePartitionKeysByDimensionArgs = {
@@ -614,6 +769,31 @@ export type AssetPartitionsStatusCounts = {
   numPartitionsMaterialized: Scalars["Int"]["output"];
   numPartitionsTargeted: Scalars["Int"]["output"];
 };
+
+export type AssetRecord = {
+  __typename?: "AssetRecord";
+  id: Scalars["String"]["output"];
+  key: AssetKey;
+};
+
+export type AssetRecordConnection = {
+  __typename?: "AssetRecordConnection";
+  assets: Array<AssetRecord>;
+  cursor?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type AssetRecordsOrError = AssetRecordConnection | PythonError;
+
+export type AssetResultEventHistoryConnection = {
+  __typename?: "AssetResultEventHistoryConnection";
+  cursor: Scalars["String"]["output"];
+  results: Array<AssetResultEventType>;
+};
+
+export type AssetResultEventType =
+  | FailedToMaterializeEvent
+  | MaterializationEvent
+  | ObservationEvent;
 
 export type AssetSelection = {
   __typename?: "AssetSelection";
@@ -731,10 +911,12 @@ export type AutomationConditionEvaluationNode = {
   __typename?: "AutomationConditionEvaluationNode";
   childUniqueIds: Array<Scalars["String"]["output"]>;
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   expandedLabel: Array<Scalars["String"]["output"]>;
   isPartitioned: Scalars["Boolean"]["output"];
   numCandidates?: Maybe<Scalars["Int"]["output"]>;
   numTrue: Scalars["Int"]["output"];
+  operatorType: Scalars["String"]["output"];
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
   uniqueId: Scalars["String"]["output"];
   userLabel?: Maybe<Scalars["String"]["output"]>;
@@ -773,6 +955,7 @@ export enum BulkActionStatus {
   CompletedFailed = "COMPLETED_FAILED",
   CompletedSuccess = "COMPLETED_SUCCESS",
   Failed = "FAILED",
+  Failing = "FAILING",
   Requested = "REQUESTED",
 }
 
@@ -991,6 +1174,27 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type CreateInvitationInput = {
+  /** Email address to invite */
+  email: Scalars["String"]["input"];
+  /** Organization name to invite user to */
+  orgName: Scalars["String"]["input"];
+};
+
+export type CreateInvitationPayload = {
+  __typename?: "CreateInvitationPayload";
+  invitation?: Maybe<Invitation>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CronFreshnessPolicy = {
+  __typename?: "CronFreshnessPolicy";
+  deadlineCron: Scalars["String"]["output"];
+  lowerBoundDeltaSeconds: Scalars["Int"]["output"];
+  timezone: Scalars["String"]["output"];
+};
+
 export type DaemonHealth = {
   __typename?: "DaemonHealth";
   allDaemonStatuses: Array<DaemonStatus>;
@@ -1019,11 +1223,16 @@ export enum DagsterEventType {
   AlertSuccess = "ALERT_SUCCESS",
   AssetCheckEvaluation = "ASSET_CHECK_EVALUATION",
   AssetCheckEvaluationPlanned = "ASSET_CHECK_EVALUATION_PLANNED",
+  AssetFailedToMaterialize = "ASSET_FAILED_TO_MATERIALIZE",
+  AssetHealthChanged = "ASSET_HEALTH_CHANGED",
   AssetMaterialization = "ASSET_MATERIALIZATION",
   AssetMaterializationPlanned = "ASSET_MATERIALIZATION_PLANNED",
   AssetObservation = "ASSET_OBSERVATION",
   AssetStoreOperation = "ASSET_STORE_OPERATION",
+  AssetWiped = "ASSET_WIPED",
   EngineEvent = "ENGINE_EVENT",
+  FreshnessStateChange = "FRESHNESS_STATE_CHANGE",
+  FreshnessStateEvaluation = "FRESHNESS_STATE_EVALUATION",
   HandledOutput = "HANDLED_OUTPUT",
   HookCompleted = "HOOK_COMPLETED",
   HookErrored = "HOOK_ERRORED",
@@ -1085,7 +1294,9 @@ export type DagsterRunEvent =
   | ExecutionStepStartEvent
   | ExecutionStepSuccessEvent
   | ExecutionStepUpForRetryEvent
+  | FailedToMaterializeEvent
   | HandledOutputEvent
+  | HealthChangedEvent
   | HookCompletedEvent
   | HookErroredEvent
   | HookSkippedEvent
@@ -1145,11 +1356,38 @@ export type DefaultPartitionStatuses = {
   unmaterializedPartitions: Array<Scalars["String"]["output"]>;
 };
 
+export type DefinitionOwner = TeamDefinitionOwner | UserDefinitionOwner;
+
 export type DefinitionTag = {
   __typename?: "DefinitionTag";
   key: Scalars["String"]["output"];
   value: Scalars["String"]["output"];
 };
+
+export type DefsKeyStateInfo = {
+  __typename?: "DefsKeyStateInfo";
+  createTimestamp: Scalars["Float"]["output"];
+  managementType: DefsStateManagementType;
+  version: Scalars["String"]["output"];
+};
+
+export type DefsStateInfo = {
+  __typename?: "DefsStateInfo";
+  keyStateInfo: Array<DefsStateInfoEntry>;
+};
+
+export type DefsStateInfoEntry = {
+  __typename?: "DefsStateInfoEntry";
+  info?: Maybe<DefsKeyStateInfo>;
+  name: Scalars["String"]["output"];
+};
+
+/** An enumeration. */
+export enum DefsStateManagementType {
+  LegacyCodeServerSnapshots = "LEGACY_CODE_SERVER_SNAPSHOTS",
+  LocalFilesystem = "LOCAL_FILESYSTEM",
+  VersionedStateStorage = "VERSIONED_STATE_STORAGE",
+}
 
 export type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
@@ -1457,6 +1695,8 @@ export type ExecutionParams = {
 export type ExecutionPlan = {
   __typename?: "ExecutionPlan";
   artifactsPersisted: Scalars["Boolean"]["output"];
+  assetKeys: Array<AssetKey>;
+  assetSelection: Array<Scalars["String"]["output"]>;
   steps: Array<ExecutionStep>;
 };
 
@@ -1612,6 +1852,29 @@ export type ExpectationResult = DisplayableEvent & {
   success: Scalars["Boolean"]["output"];
 };
 
+export type FailedToMaterializeEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "FailedToMaterializeEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    materializationFailureReason: AssetMaterializationFailureReason;
+    materializationFailureType: AssetMaterializationFailureType;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
+
 export type FailureMetadata = DisplayableEvent & {
   __typename?: "FailureMetadata";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -1646,6 +1909,8 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
 export type FloatMetadataEntry = MetadataEntry & {
   __typename?: "FloatMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
+  /** String representation of the float to support nan/inf/-inf */
+  floatRepr: Scalars["String"]["output"];
   floatValue?: Maybe<Scalars["Float"]["output"]>;
   label: Scalars["String"]["output"];
 };
@@ -1656,6 +1921,12 @@ export type FreshnessPolicy = {
   cronScheduleTimezone?: Maybe<Scalars["String"]["output"]>;
   lastEvaluationTimestamp?: Maybe<Scalars["String"]["output"]>;
   maximumLagMinutes: Scalars["Float"]["output"];
+};
+
+export type FreshnessStatusInfo = {
+  __typename?: "FreshnessStatusInfo";
+  freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata?: Maybe<AssetHealthFreshnessMeta>;
 };
 
 export type Graph = SolidContainer & {
@@ -1715,6 +1986,27 @@ export type HandledOutputEvent = DisplayableEvent &
     timestamp: Scalars["String"]["output"];
   };
 
+export type HealthChangedEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "HealthChangedEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
+
 export type HookCompletedEvent = MessageEvent &
   StepEvent & {
     __typename?: "HookCompletedEvent";
@@ -1761,6 +2053,7 @@ export type IPipelineSnapshot = {
   metadataEntries: Array<MetadataEntry>;
   modes: Array<Mode>;
   name: Scalars["String"]["output"];
+  owners: Array<DefinitionOwner>;
   parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
   pipelineSnapshotId: Scalars["String"]["output"];
   runs: Array<Run>;
@@ -1828,6 +2121,7 @@ export type Instance = {
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars["String"]["output"];
+  freshnessEvaluationEnabled: Scalars["Boolean"]["output"];
   hasInfo: Scalars["Boolean"]["output"];
   id: Scalars["String"]["output"];
   info?: Maybe<Scalars["String"]["output"]>;
@@ -1981,6 +2275,10 @@ export type IntMetadataEntry = MetadataEntry & {
   label: Scalars["String"]["output"];
 };
 
+export type InternalFreshnessPolicy =
+  | CronFreshnessPolicy
+  | TimeWindowFreshnessPolicy;
+
 export type InvalidOutputError = {
   __typename?: "InvalidOutputError";
   invalidOutputName: Scalars["String"]["output"];
@@ -2003,12 +2301,34 @@ export type InvalidSubsetError = Error & {
   pipeline: Pipeline;
 };
 
+/** Invitation to join an organization */
+export type Invitation = {
+  __typename?: "Invitation";
+  acceptedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  acceptedBy?: Maybe<User>;
+  createdAt: Scalars["DateTime"]["output"];
+  email: Scalars["String"]["output"];
+  expiresAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
+  invitedBy: User;
+  organization: Organization;
+  status: InvitationStatus;
+};
+
+export enum InvitationStatus {
+  Accepted = "ACCEPTED",
+  Deleted = "DELETED",
+  Expired = "EXPIRED",
+  Pending = "PENDING",
+}
+
 export type Job = IPipelineSnapshot &
   SolidContainer & {
     __typename?: "Job";
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
@@ -2016,6 +2336,7 @@ export type Job = IPipelineSnapshot &
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     partition?: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -2109,6 +2430,7 @@ export type LaunchBackfillParams = {
   partitionNames?: InputMaybe<Array<Scalars["String"]["input"]>>;
   partitionsByAssets?: InputMaybe<Array<InputMaybe<PartitionsByAssetSelector>>>;
   reexecutionSteps?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  runConfigData?: InputMaybe<Scalars["RunConfigData"]["input"]>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
   title?: InputMaybe<Scalars["String"]["input"]>;
@@ -2245,6 +2567,13 @@ export type LocalFileCodeReference = {
   label?: Maybe<Scalars["String"]["output"]>;
   lineNumber?: Maybe<Scalars["Int"]["output"]>;
 };
+
+export type LocationDocsJson = {
+  __typename?: "LocationDocsJson";
+  json: Scalars["JSONString"]["output"];
+};
+
+export type LocationDocsJsonOrError = LocationDocsJson | PythonError;
 
 export type LocationStateChangeEvent = {
   __typename?: "LocationStateChangeEvent";
@@ -2429,6 +2758,12 @@ export type MaterializedPartitionRangeStatuses2D = {
   secondaryDim: PartitionStatus1D;
 };
 
+export enum MemberRole {
+  Admin = "ADMIN",
+  Member = "MEMBER",
+  Owner = "OWNER",
+}
+
 export type MessageEvent = {
   eventType?: Maybe<DagsterEventType>;
   level: LogLevel;
@@ -2528,6 +2863,20 @@ export type Mutation = {
   launchRunReexecution: LaunchRunReexecutionResult;
   /** Log telemetry about the Dagster instance. */
   logTelemetry: LogTelemetryMutationResult;
+  /** Accept an invitation to join an organization */
+  osoApp_acceptInvitation: AcceptInvitationPayload;
+  /** Add a user to an organization by email */
+  osoApp_addUserByEmail: AddUserByEmailPayload;
+  /** Create and send an invitation to join an organization */
+  osoApp_createInvitation: CreateInvitationPayload;
+  /** Remove a member from an organization */
+  osoApp_removeMember: RemoveMemberPayload;
+  /** Revoke/delete an invitation */
+  osoApp_revokeInvitation: RevokeInvitationPayload;
+  /** Update a member's role in an organization */
+  osoApp_updateMemberRole: UpdateMemberRolePayload;
+  /** Update the current user's profile */
+  osoApp_updateMyProfile: UpdateProfilePayload;
   /** Retries a set of partition backfill runs. Retrying a backfill will create a new backfill to retry any failed partitions. */
   reexecutePartitionBackfill: LaunchBackfillResult;
   /** Reloads a code location server. */
@@ -2657,6 +3006,46 @@ export type MutationLogTelemetryArgs = {
   clientId: Scalars["String"]["input"];
   clientTime: Scalars["String"]["input"];
   metadata: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_AcceptInvitationArgs = {
+  invitationId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_AddUserByEmailArgs = {
+  email: Scalars["String"]["input"];
+  orgName: Scalars["String"]["input"];
+  role: MemberRole;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_CreateInvitationArgs = {
+  input: CreateInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_RemoveMemberArgs = {
+  orgName: Scalars["String"]["input"];
+  userId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_RevokeInvitationArgs = {
+  invitationId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_UpdateMemberRoleArgs = {
+  orgName: Scalars["String"]["input"];
+  role: MemberRole;
+  userId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_UpdateMyProfileArgs = {
+  input: UpdateProfileInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2918,6 +3307,34 @@ export enum OrderBy {
   /** Sorts the data in descending order */
   Desc = "Desc",
 }
+
+/** Organization entity - represents a group of users working together */
+export type Organization = {
+  __typename?: "Organization";
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
+  /** Get invitations for this organization, optionally filtered by status */
+  invitations: Array<Invitation>;
+  /** Get all members of this organization */
+  members: Array<OrganizationMember>;
+  orgName: Scalars["String"]["output"];
+};
+
+/** Organization entity - represents a group of users working together */
+export type OrganizationInvitationsArgs = {
+  status?: InputMaybe<InvitationStatus>;
+};
+
+/** Organization member - represents a user's membership in an organization */
+export type OrganizationMember = {
+  __typename?: "OrganizationMember";
+  id: Scalars["ID"]["output"];
+  joinedAt: Scalars["DateTime"]["output"];
+  organization: Organization;
+  role: MemberRole;
+  user: User;
+  userId: Scalars["ID"]["output"];
+};
 
 export type Oso_ArtifactsByCollectionV1 = {
   __typename?: "Oso_ArtifactsByCollectionV1";
@@ -4183,6 +4600,13 @@ export enum PartitionDefinitionType {
   TimeWindow = "TIME_WINDOW",
 }
 
+export type PartitionKeyConnection = {
+  __typename?: "PartitionKeyConnection";
+  cursor: Scalars["String"]["output"];
+  hasMore: Scalars["Boolean"]["output"];
+  results: Array<Scalars["String"]["output"]>;
+};
+
 export type PartitionKeyRange = {
   __typename?: "PartitionKeyRange";
   end: Scalars["String"]["output"];
@@ -4362,6 +4786,7 @@ export type PartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   numCandidates?: Maybe<Scalars["Int"]["output"]>;
   numTrue: Scalars["Int"]["output"];
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
@@ -4416,6 +4841,7 @@ export type Pipeline = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
@@ -4423,6 +4849,7 @@ export type Pipeline = IPipelineSnapshot &
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     partition?: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -4648,11 +5075,13 @@ export type PipelineSnapshot = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     pipelineSnapshotId: Scalars["String"]["output"];
     runTags: Array<PipelineTag>;
@@ -4752,6 +5181,7 @@ export type PythonError = Error & {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type Query = {
   __typename?: "Query";
+  _entities: Array<Maybe<_Entity>>;
   _service: _Service;
   /** Retrieve all the top level resources. */
   allTopLevelResourceDetailsOrError: ResourceDetailsListOrError;
@@ -4771,13 +5201,15 @@ export type Query = {
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   /** Retrieve an asset node by asset key. */
   assetNodeOrError: AssetNodeOrError;
-  /** Retrieve asset nodes after applying a filter on asset group, job, and asset keys. */
+  /** Retrieve asset nodes (assets with a definition) after applying a filter on asset group, job, and asset keys. */
   assetNodes: Array<AssetNode>;
   /** Retrieve an asset by asset key. */
   assetOrError: AssetOrError;
+  /** Retrieve materialized asset records after applying a prefix filter, cursor, and limit. */
+  assetRecordsOrError: AssetRecordsOrError;
   /** Retrieve the latest materializations for a set of assets by asset keys. */
   assetsLatestInfo: Array<AssetLatestInfo>;
-  /** Retrieve assets after applying a prefix filter, cursor, and limit. */
+  /** Retrieve all assets (both with or without a definition) after providing a list of asset keys, applying a prefix filter, cursor, and limit. */
   assetsOrError: AssetsOrError;
   /** Retrieve the auto materialization evaluation records for an asset. */
   autoMaterializeAssetEvaluationsOrError?: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
@@ -4803,10 +5235,24 @@ export type Query = {
   instigationStatesOrError: InstigationStatesOrError;
   /** Retrieve whether the run configuration is valid or invalid. */
   isPipelineConfigValid: PipelineConfigValidationResult;
+  /** Retrieve the latest available DefsStateInfo for the current workspace. */
+  latestDefsStateInfo?: Maybe<DefsStateInfo>;
   /** Retrieve location status for workspace locations. */
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
+  /** Get a specific invitation by ID */
+  osoApp_invitation?: Maybe<Invitation>;
+  /** Get the current authenticated user's profile */
+  osoApp_me: User;
+  /** Get invitations sent to the current user's email */
+  osoApp_myInvitations: Array<Invitation>;
+  /** Get a specific organization by name */
+  osoApp_organization?: Maybe<Organization>;
+  /** Get invitations for a specific organization (requires membership) */
+  osoApp_organizationInvitations: Array<Invitation>;
+  /** Get members of a specific organization (requires membership) */
+  osoApp_organizationMembers: Array<OrganizationMember>;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
   oso_artifactsByUserV1?: Maybe<Array<Oso_ArtifactsByUserV1>>;
@@ -4919,6 +5365,11 @@ export type Query = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type Query_EntitiesArgs = {
+  representations: Array<Scalars["_Any"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAllTopLevelResourceDetailsOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
@@ -4985,12 +5436,20 @@ export type QueryAssetOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryAssetRecordsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  prefix?: InputMaybe<Array<Scalars["String"]["input"]>>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetsLatestInfoArgs = {
   assetKeys: Array<AssetKeyInput>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetsOrErrorArgs = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   cursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   prefix?: InputMaybe<Array<Scalars["String"]["input"]>>;
@@ -5066,6 +5525,32 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   runId: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_InvitationArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_MyInvitationsArgs = {
+  status?: InputMaybe<InvitationStatus>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_OrganizationArgs = {
+  orgName: Scalars["String"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_OrganizationInvitationsArgs = {
+  orgName: Scalars["String"]["input"];
+  status?: InputMaybe<InvitationStatus>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_OrganizationMembersArgs = {
+  orgName: Scalars["String"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5471,12 +5956,17 @@ export type QueryWorkspaceLocationEntryOrErrorArgs = {
 };
 
 export type ReexecutionParams = {
+  /** When re-executing a single run, pass new tags which will upsert over tags on the parent run. */
+  extraTags?: InputMaybe<Array<ExecutionTag>>;
   parentRunId: Scalars["String"]["input"];
   strategy: ReexecutionStrategy;
+  /** When re-executing a single run, pass false to avoid adding the parent run tags by default. */
+  useParentRunTags?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
 export enum ReexecutionStrategy {
   AllSteps = "ALL_STEPS",
+  FromAssetFailure = "FROM_ASSET_FAILURE",
   FromFailure = "FROM_FAILURE",
 }
 
@@ -5563,6 +6053,14 @@ export type ReloadWorkspaceMutationResult =
   | UnauthorizedError
   | Workspace;
 
+export type RemoveMemberPayload = {
+  __typename?: "RemoveMemberPayload";
+  message: Scalars["String"]["output"];
+  orgName: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+  userId: Scalars["ID"]["output"];
+};
+
 export type ReportRunlessAssetEventsParams = {
   assetKey: AssetKeyInput;
   description?: InputMaybe<Scalars["String"]["input"]>;
@@ -5593,9 +6091,13 @@ export type Repository = {
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
   displayMetadata: Array<RepositoryMetadata>;
+  /** Retrieves whether the code location has integrated docs. */
+  hasLocationDocs: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   jobs: Array<Job>;
   location: RepositoryLocation;
+  /** Retrieves JSON blob to drive integrated code location docs. */
+  locationDocsJsonOrError: LocationDocsJsonOrError;
   name: Scalars["String"]["output"];
   origin: RepositoryOrigin;
   partitionSets: Array<PartitionSet>;
@@ -5833,6 +6335,13 @@ export type ResumeBackfillSuccess = {
   backfillId: Scalars["String"]["output"];
 };
 
+export type RevokeInvitationPayload = {
+  __typename?: "RevokeInvitationPayload";
+  invitationId: Scalars["ID"]["output"];
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+};
+
 export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename?: "Run";
@@ -5853,6 +6362,7 @@ export type Run = PipelineRun &
     endTime?: Maybe<Scalars["Float"]["output"]>;
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     hasConcurrencyKeySlots: Scalars["Boolean"]["output"];
     hasDeletePermission: Scalars["Boolean"]["output"];
     hasReExecutePermission: Scalars["Boolean"]["output"];
@@ -6094,6 +6604,7 @@ export type RunQueueConfig = {
 
 export type RunRequest = {
   __typename?: "RunRequest";
+  assetChecks?: Maybe<Array<AssetCheckhandle>>;
   assetSelection?: Maybe<Array<AssetKey>>;
   jobName?: Maybe<Scalars["String"]["output"]>;
   runConfigYaml: Scalars["String"]["output"];
@@ -6329,6 +6840,7 @@ export type Schedule = {
   metadataEntries: Array<MetadataEntry>;
   mode: Scalars["String"]["output"];
   name: Scalars["String"]["output"];
+  owners: Array<DefinitionOwner>;
   partitionSet?: Maybe<PartitionSet>;
   pipelineName: Scalars["String"]["output"];
   potentialTickTimestamps: Array<Scalars["Float"]["output"]>;
@@ -6465,6 +6977,7 @@ export type Sensor = {
   minIntervalSeconds: Scalars["Int"]["output"];
   name: Scalars["String"]["output"];
   nextTick?: Maybe<DryRunInstigationTick>;
+  owners: Array<DefinitionOwner>;
   sensorState: InstigationState;
   sensorType: SensorType;
   tags: Array<DefinitionTag>;
@@ -6624,6 +7137,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename?: "SpecificPartitionAssetConditionEvaluationNode";
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
+  entityKey: EntityKey;
   metadataEntries: Array<MetadataEntry>;
   status: AssetConditionEvaluationStatus;
   uniqueId: Scalars["String"]["output"];
@@ -6870,6 +7384,11 @@ export type TeamAssetOwner = {
   team: Scalars["String"]["output"];
 };
 
+export type TeamDefinitionOwner = {
+  __typename?: "TeamDefinitionOwner";
+  team: Scalars["String"]["output"];
+};
+
 /** Interface indicating that a run failed to terminate. */
 export type TerminatePipelineExecutionFailure = {
   message: Scalars["String"]["output"];
@@ -6964,6 +7483,12 @@ export type TimePartitionStatuses = {
   ranges: Array<TimePartitionRangeStatus>;
 };
 
+export type TimeWindowFreshnessPolicy = {
+  __typename?: "TimeWindowFreshnessPolicy";
+  failWindowSeconds: Scalars["Int"]["output"];
+  warnWindowSeconds?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type TimestampMetadataEntry = MetadataEntry & {
   __typename?: "TimestampMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -6995,6 +7520,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   metadataEntries: Array<MetadataEntry>;
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
   status: AssetConditionEvaluationStatus;
@@ -7012,6 +7538,27 @@ export type UnpartitionedAssetStatus = {
 export type UnsupportedOperationError = Error & {
   __typename?: "UnsupportedOperationError";
   message: Scalars["String"]["output"];
+};
+
+export type UpdateMemberRolePayload = {
+  __typename?: "UpdateMemberRolePayload";
+  member?: Maybe<OrganizationMember>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateProfileInput = {
+  /** User's avatar URL */
+  avatarUrl?: InputMaybe<Scalars["String"]["input"]>;
+  /** User's full name */
+  fullName?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type UpdateProfilePayload = {
+  __typename?: "UpdateProfilePayload";
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+  user: User;
 };
 
 export type UrlCodeReference = {
@@ -7034,8 +7581,24 @@ export type UsedSolid = {
   invocations: Array<NodeInvocationSite>;
 };
 
+/** User entity - can be extended from other subgraphs */
+export type User = {
+  __typename?: "User";
+  avatarUrl?: Maybe<Scalars["String"]["output"]>;
+  email?: Maybe<Scalars["String"]["output"]>;
+  fullName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  /** Organizations this user belongs to */
+  organizations: Array<Organization>;
+};
+
 export type UserAssetOwner = {
   __typename?: "UserAssetOwner";
+  email: Scalars["String"]["output"];
+};
+
+export type UserDefinitionOwner = {
+  __typename?: "UserDefinitionOwner";
   email: Scalars["String"]["output"];
 };
 
@@ -7052,6 +7615,7 @@ export type Workspace = {
 
 export type WorkspaceLocationEntry = {
   __typename?: "WorkspaceLocationEntry";
+  defsStateInfo?: Maybe<DefsStateInfo>;
   displayMetadata: Array<RepositoryMetadata>;
   featureFlags: Array<FeatureFlag>;
   id: Scalars["ID"]["output"];
@@ -7096,10 +7660,19 @@ export type WrappingDagsterType = {
   ofType: DagsterType;
 };
 
+export type _Entity = Invitation | Organization | OrganizationMember | User;
+
 export type _Service = {
   __typename?: "_Service";
   sdl: Scalars["String"]["output"];
 };
+
+export enum Link__Purpose {
+  /** `EXECUTION` features provide metadata necessary for operation execution. */
+  Execution = "EXECUTION",
+  /** `SECURITY` features provide metadata necessary to securely resolve fields. */
+  Security = "SECURITY",
+}
 
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
