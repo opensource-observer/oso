@@ -32,11 +32,11 @@ with history as (
     COALESCE(
       MAX(
         CASE
-          WHEN classification.metric LIKE 'new_%' THEN amount
+          WHEN classification.metric LIKE 'first_time_%' THEN amount
         END
       ),
       0
-    ) as new,
+    ) as first_time,
     COALESCE(
       MAX(
         CASE
@@ -57,7 +57,7 @@ with history as (
     classification.event_source
 ),
 lifecycle as (
-  -- Churn is prev.active - (latest.active - latest.new - latest.resurrected)
+  -- Churn is prev.active - (latest.active - latest.first_time - latest.resurrected)
   select history.metrics_sample_date,
     history.event_source,
     @metrics_entity_type_col(
@@ -70,7 +70,7 @@ lifecycle as (
         table_alias := history
       ), event_source
       ORDER BY history.metrics_sample_date
-    ), 0) - (history.active - history.new - history.resurrected) as churn,
+    ), 0) - (history.active - history.first_time - history.resurrected) as churn,
     history.full - COALESCE(LAG(history.full) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
@@ -85,13 +85,13 @@ lifecycle as (
       ), event_source
       ORDER BY history.metrics_sample_date
     ), 0) as change_in_part_time_contributors,
-    history.new - COALESCE(LAG(history.new) OVER (
+    history.first_time - COALESCE(LAG(history.first_time) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
         table_alias := history
       ), event_source
       ORDER BY history.metrics_sample_date
-    ), 0) as change_in_new_contributors,
+    ), 0) as change_in_first_time_contributors,
     history.active - COALESCE(LAG(history.active) OVER (
       PARTITION BY @metrics_entity_type_col(
         'to_{entity_type}_id',
@@ -111,8 +111,8 @@ select lifecycle.metrics_sample_date,
   ),
   lifecycle.event_source,
   '' as from_artifact_id,
-  @metrics_name('change_in_new_contributors') as metric,
-  lifecycle.change_in_new_contributors as amount
+  @metrics_name('change_in_first_time_contributors') as metric,
+  lifecycle.change_in_first_time_contributors as amount
 from lifecycle as lifecycle
 union all
 select lifecycle.metrics_sample_date,
