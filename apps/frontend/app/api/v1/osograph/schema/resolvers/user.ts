@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { GraphQLResolverMap } from "@apollo/subgraph/dist/schema-helper/resolverMap";
+import type { GraphQLResolverModule } from "@/app/api/v1/osograph/utils/types";
 import {
   getUserProfile,
   requireAuthentication,
@@ -7,7 +7,7 @@ import {
 } from "@/app/api/v1/osograph/utils/auth";
 import { UserErrors, ServerErrors } from "@/app/api/v1/osograph/utils/errors";
 
-export const userResolvers: GraphQLResolverMap<GraphQLContext> = {
+export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     osoApp_me: async (_: unknown, _args: unknown, context: GraphQLContext) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -63,6 +63,9 @@ export const userResolvers: GraphQLResolverMap<GraphQLContext> = {
     __resolveReference: async (reference: { id: string }) => {
       return getUserProfile(reference.id);
     },
+
+    fullName: (parent: { full_name: string | null }) => parent.full_name,
+    avatarUrl: (parent: { avatar_url: string | null }) => parent.avatar_url,
 
     organizations: async (
       parent: { id: string },

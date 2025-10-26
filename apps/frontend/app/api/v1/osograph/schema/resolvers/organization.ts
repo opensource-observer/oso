@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { GraphQLResolverMap } from "@apollo/subgraph/dist/schema-helper/resolverMap";
+import type { GraphQLResolverModule } from "@/app/api/v1/osograph/utils/types";
 import {
   requireAuthentication,
   requireOrgMembership,
@@ -8,7 +8,7 @@ import {
   type GraphQLContext,
 } from "@/app/api/v1/osograph/utils/auth";
 
-export const organizationResolvers: GraphQLResolverMap<GraphQLContext> = {
+export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     osoApp_organization: async (
       _: unknown,
@@ -26,6 +26,9 @@ export const organizationResolvers: GraphQLResolverMap<GraphQLContext> = {
     __resolveReference: async (reference: { id: string }) => {
       return getOrganization(reference.id);
     },
+
+    orgName: (parent: { org_name: string }) => parent.org_name,
+    createdAt: (parent: { created_at: string }) => parent.created_at,
 
     members: async (
       parent: { id: string },
