@@ -32,7 +32,7 @@ const dateTimeScalar = new GraphQLScalarType({
   },
 });
 
-export const resolvers = {
+export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DateTime: dateTimeScalar,
   Query: {
     ...userResolvers.Query,
@@ -48,4 +48,4 @@ export const resolvers = {
   Organization: organizationResolvers.Organization,
   OrganizationMember: memberResolvers.OrganizationMember,
   Invitation: invitationResolvers.Invitation,
-} as GraphQLResolverMap<GraphQLContext>;
+};
