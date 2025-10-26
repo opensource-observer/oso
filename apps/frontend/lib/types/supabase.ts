@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.0.2 (a4e00ff)";
+  };
   public: {
     Tables: {
       admin_users: {
@@ -940,10 +945,7 @@ export type Database = {
         Args: { p_resource_id: string; p_resource_type: string };
         Returns: Json;
       };
-      cleanup_orphaned_invitations: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
+      cleanup_orphaned_invitations: { Args: never; Returns: undefined };
       deduct_credits: {
         Args: {
           p_amount: number;
@@ -954,26 +956,14 @@ export type Database = {
         };
         Returns: boolean;
       };
-      expire_old_invitations: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
+      expire_old_invitations: { Args: never; Returns: undefined };
       get_og_image_info: {
         Args: { p_notebook_name: string; p_org_name: string };
         Returns: Json;
       };
-      get_organization_credits: {
-        Args: { p_org_id: string };
-        Returns: number;
-      };
-      get_user_credits: {
-        Args: { p_user_id: string };
-        Returns: number;
-      };
-      hasura_token_hook: {
-        Args: { event: Json };
-        Returns: Json;
-      };
+      get_organization_credits: { Args: { p_org_id: string }; Returns: number };
+      get_user_credits: { Args: { p_user_id: string }; Returns: number };
+      hasura_token_hook: { Args: { event: Json }; Returns: Json };
       preview_deduct_credits: {
         Args: {
           p_amount: number;
@@ -984,10 +974,7 @@ export type Database = {
         };
         Returns: boolean;
       };
-      uuid_or_null: {
-        Args: { str: string };
-        Returns: string;
-      };
+      uuid_or_null: { Args: { str: string }; Returns: string };
       validate_ownership_limits: {
         Args: {
           p_current_record_id?: string;

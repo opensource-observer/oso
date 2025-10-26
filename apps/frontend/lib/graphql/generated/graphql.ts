@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -33,6 +32,13 @@ export type Scalars = {
    * String, Boolean, Int, Float, List or Object.
    */
   GenericScalar: { input: any; output: any };
+  /**
+   * Allows use of a JSON String for input / output from the GraphQL schema.
+   *
+   * Use of this type is *not recommended* as you lose the benefits of having a defined, static
+   * schema (one of the key benefits of GraphQL).
+   */
+  JSONString: { input: any; output: any };
   Oso_Bool: { input: any; output: any };
   Oso_Date: { input: any; output: any };
   Oso_DateTime: { input: any; output: any };
@@ -139,18 +145,33 @@ export type ArrayConfigType = ConfigType &
 
 export type Asset = {
   __typename?: "Asset";
+  assetEventHistory: AssetResultEventHistoryConnection;
+  assetHealth?: Maybe<AssetHealth>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition?: Maybe<AssetNode>;
+  freshnessStatusChangedTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  hasDefinitionOrRecord: Scalars["Boolean"]["output"];
   id: Scalars["String"]["output"];
   key: AssetKey;
+  latestEventSortKey?: Maybe<Scalars["ID"]["output"]>;
+  latestFailedToMaterializeTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  latestMaterializationTimestamp?: Maybe<Scalars["Float"]["output"]>;
+};
+
+export type AssetAssetEventHistoryArgs = {
+  afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
+  limit: Scalars["Int"]["input"];
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type AssetAssetMaterializationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
-  partitionInLast?: InputMaybe<Scalars["Int"]["input"]>;
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
@@ -158,7 +179,6 @@ export type AssetAssetObservationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
-  partitionInLast?: InputMaybe<Scalars["Int"]["input"]>;
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
@@ -376,6 +396,12 @@ export type AssetDependency = {
   partitionMapping?: Maybe<PartitionMapping>;
 };
 
+export enum AssetEventHistoryEventTypeSelector {
+  FailedToMaterialize = "FAILED_TO_MATERIALIZE",
+  Materialization = "MATERIALIZATION",
+  Observation = "OBSERVATION",
+}
+
 /** The event type of an asset event. */
 export enum AssetEventType {
   AssetMaterialization = "ASSET_MATERIALIZATION",
@@ -406,6 +432,78 @@ export type AssetGroupSelector = {
   repositoryName: Scalars["String"]["input"];
 };
 
+export type AssetHealth = {
+  __typename?: "AssetHealth";
+  assetChecksStatus: AssetHealthStatus;
+  assetChecksStatusMetadata?: Maybe<AssetHealthCheckMeta>;
+  assetHealth: AssetHealthStatus;
+  freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata?: Maybe<AssetHealthFreshnessMeta>;
+  materializationStatus: AssetHealthStatus;
+  materializationStatusMetadata?: Maybe<AssetHealthMaterializationMeta>;
+};
+
+export type AssetHealthCheckDegradedMeta = {
+  __typename?: "AssetHealthCheckDegradedMeta";
+  numFailedChecks: Scalars["Int"]["output"];
+  numWarningChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckUnknownMeta
+  | AssetHealthCheckWarningMeta;
+
+export type AssetHealthCheckUnknownMeta = {
+  __typename?: "AssetHealthCheckUnknownMeta";
+  numNotExecutedChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthCheckWarningMeta = {
+  __typename?: "AssetHealthCheckWarningMeta";
+  numWarningChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthFreshnessMeta = {
+  __typename?: "AssetHealthFreshnessMeta";
+  lastMaterializedTimestamp?: Maybe<Scalars["Float"]["output"]>;
+};
+
+export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationDegradedNotPartitionedMeta";
+  failedRunId: Scalars["String"]["output"];
+};
+
+export type AssetHealthMaterializationDegradedPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationDegradedPartitionedMeta";
+  numFailedPartitions: Scalars["Int"]["output"];
+  numMissingPartitions: Scalars["Int"]["output"];
+  totalNumPartitions: Scalars["Int"]["output"];
+};
+
+export type AssetHealthMaterializationHealthyPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationHealthyPartitionedMeta";
+  numMissingPartitions: Scalars["Int"]["output"];
+  totalNumPartitions: Scalars["Int"]["output"];
+};
+
+export type AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta;
+
+/** Enum for the health status of an asset. */
+export enum AssetHealthStatus {
+  Degraded = "DEGRADED",
+  Healthy = "HEALTHY",
+  NotApplicable = "NOT_APPLICABLE",
+  Unknown = "UNKNOWN",
+  Warning = "WARNING",
+}
+
 export type AssetKey = {
   __typename?: "AssetKey";
   path: Array<Scalars["String"]["output"]>;
@@ -430,6 +528,29 @@ export type AssetLineageInfo = {
   assetKey: AssetKey;
   partitions: Array<Scalars["String"]["output"]>;
 };
+
+/**
+ * Enumerate the reasons an asset may have failed to materialize. Can be used to provide more granular
+ *     information about the failure to the user.
+ *
+ */
+export enum AssetMaterializationFailureReason {
+  FailedToMaterialize = "FAILED_TO_MATERIALIZE",
+  RunTerminated = "RUN_TERMINATED",
+  Unknown = "UNKNOWN",
+  UpstreamFailedToMaterialize = "UPSTREAM_FAILED_TO_MATERIALIZE",
+}
+
+/**
+ * An asset can fail to materialize in two ways: an unexpected/unintentional failure that should update
+ *     the global state of the asset to Failed, and one that indicates that the asset not materializing
+ *     is expected (like an optional asset or a user canceled the run).
+ *
+ */
+export enum AssetMaterializationFailureType {
+  Failed = "FAILED",
+  Skipped = "SKIPPED",
+}
 
 export type AssetMaterializationPlannedEvent = MessageEvent &
   RunEvent & {
@@ -477,12 +598,15 @@ export type AssetNode = {
   description?: Maybe<Scalars["String"]["output"]>;
   freshnessInfo?: Maybe<AssetFreshnessInfo>;
   freshnessPolicy?: Maybe<FreshnessPolicy>;
+  freshnessStatusInfo?: Maybe<FreshnessStatusInfo>;
   graphName?: Maybe<Scalars["String"]["output"]>;
   groupName: Scalars["String"]["output"];
   hasAssetChecks: Scalars["Boolean"]["output"];
   hasMaterializePermission: Scalars["Boolean"]["output"];
   hasReportRunlessAssetEventPermission: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
+  internalFreshnessPolicy?: Maybe<InternalFreshnessPolicy>;
+  isAutoCreatedStub: Scalars["Boolean"]["output"];
   isExecutable: Scalars["Boolean"]["output"];
   isMaterializable: Scalars["Boolean"]["output"];
   isObservable: Scalars["Boolean"]["output"];
@@ -490,6 +614,7 @@ export type AssetNode = {
   jobNames: Array<Scalars["String"]["output"]>;
   jobs: Array<Pipeline>;
   kinds: Array<Scalars["String"]["output"]>;
+  lastAutoMaterializationEvaluationRecord?: Maybe<AutoMaterializeAssetEvaluationRecord>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
   latestRunForPartition?: Maybe<Run>;
   metadataEntries: Array<MetadataEntry>;
@@ -499,6 +624,7 @@ export type AssetNode = {
   opVersion?: Maybe<Scalars["String"]["output"]>;
   owners: Array<AssetOwner>;
   partitionDefinition?: Maybe<PartitionDefinition>;
+  partitionKeyConnection?: Maybe<PartitionKeyConnection>;
   partitionKeys: Array<Scalars["String"]["output"]>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats?: Maybe<PartitionStats>;
@@ -543,12 +669,22 @@ export type AssetNodeDataVersionByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
+export type AssetNodeLastAutoMaterializationEvaluationRecordArgs = {
+  asOfEvaluationId?: InputMaybe<Scalars["ID"]["input"]>;
+};
+
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type AssetNodeLatestRunForPartitionArgs = {
   partition: Scalars["String"]["input"];
+};
+
+export type AssetNodePartitionKeyConnectionArgs = {
+  ascending: Scalars["Boolean"]["input"];
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit: Scalars["Int"]["input"];
 };
 
 export type AssetNodePartitionKeysByDimensionArgs = {
@@ -614,6 +750,31 @@ export type AssetPartitionsStatusCounts = {
   numPartitionsMaterialized: Scalars["Int"]["output"];
   numPartitionsTargeted: Scalars["Int"]["output"];
 };
+
+export type AssetRecord = {
+  __typename?: "AssetRecord";
+  id: Scalars["String"]["output"];
+  key: AssetKey;
+};
+
+export type AssetRecordConnection = {
+  __typename?: "AssetRecordConnection";
+  assets: Array<AssetRecord>;
+  cursor?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type AssetRecordsOrError = AssetRecordConnection | PythonError;
+
+export type AssetResultEventHistoryConnection = {
+  __typename?: "AssetResultEventHistoryConnection";
+  cursor: Scalars["String"]["output"];
+  results: Array<AssetResultEventType>;
+};
+
+export type AssetResultEventType =
+  | FailedToMaterializeEvent
+  | MaterializationEvent
+  | ObservationEvent;
 
 export type AssetSelection = {
   __typename?: "AssetSelection";
@@ -731,10 +892,12 @@ export type AutomationConditionEvaluationNode = {
   __typename?: "AutomationConditionEvaluationNode";
   childUniqueIds: Array<Scalars["String"]["output"]>;
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   expandedLabel: Array<Scalars["String"]["output"]>;
   isPartitioned: Scalars["Boolean"]["output"];
   numCandidates?: Maybe<Scalars["Int"]["output"]>;
   numTrue: Scalars["Int"]["output"];
+  operatorType: Scalars["String"]["output"];
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
   uniqueId: Scalars["String"]["output"];
   userLabel?: Maybe<Scalars["String"]["output"]>;
@@ -773,6 +936,7 @@ export enum BulkActionStatus {
   CompletedFailed = "COMPLETED_FAILED",
   CompletedSuccess = "COMPLETED_SUCCESS",
   Failed = "FAILED",
+  Failing = "FAILING",
   Requested = "REQUESTED",
 }
 
@@ -991,6 +1155,13 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type CronFreshnessPolicy = {
+  __typename?: "CronFreshnessPolicy";
+  deadlineCron: Scalars["String"]["output"];
+  lowerBoundDeltaSeconds: Scalars["Int"]["output"];
+  timezone: Scalars["String"]["output"];
+};
+
 export type DaemonHealth = {
   __typename?: "DaemonHealth";
   allDaemonStatuses: Array<DaemonStatus>;
@@ -1019,11 +1190,16 @@ export enum DagsterEventType {
   AlertSuccess = "ALERT_SUCCESS",
   AssetCheckEvaluation = "ASSET_CHECK_EVALUATION",
   AssetCheckEvaluationPlanned = "ASSET_CHECK_EVALUATION_PLANNED",
+  AssetFailedToMaterialize = "ASSET_FAILED_TO_MATERIALIZE",
+  AssetHealthChanged = "ASSET_HEALTH_CHANGED",
   AssetMaterialization = "ASSET_MATERIALIZATION",
   AssetMaterializationPlanned = "ASSET_MATERIALIZATION_PLANNED",
   AssetObservation = "ASSET_OBSERVATION",
   AssetStoreOperation = "ASSET_STORE_OPERATION",
+  AssetWiped = "ASSET_WIPED",
   EngineEvent = "ENGINE_EVENT",
+  FreshnessStateChange = "FRESHNESS_STATE_CHANGE",
+  FreshnessStateEvaluation = "FRESHNESS_STATE_EVALUATION",
   HandledOutput = "HANDLED_OUTPUT",
   HookCompleted = "HOOK_COMPLETED",
   HookErrored = "HOOK_ERRORED",
@@ -1085,7 +1261,9 @@ export type DagsterRunEvent =
   | ExecutionStepStartEvent
   | ExecutionStepSuccessEvent
   | ExecutionStepUpForRetryEvent
+  | FailedToMaterializeEvent
   | HandledOutputEvent
+  | HealthChangedEvent
   | HookCompletedEvent
   | HookErroredEvent
   | HookSkippedEvent
@@ -1145,11 +1323,38 @@ export type DefaultPartitionStatuses = {
   unmaterializedPartitions: Array<Scalars["String"]["output"]>;
 };
 
+export type DefinitionOwner = TeamDefinitionOwner | UserDefinitionOwner;
+
 export type DefinitionTag = {
   __typename?: "DefinitionTag";
   key: Scalars["String"]["output"];
   value: Scalars["String"]["output"];
 };
+
+export type DefsKeyStateInfo = {
+  __typename?: "DefsKeyStateInfo";
+  createTimestamp: Scalars["Float"]["output"];
+  managementType: DefsStateManagementType;
+  version: Scalars["String"]["output"];
+};
+
+export type DefsStateInfo = {
+  __typename?: "DefsStateInfo";
+  keyStateInfo: Array<DefsStateInfoEntry>;
+};
+
+export type DefsStateInfoEntry = {
+  __typename?: "DefsStateInfoEntry";
+  info?: Maybe<DefsKeyStateInfo>;
+  name: Scalars["String"]["output"];
+};
+
+/** An enumeration. */
+export enum DefsStateManagementType {
+  LegacyCodeServerSnapshots = "LEGACY_CODE_SERVER_SNAPSHOTS",
+  LocalFilesystem = "LOCAL_FILESYSTEM",
+  VersionedStateStorage = "VERSIONED_STATE_STORAGE",
+}
 
 export type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
@@ -1457,6 +1662,8 @@ export type ExecutionParams = {
 export type ExecutionPlan = {
   __typename?: "ExecutionPlan";
   artifactsPersisted: Scalars["Boolean"]["output"];
+  assetKeys: Array<AssetKey>;
+  assetSelection: Array<Scalars["String"]["output"]>;
   steps: Array<ExecutionStep>;
 };
 
@@ -1612,6 +1819,29 @@ export type ExpectationResult = DisplayableEvent & {
   success: Scalars["Boolean"]["output"];
 };
 
+export type FailedToMaterializeEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "FailedToMaterializeEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    materializationFailureReason: AssetMaterializationFailureReason;
+    materializationFailureType: AssetMaterializationFailureType;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
+
 export type FailureMetadata = DisplayableEvent & {
   __typename?: "FailureMetadata";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -1646,6 +1876,8 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
 export type FloatMetadataEntry = MetadataEntry & {
   __typename?: "FloatMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
+  /** String representation of the float to support nan/inf/-inf */
+  floatRepr: Scalars["String"]["output"];
   floatValue?: Maybe<Scalars["Float"]["output"]>;
   label: Scalars["String"]["output"];
 };
@@ -1656,6 +1888,12 @@ export type FreshnessPolicy = {
   cronScheduleTimezone?: Maybe<Scalars["String"]["output"]>;
   lastEvaluationTimestamp?: Maybe<Scalars["String"]["output"]>;
   maximumLagMinutes: Scalars["Float"]["output"];
+};
+
+export type FreshnessStatusInfo = {
+  __typename?: "FreshnessStatusInfo";
+  freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata?: Maybe<AssetHealthFreshnessMeta>;
 };
 
 export type Graph = SolidContainer & {
@@ -1715,6 +1953,27 @@ export type HandledOutputEvent = DisplayableEvent &
     timestamp: Scalars["String"]["output"];
   };
 
+export type HealthChangedEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "HealthChangedEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
+
 export type HookCompletedEvent = MessageEvent &
   StepEvent & {
     __typename?: "HookCompletedEvent";
@@ -1761,6 +2020,7 @@ export type IPipelineSnapshot = {
   metadataEntries: Array<MetadataEntry>;
   modes: Array<Mode>;
   name: Scalars["String"]["output"];
+  owners: Array<DefinitionOwner>;
   parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
   pipelineSnapshotId: Scalars["String"]["output"];
   runs: Array<Run>;
@@ -1828,6 +2088,7 @@ export type Instance = {
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars["String"]["output"];
+  freshnessEvaluationEnabled: Scalars["Boolean"]["output"];
   hasInfo: Scalars["Boolean"]["output"];
   id: Scalars["String"]["output"];
   info?: Maybe<Scalars["String"]["output"]>;
@@ -1981,6 +2242,10 @@ export type IntMetadataEntry = MetadataEntry & {
   label: Scalars["String"]["output"];
 };
 
+export type InternalFreshnessPolicy =
+  | CronFreshnessPolicy
+  | TimeWindowFreshnessPolicy;
+
 export type InvalidOutputError = {
   __typename?: "InvalidOutputError";
   invalidOutputName: Scalars["String"]["output"];
@@ -2009,6 +2274,7 @@ export type Job = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
@@ -2016,6 +2282,7 @@ export type Job = IPipelineSnapshot &
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     partition?: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -2109,6 +2376,7 @@ export type LaunchBackfillParams = {
   partitionNames?: InputMaybe<Array<Scalars["String"]["input"]>>;
   partitionsByAssets?: InputMaybe<Array<InputMaybe<PartitionsByAssetSelector>>>;
   reexecutionSteps?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  runConfigData?: InputMaybe<Scalars["RunConfigData"]["input"]>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
   title?: InputMaybe<Scalars["String"]["input"]>;
@@ -2245,6 +2513,13 @@ export type LocalFileCodeReference = {
   label?: Maybe<Scalars["String"]["output"]>;
   lineNumber?: Maybe<Scalars["Int"]["output"]>;
 };
+
+export type LocationDocsJson = {
+  __typename?: "LocationDocsJson";
+  json: Scalars["JSONString"]["output"];
+};
+
+export type LocationDocsJsonOrError = LocationDocsJson | PythonError;
 
 export type LocationStateChangeEvent = {
   __typename?: "LocationStateChangeEvent";
@@ -4183,6 +4458,13 @@ export enum PartitionDefinitionType {
   TimeWindow = "TIME_WINDOW",
 }
 
+export type PartitionKeyConnection = {
+  __typename?: "PartitionKeyConnection";
+  cursor: Scalars["String"]["output"];
+  hasMore: Scalars["Boolean"]["output"];
+  results: Array<Scalars["String"]["output"]>;
+};
+
 export type PartitionKeyRange = {
   __typename?: "PartitionKeyRange";
   end: Scalars["String"]["output"];
@@ -4362,6 +4644,7 @@ export type PartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   numCandidates?: Maybe<Scalars["Int"]["output"]>;
   numTrue: Scalars["Int"]["output"];
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
@@ -4416,6 +4699,7 @@ export type Pipeline = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
@@ -4423,6 +4707,7 @@ export type Pipeline = IPipelineSnapshot &
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     partition?: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -4648,11 +4933,13 @@ export type PipelineSnapshot = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     pipelineSnapshotId: Scalars["String"]["output"];
     runTags: Array<PipelineTag>;
@@ -4771,13 +5058,15 @@ export type Query = {
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   /** Retrieve an asset node by asset key. */
   assetNodeOrError: AssetNodeOrError;
-  /** Retrieve asset nodes after applying a filter on asset group, job, and asset keys. */
+  /** Retrieve asset nodes (assets with a definition) after applying a filter on asset group, job, and asset keys. */
   assetNodes: Array<AssetNode>;
   /** Retrieve an asset by asset key. */
   assetOrError: AssetOrError;
+  /** Retrieve materialized asset records after applying a prefix filter, cursor, and limit. */
+  assetRecordsOrError: AssetRecordsOrError;
   /** Retrieve the latest materializations for a set of assets by asset keys. */
   assetsLatestInfo: Array<AssetLatestInfo>;
-  /** Retrieve assets after applying a prefix filter, cursor, and limit. */
+  /** Retrieve all assets (both with or without a definition) after providing a list of asset keys, applying a prefix filter, cursor, and limit. */
   assetsOrError: AssetsOrError;
   /** Retrieve the auto materialization evaluation records for an asset. */
   autoMaterializeAssetEvaluationsOrError?: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
@@ -4803,6 +5092,8 @@ export type Query = {
   instigationStatesOrError: InstigationStatesOrError;
   /** Retrieve whether the run configuration is valid or invalid. */
   isPipelineConfigValid: PipelineConfigValidationResult;
+  /** Retrieve the latest available DefsStateInfo for the current workspace. */
+  latestDefsStateInfo?: Maybe<DefsStateInfo>;
   /** Retrieve location status for workspace locations. */
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
@@ -4985,12 +5276,20 @@ export type QueryAssetOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryAssetRecordsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  prefix?: InputMaybe<Array<Scalars["String"]["input"]>>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetsLatestInfoArgs = {
   assetKeys: Array<AssetKeyInput>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetsOrErrorArgs = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   cursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   prefix?: InputMaybe<Array<Scalars["String"]["input"]>>;
@@ -5471,12 +5770,17 @@ export type QueryWorkspaceLocationEntryOrErrorArgs = {
 };
 
 export type ReexecutionParams = {
+  /** When re-executing a single run, pass new tags which will upsert over tags on the parent run. */
+  extraTags?: InputMaybe<Array<ExecutionTag>>;
   parentRunId: Scalars["String"]["input"];
   strategy: ReexecutionStrategy;
+  /** When re-executing a single run, pass false to avoid adding the parent run tags by default. */
+  useParentRunTags?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
 export enum ReexecutionStrategy {
   AllSteps = "ALL_STEPS",
+  FromAssetFailure = "FROM_ASSET_FAILURE",
   FromFailure = "FROM_FAILURE",
 }
 
@@ -5593,9 +5897,13 @@ export type Repository = {
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
   displayMetadata: Array<RepositoryMetadata>;
+  /** Retrieves whether the code location has integrated docs. */
+  hasLocationDocs: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   jobs: Array<Job>;
   location: RepositoryLocation;
+  /** Retrieves JSON blob to drive integrated code location docs. */
+  locationDocsJsonOrError: LocationDocsJsonOrError;
   name: Scalars["String"]["output"];
   origin: RepositoryOrigin;
   partitionSets: Array<PartitionSet>;
@@ -5853,6 +6161,7 @@ export type Run = PipelineRun &
     endTime?: Maybe<Scalars["Float"]["output"]>;
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     hasConcurrencyKeySlots: Scalars["Boolean"]["output"];
     hasDeletePermission: Scalars["Boolean"]["output"];
     hasReExecutePermission: Scalars["Boolean"]["output"];
@@ -6094,6 +6403,7 @@ export type RunQueueConfig = {
 
 export type RunRequest = {
   __typename?: "RunRequest";
+  assetChecks?: Maybe<Array<AssetCheckhandle>>;
   assetSelection?: Maybe<Array<AssetKey>>;
   jobName?: Maybe<Scalars["String"]["output"]>;
   runConfigYaml: Scalars["String"]["output"];
@@ -6329,6 +6639,7 @@ export type Schedule = {
   metadataEntries: Array<MetadataEntry>;
   mode: Scalars["String"]["output"];
   name: Scalars["String"]["output"];
+  owners: Array<DefinitionOwner>;
   partitionSet?: Maybe<PartitionSet>;
   pipelineName: Scalars["String"]["output"];
   potentialTickTimestamps: Array<Scalars["Float"]["output"]>;
@@ -6465,6 +6776,7 @@ export type Sensor = {
   minIntervalSeconds: Scalars["Int"]["output"];
   name: Scalars["String"]["output"];
   nextTick?: Maybe<DryRunInstigationTick>;
+  owners: Array<DefinitionOwner>;
   sensorState: InstigationState;
   sensorType: SensorType;
   tags: Array<DefinitionTag>;
@@ -6624,6 +6936,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename?: "SpecificPartitionAssetConditionEvaluationNode";
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
+  entityKey: EntityKey;
   metadataEntries: Array<MetadataEntry>;
   status: AssetConditionEvaluationStatus;
   uniqueId: Scalars["String"]["output"];
@@ -6870,6 +7183,11 @@ export type TeamAssetOwner = {
   team: Scalars["String"]["output"];
 };
 
+export type TeamDefinitionOwner = {
+  __typename?: "TeamDefinitionOwner";
+  team: Scalars["String"]["output"];
+};
+
 /** Interface indicating that a run failed to terminate. */
 export type TerminatePipelineExecutionFailure = {
   message: Scalars["String"]["output"];
@@ -6964,6 +7282,12 @@ export type TimePartitionStatuses = {
   ranges: Array<TimePartitionRangeStatus>;
 };
 
+export type TimeWindowFreshnessPolicy = {
+  __typename?: "TimeWindowFreshnessPolicy";
+  failWindowSeconds: Scalars["Int"]["output"];
+  warnWindowSeconds?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type TimestampMetadataEntry = MetadataEntry & {
   __typename?: "TimestampMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -6995,6 +7319,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   metadataEntries: Array<MetadataEntry>;
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
   status: AssetConditionEvaluationStatus;
@@ -7039,6 +7364,11 @@ export type UserAssetOwner = {
   email: Scalars["String"]["output"];
 };
 
+export type UserDefinitionOwner = {
+  __typename?: "UserDefinitionOwner";
+  email: Scalars["String"]["output"];
+};
+
 export type WaitingOnKeysRuleEvaluationData = {
   __typename?: "WaitingOnKeysRuleEvaluationData";
   waitingOnAssetKeys?: Maybe<Array<AssetKey>>;
@@ -7052,6 +7382,7 @@ export type Workspace = {
 
 export type WorkspaceLocationEntry = {
   __typename?: "WorkspaceLocationEntry";
+  defsStateInfo?: Maybe<DefsStateInfo>;
   displayMetadata: Array<RepositoryMetadata>;
   featureFlags: Array<FeatureFlag>;
   id: Scalars["ID"]["output"];
