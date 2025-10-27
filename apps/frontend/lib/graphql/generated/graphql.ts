@@ -26,6 +26,8 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
+  /** DateTime custom scalar type */
+  DateTime: { input: any; output: any };
   /**
    * The `GenericScalar` scalar type represents a generic
    * GraphQL scalar value that could be:
@@ -54,6 +56,16 @@ export type Scalars = {
    *
    */
   RunConfigData: { input: any; output: any };
+  _Any: { input: any; output: any };
+  federation__FieldSet: { input: any; output: any };
+  link__Import: { input: any; output: any };
+};
+
+export type AcceptInvitationPayload = {
+  __typename?: "AcceptInvitationPayload";
+  member?: Maybe<OrganizationMember>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type AddDynamicPartitionResult =
@@ -66,6 +78,13 @@ export type AddDynamicPartitionSuccess = {
   __typename?: "AddDynamicPartitionSuccess";
   partitionKey: Scalars["String"]["output"];
   partitionsDefName: Scalars["String"]["output"];
+};
+
+export type AddUserByEmailPayload = {
+  __typename?: "AddUserByEmailPayload";
+  member?: Maybe<OrganizationMember>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type AlertFailureEvent = MessageEvent &
@@ -1153,6 +1172,20 @@ export enum ConfiguredValueType {
 export type ConflictingExecutionParamsError = Error & {
   __typename?: "ConflictingExecutionParamsError";
   message: Scalars["String"]["output"];
+};
+
+export type CreateInvitationInput = {
+  /** Email address to invite */
+  email: Scalars["String"]["input"];
+  /** Organization name to invite user to */
+  orgName: Scalars["String"]["input"];
+};
+
+export type CreateInvitationPayload = {
+  __typename?: "CreateInvitationPayload";
+  invitation?: Maybe<Invitation>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type CronFreshnessPolicy = {
@@ -2268,6 +2301,27 @@ export type InvalidSubsetError = Error & {
   pipeline: Pipeline;
 };
 
+/** Invitation to join an organization */
+export type Invitation = {
+  __typename?: "Invitation";
+  acceptedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  acceptedBy?: Maybe<User>;
+  createdAt: Scalars["DateTime"]["output"];
+  email: Scalars["String"]["output"];
+  expiresAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
+  invitedBy: User;
+  organization: Organization;
+  status: InvitationStatus;
+};
+
+export enum InvitationStatus {
+  Accepted = "ACCEPTED",
+  Deleted = "DELETED",
+  Expired = "EXPIRED",
+  Pending = "PENDING",
+}
+
 export type Job = IPipelineSnapshot &
   SolidContainer & {
     __typename?: "Job";
@@ -2704,6 +2758,12 @@ export type MaterializedPartitionRangeStatuses2D = {
   secondaryDim: PartitionStatus1D;
 };
 
+export enum MemberRole {
+  Admin = "ADMIN",
+  Member = "MEMBER",
+  Owner = "OWNER",
+}
+
 export type MessageEvent = {
   eventType?: Maybe<DagsterEventType>;
   level: LogLevel;
@@ -2803,6 +2863,20 @@ export type Mutation = {
   launchRunReexecution: LaunchRunReexecutionResult;
   /** Log telemetry about the Dagster instance. */
   logTelemetry: LogTelemetryMutationResult;
+  /** Accept an invitation to join an organization */
+  osoApp_acceptInvitation: AcceptInvitationPayload;
+  /** Add a user to an organization by email */
+  osoApp_addUserByEmail: AddUserByEmailPayload;
+  /** Create and send an invitation to join an organization */
+  osoApp_createInvitation: CreateInvitationPayload;
+  /** Remove a member from an organization */
+  osoApp_removeMember: RemoveMemberPayload;
+  /** Revoke/delete an invitation */
+  osoApp_revokeInvitation: RevokeInvitationPayload;
+  /** Update a member's role in an organization */
+  osoApp_updateMemberRole: UpdateMemberRolePayload;
+  /** Update the current user's profile */
+  osoApp_updateMyProfile: UpdateProfilePayload;
   /** Retries a set of partition backfill runs. Retrying a backfill will create a new backfill to retry any failed partitions. */
   reexecutePartitionBackfill: LaunchBackfillResult;
   /** Reloads a code location server. */
@@ -2932,6 +3006,46 @@ export type MutationLogTelemetryArgs = {
   clientId: Scalars["String"]["input"];
   clientTime: Scalars["String"]["input"];
   metadata: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_AcceptInvitationArgs = {
+  invitationId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_AddUserByEmailArgs = {
+  email: Scalars["String"]["input"];
+  orgName: Scalars["String"]["input"];
+  role: MemberRole;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_CreateInvitationArgs = {
+  input: CreateInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_RemoveMemberArgs = {
+  orgName: Scalars["String"]["input"];
+  userId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_RevokeInvitationArgs = {
+  invitationId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_UpdateMemberRoleArgs = {
+  orgName: Scalars["String"]["input"];
+  role: MemberRole;
+  userId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_UpdateMyProfileArgs = {
+  input: UpdateProfileInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3193,6 +3307,34 @@ export enum OrderBy {
   /** Sorts the data in descending order */
   Desc = "Desc",
 }
+
+/** Organization entity - represents a group of users working together */
+export type Organization = {
+  __typename?: "Organization";
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
+  /** Get invitations for this organization, optionally filtered by status */
+  invitations: Array<Invitation>;
+  /** Get all members of this organization */
+  members: Array<OrganizationMember>;
+  orgName: Scalars["String"]["output"];
+};
+
+/** Organization entity - represents a group of users working together */
+export type OrganizationInvitationsArgs = {
+  status?: InputMaybe<InvitationStatus>;
+};
+
+/** Organization member - represents a user's membership in an organization */
+export type OrganizationMember = {
+  __typename?: "OrganizationMember";
+  id: Scalars["ID"]["output"];
+  joinedAt: Scalars["DateTime"]["output"];
+  organization: Organization;
+  role: MemberRole;
+  user: User;
+  userId: Scalars["ID"]["output"];
+};
 
 export type Oso_ArtifactsByCollectionV1 = {
   __typename?: "Oso_ArtifactsByCollectionV1";
@@ -5039,6 +5181,7 @@ export type PythonError = Error & {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type Query = {
   __typename?: "Query";
+  _entities: Array<Maybe<_Entity>>;
   _service: _Service;
   /** Retrieve all the top level resources. */
   allTopLevelResourceDetailsOrError: ResourceDetailsListOrError;
@@ -5098,6 +5241,14 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
+  /** Get a specific invitation by ID */
+  osoApp_invitation?: Maybe<Invitation>;
+  /** Get the current authenticated user's profile */
+  osoApp_me: User;
+  /** Get invitations sent to the current user's email */
+  osoApp_myInvitations: Array<Invitation>;
+  /** Get a specific organization by name */
+  osoApp_organization?: Maybe<Organization>;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
   oso_artifactsByUserV1?: Maybe<Array<Oso_ArtifactsByUserV1>>;
@@ -5207,6 +5358,11 @@ export type Query = {
   workspaceLocationEntryOrError?: Maybe<WorkspaceLocationEntryOrError>;
   /** Retrieve the workspace and its locations. */
   workspaceOrError: WorkspaceOrError;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type Query_EntitiesArgs = {
+  representations: Array<Scalars["_Any"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5365,6 +5521,21 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   runId: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_InvitationArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_MyInvitationsArgs = {
+  status?: InputMaybe<InvitationStatus>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_OrganizationArgs = {
+  orgName: Scalars["String"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5867,6 +6038,14 @@ export type ReloadWorkspaceMutationResult =
   | UnauthorizedError
   | Workspace;
 
+export type RemoveMemberPayload = {
+  __typename?: "RemoveMemberPayload";
+  message: Scalars["String"]["output"];
+  orgName: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+  userId: Scalars["ID"]["output"];
+};
+
 export type ReportRunlessAssetEventsParams = {
   assetKey: AssetKeyInput;
   description?: InputMaybe<Scalars["String"]["input"]>;
@@ -6139,6 +6318,13 @@ export type ResumeBackfillResult =
 export type ResumeBackfillSuccess = {
   __typename?: "ResumeBackfillSuccess";
   backfillId: Scalars["String"]["output"];
+};
+
+export type RevokeInvitationPayload = {
+  __typename?: "RevokeInvitationPayload";
+  invitationId: Scalars["ID"]["output"];
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type Run = PipelineRun &
@@ -7339,6 +7525,27 @@ export type UnsupportedOperationError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type UpdateMemberRolePayload = {
+  __typename?: "UpdateMemberRolePayload";
+  member?: Maybe<OrganizationMember>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateProfileInput = {
+  /** User's avatar URL */
+  avatarUrl?: InputMaybe<Scalars["String"]["input"]>;
+  /** User's full name */
+  fullName?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type UpdateProfilePayload = {
+  __typename?: "UpdateProfilePayload";
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+  user: User;
+};
+
 export type UrlCodeReference = {
   __typename?: "UrlCodeReference";
   label?: Maybe<Scalars["String"]["output"]>;
@@ -7357,6 +7564,17 @@ export type UsedSolid = {
   __typename?: "UsedSolid";
   definition: ISolidDefinition;
   invocations: Array<NodeInvocationSite>;
+};
+
+/** User entity - can be extended from other subgraphs */
+export type User = {
+  __typename?: "User";
+  avatarUrl?: Maybe<Scalars["String"]["output"]>;
+  email?: Maybe<Scalars["String"]["output"]>;
+  fullName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  /** Organizations this user belongs to */
+  organizations: Array<Organization>;
 };
 
 export type UserAssetOwner = {
@@ -7427,10 +7645,19 @@ export type WrappingDagsterType = {
   ofType: DagsterType;
 };
 
+export type _Entity = Invitation | Organization | OrganizationMember | User;
+
 export type _Service = {
   __typename?: "_Service";
   sdl: Scalars["String"]["output"];
 };
+
+export enum Link__Purpose {
+  /** `EXECUTION` features provide metadata necessary for operation execution. */
+  Execution = "EXECUTION",
+  /** `SECURITY` features provide metadata necessary to securely resolve fields. */
+  Security = "SECURITY",
+}
 
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
