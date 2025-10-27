@@ -412,11 +412,12 @@ def generate_query(
       sample_date,
       project_id,
       metric_model,
-      amount
+      SUM(amount) as amount
     FROM {ranked_table}
     WHERE metric_model IN ({metric_list})
       AND metric_event_source IN ({chain_list})
       AND collection_name = '{collection_name}'
+    GROUP BY sample_date, project_id, metric_model
     """
     return sql
 
