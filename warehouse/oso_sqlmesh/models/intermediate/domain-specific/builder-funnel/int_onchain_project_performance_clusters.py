@@ -64,7 +64,6 @@ def _to_ts_or_none(val: t.Any) -> Optional[pd.Timestamp]:
         ts = pd.Timestamp(val)
     except Exception:
         return None
-    # Guard against NaT
     if pd.isna(ts):
         return None
     return ts
