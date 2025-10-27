@@ -314,7 +314,7 @@ class TimeseriesMetrics:
                     parent_query = queries[table_name]["rendered_query"]
                     raise MetricsCycle(
                         textwrap.dedent(
-                            f"""Cycle from {name} to {table_name}: 
+                            f"""Cycle from {name} to {table_name}:
                          ---
                         {name}:
                         {rendered_query.sql(dialect="duckdb", pretty=True)}
@@ -744,7 +744,7 @@ class TimeseriesMetrics:
             or "funding" in query_config["table_name"]
             or "releases" in query_config["table_name"]
             or "worldchain_users_aggregation" in query_config["table_name"]
-            or "new_contributors" in query_config["table_name"]
+            or "first_time_contributors" in query_config["table_name"]
         ):
             ignored_rules.append("incrementalmustdefinenogapsaudit")
 
