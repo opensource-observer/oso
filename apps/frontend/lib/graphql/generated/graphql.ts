@@ -992,6 +992,13 @@ export type CapturedLogsMetadata = {
   stdoutLocation?: Maybe<Scalars["String"]["output"]>;
 };
 
+/** Catalog entity - represents a data catalog accessible to the user */
+export type Catalog = {
+  __typename?: "Catalog";
+  name: Scalars["String"]["output"];
+  schemas: Array<Schema>;
+};
+
 /**
  * What change an asset has undergone between two deployments. Used
  *     in distinguishing asset definition changes in branch deployment and
@@ -1019,6 +1026,14 @@ export type CodeReferencesMetadataEntry = MetadataEntry & {
   codeReferences: Array<SourceLocation>;
   description?: Maybe<Scalars["String"]["output"]>;
   label: Scalars["String"]["output"];
+};
+
+/** Column entity - represents a column within a table */
+export type Column = {
+  __typename?: "Column";
+  description?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
+  type: Scalars["String"]["output"];
 };
 
 export type CompositeConfigType = ConfigType & {
@@ -5245,10 +5260,13 @@ export type Query = {
   osoApp_invitation?: Maybe<Invitation>;
   /** Get the current authenticated user's profile */
   osoApp_me: User;
+  /** Get list of catalogs for the current user */
+  osoApp_myCatalogs: Array<Catalog>;
   /** Get invitations sent to the current user's email */
   osoApp_myInvitations: Array<Invitation>;
   /** Get a specific organization by name */
   osoApp_organization?: Maybe<Organization>;
+  osoApp_tableColumns: Array<Column>;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
   oso_artifactsByUserV1?: Maybe<Array<Oso_ArtifactsByUserV1>>;
@@ -5536,6 +5554,13 @@ export type QueryOsoApp_MyInvitationsArgs = {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_OrganizationArgs = {
   orgName: Scalars["String"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_TableColumnsArgs = {
+  catalogName: Scalars["String"]["input"];
+  schemaName: Scalars["String"]["input"];
+  tableName: Scalars["String"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6940,6 +6965,13 @@ export type SchedulesOrError =
   | RepositoryNotFoundError
   | Schedules;
 
+/** Schema entity - represents a schema within a catalog */
+export type Schema = {
+  __typename?: "Schema";
+  name: Scalars["String"]["output"];
+  tables: Array<Table>;
+};
+
 export type SelectorTypeConfigError = PipelineConfigValidationError & {
   __typename?: "SelectorTypeConfigError";
   incomingFields: Array<Scalars["String"]["output"]>;
@@ -7286,8 +7318,10 @@ export type SubscriptionPipelineRunLogsArgs = {
   runId: Scalars["ID"]["input"];
 };
 
+/** Table entity - represents a table within a schema */
 export type Table = {
   __typename?: "Table";
+  name: Scalars["String"]["output"];
   records: Array<Scalars["String"]["output"]>;
   schema: TableSchema;
 };
@@ -7645,7 +7679,12 @@ export type WrappingDagsterType = {
   ofType: DagsterType;
 };
 
-export type _Entity = Invitation | Organization | OrganizationMember | User;
+export type _Entity =
+  | Catalog
+  | Invitation
+  | Organization
+  | OrganizationMember
+  | User;
 
 export type _Service = {
   __typename?: "_Service";
