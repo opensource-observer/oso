@@ -53,12 +53,7 @@ def _ensure_numeric(df: pd.DataFrame, cols: List[str]) -> None:
     """Convert columns to numeric, coercing errors to 0."""
     for c in cols:
         if c in df.columns:
-            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)  # type: ignore[union-attr]
-
-
-def _as_dataframe(obj: t.Any) -> pd.DataFrame:
-    """Force a DataFrame for pyright without runtime cost."""
-    return cast(pd.DataFrame, obj)
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
 
 
 def _to_ts_or_none(val: t.Any) -> Optional[pd.Timestamp]:
@@ -72,7 +67,7 @@ def _to_ts_or_none(val: t.Any) -> Optional[pd.Timestamp]:
     # Guard against NaT
     if pd.isna(ts):
         return None
-    return cast(pd.Timestamp, ts)
+    return ts
 
 
 def _series_min_max_ts(
@@ -96,7 +91,7 @@ def _clip_range_to_data(
         except Exception:
             s = pd.Timestamp.min
     elif data_start is not None and not pd.isna(data_start):
-        s = cast(pd.Timestamp, data_start)
+        s = data_start
     else:
         s = pd.Timestamp.min
     # Build end
@@ -106,7 +101,7 @@ def _clip_range_to_data(
         except Exception:
             e = pd.Timestamp.max
     elif data_end is not None and not pd.isna(data_end):
-        e = cast(pd.Timestamp, data_end)
+        e = data_end
     else:
         e = pd.Timestamp.max
     # Normalize potential NaT
@@ -116,9 +111,9 @@ def _clip_range_to_data(
         e = pd.Timestamp.max
     # Clip
     if data_start is not None and not pd.isna(data_start):
-        s = max(s, cast(pd.Timestamp, data_start))
+        s = max(s, data_start)
     if data_end is not None and not pd.isna(data_end):
-        e = min(e, cast(pd.Timestamp, data_end))
+        e = min(e, data_end)
     return s, e
 
 
@@ -143,12 +138,12 @@ def pivot_metrics(df: pd.DataFrame, metric_models: List[str]) -> pd.DataFrame:
         aggfunc="sum",
         observed=True,
     ).reset_index()
-    wide: pd.DataFrame = cast(pd.DataFrame, wide_raw)
+    wide: pd.DataFrame = wide_raw
 
     for m in metric_models:
         if m not in wide.columns:
             wide[m] = 0.0
-        wide[m] = pd.to_numeric(wide[m], errors="coerce").fillna(0)  # type: ignore[union-attr]
+        wide[m] = pd.to_numeric(wide[m], errors="coerce").fillna(0)
     wide[DATE_COL] = pd.to_datetime(wide[DATE_COL])
     return wide
 
@@ -274,8 +269,8 @@ def assign_month(
     feats, feature_cols = build_features(df_month, metrics)
     for c in feature_cols:
         col_data = pd.to_numeric(feats[c], errors="coerce")
-        col_data = col_data.replace([np.inf, -np.inf], 0)  # type: ignore[union-attr]
-        feats[c] = col_data.fillna(0)  # type: ignore[union-attr]
+        col_data = col_data.replace([np.inf, -np.inf], 0)
+        feats[c] = col_data.fillna(0)
 
     if artifact.centers.size == 0:
         out = feats.copy()
@@ -367,15 +362,12 @@ def build_monthly_history_full_range(
     for m in metric_ids:
         if m in df_wide.columns:
             col_numeric = pd.to_numeric(df_wide[m], errors="coerce")
-            df_wide[m] = col_numeric.fillna(0).astype("float64")  # type: ignore[union-attr]
+            df_wide[m] = col_numeric.fillna(0).astype("float64")
 
     # inclusive training slice
     t0, t1 = pd.to_datetime(train_start), pd.to_datetime(train_end)
     df_train = df_wide[(df_wide[DATE_COL] >= t0) & (df_wide[DATE_COL] <= t1)].copy()
 
-    # Ensure df_train is DataFrame
-    if not isinstance(df_train, pd.DataFrame):
-        return pd.DataFrame()
     if df_train.empty:
         return pd.DataFrame()
 
@@ -408,17 +400,16 @@ def build_monthly_history_full_range(
         if spec.id not in merged.columns:
             merged[spec.id] = 0.0
         col_numeric = pd.to_numeric(merged[spec.id], errors="coerce")
-        merged[spec.id] = col_numeric.fillna(0).astype("float64")  # type: ignore[union-attr]
+        merged[spec.id] = col_numeric.fillna(0).astype("float64")
 
     merged["cluster_id"] = merged["cluster_id"].astype("Int64")
     sil_col = merged["silhouette"]
-    merged["silhouette"] = sil_col.fillna(0.0)  # type: ignore[union-attr]
+    merged["silhouette"] = sil_col.fillna(0.0)
 
     metric_cols = [m.id for m in metrics]
     cols = [PROJECT_COL, DATE_COL, "cluster_id", "silhouette"] + metric_cols
 
-    result_raw = merged[cols]
-    result: pd.DataFrame = cast(pd.DataFrame, result_raw)
+    result: pd.DataFrame = merged[cols]
     result = result[result["cluster_id"].notna()]
     return result
 
@@ -549,9 +540,7 @@ def execute(
     df_wide["sample_date"] = pd.to_datetime(df_wide["sample_date"])
 
     # Extract scalar date bounds and clip requested range to data
-    data_start_opt, data_end_opt = _series_min_max_ts(
-        cast(pd.Series, df_wide["sample_date"])
-    )
+    data_start_opt, data_end_opt = _series_min_max_ts(df_wide["sample_date"])
     train_start, train_end = _clip_range_to_data(
         start_str=start, end_str=end, data_start=data_start_opt, data_end=data_end_opt
     )
@@ -571,4 +560,4 @@ def execute(
         yield from ()
         return
 
-    yield df_clustered  # type: ignore[misc]
+    yield df_clustered
