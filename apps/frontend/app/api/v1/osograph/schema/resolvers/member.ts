@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { GraphQLResolverMap } from "@apollo/subgraph/dist/schema-helper/resolverMap";
+import type { GraphQLResolverModule } from "@/app/api/v1/osograph/utils/types";
 import {
   requireAuthentication,
   requireOrgMembership,
@@ -22,7 +22,7 @@ import {
   ErrorCode,
 } from "@/app/api/v1/osograph/utils/errors";
 
-export const memberResolvers: GraphQLResolverMap<GraphQLContext> = {
+export const memberResolvers: GraphQLResolverModule<GraphQLContext> = {
   OrganizationMember: {
     __resolveReference: async (reference: { id: string }) => {
       const supabase = createAdminClient();

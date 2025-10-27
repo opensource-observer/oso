@@ -2,7 +2,7 @@ import { v4 as uuid4 } from "uuid";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendInvitationEmail } from "@/lib/services/email";
 import { logger } from "@/lib/logger";
-import type { GraphQLResolverMap } from "@apollo/subgraph/dist/schema-helper/resolverMap";
+import type { GraphQLResolverModule } from "@/app/api/v1/osograph/utils/types";
 import {
   requireAuthentication,
   requireOrgMembership,
@@ -23,7 +23,7 @@ import {
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 
-export const invitationResolvers: GraphQLResolverMap<GraphQLContext> = {
+export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     osoApp_invitation: async (
       _: unknown,
