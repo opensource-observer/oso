@@ -56,27 +56,6 @@ def _ensure_numeric(df: pd.DataFrame, cols: List[str]) -> None:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
 
 
-def _to_ts_or_none(val: t.Any) -> Optional[pd.Timestamp]:
-    """Convert scalar/ts/NaT to Optional[pd.Timestamp] with no exceptions."""
-    if val is None:
-        return None
-    try:
-        ts = pd.Timestamp(val)
-    except Exception:
-        return None
-    if pd.isna(ts):
-        return None
-    return ts
-
-
-def _series_min_max_ts(
-    s: pd.Series,
-) -> Tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
-    if s.empty:
-        return None, None
-    return _to_ts_or_none(s.min()), _to_ts_or_none(s.max())
-
-
 def _clip_range_to_data(
     start_str: Optional[str],
     end_str: Optional[str],
@@ -231,8 +210,8 @@ def train_master(
     # Extract training range as Optional Timestamps
     min_date_raw = df_train[DATE_COL].min()
     max_date_raw = df_train[DATE_COL].max()
-    training_start_opt = _to_ts_or_none(min_date_raw)
-    training_end_opt = _to_ts_or_none(max_date_raw)
+    training_start_opt = None if pd.isna(min_date_raw) else pd.Timestamp(min_date_raw)
+    training_end_opt = None if pd.isna(max_date_raw) else pd.Timestamp(max_date_raw)
 
     return ModelArtifact(
         centers=kmeans.cluster_centers_,
@@ -538,8 +517,16 @@ def execute(
     # Determine training date range
     df_wide["sample_date"] = pd.to_datetime(df_wide["sample_date"])
 
-    # Extract scalar date bounds and clip requested range to data
-    data_start_opt, data_end_opt = _series_min_max_ts(df_wide["sample_date"])
+    # Extract scalar date bounds and clip requested range to data (no helper)
+    sdates = df_wide["sample_date"]
+    if sdates.empty:
+        data_start_opt: Optional[pd.Timestamp] = None
+        data_end_opt: Optional[pd.Timestamp] = None
+    else:
+        _min = sdates.min()
+        _max = sdates.max()
+        data_start_opt = None if pd.isna(_min) else pd.Timestamp(_min)
+        data_end_opt = None if pd.isna(_max) else pd.Timestamp(_max)
     train_start, train_end = _clip_range_to_data(
         start_str=start, end_str=end, data_start=data_start_opt, data_end=data_end_opt
     )
