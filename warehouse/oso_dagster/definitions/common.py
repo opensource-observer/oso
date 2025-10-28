@@ -48,15 +48,15 @@ class DefinitionsLoader:
 
         # Automatically wire the necessary resources based on all of the assets' and jobs' requirements
         resources_dict: dict[str, t.Any] = {}
-        for asset in asset_factory_response.assets:
-            if isinstance(asset, dg.AssetsDefinition):
-                for resource_key in asset.required_resource_keys:
-                    if resource_key not in resources_dict:
-                        resources_dict[resource_key] = context.resolve(resource_key)
 
-        for job in asset_factory_response.jobs:
-            if isinstance(job, dg.JobDefinition):
-                for resource_key in job.required_resource_keys:
+        # Collect all definitions that have required resources
+        definitions_with_resources = [
+            (asset, dg.AssetsDefinition) for asset in asset_factory_response.assets
+        ] + [(job, dg.JobDefinition) for job in asset_factory_response.jobs]
+
+        for definition, definition_type in definitions_with_resources:
+            if isinstance(definition, definition_type):
+                for resource_key in definition.required_resource_keys:
                     if resource_key not in resources_dict:
                         resources_dict[resource_key] = context.resolve(resource_key)
 
