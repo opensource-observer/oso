@@ -322,13 +322,15 @@ type SidebarTriggerProps = React.ComponentProps<typeof Button>;
 const SidebarTriggerMeta: CodeComponentMeta<SidebarTriggerProps> = {
   name: "SidebarTrigger",
   description: "shadcn/ui SidebarTrigger component",
-  props: {},
+  props: {
+    children: "slot",
+  },
 };
 
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   SidebarTriggerProps
->(({ className, onClick, ...props }, ref) => {
+>(({ className, onClick, children, ...props }, ref) => {
   const { toggleSidebar } = useSidebar();
 
   return (
@@ -336,15 +338,14 @@ const SidebarTrigger = React.forwardRef<
       ref={ref}
       data-sidebar="trigger"
       variant="ghost"
-      size="icon"
-      className={cn("h-7 w-7", className)}
+      className={className}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
       }}
       {...props}
     >
-      <PanelLeft />
+      {children ?? <PanelLeft className="h-7 w-7" size="icon" />}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
