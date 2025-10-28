@@ -87,32 +87,6 @@ with
     from lens
   ),
 
-  ens_users as (
-    select
-      user_source_id,
-      user_source,
-      user_namespace,
-      user_name,
-      artifact_name as artifact_source_id,
-      artifact_source,
-      artifact_namespace,
-      artifact_name,
-      'ENS_USER' as user_type
-    from oso.int_addresses_by_ens_user
-    union all
-    select
-      user_source_id,
-      user_source,
-      user_namespace,
-      user_name,
-      artifact_source_id,
-      artifact_source,
-      artifact_namespace,
-      artifact_name,
-      'ENS_USER' as user_type
-    from oso.int_github_users_by_ens_user
-  ),
-
   all_normalized_users as (
     select
       artifact_source_id,
@@ -149,18 +123,6 @@ with
       user_namespace,
       user_name
     from lens_users
-    union all
-    select
-      artifact_source_id,
-      artifact_source,
-      artifact_namespace,
-      artifact_name,
-      user_source_id,
-      user_source,
-      user_type,
-      user_namespace,
-      user_name
-    from ens_users
   )
 
 select distinct
