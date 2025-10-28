@@ -60,14 +60,6 @@ def text_changeds(
         target_type="Query",
         target_query="textChangeds",
         max_depth=1,
-        exclude=[
-            # "id",
-            "resolver",
-            # "blockNumber",
-            # "transactionID",
-            # "key",
-            # "value",
-        ],
         transform_fn=lambda result: result["textChangeds"],
         pagination=PaginationConfig(
             type=PaginationType.KEYSET,
