@@ -126,6 +126,9 @@ export const ServerErrors = {
 
   externalService: (rawErrorMessage?: string) =>
     createError(ErrorCode.EXTERNAL_SERVICE_ERROR, rawErrorMessage),
+
+  storage: (rawErrorMessage?: string) =>
+    createError(ErrorCode.EXTERNAL_SERVICE_ERROR, rawErrorMessage),
 } as const;
 
 export const OrganizationErrors = {
@@ -189,4 +192,8 @@ export const UserErrors = {
 
   noFieldsToUpdate: () =>
     createError(ErrorCode.BAD_USER_INPUT, "No fields provided to update"),
+} as const;
+
+export const NotebookErrors = {
+  notFound: () => createError(ErrorCode.NOT_FOUND, "Notebook not found"),
 } as const;
