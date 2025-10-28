@@ -5,10 +5,10 @@ A simple heartbeat resource to indicate liveness of Dagster jobs.
 import asyncio
 import concurrent.futures
 import logging
+import threading
 import typing as t
 from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timezone
-from queue import Empty, Queue
 
 import aiofiles
 import dagster as dg
@@ -22,7 +22,7 @@ BeatLoopFunc = t.Callable[..., t.Coroutine[None, None, None]]
 
 def run_beat_loop(
     interval_seconds: int,
-    queue: Queue[bool],
+    stop: threading.Event,
     beat_loop_func: BeatLoopFunc,
     beat_loop_kwargs: dict[str, t.Any],
 ) -> None:
@@ -30,31 +30,30 @@ def run_beat_loop(
     while True:
         logger.info("Running heartbeat beat loop function")
         asyncio.run(beat_loop_func(**beat_loop_kwargs))
-        try:
-            if queue.get(timeout=interval_seconds):
-                logger.info("Stopping heartbeat beat loop")
-                break
-        except Empty:
-            continue
+        if stop.wait(timeout=float(interval_seconds)):
+            logger.info("Stopping heartbeat beat loop")
+            break
 
 
 class HeartBeatResource(dg.ConfigurableResource):
     def beat_loop_func(self) -> BeatLoopFunc:
+        """Return the function to be called in the heartbeat loop"""
         raise NotImplementedError()
 
     def beat_loop_kwargs(self) -> dict[str, t.Any]:
+        """Return the kwargs to be passed to the heartbeat loop function"""
         return {}
 
-    async def get_last_heartbeat_for(self, job_name: str) -> datetime | None:
+    async def get_last_heartbeat_for(self, name: str) -> datetime | None:
         raise NotImplementedError()
 
-    async def beat(self, job_name: str) -> None:
+    async def beat(self, name: str) -> None:
         raise NotImplementedError()
 
     @asynccontextmanager
     async def heartbeat(
         self,
-        job_name: str,
+        name: str,
         interval_seconds: int = 120,
         log_override: logging.Logger | None = None,
     ) -> t.AsyncIterator[None]:
@@ -62,20 +61,33 @@ class HeartBeatResource(dg.ConfigurableResource):
         loop = asyncio.get_running_loop()
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             kwargs = self.beat_loop_kwargs().copy()
-            kwargs.update({"job_name": job_name})
-            queue = Queue[bool]()
+            kwargs.update({"heartbeat_name": name})
+            stop = threading.Event()
+
+            # The beat loop must run in a separate thread because dagster's
+            # async event loop tends to block despite being async. Using a
+            # thread ensures that the heartbeat will run assuming the process is
+            # alive and not completely blocked.
+            #
+            # So in order to make this work we must pass all of the context we
+            # need for the beat loop function as the function running in a
+            # separate thread might not have access to the same context.
+            # Additionally, this means changing this to be separate processes
+            # can be done in the future if needed. This is also why the
+            # functions used for the beat loop are not methods of the resource
+            # class implementations.
             beat_task = loop.run_in_executor(
                 executor,
                 run_beat_loop,
                 interval_seconds,
-                queue,
+                stop,
                 self.beat_loop_func(),
                 kwargs,
             )
             try:
                 yield
             finally:
-                queue.put(True)
+                stop.set()
                 beat_task.cancel()
                 with suppress(asyncio.CancelledError):
                     await beat_task
@@ -90,10 +102,10 @@ async def async_redis_client(host: str, port: int) -> t.AsyncIterator[Redis]:
         await client.aclose()
 
 
-async def redis_send_heartbeat(*, host: str, port: int, job_name: str) -> None:
+async def redis_send_heartbeat(*, host: str, port: int, heartbeat_name: str) -> None:
     async with async_redis_client(host, port) as redis_client:
         await redis_client.set(
-            f"heartbeat:{job_name}", datetime.now(timezone.utc).isoformat()
+            f"heartbeat:{heartbeat_name}", datetime.now(timezone.utc).isoformat()
         )
 
 
@@ -107,10 +119,10 @@ class RedisHeartBeatResource(HeartBeatResource):
     def beat_loop_kwargs(self) -> dict[str, t.Any]:
         return {"host": self.host, "port": self.port}
 
-    async def get_last_heartbeat_for(self, job_name: str) -> datetime | None:
+    async def get_last_heartbeat_for(self, name: str) -> datetime | None:
         async with async_redis_client(self.host, self.port) as redis_client:
-            timestamp = await redis_client.get(f"heartbeat:{job_name}")
-            logger.info(f"Fetched heartbeat for job {job_name}: {timestamp}")
+            timestamp = await redis_client.get(f"heartbeat:{name}")
+            logger.info(f"Fetched heartbeat `{name}`: {timestamp}")
             if isinstance(timestamp, str):
                 return datetime.fromisoformat(timestamp)
             elif isinstance(timestamp, bytes):
@@ -118,18 +130,18 @@ class RedisHeartBeatResource(HeartBeatResource):
             else:
                 return None
 
-    async def beat(self, job_name: str) -> None:
+    async def beat(self, name: str) -> None:
         return await redis_send_heartbeat(
-            host=self.host, port=self.port, job_name=job_name
+            host=self.host, port=self.port, heartbeat_name=name
         )
 
 
-async def filebased_send_heartbeat(*, directory: str, job_name: str) -> None:
+async def filebased_send_heartbeat(*, directory: str, heartbeat_name: str) -> None:
     from pathlib import Path
 
     import aiofiles
 
-    filepath = Path(directory) / f"{job_name}_heartbeat.txt"
+    filepath = Path(directory) / f"{heartbeat_name}_heartbeat.txt"
     async with aiofiles.open(filepath, mode="w") as f:
         await f.write(datetime.now(timezone.utc).isoformat())
 
@@ -139,29 +151,25 @@ class FilebasedHeartBeatResource(HeartBeatResource):
 
     directory: str = Field(description="Directory to store heartbeat files.")
 
-    async def get_last_heartbeat_for(self, job_name: str) -> datetime | None:
+    async def get_last_heartbeat_for(self, name: str) -> datetime | None:
         from pathlib import Path
 
-        filepath = Path(self.directory) / f"{job_name}_heartbeat.txt"
+        filepath = Path(self.directory) / f"{name}_heartbeat.txt"
         if not filepath.exists():
             return None
         async with aiofiles.open(filepath, mode="r") as f:
             timestamp = await f.read()
             return datetime.fromisoformat(timestamp)
 
-    async def beat(self, job_name: str) -> None:
-        from pathlib import Path
-
-        import aiofiles
-
-        filepath = Path(self.directory) / f"{job_name}_heartbeat.txt"
-        async with aiofiles.open(filepath, mode="w") as f:
-            await f.write(datetime.now(timezone.utc).isoformat())
+    async def beat(self, name: str) -> None:
+        return await filebased_send_heartbeat(
+            directory=self.directory, heartbeat_name=name
+        )
 
     @asynccontextmanager
     async def heartbeat(
         self,
-        job_name: str,
+        name: str,
         interval_seconds: int = 120,
         log_override: logging.Logger | None = None,
     ) -> t.AsyncIterator[None]:
@@ -170,14 +178,12 @@ class FilebasedHeartBeatResource(HeartBeatResource):
         async def beat_loop():
             while True:
                 try:
-                    await self.beat(job_name)
+                    await self.beat(name)
                     logger_to_use.info(
-                        f"Heartbeat sent for job {job_name} at {datetime.now(timezone.utc).isoformat()}"
+                        f"Heartbeat sent for job {name} at {datetime.now(timezone.utc).isoformat()}"
                     )
                 except Exception as e:
-                    logger_to_use.error(
-                        f"Error sending heartbeat for job {job_name}: {e}"
-                    )
+                    logger_to_use.error(f"Error sending heartbeat for job {name}: {e}")
                 await asyncio.sleep(interval_seconds)
 
         beat_task = asyncio.create_task(beat_loop())

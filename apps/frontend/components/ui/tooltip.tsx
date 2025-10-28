@@ -54,7 +54,6 @@ const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
     },
     forceOpen: {
       type: "boolean",
-      defaultValue: false,
       editOnly: true,
       helpText: "Force the tooltip content to show.",
     },

@@ -1,17 +1,8 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
 import { includeIgnoreFile } from "@eslint/compat";
+import rootConfig from "../../eslint.config.mjs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const gitignorePath = path.resolve(__dirname, ".gitignore");
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
-});
+const gitignorePath = path.resolve(new URL(".", import.meta.url).pathname, ".gitignore");
 
 export default [
     includeIgnoreFile(gitignorePath),
@@ -32,13 +23,13 @@ export default [
             "**/yarn-debug.log*",
             "**/yarn-error.log*",
         ],
-    }, ...compat.extends("../../.eslintrc.js"), {
+    }, ...rootConfig, {
         languageOptions: {
             ecmaVersion: 5,
             sourceType: "script",
 
             parserOptions: {
-                project: ["./apps/docs/tsconfig.json"],
+                project: ["./tsconfig.json"],
             },
         },
 

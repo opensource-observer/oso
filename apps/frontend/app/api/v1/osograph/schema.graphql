@@ -1,0 +1,217 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.0"
+    import: ["@key", "@shareable", "@external"]
+  )
+
+scalar DateTime
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  DELETED
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+"""
+Organization entity - represents a group of users working together
+"""
+type Organization @key(fields: "id") {
+  id: ID!
+  orgName: String!
+  createdAt: DateTime!
+
+  """
+  Get all members of this organization
+  """
+  members: [OrganizationMember!]!
+
+  """
+  Get invitations for this organization, optionally filtered by status
+  """
+  invitations(status: InvitationStatus): [Invitation!]!
+}
+
+"""
+Organization member - represents a user's membership in an organization
+"""
+type OrganizationMember @key(fields: "id") {
+  id: ID!
+  userId: ID!
+  user: User!
+  organization: Organization!
+  role: MemberRole!
+  joinedAt: DateTime!
+}
+
+"""
+User entity - can be extended from other subgraphs
+"""
+type User @key(fields: "id") {
+  id: ID!
+  email: String
+  fullName: String
+  avatarUrl: String
+
+  """
+  Organizations this user belongs to
+  """
+  organizations: [Organization!]!
+}
+
+"""
+Invitation to join an organization
+"""
+type Invitation @key(fields: "id") {
+  id: ID!
+  email: String!
+  organization: Organization!
+  invitedBy: User!
+  status: InvitationStatus!
+  expiresAt: DateTime!
+  createdAt: DateTime!
+  acceptedAt: DateTime
+  acceptedBy: User
+}
+
+type Query {
+  """
+  Get the current authenticated user's profile
+  """
+  osoApp_me: User!
+
+  """
+  Get invitations sent to the current user's email
+  """
+  osoApp_myInvitations(status: InvitationStatus): [Invitation!]!
+
+  """
+  Get a specific organization by name
+  """
+  osoApp_organization(orgName: String!): Organization
+
+  """
+  Get a specific invitation by ID
+  """
+  osoApp_invitation(id: ID!): Invitation
+}
+
+type Mutation {
+  """
+  Update the current user's profile
+  """
+  osoApp_updateMyProfile(input: UpdateProfileInput!): UpdateProfilePayload!
+
+  """
+  Create and send an invitation to join an organization
+  """
+  osoApp_createInvitation(
+    input: CreateInvitationInput!
+  ): CreateInvitationPayload!
+
+  """
+  Accept an invitation to join an organization
+  """
+  osoApp_acceptInvitation(invitationId: ID!): AcceptInvitationPayload!
+
+  """
+  Revoke/delete an invitation
+  """
+  osoApp_revokeInvitation(invitationId: ID!): RevokeInvitationPayload!
+
+  """
+  Remove a member from an organization
+  """
+  osoApp_removeMember(orgName: String!, userId: ID!): RemoveMemberPayload!
+
+  """
+  Update a member's role in an organization
+  """
+  osoApp_updateMemberRole(
+    orgName: String!
+    userId: ID!
+    role: MemberRole!
+  ): UpdateMemberRolePayload!
+
+  """
+  Add a user to an organization by email
+  """
+  osoApp_addUserByEmail(
+    orgName: String!
+    email: String!
+    role: MemberRole!
+  ): AddUserByEmailPayload!
+}
+
+input CreateInvitationInput {
+  """
+  Email address to invite
+  """
+  email: String!
+
+  """
+  Organization name to invite user to
+  """
+  orgName: String!
+}
+
+type CreateInvitationPayload {
+  invitation: Invitation
+  message: String!
+  success: Boolean!
+}
+
+type AcceptInvitationPayload {
+  member: OrganizationMember
+  message: String!
+  success: Boolean!
+}
+
+type RevokeInvitationPayload {
+  invitationId: ID!
+  message: String!
+  success: Boolean!
+}
+
+type RemoveMemberPayload {
+  userId: ID!
+  orgName: String!
+  message: String!
+  success: Boolean!
+}
+
+type UpdateMemberRolePayload {
+  member: OrganizationMember
+  message: String!
+  success: Boolean!
+}
+
+type AddUserByEmailPayload {
+  member: OrganizationMember
+  message: String!
+  success: Boolean!
+}
+
+input UpdateProfileInput {
+  """
+  User's full name
+  """
+  fullName: String
+
+  """
+  User's avatar URL
+  """
+  avatarUrl: String
+}
+
+type UpdateProfilePayload {
+  user: User!
+  message: String!
+  success: Boolean!
+}

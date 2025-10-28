@@ -19,37 +19,66 @@ export async function tryGenerateNotebookHtml(url: string) {
   }
 }
 
+const LONG_TIMEOUT_MS = 250 * 1000;
+
 async function generateNotebookHtml(browser: Browser, url: string) {
   const page = await browser.newPage();
+  page.on("console", (msg) => {
+    logger.info(`Puppeteer console [${msg.type()}]: ${msg.text()}`);
+  });
   const cssRules: string[] = [];
+  logger.info("Navigating to notebook URL:", url);
+
   await page.goto(url, { timeout: 10 * 1000, waitUntil: "networkidle0" });
 
+  logger.info("Page loaded, waiting for spinner...");
+  // Wait for the spinner to appear and then disappear
+  await page.waitForSelector("[data-testid='large-spinner']", {
+    timeout: LONG_TIMEOUT_MS,
+  });
+  logger.info("Spinner appeared, waiting for it to disappear...");
+  await page.waitForSelector("[data-testid='large-spinner']", {
+    timeout: LONG_TIMEOUT_MS,
+    hidden: true,
+  });
+  logger.info("Spinner disappeared.");
   const previewButton = await page.waitForSelector("[id='preview-button']", {
-    timeout: 5000,
+    timeout: LONG_TIMEOUT_MS,
   });
 
   await previewButton?.click();
 
+  logger.info("Clicked preview button, waiting for interrupt button...");
   // Wait for the interrupt button to have the inactive-button class for at least 10 seconds
   await page.waitForFunction(
     () => {
-      const button = document.querySelector('[data-testid="interrupt-button"]');
-      const hasInactiveClass = button?.classList.contains("inactive-button");
+      const spinner = document.querySelector(
+        "[data-testid='loading-indicator']",
+      );
+      const interruptButton = document.querySelector(
+        '[data-testid="interrupt-button"]',
+      );
+      const runButton = document.querySelector('[data-testid="run-button"]');
+      const needsToRun = runButton?.classList.contains("yellow");
+      const hasInactiveClass =
+        interruptButton?.classList.contains("inactive-button");
 
-      if (hasInactiveClass) {
+      if (!hasInactiveClass || spinner || needsToRun) {
+        window.stableStart = undefined;
+        return false;
+      } else {
         if (window.stableStart === undefined) {
           window.stableStart = Date.now();
         }
         return Date.now() - window.stableStart >= 10000;
-      } else {
-        window.stableStart = undefined;
-        return false;
       }
     },
-    { timeout: 250 * 1000, polling: 100 },
+    { timeout: LONG_TIMEOUT_MS, polling: 100 },
   );
 
   await new Promise((resolve) => setTimeout(resolve, 5 * 1000));
+
+  logger.info("Notebook execution appears stable, extracting HTML...");
 
   cssRules.push(
     ...(await page.evaluate(() => {
@@ -84,6 +113,7 @@ async function generateNotebookHtml(browser: Browser, url: string) {
     }
     return walk(root);
   });
+  logger.info("Extracted body HTML, returning result.");
 
   return `
       <style>
