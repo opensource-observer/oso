@@ -7,6 +7,7 @@ from oso_dagster.factories.graphql import (
     GraphQLResourceConfig,
     PaginationConfig,
     PaginationType,
+    RetryConfig,
     graphql_factory,
 )
 
@@ -45,6 +46,15 @@ def projects_for_round(
             rate_limit_seconds=2.0,
         ),
         max_depth=3,
+        retry=RetryConfig(
+            max_retries=5,
+            initial_delay=2.0,
+            max_delay=30.0,
+            backoff_multiplier=2.0,
+            jitter=True,
+            reduce_page_size=True,
+            min_page_size=5,
+        ),
     )
 
     yield from graphql_factory(config, global_config, context)
@@ -72,6 +82,15 @@ def qf_rounds(context: AssetExecutionContext, global_config: DagsterConfig):
         max_depth=2,
         deps=[projects_for_round],
         deps_rate_limit_seconds=1.0,
+        retry=RetryConfig(
+            max_retries=5,
+            initial_delay=2.0,
+            max_delay=30.0,
+            backoff_multiplier=2.0,
+            jitter=True,
+            reduce_page_size=True,
+            min_page_size=1,
+        ),
     )
 
     yield graphql_factory(
