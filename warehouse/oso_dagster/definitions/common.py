@@ -46,12 +46,17 @@ class DefinitionsLoader:
         asset_factory_response = response.asset_factory_response
         response_kwargs = response.kwargs or {}
 
-        # Automatically wire the necessary resources based on all of the assets'
-        # requirements
+        # Automatically wire the necessary resources based on all of the assets' and jobs' requirements
         resources_dict: dict[str, t.Any] = {}
         for asset in asset_factory_response.assets:
             if isinstance(asset, dg.AssetsDefinition):
                 for resource_key in asset.required_resource_keys:
+                    if resource_key not in resources_dict:
+                        resources_dict[resource_key] = context.resolve(resource_key)
+
+        for job in asset_factory_response.jobs:
+            if isinstance(job, dg.JobDefinition):
+                for resource_key in job.required_resource_keys:
                     if resource_key not in resources_dict:
                         resources_dict[resource_key] = context.resolve(resource_key)
 
