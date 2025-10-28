@@ -46,19 +46,27 @@ class DefinitionsLoader:
         asset_factory_response = response.asset_factory_response
         response_kwargs = response.kwargs or {}
 
-        # Automatically wire the necessary resources based on all of the assets' and jobs' requirements
+        # Automatically wire the necessary resources based on all of the
+        # assets', jobs', checks', sensors', and schedules' requirements
         resources_dict: dict[str, t.Any] = {}
 
         # Collect all definitions that have required resources
-        definitions_with_resources = [
-            (asset, dg.AssetsDefinition) for asset in asset_factory_response.assets
-        ] + [(job, dg.JobDefinition) for job in asset_factory_response.jobs]
+        definition_items = [
+            (asset_factory_response.assets, dg.AssetsDefinition),
+            (asset_factory_response.jobs, dg.JobDefinition),
+            (asset_factory_response.checks, dg.AssetChecksDefinition),
+            (asset_factory_response.sensors, dg.SensorDefinition),
+            (asset_factory_response.schedules, dg.ScheduleDefinition),
+        ]
 
-        for definition, definition_type in definitions_with_resources:
-            if isinstance(definition, definition_type):
+        for definitions, definition_type in definition_items:
+            for definition in definitions:
+                if not isinstance(definition, definition_type):
+                    continue
                 for resource_key in definition.required_resource_keys:
-                    if resource_key not in resources_dict:
-                        resources_dict[resource_key] = context.resolve(resource_key)
+                    if resource_key in resources_dict:
+                        continue
+                    resources_dict[resource_key] = context.resolve(resource_key)
 
         if global_config.k8s_executor_enabled:
             response_kwargs["executor"] = k8s_job_executor.configured(
