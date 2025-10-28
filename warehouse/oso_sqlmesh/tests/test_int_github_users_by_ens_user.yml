@@ -1,0 +1,74 @@
+test_int_github_users_by_ens_user:
+  model: oso.int_github_users_by_ens_user
+  inputs:
+    oso.stg_ens__domains:
+      rows:
+        - name: 'vitalik.eth'
+          resolver: '{"id": "0xresolver1111111111111111111111111111111111"}'
+        - name: 'satoshi.eth'
+          resolver: '{"id": "0xresolver2222222222222222222222222222222222"}'
+        - name: 'alice.eth'
+          resolver: '{"id": "0xresolver3333333333333333333333333333333333"}'
+        - name: 'bob.eth' # Has resolver but no github text changed
+          resolver: '{"id": "0xresolver4444444444444444444444444444444444"}'
+        - name: 'nouser.eth' # Has github text but user doesn't exist in int_github_users
+          resolver: '{"id": "0xresolver5555555555555555555555555555555555"}'
+    oso.stg_ens__text_changeds:
+      rows:
+        - resolver: '{"id": "0xresolver1111111111111111111111111111111111"}'
+          text_changed_key: 'com.github'
+          text_changed_value: 'vbuterin'
+          block_number: 1000
+        - resolver: '{"id": "0xresolver1111111111111111111111111111111111"}' # Old change for same resolver
+          text_changed_key: 'com.github'
+          text_changed_value: 'oldvbuterin'
+          block_number: 500
+        - resolver: '{"id": "0xresolver2222222222222222222222222222222222"}'
+          text_changed_key: 'com.github'
+          text_changed_value: 'nakamoto'
+          block_number: 2000
+        - resolver: '{"id": "0xresolver3333333333333333333333333333333333"}'
+          text_changed_key: 'com.twitter' # Different key, should be filtered out
+          text_changed_value: 'alice_twitter'
+          block_number: 3000
+        - resolver: '{"id": "0xresolver3333333333333333333333333333333333"}'
+          text_changed_key: 'com.github'
+          text_changed_value: null # Null value, should be filtered out
+          block_number: 3000
+        - resolver: '{"id": "0xresolver5555555555555555555555555555555555"}'
+          text_changed_key: 'com.github'
+          text_changed_value: 'nonexistent_user'
+          block_number: 5000
+    oso.int_github_users:
+      rows:
+        - artifact_source_id: 'gh_user_1'
+          artifact_name: 'vbuterin'
+        - artifact_source_id: 'gh_user_2'
+          artifact_name: 'nakamoto'
+  outputs:
+    query:
+      rows:
+        - user_id: '92036233f97f059deef18860fd0009becc731d6397eb2d27d2b68cf07df563d4'
+          user_source_id: 'vitalik.eth'
+          user_source: 'ENS'
+          user_namespace: ''
+          user_name: 'vitalik.eth'
+          display_name: 'vitalik.eth'
+          artifact_source_id: 'gh_user_1'
+          artifact_source: 'GITHUB'
+          artifact_namespace: 'vbuterin'
+          artifact_name: 'vbuterin'
+          artifact_id: '3ebd1f060e85967654d98a4e4f7a5cfd74f9b63d88aebb99dcfe90ce9c4543a4'
+          artifact_type: 'GIT_USER'
+        - user_id: 'db148b24413fec56e281701d63bd4fd4d0360430344e1ffe9c50f8b22ec9d7af'
+          user_source_id: 'satoshi.eth'
+          user_source: 'ENS'
+          user_namespace: ''
+          user_name: 'satoshi.eth'
+          display_name: 'satoshi.eth'
+          artifact_source_id: 'gh_user_2'
+          artifact_source: 'GITHUB'
+          artifact_namespace: 'nakamoto'
+          artifact_name: 'nakamoto'
+          artifact_id: 'ac5417aa372e91152334be2201f8c22063828a49437ff956cec1dd46445caf0e'
+          artifact_type: 'GIT_USER'
