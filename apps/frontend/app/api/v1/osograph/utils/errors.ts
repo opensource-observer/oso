@@ -190,3 +190,5 @@ export const UserErrors = {
   noFieldsToUpdate: () =>
     createError(ErrorCode.BAD_USER_INPUT, "No fields provided to update"),
 } as const;
+
+export const CatalogErrors = {};
