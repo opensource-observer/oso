@@ -136,9 +136,10 @@ type Query {
   """
   Get list of catalogs for the current user
   """
-  osoApp_myCatalogs: [Catalog!]!
+  osoApp_myCatalogs(orgName: String!): [Catalog!]!
 
   osoApp_tableColumns(
+    orgName: String!
     catalogName: String!
     schemaName: String!
     tableName: String!

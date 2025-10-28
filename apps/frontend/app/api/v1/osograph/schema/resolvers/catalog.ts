@@ -1,6 +1,8 @@
 import type { GraphQLResolverModule } from "@/app/api/v1/osograph/utils/types";
 import {
+  getOrganizationByName,
   requireAuthentication,
+  requireOrgMembership,
   type GraphQLContext,
 } from "@/app/api/v1/osograph/utils/auth";
 import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
@@ -20,14 +22,17 @@ export const catalogResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     osoApp_myCatalogs: async (
       _: unknown,
-      _args: unknown,
+      { orgName }: { orgName: string },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
+      const organization = await getOrganizationByName(orgName);
+      await requireOrgMembership(authenticatedUser.userId, organization.id);
+
       const trinoJwt = await signTrinoJWT({
         ...authenticatedUser,
-        orgId: authenticatedUser.orgId,
-        orgName: authenticatedUser.orgName,
+        orgId: organization.id,
+        orgName: organization.org_name,
         orgRole: "member",
       });
 
@@ -106,17 +111,26 @@ export const catalogResolvers: GraphQLResolverModule<GraphQLContext> = {
     osoApp_tableColumns: async (
       _: unknown,
       {
+        orgName,
         catalogName,
         schemaName,
         tableName,
-      }: { catalogName: string; schemaName: string; tableName: string },
+      }: {
+        orgName: string;
+        catalogName: string;
+        schemaName: string;
+        tableName: string;
+      },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
+      const organization = await getOrganizationByName(orgName);
+      await requireOrgMembership(authenticatedUser.userId, organization.id);
+
       const trinoJwt = await signTrinoJWT({
         ...authenticatedUser,
-        orgId: authenticatedUser.orgId,
-        orgName: authenticatedUser.orgName,
+        orgId: organization.id,
+        orgName: organization.org_name,
         orgRole: "member",
       });
 
