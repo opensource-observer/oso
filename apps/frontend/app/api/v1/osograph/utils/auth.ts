@@ -1,23 +1,23 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { OrgUser } from "@/lib/types/user";
+import type { User } from "@/lib/types/user";
 import {
   AuthenticationErrors,
   UserErrors,
   OrganizationErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 
-export type AuthenticatedUser = Extract<OrgUser, { role: "user" }>;
+export type AuthenticatedUser = Extract<User, { role: "user" }>;
 
 export type GraphQLContext = {
   req: Request;
-  user: OrgUser;
+  user: User;
 };
 
-export function isAuthenticated(user: OrgUser): user is AuthenticatedUser {
+export function isAuthenticated(user: User): user is AuthenticatedUser {
   return user.role !== "anonymous";
 }
 
-export function requireAuthentication(user: OrgUser): AuthenticatedUser {
+export function requireAuthentication(user: User): AuthenticatedUser {
   if (!isAuthenticated(user)) {
     throw AuthenticationErrors.notAuthenticated();
   }

@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import path from "path";
 import { gql } from "graphql-tag";
-import { getOrgUser } from "@/lib/auth/auth";
+import { getUser } from "@/lib/auth/auth";
 import { resolvers } from "@/app/api/v1/osograph/schema/resolvers";
 
 const schemaPath = path.join(
@@ -23,7 +23,7 @@ const server = new ApolloServer({
 
 const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
   context: async (req) => {
-    const user = await getOrgUser(req);
+    const user = await getUser(req);
     return { req, user };
   },
 });
