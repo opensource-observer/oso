@@ -2873,6 +2873,8 @@ export type Mutation = {
   osoApp_removeMember: RemoveMemberPayload;
   /** Revoke/delete an invitation */
   osoApp_revokeInvitation: RevokeInvitationPayload;
+  /** Save notebook preview PNG image */
+  osoApp_saveNotebookPreview: SaveNotebookPreviewPayload;
   /** Update a member's role in an organization */
   osoApp_updateMemberRole: UpdateMemberRolePayload;
   /** Update the current user's profile */
@@ -3037,6 +3039,11 @@ export type MutationOsoApp_RevokeInvitationArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_SaveNotebookPreviewArgs = {
+  input: SaveNotebookPreviewInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_UpdateMemberRoleArgs = {
   orgName: Scalars["String"]["input"];
   role: MemberRole;
@@ -3190,6 +3197,13 @@ export type NotebookMetadataEntry = MetadataEntry & {
   description?: Maybe<Scalars["String"]["output"]>;
   label: Scalars["String"]["output"];
   path: Scalars["String"]["output"];
+};
+
+export type NotebookPreview = {
+  __typename?: "NotebookPreview";
+  expiresAt: Scalars["DateTime"]["output"];
+  notebookId: Scalars["ID"]["output"];
+  signedUrl: Scalars["String"]["output"];
 };
 
 export type NullMetadataEntry = MetadataEntry & {
@@ -5247,6 +5261,8 @@ export type Query = {
   osoApp_me: User;
   /** Get invitations sent to the current user's email */
   osoApp_myInvitations: Array<Invitation>;
+  /** Get notebook preview PNG image with signed URL */
+  osoApp_notebookPreview?: Maybe<NotebookPreview>;
   /** Get a specific organization by name */
   osoApp_organization?: Maybe<Organization>;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
@@ -5531,6 +5547,11 @@ export type QueryOsoApp_InvitationArgs = {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_MyInvitationsArgs = {
   status?: InputMaybe<InvitationStatus>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_NotebookPreviewArgs = {
+  notebookId: Scalars["ID"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6771,6 +6792,18 @@ export type RuntimeMismatchConfigError = PipelineConfigValidationError & {
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
   valueRep?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type SaveNotebookPreviewInput = {
+  notebookId: Scalars["ID"]["input"];
+  /** PNG image as data URL (data:image/png;base64,...) */
+  previewImage: Scalars["String"]["input"];
+};
+
+export type SaveNotebookPreviewPayload = {
+  __typename?: "SaveNotebookPreviewPayload";
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type ScalarUnionConfigType = ConfigType & {
