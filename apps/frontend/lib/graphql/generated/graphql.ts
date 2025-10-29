@@ -5563,6 +5563,11 @@ export type QueryOsoApp_InvitationArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_MyCatalogsArgs = {
+  orgName: Scalars["String"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_MyInvitationsArgs = {
   status?: InputMaybe<InvitationStatus>;
 };
@@ -5580,6 +5585,7 @@ export type QueryOsoApp_OrganizationArgs = {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_TableColumnsArgs = {
   catalogName: Scalars["String"]["input"];
+  orgName: Scalars["String"]["input"];
   schemaName: Scalars["String"]["input"];
   tableName: Scalars["String"]["input"];
 };
