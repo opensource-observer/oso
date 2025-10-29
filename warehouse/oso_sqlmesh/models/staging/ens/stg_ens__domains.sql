@@ -5,17 +5,17 @@ MODEL (
   kind FULL,
   audits (
     has_at_least_n_rows(threshold := 0)
-  )
+  ),
 );
 
 SELECT
   id,
   name,
-  resolver,
-  owner,
-  registrant,
+  TRY_CAST(resolver AS ROW(id VARCHAR)) AS resolver,
+  TRY_CAST(owner AS ROW(id VARCHAR)) AS owner,
+  TRY_CAST(registrant AS ROW(id VARCHAR)) AS registrant,
   expiry_date,
-  registration,
-  subdomains,
+  TRY_CAST(registration AS ROW(id VARCHAR)) AS registration,
+  TRY_CAST(subdomains AS ARRAY(VARCHAR)) AS subdomains,
   subdomain_count
 FROM @oso_source('bigquery.ens.domains_tmp')
