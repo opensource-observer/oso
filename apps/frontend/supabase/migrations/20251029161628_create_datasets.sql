@@ -6,15 +6,16 @@ CREATE TABLE public.datasets (
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
     deleted_at timestamp with time zone NULL,
     display_name text NOT NULL,
-    "name" text NOT NULL,
+    catalog text NOT NULL,
+    schema text NOT NULL,
     created_by uuid NOT NULL,
     CONSTRAINT datasets_pkey PRIMARY KEY (id),
     CONSTRAINT datasets_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id) ON DELETE SET NULL,
     CONSTRAINT datasets_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.user_profiles(id) ON DELETE CASCADE
 );
 
--- Add unique constraint for name and org_id where deleted_at is null
-CREATE UNIQUE INDEX datasets_name_org_id_unique ON public.datasets(name, org_id) WHERE deleted_at IS NULL;
+-- Add unique constraint for catalog and org_id where deleted_at is null
+CREATE UNIQUE INDEX datasets_catalog_org_id_unique ON public.datasets(catalog, schema, org_id) WHERE deleted_at IS NULL;
 
 -- Add row-level security for the datasets table
 ALTER TABLE public.datasets ENABLE ROW LEVEL SECURITY;
