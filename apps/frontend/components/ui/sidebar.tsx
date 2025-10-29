@@ -757,6 +757,10 @@ const SidebarMenuButtonMeta: CodeComponentMeta<SidebarMenuButtonProps> = {
         },
       ],
     },
+    onClick: {
+      type: "eventHandler",
+      argTypes: [{ name: "event", type: "object" }],
+    },
   },
 };
 
