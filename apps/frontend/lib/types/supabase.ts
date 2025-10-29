@@ -1039,10 +1039,7 @@ export type Database = {
         Args: { p_resource_id: string; p_resource_type: string };
         Returns: Json;
       };
-      cleanup_orphaned_invitations: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
+      cleanup_orphaned_invitations: { Args: never; Returns: undefined };
       deduct_credits: {
         Args: {
           p_amount: number;
@@ -1053,250 +1050,14 @@ export type Database = {
         };
         Returns: boolean;
       };
-      expire_old_invitations: {
-        Args: Record<PropertyKey, never>;
-        Returns: undefined;
-      };
-      gbt_bit_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_bool_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_bool_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_bpchar_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_bytea_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_cash_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_cash_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_date_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_date_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_decompress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_enum_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_enum_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_float4_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_float4_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_float8_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_float8_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_inet_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_int2_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_int2_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_int4_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_int4_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_int8_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_int8_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_intv_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_intv_decompress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_intv_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_macad_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_macad_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_macad8_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_macad8_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_numeric_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_oid_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_oid_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_text_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_time_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_time_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_timetz_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_ts_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_ts_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_tstz_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_uuid_compress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_uuid_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_var_decompress: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbt_var_fetch: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey_var_in: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey_var_out: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey16_in: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey16_out: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey2_in: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey2_out: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey32_in: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey32_out: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey4_in: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey4_out: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey8_in: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
-      gbtreekey8_out: {
-        Args: { "": unknown };
-        Returns: unknown;
-      };
+      expire_old_invitations: { Args: never; Returns: undefined };
       get_og_image_info: {
         Args: { p_notebook_name: string; p_org_name: string };
         Returns: Json;
       };
-      get_organization_credits: {
-        Args: { p_org_id: string };
-        Returns: number;
-      };
-      get_user_credits: {
-        Args: { p_user_id: string };
-        Returns: number;
-      };
-      hasura_token_hook: {
-        Args: { event: Json };
-        Returns: Json;
-      };
+      get_organization_credits: { Args: { p_org_id: string }; Returns: number };
+      get_user_credits: { Args: { p_user_id: string }; Returns: number };
+      hasura_token_hook: { Args: { event: Json }; Returns: Json };
       preview_deduct_credits: {
         Args: {
           p_amount: number;
@@ -1307,10 +1068,7 @@ export type Database = {
         };
         Returns: boolean;
       };
-      uuid_or_null: {
-        Args: { str: string };
-        Returns: string;
-      };
+      uuid_or_null: { Args: { str: string }; Returns: string };
       validate_ownership_limits: {
         Args: {
           p_current_record_id?: string;
