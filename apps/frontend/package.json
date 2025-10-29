@@ -161,7 +161,7 @@
     "playwright": "^1.56.1",
     "postcss": "^8.5.6",
     "storybook": "^9.1.2",
-    "supabase": "^2.39.2",
+    "supabase": "^2.54.11",
     "supazod": "^2.0.0",
     "tailwindcss": "^4.1.12",
     "ts-jest": "^29.4.1",
