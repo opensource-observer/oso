@@ -80,6 +80,38 @@ type Invitation @key(fields: "id") {
   acceptedBy: User
 }
 
+"""
+Catalog entity - represents a data catalog accessible to the user
+"""
+type Catalog @key(fields: "name") {
+  name: String!
+  schemas: [Schema!]!
+}
+
+"""
+Schema entity - represents a schema within a catalog
+"""
+type Schema {
+  name: String!
+  tables: [Table!]!
+}
+
+"""
+Table entity - represents a table within a schema
+"""
+type Table {
+  name: String!
+}
+
+"""
+Column entity - represents a column within a table
+"""
+type Column {
+  name: String!
+  type: String!
+  description: String
+}
+
 type Query {
   """
   Get the current authenticated user's profile
@@ -105,6 +137,18 @@ type Query {
   Get notebook preview PNG image with signed URL
   """
   osoApp_notebookPreview(notebookId: ID!): NotebookPreview
+
+  """
+  Get list of catalogs for the current user
+  """
+  osoApp_myCatalogs(orgName: String!): [Catalog!]!
+
+  osoApp_tableColumns(
+    orgName: String!
+    catalogName: String!
+    schemaName: String!
+    tableName: String!
+  ): [Column!]!
 }
 
 type Mutation {

@@ -20,7 +20,7 @@ import {
   UserSchema,
 } from "@/lib/types/user";
 import { Database } from "@/lib/types/supabase";
-import { OSO_JWT_SECRET } from "@/lib/config";
+import { OSO_JWT_SECRET, TRINO_JWT_SECRET } from "@/lib/config";
 import { SignJWT, jwtVerify } from "jose";
 
 // Constants
@@ -445,6 +445,23 @@ async function verifyOsoJwt(
   }
 }
 
+async function signTrinoJWT(user: AuthOrgUser) {
+  const secret = TRINO_JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT Secret not found: unable to authenticate");
+  }
+
+  return new SignJWT({
+    userId: user.userId,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(`jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`)
+    .setAudience("consumer-trino")
+    .setIssuer("opensource-observer")
+    .setExpirationTime("1h")
+    .sign(new TextEncoder().encode(secret));
+}
+
 /**
  * Gets the host from the request
  */
@@ -473,4 +490,11 @@ async function setSupabaseSession(
   return { data, error: null };
 }
 
-export { getOrgUser, getUser, setSupabaseSession, signOsoJwt, verifyOsoJwt };
+export {
+  getOrgUser,
+  getUser,
+  setSupabaseSession,
+  signOsoJwt,
+  verifyOsoJwt,
+  signTrinoJWT,
+};

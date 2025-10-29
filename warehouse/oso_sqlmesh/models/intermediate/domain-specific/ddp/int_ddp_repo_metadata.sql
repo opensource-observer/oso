@@ -17,17 +17,16 @@ MODEL (
 WITH ossd AS (
   SELECT
     artifact_id,
-    MAX_BY(artifact_namespace, updated_at) AS artifact_namespace,
-    MAX_BY(artifact_name, updated_at) AS artifact_name,
-    MAX_BY(artifact_url, updated_at) AS artifact_url,
-    MAX_BY(is_fork, updated_at) AS is_fork,
-    MAX_BY(star_count, updated_at) AS star_count,
-    MAX_BY(fork_count, updated_at) AS fork_count,
-    MAX_BY(language, updated_at) AS language,
-    MIN(created_at) AS created_at,
-    MAX(updated_at) AS updated_at
-  FROM oso.int_repositories__ossd
-  GROUP BY artifact_id
+    artifact_namespace,
+    artifact_name,
+    artifact_url,
+    is_fork,
+    star_count,
+    fork_count,
+    language,
+    created_at,
+    updated_at
+  FROM oso.int_ddp_ossd_repos
 ),
 
 -- Filter to relevant crypto ecosystem projects and get artifact metadata

@@ -6,6 +6,7 @@ import { userResolvers } from "@/app/api/v1/osograph/schema/resolvers/user";
 import { memberResolvers } from "@/app/api/v1/osograph/schema/resolvers/member";
 import { invitationResolvers } from "@/app/api/v1/osograph/schema/resolvers/invitation";
 import { notebookResolvers } from "@/app/api/v1/osograph/schema/resolvers/notebook";
+import { catalogResolvers } from "@/app/api/v1/osograph/schema/resolvers/catalog";
 
 const dateTimeScalar = new GraphQLScalarType({
   name: "DateTime",
@@ -40,6 +41,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
     ...organizationResolvers.Query,
     ...invitationResolvers.Query,
     ...notebookResolvers.Query,
+    ...catalogResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,

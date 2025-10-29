@@ -197,3 +197,5 @@ export const UserErrors = {
 export const NotebookErrors = {
   notFound: () => createError(ErrorCode.NOT_FOUND, "Notebook not found"),
 } as const;
+
+export const CatalogErrors = {};

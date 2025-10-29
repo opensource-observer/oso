@@ -1,4 +1,3 @@
-/* eslint-disable */
 import {
   ResultOf,
   DocumentTypeDecoration,
