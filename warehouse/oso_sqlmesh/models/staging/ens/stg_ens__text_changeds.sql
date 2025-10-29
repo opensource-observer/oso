@@ -10,7 +10,7 @@ MODEL (
 
 SELECT
   id,
-  resolver,
+  TRY_CAST(resolver AS ROW(id VARCHAR)) AS resolver,
   block_number,
   transaction_id,
   key AS text_changed_key,

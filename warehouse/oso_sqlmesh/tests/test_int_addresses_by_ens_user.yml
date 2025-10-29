@@ -4,26 +4,26 @@ test_int_addresses_by_ens_user:
     oso.stg_ens__domains:
       rows:
         - name: 'test1.eth'
-          owner: '{"id": "0x1111111111111111111111111111111111111111"}'
-          registrant: '{"id": "0x2222222222222222222222222222222222222222"}'
+          owner: {id: "0x1111111111111111111111111111111111111111"}
+          registrant: {id: "0x2222222222222222222222222222222222222222"}
         - name: 'test1.eth' # Duplicate, should be handled
-          owner: '{"id": "0x1111111111111111111111111111111111111111"}'
-          registrant: '{"id": "0x2222222222222222222222222222222222222222"}'
+          owner: {id: "0x1111111111111111111111111111111111111111"}
+          registrant: {id: "0x2222222222222222222222222222222222222222"}
         - name: 'test2.eth' # Another valid user
-          owner: '{"id": "0x3333333333333333333333333333333333333333"}'
-          registrant: '{"id": "0x4444444444444444444444444444444444444444"}'
+          owner: {id: "0x3333333333333333333333333333333333333333"}
+          registrant: {id: "0x4444444444444444444444444444444444444444"}
         - name: 'null_owner.eth' # Null owner, should be filtered out
           owner: null
-          registrant: '{"id": "0x5555555555555555555555555555555555555555"}'
+          registrant: {id: "0x5555555555555555555555555555555555555555"}
         - name: 'short_owner.eth' # Invalid owner address (too short), should be filtered out
-          owner: '{"id": "0x123"}'
-          registrant: '{"id": "0x6666666666666666666666666666666666666666"}'
+          owner: {id: "0x123"}
+          registrant: {id: "0x6666666666666666666666666666666666666666"}
         - name: 'no_prefix_owner.eth' # Invalid owner address (no 0x prefix), should be filtered out
-          owner: '{"id": "7777777777777777777777777777777777777777"}'
-          registrant: '{"id": "0x7777777777777777777777777777777777777777"}'
-        - name: 'null_id_owner.eth' # Owner JSON has no 'id' field, should be filtered out
-          owner: '{"not_id": "0x8888888888888888888888888888888888888888"}'
-          registrant: '{"id": "0x8888888888888888888888888888888888888888"}'
+          owner: {id: "7777777777777777777777777777777777777777"}
+          registrant: {id: "0x7777777777777777777777777777777777777777"}
+        - name: 'null_id_owner.eth' # Owner with null id field, should be filtered out
+          owner: {id: null}
+          registrant: {id: "0x8888888888888888888888888888888888888888"}
   outputs:
     query:
       rows:

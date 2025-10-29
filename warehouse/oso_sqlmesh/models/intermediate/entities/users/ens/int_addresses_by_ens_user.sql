@@ -10,12 +10,12 @@ MODEL (
 WITH owner_addresses AS (
   SELECT DISTINCT
     name,
-    JSON_EXTRACT_SCALAR(owner, '$.id') AS address
+    owner.id AS address
   FROM oso.stg_ens__domains
   WHERE
-    JSON_EXTRACT_SCALAR(owner, '$.id') IS NOT NULL
-    AND LENGTH(JSON_EXTRACT_SCALAR(owner, '$.id')) = 42
-    AND JSON_EXTRACT_SCALAR(owner, '$.id') LIKE '0x%'
+    owner.id IS NOT NULL
+    AND LENGTH(owner.id) = 42
+    AND owner.id LIKE '0x%'
 ),
 
 artifacts_by_user AS (

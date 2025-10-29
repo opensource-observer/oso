@@ -4,38 +4,38 @@ test_int_github_users_by_ens_user:
     oso.stg_ens__domains:
       rows:
         - name: 'vitalik.eth'
-          resolver: '{"id": "0xresolver1111111111111111111111111111111111"}'
+          resolver: {id: "0xresolver1111111111111111111111111111111111"}
         - name: 'satoshi.eth'
-          resolver: '{"id": "0xresolver2222222222222222222222222222222222"}'
+          resolver: {id: "0xresolver2222222222222222222222222222222222"}
         - name: 'alice.eth'
-          resolver: '{"id": "0xresolver3333333333333333333333333333333333"}'
+          resolver: {id: "0xresolver3333333333333333333333333333333333"}
         - name: 'bob.eth' # Has resolver but no github text changed
-          resolver: '{"id": "0xresolver4444444444444444444444444444444444"}'
+          resolver: {id: "0xresolver4444444444444444444444444444444444"}
         - name: 'nouser.eth' # Has github text but user doesn't exist in int_github_users
-          resolver: '{"id": "0xresolver5555555555555555555555555555555555"}'
+          resolver: {id: "0xresolver5555555555555555555555555555555555"}
     oso.stg_ens__text_changeds:
       rows:
-        - resolver: '{"id": "0xresolver1111111111111111111111111111111111"}'
+        - resolver: {id: "0xresolver1111111111111111111111111111111111"}
           text_changed_key: 'com.github'
           text_changed_value: 'vbuterin'
           block_number: 1000
-        - resolver: '{"id": "0xresolver1111111111111111111111111111111111"}' # Old change for same resolver
+        - resolver: {id: "0xresolver1111111111111111111111111111111111"} # Old change for same resolver
           text_changed_key: 'com.github'
           text_changed_value: 'oldvbuterin'
           block_number: 500
-        - resolver: '{"id": "0xresolver2222222222222222222222222222222222"}'
+        - resolver: {id: "0xresolver2222222222222222222222222222222222"}
           text_changed_key: 'com.github'
           text_changed_value: 'nakamoto'
           block_number: 2000
-        - resolver: '{"id": "0xresolver3333333333333333333333333333333333"}'
+        - resolver: {id: "0xresolver3333333333333333333333333333333333"}
           text_changed_key: 'com.twitter' # Different key, should be filtered out
           text_changed_value: 'alice_twitter'
           block_number: 3000
-        - resolver: '{"id": "0xresolver3333333333333333333333333333333333"}'
+        - resolver: {id: "0xresolver3333333333333333333333333333333333"}
           text_changed_key: 'com.github'
           text_changed_value: null # Null value, should be filtered out
           block_number: 3000
-        - resolver: '{"id": "0xresolver5555555555555555555555555555555555"}'
+        - resolver: {id: "0xresolver5555555555555555555555555555555555"}
           text_changed_key: 'com.github'
           text_changed_value: 'nonexistent_user'
           block_number: 5000

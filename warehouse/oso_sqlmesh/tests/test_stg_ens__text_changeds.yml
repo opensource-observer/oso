@@ -38,25 +38,25 @@ test_stg_ens__text_changeds:
     query:
       rows:
         - id: "0x0000000000000000000000000000000000000001"
-          resolver: '{"id": "0xresolver1"}'
+          resolver: {id: "0xresolver1"}
           block_number: 12345678
           transaction_id: "0xtx1"
           text_changed_key: "com.github"
           text_changed_value: "testuser"
         - id: "0x0000000000000000000000000000000000000002"
-          resolver: '{"id": "0xresolver2"}'
+          resolver: {id: "0xresolver2"}
           block_number: 12345679
           transaction_id: "0xtx2"
           text_changed_key: "com.github"
           text_changed_value: "anotheruser"
         - id: "0x0000000000000000000000000000000000000003"
-          resolver: '{"id": "0xresolver1"}'
+          resolver: {id: "0xresolver1"}
           block_number: 12345680
           transaction_id: "0xtx3"
           text_changed_key: "com.twitter"
           text_changed_value: "testuser"
         - id: "0x0000000000000000000000000000000000000004"
-          resolver: '{"id": "0xresolver3"}'
+          resolver: {id: "0xresolver3"}
           block_number: 12345681
           transaction_id: "0xtx4"
           text_changed_key: "org.telegram"

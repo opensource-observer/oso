@@ -10,11 +10,11 @@ MODEL (
 WITH
   ranked_github_changes AS (
     SELECT
-      JSON_EXTRACT_SCALAR(resolver, '$.id') AS resolver_id,
+      resolver.id AS resolver_id,
       text_changed_value AS github_username,
       ROW_NUMBER() OVER (
         PARTITION BY
-          JSON_EXTRACT_SCALAR(resolver, '$.id')
+          resolver.id
         ORDER BY
           block_number DESC
       ) AS rn
@@ -28,7 +28,7 @@ WITH
       c.github_username
     FROM oso.stg_ens__domains AS d
     INNER JOIN ranked_github_changes AS c
-      ON JSON_EXTRACT_SCALAR(d.resolver, '$.id') = c.resolver_id
+      ON d.resolver.id = c.resolver_id
     WHERE
       c.rn = 1
   ),
