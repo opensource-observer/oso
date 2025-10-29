@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS "public"."model" (
   "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
   "org_id" uuid NOT NULL,
   "dataset_id" uuid NOT NULL,
+  "name" text NOT NULL,
 
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -15,8 +16,8 @@ CREATE TABLE IF NOT EXISTS "public"."model" (
 
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
-  FOREIGN KEY ("dataset") REFERENCES "public"."dataset"("id") ON DELETE CASCADE,
-  UNIQUE ("org_id", "name", "dataset", "deleted_at")
+  FOREIGN KEY ("dataset_id") REFERENCES "public"."datasets"("id") ON DELETE CASCADE,
+  UNIQUE ("org_id", "name", "dataset_id", "deleted_at")
 );
 
 ALTER TABLE "public"."model" ENABLE ROW LEVEL SECURITY;
@@ -53,11 +54,11 @@ CREATE TYPE model_kind_options AS (
   merge_filter text,
   valid_from_name text,
   valid_to_name text,
-  invalidate_hard_deletes boolean DEFAULT TRUE,
+  invalidate_hard_deletes boolean,
   updated_at_column text,
-  updated_at_as_valid_from boolean DEFAULT FALSE,
+  updated_at_as_valid_from boolean,
   scd_columns text[],
-  execution_time_as_valid_from boolean DEFAULT TRUE
+  execution_time_as_valid_from boolean
 );
 
 -- Model revision tracks a specific revision of a model. Each time a model is
@@ -101,16 +102,16 @@ CREATE TABLE IF NOT EXISTS "public"."model_revision" (
   -- proper foreign keys, we store this as a list of model_dependency_type
   -- values so that updates are performant and don't involve any constraint
   -- checks upon insert.
-  "depends_on" model_dependency_type[] DEFAULT '[]'::model_dependency_type[],
-  "partitioned_by" text[] DEFAULT '[]'::text[],
-  "clustered_by" text[] DEFAULT '[]'::text[],
+  "depends_on" model_dependency_type[] DEFAULT array[]::model_dependency_type[],
+  "partitioned_by" text[] DEFAULT array[]::text[],
+  "clustered_by" text[] DEFAULT array[]::text[],
 
   "kind" model_kind NOT NULL,
   "kind_options" model_kind_options,
 
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
-  FOREIGN KEY ("model_id") REFERENCES "public"."model"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("model_id") REFERENCES "public"."model"("id") ON DELETE CASCADE
 );
 
 ALTER TABLE "public"."model_revision" ENABLE ROW LEVEL SECURITY;
@@ -130,7 +131,7 @@ CREATE TABLE IF NOT EXISTS "public"."model_release" (
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
   FOREIGN KEY ("model_id") REFERENCES "public"."model"("id") ON DELETE CASCADE,
-  FOREIGN KEY ("model_revision_id") REFERENCES "public"."model_revision"("id") ON DELETE CASCADE,
+  FOREIGN KEY ("model_revision_id") REFERENCES "public"."model_revision"("id") ON DELETE CASCADE
 );
 
 ALTER TABLE "public"."model_release" ENABLE ROW LEVEL SECURITY;
