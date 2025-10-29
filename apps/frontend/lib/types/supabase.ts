@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.0.2 (a4e00ff)";
-  };
   public: {
     Tables: {
       admin_users: {
@@ -207,6 +202,105 @@ export type Database = {
             columns: ["target_table_id"];
             isOneToOne: false;
             referencedRelation: "dynamic_table_contexts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      datasets: {
+        Row: {
+          catalog: string;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          description: string | null;
+          display_name: string;
+          id: string;
+          is_public: boolean;
+          name: string;
+          org_id: string;
+          schema: string;
+          updated_at: string;
+        };
+        Insert: {
+          catalog: string;
+          created_at?: string;
+          created_by: string;
+          deleted_at?: string | null;
+          description?: string | null;
+          display_name: string;
+          id?: string;
+          is_public?: boolean;
+          name: string;
+          org_id: string;
+          schema: string;
+          updated_at?: string;
+        };
+        Update: {
+          catalog?: string;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          description?: string | null;
+          display_name?: string;
+          id?: string;
+          is_public?: boolean;
+          name?: string;
+          org_id?: string;
+          schema?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "datasets_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "datasets_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      datasets_by_organization: {
+        Row: {
+          created_at: string;
+          dataset_id: string;
+          deleted_at: string | null;
+          id: string;
+          org_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          dataset_id: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_id: string;
+        };
+        Update: {
+          created_at?: string;
+          dataset_id?: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "datasets_by_organization_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "datasets_by_organization_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
         ];
@@ -945,7 +1039,10 @@ export type Database = {
         Args: { p_resource_id: string; p_resource_type: string };
         Returns: Json;
       };
-      cleanup_orphaned_invitations: { Args: never; Returns: undefined };
+      cleanup_orphaned_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       deduct_credits: {
         Args: {
           p_amount: number;
@@ -956,14 +1053,250 @@ export type Database = {
         };
         Returns: boolean;
       };
-      expire_old_invitations: { Args: never; Returns: undefined };
+      expire_old_invitations: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      gbt_bit_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_bool_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_bool_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_bpchar_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_bytea_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_cash_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_cash_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_date_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_date_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_decompress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_enum_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_enum_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_float4_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_float4_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_float8_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_float8_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_inet_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_int2_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_int2_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_int4_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_int4_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_int8_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_int8_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_intv_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_intv_decompress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_intv_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_macad_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_macad_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_macad8_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_macad8_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_numeric_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_oid_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_oid_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_text_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_time_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_time_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_timetz_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_ts_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_ts_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_tstz_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_uuid_compress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_uuid_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_var_decompress: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbt_var_fetch: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey_var_in: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey_var_out: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey16_in: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey16_out: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey2_in: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey2_out: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey32_in: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey32_out: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey4_in: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey4_out: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey8_in: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
+      gbtreekey8_out: {
+        Args: { "": unknown };
+        Returns: unknown;
+      };
       get_og_image_info: {
         Args: { p_notebook_name: string; p_org_name: string };
         Returns: Json;
       };
-      get_organization_credits: { Args: { p_org_id: string }; Returns: number };
-      get_user_credits: { Args: { p_user_id: string }; Returns: number };
-      hasura_token_hook: { Args: { event: Json }; Returns: Json };
+      get_organization_credits: {
+        Args: { p_org_id: string };
+        Returns: number;
+      };
+      get_user_credits: {
+        Args: { p_user_id: string };
+        Returns: number;
+      };
+      hasura_token_hook: {
+        Args: { event: Json };
+        Returns: Json;
+      };
       preview_deduct_credits: {
         Args: {
           p_amount: number;
@@ -974,7 +1307,10 @@ export type Database = {
         };
         Returns: boolean;
       };
-      uuid_or_null: { Args: { str: string }; Returns: string };
+      uuid_or_null: {
+        Args: { str: string };
+        Returns: string;
+      };
       validate_ownership_limits: {
         Args: {
           p_current_record_id?: string;

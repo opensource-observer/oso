@@ -5,7 +5,6 @@ CREATE TABLE public.datasets (
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
     deleted_at timestamp with time zone NULL,
-    display_name text NOT NULL,
     name text NOT NULL,
     display_name text NOT NULL,
     description text NULL,
@@ -19,13 +18,9 @@ CREATE TABLE public.datasets (
 );
 
 -- Add unique constraint for catalog and org_id where deleted_at is null
-CREATE UNIQUE INDEX datasets_catalog_org_id_unique ON public.datasets(catalog, schema, org_id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX datasets_catalog_org_id_unique ON public.datasets(org_id, catalog, schema) WHERE deleted_at IS NULL;
 -- Add unique constraint for name and org_id where deleted_at is null
-CREATE UNIQUE INDEX datasets_name_org_id_unique ON public.datasets(name, org_id) WHERE deleted_at IS NULL;
--- Create an index on org_id for active records
-CREATE INDEX idx_datasets_org_id_active ON public.datasets(org_id) WHERE deleted_at IS NULL;
--- Create an index on is_public
-CREATE INDEX idx_datasets_org_id_active ON public.datasets(org_id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX datasets_name_org_id_unique ON public.datasets(org_id, name) WHERE deleted_at IS NULL;
 
 -- Add row-level security for the datasets table
 ALTER TABLE public.datasets ENABLE ROW LEVEL SECURITY;
