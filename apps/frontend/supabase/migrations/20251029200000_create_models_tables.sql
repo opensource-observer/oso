@@ -165,12 +165,3 @@ CREATE TABLE IF NOT EXISTS "public"."model_run" (
 );
 
 ALTER TABLE "public"."model_run" ENABLE ROW LEVEL SECURITY;
-
--- A model graph to track dependencies between models. This is managed by the
--- application and should be considered eventually consistent.
-CREATE TABLE IF NOT EXISTS "public"."model_graph" (
-  "model_id" uuid NOT NULL,
-  "depends_on_model_id" uuid NOT NULL
-);
-
-ALTER TABLE "public"."model_graph" ENABLE ROW LEVEL SECURITY;
