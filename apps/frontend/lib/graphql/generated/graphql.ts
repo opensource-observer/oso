@@ -3207,6 +3207,19 @@ export type NodeInvocationSite = {
   solidHandle: SolidHandle;
 };
 
+/** Notebook entity - represents a computational notebook */
+export type Notebook = {
+  __typename?: "Notebook";
+  createdAt: Scalars["DateTime"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  notebookName: Scalars["String"]["output"];
+  organization: Organization;
+  /** Get preview image with signed URL */
+  preview?: Maybe<NotebookPreview>;
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
 export type NotebookMetadataEntry = MetadataEntry & {
   __typename?: "NotebookMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -5278,8 +5291,10 @@ export type Query = {
   osoApp_myCatalogs: Array<Catalog>;
   /** Get invitations sent to the current user's email */
   osoApp_myInvitations: Array<Invitation>;
-  /** Get notebook preview PNG image with signed URL */
-  osoApp_notebookPreview?: Maybe<NotebookPreview>;
+  /** Get a specific notebook by ID */
+  osoApp_notebook?: Maybe<Notebook>;
+  /** Get notebooks, optionally filtered by organization name */
+  osoApp_notebooks: Array<Notebook>;
   /** Get a specific organization by name */
   osoApp_organization?: Maybe<Organization>;
   osoApp_tableColumns: Array<Column>;
@@ -5573,8 +5588,13 @@ export type QueryOsoApp_MyInvitationsArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_NotebookPreviewArgs = {
+export type QueryOsoApp_NotebookArgs = {
   notebookId: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_NotebooksArgs = {
+  orgName?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6827,6 +6847,7 @@ export type RuntimeMismatchConfigError = PipelineConfigValidationError & {
 
 export type SaveNotebookPreviewInput = {
   notebookId: Scalars["ID"]["input"];
+  orgName: Scalars["String"]["input"];
   /** PNG image as data URL (data:image/png;base64,...) */
   previewImage: Scalars["String"]["input"];
 };
@@ -7721,6 +7742,7 @@ export type WrappingDagsterType = {
 export type _Entity =
   | Catalog
   | Invitation
+  | Notebook
   | Organization
   | OrganizationMember
   | User;
@@ -7736,6 +7758,19 @@ export enum Link__Purpose {
   /** `SECURITY` features provide metadata necessary to securely resolve fields. */
   Security = "SECURITY",
 }
+
+export type SavePreviewMutationVariables = Exact<{
+  input: SaveNotebookPreviewInput;
+}>;
+
+export type SavePreviewMutation = {
+  __typename?: "Mutation";
+  osoApp_saveNotebookPreview: {
+    __typename?: "SaveNotebookPreviewPayload";
+    success: boolean;
+    message: string;
+  };
+};
 
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -7907,6 +7942,58 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const SavePreviewDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SavePreview" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "SaveNotebookPreviewInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "osoApp_saveNotebookPreview" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SavePreviewMutation, SavePreviewMutationVariables>;
 export const AssetGraphDocument = {
   kind: "Document",
   definitions: [

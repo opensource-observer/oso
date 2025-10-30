@@ -53,4 +53,5 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   Organization: organizationResolvers.Organization,
   OrganizationMember: memberResolvers.OrganizationMember,
   Invitation: invitationResolvers.Invitation,
+  Notebook: notebookResolvers.Notebook,
 };

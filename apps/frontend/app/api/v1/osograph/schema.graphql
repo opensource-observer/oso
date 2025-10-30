@@ -81,6 +81,23 @@ type Invitation @key(fields: "id") {
 }
 
 """
+Notebook entity - represents a computational notebook
+"""
+type Notebook @key(fields: "id") {
+  id: ID!
+  notebookName: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  organization: Organization!
+
+  """
+  Get preview image with signed URL
+  """
+  preview: NotebookPreview
+}
+
+"""
 Catalog entity - represents a data catalog accessible to the user
 """
 type Catalog @key(fields: "name") {
@@ -134,9 +151,14 @@ type Query {
   osoApp_invitation(id: ID!): Invitation
 
   """
-  Get notebook preview PNG image with signed URL
+  Get notebooks, optionally filtered by organization name
   """
-  osoApp_notebookPreview(notebookId: ID!): NotebookPreview
+  osoApp_notebooks(orgName: String): [Notebook!]!
+
+  """
+  Get a specific notebook by ID
+  """
+  osoApp_notebook(notebookId: ID!): Notebook
 
   """
   Get list of catalogs for the current user
@@ -280,6 +302,7 @@ type NotebookPreview {
 
 input SaveNotebookPreviewInput {
   notebookId: ID!
+  orgName: String!
   """
   PNG image as data URL (data:image/png;base64,...)
   """

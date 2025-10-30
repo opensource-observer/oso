@@ -1,10 +1,7 @@
 import { z } from "zod";
 import { compressToEncodedURIComponent } from "lz-string";
 import { logger } from "@/lib/logger";
-import type {
-  SaveNotebookPreviewInput,
-  SaveNotebookPreviewPayload,
-} from "@/lib/graphql/generated/graphql";
+import { useOsoAppClient } from "@/components/hooks/oso-app";
 
 export type NotebookUrlOptions = {
   initialCode?: string;
@@ -19,10 +16,6 @@ export type NotebookUrlOptions = {
   enablePostMessageStore?: boolean;
   enableDebug?: boolean;
 };
-
-const jwtResponseSchema = z.object({
-  token: z.string(),
-});
 
 const previewResponseSchema = z.object({
   success: z.boolean(),
@@ -96,87 +89,6 @@ export function generatePublishedNotebookPath(
   return `${orgId}/${notebookId}.html.gz`;
 }
 
-async function fetchJwtToken(orgName: string): Promise<string> {
-  logger.log(`Fetching JWT token for organization: ${orgName}`);
-
-  const jwtResponse = await fetch(
-    `/api/v1/jwt?orgName=${encodeURIComponent(orgName)}`,
-    {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    },
-  );
-
-  if (!jwtResponse.ok) {
-    const error = await jwtResponse.json();
-    logger.error("Failed to fetch JWT token:", error?.error ?? error);
-    throw new Error(`Failed to fetch JWT token: ${error?.error ?? error}`);
-  }
-
-  const jwtData = await jwtResponse.json();
-  const validatedData = jwtResponseSchema.parse(jwtData);
-  logger.log(`Successfully obtained JWT token for organization: ${orgName}`);
-
-  return validatedData.token;
-}
-
-async function saveNotebookPreviewToGraphQL(
-  notebookId: string,
-  base64Image: string,
-  token: string,
-): Promise<SaveNotebookPreviewPayload> {
-  logger.log(
-    `Uploading notebook preview for ${notebookId}. Image size: ${base64Image.length} bytes`,
-  );
-
-  const response = await fetch("/api/v1/osograph", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      query: `
-        mutation SavePreview($input: SaveNotebookPreviewInput!) {
-          osoApp_saveNotebookPreview(input: $input) {
-            success
-            message
-          }
-        }
-      `,
-      variables: {
-        input: {
-          notebookId,
-          previewImage: base64Image,
-        } as SaveNotebookPreviewInput,
-      },
-    }),
-  });
-
-  const result = await response.json();
-
-  if (result.errors) {
-    logger.error("Failed to save preview:", result.errors[0].message);
-    throw new Error(`Failed to save preview: ${result.errors[0].message}`);
-  }
-
-  const payload = result.data?.osoApp_saveNotebookPreview;
-  if (!payload) {
-    throw new Error("No response data from preview save mutation");
-  }
-
-  const validatedPayload = previewResponseSchema.parse(payload);
-
-  if (validatedPayload.success) {
-    logger.log(
-      `Successfully saved notebook preview for ${notebookId} to bucket "notebook-previews"`,
-    );
-    logger.info("Notebook preview saved successfully");
-  }
-
-  return validatedPayload;
-}
-
 export async function saveNotebookPreview(
   notebookId: string,
   orgName: string,
@@ -193,8 +105,22 @@ export async function saveNotebookPreview(
   }
 
   try {
-    const token = await fetchJwtToken(orgName);
-    await saveNotebookPreviewToGraphQL(notebookId, base64Image, token);
+    const { client } = useOsoAppClient();
+    if (!client) {
+      throw new Error("OsoAppClient not initialized");
+    }
+
+    const payload = await client.saveNotebookPreview({
+      notebookId,
+      orgName,
+      base64Image,
+    });
+
+    const validatedPayload = previewResponseSchema.parse(payload);
+
+    if (validatedPayload.success) {
+      logger.info("Notebook preview saved successfully");
+    }
   } catch (error) {
     logger.error("Error saving notebook preview:", error);
     throw error;

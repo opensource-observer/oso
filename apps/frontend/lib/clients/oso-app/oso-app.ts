@@ -4,6 +4,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { assert, ensure } from "@opensource-observer/utils";
 import { Database, Tables } from "@/lib/types/supabase";
 import { MissingDataError, AuthError } from "@/lib/types/errors";
+import { logger } from "@/lib/logger";
+import { gql } from "@/lib/graphql/generated/gql";
 import {
   resourcePermissionResponseSchema,
   type ResourcePermissionResponse,
@@ -2357,6 +2359,72 @@ class OsoAppClient {
         },
       },
     });
+  }
+
+  async saveNotebookPreview(
+    args: Partial<{
+      notebookId: string;
+      orgName: string;
+      base64Image: string;
+    }>,
+  ) {
+    const notebookId = ensure(args.notebookId, "Missing notebookId argument");
+    const orgName = ensure(args.orgName, "Missing orgName argument");
+    const base64Image = ensure(
+      args.base64Image,
+      "Missing base64Image argument",
+    );
+
+    const SAVE_NOTEBOOK_PREVIEW_MUTATION = gql(`
+      mutation SavePreview($input: SaveNotebookPreviewInput!) {
+        osoApp_saveNotebookPreview(input: $input) {
+          success
+          message
+        }
+      }
+    `);
+
+    logger.log(
+      `Uploading notebook preview for ${notebookId}. Image size: ${base64Image.length} bytes`,
+    );
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: SAVE_NOTEBOOK_PREVIEW_MUTATION,
+        variables: {
+          input: {
+            notebookId,
+            orgName,
+            previewImage: base64Image,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to save preview:", result.errors[0].message);
+      throw new Error(`Failed to save preview: ${result.errors[0].message}`);
+    }
+
+    const payload = result.data?.osoApp_saveNotebookPreview;
+    if (!payload) {
+      throw new Error("No response data from preview save mutation");
+    }
+
+    if (payload.success) {
+      logger.log(
+        `Successfully saved notebook preview for ${notebookId} to bucket "notebook-previews"`,
+      );
+      logger.info("Notebook preview saved successfully");
+    }
+
+    return payload;
   }
 
   private async createSupabaseAuthHeaders() {
