@@ -1,0 +1,85 @@
+/******************************
+ * ENUMS
+ ******************************/
+
+enum ModelKind {
+  @@schema("public")
+  INCREMENTAL_BY_TIME_RANGE
+  INCREMENTAL_BY_UNIQUE_KEY
+  INCREMENTAL_BY_PARTITION
+  SCD_TYPE_2_BY_TIME
+  SCD_TYPE_2_BY_COLUMN
+  FULL
+  VIEW
+}
+
+enum ModelLanguage {
+  @@schema("public")
+  SQL
+  PYTHON
+}
+
+/******************************
+ * TABLES
+ ******************************/
+
+model Dataset {
+  @@schema("public")
+  id          String    @id @default(uuid())
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+  name        String
+  description String?
+  models      Model[]
+}
+
+model Model {
+  @@schema("public")
+  id          String          @id @default(uuid())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+  dataset     Dataset         @relation(fields: [datasetId], references: [id])
+  datasetId   String
+  isEnabled   Boolean         @default(true)
+  revisions   ModelRevision[]
+}
+
+model ModelRevision {
+  @@schema("public")
+  id                            String        @id @default(uuid())
+  createdAt                     DateTime      @default(now())
+  deletedAt                     DateTime?
+  model                         Model         @relation(fields: [modelId], references: [id])
+  modelId                       String
+  name                          String
+  kind                          ModelKind
+  language                      ModelLanguage
+  code                          String
+  cron                          String
+  start                         DateTime?
+  end                           DateTime?
+  description                   String?
+  schemaColumnNames             String[]      @default([])
+  schemaColumnTypes             String[]      @default([])
+  schemaColumnDescriptions      String[]      @default([])
+  dependsOn                     String[]      @default([])
+  partitionedBy                 String[]      @default([])
+  clusteredBy                   String[]      @default([])
+
+  /** Kind-specific fields **/
+  kindTimeColumn                String?
+  kindTimeColumnFormat          String?
+  kindBatchSize                 Int?
+  kindLookback                  Int?
+  kindUniqueKeyColumns          String?
+  kindWhenMatchedSQL            String?
+  kindMergeFilter               String?
+  kindValidFromName             String?
+  kindValidToName               String?
+  kindInvalidateHardDeletes     Boolean       @default(true)
+  kindUpdatedAtColumn           String?
+  kindUpdatenAtAsValidFrom      Boolean       @default(false)
+  kindSCDColumns                String?
+  kindExecutionTimeAsValidFrom  Boolean       @default(true)
+}
