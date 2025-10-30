@@ -98,18 +98,21 @@ type Notebook @key(fields: "id") {
 }
 
 """
-Catalog entity - represents a data catalog accessible to the user
+Dataset entity - represents a dataset within an organization
 """
-type Catalog @key(fields: "name") {
+type Dataset @key(fields: "id") {
+  id: ID!
+  orgId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  deletedAt: DateTime
   name: String!
-  schemas: [Schema!]!
-}
-
-"""
-Schema entity - represents a schema within a catalog
-"""
-type Schema {
-  name: String!
+  displayName: String!
+  description: String
+  catalog: String!
+  schema: String!
+  createdBy: ID!
+  isPublic: Boolean!
   tables: [Table!]!
 }
 
@@ -161,11 +164,11 @@ type Query {
   osoApp_notebook(notebookId: ID!): Notebook
 
   """
-  Get list of catalogs for the current user
+  Get list of datasets for a given organization
   """
-  osoApp_myCatalogs(orgName: String!): [Catalog!]!
+  osoApp_orgDatasets(orgName: String!): [Dataset!]!
 
-  osoApp_tableColumns(
+  osoApp_datasetTableMetadata(
     orgName: String!
     catalogName: String!
     schemaName: String!
