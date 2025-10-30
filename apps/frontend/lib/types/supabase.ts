@@ -524,6 +524,257 @@ export type Database = {
           },
         ];
       };
+      model: {
+        Row: {
+          created_at: string;
+          dataset_id: string;
+          deleted_at: string | null;
+          id: string;
+          is_enabled: boolean;
+          name: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          dataset_id: string;
+          deleted_at?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          name: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          dataset_id?: string;
+          deleted_at?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          name?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "model_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      model_release: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          model_id: string;
+          model_revision_id: string;
+          org_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          model_id: string;
+          model_revision_id: string;
+          org_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          model_id?: string;
+          model_revision_id?: string;
+          org_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "model_release_model_id_fkey";
+            columns: ["model_id"];
+            isOneToOne: false;
+            referencedRelation: "model";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_release_model_revision_id_fkey";
+            columns: ["model_revision_id"];
+            isOneToOne: false;
+            referencedRelation: "model_revision";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_release_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      model_revision: {
+        Row: {
+          clustered_by: string[] | null;
+          code: string;
+          created_at: string;
+          cron: string;
+          depends_on:
+            | Database["public"]["CompositeTypes"]["model_dependency_type"][]
+            | null;
+          description: string | null;
+          display_name: string;
+          end: string | null;
+          hash: string;
+          id: string;
+          kind: Database["public"]["Enums"]["model_kind"];
+          kind_options:
+            | Database["public"]["CompositeTypes"]["model_kind_options"]
+            | null;
+          language: string;
+          model_id: string;
+          name: string;
+          org_id: string;
+          partitioned_by: string[] | null;
+          revision_number: number;
+          schema: Database["public"]["CompositeTypes"]["model_column_type"][];
+          start: string | null;
+        };
+        Insert: {
+          clustered_by?: string[] | null;
+          code: string;
+          created_at?: string;
+          cron: string;
+          depends_on?:
+            | Database["public"]["CompositeTypes"]["model_dependency_type"][]
+            | null;
+          description?: string | null;
+          display_name: string;
+          end?: string | null;
+          hash: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["model_kind"];
+          kind_options?:
+            | Database["public"]["CompositeTypes"]["model_kind_options"]
+            | null;
+          language: string;
+          model_id: string;
+          name: string;
+          org_id: string;
+          partitioned_by?: string[] | null;
+          revision_number: number;
+          schema: Database["public"]["CompositeTypes"]["model_column_type"][];
+          start?: string | null;
+        };
+        Update: {
+          clustered_by?: string[] | null;
+          code?: string;
+          created_at?: string;
+          cron?: string;
+          depends_on?:
+            | Database["public"]["CompositeTypes"]["model_dependency_type"][]
+            | null;
+          description?: string | null;
+          display_name?: string;
+          end?: string | null;
+          hash?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["model_kind"];
+          kind_options?:
+            | Database["public"]["CompositeTypes"]["model_kind_options"]
+            | null;
+          language?: string;
+          model_id?: string;
+          name?: string;
+          org_id?: string;
+          partitioned_by?: string[] | null;
+          revision_number?: number;
+          schema?: Database["public"]["CompositeTypes"]["model_column_type"][];
+          start?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "model_revision_model_id_fkey";
+            columns: ["model_id"];
+            isOneToOne: false;
+            referencedRelation: "model";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_revision_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      model_run: {
+        Row: {
+          completed_at: string | null;
+          id: string;
+          logs_url: string | null;
+          model_id: string;
+          model_release_id: string;
+          org_id: string;
+          started_at: string;
+          status: Database["public"]["Enums"]["model_run_status"];
+        };
+        Insert: {
+          completed_at?: string | null;
+          id?: string;
+          logs_url?: string | null;
+          model_id: string;
+          model_release_id: string;
+          org_id: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["model_run_status"];
+        };
+        Update: {
+          completed_at?: string | null;
+          id?: string;
+          logs_url?: string | null;
+          model_id?: string;
+          model_release_id?: string;
+          org_id?: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["model_run_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "model_run_model_id_fkey";
+            columns: ["model_id"];
+            isOneToOne: false;
+            referencedRelation: "model";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_run_model_release_id_fkey";
+            columns: ["model_release_id"];
+            isOneToOne: false;
+            referencedRelation: "model_release";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_run_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       notebooks: {
         Row: {
           created_at: string;
@@ -1080,10 +1331,42 @@ export type Database = {
       };
     };
     Enums: {
-      [_ in never]: never;
+      model_kind:
+        | "INCREMENTAL_BY_TIME_RANGE"
+        | "INCREMENTAL_BY_UNIQUE_KEY"
+        | "INCREMENTAL_BY_PARTITION"
+        | "SCD_TYPE_2_BY_TIME"
+        | "SCD_TYPE_2_BY_COLUMN"
+        | "FULL"
+        | "VIEW";
+      model_run_status: "running" | "completed" | "failed" | "canceled";
     };
     CompositeTypes: {
-      [_ in never]: never;
+      model_column_type: {
+        name: string | null;
+        type: string | null;
+        description: string | null;
+      };
+      model_dependency_type: {
+        model_id: string | null;
+        alias: string | null;
+      };
+      model_kind_options: {
+        time_column: string | null;
+        time_column_format: string | null;
+        batch_size: number | null;
+        lookback: number | null;
+        unique_key_columns: string[] | null;
+        when_matched_sql: string | null;
+        merge_filter: string | null;
+        valid_from_name: string | null;
+        valid_to_name: string | null;
+        invalidate_hard_deletes: boolean | null;
+        updated_at_column: string | null;
+        updated_at_as_valid_from: boolean | null;
+        scd_columns: string[] | null;
+        execution_time_as_valid_from: boolean | null;
+      };
     };
   };
 };
@@ -1210,6 +1493,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      model_kind: [
+        "INCREMENTAL_BY_TIME_RANGE",
+        "INCREMENTAL_BY_UNIQUE_KEY",
+        "INCREMENTAL_BY_PARTITION",
+        "SCD_TYPE_2_BY_TIME",
+        "SCD_TYPE_2_BY_COLUMN",
+        "FULL",
+        "VIEW",
+      ],
+      model_run_status: ["running", "completed", "failed", "canceled"],
+    },
   },
 } as const;
