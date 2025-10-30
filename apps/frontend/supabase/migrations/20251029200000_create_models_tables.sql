@@ -16,9 +16,11 @@ CREATE TABLE IF NOT EXISTS "public"."model" (
 
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
-  FOREIGN KEY ("dataset_id") REFERENCES "public"."datasets"("id") ON DELETE CASCADE,
-  UNIQUE ("org_id", "name", "dataset_id", "deleted_at")
+  FOREIGN KEY ("dataset_id") REFERENCES "public"."datasets"("id") ON DELETE CASCADE
 );
+
+-- Add unique constraint for dataset_id, org_id, and name where deleted_at is null
+CREATE UNIQUE INDEX model_org_id_dataset_id_name_unique ON public.model("org_id", "dataset_id", "name") WHERE "deleted_at" IS NULL;
 
 ALTER TABLE "public"."model" ENABLE ROW LEVEL SECURITY;
 
@@ -127,11 +129,17 @@ CREATE TABLE IF NOT EXISTS "public"."model_release" (
   "model_id" uuid NOT NULL,
   "model_revision_id" uuid NOT NULL,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+  "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+
+  -- The description should be the only mutable field
+  "description" text,
 
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
   FOREIGN KEY ("model_id") REFERENCES "public"."model"("id") ON DELETE CASCADE,
-  FOREIGN KEY ("model_revision_id") REFERENCES "public"."model_revision"("id") ON DELETE CASCADE
+  FOREIGN KEY ("model_revision_id") REFERENCES "public"."model_revision"("id") ON DELETE CASCADE,
+
+  UNIQUE ("model_id", "model_revision_id")
 );
 
 ALTER TABLE "public"."model_release" ENABLE ROW LEVEL SECURITY;
@@ -156,7 +164,7 @@ CREATE TABLE IF NOT EXISTS "public"."model_run" (
   "status" model_run_status DEFAULT 'running' NOT NULL,
 
   -- URL to the logs for this model run (should be stored in gcs/s3 or similar)
-  "log_url" text,
+  "logs_url" text,
 
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
