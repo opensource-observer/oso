@@ -81,18 +81,38 @@ type Invitation @key(fields: "id") {
 }
 
 """
-Catalog entity - represents a data catalog accessible to the user
+Notebook entity - represents a computational notebook
 """
-type Catalog @key(fields: "name") {
-  name: String!
-  schemas: [Schema!]!
+type Notebook @key(fields: "id") {
+  id: ID!
+  notebookName: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  organization: Organization!
+
+  """
+  Get preview image with signed URL
+  """
+  preview: NotebookPreview
 }
 
 """
-Schema entity - represents a schema within a catalog
+Dataset entity - represents a dataset within an organization
 """
-type Schema {
+type Dataset @key(fields: "id") {
+  id: ID!
+  orgId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  deletedAt: DateTime
   name: String!
+  displayName: String!
+  description: String
+  catalog: String!
+  schema: String!
+  createdBy: ID!
+  isPublic: Boolean!
   tables: [Table!]!
 }
 
@@ -134,11 +154,21 @@ type Query {
   osoApp_invitation(id: ID!): Invitation
 
   """
-  Get list of catalogs for the current user
+  Get notebooks, optionally filtered by organization name
   """
-  osoApp_myCatalogs(orgName: String!): [Catalog!]!
+  osoApp_notebooks(orgName: String): [Notebook!]!
 
-  osoApp_tableColumns(
+  """
+  Get a specific notebook by ID
+  """
+  osoApp_notebook(notebookId: ID!): Notebook
+
+  """
+  Get list of datasets for a given organization
+  """
+  osoApp_orgDatasets(orgName: String!): [Dataset!]!
+
+  osoApp_datasetTableMetadata(
     orgName: String!
     catalogName: String!
     schemaName: String!
@@ -191,6 +221,13 @@ type Mutation {
     email: String!
     role: MemberRole!
   ): AddUserByEmailPayload!
+
+  """
+  Save notebook preview PNG image
+  """
+  osoApp_saveNotebookPreview(
+    input: SaveNotebookPreviewInput!
+  ): SaveNotebookPreviewPayload!
 }
 
 input CreateInvitationInput {
@@ -258,4 +295,24 @@ type UpdateProfilePayload {
   user: User!
   message: String!
   success: Boolean!
+}
+
+type NotebookPreview {
+  notebookId: ID!
+  signedUrl: String!
+  expiresAt: DateTime!
+}
+
+input SaveNotebookPreviewInput {
+  notebookId: ID!
+  orgName: String!
+  """
+  PNG image as data URL (data:image/png;base64,...)
+  """
+  previewImage: String!
+}
+
+type SaveNotebookPreviewPayload {
+  success: Boolean!
+  message: String!
 }

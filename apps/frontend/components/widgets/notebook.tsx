@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
 import { NotebookHostControls } from "@/lib/notebook/notebook-controls";
 import { logger } from "@/lib/logger";
+import { saveNotebookPreview } from "@/lib/notebook/utils";
 import dynamic from "next/dynamic";
 
 export interface NotebookProps {
@@ -22,6 +23,7 @@ export interface NotebookProps {
   enablePresentMode?: boolean;
   extraQueryParams?: Record<string, string>;
   extraFragmentParams?: Record<string, string>;
+  orgName?: string;
 }
 
 export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
@@ -116,6 +118,14 @@ export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
       defaultValue: "",
       required: false,
     },
+    orgName: {
+      type: "string",
+      displayName: "Organization Name",
+      description:
+        "The organization name, used for JWT token generation for GraphQL mutations",
+      defaultValue: "",
+      required: false,
+    },
   },
 };
 
@@ -145,6 +155,7 @@ function NotebookFactory() {
             iframeAllow = "",
             extraFragmentParams = {},
             extraQueryParams = {},
+            orgName = "",
           } = props;
           const { client } = useOsoAppClient();
           // Uncomment this if you want to be able to call methods exposed by
@@ -158,6 +169,7 @@ function NotebookFactory() {
               readNotebook: async () => {
                 return null;
               },
+              saveNotebookPreview: async (_base64Image: string) => {},
             });
 
           useEffect(() => {
@@ -222,8 +234,20 @@ function NotebookFactory() {
                   return null;
                 }
               },
+              saveNotebookPreview: async (base64Image: string) => {
+                try {
+                  await saveNotebookPreview(
+                    client,
+                    notebookId,
+                    orgName,
+                    base64Image,
+                  );
+                } catch (error) {
+                  logger.error("Error saving notebook preview:", error);
+                }
+              },
             });
-          }, [notebookId, enableSave]);
+          }, [notebookId, enableSave, orgName]);
 
           // Generate the environment for the notebook
           const environment = {
