@@ -23,11 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 interface FormSchemaField {
-  type: "string" | "number" | "object";
+  type: "string" | "number" | "object" | "boolean";
   label: string;
   required?: boolean;
   description?: string;
@@ -49,7 +50,9 @@ type FormBuilderZodField =
   | z.ZodNumber
   | z.ZodOptional<z.ZodNumber>
   | z.ZodObject<any>
-  | z.ZodOptional<z.ZodObject<any>>;
+  | z.ZodOptional<z.ZodObject<any>>
+  | z.ZodBoolean
+  | z.ZodOptional<z.ZodBoolean>;
 
 function generateFormConfig(schema: FormSchema): {
   zodSchema: z.ZodObject<any>;
@@ -87,6 +90,11 @@ function generateFormConfig(schema: FormSchema): {
           invalid_type_error: `${field.label} must be a number.`,
         });
         zodField = field.required ? numberField : numberField.optional();
+        break;
+      }
+      case "boolean": {
+        const booleanField = z.boolean();
+        zodField = field.required ? booleanField : booleanField.optional();
         break;
       }
       case "object": {
@@ -201,6 +209,31 @@ const RenderField: React.FC<RenderFieldProps> = ({
                 <FormDescription>{fieldSchema.description}</FormDescription>
               )}
               <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+
+    case "boolean":
+      return (
+        <FormField
+          control={control}
+          name={currentPath}
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={fieldSchema.disabled}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>{fieldSchema.label}</FormLabel>
+                {fieldSchema.description && (
+                  <FormDescription>{fieldSchema.description}</FormDescription>
+                )}
+              </div>
             </FormItem>
           )}
         />

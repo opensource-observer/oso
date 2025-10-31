@@ -76,6 +76,12 @@ const complexSchema: FormSchema = {
         type: "number",
         label: "Favorite Number",
       },
+      receiveUpdates: {
+        type: "boolean",
+        label: "Receive Updates",
+        description: "Get notified about new features.",
+        defaultValue: true,
+      },
     },
   },
 };
