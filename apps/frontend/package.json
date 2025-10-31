@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm build:next",
     "build:next": "next build",
-    "build:prod": "pnpm codegen && pnpm build:next",
+    "build:prod": "pnpm build:next",
     "codegen": "pnpm supabase:codegen && pnpm graphql:codegen && pnpm graphql:rover",
     "deploy": "pnpm build:prod",
     "dev": "pnpm codegen && next dev",
