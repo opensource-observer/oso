@@ -55,6 +55,10 @@ import {
   MultiplayerUserProvider,
   MultiplayerUserProviderMeta,
 } from "@/components/widgets/multiplayer-provider";
+import {
+  FormBuilder,
+  FormBuilderMeta,
+} from "@/components/widgets/form-builder";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -88,4 +92,5 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
     MultiplayerUserProvider,
     MultiplayerUserProviderMeta,
   );
+  PLASMIC.registerComponent(FormBuilder, FormBuilderMeta);
 }
