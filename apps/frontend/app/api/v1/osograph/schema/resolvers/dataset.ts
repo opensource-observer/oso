@@ -23,6 +23,8 @@ import { assert } from "@opensource-observer/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DatasetsRow } from "@/lib/types/schema-types";
 
+const TRINO_SCHEMA_TIMEOUT = 10000; // 10 seconds
+
 export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     osoApp_orgDatasets: async (
@@ -62,7 +64,6 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
                 return null;
               }
               const catalogName = catalog[0];
-              console.log("Processing catalog:", catalogName);
 
               const query = `
         SELECT table_schema, table_name
@@ -70,8 +71,20 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
         WHERE ${catalogName === "iceberg" ? "table_schema = 'oso'" : "table_schema != 'information_schema'"}
       `;
               try {
-                const { data: tablesResult, error } =
-                  await trino.queryAll(query);
+                const queryPromise = trino.queryAll(query);
+                const timeoutPromise = new Promise<{
+                  data: null;
+                  error: Error;
+                }>((resolve) =>
+                  setTimeout(
+                    () => resolve({ data: null, error: new Error("Timeout") }),
+                    TRINO_SCHEMA_TIMEOUT,
+                  ),
+                );
+                const { data: tablesResult, error } = await Promise.race([
+                  queryPromise,
+                  timeoutPromise,
+                ]);
                 if (error || !tablesResult) {
                   logger.warn(
                     `Could not query tables for catalog ${catalogName}:`,
@@ -133,7 +146,6 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
           tables: tablesByCatalogAndSchema[key] ?? [],
         };
       });
-      console.log("orgDatasets response:", response);
 
       return response;
     },
@@ -191,7 +203,6 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
                 return null;
               }
               const [columnName, columnType, columnComment] = column;
-              console.log("column:", columnName, columnType, columnComment);
               return ColumnSchema.parse({
                 name: columnName,
                 type: columnType,
@@ -226,7 +237,8 @@ async function getOrganizationDatasets(orgId: string): Promise<DatasetsRow[]> {
   const { data, error } = await supabase
     .from("datasets_by_organization")
     .select("datasets(*)")
-    .eq("org_id", orgId);
+    .eq("org_id", orgId)
+    .is("deleted_at", null);
 
   if (error) {
     throw ResourceErrors.notFound("Datasets", `org_id: ${orgId}`);
@@ -235,7 +247,9 @@ async function getOrganizationDatasets(orgId: string): Promise<DatasetsRow[]> {
   const { data: ownedDatasets, error: ownedError } = await supabase
     .from("datasets")
     .select("*")
-    .eq("org_id", orgId);
+    .eq("org_id", orgId)
+    .is("deleted_at", null);
+
   if (ownedError) {
     throw ResourceErrors.notFound("Datasets", `org_id: ${orgId}`);
   }
