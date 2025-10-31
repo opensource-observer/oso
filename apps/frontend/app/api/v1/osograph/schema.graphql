@@ -80,6 +80,12 @@ type Invitation @key(fields: "id") {
   acceptedBy: User
 }
 
+enum DatasetType {
+  USER_MODEL
+  DATA_CONNECTOR
+  DATA_INGESTION
+}
+
 """
 Notebook entity - represents a computational notebook
 """
@@ -114,6 +120,7 @@ type Dataset @key(fields: "id") {
   createdBy: ID!
   isPublic: Boolean!
   tables: [Table!]!
+  datasetType: DatasetType!
 }
 
 """
