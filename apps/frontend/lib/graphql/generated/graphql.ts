@@ -1,41 +1,54 @@
 /* eslint-disable */
-import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+export type Exact<T extends { [key: string]: unknown }> = {
+  [K in keyof T]: T[K];
+};
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & {
+  [SubKey in K]?: Maybe<T[SubKey]>;
+};
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & {
+  [SubKey in K]: Maybe<T[SubKey]>;
+};
+export type MakeEmpty<
+  T extends { [key: string]: unknown },
+  K extends keyof T,
+> = { [_ in K]?: never };
+export type Incremental<T> =
+  | T
+  | {
+      [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never;
+    };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string; }
-  String: { input: string; output: string; }
-  Boolean: { input: boolean; output: boolean; }
-  Int: { input: number; output: number; }
-  Float: { input: number; output: number; }
+  ID: { input: string; output: string };
+  String: { input: string; output: string };
+  Boolean: { input: boolean; output: boolean };
+  Int: { input: number; output: number };
+  Float: { input: number; output: number };
   /** DateTime custom scalar type */
-  DateTime: { input: any; output: any; }
+  DateTime: { input: any; output: any };
   /**
    * The `GenericScalar` scalar type represents a generic
    * GraphQL scalar value that could be:
    * String, Boolean, Int, Float, List or Object.
    */
-  GenericScalar: { input: any; output: any; }
+  GenericScalar: { input: any; output: any };
   /**
    * Allows use of a JSON String for input / output from the GraphQL schema.
    *
    * Use of this type is *not recommended* as you lose the benefits of having a defined, static
    * schema (one of the key benefits of GraphQL).
    */
-  JSONString: { input: any; output: any; }
-  Oso_Bool: { input: any; output: any; }
-  Oso_Date: { input: any; output: any; }
-  Oso_DateTime: { input: any; output: any; }
-  Oso_DateTime646: { input: any; output: any; }
-  Oso_Float32: { input: any; output: any; }
-  Oso_Float64: { input: any; output: any; }
-  Oso_Int64: { input: any; output: any; }
+  JSONString: { input: any; output: any };
+  Oso_Bool: { input: any; output: any };
+  Oso_Date: { input: any; output: any };
+  Oso_DateTime: { input: any; output: any };
+  Oso_DateTime646: { input: any; output: any };
+  Oso_Float32: { input: any; output: any };
+  Oso_Float64: { input: any; output: any };
+  Oso_Int64: { input: any; output: any };
   /**
    * This type is used when passing in a configuration object
    *         for pipeline configuration. Can either be passed in as a string (the
@@ -43,268 +56,277 @@ export type Scalars = {
    *         either case, the object must conform to the constraints of the dagster config type system.
    *
    */
-  RunConfigData: { input: any; output: any; }
-  _Any: { input: any; output: any; }
-  federation__FieldSet: { input: any; output: any; }
-  link__Import: { input: any; output: any; }
+  RunConfigData: { input: any; output: any };
+  _Any: { input: any; output: any };
+  federation__FieldSet: { input: any; output: any };
+  link__Import: { input: any; output: any };
 };
 
 export type AcceptInvitationPayload = {
-  __typename?: 'AcceptInvitationPayload';
+  __typename?: "AcceptInvitationPayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
-export type AddDynamicPartitionResult = AddDynamicPartitionSuccess | DuplicateDynamicPartitionError | PythonError | UnauthorizedError;
+export type AddDynamicPartitionResult =
+  | AddDynamicPartitionSuccess
+  | DuplicateDynamicPartitionError
+  | PythonError
+  | UnauthorizedError;
 
 export type AddDynamicPartitionSuccess = {
-  __typename?: 'AddDynamicPartitionSuccess';
-  partitionKey: Scalars['String']['output'];
-  partitionsDefName: Scalars['String']['output'];
+  __typename?: "AddDynamicPartitionSuccess";
+  partitionKey: Scalars["String"]["output"];
+  partitionsDefName: Scalars["String"]["output"];
 };
 
 export type AddUserByEmailPayload = {
-  __typename?: 'AddUserByEmailPayload';
+  __typename?: "AddUserByEmailPayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
-export type AlertFailureEvent = MessageEvent & RunEvent & {
-  __typename?: 'AlertFailureEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type AlertFailureEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "AlertFailureEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type AlertStartEvent = MessageEvent & RunEvent & {
-  __typename?: 'AlertStartEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type AlertStartEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "AlertStartEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type AlertSuccessEvent = MessageEvent & RunEvent & {
-  __typename?: 'AlertSuccessEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type AlertSuccessEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "AlertSuccessEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type ArrayConfigType = ConfigType & WrappingConfigType & {
-  __typename?: 'ArrayConfigType';
-  description?: Maybe<Scalars['String']['output']>;
-  isSelector: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
-  ofType: ConfigType;
-  /**
-   *
-   * This is an odd and problematic field. It recursively goes down to
-   * get all the types contained within a type. The case where it is horrible
-   * are dictionaries and it recurses all the way down to the leaves. This means
-   * that in a case where one is fetching all the types and then all the inner
-   * types keys for those types, we are returning O(N^2) type keys, which
-   * can cause awful performance for large schemas. When you have access
-   * to *all* the types, you should instead only use the type_param_keys
-   * field for closed generic types and manually navigate down the to
-   * field types client-side.
-   *
-   * Where it is useful is when you are fetching types independently and
-   * want to be able to render them, but without fetching the entire schema.
-   *
-   * We use this capability when rendering the sidebar.
-   *
-   */
-  recursiveConfigTypes: Array<ConfigType>;
-  /**
-   *
-   * This returns the keys for type parameters of any closed generic type,
-   * (e.g. List, Optional). This should be used for reconstructing and
-   * navigating the full schema client-side and not innerTypes.
-   *
-   */
-  typeParamKeys: Array<Scalars['String']['output']>;
-};
+export type ArrayConfigType = ConfigType &
+  WrappingConfigType & {
+    __typename?: "ArrayConfigType";
+    description?: Maybe<Scalars["String"]["output"]>;
+    isSelector: Scalars["Boolean"]["output"];
+    key: Scalars["String"]["output"];
+    ofType: ConfigType;
+    /**
+     *
+     * This is an odd and problematic field. It recursively goes down to
+     * get all the types contained within a type. The case where it is horrible
+     * are dictionaries and it recurses all the way down to the leaves. This means
+     * that in a case where one is fetching all the types and then all the inner
+     * types keys for those types, we are returning O(N^2) type keys, which
+     * can cause awful performance for large schemas. When you have access
+     * to *all* the types, you should instead only use the type_param_keys
+     * field for closed generic types and manually navigate down the to
+     * field types client-side.
+     *
+     * Where it is useful is when you are fetching types independently and
+     * want to be able to render them, but without fetching the entire schema.
+     *
+     * We use this capability when rendering the sidebar.
+     *
+     */
+    recursiveConfigTypes: Array<ConfigType>;
+    /**
+     *
+     * This returns the keys for type parameters of any closed generic type,
+     * (e.g. List, Optional). This should be used for reconstructing and
+     * navigating the full schema client-side and not innerTypes.
+     *
+     */
+    typeParamKeys: Array<Scalars["String"]["output"]>;
+  };
 
 export type Asset = {
-  __typename?: 'Asset';
+  __typename?: "Asset";
   assetEventHistory: AssetResultEventHistoryConnection;
   assetHealth?: Maybe<AssetHealth>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition?: Maybe<AssetNode>;
-  freshnessStatusChangedTimestamp?: Maybe<Scalars['Float']['output']>;
-  hasDefinitionOrRecord: Scalars['Boolean']['output'];
-  id: Scalars['String']['output'];
+  freshnessStatusChangedTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  hasDefinitionOrRecord: Scalars["Boolean"]["output"];
+  id: Scalars["String"]["output"];
   key: AssetKey;
-  latestEventSortKey?: Maybe<Scalars['ID']['output']>;
-  latestFailedToMaterializeTimestamp?: Maybe<Scalars['Float']['output']>;
-  latestMaterializationTimestamp?: Maybe<Scalars['Float']['output']>;
+  latestEventSortKey?: Maybe<Scalars["ID"]["output"]>;
+  latestFailedToMaterializeTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  latestMaterializationTimestamp?: Maybe<Scalars["Float"]["output"]>;
 };
-
 
 export type AssetAssetEventHistoryArgs = {
-  afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
-  limit: Scalars['Int']['input'];
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  limit: Scalars["Int"]["input"];
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
-
 
 export type AssetAssetMaterializationsArgs = {
-  afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
-
 export type AssetAssetObservationsArgs = {
-  afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type AssetBackfillData = {
-  __typename?: 'AssetBackfillData';
+  __typename?: "AssetBackfillData";
   assetBackfillStatuses: Array<AssetBackfillStatus>;
   rootTargetedPartitions?: Maybe<AssetBackfillTargetPartitions>;
 };
 
 export type AssetBackfillPreviewParams = {
   assetSelection: Array<AssetKeyInput>;
-  partitionNames: Array<Scalars['String']['input']>;
+  partitionNames: Array<Scalars["String"]["input"]>;
 };
 
-export type AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus;
+export type AssetBackfillStatus =
+  | AssetPartitionsStatusCounts
+  | UnpartitionedAssetStatus;
 
 export type AssetBackfillTargetPartitions = {
-  __typename?: 'AssetBackfillTargetPartitions';
-  partitionKeys?: Maybe<Array<Scalars['String']['output']>>;
+  __typename?: "AssetBackfillTargetPartitions";
+  partitionKeys?: Maybe<Array<Scalars["String"]["output"]>>;
   ranges?: Maybe<Array<PartitionKeyRange>>;
 };
 
 export type AssetCheck = {
-  __typename?: 'AssetCheck';
+  __typename?: "AssetCheck";
   additionalAssetKeys: Array<AssetKey>;
   assetKey: AssetKey;
   automationCondition?: Maybe<AutomationCondition>;
-  blocking: Scalars['Boolean']['output'];
+  blocking: Scalars["Boolean"]["output"];
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   executionForLatestMaterialization?: Maybe<AssetCheckExecution>;
-  jobNames: Array<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
+  jobNames: Array<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
 };
 
 export enum AssetCheckCanExecuteIndividually {
-  CanExecute = 'CAN_EXECUTE',
-  NeedsUserCodeUpgrade = 'NEEDS_USER_CODE_UPGRADE',
-  RequiresMaterialization = 'REQUIRES_MATERIALIZATION'
+  CanExecute = "CAN_EXECUTE",
+  NeedsUserCodeUpgrade = "NEEDS_USER_CODE_UPGRADE",
+  RequiresMaterialization = "REQUIRES_MATERIALIZATION",
 }
 
 export type AssetCheckEvaluation = {
-  __typename?: 'AssetCheckEvaluation';
+  __typename?: "AssetCheckEvaluation";
   assetKey: AssetKey;
-  checkName: Scalars['String']['output'];
-  description?: Maybe<Scalars['String']['output']>;
+  checkName: Scalars["String"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
   metadataEntries: Array<MetadataEntry>;
   severity: AssetCheckSeverity;
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
   targetMaterialization?: Maybe<AssetCheckEvaluationTargetMaterializationData>;
   /** When the check evaluation was stored */
-  timestamp: Scalars['Float']['output'];
+  timestamp: Scalars["Float"]["output"];
 };
 
-export type AssetCheckEvaluationEvent = MessageEvent & StepEvent & {
-  __typename?: 'AssetCheckEvaluationEvent';
-  evaluation: AssetCheckEvaluation;
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type AssetCheckEvaluationEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "AssetCheckEvaluationEvent";
+    evaluation: AssetCheckEvaluation;
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type AssetCheckEvaluationPlannedEvent = MessageEvent & StepEvent & {
-  __typename?: 'AssetCheckEvaluationPlannedEvent';
-  assetKey: AssetKey;
-  checkName: Scalars['String']['output'];
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type AssetCheckEvaluationPlannedEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "AssetCheckEvaluationPlannedEvent";
+    assetKey: AssetKey;
+    checkName: Scalars["String"]["output"];
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type AssetCheckEvaluationTargetMaterializationData = {
-  __typename?: 'AssetCheckEvaluationTargetMaterializationData';
-  runId: Scalars['String']['output'];
-  storageId: Scalars['ID']['output'];
-  timestamp: Scalars['Float']['output'];
+  __typename?: "AssetCheckEvaluationTargetMaterializationData";
+  runId: Scalars["String"]["output"];
+  storageId: Scalars["ID"]["output"];
+  timestamp: Scalars["Float"]["output"];
 };
 
 export type AssetCheckExecution = {
-  __typename?: 'AssetCheckExecution';
+  __typename?: "AssetCheckExecution";
   evaluation?: Maybe<AssetCheckEvaluation>;
-  id: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
+  id: Scalars["String"]["output"];
+  runId: Scalars["String"]["output"];
   status: AssetCheckExecutionResolvedStatus;
-  stepKey?: Maybe<Scalars['String']['output']>;
+  stepKey?: Maybe<Scalars["String"]["output"]>;
   /** When the check run started */
-  timestamp: Scalars['Float']['output'];
+  timestamp: Scalars["Float"]["output"];
 };
 
 /** An enumeration. */
 export enum AssetCheckExecutionResolvedStatus {
-  ExecutionFailed = 'EXECUTION_FAILED',
-  Failed = 'FAILED',
-  InProgress = 'IN_PROGRESS',
-  Skipped = 'SKIPPED',
-  Succeeded = 'SUCCEEDED'
+  ExecutionFailed = "EXECUTION_FAILED",
+  Failed = "FAILED",
+  InProgress = "IN_PROGRESS",
+  Skipped = "SKIPPED",
+  Succeeded = "SUCCEEDED",
 }
 
 export type AssetCheckHandleInput = {
   assetKey: AssetKeyInput;
-  name: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
 };
 
 export type AssetCheckNeedsAgentUpgradeError = Error & {
-  __typename?: 'AssetCheckNeedsAgentUpgradeError';
-  message: Scalars['String']['output'];
+  __typename?: "AssetCheckNeedsAgentUpgradeError";
+  message: Scalars["String"]["output"];
 };
 
 export type AssetCheckNeedsMigrationError = Error & {
-  __typename?: 'AssetCheckNeedsMigrationError';
-  message: Scalars['String']['output'];
+  __typename?: "AssetCheckNeedsMigrationError";
+  message: Scalars["String"]["output"];
 };
 
 export type AssetCheckNeedsUserCodeUpgrade = Error & {
-  __typename?: 'AssetCheckNeedsUserCodeUpgrade';
-  message: Scalars['String']['output'];
+  __typename?: "AssetCheckNeedsUserCodeUpgrade";
+  message: Scalars["String"]["output"];
 };
 
 /**
@@ -317,98 +339,107 @@ export type AssetCheckNeedsUserCodeUpgrade = Error & {
  *
  */
 export enum AssetCheckSeverity {
-  Error = 'ERROR',
-  Warn = 'WARN'
+  Error = "ERROR",
+  Warn = "WARN",
 }
 
 export type AssetCheckhandle = {
-  __typename?: 'AssetCheckhandle';
+  __typename?: "AssetCheckhandle";
   assetKey: AssetKey;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
 };
 
 export type AssetChecks = {
-  __typename?: 'AssetChecks';
+  __typename?: "AssetChecks";
   checks: Array<AssetCheck>;
 };
 
-export type AssetChecksOrError = AssetCheckNeedsAgentUpgradeError | AssetCheckNeedsMigrationError | AssetCheckNeedsUserCodeUpgrade | AssetChecks;
+export type AssetChecksOrError =
+  | AssetCheckNeedsAgentUpgradeError
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetChecks;
 
 export type AssetConditionEvaluation = {
-  __typename?: 'AssetConditionEvaluation';
+  __typename?: "AssetConditionEvaluation";
   evaluationNodes: Array<AssetConditionEvaluationNode>;
-  rootUniqueId: Scalars['String']['output'];
+  rootUniqueId: Scalars["String"]["output"];
 };
 
-export type AssetConditionEvaluationNode = PartitionedAssetConditionEvaluationNode | SpecificPartitionAssetConditionEvaluationNode | UnpartitionedAssetConditionEvaluationNode;
+export type AssetConditionEvaluationNode =
+  | PartitionedAssetConditionEvaluationNode
+  | SpecificPartitionAssetConditionEvaluationNode
+  | UnpartitionedAssetConditionEvaluationNode;
 
 export type AssetConditionEvaluationRecord = {
-  __typename?: 'AssetConditionEvaluationRecord';
+  __typename?: "AssetConditionEvaluationRecord";
   assetKey?: Maybe<AssetKey>;
-  endTimestamp?: Maybe<Scalars['Float']['output']>;
+  endTimestamp?: Maybe<Scalars["Float"]["output"]>;
   entityKey: EntityKey;
   evaluation: AssetConditionEvaluation;
-  evaluationId: Scalars['ID']['output'];
+  evaluationId: Scalars["ID"]["output"];
   evaluationNodes: Array<AutomationConditionEvaluationNode>;
-  id: Scalars['ID']['output'];
-  isLegacy: Scalars['Boolean']['output'];
-  numRequested: Scalars['Int']['output'];
-  rootUniqueId: Scalars['String']['output'];
-  runIds: Array<Scalars['String']['output']>;
-  startTimestamp?: Maybe<Scalars['Float']['output']>;
-  timestamp: Scalars['Float']['output'];
+  id: Scalars["ID"]["output"];
+  isLegacy: Scalars["Boolean"]["output"];
+  numRequested: Scalars["Int"]["output"];
+  rootUniqueId: Scalars["String"]["output"];
+  runIds: Array<Scalars["String"]["output"]>;
+  startTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  timestamp: Scalars["Float"]["output"];
 };
 
 export type AssetConditionEvaluationRecords = {
-  __typename?: 'AssetConditionEvaluationRecords';
+  __typename?: "AssetConditionEvaluationRecords";
   records: Array<AssetConditionEvaluationRecord>;
 };
 
-export type AssetConditionEvaluationRecordsOrError = AssetConditionEvaluationRecords | AutoMaterializeAssetEvaluationNeedsMigrationError;
+export type AssetConditionEvaluationRecordsOrError =
+  | AssetConditionEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError;
 
 /** An enumeration. */
 export enum AssetConditionEvaluationStatus {
-  False = 'FALSE',
-  Skipped = 'SKIPPED',
-  True = 'TRUE'
+  False = "FALSE",
+  Skipped = "SKIPPED",
+  True = "TRUE",
 }
 
 export type AssetConnection = {
-  __typename?: 'AssetConnection';
-  cursor?: Maybe<Scalars['String']['output']>;
+  __typename?: "AssetConnection";
+  cursor?: Maybe<Scalars["String"]["output"]>;
   nodes: Array<Asset>;
 };
 
 export type AssetDependency = {
-  __typename?: 'AssetDependency';
+  __typename?: "AssetDependency";
   asset: AssetNode;
   partitionMapping?: Maybe<PartitionMapping>;
 };
 
 export enum AssetEventHistoryEventTypeSelector {
-  FailedToMaterialize = 'FAILED_TO_MATERIALIZE',
-  Materialization = 'MATERIALIZATION',
-  Observation = 'OBSERVATION'
+  FailedToMaterialize = "FAILED_TO_MATERIALIZE",
+  Materialization = "MATERIALIZATION",
+  Observation = "OBSERVATION",
 }
 
 /** The event type of an asset event. */
 export enum AssetEventType {
-  AssetMaterialization = 'ASSET_MATERIALIZATION',
-  AssetObservation = 'ASSET_OBSERVATION'
+  AssetMaterialization = "ASSET_MATERIALIZATION",
+  AssetObservation = "ASSET_OBSERVATION",
 }
 
 export type AssetFreshnessInfo = {
-  __typename?: 'AssetFreshnessInfo';
-  currentLagMinutes?: Maybe<Scalars['Float']['output']>;
-  currentMinutesLate?: Maybe<Scalars['Float']['output']>;
-  latestMaterializationMinutesLate?: Maybe<Scalars['Float']['output']>;
+  __typename?: "AssetFreshnessInfo";
+  currentLagMinutes?: Maybe<Scalars["Float"]["output"]>;
+  currentMinutesLate?: Maybe<Scalars["Float"]["output"]>;
+  latestMaterializationMinutesLate?: Maybe<Scalars["Float"]["output"]>;
 };
 
 export type AssetGroup = {
-  __typename?: 'AssetGroup';
+  __typename?: "AssetGroup";
   assetKeys: Array<AssetKey>;
-  groupName: Scalars['String']['output'];
-  id: Scalars['String']['output'];
+  groupName: Scalars["String"]["output"];
+  id: Scalars["String"]["output"];
 };
 
 /**
@@ -416,13 +447,13 @@ export type AssetGroup = {
  *         an asset group.
  */
 export type AssetGroupSelector = {
-  groupName: Scalars['String']['input'];
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
+  groupName: Scalars["String"]["input"];
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
 };
 
 export type AssetHealth = {
-  __typename?: 'AssetHealth';
+  __typename?: "AssetHealth";
   assetChecksStatus: AssetHealthStatus;
   assetChecksStatusMetadata?: Maybe<AssetHealthCheckMeta>;
   assetHealth: AssetHealthStatus;
@@ -433,83 +464,89 @@ export type AssetHealth = {
 };
 
 export type AssetHealthCheckDegradedMeta = {
-  __typename?: 'AssetHealthCheckDegradedMeta';
-  numFailedChecks: Scalars['Int']['output'];
-  numWarningChecks: Scalars['Int']['output'];
-  totalNumChecks: Scalars['Int']['output'];
+  __typename?: "AssetHealthCheckDegradedMeta";
+  numFailedChecks: Scalars["Int"]["output"];
+  numWarningChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
 };
 
-export type AssetHealthCheckMeta = AssetHealthCheckDegradedMeta | AssetHealthCheckUnknownMeta | AssetHealthCheckWarningMeta;
+export type AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckUnknownMeta
+  | AssetHealthCheckWarningMeta;
 
 export type AssetHealthCheckUnknownMeta = {
-  __typename?: 'AssetHealthCheckUnknownMeta';
-  numNotExecutedChecks: Scalars['Int']['output'];
-  totalNumChecks: Scalars['Int']['output'];
+  __typename?: "AssetHealthCheckUnknownMeta";
+  numNotExecutedChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
 };
 
 export type AssetHealthCheckWarningMeta = {
-  __typename?: 'AssetHealthCheckWarningMeta';
-  numWarningChecks: Scalars['Int']['output'];
-  totalNumChecks: Scalars['Int']['output'];
+  __typename?: "AssetHealthCheckWarningMeta";
+  numWarningChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
 };
 
 export type AssetHealthFreshnessMeta = {
-  __typename?: 'AssetHealthFreshnessMeta';
-  lastMaterializedTimestamp?: Maybe<Scalars['Float']['output']>;
+  __typename?: "AssetHealthFreshnessMeta";
+  lastMaterializedTimestamp?: Maybe<Scalars["Float"]["output"]>;
 };
 
 export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
-  __typename?: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
-  failedRunId: Scalars['String']['output'];
+  __typename?: "AssetHealthMaterializationDegradedNotPartitionedMeta";
+  failedRunId: Scalars["String"]["output"];
 };
 
 export type AssetHealthMaterializationDegradedPartitionedMeta = {
-  __typename?: 'AssetHealthMaterializationDegradedPartitionedMeta';
-  numFailedPartitions: Scalars['Int']['output'];
-  numMissingPartitions: Scalars['Int']['output'];
-  totalNumPartitions: Scalars['Int']['output'];
+  __typename?: "AssetHealthMaterializationDegradedPartitionedMeta";
+  numFailedPartitions: Scalars["Int"]["output"];
+  numMissingPartitions: Scalars["Int"]["output"];
+  totalNumPartitions: Scalars["Int"]["output"];
 };
 
 export type AssetHealthMaterializationHealthyPartitionedMeta = {
-  __typename?: 'AssetHealthMaterializationHealthyPartitionedMeta';
-  numMissingPartitions: Scalars['Int']['output'];
-  totalNumPartitions: Scalars['Int']['output'];
+  __typename?: "AssetHealthMaterializationHealthyPartitionedMeta";
+  numMissingPartitions: Scalars["Int"]["output"];
+  totalNumPartitions: Scalars["Int"]["output"];
 };
 
-export type AssetHealthMaterializationMeta = AssetHealthMaterializationDegradedNotPartitionedMeta | AssetHealthMaterializationDegradedPartitionedMeta | AssetHealthMaterializationHealthyPartitionedMeta;
+export type AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta;
 
 /** Enum for the health status of an asset. */
 export enum AssetHealthStatus {
-  Degraded = 'DEGRADED',
-  Healthy = 'HEALTHY',
-  NotApplicable = 'NOT_APPLICABLE',
-  Unknown = 'UNKNOWN',
-  Warning = 'WARNING'
+  Degraded = "DEGRADED",
+  Healthy = "HEALTHY",
+  NotApplicable = "NOT_APPLICABLE",
+  Unknown = "UNKNOWN",
+  Warning = "WARNING",
 }
 
 export type AssetKey = {
-  __typename?: 'AssetKey';
-  path: Array<Scalars['String']['output']>;
+  __typename?: "AssetKey";
+  path: Array<Scalars["String"]["output"]>;
 };
 
 export type AssetKeyInput = {
-  path: Array<Scalars['String']['input']>;
+  path: Array<Scalars["String"]["input"]>;
 };
 
 export type AssetLatestInfo = {
-  __typename?: 'AssetLatestInfo';
+  __typename?: "AssetLatestInfo";
   assetKey: AssetKey;
-  id: Scalars['ID']['output'];
-  inProgressRunIds: Array<Scalars['String']['output']>;
+  id: Scalars["ID"]["output"];
+  inProgressRunIds: Array<Scalars["String"]["output"]>;
   latestMaterialization?: Maybe<MaterializationEvent>;
   latestRun?: Maybe<Run>;
-  unstartedRunIds: Array<Scalars['String']['output']>;
+  unstartedRunIds: Array<Scalars["String"]["output"]>;
 };
 
 export type AssetLineageInfo = {
-  __typename?: 'AssetLineageInfo';
+  __typename?: "AssetLineageInfo";
   assetKey: AssetKey;
-  partitions: Array<Scalars['String']['output']>;
+  partitions: Array<Scalars["String"]["output"]>;
 };
 
 /**
@@ -518,10 +555,10 @@ export type AssetLineageInfo = {
  *
  */
 export enum AssetMaterializationFailureReason {
-  FailedToMaterialize = 'FAILED_TO_MATERIALIZE',
-  RunTerminated = 'RUN_TERMINATED',
-  Unknown = 'UNKNOWN',
-  UpstreamFailedToMaterialize = 'UPSTREAM_FAILED_TO_MATERIALIZE'
+  FailedToMaterialize = "FAILED_TO_MATERIALIZE",
+  RunTerminated = "RUN_TERMINATED",
+  Unknown = "UNKNOWN",
+  UpstreamFailedToMaterialize = "UPSTREAM_FAILED_TO_MATERIALIZE",
 }
 
 /**
@@ -531,33 +568,34 @@ export enum AssetMaterializationFailureReason {
  *
  */
 export enum AssetMaterializationFailureType {
-  Failed = 'FAILED',
-  Skipped = 'SKIPPED'
+  Failed = "FAILED",
+  Skipped = "SKIPPED",
 }
 
-export type AssetMaterializationPlannedEvent = MessageEvent & RunEvent & {
-  __typename?: 'AssetMaterializationPlannedEvent';
-  assetKey?: Maybe<AssetKey>;
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  runOrError: RunOrError;
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type AssetMaterializationPlannedEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "AssetMaterializationPlannedEvent";
+    assetKey?: Maybe<AssetKey>;
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type AssetMetadataEntry = MetadataEntry & {
-  __typename?: 'AssetMetadataEntry';
+  __typename?: "AssetMetadataEntry";
   assetKey: AssetKey;
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
 };
 
 export type AssetNode = {
-  __typename?: 'AssetNode';
+  __typename?: "AssetNode";
   assetChecksOrError: AssetChecksOrError;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
@@ -568,49 +606,49 @@ export type AssetNode = {
   automationCondition?: Maybe<AutomationCondition>;
   backfillPolicy?: Maybe<BackfillPolicy>;
   changedReasons: Array<ChangeReason>;
-  computeKind?: Maybe<Scalars['String']['output']>;
+  computeKind?: Maybe<Scalars["String"]["output"]>;
   configField?: Maybe<ConfigTypeField>;
-  currentAutoMaterializeEvaluationId?: Maybe<Scalars['ID']['output']>;
-  dataVersion?: Maybe<Scalars['String']['output']>;
-  dataVersionByPartition: Array<Maybe<Scalars['String']['output']>>;
+  currentAutoMaterializeEvaluationId?: Maybe<Scalars["ID"]["output"]>;
+  dataVersion?: Maybe<Scalars["String"]["output"]>;
+  dataVersionByPartition: Array<Maybe<Scalars["String"]["output"]>>;
   dependedBy: Array<AssetDependency>;
   dependedByKeys: Array<AssetKey>;
   dependencies: Array<AssetDependency>;
   dependencyKeys: Array<AssetKey>;
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   freshnessInfo?: Maybe<AssetFreshnessInfo>;
   freshnessPolicy?: Maybe<FreshnessPolicy>;
   freshnessStatusInfo?: Maybe<FreshnessStatusInfo>;
-  graphName?: Maybe<Scalars['String']['output']>;
-  groupName: Scalars['String']['output'];
-  hasAssetChecks: Scalars['Boolean']['output'];
-  hasMaterializePermission: Scalars['Boolean']['output'];
-  hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
-  id: Scalars['ID']['output'];
+  graphName?: Maybe<Scalars["String"]["output"]>;
+  groupName: Scalars["String"]["output"];
+  hasAssetChecks: Scalars["Boolean"]["output"];
+  hasMaterializePermission: Scalars["Boolean"]["output"];
+  hasReportRunlessAssetEventPermission: Scalars["Boolean"]["output"];
+  id: Scalars["ID"]["output"];
   internalFreshnessPolicy?: Maybe<InternalFreshnessPolicy>;
-  isAutoCreatedStub: Scalars['Boolean']['output'];
-  isExecutable: Scalars['Boolean']['output'];
-  isMaterializable: Scalars['Boolean']['output'];
-  isObservable: Scalars['Boolean']['output'];
-  isPartitioned: Scalars['Boolean']['output'];
-  jobNames: Array<Scalars['String']['output']>;
+  isAutoCreatedStub: Scalars["Boolean"]["output"];
+  isExecutable: Scalars["Boolean"]["output"];
+  isMaterializable: Scalars["Boolean"]["output"];
+  isObservable: Scalars["Boolean"]["output"];
+  isPartitioned: Scalars["Boolean"]["output"];
+  jobNames: Array<Scalars["String"]["output"]>;
   jobs: Array<Pipeline>;
-  kinds: Array<Scalars['String']['output']>;
+  kinds: Array<Scalars["String"]["output"]>;
   lastAutoMaterializationEvaluationRecord?: Maybe<AutoMaterializeAssetEvaluationRecord>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
   latestRunForPartition?: Maybe<Run>;
   metadataEntries: Array<MetadataEntry>;
   op?: Maybe<SolidDefinition>;
-  opName?: Maybe<Scalars['String']['output']>;
-  opNames: Array<Scalars['String']['output']>;
-  opVersion?: Maybe<Scalars['String']['output']>;
+  opName?: Maybe<Scalars["String"]["output"]>;
+  opNames: Array<Scalars["String"]["output"]>;
+  opVersion?: Maybe<Scalars["String"]["output"]>;
   owners: Array<AssetOwner>;
   partitionDefinition?: Maybe<PartitionDefinition>;
   partitionKeyConnection?: Maybe<PartitionKeyConnection>;
-  partitionKeys: Array<Scalars['String']['output']>;
+  partitionKeys: Array<Scalars["String"]["output"]>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats?: Maybe<PartitionStats>;
-  pools: Array<Scalars['String']['output']>;
+  pools: Array<Scalars["String"]["output"]>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   staleCauses: Array<StaleCause>;
@@ -622,91 +660,76 @@ export type AssetNode = {
   type?: Maybe<DagsterType>;
 };
 
-
 export type AssetNodeAssetChecksOrErrorArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   pipeline?: InputMaybe<PipelineSelector>;
 };
 
-
 export type AssetNodeAssetMaterializationUsedDataArgs = {
-  timestampMillis: Scalars['String']['input'];
+  timestampMillis: Scalars["String"]["input"];
 };
-
 
 export type AssetNodeAssetMaterializationsArgs = {
-  beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
-
 
 export type AssetNodeAssetObservationsArgs = {
-  beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
-
 
 export type AssetNodeDataVersionArgs = {
-  partition?: InputMaybe<Scalars['String']['input']>;
+  partition?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 export type AssetNodeDataVersionByPartitionArgs = {
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
-
 
 export type AssetNodeLastAutoMaterializationEvaluationRecordArgs = {
-  asOfEvaluationId?: InputMaybe<Scalars['ID']['input']>;
+  asOfEvaluationId?: InputMaybe<Scalars["ID"]["input"]>;
 };
-
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
-
 
 export type AssetNodeLatestRunForPartitionArgs = {
-  partition: Scalars['String']['input'];
+  partition: Scalars["String"]["input"];
 };
-
 
 export type AssetNodePartitionKeyConnectionArgs = {
-  ascending: Scalars['Boolean']['input'];
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit: Scalars['Int']['input'];
+  ascending: Scalars["Boolean"]["input"];
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit: Scalars["Int"]["input"];
 };
-
 
 export type AssetNodePartitionKeysByDimensionArgs = {
-  endIdx?: InputMaybe<Scalars['Int']['input']>;
-  startIdx?: InputMaybe<Scalars['Int']['input']>;
+  endIdx?: InputMaybe<Scalars["Int"]["input"]>;
+  startIdx?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type AssetNodeStaleCausesArgs = {
-  partition?: InputMaybe<Scalars['String']['input']>;
+  partition?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 export type AssetNodeStaleCausesByPartitionArgs = {
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
-
 
 export type AssetNodeStaleStatusArgs = {
-  partition?: InputMaybe<Scalars['String']['input']>;
+  partition?: InputMaybe<Scalars["String"]["input"]>;
 };
 
-
 export type AssetNodeStaleStatusByPartitionArgs = {
-  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type AssetNodeDefinitionCollision = {
-  __typename?: 'AssetNodeDefinitionCollision';
+  __typename?: "AssetNodeDefinitionCollision";
   assetKey: AssetKey;
   repositories: Array<Repository>;
 };
@@ -714,8 +737,8 @@ export type AssetNodeDefinitionCollision = {
 export type AssetNodeOrError = AssetNode | AssetNotFoundError;
 
 export type AssetNotFoundError = Error & {
-  __typename?: 'AssetNotFoundError';
-  message: Scalars['String']['output'];
+  __typename?: "AssetNotFoundError";
+  message: Scalars["String"]["output"];
 };
 
 export type AssetOrError = Asset | AssetNotFoundError;
@@ -723,95 +746,108 @@ export type AssetOrError = Asset | AssetNotFoundError;
 export type AssetOwner = TeamAssetOwner | UserAssetOwner;
 
 export type AssetPartitionRange = {
-  __typename?: 'AssetPartitionRange';
+  __typename?: "AssetPartitionRange";
   assetKey: AssetKey;
   partitionRange?: Maybe<PartitionRange>;
 };
 
-export type AssetPartitionStatuses = DefaultPartitionStatuses | MultiPartitionStatuses | TimePartitionStatuses;
+export type AssetPartitionStatuses =
+  | DefaultPartitionStatuses
+  | MultiPartitionStatuses
+  | TimePartitionStatuses;
 
 export type AssetPartitions = {
-  __typename?: 'AssetPartitions';
+  __typename?: "AssetPartitions";
   assetKey: AssetKey;
   partitions?: Maybe<AssetBackfillTargetPartitions>;
 };
 
 export type AssetPartitionsStatusCounts = {
-  __typename?: 'AssetPartitionsStatusCounts';
+  __typename?: "AssetPartitionsStatusCounts";
   assetKey: AssetKey;
-  numPartitionsFailed: Scalars['Int']['output'];
-  numPartitionsInProgress: Scalars['Int']['output'];
-  numPartitionsMaterialized: Scalars['Int']['output'];
-  numPartitionsTargeted: Scalars['Int']['output'];
+  numPartitionsFailed: Scalars["Int"]["output"];
+  numPartitionsInProgress: Scalars["Int"]["output"];
+  numPartitionsMaterialized: Scalars["Int"]["output"];
+  numPartitionsTargeted: Scalars["Int"]["output"];
 };
 
 export type AssetRecord = {
-  __typename?: 'AssetRecord';
-  id: Scalars['String']['output'];
+  __typename?: "AssetRecord";
+  id: Scalars["String"]["output"];
   key: AssetKey;
 };
 
 export type AssetRecordConnection = {
-  __typename?: 'AssetRecordConnection';
+  __typename?: "AssetRecordConnection";
   assets: Array<AssetRecord>;
-  cursor?: Maybe<Scalars['String']['output']>;
+  cursor?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type AssetRecordsOrError = AssetRecordConnection | PythonError;
 
 export type AssetResultEventHistoryConnection = {
-  __typename?: 'AssetResultEventHistoryConnection';
-  cursor: Scalars['String']['output'];
+  __typename?: "AssetResultEventHistoryConnection";
+  cursor: Scalars["String"]["output"];
   results: Array<AssetResultEventType>;
 };
 
-export type AssetResultEventType = FailedToMaterializeEvent | MaterializationEvent | ObservationEvent;
+export type AssetResultEventType =
+  | FailedToMaterializeEvent
+  | MaterializationEvent
+  | ObservationEvent;
 
 export type AssetSelection = {
-  __typename?: 'AssetSelection';
+  __typename?: "AssetSelection";
   assetChecks: Array<AssetCheckhandle>;
   assetKeys: Array<AssetKey>;
-  assetSelectionString?: Maybe<Scalars['String']['output']>;
+  assetSelectionString?: Maybe<Scalars["String"]["output"]>;
   assets: Array<Asset>;
   assetsOrError: AssetsOrError;
 };
 
 /** The output from deleting asset history. */
-export type AssetWipeMutationResult = AssetNotFoundError | AssetWipeSuccess | PythonError | UnauthorizedError | UnsupportedOperationError;
+export type AssetWipeMutationResult =
+  | AssetNotFoundError
+  | AssetWipeSuccess
+  | PythonError
+  | UnauthorizedError
+  | UnsupportedOperationError;
 
 /** Output indicating that asset history was deleted. */
 export type AssetWipeSuccess = {
-  __typename?: 'AssetWipeSuccess';
+  __typename?: "AssetWipeSuccess";
   assetPartitionRanges: Array<AssetPartitionRange>;
 };
 
 export type AssetsOrError = AssetConnection | PythonError;
 
 export type AutoMaterializeAssetEvaluationNeedsMigrationError = Error & {
-  __typename?: 'AutoMaterializeAssetEvaluationNeedsMigrationError';
-  message: Scalars['String']['output'];
+  __typename?: "AutoMaterializeAssetEvaluationNeedsMigrationError";
+  message: Scalars["String"]["output"];
 };
 
 export type AutoMaterializeAssetEvaluationRecord = {
-  __typename?: 'AutoMaterializeAssetEvaluationRecord';
+  __typename?: "AutoMaterializeAssetEvaluationRecord";
   assetKey: AssetKey;
-  evaluationId: Scalars['ID']['output'];
-  id: Scalars['ID']['output'];
-  numDiscarded: Scalars['Int']['output'];
-  numRequested: Scalars['Int']['output'];
-  numSkipped: Scalars['Int']['output'];
+  evaluationId: Scalars["ID"]["output"];
+  id: Scalars["ID"]["output"];
+  numDiscarded: Scalars["Int"]["output"];
+  numRequested: Scalars["Int"]["output"];
+  numSkipped: Scalars["Int"]["output"];
   rules?: Maybe<Array<AutoMaterializeRule>>;
   rulesWithRuleEvaluations: Array<AutoMaterializeRuleWithRuleEvaluations>;
-  runIds: Array<Scalars['String']['output']>;
-  timestamp: Scalars['Float']['output'];
+  runIds: Array<Scalars["String"]["output"]>;
+  timestamp: Scalars["Float"]["output"];
 };
 
 export type AutoMaterializeAssetEvaluationRecords = {
-  __typename?: 'AutoMaterializeAssetEvaluationRecords';
+  __typename?: "AutoMaterializeAssetEvaluationRecords";
   records: Array<AutoMaterializeAssetEvaluationRecord>;
 };
 
-export type AutoMaterializeAssetEvaluationRecordsOrError = AutoMaterializeAssetEvaluationNeedsMigrationError | AutoMaterializeAssetEvaluationRecords;
+export type AutoMaterializeAssetEvaluationRecordsOrError =
+  | AutoMaterializeAssetEvaluationNeedsMigrationError
+  | AutoMaterializeAssetEvaluationRecords;
 
 /**
  * Represents the set of results of the auto-materialize logic.
@@ -824,131 +860,137 @@ export type AutoMaterializeAssetEvaluationRecordsOrError = AutoMaterializeAssetE
  *
  */
 export enum AutoMaterializeDecisionType {
-  Discard = 'DISCARD',
-  Materialize = 'MATERIALIZE',
-  Skip = 'SKIP'
+  Discard = "DISCARD",
+  Materialize = "MATERIALIZE",
+  Skip = "SKIP",
 }
 
 export type AutoMaterializePolicy = {
-  __typename?: 'AutoMaterializePolicy';
-  maxMaterializationsPerMinute?: Maybe<Scalars['Int']['output']>;
+  __typename?: "AutoMaterializePolicy";
+  maxMaterializationsPerMinute?: Maybe<Scalars["Int"]["output"]>;
   policyType: AutoMaterializePolicyType;
   rules: Array<AutoMaterializeRule>;
 };
 
 /** An enumeration. */
 export enum AutoMaterializePolicyType {
-  Eager = 'EAGER',
-  Lazy = 'LAZY'
+  Eager = "EAGER",
+  Lazy = "LAZY",
 }
 
 export type AutoMaterializeRule = {
-  __typename?: 'AutoMaterializeRule';
-  className: Scalars['String']['output'];
+  __typename?: "AutoMaterializeRule";
+  className: Scalars["String"]["output"];
   decisionType: AutoMaterializeDecisionType;
-  description: Scalars['String']['output'];
+  description: Scalars["String"]["output"];
 };
 
 export type AutoMaterializeRuleEvaluation = {
-  __typename?: 'AutoMaterializeRuleEvaluation';
+  __typename?: "AutoMaterializeRuleEvaluation";
   evaluationData?: Maybe<AutoMaterializeRuleEvaluationData>;
   partitionKeysOrError?: Maybe<PartitionKeysOrError>;
 };
 
-export type AutoMaterializeRuleEvaluationData = ParentMaterializedRuleEvaluationData | TextRuleEvaluationData | WaitingOnKeysRuleEvaluationData;
+export type AutoMaterializeRuleEvaluationData =
+  | ParentMaterializedRuleEvaluationData
+  | TextRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData;
 
 export type AutoMaterializeRuleWithRuleEvaluations = {
-  __typename?: 'AutoMaterializeRuleWithRuleEvaluations';
+  __typename?: "AutoMaterializeRuleWithRuleEvaluations";
   rule: AutoMaterializeRule;
   ruleEvaluations: Array<AutoMaterializeRuleEvaluation>;
 };
 
 export type AutomationCondition = {
-  __typename?: 'AutomationCondition';
-  expandedLabel: Array<Scalars['String']['output']>;
-  label?: Maybe<Scalars['String']['output']>;
+  __typename?: "AutomationCondition";
+  expandedLabel: Array<Scalars["String"]["output"]>;
+  label?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type AutomationConditionEvaluationNode = {
-  __typename?: 'AutomationConditionEvaluationNode';
-  childUniqueIds: Array<Scalars['String']['output']>;
-  endTimestamp?: Maybe<Scalars['Float']['output']>;
+  __typename?: "AutomationConditionEvaluationNode";
+  childUniqueIds: Array<Scalars["String"]["output"]>;
+  endTimestamp?: Maybe<Scalars["Float"]["output"]>;
   entityKey: EntityKey;
-  expandedLabel: Array<Scalars['String']['output']>;
-  isPartitioned: Scalars['Boolean']['output'];
-  numCandidates?: Maybe<Scalars['Int']['output']>;
-  numTrue: Scalars['Int']['output'];
-  operatorType: Scalars['String']['output'];
-  startTimestamp?: Maybe<Scalars['Float']['output']>;
-  uniqueId: Scalars['String']['output'];
-  userLabel?: Maybe<Scalars['String']['output']>;
+  expandedLabel: Array<Scalars["String"]["output"]>;
+  isPartitioned: Scalars["Boolean"]["output"];
+  numCandidates?: Maybe<Scalars["Int"]["output"]>;
+  numTrue: Scalars["Int"]["output"];
+  operatorType: Scalars["String"]["output"];
+  startTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  uniqueId: Scalars["String"]["output"];
+  userLabel?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type BackfillNotFoundError = Error & {
-  __typename?: 'BackfillNotFoundError';
-  backfillId: Scalars['String']['output'];
-  message: Scalars['String']['output'];
+  __typename?: "BackfillNotFoundError";
+  backfillId: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
 };
 
 export type BackfillPolicy = {
-  __typename?: 'BackfillPolicy';
-  description: Scalars['String']['output'];
-  maxPartitionsPerRun?: Maybe<Scalars['Int']['output']>;
+  __typename?: "BackfillPolicy";
+  description: Scalars["String"]["output"];
+  maxPartitionsPerRun?: Maybe<Scalars["Int"]["output"]>;
   policyType: BackfillPolicyType;
 };
 
 /** An enumeration. */
 export enum BackfillPolicyType {
-  MultiRun = 'MULTI_RUN',
-  SingleRun = 'SINGLE_RUN'
+  MultiRun = "MULTI_RUN",
+  SingleRun = "SINGLE_RUN",
 }
 
 export type BoolMetadataEntry = MetadataEntry & {
-  __typename?: 'BoolMetadataEntry';
-  boolValue?: Maybe<Scalars['Boolean']['output']>;
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
+  __typename?: "BoolMetadataEntry";
+  boolValue?: Maybe<Scalars["Boolean"]["output"]>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
 };
 
 export enum BulkActionStatus {
-  Canceled = 'CANCELED',
-  Canceling = 'CANCELING',
-  Completed = 'COMPLETED',
-  CompletedFailed = 'COMPLETED_FAILED',
-  CompletedSuccess = 'COMPLETED_SUCCESS',
-  Failed = 'FAILED',
-  Failing = 'FAILING',
-  Requested = 'REQUESTED'
+  Canceled = "CANCELED",
+  Canceling = "CANCELING",
+  Completed = "COMPLETED",
+  CompletedFailed = "COMPLETED_FAILED",
+  CompletedSuccess = "COMPLETED_SUCCESS",
+  Failed = "FAILED",
+  Failing = "FAILING",
+  Requested = "REQUESTED",
 }
 
 /** This type represents a filter on Dagster Bulk Actions (backfills). */
 export type BulkActionsFilter = {
-  createdAfter?: InputMaybe<Scalars['Float']['input']>;
-  createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  createdAfter?: InputMaybe<Scalars["Float"]["input"]>;
+  createdBefore?: InputMaybe<Scalars["Float"]["input"]>;
   statuses?: InputMaybe<Array<BulkActionStatus>>;
 };
 
-export type CancelBackfillResult = CancelBackfillSuccess | PythonError | UnauthorizedError;
+export type CancelBackfillResult =
+  | CancelBackfillSuccess
+  | PythonError
+  | UnauthorizedError;
 
 export type CancelBackfillSuccess = {
-  __typename?: 'CancelBackfillSuccess';
-  backfillId: Scalars['String']['output'];
+  __typename?: "CancelBackfillSuccess";
+  backfillId: Scalars["String"]["output"];
 };
 
 export type CapturedLogs = {
-  __typename?: 'CapturedLogs';
-  cursor?: Maybe<Scalars['String']['output']>;
-  logKey: Array<Scalars['String']['output']>;
-  stderr?: Maybe<Scalars['String']['output']>;
-  stdout?: Maybe<Scalars['String']['output']>;
+  __typename?: "CapturedLogs";
+  cursor?: Maybe<Scalars["String"]["output"]>;
+  logKey: Array<Scalars["String"]["output"]>;
+  stderr?: Maybe<Scalars["String"]["output"]>;
+  stdout?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type CapturedLogsMetadata = {
-  __typename?: 'CapturedLogsMetadata';
-  stderrDownloadUrl?: Maybe<Scalars['String']['output']>;
-  stderrLocation?: Maybe<Scalars['String']['output']>;
-  stdoutDownloadUrl?: Maybe<Scalars['String']['output']>;
-  stdoutLocation?: Maybe<Scalars['String']['output']>;
+  __typename?: "CapturedLogsMetadata";
+  stderrDownloadUrl?: Maybe<Scalars["String"]["output"]>;
+  stderrLocation?: Maybe<Scalars["String"]["output"]>;
+  stdoutDownloadUrl?: Maybe<Scalars["String"]["output"]>;
+  stdoutLocation?: Maybe<Scalars["String"]["output"]>;
 };
 
 /**
@@ -958,42 +1000,42 @@ export type CapturedLogsMetadata = {
  *
  */
 export enum ChangeReason {
-  CodeVersion = 'CODE_VERSION',
-  Dependencies = 'DEPENDENCIES',
-  Metadata = 'METADATA',
-  New = 'NEW',
-  PartitionsDefinition = 'PARTITIONS_DEFINITION',
-  Removed = 'REMOVED',
-  Tags = 'TAGS'
+  CodeVersion = "CODE_VERSION",
+  Dependencies = "DEPENDENCIES",
+  Metadata = "METADATA",
+  New = "NEW",
+  PartitionsDefinition = "PARTITIONS_DEFINITION",
+  Removed = "REMOVED",
+  Tags = "TAGS",
 }
 
 export type ClaimedConcurrencySlot = {
-  __typename?: 'ClaimedConcurrencySlot';
-  runId: Scalars['String']['output'];
-  stepKey: Scalars['String']['output'];
+  __typename?: "ClaimedConcurrencySlot";
+  runId: Scalars["String"]["output"];
+  stepKey: Scalars["String"]["output"];
 };
 
 export type CodeReferencesMetadataEntry = MetadataEntry & {
-  __typename?: 'CodeReferencesMetadataEntry';
+  __typename?: "CodeReferencesMetadataEntry";
   codeReferences: Array<SourceLocation>;
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
 };
 
 /** Column entity - represents a column within a table */
 export type Column = {
-  __typename?: 'Column';
-  description?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
-  type: Scalars['String']['output'];
+  __typename?: "Column";
+  description?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
+  type: Scalars["String"]["output"];
 };
 
 export type CompositeConfigType = ConfigType & {
-  __typename?: 'CompositeConfigType';
-  description?: Maybe<Scalars['String']['output']>;
+  __typename?: "CompositeConfigType";
+  description?: Maybe<Scalars["String"]["output"]>;
   fields: Array<ConfigTypeField>;
-  isSelector: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
+  isSelector: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
   /**
    *
    * This is an odd and problematic field. It recursively goes down to
@@ -1020,57 +1062,56 @@ export type CompositeConfigType = ConfigType & {
    * navigating the full schema client-side and not innerTypes.
    *
    */
-  typeParamKeys: Array<Scalars['String']['output']>;
+  typeParamKeys: Array<Scalars["String"]["output"]>;
 };
 
-export type CompositeSolidDefinition = ISolidDefinition & SolidContainer & {
-  __typename?: 'CompositeSolidDefinition';
-  assetNodes: Array<AssetNode>;
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
-  inputDefinitions: Array<InputDefinition>;
-  inputMappings: Array<InputMapping>;
-  metadata: Array<MetadataItemDefinition>;
-  modes: Array<Mode>;
-  name: Scalars['String']['output'];
-  outputDefinitions: Array<OutputDefinition>;
-  outputMappings: Array<OutputMapping>;
-  pools: Array<Scalars['String']['output']>;
-  solidHandle?: Maybe<SolidHandle>;
-  solidHandles: Array<SolidHandle>;
-  solids: Array<Solid>;
-};
-
+export type CompositeSolidDefinition = ISolidDefinition &
+  SolidContainer & {
+    __typename?: "CompositeSolidDefinition";
+    assetNodes: Array<AssetNode>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    id: Scalars["ID"]["output"];
+    inputDefinitions: Array<InputDefinition>;
+    inputMappings: Array<InputMapping>;
+    metadata: Array<MetadataItemDefinition>;
+    modes: Array<Mode>;
+    name: Scalars["String"]["output"];
+    outputDefinitions: Array<OutputDefinition>;
+    outputMappings: Array<OutputMapping>;
+    pools: Array<Scalars["String"]["output"]>;
+    solidHandle?: Maybe<SolidHandle>;
+    solidHandles: Array<SolidHandle>;
+    solids: Array<Solid>;
+  };
 
 export type CompositeSolidDefinitionSolidHandleArgs = {
-  handleID: Scalars['String']['input'];
+  handleID: Scalars["String"]["input"];
 };
 
-
 export type CompositeSolidDefinitionSolidHandlesArgs = {
-  parentHandleID?: InputMaybe<Scalars['String']['input']>;
+  parentHandleID?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type ConcurrencyKeyInfo = {
-  __typename?: 'ConcurrencyKeyInfo';
-  activeRunIds: Array<Scalars['String']['output']>;
-  activeSlotCount: Scalars['Int']['output'];
-  assignedStepCount: Scalars['Int']['output'];
-  assignedStepRunIds: Array<Scalars['String']['output']>;
+  __typename?: "ConcurrencyKeyInfo";
+  activeRunIds: Array<Scalars["String"]["output"]>;
+  activeSlotCount: Scalars["Int"]["output"];
+  assignedStepCount: Scalars["Int"]["output"];
+  assignedStepRunIds: Array<Scalars["String"]["output"]>;
   claimedSlots: Array<ClaimedConcurrencySlot>;
-  concurrencyKey: Scalars['String']['output'];
-  limit?: Maybe<Scalars['Int']['output']>;
-  pendingStepCount: Scalars['Int']['output'];
-  pendingStepRunIds: Array<Scalars['String']['output']>;
+  concurrencyKey: Scalars["String"]["output"];
+  limit?: Maybe<Scalars["Int"]["output"]>;
+  pendingStepCount: Scalars["Int"]["output"];
+  pendingStepRunIds: Array<Scalars["String"]["output"]>;
   pendingSteps: Array<PendingConcurrencyStep>;
-  slotCount: Scalars['Int']['output'];
-  usingDefaultLimit?: Maybe<Scalars['Boolean']['output']>;
+  slotCount: Scalars["Int"]["output"];
+  usingDefaultLimit?: Maybe<Scalars["Boolean"]["output"]>;
 };
 
 export type ConfigType = {
-  description?: Maybe<Scalars['String']['output']>;
-  isSelector: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  isSelector: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
   /**
    *
    * This is an odd and problematic field. It recursively goes down to
@@ -1097,349 +1138,410 @@ export type ConfigType = {
    * navigating the full schema client-side and not innerTypes.
    *
    */
-  typeParamKeys: Array<Scalars['String']['output']>;
+  typeParamKeys: Array<Scalars["String"]["output"]>;
 };
 
 export type ConfigTypeField = {
-  __typename?: 'ConfigTypeField';
+  __typename?: "ConfigTypeField";
   configType: ConfigType;
-  configTypeKey: Scalars['String']['output'];
-  defaultValueAsJson?: Maybe<Scalars['String']['output']>;
-  description?: Maybe<Scalars['String']['output']>;
-  isRequired: Scalars['Boolean']['output'];
-  name: Scalars['String']['output'];
+  configTypeKey: Scalars["String"]["output"];
+  defaultValueAsJson?: Maybe<Scalars["String"]["output"]>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  isRequired: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
 };
 
 export type ConfigTypeNotFoundError = Error & {
-  __typename?: 'ConfigTypeNotFoundError';
-  configTypeName: Scalars['String']['output'];
-  message: Scalars['String']['output'];
+  __typename?: "ConfigTypeNotFoundError";
+  configTypeName: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
   pipeline: Pipeline;
 };
 
-export type ConfigTypeOrError = CompositeConfigType | ConfigTypeNotFoundError | EnumConfigType | PipelineNotFoundError | PythonError | RegularConfigType;
+export type ConfigTypeOrError =
+  | CompositeConfigType
+  | ConfigTypeNotFoundError
+  | EnumConfigType
+  | PipelineNotFoundError
+  | PythonError
+  | RegularConfigType;
 
 export type ConfiguredValue = {
-  __typename?: 'ConfiguredValue';
-  key: Scalars['String']['output'];
+  __typename?: "ConfiguredValue";
+  key: Scalars["String"]["output"];
   type: ConfiguredValueType;
-  value: Scalars['String']['output'];
+  value: Scalars["String"]["output"];
 };
 
 export enum ConfiguredValueType {
-  EnvVar = 'ENV_VAR',
-  Value = 'VALUE'
+  EnvVar = "ENV_VAR",
+  Value = "VALUE",
 }
 
 export type ConflictingExecutionParamsError = Error & {
-  __typename?: 'ConflictingExecutionParamsError';
-  message: Scalars['String']['output'];
+  __typename?: "ConflictingExecutionParamsError";
+  message: Scalars["String"]["output"];
 };
 
 export type CreateInvitationInput = {
   /** Email address to invite */
-  email: Scalars['String']['input'];
+  email: Scalars["String"]["input"];
   /** Organization name to invite user to */
-  orgName: Scalars['String']['input'];
+  orgName: Scalars["String"]["input"];
 };
 
 export type CreateInvitationPayload = {
-  __typename?: 'CreateInvitationPayload';
+  __typename?: "CreateInvitationPayload";
   invitation?: Maybe<Invitation>;
-  message: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type CronFreshnessPolicy = {
-  __typename?: 'CronFreshnessPolicy';
-  deadlineCron: Scalars['String']['output'];
-  lowerBoundDeltaSeconds: Scalars['Int']['output'];
-  timezone: Scalars['String']['output'];
+  __typename?: "CronFreshnessPolicy";
+  deadlineCron: Scalars["String"]["output"];
+  lowerBoundDeltaSeconds: Scalars["Int"]["output"];
+  timezone: Scalars["String"]["output"];
 };
 
 export type DaemonHealth = {
-  __typename?: 'DaemonHealth';
+  __typename?: "DaemonHealth";
   allDaemonStatuses: Array<DaemonStatus>;
   daemonStatus: DaemonStatus;
-  id: Scalars['String']['output'];
+  id: Scalars["String"]["output"];
 };
 
-
 export type DaemonHealthDaemonStatusArgs = {
-  daemonType?: InputMaybe<Scalars['String']['input']>;
+  daemonType?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type DaemonStatus = {
-  __typename?: 'DaemonStatus';
-  daemonType: Scalars['String']['output'];
-  healthy?: Maybe<Scalars['Boolean']['output']>;
-  id: Scalars['ID']['output'];
+  __typename?: "DaemonStatus";
+  daemonType: Scalars["String"]["output"];
+  healthy?: Maybe<Scalars["Boolean"]["output"]>;
+  id: Scalars["ID"]["output"];
   lastHeartbeatErrors: Array<PythonError>;
-  lastHeartbeatTime?: Maybe<Scalars['Float']['output']>;
-  required: Scalars['Boolean']['output'];
+  lastHeartbeatTime?: Maybe<Scalars["Float"]["output"]>;
+  required: Scalars["Boolean"]["output"];
 };
 
 /** The types of events that may be yielded by op and job execution. */
 export enum DagsterEventType {
-  AlertFailure = 'ALERT_FAILURE',
-  AlertStart = 'ALERT_START',
-  AlertSuccess = 'ALERT_SUCCESS',
-  AssetCheckEvaluation = 'ASSET_CHECK_EVALUATION',
-  AssetCheckEvaluationPlanned = 'ASSET_CHECK_EVALUATION_PLANNED',
-  AssetFailedToMaterialize = 'ASSET_FAILED_TO_MATERIALIZE',
-  AssetHealthChanged = 'ASSET_HEALTH_CHANGED',
-  AssetMaterialization = 'ASSET_MATERIALIZATION',
-  AssetMaterializationPlanned = 'ASSET_MATERIALIZATION_PLANNED',
-  AssetObservation = 'ASSET_OBSERVATION',
-  AssetStoreOperation = 'ASSET_STORE_OPERATION',
-  AssetWiped = 'ASSET_WIPED',
-  EngineEvent = 'ENGINE_EVENT',
-  FreshnessStateChange = 'FRESHNESS_STATE_CHANGE',
-  FreshnessStateEvaluation = 'FRESHNESS_STATE_EVALUATION',
-  HandledOutput = 'HANDLED_OUTPUT',
-  HookCompleted = 'HOOK_COMPLETED',
-  HookErrored = 'HOOK_ERRORED',
-  HookSkipped = 'HOOK_SKIPPED',
-  LoadedInput = 'LOADED_INPUT',
-  LogsCaptured = 'LOGS_CAPTURED',
-  ObjectStoreOperation = 'OBJECT_STORE_OPERATION',
-  PipelineCanceled = 'PIPELINE_CANCELED',
-  PipelineCanceling = 'PIPELINE_CANCELING',
-  PipelineDequeued = 'PIPELINE_DEQUEUED',
-  PipelineEnqueued = 'PIPELINE_ENQUEUED',
-  PipelineFailure = 'PIPELINE_FAILURE',
-  PipelineStart = 'PIPELINE_START',
-  PipelineStarting = 'PIPELINE_STARTING',
-  PipelineSuccess = 'PIPELINE_SUCCESS',
-  ResourceInitFailure = 'RESOURCE_INIT_FAILURE',
-  ResourceInitStarted = 'RESOURCE_INIT_STARTED',
-  ResourceInitSuccess = 'RESOURCE_INIT_SUCCESS',
-  RunCanceled = 'RUN_CANCELED',
-  RunCanceling = 'RUN_CANCELING',
-  RunDequeued = 'RUN_DEQUEUED',
-  RunEnqueued = 'RUN_ENQUEUED',
-  RunFailure = 'RUN_FAILURE',
-  RunStart = 'RUN_START',
-  RunStarting = 'RUN_STARTING',
-  RunSuccess = 'RUN_SUCCESS',
-  StepExpectationResult = 'STEP_EXPECTATION_RESULT',
-  StepFailure = 'STEP_FAILURE',
-  StepInput = 'STEP_INPUT',
-  StepOutput = 'STEP_OUTPUT',
-  StepRestarted = 'STEP_RESTARTED',
-  StepSkipped = 'STEP_SKIPPED',
-  StepStart = 'STEP_START',
-  StepSuccess = 'STEP_SUCCESS',
-  StepUpForRetry = 'STEP_UP_FOR_RETRY',
-  StepWorkerStarted = 'STEP_WORKER_STARTED',
-  StepWorkerStarting = 'STEP_WORKER_STARTING'
+  AlertFailure = "ALERT_FAILURE",
+  AlertStart = "ALERT_START",
+  AlertSuccess = "ALERT_SUCCESS",
+  AssetCheckEvaluation = "ASSET_CHECK_EVALUATION",
+  AssetCheckEvaluationPlanned = "ASSET_CHECK_EVALUATION_PLANNED",
+  AssetFailedToMaterialize = "ASSET_FAILED_TO_MATERIALIZE",
+  AssetHealthChanged = "ASSET_HEALTH_CHANGED",
+  AssetMaterialization = "ASSET_MATERIALIZATION",
+  AssetMaterializationPlanned = "ASSET_MATERIALIZATION_PLANNED",
+  AssetObservation = "ASSET_OBSERVATION",
+  AssetStoreOperation = "ASSET_STORE_OPERATION",
+  AssetWiped = "ASSET_WIPED",
+  EngineEvent = "ENGINE_EVENT",
+  FreshnessStateChange = "FRESHNESS_STATE_CHANGE",
+  FreshnessStateEvaluation = "FRESHNESS_STATE_EVALUATION",
+  HandledOutput = "HANDLED_OUTPUT",
+  HookCompleted = "HOOK_COMPLETED",
+  HookErrored = "HOOK_ERRORED",
+  HookSkipped = "HOOK_SKIPPED",
+  LoadedInput = "LOADED_INPUT",
+  LogsCaptured = "LOGS_CAPTURED",
+  ObjectStoreOperation = "OBJECT_STORE_OPERATION",
+  PipelineCanceled = "PIPELINE_CANCELED",
+  PipelineCanceling = "PIPELINE_CANCELING",
+  PipelineDequeued = "PIPELINE_DEQUEUED",
+  PipelineEnqueued = "PIPELINE_ENQUEUED",
+  PipelineFailure = "PIPELINE_FAILURE",
+  PipelineStart = "PIPELINE_START",
+  PipelineStarting = "PIPELINE_STARTING",
+  PipelineSuccess = "PIPELINE_SUCCESS",
+  ResourceInitFailure = "RESOURCE_INIT_FAILURE",
+  ResourceInitStarted = "RESOURCE_INIT_STARTED",
+  ResourceInitSuccess = "RESOURCE_INIT_SUCCESS",
+  RunCanceled = "RUN_CANCELED",
+  RunCanceling = "RUN_CANCELING",
+  RunDequeued = "RUN_DEQUEUED",
+  RunEnqueued = "RUN_ENQUEUED",
+  RunFailure = "RUN_FAILURE",
+  RunStart = "RUN_START",
+  RunStarting = "RUN_STARTING",
+  RunSuccess = "RUN_SUCCESS",
+  StepExpectationResult = "STEP_EXPECTATION_RESULT",
+  StepFailure = "STEP_FAILURE",
+  StepInput = "STEP_INPUT",
+  StepOutput = "STEP_OUTPUT",
+  StepRestarted = "STEP_RESTARTED",
+  StepSkipped = "STEP_SKIPPED",
+  StepStart = "STEP_START",
+  StepSuccess = "STEP_SUCCESS",
+  StepUpForRetry = "STEP_UP_FOR_RETRY",
+  StepWorkerStarted = "STEP_WORKER_STARTED",
+  StepWorkerStarting = "STEP_WORKER_STARTING",
 }
 
 export type DagsterLibraryVersion = {
-  __typename?: 'DagsterLibraryVersion';
-  name: Scalars['String']['output'];
-  version: Scalars['String']['output'];
+  __typename?: "DagsterLibraryVersion";
+  name: Scalars["String"]["output"];
+  version: Scalars["String"]["output"];
 };
 
-export type DagsterRunEvent = AlertFailureEvent | AlertStartEvent | AlertSuccessEvent | AssetCheckEvaluationEvent | AssetCheckEvaluationPlannedEvent | AssetMaterializationPlannedEvent | EngineEvent | ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepRestartEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | FailedToMaterializeEvent | HandledOutputEvent | HealthChangedEvent | HookCompletedEvent | HookErroredEvent | HookSkippedEvent | LoadedInputEvent | LogMessageEvent | LogsCapturedEvent | MaterializationEvent | ObjectStoreOperationEvent | ObservationEvent | ResourceInitFailureEvent | ResourceInitStartedEvent | ResourceInitSuccessEvent | RunCanceledEvent | RunCancelingEvent | RunDequeuedEvent | RunEnqueuedEvent | RunFailureEvent | RunStartEvent | RunStartingEvent | RunSuccessEvent | StepExpectationResultEvent | StepWorkerStartedEvent | StepWorkerStartingEvent;
+export type DagsterRunEvent =
+  | AlertFailureEvent
+  | AlertStartEvent
+  | AlertSuccessEvent
+  | AssetCheckEvaluationEvent
+  | AssetCheckEvaluationPlannedEvent
+  | AssetMaterializationPlannedEvent
+  | EngineEvent
+  | ExecutionStepFailureEvent
+  | ExecutionStepInputEvent
+  | ExecutionStepOutputEvent
+  | ExecutionStepRestartEvent
+  | ExecutionStepSkippedEvent
+  | ExecutionStepStartEvent
+  | ExecutionStepSuccessEvent
+  | ExecutionStepUpForRetryEvent
+  | FailedToMaterializeEvent
+  | HandledOutputEvent
+  | HealthChangedEvent
+  | HookCompletedEvent
+  | HookErroredEvent
+  | HookSkippedEvent
+  | LoadedInputEvent
+  | LogMessageEvent
+  | LogsCapturedEvent
+  | MaterializationEvent
+  | ObjectStoreOperationEvent
+  | ObservationEvent
+  | ResourceInitFailureEvent
+  | ResourceInitStartedEvent
+  | ResourceInitSuccessEvent
+  | RunCanceledEvent
+  | RunCancelingEvent
+  | RunDequeuedEvent
+  | RunEnqueuedEvent
+  | RunFailureEvent
+  | RunStartEvent
+  | RunStartingEvent
+  | RunSuccessEvent
+  | StepExpectationResultEvent
+  | StepWorkerStartedEvent
+  | StepWorkerStartingEvent;
 
 export type DagsterType = {
-  description?: Maybe<Scalars['String']['output']>;
-  displayName: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName: Scalars["String"]["output"];
   innerTypes: Array<DagsterType>;
   inputSchemaType?: Maybe<ConfigType>;
-  isBuiltin: Scalars['Boolean']['output'];
-  isList: Scalars['Boolean']['output'];
-  isNothing: Scalars['Boolean']['output'];
-  isNullable: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
+  isBuiltin: Scalars["Boolean"]["output"];
+  isList: Scalars["Boolean"]["output"];
+  isNothing: Scalars["Boolean"]["output"];
+  isNullable: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
   metadataEntries: Array<MetadataEntry>;
-  name?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars["String"]["output"]>;
   outputSchemaType?: Maybe<ConfigType>;
 };
 
 export type DagsterTypeNotFoundError = Error & {
-  __typename?: 'DagsterTypeNotFoundError';
-  dagsterTypeName: Scalars['String']['output'];
-  message: Scalars['String']['output'];
+  __typename?: "DagsterTypeNotFoundError";
+  dagsterTypeName: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
 };
 
-export type DagsterTypeOrError = DagsterTypeNotFoundError | PipelineNotFoundError | PythonError | RegularDagsterType;
+export type DagsterTypeOrError =
+  | DagsterTypeNotFoundError
+  | PipelineNotFoundError
+  | PythonError
+  | RegularDagsterType;
 
 /** Dataset entity - represents a dataset within an organization */
 export type Dataset = {
-  __typename?: 'Dataset';
-  catalog: Scalars['String']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  createdBy: Scalars['ID']['output'];
+  __typename?: "Dataset";
+  catalog: Scalars["String"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  createdBy: Scalars["ID"]["output"];
   datasetType: DatasetType;
-  deletedAt?: Maybe<Scalars['DateTime']['output']>;
-  description?: Maybe<Scalars['String']['output']>;
-  displayName: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  isPublic: Scalars['Boolean']['output'];
-  name: Scalars['String']['output'];
-  orgId: Scalars['ID']['output'];
-  schema: Scalars['String']['output'];
+  deletedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName: Scalars["String"]["output"];
+  id: Scalars["ID"]["output"];
+  isPublic: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  schema: Scalars["String"]["output"];
   tables: Array<Table>;
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 export enum DatasetType {
-  DataConnector = 'DATA_CONNECTOR',
-  DataIngestion = 'DATA_INGESTION',
-  UserModel = 'USER_MODEL'
+  DataConnector = "DATA_CONNECTOR",
+  DataIngestion = "DATA_INGESTION",
+  UserModel = "USER_MODEL",
 }
 
 export type DefaultPartitionStatuses = {
-  __typename?: 'DefaultPartitionStatuses';
-  failedPartitions: Array<Scalars['String']['output']>;
-  materializedPartitions: Array<Scalars['String']['output']>;
-  materializingPartitions: Array<Scalars['String']['output']>;
-  unmaterializedPartitions: Array<Scalars['String']['output']>;
+  __typename?: "DefaultPartitionStatuses";
+  failedPartitions: Array<Scalars["String"]["output"]>;
+  materializedPartitions: Array<Scalars["String"]["output"]>;
+  materializingPartitions: Array<Scalars["String"]["output"]>;
+  unmaterializedPartitions: Array<Scalars["String"]["output"]>;
 };
 
 export type DefinitionOwner = TeamDefinitionOwner | UserDefinitionOwner;
 
 export type DefinitionTag = {
-  __typename?: 'DefinitionTag';
-  key: Scalars['String']['output'];
-  value: Scalars['String']['output'];
+  __typename?: "DefinitionTag";
+  key: Scalars["String"]["output"];
+  value: Scalars["String"]["output"];
 };
 
 export type DefsKeyStateInfo = {
-  __typename?: 'DefsKeyStateInfo';
-  createTimestamp: Scalars['Float']['output'];
+  __typename?: "DefsKeyStateInfo";
+  createTimestamp: Scalars["Float"]["output"];
   managementType: DefsStateManagementType;
-  version: Scalars['String']['output'];
+  version: Scalars["String"]["output"];
 };
 
 export type DefsStateInfo = {
-  __typename?: 'DefsStateInfo';
+  __typename?: "DefsStateInfo";
   keyStateInfo: Array<DefsStateInfoEntry>;
 };
 
 export type DefsStateInfoEntry = {
-  __typename?: 'DefsStateInfoEntry';
+  __typename?: "DefsStateInfoEntry";
   info?: Maybe<DefsKeyStateInfo>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
 };
 
 /** An enumeration. */
 export enum DefsStateManagementType {
-  LegacyCodeServerSnapshots = 'LEGACY_CODE_SERVER_SNAPSHOTS',
-  LocalFilesystem = 'LOCAL_FILESYSTEM',
-  VersionedStateStorage = 'VERSIONED_STATE_STORAGE'
+  LegacyCodeServerSnapshots = "LEGACY_CODE_SERVER_SNAPSHOTS",
+  LocalFilesystem = "LOCAL_FILESYSTEM",
+  VersionedStateStorage = "VERSIONED_STATE_STORAGE",
 }
 
-export type DeleteDynamicPartitionsResult = DeleteDynamicPartitionsSuccess | PythonError | UnauthorizedError;
+export type DeleteDynamicPartitionsResult =
+  | DeleteDynamicPartitionsSuccess
+  | PythonError
+  | UnauthorizedError;
 
 export type DeleteDynamicPartitionsSuccess = {
-  __typename?: 'DeleteDynamicPartitionsSuccess';
-  partitionsDefName: Scalars['String']['output'];
+  __typename?: "DeleteDynamicPartitionsSuccess";
+  partitionsDefName: Scalars["String"]["output"];
 };
 
 /** The output from deleting a run. */
-export type DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | RunNotFoundError | UnauthorizedError;
+export type DeletePipelineRunResult =
+  | DeletePipelineRunSuccess
+  | PythonError
+  | RunNotFoundError
+  | UnauthorizedError;
 
 /** Output indicating that a run was deleted. */
 export type DeletePipelineRunSuccess = {
-  __typename?: 'DeletePipelineRunSuccess';
-  runId: Scalars['String']['output'];
+  __typename?: "DeletePipelineRunSuccess";
+  runId: Scalars["String"]["output"];
 };
 
 /** Deletes a run from storage. */
 export type DeleteRunMutation = {
-  __typename?: 'DeleteRunMutation';
+  __typename?: "DeleteRunMutation";
   Output: DeletePipelineRunResult;
 };
 
 export type DimensionDefinitionType = {
-  __typename?: 'DimensionDefinitionType';
-  description: Scalars['String']['output'];
-  dynamicPartitionsDefinitionName?: Maybe<Scalars['String']['output']>;
-  isPrimaryDimension: Scalars['Boolean']['output'];
-  name: Scalars['String']['output'];
+  __typename?: "DimensionDefinitionType";
+  description: Scalars["String"]["output"];
+  dynamicPartitionsDefinitionName?: Maybe<Scalars["String"]["output"]>;
+  isPrimaryDimension: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
   type: PartitionDefinitionType;
 };
 
 export type DimensionPartitionKeys = {
-  __typename?: 'DimensionPartitionKeys';
-  name: Scalars['String']['output'];
-  partitionKeys: Array<Scalars['String']['output']>;
+  __typename?: "DimensionPartitionKeys";
+  name: Scalars["String"]["output"];
+  partitionKeys: Array<Scalars["String"]["output"]>;
   type: PartitionDefinitionType;
 };
 
 export type DisplayableEvent = {
-  description?: Maybe<Scalars['String']['output']>;
-  label?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  label?: Maybe<Scalars["String"]["output"]>;
   metadataEntries: Array<MetadataEntry>;
 };
 
 export type DryRunInstigationTick = {
-  __typename?: 'DryRunInstigationTick';
+  __typename?: "DryRunInstigationTick";
   evaluationResult?: Maybe<TickEvaluation>;
-  timestamp?: Maybe<Scalars['Float']['output']>;
+  timestamp?: Maybe<Scalars["Float"]["output"]>;
 };
 
 export type DryRunInstigationTicks = {
-  __typename?: 'DryRunInstigationTicks';
-  cursor: Scalars['Float']['output'];
+  __typename?: "DryRunInstigationTicks";
+  cursor: Scalars["Float"]["output"];
   results: Array<DryRunInstigationTick>;
 };
 
 export type DuplicateDynamicPartitionError = Error & {
-  __typename?: 'DuplicateDynamicPartitionError';
-  message: Scalars['String']['output'];
-  partitionName: Scalars['String']['output'];
-  partitionsDefName: Scalars['String']['output'];
+  __typename?: "DuplicateDynamicPartitionError";
+  message: Scalars["String"]["output"];
+  partitionName: Scalars["String"]["output"];
+  partitionsDefName: Scalars["String"]["output"];
 };
 
 export type DynamicPartitionRequest = {
-  __typename?: 'DynamicPartitionRequest';
-  partitionKeys?: Maybe<Array<Scalars['String']['output']>>;
-  partitionsDefName: Scalars['String']['output'];
+  __typename?: "DynamicPartitionRequest";
+  partitionKeys?: Maybe<Array<Scalars["String"]["output"]>>;
+  partitionsDefName: Scalars["String"]["output"];
   type: DynamicPartitionsRequestType;
 };
 
 export type DynamicPartitionsRequestResult = {
-  __typename?: 'DynamicPartitionsRequestResult';
-  partitionKeys?: Maybe<Array<Scalars['String']['output']>>;
-  partitionsDefName: Scalars['String']['output'];
-  skippedPartitionKeys: Array<Scalars['String']['output']>;
+  __typename?: "DynamicPartitionsRequestResult";
+  partitionKeys?: Maybe<Array<Scalars["String"]["output"]>>;
+  partitionsDefName: Scalars["String"]["output"];
+  skippedPartitionKeys: Array<Scalars["String"]["output"]>;
   type: DynamicPartitionsRequestType;
 };
 
 export enum DynamicPartitionsRequestType {
-  AddPartitions = 'ADD_PARTITIONS',
-  DeletePartitions = 'DELETE_PARTITIONS'
+  AddPartitions = "ADD_PARTITIONS",
+  DeletePartitions = "DELETE_PARTITIONS",
 }
 
-export type EngineEvent = DisplayableEvent & ErrorEvent & MarkerEvent & MessageEvent & StepEvent & {
-  __typename?: 'EngineEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  error?: Maybe<PythonError>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  markerEnd?: Maybe<Scalars['String']['output']>;
-  markerStart?: Maybe<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type EngineEvent = DisplayableEvent &
+  ErrorEvent &
+  MarkerEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "EngineEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    error?: Maybe<PythonError>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    markerEnd?: Maybe<Scalars["String"]["output"]>;
+    markerStart?: Maybe<Scalars["String"]["output"]>;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type EntityKey = AssetCheckhandle | AssetKey;
 
 export type EnumConfigType = ConfigType & {
-  __typename?: 'EnumConfigType';
-  description?: Maybe<Scalars['String']['output']>;
-  givenName: Scalars['String']['output'];
-  isSelector: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
+  __typename?: "EnumConfigType";
+  description?: Maybe<Scalars["String"]["output"]>;
+  givenName: Scalars["String"]["output"];
+  isSelector: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
   /**
    *
    * This is an odd and problematic field. It recursively goes down to
@@ -1466,48 +1568,48 @@ export type EnumConfigType = ConfigType & {
    * navigating the full schema client-side and not innerTypes.
    *
    */
-  typeParamKeys: Array<Scalars['String']['output']>;
+  typeParamKeys: Array<Scalars["String"]["output"]>;
   values: Array<EnumConfigValue>;
 };
 
 export type EnumConfigValue = {
-  __typename?: 'EnumConfigValue';
-  description?: Maybe<Scalars['String']['output']>;
-  value: Scalars['String']['output'];
+  __typename?: "EnumConfigValue";
+  description?: Maybe<Scalars["String"]["output"]>;
+  value: Scalars["String"]["output"];
 };
 
 export type EnvVarConsumer = {
-  __typename?: 'EnvVarConsumer';
-  name: Scalars['String']['output'];
+  __typename?: "EnvVarConsumer";
+  name: Scalars["String"]["output"];
   type: EnvVarConsumerType;
 };
 
 export enum EnvVarConsumerType {
-  Resource = 'RESOURCE'
+  Resource = "RESOURCE",
 }
 
 export type EnvVarWithConsumers = {
-  __typename?: 'EnvVarWithConsumers';
+  __typename?: "EnvVarWithConsumers";
   envVarConsumers: Array<EnvVarConsumer>;
-  envVarName: Scalars['String']['output'];
+  envVarName: Scalars["String"]["output"];
 };
 
 export type EnvVarWithConsumersList = {
-  __typename?: 'EnvVarWithConsumersList';
+  __typename?: "EnvVarWithConsumersList";
   results: Array<EnvVarWithConsumers>;
 };
 
 export type EnvVarWithConsumersOrError = EnvVarWithConsumersList | PythonError;
 
 export type Error = {
-  message: Scalars['String']['output'];
+  message: Scalars["String"]["output"];
 };
 
 export type ErrorChainLink = Error & {
-  __typename?: 'ErrorChainLink';
+  __typename?: "ErrorChainLink";
   error: PythonError;
-  isExplicitLink: Scalars['Boolean']['output'];
-  message: Scalars['String']['output'];
+  isExplicitLink: Scalars["Boolean"]["output"];
+  message: Scalars["String"]["output"];
 };
 
 export type ErrorEvent = {
@@ -1516,61 +1618,68 @@ export type ErrorEvent = {
 
 /** An enumeration. */
 export enum ErrorSource {
-  FrameworkError = 'FRAMEWORK_ERROR',
-  Interrupt = 'INTERRUPT',
-  UnexpectedError = 'UNEXPECTED_ERROR',
-  UserCodeError = 'USER_CODE_ERROR'
+  FrameworkError = "FRAMEWORK_ERROR",
+  Interrupt = "INTERRUPT",
+  UnexpectedError = "UNEXPECTED_ERROR",
+  UserCodeError = "USER_CODE_ERROR",
 }
 
 export enum EvaluationErrorReason {
-  FieldsNotDefined = 'FIELDS_NOT_DEFINED',
-  FieldNotDefined = 'FIELD_NOT_DEFINED',
-  MissingRequiredField = 'MISSING_REQUIRED_FIELD',
-  MissingRequiredFields = 'MISSING_REQUIRED_FIELDS',
-  RuntimeTypeMismatch = 'RUNTIME_TYPE_MISMATCH',
-  SelectorFieldError = 'SELECTOR_FIELD_ERROR'
+  FieldsNotDefined = "FIELDS_NOT_DEFINED",
+  FieldNotDefined = "FIELD_NOT_DEFINED",
+  MissingRequiredField = "MISSING_REQUIRED_FIELD",
+  MissingRequiredFields = "MISSING_REQUIRED_FIELDS",
+  RuntimeTypeMismatch = "RUNTIME_TYPE_MISMATCH",
+  SelectorFieldError = "SELECTOR_FIELD_ERROR",
 }
 
 export type EvaluationStack = {
-  __typename?: 'EvaluationStack';
+  __typename?: "EvaluationStack";
   entries: Array<EvaluationStackEntry>;
 };
 
-export type EvaluationStackEntry = EvaluationStackListItemEntry | EvaluationStackMapKeyEntry | EvaluationStackMapValueEntry | EvaluationStackPathEntry;
+export type EvaluationStackEntry =
+  | EvaluationStackListItemEntry
+  | EvaluationStackMapKeyEntry
+  | EvaluationStackMapValueEntry
+  | EvaluationStackPathEntry;
 
 export type EvaluationStackListItemEntry = {
-  __typename?: 'EvaluationStackListItemEntry';
-  listIndex: Scalars['Int']['output'];
+  __typename?: "EvaluationStackListItemEntry";
+  listIndex: Scalars["Int"]["output"];
 };
 
 export type EvaluationStackMapKeyEntry = {
-  __typename?: 'EvaluationStackMapKeyEntry';
-  mapKey: Scalars['GenericScalar']['output'];
+  __typename?: "EvaluationStackMapKeyEntry";
+  mapKey: Scalars["GenericScalar"]["output"];
 };
 
 export type EvaluationStackMapValueEntry = {
-  __typename?: 'EvaluationStackMapValueEntry';
-  mapKey: Scalars['GenericScalar']['output'];
+  __typename?: "EvaluationStackMapValueEntry";
+  mapKey: Scalars["GenericScalar"]["output"];
 };
 
 export type EvaluationStackPathEntry = {
-  __typename?: 'EvaluationStackPathEntry';
-  fieldName: Scalars['String']['output'];
+  __typename?: "EvaluationStackPathEntry";
+  fieldName: Scalars["String"]["output"];
 };
 
 export type EventConnection = {
-  __typename?: 'EventConnection';
-  cursor: Scalars['String']['output'];
+  __typename?: "EventConnection";
+  cursor: Scalars["String"]["output"];
   events: Array<DagsterRunEvent>;
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
 };
 
-export type EventConnectionOrError = EventConnection | PythonError | RunNotFoundError;
+export type EventConnectionOrError =
+  | EventConnection
+  | PythonError
+  | RunNotFoundError;
 
 export type EventTag = {
-  __typename?: 'EventTag';
-  key: Scalars['String']['output'];
-  value: Scalars['String']['output'];
+  __typename?: "EventTag";
+  key: Scalars["String"]["output"];
+  value: Scalars["String"]["output"];
 };
 
 export type ExecutionMetadata = {
@@ -1579,13 +1688,13 @@ export type ExecutionMetadata = {
    *         For the first re-execution, this will be the same as the `rootRunId`. For
    *         subsequent runs, the root or a previous re-execution could be the parent run.
    */
-  parentRunId?: InputMaybe<Scalars['String']['input']>;
+  parentRunId?: InputMaybe<Scalars["String"]["input"]>;
   /**
    * The ID of the run at the root of the run group. All partial /
    *         full re-executions should use the first run as the rootRunID so they are
    *         grouped together.
    */
-  rootRunId?: InputMaybe<Scalars['String']['input']>;
+  rootRunId?: InputMaybe<Scalars["String"]["input"]>;
   tags?: InputMaybe<Array<ExecutionTag>>;
 };
 
@@ -1599,9 +1708,9 @@ export type ExecutionParams = {
    *         override any stepKeys provided.
    */
   executionMetadata?: InputMaybe<ExecutionMetadata>;
-  mode?: InputMaybe<Scalars['String']['input']>;
-  preset?: InputMaybe<Scalars['String']['input']>;
-  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
+  mode?: InputMaybe<Scalars["String"]["input"]>;
+  preset?: InputMaybe<Scalars["String"]["input"]>;
+  runConfigData?: InputMaybe<Scalars["RunConfigData"]["input"]>;
   /**
    * Defines the job / pipeline and solid subset that should be executed.
    *         All subsequent executions in the same run group (for example, a single-step
@@ -1614,255 +1723,271 @@ export type ExecutionParams = {
    *         by the pipeline `selector`. To execute the entire execution plan, you can omit
    *         this parameter, provide an empty array, or provide every step name.
    */
-  stepKeys?: InputMaybe<Array<Scalars['String']['input']>>;
+  stepKeys?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type ExecutionPlan = {
-  __typename?: 'ExecutionPlan';
-  artifactsPersisted: Scalars['Boolean']['output'];
+  __typename?: "ExecutionPlan";
+  artifactsPersisted: Scalars["Boolean"]["output"];
   assetKeys: Array<AssetKey>;
-  assetSelection: Array<Scalars['String']['output']>;
+  assetSelection: Array<Scalars["String"]["output"]>;
   steps: Array<ExecutionStep>;
 };
 
-export type ExecutionPlanOrError = ExecutionPlan | InvalidSubsetError | PipelineNotFoundError | PythonError | RunConfigValidationInvalid;
+export type ExecutionPlanOrError =
+  | ExecutionPlan
+  | InvalidSubsetError
+  | PipelineNotFoundError
+  | PythonError
+  | RunConfigValidationInvalid;
 
 export type ExecutionStep = {
-  __typename?: 'ExecutionStep';
+  __typename?: "ExecutionStep";
   inputs: Array<ExecutionStepInput>;
-  key: Scalars['String']['output'];
+  key: Scalars["String"]["output"];
   kind: StepKind;
   metadata: Array<MetadataItemDefinition>;
   outputs: Array<ExecutionStepOutput>;
-  solidHandleID: Scalars['String']['output'];
+  solidHandleID: Scalars["String"]["output"];
 };
 
-export type ExecutionStepFailureEvent = ErrorEvent & MessageEvent & StepEvent & {
-  __typename?: 'ExecutionStepFailureEvent';
-  error?: Maybe<PythonError>;
-  errorSource?: Maybe<ErrorSource>;
-  eventType?: Maybe<DagsterEventType>;
-  failureMetadata?: Maybe<FailureMetadata>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ExecutionStepFailureEvent = ErrorEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "ExecutionStepFailureEvent";
+    error?: Maybe<PythonError>;
+    errorSource?: Maybe<ErrorSource>;
+    eventType?: Maybe<DagsterEventType>;
+    failureMetadata?: Maybe<FailureMetadata>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type ExecutionStepInput = {
-  __typename?: 'ExecutionStepInput';
+  __typename?: "ExecutionStepInput";
   dependsOn: Array<ExecutionStep>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
 };
 
-export type ExecutionStepInputEvent = MessageEvent & StepEvent & {
-  __typename?: 'ExecutionStepInputEvent';
-  eventType?: Maybe<DagsterEventType>;
-  inputName: Scalars['String']['output'];
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-  typeCheck: TypeCheck;
-};
+export type ExecutionStepInputEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "ExecutionStepInputEvent";
+    eventType?: Maybe<DagsterEventType>;
+    inputName: Scalars["String"]["output"];
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+    typeCheck: TypeCheck;
+  };
 
 export type ExecutionStepOutput = {
-  __typename?: 'ExecutionStepOutput';
-  name: Scalars['String']['output'];
+  __typename?: "ExecutionStepOutput";
+  name: Scalars["String"]["output"];
 };
 
-export type ExecutionStepOutputEvent = DisplayableEvent & MessageEvent & StepEvent & {
-  __typename?: 'ExecutionStepOutputEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  outputName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-  typeCheck: TypeCheck;
-};
+export type ExecutionStepOutputEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "ExecutionStepOutputEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    outputName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+    typeCheck: TypeCheck;
+  };
 
-export type ExecutionStepRestartEvent = MessageEvent & StepEvent & {
-  __typename?: 'ExecutionStepRestartEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ExecutionStepRestartEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "ExecutionStepRestartEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type ExecutionStepSkippedEvent = MessageEvent & StepEvent & {
-  __typename?: 'ExecutionStepSkippedEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ExecutionStepSkippedEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "ExecutionStepSkippedEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type ExecutionStepStartEvent = MessageEvent & StepEvent & {
-  __typename?: 'ExecutionStepStartEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ExecutionStepStartEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "ExecutionStepStartEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type ExecutionStepSuccessEvent = MessageEvent & StepEvent & {
-  __typename?: 'ExecutionStepSuccessEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ExecutionStepSuccessEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "ExecutionStepSuccessEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type ExecutionStepUpForRetryEvent = ErrorEvent & MessageEvent & StepEvent & {
-  __typename?: 'ExecutionStepUpForRetryEvent';
-  error?: Maybe<PythonError>;
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  secondsToWait?: Maybe<Scalars['Int']['output']>;
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ExecutionStepUpForRetryEvent = ErrorEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "ExecutionStepUpForRetryEvent";
+    error?: Maybe<PythonError>;
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    secondsToWait?: Maybe<Scalars["Int"]["output"]>;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type ExecutionTag = {
-  key: Scalars['String']['input'];
-  value: Scalars['String']['input'];
+  key: Scalars["String"]["input"];
+  value: Scalars["String"]["input"];
 };
 
 export type ExpectationResult = DisplayableEvent & {
-  __typename?: 'ExpectationResult';
-  description?: Maybe<Scalars['String']['output']>;
-  label?: Maybe<Scalars['String']['output']>;
+  __typename?: "ExpectationResult";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label?: Maybe<Scalars["String"]["output"]>;
   metadataEntries: Array<MetadataEntry>;
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
-export type FailedToMaterializeEvent = DisplayableEvent & MessageEvent & StepEvent & {
-  __typename?: 'FailedToMaterializeEvent';
-  assetKey?: Maybe<AssetKey>;
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  materializationFailureReason: AssetMaterializationFailureReason;
-  materializationFailureType: AssetMaterializationFailureType;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  partition?: Maybe<Scalars['String']['output']>;
-  runId: Scalars['String']['output'];
-  runOrError: RunOrError;
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  stepStats: RunStepStats;
-  tags: Array<EventTag>;
-  timestamp: Scalars['String']['output'];
-};
+export type FailedToMaterializeEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "FailedToMaterializeEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    materializationFailureReason: AssetMaterializationFailureReason;
+    materializationFailureType: AssetMaterializationFailureType;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type FailureMetadata = DisplayableEvent & {
-  __typename?: 'FailureMetadata';
-  description?: Maybe<Scalars['String']['output']>;
-  label?: Maybe<Scalars['String']['output']>;
+  __typename?: "FailureMetadata";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label?: Maybe<Scalars["String"]["output"]>;
   metadataEntries: Array<MetadataEntry>;
 };
 
 export type FeatureFlag = {
-  __typename?: 'FeatureFlag';
-  enabled: Scalars['Boolean']['output'];
-  name: Scalars['String']['output'];
+  __typename?: "FeatureFlag";
+  enabled: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
 };
 
 export type FieldNotDefinedConfigError = PipelineConfigValidationError & {
-  __typename?: 'FieldNotDefinedConfigError';
-  fieldName: Scalars['String']['output'];
-  message: Scalars['String']['output'];
-  path: Array<Scalars['String']['output']>;
+  __typename?: "FieldNotDefinedConfigError";
+  fieldName: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
+  path: Array<Scalars["String"]["output"]>;
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
 };
 
 export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
-  __typename?: 'FieldsNotDefinedConfigError';
-  fieldNames: Array<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  path: Array<Scalars['String']['output']>;
+  __typename?: "FieldsNotDefinedConfigError";
+  fieldNames: Array<Scalars["String"]["output"]>;
+  message: Scalars["String"]["output"];
+  path: Array<Scalars["String"]["output"]>;
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
 };
 
 export type FloatMetadataEntry = MetadataEntry & {
-  __typename?: 'FloatMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
+  __typename?: "FloatMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
   /** String representation of the float to support nan/inf/-inf */
-  floatRepr: Scalars['String']['output'];
-  floatValue?: Maybe<Scalars['Float']['output']>;
-  label: Scalars['String']['output'];
+  floatRepr: Scalars["String"]["output"];
+  floatValue?: Maybe<Scalars["Float"]["output"]>;
+  label: Scalars["String"]["output"];
 };
 
 export type FreshnessPolicy = {
-  __typename?: 'FreshnessPolicy';
-  cronSchedule?: Maybe<Scalars['String']['output']>;
-  cronScheduleTimezone?: Maybe<Scalars['String']['output']>;
-  lastEvaluationTimestamp?: Maybe<Scalars['String']['output']>;
-  maximumLagMinutes: Scalars['Float']['output'];
+  __typename?: "FreshnessPolicy";
+  cronSchedule?: Maybe<Scalars["String"]["output"]>;
+  cronScheduleTimezone?: Maybe<Scalars["String"]["output"]>;
+  lastEvaluationTimestamp?: Maybe<Scalars["String"]["output"]>;
+  maximumLagMinutes: Scalars["Float"]["output"];
 };
 
 export type FreshnessStatusInfo = {
-  __typename?: 'FreshnessStatusInfo';
+  __typename?: "FreshnessStatusInfo";
   freshnessStatus: AssetHealthStatus;
   freshnessStatusMetadata?: Maybe<AssetHealthFreshnessMeta>;
 };
 
 export type Graph = SolidContainer & {
-  __typename?: 'Graph';
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
+  __typename?: "Graph";
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
   modes: Array<Mode>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   solidHandle?: Maybe<SolidHandle>;
   solidHandles: Array<SolidHandle>;
   solids: Array<Solid>;
 };
 
-
 export type GraphSolidHandleArgs = {
-  handleID: Scalars['String']['input'];
+  handleID: Scalars["String"]["input"];
 };
 
-
 export type GraphSolidHandlesArgs = {
-  parentHandleID?: InputMaybe<Scalars['String']['input']>;
+  parentHandleID?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type GraphNotFoundError = Error & {
-  __typename?: 'GraphNotFoundError';
-  graphName: Scalars['String']['output'];
-  message: Scalars['String']['output'];
-  repositoryLocationName: Scalars['String']['output'];
-  repositoryName: Scalars['String']['output'];
+  __typename?: "GraphNotFoundError";
+  graphName: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
+  repositoryLocationName: Scalars["String"]["output"];
+  repositoryName: Scalars["String"]["output"];
 };
 
 export type GraphOrError = Graph | GraphNotFoundError | PythonError;
@@ -1872,91 +1997,99 @@ export type GraphOrError = Graph | GraphNotFoundError | PythonError;
  *         graph
  */
 export type GraphSelector = {
-  graphName: Scalars['String']['input'];
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
+  graphName: Scalars["String"]["input"];
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
 };
 
-export type HandledOutputEvent = DisplayableEvent & MessageEvent & StepEvent & {
-  __typename?: 'HandledOutputEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  managerKey: Scalars['String']['output'];
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  outputName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type HandledOutputEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "HandledOutputEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    managerKey: Scalars["String"]["output"];
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    outputName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type HealthChangedEvent = DisplayableEvent & MessageEvent & StepEvent & {
-  __typename?: 'HealthChangedEvent';
-  assetKey?: Maybe<AssetKey>;
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  partition?: Maybe<Scalars['String']['output']>;
-  runId: Scalars['String']['output'];
-  runOrError: RunOrError;
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  stepStats: RunStepStats;
-  tags: Array<EventTag>;
-  timestamp: Scalars['String']['output'];
-};
+export type HealthChangedEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "HealthChangedEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type HookCompletedEvent = MessageEvent & StepEvent & {
-  __typename?: 'HookCompletedEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type HookCompletedEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "HookCompletedEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type HookErroredEvent = ErrorEvent & MessageEvent & StepEvent & {
-  __typename?: 'HookErroredEvent';
-  error?: Maybe<PythonError>;
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type HookErroredEvent = ErrorEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "HookErroredEvent";
+    error?: Maybe<PythonError>;
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type HookSkippedEvent = MessageEvent & StepEvent & {
-  __typename?: 'HookSkippedEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type HookSkippedEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "HookSkippedEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type IPipelineSnapshot = {
   dagsterTypeOrError: DagsterTypeOrError;
   dagsterTypes: Array<DagsterType>;
-  description?: Maybe<Scalars['String']['output']>;
-  graphName: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  graphName: Scalars["String"]["output"];
   metadataEntries: Array<MetadataEntry>;
   modes: Array<Mode>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   owners: Array<DefinitionOwner>;
-  parentSnapshotId?: Maybe<Scalars['String']['output']>;
-  pipelineSnapshotId: Scalars['String']['output'];
+  parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
+  pipelineSnapshotId: Scalars["String"]["output"];
   runs: Array<Run>;
   schedules: Array<Schedule>;
   sensors: Array<Sensor>;
@@ -1966,205 +2099,200 @@ export type IPipelineSnapshot = {
   tags: Array<PipelineTag>;
 };
 
-
 export type IPipelineSnapshotDagsterTypeOrErrorArgs = {
-  dagsterTypeName: Scalars['String']['input'];
+  dagsterTypeName: Scalars["String"]["input"];
 };
-
 
 export type IPipelineSnapshotRunsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type IPipelineSnapshotSolidHandleArgs = {
-  handleID: Scalars['String']['input'];
+  handleID: Scalars["String"]["input"];
 };
 
-
 export type IPipelineSnapshotSolidHandlesArgs = {
-  parentHandleID?: InputMaybe<Scalars['String']['input']>;
+  parentHandleID?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type ISolidDefinition = {
   assetNodes: Array<AssetNode>;
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   inputDefinitions: Array<InputDefinition>;
   metadata: Array<MetadataItemDefinition>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   outputDefinitions: Array<OutputDefinition>;
-  pools: Array<Scalars['String']['output']>;
+  pools: Array<Scalars["String"]["output"]>;
 };
 
 export type Input = {
-  __typename?: 'Input';
+  __typename?: "Input";
   definition: InputDefinition;
   dependsOn: Array<Output>;
-  isDynamicCollect: Scalars['Boolean']['output'];
+  isDynamicCollect: Scalars["Boolean"]["output"];
   solid: Solid;
 };
 
 export type InputDefinition = {
-  __typename?: 'InputDefinition';
-  description?: Maybe<Scalars['String']['output']>;
+  __typename?: "InputDefinition";
+  description?: Maybe<Scalars["String"]["output"]>;
   metadataEntries: Array<MetadataEntry>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   type: DagsterType;
 };
 
 export type InputMapping = {
-  __typename?: 'InputMapping';
+  __typename?: "InputMapping";
   definition: InputDefinition;
   mappedInput: Input;
 };
 
 export type Instance = {
-  __typename?: 'Instance';
-  autoMaterializePaused: Scalars['Boolean']['output'];
+  __typename?: "Instance";
+  autoMaterializePaused: Scalars["Boolean"]["output"];
   concurrencyLimit: ConcurrencyKeyInfo;
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
-  executablePath: Scalars['String']['output'];
-  freshnessEvaluationEnabled: Scalars['Boolean']['output'];
-  hasInfo: Scalars['Boolean']['output'];
-  id: Scalars['String']['output'];
-  info?: Maybe<Scalars['String']['output']>;
-  maxConcurrencyLimitValue: Scalars['Int']['output'];
-  minConcurrencyLimitValue: Scalars['Int']['output'];
+  executablePath: Scalars["String"]["output"];
+  freshnessEvaluationEnabled: Scalars["Boolean"]["output"];
+  hasInfo: Scalars["Boolean"]["output"];
+  id: Scalars["String"]["output"];
+  info?: Maybe<Scalars["String"]["output"]>;
+  maxConcurrencyLimitValue: Scalars["Int"]["output"];
+  minConcurrencyLimitValue: Scalars["Int"]["output"];
   poolConfig?: Maybe<PoolConfig>;
   runLauncher?: Maybe<RunLauncher>;
   runQueueConfig?: Maybe<RunQueueConfig>;
-  runQueuingSupported: Scalars['Boolean']['output'];
-  supportsConcurrencyLimits: Scalars['Boolean']['output'];
+  runQueuingSupported: Scalars["Boolean"]["output"];
+  supportsConcurrencyLimits: Scalars["Boolean"]["output"];
   /** Whether or not the deployment is using automation policy sensors to materialize assets */
-  useAutoMaterializeSensors: Scalars['Boolean']['output'];
+  useAutoMaterializeSensors: Scalars["Boolean"]["output"];
 };
 
-
 export type InstanceConcurrencyLimitArgs = {
-  concurrencyKey?: InputMaybe<Scalars['String']['input']>;
+  concurrencyKey?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type InstigationEvent = {
-  __typename?: 'InstigationEvent';
+  __typename?: "InstigationEvent";
   level: LogLevel;
-  message: Scalars['String']['output'];
-  timestamp: Scalars['String']['output'];
+  message: Scalars["String"]["output"];
+  timestamp: Scalars["String"]["output"];
 };
 
 export type InstigationEventConnection = {
-  __typename?: 'InstigationEventConnection';
-  cursor: Scalars['String']['output'];
+  __typename?: "InstigationEventConnection";
+  cursor: Scalars["String"]["output"];
   events: Array<InstigationEvent>;
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
 };
 
 /** This type represents the fields necessary to identify a schedule or sensor. */
 export type InstigationSelector = {
-  name: Scalars['String']['input'];
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
 };
 
 export type InstigationState = {
-  __typename?: 'InstigationState';
-  hasStartPermission: Scalars['Boolean']['output'];
-  hasStopPermission: Scalars['Boolean']['output'];
-  id: Scalars['ID']['output'];
+  __typename?: "InstigationState";
+  hasStartPermission: Scalars["Boolean"]["output"];
+  hasStopPermission: Scalars["Boolean"]["output"];
+  id: Scalars["ID"]["output"];
   instigationType: InstigationType;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   nextTick?: Maybe<DryRunInstigationTick>;
-  repositoryLocationName: Scalars['String']['output'];
-  repositoryName: Scalars['String']['output'];
+  repositoryLocationName: Scalars["String"]["output"];
+  repositoryName: Scalars["String"]["output"];
   repositoryOrigin: RepositoryOrigin;
-  runningCount: Scalars['Int']['output'];
+  runningCount: Scalars["Int"]["output"];
   runs: Array<Run>;
-  runsCount: Scalars['Int']['output'];
-  selectorId: Scalars['String']['output'];
+  runsCount: Scalars["Int"]["output"];
+  selectorId: Scalars["String"]["output"];
   status: InstigationStatus;
   tick: InstigationTick;
   ticks: Array<InstigationTick>;
   typeSpecificData?: Maybe<InstigationTypeSpecificData>;
 };
 
-
 export type InstigationStateRunsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type InstigationStateTickArgs = {
-  tickId: Scalars['ID']['input'];
+  tickId: Scalars["ID"]["input"];
 };
 
-
 export type InstigationStateTicksArgs = {
-  afterTimestamp?: InputMaybe<Scalars['Float']['input']>;
-  beforeTimestamp?: InputMaybe<Scalars['Float']['input']>;
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  dayOffset?: InputMaybe<Scalars['Int']['input']>;
-  dayRange?: InputMaybe<Scalars['Int']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  afterTimestamp?: InputMaybe<Scalars["Float"]["input"]>;
+  beforeTimestamp?: InputMaybe<Scalars["Float"]["input"]>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  dayOffset?: InputMaybe<Scalars["Int"]["input"]>;
+  dayRange?: InputMaybe<Scalars["Int"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   statuses?: InputMaybe<Array<InstigationTickStatus>>;
 };
 
 export type InstigationStateNotFoundError = Error & {
-  __typename?: 'InstigationStateNotFoundError';
-  message: Scalars['String']['output'];
-  name: Scalars['String']['output'];
+  __typename?: "InstigationStateNotFoundError";
+  message: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
 };
 
-export type InstigationStateOrError = InstigationState | InstigationStateNotFoundError | PythonError;
+export type InstigationStateOrError =
+  | InstigationState
+  | InstigationStateNotFoundError
+  | PythonError;
 
 export type InstigationStates = {
-  __typename?: 'InstigationStates';
+  __typename?: "InstigationStates";
   results: Array<InstigationState>;
 };
 
 export type InstigationStatesOrError = InstigationStates | PythonError;
 
 export enum InstigationStatus {
-  Running = 'RUNNING',
-  Stopped = 'STOPPED'
+  Running = "RUNNING",
+  Stopped = "STOPPED",
 }
 
 export type InstigationTick = {
-  __typename?: 'InstigationTick';
-  autoMaterializeAssetEvaluationId?: Maybe<Scalars['ID']['output']>;
-  cursor?: Maybe<Scalars['String']['output']>;
+  __typename?: "InstigationTick";
+  autoMaterializeAssetEvaluationId?: Maybe<Scalars["ID"]["output"]>;
+  cursor?: Maybe<Scalars["String"]["output"]>;
   dynamicPartitionsRequestResults: Array<DynamicPartitionsRequestResult>;
-  endTimestamp?: Maybe<Scalars['Float']['output']>;
+  endTimestamp?: Maybe<Scalars["Float"]["output"]>;
   error?: Maybe<PythonError>;
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   instigationType: InstigationType;
   logEvents: InstigationEventConnection;
-  logKey?: Maybe<Array<Scalars['String']['output']>>;
-  originRunIds: Array<Scalars['String']['output']>;
+  logKey?: Maybe<Array<Scalars["String"]["output"]>>;
+  originRunIds: Array<Scalars["String"]["output"]>;
   requestedAssetKeys: Array<AssetKey>;
-  requestedAssetMaterializationCount: Scalars['Int']['output'];
+  requestedAssetMaterializationCount: Scalars["Int"]["output"];
   requestedMaterializationsForAssets: Array<RequestedMaterializationsForAsset>;
-  runIds: Array<Scalars['String']['output']>;
-  runKeys: Array<Scalars['String']['output']>;
+  runIds: Array<Scalars["String"]["output"]>;
+  runKeys: Array<Scalars["String"]["output"]>;
   runs: Array<Run>;
-  skipReason?: Maybe<Scalars['String']['output']>;
+  skipReason?: Maybe<Scalars["String"]["output"]>;
   status: InstigationTickStatus;
-  tickId: Scalars['ID']['output'];
-  timestamp: Scalars['Float']['output'];
+  tickId: Scalars["ID"]["output"];
+  timestamp: Scalars["Float"]["output"];
 };
 
 export enum InstigationTickStatus {
-  Failure = 'FAILURE',
-  Skipped = 'SKIPPED',
-  Started = 'STARTED',
-  Success = 'SUCCESS'
+  Failure = "FAILURE",
+  Skipped = "SKIPPED",
+  Started = "STARTED",
+  Success = "SUCCESS",
 }
 
 /** An enumeration. */
 export enum InstigationType {
-  AutoMaterialize = 'AUTO_MATERIALIZE',
-  Schedule = 'SCHEDULE',
-  Sensor = 'SENSOR'
+  AutoMaterialize = "AUTO_MATERIALIZE",
+  Schedule = "SCHEDULE",
+  Sensor = "SENSOR",
 }
 
 export type InstigationTypeSpecificData = ScheduleData | SensorData;
@@ -2172,200 +2300,213 @@ export type InstigationTypeSpecificData = ScheduleData | SensorData;
 export type Instigator = Schedule | Sensor;
 
 export type IntMetadataEntry = MetadataEntry & {
-  __typename?: 'IntMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
+  __typename?: "IntMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
   /** String representation of the int to support greater than 32 bit */
-  intRepr: Scalars['String']['output'];
+  intRepr: Scalars["String"]["output"];
   /** Nullable to allow graceful degrade on > 32 bit numbers */
-  intValue?: Maybe<Scalars['Int']['output']>;
-  label: Scalars['String']['output'];
+  intValue?: Maybe<Scalars["Int"]["output"]>;
+  label: Scalars["String"]["output"];
 };
 
-export type InternalFreshnessPolicy = CronFreshnessPolicy | TimeWindowFreshnessPolicy;
+export type InternalFreshnessPolicy =
+  | CronFreshnessPolicy
+  | TimeWindowFreshnessPolicy;
 
 export type InvalidOutputError = {
-  __typename?: 'InvalidOutputError';
-  invalidOutputName: Scalars['String']['output'];
-  stepKey: Scalars['String']['output'];
+  __typename?: "InvalidOutputError";
+  invalidOutputName: Scalars["String"]["output"];
+  stepKey: Scalars["String"]["output"];
 };
 
 export type InvalidPipelineRunsFilterError = Error & {
-  __typename?: 'InvalidPipelineRunsFilterError';
-  message: Scalars['String']['output'];
+  __typename?: "InvalidPipelineRunsFilterError";
+  message: Scalars["String"]["output"];
 };
 
 export type InvalidStepError = {
-  __typename?: 'InvalidStepError';
-  invalidStepKey: Scalars['String']['output'];
+  __typename?: "InvalidStepError";
+  invalidStepKey: Scalars["String"]["output"];
 };
 
 export type InvalidSubsetError = Error & {
-  __typename?: 'InvalidSubsetError';
-  message: Scalars['String']['output'];
+  __typename?: "InvalidSubsetError";
+  message: Scalars["String"]["output"];
   pipeline: Pipeline;
 };
 
 /** Invitation to join an organization */
 export type Invitation = {
-  __typename?: 'Invitation';
-  acceptedAt?: Maybe<Scalars['DateTime']['output']>;
+  __typename?: "Invitation";
+  acceptedAt?: Maybe<Scalars["DateTime"]["output"]>;
   acceptedBy?: Maybe<User>;
-  createdAt: Scalars['DateTime']['output'];
-  email: Scalars['String']['output'];
-  expiresAt: Scalars['DateTime']['output'];
-  id: Scalars['ID']['output'];
+  createdAt: Scalars["DateTime"]["output"];
+  email: Scalars["String"]["output"];
+  expiresAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
   invitedBy: User;
   organization: Organization;
   status: InvitationStatus;
 };
 
 export enum InvitationStatus {
-  Accepted = 'ACCEPTED',
-  Deleted = 'DELETED',
-  Expired = 'EXPIRED',
-  Pending = 'PENDING'
+  Accepted = "ACCEPTED",
+  Deleted = "DELETED",
+  Expired = "EXPIRED",
+  Pending = "PENDING",
 }
 
-export type Job = IPipelineSnapshot & SolidContainer & {
-  __typename?: 'Job';
-  dagsterTypeOrError: DagsterTypeOrError;
-  dagsterTypes: Array<DagsterType>;
-  description?: Maybe<Scalars['String']['output']>;
-  externalJobSource?: Maybe<Scalars['String']['output']>;
-  graphName: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  isAssetJob: Scalars['Boolean']['output'];
-  isJob: Scalars['Boolean']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  modes: Array<Mode>;
-  name: Scalars['String']['output'];
-  owners: Array<DefinitionOwner>;
-  parentSnapshotId?: Maybe<Scalars['String']['output']>;
-  partition?: Maybe<PartitionTagsAndConfig>;
-  partitionKeysOrError: PartitionKeys;
-  pipelineSnapshotId: Scalars['String']['output'];
-  presets: Array<PipelinePreset>;
-  repository: Repository;
-  runTags: Array<PipelineTag>;
-  runs: Array<Run>;
-  schedules: Array<Schedule>;
-  sensors: Array<Sensor>;
-  solidHandle?: Maybe<SolidHandle>;
-  solidHandles: Array<SolidHandle>;
-  solids: Array<Solid>;
-  tags: Array<PipelineTag>;
-};
-
+export type Job = IPipelineSnapshot &
+  SolidContainer & {
+    __typename?: "Job";
+    dagsterTypeOrError: DagsterTypeOrError;
+    dagsterTypes: Array<DagsterType>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
+    graphName: Scalars["String"]["output"];
+    id: Scalars["ID"]["output"];
+    isAssetJob: Scalars["Boolean"]["output"];
+    isJob: Scalars["Boolean"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    modes: Array<Mode>;
+    name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
+    parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
+    partition?: Maybe<PartitionTagsAndConfig>;
+    partitionKeysOrError: PartitionKeys;
+    pipelineSnapshotId: Scalars["String"]["output"];
+    presets: Array<PipelinePreset>;
+    repository: Repository;
+    runTags: Array<PipelineTag>;
+    runs: Array<Run>;
+    schedules: Array<Schedule>;
+    sensors: Array<Sensor>;
+    solidHandle?: Maybe<SolidHandle>;
+    solidHandles: Array<SolidHandle>;
+    solids: Array<Solid>;
+    tags: Array<PipelineTag>;
+  };
 
 export type JobDagsterTypeOrErrorArgs = {
-  dagsterTypeName: Scalars['String']['input'];
+  dagsterTypeName: Scalars["String"]["input"];
 };
-
 
 export type JobPartitionArgs = {
-  partitionName: Scalars['String']['input'];
+  partitionName: Scalars["String"]["input"];
   selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
-
 
 export type JobPartitionKeysOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  reverse?: InputMaybe<Scalars['Boolean']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  reverse?: InputMaybe<Scalars["Boolean"]["input"]>;
   selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
 
-
 export type JobRunsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type JobSolidHandleArgs = {
-  handleID: Scalars['String']['input'];
+  handleID: Scalars["String"]["input"];
 };
 
-
 export type JobSolidHandlesArgs = {
-  parentHandleID?: InputMaybe<Scalars['String']['input']>;
+  parentHandleID?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type JobMetadataEntry = MetadataEntry & {
-  __typename?: 'JobMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  jobName: Scalars['String']['output'];
-  label: Scalars['String']['output'];
-  locationName: Scalars['String']['output'];
-  repositoryName?: Maybe<Scalars['String']['output']>;
+  __typename?: "JobMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  jobName: Scalars["String"]["output"];
+  label: Scalars["String"]["output"];
+  locationName: Scalars["String"]["output"];
+  repositoryName?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** This type represents the fields necessary to identify a job or pipeline */
 export type JobOrPipelineSelector = {
   assetCheckSelection?: InputMaybe<Array<AssetCheckHandleInput>>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
-  jobName?: InputMaybe<Scalars['String']['input']>;
-  pipelineName?: InputMaybe<Scalars['String']['input']>;
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
-  solidSelection?: InputMaybe<Array<Scalars['String']['input']>>;
+  jobName?: InputMaybe<Scalars["String"]["input"]>;
+  pipelineName?: InputMaybe<Scalars["String"]["input"]>;
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
+  solidSelection?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type JobWithOps = {
-  __typename?: 'JobWithOps';
-  jobName: Scalars['String']['output'];
-  opHandleIDs: Array<Scalars['String']['output']>;
+  __typename?: "JobWithOps";
+  jobName: Scalars["String"]["output"];
+  opHandleIDs: Array<Scalars["String"]["output"]>;
 };
 
 export type JsonMetadataEntry = MetadataEntry & {
-  __typename?: 'JsonMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  jsonString: Scalars['String']['output'];
-  label: Scalars['String']['output'];
+  __typename?: "JsonMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  jsonString: Scalars["String"]["output"];
+  label: Scalars["String"]["output"];
 };
 
 /** Launches a set of partition backfill runs. */
 export type LaunchBackfillMutation = {
-  __typename?: 'LaunchBackfillMutation';
+  __typename?: "LaunchBackfillMutation";
   Output: LaunchBackfillResult;
 };
 
 export type LaunchBackfillParams = {
-  allPartitions?: InputMaybe<Scalars['Boolean']['input']>;
+  allPartitions?: InputMaybe<Scalars["Boolean"]["input"]>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
-  description?: InputMaybe<Scalars['String']['input']>;
-  forceSynchronousSubmission?: InputMaybe<Scalars['Boolean']['input']>;
-  fromFailure?: InputMaybe<Scalars['Boolean']['input']>;
-  partitionNames?: InputMaybe<Array<Scalars['String']['input']>>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  forceSynchronousSubmission?: InputMaybe<Scalars["Boolean"]["input"]>;
+  fromFailure?: InputMaybe<Scalars["Boolean"]["input"]>;
+  partitionNames?: InputMaybe<Array<Scalars["String"]["input"]>>;
   partitionsByAssets?: InputMaybe<Array<InputMaybe<PartitionsByAssetSelector>>>;
-  reexecutionSteps?: InputMaybe<Array<Scalars['String']['input']>>;
-  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
+  reexecutionSteps?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  runConfigData?: InputMaybe<Scalars["RunConfigData"]["input"]>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
-  title?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars["String"]["input"]>;
 };
 
-export type LaunchBackfillResult = ConflictingExecutionParamsError | InvalidOutputError | InvalidStepError | InvalidSubsetError | LaunchBackfillSuccess | NoModeProvidedError | PartitionKeysNotFoundError | PartitionSetNotFoundError | PipelineNotFoundError | PresetNotFoundError | PythonError | RunConfigValidationInvalid | RunConflict | UnauthorizedError;
+export type LaunchBackfillResult =
+  | ConflictingExecutionParamsError
+  | InvalidOutputError
+  | InvalidStepError
+  | InvalidSubsetError
+  | LaunchBackfillSuccess
+  | NoModeProvidedError
+  | PartitionKeysNotFoundError
+  | PartitionSetNotFoundError
+  | PipelineNotFoundError
+  | PresetNotFoundError
+  | PythonError
+  | RunConfigValidationInvalid
+  | RunConflict
+  | UnauthorizedError;
 
 export type LaunchBackfillSuccess = {
-  __typename?: 'LaunchBackfillSuccess';
-  backfillId: Scalars['String']['output'];
-  launchedRunIds?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  __typename?: "LaunchBackfillSuccess";
+  backfillId: Scalars["String"]["output"];
+  launchedRunIds?: Maybe<Array<Maybe<Scalars["String"]["output"]>>>;
 };
 
 /** Launches multiple job runs. */
 export type LaunchMultipleRunsMutation = {
-  __typename?: 'LaunchMultipleRunsMutation';
+  __typename?: "LaunchMultipleRunsMutation";
   Output: LaunchMultipleRunsResultOrError;
 };
 
 /** Contains results from multiple pipeline launches. */
 export type LaunchMultipleRunsResult = {
-  __typename?: 'LaunchMultipleRunsResult';
+  __typename?: "LaunchMultipleRunsResult";
   launchMultipleRunsResult: Array<LaunchRunResult>;
 };
 
-export type LaunchMultipleRunsResultOrError = LaunchMultipleRunsResult | PythonError;
+export type LaunchMultipleRunsResultOrError =
+  | LaunchMultipleRunsResult
+  | PythonError;
 
 export type LaunchPipelineRunSuccess = {
   run: Run;
@@ -2373,118 +2514,145 @@ export type LaunchPipelineRunSuccess = {
 
 /** Launches a job run. */
 export type LaunchRunMutation = {
-  __typename?: 'LaunchRunMutation';
+  __typename?: "LaunchRunMutation";
   Output: LaunchRunResult;
 };
 
 /** Re-executes a job run. */
 export type LaunchRunReexecutionMutation = {
-  __typename?: 'LaunchRunReexecutionMutation';
+  __typename?: "LaunchRunReexecutionMutation";
   Output: LaunchRunReexecutionResult;
 };
 
-export type LaunchRunReexecutionResult = ConflictingExecutionParamsError | InvalidOutputError | InvalidStepError | InvalidSubsetError | LaunchRunSuccess | NoModeProvidedError | PipelineNotFoundError | PresetNotFoundError | PythonError | RunConfigValidationInvalid | RunConflict | UnauthorizedError;
+export type LaunchRunReexecutionResult =
+  | ConflictingExecutionParamsError
+  | InvalidOutputError
+  | InvalidStepError
+  | InvalidSubsetError
+  | LaunchRunSuccess
+  | NoModeProvidedError
+  | PipelineNotFoundError
+  | PresetNotFoundError
+  | PythonError
+  | RunConfigValidationInvalid
+  | RunConflict
+  | UnauthorizedError;
 
-export type LaunchRunResult = ConflictingExecutionParamsError | InvalidOutputError | InvalidStepError | InvalidSubsetError | LaunchRunSuccess | NoModeProvidedError | PipelineNotFoundError | PresetNotFoundError | PythonError | RunConfigValidationInvalid | RunConflict | UnauthorizedError;
+export type LaunchRunResult =
+  | ConflictingExecutionParamsError
+  | InvalidOutputError
+  | InvalidStepError
+  | InvalidSubsetError
+  | LaunchRunSuccess
+  | NoModeProvidedError
+  | PipelineNotFoundError
+  | PresetNotFoundError
+  | PythonError
+  | RunConfigValidationInvalid
+  | RunConflict
+  | UnauthorizedError;
 
 export type LaunchRunSuccess = LaunchPipelineRunSuccess & {
-  __typename?: 'LaunchRunSuccess';
+  __typename?: "LaunchRunSuccess";
   run: Run;
 };
 
-export type ListDagsterType = DagsterType & WrappingDagsterType & {
-  __typename?: 'ListDagsterType';
-  description?: Maybe<Scalars['String']['output']>;
-  displayName: Scalars['String']['output'];
-  innerTypes: Array<DagsterType>;
-  inputSchemaType?: Maybe<ConfigType>;
-  isBuiltin: Scalars['Boolean']['output'];
-  isList: Scalars['Boolean']['output'];
-  isNothing: Scalars['Boolean']['output'];
-  isNullable: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  name?: Maybe<Scalars['String']['output']>;
-  ofType: DagsterType;
-  outputSchemaType?: Maybe<ConfigType>;
-};
+export type ListDagsterType = DagsterType &
+  WrappingDagsterType & {
+    __typename?: "ListDagsterType";
+    description?: Maybe<Scalars["String"]["output"]>;
+    displayName: Scalars["String"]["output"];
+    innerTypes: Array<DagsterType>;
+    inputSchemaType?: Maybe<ConfigType>;
+    isBuiltin: Scalars["Boolean"]["output"];
+    isList: Scalars["Boolean"]["output"];
+    isNothing: Scalars["Boolean"]["output"];
+    isNullable: Scalars["Boolean"]["output"];
+    key: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    name?: Maybe<Scalars["String"]["output"]>;
+    ofType: DagsterType;
+    outputSchemaType?: Maybe<ConfigType>;
+  };
 
-export type LoadedInputEvent = DisplayableEvent & MessageEvent & StepEvent & {
-  __typename?: 'LoadedInputEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  inputName: Scalars['String']['output'];
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  managerKey: Scalars['String']['output'];
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-  upstreamOutputName?: Maybe<Scalars['String']['output']>;
-  upstreamStepKey?: Maybe<Scalars['String']['output']>;
-};
+export type LoadedInputEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "LoadedInputEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    inputName: Scalars["String"]["output"];
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    managerKey: Scalars["String"]["output"];
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+    upstreamOutputName?: Maybe<Scalars["String"]["output"]>;
+    upstreamStepKey?: Maybe<Scalars["String"]["output"]>;
+  };
 
 export type LocalFileCodeReference = {
-  __typename?: 'LocalFileCodeReference';
-  filePath: Scalars['String']['output'];
-  label?: Maybe<Scalars['String']['output']>;
-  lineNumber?: Maybe<Scalars['Int']['output']>;
+  __typename?: "LocalFileCodeReference";
+  filePath: Scalars["String"]["output"];
+  label?: Maybe<Scalars["String"]["output"]>;
+  lineNumber?: Maybe<Scalars["Int"]["output"]>;
 };
 
 export type LocationDocsJson = {
-  __typename?: 'LocationDocsJson';
-  json: Scalars['JSONString']['output'];
+  __typename?: "LocationDocsJson";
+  json: Scalars["JSONString"]["output"];
 };
 
 export type LocationDocsJsonOrError = LocationDocsJson | PythonError;
 
 export type LocationStateChangeEvent = {
-  __typename?: 'LocationStateChangeEvent';
+  __typename?: "LocationStateChangeEvent";
   eventType: LocationStateChangeEventType;
-  locationName: Scalars['String']['output'];
-  message: Scalars['String']['output'];
-  serverId?: Maybe<Scalars['String']['output']>;
+  locationName: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
+  serverId?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** An enumeration. */
 export enum LocationStateChangeEventType {
-  LocationDisconnected = 'LOCATION_DISCONNECTED',
-  LocationError = 'LOCATION_ERROR',
-  LocationReconnected = 'LOCATION_RECONNECTED',
-  LocationUpdated = 'LOCATION_UPDATED'
+  LocationDisconnected = "LOCATION_DISCONNECTED",
+  LocationError = "LOCATION_ERROR",
+  LocationReconnected = "LOCATION_RECONNECTED",
+  LocationUpdated = "LOCATION_UPDATED",
 }
 
 export type LocationStateChangeSubscription = {
-  __typename?: 'LocationStateChangeSubscription';
+  __typename?: "LocationStateChangeSubscription";
   event: LocationStateChangeEvent;
 };
 
 export enum LogLevel {
-  Critical = 'CRITICAL',
-  Debug = 'DEBUG',
-  Error = 'ERROR',
-  Info = 'INFO',
-  Warning = 'WARNING'
+  Critical = "CRITICAL",
+  Debug = "DEBUG",
+  Error = "ERROR",
+  Info = "INFO",
+  Warning = "WARNING",
 }
 
 export type LogMessageEvent = MessageEvent & {
-  __typename?: 'LogMessageEvent';
+  __typename?: "LogMessageEvent";
   eventType?: Maybe<DagsterEventType>;
   level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
+  message: Scalars["String"]["output"];
+  runId: Scalars["String"]["output"];
+  solidHandleID?: Maybe<Scalars["String"]["output"]>;
+  stepKey?: Maybe<Scalars["String"]["output"]>;
+  timestamp: Scalars["String"]["output"];
 };
 
 export type LogRetrievalShellCommand = {
-  __typename?: 'LogRetrievalShellCommand';
-  stderr?: Maybe<Scalars['String']['output']>;
-  stdout?: Maybe<Scalars['String']['output']>;
+  __typename?: "LogRetrievalShellCommand";
+  stderr?: Maybe<Scalars["String"]["output"]>;
+  stdout?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** The output from logging telemetry. */
@@ -2492,42 +2660,42 @@ export type LogTelemetryMutationResult = LogTelemetrySuccess | PythonError;
 
 /** Output indicating that telemetry was logged. */
 export type LogTelemetrySuccess = {
-  __typename?: 'LogTelemetrySuccess';
-  action: Scalars['String']['output'];
+  __typename?: "LogTelemetrySuccess";
+  action: Scalars["String"]["output"];
 };
 
 export type Logger = {
-  __typename?: 'Logger';
+  __typename?: "Logger";
   configField?: Maybe<ConfigTypeField>;
-  description?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
 };
 
 export type LogsCapturedEvent = MessageEvent & {
-  __typename?: 'LogsCapturedEvent';
+  __typename?: "LogsCapturedEvent";
   eventType?: Maybe<DagsterEventType>;
-  externalStderrUrl?: Maybe<Scalars['String']['output']>;
-  externalStdoutUrl?: Maybe<Scalars['String']['output']>;
-  externalUrl?: Maybe<Scalars['String']['output']>;
-  fileKey: Scalars['String']['output'];
+  externalStderrUrl?: Maybe<Scalars["String"]["output"]>;
+  externalStdoutUrl?: Maybe<Scalars["String"]["output"]>;
+  externalUrl?: Maybe<Scalars["String"]["output"]>;
+  fileKey: Scalars["String"]["output"];
   level: LogLevel;
-  logKey: Scalars['String']['output'];
-  message: Scalars['String']['output'];
-  pid?: Maybe<Scalars['Int']['output']>;
-  runId: Scalars['String']['output'];
+  logKey: Scalars["String"]["output"];
+  message: Scalars["String"]["output"];
+  pid?: Maybe<Scalars["Int"]["output"]>;
+  runId: Scalars["String"]["output"];
   shellCmd?: Maybe<LogRetrievalShellCommand>;
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  stepKeys?: Maybe<Array<Scalars['String']['output']>>;
-  timestamp: Scalars['String']['output'];
+  solidHandleID?: Maybe<Scalars["String"]["output"]>;
+  stepKey?: Maybe<Scalars["String"]["output"]>;
+  stepKeys?: Maybe<Array<Scalars["String"]["output"]>>;
+  timestamp: Scalars["String"]["output"];
 };
 
 export type MapConfigType = ConfigType & {
-  __typename?: 'MapConfigType';
-  description?: Maybe<Scalars['String']['output']>;
-  isSelector: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
-  keyLabelName?: Maybe<Scalars['String']['output']>;
+  __typename?: "MapConfigType";
+  description?: Maybe<Scalars["String"]["output"]>;
+  isSelector: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
+  keyLabelName?: Maybe<Scalars["String"]["output"]>;
   keyType: ConfigType;
   /**
    *
@@ -2555,57 +2723,59 @@ export type MapConfigType = ConfigType & {
    * navigating the full schema client-side and not innerTypes.
    *
    */
-  typeParamKeys: Array<Scalars['String']['output']>;
+  typeParamKeys: Array<Scalars["String"]["output"]>;
   valueType: ConfigType;
 };
 
 export type MarkdownMetadataEntry = MetadataEntry & {
-  __typename?: 'MarkdownMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  mdStr: Scalars['String']['output'];
+  __typename?: "MarkdownMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  mdStr: Scalars["String"]["output"];
 };
 
 export type MarkerEvent = {
-  markerEnd?: Maybe<Scalars['String']['output']>;
-  markerStart?: Maybe<Scalars['String']['output']>;
+  markerEnd?: Maybe<Scalars["String"]["output"]>;
+  markerStart?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type MarshalledInput = {
-  inputName: Scalars['String']['input'];
-  key: Scalars['String']['input'];
+  inputName: Scalars["String"]["input"];
+  key: Scalars["String"]["input"];
 };
 
 export type MarshalledOutput = {
-  key: Scalars['String']['input'];
-  outputName: Scalars['String']['input'];
+  key: Scalars["String"]["input"];
+  outputName: Scalars["String"]["input"];
 };
 
-export type MaterializationEvent = DisplayableEvent & MessageEvent & StepEvent & {
-  __typename?: 'MaterializationEvent';
-  assetKey?: Maybe<AssetKey>;
-  assetLineage: Array<AssetLineageInfo>;
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  partition?: Maybe<Scalars['String']['output']>;
-  runId: Scalars['String']['output'];
-  runOrError: RunOrError;
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  stepStats: RunStepStats;
-  tags: Array<EventTag>;
-  timestamp: Scalars['String']['output'];
-};
+export type MaterializationEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "MaterializationEvent";
+    assetKey?: Maybe<AssetKey>;
+    assetLineage: Array<AssetLineageInfo>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type MaterializationUpstreamDataVersion = {
-  __typename?: 'MaterializationUpstreamDataVersion';
+  __typename?: "MaterializationUpstreamDataVersion";
   assetKey: AssetKey;
   downstreamAssetKey: AssetKey;
-  timestamp: Scalars['String']['output'];
+  timestamp: Scalars["String"]["output"];
 };
 
 /**
@@ -2614,95 +2784,95 @@ export type MaterializationUpstreamDataVersion = {
  * the first defined dimension.
  */
 export type MaterializedPartitionRangeStatuses2D = {
-  __typename?: 'MaterializedPartitionRangeStatuses2D';
-  primaryDimEndKey: Scalars['String']['output'];
-  primaryDimEndTime?: Maybe<Scalars['Float']['output']>;
-  primaryDimStartKey: Scalars['String']['output'];
-  primaryDimStartTime?: Maybe<Scalars['Float']['output']>;
+  __typename?: "MaterializedPartitionRangeStatuses2D";
+  primaryDimEndKey: Scalars["String"]["output"];
+  primaryDimEndTime?: Maybe<Scalars["Float"]["output"]>;
+  primaryDimStartKey: Scalars["String"]["output"];
+  primaryDimStartTime?: Maybe<Scalars["Float"]["output"]>;
   secondaryDim: PartitionStatus1D;
 };
 
 export enum MemberRole {
-  Admin = 'ADMIN',
-  Member = 'MEMBER',
-  Owner = 'OWNER'
+  Admin = "ADMIN",
+  Member = "MEMBER",
+  Owner = "OWNER",
 }
 
 export type MessageEvent = {
   eventType?: Maybe<DagsterEventType>;
   level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
+  message: Scalars["String"]["output"];
+  runId: Scalars["String"]["output"];
+  solidHandleID?: Maybe<Scalars["String"]["output"]>;
+  stepKey?: Maybe<Scalars["String"]["output"]>;
+  timestamp: Scalars["String"]["output"];
 };
 
 export type MetadataEntry = {
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
 };
 
 export type MetadataItemDefinition = {
-  __typename?: 'MetadataItemDefinition';
-  key: Scalars['String']['output'];
-  value: Scalars['String']['output'];
+  __typename?: "MetadataItemDefinition";
+  key: Scalars["String"]["output"];
+  value: Scalars["String"]["output"];
 };
 
 export type MissingFieldConfigError = PipelineConfigValidationError & {
-  __typename?: 'MissingFieldConfigError';
+  __typename?: "MissingFieldConfigError";
   field: ConfigTypeField;
-  message: Scalars['String']['output'];
-  path: Array<Scalars['String']['output']>;
+  message: Scalars["String"]["output"];
+  path: Array<Scalars["String"]["output"]>;
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
 };
 
 export type MissingFieldsConfigError = PipelineConfigValidationError & {
-  __typename?: 'MissingFieldsConfigError';
+  __typename?: "MissingFieldsConfigError";
   fields: Array<ConfigTypeField>;
-  message: Scalars['String']['output'];
-  path: Array<Scalars['String']['output']>;
+  message: Scalars["String"]["output"];
+  path: Array<Scalars["String"]["output"]>;
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
 };
 
 export type MissingRunIdErrorEvent = {
-  __typename?: 'MissingRunIdErrorEvent';
-  invalidRunId: Scalars['String']['output'];
+  __typename?: "MissingRunIdErrorEvent";
+  invalidRunId: Scalars["String"]["output"];
 };
 
 export type Mode = {
-  __typename?: 'Mode';
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['String']['output'];
+  __typename?: "Mode";
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["String"]["output"];
   loggers: Array<Logger>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   resources: Array<Resource>;
 };
 
 export type ModeNotFoundError = Error & {
-  __typename?: 'ModeNotFoundError';
-  message: Scalars['String']['output'];
-  mode: Scalars['String']['output'];
+  __typename?: "ModeNotFoundError";
+  message: Scalars["String"]["output"];
+  mode: Scalars["String"]["output"];
 };
 
 export type MultiPartitionStatuses = {
-  __typename?: 'MultiPartitionStatuses';
-  primaryDimensionName: Scalars['String']['output'];
+  __typename?: "MultiPartitionStatuses";
+  primaryDimensionName: Scalars["String"]["output"];
   ranges: Array<MaterializedPartitionRangeStatuses2D>;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type Mutation = {
-  __typename?: 'Mutation';
-  _no_fields_accessible?: Maybe<Scalars['String']['output']>;
+  __typename?: "Mutation";
+  _no_fields_accessible?: Maybe<Scalars["String"]["output"]>;
   /** Adds a partition to a dynamic partition set. */
   addDynamicPartition: AddDynamicPartitionResult;
   /** Cancels a set of partition backfill runs. */
   cancelPartitionBackfill: CancelBackfillResult;
   /** Sets the concurrency limit for a given concurrency key. */
-  deleteConcurrencyLimit: Scalars['Boolean']['output'];
+  deleteConcurrencyLimit: Scalars["Boolean"]["output"];
   /** Deletes partitions from a dynamic partition set. */
   deleteDynamicPartitions: DeleteDynamicPartitionsResult;
   /** Deletes a run from storage. */
@@ -2710,9 +2880,9 @@ export type Mutation = {
   /** Deletes a run from storage. */
   deleteRun: DeletePipelineRunResult;
   /** Frees concurrency slots. */
-  freeConcurrencySlots: Scalars['Boolean']['output'];
+  freeConcurrencySlots: Scalars["Boolean"]["output"];
   /** Frees the concurrency slots occupied by a specific run. */
-  freeConcurrencySlotsForRun: Scalars['Boolean']['output'];
+  freeConcurrencySlotsForRun: Scalars["Boolean"]["output"];
   /** Launches multiple job runs. */
   launchMultipleRuns: LaunchMultipleRunsResultOrError;
   /** Launches a set of partition backfill runs. */
@@ -2762,11 +2932,11 @@ export type Mutation = {
   /** Enable a sensor to launch runs for a job based on external state change. */
   sensorDryRun: SensorDryRunResult;
   /** Toggle asset auto materializing on or off. */
-  setAutoMaterializePaused: Scalars['Boolean']['output'];
+  setAutoMaterializePaused: Scalars["Boolean"]["output"];
   /** Sets the concurrency limit for a given concurrency key. */
-  setConcurrencyLimit: Scalars['Boolean']['output'];
+  setConcurrencyLimit: Scalars["Boolean"]["output"];
   /** Store whether we've shown the nux to any user and they've dismissed or submitted it. */
-  setNuxSeen: Scalars['Boolean']['output'];
+  setNuxSeen: Scalars["Boolean"]["output"];
   /** Set a cursor for a sensor to track state across evaluations. */
   setSensorCursor: SensorOrError;
   /** Shuts down a code location server. */
@@ -2789,77 +2959,65 @@ export type Mutation = {
   wipeAssets: AssetWipeMutationResult;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationAddDynamicPartitionArgs = {
-  partitionKey: Scalars['String']['input'];
-  partitionsDefName: Scalars['String']['input'];
+  partitionKey: Scalars["String"]["input"];
+  partitionsDefName: Scalars["String"]["input"];
   repositorySelector: RepositorySelector;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCancelPartitionBackfillArgs = {
-  backfillId: Scalars['String']['input'];
+  backfillId: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteConcurrencyLimitArgs = {
-  concurrencyKey: Scalars['String']['input'];
+  concurrencyKey: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteDynamicPartitionsArgs = {
-  partitionKeys: Array<Scalars['String']['input']>;
-  partitionsDefName: Scalars['String']['input'];
+  partitionKeys: Array<Scalars["String"]["input"]>;
+  partitionsDefName: Scalars["String"]["input"];
   repositorySelector: RepositorySelector;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeletePipelineRunArgs = {
-  runId: Scalars['String']['input'];
+  runId: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteRunArgs = {
-  runId: Scalars['String']['input'];
+  runId: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationFreeConcurrencySlotsArgs = {
-  runId: Scalars['String']['input'];
-  stepKey?: InputMaybe<Scalars['String']['input']>;
+  runId: Scalars["String"]["input"];
+  stepKey?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationFreeConcurrencySlotsForRunArgs = {
-  runId: Scalars['String']['input'];
+  runId: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationLaunchMultipleRunsArgs = {
   executionParamsList: Array<ExecutionParams>;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationLaunchPartitionBackfillArgs = {
   backfillParams: LaunchBackfillParams;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationLaunchPipelineExecutionArgs = {
   executionParams: ExecutionParams;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationLaunchPipelineReexecutionArgs = {
@@ -2867,12 +3025,10 @@ export type MutationLaunchPipelineReexecutionArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationLaunchRunArgs = {
   executionParams: ExecutionParams;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationLaunchRunReexecutionArgs = {
@@ -2880,193 +3036,164 @@ export type MutationLaunchRunReexecutionArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationLogTelemetryArgs = {
-  action: Scalars['String']['input'];
-  clientId: Scalars['String']['input'];
-  clientTime: Scalars['String']['input'];
-  metadata: Scalars['String']['input'];
+  action: Scalars["String"]["input"];
+  clientId: Scalars["String"]["input"];
+  clientTime: Scalars["String"]["input"];
+  metadata: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_AcceptInvitationArgs = {
-  invitationId: Scalars['ID']['input'];
+  invitationId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_AddUserByEmailArgs = {
-  email: Scalars['String']['input'];
-  orgName: Scalars['String']['input'];
+  email: Scalars["String"]["input"];
+  orgName: Scalars["String"]["input"];
   role: MemberRole;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_CreateInvitationArgs = {
   input: CreateInvitationInput;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_RemoveMemberArgs = {
-  orgName: Scalars['String']['input'];
-  userId: Scalars['ID']['input'];
+  orgName: Scalars["String"]["input"];
+  userId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_RevokeInvitationArgs = {
-  invitationId: Scalars['ID']['input'];
+  invitationId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_SaveNotebookPreviewArgs = {
   input: SaveNotebookPreviewInput;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_UpdateMemberRoleArgs = {
-  orgName: Scalars['String']['input'];
+  orgName: Scalars["String"]["input"];
   role: MemberRole;
-  userId: Scalars['ID']['input'];
+  userId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_UpdateMyProfileArgs = {
   input: UpdateProfileInput;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReexecutePartitionBackfillArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReloadRepositoryLocationArgs = {
-  repositoryLocationName: Scalars['String']['input'];
+  repositoryLocationName: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReportRunlessAssetEventsArgs = {
   eventParams: ReportRunlessAssetEventsParams;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationResetScheduleArgs = {
   scheduleSelector: ScheduleSelector;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationResetSensorArgs = {
   sensorSelector: SensorSelector;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationResumePartitionBackfillArgs = {
-  backfillId: Scalars['String']['input'];
+  backfillId: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationScheduleDryRunArgs = {
   selectorData: ScheduleSelector;
-  timestamp?: InputMaybe<Scalars['Float']['input']>;
+  timestamp?: InputMaybe<Scalars["Float"]["input"]>;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationSensorDryRunArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   selectorData: SensorSelector;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationSetAutoMaterializePausedArgs = {
-  paused: Scalars['Boolean']['input'];
+  paused: Scalars["Boolean"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationSetConcurrencyLimitArgs = {
-  concurrencyKey: Scalars['String']['input'];
-  limit: Scalars['Int']['input'];
+  concurrencyKey: Scalars["String"]["input"];
+  limit: Scalars["Int"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationSetSensorCursorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   sensorSelector: SensorSelector;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationShutdownRepositoryLocationArgs = {
-  repositoryLocationName: Scalars['String']['input'];
+  repositoryLocationName: Scalars["String"]["input"];
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationStartScheduleArgs = {
   scheduleSelector: ScheduleSelector;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationStartSensorArgs = {
   sensorSelector: SensorSelector;
 };
 
-
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationStopRunningScheduleArgs = {
-  id?: InputMaybe<Scalars['String']['input']>;
-  scheduleOriginId?: InputMaybe<Scalars['String']['input']>;
-  scheduleSelectorId?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars["String"]["input"]>;
+  scheduleOriginId?: InputMaybe<Scalars["String"]["input"]>;
+  scheduleSelectorId?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationStopSensorArgs = {
-  id?: InputMaybe<Scalars['String']['input']>;
-  jobOriginId?: InputMaybe<Scalars['String']['input']>;
-  jobSelectorId?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars["String"]["input"]>;
+  jobOriginId?: InputMaybe<Scalars["String"]["input"]>;
+  jobSelectorId?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationTerminatePipelineExecutionArgs = {
-  runId: Scalars['String']['input'];
+  runId: Scalars["String"]["input"];
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationTerminateRunArgs = {
-  runId: Scalars['String']['input'];
+  runId: Scalars["String"]["input"];
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationTerminateRunsArgs = {
-  runIds: Array<Scalars['String']['input']>;
+  runIds: Array<Scalars["String"]["input"]>;
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
 };
-
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationWipeAssetsArgs = {
@@ -3074,181 +3201,185 @@ export type MutationWipeAssetsArgs = {
 };
 
 export type NestedResourceEntry = {
-  __typename?: 'NestedResourceEntry';
-  name: Scalars['String']['output'];
+  __typename?: "NestedResourceEntry";
+  name: Scalars["String"]["output"];
   resource?: Maybe<ResourceDetails>;
   type: NestedResourceType;
 };
 
 /** An enumeration. */
 export enum NestedResourceType {
-  Anonymous = 'ANONYMOUS',
-  TopLevel = 'TOP_LEVEL'
+  Anonymous = "ANONYMOUS",
+  TopLevel = "TOP_LEVEL",
 }
 
 export type NoModeProvidedError = Error & {
-  __typename?: 'NoModeProvidedError';
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
+  __typename?: "NoModeProvidedError";
+  message: Scalars["String"]["output"];
+  pipelineName: Scalars["String"]["output"];
 };
 
 /** An invocation of a solid within a repo. */
 export type NodeInvocationSite = {
-  __typename?: 'NodeInvocationSite';
+  __typename?: "NodeInvocationSite";
   pipeline: Pipeline;
   solidHandle: SolidHandle;
 };
 
 /** Notebook entity - represents a computational notebook */
 export type Notebook = {
-  __typename?: 'Notebook';
-  createdAt: Scalars['DateTime']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
-  notebookName: Scalars['String']['output'];
+  __typename?: "Notebook";
+  createdAt: Scalars["DateTime"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  notebookName: Scalars["String"]["output"];
   organization: Organization;
   /** Get preview image with signed URL */
   preview?: Maybe<NotebookPreview>;
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 export type NotebookMetadataEntry = MetadataEntry & {
-  __typename?: 'NotebookMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  path: Scalars['String']['output'];
+  __typename?: "NotebookMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  path: Scalars["String"]["output"];
 };
 
 export type NotebookPreview = {
-  __typename?: 'NotebookPreview';
-  expiresAt: Scalars['DateTime']['output'];
-  notebookId: Scalars['ID']['output'];
-  signedUrl: Scalars['String']['output'];
+  __typename?: "NotebookPreview";
+  expiresAt: Scalars["DateTime"]["output"];
+  notebookId: Scalars["ID"]["output"];
+  signedUrl: Scalars["String"]["output"];
 };
 
 export type NullMetadataEntry = MetadataEntry & {
-  __typename?: 'NullMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
+  __typename?: "NullMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
 };
 
-export type NullableConfigType = ConfigType & WrappingConfigType & {
-  __typename?: 'NullableConfigType';
-  description?: Maybe<Scalars['String']['output']>;
-  isSelector: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
-  ofType: ConfigType;
-  /**
-   *
-   * This is an odd and problematic field. It recursively goes down to
-   * get all the types contained within a type. The case where it is horrible
-   * are dictionaries and it recurses all the way down to the leaves. This means
-   * that in a case where one is fetching all the types and then all the inner
-   * types keys for those types, we are returning O(N^2) type keys, which
-   * can cause awful performance for large schemas. When you have access
-   * to *all* the types, you should instead only use the type_param_keys
-   * field for closed generic types and manually navigate down the to
-   * field types client-side.
-   *
-   * Where it is useful is when you are fetching types independently and
-   * want to be able to render them, but without fetching the entire schema.
-   *
-   * We use this capability when rendering the sidebar.
-   *
-   */
-  recursiveConfigTypes: Array<ConfigType>;
-  /**
-   *
-   * This returns the keys for type parameters of any closed generic type,
-   * (e.g. List, Optional). This should be used for reconstructing and
-   * navigating the full schema client-side and not innerTypes.
-   *
-   */
-  typeParamKeys: Array<Scalars['String']['output']>;
-};
+export type NullableConfigType = ConfigType &
+  WrappingConfigType & {
+    __typename?: "NullableConfigType";
+    description?: Maybe<Scalars["String"]["output"]>;
+    isSelector: Scalars["Boolean"]["output"];
+    key: Scalars["String"]["output"];
+    ofType: ConfigType;
+    /**
+     *
+     * This is an odd and problematic field. It recursively goes down to
+     * get all the types contained within a type. The case where it is horrible
+     * are dictionaries and it recurses all the way down to the leaves. This means
+     * that in a case where one is fetching all the types and then all the inner
+     * types keys for those types, we are returning O(N^2) type keys, which
+     * can cause awful performance for large schemas. When you have access
+     * to *all* the types, you should instead only use the type_param_keys
+     * field for closed generic types and manually navigate down the to
+     * field types client-side.
+     *
+     * Where it is useful is when you are fetching types independently and
+     * want to be able to render them, but without fetching the entire schema.
+     *
+     * We use this capability when rendering the sidebar.
+     *
+     */
+    recursiveConfigTypes: Array<ConfigType>;
+    /**
+     *
+     * This returns the keys for type parameters of any closed generic type,
+     * (e.g. List, Optional). This should be used for reconstructing and
+     * navigating the full schema client-side and not innerTypes.
+     *
+     */
+    typeParamKeys: Array<Scalars["String"]["output"]>;
+  };
 
-export type NullableDagsterType = DagsterType & WrappingDagsterType & {
-  __typename?: 'NullableDagsterType';
-  description?: Maybe<Scalars['String']['output']>;
-  displayName: Scalars['String']['output'];
-  innerTypes: Array<DagsterType>;
-  inputSchemaType?: Maybe<ConfigType>;
-  isBuiltin: Scalars['Boolean']['output'];
-  isList: Scalars['Boolean']['output'];
-  isNothing: Scalars['Boolean']['output'];
-  isNullable: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  name?: Maybe<Scalars['String']['output']>;
-  ofType: DagsterType;
-  outputSchemaType?: Maybe<ConfigType>;
-};
+export type NullableDagsterType = DagsterType &
+  WrappingDagsterType & {
+    __typename?: "NullableDagsterType";
+    description?: Maybe<Scalars["String"]["output"]>;
+    displayName: Scalars["String"]["output"];
+    innerTypes: Array<DagsterType>;
+    inputSchemaType?: Maybe<ConfigType>;
+    isBuiltin: Scalars["Boolean"]["output"];
+    isList: Scalars["Boolean"]["output"];
+    isNothing: Scalars["Boolean"]["output"];
+    isNullable: Scalars["Boolean"]["output"];
+    key: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    name?: Maybe<Scalars["String"]["output"]>;
+    ofType: DagsterType;
+    outputSchemaType?: Maybe<ConfigType>;
+  };
 
-export type ObjectStoreOperationEvent = MessageEvent & StepEvent & {
-  __typename?: 'ObjectStoreOperationEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  operationResult: ObjectStoreOperationResult;
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ObjectStoreOperationEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "ObjectStoreOperationEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    operationResult: ObjectStoreOperationResult;
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type ObjectStoreOperationResult = DisplayableEvent & {
-  __typename?: 'ObjectStoreOperationResult';
-  description?: Maybe<Scalars['String']['output']>;
-  label?: Maybe<Scalars['String']['output']>;
+  __typename?: "ObjectStoreOperationResult";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label?: Maybe<Scalars["String"]["output"]>;
   metadataEntries: Array<MetadataEntry>;
   op: ObjectStoreOperationType;
 };
 
 export enum ObjectStoreOperationType {
-  CpObject = 'CP_OBJECT',
-  GetObject = 'GET_OBJECT',
-  RmObject = 'RM_OBJECT',
-  SetObject = 'SET_OBJECT'
+  CpObject = "CP_OBJECT",
+  GetObject = "GET_OBJECT",
+  RmObject = "RM_OBJECT",
+  SetObject = "SET_OBJECT",
 }
 
-export type ObservationEvent = DisplayableEvent & MessageEvent & StepEvent & {
-  __typename?: 'ObservationEvent';
-  assetKey?: Maybe<AssetKey>;
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  partition?: Maybe<Scalars['String']['output']>;
-  runId: Scalars['String']['output'];
-  runOrError: RunOrError;
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  stepStats: RunStepStats;
-  tags: Array<EventTag>;
-  timestamp: Scalars['String']['output'];
-};
+export type ObservationEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "ObservationEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export enum OrderBy {
   /** Sorts the data in ascending order */
-  Asc = 'Asc',
+  Asc = "Asc",
   /** Sorts the data in descending order */
-  Desc = 'Desc'
+  Desc = "Desc",
 }
 
 /** Organization entity - represents a group of users working together */
 export type Organization = {
-  __typename?: 'Organization';
-  createdAt: Scalars['DateTime']['output'];
-  id: Scalars['ID']['output'];
+  __typename?: "Organization";
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
   /** Get invitations for this organization, optionally filtered by status */
   invitations: Array<Invitation>;
   /** Get all members of this organization */
   members: Array<OrganizationMember>;
-  orgName: Scalars['String']['output'];
+  orgName: Scalars["String"]["output"];
 };
-
 
 /** Organization entity - represents a group of users working together */
 export type OrganizationInvitationsArgs = {
@@ -3257,26 +3388,26 @@ export type OrganizationInvitationsArgs = {
 
 /** Organization member - represents a user's membership in an organization */
 export type OrganizationMember = {
-  __typename?: 'OrganizationMember';
-  id: Scalars['ID']['output'];
-  joinedAt: Scalars['DateTime']['output'];
+  __typename?: "OrganizationMember";
+  id: Scalars["ID"]["output"];
+  joinedAt: Scalars["DateTime"]["output"];
   organization: Organization;
   role: MemberRole;
   user: User;
-  userId: Scalars['ID']['output'];
+  userId: Scalars["ID"]["output"];
 };
 
 export type Oso_ArtifactsByCollectionV1 = {
-  __typename?: 'Oso_ArtifactsByCollectionV1';
-  artifactId: Scalars['String']['output'];
-  artifactName: Scalars['String']['output'];
-  artifactNamespace: Scalars['String']['output'];
-  artifactSource: Scalars['String']['output'];
-  artifactSourceId: Scalars['String']['output'];
-  collectionId: Scalars['String']['output'];
-  collectionName: Scalars['String']['output'];
-  collectionNamespace: Scalars['String']['output'];
-  collectionSource: Scalars['String']['output'];
+  __typename?: "Oso_ArtifactsByCollectionV1";
+  artifactId: Scalars["String"]["output"];
+  artifactName: Scalars["String"]["output"];
+  artifactNamespace: Scalars["String"]["output"];
+  artifactSource: Scalars["String"]["output"];
+  artifactSourceId: Scalars["String"]["output"];
+  collectionId: Scalars["String"]["output"];
+  collectionName: Scalars["String"]["output"];
+  collectionNamespace: Scalars["String"]["output"];
+  collectionSource: Scalars["String"]["output"];
 };
 
 export type Oso_ArtifactsByCollectionV1BoolExp = {
@@ -3307,16 +3438,16 @@ export type Oso_ArtifactsByCollectionV1OrderByExp = {
 };
 
 export type Oso_ArtifactsByProjectV1 = {
-  __typename?: 'Oso_ArtifactsByProjectV1';
-  artifactId: Scalars['String']['output'];
-  artifactName: Scalars['String']['output'];
-  artifactNamespace: Scalars['String']['output'];
-  artifactSource: Scalars['String']['output'];
-  artifactSourceId: Scalars['String']['output'];
-  projectId: Scalars['String']['output'];
-  projectName: Scalars['String']['output'];
-  projectNamespace: Scalars['String']['output'];
-  projectSource: Scalars['String']['output'];
+  __typename?: "Oso_ArtifactsByProjectV1";
+  artifactId: Scalars["String"]["output"];
+  artifactName: Scalars["String"]["output"];
+  artifactNamespace: Scalars["String"]["output"];
+  artifactSource: Scalars["String"]["output"];
+  artifactSourceId: Scalars["String"]["output"];
+  projectId: Scalars["String"]["output"];
+  projectName: Scalars["String"]["output"];
+  projectNamespace: Scalars["String"]["output"];
+  projectSource: Scalars["String"]["output"];
 };
 
 export type Oso_ArtifactsByProjectV1BoolExp = {
@@ -3347,18 +3478,18 @@ export type Oso_ArtifactsByProjectV1OrderBy = {
 };
 
 export type Oso_ArtifactsByUserV1 = {
-  __typename?: 'Oso_ArtifactsByUserV1';
-  artifactId: Scalars['String']['output'];
-  artifactName: Scalars['String']['output'];
-  artifactNamespace: Scalars['String']['output'];
-  artifactSource: Scalars['String']['output'];
-  artifactSourceId: Scalars['String']['output'];
-  userId: Scalars['String']['output'];
-  userName: Scalars['String']['output'];
-  userNamespace: Scalars['String']['output'];
-  userSource: Scalars['String']['output'];
-  userSourceId: Scalars['String']['output'];
-  userType: Scalars['String']['output'];
+  __typename?: "Oso_ArtifactsByUserV1";
+  artifactId: Scalars["String"]["output"];
+  artifactName: Scalars["String"]["output"];
+  artifactNamespace: Scalars["String"]["output"];
+  artifactSource: Scalars["String"]["output"];
+  artifactSourceId: Scalars["String"]["output"];
+  userId: Scalars["String"]["output"];
+  userName: Scalars["String"]["output"];
+  userNamespace: Scalars["String"]["output"];
+  userSource: Scalars["String"]["output"];
+  userSourceId: Scalars["String"]["output"];
+  userType: Scalars["String"]["output"];
 };
 
 export type Oso_ArtifactsByUserV1BoolExp = {
@@ -3393,12 +3524,12 @@ export type Oso_ArtifactsByUserV1OrderByExp = {
 };
 
 export type Oso_ArtifactsV1 = {
-  __typename?: 'Oso_ArtifactsV1';
-  artifactId: Scalars['String']['output'];
-  artifactName: Scalars['String']['output'];
-  artifactNamespace: Scalars['String']['output'];
-  artifactSource: Scalars['String']['output'];
-  artifactSourceId: Scalars['String']['output'];
+  __typename?: "Oso_ArtifactsV1";
+  artifactId: Scalars["String"]["output"];
+  artifactName: Scalars["String"]["output"];
+  artifactNamespace: Scalars["String"]["output"];
+  artifactSource: Scalars["String"]["output"];
+  artifactSourceId: Scalars["String"]["output"];
 };
 
 export type Oso_ArtifactsV1BoolExp = {
@@ -3421,33 +3552,33 @@ export type Oso_ArtifactsV1OrderByExp = {
 };
 
 export type Oso_BoolBoolExp = {
-  _eq?: InputMaybe<Scalars['Oso_Bool']['input']>;
-  _in?: InputMaybe<Array<Scalars['Oso_Bool']['input']>>;
-  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _neq?: InputMaybe<Scalars['Oso_Bool']['input']>;
-  _nin?: InputMaybe<Array<Scalars['Oso_Bool']['input']>>;
+  _eq?: InputMaybe<Scalars["Oso_Bool"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["Oso_Bool"]["input"]>>;
+  _is_null?: InputMaybe<Scalars["Boolean"]["input"]>;
+  _neq?: InputMaybe<Scalars["Oso_Bool"]["input"]>;
+  _nin?: InputMaybe<Array<Scalars["Oso_Bool"]["input"]>>;
 };
 
 export type Oso_CodeMetricsByArtifactV0 = {
-  __typename?: 'Oso_CodeMetricsByArtifactV0';
-  activeDeveloperCount6Months: Scalars['Oso_Float32']['output'];
-  artifactId: Scalars['String']['output'];
-  artifactName: Scalars['String']['output'];
-  artifactNamespace: Scalars['String']['output'];
-  closedIssueCount6Months: Scalars['Oso_Float32']['output'];
-  commitCount6Months: Scalars['Oso_Float32']['output'];
-  contributorCount: Scalars['Oso_Float32']['output'];
-  contributorCount6Months: Scalars['Oso_Float32']['output'];
-  eventSource: Scalars['String']['output'];
-  firstCommitDate: Scalars['Oso_DateTime']['output'];
-  forkCount: Scalars['Oso_Int64']['output'];
-  fulltimeDeveloperAverage6Months: Scalars['Oso_Float32']['output'];
-  lastCommitDate: Scalars['Oso_DateTime']['output'];
-  mergedPullRequestCount6Months: Scalars['Oso_Float32']['output'];
-  newContributorCount6Months: Scalars['Oso_Float32']['output'];
-  openedIssueCount6Months: Scalars['Oso_Float32']['output'];
-  openedPullRequestCount6Months: Scalars['Oso_Float32']['output'];
-  starCount: Scalars['Oso_Int64']['output'];
+  __typename?: "Oso_CodeMetricsByArtifactV0";
+  activeDeveloperCount6Months: Scalars["Oso_Float32"]["output"];
+  artifactId: Scalars["String"]["output"];
+  artifactName: Scalars["String"]["output"];
+  artifactNamespace: Scalars["String"]["output"];
+  closedIssueCount6Months: Scalars["Oso_Float32"]["output"];
+  commitCount6Months: Scalars["Oso_Float32"]["output"];
+  contributorCount: Scalars["Oso_Float32"]["output"];
+  contributorCount6Months: Scalars["Oso_Float32"]["output"];
+  eventSource: Scalars["String"]["output"];
+  firstCommitDate: Scalars["Oso_DateTime"]["output"];
+  forkCount: Scalars["Oso_Int64"]["output"];
+  fulltimeDeveloperAverage6Months: Scalars["Oso_Float32"]["output"];
+  lastCommitDate: Scalars["Oso_DateTime"]["output"];
+  mergedPullRequestCount6Months: Scalars["Oso_Float32"]["output"];
+  newContributorCount6Months: Scalars["Oso_Float32"]["output"];
+  openedIssueCount6Months: Scalars["Oso_Float32"]["output"];
+  openedPullRequestCount6Months: Scalars["Oso_Float32"]["output"];
+  starCount: Scalars["Oso_Int64"]["output"];
 };
 
 export type Oso_CodeMetricsByArtifactV0BoolExp = {
@@ -3496,35 +3627,35 @@ export type Oso_CodeMetricsByArtifactV0OrderBy = {
 };
 
 export type Oso_CodeMetricsByProjectV1 = {
-  __typename?: 'Oso_CodeMetricsByProjectV1';
-  activeDeveloperCount6Months: Scalars['Oso_Float32']['output'];
-  closedIssueCount6Months: Scalars['Oso_Float32']['output'];
-  commentCount6Months: Scalars['Oso_Float32']['output'];
-  commitCount6Months: Scalars['Oso_Float32']['output'];
-  contributorCount: Scalars['Oso_Float32']['output'];
-  contributorCount6Months: Scalars['Oso_Float32']['output'];
-  developerCount: Scalars['Oso_Float32']['output'];
-  displayName: Scalars['String']['output'];
-  eventSource: Scalars['String']['output'];
-  firstCommitDate: Scalars['Oso_DateTime']['output'];
-  firstCreatedAtDate: Scalars['Oso_DateTime']['output'];
-  forkCount: Scalars['Oso_Int64']['output'];
-  fulltimeDeveloperAverage6Months: Scalars['Oso_Float32']['output'];
-  lastCommitDate: Scalars['Oso_DateTime']['output'];
-  lastUpdatedAtDate: Scalars['Oso_DateTime']['output'];
-  mergedPullRequestCount6Months: Scalars['Oso_Float32']['output'];
-  newContributorCount6Months: Scalars['Oso_Float32']['output'];
-  openedIssueCount6Months: Scalars['Oso_Float32']['output'];
-  openedPullRequestCount6Months: Scalars['Oso_Float32']['output'];
-  projectId: Scalars['String']['output'];
-  projectName: Scalars['String']['output'];
-  projectNamespace: Scalars['String']['output'];
-  projectSource: Scalars['String']['output'];
-  releaseCount6Months: Scalars['Oso_Float32']['output'];
-  repositoryCount: Scalars['Oso_Int64']['output'];
-  starCount: Scalars['Oso_Int64']['output'];
-  timeToFirstResponseDaysAverage6Months: Scalars['Oso_Float32']['output'];
-  timeToMergeDaysAverage6Months: Scalars['Oso_Float32']['output'];
+  __typename?: "Oso_CodeMetricsByProjectV1";
+  activeDeveloperCount6Months: Scalars["Oso_Float32"]["output"];
+  closedIssueCount6Months: Scalars["Oso_Float32"]["output"];
+  commentCount6Months: Scalars["Oso_Float32"]["output"];
+  commitCount6Months: Scalars["Oso_Float32"]["output"];
+  contributorCount: Scalars["Oso_Float32"]["output"];
+  contributorCount6Months: Scalars["Oso_Float32"]["output"];
+  developerCount: Scalars["Oso_Float32"]["output"];
+  displayName: Scalars["String"]["output"];
+  eventSource: Scalars["String"]["output"];
+  firstCommitDate: Scalars["Oso_DateTime"]["output"];
+  firstCreatedAtDate: Scalars["Oso_DateTime"]["output"];
+  forkCount: Scalars["Oso_Int64"]["output"];
+  fulltimeDeveloperAverage6Months: Scalars["Oso_Float32"]["output"];
+  lastCommitDate: Scalars["Oso_DateTime"]["output"];
+  lastUpdatedAtDate: Scalars["Oso_DateTime"]["output"];
+  mergedPullRequestCount6Months: Scalars["Oso_Float32"]["output"];
+  newContributorCount6Months: Scalars["Oso_Float32"]["output"];
+  openedIssueCount6Months: Scalars["Oso_Float32"]["output"];
+  openedPullRequestCount6Months: Scalars["Oso_Float32"]["output"];
+  projectId: Scalars["String"]["output"];
+  projectName: Scalars["String"]["output"];
+  projectNamespace: Scalars["String"]["output"];
+  projectSource: Scalars["String"]["output"];
+  releaseCount6Months: Scalars["Oso_Float32"]["output"];
+  repositoryCount: Scalars["Oso_Int64"]["output"];
+  starCount: Scalars["Oso_Int64"]["output"];
+  timeToFirstResponseDaysAverage6Months: Scalars["Oso_Float32"]["output"];
+  timeToMergeDaysAverage6Months: Scalars["Oso_Float32"]["output"];
 };
 
 export type Oso_CodeMetricsByProjectV1BoolExp = {
@@ -3593,13 +3724,13 @@ export type Oso_CodeMetricsByProjectV1OrderBy = {
 };
 
 export type Oso_CollectionsV1 = {
-  __typename?: 'Oso_CollectionsV1';
-  collectionId: Scalars['String']['output'];
-  collectionName: Scalars['String']['output'];
-  collectionNamespace: Scalars['String']['output'];
-  collectionSource: Scalars['String']['output'];
-  description: Scalars['String']['output'];
-  displayName: Scalars['String']['output'];
+  __typename?: "Oso_CollectionsV1";
+  collectionId: Scalars["String"]["output"];
+  collectionName: Scalars["String"]["output"];
+  collectionNamespace: Scalars["String"]["output"];
+  collectionSource: Scalars["String"]["output"];
+  description: Scalars["String"]["output"];
+  displayName: Scalars["String"]["output"];
 };
 
 export type Oso_CollectionsV1BoolExp = {
@@ -3624,14 +3755,14 @@ export type Oso_CollectionsV1OrderBy = {
 };
 
 export type Oso_ContractsV0 = {
-  __typename?: 'Oso_ContractsV0';
-  contractAddress: Scalars['String']['output'];
-  contractNamespace: Scalars['String']['output'];
-  deploymentDate: Scalars['Oso_Date']['output'];
-  factoryAddress: Scalars['String']['output'];
-  originatingAddress: Scalars['String']['output'];
-  rootDeployerAddress: Scalars['String']['output'];
-  sortWeight: Scalars['Oso_Int64']['output'];
+  __typename?: "Oso_ContractsV0";
+  contractAddress: Scalars["String"]["output"];
+  contractNamespace: Scalars["String"]["output"];
+  deploymentDate: Scalars["Oso_Date"]["output"];
+  factoryAddress: Scalars["String"]["output"];
+  originatingAddress: Scalars["String"]["output"];
+  rootDeployerAddress: Scalars["String"]["output"];
+  sortWeight: Scalars["Oso_Int64"]["output"];
 };
 
 export type Oso_ContractsV0BoolExp = {
@@ -3658,44 +3789,44 @@ export type Oso_ContractsV0OrderByExp = {
 };
 
 export type Oso_DateBoolExp = {
-  _eq?: InputMaybe<Scalars['Oso_Date']['input']>;
-  _gt?: InputMaybe<Scalars['Oso_Date']['input']>;
-  _gte?: InputMaybe<Scalars['Oso_Date']['input']>;
-  _in?: InputMaybe<Array<Scalars['Oso_Date']['input']>>;
-  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _lt?: InputMaybe<Scalars['Oso_Date']['input']>;
-  _lte?: InputMaybe<Scalars['Oso_Date']['input']>;
-  _neq?: InputMaybe<Scalars['Oso_Date']['input']>;
-  _nin?: InputMaybe<Array<Scalars['Oso_Date']['input']>>;
+  _eq?: InputMaybe<Scalars["Oso_Date"]["input"]>;
+  _gt?: InputMaybe<Scalars["Oso_Date"]["input"]>;
+  _gte?: InputMaybe<Scalars["Oso_Date"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["Oso_Date"]["input"]>>;
+  _is_null?: InputMaybe<Scalars["Boolean"]["input"]>;
+  _lt?: InputMaybe<Scalars["Oso_Date"]["input"]>;
+  _lte?: InputMaybe<Scalars["Oso_Date"]["input"]>;
+  _neq?: InputMaybe<Scalars["Oso_Date"]["input"]>;
+  _nin?: InputMaybe<Array<Scalars["Oso_Date"]["input"]>>;
 };
 
 export type Oso_DateTime646BoolExp = {
-  _eq?: InputMaybe<Scalars['Oso_DateTime646']['input']>;
-  _gt?: InputMaybe<Scalars['Oso_DateTime646']['input']>;
-  _gte?: InputMaybe<Scalars['Oso_DateTime646']['input']>;
-  _in?: InputMaybe<Array<Scalars['Oso_DateTime646']['input']>>;
-  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _lt?: InputMaybe<Scalars['Oso_DateTime646']['input']>;
-  _lte?: InputMaybe<Scalars['Oso_DateTime646']['input']>;
-  _neq?: InputMaybe<Scalars['Oso_DateTime646']['input']>;
-  _nin?: InputMaybe<Array<Scalars['Oso_DateTime646']['input']>>;
+  _eq?: InputMaybe<Scalars["Oso_DateTime646"]["input"]>;
+  _gt?: InputMaybe<Scalars["Oso_DateTime646"]["input"]>;
+  _gte?: InputMaybe<Scalars["Oso_DateTime646"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["Oso_DateTime646"]["input"]>>;
+  _is_null?: InputMaybe<Scalars["Boolean"]["input"]>;
+  _lt?: InputMaybe<Scalars["Oso_DateTime646"]["input"]>;
+  _lte?: InputMaybe<Scalars["Oso_DateTime646"]["input"]>;
+  _neq?: InputMaybe<Scalars["Oso_DateTime646"]["input"]>;
+  _nin?: InputMaybe<Array<Scalars["Oso_DateTime646"]["input"]>>;
 };
 
 export type Oso_DateTimeBoolExp = {
-  _eq?: InputMaybe<Scalars['Oso_DateTime']['input']>;
-  _gt?: InputMaybe<Scalars['Oso_DateTime']['input']>;
-  _gte?: InputMaybe<Scalars['Oso_DateTime']['input']>;
-  _in?: InputMaybe<Array<Scalars['Oso_DateTime']['input']>>;
-  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _lt?: InputMaybe<Scalars['Oso_DateTime']['input']>;
-  _lte?: InputMaybe<Scalars['Oso_DateTime']['input']>;
-  _neq?: InputMaybe<Scalars['Oso_DateTime']['input']>;
-  _nin?: InputMaybe<Array<Scalars['Oso_DateTime']['input']>>;
+  _eq?: InputMaybe<Scalars["Oso_DateTime"]["input"]>;
+  _gt?: InputMaybe<Scalars["Oso_DateTime"]["input"]>;
+  _gte?: InputMaybe<Scalars["Oso_DateTime"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["Oso_DateTime"]["input"]>>;
+  _is_null?: InputMaybe<Scalars["Boolean"]["input"]>;
+  _lt?: InputMaybe<Scalars["Oso_DateTime"]["input"]>;
+  _lte?: InputMaybe<Scalars["Oso_DateTime"]["input"]>;
+  _neq?: InputMaybe<Scalars["Oso_DateTime"]["input"]>;
+  _nin?: InputMaybe<Array<Scalars["Oso_DateTime"]["input"]>>;
 };
 
 export type Oso_EventTypesV1 = {
-  __typename?: 'Oso_EventTypesV1';
-  eventType: Scalars['String']['output'];
+  __typename?: "Oso_EventTypesV1";
+  eventType: Scalars["String"]["output"];
 };
 
 export type Oso_EventTypesV1BoolExp = {
@@ -3710,40 +3841,40 @@ export type Oso_EventTypesV1OrderBy = {
 };
 
 export type Oso_Float32BoolExp = {
-  _eq?: InputMaybe<Scalars['Oso_Float32']['input']>;
-  _gt?: InputMaybe<Scalars['Oso_Float32']['input']>;
-  _gte?: InputMaybe<Scalars['Oso_Float32']['input']>;
-  _in?: InputMaybe<Array<Scalars['Oso_Float32']['input']>>;
-  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _lt?: InputMaybe<Scalars['Oso_Float32']['input']>;
-  _lte?: InputMaybe<Scalars['Oso_Float32']['input']>;
-  _neq?: InputMaybe<Scalars['Oso_Float32']['input']>;
-  _nin?: InputMaybe<Array<Scalars['Oso_Float32']['input']>>;
+  _eq?: InputMaybe<Scalars["Oso_Float32"]["input"]>;
+  _gt?: InputMaybe<Scalars["Oso_Float32"]["input"]>;
+  _gte?: InputMaybe<Scalars["Oso_Float32"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["Oso_Float32"]["input"]>>;
+  _is_null?: InputMaybe<Scalars["Boolean"]["input"]>;
+  _lt?: InputMaybe<Scalars["Oso_Float32"]["input"]>;
+  _lte?: InputMaybe<Scalars["Oso_Float32"]["input"]>;
+  _neq?: InputMaybe<Scalars["Oso_Float32"]["input"]>;
+  _nin?: InputMaybe<Array<Scalars["Oso_Float32"]["input"]>>;
 };
 
 export type Oso_Float64BoolExp = {
-  _eq?: InputMaybe<Scalars['Oso_Float64']['input']>;
-  _gt?: InputMaybe<Scalars['Oso_Float64']['input']>;
-  _gte?: InputMaybe<Scalars['Oso_Float64']['input']>;
-  _in?: InputMaybe<Array<Scalars['Oso_Float64']['input']>>;
-  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _lt?: InputMaybe<Scalars['Oso_Float64']['input']>;
-  _lte?: InputMaybe<Scalars['Oso_Float64']['input']>;
-  _neq?: InputMaybe<Scalars['Oso_Float64']['input']>;
-  _nin?: InputMaybe<Array<Scalars['Oso_Float64']['input']>>;
+  _eq?: InputMaybe<Scalars["Oso_Float64"]["input"]>;
+  _gt?: InputMaybe<Scalars["Oso_Float64"]["input"]>;
+  _gte?: InputMaybe<Scalars["Oso_Float64"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["Oso_Float64"]["input"]>>;
+  _is_null?: InputMaybe<Scalars["Boolean"]["input"]>;
+  _lt?: InputMaybe<Scalars["Oso_Float64"]["input"]>;
+  _lte?: InputMaybe<Scalars["Oso_Float64"]["input"]>;
+  _neq?: InputMaybe<Scalars["Oso_Float64"]["input"]>;
+  _nin?: InputMaybe<Array<Scalars["Oso_Float64"]["input"]>>;
 };
 
 export type Oso_FundingMetricsByProjectV1 = {
-  __typename?: 'Oso_FundingMetricsByProjectV1';
-  displayName: Scalars['String']['output'];
-  eventSource: Scalars['String']['output'];
-  projectId: Scalars['String']['output'];
-  projectName: Scalars['String']['output'];
-  projectNamespace: Scalars['String']['output'];
-  projectSource: Scalars['String']['output'];
-  totalFundersCount: Scalars['Oso_Int64']['output'];
-  totalFundingReceivedUsd: Scalars['Oso_Float32']['output'];
-  totalFundingReceivedUsd6Months: Scalars['Oso_Float32']['output'];
+  __typename?: "Oso_FundingMetricsByProjectV1";
+  displayName: Scalars["String"]["output"];
+  eventSource: Scalars["String"]["output"];
+  projectId: Scalars["String"]["output"];
+  projectName: Scalars["String"]["output"];
+  projectNamespace: Scalars["String"]["output"];
+  projectSource: Scalars["String"]["output"];
+  totalFundersCount: Scalars["Oso_Int64"]["output"];
+  totalFundingReceivedUsd: Scalars["Oso_Float32"]["output"];
+  totalFundingReceivedUsd6Months: Scalars["Oso_Float32"]["output"];
 };
 
 export type Oso_FundingMetricsByProjectV1BoolExp = {
@@ -3774,24 +3905,24 @@ export type Oso_FundingMetricsByProjectV1OrderBy = {
 };
 
 export type Oso_Int64BoolExp = {
-  _eq?: InputMaybe<Scalars['Oso_Int64']['input']>;
-  _gt?: InputMaybe<Scalars['Oso_Int64']['input']>;
-  _gte?: InputMaybe<Scalars['Oso_Int64']['input']>;
-  _in?: InputMaybe<Array<Scalars['Oso_Int64']['input']>>;
-  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _lt?: InputMaybe<Scalars['Oso_Int64']['input']>;
-  _lte?: InputMaybe<Scalars['Oso_Int64']['input']>;
-  _neq?: InputMaybe<Scalars['Oso_Int64']['input']>;
-  _nin?: InputMaybe<Array<Scalars['Oso_Int64']['input']>>;
+  _eq?: InputMaybe<Scalars["Oso_Int64"]["input"]>;
+  _gt?: InputMaybe<Scalars["Oso_Int64"]["input"]>;
+  _gte?: InputMaybe<Scalars["Oso_Int64"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["Oso_Int64"]["input"]>>;
+  _is_null?: InputMaybe<Scalars["Boolean"]["input"]>;
+  _lt?: InputMaybe<Scalars["Oso_Int64"]["input"]>;
+  _lte?: InputMaybe<Scalars["Oso_Int64"]["input"]>;
+  _neq?: InputMaybe<Scalars["Oso_Int64"]["input"]>;
+  _nin?: InputMaybe<Array<Scalars["Oso_Int64"]["input"]>>;
 };
 
 export type Oso_KeyMetricsByArtifactV0 = {
-  __typename?: 'Oso_KeyMetricsByArtifactV0';
-  amount: Scalars['Oso_Float64']['output'];
-  artifactId: Scalars['String']['output'];
-  metricId: Scalars['String']['output'];
-  sampleDate: Scalars['Oso_Date']['output'];
-  unit: Scalars['String']['output'];
+  __typename?: "Oso_KeyMetricsByArtifactV0";
+  amount: Scalars["Oso_Float64"]["output"];
+  artifactId: Scalars["String"]["output"];
+  metricId: Scalars["String"]["output"];
+  sampleDate: Scalars["Oso_Date"]["output"];
+  unit: Scalars["String"]["output"];
 };
 
 export type Oso_KeyMetricsByArtifactV0BoolExp = {
@@ -3814,12 +3945,12 @@ export type Oso_KeyMetricsByArtifactV0OrderByExp = {
 };
 
 export type Oso_KeyMetricsByCollectionV0 = {
-  __typename?: 'Oso_KeyMetricsByCollectionV0';
-  amount: Scalars['Oso_Float64']['output'];
-  collectionId: Scalars['String']['output'];
-  metricId: Scalars['String']['output'];
-  sampleDate: Scalars['Oso_Date']['output'];
-  unit: Scalars['String']['output'];
+  __typename?: "Oso_KeyMetricsByCollectionV0";
+  amount: Scalars["Oso_Float64"]["output"];
+  collectionId: Scalars["String"]["output"];
+  metricId: Scalars["String"]["output"];
+  sampleDate: Scalars["Oso_Date"]["output"];
+  unit: Scalars["String"]["output"];
 };
 
 export type Oso_KeyMetricsByCollectionV0BoolExp = {
@@ -3842,12 +3973,12 @@ export type Oso_KeyMetricsByCollectionV0OrderByExp = {
 };
 
 export type Oso_KeyMetricsByProjectV0 = {
-  __typename?: 'Oso_KeyMetricsByProjectV0';
-  amount: Scalars['Oso_Float64']['output'];
-  metricId: Scalars['String']['output'];
-  projectId: Scalars['String']['output'];
-  sampleDate: Scalars['Oso_Date']['output'];
-  unit: Scalars['String']['output'];
+  __typename?: "Oso_KeyMetricsByProjectV0";
+  amount: Scalars["Oso_Float64"]["output"];
+  metricId: Scalars["String"]["output"];
+  projectId: Scalars["String"]["output"];
+  sampleDate: Scalars["Oso_Date"]["output"];
+  unit: Scalars["String"]["output"];
 };
 
 export type Oso_KeyMetricsByProjectV0BoolExp = {
@@ -3870,16 +4001,16 @@ export type Oso_KeyMetricsByProjectV0OrderByExp = {
 };
 
 export type Oso_MetricsV0 = {
-  __typename?: 'Oso_MetricsV0';
-  aggregationFunction: Scalars['String']['output'];
-  definitionRef: Scalars['String']['output'];
-  description: Scalars['String']['output'];
-  displayName: Scalars['String']['output'];
-  metricId: Scalars['String']['output'];
-  metricName: Scalars['String']['output'];
-  metricNamespace: Scalars['String']['output'];
-  metricSource: Scalars['String']['output'];
-  rawDefinition: Scalars['String']['output'];
+  __typename?: "Oso_MetricsV0";
+  aggregationFunction: Scalars["String"]["output"];
+  definitionRef: Scalars["String"]["output"];
+  description: Scalars["String"]["output"];
+  displayName: Scalars["String"]["output"];
+  metricId: Scalars["String"]["output"];
+  metricName: Scalars["String"]["output"];
+  metricNamespace: Scalars["String"]["output"];
+  metricSource: Scalars["String"]["output"];
+  rawDefinition: Scalars["String"]["output"];
 };
 
 export type Oso_MetricsV0BoolExp = {
@@ -3910,11 +4041,11 @@ export type Oso_MetricsV0OrderBy = {
 };
 
 export type Oso_ModelsV0 = {
-  __typename?: 'Oso_ModelsV0';
-  modelId: Scalars['String']['output'];
-  modelName: Scalars['String']['output'];
-  renderedAt: Scalars['Oso_DateTime646']['output'];
-  renderedSql: Scalars['String']['output'];
+  __typename?: "Oso_ModelsV0";
+  modelId: Scalars["String"]["output"];
+  modelName: Scalars["String"]["output"];
+  renderedAt: Scalars["Oso_DateTime646"]["output"];
+  renderedSql: Scalars["String"]["output"];
 };
 
 export type Oso_ModelsV0BoolExp = {
@@ -3935,27 +4066,27 @@ export type Oso_ModelsV0OrderByExp = {
 };
 
 export type Oso_OnchainMetricsByProjectV1 = {
-  __typename?: 'Oso_OnchainMetricsByProjectV1';
-  activeContractCount90Days: Scalars['Oso_Float32']['output'];
-  addressCount: Scalars['Oso_Float32']['output'];
-  addressCount90Days: Scalars['Oso_Float32']['output'];
-  daysSinceFirstTransaction: Scalars['Oso_Float32']['output'];
-  displayName: Scalars['String']['output'];
-  eventSource: Scalars['String']['output'];
-  gasFeesSum: Scalars['Oso_Float32']['output'];
-  gasFeesSum6Months: Scalars['Oso_Float32']['output'];
-  highActivityAddressCount90Days: Scalars['Oso_Float32']['output'];
-  lowActivityAddressCount90Days: Scalars['Oso_Float32']['output'];
-  mediumActivityAddressCount90Days: Scalars['Oso_Float32']['output'];
-  multiProjectAddressCount90Days: Scalars['Oso_Float32']['output'];
-  newAddressCount90Days: Scalars['Oso_Float32']['output'];
-  projectId: Scalars['String']['output'];
-  projectName: Scalars['String']['output'];
-  projectNamespace: Scalars['String']['output'];
-  projectSource: Scalars['String']['output'];
-  returningAddressCount90Days: Scalars['Oso_Float32']['output'];
-  transactionCount: Scalars['Oso_Float32']['output'];
-  transactionCount6Months: Scalars['Oso_Float32']['output'];
+  __typename?: "Oso_OnchainMetricsByProjectV1";
+  activeContractCount90Days: Scalars["Oso_Float32"]["output"];
+  addressCount: Scalars["Oso_Float32"]["output"];
+  addressCount90Days: Scalars["Oso_Float32"]["output"];
+  daysSinceFirstTransaction: Scalars["Oso_Float32"]["output"];
+  displayName: Scalars["String"]["output"];
+  eventSource: Scalars["String"]["output"];
+  gasFeesSum: Scalars["Oso_Float32"]["output"];
+  gasFeesSum6Months: Scalars["Oso_Float32"]["output"];
+  highActivityAddressCount90Days: Scalars["Oso_Float32"]["output"];
+  lowActivityAddressCount90Days: Scalars["Oso_Float32"]["output"];
+  mediumActivityAddressCount90Days: Scalars["Oso_Float32"]["output"];
+  multiProjectAddressCount90Days: Scalars["Oso_Float32"]["output"];
+  newAddressCount90Days: Scalars["Oso_Float32"]["output"];
+  projectId: Scalars["String"]["output"];
+  projectName: Scalars["String"]["output"];
+  projectNamespace: Scalars["String"]["output"];
+  projectSource: Scalars["String"]["output"];
+  returningAddressCount90Days: Scalars["Oso_Float32"]["output"];
+  transactionCount: Scalars["Oso_Float32"]["output"];
+  transactionCount6Months: Scalars["Oso_Float32"]["output"];
 };
 
 export type Oso_OnchainMetricsByProjectV1BoolExp = {
@@ -4008,17 +4139,17 @@ export type Oso_OnchainMetricsByProjectV1OrderBy = {
 };
 
 export type Oso_PackageOwnersV0 = {
-  __typename?: 'Oso_PackageOwnersV0';
-  packageArtifactId: Scalars['String']['output'];
-  packageArtifactName: Scalars['String']['output'];
-  packageArtifactNamespace: Scalars['String']['output'];
-  packageArtifactSource: Scalars['String']['output'];
-  packageOwnerArtifactId: Scalars['String']['output'];
-  packageOwnerArtifactName: Scalars['String']['output'];
-  packageOwnerArtifactNamespace: Scalars['String']['output'];
-  packageOwnerProjectId: Scalars['String']['output'];
-  packageOwnerSource: Scalars['String']['output'];
-  packageProjectId: Scalars['String']['output'];
+  __typename?: "Oso_PackageOwnersV0";
+  packageArtifactId: Scalars["String"]["output"];
+  packageArtifactName: Scalars["String"]["output"];
+  packageArtifactNamespace: Scalars["String"]["output"];
+  packageArtifactSource: Scalars["String"]["output"];
+  packageOwnerArtifactId: Scalars["String"]["output"];
+  packageOwnerArtifactName: Scalars["String"]["output"];
+  packageOwnerArtifactNamespace: Scalars["String"]["output"];
+  packageOwnerProjectId: Scalars["String"]["output"];
+  packageOwnerSource: Scalars["String"]["output"];
+  packageProjectId: Scalars["String"]["output"];
 };
 
 export type Oso_PackageOwnersV0BoolExp = {
@@ -4051,15 +4182,15 @@ export type Oso_PackageOwnersV0OrderByExp = {
 };
 
 export type Oso_ProjectsByCollectionV1 = {
-  __typename?: 'Oso_ProjectsByCollectionV1';
-  collectionId: Scalars['String']['output'];
-  collectionName: Scalars['String']['output'];
-  collectionNamespace: Scalars['String']['output'];
-  collectionSource: Scalars['String']['output'];
-  projectId: Scalars['String']['output'];
-  projectName: Scalars['String']['output'];
-  projectNamespace: Scalars['String']['output'];
-  projectSource: Scalars['String']['output'];
+  __typename?: "Oso_ProjectsByCollectionV1";
+  collectionId: Scalars["String"]["output"];
+  collectionName: Scalars["String"]["output"];
+  collectionNamespace: Scalars["String"]["output"];
+  collectionSource: Scalars["String"]["output"];
+  projectId: Scalars["String"]["output"];
+  projectName: Scalars["String"]["output"];
+  projectNamespace: Scalars["String"]["output"];
+  projectSource: Scalars["String"]["output"];
 };
 
 export type Oso_ProjectsByCollectionV1BoolExp = {
@@ -4088,13 +4219,13 @@ export type Oso_ProjectsByCollectionV1OrderBy = {
 };
 
 export type Oso_ProjectsV1 = {
-  __typename?: 'Oso_ProjectsV1';
-  description: Scalars['String']['output'];
-  displayName: Scalars['String']['output'];
-  projectId: Scalars['String']['output'];
-  projectName: Scalars['String']['output'];
-  projectNamespace: Scalars['String']['output'];
-  projectSource: Scalars['String']['output'];
+  __typename?: "Oso_ProjectsV1";
+  description: Scalars["String"]["output"];
+  displayName: Scalars["String"]["output"];
+  projectId: Scalars["String"]["output"];
+  projectName: Scalars["String"]["output"];
+  projectNamespace: Scalars["String"]["output"];
+  projectSource: Scalars["String"]["output"];
 };
 
 export type Oso_ProjectsV1BoolExp = {
@@ -4119,24 +4250,24 @@ export type Oso_ProjectsV1OrderBy = {
 };
 
 export type Oso_RepositoriesV0 = {
-  __typename?: 'Oso_RepositoriesV0';
-  artifactId: Scalars['String']['output'];
-  artifactName: Scalars['String']['output'];
-  artifactNamespace: Scalars['String']['output'];
-  artifactSource: Scalars['String']['output'];
-  artifactSourceId: Scalars['String']['output'];
-  artifactUrl: Scalars['String']['output'];
-  branch: Scalars['String']['output'];
-  createdAt: Scalars['Oso_DateTime']['output'];
-  forkCount: Scalars['Oso_Int64']['output'];
-  isFork: Scalars['Oso_Bool']['output'];
-  language: Scalars['String']['output'];
-  licenseName: Scalars['String']['output'];
-  licenseSpdxId: Scalars['String']['output'];
-  projectId: Scalars['String']['output'];
-  starCount: Scalars['Oso_Int64']['output'];
-  updatedAt: Scalars['Oso_DateTime']['output'];
-  watcherCount: Scalars['Oso_Int64']['output'];
+  __typename?: "Oso_RepositoriesV0";
+  artifactId: Scalars["String"]["output"];
+  artifactName: Scalars["String"]["output"];
+  artifactNamespace: Scalars["String"]["output"];
+  artifactSource: Scalars["String"]["output"];
+  artifactSourceId: Scalars["String"]["output"];
+  artifactUrl: Scalars["String"]["output"];
+  branch: Scalars["String"]["output"];
+  createdAt: Scalars["Oso_DateTime"]["output"];
+  forkCount: Scalars["Oso_Int64"]["output"];
+  isFork: Scalars["Oso_Bool"]["output"];
+  language: Scalars["String"]["output"];
+  licenseName: Scalars["String"]["output"];
+  licenseSpdxId: Scalars["String"]["output"];
+  projectId: Scalars["String"]["output"];
+  starCount: Scalars["Oso_Int64"]["output"];
+  updatedAt: Scalars["Oso_DateTime"]["output"];
+  watcherCount: Scalars["Oso_Int64"]["output"];
 };
 
 export type Oso_RepositoriesV0BoolExp = {
@@ -4183,17 +4314,17 @@ export type Oso_RepositoriesV0OrderByExp = {
 };
 
 export type Oso_SbomsV0 = {
-  __typename?: 'Oso_SbomsV0';
-  fromArtifactId: Scalars['String']['output'];
-  fromArtifactName: Scalars['String']['output'];
-  fromArtifactNamespace: Scalars['String']['output'];
-  fromArtifactSource: Scalars['String']['output'];
-  fromProjectId: Scalars['String']['output'];
-  toPackageArtifactId: Scalars['String']['output'];
-  toPackageArtifactName: Scalars['String']['output'];
-  toPackageArtifactNamespace: Scalars['String']['output'];
-  toPackageArtifactSource: Scalars['String']['output'];
-  toPackageProjectId: Scalars['String']['output'];
+  __typename?: "Oso_SbomsV0";
+  fromArtifactId: Scalars["String"]["output"];
+  fromArtifactName: Scalars["String"]["output"];
+  fromArtifactNamespace: Scalars["String"]["output"];
+  fromArtifactSource: Scalars["String"]["output"];
+  fromProjectId: Scalars["String"]["output"];
+  toPackageArtifactId: Scalars["String"]["output"];
+  toPackageArtifactName: Scalars["String"]["output"];
+  toPackageArtifactNamespace: Scalars["String"]["output"];
+  toPackageArtifactSource: Scalars["String"]["output"];
+  toPackageProjectId: Scalars["String"]["output"];
 };
 
 export type Oso_SbomsV0BoolExp = {
@@ -4226,31 +4357,31 @@ export type Oso_SbomsV0OrderByExp = {
 };
 
 export type Oso_StringBoolExp = {
-  _eq?: InputMaybe<Scalars['String']['input']>;
-  _gt?: InputMaybe<Scalars['String']['input']>;
-  _gte?: InputMaybe<Scalars['String']['input']>;
-  _ilike?: InputMaybe<Scalars['String']['input']>;
-  _in?: InputMaybe<Array<Scalars['String']['input']>>;
-  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
-  _like?: InputMaybe<Scalars['String']['input']>;
-  _lt?: InputMaybe<Scalars['String']['input']>;
-  _lte?: InputMaybe<Scalars['String']['input']>;
-  _match?: InputMaybe<Scalars['String']['input']>;
-  _neq?: InputMaybe<Scalars['String']['input']>;
-  _nilike?: InputMaybe<Scalars['String']['input']>;
-  _nin?: InputMaybe<Array<Scalars['String']['input']>>;
-  _nlike?: InputMaybe<Scalars['String']['input']>;
+  _eq?: InputMaybe<Scalars["String"]["input"]>;
+  _gt?: InputMaybe<Scalars["String"]["input"]>;
+  _gte?: InputMaybe<Scalars["String"]["input"]>;
+  _ilike?: InputMaybe<Scalars["String"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  _is_null?: InputMaybe<Scalars["Boolean"]["input"]>;
+  _like?: InputMaybe<Scalars["String"]["input"]>;
+  _lt?: InputMaybe<Scalars["String"]["input"]>;
+  _lte?: InputMaybe<Scalars["String"]["input"]>;
+  _match?: InputMaybe<Scalars["String"]["input"]>;
+  _neq?: InputMaybe<Scalars["String"]["input"]>;
+  _nilike?: InputMaybe<Scalars["String"]["input"]>;
+  _nin?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  _nlike?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type Oso_TimeseriesEventsByArtifactV0 = {
-  __typename?: 'Oso_TimeseriesEventsByArtifactV0';
-  amount: Scalars['Oso_Float32']['output'];
-  eventSource: Scalars['String']['output'];
-  eventSourceId: Scalars['String']['output'];
-  eventType: Scalars['String']['output'];
-  fromArtifactId: Scalars['String']['output'];
-  time: Scalars['Oso_DateTime']['output'];
-  toArtifactId: Scalars['String']['output'];
+  __typename?: "Oso_TimeseriesEventsByArtifactV0";
+  amount: Scalars["Oso_Float32"]["output"];
+  eventSource: Scalars["String"]["output"];
+  eventSourceId: Scalars["String"]["output"];
+  eventType: Scalars["String"]["output"];
+  fromArtifactId: Scalars["String"]["output"];
+  time: Scalars["Oso_DateTime"]["output"];
+  toArtifactId: Scalars["String"]["output"];
 };
 
 export type Oso_TimeseriesEventsByArtifactV0BoolExp = {
@@ -4277,12 +4408,12 @@ export type Oso_TimeseriesEventsByArtifactV0OrderBy = {
 };
 
 export type Oso_TimeseriesMetricsByArtifactV0 = {
-  __typename?: 'Oso_TimeseriesMetricsByArtifactV0';
-  amount: Scalars['Oso_Float64']['output'];
-  artifactId: Scalars['String']['output'];
-  metricId: Scalars['String']['output'];
-  sampleDate: Scalars['Oso_Date']['output'];
-  unit: Scalars['String']['output'];
+  __typename?: "Oso_TimeseriesMetricsByArtifactV0";
+  amount: Scalars["Oso_Float64"]["output"];
+  artifactId: Scalars["String"]["output"];
+  metricId: Scalars["String"]["output"];
+  sampleDate: Scalars["Oso_Date"]["output"];
+  unit: Scalars["String"]["output"];
 };
 
 export type Oso_TimeseriesMetricsByArtifactV0BoolExp = {
@@ -4305,12 +4436,12 @@ export type Oso_TimeseriesMetricsByArtifactV0OrderBy = {
 };
 
 export type Oso_TimeseriesMetricsByCollectionV0 = {
-  __typename?: 'Oso_TimeseriesMetricsByCollectionV0';
-  amount: Scalars['Oso_Float64']['output'];
-  collectionId: Scalars['String']['output'];
-  metricId: Scalars['String']['output'];
-  sampleDate: Scalars['Oso_Date']['output'];
-  unit: Scalars['String']['output'];
+  __typename?: "Oso_TimeseriesMetricsByCollectionV0";
+  amount: Scalars["Oso_Float64"]["output"];
+  collectionId: Scalars["String"]["output"];
+  metricId: Scalars["String"]["output"];
+  sampleDate: Scalars["Oso_Date"]["output"];
+  unit: Scalars["String"]["output"];
 };
 
 export type Oso_TimeseriesMetricsByCollectionV0BoolExp = {
@@ -4333,12 +4464,12 @@ export type Oso_TimeseriesMetricsByCollectionV0OrderBy = {
 };
 
 export type Oso_TimeseriesMetricsByProjectV0 = {
-  __typename?: 'Oso_TimeseriesMetricsByProjectV0';
-  amount: Scalars['Oso_Float64']['output'];
-  metricId: Scalars['String']['output'];
-  projectId: Scalars['String']['output'];
-  sampleDate: Scalars['Oso_Date']['output'];
-  unit: Scalars['String']['output'];
+  __typename?: "Oso_TimeseriesMetricsByProjectV0";
+  amount: Scalars["Oso_Float64"]["output"];
+  metricId: Scalars["String"]["output"];
+  projectId: Scalars["String"]["output"];
+  sampleDate: Scalars["Oso_Date"]["output"];
+  unit: Scalars["String"]["output"];
 };
 
 export type Oso_TimeseriesMetricsByProjectV0BoolExp = {
@@ -4361,14 +4492,14 @@ export type Oso_TimeseriesMetricsByProjectV0OrderBy = {
 };
 
 export type Oso_UsersV1 = {
-  __typename?: 'Oso_UsersV1';
-  bio: Scalars['String']['output'];
-  displayName: Scalars['String']['output'];
-  profilePictureUrl: Scalars['String']['output'];
-  url: Scalars['String']['output'];
-  userId: Scalars['String']['output'];
-  userSource: Scalars['String']['output'];
-  userSourceId: Scalars['String']['output'];
+  __typename?: "Oso_UsersV1";
+  bio: Scalars["String"]["output"];
+  displayName: Scalars["String"]["output"];
+  profilePictureUrl: Scalars["String"]["output"];
+  url: Scalars["String"]["output"];
+  userId: Scalars["String"]["output"];
+  userSource: Scalars["String"]["output"];
+  userSourceId: Scalars["String"]["output"];
 };
 
 export type Oso_UsersV1BoolExp = {
@@ -4395,312 +4526,316 @@ export type Oso_UsersV1OrderBy = {
 };
 
 export type Output = {
-  __typename?: 'Output';
+  __typename?: "Output";
   definition: OutputDefinition;
   dependedBy: Array<Input>;
   solid: Solid;
 };
 
 export type OutputDefinition = {
-  __typename?: 'OutputDefinition';
-  description?: Maybe<Scalars['String']['output']>;
-  isDynamic?: Maybe<Scalars['Boolean']['output']>;
+  __typename?: "OutputDefinition";
+  description?: Maybe<Scalars["String"]["output"]>;
+  isDynamic?: Maybe<Scalars["Boolean"]["output"]>;
   metadataEntries: Array<MetadataEntry>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   type: DagsterType;
 };
 
 export type OutputMapping = {
-  __typename?: 'OutputMapping';
+  __typename?: "OutputMapping";
   definition: OutputDefinition;
   mappedOutput: Output;
 };
 
 export type ParentMaterializedRuleEvaluationData = {
-  __typename?: 'ParentMaterializedRuleEvaluationData';
+  __typename?: "ParentMaterializedRuleEvaluationData";
   updatedAssetKeys?: Maybe<Array<AssetKey>>;
   willUpdateAssetKeys?: Maybe<Array<AssetKey>>;
 };
 
 export type Partition = {
-  __typename?: 'Partition';
-  mode: Scalars['String']['output'];
-  name: Scalars['String']['output'];
-  partitionSetName: Scalars['String']['output'];
+  __typename?: "Partition";
+  mode: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  partitionSetName: Scalars["String"]["output"];
   runConfigOrError: PartitionRunConfigOrError;
   runs: Array<Run>;
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
+  solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
   status?: Maybe<RunStatus>;
   tagsOrError: PartitionTagsOrError;
 };
 
-
 export type PartitionRunsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   filter?: InputMaybe<RunsFilter>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type PartitionBackfill = RunsFeedEntry & {
-  __typename?: 'PartitionBackfill';
+  __typename?: "PartitionBackfill";
   assetBackfillData?: Maybe<AssetBackfillData>;
   assetCheckSelection?: Maybe<Array<AssetCheckhandle>>;
   assetSelection?: Maybe<Array<AssetKey>>;
   cancelableRuns: Array<Run>;
-  creationTime: Scalars['Float']['output'];
-  description?: Maybe<Scalars['String']['output']>;
+  creationTime: Scalars["Float"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
   /** Included to comply with RunsFeedEntry interface. Duplicate of endTimestamp. */
-  endTime?: Maybe<Scalars['Float']['output']>;
-  endTimestamp?: Maybe<Scalars['Float']['output']>;
+  endTime?: Maybe<Scalars["Float"]["output"]>;
+  endTimestamp?: Maybe<Scalars["Float"]["output"]>;
   error?: Maybe<PythonError>;
-  fromFailure: Scalars['Boolean']['output'];
-  hasCancelPermission: Scalars['Boolean']['output'];
-  hasResumePermission: Scalars['Boolean']['output'];
-  id: Scalars['ID']['output'];
-  isAssetBackfill: Scalars['Boolean']['output'];
-  isValidSerialization: Scalars['Boolean']['output'];
+  fromFailure: Scalars["Boolean"]["output"];
+  hasCancelPermission: Scalars["Boolean"]["output"];
+  hasResumePermission: Scalars["Boolean"]["output"];
+  id: Scalars["ID"]["output"];
+  isAssetBackfill: Scalars["Boolean"]["output"];
+  isValidSerialization: Scalars["Boolean"]["output"];
   /** Included to comply with RunsFeedEntry interface. */
-  jobName?: Maybe<Scalars['String']['output']>;
+  jobName?: Maybe<Scalars["String"]["output"]>;
   logEvents: InstigationEventConnection;
-  numCancelable: Scalars['Int']['output'];
-  numPartitions?: Maybe<Scalars['Int']['output']>;
-  partitionNames?: Maybe<Array<Scalars['String']['output']>>;
+  numCancelable: Scalars["Int"]["output"];
+  numPartitions?: Maybe<Scalars["Int"]["output"]>;
+  partitionNames?: Maybe<Array<Scalars["String"]["output"]>>;
   partitionSet?: Maybe<PartitionSet>;
-  partitionSetName?: Maybe<Scalars['String']['output']>;
+  partitionSetName?: Maybe<Scalars["String"]["output"]>;
   partitionStatusCounts: Array<PartitionStatusCounts>;
   partitionStatuses?: Maybe<PartitionStatuses>;
   partitionsTargetedForAssetKey?: Maybe<AssetBackfillTargetPartitions>;
-  reexecutionSteps?: Maybe<Array<Scalars['String']['output']>>;
+  reexecutionSteps?: Maybe<Array<Scalars["String"]["output"]>>;
   runStatus: RunStatus;
   runs: Array<Run>;
   /** Included to comply with RunsFeedEntry interface. Duplicate of timestamp. */
-  startTime?: Maybe<Scalars['Float']['output']>;
+  startTime?: Maybe<Scalars["Float"]["output"]>;
   status: BulkActionStatus;
   tags: Array<PipelineTag>;
-  timestamp: Scalars['Float']['output'];
-  title?: Maybe<Scalars['String']['output']>;
+  timestamp: Scalars["Float"]["output"];
+  title?: Maybe<Scalars["String"]["output"]>;
   unfinishedRuns: Array<Run>;
-  user?: Maybe<Scalars['String']['output']>;
+  user?: Maybe<Scalars["String"]["output"]>;
 };
-
 
 export type PartitionBackfillCancelableRunsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type PartitionBackfillLogEventsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 export type PartitionBackfillPartitionsTargetedForAssetKeyArgs = {
   assetKey?: InputMaybe<AssetKeyInput>;
 };
 
-
 export type PartitionBackfillRunsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type PartitionBackfillUnfinishedRunsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
-export type PartitionBackfillOrError = BackfillNotFoundError | PartitionBackfill | PythonError;
+export type PartitionBackfillOrError =
+  | BackfillNotFoundError
+  | PartitionBackfill
+  | PythonError;
 
 export type PartitionBackfills = {
-  __typename?: 'PartitionBackfills';
+  __typename?: "PartitionBackfills";
   results: Array<PartitionBackfill>;
 };
 
 export type PartitionBackfillsOrError = PartitionBackfills | PythonError;
 
 export type PartitionDefinition = {
-  __typename?: 'PartitionDefinition';
-  description: Scalars['String']['output'];
+  __typename?: "PartitionDefinition";
+  description: Scalars["String"]["output"];
   dimensionTypes: Array<DimensionDefinitionType>;
-  fmt?: Maybe<Scalars['String']['output']>;
-  name?: Maybe<Scalars['String']['output']>;
+  fmt?: Maybe<Scalars["String"]["output"]>;
+  name?: Maybe<Scalars["String"]["output"]>;
   type: PartitionDefinitionType;
 };
 
 export enum PartitionDefinitionType {
-  Dynamic = 'DYNAMIC',
-  Multipartitioned = 'MULTIPARTITIONED',
-  Static = 'STATIC',
-  TimeWindow = 'TIME_WINDOW'
+  Dynamic = "DYNAMIC",
+  Multipartitioned = "MULTIPARTITIONED",
+  Static = "STATIC",
+  TimeWindow = "TIME_WINDOW",
 }
 
 export type PartitionKeyConnection = {
-  __typename?: 'PartitionKeyConnection';
-  cursor: Scalars['String']['output'];
-  hasMore: Scalars['Boolean']['output'];
-  results: Array<Scalars['String']['output']>;
+  __typename?: "PartitionKeyConnection";
+  cursor: Scalars["String"]["output"];
+  hasMore: Scalars["Boolean"]["output"];
+  results: Array<Scalars["String"]["output"]>;
 };
 
 export type PartitionKeyRange = {
-  __typename?: 'PartitionKeyRange';
-  end: Scalars['String']['output'];
-  start: Scalars['String']['output'];
+  __typename?: "PartitionKeyRange";
+  end: Scalars["String"]["output"];
+  start: Scalars["String"]["output"];
 };
 
 export type PartitionKeys = {
-  __typename?: 'PartitionKeys';
-  partitionKeys: Array<Scalars['String']['output']>;
+  __typename?: "PartitionKeys";
+  partitionKeys: Array<Scalars["String"]["output"]>;
 };
 
 export type PartitionKeysNotFoundError = Error & {
-  __typename?: 'PartitionKeysNotFoundError';
-  message: Scalars['String']['output'];
-  partitionKeys: Array<Scalars['String']['output']>;
+  __typename?: "PartitionKeysNotFoundError";
+  message: Scalars["String"]["output"];
+  partitionKeys: Array<Scalars["String"]["output"]>;
 };
 
-export type PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError;
+export type PartitionKeysOrError =
+  | PartitionKeys
+  | PartitionSubsetDeserializationError;
 
 export type PartitionMapping = {
-  __typename?: 'PartitionMapping';
-  className: Scalars['String']['output'];
-  description: Scalars['String']['output'];
+  __typename?: "PartitionMapping";
+  className: Scalars["String"]["output"];
+  description: Scalars["String"]["output"];
 };
 
 export type PartitionRange = {
-  __typename?: 'PartitionRange';
-  end: Scalars['String']['output'];
-  start: Scalars['String']['output'];
+  __typename?: "PartitionRange";
+  end: Scalars["String"]["output"];
+  start: Scalars["String"]["output"];
 };
 
 /** This type represents a partition range selection with start and end. */
 export type PartitionRangeSelector = {
-  end: Scalars['String']['input'];
-  start: Scalars['String']['input'];
+  end: Scalars["String"]["input"];
+  start: Scalars["String"]["input"];
 };
 
 /** An enumeration. */
 export enum PartitionRangeStatus {
-  Failed = 'FAILED',
-  Materialized = 'MATERIALIZED',
-  Materializing = 'MATERIALIZING'
+  Failed = "FAILED",
+  Materialized = "MATERIALIZED",
+  Materializing = "MATERIALIZING",
 }
 
 export type PartitionRun = {
-  __typename?: 'PartitionRun';
-  id: Scalars['String']['output'];
-  partitionName: Scalars['String']['output'];
+  __typename?: "PartitionRun";
+  id: Scalars["String"]["output"];
+  partitionName: Scalars["String"]["output"];
   run?: Maybe<Run>;
 };
 
 export type PartitionRunConfig = {
-  __typename?: 'PartitionRunConfig';
-  yaml: Scalars['String']['output'];
+  __typename?: "PartitionRunConfig";
+  yaml: Scalars["String"]["output"];
 };
 
 export type PartitionRunConfigOrError = PartitionRunConfig | PythonError;
 
 export type PartitionSet = {
-  __typename?: 'PartitionSet';
+  __typename?: "PartitionSet";
   backfills: Array<PartitionBackfill>;
-  id: Scalars['ID']['output'];
-  mode: Scalars['String']['output'];
-  name: Scalars['String']['output'];
+  id: Scalars["ID"]["output"];
+  mode: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
   partition?: Maybe<Partition>;
   partitionRuns: Array<PartitionRun>;
   partitionStatusesOrError: PartitionStatusesOrError;
   partitionsOrError: PartitionsOrError;
-  pipelineName: Scalars['String']['output'];
+  pipelineName: Scalars["String"]["output"];
   repositoryOrigin: RepositoryOrigin;
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
+  solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
 };
-
 
 export type PartitionSetBackfillsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type PartitionSetPartitionArgs = {
-  partitionName: Scalars['String']['input'];
+  partitionName: Scalars["String"]["input"];
 };
 
-
 export type PartitionSetPartitionsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  reverse?: InputMaybe<Scalars['Boolean']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  reverse?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
 export type PartitionSetNotFoundError = Error & {
-  __typename?: 'PartitionSetNotFoundError';
-  message: Scalars['String']['output'];
-  partitionSetName: Scalars['String']['output'];
+  __typename?: "PartitionSetNotFoundError";
+  message: Scalars["String"]["output"];
+  partitionSetName: Scalars["String"]["output"];
 };
 
-export type PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError;
+export type PartitionSetOrError =
+  | PartitionSet
+  | PartitionSetNotFoundError
+  | PythonError;
 
 /**
  * This type represents the fields necessary to identify a
  *         pipeline or pipeline subset.
  */
 export type PartitionSetSelector = {
-  partitionSetName: Scalars['String']['input'];
+  partitionSetName: Scalars["String"]["input"];
   repositorySelector: RepositorySelector;
 };
 
 export type PartitionSets = {
-  __typename?: 'PartitionSets';
+  __typename?: "PartitionSets";
   results: Array<PartitionSet>;
 };
 
-export type PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError;
+export type PartitionSetsOrError =
+  | PartitionSets
+  | PipelineNotFoundError
+  | PythonError;
 
 export type PartitionStats = {
-  __typename?: 'PartitionStats';
-  numFailed: Scalars['Int']['output'];
-  numMaterialized: Scalars['Int']['output'];
-  numMaterializing: Scalars['Int']['output'];
-  numPartitions: Scalars['Int']['output'];
+  __typename?: "PartitionStats";
+  numFailed: Scalars["Int"]["output"];
+  numMaterialized: Scalars["Int"]["output"];
+  numMaterializing: Scalars["Int"]["output"];
+  numPartitions: Scalars["Int"]["output"];
 };
 
 export type PartitionStatus = {
-  __typename?: 'PartitionStatus';
-  id: Scalars['String']['output'];
-  partitionName: Scalars['String']['output'];
-  runDuration?: Maybe<Scalars['Float']['output']>;
-  runId?: Maybe<Scalars['String']['output']>;
+  __typename?: "PartitionStatus";
+  id: Scalars["String"]["output"];
+  partitionName: Scalars["String"]["output"];
+  runDuration?: Maybe<Scalars["Float"]["output"]>;
+  runId?: Maybe<Scalars["String"]["output"]>;
   runStatus?: Maybe<RunStatus>;
 };
 
-export type PartitionStatus1D = DefaultPartitionStatuses | TimePartitionStatuses;
+export type PartitionStatus1D =
+  | DefaultPartitionStatuses
+  | TimePartitionStatuses;
 
 export type PartitionStatusCounts = {
-  __typename?: 'PartitionStatusCounts';
-  count: Scalars['Int']['output'];
+  __typename?: "PartitionStatusCounts";
+  count: Scalars["Int"]["output"];
   runStatus: RunStatus;
 };
 
 export type PartitionStatuses = {
-  __typename?: 'PartitionStatuses';
+  __typename?: "PartitionStatuses";
   results: Array<PartitionStatus>;
 };
 
 export type PartitionStatusesOrError = PartitionStatuses | PythonError;
 
 export type PartitionSubsetDeserializationError = Error & {
-  __typename?: 'PartitionSubsetDeserializationError';
-  message: Scalars['String']['output'];
+  __typename?: "PartitionSubsetDeserializationError";
+  message: Scalars["String"]["output"];
 };
 
 export type PartitionTags = {
-  __typename?: 'PartitionTags';
+  __typename?: "PartitionTags";
   results: Array<PipelineTag>;
 };
 
 export type PartitionTagsAndConfig = {
-  __typename?: 'PartitionTagsAndConfig';
-  jobName: Scalars['String']['output'];
-  name: Scalars['String']['output'];
+  __typename?: "PartitionTagsAndConfig";
+  jobName: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
   runConfigOrError: PartitionRunConfigOrError;
   tagsOrError: PartitionTagsOrError;
 };
@@ -4708,19 +4843,19 @@ export type PartitionTagsAndConfig = {
 export type PartitionTagsOrError = PartitionTags | PythonError;
 
 export type PartitionedAssetConditionEvaluationNode = {
-  __typename?: 'PartitionedAssetConditionEvaluationNode';
-  childUniqueIds: Array<Scalars['String']['output']>;
-  description: Scalars['String']['output'];
-  endTimestamp?: Maybe<Scalars['Float']['output']>;
+  __typename?: "PartitionedAssetConditionEvaluationNode";
+  childUniqueIds: Array<Scalars["String"]["output"]>;
+  description: Scalars["String"]["output"];
+  endTimestamp?: Maybe<Scalars["Float"]["output"]>;
   entityKey: EntityKey;
-  numCandidates?: Maybe<Scalars['Int']['output']>;
-  numTrue: Scalars['Int']['output'];
-  startTimestamp?: Maybe<Scalars['Float']['output']>;
-  uniqueId: Scalars['String']['output'];
+  numCandidates?: Maybe<Scalars["Int"]["output"]>;
+  numTrue: Scalars["Int"]["output"];
+  startTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  uniqueId: Scalars["String"]["output"];
 };
 
 export type Partitions = {
-  __typename?: 'Partitions';
+  __typename?: "Partitions";
   results: Array<Partition>;
 };
 
@@ -4739,128 +4874,132 @@ export type PartitionsSelector = {
 };
 
 export type PathMetadataEntry = MetadataEntry & {
-  __typename?: 'PathMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  path: Scalars['String']['output'];
+  __typename?: "PathMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  path: Scalars["String"]["output"];
 };
 
 export type PendingConcurrencyStep = {
-  __typename?: 'PendingConcurrencyStep';
-  assignedTimestamp?: Maybe<Scalars['Float']['output']>;
-  enqueuedTimestamp: Scalars['Float']['output'];
-  priority?: Maybe<Scalars['Int']['output']>;
-  runId: Scalars['String']['output'];
-  stepKey: Scalars['String']['output'];
+  __typename?: "PendingConcurrencyStep";
+  assignedTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  enqueuedTimestamp: Scalars["Float"]["output"];
+  priority?: Maybe<Scalars["Int"]["output"]>;
+  runId: Scalars["String"]["output"];
+  stepKey: Scalars["String"]["output"];
 };
 
 export type Permission = {
-  __typename?: 'Permission';
-  disabledReason?: Maybe<Scalars['String']['output']>;
-  permission: Scalars['String']['output'];
-  value: Scalars['Boolean']['output'];
+  __typename?: "Permission";
+  disabledReason?: Maybe<Scalars["String"]["output"]>;
+  permission: Scalars["String"]["output"];
+  value: Scalars["Boolean"]["output"];
 };
 
-export type Pipeline = IPipelineSnapshot & SolidContainer & {
-  __typename?: 'Pipeline';
-  dagsterTypeOrError: DagsterTypeOrError;
-  dagsterTypes: Array<DagsterType>;
-  description?: Maybe<Scalars['String']['output']>;
-  externalJobSource?: Maybe<Scalars['String']['output']>;
-  graphName: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  isAssetJob: Scalars['Boolean']['output'];
-  isJob: Scalars['Boolean']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  modes: Array<Mode>;
-  name: Scalars['String']['output'];
-  owners: Array<DefinitionOwner>;
-  parentSnapshotId?: Maybe<Scalars['String']['output']>;
-  partition?: Maybe<PartitionTagsAndConfig>;
-  partitionKeysOrError: PartitionKeys;
-  pipelineSnapshotId: Scalars['String']['output'];
-  presets: Array<PipelinePreset>;
-  repository: Repository;
-  runTags: Array<PipelineTag>;
-  runs: Array<Run>;
-  schedules: Array<Schedule>;
-  sensors: Array<Sensor>;
-  solidHandle?: Maybe<SolidHandle>;
-  solidHandles: Array<SolidHandle>;
-  solids: Array<Solid>;
-  tags: Array<PipelineTag>;
-};
-
+export type Pipeline = IPipelineSnapshot &
+  SolidContainer & {
+    __typename?: "Pipeline";
+    dagsterTypeOrError: DagsterTypeOrError;
+    dagsterTypes: Array<DagsterType>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
+    graphName: Scalars["String"]["output"];
+    id: Scalars["ID"]["output"];
+    isAssetJob: Scalars["Boolean"]["output"];
+    isJob: Scalars["Boolean"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    modes: Array<Mode>;
+    name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
+    parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
+    partition?: Maybe<PartitionTagsAndConfig>;
+    partitionKeysOrError: PartitionKeys;
+    pipelineSnapshotId: Scalars["String"]["output"];
+    presets: Array<PipelinePreset>;
+    repository: Repository;
+    runTags: Array<PipelineTag>;
+    runs: Array<Run>;
+    schedules: Array<Schedule>;
+    sensors: Array<Sensor>;
+    solidHandle?: Maybe<SolidHandle>;
+    solidHandles: Array<SolidHandle>;
+    solids: Array<Solid>;
+    tags: Array<PipelineTag>;
+  };
 
 export type PipelineDagsterTypeOrErrorArgs = {
-  dagsterTypeName: Scalars['String']['input'];
+  dagsterTypeName: Scalars["String"]["input"];
 };
-
 
 export type PipelinePartitionArgs = {
-  partitionName: Scalars['String']['input'];
+  partitionName: Scalars["String"]["input"];
   selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
-
 
 export type PipelinePartitionKeysOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  reverse?: InputMaybe<Scalars['Boolean']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  reverse?: InputMaybe<Scalars["Boolean"]["input"]>;
   selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
 
-
 export type PipelineRunsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type PipelineSolidHandleArgs = {
-  handleID: Scalars['String']['input'];
+  handleID: Scalars["String"]["input"];
 };
 
-
 export type PipelineSolidHandlesArgs = {
-  parentHandleID?: InputMaybe<Scalars['String']['input']>;
+  parentHandleID?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type PipelineConfigValidationError = {
-  message: Scalars['String']['output'];
-  path: Array<Scalars['String']['output']>;
+  message: Scalars["String"]["output"];
+  path: Array<Scalars["String"]["output"]>;
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
 };
 
 export type PipelineConfigValidationInvalid = {
   errors: Array<PipelineConfigValidationError>;
-  pipelineName: Scalars['String']['output'];
+  pipelineName: Scalars["String"]["output"];
 };
 
-export type PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | PipelineNotFoundError | PythonError | RunConfigValidationInvalid;
+export type PipelineConfigValidationResult =
+  | InvalidSubsetError
+  | PipelineConfigValidationValid
+  | PipelineNotFoundError
+  | PythonError
+  | RunConfigValidationInvalid;
 
 export type PipelineConfigValidationValid = {
-  __typename?: 'PipelineConfigValidationValid';
-  pipelineName: Scalars['String']['output'];
+  __typename?: "PipelineConfigValidationValid";
+  pipelineName: Scalars["String"]["output"];
 };
 
 export type PipelineNotFoundError = Error & {
-  __typename?: 'PipelineNotFoundError';
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  repositoryLocationName: Scalars['String']['output'];
-  repositoryName: Scalars['String']['output'];
+  __typename?: "PipelineNotFoundError";
+  message: Scalars["String"]["output"];
+  pipelineName: Scalars["String"]["output"];
+  repositoryLocationName: Scalars["String"]["output"];
+  repositoryName: Scalars["String"]["output"];
 };
 
-export type PipelineOrError = InvalidSubsetError | Pipeline | PipelineNotFoundError | PythonError;
+export type PipelineOrError =
+  | InvalidSubsetError
+  | Pipeline
+  | PipelineNotFoundError
+  | PythonError;
 
 export type PipelinePreset = {
-  __typename?: 'PipelinePreset';
-  mode: Scalars['String']['output'];
-  name: Scalars['String']['output'];
-  runConfigYaml: Scalars['String']['output'];
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
+  __typename?: "PipelinePreset";
+  mode: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  runConfigYaml: Scalars["String"]["output"];
+  solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
   tags: Array<PipelineTag>;
 };
 
@@ -4871,13 +5010,13 @@ export type PipelinePreset = {
  * where we can't look the concrete pipeline up.
  */
 export type PipelineReference = {
-  name: Scalars['String']['output'];
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
+  name: Scalars["String"]["output"];
+  solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
 };
 
 export type PipelineRun = {
   assets: Array<Asset>;
-  canTerminate: Scalars['Boolean']['output'];
+  canTerminate: Scalars["Boolean"]["output"];
   /**
    *
    *         Captured logs are the stdout/stderr logs for a given file key within the run
@@ -4886,94 +5025,94 @@ export type PipelineRun = {
   capturedLogs: CapturedLogs;
   eventConnection: EventConnection;
   executionPlan?: Maybe<ExecutionPlan>;
-  id: Scalars['ID']['output'];
-  jobName: Scalars['String']['output'];
-  mode: Scalars['String']['output'];
-  parentRunId?: Maybe<Scalars['String']['output']>;
+  id: Scalars["ID"]["output"];
+  jobName: Scalars["String"]["output"];
+  mode: Scalars["String"]["output"];
+  parentRunId?: Maybe<Scalars["String"]["output"]>;
   pipeline: PipelineReference;
-  pipelineName: Scalars['String']['output'];
-  pipelineSnapshotId?: Maybe<Scalars['String']['output']>;
+  pipelineName: Scalars["String"]["output"];
+  pipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
   repositoryOrigin?: Maybe<RepositoryOrigin>;
-  rootRunId?: Maybe<Scalars['String']['output']>;
-  runConfig: Scalars['RunConfigData']['output'];
-  runConfigYaml: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
+  rootRunId?: Maybe<Scalars["String"]["output"]>;
+  runConfig: Scalars["RunConfigData"]["output"];
+  runConfigYaml: Scalars["String"]["output"];
+  runId: Scalars["String"]["output"];
+  solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
   stats: RunStatsSnapshotOrError;
   status: RunStatus;
-  stepKeysToExecute?: Maybe<Array<Scalars['String']['output']>>;
+  stepKeysToExecute?: Maybe<Array<Scalars["String"]["output"]>>;
   stepStats: Array<RunStepStats>;
   tags: Array<PipelineTag>;
 };
 
-
 export type PipelineRunCapturedLogsArgs = {
-  fileKey: Scalars['String']['input'];
+  fileKey: Scalars["String"]["input"];
 };
 
-
 export type PipelineRunEventConnectionArgs = {
-  afterCursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  afterCursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type PipelineRunConflict = {
-  message: Scalars['String']['output'];
+  message: Scalars["String"]["output"];
 };
 
 export type PipelineRunLogsSubscriptionFailure = {
-  __typename?: 'PipelineRunLogsSubscriptionFailure';
-  message: Scalars['String']['output'];
-  missingRunId?: Maybe<Scalars['String']['output']>;
+  __typename?: "PipelineRunLogsSubscriptionFailure";
+  message: Scalars["String"]["output"];
+  missingRunId?: Maybe<Scalars["String"]["output"]>;
 };
 
-export type PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionFailure | PipelineRunLogsSubscriptionSuccess;
+export type PipelineRunLogsSubscriptionPayload =
+  | PipelineRunLogsSubscriptionFailure
+  | PipelineRunLogsSubscriptionSuccess;
 
 export type PipelineRunLogsSubscriptionSuccess = {
-  __typename?: 'PipelineRunLogsSubscriptionSuccess';
-  cursor: Scalars['String']['output'];
-  hasMorePastEvents: Scalars['Boolean']['output'];
+  __typename?: "PipelineRunLogsSubscriptionSuccess";
+  cursor: Scalars["String"]["output"];
+  hasMorePastEvents: Scalars["Boolean"]["output"];
   messages: Array<DagsterRunEvent>;
   run: Run;
 };
 
 export type PipelineRunMetadataEntry = MetadataEntry & {
-  __typename?: 'PipelineRunMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
+  __typename?: "PipelineRunMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  runId: Scalars["String"]["output"];
 };
 
 export type PipelineRunNotFoundError = {
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
+  message: Scalars["String"]["output"];
+  runId: Scalars["String"]["output"];
 };
 
 export type PipelineRunStatsSnapshot = {
-  endTime?: Maybe<Scalars['Float']['output']>;
-  enqueuedTime?: Maybe<Scalars['Float']['output']>;
-  expectations: Scalars['Int']['output'];
-  id: Scalars['String']['output'];
-  launchTime?: Maybe<Scalars['Float']['output']>;
-  materializations: Scalars['Int']['output'];
-  runId: Scalars['String']['output'];
-  startTime?: Maybe<Scalars['Float']['output']>;
-  stepsFailed: Scalars['Int']['output'];
-  stepsSucceeded: Scalars['Int']['output'];
+  endTime?: Maybe<Scalars["Float"]["output"]>;
+  enqueuedTime?: Maybe<Scalars["Float"]["output"]>;
+  expectations: Scalars["Int"]["output"];
+  id: Scalars["String"]["output"];
+  launchTime?: Maybe<Scalars["Float"]["output"]>;
+  materializations: Scalars["Int"]["output"];
+  runId: Scalars["String"]["output"];
+  startTime?: Maybe<Scalars["Float"]["output"]>;
+  stepsFailed: Scalars["Int"]["output"];
+  stepsSucceeded: Scalars["Int"]["output"];
 };
 
 export type PipelineRunStepStats = {
-  endTime?: Maybe<Scalars['Float']['output']>;
+  endTime?: Maybe<Scalars["Float"]["output"]>;
   expectationResults: Array<ExpectationResult>;
   materializations: Array<MaterializationEvent>;
-  runId: Scalars['String']['output'];
-  startTime?: Maybe<Scalars['Float']['output']>;
+  runId: Scalars["String"]["output"];
+  startTime?: Maybe<Scalars["Float"]["output"]>;
   status?: Maybe<StepEventStatus>;
-  stepKey: Scalars['String']['output'];
+  stepKey: Scalars["String"]["output"];
 };
 
 export type PipelineRuns = {
-  count?: Maybe<Scalars['Int']['output']>;
+  count?: Maybe<Scalars["Int"]["output"]>;
   results: Array<Run>;
 };
 
@@ -4984,70 +5123,72 @@ export type PipelineRuns = {
 export type PipelineSelector = {
   assetCheckSelection?: InputMaybe<Array<AssetCheckHandleInput>>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
-  pipelineName: Scalars['String']['input'];
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
-  solidSelection?: InputMaybe<Array<Scalars['String']['input']>>;
+  pipelineName: Scalars["String"]["input"];
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
+  solidSelection?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
-export type PipelineSnapshot = IPipelineSnapshot & PipelineReference & SolidContainer & {
-  __typename?: 'PipelineSnapshot';
-  dagsterTypeOrError: DagsterTypeOrError;
-  dagsterTypes: Array<DagsterType>;
-  description?: Maybe<Scalars['String']['output']>;
-  externalJobSource?: Maybe<Scalars['String']['output']>;
-  graphName: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  modes: Array<Mode>;
-  name: Scalars['String']['output'];
-  owners: Array<DefinitionOwner>;
-  parentSnapshotId?: Maybe<Scalars['String']['output']>;
-  pipelineSnapshotId: Scalars['String']['output'];
-  runTags: Array<PipelineTag>;
-  runs: Array<Run>;
-  schedules: Array<Schedule>;
-  sensors: Array<Sensor>;
-  solidHandle?: Maybe<SolidHandle>;
-  solidHandles: Array<SolidHandle>;
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
-  solids: Array<Solid>;
-  tags: Array<PipelineTag>;
-};
-
+export type PipelineSnapshot = IPipelineSnapshot &
+  PipelineReference &
+  SolidContainer & {
+    __typename?: "PipelineSnapshot";
+    dagsterTypeOrError: DagsterTypeOrError;
+    dagsterTypes: Array<DagsterType>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
+    graphName: Scalars["String"]["output"];
+    id: Scalars["ID"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    modes: Array<Mode>;
+    name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
+    parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
+    pipelineSnapshotId: Scalars["String"]["output"];
+    runTags: Array<PipelineTag>;
+    runs: Array<Run>;
+    schedules: Array<Schedule>;
+    sensors: Array<Sensor>;
+    solidHandle?: Maybe<SolidHandle>;
+    solidHandles: Array<SolidHandle>;
+    solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
+    solids: Array<Solid>;
+    tags: Array<PipelineTag>;
+  };
 
 export type PipelineSnapshotDagsterTypeOrErrorArgs = {
-  dagsterTypeName: Scalars['String']['input'];
+  dagsterTypeName: Scalars["String"]["input"];
 };
-
 
 export type PipelineSnapshotRunsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 export type PipelineSnapshotSolidHandleArgs = {
-  handleID: Scalars['String']['input'];
+  handleID: Scalars["String"]["input"];
 };
 
-
 export type PipelineSnapshotSolidHandlesArgs = {
-  parentHandleID?: InputMaybe<Scalars['String']['input']>;
+  parentHandleID?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type PipelineSnapshotNotFoundError = Error & {
-  __typename?: 'PipelineSnapshotNotFoundError';
-  message: Scalars['String']['output'];
-  snapshotId: Scalars['String']['output'];
+  __typename?: "PipelineSnapshotNotFoundError";
+  message: Scalars["String"]["output"];
+  snapshotId: Scalars["String"]["output"];
 };
 
-export type PipelineSnapshotOrError = PipelineNotFoundError | PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError;
+export type PipelineSnapshotOrError =
+  | PipelineNotFoundError
+  | PipelineSnapshot
+  | PipelineSnapshotNotFoundError
+  | PythonError;
 
 export type PipelineTag = {
-  __typename?: 'PipelineTag';
-  key: Scalars['String']['output'];
-  value: Scalars['String']['output'];
+  __typename?: "PipelineTag";
+  key: Scalars["String"]["output"];
+  value: Scalars["String"]["output"];
 };
 
 /**
@@ -5055,52 +5196,52 @@ export type PipelineTag = {
  *         with it so far.
  */
 export type PipelineTagAndValues = {
-  __typename?: 'PipelineTagAndValues';
-  key: Scalars['String']['output'];
-  values: Array<Scalars['String']['output']>;
+  __typename?: "PipelineTagAndValues";
+  key: Scalars["String"]["output"];
+  values: Array<Scalars["String"]["output"]>;
 };
 
 export type PoolConfig = {
-  __typename?: 'PoolConfig';
-  defaultPoolLimit?: Maybe<Scalars['Int']['output']>;
-  opGranularityRunBuffer?: Maybe<Scalars['Int']['output']>;
-  poolGranularity?: Maybe<Scalars['String']['output']>;
+  __typename?: "PoolConfig";
+  defaultPoolLimit?: Maybe<Scalars["Int"]["output"]>;
+  opGranularityRunBuffer?: Maybe<Scalars["Int"]["output"]>;
+  poolGranularity?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type PoolMetadataEntry = MetadataEntry & {
-  __typename?: 'PoolMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  pool: Scalars['String']['output'];
+  __typename?: "PoolMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  pool: Scalars["String"]["output"];
 };
 
 export type PresetNotFoundError = Error & {
-  __typename?: 'PresetNotFoundError';
-  message: Scalars['String']['output'];
-  preset: Scalars['String']['output'];
+  __typename?: "PresetNotFoundError";
+  message: Scalars["String"]["output"];
+  preset: Scalars["String"]["output"];
 };
 
 export type PythonArtifactMetadataEntry = MetadataEntry & {
-  __typename?: 'PythonArtifactMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  module: Scalars['String']['output'];
-  name: Scalars['String']['output'];
+  __typename?: "PythonArtifactMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  module: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
 };
 
 export type PythonError = Error & {
-  __typename?: 'PythonError';
+  __typename?: "PythonError";
   cause?: Maybe<PythonError>;
   causes: Array<PythonError>;
-  className?: Maybe<Scalars['String']['output']>;
+  className?: Maybe<Scalars["String"]["output"]>;
   errorChain: Array<ErrorChainLink>;
-  message: Scalars['String']['output'];
-  stack: Array<Scalars['String']['output']>;
+  message: Scalars["String"]["output"];
+  stack: Array<Scalars["String"]["output"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type Query = {
-  __typename?: 'Query';
+  __typename?: "Query";
   _entities: Array<Maybe<_Entity>>;
   _service: _Service;
   /** Retrieve all the top level resources. */
@@ -5138,7 +5279,7 @@ export type Query = {
   /** Fetch the history of auto-materialization ticks */
   autoMaterializeTicks: Array<InstigationTick>;
   /** Returns whether the user has permission to terminate runs in the deployment */
-  canBulkTerminate: Scalars['Boolean']['output'];
+  canBulkTerminate: Scalars["Boolean"]["output"];
   /** Captured logs are the stdout/stderr logs for a given log key */
   capturedLogs: CapturedLogs;
   /** Retrieve the captured log metadata for a given log key. */
@@ -5199,12 +5340,20 @@ export type Query = {
   oso_projectsV1?: Maybe<Array<Oso_ProjectsV1>>;
   oso_repositoriesV0?: Maybe<Array<Oso_RepositoriesV0>>;
   oso_sbomsV0?: Maybe<Array<Oso_SbomsV0>>;
-  oso_timeseriesEventsByArtifactV0?: Maybe<Array<Oso_TimeseriesEventsByArtifactV0>>;
-  oso_timeseriesMetricsByArtifactV0?: Maybe<Array<Oso_TimeseriesMetricsByArtifactV0>>;
+  oso_timeseriesEventsByArtifactV0?: Maybe<
+    Array<Oso_TimeseriesEventsByArtifactV0>
+  >;
+  oso_timeseriesMetricsByArtifactV0?: Maybe<
+    Array<Oso_TimeseriesMetricsByArtifactV0>
+  >;
   oso_timeseriesMetricsByArtifactV0ByMetricIdArtifactIdSampleDate?: Maybe<Oso_TimeseriesMetricsByArtifactV0>;
-  oso_timeseriesMetricsByCollectionV0?: Maybe<Array<Oso_TimeseriesMetricsByCollectionV0>>;
+  oso_timeseriesMetricsByCollectionV0?: Maybe<
+    Array<Oso_TimeseriesMetricsByCollectionV0>
+  >;
   oso_timeseriesMetricsByCollectionV0ByMetricIdCollectionIdSampleDate?: Maybe<Oso_TimeseriesMetricsByCollectionV0>;
-  oso_timeseriesMetricsByProjectV0?: Maybe<Array<Oso_TimeseriesMetricsByProjectV0>>;
+  oso_timeseriesMetricsByProjectV0?: Maybe<
+    Array<Oso_TimeseriesMetricsByProjectV0>
+  >;
   oso_timeseriesMetricsByProjectV0ByMetricIdProjectIdSampleDate?: Maybe<Oso_TimeseriesMetricsByProjectV0>;
   oso_usersV1?: Maybe<Array<Oso_UsersV1>>;
   /** Retrieve a backfill by backfill id. */
@@ -5260,638 +5409,562 @@ export type Query = {
   /** Retrieve all the sensors. */
   sensorsOrError: SensorsOrError;
   /** Whether or not the NUX should be shown to the user */
-  shouldShowNux: Scalars['Boolean']['output'];
+  shouldShowNux: Scalars["Boolean"]["output"];
   /** Provides fields for testing behavior */
   test?: Maybe<TestFields>;
   /** Retrieve a top level resource by its location name, repository name, and resource name. */
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
   /** Retrieve the partition keys which were true for a specific automation condition evaluation node. */
-  truePartitionsForAutomationConditionEvaluationNode: Array<Scalars['String']['output']>;
+  truePartitionsForAutomationConditionEvaluationNode: Array<
+    Scalars["String"]["output"]
+  >;
   /** Retrieve all the utilized environment variables for the given repo. */
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   /** Retrieve the version of Dagster running in the Dagster deployment. */
-  version: Scalars['String']['output'];
+  version: Scalars["String"]["output"];
   /** Retrieve a workspace entry by name. */
   workspaceLocationEntryOrError?: Maybe<WorkspaceLocationEntryOrError>;
   /** Retrieve the workspace and its locations. */
   workspaceOrError: WorkspaceOrError;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type Query_EntitiesArgs = {
-  representations: Array<Scalars['_Any']['input']>;
+  representations: Array<Scalars["_Any"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAllTopLevelResourceDetailsOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetBackfillPreviewArgs = {
   params: AssetBackfillPreviewParams;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetCheckExecutionsArgs = {
   assetKey: AssetKeyInput;
-  checkName: Scalars['String']['input'];
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit: Scalars['Int']['input'];
+  checkName: Scalars["String"]["input"];
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit: Scalars["Int"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetConditionEvaluationForPartitionArgs = {
   assetKey?: InputMaybe<AssetKeyInput>;
-  evaluationId: Scalars['ID']['input'];
-  partition: Scalars['String']['input'];
+  evaluationId: Scalars["ID"]["input"];
+  partition: Scalars["String"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetConditionEvaluationRecordsOrErrorArgs = {
   assetCheckKey?: InputMaybe<AssetCheckHandleInput>;
   assetKey?: InputMaybe<AssetKeyInput>;
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit: Scalars['Int']['input'];
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit: Scalars["Int"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetConditionEvaluationsForEvaluationIdArgs = {
-  evaluationId: Scalars['ID']['input'];
+  evaluationId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetNodeAdditionalRequiredKeysArgs = {
   assetKeys: Array<AssetKeyInput>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetNodeDefinitionCollisionsArgs = {
   assetKeys: Array<AssetKeyInput>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetNodeOrErrorArgs = {
   assetKey: AssetKeyInput;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetNodesArgs = {
   assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   group?: InputMaybe<AssetGroupSelector>;
-  loadMaterializations?: InputMaybe<Scalars['Boolean']['input']>;
+  loadMaterializations?: InputMaybe<Scalars["Boolean"]["input"]>;
   pipeline?: InputMaybe<PipelineSelector>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetOrErrorArgs = {
   assetKey: AssetKeyInput;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetRecordsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  prefix?: InputMaybe<Array<Scalars['String']['input']>>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  prefix?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetsLatestInfoArgs = {
   assetKeys: Array<AssetKeyInput>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetsOrErrorArgs = {
   assetKeys?: InputMaybe<Array<AssetKeyInput>>;
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  prefix?: InputMaybe<Array<Scalars['String']['input']>>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  prefix?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAutoMaterializeAssetEvaluationsOrErrorArgs = {
   assetKey: AssetKeyInput;
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit: Scalars['Int']['input'];
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit: Scalars["Int"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAutoMaterializeEvaluationsForEvaluationIdArgs = {
-  evaluationId: Scalars['ID']['input'];
+  evaluationId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAutoMaterializeTicksArgs = {
-  afterTimestamp?: InputMaybe<Scalars['Float']['input']>;
-  beforeTimestamp?: InputMaybe<Scalars['Float']['input']>;
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  dayOffset?: InputMaybe<Scalars['Int']['input']>;
-  dayRange?: InputMaybe<Scalars['Int']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  afterTimestamp?: InputMaybe<Scalars["Float"]["input"]>;
+  beforeTimestamp?: InputMaybe<Scalars["Float"]["input"]>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  dayOffset?: InputMaybe<Scalars["Int"]["input"]>;
+  dayRange?: InputMaybe<Scalars["Int"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   statuses?: InputMaybe<Array<InstigationTickStatus>>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryCapturedLogsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  logKey: Array<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  logKey: Array<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryCapturedLogsMetadataArgs = {
-  logKey: Array<Scalars['String']['input']>;
+  logKey: Array<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryExecutionPlanOrErrorArgs = {
-  mode: Scalars['String']['input'];
+  mode: Scalars["String"]["input"];
   pipeline: PipelineSelector;
-  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
+  runConfigData?: InputMaybe<Scalars["RunConfigData"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryGraphOrErrorArgs = {
   selector?: InputMaybe<GraphSelector>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryInstigationStateOrErrorArgs = {
-  id?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars["String"]["input"]>;
   instigationSelector: InstigationSelector;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryInstigationStatesOrErrorArgs = {
-  repositoryID: Scalars['String']['input'];
+  repositoryID: Scalars["String"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryIsPipelineConfigValidArgs = {
-  mode: Scalars['String']['input'];
+  mode: Scalars["String"]["input"];
   pipeline: PipelineSelector;
-  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
+  runConfigData?: InputMaybe<Scalars["RunConfigData"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryLogsForRunArgs = {
-  afterCursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  runId: Scalars['ID']['input'];
+  afterCursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  runId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_DatasetTableMetadataArgs = {
-  catalogName: Scalars['String']['input'];
-  orgName: Scalars['String']['input'];
-  schemaName: Scalars['String']['input'];
-  tableName: Scalars['String']['input'];
+  catalogName: Scalars["String"]["input"];
+  orgName: Scalars["String"]["input"];
+  schemaName: Scalars["String"]["input"];
+  tableName: Scalars["String"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_InvitationArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_MyInvitationsArgs = {
   status?: InputMaybe<InvitationStatus>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_NotebookArgs = {
-  notebookId: Scalars['ID']['input'];
+  notebookId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_NotebooksArgs = {
-  orgName?: InputMaybe<Scalars['String']['input']>;
+  orgName?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_OrgDatasetsArgs = {
-  orgName: Scalars['String']['input'];
+  orgName: Scalars["String"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_OrganizationArgs = {
-  orgName: Scalars['String']['input'];
+  orgName: Scalars["String"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ArtifactsByCollectionV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_ArtifactsByCollectionV1OrderByExp>>;
   where?: InputMaybe<Oso_ArtifactsByCollectionV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ArtifactsByProjectV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_ArtifactsByProjectV1OrderBy>>;
   where?: InputMaybe<Oso_ArtifactsByProjectV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ArtifactsByUserV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_ArtifactsByUserV1OrderByExp>>;
   where?: InputMaybe<Oso_ArtifactsByUserV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ArtifactsV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_ArtifactsV1OrderByExp>>;
   where?: InputMaybe<Oso_ArtifactsV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_CodeMetricsByArtifactV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_CodeMetricsByArtifactV0OrderBy>>;
   where?: InputMaybe<Oso_CodeMetricsByArtifactV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_CodeMetricsByProjectV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_CodeMetricsByProjectV1OrderBy>>;
   where?: InputMaybe<Oso_CodeMetricsByProjectV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_CollectionsV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_CollectionsV1OrderBy>>;
   where?: InputMaybe<Oso_CollectionsV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ContractsV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_ContractsV0OrderByExp>>;
   where?: InputMaybe<Oso_ContractsV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ContractsV0ByDeploymentDateArgs = {
-  deploymentDate: Scalars['Oso_Date']['input'];
+  deploymentDate: Scalars["Oso_Date"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_EventTypesV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_EventTypesV1OrderBy>>;
   where?: InputMaybe<Oso_EventTypesV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_FundingMetricsByProjectV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_FundingMetricsByProjectV1OrderBy>>;
   where?: InputMaybe<Oso_FundingMetricsByProjectV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_KeyMetricsByArtifactV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_KeyMetricsByArtifactV0OrderByExp>>;
   where?: InputMaybe<Oso_KeyMetricsByArtifactV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_KeyMetricsByCollectionV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_KeyMetricsByCollectionV0OrderByExp>>;
   where?: InputMaybe<Oso_KeyMetricsByCollectionV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_KeyMetricsByProjectV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_KeyMetricsByProjectV0OrderByExp>>;
   where?: InputMaybe<Oso_KeyMetricsByProjectV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_MetricsV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_MetricsV0OrderBy>>;
   where?: InputMaybe<Oso_MetricsV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_MetricsV0ByMetricSourceMetricNamespaceMetricNameArgs = {
-  metricName: Scalars['String']['input'];
-  metricNamespace: Scalars['String']['input'];
-  metricSource: Scalars['String']['input'];
+  metricName: Scalars["String"]["input"];
+  metricNamespace: Scalars["String"]["input"];
+  metricSource: Scalars["String"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ModelsV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_ModelsV0OrderByExp>>;
   where?: InputMaybe<Oso_ModelsV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_OnchainMetricsByProjectV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_OnchainMetricsByProjectV1OrderBy>>;
   where?: InputMaybe<Oso_OnchainMetricsByProjectV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_PackageOwnersV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_PackageOwnersV0OrderByExp>>;
   where?: InputMaybe<Oso_PackageOwnersV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ProjectsByCollectionV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_ProjectsByCollectionV1OrderBy>>;
   where?: InputMaybe<Oso_ProjectsByCollectionV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_ProjectsV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_ProjectsV1OrderBy>>;
   where?: InputMaybe<Oso_ProjectsV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_RepositoriesV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_RepositoriesV0OrderByExp>>;
   where?: InputMaybe<Oso_RepositoriesV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_SbomsV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_SbomsV0OrderByExp>>;
   where?: InputMaybe<Oso_SbomsV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_TimeseriesEventsByArtifactV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_TimeseriesEventsByArtifactV0OrderBy>>;
   where?: InputMaybe<Oso_TimeseriesEventsByArtifactV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_TimeseriesMetricsByArtifactV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_TimeseriesMetricsByArtifactV0OrderBy>>;
   where?: InputMaybe<Oso_TimeseriesMetricsByArtifactV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOso_TimeseriesMetricsByArtifactV0ByMetricIdArtifactIdSampleDateArgs = {
-  artifactId: Scalars['String']['input'];
-  metricId: Scalars['String']['input'];
-  sampleDate: Scalars['Oso_Date']['input'];
-};
-
+export type QueryOso_TimeseriesMetricsByArtifactV0ByMetricIdArtifactIdSampleDateArgs =
+  {
+    artifactId: Scalars["String"]["input"];
+    metricId: Scalars["String"]["input"];
+    sampleDate: Scalars["Oso_Date"]["input"];
+  };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_TimeseriesMetricsByCollectionV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_TimeseriesMetricsByCollectionV0OrderBy>>;
   where?: InputMaybe<Oso_TimeseriesMetricsByCollectionV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOso_TimeseriesMetricsByCollectionV0ByMetricIdCollectionIdSampleDateArgs = {
-  collectionId: Scalars['String']['input'];
-  metricId: Scalars['String']['input'];
-  sampleDate: Scalars['Oso_Date']['input'];
-};
-
+export type QueryOso_TimeseriesMetricsByCollectionV0ByMetricIdCollectionIdSampleDateArgs =
+  {
+    collectionId: Scalars["String"]["input"];
+    metricId: Scalars["String"]["input"];
+    sampleDate: Scalars["Oso_Date"]["input"];
+  };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_TimeseriesMetricsByProjectV0Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_TimeseriesMetricsByProjectV0OrderBy>>;
   where?: InputMaybe<Oso_TimeseriesMetricsByProjectV0BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOso_TimeseriesMetricsByProjectV0ByMetricIdProjectIdSampleDateArgs = {
-  metricId: Scalars['String']['input'];
-  projectId: Scalars['String']['input'];
-  sampleDate: Scalars['Oso_Date']['input'];
-};
-
+export type QueryOso_TimeseriesMetricsByProjectV0ByMetricIdProjectIdSampleDateArgs =
+  {
+    metricId: Scalars["String"]["input"];
+    projectId: Scalars["String"]["input"];
+    sampleDate: Scalars["Oso_Date"]["input"];
+  };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOso_UsersV1Args = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   order_by?: InputMaybe<Array<Oso_UsersV1OrderBy>>;
   where?: InputMaybe<Oso_UsersV1BoolExp>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryPartitionBackfillOrErrorArgs = {
-  backfillId: Scalars['String']['input'];
+  backfillId: Scalars["String"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryPartitionBackfillsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   filters?: InputMaybe<BulkActionsFilter>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   status?: InputMaybe<BulkActionStatus>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryPartitionSetOrErrorArgs = {
-  partitionSetName?: InputMaybe<Scalars['String']['input']>;
+  partitionSetName?: InputMaybe<Scalars["String"]["input"]>;
   repositorySelector: RepositorySelector;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryPartitionSetsOrErrorArgs = {
-  pipelineName: Scalars['String']['input'];
+  pipelineName: Scalars["String"]["input"];
   repositorySelector: RepositorySelector;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryPipelineOrErrorArgs = {
   params: PipelineSelector;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryPipelineRunOrErrorArgs = {
-  runId: Scalars['ID']['input'];
+  runId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryPipelineRunsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   filter?: InputMaybe<RunsFilter>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryPipelineSnapshotOrErrorArgs = {
   activePipelineSelector?: InputMaybe<PipelineSelector>;
-  snapshotId?: InputMaybe<Scalars['String']['input']>;
+  snapshotId?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRepositoriesOrErrorArgs = {
   repositorySelector?: InputMaybe<RepositorySelector>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRepositoryOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryResourcesOrErrorArgs = {
   pipelineSelector: PipelineSelector;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunConfigSchemaOrErrorArgs = {
-  mode?: InputMaybe<Scalars['String']['input']>;
+  mode?: InputMaybe<Scalars["String"]["input"]>;
   selector: PipelineSelector;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunGroupOrErrorArgs = {
-  runId: Scalars['ID']['input'];
+  runId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunIdsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   filter?: InputMaybe<RunsFilter>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunOrErrorArgs = {
-  runId: Scalars['ID']['input'];
+  runId: Scalars["ID"]["input"];
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunTagsOrErrorArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  tagKeys?: InputMaybe<Array<Scalars['String']['input']>>;
-  valuePrefix?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  tagKeys?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  valuePrefix?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunsFeedCountOrErrorArgs = {
@@ -5899,29 +5972,25 @@ export type QueryRunsFeedCountOrErrorArgs = {
   view: RunsFeedView;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunsFeedOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   filter?: InputMaybe<RunsFilter>;
-  limit: Scalars['Int']['input'];
+  limit: Scalars["Int"]["input"];
   view: RunsFeedView;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
   filter?: InputMaybe<RunsFilter>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryScheduleOrErrorArgs = {
   scheduleSelector: ScheduleSelector;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QuerySchedulesOrErrorArgs = {
@@ -5929,12 +5998,10 @@ export type QuerySchedulesOrErrorArgs = {
   scheduleStatus?: InputMaybe<InstigationStatus>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QuerySensorOrErrorArgs = {
   sensorSelector: SensorSelector;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QuerySensorsOrErrorArgs = {
@@ -5942,54 +6009,50 @@ export type QuerySensorsOrErrorArgs = {
   sensorStatus?: InputMaybe<InstigationStatus>;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryTopLevelResourceDetailsOrErrorArgs = {
   resourceSelector: ResourceSelector;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryTruePartitionsForAutomationConditionEvaluationNodeArgs = {
   assetKey?: InputMaybe<AssetKeyInput>;
-  evaluationId: Scalars['ID']['input'];
-  nodeUniqueId?: InputMaybe<Scalars['String']['input']>;
+  evaluationId: Scalars["ID"]["input"];
+  nodeUniqueId?: InputMaybe<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryUtilizedEnvVarsOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
 
-
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryWorkspaceLocationEntryOrErrorArgs = {
-  name: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
 };
 
 export type ReexecutionParams = {
   /** When re-executing a single run, pass new tags which will upsert over tags on the parent run. */
   extraTags?: InputMaybe<Array<ExecutionTag>>;
-  parentRunId: Scalars['String']['input'];
+  parentRunId: Scalars["String"]["input"];
   strategy: ReexecutionStrategy;
   /** When re-executing a single run, pass false to avoid adding the parent run tags by default. */
-  useParentRunTags?: InputMaybe<Scalars['Boolean']['input']>;
+  useParentRunTags?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
 export enum ReexecutionStrategy {
-  AllSteps = 'ALL_STEPS',
-  FromAssetFailure = 'FROM_ASSET_FAILURE',
-  FromFailure = 'FROM_FAILURE'
+  AllSteps = "ALL_STEPS",
+  FromAssetFailure = "FROM_ASSET_FAILURE",
+  FromFailure = "FROM_FAILURE",
 }
 
 /** Regular is an odd name in this context. It really means Scalar or Any. */
 export type RegularConfigType = ConfigType & {
-  __typename?: 'RegularConfigType';
-  description?: Maybe<Scalars['String']['output']>;
-  givenName: Scalars['String']['output'];
-  isSelector: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
+  __typename?: "RegularConfigType";
+  description?: Maybe<Scalars["String"]["output"]>;
+  givenName: Scalars["String"]["output"];
+  isSelector: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
   /**
    *
    * This is an odd and problematic field. It recursively goes down to
@@ -6016,88 +6079,102 @@ export type RegularConfigType = ConfigType & {
    * navigating the full schema client-side and not innerTypes.
    *
    */
-  typeParamKeys: Array<Scalars['String']['output']>;
+  typeParamKeys: Array<Scalars["String"]["output"]>;
 };
 
 export type RegularDagsterType = DagsterType & {
-  __typename?: 'RegularDagsterType';
-  description?: Maybe<Scalars['String']['output']>;
-  displayName: Scalars['String']['output'];
+  __typename?: "RegularDagsterType";
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName: Scalars["String"]["output"];
   innerTypes: Array<DagsterType>;
   inputSchemaType?: Maybe<ConfigType>;
-  isBuiltin: Scalars['Boolean']['output'];
-  isList: Scalars['Boolean']['output'];
-  isNothing: Scalars['Boolean']['output'];
-  isNullable: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
+  isBuiltin: Scalars["Boolean"]["output"];
+  isList: Scalars["Boolean"]["output"];
+  isNothing: Scalars["Boolean"]["output"];
+  isNullable: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
   metadataEntries: Array<MetadataEntry>;
-  name?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars["String"]["output"]>;
   outputSchemaType?: Maybe<ConfigType>;
 };
 
 export type ReloadNotSupported = Error & {
-  __typename?: 'ReloadNotSupported';
-  message: Scalars['String']['output'];
+  __typename?: "ReloadNotSupported";
+  message: Scalars["String"]["output"];
 };
 
 /** Reloads a code location server. */
 export type ReloadRepositoryLocationMutation = {
-  __typename?: 'ReloadRepositoryLocationMutation';
+  __typename?: "ReloadRepositoryLocationMutation";
   Output: ReloadRepositoryLocationMutationResult;
 };
 
 /** The output from reloading a code location server. */
-export type ReloadRepositoryLocationMutationResult = PythonError | ReloadNotSupported | RepositoryLocationNotFound | UnauthorizedError | WorkspaceLocationEntry;
+export type ReloadRepositoryLocationMutationResult =
+  | PythonError
+  | ReloadNotSupported
+  | RepositoryLocationNotFound
+  | UnauthorizedError
+  | WorkspaceLocationEntry;
 
 /** Reloads the workspace and its code location servers. */
 export type ReloadWorkspaceMutation = {
-  __typename?: 'ReloadWorkspaceMutation';
+  __typename?: "ReloadWorkspaceMutation";
   Output: ReloadWorkspaceMutationResult;
 };
 
 /** The output from reloading the workspace. */
-export type ReloadWorkspaceMutationResult = PythonError | UnauthorizedError | Workspace;
+export type ReloadWorkspaceMutationResult =
+  | PythonError
+  | UnauthorizedError
+  | Workspace;
 
 export type RemoveMemberPayload = {
-  __typename?: 'RemoveMemberPayload';
-  message: Scalars['String']['output'];
-  orgName: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
-  userId: Scalars['ID']['output'];
+  __typename?: "RemoveMemberPayload";
+  message: Scalars["String"]["output"];
+  orgName: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+  userId: Scalars["ID"]["output"];
 };
 
 export type ReportRunlessAssetEventsParams = {
   assetKey: AssetKeyInput;
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   eventType: AssetEventType;
-  partitionKeys?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  partitionKeys?: InputMaybe<Array<InputMaybe<Scalars["String"]["input"]>>>;
 };
 
 /** The output from reporting runless events. */
-export type ReportRunlessAssetEventsResult = PythonError | ReportRunlessAssetEventsSuccess | UnauthorizedError;
+export type ReportRunlessAssetEventsResult =
+  | PythonError
+  | ReportRunlessAssetEventsSuccess
+  | UnauthorizedError;
 
 /** Output indicating that runless asset events were reported. */
 export type ReportRunlessAssetEventsSuccess = {
-  __typename?: 'ReportRunlessAssetEventsSuccess';
+  __typename?: "ReportRunlessAssetEventsSuccess";
   assetKey: AssetKey;
 };
 
-export type RepositoriesOrError = PythonError | RepositoryConnection | RepositoryNotFoundError;
+export type RepositoriesOrError =
+  | PythonError
+  | RepositoryConnection
+  | RepositoryNotFoundError;
 
 export type Repository = {
-  __typename?: 'Repository';
+  __typename?: "Repository";
   allTopLevelResourceDetails: Array<ResourceDetails>;
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
   displayMetadata: Array<RepositoryMetadata>;
   /** Retrieves whether the code location has integrated docs. */
-  hasLocationDocs: Scalars['Boolean']['output'];
-  id: Scalars['ID']['output'];
+  hasLocationDocs: Scalars["Boolean"]["output"];
+  id: Scalars["ID"]["output"];
   jobs: Array<Job>;
   location: RepositoryLocation;
   /** Retrieves JSON blob to drive integrated code location docs. */
   locationDocsJsonOrError: LocationDocsJsonOrError;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   origin: RepositoryOrigin;
   partitionSets: Array<PartitionSet>;
   pipelines: Array<Pipeline>;
@@ -6107,304 +6184,330 @@ export type Repository = {
   usedSolids: Array<UsedSolid>;
 };
 
-
 export type RepositorySensorsArgs = {
   sensorType?: InputMaybe<SensorType>;
 };
 
-
 export type RepositoryUsedSolidArgs = {
-  name: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
 };
 
 export type RepositoryConnection = {
-  __typename?: 'RepositoryConnection';
+  __typename?: "RepositoryConnection";
   nodes: Array<Repository>;
 };
 
 export type RepositoryLocation = {
-  __typename?: 'RepositoryLocation';
+  __typename?: "RepositoryLocation";
   dagsterLibraryVersions?: Maybe<Array<DagsterLibraryVersion>>;
-  environmentPath?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
-  isReloadSupported: Scalars['Boolean']['output'];
-  name: Scalars['String']['output'];
+  environmentPath?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  isReloadSupported: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
   repositories: Array<Repository>;
-  serverId?: Maybe<Scalars['String']['output']>;
+  serverId?: Maybe<Scalars["String"]["output"]>;
 };
 
 export enum RepositoryLocationLoadStatus {
-  Loaded = 'LOADED',
-  Loading = 'LOADING'
+  Loaded = "LOADED",
+  Loading = "LOADING",
 }
 
 export type RepositoryLocationNotFound = Error & {
-  __typename?: 'RepositoryLocationNotFound';
-  message: Scalars['String']['output'];
+  __typename?: "RepositoryLocationNotFound";
+  message: Scalars["String"]["output"];
 };
 
 export type RepositoryLocationOrLoadError = PythonError | RepositoryLocation;
 
 export type RepositoryMetadata = {
-  __typename?: 'RepositoryMetadata';
-  key: Scalars['String']['output'];
-  value: Scalars['String']['output'];
+  __typename?: "RepositoryMetadata";
+  key: Scalars["String"]["output"];
+  value: Scalars["String"]["output"];
 };
 
 export type RepositoryNotFoundError = Error & {
-  __typename?: 'RepositoryNotFoundError';
-  message: Scalars['String']['output'];
-  repositoryLocationName: Scalars['String']['output'];
-  repositoryName: Scalars['String']['output'];
+  __typename?: "RepositoryNotFoundError";
+  message: Scalars["String"]["output"];
+  repositoryLocationName: Scalars["String"]["output"];
+  repositoryName: Scalars["String"]["output"];
 };
 
-export type RepositoryOrError = PythonError | Repository | RepositoryNotFoundError;
+export type RepositoryOrError =
+  | PythonError
+  | Repository
+  | RepositoryNotFoundError;
 
 export type RepositoryOrigin = {
-  __typename?: 'RepositoryOrigin';
-  id: Scalars['String']['output'];
+  __typename?: "RepositoryOrigin";
+  id: Scalars["String"]["output"];
   repositoryLocationMetadata: Array<RepositoryMetadata>;
-  repositoryLocationName: Scalars['String']['output'];
-  repositoryName: Scalars['String']['output'];
+  repositoryLocationName: Scalars["String"]["output"];
+  repositoryName: Scalars["String"]["output"];
 };
 
 /** This type represents the fields necessary to identify a repository. */
 export type RepositorySelector = {
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
 };
 
 export type RequestedMaterializationsForAsset = {
-  __typename?: 'RequestedMaterializationsForAsset';
+  __typename?: "RequestedMaterializationsForAsset";
   assetKey: AssetKey;
-  partitionKeys: Array<Scalars['String']['output']>;
+  partitionKeys: Array<Scalars["String"]["output"]>;
 };
 
 /** Reset a schedule to its status defined in code, otherwise disable it from launching runs for a job. */
 export type ResetScheduleMutation = {
-  __typename?: 'ResetScheduleMutation';
+  __typename?: "ResetScheduleMutation";
   Output: ScheduleMutationResult;
 };
 
 /** Reset a sensor to its status defined in code, otherwise disable it from launching runs for a job. */
 export type ResetSensorMutation = {
-  __typename?: 'ResetSensorMutation';
+  __typename?: "ResetSensorMutation";
   Output: SensorOrError;
 };
 
 export type Resource = {
-  __typename?: 'Resource';
+  __typename?: "Resource";
   configField?: Maybe<ConfigTypeField>;
-  description?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
 };
 
 export type ResourceConnection = {
-  __typename?: 'ResourceConnection';
+  __typename?: "ResourceConnection";
   resources: Array<Resource>;
 };
 
 export type ResourceDetails = {
-  __typename?: 'ResourceDetails';
+  __typename?: "ResourceDetails";
   assetKeysUsing: Array<AssetKey>;
   /** Snapshots of all the fields for the given resource */
   configFields: Array<ConfigTypeField>;
   /** List of K/V pairs of user-configured values for each of the top-level fields on the resource */
   configuredValues: Array<ConfiguredValue>;
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['String']['output'];
-  isTopLevel: Scalars['Boolean']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["String"]["output"];
+  isTopLevel: Scalars["Boolean"]["output"];
   jobsOpsUsing: Array<JobWithOps>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** List of nested resources for the given resource */
   nestedResources: Array<NestedResourceEntry>;
   /** List of parent resources for the given resource */
   parentResources: Array<NestedResourceEntry>;
-  resourceType: Scalars['String']['output'];
-  schedulesUsing: Array<Scalars['String']['output']>;
-  sensorsUsing: Array<Scalars['String']['output']>;
+  resourceType: Scalars["String"]["output"];
+  schedulesUsing: Array<Scalars["String"]["output"]>;
+  sensorsUsing: Array<Scalars["String"]["output"]>;
 };
 
 export type ResourceDetailsList = {
-  __typename?: 'ResourceDetailsList';
+  __typename?: "ResourceDetailsList";
   results: Array<ResourceDetails>;
 };
 
-export type ResourceDetailsListOrError = PythonError | RepositoryNotFoundError | ResourceDetailsList;
+export type ResourceDetailsListOrError =
+  | PythonError
+  | RepositoryNotFoundError
+  | ResourceDetailsList;
 
-export type ResourceDetailsOrError = PythonError | ResourceDetails | ResourceNotFoundError;
+export type ResourceDetailsOrError =
+  | PythonError
+  | ResourceDetails
+  | ResourceNotFoundError;
 
-export type ResourceInitFailureEvent = DisplayableEvent & ErrorEvent & MarkerEvent & MessageEvent & StepEvent & {
-  __typename?: 'ResourceInitFailureEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  error?: Maybe<PythonError>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  markerEnd?: Maybe<Scalars['String']['output']>;
-  markerStart?: Maybe<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ResourceInitFailureEvent = DisplayableEvent &
+  ErrorEvent &
+  MarkerEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "ResourceInitFailureEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    error?: Maybe<PythonError>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    markerEnd?: Maybe<Scalars["String"]["output"]>;
+    markerStart?: Maybe<Scalars["String"]["output"]>;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type ResourceInitStartedEvent = DisplayableEvent & MarkerEvent & MessageEvent & StepEvent & {
-  __typename?: 'ResourceInitStartedEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  markerEnd?: Maybe<Scalars['String']['output']>;
-  markerStart?: Maybe<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ResourceInitStartedEvent = DisplayableEvent &
+  MarkerEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "ResourceInitStartedEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    markerEnd?: Maybe<Scalars["String"]["output"]>;
+    markerStart?: Maybe<Scalars["String"]["output"]>;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type ResourceInitSuccessEvent = DisplayableEvent & MarkerEvent & MessageEvent & StepEvent & {
-  __typename?: 'ResourceInitSuccessEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  markerEnd?: Maybe<Scalars['String']['output']>;
-  markerStart?: Maybe<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type ResourceInitSuccessEvent = DisplayableEvent &
+  MarkerEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "ResourceInitSuccessEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    markerEnd?: Maybe<Scalars["String"]["output"]>;
+    markerStart?: Maybe<Scalars["String"]["output"]>;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type ResourceNotFoundError = Error & {
-  __typename?: 'ResourceNotFoundError';
-  message: Scalars['String']['output'];
-  resourceName: Scalars['String']['output'];
+  __typename?: "ResourceNotFoundError";
+  message: Scalars["String"]["output"];
+  resourceName: Scalars["String"]["output"];
 };
 
 export type ResourceRequirement = {
-  __typename?: 'ResourceRequirement';
-  resourceKey: Scalars['String']['output'];
+  __typename?: "ResourceRequirement";
+  resourceKey: Scalars["String"]["output"];
 };
 
 /** This type represents the fields necessary to identify a top-level resource. */
 export type ResourceSelector = {
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
-  resourceName: Scalars['String']['input'];
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
+  resourceName: Scalars["String"]["input"];
 };
 
-export type ResourcesOrError = InvalidSubsetError | PipelineNotFoundError | PythonError | ResourceConnection;
+export type ResourcesOrError =
+  | InvalidSubsetError
+  | PipelineNotFoundError
+  | PythonError
+  | ResourceConnection;
 
-export type ResumeBackfillResult = PythonError | ResumeBackfillSuccess | UnauthorizedError;
+export type ResumeBackfillResult =
+  | PythonError
+  | ResumeBackfillSuccess
+  | UnauthorizedError;
 
 export type ResumeBackfillSuccess = {
-  __typename?: 'ResumeBackfillSuccess';
-  backfillId: Scalars['String']['output'];
+  __typename?: "ResumeBackfillSuccess";
+  backfillId: Scalars["String"]["output"];
 };
 
 export type RevokeInvitationPayload = {
-  __typename?: 'RevokeInvitationPayload';
-  invitationId: Scalars['ID']['output'];
-  message: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  __typename?: "RevokeInvitationPayload";
+  invitationId: Scalars["ID"]["output"];
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
-export type Run = PipelineRun & RunsFeedEntry & {
-  __typename?: 'Run';
-  allPools?: Maybe<Array<Scalars['String']['output']>>;
-  assetCheckSelection?: Maybe<Array<AssetCheckhandle>>;
-  assetChecks?: Maybe<Array<AssetCheckhandle>>;
-  assetMaterializations: Array<MaterializationEvent>;
-  assetSelection?: Maybe<Array<AssetKey>>;
-  assets: Array<Asset>;
-  canTerminate: Scalars['Boolean']['output'];
-  /**
-   *
-   *         Captured logs are the stdout/stderr logs for a given file key within the run
-   *
-   */
-  capturedLogs: CapturedLogs;
-  creationTime: Scalars['Float']['output'];
-  endTime?: Maybe<Scalars['Float']['output']>;
-  eventConnection: EventConnection;
-  executionPlan?: Maybe<ExecutionPlan>;
-  externalJobSource?: Maybe<Scalars['String']['output']>;
-  hasConcurrencyKeySlots: Scalars['Boolean']['output'];
-  hasDeletePermission: Scalars['Boolean']['output'];
-  hasReExecutePermission: Scalars['Boolean']['output'];
-  hasRunMetricsEnabled: Scalars['Boolean']['output'];
-  hasTerminatePermission: Scalars['Boolean']['output'];
-  hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
-  id: Scalars['ID']['output'];
-  jobName: Scalars['String']['output'];
-  mode: Scalars['String']['output'];
-  parentPipelineSnapshotId?: Maybe<Scalars['String']['output']>;
-  parentRunId?: Maybe<Scalars['String']['output']>;
-  pipeline: PipelineReference;
-  pipelineName: Scalars['String']['output'];
-  pipelineSnapshotId?: Maybe<Scalars['String']['output']>;
-  repositoryOrigin?: Maybe<RepositoryOrigin>;
-  resolvedOpSelection?: Maybe<Array<Scalars['String']['output']>>;
-  rootConcurrencyKeys?: Maybe<Array<Scalars['String']['output']>>;
-  rootRunId?: Maybe<Scalars['String']['output']>;
-  runConfig: Scalars['RunConfigData']['output'];
-  runConfigYaml: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  /** Included to comply with RunsFeedEntry interface. Duplicate of status. */
-  runStatus: RunStatus;
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
-  startTime?: Maybe<Scalars['Float']['output']>;
-  stats: RunStatsSnapshotOrError;
-  status: RunStatus;
-  stepKeysToExecute?: Maybe<Array<Scalars['String']['output']>>;
-  stepStats: Array<RunStepStats>;
-  tags: Array<PipelineTag>;
-  updateTime?: Maybe<Scalars['Float']['output']>;
-};
-
+export type Run = PipelineRun &
+  RunsFeedEntry & {
+    __typename?: "Run";
+    allPools?: Maybe<Array<Scalars["String"]["output"]>>;
+    assetCheckSelection?: Maybe<Array<AssetCheckhandle>>;
+    assetChecks?: Maybe<Array<AssetCheckhandle>>;
+    assetMaterializations: Array<MaterializationEvent>;
+    assetSelection?: Maybe<Array<AssetKey>>;
+    assets: Array<Asset>;
+    canTerminate: Scalars["Boolean"]["output"];
+    /**
+     *
+     *         Captured logs are the stdout/stderr logs for a given file key within the run
+     *
+     */
+    capturedLogs: CapturedLogs;
+    creationTime: Scalars["Float"]["output"];
+    endTime?: Maybe<Scalars["Float"]["output"]>;
+    eventConnection: EventConnection;
+    executionPlan?: Maybe<ExecutionPlan>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
+    hasConcurrencyKeySlots: Scalars["Boolean"]["output"];
+    hasDeletePermission: Scalars["Boolean"]["output"];
+    hasReExecutePermission: Scalars["Boolean"]["output"];
+    hasRunMetricsEnabled: Scalars["Boolean"]["output"];
+    hasTerminatePermission: Scalars["Boolean"]["output"];
+    hasUnconstrainedRootNodes: Scalars["Boolean"]["output"];
+    id: Scalars["ID"]["output"];
+    jobName: Scalars["String"]["output"];
+    mode: Scalars["String"]["output"];
+    parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
+    parentRunId?: Maybe<Scalars["String"]["output"]>;
+    pipeline: PipelineReference;
+    pipelineName: Scalars["String"]["output"];
+    pipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
+    repositoryOrigin?: Maybe<RepositoryOrigin>;
+    resolvedOpSelection?: Maybe<Array<Scalars["String"]["output"]>>;
+    rootConcurrencyKeys?: Maybe<Array<Scalars["String"]["output"]>>;
+    rootRunId?: Maybe<Scalars["String"]["output"]>;
+    runConfig: Scalars["RunConfigData"]["output"];
+    runConfigYaml: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    /** Included to comply with RunsFeedEntry interface. Duplicate of status. */
+    runStatus: RunStatus;
+    solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
+    startTime?: Maybe<Scalars["Float"]["output"]>;
+    stats: RunStatsSnapshotOrError;
+    status: RunStatus;
+    stepKeysToExecute?: Maybe<Array<Scalars["String"]["output"]>>;
+    stepStats: Array<RunStepStats>;
+    tags: Array<PipelineTag>;
+    updateTime?: Maybe<Scalars["Float"]["output"]>;
+  };
 
 export type RunCapturedLogsArgs = {
-  fileKey: Scalars['String']['input'];
+  fileKey: Scalars["String"]["input"];
 };
-
 
 export type RunEventConnectionArgs = {
-  afterCursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  afterCursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
-export type RunCanceledEvent = ErrorEvent & MessageEvent & RunEvent & {
-  __typename?: 'RunCanceledEvent';
-  error?: Maybe<PythonError>;
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type RunCanceledEvent = ErrorEvent &
+  MessageEvent &
+  RunEvent & {
+    __typename?: "RunCanceledEvent";
+    error?: Maybe<PythonError>;
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type RunCancelingEvent = MessageEvent & RunEvent & {
-  __typename?: 'RunCancelingEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type RunCancelingEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "RunCancelingEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 /**
  * The run config schema represents the all the config type
@@ -6414,7 +6517,7 @@ export type RunCancelingEvent = MessageEvent & RunEvent & {
  *         through this type
  */
 export type RunConfigSchema = {
-  __typename?: 'RunConfigSchema';
+  __typename?: "RunConfigSchema";
   /**
    * Fetch all the named config types that are in the schema. Useful
    *         for things like a type browser UI, or for fetching all the types are in the
@@ -6441,9 +6544,8 @@ export type RunConfigSchema = {
    *         so that the client does not have to parse JSON client side and assemble
    *         it into a single yaml document.
    */
-  rootDefaultYaml: Scalars['String']['output'];
+  rootDefaultYaml: Scalars["String"]["output"];
 };
-
 
 /**
  * The run config schema represents the all the config type
@@ -6453,161 +6555,177 @@ export type RunConfigSchema = {
  *         through this type
  */
 export type RunConfigSchemaIsRunConfigValidArgs = {
-  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
+  runConfigData?: InputMaybe<Scalars["RunConfigData"]["input"]>;
 };
 
-export type RunConfigSchemaOrError = InvalidSubsetError | ModeNotFoundError | PipelineNotFoundError | PythonError | RunConfigSchema;
+export type RunConfigSchemaOrError =
+  | InvalidSubsetError
+  | ModeNotFoundError
+  | PipelineNotFoundError
+  | PythonError
+  | RunConfigSchema;
 
 export type RunConfigValidationInvalid = PipelineConfigValidationInvalid & {
-  __typename?: 'RunConfigValidationInvalid';
+  __typename?: "RunConfigValidationInvalid";
   errors: Array<PipelineConfigValidationError>;
-  pipelineName: Scalars['String']['output'];
+  pipelineName: Scalars["String"]["output"];
 };
 
-export type RunConflict = Error & PipelineRunConflict & {
-  __typename?: 'RunConflict';
-  message: Scalars['String']['output'];
-};
+export type RunConflict = Error &
+  PipelineRunConflict & {
+    __typename?: "RunConflict";
+    message: Scalars["String"]["output"];
+  };
 
-export type RunDequeuedEvent = MessageEvent & RunEvent & {
-  __typename?: 'RunDequeuedEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type RunDequeuedEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "RunDequeuedEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type RunEnqueuedEvent = MessageEvent & RunEvent & {
-  __typename?: 'RunEnqueuedEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type RunEnqueuedEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "RunEnqueuedEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type RunEvent = {
-  pipelineName: Scalars['String']['output'];
+  pipelineName: Scalars["String"]["output"];
 };
 
-export type RunFailureEvent = ErrorEvent & MessageEvent & RunEvent & {
-  __typename?: 'RunFailureEvent';
-  error?: Maybe<PythonError>;
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type RunFailureEvent = ErrorEvent &
+  MessageEvent &
+  RunEvent & {
+    __typename?: "RunFailureEvent";
+    error?: Maybe<PythonError>;
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type RunGroup = {
-  __typename?: 'RunGroup';
-  rootRunId: Scalars['String']['output'];
+  __typename?: "RunGroup";
+  rootRunId: Scalars["String"]["output"];
   runs?: Maybe<Array<Maybe<Run>>>;
 };
 
 export type RunGroupNotFoundError = Error & {
-  __typename?: 'RunGroupNotFoundError';
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
+  __typename?: "RunGroupNotFoundError";
+  message: Scalars["String"]["output"];
+  runId: Scalars["String"]["output"];
 };
 
 export type RunGroupOrError = PythonError | RunGroup | RunGroupNotFoundError;
 
 export type RunGroups = {
-  __typename?: 'RunGroups';
+  __typename?: "RunGroups";
   results: Array<RunGroup>;
 };
 
 export type RunIds = {
-  __typename?: 'RunIds';
-  results: Array<Scalars['String']['output']>;
+  __typename?: "RunIds";
+  results: Array<Scalars["String"]["output"]>;
 };
 
-export type RunIdsOrError = InvalidPipelineRunsFilterError | PythonError | RunIds;
+export type RunIdsOrError =
+  | InvalidPipelineRunsFilterError
+  | PythonError
+  | RunIds;
 
 export type RunLauncher = {
-  __typename?: 'RunLauncher';
-  name: Scalars['String']['output'];
+  __typename?: "RunLauncher";
+  name: Scalars["String"]["output"];
 };
 
 export type RunMarker = {
-  __typename?: 'RunMarker';
-  endTime?: Maybe<Scalars['Float']['output']>;
-  startTime?: Maybe<Scalars['Float']['output']>;
+  __typename?: "RunMarker";
+  endTime?: Maybe<Scalars["Float"]["output"]>;
+  startTime?: Maybe<Scalars["Float"]["output"]>;
 };
 
-export type RunNotFoundError = Error & PipelineRunNotFoundError & {
-  __typename?: 'RunNotFoundError';
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-};
+export type RunNotFoundError = Error &
+  PipelineRunNotFoundError & {
+    __typename?: "RunNotFoundError";
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+  };
 
 export type RunOrError = PythonError | Run | RunNotFoundError;
 
 export type RunQueueConfig = {
-  __typename?: 'RunQueueConfig';
-  isOpConcurrencyAware?: Maybe<Scalars['Boolean']['output']>;
-  maxConcurrentRuns: Scalars['Int']['output'];
-  tagConcurrencyLimitsYaml?: Maybe<Scalars['String']['output']>;
+  __typename?: "RunQueueConfig";
+  isOpConcurrencyAware?: Maybe<Scalars["Boolean"]["output"]>;
+  maxConcurrentRuns: Scalars["Int"]["output"];
+  tagConcurrencyLimitsYaml?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type RunRequest = {
-  __typename?: 'RunRequest';
+  __typename?: "RunRequest";
   assetChecks?: Maybe<Array<AssetCheckhandle>>;
   assetSelection?: Maybe<Array<AssetKey>>;
-  jobName?: Maybe<Scalars['String']['output']>;
-  runConfigYaml: Scalars['String']['output'];
-  runKey?: Maybe<Scalars['String']['output']>;
+  jobName?: Maybe<Scalars["String"]["output"]>;
+  runConfigYaml: Scalars["String"]["output"];
+  runKey?: Maybe<Scalars["String"]["output"]>;
   tags: Array<PipelineTag>;
 };
 
-export type RunStartEvent = MessageEvent & RunEvent & {
-  __typename?: 'RunStartEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type RunStartEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "RunStartEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type RunStartingEvent = MessageEvent & RunEvent & {
-  __typename?: 'RunStartingEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type RunStartingEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "RunStartingEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type RunStatsSnapshot = PipelineRunStatsSnapshot & {
-  __typename?: 'RunStatsSnapshot';
-  endTime?: Maybe<Scalars['Float']['output']>;
-  enqueuedTime?: Maybe<Scalars['Float']['output']>;
-  expectations: Scalars['Int']['output'];
-  id: Scalars['String']['output'];
-  launchTime?: Maybe<Scalars['Float']['output']>;
-  materializations: Scalars['Int']['output'];
-  runId: Scalars['String']['output'];
-  startTime?: Maybe<Scalars['Float']['output']>;
-  stepsFailed: Scalars['Int']['output'];
-  stepsSucceeded: Scalars['Int']['output'];
+  __typename?: "RunStatsSnapshot";
+  endTime?: Maybe<Scalars["Float"]["output"]>;
+  enqueuedTime?: Maybe<Scalars["Float"]["output"]>;
+  expectations: Scalars["Int"]["output"];
+  id: Scalars["String"]["output"];
+  launchTime?: Maybe<Scalars["Float"]["output"]>;
+  materializations: Scalars["Int"]["output"];
+  runId: Scalars["String"]["output"];
+  startTime?: Maybe<Scalars["Float"]["output"]>;
+  stepsFailed: Scalars["Int"]["output"];
+  stepsSucceeded: Scalars["Int"]["output"];
 };
 
 export type RunStatsSnapshotOrError = PythonError | RunStatsSnapshot;
@@ -6615,82 +6733,83 @@ export type RunStatsSnapshotOrError = PythonError | RunStatsSnapshot;
 /** The status of run execution. */
 export enum RunStatus {
   /** Runs that have been canceled before completion. */
-  Canceled = 'CANCELED',
+  Canceled = "CANCELED",
   /** Runs that are in-progress and pending to be canceled. */
-  Canceling = 'CANCELING',
+  Canceling = "CANCELING",
   /** Runs that have failed to complete. */
-  Failure = 'FAILURE',
+  Failure = "FAILURE",
   /** Runs that are managed outside of the Dagster control plane. */
-  Managed = 'MANAGED',
+  Managed = "MANAGED",
   /** Runs that have been created, but not yet submitted for launch. */
-  NotStarted = 'NOT_STARTED',
+  NotStarted = "NOT_STARTED",
   /** Runs waiting to be launched by the Dagster Daemon. */
-  Queued = 'QUEUED',
+  Queued = "QUEUED",
   /** Runs that have been launched and execution has started. */
-  Started = 'STARTED',
+  Started = "STARTED",
   /** Runs that have been launched, but execution has not yet started. */
-  Starting = 'STARTING',
+  Starting = "STARTING",
   /** Runs that have successfully completed. */
-  Success = 'SUCCESS'
+  Success = "SUCCESS",
 }
 
 export type RunStepStats = PipelineRunStepStats & {
-  __typename?: 'RunStepStats';
+  __typename?: "RunStepStats";
   attempts: Array<RunMarker>;
-  endTime?: Maybe<Scalars['Float']['output']>;
+  endTime?: Maybe<Scalars["Float"]["output"]>;
   expectationResults: Array<ExpectationResult>;
   markers: Array<RunMarker>;
   materializations: Array<MaterializationEvent>;
-  runId: Scalars['String']['output'];
-  startTime?: Maybe<Scalars['Float']['output']>;
+  runId: Scalars["String"]["output"];
+  startTime?: Maybe<Scalars["Float"]["output"]>;
   status?: Maybe<StepEventStatus>;
-  stepKey: Scalars['String']['output'];
+  stepKey: Scalars["String"]["output"];
 };
 
-export type RunSuccessEvent = MessageEvent & RunEvent & {
-  __typename?: 'RunSuccessEvent';
-  eventType?: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type RunSuccessEvent = MessageEvent &
+  RunEvent & {
+    __typename?: "RunSuccessEvent";
+    eventType?: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    pipelineName: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export type RunTagKeys = {
-  __typename?: 'RunTagKeys';
-  keys: Array<Scalars['String']['output']>;
+  __typename?: "RunTagKeys";
+  keys: Array<Scalars["String"]["output"]>;
 };
 
 export type RunTagKeysOrError = PythonError | RunTagKeys;
 
 export type RunTags = {
-  __typename?: 'RunTags';
+  __typename?: "RunTags";
   tags: Array<PipelineTagAndValues>;
 };
 
 export type RunTagsOrError = PythonError | RunTags;
 
 export type Runs = PipelineRuns & {
-  __typename?: 'Runs';
-  count?: Maybe<Scalars['Int']['output']>;
+  __typename?: "Runs";
+  count?: Maybe<Scalars["Int"]["output"]>;
   results: Array<Run>;
 };
 
 export type RunsFeedConnection = {
-  __typename?: 'RunsFeedConnection';
-  cursor: Scalars['String']['output'];
-  hasMore: Scalars['Boolean']['output'];
+  __typename?: "RunsFeedConnection";
+  cursor: Scalars["String"]["output"];
+  hasMore: Scalars["Boolean"]["output"];
   results: Array<RunsFeedEntry>;
 };
 
 export type RunsFeedConnectionOrError = PythonError | RunsFeedConnection;
 
 export type RunsFeedCount = {
-  __typename?: 'RunsFeedCount';
-  count: Scalars['Int']['output'];
+  __typename?: "RunsFeedCount";
+  count: Scalars["Int"]["output"];
 };
 
 export type RunsFeedCountOrError = PythonError | RunsFeedCount;
@@ -6698,12 +6817,12 @@ export type RunsFeedCountOrError = PythonError | RunsFeedCount;
 export type RunsFeedEntry = {
   assetCheckSelection?: Maybe<Array<AssetCheckhandle>>;
   assetSelection?: Maybe<Array<AssetKey>>;
-  creationTime: Scalars['Float']['output'];
-  endTime?: Maybe<Scalars['Float']['output']>;
-  id: Scalars['ID']['output'];
-  jobName?: Maybe<Scalars['String']['output']>;
+  creationTime: Scalars["Float"]["output"];
+  endTime?: Maybe<Scalars["Float"]["output"]>;
+  id: Scalars["ID"]["output"];
+  jobName?: Maybe<Scalars["String"]["output"]>;
   runStatus?: Maybe<RunStatus>;
-  startTime?: Maybe<Scalars['Float']['output']>;
+  startTime?: Maybe<Scalars["Float"]["output"]>;
   tags: Array<PipelineTag>;
 };
 
@@ -6715,56 +6834,56 @@ export type RunsFeedEntry = {
  * BACKFILLS: Return backfills only
  */
 export enum RunsFeedView {
-  Backfills = 'BACKFILLS',
-  Roots = 'ROOTS',
-  Runs = 'RUNS'
+  Backfills = "BACKFILLS",
+  Roots = "ROOTS",
+  Runs = "RUNS",
 }
 
 /** This type represents a filter on Dagster runs. */
 export type RunsFilter = {
-  createdAfter?: InputMaybe<Scalars['Float']['input']>;
-  createdBefore?: InputMaybe<Scalars['Float']['input']>;
-  mode?: InputMaybe<Scalars['String']['input']>;
-  pipelineName?: InputMaybe<Scalars['String']['input']>;
-  runIds?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
-  snapshotId?: InputMaybe<Scalars['String']['input']>;
+  createdAfter?: InputMaybe<Scalars["Float"]["input"]>;
+  createdBefore?: InputMaybe<Scalars["Float"]["input"]>;
+  mode?: InputMaybe<Scalars["String"]["input"]>;
+  pipelineName?: InputMaybe<Scalars["String"]["input"]>;
+  runIds?: InputMaybe<Array<InputMaybe<Scalars["String"]["input"]>>>;
+  snapshotId?: InputMaybe<Scalars["String"]["input"]>;
   statuses?: InputMaybe<Array<RunStatus>>;
   tags?: InputMaybe<Array<ExecutionTag>>;
-  updatedAfter?: InputMaybe<Scalars['Float']['input']>;
-  updatedBefore?: InputMaybe<Scalars['Float']['input']>;
+  updatedAfter?: InputMaybe<Scalars["Float"]["input"]>;
+  updatedBefore?: InputMaybe<Scalars["Float"]["input"]>;
 };
 
 export type RunsOrError = InvalidPipelineRunsFilterError | PythonError | Runs;
 
 export type RuntimeMismatchConfigError = PipelineConfigValidationError & {
-  __typename?: 'RuntimeMismatchConfigError';
-  message: Scalars['String']['output'];
-  path: Array<Scalars['String']['output']>;
+  __typename?: "RuntimeMismatchConfigError";
+  message: Scalars["String"]["output"];
+  path: Array<Scalars["String"]["output"]>;
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
-  valueRep?: Maybe<Scalars['String']['output']>;
+  valueRep?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type SaveNotebookPreviewInput = {
-  notebookId: Scalars['ID']['input'];
-  orgName: Scalars['String']['input'];
+  notebookId: Scalars["ID"]["input"];
+  orgName: Scalars["String"]["input"];
   /** PNG image as data URL (data:image/png;base64,...) */
-  previewImage: Scalars['String']['input'];
+  previewImage: Scalars["String"]["input"];
 };
 
 export type SaveNotebookPreviewPayload = {
-  __typename?: 'SaveNotebookPreviewPayload';
-  message: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  __typename?: "SaveNotebookPreviewPayload";
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type ScalarUnionConfigType = ConfigType & {
-  __typename?: 'ScalarUnionConfigType';
-  description?: Maybe<Scalars['String']['output']>;
-  isSelector: Scalars['Boolean']['output'];
-  key: Scalars['String']['output'];
+  __typename?: "ScalarUnionConfigType";
+  description?: Maybe<Scalars["String"]["output"]>;
+  isSelector: Scalars["Boolean"]["output"];
+  key: Scalars["String"]["output"];
   nonScalarType: ConfigType;
-  nonScalarTypeKey: Scalars['String']['output'];
+  nonScalarTypeKey: Scalars["String"]["output"];
   /**
    *
    * This is an odd and problematic field. It recursively goes down to
@@ -6785,7 +6904,7 @@ export type ScalarUnionConfigType = ConfigType & {
    */
   recursiveConfigTypes: Array<ConfigType>;
   scalarType: ConfigType;
-  scalarTypeKey: Scalars['String']['output'];
+  scalarTypeKey: Scalars["String"]["output"];
   /**
    *
    * This returns the keys for type parameters of any closed generic type,
@@ -6793,147 +6912,159 @@ export type ScalarUnionConfigType = ConfigType & {
    * navigating the full schema client-side and not innerTypes.
    *
    */
-  typeParamKeys: Array<Scalars['String']['output']>;
+  typeParamKeys: Array<Scalars["String"]["output"]>;
 };
 
 export type Schedule = {
-  __typename?: 'Schedule';
+  __typename?: "Schedule";
   assetSelection?: Maybe<AssetSelection>;
-  canReset: Scalars['Boolean']['output'];
-  cronSchedule: Scalars['String']['output'];
+  canReset: Scalars["Boolean"]["output"];
+  cronSchedule: Scalars["String"]["output"];
   defaultStatus: InstigationStatus;
-  description?: Maybe<Scalars['String']['output']>;
-  executionTimezone?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  executionTimezone?: Maybe<Scalars["String"]["output"]>;
   futureTick: DryRunInstigationTick;
   futureTicks: DryRunInstigationTicks;
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   metadataEntries: Array<MetadataEntry>;
-  mode: Scalars['String']['output'];
-  name: Scalars['String']['output'];
+  mode: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
   owners: Array<DefinitionOwner>;
   partitionSet?: Maybe<PartitionSet>;
-  pipelineName: Scalars['String']['output'];
-  potentialTickTimestamps: Array<Scalars['Float']['output']>;
+  pipelineName: Scalars["String"]["output"];
+  potentialTickTimestamps: Array<Scalars["Float"]["output"]>;
   scheduleState: InstigationState;
-  solidSelection?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  solidSelection?: Maybe<Array<Maybe<Scalars["String"]["output"]>>>;
   tags: Array<DefinitionTag>;
 };
 
-
 export type ScheduleFutureTickArgs = {
-  tickTimestamp: Scalars['Int']['input'];
+  tickTimestamp: Scalars["Int"]["input"];
 };
-
 
 export type ScheduleFutureTicksArgs = {
-  cursor?: InputMaybe<Scalars['Float']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  until?: InputMaybe<Scalars['Float']['input']>;
+  cursor?: InputMaybe<Scalars["Float"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  until?: InputMaybe<Scalars["Float"]["input"]>;
 };
 
-
 export type SchedulePotentialTickTimestampsArgs = {
-  lowerLimit?: InputMaybe<Scalars['Int']['input']>;
-  startTimestamp?: InputMaybe<Scalars['Float']['input']>;
-  upperLimit?: InputMaybe<Scalars['Int']['input']>;
+  lowerLimit?: InputMaybe<Scalars["Int"]["input"]>;
+  startTimestamp?: InputMaybe<Scalars["Float"]["input"]>;
+  upperLimit?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type ScheduleData = {
-  __typename?: 'ScheduleData';
-  cronSchedule: Scalars['String']['output'];
-  startTimestamp?: Maybe<Scalars['Float']['output']>;
+  __typename?: "ScheduleData";
+  cronSchedule: Scalars["String"]["output"];
+  startTimestamp?: Maybe<Scalars["Float"]["output"]>;
 };
 
-export type ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError;
+export type ScheduleDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | ScheduleNotFoundError;
 
-export type ScheduleMutationResult = PythonError | ScheduleNotFoundError | ScheduleStateResult | UnauthorizedError;
+export type ScheduleMutationResult =
+  | PythonError
+  | ScheduleNotFoundError
+  | ScheduleStateResult
+  | UnauthorizedError;
 
 export type ScheduleNotFoundError = Error & {
-  __typename?: 'ScheduleNotFoundError';
-  message: Scalars['String']['output'];
-  scheduleName: Scalars['String']['output'];
+  __typename?: "ScheduleNotFoundError";
+  message: Scalars["String"]["output"];
+  scheduleName: Scalars["String"]["output"];
 };
 
 export type ScheduleOrError = PythonError | Schedule | ScheduleNotFoundError;
 
 /** This type represents the fields necessary to identify a schedule. */
 export type ScheduleSelector = {
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
-  scheduleName: Scalars['String']['input'];
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
+  scheduleName: Scalars["String"]["input"];
 };
 
 export type ScheduleStateResult = {
-  __typename?: 'ScheduleStateResult';
+  __typename?: "ScheduleStateResult";
   scheduleState: InstigationState;
 };
 
 export enum ScheduleStatus {
-  Ended = 'ENDED',
-  Running = 'RUNNING',
-  Stopped = 'STOPPED'
+  Ended = "ENDED",
+  Running = "RUNNING",
+  Stopped = "STOPPED",
 }
 
 export type ScheduleTick = {
-  __typename?: 'ScheduleTick';
+  __typename?: "ScheduleTick";
   status: InstigationTickStatus;
-  tickId: Scalars['String']['output'];
+  tickId: Scalars["String"]["output"];
   tickSpecificData?: Maybe<ScheduleTickSpecificData>;
-  timestamp: Scalars['Float']['output'];
+  timestamp: Scalars["Float"]["output"];
 };
 
 export type ScheduleTickFailureData = {
-  __typename?: 'ScheduleTickFailureData';
+  __typename?: "ScheduleTickFailureData";
   error: PythonError;
 };
 
-export type ScheduleTickSpecificData = ScheduleTickFailureData | ScheduleTickSuccessData;
+export type ScheduleTickSpecificData =
+  | ScheduleTickFailureData
+  | ScheduleTickSuccessData;
 
 export type ScheduleTickSuccessData = {
-  __typename?: 'ScheduleTickSuccessData';
+  __typename?: "ScheduleTickSuccessData";
   run?: Maybe<Run>;
 };
 
 export type Scheduler = {
-  __typename?: 'Scheduler';
-  schedulerClass?: Maybe<Scalars['String']['output']>;
+  __typename?: "Scheduler";
+  schedulerClass?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type SchedulerNotDefinedError = Error & {
-  __typename?: 'SchedulerNotDefinedError';
-  message: Scalars['String']['output'];
+  __typename?: "SchedulerNotDefinedError";
+  message: Scalars["String"]["output"];
 };
 
-export type SchedulerOrError = PythonError | Scheduler | SchedulerNotDefinedError;
+export type SchedulerOrError =
+  | PythonError
+  | Scheduler
+  | SchedulerNotDefinedError;
 
 export type Schedules = {
-  __typename?: 'Schedules';
+  __typename?: "Schedules";
   results: Array<Schedule>;
 };
 
-export type SchedulesOrError = PythonError | RepositoryNotFoundError | Schedules;
+export type SchedulesOrError =
+  | PythonError
+  | RepositoryNotFoundError
+  | Schedules;
 
 export type SelectorTypeConfigError = PipelineConfigValidationError & {
-  __typename?: 'SelectorTypeConfigError';
-  incomingFields: Array<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  path: Array<Scalars['String']['output']>;
+  __typename?: "SelectorTypeConfigError";
+  incomingFields: Array<Scalars["String"]["output"]>;
+  message: Scalars["String"]["output"];
+  path: Array<Scalars["String"]["output"]>;
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
 };
 
 export type Sensor = {
-  __typename?: 'Sensor';
+  __typename?: "Sensor";
   assetSelection?: Maybe<AssetSelection>;
-  canReset: Scalars['Boolean']['output'];
+  canReset: Scalars["Boolean"]["output"];
   defaultStatus: InstigationStatus;
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
-  jobOriginId: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  jobOriginId: Scalars["String"]["output"];
   metadata: SensorMetadata;
   metadataEntries: Array<MetadataEntry>;
-  minIntervalSeconds: Scalars['Int']['output'];
-  name: Scalars['String']['output'];
+  minIntervalSeconds: Scalars["Int"]["output"];
+  name: Scalars["String"]["output"];
   nextTick?: Maybe<DryRunInstigationTick>;
   owners: Array<DefinitionOwner>;
   sensorState: InstigationState;
@@ -6943,48 +7074,55 @@ export type Sensor = {
 };
 
 export type SensorData = {
-  __typename?: 'SensorData';
-  lastCursor?: Maybe<Scalars['String']['output']>;
-  lastRunKey?: Maybe<Scalars['String']['output']>;
-  lastTickTimestamp?: Maybe<Scalars['Float']['output']>;
+  __typename?: "SensorData";
+  lastCursor?: Maybe<Scalars["String"]["output"]>;
+  lastRunKey?: Maybe<Scalars["String"]["output"]>;
+  lastTickTimestamp?: Maybe<Scalars["Float"]["output"]>;
 };
 
-export type SensorDryRunResult = DryRunInstigationTick | PythonError | SensorNotFoundError;
+export type SensorDryRunResult =
+  | DryRunInstigationTick
+  | PythonError
+  | SensorNotFoundError;
 
 export type SensorMetadata = {
-  __typename?: 'SensorMetadata';
+  __typename?: "SensorMetadata";
   assetKeys?: Maybe<Array<AssetKey>>;
 };
 
 export type SensorNotFoundError = Error & {
-  __typename?: 'SensorNotFoundError';
-  message: Scalars['String']['output'];
-  sensorName: Scalars['String']['output'];
+  __typename?: "SensorNotFoundError";
+  message: Scalars["String"]["output"];
+  sensorName: Scalars["String"]["output"];
 };
 
-export type SensorOrError = PythonError | Sensor | SensorNotFoundError | UnauthorizedError;
+export type SensorOrError =
+  | PythonError
+  | Sensor
+  | SensorNotFoundError
+  | UnauthorizedError;
 
 /** This type represents the fields necessary to identify a sensor. */
 export type SensorSelector = {
-  repositoryLocationName: Scalars['String']['input'];
-  repositoryName: Scalars['String']['input'];
-  sensorName: Scalars['String']['input'];
+  repositoryLocationName: Scalars["String"]["input"];
+  repositoryName: Scalars["String"]["input"];
+  sensorName: Scalars["String"]["input"];
 };
 
 /** An enumeration. */
 export enum SensorType {
-  Asset = 'ASSET',
-  Automation = 'AUTOMATION',
-  AutoMaterialize = 'AUTO_MATERIALIZE',
-  FreshnessPolicy = 'FRESHNESS_POLICY',
-  MultiAsset = 'MULTI_ASSET',
-  RunStatus = 'RUN_STATUS',
-  Standard = 'STANDARD',
-  Unknown = 'UNKNOWN'
+  Asset = "ASSET",
+  Automation = "AUTOMATION",
+  AutoMaterialize = "AUTO_MATERIALIZE",
+  FreshnessPolicy = "FRESHNESS_POLICY",
+  MultiAsset = "MULTI_ASSET",
+  RunStatus = "RUN_STATUS",
+  Standard = "STANDARD",
+  Unknown = "UNKNOWN",
 }
 
 export type Sensors = {
-  __typename?: 'Sensors';
+  __typename?: "Sensors";
   results: Array<Sensor>;
 };
 
@@ -6992,233 +7130,246 @@ export type SensorsOrError = PythonError | RepositoryNotFoundError | Sensors;
 
 /** Set a cursor for a sensor to track state across evaluations. */
 export type SetSensorCursorMutation = {
-  __typename?: 'SetSensorCursorMutation';
+  __typename?: "SetSensorCursorMutation";
   Output: SensorOrError;
 };
 
 /** Shuts down a code location server. */
 export type ShutdownRepositoryLocationMutation = {
-  __typename?: 'ShutdownRepositoryLocationMutation';
+  __typename?: "ShutdownRepositoryLocationMutation";
   Output: ShutdownRepositoryLocationMutationResult;
 };
 
 /** The output from shutting down a code location server. */
-export type ShutdownRepositoryLocationMutationResult = PythonError | RepositoryLocationNotFound | ShutdownRepositoryLocationSuccess | UnauthorizedError;
+export type ShutdownRepositoryLocationMutationResult =
+  | PythonError
+  | RepositoryLocationNotFound
+  | ShutdownRepositoryLocationSuccess
+  | UnauthorizedError;
 
 /** Output indicating that a code location server was shut down. */
 export type ShutdownRepositoryLocationSuccess = {
-  __typename?: 'ShutdownRepositoryLocationSuccess';
-  repositoryLocationName: Scalars['String']['output'];
+  __typename?: "ShutdownRepositoryLocationSuccess";
+  repositoryLocationName: Scalars["String"]["output"];
 };
 
 export type Solid = {
-  __typename?: 'Solid';
+  __typename?: "Solid";
   definition: ISolidDefinition;
   inputs: Array<Input>;
-  isDynamicMapped: Scalars['Boolean']['output'];
-  name: Scalars['String']['output'];
+  isDynamicMapped: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
   outputs: Array<Output>;
 };
 
 export type SolidContainer = {
-  description?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
   modes: Array<Mode>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   solidHandle?: Maybe<SolidHandle>;
   solidHandles: Array<SolidHandle>;
   solids: Array<Solid>;
 };
 
-
 export type SolidContainerSolidHandleArgs = {
-  handleID: Scalars['String']['input'];
+  handleID: Scalars["String"]["input"];
 };
 
-
 export type SolidContainerSolidHandlesArgs = {
-  parentHandleID?: InputMaybe<Scalars['String']['input']>;
+  parentHandleID?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type SolidDefinition = ISolidDefinition & {
-  __typename?: 'SolidDefinition';
+  __typename?: "SolidDefinition";
   assetNodes: Array<AssetNode>;
   configField?: Maybe<ConfigTypeField>;
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   inputDefinitions: Array<InputDefinition>;
   metadata: Array<MetadataItemDefinition>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   outputDefinitions: Array<OutputDefinition>;
-  pool?: Maybe<Scalars['String']['output']>;
-  pools: Array<Scalars['String']['output']>;
+  pool?: Maybe<Scalars["String"]["output"]>;
+  pools: Array<Scalars["String"]["output"]>;
   requiredResources: Array<ResourceRequirement>;
 };
 
 export type SolidHandle = {
-  __typename?: 'SolidHandle';
-  handleID: Scalars['String']['output'];
+  __typename?: "SolidHandle";
+  handleID: Scalars["String"]["output"];
   parent?: Maybe<SolidHandle>;
   solid: Solid;
   stepStats?: Maybe<SolidStepStatsOrError>;
 };
 
-
 export type SolidHandleStepStatsArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type SolidStepStatsConnection = {
-  __typename?: 'SolidStepStatsConnection';
+  __typename?: "SolidStepStatsConnection";
   nodes: Array<RunStepStats>;
 };
 
-export type SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUnavailableError;
+export type SolidStepStatsOrError =
+  | SolidStepStatsConnection
+  | SolidStepStatusUnavailableError;
 
 export type SolidStepStatusUnavailableError = Error & {
-  __typename?: 'SolidStepStatusUnavailableError';
-  message: Scalars['String']['output'];
+  __typename?: "SolidStepStatusUnavailableError";
+  message: Scalars["String"]["output"];
 };
 
 export type SourceLocation = LocalFileCodeReference | UrlCodeReference;
 
 export type SpecificPartitionAssetConditionEvaluationNode = {
-  __typename?: 'SpecificPartitionAssetConditionEvaluationNode';
-  childUniqueIds: Array<Scalars['String']['output']>;
-  description: Scalars['String']['output'];
+  __typename?: "SpecificPartitionAssetConditionEvaluationNode";
+  childUniqueIds: Array<Scalars["String"]["output"]>;
+  description: Scalars["String"]["output"];
   entityKey: EntityKey;
   metadataEntries: Array<MetadataEntry>;
   status: AssetConditionEvaluationStatus;
-  uniqueId: Scalars['String']['output'];
+  uniqueId: Scalars["String"]["output"];
 };
 
 export type StaleCause = {
-  __typename?: 'StaleCause';
+  __typename?: "StaleCause";
   category: StaleCauseCategory;
   dependency?: Maybe<AssetKey>;
-  dependencyPartitionKey?: Maybe<Scalars['String']['output']>;
+  dependencyPartitionKey?: Maybe<Scalars["String"]["output"]>;
   key: AssetKey;
-  partitionKey?: Maybe<Scalars['String']['output']>;
-  reason: Scalars['String']['output'];
+  partitionKey?: Maybe<Scalars["String"]["output"]>;
+  reason: Scalars["String"]["output"];
 };
 
 /** An enumeration. */
 export enum StaleCauseCategory {
-  Code = 'CODE',
-  Data = 'DATA',
-  Dependencies = 'DEPENDENCIES'
+  Code = "CODE",
+  Data = "DATA",
+  Dependencies = "DEPENDENCIES",
 }
 
 /** An enumeration. */
 export enum StaleStatus {
-  Fresh = 'FRESH',
-  Missing = 'MISSING',
-  Stale = 'STALE'
+  Fresh = "FRESH",
+  Missing = "MISSING",
+  Stale = "STALE",
 }
 
 /** Enable a schedule to launch runs for a job at a fixed interval. */
 export type StartScheduleMutation = {
-  __typename?: 'StartScheduleMutation';
+  __typename?: "StartScheduleMutation";
   Output: ScheduleMutationResult;
 };
 
 export type StepEvent = {
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
+  solidHandleID?: Maybe<Scalars["String"]["output"]>;
+  stepKey?: Maybe<Scalars["String"]["output"]>;
 };
 
 export enum StepEventStatus {
-  Failure = 'FAILURE',
-  InProgress = 'IN_PROGRESS',
-  Skipped = 'SKIPPED',
-  Success = 'SUCCESS'
+  Failure = "FAILURE",
+  InProgress = "IN_PROGRESS",
+  Skipped = "SKIPPED",
+  Success = "SUCCESS",
 }
 
 export type StepExecution = {
   marshalledInputs?: InputMaybe<Array<MarshalledInput>>;
   marshalledOutputs?: InputMaybe<Array<MarshalledOutput>>;
-  stepKey: Scalars['String']['input'];
+  stepKey: Scalars["String"]["input"];
 };
 
-export type StepExpectationResultEvent = MessageEvent & StepEvent & {
-  __typename?: 'StepExpectationResultEvent';
-  eventType?: Maybe<DagsterEventType>;
-  expectationResult: ExpectationResult;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type StepExpectationResultEvent = MessageEvent &
+  StepEvent & {
+    __typename?: "StepExpectationResultEvent";
+    eventType?: Maybe<DagsterEventType>;
+    expectationResult: ExpectationResult;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 export enum StepKind {
   /** This is a user-defined computation step */
-  Compute = 'COMPUTE',
+  Compute = "COMPUTE",
   /** This is a collect step that is not yet resolved */
-  UnresolvedCollect = 'UNRESOLVED_COLLECT',
+  UnresolvedCollect = "UNRESOLVED_COLLECT",
   /** This is a mapped step that has not yet been resolved */
-  UnresolvedMapped = 'UNRESOLVED_MAPPED'
+  UnresolvedMapped = "UNRESOLVED_MAPPED",
 }
 
 export type StepOutputHandle = {
-  outputName: Scalars['String']['input'];
-  stepKey: Scalars['String']['input'];
+  outputName: Scalars["String"]["input"];
+  stepKey: Scalars["String"]["input"];
 };
 
-export type StepWorkerStartedEvent = DisplayableEvent & MarkerEvent & MessageEvent & StepEvent & {
-  __typename?: 'StepWorkerStartedEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  markerEnd?: Maybe<Scalars['String']['output']>;
-  markerStart?: Maybe<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type StepWorkerStartedEvent = DisplayableEvent &
+  MarkerEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "StepWorkerStartedEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    markerEnd?: Maybe<Scalars["String"]["output"]>;
+    markerStart?: Maybe<Scalars["String"]["output"]>;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
-export type StepWorkerStartingEvent = DisplayableEvent & MarkerEvent & MessageEvent & StepEvent & {
-  __typename?: 'StepWorkerStartingEvent';
-  description?: Maybe<Scalars['String']['output']>;
-  eventType?: Maybe<DagsterEventType>;
-  label?: Maybe<Scalars['String']['output']>;
-  level: LogLevel;
-  markerEnd?: Maybe<Scalars['String']['output']>;
-  markerStart?: Maybe<Scalars['String']['output']>;
-  message: Scalars['String']['output'];
-  metadataEntries: Array<MetadataEntry>;
-  runId: Scalars['String']['output'];
-  solidHandleID?: Maybe<Scalars['String']['output']>;
-  stepKey?: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type StepWorkerStartingEvent = DisplayableEvent &
+  MarkerEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "StepWorkerStartingEvent";
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    markerEnd?: Maybe<Scalars["String"]["output"]>;
+    markerStart?: Maybe<Scalars["String"]["output"]>;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    runId: Scalars["String"]["output"];
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    timestamp: Scalars["String"]["output"];
+  };
 
 /** Disable a schedule from launching runs for a job. */
 export type StopRunningScheduleMutation = {
-  __typename?: 'StopRunningScheduleMutation';
+  __typename?: "StopRunningScheduleMutation";
   Output: ScheduleMutationResult;
 };
 
 /** Disable a sensor from launching runs for a job. */
 export type StopSensorMutation = {
-  __typename?: 'StopSensorMutation';
+  __typename?: "StopSensorMutation";
   Output: StopSensorMutationResultOrError;
 };
 
 export type StopSensorMutationResult = {
-  __typename?: 'StopSensorMutationResult';
+  __typename?: "StopSensorMutationResult";
   instigationState?: Maybe<InstigationState>;
 };
 
-export type StopSensorMutationResultOrError = PythonError | StopSensorMutationResult | UnauthorizedError;
+export type StopSensorMutationResultOrError =
+  | PythonError
+  | StopSensorMutationResult
+  | UnauthorizedError;
 
 /** The root for all subscriptions to retrieve real-time data from the Dagster instance. */
 export type Subscription = {
-  __typename?: 'Subscription';
+  __typename?: "Subscription";
   /** Retrieve real-time compute logs. */
   capturedLogs: CapturedLogs;
   /** Retrieve real-time events when a location in the workspace undergoes a state change. */
@@ -7227,113 +7378,111 @@ export type Subscription = {
   pipelineRunLogs: PipelineRunLogsSubscriptionPayload;
 };
 
-
 /** The root for all subscriptions to retrieve real-time data from the Dagster instance. */
 export type SubscriptionCapturedLogsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  logKey: Array<Scalars['String']['input']>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  logKey: Array<Scalars["String"]["input"]>;
 };
-
 
 /** The root for all subscriptions to retrieve real-time data from the Dagster instance. */
 export type SubscriptionPipelineRunLogsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  runId: Scalars['ID']['input'];
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  runId: Scalars["ID"]["input"];
 };
 
 /** Table entity - represents a table within a schema */
 export type Table = {
-  __typename?: 'Table';
-  name: Scalars['String']['output'];
-  records: Array<Scalars['String']['output']>;
+  __typename?: "Table";
+  name: Scalars["String"]["output"];
+  records: Array<Scalars["String"]["output"]>;
   schema: TableSchema;
 };
 
 export type TableColumn = {
-  __typename?: 'TableColumn';
+  __typename?: "TableColumn";
   constraints: TableColumnConstraints;
-  description?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
+  description?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
   tags: Array<DefinitionTag>;
-  type: Scalars['String']['output'];
+  type: Scalars["String"]["output"];
 };
 
 export type TableColumnConstraints = {
-  __typename?: 'TableColumnConstraints';
-  nullable: Scalars['Boolean']['output'];
-  other: Array<Scalars['String']['output']>;
-  unique: Scalars['Boolean']['output'];
+  __typename?: "TableColumnConstraints";
+  nullable: Scalars["Boolean"]["output"];
+  other: Array<Scalars["String"]["output"]>;
+  unique: Scalars["Boolean"]["output"];
 };
 
 export type TableColumnDep = {
-  __typename?: 'TableColumnDep';
+  __typename?: "TableColumnDep";
   assetKey: AssetKey;
-  columnName: Scalars['String']['output'];
+  columnName: Scalars["String"]["output"];
 };
 
 export type TableColumnLineageEntry = {
-  __typename?: 'TableColumnLineageEntry';
+  __typename?: "TableColumnLineageEntry";
   columnDeps: Array<TableColumnDep>;
-  columnName: Scalars['String']['output'];
+  columnName: Scalars["String"]["output"];
 };
 
 export type TableColumnLineageMetadataEntry = MetadataEntry & {
-  __typename?: 'TableColumnLineageMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
+  __typename?: "TableColumnLineageMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
   lineage: Array<TableColumnLineageEntry>;
 };
 
 export type TableConstraints = {
-  __typename?: 'TableConstraints';
-  other: Array<Scalars['String']['output']>;
+  __typename?: "TableConstraints";
+  other: Array<Scalars["String"]["output"]>;
 };
 
 export type TableMetadataEntry = MetadataEntry & {
-  __typename?: 'TableMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
+  __typename?: "TableMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
   table: Table;
 };
 
 export type TableSchema = {
-  __typename?: 'TableSchema';
+  __typename?: "TableSchema";
   columns: Array<TableColumn>;
   constraints?: Maybe<TableConstraints>;
 };
 
 export type TableSchemaMetadataEntry = MetadataEntry & {
-  __typename?: 'TableSchemaMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
+  __typename?: "TableSchemaMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
   schema: TableSchema;
 };
 
 export type TagInput = {
-  key: Scalars['String']['input'];
-  value: Scalars['String']['input'];
+  key: Scalars["String"]["input"];
+  value: Scalars["String"]["input"];
 };
 
 export type Target = {
-  __typename?: 'Target';
-  mode: Scalars['String']['output'];
-  pipelineName: Scalars['String']['output'];
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
+  __typename?: "Target";
+  mode: Scalars["String"]["output"];
+  pipelineName: Scalars["String"]["output"];
+  solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
 };
 
 export type TeamAssetOwner = {
-  __typename?: 'TeamAssetOwner';
-  team: Scalars['String']['output'];
+  __typename?: "TeamAssetOwner";
+  team: Scalars["String"]["output"];
 };
 
 export type TeamDefinitionOwner = {
-  __typename?: 'TeamDefinitionOwner';
-  team: Scalars['String']['output'];
+  __typename?: "TeamDefinitionOwner";
+  team: Scalars["String"]["output"];
 };
 
 /** Interface indicating that a run failed to terminate. */
 export type TerminatePipelineExecutionFailure = {
-  message: Scalars['String']['output'];
+  message: Scalars["String"]["output"];
   run: Run;
 };
 
@@ -7344,35 +7493,40 @@ export type TerminatePipelineExecutionSuccess = {
 
 /** Output indicating that a run failed to terminate. */
 export type TerminateRunFailure = TerminatePipelineExecutionFailure & {
-  __typename?: 'TerminateRunFailure';
-  message: Scalars['String']['output'];
+  __typename?: "TerminateRunFailure";
+  message: Scalars["String"]["output"];
   run: Run;
 };
 
 /** Terminates a run. */
 export type TerminateRunMutation = {
-  __typename?: 'TerminateRunMutation';
+  __typename?: "TerminateRunMutation";
   Output: TerminateRunResult;
 };
 
 /** The type of termination policy to use for a run. */
 export enum TerminateRunPolicy {
-  MarkAsCanceledImmediately = 'MARK_AS_CANCELED_IMMEDIATELY',
-  SafeTerminate = 'SAFE_TERMINATE'
+  MarkAsCanceledImmediately = "MARK_AS_CANCELED_IMMEDIATELY",
+  SafeTerminate = "SAFE_TERMINATE",
 }
 
 /** The output from a run termination. */
-export type TerminateRunResult = PythonError | RunNotFoundError | TerminateRunFailure | TerminateRunSuccess | UnauthorizedError;
+export type TerminateRunResult =
+  | PythonError
+  | RunNotFoundError
+  | TerminateRunFailure
+  | TerminateRunSuccess
+  | UnauthorizedError;
 
 /** Output indicating that a run was terminated. */
 export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
-  __typename?: 'TerminateRunSuccess';
+  __typename?: "TerminateRunSuccess";
   run: Run;
 };
 
 /** Indicates the runs that successfully terminated and those that failed to terminate. */
 export type TerminateRunsResult = {
-  __typename?: 'TerminateRunsResult';
+  __typename?: "TerminateRunsResult";
   terminateRunResults: Array<TerminateRunResult>;
 };
 
@@ -7380,207 +7534,211 @@ export type TerminateRunsResult = {
 export type TerminateRunsResultOrError = PythonError | TerminateRunsResult;
 
 export type TestFields = {
-  __typename?: 'TestFields';
-  alwaysException?: Maybe<Scalars['String']['output']>;
-  asyncString?: Maybe<Scalars['String']['output']>;
+  __typename?: "TestFields";
+  alwaysException?: Maybe<Scalars["String"]["output"]>;
+  asyncString?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type TextMetadataEntry = MetadataEntry & {
-  __typename?: 'TextMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  text: Scalars['String']['output'];
+  __typename?: "TextMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  text: Scalars["String"]["output"];
 };
 
 export type TextRuleEvaluationData = {
-  __typename?: 'TextRuleEvaluationData';
-  text?: Maybe<Scalars['String']['output']>;
+  __typename?: "TextRuleEvaluationData";
+  text?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type TickEvaluation = {
-  __typename?: 'TickEvaluation';
-  cursor?: Maybe<Scalars['String']['output']>;
+  __typename?: "TickEvaluation";
+  cursor?: Maybe<Scalars["String"]["output"]>;
   dynamicPartitionsRequests?: Maybe<Array<DynamicPartitionRequest>>;
   error?: Maybe<PythonError>;
   runRequests?: Maybe<Array<RunRequest>>;
-  skipReason?: Maybe<Scalars['String']['output']>;
+  skipReason?: Maybe<Scalars["String"]["output"]>;
 };
 
 export type TimePartitionRangeStatus = {
-  __typename?: 'TimePartitionRangeStatus';
-  endKey: Scalars['String']['output'];
-  endTime: Scalars['Float']['output'];
-  startKey: Scalars['String']['output'];
-  startTime: Scalars['Float']['output'];
+  __typename?: "TimePartitionRangeStatus";
+  endKey: Scalars["String"]["output"];
+  endTime: Scalars["Float"]["output"];
+  startKey: Scalars["String"]["output"];
+  startTime: Scalars["Float"]["output"];
   status: PartitionRangeStatus;
 };
 
 export type TimePartitionStatuses = {
-  __typename?: 'TimePartitionStatuses';
+  __typename?: "TimePartitionStatuses";
   ranges: Array<TimePartitionRangeStatus>;
 };
 
 export type TimeWindowFreshnessPolicy = {
-  __typename?: 'TimeWindowFreshnessPolicy';
-  failWindowSeconds: Scalars['Int']['output'];
-  warnWindowSeconds?: Maybe<Scalars['Int']['output']>;
+  __typename?: "TimeWindowFreshnessPolicy";
+  failWindowSeconds: Scalars["Int"]["output"];
+  warnWindowSeconds?: Maybe<Scalars["Int"]["output"]>;
 };
 
 export type TimestampMetadataEntry = MetadataEntry & {
-  __typename?: 'TimestampMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  timestamp: Scalars['Float']['output'];
+  __typename?: "TimestampMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  timestamp: Scalars["Float"]["output"];
 };
 
 export type TypeCheck = DisplayableEvent & {
-  __typename?: 'TypeCheck';
-  description?: Maybe<Scalars['String']['output']>;
-  label?: Maybe<Scalars['String']['output']>;
+  __typename?: "TypeCheck";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label?: Maybe<Scalars["String"]["output"]>;
   metadataEntries: Array<MetadataEntry>;
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type UnauthorizedError = Error & {
-  __typename?: 'UnauthorizedError';
-  message: Scalars['String']['output'];
+  __typename?: "UnauthorizedError";
+  message: Scalars["String"]["output"];
 };
 
 export type UnknownPipeline = PipelineReference & {
-  __typename?: 'UnknownPipeline';
-  name: Scalars['String']['output'];
-  solidSelection?: Maybe<Array<Scalars['String']['output']>>;
+  __typename?: "UnknownPipeline";
+  name: Scalars["String"]["output"];
+  solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
 };
 
 export type UnpartitionedAssetConditionEvaluationNode = {
-  __typename?: 'UnpartitionedAssetConditionEvaluationNode';
-  childUniqueIds: Array<Scalars['String']['output']>;
-  description: Scalars['String']['output'];
-  endTimestamp?: Maybe<Scalars['Float']['output']>;
+  __typename?: "UnpartitionedAssetConditionEvaluationNode";
+  childUniqueIds: Array<Scalars["String"]["output"]>;
+  description: Scalars["String"]["output"];
+  endTimestamp?: Maybe<Scalars["Float"]["output"]>;
   entityKey: EntityKey;
   metadataEntries: Array<MetadataEntry>;
-  startTimestamp?: Maybe<Scalars['Float']['output']>;
+  startTimestamp?: Maybe<Scalars["Float"]["output"]>;
   status: AssetConditionEvaluationStatus;
-  uniqueId: Scalars['String']['output'];
+  uniqueId: Scalars["String"]["output"];
 };
 
 export type UnpartitionedAssetStatus = {
-  __typename?: 'UnpartitionedAssetStatus';
+  __typename?: "UnpartitionedAssetStatus";
   assetKey: AssetKey;
-  failed: Scalars['Boolean']['output'];
-  inProgress: Scalars['Boolean']['output'];
-  materialized: Scalars['Boolean']['output'];
+  failed: Scalars["Boolean"]["output"];
+  inProgress: Scalars["Boolean"]["output"];
+  materialized: Scalars["Boolean"]["output"];
 };
 
 export type UnsupportedOperationError = Error & {
-  __typename?: 'UnsupportedOperationError';
-  message: Scalars['String']['output'];
+  __typename?: "UnsupportedOperationError";
+  message: Scalars["String"]["output"];
 };
 
 export type UpdateMemberRolePayload = {
-  __typename?: 'UpdateMemberRolePayload';
+  __typename?: "UpdateMemberRolePayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
 };
 
 export type UpdateProfileInput = {
   /** User's avatar URL */
-  avatarUrl?: InputMaybe<Scalars['String']['input']>;
+  avatarUrl?: InputMaybe<Scalars["String"]["input"]>;
   /** User's full name */
-  fullName?: InputMaybe<Scalars['String']['input']>;
+  fullName?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type UpdateProfilePayload = {
-  __typename?: 'UpdateProfilePayload';
-  message: Scalars['String']['output'];
-  success: Scalars['Boolean']['output'];
+  __typename?: "UpdateProfilePayload";
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
   user: User;
 };
 
 export type UrlCodeReference = {
-  __typename?: 'UrlCodeReference';
-  label?: Maybe<Scalars['String']['output']>;
-  url: Scalars['String']['output'];
+  __typename?: "UrlCodeReference";
+  label?: Maybe<Scalars["String"]["output"]>;
+  url: Scalars["String"]["output"];
 };
 
 export type UrlMetadataEntry = MetadataEntry & {
-  __typename?: 'UrlMetadataEntry';
-  description?: Maybe<Scalars['String']['output']>;
-  label: Scalars['String']['output'];
-  url: Scalars['String']['output'];
+  __typename?: "UrlMetadataEntry";
+  description?: Maybe<Scalars["String"]["output"]>;
+  label: Scalars["String"]["output"];
+  url: Scalars["String"]["output"];
 };
 
 /** A solid definition and its invocations within the repo. */
 export type UsedSolid = {
-  __typename?: 'UsedSolid';
+  __typename?: "UsedSolid";
   definition: ISolidDefinition;
   invocations: Array<NodeInvocationSite>;
 };
 
 /** User entity - can be extended from other subgraphs */
 export type User = {
-  __typename?: 'User';
-  avatarUrl?: Maybe<Scalars['String']['output']>;
-  email?: Maybe<Scalars['String']['output']>;
-  fullName?: Maybe<Scalars['String']['output']>;
-  id: Scalars['ID']['output'];
+  __typename?: "User";
+  avatarUrl?: Maybe<Scalars["String"]["output"]>;
+  email?: Maybe<Scalars["String"]["output"]>;
+  fullName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
   /** Organizations this user belongs to */
   organizations: Array<Organization>;
 };
 
 export type UserAssetOwner = {
-  __typename?: 'UserAssetOwner';
-  email: Scalars['String']['output'];
+  __typename?: "UserAssetOwner";
+  email: Scalars["String"]["output"];
 };
 
 export type UserDefinitionOwner = {
-  __typename?: 'UserDefinitionOwner';
-  email: Scalars['String']['output'];
+  __typename?: "UserDefinitionOwner";
+  email: Scalars["String"]["output"];
 };
 
 export type WaitingOnKeysRuleEvaluationData = {
-  __typename?: 'WaitingOnKeysRuleEvaluationData';
+  __typename?: "WaitingOnKeysRuleEvaluationData";
   waitingOnAssetKeys?: Maybe<Array<AssetKey>>;
 };
 
 export type Workspace = {
-  __typename?: 'Workspace';
-  id: Scalars['String']['output'];
+  __typename?: "Workspace";
+  id: Scalars["String"]["output"];
   locationEntries: Array<WorkspaceLocationEntry>;
 };
 
 export type WorkspaceLocationEntry = {
-  __typename?: 'WorkspaceLocationEntry';
+  __typename?: "WorkspaceLocationEntry";
   defsStateInfo?: Maybe<DefsStateInfo>;
   displayMetadata: Array<RepositoryMetadata>;
   featureFlags: Array<FeatureFlag>;
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   loadStatus: RepositoryLocationLoadStatus;
   locationOrLoadError?: Maybe<RepositoryLocationOrLoadError>;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   permissions: Array<Permission>;
-  updatedTimestamp: Scalars['Float']['output'];
-  versionKey: Scalars['String']['output'];
+  updatedTimestamp: Scalars["Float"]["output"];
+  versionKey: Scalars["String"]["output"];
 };
 
-export type WorkspaceLocationEntryOrError = PythonError | WorkspaceLocationEntry;
+export type WorkspaceLocationEntryOrError =
+  | PythonError
+  | WorkspaceLocationEntry;
 
 export type WorkspaceLocationStatusEntries = {
-  __typename?: 'WorkspaceLocationStatusEntries';
+  __typename?: "WorkspaceLocationStatusEntries";
   entries: Array<WorkspaceLocationStatusEntry>;
 };
 
-export type WorkspaceLocationStatusEntriesOrError = PythonError | WorkspaceLocationStatusEntries;
+export type WorkspaceLocationStatusEntriesOrError =
+  | PythonError
+  | WorkspaceLocationStatusEntries;
 
 export type WorkspaceLocationStatusEntry = {
-  __typename?: 'WorkspaceLocationStatusEntry';
-  id: Scalars['ID']['output'];
+  __typename?: "WorkspaceLocationStatusEntry";
+  id: Scalars["ID"]["output"];
   loadStatus: RepositoryLocationLoadStatus;
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   permissions: Array<Permission>;
-  updateTimestamp: Scalars['Float']['output'];
-  versionKey: Scalars['String']['output'];
+  updateTimestamp: Scalars["Float"]["output"];
+  versionKey: Scalars["String"]["output"];
 };
 
 export type WorkspaceOrError = PythonError | Workspace;
@@ -7593,73 +7751,1298 @@ export type WrappingDagsterType = {
   ofType: DagsterType;
 };
 
-export type _Entity = Dataset | Invitation | Notebook | Organization | OrganizationMember | User;
+export type _Entity =
+  | Dataset
+  | Invitation
+  | Notebook
+  | Organization
+  | OrganizationMember
+  | User;
 
 export type _Service = {
-  __typename?: '_Service';
-  sdl: Scalars['String']['output'];
+  __typename?: "_Service";
+  sdl: Scalars["String"]["output"];
 };
 
 export enum Link__Purpose {
   /** `EXECUTION` features provide metadata necessary for operation execution. */
-  Execution = 'EXECUTION',
+  Execution = "EXECUTION",
   /** `SECURITY` features provide metadata necessary to securely resolve fields. */
-  Security = 'SECURITY'
+  Security = "SECURITY",
 }
 
 export type SavePreviewMutationVariables = Exact<{
   input: SaveNotebookPreviewInput;
 }>;
 
+export type SavePreviewMutation = {
+  __typename?: "Mutation";
+  osoApp_saveNotebookPreview: {
+    __typename?: "SaveNotebookPreviewPayload";
+    success: boolean;
+    message: string;
+  };
+};
 
-export type SavePreviewMutation = { __typename?: 'Mutation', osoApp_saveNotebookPreview: { __typename?: 'SaveNotebookPreviewPayload', success: boolean, message: string } };
+export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
-export type AssetGraphQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type AssetGraphQuery = { __typename?: 'Query', assetNodes: Array<{ __typename?: 'AssetNode', assetKey: { __typename?: 'AssetKey', path: Array<string> }, dependencyKeys: Array<{ __typename?: 'AssetKey', path: Array<string> }> }> };
+export type AssetGraphQuery = {
+  __typename?: "Query";
+  assetNodes: Array<{
+    __typename?: "AssetNode";
+    assetKey: { __typename?: "AssetKey"; path: Array<string> };
+    dependencyKeys: Array<{ __typename?: "AssetKey"; path: Array<string> }>;
+  }>;
+};
 
 export type AssetMaterializedDataQueryVariables = Exact<{
   assetKeys?: InputMaybe<Array<AssetKeyInput> | AssetKeyInput>;
 }>;
 
-
-export type AssetMaterializedDataQuery = { __typename?: 'Query', assetNodes: Array<{ __typename?: 'AssetNode', assetKey: { __typename?: 'AssetKey', path: Array<string> }, partitionStats?: { __typename?: 'PartitionStats', numFailed: number, numMaterialized: number, numMaterializing: number, numPartitions: number } | null, assetPartitionStatuses: { __typename?: 'DefaultPartitionStatuses' } | { __typename?: 'MultiPartitionStatuses' } | { __typename: 'TimePartitionStatuses', ranges: Array<{ __typename?: 'TimePartitionRangeStatus', endKey: string, startKey: string, status: PartitionRangeStatus }> }, assetMaterializations: Array<{ __typename?: 'MaterializationEvent', runOrError: { __typename?: 'PythonError' } | { __typename?: 'Run', endTime?: number | null } | { __typename?: 'RunNotFoundError' } }> }> };
+export type AssetMaterializedDataQuery = {
+  __typename?: "Query";
+  assetNodes: Array<{
+    __typename?: "AssetNode";
+    assetKey: { __typename?: "AssetKey"; path: Array<string> };
+    partitionStats?: {
+      __typename?: "PartitionStats";
+      numFailed: number;
+      numMaterialized: number;
+      numMaterializing: number;
+      numPartitions: number;
+    } | null;
+    assetPartitionStatuses:
+      | { __typename?: "DefaultPartitionStatuses" }
+      | { __typename?: "MultiPartitionStatuses" }
+      | {
+          __typename: "TimePartitionStatuses";
+          ranges: Array<{
+            __typename?: "TimePartitionRangeStatus";
+            endKey: string;
+            startKey: string;
+            status: PartitionRangeStatus;
+          }>;
+        };
+    assetMaterializations: Array<{
+      __typename?: "MaterializationEvent";
+      runOrError:
+        | { __typename?: "PythonError" }
+        | { __typename?: "Run"; endTime?: number | null }
+        | { __typename?: "RunNotFoundError" };
+    }>;
+  }>;
+};
 
 export type TimeseriesMetricsByArtifactQueryVariables = Exact<{
-  artifactIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  metricIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  startDate: Scalars['Oso_Date']['input'];
-  endDate: Scalars['Oso_Date']['input'];
+  artifactIds?: InputMaybe<
+    Array<Scalars["String"]["input"]> | Scalars["String"]["input"]
+  >;
+  metricIds?: InputMaybe<
+    Array<Scalars["String"]["input"]> | Scalars["String"]["input"]
+  >;
+  startDate: Scalars["Oso_Date"]["input"];
+  endDate: Scalars["Oso_Date"]["input"];
 }>;
 
-
-export type TimeseriesMetricsByArtifactQuery = { __typename?: 'Query', oso_timeseriesMetricsByArtifactV0?: Array<{ __typename?: 'Oso_TimeseriesMetricsByArtifactV0', amount: any, artifactId: string, metricId: string, sampleDate: any, unit: string }> | null, oso_artifactsV1?: Array<{ __typename?: 'Oso_ArtifactsV1', artifactId: string, artifactSource: string, artifactNamespace: string, artifactName: string }> | null, oso_metricsV0?: Array<{ __typename?: 'Oso_MetricsV0', metricId: string, metricSource: string, metricNamespace: string, metricName: string, displayName: string, description: string }> | null };
+export type TimeseriesMetricsByArtifactQuery = {
+  __typename?: "Query";
+  oso_timeseriesMetricsByArtifactV0?: Array<{
+    __typename?: "Oso_TimeseriesMetricsByArtifactV0";
+    amount: any;
+    artifactId: string;
+    metricId: string;
+    sampleDate: any;
+    unit: string;
+  }> | null;
+  oso_artifactsV1?: Array<{
+    __typename?: "Oso_ArtifactsV1";
+    artifactId: string;
+    artifactSource: string;
+    artifactNamespace: string;
+    artifactName: string;
+  }> | null;
+  oso_metricsV0?: Array<{
+    __typename?: "Oso_MetricsV0";
+    metricId: string;
+    metricSource: string;
+    metricNamespace: string;
+    metricName: string;
+    displayName: string;
+    description: string;
+  }> | null;
+};
 
 export type TimeseriesMetricsByProjectQueryVariables = Exact<{
-  projectIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  metricIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  startDate: Scalars['Oso_Date']['input'];
-  endDate: Scalars['Oso_Date']['input'];
+  projectIds?: InputMaybe<
+    Array<Scalars["String"]["input"]> | Scalars["String"]["input"]
+  >;
+  metricIds?: InputMaybe<
+    Array<Scalars["String"]["input"]> | Scalars["String"]["input"]
+  >;
+  startDate: Scalars["Oso_Date"]["input"];
+  endDate: Scalars["Oso_Date"]["input"];
 }>;
 
-
-export type TimeseriesMetricsByProjectQuery = { __typename?: 'Query', oso_timeseriesMetricsByProjectV0?: Array<{ __typename?: 'Oso_TimeseriesMetricsByProjectV0', amount: any, metricId: string, projectId: string, sampleDate: any, unit: string }> | null, oso_projectsV1?: Array<{ __typename?: 'Oso_ProjectsV1', projectId: string, projectSource: string, projectNamespace: string, projectName: string, displayName: string, description: string }> | null, oso_metricsV0?: Array<{ __typename?: 'Oso_MetricsV0', metricId: string, metricSource: string, metricNamespace: string, metricName: string, displayName: string, description: string }> | null };
+export type TimeseriesMetricsByProjectQuery = {
+  __typename?: "Query";
+  oso_timeseriesMetricsByProjectV0?: Array<{
+    __typename?: "Oso_TimeseriesMetricsByProjectV0";
+    amount: any;
+    metricId: string;
+    projectId: string;
+    sampleDate: any;
+    unit: string;
+  }> | null;
+  oso_projectsV1?: Array<{
+    __typename?: "Oso_ProjectsV1";
+    projectId: string;
+    projectSource: string;
+    projectNamespace: string;
+    projectName: string;
+    displayName: string;
+    description: string;
+  }> | null;
+  oso_metricsV0?: Array<{
+    __typename?: "Oso_MetricsV0";
+    metricId: string;
+    metricSource: string;
+    metricNamespace: string;
+    metricName: string;
+    displayName: string;
+    description: string;
+  }> | null;
+};
 
 export type TimeseriesMetricsByCollectionQueryVariables = Exact<{
-  collectionIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  metricIds?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  startDate: Scalars['Oso_Date']['input'];
-  endDate: Scalars['Oso_Date']['input'];
+  collectionIds?: InputMaybe<
+    Array<Scalars["String"]["input"]> | Scalars["String"]["input"]
+  >;
+  metricIds?: InputMaybe<
+    Array<Scalars["String"]["input"]> | Scalars["String"]["input"]
+  >;
+  startDate: Scalars["Oso_Date"]["input"];
+  endDate: Scalars["Oso_Date"]["input"];
 }>;
 
+export type TimeseriesMetricsByCollectionQuery = {
+  __typename?: "Query";
+  oso_timeseriesMetricsByCollectionV0?: Array<{
+    __typename?: "Oso_TimeseriesMetricsByCollectionV0";
+    amount: any;
+    metricId: string;
+    collectionId: string;
+    sampleDate: any;
+    unit: string;
+  }> | null;
+  oso_collectionsV1?: Array<{
+    __typename?: "Oso_CollectionsV1";
+    collectionId: string;
+    collectionSource: string;
+    collectionNamespace: string;
+    collectionName: string;
+    displayName: string;
+    description: string;
+  }> | null;
+  oso_metricsV0?: Array<{
+    __typename?: "Oso_MetricsV0";
+    metricId: string;
+    metricSource: string;
+    metricNamespace: string;
+    metricName: string;
+    displayName: string;
+    description: string;
+  }> | null;
+};
 
-export type TimeseriesMetricsByCollectionQuery = { __typename?: 'Query', oso_timeseriesMetricsByCollectionV0?: Array<{ __typename?: 'Oso_TimeseriesMetricsByCollectionV0', amount: any, metricId: string, collectionId: string, sampleDate: any, unit: string }> | null, oso_collectionsV1?: Array<{ __typename?: 'Oso_CollectionsV1', collectionId: string, collectionSource: string, collectionNamespace: string, collectionName: string, displayName: string, description: string }> | null, oso_metricsV0?: Array<{ __typename?: 'Oso_MetricsV0', metricId: string, metricSource: string, metricNamespace: string, metricName: string, displayName: string, description: string }> | null };
-
-
-export const SavePreviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SavePreview"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SaveNotebookPreviewInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"osoApp_saveNotebookPreview"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode<SavePreviewMutation, SavePreviewMutationVariables>;
-export const AssetGraphDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AssetGraph"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assetNodes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assetKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"path"}}]}},{"kind":"Field","name":{"kind":"Name","value":"dependencyKeys"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"path"}}]}}]}}]}}]} as unknown as DocumentNode<AssetGraphQuery, AssetGraphQueryVariables>;
-export const AssetMaterializedDataDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AssetMaterializedData"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"assetKeys"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AssetKeyInput"}}}},"defaultValue":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"path"},"value":{"kind":"StringValue","value":"","block":false}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assetNodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"assetKeys"},"value":{"kind":"Variable","name":{"kind":"Name","value":"assetKeys"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assetKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"path"}}]}},{"kind":"Field","name":{"kind":"Name","value":"partitionStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"numFailed"}},{"kind":"Field","name":{"kind":"Name","value":"numMaterialized"}},{"kind":"Field","name":{"kind":"Name","value":"numMaterializing"}},{"kind":"Field","name":{"kind":"Name","value":"numPartitions"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assetPartitionStatuses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TimePartitionStatuses"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"ranges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"endKey"}},{"kind":"Field","name":{"kind":"Name","value":"startKey"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"assetMaterializations"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"runOrError"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Run"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"endTime"}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<AssetMaterializedDataQuery, AssetMaterializedDataQueryVariables>;
-export const TimeseriesMetricsByArtifactDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TimeseriesMetricsByArtifact"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"artifactIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Oso_Date"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"endDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Oso_Date"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"oso_timeseriesMetricsByArtifactV0"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"artifactId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"artifactIds"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"metricId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"sampleDate"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"_lte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"endDate"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"artifactId"}},{"kind":"Field","name":{"kind":"Name","value":"metricId"}},{"kind":"Field","name":{"kind":"Name","value":"sampleDate"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}}]}},{"kind":"Field","name":{"kind":"Name","value":"oso_artifactsV1"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"artifactId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"artifactIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"artifactId"}},{"kind":"Field","name":{"kind":"Name","value":"artifactSource"}},{"kind":"Field","name":{"kind":"Name","value":"artifactNamespace"}},{"kind":"Field","name":{"kind":"Name","value":"artifactName"}}]}},{"kind":"Field","name":{"kind":"Name","value":"oso_metricsV0"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"metricId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"metricId"}},{"kind":"Field","name":{"kind":"Name","value":"metricSource"}},{"kind":"Field","name":{"kind":"Name","value":"metricNamespace"}},{"kind":"Field","name":{"kind":"Name","value":"metricName"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<TimeseriesMetricsByArtifactQuery, TimeseriesMetricsByArtifactQueryVariables>;
-export const TimeseriesMetricsByProjectDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TimeseriesMetricsByProject"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"projectIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Oso_Date"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"endDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Oso_Date"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"oso_timeseriesMetricsByProjectV0"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"projectId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"projectIds"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"metricId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"sampleDate"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"_lte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"endDate"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"metricId"}},{"kind":"Field","name":{"kind":"Name","value":"projectId"}},{"kind":"Field","name":{"kind":"Name","value":"sampleDate"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}}]}},{"kind":"Field","name":{"kind":"Name","value":"oso_projectsV1"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"projectId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"projectIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"projectId"}},{"kind":"Field","name":{"kind":"Name","value":"projectSource"}},{"kind":"Field","name":{"kind":"Name","value":"projectNamespace"}},{"kind":"Field","name":{"kind":"Name","value":"projectName"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"oso_metricsV0"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"metricId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"metricId"}},{"kind":"Field","name":{"kind":"Name","value":"metricSource"}},{"kind":"Field","name":{"kind":"Name","value":"metricNamespace"}},{"kind":"Field","name":{"kind":"Name","value":"metricName"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<TimeseriesMetricsByProjectQuery, TimeseriesMetricsByProjectQueryVariables>;
-export const TimeseriesMetricsByCollectionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"TimeseriesMetricsByCollection"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"collectionIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Oso_Date"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"endDate"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Oso_Date"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"oso_timeseriesMetricsByCollectionV0"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"collectionId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"collectionIds"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"metricId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"sampleDate"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"startDate"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"_lte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"endDate"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"metricId"}},{"kind":"Field","name":{"kind":"Name","value":"collectionId"}},{"kind":"Field","name":{"kind":"Name","value":"sampleDate"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}}]}},{"kind":"Field","name":{"kind":"Name","value":"oso_collectionsV1"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"collectionId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"collectionIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"collectionId"}},{"kind":"Field","name":{"kind":"Name","value":"collectionSource"}},{"kind":"Field","name":{"kind":"Name","value":"collectionNamespace"}},{"kind":"Field","name":{"kind":"Name","value":"collectionName"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"oso_metricsV0"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"metricId"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_in"},"value":{"kind":"Variable","name":{"kind":"Name","value":"metricIds"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"metricId"}},{"kind":"Field","name":{"kind":"Name","value":"metricSource"}},{"kind":"Field","name":{"kind":"Name","value":"metricNamespace"}},{"kind":"Field","name":{"kind":"Name","value":"metricName"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]} as unknown as DocumentNode<TimeseriesMetricsByCollectionQuery, TimeseriesMetricsByCollectionQueryVariables>;
+export const SavePreviewDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SavePreview" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "SaveNotebookPreviewInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "osoApp_saveNotebookPreview" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SavePreviewMutation, SavePreviewMutationVariables>;
+export const AssetGraphDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "AssetGraph" },
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "assetNodes" },
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "assetKey" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "path" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dependencyKeys" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "path" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<AssetGraphQuery, AssetGraphQueryVariables>;
+export const AssetMaterializedDataDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "AssetMaterializedData" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "assetKeys" },
+          },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: {
+                kind: "NamedType",
+                name: { kind: "Name", value: "AssetKeyInput" },
+              },
+            },
+          },
+          defaultValue: {
+            kind: "ObjectValue",
+            fields: [
+              {
+                kind: "ObjectField",
+                name: { kind: "Name", value: "path" },
+                value: { kind: "StringValue", value: "", block: false },
+              },
+            ],
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "assetNodes" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "assetKeys" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "assetKeys" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "assetKey" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "path" } },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "partitionStats" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "numFailed" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "numMaterialized" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "numMaterializing" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "numPartitions" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "assetPartitionStatuses" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "InlineFragment",
+                        typeCondition: {
+                          kind: "NamedType",
+                          name: {
+                            kind: "Name",
+                            value: "TimePartitionStatuses",
+                          },
+                        },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "__typename" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "ranges" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "endKey" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "startKey" },
+                                  },
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "status" },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "assetMaterializations" },
+                  arguments: [
+                    {
+                      kind: "Argument",
+                      name: { kind: "Name", value: "limit" },
+                      value: { kind: "IntValue", value: "1" },
+                    },
+                  ],
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "runOrError" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "InlineFragment",
+                              typeCondition: {
+                                kind: "NamedType",
+                                name: { kind: "Name", value: "Run" },
+                              },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "endTime" },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  AssetMaterializedDataQuery,
+  AssetMaterializedDataQueryVariables
+>;
+export const TimeseriesMetricsByArtifactDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "TimeseriesMetricsByArtifact" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "artifactIds" },
+          },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: {
+                kind: "NamedType",
+                name: { kind: "Name", value: "String" },
+              },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "metricIds" },
+          },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: {
+                kind: "NamedType",
+                name: { kind: "Name", value: "String" },
+              },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "startDate" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "Oso_Date" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "endDate" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "Oso_Date" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "oso_timeseriesMetricsByArtifactV0" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "artifactId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "artifactIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "metricId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "metricIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "sampleDate" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_gte" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "startDate" },
+                            },
+                          },
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_lte" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "endDate" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "amount" } },
+                { kind: "Field", name: { kind: "Name", value: "artifactId" } },
+                { kind: "Field", name: { kind: "Name", value: "metricId" } },
+                { kind: "Field", name: { kind: "Name", value: "sampleDate" } },
+                { kind: "Field", name: { kind: "Name", value: "unit" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "oso_artifactsV1" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "artifactId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "artifactIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "artifactId" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "artifactSource" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "artifactNamespace" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "artifactName" },
+                },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "oso_metricsV0" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "metricId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "metricIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "metricId" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "metricSource" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "metricNamespace" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "metricName" } },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  TimeseriesMetricsByArtifactQuery,
+  TimeseriesMetricsByArtifactQueryVariables
+>;
+export const TimeseriesMetricsByProjectDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "TimeseriesMetricsByProject" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "projectIds" },
+          },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: {
+                kind: "NamedType",
+                name: { kind: "Name", value: "String" },
+              },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "metricIds" },
+          },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: {
+                kind: "NamedType",
+                name: { kind: "Name", value: "String" },
+              },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "startDate" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "Oso_Date" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "endDate" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "Oso_Date" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "oso_timeseriesMetricsByProjectV0" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "projectId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "projectIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "metricId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "metricIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "sampleDate" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_gte" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "startDate" },
+                            },
+                          },
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_lte" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "endDate" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "amount" } },
+                { kind: "Field", name: { kind: "Name", value: "metricId" } },
+                { kind: "Field", name: { kind: "Name", value: "projectId" } },
+                { kind: "Field", name: { kind: "Name", value: "sampleDate" } },
+                { kind: "Field", name: { kind: "Name", value: "unit" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "oso_projectsV1" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "projectId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "projectIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "projectId" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "projectSource" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "projectNamespace" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "projectName" } },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "oso_metricsV0" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "metricId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "metricIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "metricId" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "metricSource" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "metricNamespace" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "metricName" } },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  TimeseriesMetricsByProjectQuery,
+  TimeseriesMetricsByProjectQueryVariables
+>;
+export const TimeseriesMetricsByCollectionDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "TimeseriesMetricsByCollection" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "collectionIds" },
+          },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: {
+                kind: "NamedType",
+                name: { kind: "Name", value: "String" },
+              },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "metricIds" },
+          },
+          type: {
+            kind: "ListType",
+            type: {
+              kind: "NonNullType",
+              type: {
+                kind: "NamedType",
+                name: { kind: "Name", value: "String" },
+              },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "startDate" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "Oso_Date" },
+            },
+          },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "endDate" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "Oso_Date" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: {
+              kind: "Name",
+              value: "oso_timeseriesMetricsByCollectionV0",
+            },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "collectionId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "collectionIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "metricId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "metricIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "sampleDate" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_gte" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "startDate" },
+                            },
+                          },
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_lte" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "endDate" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "amount" } },
+                { kind: "Field", name: { kind: "Name", value: "metricId" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "collectionId" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "sampleDate" } },
+                { kind: "Field", name: { kind: "Name", value: "unit" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "oso_collectionsV1" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "collectionId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "collectionIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "collectionId" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "collectionSource" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "collectionNamespace" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "collectionName" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+              ],
+            },
+          },
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "oso_metricsV0" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "ObjectValue",
+                  fields: [
+                    {
+                      kind: "ObjectField",
+                      name: { kind: "Name", value: "metricId" },
+                      value: {
+                        kind: "ObjectValue",
+                        fields: [
+                          {
+                            kind: "ObjectField",
+                            name: { kind: "Name", value: "_in" },
+                            value: {
+                              kind: "Variable",
+                              name: { kind: "Name", value: "metricIds" },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "metricId" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "metricSource" },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "metricNamespace" },
+                },
+                { kind: "Field", name: { kind: "Name", value: "metricName" } },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "description" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  TimeseriesMetricsByCollectionQuery,
+  TimeseriesMetricsByCollectionQueryVariables
+>;

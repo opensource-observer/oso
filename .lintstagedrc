@@ -1,6 +1,6 @@
 {
     "**/*.{js,jsx,ts,tsx,sol}": [
-        "eslint --flag v10_config_lookup_from_file --fix --max-warnings 0",
+        "eslint --flag v10_config_lookup_from_file --fix --max-warnings 0 --no-warn-ignored",
         "prettier --ignore-path .gitignore --write",
         "prettier --ignore-path .gitignore --log-level warn --check"
     ],
