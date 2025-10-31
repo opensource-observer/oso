@@ -3,6 +3,8 @@ export interface NotebookHostControls {
   saveNotebook: (contents: string) => Promise<void>;
   // Read the contents of a notebook via the host
   readNotebook: () => Promise<string | null>;
+  // Save a preview image of the notebook
+  saveNotebookPreview: (base64Image: string) => Promise<void>;
 }
 
 export interface NotebookControls {

@@ -992,6 +992,13 @@ export type CapturedLogsMetadata = {
   stdoutLocation?: Maybe<Scalars["String"]["output"]>;
 };
 
+/** Catalog entity - represents a data catalog accessible to the user */
+export type Catalog = {
+  __typename?: "Catalog";
+  name: Scalars["String"]["output"];
+  schemas: Array<Schema>;
+};
+
 /**
  * What change an asset has undergone between two deployments. Used
  *     in distinguishing asset definition changes in branch deployment and
@@ -1355,24 +1362,6 @@ export type DagsterTypeOrError =
   | PipelineNotFoundError
   | PythonError
   | RegularDagsterType;
-
-/** Dataset entity - represents a dataset within an organization */
-export type Dataset = {
-  __typename?: "Dataset";
-  catalog: Scalars["String"]["output"];
-  createdAt: Scalars["DateTime"]["output"];
-  createdBy: Scalars["ID"]["output"];
-  deletedAt?: Maybe<Scalars["DateTime"]["output"]>;
-  description?: Maybe<Scalars["String"]["output"]>;
-  displayName: Scalars["String"]["output"];
-  id: Scalars["ID"]["output"];
-  isPublic: Scalars["Boolean"]["output"];
-  name: Scalars["String"]["output"];
-  orgId: Scalars["ID"]["output"];
-  schema: Scalars["String"]["output"];
-  tables: Array<Table>;
-  updatedAt: Scalars["DateTime"]["output"];
-};
 
 export type DefaultPartitionStatuses = {
   __typename?: "DefaultPartitionStatuses";
@@ -2899,6 +2888,8 @@ export type Mutation = {
   osoApp_removeMember: RemoveMemberPayload;
   /** Revoke/delete an invitation */
   osoApp_revokeInvitation: RevokeInvitationPayload;
+  /** Save notebook preview PNG image */
+  osoApp_saveNotebookPreview: SaveNotebookPreviewPayload;
   /** Update a member's role in an organization */
   osoApp_updateMemberRole: UpdateMemberRolePayload;
   /** Update the current user's profile */
@@ -3063,6 +3054,11 @@ export type MutationOsoApp_RevokeInvitationArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_SaveNotebookPreviewArgs = {
+  input: SaveNotebookPreviewInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_UpdateMemberRoleArgs = {
   orgName: Scalars["String"]["input"];
   role: MemberRole;
@@ -3211,11 +3207,31 @@ export type NodeInvocationSite = {
   solidHandle: SolidHandle;
 };
 
+/** Notebook entity - represents a computational notebook */
+export type Notebook = {
+  __typename?: "Notebook";
+  createdAt: Scalars["DateTime"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  notebookName: Scalars["String"]["output"];
+  organization: Organization;
+  /** Get preview image with signed URL */
+  preview?: Maybe<NotebookPreview>;
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
 export type NotebookMetadataEntry = MetadataEntry & {
   __typename?: "NotebookMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
   label: Scalars["String"]["output"];
   path: Scalars["String"]["output"];
+};
+
+export type NotebookPreview = {
+  __typename?: "NotebookPreview";
+  expiresAt: Scalars["DateTime"]["output"];
+  notebookId: Scalars["ID"]["output"];
+  signedUrl: Scalars["String"]["output"];
 };
 
 export type NullMetadataEntry = MetadataEntry & {
@@ -5267,17 +5283,21 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
-  osoApp_datasetTableMetadata: Array<Column>;
   /** Get a specific invitation by ID */
   osoApp_invitation?: Maybe<Invitation>;
   /** Get the current authenticated user's profile */
   osoApp_me: User;
+  /** Get list of catalogs for the current user */
+  osoApp_myCatalogs: Array<Catalog>;
   /** Get invitations sent to the current user's email */
   osoApp_myInvitations: Array<Invitation>;
-  /** Get list of datasets for a given organization */
-  osoApp_orgDatasets: Array<Dataset>;
+  /** Get a specific notebook by ID */
+  osoApp_notebook?: Maybe<Notebook>;
+  /** Get notebooks, optionally filtered by organization name */
+  osoApp_notebooks: Array<Notebook>;
   /** Get a specific organization by name */
   osoApp_organization?: Maybe<Organization>;
+  osoApp_tableColumns: Array<Column>;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
   oso_artifactsByUserV1?: Maybe<Array<Oso_ArtifactsByUserV1>>;
@@ -5553,16 +5573,13 @@ export type QueryLogsForRunArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_DatasetTableMetadataArgs = {
-  catalogName: Scalars["String"]["input"];
-  orgName: Scalars["String"]["input"];
-  schemaName: Scalars["String"]["input"];
-  tableName: Scalars["String"]["input"];
+export type QueryOsoApp_InvitationArgs = {
+  id: Scalars["ID"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_InvitationArgs = {
-  id: Scalars["ID"]["input"];
+export type QueryOsoApp_MyCatalogsArgs = {
+  orgName: Scalars["String"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5571,13 +5588,26 @@ export type QueryOsoApp_MyInvitationsArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_OrgDatasetsArgs = {
-  orgName: Scalars["String"]["input"];
+export type QueryOsoApp_NotebookArgs = {
+  notebookId: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_NotebooksArgs = {
+  orgName?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOsoApp_OrganizationArgs = {
   orgName: Scalars["String"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_TableColumnsArgs = {
+  catalogName: Scalars["String"]["input"];
+  orgName: Scalars["String"]["input"];
+  schemaName: Scalars["String"]["input"];
+  tableName: Scalars["String"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6815,6 +6845,19 @@ export type RuntimeMismatchConfigError = PipelineConfigValidationError & {
   valueRep?: Maybe<Scalars["String"]["output"]>;
 };
 
+export type SaveNotebookPreviewInput = {
+  notebookId: Scalars["ID"]["input"];
+  orgName: Scalars["String"]["input"];
+  /** PNG image as data URL (data:image/png;base64,...) */
+  previewImage: Scalars["String"]["input"];
+};
+
+export type SaveNotebookPreviewPayload = {
+  __typename?: "SaveNotebookPreviewPayload";
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+};
+
 export type ScalarUnionConfigType = ConfigType & {
   __typename?: "ScalarUnionConfigType";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -6981,6 +7024,13 @@ export type SchedulesOrError =
   | PythonError
   | RepositoryNotFoundError
   | Schedules;
+
+/** Schema entity - represents a schema within a catalog */
+export type Schema = {
+  __typename?: "Schema";
+  name: Scalars["String"]["output"];
+  tables: Array<Table>;
+};
 
 export type SelectorTypeConfigError = PipelineConfigValidationError & {
   __typename?: "SelectorTypeConfigError";
@@ -7690,8 +7740,9 @@ export type WrappingDagsterType = {
 };
 
 export type _Entity =
-  | Dataset
+  | Catalog
   | Invitation
+  | Notebook
   | Organization
   | OrganizationMember
   | User;
@@ -7707,6 +7758,19 @@ export enum Link__Purpose {
   /** `SECURITY` features provide metadata necessary to securely resolve fields. */
   Security = "SECURITY",
 }
+
+export type SavePreviewMutationVariables = Exact<{
+  input: SaveNotebookPreviewInput;
+}>;
+
+export type SavePreviewMutation = {
+  __typename?: "Mutation";
+  osoApp_saveNotebookPreview: {
+    __typename?: "SaveNotebookPreviewPayload";
+    success: boolean;
+    message: string;
+  };
+};
 
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -7878,6 +7942,58 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const SavePreviewDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SavePreview" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "SaveNotebookPreviewInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "osoApp_saveNotebookPreview" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SavePreviewMutation, SavePreviewMutationVariables>;
 export const AssetGraphDocument = {
   kind: "Document",
   definitions: [

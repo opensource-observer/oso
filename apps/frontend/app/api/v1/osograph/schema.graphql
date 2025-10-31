@@ -81,6 +81,23 @@ type Invitation @key(fields: "id") {
 }
 
 """
+Notebook entity - represents a computational notebook
+"""
+type Notebook @key(fields: "id") {
+  id: ID!
+  notebookName: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  organization: Organization!
+
+  """
+  Get preview image with signed URL
+  """
+  preview: NotebookPreview
+}
+
+"""
 Dataset entity - represents a dataset within an organization
 """
 type Dataset @key(fields: "id") {
@@ -135,6 +152,16 @@ type Query {
   Get a specific invitation by ID
   """
   osoApp_invitation(id: ID!): Invitation
+
+  """
+  Get notebooks, optionally filtered by organization name
+  """
+  osoApp_notebooks(orgName: String): [Notebook!]!
+
+  """
+  Get a specific notebook by ID
+  """
+  osoApp_notebook(notebookId: ID!): Notebook
 
   """
   Get list of datasets for a given organization
@@ -194,6 +221,13 @@ type Mutation {
     email: String!
     role: MemberRole!
   ): AddUserByEmailPayload!
+
+  """
+  Save notebook preview PNG image
+  """
+  osoApp_saveNotebookPreview(
+    input: SaveNotebookPreviewInput!
+  ): SaveNotebookPreviewPayload!
 }
 
 input CreateInvitationInput {
@@ -261,4 +295,24 @@ type UpdateProfilePayload {
   user: User!
   message: String!
   success: Boolean!
+}
+
+type NotebookPreview {
+  notebookId: ID!
+  signedUrl: String!
+  expiresAt: DateTime!
+}
+
+input SaveNotebookPreviewInput {
+  notebookId: ID!
+  orgName: String!
+  """
+  PNG image as data URL (data:image/png;base64,...)
+  """
+  previewImage: String!
+}
+
+type SaveNotebookPreviewPayload {
+  success: Boolean!
+  message: String!
 }

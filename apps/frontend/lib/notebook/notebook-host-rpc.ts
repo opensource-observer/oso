@@ -25,6 +25,13 @@ export class NotebookHostRpc extends RpcTarget implements NotebookHostControls {
     return this.handler.readNotebook();
   }
 
+  async saveNotebookPreview(base64Image: string): Promise<void> {
+    if (!this.handler) {
+      throw new Error("No handler registered for host controls");
+    }
+    return this.handler.saveNotebookPreview(base64Image);
+  }
+
   setHandler(handler: NotebookHostControls) {
     this.handler = handler;
   }
