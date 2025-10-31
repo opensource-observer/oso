@@ -7,6 +7,12 @@
 import { z } from "zod";
 import { type Json } from "@/lib/types/supabase";
 
+export const publicDatasetTypeSchema = z.union([
+  z.literal("SQL_MODEL"),
+  z.literal("DATA_CONNECTOR"),
+  z.literal("DATA_INGESTION"),
+]);
+
 export const publicModelKindSchema = z.union([
   z.literal("INCREMENTAL_BY_TIME_RANGE"),
   z.literal("INCREMENTAL_BY_UNIQUE_KEY"),
@@ -257,6 +263,7 @@ export const datasetsRowSchema = z.object({
   catalog: z.string(),
   created_at: z.string(),
   created_by: z.string(),
+  dataset_type: publicDatasetTypeSchema,
   deleted_at: z.string().nullable(),
   description: z.string().nullable(),
   display_name: z.string(),
@@ -272,6 +279,7 @@ export const datasetsInsertSchema = z.object({
   catalog: z.string(),
   created_at: z.string().optional(),
   created_by: z.string(),
+  dataset_type: publicDatasetTypeSchema,
   deleted_at: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   display_name: z.string(),
@@ -287,6 +295,7 @@ export const datasetsUpdateSchema = z.object({
   catalog: z.string().optional(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
+  dataset_type: publicDatasetTypeSchema.optional(),
   deleted_at: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   display_name: z.string().optional(),

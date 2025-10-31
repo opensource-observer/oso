@@ -228,6 +228,7 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
     schema: (parent: DatasetsRow) => parent.schema,
     createdBy: (parent: DatasetsRow) => parent.created_by,
     isPublic: (parent: DatasetsRow) => parent.is_public,
+    datasetType: (parent: DatasetsRow) => parent.dataset_type,
   },
 };
 

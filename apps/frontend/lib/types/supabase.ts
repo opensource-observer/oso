@@ -211,6 +211,7 @@ export type Database = {
           catalog: string;
           created_at: string;
           created_by: string;
+          dataset_type: Database["public"]["Enums"]["dataset_type"];
           deleted_at: string | null;
           description: string | null;
           display_name: string;
@@ -225,6 +226,7 @@ export type Database = {
           catalog: string;
           created_at?: string;
           created_by: string;
+          dataset_type: Database["public"]["Enums"]["dataset_type"];
           deleted_at?: string | null;
           description?: string | null;
           display_name: string;
@@ -239,6 +241,7 @@ export type Database = {
           catalog?: string;
           created_at?: string;
           created_by?: string;
+          dataset_type?: Database["public"]["Enums"]["dataset_type"];
           deleted_at?: string | null;
           description?: string | null;
           display_name?: string;
@@ -1331,6 +1334,7 @@ export type Database = {
       };
     };
     Enums: {
+      dataset_type: "SQL_MODEL" | "DATA_CONNECTOR" | "DATA_INGESTION";
       model_kind:
         | "INCREMENTAL_BY_TIME_RANGE"
         | "INCREMENTAL_BY_UNIQUE_KEY"
@@ -1494,6 +1498,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      dataset_type: ["SQL_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"],
       model_kind: [
         "INCREMENTAL_BY_TIME_RANGE",
         "INCREMENTAL_BY_UNIQUE_KEY",
