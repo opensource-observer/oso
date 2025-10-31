@@ -236,7 +236,12 @@ function NotebookFactory() {
               },
               saveNotebookPreview: async (base64Image: string) => {
                 try {
-                  await saveNotebookPreview(notebookId, orgName, base64Image);
+                  await saveNotebookPreview(
+                    client,
+                    notebookId,
+                    orgName,
+                    base64Image,
+                  );
                 } catch (error) {
                   logger.error("Error saving notebook preview:", error);
                 }

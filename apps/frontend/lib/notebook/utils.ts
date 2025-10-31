@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { compressToEncodedURIComponent } from "lz-string";
 import { logger } from "@/lib/logger";
-import { useOsoAppClient } from "@/components/hooks/oso-app";
+import type { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
 
 export type NotebookUrlOptions = {
   initialCode?: string;
@@ -90,6 +90,7 @@ export function generatePublishedNotebookPath(
 }
 
 export async function saveNotebookPreview(
+  client: OsoAppClient | null,
   notebookId: string,
   orgName: string,
   base64Image: string,
@@ -104,12 +105,11 @@ export async function saveNotebookPreview(
     return;
   }
 
-  try {
-    const { client } = useOsoAppClient();
-    if (!client) {
-      throw new Error("OsoAppClient not initialized");
-    }
+  if (!client) {
+    throw new Error("OsoAppClient not initialized");
+  }
 
+  try {
     const payload = await client.saveNotebookPreview({
       notebookId,
       orgName,

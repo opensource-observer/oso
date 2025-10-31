@@ -6,6 +6,7 @@ import { Database, Tables } from "@/lib/types/supabase";
 import { MissingDataError, AuthError } from "@/lib/types/errors";
 import { logger } from "@/lib/logger";
 import { gql } from "@/lib/graphql/generated/gql";
+import { print } from "graphql";
 import {
   resourcePermissionResponseSchema,
   type ResourcePermissionResponse,
@@ -2394,7 +2395,7 @@ class OsoAppClient {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: SAVE_NOTEBOOK_PREVIEW_MUTATION,
+        query: print(SAVE_NOTEBOOK_PREVIEW_MUTATION),
         variables: {
           input: {
             notebookId,
