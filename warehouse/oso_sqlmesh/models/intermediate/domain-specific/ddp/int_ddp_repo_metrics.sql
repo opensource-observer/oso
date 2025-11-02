@@ -24,3 +24,15 @@ SELECT
 FROM oso.int_ddp_repo_metadata AS a
 JOIN oso.key_metrics_by_artifact_v0 AS km USING (artifact_id)
 JOIN oso.metrics_v0 AS m USING (metric_id)
+WHERE m.metric_model IN (
+  'contributors',
+  'commits',
+  'forks',
+  'stars',
+  'opened_issues',
+  'closed_issues',
+  'opened_pull_requests',
+  'merged_pull_requests',
+  'releases',
+  'comments'
+)
