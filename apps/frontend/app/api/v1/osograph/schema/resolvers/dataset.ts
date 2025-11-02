@@ -5,7 +5,10 @@ import {
   requireOrgMembership,
   type GraphQLContext,
 } from "@/app/api/v1/osograph/utils/auth";
-import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
+import {
+  ResourceErrors,
+  ServerErrors,
+} from "@/app/api/v1/osograph/utils/errors";
 import { signTrinoJWT } from "@/lib/auth/auth";
 import { getTrinoClient } from "@/lib/clients/trino";
 import {
@@ -17,10 +20,14 @@ import {
 } from "@/lib/types/catalog";
 import { logger } from "@/lib/logger";
 import { assert } from "@opensource-observer/utils";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { DatasetsRow } from "@/lib/types/schema-types";
 
-export const catalogResolvers: GraphQLResolverModule<GraphQLContext> = {
+const TRINO_SCHEMA_TIMEOUT = 10000; // 10 seconds
+
+export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
   Query: {
-    osoApp_myCatalogs: async (
+    osoApp_orgDatasets: async (
       _: unknown,
       { orgName }: { orgName: string },
       context: GraphQLContext,
@@ -57,7 +64,6 @@ export const catalogResolvers: GraphQLResolverModule<GraphQLContext> = {
                 return null;
               }
               const catalogName = catalog[0];
-              console.log("Processing catalog:", catalogName);
 
               const query = `
         SELECT table_schema, table_name
@@ -65,8 +71,20 @@ export const catalogResolvers: GraphQLResolverModule<GraphQLContext> = {
         WHERE ${catalogName === "iceberg" ? "table_schema = 'oso'" : "table_schema != 'information_schema'"}
       `;
               try {
-                const { data: tablesResult, error } =
-                  await trino.queryAll(query);
+                const queryPromise = trino.queryAll(query);
+                const timeoutPromise = new Promise<{
+                  data: null;
+                  error: Error;
+                }>((resolve) =>
+                  setTimeout(
+                    () => resolve({ data: null, error: new Error("Timeout") }),
+                    TRINO_SCHEMA_TIMEOUT,
+                  ),
+                );
+                const { data: tablesResult, error } = await Promise.race([
+                  queryPromise,
+                  timeoutPromise,
+                ]);
                 if (error || !tablesResult) {
                   logger.warn(
                     `Could not query tables for catalog ${catalogName}:`,
@@ -104,11 +122,35 @@ export const catalogResolvers: GraphQLResolverModule<GraphQLContext> = {
             },
           ),
       );
-      const filteredResults = results.filter((result) => result !== null);
-      return filteredResults;
+      const filteredResults = results.filter(
+        (result): result is Catalog => result !== null,
+      );
+
+      const datasets = await getOrganizationDatasets(organization.id);
+
+      const tablesByCatalogAndSchema = filteredResults.reduce(
+        (acc, catalog) => {
+          for (const schema of catalog.schemas) {
+            const key = `${catalog.name}.${schema.name}`;
+            acc[key] = schema.tables;
+          }
+          return acc;
+        },
+        {} as Record<string, { name: string }[]>,
+      );
+
+      const response = datasets.map((dataset) => {
+        const key = `${dataset.catalog}.${dataset.schema}`;
+        return {
+          ...dataset,
+          tables: tablesByCatalogAndSchema[key] ?? [],
+        };
+      });
+
+      return response;
     },
 
-    osoApp_tableColumns: async (
+    osoApp_datasetTableMetadata: async (
       _: unknown,
       {
         orgName,
@@ -161,7 +203,6 @@ export const catalogResolvers: GraphQLResolverModule<GraphQLContext> = {
                 return null;
               }
               const [columnName, columnType, columnComment] = column;
-              console.log("column:", columnName, columnType, columnComment);
               return ColumnSchema.parse({
                 name: columnName,
                 type: columnType,
@@ -174,4 +215,45 @@ export const catalogResolvers: GraphQLResolverModule<GraphQLContext> = {
       return filteredResults;
     },
   },
+  Dataset: {
+    id: (parent: DatasetsRow) => parent.id,
+    orgId: (parent: DatasetsRow) => parent.org_id,
+    createdAt: (parent: DatasetsRow) => parent.created_at,
+    updatedAt: (parent: DatasetsRow) => parent.updated_at,
+    deletedAt: (parent: DatasetsRow) => parent.deleted_at,
+    name: (parent: DatasetsRow) => parent.name,
+    displayName: (parent: DatasetsRow) => parent.display_name,
+    description: (parent: DatasetsRow) => parent.description,
+    catalog: (parent: DatasetsRow) => parent.catalog,
+    schema: (parent: DatasetsRow) => parent.schema,
+    createdBy: (parent: DatasetsRow) => parent.created_by,
+    isPublic: (parent: DatasetsRow) => parent.is_public,
+    datasetType: (parent: DatasetsRow) => parent.dataset_type,
+  },
 };
+
+async function getOrganizationDatasets(orgId: string): Promise<DatasetsRow[]> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("datasets_by_organization")
+    .select("datasets(*)")
+    .eq("org_id", orgId)
+    .is("deleted_at", null);
+
+  if (error) {
+    throw ResourceErrors.notFound("Datasets", `org_id: ${orgId}`);
+  }
+
+  const { data: ownedDatasets, error: ownedError } = await supabase
+    .from("datasets")
+    .select("*")
+    .eq("org_id", orgId)
+    .is("deleted_at", null);
+
+  if (ownedError) {
+    throw ResourceErrors.notFound("Datasets", `org_id: ${orgId}`);
+  }
+
+  return data.map((d) => d.datasets).concat(ownedDatasets);
+}

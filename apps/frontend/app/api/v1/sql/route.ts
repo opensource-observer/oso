@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { ReadableStream as WebReadableStream } from "node:stream/web";
 import { getTrinoClient } from "@/lib/clients/trino";
 import type { Iterator, QueryResult } from "trino-client";
 import { getTableNamesFromSql } from "@/lib/parsing";
@@ -60,9 +59,9 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     const objResponse = await getObjectByQuery(PUBLIC_SQL_BUCKET, reqBody);
     //console.log(objResponse);
     if (objResponse.Body) {
-      const respStream = WebReadableStream.from(objResponse.Body);
+      const respStream = objResponse.Body.transformToWebStream();
       logger.log(`/api/sql: Public cache hit, short-circuiting`);
-      return new NextResponse(respStream as ReadableStream, {
+      return new NextResponse(respStream, {
         headers: {
           "Content-Type": "application/x-ndjson",
         },
@@ -111,13 +110,13 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
       const objResponse = await getObjectByQuery(user.orgName, reqBody);
       //console.log(objResponse);
       if (objResponse.Body) {
-        const respStream = WebReadableStream.from(objResponse.Body);
+        const respStream = objResponse.Body.transformToWebStream();
         logger.log(`/api/sql: Private cache hit, short-circuiting`);
 
         // TODO: this should be controlled by a `publishQuery` option
         await copyObjectByQuery(user.orgName, reqBody, PUBLIC_SQL_BUCKET);
 
-        return new NextResponse(respStream as ReadableStream, {
+        return new NextResponse(respStream, {
           headers: {
             "Content-Type": "application/x-ndjson",
           },

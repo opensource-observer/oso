@@ -6,6 +6,9 @@
 
 import { z } from "zod";
 import * as generated from "@/lib/types/schema";
+export type PublicDatasetType = z.infer<
+  typeof generated.publicDatasetTypeSchema
+>;
 export type PublicModelKind = z.infer<typeof generated.publicModelKindSchema>;
 export type PublicModelRunStatus = z.infer<
   typeof generated.publicModelRunStatusSchema
