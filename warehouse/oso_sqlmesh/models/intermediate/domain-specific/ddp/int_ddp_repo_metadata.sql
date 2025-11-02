@@ -29,6 +29,11 @@ WITH ossd AS (
   FROM oso.int_ddp_ossd_repos
 ),
 
+ossd_namespaces AS (
+  SELECT DISTINCT artifact_namespace
+  FROM ossd
+),
+
 -- Filter to relevant crypto ecosystem projects and get artifact metadata
 ec_artifacts AS (
   SELECT DISTINCT
@@ -81,32 +86,55 @@ all_artifact_ids AS (
   SELECT artifact_id FROM ossd
   UNION
   SELECT artifact_id FROM ec_artifacts
+),
+
+joined AS (
+  SELECT
+    a.artifact_id,
+    -- Prefer OSSD metadata, fall back to crypto ecosystems metadata
+    COALESCE(o.artifact_namespace, e.artifact_namespace) AS artifact_namespace,
+    COALESCE(o.artifact_name, e.artifact_name) AS artifact_name,
+    COALESCE(o.artifact_url, e.artifact_url) AS artifact_url,
+    -- Repository metadata (only available from OSSD)
+    o.is_fork,
+    o.star_count,
+    o.fork_count,
+    o.language,
+    o.created_at,
+    o.updated_at,
+    -- Ecosystem membership flags
+    p.is_ethereum,
+    p.is_evm_l1,
+    p.is_evm_l2,
+    p.is_evm_stack,
+    p.is_solana,
+    p.ecosystem_count
+  FROM all_artifact_ids AS a
+  LEFT JOIN ossd AS o
+    ON a.artifact_id = o.artifact_id
+  LEFT JOIN ec_artifacts AS e
+    ON a.artifact_id = e.artifact_id
+  LEFT JOIN ec_pivot AS p
+    ON a.artifact_id = p.artifact_id
 )
 
 SELECT
-  a.artifact_id,
-  -- Prefer OSSD metadata, fall back to crypto ecosystems metadata
-  COALESCE(o.artifact_namespace, e.artifact_namespace) AS artifact_namespace,
-  COALESCE(o.artifact_name, e.artifact_name) AS artifact_name,
-  COALESCE(o.artifact_url, e.artifact_url) AS artifact_url,
-  -- Repository metadata (only available from OSSD)
-  o.is_fork,
-  o.star_count,
-  o.fork_count,
-  o.language,
-  o.created_at,
-  o.updated_at,
-  -- Ecosystem membership flags
-  p.is_ethereum,
-  p.is_evm_l1,
-  p.is_evm_l2,
-  p.is_evm_stack,
-  p.is_solana,
-  p.ecosystem_count
-FROM all_artifact_ids AS a
-LEFT JOIN ossd AS o
-  ON a.artifact_id = o.artifact_id
-LEFT JOIN ec_artifacts AS e
-  ON a.artifact_id = e.artifact_id
-LEFT JOIN ec_pivot AS p
-  ON a.artifact_id = p.artifact_id
+  artifact_id,
+  artifact_namespace,
+  artifact_name,
+  artifact_url,
+  is_fork,
+  star_count,
+  fork_count,
+  language,
+  created_at,
+  updated_at,
+  is_ethereum,
+  is_evm_l1,
+  is_evm_l2,
+  is_evm_stack,
+  is_solana,
+  ecosystem_count,
+  (artifact_id IN (SELECT artifact_id FROM ossd)) AS is_in_ossd,
+  (artifact_namespace IN (SELECT artifact_namespace FROM ossd_namespaces)) AS is_owner_in_ossd
+FROM joined
