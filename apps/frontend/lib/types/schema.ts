@@ -8,7 +8,7 @@ import { z } from "zod";
 import { type Json } from "@/lib/types/supabase";
 
 export const publicDatasetTypeSchema = z.union([
-  z.literal("SQL_MODEL"),
+  z.literal("USER_MODEL"),
   z.literal("DATA_CONNECTOR"),
   z.literal("DATA_INGESTION"),
 ]);

@@ -1183,6 +1183,22 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type CreateDatasetInput = {
+  datasetType: DatasetType;
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  displayName: Scalars["String"]["input"];
+  isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgName: Scalars["String"]["input"];
+};
+
+export type CreateDatasetPayload = {
+  __typename?: "CreateDatasetPayload";
+  dataset?: Maybe<Dataset>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+};
+
 export type CreateInvitationInput = {
   /** Email address to invite */
   email: Scalars["String"]["input"];
@@ -2901,6 +2917,8 @@ export type Mutation = {
   osoApp_acceptInvitation: AcceptInvitationPayload;
   /** Add a user to an organization by email */
   osoApp_addUserByEmail: AddUserByEmailPayload;
+  /** Create a new dataset */
+  osoApp_createDataset: CreateDatasetPayload;
   /** Create and send an invitation to join an organization */
   osoApp_createInvitation: CreateInvitationPayload;
   /** Remove a member from an organization */
@@ -3054,6 +3072,11 @@ export type MutationOsoApp_AddUserByEmailArgs = {
   email: Scalars["String"]["input"];
   orgName: Scalars["String"]["input"];
   role: MemberRole;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_CreateDatasetArgs = {
+  input: CreateDatasetInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -7771,6 +7794,30 @@ export enum Link__Purpose {
   Security = "SECURITY",
 }
 
+export type CreateDatasetMutationVariables = Exact<{
+  input: CreateDatasetInput;
+}>;
+
+export type CreateDatasetMutation = {
+  __typename?: "Mutation";
+  osoApp_createDataset: {
+    __typename?: "CreateDatasetPayload";
+    success: boolean;
+    message: string;
+    dataset?: {
+      __typename?: "Dataset";
+      id: string;
+      name: string;
+      displayName: string;
+      description?: string | null;
+      catalog: string;
+      schema: string;
+      datasetType: DatasetType;
+      isPublic: boolean;
+    } | null;
+  };
+};
+
 export type SavePreviewMutationVariables = Exact<{
   input: SaveNotebookPreviewInput;
 }>;
@@ -7954,6 +8001,96 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const CreateDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "osoApp_createDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataset" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "displayName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "catalog" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "schema" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "datasetType" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isPublic" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDatasetMutation,
+  CreateDatasetMutationVariables
+>;
 export const SavePreviewDocument = {
   kind: "Document",
   definitions: [

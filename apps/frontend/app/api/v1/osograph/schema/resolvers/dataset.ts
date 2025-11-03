@@ -22,6 +22,9 @@ import { logger } from "@/lib/logger";
 import { assert } from "@opensource-observer/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DatasetsRow } from "@/lib/types/schema-types";
+import z from "zod";
+import { validateInput } from "@/app/api/v1/osograph/utils/validation";
+import { v4 as uuidv4 } from "uuid";
 
 const TRINO_SCHEMA_TIMEOUT = 10000; // 10 seconds
 
@@ -215,6 +218,62 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
       return filteredResults;
     },
   },
+  Mutation: {
+    osoApp_createDataset: async (
+      _: unknown,
+      { input }: { input: z.infer<typeof CreateDatasetSchema> },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const validated = validateInput(CreateDatasetSchema, input);
+      const organization = await getOrganizationByName(validated.orgName);
+      await requireOrgMembership(authenticatedUser.userId, organization.id);
+
+      const supabase = createAdminClient();
+      const datasetId = uuidv4();
+      let catalog: string;
+      let schema: string;
+
+      switch (validated.datasetType) {
+        case "USER_MODEL":
+          catalog = "user_iceberg";
+          schema = `ds_${datasetId.replace(/-/g, "")}`;
+          break;
+        default:
+          throw new Error(
+            `Dataset type "${validated.datasetType}" is not supported yet.`,
+          );
+      }
+
+      const { data: dataset, error } = await supabase
+        .from("datasets")
+        .insert({
+          id: datasetId,
+          org_id: organization.id,
+          name: validated.name,
+          display_name: validated.displayName,
+          description: validated.description,
+          catalog,
+          schema,
+          created_by: authenticatedUser.userId,
+          is_public: validated.isPublic ?? false,
+          dataset_type: validated.datasetType,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        logger.error("Failed to create dataset:", error);
+        throw ServerErrors.database("Failed to create dataset");
+      }
+
+      return {
+        dataset,
+        message: "Dataset created successfully",
+        success: true,
+      };
+    },
+  },
   Dataset: {
     id: (parent: DatasetsRow) => parent.id,
     orgId: (parent: DatasetsRow) => parent.org_id,
@@ -231,6 +290,21 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
     datasetType: (parent: DatasetsRow) => parent.dataset_type,
   },
 };
+
+export const CreateDatasetSchema = z.object({
+  orgName: z.string().min(1, "Organization name is required"),
+  name: z
+    .string()
+    .min(1, "Dataset name is required")
+    .regex(
+      /^[a-zA-Z][a-zA-Z0-9_]+$/,
+      "Dataset name can only contain letters, numbers, and underscores",
+    ),
+  displayName: z.string().min(1, "Display name is required"),
+  description: z.string().optional(),
+  isPublic: z.boolean().optional(),
+  datasetType: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
+});
 
 async function getOrganizationDatasets(orgId: string): Promise<DatasetsRow[]> {
   const supabase = createAdminClient();

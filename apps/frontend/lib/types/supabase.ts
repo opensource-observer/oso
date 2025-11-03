@@ -1334,7 +1334,7 @@ export type Database = {
       };
     };
     Enums: {
-      dataset_type: "SQL_MODEL" | "DATA_CONNECTOR" | "DATA_INGESTION";
+      dataset_type: "USER_MODEL" | "DATA_CONNECTOR" | "DATA_INGESTION";
       model_kind:
         | "INCREMENTAL_BY_TIME_RANGE"
         | "INCREMENTAL_BY_UNIQUE_KEY"
@@ -1498,7 +1498,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      dataset_type: ["SQL_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"],
+      dataset_type: ["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"],
       model_kind: [
         "INCREMENTAL_BY_TIME_RANGE",
         "INCREMENTAL_BY_UNIQUE_KEY",
