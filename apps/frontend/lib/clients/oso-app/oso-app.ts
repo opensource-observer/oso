@@ -2442,6 +2442,83 @@ class OsoAppClient {
       "X-Supabase-Auth": `${sessionData.session.access_token}:${sessionData.session.refresh_token}`,
     };
   }
+
+  async createDataset(
+    args: Partial<{
+      orgName: string;
+      name: string;
+      displayName: string;
+      description: string;
+      datasetType: "USER_MODEL" | "DATA_CONNECTOR" | "DATA_INGESTION";
+      isPublic: boolean;
+    }>,
+  ) {
+    const { orgName, name, displayName, description, datasetType, isPublic } = {
+      orgName: ensure(args.orgName, "Missing orgName argument"),
+      name: ensure(args.name, "Missing name argument"),
+      displayName: ensure(args.displayName, "Missing displayName argument"),
+      description: args.description,
+      datasetType: ensure(args.datasetType, "Missing datasetType argument"),
+      isPublic: args.isPublic,
+    };
+
+    const CREATE_DATASET_MUTATION = gql(`
+      mutation CreateDataset($input: CreateDatasetInput!) {
+        osoApp_createDataset(input: $input) {
+          success
+          message
+          dataset {
+            id
+            name
+            displayName
+            description
+            catalog
+            schema
+            datasetType
+            isPublic
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_DATASET_MUTATION),
+        variables: {
+          input: {
+            orgName,
+            name,
+            displayName,
+            description,
+            datasetType,
+            isPublic,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to create dataset:", result.errors[0].message);
+      throw new Error(`Failed to create dataset: ${result.errors[0].message}`);
+    }
+
+    const payload = result.data?.osoApp_createDataset;
+    if (!payload) {
+      throw new Error("No response data from create dataset mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully created dataset "${displayName}"`);
+    }
+
+    return payload.dataset;
+  }
 }
 
 export { OsoAppClient };

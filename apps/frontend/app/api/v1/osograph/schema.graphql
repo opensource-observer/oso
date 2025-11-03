@@ -235,6 +235,26 @@ type Mutation {
   osoApp_saveNotebookPreview(
     input: SaveNotebookPreviewInput!
   ): SaveNotebookPreviewPayload!
+
+  """
+  Create a new dataset
+  """
+  osoApp_createDataset(input: CreateDatasetInput!): CreateDatasetPayload!
+}
+
+input CreateDatasetInput {
+  orgName: String!
+  name: String!
+  displayName: String!
+  description: String
+  datasetType: DatasetType!
+  isPublic: Boolean
+}
+
+type CreateDatasetPayload {
+  dataset: Dataset
+  message: String!
+  success: Boolean!
 }
 
 input CreateInvitationInput {
