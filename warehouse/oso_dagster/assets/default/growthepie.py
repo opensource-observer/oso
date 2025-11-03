@@ -3,16 +3,16 @@ from oso_dagster.factories.rest import create_rest_factory_asset
 
 config: RESTAPIConfig = {
     "client": {
-        "base_url": "https://api.growthepie.xyz/v1",
+        "base_url": "https://api.growthepie.com/v1",
     },
     "resource_defaults": {
         "write_disposition": "replace",
     },
     "resources": [
         {
-            "name": "fundamentals_full",
+            "name": "fundamentals",
             "endpoint": {
-                "path": "fundamentals_full.json",
+                "path": "fundamentals.json",
                 "data_selector": "$",
             },
         }
@@ -25,5 +25,5 @@ dlt_assets = create_rest_factory_asset(
 
 growthepie_assets = dlt_assets(
     key_prefix="growthepie",
-    name="growthepie",
+    name="fundamentals",
 )
