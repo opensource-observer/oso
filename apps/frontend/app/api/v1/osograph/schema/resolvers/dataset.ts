@@ -6,6 +6,7 @@ import {
   type GraphQLContext,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
+  AuthenticationErrors,
   ResourceErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
@@ -153,6 +154,34 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
       return response;
     },
 
+    osoApp_dataset: async (
+      _: unknown,
+      { orgName, datasetName }: { orgName: string; datasetName: string },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const organization = await getOrganizationByName(orgName);
+      await requireOrgMembership(authenticatedUser.userId, organization.id);
+
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("datasets")
+        .select("*, models:model(*)")
+        .eq("org_id", organization.id)
+        .eq("name", datasetName)
+        .is("deleted_at", null)
+        .single();
+
+      if (error) {
+        throw ResourceErrors.notFound("Dataset", `name: ${datasetName}`);
+      }
+
+      return {
+        ...data,
+        tables: data.models.map((m) => ({ name: m.name })),
+      };
+    },
+
     osoApp_datasetTableMetadata: async (
       _: unknown,
       {
@@ -270,6 +299,63 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
       return {
         dataset,
         message: "Dataset created successfully",
+        success: true,
+      };
+    },
+    osoApp_updateDataset: async (
+      _: unknown,
+      {
+        datasetId,
+        name,
+        displayName,
+        description,
+        isPublic,
+      }: {
+        datasetId: string;
+        name?: string;
+        displayName?: string;
+        description?: string;
+        isPublic?: boolean;
+      },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const supabase = createAdminClient();
+
+      const { data: existingDataset, error: existingError } = await supabase
+        .from("datasets")
+        .select("org_id")
+        .eq("id", datasetId)
+        .single();
+
+      if (existingError || !existingDataset) {
+        throw AuthenticationErrors.notAuthorized();
+      }
+
+      await requireOrgMembership(
+        authenticatedUser.userId,
+        existingDataset.org_id,
+      );
+
+      const { data, error } = await supabase
+        .from("datasets")
+        .update({
+          name,
+          display_name: displayName,
+          description,
+          is_public: isPublic,
+        })
+        .eq("id", datasetId)
+        .select()
+        .single();
+
+      if (error) {
+        throw ServerErrors.database("Failed to update dataset");
+      }
+
+      return {
+        dataset: data,
+        message: "Dataset updated successfully",
         success: true,
       };
     },

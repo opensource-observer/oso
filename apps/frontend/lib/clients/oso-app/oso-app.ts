@@ -2519,6 +2519,77 @@ class OsoAppClient {
 
     return payload.dataset;
   }
+
+  async updateDataset(
+    args: Partial<{
+      datasetId: string;
+      name: string;
+      displayName: string;
+      description: string;
+      isPublic: boolean;
+    }>,
+  ) {
+    const { datasetId, name, displayName, description, isPublic } = {
+      datasetId: ensure(args.datasetId, "Missing datasetId argument"),
+      name: args.name,
+      displayName: args.displayName,
+      description: args.description,
+      isPublic: args.isPublic,
+    };
+
+    const UPDATE_DATASET_MUTATION = gql(`
+      mutation UpdateDataset($input: UpdateDatasetInput!) {
+        osoApp_updateDataset(input: $input) {
+          success
+          message
+          dataset {
+            id
+            name
+            displayName
+            description
+            isPublic
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(UPDATE_DATASET_MUTATION),
+        variables: {
+          input: {
+            datasetId,
+            name,
+            displayName,
+            description,
+            isPublic,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to update dataset:", result.errors[0].message);
+      throw new Error(`Failed to update dataset: ${result.errors[0].message}`);
+    }
+
+    const payload = result.data?.osoApp_updateDataset;
+    if (!payload) {
+      throw new Error("No response data from update dataset mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully updated dataset "${displayName}"`);
+    }
+
+    return payload.dataset;
+  }
 }
 
 export { OsoAppClient };

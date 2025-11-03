@@ -2927,6 +2927,8 @@ export type Mutation = {
   osoApp_revokeInvitation: RevokeInvitationPayload;
   /** Save notebook preview PNG image */
   osoApp_saveNotebookPreview: SaveNotebookPreviewPayload;
+  /** Update a dataset */
+  osoApp_updateDataset: UpdateDatasetPayload;
   /** Update a member's role in an organization */
   osoApp_updateMemberRole: UpdateMemberRolePayload;
   /** Update the current user's profile */
@@ -3098,6 +3100,11 @@ export type MutationOsoApp_RevokeInvitationArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationOsoApp_SaveNotebookPreviewArgs = {
   input: SaveNotebookPreviewInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationOsoApp_UpdateDatasetArgs = {
+  input: UpdateDatasetInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -5325,6 +5332,8 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
+  /** Get a specific dataset by name */
+  osoApp_dataset?: Maybe<Dataset>;
   osoApp_datasetTableMetadata: Array<Column>;
   /** Get a specific invitation by ID */
   osoApp_invitation?: Maybe<Invitation>;
@@ -5612,6 +5621,12 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   runId: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOsoApp_DatasetArgs = {
+  datasetName: Scalars["String"]["input"];
+  orgName: Scalars["String"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -7654,6 +7669,21 @@ export type UnsupportedOperationError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type UpdateDatasetInput = {
+  datasetId: Scalars["ID"]["input"];
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  displayName?: InputMaybe<Scalars["String"]["input"]>;
+  isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type UpdateDatasetPayload = {
+  __typename?: "UpdateDatasetPayload";
+  dataset?: Maybe<Dataset>;
+  message: Scalars["String"]["output"];
+  success: Scalars["Boolean"]["output"];
+};
+
 export type UpdateMemberRolePayload = {
   __typename?: "UpdateMemberRolePayload";
   member?: Maybe<OrganizationMember>;
@@ -7794,6 +7824,40 @@ export enum Link__Purpose {
   Security = "SECURITY",
 }
 
+export type UpdateDatasetMutationVariables = Exact<{
+  input: UpdateDatasetInput;
+}>;
+
+export type UpdateDatasetMutation = {
+  __typename?: "Mutation";
+  osoApp_updateDataset: {
+    __typename?: "UpdateDatasetPayload";
+    success: boolean;
+    message: string;
+    dataset?: {
+      __typename?: "Dataset";
+      id: string;
+      name: string;
+      displayName: string;
+      description?: string | null;
+      isPublic: boolean;
+    } | null;
+  };
+};
+
+export type SavePreviewMutationVariables = Exact<{
+  input: SaveNotebookPreviewInput;
+}>;
+
+export type SavePreviewMutation = {
+  __typename?: "Mutation";
+  osoApp_saveNotebookPreview: {
+    __typename?: "SaveNotebookPreviewPayload";
+    success: boolean;
+    message: string;
+  };
+};
+
 export type CreateDatasetMutationVariables = Exact<{
   input: CreateDatasetInput;
 }>;
@@ -7815,19 +7879,6 @@ export type CreateDatasetMutation = {
       datasetType: DatasetType;
       isPublic: boolean;
     } | null;
-  };
-};
-
-export type SavePreviewMutationVariables = Exact<{
-  input: SaveNotebookPreviewInput;
-}>;
-
-export type SavePreviewMutation = {
-  __typename?: "Mutation";
-  osoApp_saveNotebookPreview: {
-    __typename?: "SaveNotebookPreviewPayload";
-    success: boolean;
-    message: string;
   };
 };
 
@@ -8001,6 +8052,136 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const UpdateDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "osoApp_updateDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataset" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "displayName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isPublic" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateDatasetMutation,
+  UpdateDatasetMutationVariables
+>;
+export const SavePreviewDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SavePreview" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "SaveNotebookPreviewInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "osoApp_saveNotebookPreview" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SavePreviewMutation, SavePreviewMutationVariables>;
 export const CreateDatasetDocument = {
   kind: "Document",
   definitions: [
@@ -8091,58 +8272,6 @@ export const CreateDatasetDocument = {
   CreateDatasetMutation,
   CreateDatasetMutationVariables
 >;
-export const SavePreviewDocument = {
-  kind: "Document",
-  definitions: [
-    {
-      kind: "OperationDefinition",
-      operation: "mutation",
-      name: { kind: "Name", value: "SavePreview" },
-      variableDefinitions: [
-        {
-          kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "input" },
-          },
-          type: {
-            kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "SaveNotebookPreviewInput" },
-            },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: "SelectionSet",
-        selections: [
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "osoApp_saveNotebookPreview" },
-            arguments: [
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "input" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "input" },
-                },
-              },
-            ],
-            selectionSet: {
-              kind: "SelectionSet",
-              selections: [
-                { kind: "Field", name: { kind: "Name", value: "success" } },
-                { kind: "Field", name: { kind: "Name", value: "message" } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<SavePreviewMutation, SavePreviewMutationVariables>;
 export const AssetGraphDocument = {
   kind: "Document",
   definitions: [
