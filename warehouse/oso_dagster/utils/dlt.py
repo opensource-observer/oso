@@ -158,10 +158,10 @@ class ChunkedResourceConfig(Generic[T]):
             Determines how to handle existing data in the table.
         gcs_prefix (str): Google Cloud Storage prefix for chunked data. Defaults
             to "dlt_chunked_state".
-        max_manifest_age (int): Maximum age of the manifest file in seconds. If the
-            manifest file is older than this value, the manifest will be reset. This
-            means that the `fetch_data_fn` will be called again, re-fetching all the
-            data and starting from scratch. Defaults to 3 days.
+        max_age_hours (int): Maximum age in hours for both manifest files and chunk files.
+            If the manifest is older than this value, it will be reset and data will be
+            re-fetched. Chunk files older than this value will be cleaned up by the sensor.
+            This value is stored in the manifest. Defaults to 48 hours.
         context (AssetExecutionContext): Dagster context object.
     """
 
@@ -175,7 +175,7 @@ class ChunkedResourceConfig(Generic[T]):
         gcs_bucket_name: str,
         write_disposition: str,
         gcs_prefix: str = "dlt_chunked_state",
-        max_manifest_age: int = 60 * 60 * 24 * 3,
+        max_age_hours: int = 48,
         context: AssetExecutionContext | None = None,
     ):
         self.fetch_data_fn = fetch_data_fn
@@ -186,7 +186,7 @@ class ChunkedResourceConfig(Generic[T]):
         self.gcs_bucket_name = gcs_bucket_name
         self.write_disposition = write_disposition
         self.gcs_prefix = gcs_prefix
-        self.max_manifest_age = max_manifest_age
+        self.max_age_hours = max_age_hours
         self.context = context
 
 
@@ -393,6 +393,7 @@ def process_chunked_resource(
 
         log.info("ChunkedResource: Found existing state manifest")
 
+        max_age_seconds = config.max_age_hours * 60 * 60
         updated_age = (
             datetime.now() - datetime.fromisoformat(manifest_data["updated_at"])
         ).total_seconds()
@@ -400,10 +401,7 @@ def process_chunked_resource(
             datetime.now() - datetime.fromisoformat(manifest_data["created_at"])
         ).total_seconds()
 
-        if (
-            updated_age > config.max_manifest_age
-            or created_age > config.max_manifest_age
-        ):
+        if updated_age > max_age_seconds or created_age > max_age_seconds:
             log.info("ChunkedResource: State manifest is too old, resetting")
             manifest_data = None
 
@@ -434,6 +432,7 @@ def process_chunked_resource(
             "updated_at": datetime.now().isoformat(),
             "created_at": datetime.now().isoformat(),
             "pending_data": config.fetch_data_fn(),
+            "max_age_hours": config.max_age_hours,
         }
 
         log.info("ChunkedResource: Uploading initial manifest")
@@ -571,20 +570,22 @@ async def cleanup_chunks(
     context: OpExecutionContext,
     bucket_name: str,
     prefix: str = "dlt_chunked_state",
-    max_age_hours: int = 24,
     client: Optional[storage.Client] = None,
 ):
     """
     Cleanup function that deletes chunk files older than the specified age.
     Also cleans up state files if they have no pending data.
+    The max_age_hours is read from each resource's manifest, falling back to
+    48 hours if not specified.
 
     Args:
         context (OpExecutionContext): The Dagster operation context
         bucket_name (str): The GCS bucket name
         prefix (str): The GCS prefix
-        max_age_hours (int): The maximum age of chunk files to clean up
         client (storage.Client): Optional storage client
     """
+
+    DEFAULT_MAX_AGE_HOURS = 48
 
     if client is None:
         client = storage.Client()
@@ -622,9 +623,21 @@ async def cleanup_chunks(
 
     state_blobs = [blob for blob in blobs if blob.name.endswith("/state.json")]
 
+    resource_max_age = {}
     for state_blob in state_blobs:
         try:
             state_data = json.loads(state_blob.download_as_string())
+
+            parts = state_blob.name.split("/")
+            if len(parts) >= 2:
+                resource_name = parts[-2]
+                resource_max_age[resource_name] = state_data.get(
+                    "max_age_hours", DEFAULT_MAX_AGE_HOURS
+                )
+                context.log.info(
+                    f"Resource '{resource_name}' max_age_hours: {resource_max_age[resource_name]}"
+                )
+
             if not state_data.get("pending_data"):
                 context.log.info(
                     f"State file {state_blob.name} has no pending data, marking for deletion"
@@ -637,8 +650,11 @@ async def cleanup_chunks(
             context.log.error(f"Error processing state file {state_blob.name}: {e}")
 
     for resource_name, blobs in resource_chunks.items():
+        max_age_hours = resource_max_age.get(resource_name, DEFAULT_MAX_AGE_HOURS)
+
         context.log.info(
-            f"Processing resource: {resource_name} with {len(blobs)} chunk files"
+            f"Processing resource: {resource_name} with {len(blobs)} chunk files "
+            f"(max_age_hours: {max_age_hours})"
         )
 
         blobs_to_delete = []
@@ -680,16 +696,15 @@ async def cleanup_chunks(
 def setup_chunked_state_cleanup_sensor(
     gcs_bucket_name: str,
     gcs_prefix: str = "dlt_chunked_state",
-    max_age_hours: int = 48,
     enable: bool = False,
 ):
     """
-    Sets up a sensor and job to clean up chunk files that are older than the specified age.
+    Sets up a sensor and job to clean up chunk files based on per-asset max_age_hours
+    configuration stored in each resource's manifest.
 
     Args:
         gcs_bucket_name (str): GCS bucket name
         gcs_prefix (str): GCS prefix for chunked data
-        max_age_hours (int): Maximum age in hours for chunk files
         enable (bool): Whether to enable the sensor
 
     Returns:
@@ -703,14 +718,12 @@ def setup_chunked_state_cleanup_sensor(
             f"Starting chunked state cleanup job with settings:"
             f"\n  - Bucket: {gcs_bucket_name}"
             f"\n  - Prefix: {gcs_prefix}"
-            f"\n  - Max age for chunk files: {max_age_hours} hours"
         )
 
         await cleanup_chunks(
             context=context,
             bucket_name=gcs_bucket_name,
             prefix=gcs_prefix,
-            max_age_hours=max_age_hours,
         )
 
         context.log.info("Chunked state cleanup job completed successfully")
@@ -724,13 +737,13 @@ def setup_chunked_state_cleanup_sensor(
     @sensor(
         name="chunked_state_cleanup_sensor",
         job=cleanup_job,
-        minimum_interval_seconds=60 * 60 * 12,
+        minimum_interval_seconds=60 * 60 * 2,
         default_status=status,
     )
     def cleanup_sensor(context: SensorEvaluationContext):
         """
-        Sensor that periodically triggers the job to clean up chunk files
-        that are older than the specified age.
+        Sensor that periodically triggers the job to clean up chunk files.
+        The max age for each resource is read from its manifest.
         """
         context.log.info("Evaluating chunked state cleanup sensor")
 
