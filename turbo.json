@@ -21,13 +21,15 @@
     "test": {},
     "@opensource-observer/frontend#build": {
       "dependsOn": ["^build"],
-      "outputs": ["out/**", ".next/**"],
+      "outputs": ["out/**", ".next/**", "!.next/cache/**"],
       "env": ["PLASMIC_PROJECT_ID", "PLASMIC_PROJECT_API_TOKEN"],
       "cache": false
     },
     "@opensource-observer/frontend#deploy": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["out/**", ".next/**", "!.next/cache/**"],
+      "env": ["PLASMIC_PROJECT_ID", "PLASMIC_PROJECT_API_TOKEN"],
+      "cache": false
     },
     "@opensource-observer/hasura-clickhouse#sync": {}
   }
