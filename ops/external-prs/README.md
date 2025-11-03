@@ -50,11 +50,14 @@ Then `git clone` to 2 different paths on your filesystem,
 the oss-directory main branch
 and the PR branch to compare.
 
+> [!TIP]
+> In order to get an OSO API key, visit [`oso.xyz`](https://www.oso.xyz)
+
 You can run the app via:
 
 ```bash
 # Handle PR validations
-pnpm external-prs ossd validate-pr {pr_number} {commit_sha} {main_path} {pr_path}
+pnpm external-prs ossd validate-pr {pr_number} {commit_sha} {main_path} {pr_path} --oso-api-key {oso_api_key}
 ```
 
 If you've configured your GitHub secrets correctly,
