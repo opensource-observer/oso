@@ -169,6 +169,11 @@ export function ossdSubcommands(yargs: Argv) {
             type: "string",
             description: "Optimism RPC URL",
             demandOption: true,
+          })
+          .option("oso-api-key", {
+            type: "string",
+            description: "OSO API Key",
+            demandOption: true,
           });
       },
       (args) => handleError(validatePR(args)),
@@ -205,6 +210,7 @@ interface RpcUrlArgs {
   arbitrumRpcUrl: string;
   baseRpcUrl: string;
   optimismRpcUrl: string;
+  osoApiKey: string;
 }
 
 type ValidatePRArgs = OSSDirectoryPullRequestArgs & RpcUrlArgs;
@@ -325,18 +331,23 @@ class OSSDirectoryPullRequest {
     this.defillamaValidator = new DefiLlamaValidator();
     this.blockchainValidators["any_evm"] = AnyEVMContractsV0Validator(
       urls.mainnetRpcUrl,
+      urls.osoApiKey,
     );
     this.blockchainValidators["mainnet"] = EthereumContractsV0Validator(
       urls.mainnetRpcUrl,
+      urls.osoApiKey,
     );
     this.blockchainValidators["arbitrum_one"] = ArbitrumContractsV0Validator(
       urls.arbitrumRpcUrl,
+      urls.osoApiKey,
     );
     this.blockchainValidators["base"] = BaseContractsV0Validator(
       urls.baseRpcUrl,
+      urls.osoApiKey,
     );
     this.blockchainValidators["optimism"] = OptimismContractsV0Validator(
       urls.optimismRpcUrl,
+      urls.osoApiKey,
     );
   }
 
