@@ -169,3 +169,9 @@ export const AnyEVMContractsV0Validator = (
   rpcUrl: string,
   apiKey?: string,
 ): ContractsV0Validator => createContractsV0Validator(rpcUrl, ANY_EVM, apiKey);
+
+export const UnichainContractsV0Validator = (
+  rpcUrl: string,
+  apiKey?: string,
+): ContractsV0Validator =>
+  createContractsV0Validator(rpcUrl, "UNICHAIN", apiKey);

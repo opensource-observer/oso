@@ -25,6 +25,7 @@ import {
   BaseContractsV0Validator,
   OptimismContractsV0Validator,
   AnyEVMContractsV0Validator,
+  UnichainContractsV0Validator,
 } from "@opensource-observer/oss-artifact-validators";
 import { uncheckedCast } from "@opensource-observer/utils";
 import { CheckConclusion, CheckStatus } from "../checks.js";
@@ -170,6 +171,11 @@ export function ossdSubcommands(yargs: Argv) {
             description: "Optimism RPC URL",
             demandOption: true,
           })
+          .option("unichain-rpc-url", {
+            type: "string",
+            description: "Unichain RPC URL",
+            demandOption: true,
+          })
           .option("oso-api-key", {
             type: "string",
             description: "OSO API Key",
@@ -210,6 +216,7 @@ interface RpcUrlArgs {
   arbitrumRpcUrl: string;
   baseRpcUrl: string;
   optimismRpcUrl: string;
+  unichainRpcUrl: string;
   osoApiKey: string;
 }
 
@@ -347,6 +354,10 @@ class OSSDirectoryPullRequest {
     );
     this.blockchainValidators["optimism"] = OptimismContractsV0Validator(
       urls.optimismRpcUrl,
+      urls.osoApiKey,
+    );
+    this.blockchainValidators["unichain"] = UnichainContractsV0Validator(
+      urls.unichainRpcUrl,
       urls.osoApiKey,
     );
   }
