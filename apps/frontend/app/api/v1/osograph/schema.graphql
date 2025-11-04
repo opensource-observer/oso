@@ -175,6 +175,11 @@ type Query {
   """
   osoApp_orgDatasets(orgName: String!): [Dataset!]!
 
+  """
+  Get a specific dataset by name
+  """
+  osoApp_dataset(orgName: String!, datasetName: String!): Dataset
+
   osoApp_datasetTableMetadata(
     orgName: String!
     catalogName: String!
@@ -240,6 +245,11 @@ type Mutation {
   Create a new dataset
   """
   osoApp_createDataset(input: CreateDatasetInput!): CreateDatasetPayload!
+
+  """
+  Update a dataset
+  """
+  osoApp_updateDataset(input: UpdateDatasetInput!): UpdateDatasetPayload!
 }
 
 input CreateDatasetInput {
@@ -252,6 +262,20 @@ input CreateDatasetInput {
 }
 
 type CreateDatasetPayload {
+  dataset: Dataset
+  message: String!
+  success: Boolean!
+}
+
+input UpdateDatasetInput {
+  datasetId: ID!
+  name: String
+  displayName: String
+  description: String
+  isPublic: Boolean
+}
+
+type UpdateDatasetPayload {
   dataset: Dataset
   message: String!
   success: Boolean!
