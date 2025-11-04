@@ -98,6 +98,7 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "updateOrganizationTier",
   "setOrganizationCredits",
   "createDataset",
+  "updateDataset",
 ]);
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [

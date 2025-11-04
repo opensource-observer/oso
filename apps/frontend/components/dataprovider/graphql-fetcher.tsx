@@ -96,24 +96,26 @@ function GraphqlFetcher(props: GraphqlFetcherProps) {
     ...rest
   } = props;
 
+  const path = url ? new URL(url).pathname : undefined;
+
   let fetchProps: FetchProps;
   if (method === "GET") {
     // https://graphql.org/learn/serving-over-http/#get-request-and-parameters
-    const urlWithQueryParams = new URL(url ?? "");
-    urlWithQueryParams.searchParams.set("query", query?.query ?? "{}");
-    urlWithQueryParams.searchParams.set(
+    const params = new URLSearchParams();
+    params.set("query", query?.query ?? "{}");
+    params.set(
       "variables",
       JSON.stringify({ ...query?.variables, ...varOverrides }),
     );
     fetchProps = {
-      url: urlWithQueryParams.toString(),
+      url: path ? `${path}?${params.toString()}` : undefined,
       method,
       headers,
     };
   } else {
     fetchProps = {
       body: { ...query, variables: { ...query?.variables, ...varOverrides } },
-      url,
+      url: path,
       method,
       headers,
     };
