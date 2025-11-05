@@ -179,3 +179,12 @@ export const WithDisabledAndHiddenFields: Story = {
     className: "w-[400px]",
   },
 };
+
+export const HorizontalForm: Story = {
+  args: {
+    schema: simpleSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[600px]",
+    horizontal: true,
+  },
+};
