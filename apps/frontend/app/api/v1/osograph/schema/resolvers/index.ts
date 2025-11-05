@@ -48,6 +48,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
     ...memberResolvers.Mutation,
     ...invitationResolvers.Mutation,
     ...notebookResolvers.Mutation,
+    ...datasetResolver.Mutation,
   },
   User: userResolvers.User,
   Organization: organizationResolvers.Organization,

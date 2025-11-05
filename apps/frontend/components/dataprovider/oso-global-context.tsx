@@ -152,7 +152,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       errorCodeMap[error.code] ?? `${error.code}: ${error.message}`,
       DEFAULT_TOAST_OPTIONS,
     );
-    return error;
+    throw error;
   };
 
   const actions = React.useMemo(
