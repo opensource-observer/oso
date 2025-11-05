@@ -4,8 +4,8 @@ MODEL (
   dialect trino,
   kind incremental_by_time_range(
     time_column bucket_day,
-    batch_size 120,
-    batch_concurrency 3,
+    batch_size 365,
+    batch_concurrency 1,
     lookback @default_daily_incremental_lookback,
     forward_only true,
     on_destructive_change warn,
