@@ -121,6 +121,7 @@ interface RenderFieldProps {
   fieldSchema: FormSchemaField;
   path: string;
   objectClassName?: string;
+  horizontal?: boolean;
 }
 
 const RenderField: React.FC<RenderFieldProps> = ({
@@ -128,6 +129,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
   fieldSchema,
   path,
   objectClassName,
+  horizontal,
 }) => {
   const { control } = useFormContext();
   const currentPath = path ? `${path}.${fieldName}` : fieldName;
@@ -143,40 +145,46 @@ const RenderField: React.FC<RenderFieldProps> = ({
           control={control}
           name={currentPath}
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{fieldSchema.label}</FormLabel>
-              {fieldSchema.options ? (
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={fieldSchema.disabled}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={fieldSchema.placeholder} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {fieldSchema.options.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <FormControl>
-                  <Input
-                    placeholder={fieldSchema.placeholder}
-                    {...field}
+            <FormItem
+              className={cn(horizontal && "grid grid-cols-4 items-start gap-4")}
+            >
+              <FormLabel className={cn(horizontal && "text-right pt-2")}>
+                {fieldSchema.label}
+              </FormLabel>
+              <div className={cn(horizontal && "col-span-3")}>
+                {fieldSchema.options ? (
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
                     disabled={fieldSchema.disabled}
-                  />
-                </FormControl>
-              )}
-              {fieldSchema.description && (
-                <FormDescription>{fieldSchema.description}</FormDescription>
-              )}
-              <FormMessage />
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={fieldSchema.placeholder} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {fieldSchema.options.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <FormControl>
+                    <Input
+                      placeholder={fieldSchema.placeholder}
+                      {...field}
+                      disabled={fieldSchema.disabled}
+                    />
+                  </FormControl>
+                )}
+                {fieldSchema.description && (
+                  <FormDescription>{fieldSchema.description}</FormDescription>
+                )}
+                <FormMessage />
+              </div>
             </FormItem>
           )}
         />
@@ -188,27 +196,33 @@ const RenderField: React.FC<RenderFieldProps> = ({
           control={control}
           name={currentPath}
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{fieldSchema.label}</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder={fieldSchema.placeholder}
-                  {...field}
-                  disabled={fieldSchema.disabled}
-                  onChange={(e) =>
-                    field.onChange(
-                      e.target.value === ""
-                        ? undefined
-                        : Number(e.target.value),
-                    )
-                  }
-                />
-              </FormControl>
-              {fieldSchema.description && (
-                <FormDescription>{fieldSchema.description}</FormDescription>
-              )}
-              <FormMessage />
+            <FormItem
+              className={cn(horizontal && "grid grid-cols-4 items-start gap-4")}
+            >
+              <FormLabel className={cn(horizontal && "text-right pt-2")}>
+                {fieldSchema.label}
+              </FormLabel>
+              <div className={cn(horizontal && "col-span-3")}>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder={fieldSchema.placeholder}
+                    {...field}
+                    disabled={fieldSchema.disabled}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value),
+                      )
+                    }
+                  />
+                </FormControl>
+                {fieldSchema.description && (
+                  <FormDescription>{fieldSchema.description}</FormDescription>
+                )}
+                <FormMessage />
+              </div>
             </FormItem>
           )}
         />
@@ -250,6 +264,8 @@ const RenderField: React.FC<RenderFieldProps> = ({
                 fieldName={key}
                 fieldSchema={value}
                 path={currentPath}
+                objectClassName={objectClassName}
+                horizontal={horizontal}
               />
             ))}
         </div>
@@ -266,6 +282,7 @@ interface FormBuilderProps {
   className?: string;
   objectClassName?: string;
   footer?: React.ReactNode;
+  horizontal?: boolean;
 }
 
 const FormBuilder: React.FC<FormBuilderProps> = ({
@@ -274,6 +291,7 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
   className,
   objectClassName,
   footer,
+  horizontal,
 }) => {
   const { zodSchema, defaultValues } = React.useMemo(
     () => generateFormConfig(schema),
@@ -299,9 +317,18 @@ const FormBuilder: React.FC<FormBuilderProps> = ({
               fieldSchema={value}
               objectClassName={objectClassName}
               path=""
+              horizontal={horizontal}
             />
           ))}
-          {footer ?? <Button type="submit">Submit</Button>}
+          {horizontal ? (
+            <div className="grid grid-cols-4 items-start gap-4">
+              <div className="col-start-2 col-span-3">
+                {footer ?? <Button type="submit">Submit</Button>}
+              </div>
+            </div>
+          ) : (
+            (footer ?? <Button type="submit">Submit</Button>)
+          )}
         </form>
       </Form>
     </FormProvider>
@@ -329,6 +356,10 @@ const FormBuilderMeta: CodeComponentMeta<FormBuilderProps> = {
           type: "object",
         },
       ],
+    },
+    horizontal: {
+      type: "boolean",
+      description: "Whether to display form items horizontally.",
     },
   },
 };
