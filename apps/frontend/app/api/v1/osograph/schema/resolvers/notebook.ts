@@ -16,16 +16,14 @@ import {
   putBase64Image,
 } from "@/lib/clients/cloudflare-r2";
 import { logger } from "@/lib/logger";
-import {
-  buildConnection,
-  emptyConnection,
-} from "@/app/api/v1/osograph/utils/connection";
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import {
-  getFetchLimit,
-  getSupabaseRange,
-} from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
+import {
+  getUserOrganizationIds,
+  getNotebooksConnection,
+  requireOrganizationAccess,
+  getResourceByIdOrName,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 
 const PREVIEWS_BUCKET = "notebook-previews";
 const SIGNED_URL_EXPIRY = 900;
@@ -38,42 +36,8 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-
-      const { data: memberships } = await supabase
-        .from("users_by_organization")
-        .select("org_id")
-        .eq("user_id", authenticatedUser.userId)
-        .is("deleted_at", null);
-
-      const orgIds = memberships?.map((m) => m.org_id) || [];
-      if (orgIds.length === 0) {
-        return emptyConnection();
-      }
-
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const { data: notebooks, error } = await supabase
-        .from("notebooks")
-        .select("*")
-        .in("org_id", orgIds)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      if (error) {
-        logger.error(`Failed to fetch notebooks: ${error}`);
-        throw ServerErrors.database("Failed to fetch notebooks");
-      }
-
-      if (!notebooks || notebooks.length === 0) {
-        return emptyConnection();
-      }
-
-      return buildConnection(notebooks, args);
+      const orgIds = await getUserOrganizationIds(authenticatedUser.userId);
+      return getNotebooksConnection(orgIds, args);
     },
 
     notebook: async (
@@ -82,32 +46,12 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-
-      if (!args.id && !args.name) {
-        return null;
-      }
-
-      let query = supabase.from("notebooks").select("*").is("deleted_at", null);
-
-      if (args.id) {
-        query = query.eq("id", args.id);
-      } else if (args.name) {
-        query = query.eq("name", args.name);
-      }
-
-      const { data: notebook, error } = await query.single();
-
-      if (error || !notebook) {
-        return null;
-      }
-
-      try {
-        await requireOrgMembership(authenticatedUser.userId, notebook.org_id);
-        return notebook;
-      } catch {
-        return null;
-      }
+      return getResourceByIdOrName({
+        tableName: "notebooks",
+        args,
+        userId: authenticatedUser.userId,
+        checkMembership: true,
+      });
     },
   },
 
@@ -121,7 +65,7 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
       const { input } = args;
 
       const supabase = createAdminClient();
-      await requireOrgMembership(authenticatedUser.userId, input.orgId);
+      await requireOrganizationAccess(authenticatedUser.userId, input.orgId);
 
       const notebookId = uuidv4();
       const { data: notebook, error } = await supabase

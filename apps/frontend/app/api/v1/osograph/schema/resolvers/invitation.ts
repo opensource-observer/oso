@@ -14,15 +14,12 @@ import {
   ServerErrors,
   UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import {
-  buildConnection,
-  emptyConnection,
-} from "@/app/api/v1/osograph/utils/connection";
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getFetchLimit,
-  getSupabaseRange,
-} from "@/app/api/v1/osograph/utils/pagination";
+  getUserInvitationsConnection,
+  requireOrganizationAccess,
+  checkMembershipExists,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
 export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
@@ -68,34 +65,13 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
       const userEmail = authenticatedUser.email?.toLowerCase();
 
       if (!userEmail) {
         throw UserErrors.emailNotFound();
       }
 
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const query = supabase
-        .from("invitations")
-        .select("*")
-        .ilike("email", userEmail)
-        .is("accepted_at", null)
-        .is("deleted_at", null)
-        .gt("expires_at", new Date().toISOString());
-
-      const { data: invitations } = await query.range(start, end);
-
-      if (!invitations || invitations.length === 0) {
-        return emptyConnection();
-      }
-
-      return buildConnection(invitations, args);
+      return getUserInvitationsConnection(userEmail, args);
     },
   },
 
@@ -109,10 +85,11 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       const { input } = args;
 
       const supabase = createAdminClient();
-      const org = await getOrganization(input.orgId);
+      const org = await requireOrganizationAccess(
+        authenticatedUser.userId,
+        input.orgId,
+      );
       const userProfile = await getUserProfile(authenticatedUser.userId);
-
-      await requireOrgMembership(authenticatedUser.userId, org.id);
 
       const normalizedEmail = input.email.toLowerCase().trim();
 
@@ -127,15 +104,12 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
         .single();
 
       if (existingUser) {
-        const { data: existingMembership } = await supabase
-          .from("users_by_organization")
-          .select("*")
-          .eq("user_id", existingUser.id)
-          .eq("org_id", org.id)
-          .is("deleted_at", null)
-          .single();
+        const membershipExists = await checkMembershipExists(
+          existingUser.id,
+          org.id,
+        );
 
-        if (existingMembership) {
+        if (membershipExists) {
           throw InvitationErrors.alreadyExists();
         }
       }

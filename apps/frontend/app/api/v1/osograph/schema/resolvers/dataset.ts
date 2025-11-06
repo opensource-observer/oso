@@ -17,15 +17,14 @@ import {
   ResourceErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import {
-  buildConnection,
-  emptyConnection,
-} from "@/app/api/v1/osograph/utils/connection";
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getFetchLimit,
-  getSupabaseRange,
-} from "@/app/api/v1/osograph/utils/pagination";
+  getUserOrganizationIds,
+  requireOrganizationAccess,
+  getResourceByIdOrName,
+  buildConnectionOrEmpty,
+  preparePaginationRange,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 import {
   Catalog,
   CatalogSchema,
@@ -49,15 +48,9 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       const authenticatedUser = requireAuthentication(context.user);
       const supabase = createAdminClient();
 
-      const { data: memberships } = await supabase
-        .from("users_by_organization")
-        .select("org_id")
-        .eq("user_id", authenticatedUser.userId)
-        .is("deleted_at", null);
-
-      const orgIds = memberships?.map((m) => m.org_id) || [];
+      const orgIds = await getUserOrganizationIds(authenticatedUser.userId);
       if (orgIds.length === 0) {
-        return emptyConnection();
+        return buildConnectionOrEmpty(null, args, 0);
       }
 
       const trinoJwt = await signTrinoJWT({
@@ -154,15 +147,15 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         (result): result is Catalog => result !== null,
       );
 
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
+      const [start, end] = preparePaginationRange(args);
 
-      const { data: datasetsList, error: datasetError } = await supabase
+      const {
+        data: datasetsList,
+        error: datasetError,
+        count,
+      } = await supabase
         .from("datasets")
-        .select("*")
+        .select("*", { count: "exact" })
         .in("org_id", orgIds)
         .is("deleted_at", null)
         .range(start, end);
@@ -173,7 +166,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       }
 
       if (!datasetsList || datasetsList.length === 0) {
-        return emptyConnection();
+        return buildConnectionOrEmpty(null, args, count);
       }
 
       const tablesByCatalogAndSchema = filteredResults.reduce(
@@ -195,7 +188,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         };
       });
 
-      return buildConnection(response, args);
+      return buildConnectionOrEmpty(response, args, count);
     },
 
     dataset: async (
@@ -204,32 +197,12 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-
-      if (!args.id && !args.name) {
-        return null;
-      }
-
-      let query = supabase.from("datasets").select("*").is("deleted_at", null);
-
-      if (args.id) {
-        query = query.eq("id", args.id);
-      } else if (args.name) {
-        query = query.eq("name", args.name);
-      }
-
-      const { data: dataset, error } = await query.single();
-
-      if (error || !dataset) {
-        return null;
-      }
-
-      try {
-        await requireOrgMembership(authenticatedUser.userId, dataset.org_id);
-        return dataset;
-      } catch {
-        return null;
-      }
+      return getResourceByIdOrName({
+        tableName: "datasets",
+        args,
+        userId: authenticatedUser.userId,
+        checkMembership: true,
+      });
     },
 
     datasetTableMetadata: async (
@@ -243,8 +216,10 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const org = await getOrganization(args.orgId);
-      await requireOrgMembership(authenticatedUser.userId, org.id);
+      const org = await requireOrganizationAccess(
+        authenticatedUser.userId,
+        args.orgId,
+      );
 
       const trinoJwt = await signTrinoJWT({
         ...authenticatedUser,

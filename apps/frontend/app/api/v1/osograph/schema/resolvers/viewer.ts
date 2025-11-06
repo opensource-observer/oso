@@ -2,16 +2,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { UserErrors } from "@/app/api/v1/osograph/utils/errors";
-import {
-  buildConnection,
-  emptyConnection,
-} from "@/app/api/v1/osograph/utils/connection";
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import {
-  getFetchLimit,
-  getSupabaseRange,
-} from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
+import {
+  getUserOrganizationsConnection,
+  getNotebooksConnection,
+  getDatasetsConnection,
+  getUserInvitationsConnection,
+  getUserOrganizationIds,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 
 export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -42,29 +41,7 @@ export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
-      const supabase = createAdminClient();
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const { data: memberships } = await supabase
-        .from("users_by_organization")
-        .select("org_id, organizations(*)")
-        .eq("user_id", parent.id)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      if (!memberships || memberships.length === 0) {
-        return emptyConnection();
-      }
-
-      const organizations = memberships
-        .map((m) => m.organizations)
-        .filter((org) => org !== null);
-
-      return buildConnection(organizations, args);
+      return getUserOrganizationsConnection(parent.id, args);
     },
 
     notebooks: async (
@@ -72,37 +49,8 @@ export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
-      const supabase = createAdminClient();
-
-      const { data: memberships } = await supabase
-        .from("users_by_organization")
-        .select("org_id")
-        .eq("user_id", parent.id)
-        .is("deleted_at", null);
-
-      const orgIds = memberships?.map((m) => m.org_id) || [];
-      if (orgIds.length === 0) {
-        return emptyConnection();
-      }
-
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const { data: notebooks } = await supabase
-        .from("notebooks")
-        .select("*")
-        .in("org_id", orgIds)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      if (!notebooks || notebooks.length === 0) {
-        return emptyConnection();
-      }
-
-      return buildConnection(notebooks, args);
+      const orgIds = await getUserOrganizationIds(parent.id);
+      return getNotebooksConnection(orgIds, args);
     },
 
     datasets: async (
@@ -110,37 +58,8 @@ export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
-      const supabase = createAdminClient();
-
-      const { data: memberships } = await supabase
-        .from("users_by_organization")
-        .select("org_id")
-        .eq("user_id", parent.id)
-        .is("deleted_at", null);
-
-      const orgIds = memberships?.map((m) => m.org_id) || [];
-      if (orgIds.length === 0) {
-        return emptyConnection();
-      }
-
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const { data: datasets } = await supabase
-        .from("datasets")
-        .select("*")
-        .in("org_id", orgIds)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      if (!datasets || datasets.length === 0) {
-        return emptyConnection();
-      }
-
-      return buildConnection(datasets, args);
+      const orgIds = await getUserOrganizationIds(parent.id);
+      return getDatasetsConnection(orgIds, args);
     },
 
     invitations: async (
@@ -148,33 +67,7 @@ export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
-      const supabase = createAdminClient();
-      const userEmail = parent.email?.toLowerCase();
-
-      if (!userEmail) {
-        return emptyConnection();
-      }
-
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const { data: invitations } = await supabase
-        .from("invitations")
-        .select("*")
-        .ilike("email", userEmail)
-        .is("accepted_at", null)
-        .is("deleted_at", null)
-        .gt("expires_at", new Date().toISOString())
-        .range(start, end);
-
-      if (!invitations || invitations.length === 0) {
-        return emptyConnection();
-      }
-
-      return buildConnection(invitations, args);
+      return getUserInvitationsConnection(parent.email, args);
     },
   },
 };

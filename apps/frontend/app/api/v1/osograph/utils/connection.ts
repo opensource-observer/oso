@@ -25,7 +25,7 @@ export interface Connection<T> {
 export function buildConnection<T>(
   nodes: T[],
   args: ConnectionArgs,
-  totalCount?: number,
+  totalCount: number,
 ): Connection<T> {
   const { offset, limit } = getPaginationParams(args);
 

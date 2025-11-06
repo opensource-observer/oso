@@ -14,15 +14,14 @@ import {
   ServerErrors,
   UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import {
-  buildConnection,
-  emptyConnection,
-} from "@/app/api/v1/osograph/utils/connection";
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getFetchLimit,
-  getSupabaseRange,
-} from "@/app/api/v1/osograph/utils/pagination";
+  getUserOrganizationsConnection,
+  getNotebooksConnection,
+  getDatasetsConnection,
+  buildConnectionOrEmpty,
+  preparePaginationRange,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
 export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
@@ -33,30 +32,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const { data: memberships } = await supabase
-        .from("users_by_organization")
-        .select("org_id, organizations(*)")
-        .eq("user_id", authenticatedUser.userId)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      if (!memberships || memberships.length === 0) {
-        return emptyConnection();
-      }
-
-      const organizations = memberships
-        .map((m) => m.organizations)
-        .filter((org) => org !== null);
-
-      return buildConnection(organizations, args);
+      return getUserOrganizationsConnection(authenticatedUser.userId, args);
     },
 
     organization: async (
@@ -232,21 +208,17 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       await requireOrgMembership(authenticatedUser.userId, parent.id);
 
       const supabase = createAdminClient();
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
+      const [start, end] = preparePaginationRange(args);
 
-      const { data: membersData } = await supabase
+      const { data: membersData, count } = await supabase
         .from("users_by_organization")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("org_id", parent.id)
         .is("deleted_at", null)
         .range(start, end);
 
       if (!membersData || membersData.length === 0) {
-        return emptyConnection();
+        return buildConnectionOrEmpty(null, args, count);
       }
 
       const userIds = membersData.map((m) => m.user_id);
@@ -255,11 +227,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
         .select("*")
         .in("id", userIds);
 
-      if (!users) {
-        return emptyConnection();
-      }
-
-      return buildConnection(users, args);
+      return buildConnectionOrEmpty(users, args, count);
     },
 
     notebooks: async (
@@ -269,26 +237,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
       await requireOrgMembership(authenticatedUser.userId, parent.id);
-
-      const supabase = createAdminClient();
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const { data: notebooks } = await supabase
-        .from("notebooks")
-        .select("*")
-        .eq("org_id", parent.id)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      if (!notebooks || notebooks.length === 0) {
-        return emptyConnection();
-      }
-
-      return buildConnection(notebooks, args);
+      return getNotebooksConnection(parent.id, args);
     },
 
     datasets: async (
@@ -298,26 +247,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
       await requireOrgMembership(authenticatedUser.userId, parent.id);
-
-      const supabase = createAdminClient();
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({
-        ...args,
-        first: limit,
-      });
-
-      const { data: datasets } = await supabase
-        .from("datasets")
-        .select("*")
-        .eq("org_id", parent.id)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      if (!datasets || datasets.length === 0) {
-        return emptyConnection();
-      }
-
-      return buildConnection(datasets, args);
+      return getDatasetsConnection(parent.id, args);
     },
   },
 
