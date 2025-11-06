@@ -382,29 +382,9 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         existingDataset.org_id,
       );
 
-      const updateData: {
-        name?: string;
-        display_name?: string;
-        description?: string;
-        is_public?: boolean;
-      } = {};
-
-      if (input.name !== undefined) {
-        updateData.name = input.name;
-      }
-      if (input.displayName !== undefined) {
-        updateData.display_name = input.displayName;
-      }
-      if (input.description !== undefined) {
-        updateData.description = input.description;
-      }
-      if (input.isPublic !== undefined) {
-        updateData.is_public = input.isPublic;
-      }
-
       const { data, error } = await supabase
         .from("datasets")
-        .update(updateData)
+        .update(input)
         .eq("id", input.id)
         .select()
         .single();
