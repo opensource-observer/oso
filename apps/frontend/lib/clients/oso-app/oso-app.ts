@@ -1015,7 +1015,7 @@ class OsoAppClient {
       planId: plan.plan_id,
       planName: plan.plan_name,
       planDescription: undefined,
-      tier: isEnterprise ? "enterprise" : isFree ? "free" : "unknown",
+      tier: plan.plan_name.toLowerCase(),
       creditsBalance: finalCreditsBalance,
       maxCreditsPerCycle: plan.max_credits_per_cycle || 0,
       billingCycle: {
@@ -2002,7 +2002,7 @@ class OsoAppClient {
   /**
    * Creates an R2 bucket for an enterprise organization via API route
    * @param orgName - organization name
-   * @returns Promise<boolean>
+   * @returns Promise<void>
    */
   private async createEnterpriseOrgR2Bucket(orgName: string) {
     const customHeaders = await this.createSupabaseAuthHeaders();
@@ -2018,6 +2018,26 @@ class OsoAppClient {
   }
 
   /**
+   * Gets a pricing plan by name
+   * @param planName - The name of the plan (e.g., "ENTERPRISE", "FREE", "PRO", "STARTER")
+   * @returns Promise<{ plan_id: string; plan_name: string }> - The plan data
+   */
+  private async getPlanByName(planName: string) {
+    const { data: plan } = await this.supabaseClient
+      .from("pricing_plan")
+      .select("plan_id, plan_name")
+      .eq("plan_name", planName)
+      .single()
+      .throwOnError();
+
+    if (!plan) {
+      throw new Error(`Pricing plan not found: ${planName}`);
+    }
+
+    return plan;
+  }
+
+  /**
    * Promote an existing organization to enterprise tier
    * @param orgName
    * @returns Promise<boolean>
@@ -2028,18 +2048,7 @@ class OsoAppClient {
       "orgName is required to promote organization to enterprise",
     );
 
-    const { data: enterprisePlan } = await this.supabaseClient
-      .from("pricing_plan")
-      .select("plan_id")
-      .eq("plan_name", "ENTERPRISE")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .single()
-      .throwOnError();
-
-    if (!enterprisePlan) {
-      throw new Error("Enterprise plan not found");
-    }
+    const enterprisePlan = await this.getPlanByName("ENTERPRISE");
 
     await this.supabaseClient
       .from("organizations")
@@ -2066,18 +2075,7 @@ class OsoAppClient {
       "orgName is required to demote organization from enterprise",
     );
 
-    const { data: freePlan } = await this.supabaseClient
-      .from("pricing_plan")
-      .select("plan_id")
-      .eq("plan_name", "FREE")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .single()
-      .throwOnError();
-
-    if (!freePlan) {
-      throw new Error("Free plan not found");
-    }
+    const freePlan = await this.getPlanByName("FREE");
 
     await this.supabaseClient
       .from("organizations")
@@ -2089,13 +2087,13 @@ class OsoAppClient {
   }
 
   /**
-   * Update an organization's tier (FREE or ENTERPRISE)
-   * @param orgName
-   * @param tier
+   * Update an organization's tier to any available plan
+   * @param orgName - The organization name
+   * @param tier - The tier name (e.g., "FREE", "STARTER", "PRO", "ENTERPRISE")
    * @returns Promise<boolean>
    */
   async updateOrganizationTier(
-    args: Partial<{ orgName: string; tier: "FREE" | "ENTERPRISE" }>,
+    args: Partial<{ orgName: string; tier: string }>,
   ) {
     const orgName = ensure(
       args.orgName,
@@ -2105,10 +2103,6 @@ class OsoAppClient {
       args.tier,
       "tier is required to update organization tier",
     );
-
-    if (tier !== "FREE" && tier !== "ENTERPRISE") {
-      throw new Error("Invalid tier. Must be either 'FREE' or 'ENTERPRISE'");
-    }
 
     const { data: org } = await this.supabaseClient
       .from("organizations")
@@ -2137,11 +2131,22 @@ class OsoAppClient {
       return true;
     }
 
+    const targetPlan = await this.getPlanByName(tier);
+
+    await this.supabaseClient
+      .from("organizations")
+      .update({ plan_id: targetPlan.plan_id })
+      .eq("org_name", orgName)
+      .throwOnError();
+
     if (tier === "ENTERPRISE") {
-      return this.promoteOrganizationToEnterprise({ orgName });
-    } else {
-      return this.demoteOrganizationFromEnterprise({ orgName });
+      const hasFetch = typeof fetch === "function";
+      if (hasFetch) {
+        await this.createEnterpriseOrgR2Bucket(orgName);
+      }
     }
+
+    return true;
   }
 
   /**
