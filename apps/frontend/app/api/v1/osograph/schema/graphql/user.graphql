@@ -1,0 +1,52 @@
+"""
+User type represents an authenticated user in the system
+"""
+type User {
+  id: ID!
+  email: String!
+  fullName: String
+  avatarUrl: String
+  role: String!
+  organizations(
+    limit: Int = 50
+    offset: Int = 0
+    where: OrganizationWhere
+    order_by: [OrderByInput!]
+  ): [Organization!]!
+}
+
+"""
+Viewer represents the currently authenticated user
+Provides convenient access to the user's resources
+"""
+type Viewer {
+  id: ID!
+  email: String!
+  fullName: String
+  avatarUrl: String
+  organizations(
+    limit: Int = 50
+    offset: Int = 0
+    where: OrganizationWhere
+    order_by: [OrderByInput!]
+  ): [Organization!]!
+  notebooks(
+    limit: Int = 50
+    offset: Int = 0
+    where: NotebookWhere
+    order_by: [OrderByInput!]
+  ): [Notebook!]!
+  datasets(
+    limit: Int = 50
+    offset: Int = 0
+    where: DatasetWhere
+    order_by: [OrderByInput!]
+  ): [Dataset!]!
+}
+
+extend type Query {
+  """
+  Get the currently authenticated viewer
+  """
+  viewer: Viewer!
+}

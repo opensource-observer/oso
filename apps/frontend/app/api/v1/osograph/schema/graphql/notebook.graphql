@@ -1,0 +1,94 @@
+"""
+Represents a notebook
+"""
+type Notebook {
+  id: ID!
+  orgId: ID!
+  name: String!
+  description: String
+  creatorId: ID!
+  preview: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: User!
+  organization: Organization!
+}
+
+input NotebookWhere {
+  name: StringFilter
+  orgId: UUIDFilter
+  creatorId: UUIDFilter
+  createdAt: DateTimeFilter
+}
+
+extend type Query {
+  """
+  List notebooks
+  """
+  notebooks(
+    limit: Int = 50
+    offset: Int = 0
+    where: NotebookWhere
+    order_by: [OrderByInput!]
+  ): [Notebook!]!
+
+  """
+  Get a specific notebook by ID or name
+  """
+  notebook(id: ID, name: String): Notebook
+}
+
+extend type Mutation {
+  """
+  Create a new notebook
+  """
+  createNotebook(input: CreateNotebookInput!): CreateNotebookPayload!
+
+  """
+  Update an existing notebook
+  """
+  updateNotebook(input: UpdateNotebookInput!): UpdateNotebookPayload!
+
+  """
+  Save a preview image for a notebook
+  """
+  saveNotebookPreview(
+    input: SaveNotebookPreviewInput!
+  ): SaveNotebookPreviewPayload!
+}
+
+input CreateNotebookInput {
+  orgId: ID!
+  name: String!
+  description: String
+}
+
+type CreateNotebookPayload {
+  success: Boolean!
+  notebook: Notebook
+  message: String
+}
+
+input UpdateNotebookInput {
+  id: ID!
+  name: String
+  description: String
+}
+
+type UpdateNotebookPayload {
+  success: Boolean!
+  notebook: Notebook
+  message: String
+}
+
+input SaveNotebookPreviewInput {
+  notebookId: ID!
+  preview: String!
+}
+
+type SaveNotebookPreviewPayload {
+  success: Boolean!
+  notebook: Notebook
+  previewUrl: String
+  message: String
+}

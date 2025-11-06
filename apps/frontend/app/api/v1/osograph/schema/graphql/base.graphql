@@ -1,0 +1,99 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.0"
+    import: ["@key", "@shareable", "@external"]
+  )
+
+scalar DateTime
+
+enum OrderDirection {
+  asc
+  desc
+}
+
+"""
+Hasura-style string filter operators
+"""
+input StringFilter {
+  _eq: String
+  _neq: String
+  _ilike: String
+  _in: [String!]
+}
+
+"""
+Hasura-style UUID filter operators
+"""
+input UUIDFilter {
+  _eq: ID
+  _neq: ID
+  _in: [ID!]
+}
+
+"""
+Hasura-style DateTime filter operators
+"""
+input DateTimeFilter {
+  _eq: DateTime
+  _gte: DateTime
+  _lte: DateTime
+  _gt: DateTime
+  _lt: DateTime
+}
+
+"""
+Hasura-style Boolean filter operators
+"""
+input BooleanFilter {
+  _eq: Boolean
+}
+
+"""
+Standard order by input for any list query
+"""
+input OrderByInput {
+  field: String!
+  direction: OrderDirection!
+}
+
+"""
+Member roles in organization
+"""
+enum MemberRole {
+  owner
+  admin
+  member
+}
+
+"""
+Invitation status
+"""
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+"""
+Dataset types
+"""
+enum DatasetType {
+  PYTHON_MODEL
+  SQL_TABLE
+  EXTERNAL
+}
+
+"""
+Root Query type
+"""
+type Query {
+  _empty: String
+}
+
+"""
+Root Mutation type
+"""
+type Mutation {
+  _empty: String
+}

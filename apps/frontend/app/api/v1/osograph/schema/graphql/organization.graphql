@@ -1,0 +1,110 @@
+"""
+Represents an organization
+"""
+type Organization {
+  id: ID!
+  name: String!
+  displayName: String
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  members(limit: Int = 50, offset: Int = 0): [OrganizationMember!]!
+  notebooks(
+    limit: Int = 50
+    offset: Int = 0
+    where: NotebookWhere
+    order_by: [OrderByInput!]
+  ): [Notebook!]!
+  datasets(
+    limit: Int = 50
+    offset: Int = 0
+    where: DatasetWhere
+    order_by: [OrderByInput!]
+  ): [Dataset!]!
+}
+
+"""
+Organization member with user details
+"""
+type OrganizationMember {
+  id: ID!
+  userId: ID!
+  orgId: ID!
+  userRole: MemberRole!
+  createdAt: DateTime!
+  user: User!
+}
+
+input OrganizationWhere {
+  name: StringFilter
+  displayName: StringFilter
+  createdAt: DateTimeFilter
+}
+
+extend type Query {
+  """
+  List organizations the user is a member of
+  """
+  organizations(
+    limit: Int = 50
+    offset: Int = 0
+    where: OrganizationWhere
+    order_by: [OrderByInput!]
+  ): [Organization!]!
+
+  """
+  Get a specific organization by ID or name
+  """
+  organization(id: ID, name: String): Organization
+}
+
+extend type Mutation {
+  """
+  Add a user to an organization by email
+  """
+  addUserByEmail(input: AddUserByEmailInput!): AddUserByEmailPayload!
+
+  """
+  Remove a user from an organization
+  """
+  removeMember(input: RemoveMemberInput!): RemoveMemberPayload!
+
+  """
+  Update a member's role in an organization
+  """
+  updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRolePayload!
+}
+
+input AddUserByEmailInput {
+  orgId: ID!
+  email: String!
+  role: MemberRole!
+}
+
+type AddUserByEmailPayload {
+  success: Boolean!
+  member: OrganizationMember
+  message: String
+}
+
+input RemoveMemberInput {
+  orgId: ID!
+  userId: ID!
+}
+
+type RemoveMemberPayload {
+  success: Boolean!
+  message: String
+}
+
+input UpdateMemberRoleInput {
+  orgId: ID!
+  userId: ID!
+  role: MemberRole!
+}
+
+type UpdateMemberRolePayload {
+  success: Boolean!
+  member: OrganizationMember
+  message: String
+}
