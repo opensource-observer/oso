@@ -9,18 +9,16 @@ import {
   getFetchLimit,
   getSupabaseRange,
 } from "@/app/api/v1/osograph/utils/pagination";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
-export const userResolvers = {
+export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
   User: {
     fullName: (parent: { full_name: string | null }) => parent.full_name,
     avatarUrl: (parent: { avatar_url: string | null }) => parent.avatar_url,
 
     organizations: async (
       parent: { id: string },
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
       const supabase = createAdminClient();

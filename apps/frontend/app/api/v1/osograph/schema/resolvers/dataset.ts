@@ -35,17 +35,15 @@ import {
 } from "@/lib/types/catalog";
 import z from "zod";
 import { assert } from "@opensource-observer/utils";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
 const TRINO_SCHEMA_TIMEOUT = 10_000; // 10 seconds
 
-export const datasetResolvers = {
+export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     datasets: async (
       _: unknown,
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);

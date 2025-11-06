@@ -23,8 +23,9 @@ import {
   getFetchLimit,
   getSupabaseRange,
 } from "@/app/api/v1/osograph/utils/pagination";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
-export const invitationResolvers = {
+export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     invitation: async (
       _: unknown,
@@ -63,10 +64,7 @@ export const invitationResolvers = {
 
     myInvitations: async (
       _: unknown,
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);

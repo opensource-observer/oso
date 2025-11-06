@@ -25,18 +25,16 @@ import {
   getFetchLimit,
   getSupabaseRange,
 } from "@/app/api/v1/osograph/utils/pagination";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
 const PREVIEWS_BUCKET = "notebook-previews";
 const SIGNED_URL_EXPIRY = 900;
 
-export const notebookResolvers = {
+export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     notebooks: async (
       _: unknown,
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);

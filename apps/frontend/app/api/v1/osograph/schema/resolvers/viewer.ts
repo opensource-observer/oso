@@ -11,8 +11,9 @@ import {
   getFetchLimit,
   getSupabaseRange,
 } from "@/app/api/v1/osograph/utils/pagination";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
-export const viewerResolvers = {
+export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     viewer: async (_: unknown, _args: unknown, context: GraphQLContext) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -38,10 +39,7 @@ export const viewerResolvers = {
 
     organizations: async (
       parent: { id: string },
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
       const supabase = createAdminClient();
@@ -71,10 +69,7 @@ export const viewerResolvers = {
 
     notebooks: async (
       parent: { id: string },
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
       const supabase = createAdminClient();
@@ -112,10 +107,7 @@ export const viewerResolvers = {
 
     datasets: async (
       parent: { id: string },
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
       const supabase = createAdminClient();
@@ -153,10 +145,7 @@ export const viewerResolvers = {
 
     invitations: async (
       parent: { id: string; email: string },
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       _context: GraphQLContext,
     ) => {
       const supabase = createAdminClient();

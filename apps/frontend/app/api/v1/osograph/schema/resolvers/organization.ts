@@ -23,15 +23,13 @@ import {
   getFetchLimit,
   getSupabaseRange,
 } from "@/app/api/v1/osograph/utils/pagination";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
-export const organizationResolvers = {
+export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     organizations: async (
       _: unknown,
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -227,10 +225,7 @@ export const organizationResolvers = {
 
     members: async (
       parent: { id: string },
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -269,10 +264,7 @@ export const organizationResolvers = {
 
     notebooks: async (
       parent: { id: string },
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -301,10 +293,7 @@ export const organizationResolvers = {
 
     datasets: async (
       parent: { id: string },
-      args: ConnectionArgs & {
-        where?: unknown;
-        order_by?: unknown;
-      },
+      args: ConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
