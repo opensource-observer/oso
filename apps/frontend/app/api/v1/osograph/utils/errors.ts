@@ -198,4 +198,6 @@ export const NotebookErrors = {
   notFound: () => createError(ErrorCode.NOT_FOUND, "Notebook not found"),
 } as const;
 
-export const CatalogErrors = {};
+export const DatasetErrors = {
+  notFound: () => createError(ErrorCode.NOT_FOUND, "Dataset not found"),
+} as const;

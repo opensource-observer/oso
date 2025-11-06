@@ -37,7 +37,8 @@ export function validateBase64PngImage(base64Data: string): void {
 
 export const CreateInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
+  role: z.enum(["owner", "admin", "member"]).default("member"),
 });
 
 export const AcceptInvitationSchema = z.object({
@@ -49,20 +50,60 @@ export const RevokeInvitationSchema = z.object({
 });
 
 export const RemoveMemberSchema = z.object({
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
   userId: z.string().uuid("Invalid user ID"),
 });
 
 export const UpdateMemberRoleSchema = z.object({
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
   userId: z.string().uuid("Invalid user ID"),
   role: z.enum(["owner", "admin", "member"]),
 });
 
 export const AddUserByEmailSchema = z.object({
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
   email: z.string().email("Invalid email address"),
   role: z.enum(["owner", "admin", "member"]),
+});
+
+export const CreateNotebookSchema = z.object({
+  orgId: z.string().uuid("Invalid organization ID"),
+  name: z.string().min(1, "Notebook name is required"),
+  description: z.string().optional(),
+});
+
+export const UpdateNotebookSchema = z.object({
+  id: z.string().uuid("Invalid notebook ID"),
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+});
+
+export const SaveNotebookPreviewSchema = z.object({
+  notebookId: z.string().uuid("Invalid notebook ID"),
+  preview: z.string().startsWith("data:image/png;base64,"),
+});
+
+export const UpdateDatasetSchema = z.object({
+  id: z.string().uuid("Invalid dataset ID"),
+  name: z.string().min(1).optional(),
+  displayName: z.string().optional(),
+  description: z.string().optional(),
+  isPublic: z.boolean().optional(),
+});
+
+export const CreateDatasetSchema = z.object({
+  orgName: z.string().min(1, "Organization name is required"),
+  name: z
+    .string()
+    .min(1, "Dataset name is required")
+    .regex(
+      /^[a-zA-Z][a-zA-Z0-9_]+$/,
+      "Dataset name can only contain letters, numbers, and underscores",
+    ),
+  displayName: z.string().min(1, "Display name is required"),
+  description: z.string().optional(),
+  isPublic: z.boolean().optional(),
+  datasetType: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
 });
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
