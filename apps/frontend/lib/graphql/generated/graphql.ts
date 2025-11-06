@@ -62,10 +62,14 @@ export type Scalars = {
   link__Import: { input: any; output: any };
 };
 
+export type AcceptInvitationInput = {
+  invitationId: Scalars["ID"]["input"];
+};
+
 export type AcceptInvitationPayload = {
   __typename?: "AcceptInvitationPayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -81,10 +85,16 @@ export type AddDynamicPartitionSuccess = {
   partitionsDefName: Scalars["String"]["output"];
 };
 
+export type AddUserByEmailInput = {
+  email: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  role: MemberRole;
+};
+
 export type AddUserByEmailPayload = {
   __typename?: "AddUserByEmailPayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -949,6 +959,11 @@ export type BoolMetadataEntry = MetadataEntry & {
   label: Scalars["String"]["output"];
 };
 
+/** Hasura-style Boolean filter operators */
+export type BooleanFilter = {
+  _eq?: InputMaybe<Scalars["Boolean"]["input"]>;
+};
+
 export enum BulkActionStatus {
   Canceled = "CANCELED",
   Canceling = "CANCELING",
@@ -1020,14 +1035,6 @@ export type CodeReferencesMetadataEntry = MetadataEntry & {
   codeReferences: Array<SourceLocation>;
   description?: Maybe<Scalars["String"]["output"]>;
   label: Scalars["String"]["output"];
-};
-
-/** Column entity - represents a column within a table */
-export type Column = {
-  __typename?: "Column";
-  description?: Maybe<Scalars["String"]["output"]>;
-  name: Scalars["String"]["output"];
-  type: Scalars["String"]["output"];
 };
 
 export type CompositeConfigType = ConfigType & {
@@ -1184,32 +1191,44 @@ export type ConflictingExecutionParamsError = Error & {
 };
 
 export type CreateDatasetInput = {
-  datasetType: DatasetType;
   description?: InputMaybe<Scalars["String"]["input"]>;
-  displayName: Scalars["String"]["input"];
+  displayName?: InputMaybe<Scalars["String"]["input"]>;
   isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
   name: Scalars["String"]["input"];
-  orgName: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  type?: InputMaybe<DatasetType>;
 };
 
 export type CreateDatasetPayload = {
   __typename?: "CreateDatasetPayload";
   dataset?: Maybe<Dataset>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
 export type CreateInvitationInput = {
-  /** Email address to invite */
   email: Scalars["String"]["input"];
-  /** Organization name to invite user to */
-  orgName: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  role?: MemberRole;
 };
 
 export type CreateInvitationPayload = {
   __typename?: "CreateInvitationPayload";
   invitation?: Maybe<Invitation>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateNotebookInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
+export type CreateNotebookPayload = {
+  __typename?: "CreateNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -1373,30 +1392,48 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
-/** Dataset entity - represents a dataset within an organization */
+/** Represents a dataset */
 export type Dataset = {
   __typename?: "Dataset";
-  catalog: Scalars["String"]["output"];
   createdAt: Scalars["DateTime"]["output"];
-  createdBy: Scalars["ID"]["output"];
-  datasetType: DatasetType;
-  deletedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  creator: User;
+  creatorId: Scalars["ID"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
-  displayName: Scalars["String"]["output"];
+  displayName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   isPublic: Scalars["Boolean"]["output"];
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
-  schema: Scalars["String"]["output"];
-  tables: Array<Table>;
+  organization: Organization;
+  type: DatasetType;
   updatedAt: Scalars["DateTime"]["output"];
 };
 
+/** Dataset types */
 export enum DatasetType {
-  DataConnector = "DATA_CONNECTOR",
-  DataIngestion = "DATA_INGESTION",
-  UserModel = "USER_MODEL",
+  External = "EXTERNAL",
+  PythonModel = "PYTHON_MODEL",
+  SqlTable = "SQL_TABLE",
 }
+
+export type DatasetWhere = {
+  createdAt?: InputMaybe<DateTimeFilter>;
+  creatorId?: InputMaybe<UuidFilter>;
+  displayName?: InputMaybe<StringFilter>;
+  isPublic?: InputMaybe<BooleanFilter>;
+  name?: InputMaybe<StringFilter>;
+  orgId?: InputMaybe<UuidFilter>;
+  type?: InputMaybe<DatasetType>;
+};
+
+/** Hasura-style DateTime filter operators */
+export type DateTimeFilter = {
+  _eq?: InputMaybe<Scalars["DateTime"]["input"]>;
+  _gt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  _gte?: InputMaybe<Scalars["DateTime"]["input"]>;
+  _lt?: InputMaybe<Scalars["DateTime"]["input"]>;
+  _lte?: InputMaybe<Scalars["DateTime"]["input"]>;
+};
 
 export type DefaultPartitionStatuses = {
   __typename?: "DefaultPartitionStatuses";
@@ -2355,22 +2392,30 @@ export type InvalidSubsetError = Error & {
 export type Invitation = {
   __typename?: "Invitation";
   acceptedAt?: Maybe<Scalars["DateTime"]["output"]>;
-  acceptedBy?: Maybe<User>;
   createdAt: Scalars["DateTime"]["output"];
+  deletedAt?: Maybe<Scalars["DateTime"]["output"]>;
   email: Scalars["String"]["output"];
   expiresAt: Scalars["DateTime"]["output"];
   id: Scalars["ID"]["output"];
-  invitedBy: User;
-  organization: Organization;
+  orgId: Scalars["ID"]["output"];
   status: InvitationStatus;
+  userRole: MemberRole;
 };
 
+/** Invitation status */
 export enum InvitationStatus {
   Accepted = "ACCEPTED",
-  Deleted = "DELETED",
   Expired = "EXPIRED",
   Pending = "PENDING",
+  Revoked = "REVOKED",
 }
+
+export type InvitationWhere = {
+  createdAt?: InputMaybe<DateTimeFilter>;
+  email?: InputMaybe<StringFilter>;
+  orgId?: InputMaybe<UuidFilter>;
+  status?: InputMaybe<InvitationStatus>;
+};
 
 export type Job = IPipelineSnapshot &
   SolidContainer & {
@@ -2808,10 +2853,11 @@ export type MaterializedPartitionRangeStatuses2D = {
   secondaryDim: PartitionStatus1D;
 };
 
+/** Member roles in organization */
 export enum MemberRole {
-  Admin = "ADMIN",
-  Member = "MEMBER",
-  Owner = "OWNER",
+  Admin = "admin",
+  Member = "member",
+  Owner = "owner",
 }
 
 export type MessageEvent = {
@@ -2882,11 +2928,22 @@ export type MultiPartitionStatuses = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type Mutation = {
   __typename?: "Mutation";
+  _empty?: Maybe<Scalars["String"]["output"]>;
   _no_fields_accessible?: Maybe<Scalars["String"]["output"]>;
+  /** Accept an invitation */
+  acceptInvitation: AcceptInvitationPayload;
   /** Adds a partition to a dynamic partition set. */
   addDynamicPartition: AddDynamicPartitionResult;
+  /** Add a user to an organization by email */
+  addUserByEmail: AddUserByEmailPayload;
   /** Cancels a set of partition backfill runs. */
   cancelPartitionBackfill: CancelBackfillResult;
+  /** Create a new dataset */
+  createDataset: CreateDatasetPayload;
+  /** Create and send an invitation to join an organization */
+  createInvitation: CreateInvitationPayload;
+  /** Create a new notebook */
+  createNotebook: CreateNotebookPayload;
   /** Sets the concurrency limit for a given concurrency key. */
   deleteConcurrencyLimit: Scalars["Boolean"]["output"];
   /** Deletes partitions from a dynamic partition set. */
@@ -2913,32 +2970,14 @@ export type Mutation = {
   launchRunReexecution: LaunchRunReexecutionResult;
   /** Log telemetry about the Dagster instance. */
   logTelemetry: LogTelemetryMutationResult;
-  /** Accept an invitation to join an organization */
-  osoApp_acceptInvitation: AcceptInvitationPayload;
-  /** Add a user to an organization by email */
-  osoApp_addUserByEmail: AddUserByEmailPayload;
-  /** Create a new dataset */
-  osoApp_createDataset: CreateDatasetPayload;
-  /** Create and send an invitation to join an organization */
-  osoApp_createInvitation: CreateInvitationPayload;
-  /** Remove a member from an organization */
-  osoApp_removeMember: RemoveMemberPayload;
-  /** Revoke/delete an invitation */
-  osoApp_revokeInvitation: RevokeInvitationPayload;
-  /** Save notebook preview PNG image */
-  osoApp_saveNotebookPreview: SaveNotebookPreviewPayload;
-  /** Update a dataset */
-  osoApp_updateDataset: UpdateDatasetPayload;
-  /** Update a member's role in an organization */
-  osoApp_updateMemberRole: UpdateMemberRolePayload;
-  /** Update the current user's profile */
-  osoApp_updateMyProfile: UpdateProfilePayload;
   /** Retries a set of partition backfill runs. Retrying a backfill will create a new backfill to retry any failed partitions. */
   reexecutePartitionBackfill: LaunchBackfillResult;
   /** Reloads a code location server. */
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   /** Reloads the workspace and its code location servers. */
   reloadWorkspace: ReloadWorkspaceMutationResult;
+  /** Remove a user from an organization */
+  removeMember: RemoveMemberPayload;
   /** Reports runless events for an asset or a subset of its partitions. */
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
   /** Reset a schedule to its status defined in code, otherwise disable it from launching runs for a job. */
@@ -2947,6 +2986,10 @@ export type Mutation = {
   resetSensor: SensorOrError;
   /** Resumes a set of partition backfill runs. Resuming a backfill will not retry any failed runs. */
   resumePartitionBackfill: ResumeBackfillResult;
+  /** Revoke an invitation */
+  revokeInvitation: RevokeInvitationPayload;
+  /** Save a preview image for a notebook */
+  saveNotebookPreview: SaveNotebookPreviewPayload;
   /** Enable a schedule to launch runs for a job based on external state change. */
   scheduleDryRun: ScheduleDryRunResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
@@ -2975,8 +3018,19 @@ export type Mutation = {
   terminateRun: TerminateRunResult;
   /** Terminates a set of runs given their run IDs. */
   terminateRuns: TerminateRunsResultOrError;
+  /** Update an existing dataset */
+  updateDataset: UpdateDatasetPayload;
+  /** Update a member's role in an organization */
+  updateMemberRole: UpdateMemberRolePayload;
+  /** Update an existing notebook */
+  updateNotebook: UpdateNotebookPayload;
   /** Deletes asset history from storage. */
   wipeAssets: AssetWipeMutationResult;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationAcceptInvitationArgs = {
+  input: AcceptInvitationInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2987,8 +3041,28 @@ export type MutationAddDynamicPartitionArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationAddUserByEmailArgs = {
+  input: AddUserByEmailInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCancelPartitionBackfillArgs = {
   backfillId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDatasetArgs = {
+  input: CreateDatasetInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateInvitationArgs = {
+  input: CreateInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateNotebookArgs = {
+  input: CreateNotebookInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3065,61 +3139,6 @@ export type MutationLogTelemetryArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_AcceptInvitationArgs = {
-  invitationId: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_AddUserByEmailArgs = {
-  email: Scalars["String"]["input"];
-  orgName: Scalars["String"]["input"];
-  role: MemberRole;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_CreateDatasetArgs = {
-  input: CreateDatasetInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_CreateInvitationArgs = {
-  input: CreateInvitationInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_RemoveMemberArgs = {
-  orgName: Scalars["String"]["input"];
-  userId: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_RevokeInvitationArgs = {
-  invitationId: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_SaveNotebookPreviewArgs = {
-  input: SaveNotebookPreviewInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_UpdateDatasetArgs = {
-  input: UpdateDatasetInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_UpdateMemberRoleArgs = {
-  orgName: Scalars["String"]["input"];
-  role: MemberRole;
-  userId: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_UpdateMyProfileArgs = {
-  input: UpdateProfileInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReexecutePartitionBackfillArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
@@ -3127,6 +3146,11 @@ export type MutationReexecutePartitionBackfillArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReloadRepositoryLocationArgs = {
   repositoryLocationName: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationRemoveMemberArgs = {
+  input: RemoveMemberInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3147,6 +3171,16 @@ export type MutationResetSensorArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationResumePartitionBackfillArgs = {
   backfillId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationRevokeInvitationArgs = {
+  input: RevokeInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationSaveNotebookPreviewArgs = {
+  input: SaveNotebookPreviewInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3226,6 +3260,21 @@ export type MutationTerminateRunsArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateDatasetArgs = {
+  input: UpdateDatasetInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateMemberRoleArgs = {
+  input: UpdateMemberRoleInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateNotebookArgs = {
+  input: UpdateNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationWipeAssetsArgs = {
   assetPartitionRanges: Array<PartitionsByAssetSelector>;
 };
@@ -3256,16 +3305,18 @@ export type NodeInvocationSite = {
   solidHandle: SolidHandle;
 };
 
-/** Notebook entity - represents a computational notebook */
+/** Represents a notebook */
 export type Notebook = {
   __typename?: "Notebook";
   createdAt: Scalars["DateTime"]["output"];
+  creator: User;
+  creatorId: Scalars["ID"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  notebookName: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
   organization: Organization;
-  /** Get preview image with signed URL */
-  preview?: Maybe<NotebookPreview>;
+  preview?: Maybe<Scalars["String"]["output"]>;
   updatedAt: Scalars["DateTime"]["output"];
 };
 
@@ -3276,11 +3327,11 @@ export type NotebookMetadataEntry = MetadataEntry & {
   path: Scalars["String"]["output"];
 };
 
-export type NotebookPreview = {
-  __typename?: "NotebookPreview";
-  expiresAt: Scalars["DateTime"]["output"];
-  notebookId: Scalars["ID"]["output"];
-  signedUrl: Scalars["String"]["output"];
+export type NotebookWhere = {
+  createdAt?: InputMaybe<DateTimeFilter>;
+  creatorId?: InputMaybe<UuidFilter>;
+  name?: InputMaybe<StringFilter>;
+  orgId?: InputMaybe<UuidFilter>;
 };
 
 export type NullMetadataEntry = MetadataEntry & {
@@ -3399,32 +3450,68 @@ export enum OrderBy {
   Desc = "Desc",
 }
 
-/** Organization entity - represents a group of users working together */
+/** Standard order by input for any list query */
+export type OrderByInput = {
+  direction: OrderDirection;
+  field: Scalars["String"]["input"];
+};
+
+export enum OrderDirection {
+  Asc = "asc",
+  Desc = "desc",
+}
+
+/** Represents an organization */
 export type Organization = {
   __typename?: "Organization";
   createdAt: Scalars["DateTime"]["output"];
+  datasets: Array<Dataset>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  /** Get invitations for this organization, optionally filtered by status */
-  invitations: Array<Invitation>;
-  /** Get all members of this organization */
   members: Array<OrganizationMember>;
-  orgName: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  notebooks: Array<Notebook>;
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
-/** Organization entity - represents a group of users working together */
-export type OrganizationInvitationsArgs = {
-  status?: InputMaybe<InvitationStatus>;
+/** Represents an organization */
+export type OrganizationDatasetsArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<DatasetWhere>;
 };
 
-/** Organization member - represents a user's membership in an organization */
+/** Represents an organization */
+export type OrganizationMembersArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** Represents an organization */
+export type OrganizationNotebooksArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<NotebookWhere>;
+};
+
+/** Organization member with user details */
 export type OrganizationMember = {
   __typename?: "OrganizationMember";
+  createdAt: Scalars["DateTime"]["output"];
   id: Scalars["ID"]["output"];
-  joinedAt: Scalars["DateTime"]["output"];
-  organization: Organization;
-  role: MemberRole;
+  orgId: Scalars["ID"]["output"];
   user: User;
   userId: Scalars["ID"]["output"];
+  userRole: MemberRole;
+};
+
+export type OrganizationWhere = {
+  createdAt?: InputMaybe<DateTimeFilter>;
+  displayName?: InputMaybe<StringFilter>;
+  name?: InputMaybe<StringFilter>;
 };
 
 export type Oso_ArtifactsByCollectionV1 = {
@@ -5272,7 +5359,7 @@ export type PythonError = Error & {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type Query = {
   __typename?: "Query";
-  _entities: Array<Maybe<_Entity>>;
+  _empty?: Maybe<Scalars["String"]["output"]>;
   _service: _Service;
   /** Retrieve all the top level resources. */
   allTopLevelResourceDetailsOrError: ResourceDetailsListOrError;
@@ -5314,6 +5401,12 @@ export type Query = {
   capturedLogs: CapturedLogs;
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
+  /** Get a specific dataset by ID or name */
+  dataset?: Maybe<Dataset>;
+  /** Get metadata about a dataset table */
+  datasetTableMetadata: Array<TableColumn>;
+  /** List datasets with pagination and filters */
+  datasets: Array<Dataset>;
   /** Retrieve the execution plan for a job and its run configuration. */
   executionPlanOrError: ExecutionPlanOrError;
   /** Retrieve a graph by its location name, repository name, and graph name. */
@@ -5324,6 +5417,8 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   /** Retrieve the state for a group of instigators (schedule/sensor) by their containing repository id. */
   instigationStatesOrError: InstigationStatesOrError;
+  /** Get a specific invitation by ID */
+  invitation?: Maybe<Invitation>;
   /** Retrieve whether the run configuration is valid or invalid. */
   isPipelineConfigValid: PipelineConfigValidationResult;
   /** Retrieve the latest available DefsStateInfo for the current workspace. */
@@ -5332,23 +5427,16 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
-  /** Get a specific dataset by name */
-  osoApp_dataset?: Maybe<Dataset>;
-  osoApp_datasetTableMetadata: Array<Column>;
-  /** Get a specific invitation by ID */
-  osoApp_invitation?: Maybe<Invitation>;
-  /** Get the current authenticated user's profile */
-  osoApp_me: User;
-  /** Get invitations sent to the current user's email */
-  osoApp_myInvitations: Array<Invitation>;
-  /** Get a specific notebook by ID */
-  osoApp_notebook?: Maybe<Notebook>;
-  /** Get notebooks, optionally filtered by organization name */
-  osoApp_notebooks: Array<Notebook>;
-  /** Get list of datasets for a given organization */
-  osoApp_orgDatasets: Array<Dataset>;
-  /** Get a specific organization by name */
-  osoApp_organization?: Maybe<Organization>;
+  /** List invitations sent to the current user */
+  myInvitations: Array<Invitation>;
+  /** Get a specific notebook by ID or name */
+  notebook?: Maybe<Notebook>;
+  /** List notebooks */
+  notebooks: Array<Notebook>;
+  /** Get a specific organization by ID or name */
+  organization?: Maybe<Organization>;
+  /** List organizations the user is a member of */
+  organizations: Array<Organization>;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
   oso_artifactsByUserV1?: Maybe<Array<Oso_ArtifactsByUserV1>>;
@@ -5454,15 +5542,12 @@ export type Query = {
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   /** Retrieve the version of Dagster running in the Dagster deployment. */
   version: Scalars["String"]["output"];
+  /** Get the currently authenticated viewer */
+  viewer: Viewer;
   /** Retrieve a workspace entry by name. */
   workspaceLocationEntryOrError?: Maybe<WorkspaceLocationEntryOrError>;
   /** Retrieve the workspace and its locations. */
   workspaceOrError: WorkspaceOrError;
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type Query_EntitiesArgs = {
-  representations: Array<Scalars["_Any"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5587,6 +5672,28 @@ export type QueryCapturedLogsMetadataArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDatasetArgs = {
+  id?: InputMaybe<Scalars["ID"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDatasetTableMetadataArgs = {
+  catalogName: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  schemaName: Scalars["String"]["input"];
+  tableName: Scalars["String"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDatasetsArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<DatasetWhere>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryExecutionPlanOrErrorArgs = {
   mode: Scalars["String"]["input"];
   pipeline: PipelineSelector;
@@ -5610,6 +5717,11 @@ export type QueryInstigationStatesOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryInvitationArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryIsPipelineConfigValidArgs = {
   mode: Scalars["String"]["input"];
   pipeline: PipelineSelector;
@@ -5624,47 +5736,39 @@ export type QueryLogsForRunArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_DatasetArgs = {
-  datasetName: Scalars["String"]["input"];
-  orgName: Scalars["String"]["input"];
+export type QueryMyInvitationsArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<InvitationWhere>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_DatasetTableMetadataArgs = {
-  catalogName: Scalars["String"]["input"];
-  orgName: Scalars["String"]["input"];
-  schemaName: Scalars["String"]["input"];
-  tableName: Scalars["String"]["input"];
+export type QueryNotebookArgs = {
+  id?: InputMaybe<Scalars["ID"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_InvitationArgs = {
-  id: Scalars["ID"]["input"];
+export type QueryNotebooksArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<NotebookWhere>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_MyInvitationsArgs = {
-  status?: InputMaybe<InvitationStatus>;
+export type QueryOrganizationArgs = {
+  id?: InputMaybe<Scalars["ID"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_NotebookArgs = {
-  notebookId: Scalars["ID"]["input"];
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_NotebooksArgs = {
-  orgName?: InputMaybe<Scalars["String"]["input"]>;
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_OrgDatasetsArgs = {
-  orgName: Scalars["String"]["input"];
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_OrganizationArgs = {
-  orgName: Scalars["String"]["input"];
+export type QueryOrganizationsArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<OrganizationWhere>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6167,12 +6271,15 @@ export type ReloadWorkspaceMutationResult =
   | UnauthorizedError
   | Workspace;
 
+export type RemoveMemberInput = {
+  orgId: Scalars["ID"]["input"];
+  userId: Scalars["ID"]["input"];
+};
+
 export type RemoveMemberPayload = {
   __typename?: "RemoveMemberPayload";
-  message: Scalars["String"]["output"];
-  orgName: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
-  userId: Scalars["ID"]["output"];
 };
 
 export type ReportRunlessAssetEventsParams = {
@@ -6449,10 +6556,13 @@ export type ResumeBackfillSuccess = {
   backfillId: Scalars["String"]["output"];
 };
 
+export type RevokeInvitationInput = {
+  invitationId: Scalars["ID"]["input"];
+};
+
 export type RevokeInvitationPayload = {
   __typename?: "RevokeInvitationPayload";
-  invitationId: Scalars["ID"]["output"];
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -6904,14 +7014,14 @@ export type RuntimeMismatchConfigError = PipelineConfigValidationError & {
 
 export type SaveNotebookPreviewInput = {
   notebookId: Scalars["ID"]["input"];
-  orgName: Scalars["String"]["input"];
-  /** PNG image as data URL (data:image/png;base64,...) */
-  previewImage: Scalars["String"]["input"];
+  preview: Scalars["String"]["input"];
 };
 
 export type SaveNotebookPreviewPayload = {
   __typename?: "SaveNotebookPreviewPayload";
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
+  previewUrl?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -7405,6 +7515,14 @@ export type StopSensorMutationResultOrError =
   | StopSensorMutationResult
   | UnauthorizedError;
 
+/** Hasura-style string filter operators */
+export type StringFilter = {
+  _eq?: InputMaybe<Scalars["String"]["input"]>;
+  _ilike?: InputMaybe<Scalars["String"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  _neq?: InputMaybe<Scalars["String"]["input"]>;
+};
+
 /** The root for all subscriptions to retrieve real-time data from the Dagster instance. */
 export type Subscription = {
   __typename?: "Subscription";
@@ -7428,19 +7546,19 @@ export type SubscriptionPipelineRunLogsArgs = {
   runId: Scalars["ID"]["input"];
 };
 
-/** Table entity - represents a table within a schema */
 export type Table = {
   __typename?: "Table";
-  name: Scalars["String"]["output"];
   records: Array<Scalars["String"]["output"]>;
   schema: TableSchema;
 };
 
+/** Table column metadata for dataset tables */
 export type TableColumn = {
   __typename?: "TableColumn";
   constraints: TableColumnConstraints;
   description?: Maybe<Scalars["String"]["output"]>;
   name: Scalars["String"]["output"];
+  nullable: Scalars["Boolean"]["output"];
   tags: Array<DefinitionTag>;
   type: Scalars["String"]["output"];
 };
@@ -7633,6 +7751,13 @@ export type TypeCheck = DisplayableEvent & {
   success: Scalars["Boolean"]["output"];
 };
 
+/** Hasura-style UUID filter operators */
+export type UuidFilter = {
+  _eq?: InputMaybe<Scalars["ID"]["input"]>;
+  _in?: InputMaybe<Array<Scalars["ID"]["input"]>>;
+  _neq?: InputMaybe<Scalars["ID"]["input"]>;
+};
+
 export type UnauthorizedError = Error & {
   __typename?: "UnauthorizedError";
   message: Scalars["String"]["output"];
@@ -7670,9 +7795,9 @@ export type UnsupportedOperationError = Error & {
 };
 
 export type UpdateDatasetInput = {
-  datasetId: Scalars["ID"]["input"];
   description?: InputMaybe<Scalars["String"]["input"]>;
   displayName?: InputMaybe<Scalars["String"]["input"]>;
+  id: Scalars["ID"]["input"];
   isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
   name?: InputMaybe<Scalars["String"]["input"]>;
 };
@@ -7680,29 +7805,34 @@ export type UpdateDatasetInput = {
 export type UpdateDatasetPayload = {
   __typename?: "UpdateDatasetPayload";
   dataset?: Maybe<Dataset>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateMemberRoleInput = {
+  orgId: Scalars["ID"]["input"];
+  role: MemberRole;
+  userId: Scalars["ID"]["input"];
 };
 
 export type UpdateMemberRolePayload = {
   __typename?: "UpdateMemberRolePayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
-export type UpdateProfileInput = {
-  /** User's avatar URL */
-  avatarUrl?: InputMaybe<Scalars["String"]["input"]>;
-  /** User's full name */
-  fullName?: InputMaybe<Scalars["String"]["input"]>;
+export type UpdateNotebookInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  id: Scalars["ID"]["input"];
+  name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
-export type UpdateProfilePayload = {
-  __typename?: "UpdateProfilePayload";
-  message: Scalars["String"]["output"];
+export type UpdateNotebookPayload = {
+  __typename?: "UpdateNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
   success: Scalars["Boolean"]["output"];
-  user: User;
 };
 
 export type UrlCodeReference = {
@@ -7725,15 +7855,23 @@ export type UsedSolid = {
   invocations: Array<NodeInvocationSite>;
 };
 
-/** User entity - can be extended from other subgraphs */
+/** User type represents an authenticated user in the system */
 export type User = {
   __typename?: "User";
   avatarUrl?: Maybe<Scalars["String"]["output"]>;
-  email?: Maybe<Scalars["String"]["output"]>;
+  email: Scalars["String"]["output"];
   fullName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  /** Organizations this user belongs to */
   organizations: Array<Organization>;
+  role: Scalars["String"]["output"];
+};
+
+/** User type represents an authenticated user in the system */
+export type UserOrganizationsArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<OrganizationWhere>;
 };
 
 export type UserAssetOwner = {
@@ -7744,6 +7882,54 @@ export type UserAssetOwner = {
 export type UserDefinitionOwner = {
   __typename?: "UserDefinitionOwner";
   email: Scalars["String"]["output"];
+};
+
+/**
+ * Viewer represents the currently authenticated user
+ * Provides convenient access to the user's resources
+ */
+export type Viewer = {
+  __typename?: "Viewer";
+  avatarUrl?: Maybe<Scalars["String"]["output"]>;
+  datasets: Array<Dataset>;
+  email: Scalars["String"]["output"];
+  fullName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  notebooks: Array<Notebook>;
+  organizations: Array<Organization>;
+};
+
+/**
+ * Viewer represents the currently authenticated user
+ * Provides convenient access to the user's resources
+ */
+export type ViewerDatasetsArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<DatasetWhere>;
+};
+
+/**
+ * Viewer represents the currently authenticated user
+ * Provides convenient access to the user's resources
+ */
+export type ViewerNotebooksArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<NotebookWhere>;
+};
+
+/**
+ * Viewer represents the currently authenticated user
+ * Provides convenient access to the user's resources
+ */
+export type ViewerOrganizationsArgs = {
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  order_by?: InputMaybe<Array<OrderByInput>>;
+  where?: InputMaybe<OrganizationWhere>;
 };
 
 export type WaitingOnKeysRuleEvaluationData = {
@@ -7804,14 +7990,6 @@ export type WrappingDagsterType = {
   ofType: DagsterType;
 };
 
-export type _Entity =
-  | Dataset
-  | Invitation
-  | Notebook
-  | Organization
-  | OrganizationMember
-  | User;
-
 export type _Service = {
   __typename?: "_Service";
   sdl: Scalars["String"]["output"];
@@ -7824,37 +8002,16 @@ export enum Link__Purpose {
   Security = "SECURITY",
 }
 
-export type UpdateDatasetMutationVariables = Exact<{
-  input: UpdateDatasetInput;
-}>;
-
-export type UpdateDatasetMutation = {
-  __typename?: "Mutation";
-  osoApp_updateDataset: {
-    __typename?: "UpdateDatasetPayload";
-    success: boolean;
-    message: string;
-    dataset?: {
-      __typename?: "Dataset";
-      id: string;
-      name: string;
-      displayName: string;
-      description?: string | null;
-      isPublic: boolean;
-    } | null;
-  };
-};
-
 export type SavePreviewMutationVariables = Exact<{
   input: SaveNotebookPreviewInput;
 }>;
 
 export type SavePreviewMutation = {
   __typename?: "Mutation";
-  osoApp_saveNotebookPreview: {
+  saveNotebookPreview: {
     __typename?: "SaveNotebookPreviewPayload";
     success: boolean;
-    message: string;
+    message?: string | null;
   };
 };
 
@@ -7864,19 +8021,38 @@ export type CreateDatasetMutationVariables = Exact<{
 
 export type CreateDatasetMutation = {
   __typename?: "Mutation";
-  osoApp_createDataset: {
+  createDataset: {
     __typename?: "CreateDatasetPayload";
     success: boolean;
-    message: string;
+    message?: string | null;
     dataset?: {
       __typename?: "Dataset";
       id: string;
       name: string;
-      displayName: string;
+      displayName?: string | null;
       description?: string | null;
-      catalog: string;
-      schema: string;
-      datasetType: DatasetType;
+      type: DatasetType;
+      isPublic: boolean;
+    } | null;
+  };
+};
+
+export type UpdateDatasetMutationVariables = Exact<{
+  input: UpdateDatasetInput;
+}>;
+
+export type UpdateDatasetMutation = {
+  __typename?: "Mutation";
+  updateDataset: {
+    __typename?: "UpdateDatasetPayload";
+    success: boolean;
+    message?: string | null;
+    dataset?: {
+      __typename?: "Dataset";
+      id: string;
+      name: string;
+      displayName?: string | null;
+      description?: string | null;
       isPublic: boolean;
     } | null;
   };
@@ -8052,84 +8228,6 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
-export const UpdateDatasetDocument = {
-  kind: "Document",
-  definitions: [
-    {
-      kind: "OperationDefinition",
-      operation: "mutation",
-      name: { kind: "Name", value: "UpdateDataset" },
-      variableDefinitions: [
-        {
-          kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "input" },
-          },
-          type: {
-            kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "UpdateDatasetInput" },
-            },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: "SelectionSet",
-        selections: [
-          {
-            kind: "Field",
-            name: { kind: "Name", value: "osoApp_updateDataset" },
-            arguments: [
-              {
-                kind: "Argument",
-                name: { kind: "Name", value: "input" },
-                value: {
-                  kind: "Variable",
-                  name: { kind: "Name", value: "input" },
-                },
-              },
-            ],
-            selectionSet: {
-              kind: "SelectionSet",
-              selections: [
-                { kind: "Field", name: { kind: "Name", value: "success" } },
-                { kind: "Field", name: { kind: "Name", value: "message" } },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "dataset" },
-                  selectionSet: {
-                    kind: "SelectionSet",
-                    selections: [
-                      { kind: "Field", name: { kind: "Name", value: "id" } },
-                      { kind: "Field", name: { kind: "Name", value: "name" } },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "displayName" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "description" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "isPublic" },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<
-  UpdateDatasetMutation,
-  UpdateDatasetMutationVariables
->;
 export const SavePreviewDocument = {
   kind: "Document",
   definitions: [
@@ -8158,7 +8256,7 @@ export const SavePreviewDocument = {
         selections: [
           {
             kind: "Field",
-            name: { kind: "Name", value: "osoApp_saveNotebookPreview" },
+            name: { kind: "Name", value: "saveNotebookPreview" },
             arguments: [
               {
                 kind: "Argument",
@@ -8210,7 +8308,86 @@ export const CreateDatasetDocument = {
         selections: [
           {
             kind: "Field",
-            name: { kind: "Name", value: "osoApp_createDataset" },
+            name: { kind: "Name", value: "createDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataset" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "displayName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "type" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isPublic" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDatasetMutation,
+  CreateDatasetMutationVariables
+>;
+export const UpdateDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateDataset" },
             arguments: [
               {
                 kind: "Argument",
@@ -8244,18 +8421,6 @@ export const CreateDatasetDocument = {
                       },
                       {
                         kind: "Field",
-                        name: { kind: "Name", value: "catalog" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "schema" },
-                      },
-                      {
-                        kind: "Field",
-                        name: { kind: "Name", value: "datasetType" },
-                      },
-                      {
-                        kind: "Field",
                         name: { kind: "Name", value: "isPublic" },
                       },
                     ],
@@ -8269,8 +8434,8 @@ export const CreateDatasetDocument = {
     },
   ],
 } as unknown as DocumentNode<
-  CreateDatasetMutation,
-  CreateDatasetMutationVariables
+  UpdateDatasetMutation,
+  UpdateDatasetMutationVariables
 >;
 export const AssetGraphDocument = {
   kind: "Document",

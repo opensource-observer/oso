@@ -2378,7 +2378,7 @@ class OsoAppClient {
 
     const SAVE_NOTEBOOK_PREVIEW_MUTATION = gql(`
       mutation SavePreview($input: SaveNotebookPreviewInput!) {
-        osoApp_saveNotebookPreview(input: $input) {
+        saveNotebookPreview(input: $input) {
           success
           message
         }
@@ -2413,7 +2413,7 @@ class OsoAppClient {
       throw new Error(`Failed to save preview: ${result.errors[0].message}`);
     }
 
-    const payload = result.data?.osoApp_saveNotebookPreview;
+    const payload = result.data?.saveNotebookPreview;
     if (!payload) {
       throw new Error("No response data from preview save mutation");
     }
@@ -2464,7 +2464,7 @@ class OsoAppClient {
 
     const CREATE_DATASET_MUTATION = gql(`
       mutation CreateDataset($input: CreateDatasetInput!) {
-        osoApp_createDataset(input: $input) {
+        createDataset(input: $input) {
           success
           message
           dataset {
@@ -2472,9 +2472,7 @@ class OsoAppClient {
             name
             displayName
             description
-            catalog
-            schema
-            datasetType
+            type
             isPublic
           }
         }
@@ -2508,7 +2506,7 @@ class OsoAppClient {
       throw new Error(`Failed to create dataset: ${result.errors[0].message}`);
     }
 
-    const payload = result.data?.osoApp_createDataset;
+    const payload = result.data?.createDataset;
     if (!payload) {
       throw new Error("No response data from create dataset mutation");
     }
@@ -2539,7 +2537,7 @@ class OsoAppClient {
 
     const UPDATE_DATASET_MUTATION = gql(`
       mutation UpdateDataset($input: UpdateDatasetInput!) {
-        osoApp_updateDataset(input: $input) {
+        updateDataset(input: $input) {
           success
           message
           dataset {
@@ -2579,7 +2577,7 @@ class OsoAppClient {
       throw new Error(`Failed to update dataset: ${result.errors[0].message}`);
     }
 
-    const payload = result.data?.osoApp_updateDataset;
+    const payload = result.data?.updateDataset;
     if (!payload) {
       throw new Error("No response data from update dataset mutation");
     }
