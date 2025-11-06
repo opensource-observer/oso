@@ -2027,6 +2027,8 @@ class OsoAppClient {
       .from("pricing_plan")
       .select("plan_id, plan_name")
       .eq("plan_name", planName)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .single()
       .throwOnError();
 
