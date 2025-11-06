@@ -23,7 +23,6 @@ export interface NotebookProps {
   enablePresentMode?: boolean;
   extraQueryParams?: Record<string, string>;
   extraFragmentParams?: Record<string, string>;
-  orgName?: string;
 }
 
 export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
@@ -118,14 +117,6 @@ export const NotebookMeta: CodeComponentMeta<NotebookProps> = {
       defaultValue: "",
       required: false,
     },
-    orgName: {
-      type: "string",
-      displayName: "Organization Name",
-      description:
-        "The organization name, used for JWT token generation for GraphQL mutations",
-      defaultValue: "",
-      required: false,
-    },
   },
 };
 
@@ -155,7 +146,6 @@ function NotebookFactory() {
             iframeAllow = "",
             extraFragmentParams = {},
             extraQueryParams = {},
-            orgName = "",
           } = props;
           const { client } = useOsoAppClient();
           // Uncomment this if you want to be able to call methods exposed by
@@ -236,18 +226,13 @@ function NotebookFactory() {
               },
               saveNotebookPreview: async (base64Image: string) => {
                 try {
-                  await saveNotebookPreview(
-                    client,
-                    notebookId,
-                    orgName,
-                    base64Image,
-                  );
+                  await saveNotebookPreview(client, notebookId, base64Image);
                 } catch (error) {
                   logger.error("Error saving notebook preview:", error);
                 }
               },
             });
-          }, [notebookId, enableSave, orgName]);
+          }, [notebookId, enableSave]);
 
           // Generate the environment for the notebook
           const environment = {

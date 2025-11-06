@@ -959,11 +959,6 @@ export type BoolMetadataEntry = MetadataEntry & {
   label: Scalars["String"]["output"];
 };
 
-/** Hasura-style Boolean filter operators */
-export type BooleanFilter = {
-  _eq?: InputMaybe<Scalars["Boolean"]["input"]>;
-};
-
 export enum BulkActionStatus {
   Canceled = "CANCELED",
   Canceling = "CANCELING",
@@ -1392,7 +1387,6 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
-/** Represents a dataset */
 export type Dataset = {
   __typename?: "Dataset";
   createdAt: Scalars["DateTime"]["output"];
@@ -1409,31 +1403,24 @@ export type Dataset = {
   updatedAt: Scalars["DateTime"]["output"];
 };
 
-/** Dataset types */
+export type DatasetConnection = {
+  __typename?: "DatasetConnection";
+  edges: Array<DatasetEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DatasetEdge = {
+  __typename?: "DatasetEdge";
+  cursor: Scalars["String"]["output"];
+  node: Dataset;
+};
+
 export enum DatasetType {
   External = "EXTERNAL",
   PythonModel = "PYTHON_MODEL",
   SqlTable = "SQL_TABLE",
 }
-
-export type DatasetWhere = {
-  createdAt?: InputMaybe<DateTimeFilter>;
-  creatorId?: InputMaybe<UuidFilter>;
-  displayName?: InputMaybe<StringFilter>;
-  isPublic?: InputMaybe<BooleanFilter>;
-  name?: InputMaybe<StringFilter>;
-  orgId?: InputMaybe<UuidFilter>;
-  type?: InputMaybe<DatasetType>;
-};
-
-/** Hasura-style DateTime filter operators */
-export type DateTimeFilter = {
-  _eq?: InputMaybe<Scalars["DateTime"]["input"]>;
-  _gt?: InputMaybe<Scalars["DateTime"]["input"]>;
-  _gte?: InputMaybe<Scalars["DateTime"]["input"]>;
-  _lt?: InputMaybe<Scalars["DateTime"]["input"]>;
-  _lte?: InputMaybe<Scalars["DateTime"]["input"]>;
-};
 
 export type DefaultPartitionStatuses = {
   __typename?: "DefaultPartitionStatuses";
@@ -2388,34 +2375,41 @@ export type InvalidSubsetError = Error & {
   pipeline: Pipeline;
 };
 
-/** Invitation to join an organization */
 export type Invitation = {
   __typename?: "Invitation";
   acceptedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  acceptedBy?: Maybe<User>;
   createdAt: Scalars["DateTime"]["output"];
   deletedAt?: Maybe<Scalars["DateTime"]["output"]>;
   email: Scalars["String"]["output"];
   expiresAt: Scalars["DateTime"]["output"];
   id: Scalars["ID"]["output"];
+  invitedBy: User;
   orgId: Scalars["ID"]["output"];
+  organization: Organization;
   status: InvitationStatus;
   userRole: MemberRole;
 };
 
-/** Invitation status */
+export type InvitationConnection = {
+  __typename?: "InvitationConnection";
+  edges: Array<InvitationEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type InvitationEdge = {
+  __typename?: "InvitationEdge";
+  cursor: Scalars["String"]["output"];
+  node: Invitation;
+};
+
 export enum InvitationStatus {
   Accepted = "ACCEPTED",
   Expired = "EXPIRED",
   Pending = "PENDING",
   Revoked = "REVOKED",
 }
-
-export type InvitationWhere = {
-  createdAt?: InputMaybe<DateTimeFilter>;
-  email?: InputMaybe<StringFilter>;
-  orgId?: InputMaybe<UuidFilter>;
-  status?: InputMaybe<InvitationStatus>;
-};
 
 export type Job = IPipelineSnapshot &
   SolidContainer & {
@@ -2853,10 +2847,8 @@ export type MaterializedPartitionRangeStatuses2D = {
   secondaryDim: PartitionStatus1D;
 };
 
-/** Member roles in organization */
 export enum MemberRole {
   Admin = "admin",
-  Member = "member",
   Owner = "owner",
 }
 
@@ -2934,13 +2926,13 @@ export type Mutation = {
   acceptInvitation: AcceptInvitationPayload;
   /** Adds a partition to a dynamic partition set. */
   addDynamicPartition: AddDynamicPartitionResult;
-  /** Add a user to an organization by email */
+  /** Add a user to organization */
   addUserByEmail: AddUserByEmailPayload;
   /** Cancels a set of partition backfill runs. */
   cancelPartitionBackfill: CancelBackfillResult;
   /** Create a new dataset */
   createDataset: CreateDatasetPayload;
-  /** Create and send an invitation to join an organization */
+  /** Create an invitation */
   createInvitation: CreateInvitationPayload;
   /** Create a new notebook */
   createNotebook: CreateNotebookPayload;
@@ -2976,7 +2968,7 @@ export type Mutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   /** Reloads the workspace and its code location servers. */
   reloadWorkspace: ReloadWorkspaceMutationResult;
-  /** Remove a user from an organization */
+  /** Remove a member from organization */
   removeMember: RemoveMemberPayload;
   /** Reports runless events for an asset or a subset of its partitions. */
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
@@ -2988,7 +2980,7 @@ export type Mutation = {
   resumePartitionBackfill: ResumeBackfillResult;
   /** Revoke an invitation */
   revokeInvitation: RevokeInvitationPayload;
-  /** Save a preview image for a notebook */
+  /** Save notebook preview image */
   saveNotebookPreview: SaveNotebookPreviewPayload;
   /** Enable a schedule to launch runs for a job based on external state change. */
   scheduleDryRun: ScheduleDryRunResult;
@@ -3018,11 +3010,11 @@ export type Mutation = {
   terminateRun: TerminateRunResult;
   /** Terminates a set of runs given their run IDs. */
   terminateRuns: TerminateRunsResultOrError;
-  /** Update an existing dataset */
+  /** Update a dataset */
   updateDataset: UpdateDatasetPayload;
-  /** Update a member's role in an organization */
+  /** Update member role */
   updateMemberRole: UpdateMemberRolePayload;
-  /** Update an existing notebook */
+  /** Update a notebook */
   updateNotebook: UpdateNotebookPayload;
   /** Deletes asset history from storage. */
   wipeAssets: AssetWipeMutationResult;
@@ -3305,7 +3297,6 @@ export type NodeInvocationSite = {
   solidHandle: SolidHandle;
 };
 
-/** Represents a notebook */
 export type Notebook = {
   __typename?: "Notebook";
   createdAt: Scalars["DateTime"]["output"];
@@ -3320,18 +3311,24 @@ export type Notebook = {
   updatedAt: Scalars["DateTime"]["output"];
 };
 
+export type NotebookConnection = {
+  __typename?: "NotebookConnection";
+  edges: Array<NotebookEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type NotebookEdge = {
+  __typename?: "NotebookEdge";
+  cursor: Scalars["String"]["output"];
+  node: Notebook;
+};
+
 export type NotebookMetadataEntry = MetadataEntry & {
   __typename?: "NotebookMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
   label: Scalars["String"]["output"];
   path: Scalars["String"]["output"];
-};
-
-export type NotebookWhere = {
-  createdAt?: InputMaybe<DateTimeFilter>;
-  creatorId?: InputMaybe<UuidFilter>;
-  name?: InputMaybe<StringFilter>;
-  orgId?: InputMaybe<UuidFilter>;
 };
 
 export type NullMetadataEntry = MetadataEntry & {
@@ -3450,54 +3447,47 @@ export enum OrderBy {
   Desc = "Desc",
 }
 
-/** Standard order by input for any list query */
-export type OrderByInput = {
-  direction: OrderDirection;
-  field: Scalars["String"]["input"];
-};
-
-export enum OrderDirection {
-  Asc = "asc",
-  Desc = "desc",
-}
-
-/** Represents an organization */
 export type Organization = {
   __typename?: "Organization";
   createdAt: Scalars["DateTime"]["output"];
-  datasets: Array<Dataset>;
+  datasets: DatasetConnection;
   description?: Maybe<Scalars["String"]["output"]>;
   displayName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  members: Array<OrganizationMember>;
+  members: UserConnection;
   name: Scalars["String"]["output"];
-  notebooks: Array<Notebook>;
+  notebooks: NotebookConnection;
   updatedAt: Scalars["DateTime"]["output"];
 };
 
-/** Represents an organization */
 export type OrganizationDatasetsArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<DatasetWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
-/** Represents an organization */
 export type OrganizationMembersArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
-/** Represents an organization */
 export type OrganizationNotebooksArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<NotebookWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
-/** Organization member with user details */
+export type OrganizationConnection = {
+  __typename?: "OrganizationConnection";
+  edges: Array<OrganizationEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type OrganizationEdge = {
+  __typename?: "OrganizationEdge";
+  cursor: Scalars["String"]["output"];
+  node: Organization;
+};
+
 export type OrganizationMember = {
   __typename?: "OrganizationMember";
   createdAt: Scalars["DateTime"]["output"];
@@ -3506,12 +3496,6 @@ export type OrganizationMember = {
   user: User;
   userId: Scalars["ID"]["output"];
   userRole: MemberRole;
-};
-
-export type OrganizationWhere = {
-  createdAt?: InputMaybe<DateTimeFilter>;
-  displayName?: InputMaybe<StringFilter>;
-  name?: InputMaybe<StringFilter>;
 };
 
 export type Oso_ArtifactsByCollectionV1 = {
@@ -4664,6 +4648,15 @@ export type OutputMapping = {
   mappedOutput: Output;
 };
 
+/** Cursor-based pagination information */
+export type PageInfo = {
+  __typename?: "PageInfo";
+  endCursor?: Maybe<Scalars["String"]["output"]>;
+  hasNextPage: Scalars["Boolean"]["output"];
+  hasPreviousPage: Scalars["Boolean"]["output"];
+  startCursor?: Maybe<Scalars["String"]["output"]>;
+};
+
 export type ParentMaterializedRuleEvaluationData = {
   __typename?: "ParentMaterializedRuleEvaluationData";
   updatedAssetKeys?: Maybe<Array<AssetKey>>;
@@ -5401,12 +5394,12 @@ export type Query = {
   capturedLogs: CapturedLogs;
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
-  /** Get a specific dataset by ID or name */
+  /** Get a dataset by ID or name */
   dataset?: Maybe<Dataset>;
-  /** Get metadata about a dataset table */
+  /** Get table column metadata */
   datasetTableMetadata: Array<TableColumn>;
-  /** List datasets with pagination and filters */
-  datasets: Array<Dataset>;
+  /** List all datasets */
+  datasets: DatasetConnection;
   /** Retrieve the execution plan for a job and its run configuration. */
   executionPlanOrError: ExecutionPlanOrError;
   /** Retrieve a graph by its location name, repository name, and graph name. */
@@ -5417,7 +5410,7 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   /** Retrieve the state for a group of instigators (schedule/sensor) by their containing repository id. */
   instigationStatesOrError: InstigationStatesOrError;
-  /** Get a specific invitation by ID */
+  /** Get an invitation by ID */
   invitation?: Maybe<Invitation>;
   /** Retrieve whether the run configuration is valid or invalid. */
   isPipelineConfigValid: PipelineConfigValidationResult;
@@ -5427,16 +5420,16 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
-  /** List invitations sent to the current user */
-  myInvitations: Array<Invitation>;
-  /** Get a specific notebook by ID or name */
+  /** List invitations for current user */
+  myInvitations: InvitationConnection;
+  /** Get a notebook by ID or name */
   notebook?: Maybe<Notebook>;
-  /** List notebooks */
-  notebooks: Array<Notebook>;
-  /** Get a specific organization by ID or name */
+  /** List all notebooks */
+  notebooks: NotebookConnection;
+  /** Get an organization by ID or name */
   organization?: Maybe<Organization>;
-  /** List organizations the user is a member of */
-  organizations: Array<Organization>;
+  /** List all organizations */
+  organizations: OrganizationConnection;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
   oso_artifactsByUserV1?: Maybe<Array<Oso_ArtifactsByUserV1>>;
@@ -5542,7 +5535,7 @@ export type Query = {
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   /** Retrieve the version of Dagster running in the Dagster deployment. */
   version: Scalars["String"]["output"];
-  /** Get the currently authenticated viewer */
+  /** Get the currently authenticated user */
   viewer: Viewer;
   /** Retrieve a workspace entry by name. */
   workspaceLocationEntryOrError?: Maybe<WorkspaceLocationEntryOrError>;
@@ -5687,10 +5680,8 @@ export type QueryDatasetTableMetadataArgs = {
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryDatasetsArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<DatasetWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5737,10 +5728,8 @@ export type QueryLogsForRunArgs = {
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryMyInvitationsArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<InvitationWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5751,10 +5740,8 @@ export type QueryNotebookArgs = {
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryNotebooksArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<NotebookWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5765,10 +5752,8 @@ export type QueryOrganizationArgs = {
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOrganizationsArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<OrganizationWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -7515,14 +7500,6 @@ export type StopSensorMutationResultOrError =
   | StopSensorMutationResult
   | UnauthorizedError;
 
-/** Hasura-style string filter operators */
-export type StringFilter = {
-  _eq?: InputMaybe<Scalars["String"]["input"]>;
-  _ilike?: InputMaybe<Scalars["String"]["input"]>;
-  _in?: InputMaybe<Array<Scalars["String"]["input"]>>;
-  _neq?: InputMaybe<Scalars["String"]["input"]>;
-};
-
 /** The root for all subscriptions to retrieve real-time data from the Dagster instance. */
 export type Subscription = {
   __typename?: "Subscription";
@@ -7552,7 +7529,6 @@ export type Table = {
   schema: TableSchema;
 };
 
-/** Table column metadata for dataset tables */
 export type TableColumn = {
   __typename?: "TableColumn";
   constraints: TableColumnConstraints;
@@ -7751,13 +7727,6 @@ export type TypeCheck = DisplayableEvent & {
   success: Scalars["Boolean"]["output"];
 };
 
-/** Hasura-style UUID filter operators */
-export type UuidFilter = {
-  _eq?: InputMaybe<Scalars["ID"]["input"]>;
-  _in?: InputMaybe<Array<Scalars["ID"]["input"]>>;
-  _neq?: InputMaybe<Scalars["ID"]["input"]>;
-};
-
 export type UnauthorizedError = Error & {
   __typename?: "UnauthorizedError";
   message: Scalars["String"]["output"];
@@ -7855,23 +7824,19 @@ export type UsedSolid = {
   invocations: Array<NodeInvocationSite>;
 };
 
-/** User type represents an authenticated user in the system */
 export type User = {
   __typename?: "User";
   avatarUrl?: Maybe<Scalars["String"]["output"]>;
   email: Scalars["String"]["output"];
   fullName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  organizations: Array<Organization>;
+  organizations: OrganizationConnection;
   role: Scalars["String"]["output"];
 };
 
-/** User type represents an authenticated user in the system */
 export type UserOrganizationsArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<OrganizationWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type UserAssetOwner = {
@@ -7879,57 +7844,59 @@ export type UserAssetOwner = {
   email: Scalars["String"]["output"];
 };
 
+export type UserConnection = {
+  __typename?: "UserConnection";
+  edges: Array<UserEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type UserDefinitionOwner = {
   __typename?: "UserDefinitionOwner";
   email: Scalars["String"]["output"];
 };
 
-/**
- * Viewer represents the currently authenticated user
- * Provides convenient access to the user's resources
- */
+export type UserEdge = {
+  __typename?: "UserEdge";
+  cursor: Scalars["String"]["output"];
+  node: User;
+};
+
+/** Currently authenticated user */
 export type Viewer = {
   __typename?: "Viewer";
   avatarUrl?: Maybe<Scalars["String"]["output"]>;
-  datasets: Array<Dataset>;
+  datasets: DatasetConnection;
   email: Scalars["String"]["output"];
   fullName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  notebooks: Array<Notebook>;
-  organizations: Array<Organization>;
+  invitations: InvitationConnection;
+  notebooks: NotebookConnection;
+  organizations: OrganizationConnection;
 };
 
-/**
- * Viewer represents the currently authenticated user
- * Provides convenient access to the user's resources
- */
+/** Currently authenticated user */
 export type ViewerDatasetsArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<DatasetWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
-/**
- * Viewer represents the currently authenticated user
- * Provides convenient access to the user's resources
- */
+/** Currently authenticated user */
+export type ViewerInvitationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** Currently authenticated user */
 export type ViewerNotebooksArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<NotebookWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
-/**
- * Viewer represents the currently authenticated user
- * Provides convenient access to the user's resources
- */
+/** Currently authenticated user */
 export type ViewerOrganizationsArgs = {
-  limit?: InputMaybe<Scalars["Int"]["input"]>;
-  offset?: InputMaybe<Scalars["Int"]["input"]>;
-  order_by?: InputMaybe<Array<OrderByInput>>;
-  where?: InputMaybe<OrganizationWhere>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type WaitingOnKeysRuleEvaluationData = {

@@ -92,16 +92,10 @@ export function generatePublishedNotebookPath(
 export async function saveNotebookPreview(
   client: OsoAppClient | null,
   notebookId: string,
-  orgName: string,
   base64Image: string,
 ): Promise<void> {
   if (!notebookId) {
     logger.error("No notebookId provided, cannot save preview");
-    return;
-  }
-
-  if (!orgName) {
-    logger.error("No orgName provided, cannot save preview");
     return;
   }
 
@@ -112,7 +106,6 @@ export async function saveNotebookPreview(
   try {
     const payload = await client.saveNotebookPreview({
       notebookId,
-      orgName,
       base64Image,
     });
 

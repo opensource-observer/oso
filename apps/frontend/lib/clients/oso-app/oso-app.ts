@@ -2365,12 +2365,10 @@ class OsoAppClient {
   async saveNotebookPreview(
     args: Partial<{
       notebookId: string;
-      orgName: string;
       base64Image: string;
     }>,
   ) {
     const notebookId = ensure(args.notebookId, "Missing notebookId argument");
-    const orgName = ensure(args.orgName, "Missing orgName argument");
     const base64Image = ensure(
       args.base64Image,
       "Missing base64Image argument",
@@ -2399,8 +2397,7 @@ class OsoAppClient {
         variables: {
           input: {
             notebookId,
-            orgName,
-            previewImage: base64Image,
+            preview: base64Image,
           },
         },
       }),
@@ -2479,6 +2476,8 @@ class OsoAppClient {
       }
     `);
 
+    const org = await this.getOrganizationByName({ orgName });
+
     const response = await fetch("/api/v1/osograph", {
       method: "POST",
       headers: {
@@ -2488,11 +2487,11 @@ class OsoAppClient {
         query: print(CREATE_DATASET_MUTATION),
         variables: {
           input: {
-            orgName,
+            orgId: org.id,
             name,
             displayName,
             description,
-            datasetType,
+            type: datasetType,
             isPublic,
           },
         },
@@ -2560,7 +2559,7 @@ class OsoAppClient {
         query: print(UPDATE_DATASET_MUTATION),
         variables: {
           input: {
-            datasetId,
+            id: datasetId,
             name,
             displayName,
             description,
