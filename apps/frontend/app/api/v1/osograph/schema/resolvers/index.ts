@@ -1,12 +1,12 @@
 import { GraphQLScalarType, Kind } from "graphql";
 import type { GraphQLResolverMap } from "@apollo/subgraph/dist/schema-helper/resolverMap";
-import type { GraphQLContext } from "@/app/api/v1/osograph/utils/auth";
-import { organizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization";
+import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
+import { viewerResolvers } from "@/app/api/v1/osograph/schema/resolvers/viewer";
 import { userResolvers } from "@/app/api/v1/osograph/schema/resolvers/user";
-import { memberResolvers } from "@/app/api/v1/osograph/schema/resolvers/member";
+import { organizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization";
 import { invitationResolvers } from "@/app/api/v1/osograph/schema/resolvers/invitation";
 import { notebookResolvers } from "@/app/api/v1/osograph/schema/resolvers/notebook";
-import { datasetResolver } from "@/app/api/v1/osograph/schema/resolvers/dataset";
+import { datasetResolvers } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 
 const dateTimeScalar = new GraphQLScalarType({
   name: "DateTime",
@@ -36,24 +36,29 @@ const dateTimeScalar = new GraphQLScalarType({
 
 export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DateTime: dateTimeScalar,
+
   Query: {
+    ...viewerResolvers.Query,
     ...userResolvers.Query,
     ...organizationResolvers.Query,
     ...invitationResolvers.Query,
     ...notebookResolvers.Query,
-    ...datasetResolver.Query,
+    ...datasetResolvers.Query,
   },
+
   Mutation: {
     ...userResolvers.Mutation,
-    ...memberResolvers.Mutation,
+    ...organizationResolvers.Mutation,
     ...invitationResolvers.Mutation,
     ...notebookResolvers.Mutation,
-    ...datasetResolver.Mutation,
+    ...datasetResolvers.Mutation,
   },
+
+  Viewer: viewerResolvers.Viewer,
   User: userResolvers.User,
   Organization: organizationResolvers.Organization,
-  OrganizationMember: memberResolvers.OrganizationMember,
+  OrganizationMember: organizationResolvers.OrganizationMember,
   Invitation: invitationResolvers.Invitation,
   Notebook: notebookResolvers.Notebook,
-  Dataset: datasetResolver.Dataset,
+  Dataset: datasetResolvers.Dataset,
 };

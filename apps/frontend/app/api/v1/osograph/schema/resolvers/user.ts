@@ -1,22 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { GraphQLResolverModule } from "@/app/api/v1/osograph/utils/types";
-import {
-  getUserProfile,
-  requireAuthentication,
-  type GraphQLContext,
-} from "@/app/api/v1/osograph/utils/auth";
+import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
+import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { UserErrors, ServerErrors } from "@/app/api/v1/osograph/utils/errors";
 
-export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
-  Query: {
-    osoApp_me: async (_: unknown, _args: unknown, context: GraphQLContext) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      return getUserProfile(authenticatedUser.userId);
-    },
-  },
+export const userResolvers = {
+  Query: {},
 
   Mutation: {
-    osoApp_updateMyProfile: async (
+    updateMyProfile: async (
       _: unknown,
       args: { input: { fullName?: string; avatarUrl?: string } },
       context: GraphQLContext,
@@ -60,16 +51,19 @@ export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
   },
 
   User: {
-    __resolveReference: async (reference: { id: string }) => {
-      return getUserProfile(reference.id);
-    },
-
+    email: (parent: { email: string }) => parent.email,
     fullName: (parent: { full_name: string | null }) => parent.full_name,
     avatarUrl: (parent: { avatar_url: string | null }) => parent.avatar_url,
+    role: (parent: { role?: string }) => parent.role || "member",
 
     organizations: async (
       parent: { id: string },
-      _args: unknown,
+      args: {
+        limit?: number;
+        offset?: number;
+        where?: unknown;
+        order_by?: unknown;
+      },
       _context: GraphQLContext,
     ) => {
       const supabase = createAdminClient();
@@ -77,7 +71,8 @@ export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
         .from("users_by_organization")
         .select("org_id, organizations(*)")
         .eq("user_id", parent.id)
-        .is("deleted_at", null);
+        .is("deleted_at", null)
+        .range(args.offset || 0, (args.offset || 0) + (args.limit || 50) - 1);
 
       if (!memberships) return [];
 

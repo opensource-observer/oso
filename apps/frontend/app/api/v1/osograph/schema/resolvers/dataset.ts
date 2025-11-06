@@ -1,17 +1,23 @@
-import type { GraphQLResolverModule } from "@/app/api/v1/osograph/utils/types";
-import {
-  getOrganizationByName,
-  requireAuthentication,
-  requireOrgMembership,
-  type GraphQLContext,
-} from "@/app/api/v1/osograph/utils/auth";
-import {
-  AuthenticationErrors,
-  ResourceErrors,
-  ServerErrors,
-} from "@/app/api/v1/osograph/utils/errors";
+import { v4 as uuidv4 } from "uuid";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { signTrinoJWT } from "@/lib/auth/auth";
 import { getTrinoClient } from "@/lib/clients/trino";
+import { logger } from "@/lib/logger";
+import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
+import {
+  requireAuthentication,
+  requireOrgMembership,
+  getOrganization,
+  getUserProfile,
+  getOrganizationByName,
+} from "@/app/api/v1/osograph/utils/auth";
+import { validateInput } from "@/app/api/v1/osograph/utils/validation";
+import { CreateDatasetSchema } from "@/app/api/v1/osograph/utils/validation";
+import {
+  ServerErrors,
+  ResourceErrors,
+} from "@/app/api/v1/osograph/utils/errors";
+import { getPaginationRange } from "@/app/api/v1/osograph/utils/resolvers";
 import {
   Catalog,
   CatalogSchema,
@@ -19,31 +25,41 @@ import {
   ColumnSchema,
   Schema,
 } from "@/lib/types/catalog";
-import { logger } from "@/lib/logger";
-import { assert } from "@opensource-observer/utils";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { DatasetsRow } from "@/lib/types/schema-types";
 import z from "zod";
-import { validateInput } from "@/app/api/v1/osograph/utils/validation";
-import { v4 as uuidv4 } from "uuid";
+import { assert } from "@opensource-observer/utils";
 
 const TRINO_SCHEMA_TIMEOUT = 10000; // 10 seconds
 
-export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
+export const datasetResolvers = {
   Query: {
-    osoApp_orgDatasets: async (
+    datasets: async (
       _: unknown,
-      { orgName }: { orgName: string },
+      args: {
+        limit?: number;
+        offset?: number;
+        where?: unknown;
+        order_by?: unknown;
+      },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const organization = await getOrganizationByName(orgName);
-      await requireOrgMembership(authenticatedUser.userId, organization.id);
+      const supabase = createAdminClient();
+
+      const { data: memberships } = await supabase
+        .from("users_by_organization")
+        .select("org_id")
+        .eq("user_id", authenticatedUser.userId)
+        .is("deleted_at", null);
+
+      const orgIds = memberships?.map((m) => m.org_id) || [];
+      if (orgIds.length === 0) {
+        return [];
+      }
 
       const trinoJwt = await signTrinoJWT({
         ...authenticatedUser,
-        orgId: organization.id,
-        orgName: organization.org_name,
+        orgId: orgIds[0],
+        orgName: "",
         orgRole: "member",
       });
 
@@ -130,7 +146,18 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
         (result): result is Catalog => result !== null,
       );
 
-      const datasets = await getOrganizationDatasets(organization.id);
+      const [start, end] = getPaginationRange(args);
+      const { data: datasetsList, error: datasetError } = await supabase
+        .from("datasets")
+        .select("*")
+        .in("org_id", orgIds)
+        .is("deleted_at", null)
+        .range(start, end);
+
+      if (datasetError) {
+        logger.error(`Failed to fetch datasets: ${datasetError}`);
+        throw ServerErrors.database("Failed to fetch datasets");
+      }
 
       const tablesByCatalogAndSchema = filteredResults.reduce(
         (acc, catalog) => {
@@ -143,7 +170,7 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
         {} as Record<string, { name: string }[]>,
       );
 
-      const response = datasets.map((dataset) => {
+      const response = (datasetsList || []).map((dataset) => {
         const key = `${dataset.catalog}.${dataset.schema}`;
         return {
           ...dataset,
@@ -154,43 +181,44 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
       return response;
     },
 
-    osoApp_dataset: async (
+    dataset: async (
       _: unknown,
-      { orgName, datasetName }: { orgName: string; datasetName: string },
+      args: { id?: string; name?: string },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const organization = await getOrganizationByName(orgName);
-      await requireOrgMembership(authenticatedUser.userId, organization.id);
-
       const supabase = createAdminClient();
-      const { data, error } = await supabase
-        .from("datasets")
-        .select("*, models:model(*)")
-        .eq("org_id", organization.id)
-        .eq("name", datasetName)
-        .is("deleted_at", null)
-        .single();
 
-      if (error) {
-        throw ResourceErrors.notFound("Dataset", `name: ${datasetName}`);
+      if (!args.id && !args.name) {
+        return null;
       }
 
-      return {
-        ...data,
-        tables: data.models.map((m) => ({ name: m.name })),
-      };
+      let query = supabase.from("datasets").select("*").is("deleted_at", null);
+
+      if (args.id) {
+        query = query.eq("id", args.id);
+      } else if (args.name) {
+        query = query.eq("name", args.name);
+      }
+
+      const { data: dataset, error } = await query.single();
+
+      if (error || !dataset) {
+        return null;
+      }
+
+      try {
+        await requireOrgMembership(authenticatedUser.userId, dataset.org_id);
+        return dataset;
+      } catch {
+        return null;
+      }
     },
 
-    osoApp_datasetTableMetadata: async (
+    datasetTableMetadata: async (
       _: unknown,
-      {
-        orgName,
-        catalogName,
-        schemaName,
-        tableName,
-      }: {
-        orgName: string;
+      args: {
+        orgId: string;
         catalogName: string;
         schemaName: string;
         tableName: string;
@@ -198,13 +226,13 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const organization = await getOrganizationByName(orgName);
-      await requireOrgMembership(authenticatedUser.userId, organization.id);
+      const org = await getOrganization(args.orgId);
+      await requireOrgMembership(authenticatedUser.userId, org.id);
 
       const trinoJwt = await signTrinoJWT({
         ...authenticatedUser,
-        orgId: organization.id,
-        orgName: organization.org_name,
+        orgId: org.id,
+        orgName: org.org_name,
         orgRole: "member",
       });
 
@@ -212,8 +240,8 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
 
       const query = `
         SELECT column_name, data_type, column_comment
-        FROM ${catalogName}.information_schema.columns
-        WHERE table_schema = '${schemaName}' AND table_name = '${tableName}'
+        FROM ${args.catalogName}.information_schema.columns
+        WHERE table_schema = '${args.schemaName}' AND table_name = '${args.tableName}'
       `;
       const { data: columnResult, error } = await trino.queryAll(query);
       if (error || !columnResult) {
@@ -247,8 +275,9 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
       return filteredResults;
     },
   },
+
   Mutation: {
-    osoApp_createDataset: async (
+    createDataset: async (
       _: unknown,
       { input }: { input: z.infer<typeof CreateDatasetSchema> },
       context: GraphQLContext,
@@ -302,34 +331,33 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
         success: true,
       };
     },
-    osoApp_updateDataset: async (
+
+    updateDataset: async (
       _: unknown,
-      {
-        datasetId,
-        name,
-        displayName,
-        description,
-        isPublic,
-      }: {
-        datasetId: string;
-        name?: string;
-        displayName?: string;
-        description?: string;
-        isPublic?: boolean;
+      args: {
+        input: {
+          id: string;
+          name?: string;
+          displayName?: string;
+          description?: string;
+          isPublic?: boolean;
+        };
       },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
+      const { input } = args;
+
       const supabase = createAdminClient();
 
       const { data: existingDataset, error: existingError } = await supabase
         .from("datasets")
         .select("org_id")
-        .eq("id", datasetId)
+        .eq("id", input.id)
         .single();
 
       if (existingError || !existingDataset) {
-        throw AuthenticationErrors.notAuthorized();
+        throw ResourceErrors.notFound("Dataset", input.id);
       }
 
       await requireOrgMembership(
@@ -337,20 +365,37 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
         existingDataset.org_id,
       );
 
+      const updateData: {
+        name?: string;
+        display_name?: string;
+        description?: string;
+        is_public?: boolean;
+      } = {};
+
+      if (input.name !== undefined) {
+        updateData.name = input.name;
+      }
+      if (input.displayName !== undefined) {
+        updateData.display_name = input.displayName;
+      }
+      if (input.description !== undefined) {
+        updateData.description = input.description;
+      }
+      if (input.isPublic !== undefined) {
+        updateData.is_public = input.isPublic;
+      }
+
       const { data, error } = await supabase
         .from("datasets")
-        .update({
-          name,
-          display_name: displayName,
-          description,
-          is_public: isPublic,
-        })
-        .eq("id", datasetId)
+        .update(updateData)
+        .eq("id", input.id)
         .select()
         .single();
 
       if (error) {
-        throw ServerErrors.database("Failed to update dataset");
+        throw ServerErrors.database(
+          `Failed to update dataset: ${error.message}`,
+        );
       }
 
       return {
@@ -360,60 +405,23 @@ export const datasetResolver: GraphQLResolverModule<GraphQLContext> = {
       };
     },
   },
+
   Dataset: {
-    id: (parent: DatasetsRow) => parent.id,
-    orgId: (parent: DatasetsRow) => parent.org_id,
-    createdAt: (parent: DatasetsRow) => parent.created_at,
-    updatedAt: (parent: DatasetsRow) => parent.updated_at,
-    deletedAt: (parent: DatasetsRow) => parent.deleted_at,
-    name: (parent: DatasetsRow) => parent.name,
-    displayName: (parent: DatasetsRow) => parent.display_name,
-    description: (parent: DatasetsRow) => parent.description,
-    catalog: (parent: DatasetsRow) => parent.catalog,
-    schema: (parent: DatasetsRow) => parent.schema,
-    createdBy: (parent: DatasetsRow) => parent.created_by,
-    isPublic: (parent: DatasetsRow) => parent.is_public,
-    datasetType: (parent: DatasetsRow) => parent.dataset_type,
+    displayName: (parent: { display_name: string | null }) =>
+      parent.display_name,
+    createdAt: (parent: { created_at: string }) => parent.created_at,
+    updatedAt: (parent: { updated_at: string }) => parent.updated_at,
+    creatorId: (parent: { created_by: string }) => parent.created_by,
+    orgId: (parent: { org_id: string }) => parent.org_id,
+    isPublic: (parent: { is_public: boolean }) => parent.is_public,
+    type: (parent: { dataset_type: string }) => parent.dataset_type,
+
+    creator: async (parent: { created_by: string }) => {
+      return getUserProfile(parent.created_by);
+    },
+
+    organization: async (parent: { org_id: string }) => {
+      return getOrganization(parent.org_id);
+    },
   },
 };
-
-export const CreateDatasetSchema = z.object({
-  orgName: z.string().min(1, "Organization name is required"),
-  name: z
-    .string()
-    .min(1, "Dataset name is required")
-    .regex(
-      /^[a-zA-Z][a-zA-Z0-9_]+$/,
-      "Dataset name can only contain letters, numbers, and underscores",
-    ),
-  displayName: z.string().min(1, "Display name is required"),
-  description: z.string().optional(),
-  isPublic: z.boolean().optional(),
-  datasetType: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
-});
-
-async function getOrganizationDatasets(orgId: string): Promise<DatasetsRow[]> {
-  const supabase = createAdminClient();
-
-  const { data, error } = await supabase
-    .from("datasets_by_organization")
-    .select("datasets(*)")
-    .eq("org_id", orgId)
-    .is("deleted_at", null);
-
-  if (error) {
-    throw ResourceErrors.notFound("Datasets", `org_id: ${orgId}`);
-  }
-
-  const { data: ownedDatasets, error: ownedError } = await supabase
-    .from("datasets")
-    .select("*")
-    .eq("org_id", orgId)
-    .is("deleted_at", null);
-
-  if (ownedError) {
-    throw ResourceErrors.notFound("Datasets", `org_id: ${orgId}`);
-  }
-
-  return data.map((d) => d.datasets).concat(ownedDatasets);
-}
