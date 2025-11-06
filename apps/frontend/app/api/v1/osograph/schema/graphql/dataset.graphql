@@ -1,6 +1,3 @@
-"""
-Represents a dataset
-"""
 type Dataset {
   id: ID!
   orgId: ID!
@@ -16,34 +13,36 @@ type Dataset {
   organization: Organization!
 }
 
-input DatasetWhere {
-  name: StringFilter
-  displayName: StringFilter
-  type: DatasetType
-  orgId: UUIDFilter
-  creatorId: UUIDFilter
-  isPublic: BooleanFilter
-  createdAt: DateTimeFilter
+type DatasetEdge {
+  node: Dataset!
+  cursor: String!
+}
+
+type DatasetConnection {
+  edges: [DatasetEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type TableColumn {
+  name: String!
+  type: String!
+  nullable: Boolean!
 }
 
 extend type Query {
   """
-  List datasets with pagination and filters
+  List all datasets
   """
-  datasets(
-    limit: Int = 50
-    offset: Int = 0
-    where: DatasetWhere
-    order_by: [OrderByInput!]
-  ): [Dataset!]!
+  datasets(first: Int = 50, after: String): DatasetConnection!
 
   """
-  Get a specific dataset by ID or name
+  Get a dataset by ID or name
   """
   dataset(id: ID, name: String): Dataset
 
   """
-  Get metadata about a dataset table
+  Get table column metadata
   """
   datasetTableMetadata(
     orgId: ID!
@@ -53,15 +52,6 @@ extend type Query {
   ): [TableColumn!]!
 }
 
-"""
-Table column metadata for dataset tables
-"""
-type TableColumn {
-  name: String!
-  type: String!
-  nullable: Boolean!
-}
-
 extend type Mutation {
   """
   Create a new dataset
@@ -69,7 +59,7 @@ extend type Mutation {
   createDataset(input: CreateDatasetInput!): CreateDatasetPayload!
 
   """
-  Update an existing dataset
+  Update a dataset
   """
   updateDataset(input: UpdateDatasetInput!): UpdateDatasetPayload!
 }

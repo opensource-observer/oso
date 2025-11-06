@@ -1,6 +1,3 @@
-"""
-Invitation to join an organization
-"""
 type Invitation {
   id: ID!
   orgId: ID!
@@ -11,35 +8,37 @@ type Invitation {
   acceptedAt: DateTime
   deletedAt: DateTime
   status: InvitationStatus!
+  organization: Organization!
+  invitedBy: User!
+  acceptedBy: User
 }
 
-input InvitationWhere {
-  status: InvitationStatus
-  email: StringFilter
-  orgId: UUIDFilter
-  createdAt: DateTimeFilter
+type InvitationEdge {
+  node: Invitation!
+  cursor: String!
+}
+
+type InvitationConnection {
+  edges: [InvitationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
 }
 
 extend type Query {
   """
-  Get a specific invitation by ID
+  Get an invitation by ID
   """
   invitation(id: ID!): Invitation
 
   """
-  List invitations sent to the current user
+  List invitations for current user
   """
-  myInvitations(
-    limit: Int = 50
-    offset: Int = 0
-    where: InvitationWhere
-    order_by: [OrderByInput!]
-  ): [Invitation!]!
+  myInvitations(first: Int = 50, after: String): InvitationConnection!
 }
 
 extend type Mutation {
   """
-  Create and send an invitation to join an organization
+  Create an invitation
   """
   createInvitation(input: CreateInvitationInput!): CreateInvitationPayload!
 
@@ -57,7 +56,7 @@ extend type Mutation {
 input CreateInvitationInput {
   orgId: ID!
   email: String!
-  role: MemberRole! = member
+  role: MemberRole! = admin
 }
 
 type CreateInvitationPayload {

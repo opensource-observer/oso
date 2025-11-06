@@ -4,17 +4,25 @@ import { sendInvitationEmail } from "@/lib/services/email";
 import { logger } from "@/lib/logger";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
+  getOrganization,
+  getUserProfile,
   requireAuthentication,
   requireOrgMembership,
-  getUserProfile,
-  getOrganization,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
   InvitationErrors,
-  UserErrors,
   ServerErrors,
+  UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import { getPaginationRange } from "@/app/api/v1/osograph/utils/resolvers";
+import {
+  buildConnection,
+  emptyConnection,
+} from "@/app/api/v1/osograph/utils/connection";
+import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  getFetchLimit,
+  getSupabaseRange,
+} from "@/app/api/v1/osograph/utils/pagination";
 
 export const invitationResolvers = {
   Query: {
@@ -55,9 +63,7 @@ export const invitationResolvers = {
 
     myInvitations: async (
       _: unknown,
-      args: {
-        limit?: number;
-        offset?: number;
+      args: ConnectionArgs & {
         where?: unknown;
         order_by?: unknown;
       },
@@ -71,7 +77,12 @@ export const invitationResolvers = {
         throw UserErrors.emailNotFound();
       }
 
-      const [start, end] = getPaginationRange(args);
+      const limit = getFetchLimit(args);
+      const [start, end] = getSupabaseRange({
+        ...args,
+        first: limit,
+      });
+
       const query = supabase
         .from("invitations")
         .select("*")
@@ -82,7 +93,11 @@ export const invitationResolvers = {
 
       const { data: invitations } = await query.range(start, end);
 
-      return invitations || [];
+      if (!invitations || invitations.length === 0) {
+        return emptyConnection();
+      }
+
+      return buildConnection(invitations, args);
     },
   },
 
@@ -172,7 +187,9 @@ export const invitationResolvers = {
       } catch (emailError) {
         logger.error("Failed to send invitation email:", emailError);
         throw ServerErrors.externalService(
-          `Failed to send invitation email: ${emailError instanceof Error ? emailError.message : "Unknown error"}`,
+          `Failed to send invitation email: ${
+            emailError instanceof Error ? emailError.message : "Unknown error"
+          }`,
         );
       }
 

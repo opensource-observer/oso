@@ -2,20 +2,29 @@ import { v4 as uuidv4 } from "uuid";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
-  requireAuthentication,
-  requireOrgMembership,
   getOrganization,
   getUserProfile,
+  requireAuthentication,
+  requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
-  ServerErrors,
   ResourceErrors,
+  ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 import {
-  putBase64Image,
   getPreviewSignedUrl,
+  putBase64Image,
 } from "@/lib/clients/cloudflare-r2";
 import { logger } from "@/lib/logger";
+import {
+  buildConnection,
+  emptyConnection,
+} from "@/app/api/v1/osograph/utils/connection";
+import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  getFetchLimit,
+  getSupabaseRange,
+} from "@/app/api/v1/osograph/utils/pagination";
 
 const PREVIEWS_BUCKET = "notebook-previews";
 const SIGNED_URL_EXPIRY = 900;
@@ -24,9 +33,7 @@ export const notebookResolvers = {
   Query: {
     notebooks: async (
       _: unknown,
-      args: {
-        limit?: number;
-        offset?: number;
+      args: ConnectionArgs & {
         where?: unknown;
         order_by?: unknown;
       },
@@ -43,26 +50,32 @@ export const notebookResolvers = {
 
       const orgIds = memberships?.map((m) => m.org_id) || [];
       if (orgIds.length === 0) {
-        return [];
+        return emptyConnection();
       }
 
-      const query = supabase
+      const limit = getFetchLimit(args);
+      const [start, end] = getSupabaseRange({
+        ...args,
+        first: limit,
+      });
+
+      const { data: notebooks, error } = await supabase
         .from("notebooks")
         .select("*")
         .in("org_id", orgIds)
-        .is("deleted_at", null);
-
-      const { data: notebooks, error } = await query.range(
-        args.offset || 0,
-        (args.offset || 0) + (args.limit || 50) - 1,
-      );
+        .is("deleted_at", null)
+        .range(start, end);
 
       if (error) {
         logger.error(`Failed to fetch notebooks: ${error}`);
         throw ServerErrors.database("Failed to fetch notebooks");
       }
 
-      return notebooks || [];
+      if (!notebooks || notebooks.length === 0) {
+        return emptyConnection();
+      }
+
+      return buildConnection(notebooks, args);
     },
 
     notebook: async (

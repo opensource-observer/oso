@@ -1,6 +1,3 @@
-"""
-Represents an organization
-"""
 type Organization {
   id: ID!
   name: String!
@@ -8,24 +5,11 @@ type Organization {
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  members(limit: Int = 50, offset: Int = 0): [OrganizationMember!]!
-  notebooks(
-    limit: Int = 50
-    offset: Int = 0
-    where: NotebookWhere
-    order_by: [OrderByInput!]
-  ): [Notebook!]!
-  datasets(
-    limit: Int = 50
-    offset: Int = 0
-    where: DatasetWhere
-    order_by: [OrderByInput!]
-  ): [Dataset!]!
+  members(first: Int = 50, after: String): UserConnection!
+  notebooks(first: Int = 50, after: String): NotebookConnection!
+  datasets(first: Int = 50, after: String): DatasetConnection!
 }
 
-"""
-Organization member with user details
-"""
 type OrganizationMember {
   id: ID!
   userId: ID!
@@ -35,42 +19,42 @@ type OrganizationMember {
   user: User!
 }
 
-input OrganizationWhere {
-  name: StringFilter
-  displayName: StringFilter
-  createdAt: DateTimeFilter
+type OrganizationEdge {
+  node: Organization!
+  cursor: String!
+}
+
+type OrganizationConnection {
+  edges: [OrganizationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
 }
 
 extend type Query {
   """
-  List organizations the user is a member of
+  List all organizations
   """
-  organizations(
-    limit: Int = 50
-    offset: Int = 0
-    where: OrganizationWhere
-    order_by: [OrderByInput!]
-  ): [Organization!]!
+  organizations(first: Int = 50, after: String): OrganizationConnection!
 
   """
-  Get a specific organization by ID or name
+  Get an organization by ID or name
   """
   organization(id: ID, name: String): Organization
 }
 
 extend type Mutation {
   """
-  Add a user to an organization by email
+  Add a user to organization
   """
   addUserByEmail(input: AddUserByEmailInput!): AddUserByEmailPayload!
 
   """
-  Remove a user from an organization
+  Remove a member from organization
   """
   removeMember(input: RemoveMemberInput!): RemoveMemberPayload!
 
   """
-  Update a member's role in an organization
+  Update member role
   """
   updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRolePayload!
 }

@@ -5,19 +5,27 @@ import { getTrinoClient } from "@/lib/clients/trino";
 import { logger } from "@/lib/logger";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
+  getOrganization,
+  getOrganizationByName,
+  getUserProfile,
   requireAuthentication,
   requireOrgMembership,
-  getOrganization,
-  getUserProfile,
-  getOrganizationByName,
 } from "@/app/api/v1/osograph/utils/auth";
 import { validateInput } from "@/app/api/v1/osograph/utils/validation";
 import { CreateDatasetSchema } from "@/app/api/v1/osograph/utils/validation";
 import {
-  ServerErrors,
   ResourceErrors,
+  ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import { getPaginationRange } from "@/app/api/v1/osograph/utils/resolvers";
+import {
+  buildConnection,
+  emptyConnection,
+} from "@/app/api/v1/osograph/utils/connection";
+import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  getFetchLimit,
+  getSupabaseRange,
+} from "@/app/api/v1/osograph/utils/pagination";
 import {
   Catalog,
   CatalogSchema,
@@ -28,15 +36,13 @@ import {
 import z from "zod";
 import { assert } from "@opensource-observer/utils";
 
-const TRINO_SCHEMA_TIMEOUT = 10000; // 10 seconds
+const TRINO_SCHEMA_TIMEOUT = 10_000; // 10 seconds
 
 export const datasetResolvers = {
   Query: {
     datasets: async (
       _: unknown,
-      args: {
-        limit?: number;
-        offset?: number;
+      args: ConnectionArgs & {
         where?: unknown;
         order_by?: unknown;
       },
@@ -53,7 +59,7 @@ export const datasetResolvers = {
 
       const orgIds = memberships?.map((m) => m.org_id) || [];
       if (orgIds.length === 0) {
-        return [];
+        return emptyConnection();
       }
 
       const trinoJwt = await signTrinoJWT({
@@ -88,7 +94,11 @@ export const datasetResolvers = {
               const query = `
         SELECT table_schema, table_name
         FROM ${catalogName}.information_schema.tables
-        WHERE ${catalogName === "iceberg" ? "table_schema = 'oso'" : "table_schema != 'information_schema'"}
+        WHERE ${
+          catalogName === "iceberg"
+            ? "table_schema = 'oso'"
+            : "table_schema != 'information_schema'"
+        }
       `;
               try {
                 const queryPromise = trino.queryAll(query);
@@ -146,7 +156,12 @@ export const datasetResolvers = {
         (result): result is Catalog => result !== null,
       );
 
-      const [start, end] = getPaginationRange(args);
+      const limit = getFetchLimit(args);
+      const [start, end] = getSupabaseRange({
+        ...args,
+        first: limit,
+      });
+
       const { data: datasetsList, error: datasetError } = await supabase
         .from("datasets")
         .select("*")
@@ -157,6 +172,10 @@ export const datasetResolvers = {
       if (datasetError) {
         logger.error(`Failed to fetch datasets: ${datasetError}`);
         throw ServerErrors.database("Failed to fetch datasets");
+      }
+
+      if (!datasetsList || datasetsList.length === 0) {
+        return emptyConnection();
       }
 
       const tablesByCatalogAndSchema = filteredResults.reduce(
@@ -170,7 +189,7 @@ export const datasetResolvers = {
         {} as Record<string, { name: string }[]>,
       );
 
-      const response = (datasetsList || []).map((dataset) => {
+      const response = datasetsList.map((dataset) => {
         const key = `${dataset.catalog}.${dataset.schema}`;
         return {
           ...dataset,
@@ -178,7 +197,7 @@ export const datasetResolvers = {
         };
       });
 
-      return response;
+      return buildConnection(response, args);
     },
 
     dataset: async (

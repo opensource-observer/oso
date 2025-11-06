@@ -38,7 +38,7 @@ export function validateBase64PngImage(base64Data: string): void {
 export const CreateInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
   orgId: z.string().uuid("Invalid organization ID"),
-  role: z.enum(["owner", "admin", "member"]).default("member"),
+  role: z.enum(["owner", "admin"]).default("admin"),
 });
 
 export const AcceptInvitationSchema = z.object({
@@ -57,13 +57,13 @@ export const RemoveMemberSchema = z.object({
 export const UpdateMemberRoleSchema = z.object({
   orgId: z.string().uuid("Invalid organization ID"),
   userId: z.string().uuid("Invalid user ID"),
-  role: z.enum(["owner", "admin", "member"]),
+  role: z.enum(["owner", "admin"]),
 });
 
 export const AddUserByEmailSchema = z.object({
   orgId: z.string().uuid("Invalid organization ID"),
   email: z.string().email("Invalid email address"),
-  role: z.enum(["owner", "admin", "member"]),
+  role: z.enum(["owner", "admin"]),
 });
 
 export const CreateNotebookSchema = z.object({

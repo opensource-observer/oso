@@ -39,7 +39,6 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
 
   Query: {
     ...viewerResolvers.Query,
-    ...userResolvers.Query,
     ...organizationResolvers.Query,
     ...invitationResolvers.Query,
     ...notebookResolvers.Query,
@@ -47,7 +46,6 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   },
 
   Mutation: {
-    ...userResolvers.Mutation,
     ...organizationResolvers.Mutation,
     ...invitationResolvers.Mutation,
     ...notebookResolvers.Mutation,

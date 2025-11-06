@@ -6,63 +6,9 @@ extend schema
 
 scalar DateTime
 
-enum OrderDirection {
-  asc
-  desc
-}
-
-"""
-Hasura-style string filter operators
-"""
-input StringFilter {
-  _eq: String
-  _neq: String
-  _ilike: String
-  _in: [String!]
-}
-
-"""
-Hasura-style UUID filter operators
-"""
-input UUIDFilter {
-  _eq: ID
-  _neq: ID
-  _in: [ID!]
-}
-
-"""
-Hasura-style DateTime filter operators
-"""
-input DateTimeFilter {
-  _eq: DateTime
-  _gte: DateTime
-  _lte: DateTime
-  _gt: DateTime
-  _lt: DateTime
-}
-
-"""
-Hasura-style Boolean filter operators
-"""
-input BooleanFilter {
-  _eq: Boolean
-}
-
-"""
-Standard order by input for any list query
-"""
-input OrderByInput {
-  field: String!
-  direction: OrderDirection!
-}
-
-"""
-Member roles in organization
-"""
 enum MemberRole {
   owner
   admin
-  member
 }
 
 """
@@ -85,15 +31,19 @@ enum DatasetType {
 }
 
 """
-Root Query type
+Cursor-based pagination information
 """
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
 type Query {
   _empty: String
 }
 
-"""
-Root Mutation type
-"""
 type Mutation {
   _empty: String
 }

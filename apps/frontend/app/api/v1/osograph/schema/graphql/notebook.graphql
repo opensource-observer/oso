@@ -1,6 +1,3 @@
-"""
-Represents a notebook
-"""
 type Notebook {
   id: ID!
   orgId: ID!
@@ -14,26 +11,25 @@ type Notebook {
   organization: Organization!
 }
 
-input NotebookWhere {
-  name: StringFilter
-  orgId: UUIDFilter
-  creatorId: UUIDFilter
-  createdAt: DateTimeFilter
+type NotebookEdge {
+  node: Notebook!
+  cursor: String!
+}
+
+type NotebookConnection {
+  edges: [NotebookEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
 }
 
 extend type Query {
   """
-  List notebooks
+  List all notebooks
   """
-  notebooks(
-    limit: Int = 50
-    offset: Int = 0
-    where: NotebookWhere
-    order_by: [OrderByInput!]
-  ): [Notebook!]!
+  notebooks(first: Int = 50, after: String): NotebookConnection!
 
   """
-  Get a specific notebook by ID or name
+  Get a notebook by ID or name
   """
   notebook(id: ID, name: String): Notebook
 }
@@ -45,16 +41,14 @@ extend type Mutation {
   createNotebook(input: CreateNotebookInput!): CreateNotebookPayload!
 
   """
-  Update an existing notebook
+  Update a notebook
   """
   updateNotebook(input: UpdateNotebookInput!): UpdateNotebookPayload!
 
   """
-  Save a preview image for a notebook
+  Save notebook preview image
   """
-  saveNotebookPreview(
-    input: SaveNotebookPreviewInput!
-  ): SaveNotebookPreviewPayload!
+  saveNotebookPreview(input: SaveNotebookPreviewInput!): SaveNotebookPreviewPayload!
 }
 
 input CreateNotebookInput {

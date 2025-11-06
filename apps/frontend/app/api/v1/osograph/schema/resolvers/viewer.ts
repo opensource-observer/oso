@@ -2,7 +2,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { UserErrors } from "@/app/api/v1/osograph/utils/errors";
-import { getPaginationRange } from "@/app/api/v1/osograph/utils/resolvers";
+import {
+  buildConnection,
+  emptyConnection,
+} from "@/app/api/v1/osograph/utils/connection";
+import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  getFetchLimit,
+  getSupabaseRange,
+} from "@/app/api/v1/osograph/utils/pagination";
 
 export const viewerResolvers = {
   Query: {
@@ -30,16 +38,19 @@ export const viewerResolvers = {
 
     organizations: async (
       parent: { id: string },
-      args: {
-        limit?: number;
-        offset?: number;
+      args: ConnectionArgs & {
         where?: unknown;
         order_by?: unknown;
       },
       _context: GraphQLContext,
     ) => {
       const supabase = createAdminClient();
-      const [start, end] = getPaginationRange(args);
+      const limit = getFetchLimit(args);
+      const [start, end] = getSupabaseRange({
+        ...args,
+        first: limit,
+      });
+
       const { data: memberships } = await supabase
         .from("users_by_organization")
         .select("org_id, organizations(*)")
@@ -47,18 +58,20 @@ export const viewerResolvers = {
         .is("deleted_at", null)
         .range(start, end);
 
-      if (!memberships) return [];
+      if (!memberships || memberships.length === 0) {
+        return emptyConnection();
+      }
 
-      return memberships
+      const organizations = memberships
         .map((m) => m.organizations)
         .filter((org) => org !== null);
+
+      return buildConnection(organizations, args);
     },
 
     notebooks: async (
       parent: { id: string },
-      args: {
-        limit?: number;
-        offset?: number;
+      args: ConnectionArgs & {
         where?: unknown;
         order_by?: unknown;
       },
@@ -74,10 +87,15 @@ export const viewerResolvers = {
 
       const orgIds = memberships?.map((m) => m.org_id) || [];
       if (orgIds.length === 0) {
-        return [];
+        return emptyConnection();
       }
 
-      const [start, end] = getPaginationRange(args);
+      const limit = getFetchLimit(args);
+      const [start, end] = getSupabaseRange({
+        ...args,
+        first: limit,
+      });
+
       const { data: notebooks } = await supabase
         .from("notebooks")
         .select("*")
@@ -85,14 +103,16 @@ export const viewerResolvers = {
         .is("deleted_at", null)
         .range(start, end);
 
-      return notebooks || [];
+      if (!notebooks || notebooks.length === 0) {
+        return emptyConnection();
+      }
+
+      return buildConnection(notebooks, args);
     },
 
     datasets: async (
       parent: { id: string },
-      args: {
-        limit?: number;
-        offset?: number;
+      args: ConnectionArgs & {
         where?: unknown;
         order_by?: unknown;
       },
@@ -108,10 +128,15 @@ export const viewerResolvers = {
 
       const orgIds = memberships?.map((m) => m.org_id) || [];
       if (orgIds.length === 0) {
-        return [];
+        return emptyConnection();
       }
 
-      const [start, end] = getPaginationRange(args);
+      const limit = getFetchLimit(args);
+      const [start, end] = getSupabaseRange({
+        ...args,
+        first: limit,
+      });
+
       const { data: datasets } = await supabase
         .from("datasets")
         .select("*")
@@ -119,14 +144,16 @@ export const viewerResolvers = {
         .is("deleted_at", null)
         .range(start, end);
 
-      return datasets || [];
+      if (!datasets || datasets.length === 0) {
+        return emptyConnection();
+      }
+
+      return buildConnection(datasets, args);
     },
 
     invitations: async (
       parent: { id: string; email: string },
-      args: {
-        limit?: number;
-        offset?: number;
+      args: ConnectionArgs & {
         where?: unknown;
         order_by?: unknown;
       },
@@ -136,10 +163,15 @@ export const viewerResolvers = {
       const userEmail = parent.email?.toLowerCase();
 
       if (!userEmail) {
-        return [];
+        return emptyConnection();
       }
 
-      const [start, end] = getPaginationRange(args);
+      const limit = getFetchLimit(args);
+      const [start, end] = getSupabaseRange({
+        ...args,
+        first: limit,
+      });
+
       const { data: invitations } = await supabase
         .from("invitations")
         .select("*")
@@ -149,7 +181,11 @@ export const viewerResolvers = {
         .gt("expires_at", new Date().toISOString())
         .range(start, end);
 
-      return invitations || [];
+      if (!invitations || invitations.length === 0) {
+        return emptyConnection();
+      }
+
+      return buildConnection(invitations, args);
     },
   },
 };
