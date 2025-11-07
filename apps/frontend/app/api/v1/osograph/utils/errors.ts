@@ -201,3 +201,24 @@ export const NotebookErrors = {
 export const DatasetErrors = {
   notFound: () => createError(ErrorCode.NOT_FOUND, "Dataset not found"),
 } as const;
+
+export const PaginationErrors = {
+  invalidCursor: () =>
+    createError(ErrorCode.BAD_USER_INPUT, "Invalid pagination cursor format", {
+      field: "after",
+    }),
+
+  invalidPageSize: (size: number) =>
+    createError(
+      ErrorCode.BAD_USER_INPUT,
+      `Page size must be between 0 and 100, received: ${size}`,
+      { field: "first" },
+    ),
+
+  negativePageSize: () =>
+    createError(
+      ErrorCode.BAD_USER_INPUT,
+      "Page size must be a non-negative integer",
+      { field: "first" },
+    ),
+} as const;

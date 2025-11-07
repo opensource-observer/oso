@@ -1,3 +1,8 @@
+import { PaginationErrors } from "@/app/api/v1/osograph/utils/errors";
+
+export const MAX_PAGE_SIZE = 100;
+export const DEFAULT_PAGE_SIZE = 50;
+
 export function encodeCursor(index: number): string {
   return Buffer.from(`cursor:${index}`).toString("base64");
 }
@@ -7,11 +12,11 @@ export function decodeCursor(cursor: string): number {
     const decoded = Buffer.from(cursor, "base64").toString("utf-8");
     const match = decoded.match(/^cursor:(\d+)$/);
     if (!match) {
-      throw new Error("Invalid cursor format");
+      throw PaginationErrors.invalidCursor();
     }
     return parseInt(match[1], 10);
   } catch {
-    throw new Error("Invalid cursor");
+    throw PaginationErrors.invalidCursor();
   }
 }
 
@@ -24,15 +29,15 @@ export function getPaginationParams(args: ConnectionArgs): {
   offset: number;
   limit: number;
 } {
-  const first = args.first ?? 50;
+  const first = args.first ?? DEFAULT_PAGE_SIZE;
   const offset = args.after ? decodeCursor(args.after) + 1 : 0;
 
   if (first < 0) {
-    throw new Error("Argument 'first' must be a non-negative integer");
+    throw PaginationErrors.negativePageSize();
   }
 
-  if (first > 100) {
-    throw new Error("Argument 'first' cannot exceed 100");
+  if (first > MAX_PAGE_SIZE) {
+    throw PaginationErrors.invalidPageSize(first);
   }
 
   return {
