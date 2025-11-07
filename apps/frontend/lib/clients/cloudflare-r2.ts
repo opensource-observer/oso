@@ -11,6 +11,7 @@ import {
   PutBucketLifecycleConfigurationCommand,
   NotFound,
   PutObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createHash } from "node:crypto";
@@ -225,11 +226,36 @@ async function putBase64Image(
   await S3.send(command);
 }
 
+async function objectExists(
+  bucketName: string,
+  objectKey: string,
+): Promise<boolean> {
+  try {
+    await S3.send(
+      new HeadObjectCommand({
+        Bucket: bucketName,
+        Key: objectKey,
+      }),
+    );
+    return true;
+  } catch (error) {
+    if (error instanceof NotFound) {
+      return false;
+    }
+    throw error;
+  }
+}
+
 async function getPreviewSignedUrl(
   bucketName: string,
   objectKey: string,
   expirationSeconds: number = 900,
-): Promise<string> {
+): Promise<string | null> {
+  const exists = await objectExists(bucketName, objectKey);
+  if (!exists) {
+    return null;
+  }
+
   const command = new GetObjectCommand({
     Bucket: bucketName,
     Key: objectKey,

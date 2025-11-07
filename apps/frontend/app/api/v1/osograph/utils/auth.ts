@@ -2,16 +2,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { User } from "@/lib/types/user";
 import {
   AuthenticationErrors,
-  UserErrors,
   OrganizationErrors,
+  UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-
-export type AuthenticatedUser = Extract<User, { role: "user" }>;
-
-export type GraphQLContext = {
-  req: Request;
-  user: User;
-};
+import type { AuthenticatedUser } from "@/app/api/v1/osograph/types/context";
 
 export function isAuthenticated(user: User): user is AuthenticatedUser {
   return user.role !== "anonymous";
@@ -22,6 +16,18 @@ export function requireAuthentication(user: User): AuthenticatedUser {
     throw AuthenticationErrors.notAuthenticated();
   }
   return user;
+}
+
+export async function getUserOrgIds(userId: string): Promise<string[]> {
+  const supabase = createAdminClient();
+
+  const { data: memberships } = await supabase
+    .from("users_by_organization")
+    .select("org_id")
+    .eq("user_id", userId)
+    .is("deleted_at", null);
+
+  return memberships?.map((m) => m.org_id) || [];
 }
 
 export async function requireOrgMembership(

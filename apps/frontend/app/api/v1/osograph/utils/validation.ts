@@ -8,36 +8,49 @@ const PNG_HEADER = Buffer.from([
 
 export function validateBase64PngImage(base64Data: string): void {
   if (!base64Data.startsWith("data:image/png;base64,")) {
-    throw new Error("Invalid image format. Expected PNG data URL.");
+    throw ValidationErrors.invalidInput(
+      "preview",
+      "Invalid image format. Expected PNG data URL.",
+    );
   }
 
   const base64Content = base64Data.replace(/^data:[^;]+;base64,/, "");
 
   if (base64Content.length > (MAX_PREVIEW_SIZE_MB * 4) / 3) {
-    throw new Error("Image is too large.");
+    throw ValidationErrors.invalidInput(
+      "preview",
+      "Image is too large. Maximum size is 1MB.",
+    );
   }
 
   try {
     const buffer = Buffer.from(base64Content, "base64");
 
     if (!buffer.subarray(0, 8).equals(PNG_HEADER)) {
-      throw new Error("Invalid PNG header.");
+      throw ValidationErrors.invalidInput("preview", "Invalid PNG header.");
     }
 
     if (buffer.length > MAX_PREVIEW_SIZE_MB) {
-      throw new Error("Image is too large.");
+      throw ValidationErrors.invalidInput(
+        "preview",
+        "Image is too large. Maximum size is 1MB.",
+      );
     }
   } catch (error) {
     if (error instanceof Error && error.message.includes("Invalid PNG")) {
       throw error;
     }
-    throw new Error("Invalid base64 encoding or corrupted image data.");
+    throw ValidationErrors.invalidInput(
+      "preview",
+      "Invalid base64 encoding or corrupted image data.",
+    );
   }
 }
 
 export const CreateInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
+  role: z.enum(["owner", "admin"]).default("admin"),
 });
 
 export const AcceptInvitationSchema = z.object({
@@ -49,20 +62,60 @@ export const RevokeInvitationSchema = z.object({
 });
 
 export const RemoveMemberSchema = z.object({
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
   userId: z.string().uuid("Invalid user ID"),
 });
 
 export const UpdateMemberRoleSchema = z.object({
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
   userId: z.string().uuid("Invalid user ID"),
-  role: z.enum(["owner", "admin", "member"]),
+  role: z.enum(["owner", "admin"]),
 });
 
 export const AddUserByEmailSchema = z.object({
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
   email: z.string().email("Invalid email address"),
-  role: z.enum(["owner", "admin", "member"]),
+  role: z.enum(["owner", "admin"]),
+});
+
+export const CreateNotebookSchema = z.object({
+  orgId: z.string().uuid("Invalid organization ID"),
+  name: z.string().min(1, "Notebook name is required"),
+  description: z.string().optional(),
+});
+
+export const UpdateNotebookSchema = z.object({
+  id: z.string().uuid("Invalid notebook ID"),
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+});
+
+export const SaveNotebookPreviewSchema = z.object({
+  notebookId: z.string().uuid("Invalid notebook ID"),
+  preview: z.string().startsWith("data:image/png;base64,"),
+});
+
+export const UpdateDatasetSchema = z.object({
+  id: z.string().uuid("Invalid dataset ID"),
+  name: z.string().min(1).optional(),
+  displayName: z.string().optional(),
+  description: z.string().optional(),
+  isPublic: z.boolean().optional(),
+});
+
+export const CreateDatasetSchema = z.object({
+  orgId: z.string().uuid("Invalid organization ID"),
+  name: z
+    .string()
+    .min(1, "Dataset name is required")
+    .regex(
+      /^[a-zA-Z][a-zA-Z0-9_]+$/,
+      "Dataset name can only contain letters, numbers, and underscores",
+    ),
+  displayName: z.string().min(1, "Display name is required"),
+  description: z.string().optional(),
+  isPublic: z.boolean().optional(),
+  type: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
 });
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {

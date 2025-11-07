@@ -1,0 +1,94 @@
+type Dataset {
+  id: ID!
+  orgId: ID!
+  name: String!
+  displayName: String
+  description: String
+  type: DatasetType!
+  creatorId: ID!
+  isPublic: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: User!
+  organization: Organization!
+}
+
+type DatasetEdge {
+  node: Dataset!
+  cursor: String!
+}
+
+type DatasetConnection {
+  edges: [DatasetEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type TableColumn {
+  name: String!
+  type: String!
+  nullable: Boolean!
+}
+
+extend type Query {
+  """
+  List all datasets
+  """
+  datasets(first: Int = 50, after: String): DatasetConnection!
+
+  """
+  Get a dataset by ID
+  """
+  dataset(id: ID!): Dataset
+
+  """
+  Get table column metadata
+  """
+  datasetTableMetadata(
+    orgId: ID!
+    catalogName: String!
+    schemaName: String!
+    tableName: String!
+  ): [TableColumn!]!
+}
+
+extend type Mutation {
+  """
+  Create a new dataset
+  """
+  createDataset(input: CreateDatasetInput!): CreateDatasetPayload!
+
+  """
+  Update a dataset
+  """
+  updateDataset(input: UpdateDatasetInput!): UpdateDatasetPayload!
+}
+
+input CreateDatasetInput {
+  orgId: ID!
+  name: String!
+  displayName: String
+  description: String
+  type: DatasetType = USER_MODEL
+  isPublic: Boolean = false
+}
+
+type CreateDatasetPayload {
+  success: Boolean!
+  dataset: Dataset
+  message: String
+}
+
+input UpdateDatasetInput {
+  id: ID!
+  name: String
+  displayName: String
+  description: String
+  isPublic: Boolean
+}
+
+type UpdateDatasetPayload {
+  success: Boolean!
+  dataset: Dataset
+  message: String
+}
