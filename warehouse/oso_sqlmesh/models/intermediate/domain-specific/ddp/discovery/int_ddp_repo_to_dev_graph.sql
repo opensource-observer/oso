@@ -12,11 +12,11 @@ MODEL (
   )
 );
 
-@DEF(half_life_days, 365.0);
+@DEF(half_life_months, 12);
 
 WITH last_date AS (
-  SELECT MAX(bucket_day) AS last_bucket
-  FROM oso.int_events_daily__github
+  SELECT MAX(bucket_month) AS last_bucket
+  FROM oso.int_ddp_filtered_github_events_by_month
 ),
 event_weights AS (
   SELECT 'STARRED' event_type,1.0 w UNION ALL
@@ -27,44 +27,31 @@ event_weights AS (
 ),
 dev_repo_edges AS (
   SELECT
-    e.from_artifact_id AS dev_artifact_id,
-    u.artifact_name AS dev_name,
-    e.to_artifact_id AS repo_artifact_id,
-    sum(
+    e.git_user,
+    e.repo_artifact_id,
+    SUM(
       coalesce(w.w,1.0)
       * coalesce(e.amount,1.0)
       * exp(
-        - (ln(2) / @half_life_days)
-        * CAST(date_diff('day', e.bucket_day, ld.last_bucket) AS DOUBLE)
-      )
+          - (ln(2) / CAST(@half_life_months AS DOUBLE))
+          * CAST(date_diff('MONTH', e.bucket_month, ld.last_bucket) AS DOUBLE)
+        )
     ) AS edge_weight,
-    count(*) AS event_count
-  FROM oso.int_events_daily__github AS e
-  JOIN oso.int_github_users_bot_filtered AS u
-    ON e.from_artifact_id = u.artifact_id
+    COUNT(*) AS event_count
+  FROM oso.int_ddp_filtered_github_events_by_month AS e
   LEFT JOIN event_weights AS w
     ON e.event_type = w.event_type
   CROSS JOIN last_date AS ld
-  WHERE NOT u.is_bot
-    AND e.event_type IN (
-      'STARRED',
-      'FORKED',
-      'ISSUE_OPENED',
-      'PULL_REQUEST_OPENED',
-      'COMMIT_CODE'
-    )
-  GROUP BY
-    e.from_artifact_id,
-    u.artifact_name,
-    e.to_artifact_id
+  GROUP BY 1,2
 )
 
 SELECT
-  e.dev_artifact_id,
-  e.dev_name,
-  e.repo_artifact_id,
-  r.artifact_url AS url,
-  e.edge_weight,
-  e.event_count
-FROM dev_repo_edges AS e
-JOIN oso.int_artifacts__github AS r
+  d.git_user,
+  d.repo_artifact_id,
+  a.artifact_url AS url,
+  d.edge_weight,
+  d.event_count
+FROM dev_repo_edges AS d
+JOIN oso.int_artifacts__github AS a
+  ON d.repo_artifact_id = a.artifact_id
+ORDER BY d.edge_weight DESC
