@@ -21,10 +21,14 @@ import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
   getUserOrganizationIds,
   requireOrganizationAccess,
-  getResourceByIdOrName,
+  getResourceById,
   buildConnectionOrEmpty,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import {
+  emptyConnection,
+  type Connection,
+} from "@/app/api/v1/osograph/utils/connection";
 import {
   Catalog,
   CatalogSchema,
@@ -38,6 +42,41 @@ import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
 const TRINO_SCHEMA_TIMEOUT = 10_000; // 10 seconds
 
+export async function getRawDatasets(
+  orgIds: string[],
+  args: ConnectionArgs,
+): Promise<{ data: any[] | null; count: number | null }> {
+  const supabase = createAdminClient();
+  const [start, end] = preparePaginationRange(args);
+
+  const query = supabase
+    .from("datasets")
+    .select("*", { count: "exact" })
+    .is("deleted_at", null)
+    .range(start, end);
+
+  const { data: datasets, count } =
+    orgIds.length === 1
+      ? await query.eq("org_id", orgIds[0])
+      : await query.in("org_id", orgIds);
+
+  return { data: datasets, count };
+}
+
+export async function getDatasetsConnection(
+  orgIds: string | string[],
+  args: ConnectionArgs,
+): Promise<Connection<any>> {
+  const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
+
+  if (orgIdArray.length === 0) {
+    return emptyConnection();
+  }
+
+  const { data: datasets, count } = await getRawDatasets(orgIdArray, args);
+  return buildConnectionOrEmpty(datasets, args, count);
+}
+
 export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     datasets: async (
@@ -46,7 +85,6 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
 
       const orgIds = await getUserOrganizationIds(authenticatedUser.userId);
       if (orgIds.length === 0) {
@@ -147,23 +185,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         (result): result is Catalog => result !== null,
       );
 
-      const [start, end] = preparePaginationRange(args);
-
-      const {
-        data: datasetsList,
-        error: datasetError,
-        count,
-      } = await supabase
-        .from("datasets")
-        .select("*", { count: "exact" })
-        .in("org_id", orgIds)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      if (datasetError) {
-        logger.error(`Failed to fetch datasets: ${datasetError}`);
-        throw ServerErrors.database("Failed to fetch datasets");
-      }
+      const { data: datasetsList, count } = await getRawDatasets(orgIds, args);
 
       if (!datasetsList || datasetsList.length === 0) {
         return buildConnectionOrEmpty(null, args, count);
@@ -193,13 +215,13 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     dataset: async (
       _: unknown,
-      args: { id?: string; name?: string },
+      args: { id: string },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      return getResourceByIdOrName({
+      return getResourceById({
         tableName: "datasets",
-        args,
+        id: args.id,
         userId: authenticatedUser.userId,
         checkMembership: true,
       });

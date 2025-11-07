@@ -136,8 +136,7 @@ export const widgetResolvers = {
       await requireOrgMembership(user.userId, args.orgId);
 
       const supabase = createAdminClient();
-      const limit = getFetchLimit(args);
-      const [start, end] = getSupabaseRange({ ...args, first: limit });
+      const [start, end] = preparePaginationRange(args);
 
       const { data: widgets } = await supabase
         .from("widgets")

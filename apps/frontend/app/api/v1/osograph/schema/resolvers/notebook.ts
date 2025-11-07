@@ -20,13 +20,45 @@ import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
   getUserOrganizationIds,
-  getNotebooksConnection,
   requireOrganizationAccess,
-  getResourceByIdOrName,
+  getResourceById,
+  buildConnectionOrEmpty,
+  preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import {
+  emptyConnection,
+  type Connection,
+} from "@/app/api/v1/osograph/utils/connection";
 
 const PREVIEWS_BUCKET = "notebook-previews";
 const SIGNED_URL_EXPIRY = 900;
+
+export async function getNotebooksConnection(
+  orgIds: string | string[],
+  args: ConnectionArgs,
+): Promise<Connection<any>> {
+  const supabase = createAdminClient();
+  const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
+
+  if (orgIdArray.length === 0) {
+    return emptyConnection();
+  }
+
+  const [start, end] = preparePaginationRange(args);
+
+  const query = supabase
+    .from("notebooks")
+    .select("*", { count: "exact" })
+    .is("deleted_at", null)
+    .range(start, end);
+
+  const { data: notebooks, count } =
+    orgIdArray.length === 1
+      ? await query.eq("org_id", orgIdArray[0])
+      : await query.in("org_id", orgIdArray);
+
+  return buildConnectionOrEmpty(notebooks, args, count);
+}
 
 export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -42,13 +74,13 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     notebook: async (
       _: unknown,
-      args: { id?: string; name?: string },
+      args: { id: string },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      return getResourceByIdOrName({
+      return getResourceById({
         tableName: "notebooks",
-        args,
+        id: args.id,
         userId: authenticatedUser.userId,
         checkMembership: true,
       });

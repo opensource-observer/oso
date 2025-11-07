@@ -1416,10 +1416,11 @@ export type DatasetEdge = {
   node: Dataset;
 };
 
+/** Dataset types */
 export enum DatasetType {
-  External = "EXTERNAL",
-  PythonModel = "PYTHON_MODEL",
-  SqlTable = "SQL_TABLE",
+  DataConnector = "DATA_CONNECTOR",
+  DataIngestion = "DATA_INGESTION",
+  UserModel = "USER_MODEL",
 }
 
 export type DefaultPartitionStatuses = {
@@ -2404,6 +2405,7 @@ export type InvitationEdge = {
   node: Invitation;
 };
 
+/** Invitation status */
 export enum InvitationStatus {
   Accepted = "ACCEPTED",
   Expired = "EXPIRED",
@@ -5394,7 +5396,7 @@ export type Query = {
   capturedLogs: CapturedLogs;
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
-  /** Get a dataset by ID or name */
+  /** Get a dataset by ID */
   dataset?: Maybe<Dataset>;
   /** Get table column metadata */
   datasetTableMetadata: Array<TableColumn>;
@@ -5422,7 +5424,7 @@ export type Query = {
   logsForRun: EventConnectionOrError;
   /** List invitations for current user */
   myInvitations: InvitationConnection;
-  /** Get a notebook by ID or name */
+  /** Get a notebook by ID */
   notebook?: Maybe<Notebook>;
   /** List all notebooks */
   notebooks: NotebookConnection;
@@ -5666,8 +5668,7 @@ export type QueryCapturedLogsMetadataArgs = {
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryDatasetArgs = {
-  id?: InputMaybe<Scalars["ID"]["input"]>;
-  name?: InputMaybe<Scalars["String"]["input"]>;
+  id: Scalars["ID"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5734,8 +5735,7 @@ export type QueryMyInvitationsArgs = {
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryNotebookArgs = {
-  id?: InputMaybe<Scalars["ID"]["input"]>;
-  name?: InputMaybe<Scalars["String"]["input"]>;
+  id: Scalars["ID"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */

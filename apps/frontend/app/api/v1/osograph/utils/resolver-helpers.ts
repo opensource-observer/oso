@@ -73,60 +73,6 @@ export async function getUserOrganizationsConnection(
   return buildConnectionOrEmpty(organizations, args, count);
 }
 
-export async function getNotebooksConnection(
-  orgIds: string | string[],
-  args: ConnectionArgs,
-): Promise<Connection<any>> {
-  const supabase = createAdminClient();
-  const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
-
-  if (orgIdArray.length === 0) {
-    return emptyConnection();
-  }
-
-  const [start, end] = preparePaginationRange(args);
-
-  const query = supabase
-    .from("notebooks")
-    .select("*", { count: "exact" })
-    .is("deleted_at", null)
-    .range(start, end);
-
-  const { data: notebooks, count } =
-    orgIdArray.length === 1
-      ? await query.eq("org_id", orgIdArray[0])
-      : await query.in("org_id", orgIdArray);
-
-  return buildConnectionOrEmpty(notebooks, args, count);
-}
-
-export async function getDatasetsConnection(
-  orgIds: string | string[],
-  args: ConnectionArgs,
-): Promise<Connection<any>> {
-  const supabase = createAdminClient();
-  const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
-
-  if (orgIdArray.length === 0) {
-    return emptyConnection();
-  }
-
-  const [start, end] = preparePaginationRange(args);
-
-  const query = supabase
-    .from("datasets")
-    .select("*", { count: "exact" })
-    .is("deleted_at", null)
-    .range(start, end);
-
-  const { data: datasets, count } =
-    orgIdArray.length === 1
-      ? await query.eq("org_id", orgIdArray[0])
-      : await query.in("org_id", orgIdArray);
-
-  return buildConnectionOrEmpty(datasets, args, count);
-}
-
 export async function getUserInvitationsConnection(
   email: string | null | undefined,
   args: ConnectionArgs,
@@ -160,28 +106,21 @@ export async function requireOrganizationAccess(
   return org;
 }
 
-export async function getResourceByIdOrName<T>(params: {
+export async function getResourceById<T>(params: {
   tableName: keyof Database["public"]["Tables"];
-  args: { id?: string; name?: string };
+  id: string;
   userId: string;
   checkMembership?: boolean;
 }): Promise<T | null> {
-  const { tableName, args, userId, checkMembership = true } = params;
-
-  if (!args.id && !args.name) {
-    return null;
-  }
+  const { tableName, id, userId, checkMembership = true } = params;
 
   const supabase = createAdminClient();
-  let query = supabase.from(tableName).select("*").is("deleted_at", null);
-
-  if (args.id) {
-    query = query.eq("id", args.id);
-  } else if (args.name) {
-    query = query.eq("name", args.name);
-  }
-
-  const { data: resource, error } = await query.single();
+  const { data: resource, error } = await supabase
+    .from(tableName)
+    .select("*")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .single();
 
   if (error || !resource) {
     return null;

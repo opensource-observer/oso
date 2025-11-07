@@ -17,11 +17,11 @@ import {
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
   getUserOrganizationsConnection,
-  getNotebooksConnection,
-  getDatasetsConnection,
   buildConnectionOrEmpty,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import { getNotebooksConnection } from "@/app/api/v1/osograph/schema/resolvers/notebook";
+import { getDatasetsConnection } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
 export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {

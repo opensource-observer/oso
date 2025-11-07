@@ -37,9 +37,9 @@ extend type Query {
   datasets(first: Int = 50, after: String): DatasetConnection!
 
   """
-  Get a dataset by ID or name
+  Get a dataset by ID
   """
-  dataset(id: ID, name: String): Dataset
+  dataset(id: ID!): Dataset
 
   """
   Get table column metadata
@@ -69,7 +69,7 @@ input CreateDatasetInput {
   name: String!
   displayName: String
   description: String
-  type: DatasetType = PYTHON_MODEL
+  type: DatasetType = USER_MODEL
   isPublic: Boolean = false
 }
 

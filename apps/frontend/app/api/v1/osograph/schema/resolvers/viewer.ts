@@ -6,11 +6,11 @@ import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
   getUserOrganizationsConnection,
-  getNotebooksConnection,
-  getDatasetsConnection,
   getUserInvitationsConnection,
   getUserOrganizationIds,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import { getNotebooksConnection } from "@/app/api/v1/osograph/schema/resolvers/notebook";
+import { getDatasetsConnection } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 
 export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {

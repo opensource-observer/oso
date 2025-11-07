@@ -29,9 +29,9 @@ extend type Query {
   notebooks(first: Int = 50, after: String): NotebookConnection!
 
   """
-  Get a notebook by ID or name
+  Get a notebook by ID
   """
-  notebook(id: ID, name: String): Notebook
+  notebook(id: ID!): Notebook
 }
 
 extend type Mutation {

@@ -25,9 +25,9 @@ enum InvitationStatus {
 Dataset types
 """
 enum DatasetType {
-  PYTHON_MODEL
-  SQL_TABLE
-  EXTERNAL
+  USER_MODEL
+  DATA_CONNECTOR
+  DATA_INGESTION
 }
 
 """
