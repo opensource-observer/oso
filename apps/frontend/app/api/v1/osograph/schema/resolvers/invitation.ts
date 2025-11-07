@@ -21,6 +21,12 @@ import {
   checkMembershipExists,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
+import {
+  validateInput,
+  CreateInvitationSchema,
+  AcceptInvitationSchema,
+  RevokeInvitationSchema,
+} from "@/app/api/v1/osograph/utils/validation";
 
 export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -82,7 +88,7 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(CreateInvitationSchema, args.input);
 
       const supabase = createAdminClient();
       const org = await requireOrganizationAccess(
@@ -178,7 +184,7 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(AcceptInvitationSchema, args.input);
 
       const supabase = createAdminClient();
 
@@ -265,7 +271,7 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(RevokeInvitationSchema, args.input);
 
       const supabase = createAdminClient();
 

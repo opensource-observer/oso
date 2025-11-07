@@ -11,8 +11,11 @@ import {
   requireAuthentication,
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
-import { validateInput } from "@/app/api/v1/osograph/utils/validation";
-import { CreateDatasetSchema } from "@/app/api/v1/osograph/utils/validation";
+import {
+  validateInput,
+  CreateDatasetSchema,
+  UpdateDatasetSchema,
+} from "@/app/api/v1/osograph/utils/validation";
 import {
   ResourceErrors,
   ServerErrors,
@@ -360,7 +363,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(UpdateDatasetSchema, args.input);
 
       const supabase = createAdminClient();
 

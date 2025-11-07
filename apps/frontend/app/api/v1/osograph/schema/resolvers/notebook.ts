@@ -26,6 +26,13 @@ import {
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import {
+  validateInput,
+  CreateNotebookSchema,
+  UpdateNotebookSchema,
+  SaveNotebookPreviewSchema,
+  validateBase64PngImage,
+} from "@/app/api/v1/osograph/utils/validation";
+import {
   emptyConnection,
   type Connection,
 } from "@/app/api/v1/osograph/utils/connection";
@@ -94,7 +101,7 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(CreateNotebookSchema, args.input);
 
       const supabase = createAdminClient();
       await requireOrganizationAccess(authenticatedUser.userId, input.orgId);
@@ -131,7 +138,7 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(UpdateNotebookSchema, args.input);
 
       const supabase = createAdminClient();
       const { data: notebook, error: fetchError } = await supabase
@@ -180,7 +187,8 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(SaveNotebookPreviewSchema, args.input);
+      validateBase64PngImage(input.preview);
 
       const supabase = createAdminClient();
       const { data: notebook } = await supabase
