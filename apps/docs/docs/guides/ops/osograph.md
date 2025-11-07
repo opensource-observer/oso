@@ -18,7 +18,7 @@ The API follows **Relay's cursor-based pagination spec**. Every list query retur
 2. **Connection Pattern**: All list queries return Connections, never arrays.
 
    ```
-   Connection { edges: [{ node: T, cursor: String }], pageInfo: { ... } }
+   Connection { edges: [{ node: T, cursor: String }], pageInfo: { ... }, totalCount: Int }
    ```
 
 3. **Edge Types**: Edges wrap nodes with cursors. Define `{Type}Edge` and `{Type}Connection` for each resource.
@@ -30,7 +30,7 @@ The API follows **Relay's cursor-based pagination spec**. Every list query retur
 **Data Flow:**
 
 ```
-Query → Auth Check → Pagination Utils (offset/limit) → Supabase → buildConnection() → { edges, pageInfo }
+Query → Auth Check → preparePaginationRange() → Supabase (with count) → buildConnectionOrEmpty() → { edges, pageInfo, totalCount }
 ```
 
 ## Directory Structure
@@ -50,8 +50,10 @@ frontend/app/api/v1/osograph/
 └── utils/
     ├── auth.ts                # Auth helpers
     ├── errors.ts              # Error helpers
-    ├── pagination.ts          # Cursor pagination
-    └── connection.ts          # Connection builder
+    ├── pagination.ts          # Cursor pagination (constants & encoding)
+    ├── connection.ts          # Connection builder
+    ├── validation.ts          # Zod schemas & input validation
+    └── resolver-helpers.ts    # Shared resolver utilities
 ```
 
 ## Adding a Query
@@ -77,6 +79,7 @@ type WidgetEdge {
 type WidgetConnection {
   edges: [WidgetEdge!]!
   pageInfo: PageInfo!
+  totalCount: Int
 }
 
 extend type Query {
@@ -84,6 +87,8 @@ extend type Query {
   widgets(orgId: ID!, first: Int = 50, after: String): WidgetConnection!
 }
 ```
+
+**Note:** The default value `50` matches the `DEFAULT_PAGE_SIZE` constant in `utils/pagination.ts`. Maximum allowed is `MAX_PAGE_SIZE = 100`.
 
 **2. Implement Resolver** (`schema/resolvers/widget.ts`)
 
@@ -95,14 +100,10 @@ import {
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
-  buildConnection,
-  emptyConnection,
-} from "@/app/api/v1/osograph/utils/connection";
+  buildConnectionOrEmpty,
+  preparePaginationRange,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import {
-  getFetchLimit,
-  getSupabaseRange,
-} from "@/app/api/v1/osograph/utils/pagination";
 
 export const widgetResolvers = {
   Query: {
@@ -138,15 +139,14 @@ export const widgetResolvers = {
       const supabase = createAdminClient();
       const [start, end] = preparePaginationRange(args);
 
-      const { data: widgets } = await supabase
+      const { data: widgets, count } = await supabase
         .from("widgets")
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("org_id", args.orgId)
         .is("deleted_at", null)
         .range(start, end);
 
-      if (!widgets?.length) return emptyConnection();
-      return buildConnection(widgets, args);
+      return buildConnectionOrEmpty(widgets, args, count);
     },
   },
 
@@ -169,26 +169,34 @@ export const widgetResolvers = {
 
 **3. Register**
 
-Add to `route.ts`:
+Schema files (`.graphql`) are **automatically discovered** by `route.ts`.
 
-```typescript
-const schemaFiles = ["base.graphql" /* ... */, , "widget.graphql"];
-```
-
-Add to `schema/resolvers/index.ts`:
+Add resolver to `schema/resolvers/index.ts`:
 
 ```typescript
 import { widgetResolvers } from "./widget";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
-export const resolvers = {
-  Query: { ...widgetResolvers.Query /* ... */ },
+export const resolvers: GraphQLResolverMap<GraphQLContext> = {
+  Query: {
+    ...viewerResolvers.Query,
+    ...widgetResolvers.Query,
+    // ... other resolvers
+  },
+
+  Mutation: {
+    ...widgetResolvers.Mutation,
+    // ... other resolvers
+  },
+
   Widget: widgetResolvers.Widget,
+  // ... other type resolvers
 };
 ```
 
 ## Adding a Mutation
 
-**1. Define Schema**
+**1. Define Schema** (`schema/graphql/widget.graphql`)
 
 ```graphql
 input CreateWidgetInput {
@@ -207,9 +215,24 @@ extend type Mutation {
 }
 ```
 
-**2. Implement Resolver**
+**2. Create Validation Schema** (`utils/validation.ts`)
 
 ```typescript
+import { z } from "zod";
+
+export const CreateWidgetSchema = z.object({
+  orgId: z.string().uuid("Invalid organization ID"),
+  name: z.string().min(1, "Widget name is required"),
+});
+```
+
+**3. Implement Resolver** (`schema/resolvers/widget.ts`)
+
+```typescript
+import { validateInput } from "@/app/api/v1/osograph/utils/validation";
+import { CreateWidgetSchema } from "@/app/api/v1/osograph/utils/validation";
+import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
+
 Mutation: {
   createWidget: async (
     _: unknown,
@@ -217,15 +240,16 @@ Mutation: {
     context: GraphQLContext,
   ) => {
     const user = requireAuthentication(context.user);
-    await requireOrgMembership(user.userId, args.input.orgId);
+    const input = validateInput(CreateWidgetSchema, args.input);
+    await requireOrgMembership(user.userId, input.orgId);
 
     const supabase = createAdminClient();
 
     const { data: widget, error } = await supabase
       .from("widgets")
       .insert({
-        org_id: args.input.orgId,
-        name: args.input.name,
+        org_id: input.orgId,
+        name: input.name,
         created_by: user.userId,
       })
       .select()
@@ -233,28 +257,37 @@ Mutation: {
 
     if (error) throw ServerErrors.database(error.message);
 
-    return { success: true, widget, message: "Created" };
+    return { success: true, widget, message: "Widget created successfully" };
   },
 }
 ```
 
-**3. Register**
+**4. Register**
+
+Add to `schema/resolvers/index.ts`:
 
 ```typescript
-export const resolvers = {
-  Mutation: { ...widgetResolvers.Mutation /* ... */ },
+export const resolvers: GraphQLResolverMap<GraphQLContext> = {
+  Mutation: {
+    ...widgetResolvers.Mutation,
+    // ... other mutations
+  },
 };
 ```
+
+Export the validation schema in `utils/validation.ts` so it's available for import.
 
 ## Patterns
 
 ### Pagination
 
 ```typescript
-const limit = getFetchLimit(args); // Get limit + 1
-const [start, end] = getSupabaseRange(args); // Convert to range
-const { data } = await supabase.from("t").range(start, end);
-return buildConnection(data, args); // Build connection
+const [start, end] = preparePaginationRange(args); // Get offset range
+const { data, count } = await supabase
+  .from("t")
+  .select("*", { count: "exact" })
+  .range(start, end);
+return buildConnectionOrEmpty(data, args, count); // Build connection
 ```
 
 ### Field Mapping
@@ -283,18 +316,21 @@ Widget: {
 - Check org membership: `requireOrgMembership(userId, orgId)`
 - Use error helpers: `ResourceErrors.notFound()`, `ValidationErrors.invalidInput()`
 - Soft delete: `.is("deleted_at", null)`
-- Return connections for lists: `buildConnection(items, args)`
+- Return connections for lists: `buildConnectionOrEmpty(items, args, count)`
 - Map DB columns: `orgId: (p) => p.org_id`
 - Return structured payloads: `{ success, resource, message }`
+- Fetch counts for pagination: `.select("*", { count: "exact" })`
+- Use validation schemas: `validateInput(Schema, input)`
 
 **DON'T:**
 
 - Skip auth checks
 - Expose raw errors: use error helpers
-- Hardcode limits: use `getFetchLimit()` and `getSupabaseRange()`
+- Hardcode pagination limits: use constants from `pagination.ts`
 - Forget soft deletes
 - Mix domain logic across resolvers
 - Create custom connection types
+- Skip input validation for mutations
 
 **Naming:**
 
