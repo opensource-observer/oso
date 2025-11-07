@@ -6,7 +6,6 @@ import { logger } from "@/lib/logger";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
   getOrganization,
-  getOrganizationByName,
   getUserProfile,
   requireAuthentication,
   requireOrgMembership,
@@ -301,7 +300,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
       const validated = validateInput(CreateDatasetSchema, input);
-      const organization = await getOrganizationByName(validated.orgName);
+      const organization = await getOrganization(validated.orgId);
       await requireOrgMembership(authenticatedUser.userId, organization.id);
 
       const supabase = createAdminClient();
@@ -309,14 +308,14 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       let catalog: string;
       let schema: string;
 
-      switch (validated.datasetType) {
+      switch (validated.type) {
         case "USER_MODEL":
           catalog = "user_iceberg";
           schema = `ds_${datasetId.replace(/-/g, "")}`;
           break;
         default:
           throw new Error(
-            `Dataset type "${validated.datasetType}" is not supported yet.`,
+            `Dataset type "${validated.type}" is not supported yet.`,
           );
       }
 
@@ -332,7 +331,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           schema,
           created_by: authenticatedUser.userId,
           is_public: validated.isPublic ?? false,
-          dataset_type: validated.datasetType,
+          dataset_type: validated.type,
         })
         .select()
         .single();

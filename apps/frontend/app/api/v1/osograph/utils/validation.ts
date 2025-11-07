@@ -104,7 +104,7 @@ export const UpdateDatasetSchema = z.object({
 });
 
 export const CreateDatasetSchema = z.object({
-  orgName: z.string().min(1, "Organization name is required"),
+  orgId: z.string().uuid("Invalid organization ID"),
   name: z
     .string()
     .min(1, "Dataset name is required")
@@ -115,7 +115,7 @@ export const CreateDatasetSchema = z.object({
   displayName: z.string().min(1, "Display name is required"),
   description: z.string().optional(),
   isPublic: z.boolean().optional(),
-  datasetType: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
+  type: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
 });
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
