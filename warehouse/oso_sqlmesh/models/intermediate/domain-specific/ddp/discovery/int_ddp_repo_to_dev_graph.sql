@@ -48,10 +48,10 @@ dev_repo_edges AS (
 SELECT
   d.git_user,
   d.repo_artifact_id,
-  r.artifact_url AS url,
+  a.artifact_url AS url,
   d.edge_weight,
   d.event_count
-FROM dev_repo_edges d
-JOIN oso.int_artifacts__github AS r
-  ON d.repo_artifact_id = r.artifact_id
+FROM dev_repo_edges AS d
+JOIN oso.int_artifacts__github AS a
+  ON d.repo_artifact_id = a.artifact_id
 ORDER BY d.edge_weight DESC

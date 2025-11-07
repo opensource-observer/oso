@@ -1,6 +1,6 @@
 MODEL (
   name oso.int_ddp_filtered_github_events_by_month,
-  description "GitHub events by monthly, filtered on developers who have interacted with a repo in the Ethereum ecosystem",
+  description "GitHub events aggregated by month, filtered on developers who have interacted with a repo in the Ethereum ecosystem",
   kind FULL,
   dialect trino,
   grain (bucket_month, event_type, git_user, repo_artifact_id),

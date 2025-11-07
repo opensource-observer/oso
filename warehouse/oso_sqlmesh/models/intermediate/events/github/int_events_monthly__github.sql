@@ -28,7 +28,6 @@ SELECT
   DATE_TRUNC('MONTH', bucket_day::DATE) AS bucket_month,
   from_artifact_id::VARCHAR AS from_artifact_id,
   to_artifact_id::VARCHAR AS to_artifact_id,
-  event_source::VARCHAR,
   event_type::VARCHAR,
   SUM(amount::DOUBLE)::DOUBLE AS amount
 FROM oso.int_events_daily__github as events
@@ -37,5 +36,4 @@ GROUP BY
   DATE_TRUNC('MONTH', bucket_day::DATE),
   from_artifact_id,
   to_artifact_id,
-  event_source,
   event_type
