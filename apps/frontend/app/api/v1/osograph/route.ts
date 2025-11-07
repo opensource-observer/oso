@@ -1,7 +1,7 @@
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { NextRequest, NextResponse } from "next/server";
-import { readFileSync } from "fs";
+import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { gql } from "graphql-tag";
 import { getUser } from "@/lib/auth/auth";
@@ -14,21 +14,21 @@ function loadSchemas(): string {
     "./app/api/v1/osograph/schema/graphql",
   );
 
-  const schemaFiles = [
-    "base.graphql",
-    "user.graphql",
-    "organization.graphql",
-    "invitation.graphql",
-    "notebook.graphql",
-    "dataset.graphql",
-  ];
+  const baseSchema = readFileSync(
+    path.join(schemaDir, "base.graphql"),
+    "utf-8",
+  );
 
-  const schemas = schemaFiles.map((file) => {
+  const otherSchemaFiles = readdirSync(schemaDir)
+    .filter((file) => file.endsWith(".graphql") && file !== "base.graphql")
+    .sort();
+
+  const otherSchemas = otherSchemaFiles.map((file) => {
     const filePath = path.join(schemaDir, file);
     return readFileSync(filePath, "utf-8");
   });
 
-  return schemas.join("\n\n");
+  return [baseSchema, ...otherSchemas].join("\n\n");
 }
 
 const schemaString = loadSchemas();
