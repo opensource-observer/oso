@@ -23,6 +23,12 @@ import {
 import { getNotebooksConnection } from "@/app/api/v1/osograph/schema/resolvers/notebook";
 import { getDatasetsConnection } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
+import {
+  validateInput,
+  AddUserByEmailSchema,
+  RemoveMemberSchema,
+  UpdateMemberRoleSchema,
+} from "@/app/api/v1/osograph/utils/validation";
 
 export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -66,7 +72,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(AddUserByEmailSchema, args.input);
 
       const supabase = createAdminClient();
       const org = await getOrganization(input.orgId);
@@ -129,7 +135,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(RemoveMemberSchema, args.input);
 
       if (input.userId === authenticatedUser.userId) {
         throw OrganizationErrors.cannotRemoveSelf();
@@ -164,7 +170,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       context: GraphQLContext,
     ) => {
       requireAuthentication(context.user);
-      const { input } = args;
+      const input = validateInput(UpdateMemberRoleSchema, args.input);
 
       const supabase = createAdminClient();
       const org = await getOrganization(input.orgId);
@@ -212,7 +218,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const { data: membersData, count } = await supabase
         .from("users_by_organization")
-        .select("*", { count: "exact" })
+        .select("*, user_profiles(*)", { count: "exact" })
         .eq("org_id", parent.id)
         .is("deleted_at", null)
         .range(start, end);
@@ -221,11 +227,9 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
         return buildConnectionOrEmpty(null, args, count);
       }
 
-      const userIds = membersData.map((m) => m.user_id);
-      const { data: users } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .in("id", userIds);
+      const users = membersData
+        .map((m) => m.user_profiles)
+        .filter((user) => user !== null);
 
       return buildConnectionOrEmpty(users, args, count);
     },
