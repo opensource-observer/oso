@@ -41,6 +41,7 @@ import {
 import z from "zod";
 import { assert } from "@opensource-observer/utils";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
+import { getModelsConnection } from "@/app/api/v1/osograph/schema/resolvers/model";
 
 const TRINO_SCHEMA_TIMEOUT = 10_000; // 10 seconds
 
@@ -418,6 +419,16 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     organization: async (parent: { org_id: string }) => {
       return getOrganization(parent.org_id);
+    },
+
+    models: async (
+      parent: { id: string; org_id: string },
+      args: ConnectionArgs,
+    ) => {
+      return getModelsConnection([parent.org_id], {
+        ...args,
+        datasetId: parent.id,
+      });
     },
   },
 };

@@ -11,6 +11,7 @@ type Dataset {
   updatedAt: DateTime!
   creator: User!
   organization: Organization!
+  models(limit: Int = 50, offset: Int = 0): [Model!]
 }
 
 type DatasetEdge {

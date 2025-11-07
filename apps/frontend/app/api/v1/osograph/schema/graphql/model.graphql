@@ -1,0 +1,209 @@
+type Model {
+  id: ID!
+  organization: Organization!
+  dataset: Dataset!
+  name: String!
+  isEnabled: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  revisions(first: Int = 50, after: String): ModelRevisionConnection!
+  releases(first: Int = 50, after: String): ModelReleaseConnection!
+  latestRevision: ModelRevision
+  latestRelease: ModelRelease
+}
+
+type ModelEdge {
+  node: Model!
+  cursor: String!
+}
+
+type ModelConnection {
+  edges: [ModelEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type ModelRevision {
+  id: ID!
+  model: Model!
+  organization: Organization!
+  name: String!
+  displayName: String!
+  description: String
+  revisionNumber: Int!
+  hash: String!
+  language: String!
+  code: String!
+  cron: String!
+  start: DateTime
+  end: DateTime
+  schema: [ModelColumn!]
+  dependsOn: [ModelDependency!]
+  partitionedBy: [String!]
+  clusteredBy: [String!]
+  kind: ModelKind!
+  kindOptions: ModelKindOptions
+  createdAt: DateTime!
+}
+
+type ModelRevisionEdge {
+  node: ModelRevision!
+  cursor: String!
+}
+
+type ModelRevisionConnection {
+  edges: [ModelRevisionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type ModelRelease {
+  id: ID!
+  model: Model!
+  revision: ModelRevision!
+  organization: Organization!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ModelReleaseEdge {
+  node: ModelRelease!
+  cursor: String!
+}
+
+type ModelReleaseConnection {
+  edges: [ModelReleaseEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type ModelDependency {
+  modelId: ID!
+  alias: String
+}
+
+type ModelColumn {
+  name: String!
+  type: String!
+  description: String
+}
+
+enum ModelKind {
+  INCREMENTAL_BY_TIME_RANGE
+  INCREMENTAL_BY_UNIQUE_KEY
+  INCREMENTAL_BY_PARTITION
+  SCD_TYPE_2_BY_TIME
+  SCD_TYPE_2_BY_COLUMN
+  FULL
+  VIEW
+}
+
+type ModelKindOptions {
+  timeColumn: String
+  timeColumnFormat: String
+  batchSize: Int
+  lookback: Int
+  uniqueKeyColumns: [String!]
+  whenMatchedSql: String
+  mergeFilter: String
+  validFromName: String
+  validToName: String
+  invalidateHardDeletes: Boolean
+  updatedAtColumn: String
+  updatedAtAsValidFrom: Boolean
+  scdColumns: [String!]
+  executionTimeAsValidFrom: Boolean
+}
+
+extend type Query {
+  model(id: ID!): Model
+  models(first: Int = 50, after: String): ModelConnection!
+}
+
+input CreateModelInput {
+  orgId: ID!
+  datasetId: ID!
+  name: String!
+  isEnabled: Boolean
+}
+
+type CreateModelPayload {
+  success: Boolean!
+  model: Model
+  message: String
+}
+
+input ModelColumnInput {
+  name: String!
+  type: String!
+  description: String
+}
+
+input ModelDependencyInput {
+  modelId: ID!
+  alias: String
+}
+
+input ModelKindOptionsInput {
+  timeColumn: String
+  timeColumnFormat: String
+  batchSize: Int
+  lookback: Int
+  uniqueKeyColumns: [String!]
+  whenMatchedSql: String
+  mergeFilter: String
+  validFromName: String
+  validToName: String
+  invalidateHardDeletes: Boolean
+  updatedAtColumn: String
+  updatedAtAsValidFrom: Boolean
+  scdColumns: [String!]
+  executionTimeAsValidFrom: Boolean
+}
+
+input CreateModelRevisionInput {
+  modelId: ID!
+  name: String!
+  displayName: String!
+  description: String
+  language: String!
+  code: String!
+  cron: String!
+  start: DateTime
+  end: DateTime
+  schema: [ModelColumnInput!]!
+  dependsOn: [ModelDependencyInput!]
+  partitionedBy: [String!]
+  clusteredBy: [String!]
+  kind: ModelKind!
+  kindOptions: ModelKindOptionsInput
+}
+
+type CreateModelRevisionPayload {
+  success: Boolean!
+  modelRevision: ModelRevision
+  message: String
+}
+
+input CreateModelReleaseInput {
+  modelId: ID!
+  modelRevisionId: ID!
+  description: String
+}
+
+type CreateModelReleasePayload {
+  success: Boolean!
+  modelRelease: ModelRelease
+  message: String
+}
+
+extend type Mutation {
+  createModel(input: CreateModelInput!): CreateModelPayload!
+  createModelRevision(
+    input: CreateModelRevisionInput!
+  ): CreateModelRevisionPayload!
+  createModelRelease(
+    input: CreateModelReleaseInput!
+  ): CreateModelReleasePayload!
+}
