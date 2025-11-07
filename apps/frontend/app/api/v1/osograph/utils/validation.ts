@@ -8,30 +8,42 @@ const PNG_HEADER = Buffer.from([
 
 export function validateBase64PngImage(base64Data: string): void {
   if (!base64Data.startsWith("data:image/png;base64,")) {
-    throw new Error("Invalid image format. Expected PNG data URL.");
+    throw ValidationErrors.invalidInput(
+      "preview",
+      "Invalid image format. Expected PNG data URL.",
+    );
   }
 
   const base64Content = base64Data.replace(/^data:[^;]+;base64,/, "");
 
   if (base64Content.length > (MAX_PREVIEW_SIZE_MB * 4) / 3) {
-    throw new Error("Image is too large.");
+    throw ValidationErrors.invalidInput(
+      "preview",
+      "Image is too large. Maximum size is 1MB.",
+    );
   }
 
   try {
     const buffer = Buffer.from(base64Content, "base64");
 
     if (!buffer.subarray(0, 8).equals(PNG_HEADER)) {
-      throw new Error("Invalid PNG header.");
+      throw ValidationErrors.invalidInput("preview", "Invalid PNG header.");
     }
 
     if (buffer.length > MAX_PREVIEW_SIZE_MB) {
-      throw new Error("Image is too large.");
+      throw ValidationErrors.invalidInput(
+        "preview",
+        "Image is too large. Maximum size is 1MB.",
+      );
     }
   } catch (error) {
     if (error instanceof Error && error.message.includes("Invalid PNG")) {
       throw error;
     }
-    throw new Error("Invalid base64 encoding or corrupted image data.");
+    throw ValidationErrors.invalidInput(
+      "preview",
+      "Invalid base64 encoding or corrupted image data.",
+    );
   }
 }
 
