@@ -60,9 +60,11 @@ dev_repo_edges AS (
 )
 
 SELECT
-  dev_artifact_id,
-  dev_name,
-  repo_artifact_id,
-  edge_weight,
-  event_count
-FROM dev_repo_edges
+  e.dev_artifact_id,
+  e.dev_name,
+  e.repo_artifact_id,
+  r.artifact_url AS url,
+  e.edge_weight,
+  e.event_count
+FROM dev_repo_edges AS e
+JOIN oso.int_artifacts__github AS r
