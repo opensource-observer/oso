@@ -1,5 +1,4 @@
 import dagster as dg
-from oso_dagster.config import DagsterConfig
 from oso_dagster.factories.common import (
     AssetFactoryResponse,
     early_resources_asset_factory,
@@ -13,9 +12,7 @@ from sqlmesh.core.engine_adapter.trino import TrinoEngineAdapter
 def udm_models() -> AssetFactoryResponse:
     @dg.asset
     async def udm_models(
-        context: dg.AssetExecutionContext,
         trino: dg.ResourceParam[TrinoResource],
-        global_config: dg.ResourceParam[DagsterConfig],
     ) -> None:
         # TODO replace with a real UDM client
         # For now we have a fake implementation we use from the testing module
