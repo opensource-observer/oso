@@ -29,7 +29,10 @@ repo_norm AS (
     repo_artifact_id,
     url,
     raw_score,
-    (raw_score - min(raw_score) OVER()) / NULLIF(max(raw_score) OVER() - min(raw_score) OVER(),0) AS score
+    CASE 
+      WHEN raw_score < 0 THEN 0
+      ELSE raw_score / NULLIF(MAX(raw_score) OVER(), 0)
+    END AS score
   FROM repo_base
 )
 

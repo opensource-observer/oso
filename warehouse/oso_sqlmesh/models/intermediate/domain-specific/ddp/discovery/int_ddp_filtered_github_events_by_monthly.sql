@@ -1,9 +1,9 @@
 MODEL (
   name oso.int_ddp_filtered_github_events_by_monthly,
-  description "Filtered GitHub events by monthly",
+  description "GitHub events by monthly, filtered on developers who have interacted with a repo in the Ethereum ecosystem",
   kind FULL,
   dialect trino,
-  grain (bucket_month, event_type, git_user, repo_artifact_id, amount),
+  grain (bucket_month, event_type, git_user, repo_artifact_id),
   tags (
     'entity_category=artifact'
   ),
@@ -40,6 +40,7 @@ devs_touching_pretrust AS (
   WHERE repo_artifact_id IN (
     SELECT repo_artifact_id
     FROM oso.int_ddp_repo_pretrust
+    WHERE raw_score > 0
   )
 )
 

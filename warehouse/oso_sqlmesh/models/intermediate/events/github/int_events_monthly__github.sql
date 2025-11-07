@@ -2,15 +2,15 @@ MODEL (
   name oso.int_events_monthly__github,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column bucket_month,
-    batch_size 365,
+    batch_size 12,
     batch_concurrency 2,
-    lookback @default_daily_incremental_lookback,
+    lookback 3,
     forward_only true,
   ),
   start @github_incremental_start,
-  cron '@daily',
-  partitioned_by (DAY("bucket_month"), "event_type"),
-  grain (bucket_month, event_type, event_source, from_artifact_id, to_artifact_id),
+  cron '@monthly',
+  partitioned_by (YEAR("bucket_month"), "event_type"),
+  grain (bucket_month, event_type, from_artifact_id, to_artifact_id),
   audits (
     has_at_least_n_rows(threshold := 0),
     no_gaps(
