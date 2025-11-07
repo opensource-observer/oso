@@ -44,7 +44,8 @@ SELECT
   COALESCE(r.is_owner_in_ossd, FALSE) AS is_owner_in_ossd,
   r.last_activity_time AS last_activity_time,
   r.age_months AS age_months,
-  r.contributor_count AS contributor_count
+  r.contributor_count AS contributor_count,
+  r.is_current_repo AS is_current_repo
 FROM pkg_deps AS p
 LEFT JOIN oso.int_ddp_repo_features AS r
   ON p.package_owner_artifact_id = r.artifact_id

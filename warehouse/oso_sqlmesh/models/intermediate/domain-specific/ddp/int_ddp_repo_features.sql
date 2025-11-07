@@ -120,19 +120,21 @@ joined AS (
       WHEN bm.is_fork IS NULL THEN 'Unknown'
       ELSE 'No'
     END AS fork_status,
+    -- Prefer repo metadata over gharchive data
     COALESCE(bm.created_at, ct.first_commit) AS first_activity_time,
     COALESCE(bm.updated_at, ct.last_commit) AS last_activity_time,
-    -- Calculate age in months from first to last commit
+    COALESCE(bm.fork_count, pm.fork_count) AS fork_count,
+    COALESCE(bm.star_count, pm.star_count) AS star_count,
+    -- Only source is gharchive data
     COALESCE(pm.contributor_count, 0) AS contributor_count,
     COALESCE(pm.commit_count, 0) AS commit_count,
-    COALESCE(pm.fork_count, bm.fork_count, 0) AS fork_count,
-    COALESCE(pm.star_count, bm.star_count, 0) AS star_count,
     COALESCE(pm.opened_issue_count, 0) AS opened_issue_count,
     COALESCE(pm.closed_issue_count, 0) AS closed_issue_count,
     COALESCE(pm.opened_pull_request_count, 0) AS opened_pull_request_count,
     COALESCE(pm.merged_pull_request_count, 0) AS merged_pull_request_count,
     COALESCE(pm.release_count, 0) AS release_count,
     COALESCE(pm.comment_count, 0) AS comment_count,
+    -- Only source is packages table
     COALESCE(rp.has_packages, FALSE) AS has_packages,
     COALESCE(rp.package_count, 0) AS package_count,
     -- Additional useful metadata
