@@ -41,29 +41,6 @@ export function getPaginationParams(args: ConnectionArgs): {
   };
 }
 
-export function getSupabaseRange(args: ConnectionArgs): [number, number] {
-  const { offset, limit } = getPaginationParams(args);
-  return [offset, offset + limit - 1];
-}
-
-export function getNextCursor(
-  currentOffset: number,
-  currentLimit: number,
-  hasMore: boolean,
-): string | null {
-  if (!hasMore) {
-    return null;
-  }
-  return encodeCursor(currentOffset + currentLimit - 1);
-}
-
-export function hasMoreItems(
-  itemCount: number,
-  requestedLimit: number,
-): boolean {
-  return itemCount > requestedLimit;
-}
-
 export function getFetchLimit(args: ConnectionArgs): number {
   const { limit } = getPaginationParams(args);
   return limit + 1;

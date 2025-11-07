@@ -52,11 +52,6 @@ export function buildConnection<T>(
   };
 }
 
-export function getFetchLimit(args: ConnectionArgs): number {
-  const { limit } = getPaginationParams(args);
-  return limit + 1;
-}
-
 export function emptyConnection<T>(): Connection<T> {
   return {
     edges: [],

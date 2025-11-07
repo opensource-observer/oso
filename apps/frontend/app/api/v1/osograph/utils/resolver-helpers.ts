@@ -7,7 +7,7 @@ import {
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
   getFetchLimit,
-  getSupabaseRange,
+  getPaginationParams,
 } from "@/app/api/v1/osograph/utils/pagination";
 import {
   getOrganization,
@@ -17,10 +17,8 @@ import { Database } from "@/lib/types/supabase";
 
 export function preparePaginationRange(args: ConnectionArgs): [number, number] {
   const limit = getFetchLimit(args);
-  return getSupabaseRange({
-    ...args,
-    first: limit,
-  });
+  const { offset } = getPaginationParams(args);
+  return [offset, offset + limit - 1];
 }
 
 export function buildConnectionOrEmpty<T>(
