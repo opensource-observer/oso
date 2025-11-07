@@ -16,7 +16,7 @@ MODEL (
 
 WITH last_date AS (
   SELECT MAX(bucket_month) AS last_bucket
-  FROM oso.int_ddp_filtered_github_events_by_monthly
+  FROM oso.int_ddp_filtered_github_events_by_month
 ),
 event_weights AS (
   SELECT 'STARRED' event_type,1.0 w UNION ALL
@@ -38,7 +38,7 @@ dev_repo_edges AS (
         )
     ) AS edge_weight,
     COUNT(*) AS event_count
-  FROM oso.int_ddp_filtered_github_events_by_monthly AS e
+  FROM oso.int_ddp_filtered_github_events_by_month AS e
   LEFT JOIN event_weights AS w
     ON e.event_type = w.event_type
   CROSS JOIN last_date AS ld
