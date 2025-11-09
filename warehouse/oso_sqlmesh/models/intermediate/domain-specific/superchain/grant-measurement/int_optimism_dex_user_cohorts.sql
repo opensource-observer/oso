@@ -12,7 +12,7 @@ WITH user_first_day AS (
   SELECT
     from_artifact_id,
     MIN(bucket_day) AS first_day
-  FROM oso.int_optimism_dex_trades
+  FROM oso.int_optimism_dex_trades_daily
   GROUP BY 1
 ),
 user_first_dex AS (
@@ -32,7 +32,7 @@ user_first_dex AS (
       SUM(t.count) AS tx_count,
       SUM(t.l2_gas_fee) AS l2_gas_fee
     FROM user_first_day AS f
-    JOIN oso.int_optimism_dex_trades t
+    JOIN oso.int_optimism_dex_trades_daily AS t
       ON t.from_artifact_id = f.from_artifact_id
      AND t.bucket_day = f.first_day
     GROUP BY 1,2,3
@@ -52,8 +52,9 @@ daily_new AS (
     t.project_name,
     t.dex_address,
     COUNT(DISTINCT t.from_artifact_id) AS new_address_count,
-    SUM(t.l2_gas_fee) AS new_fees_eth
-  FROM oso.int_optimism_dex_trades AS t
+    SUM(t.l2_gas_fee) AS new_fees_eth,
+    SUM(t.count) AS new_tx_count
+  FROM oso.int_optimism_dex_trades_daily AS t
   JOIN cohort_users AS u
     ON t.from_artifact_id = u.from_artifact_id
    AND t.bucket_day >= u.cohort_start_day
@@ -65,8 +66,9 @@ daily_all AS (
     project_name,
     dex_address,
     COUNT(DISTINCT from_artifact_id) AS all_address_count,
-    SUM(l2_gas_fee) AS all_fees_eth
-  FROM oso.int_optimism_dex_trades
+    SUM(l2_gas_fee) AS all_fees_eth,
+    SUM(count) AS all_tx_count
+  FROM oso.int_optimism_dex_trades_daily
   GROUP BY 1,2,3
 ),
 all_days_projects AS (
@@ -90,7 +92,9 @@ joined AS (
     COALESCE(all_address_count,0) AS all_addr,
     COALESCE(new_address_count,0) AS new_addr,
     COALESCE(all_fees_eth,0) AS all_fees_eth,
-    COALESCE(new_fees_eth,0) AS new_fees_eth
+    COALESCE(new_fees_eth,0) AS new_fees_eth,
+    COALESCE(all_tx_count,0) AS all_tx_count,
+    COALESCE(new_tx_count,0) AS new_tx_count
   FROM all_days_projects AS a
   LEFT JOIN daily_all AS al
     ON a.bucket_day = al.bucket_day
@@ -105,7 +109,8 @@ SELECT
   dex_address,
   new_addr AS address_count,
   new_fees_eth AS tx_fees_eth,
-  'new addresses' AS cohort
+  new_tx_count AS tx_count,
+  'new' AS cohort
 FROM joined
 
 UNION ALL
@@ -116,7 +121,8 @@ SELECT
   dex_address,
   all_addr,
   all_fees_eth,
-  'all addresses' AS cohort
+  all_tx_count AS tx_count,
+  'all' AS cohort
 FROM joined
 
 UNION ALL
@@ -127,7 +133,8 @@ SELECT
   dex_address,
   (all_addr - new_addr) AS address_count,
   (all_fees_eth - new_fees_eth) AS tx_fees_eth,
-  'existing addresses' AS cohort
+  (all_tx_count - new_tx_count) AS tx_count,
+  'existing' AS cohort
 FROM joined
 ORDER BY
   project_name,

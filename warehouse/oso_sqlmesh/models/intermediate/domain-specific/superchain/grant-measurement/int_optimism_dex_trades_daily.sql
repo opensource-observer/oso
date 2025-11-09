@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_optimism_dex_trades,
+  name oso.int_optimism_dex_trades_daily,
   description 'DEX trade events on OP Mainnet',
   dialect trino,
   kind incremental_by_time_range(
@@ -40,11 +40,11 @@ SELECT
   d.project_name,
   d.dex_address,
   txs.count,
-  txs.l2_gas_fee,
+  (txs.l2_gas_fee / 1e18)::DOUBLE AS l2_gas_fee,
   txs.from_artifact_id
 FROM oso.int_events_daily__l2_transactions AS txs
 JOIN dexs AS d
-  ON txs.from_artifact_id = d.artifact_id
+  ON txs.to_artifact_id = d.artifact_id
 WHERE
   txs.event_source = 'OPTIMISM'
   AND txs.event_type = 'TRANSACTION'
