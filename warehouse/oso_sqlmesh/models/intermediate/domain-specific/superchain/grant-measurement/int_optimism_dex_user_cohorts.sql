@@ -18,7 +18,7 @@ WITH user_first_day AS (
 user_first_dex AS (
   SELECT
     a.from_artifact_id,
-    a.dex_address,
+    a.dex_address AS cohort_dex,
     a.first_day AS cohort_start_day,
     ROW_NUMBER() OVER (
       PARTITION BY a.from_artifact_id
@@ -41,102 +41,116 @@ user_first_dex AS (
 cohort_users AS (
   SELECT
     from_artifact_id,
-    dex_address,
+    cohort_dex,
     cohort_start_day
   FROM user_first_dex
   WHERE rn = 1
 ),
-daily_new AS (
+user_dex_first_day AS (
   SELECT
-    t.bucket_day,
-    t.project_name,
-    t.dex_address,
-    COUNT(DISTINCT t.from_artifact_id) AS new_address_count,
-    SUM(t.l2_gas_fee) AS new_fees_eth,
-    SUM(t.count) AS new_tx_count
-  FROM oso.int_optimism_dex_trades_daily AS t
-  JOIN cohort_users AS u
-    ON t.from_artifact_id = u.from_artifact_id
-   AND t.bucket_day >= u.cohort_start_day
-  GROUP BY 1,2,3
+    from_artifact_id,
+    dex_address,
+    MIN(bucket_day) AS first_day_with_dex
+  FROM oso.int_optimism_dex_trades_daily
+  GROUP BY 1,2
 ),
-daily_all AS (
+user_day_dex AS (
   SELECT
     bucket_day,
     project_name,
     dex_address,
-    COUNT(DISTINCT from_artifact_id) AS all_address_count,
-    SUM(l2_gas_fee) AS all_fees_eth,
-    SUM(count) AS all_tx_count
+    from_artifact_id,
+    SUM(count) AS tx_count,
+    SUM(l2_gas_fee) AS tx_fees_eth
   FROM oso.int_optimism_dex_trades_daily
-  GROUP BY 1,2,3
+  GROUP BY 1,2,3,4
+),
+classified AS (
+  SELECT
+    u.bucket_day,
+    u.project_name,
+    u.dex_address,
+    u.from_artifact_id,
+    u.tx_count,
+    u.tx_fees_eth,
+    uf.first_day AS first_day_global,
+    cu.cohort_dex,
+    cu.cohort_start_day,
+    udf.first_day_with_dex,
+    CASE
+      WHEN uf.first_day = u.bucket_day
+       AND cu.cohort_dex = u.dex_address
+        THEN 'new_onboarded_this_dex'
+      WHEN udf.first_day_with_dex = u.bucket_day
+       AND uf.first_day < u.bucket_day
+       AND cu.cohort_dex <> u.dex_address
+        THEN 'new_onboarded_other_dex'
+      WHEN udf.first_day_with_dex < u.bucket_day
+       AND cu.cohort_dex = u.dex_address
+        THEN 'returning_onboarded_this_dex'
+      WHEN udf.first_day_with_dex < u.bucket_day
+       AND cu.cohort_dex <> u.dex_address
+        THEN 'returning_onboarded_other_dex'
+      ELSE 'other'
+    END AS cohort_type
+  FROM user_day_dex AS u
+  LEFT JOIN user_first_day AS uf
+    ON u.from_artifact_id = uf.from_artifact_id
+  LEFT JOIN cohort_users AS cu
+    ON u.from_artifact_id = cu.from_artifact_id
+  LEFT JOIN user_dex_first_day AS udf
+    ON u.from_artifact_id = udf.from_artifact_id
+   AND u.dex_address = udf.dex_address
+),
+agg AS (
+  SELECT
+    bucket_day,
+    project_name,
+    dex_address,
+    cohort_type,
+    COUNT(DISTINCT from_artifact_id) AS address_count,
+    SUM(tx_fees_eth) AS tx_fees_eth,
+    SUM(tx_count) AS tx_count
+  FROM classified
+  WHERE cohort_type <> 'other'
+  GROUP BY 1,2,3,4
 ),
 all_days_projects AS (
-  SELECT
-    bucket_day,
-    project_name,
-    dex_address
-  FROM daily_all
-  UNION
-  SELECT
-    bucket_day,
-    project_name,
-    dex_address
-  FROM daily_new
+  SELECT DISTINCT bucket_day, project_name, dex_address
+  FROM oso.int_optimism_dex_trades_daily
 ),
-joined AS (
+cohort_types AS (
+  SELECT 'new_onboarded_this_dex' AS cohort_type UNION ALL
+  SELECT 'new_onboarded_other_dex' UNION ALL
+  SELECT 'returning_onboarded_this_dex' UNION ALL
+  SELECT 'returning_onboarded_other_dex'
+),
+grid AS (
   SELECT
-    a.bucket_day,
-    a.project_name,
-    a.dex_address,
-    COALESCE(all_address_count,0) AS all_addr,
-    COALESCE(new_address_count,0) AS new_addr,
-    COALESCE(all_fees_eth,0) AS all_fees_eth,
-    COALESCE(new_fees_eth,0) AS new_fees_eth,
-    COALESCE(all_tx_count,0) AS all_tx_count,
-    COALESCE(new_tx_count,0) AS new_tx_count
-  FROM all_days_projects AS a
-  LEFT JOIN daily_all AS al
-    ON a.bucket_day = al.bucket_day
-   AND a.dex_address = al.dex_address
-  LEFT JOIN daily_new AS nw
-    ON a.bucket_day = nw.bucket_day
-   AND a.dex_address = nw.dex_address
+    d.bucket_day,
+    d.project_name,
+    d.dex_address,
+    c.cohort_type
+  FROM all_days_projects AS d
+  CROSS JOIN cohort_types AS c
 )
-SELECT
-  bucket_day,
-  project_name,
-  dex_address,
-  new_addr AS address_count,
-  new_fees_eth AS tx_fees_eth,
-  new_tx_count AS tx_count,
-  'new' AS cohort
-FROM joined
-
-UNION ALL
 
 SELECT
-  bucket_day,
-  project_name,
-  dex_address,
-  all_addr,
-  all_fees_eth,
-  all_tx_count AS tx_count,
-  'all' AS cohort
-FROM joined
-
-UNION ALL
-
-SELECT
-  bucket_day,
-  project_name,
-  dex_address,
-  (all_addr - new_addr) AS address_count,
-  (all_fees_eth - new_fees_eth) AS tx_fees_eth,
-  (all_tx_count - new_tx_count) AS tx_count,
-  'existing' AS cohort
-FROM joined
+  g.bucket_day,
+  g.project_name,
+  g.dex_address,
+  g.cohort_type,
+  COALESCE(a.address_count,0) AS address_count,
+  COALESCE(a.tx_fees_eth,0) AS tx_fees_eth,
+  COALESCE(a.tx_count,0) AS tx_count
+FROM grid AS g
+LEFT JOIN agg AS a
+  ON g.bucket_day = a.bucket_day
+ AND g.project_name = a.project_name
+ AND g.dex_address = a.dex_address
+ AND g.cohort_type = a.cohort_type
 ORDER BY
-  project_name,
   bucket_day,
-  cohort
+  project_name,
+  dex_address,
+  cohort_type
