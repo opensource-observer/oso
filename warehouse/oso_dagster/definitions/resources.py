@@ -11,11 +11,13 @@ from oso_core.cache import Cache, CacheOptions, FileCacheBackend
 from oso_core.logging.decorators import time_function
 from oso_dagster.cbt.cbt import CBTResource
 from oso_dagster.factories import resource_factory
-from oso_dagster.factories.common import ResourcesRegistry
+from oso_dagster.factories.common import ResourcesContext, ResourcesRegistry
 from oso_dagster.resources import (
     BigQueryDataTransferResource,
     ClickhouseResource,
+    DuckdbEngineAdapterResource,
     DuckDBResource,
+    FakeUserDefinedModelResource,
     K8sApiResource,
     K8sResource,
     NessieResource,
@@ -23,9 +25,12 @@ from oso_dagster.resources import (
     PrefixedSQLMeshTranslator,
     SQLMeshExporter,
     Trino2ClickhouseSQLMeshExporter,
+    TrinoEngineAdapterResource,
     TrinoK8sResource,
     TrinoRemoteResource,
     TrinoResource,
+    UserDefinedModelEngineAdapterResource,
+    UserDefinedModelStateResource,
     load_dlt_dynamic_warehouse_destination,
     load_dlt_staging,
     load_dlt_warehouse_destination,
@@ -434,6 +439,36 @@ def heartbeat_factory(global_config: DagsterConfig) -> HeartBeatResource:
         )
 
 
+@resource_factory("udm_engine_adapter")
+@time_function(logger)
+def udm_engine_adapter_factory(
+    resources: ResourcesContext, global_config: DagsterConfig
+) -> UserDefinedModelEngineAdapterResource:
+    """Factory function to create a UDM engine adapter resource."""
+
+    if global_config.gcp_bigquery_enabled:
+        trino: TrinoResource = resources.resolve("trino")
+        return TrinoEngineAdapterResource(
+            trino=trino,
+            http_scheme="https",
+        )
+    else:
+        duckdb: DuckDBResource = resources.resolve("duckdb")
+        return DuckdbEngineAdapterResource(
+            duckdb=duckdb,
+        )
+
+
+@resource_factory("udm_state")
+@time_function(logger)
+def udm_state_factory() -> UserDefinedModelStateResource:
+    """Factory function to create a UDM state resource."""
+
+    # Use a fake UDM state resource for now as this is a stub until we implement
+    # all the APIs properly.
+    return FakeUserDefinedModelResource()
+
+
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
@@ -471,5 +506,7 @@ def default_resource_registry():
     registry.add(time_ordered_storage_factory)
     registry.add(oso_app_db_factory)
     registry.add(heartbeat_factory)
+    registry.add(udm_engine_adapter_factory)
+    registry.add(udm_state_factory)
 
     return registry

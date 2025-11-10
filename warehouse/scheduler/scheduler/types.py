@@ -133,7 +133,7 @@ class Model(BaseModel):
         return exp.to_table(f"{self.backend_db_name()}.{self.backend_table_name()}")
 
 
-class UserDefinedModelClient(abc.ABC):
+class UserDefinedModelStateClient(abc.ABC):
     """A client to manage user defined models."""
 
     @abc.abstractmethod

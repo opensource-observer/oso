@@ -1,9 +1,9 @@
-from scheduler.types import UserDefinedModelClient
+from scheduler.types import UserDefinedModelStateClient
 from sqlmesh import EngineAdapter
 
 
 async def evaluate_all_models(
-    udm_client: UserDefinedModelClient, adapter: EngineAdapter
+    udm_client: UserDefinedModelStateClient, adapter: EngineAdapter
 ) -> None:
     """Our first pass at a hacky model evaluator. This should be immediately
     replaced as this simply checks available models in our database.

@@ -3,30 +3,27 @@ from oso_dagster.factories.common import (
     AssetFactoryResponse,
     early_resources_asset_factory,
 )
-from oso_dagster.resources.trino import TrinoResource
+from oso_dagster.resources.udm_engine_adapter import (
+    UserDefinedModelEngineAdapterResource,
+)
+from oso_dagster.resources.udm_state import UserDefinedModelStateResource
 from scheduler.evaluator import evaluate_all_models
-from sqlmesh.core.engine_adapter.trino import TrinoEngineAdapter
 
 
 @early_resources_asset_factory()
 def udm_models() -> AssetFactoryResponse:
     @dg.asset
     async def udm_models(
-        trino: dg.ResourceParam[TrinoResource],
+        context: dg.AssetExecutionContext,
+        udm_engine_adapter: dg.ResourceParam[UserDefinedModelEngineAdapterResource],
+        udm_state: dg.ResourceParam[UserDefinedModelStateResource],
     ) -> None:
-        # TODO replace with a real UDM client
-        # For now we have a fake implementation we use from the testing module
-        from scheduler.testing.client import FakeUDMClient
-
-        async with trino.ensure_available():
-            adapter = TrinoEngineAdapter(
-                connection_factory_or_pool=lambda: trino.get_connection()
-            )
-
-            await evaluate_all_models(
-                udm_client=FakeUDMClient(),
-                adapter=adapter,
-            )
+        async with udm_engine_adapter.get_adapter(log_override=context.log) as adapter:
+            async with udm_state.get_client() as udm_client:
+                await evaluate_all_models(
+                    udm_client=udm_client,
+                    adapter=adapter,
+                )
 
     job = dg.define_asset_job(
         name="udm_models_job", selection=dg.AssetSelection.assets(udm_models)

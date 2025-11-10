@@ -1,7 +1,7 @@
-from scheduler.types import Model, UserDefinedModelClient
+from scheduler.types import Model, UserDefinedModelStateClient
 
 
-class FakeUDMClient(UserDefinedModelClient):
+class FakeUDMClient(UserDefinedModelStateClient):
     def __init__(self):
         self._models: list[Model] = []
         super().__init__()
