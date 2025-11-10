@@ -67,7 +67,7 @@ dependencies = [
     "kr8s==0.20.9",
     "structlog>=25.4.0",
     "pandas-gbq>=0.29.2",
-    "dagster-sqlmesh>=0.20.0",
+    "dagster-sqlmesh>=0.21.0",
     "oso-core",
     "pyoso",
     "metrics-service",
@@ -110,7 +110,6 @@ pyoso = { workspace = true }
 oso-mcp = { workspace = true }
 oso-core = { workspace = true }
 metrics-service = { workspace = true }
-dagster-sqlmesh = { path = "../dagster-sqlmesh", editable = true }
 scheduler = { workspace = true }
 
 [tool.uv.workspace]

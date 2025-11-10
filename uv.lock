@@ -1214,8 +1214,8 @@ wheels = [
 
 [[package]]
 name = "dagster-sqlmesh"
-version = "0.20.0"
-source = { editable = "../dagster-sqlmesh" }
+version = "0.21.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dagster" },
     { name = "pyarrow" },
@@ -1223,26 +1223,9 @@ dependencies = [
     { name = "pytest" },
     { name = "sqlmesh" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "dagster", specifier = ">=1.7.8" },
-    { name = "pyarrow", specifier = ">=18.0.0" },
-    { name = "pydantic", specifier = ">=2.11.5" },
-    { name = "pytest", specifier = ">=8.3.2" },
-    { name = "sqlmesh", specifier = ">=0.188" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "dagster-duckdb-polars", specifier = ">=0.24.2" },
-    { name = "dagster-webserver", specifier = ">=1.8.1" },
-    { name = "fastapi" },
-    { name = "ipython", specifier = ">=8.26.0" },
-    { name = "pdbpp", specifier = ">=0.10.3" },
-    { name = "polars", specifier = ">=1.5.0" },
-    { name = "ruff", specifier = "==0.10.0" },
-    { name = "sse-starlette" },
+sdist = { url = "https://files.pythonhosted.org/packages/fa/fb/3b4d6d84ff26ca4c90264422e3c505d6d837d211d422e024db67bbd418ee/dagster_sqlmesh-0.21.0.tar.gz", hash = "sha256:04c90fcb5f03b0eed66b4818fc0d898fac84c3da81cd2a288425bcbdf40c731c", size = 224484, upload-time = "2025-11-09T04:26:51.713Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/92/6a/9c7893ba9fe599f98aa5be2baf86da4a4a9c511c2bd9ec38c23c78557ec2/dagster_sqlmesh-0.21.0-py3-none-any.whl", hash = "sha256:75a58bd48e70123375c29c074b17716b8e229583bced8b871c96c97e9574cf10", size = 40503, upload-time = "2025-11-09T04:26:50.045Z" },
 ]
 
 [[package]]
@@ -4231,7 +4214,7 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", editable = "../dagster-sqlmesh" },
+    { name = "dagster-sqlmesh", specifier = ">=0.21.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.8.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.8.0" },
