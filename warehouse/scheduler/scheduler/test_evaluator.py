@@ -1,5 +1,7 @@
+from contextlib import asynccontextmanager
+
 import pytest
-from scheduler.evaluator import evaluate_all_models
+from scheduler.evaluator import UserDefinedModelEvaluator
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import Model
 from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
@@ -26,10 +28,13 @@ async def test_evaluator(
         )
     )
 
-    await evaluate_all_models(
-        udm_client=fake_udm_client,
-        adapter=duckdb_engine_adapter,
-    )
+    evaluator = UserDefinedModelEvaluator.prepare(fake_udm_client)
+
+    @asynccontextmanager
+    async def adapter_context_manager():
+        yield duckdb_engine_adapter
+
+    await evaluator.evaluate(adapter_context_manager)
 
     schemas = duckdb_engine_adapter.fetchdf("SHOW ALL TABLES")
     # Print all rows and all columns in the schemas dataframe for debugging

@@ -1,3 +1,5 @@
+import functools
+
 import dagster as dg
 from oso_dagster.factories.common import (
     AssetFactoryResponse,
@@ -7,7 +9,7 @@ from oso_dagster.resources.udm_engine_adapter import (
     UserDefinedModelEngineAdapterResource,
 )
 from oso_dagster.resources.udm_state import UserDefinedModelStateResource
-from scheduler.evaluator import evaluate_all_models
+from scheduler.evaluator import UserDefinedModelEvaluator
 
 
 @early_resources_asset_factory()
@@ -18,12 +20,13 @@ def udm_models() -> AssetFactoryResponse:
         udm_engine_adapter: dg.ResourceParam[UserDefinedModelEngineAdapterResource],
         udm_state: dg.ResourceParam[UserDefinedModelStateResource],
     ) -> None:
-        async with udm_engine_adapter.get_adapter(log_override=context.log) as adapter:
-            async with udm_state.get_client() as udm_client:
-                await evaluate_all_models(
-                    udm_client=udm_client,
-                    adapter=adapter,
+        async with udm_state.get_client() as udm_client:
+            evaluator = UserDefinedModelEvaluator.prepare(udm_client)
+            await evaluator.evaluate(
+                functools.partial(
+                    udm_engine_adapter.get_adapter, log_override=context.log
                 )
+            )
 
     job = dg.define_asset_job(
         name="udm_models_job", selection=dg.AssetSelection.assets(udm_models)
