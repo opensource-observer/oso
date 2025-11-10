@@ -23,7 +23,7 @@ class UserDefinedModelEngineAdapterResource(dg.ConfigurableResource):
         log_override: t.Optional[logging.Logger] = None,
     ) -> t.AsyncGenerator[EngineAdapter, None]:
         raise NotImplementedError(
-            "get_client not implemented on the base TrinoResource"
+            "get_client not implemented on the base UserDefinedModelEngineAdapterResource"
         )
 
 
