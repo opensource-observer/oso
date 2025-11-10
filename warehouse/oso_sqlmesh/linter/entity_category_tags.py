@@ -3,7 +3,7 @@ import typing as t
 
 import sqlglot
 from sqlglot import exp
-from sqlmesh.core.linter.rule import Rule, RuleViolation
+from sqlmesh.core.linter.rule import Fix, Range, Rule, RuleViolation
 from sqlmesh.core.model import IncrementalByTimeRangeKind, Model, SqlModel
 
 # Tables that indicate a model is related to projects (with canonical names)
@@ -107,7 +107,12 @@ class EntityCategoryTagRequired(Rule):
 
         return None
 
-    def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
+    def violation(
+        self,
+        violation_msg: t.Optional[str] = None,
+        violation_range: t.Optional[Range] = None,
+        fixes: t.Optional[t.List[Fix]] = None,
+    ) -> RuleViolation:
         return RuleViolation(
             rule=self,
             violation_msg=violation_msg
