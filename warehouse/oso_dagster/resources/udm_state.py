@@ -18,7 +18,7 @@ class UserDefinedModelStateResource(dg.ConfigurableResource):
         self,
     ) -> t.AsyncIterator[UserDefinedModelStateClient]:
         raise NotImplementedError(
-            "get_client not implemented on the base UserDefinedModelClientResource"
+            "get_client not implemented on the base UserDefinedModelStateResource"
         )
 
 
