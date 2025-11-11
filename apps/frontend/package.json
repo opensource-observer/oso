@@ -74,7 +74,7 @@
     "@tremor/react": "^3.18.7",
     "@vercel/og": "^0.8.5",
     "add": "^2.0.6",
-    "ai": "^5.0.15",
+    "ai": "^5.0.52",
     "algoliasearch": "^5.35.0",
     "capnweb": "^0.1.0",
     "class-variance-authority": "^0.7.1",
