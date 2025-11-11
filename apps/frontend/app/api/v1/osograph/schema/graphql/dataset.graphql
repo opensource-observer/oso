@@ -11,7 +11,7 @@ type Dataset {
   updatedAt: DateTime!
   creator: User!
   organization: Organization!
-  models(first: Int = 50, after: String): ModelConnection!
+  dataModels(first: Int = 50, after: String): DataModelConnection!
 }
 
 type DatasetEdge {

@@ -20,13 +20,13 @@ import { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { createHash } from "crypto";
 import {
   validateInput,
-  CreateModelSchema,
-  CreateModelRevisionSchema,
-  CreateModelReleaseSchema,
+  CreateDataModelSchema,
+  CreateDataModelRevisionSchema,
+  CreateDataModelReleaseSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
 
-export async function getModelsConnection(
+export async function getDataModelsConnection(
   orgIds: string[],
   args: ConnectionArgs & {
     datasetId?: string;
@@ -46,19 +46,19 @@ export async function getModelsConnection(
   const [start, end] = preparePaginationRange(args);
   query = query.range(start, end);
 
-  const { data: models, error, count } = await query;
+  const { data: dataModels, error, count } = await query;
 
   if (error) {
-    logger.error("Failed to fetch models:", error);
-    throw ServerErrors.database("Failed to fetch models");
+    logger.error("Failed to fetch dataModels:", error);
+    throw ServerErrors.database("Failed to fetch dataModels");
   }
 
-  return buildConnectionOrEmpty(models, args, count);
+  return buildConnectionOrEmpty(dataModels, args, count);
 }
 
-export const modelResolvers = {
+export const dataModelResolvers = {
   Query: {
-    model: async (
+    dataModel: async (
       _: unknown,
       args: { id: string },
       context: GraphQLContext,
@@ -66,21 +66,21 @@ export const modelResolvers = {
       const authenticatedUser = requireAuthentication(context.user);
       const supabase = createAdminClient();
 
-      const { data: model, error } = await supabase
+      const { data: dataModel, error } = await supabase
         .from("model")
         .select("*")
         .eq("id", args.id)
         .is("deleted_at", null)
         .single();
 
-      if (error || !model) {
+      if (error || !dataModel) {
         return null;
       }
-      await requireOrgMembership(authenticatedUser.userId, model.org_id);
+      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
 
-      return model;
+      return dataModel;
     },
-    models: async (
+    dataModels: async (
       _: unknown,
       args: ConnectionArgs,
       context: GraphQLContext,
@@ -90,21 +90,21 @@ export const modelResolvers = {
       if (orgIds.length === 0) {
         return buildConnectionOrEmpty(null, args, 0);
       }
-      return getModelsConnection(orgIds, args);
+      return getDataModelsConnection(orgIds, args);
     },
   },
   Mutation: {
-    createModel: async (
+    createDataModel: async (
       _: unknown,
       {
         input,
       }: {
-        input: z.infer<typeof CreateModelSchema>;
+        input: z.infer<typeof CreateDataModelSchema>;
       },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const validatedInput = validateInput(CreateModelSchema, input);
+      const validatedInput = validateInput(CreateDataModelSchema, input);
       await requireOrgMembership(
         authenticatedUser.userId,
         validatedInput.orgId,
@@ -123,41 +123,44 @@ export const modelResolvers = {
         .single();
 
       if (error) {
-        logger.error("Failed to create model:", error);
-        throw ServerErrors.database("Failed to create model");
+        logger.error("Failed to create dataModel:", error);
+        throw ServerErrors.database("Failed to create dataModel");
       }
 
       return {
         success: true,
-        message: "Model created successfully",
-        model: data,
+        message: "DataModel created successfully",
+        dataModel: data,
       };
     },
-    createModelRevision: async (
+    createDataModelRevision: async (
       _: unknown,
-      { input }: { input: z.infer<typeof CreateModelRevisionSchema> },
+      { input }: { input: z.infer<typeof CreateDataModelRevisionSchema> },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const validatedInput = validateInput(CreateModelRevisionSchema, input);
+      const validatedInput = validateInput(
+        CreateDataModelRevisionSchema,
+        input,
+      );
       const supabase = createAdminClient();
 
-      const { data: model, error: modelError } = await supabase
+      const { data: dataModel, error: dataModelError } = await supabase
         .from("model")
         .select("org_id")
-        .eq("id", validatedInput.modelId)
+        .eq("id", validatedInput.dataModelId)
         .single();
 
-      if (modelError || !model) {
-        throw ResourceErrors.notFound("Model", validatedInput.modelId);
+      if (dataModelError || !dataModel) {
+        throw ResourceErrors.notFound("DataModel", validatedInput.dataModelId);
       }
 
-      await requireOrgMembership(authenticatedUser.userId, model.org_id);
+      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
 
       const { data: latestRevision } = await supabase
         .from("model_revision")
         .select("revision_number, hash")
-        .eq("model_id", validatedInput.modelId)
+        .eq("model_id", validatedInput.dataModelId)
         .order("revision_number", { ascending: false })
         .limit(1)
         .single();
@@ -180,7 +183,7 @@ export const modelResolvers = {
         return {
           success: true,
           message: "No changes detected, returning existing revision",
-          modelRevision: latestRevision,
+          dataModelRevision: latestRevision,
         };
       }
 
@@ -189,8 +192,8 @@ export const modelResolvers = {
       const { data, error } = await supabase
         .from("model_revision")
         .insert({
-          org_id: model.org_id,
-          model_id: validatedInput.modelId,
+          org_id: dataModel.org_id,
+          model_id: validatedInput.dataModelId,
           name: validatedInput.name,
           display_name: validatedInput.displayName,
           description: validatedInput.description,
@@ -207,7 +210,7 @@ export const modelResolvers = {
             description: col.description ?? null,
           })),
           depends_on: validatedInput.dependsOn?.map((d) => ({
-            model_id: d.modelId,
+            model_id: d.dataModelId,
             alias: d.alias ?? null,
           })),
           partitioned_by: validatedInput.partitionedBy,
@@ -244,75 +247,75 @@ export const modelResolvers = {
         .single();
 
       if (error) {
-        logger.error("Failed to create model revision:", error);
-        throw ServerErrors.database("Failed to create model revision");
+        logger.error("Failed to create dataModel revision:", error);
+        throw ServerErrors.database("Failed to create dataModel revision");
       }
 
       return {
         success: true,
-        message: "Model revision created successfully",
-        modelRevision: data,
+        message: "DataModel revision created successfully",
+        dataModelRevision: data,
       };
     },
-    createModelRelease: async (
+    createDataModelRelease: async (
       _: unknown,
-      { input }: { input: z.infer<typeof CreateModelReleaseSchema> },
+      { input }: { input: z.infer<typeof CreateDataModelReleaseSchema> },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const validatedInput = validateInput(CreateModelReleaseSchema, input);
+      const validatedInput = validateInput(CreateDataModelReleaseSchema, input);
       const supabase = createAdminClient();
 
-      const { data: model, error: modelError } = await supabase
+      const { data: dataModel, error: dataModelError } = await supabase
         .from("model")
         .select("org_id")
-        .eq("id", validatedInput.modelId)
+        .eq("id", validatedInput.dataModelId)
         .single();
 
-      if (modelError || !model) {
-        throw ResourceErrors.notFound("Model", validatedInput.modelId);
+      if (dataModelError || !dataModel) {
+        throw ResourceErrors.notFound("DataModel", validatedInput.dataModelId);
       }
 
-      await requireOrgMembership(authenticatedUser.userId, model.org_id);
+      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
 
       const { error: revisionError } = await supabase
         .from("model_revision")
         .select("id")
-        .eq("id", validatedInput.modelRevisionId)
-        .eq("model_id", validatedInput.modelId)
+        .eq("id", validatedInput.dataModelRevisionId)
+        .eq("model_id", validatedInput.dataModelId)
         .single();
 
       if (revisionError) {
         throw ResourceErrors.notFound(
-          "ModelRevision",
-          validatedInput.modelRevisionId,
+          "DataModelRevision",
+          validatedInput.dataModelRevisionId,
         );
       }
 
       const { data, error } = await supabase
         .from("model_release")
         .insert({
-          org_id: model.org_id,
-          model_id: validatedInput.modelId,
-          model_revision_id: validatedInput.modelRevisionId,
+          org_id: dataModel.org_id,
+          model_id: validatedInput.dataModelId,
+          model_revision_id: validatedInput.dataModelRevisionId,
           description: validatedInput.description,
         })
         .select()
         .single();
 
       if (error) {
-        logger.error("Failed to create model release:", error);
-        throw ServerErrors.database("Failed to create model release");
+        logger.error("Failed to create dataModel release:", error);
+        throw ServerErrors.database("Failed to create dataModel release");
       }
 
       return {
         success: true,
-        message: "Model release created successfully",
-        modelRelease: data,
+        message: "DataModel release created successfully",
+        dataModelRelease: data,
       };
     },
   },
-  Model: {
+  DataModel: {
     orgId: (parent: { org_id: string }) => parent.org_id,
     organization: (parent: { org_id: string }) => {
       return getOrganization(parent.org_id);
@@ -336,7 +339,7 @@ export const modelResolvers = {
 
       if (error) {
         logger.error(
-          `Failed to fetch revisions for model ${parent.id}:`,
+          `Failed to fetch revisions for dataModel ${parent.id}:`,
           error,
         );
         return buildConnectionOrEmpty(null, args, 0);
@@ -354,7 +357,10 @@ export const modelResolvers = {
         .range(start, end);
 
       if (error) {
-        logger.error(`Failed to fetch releases for model ${parent.id}:`, error);
+        logger.error(
+          `Failed to fetch releases for dataModel ${parent.id}:`,
+          error,
+        );
         return buildConnectionOrEmpty(null, args, 0);
       }
       return buildConnectionOrEmpty(data, args, count);
@@ -394,10 +400,10 @@ export const modelResolvers = {
     },
   },
 
-  ModelRevision: {
+  DataModelRevision: {
     orgId: (parent: { org_id: string }) => parent.org_id,
-    modelId: (parent: { model_id: string }) => parent.model_id,
-    model: async (parent: { model_id: string }) => {
+    dataModelId: (parent: { model_id: string }) => parent.model_id,
+    dataModel: async (parent: { model_id: string }) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("model")
@@ -405,7 +411,7 @@ export const modelResolvers = {
         .eq("id", parent.model_id)
         .single();
       if (error) {
-        throw ResourceErrors.notFound("Model", parent.model_id);
+        throw ResourceErrors.notFound("DataModel", parent.model_id);
       }
       return data;
     },
@@ -425,12 +431,12 @@ export const modelResolvers = {
     createdAt: (parent: { created_at: string }) => parent.created_at,
   },
 
-  ModelRelease: {
+  DataModelRelease: {
     orgId: (parent: { org_id: string }) => parent.org_id,
-    modelId: (parent: { model_id: string }) => parent.model_id,
+    dataModelId: (parent: { model_id: string }) => parent.model_id,
     revisionId: (parent: { model_revision_id: string }) =>
       parent.model_revision_id,
-    model: async (parent: { model_id: string }) => {
+    dataModel: async (parent: { model_id: string }) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
         .from("model")
@@ -438,7 +444,7 @@ export const modelResolvers = {
         .eq("id", parent.model_id)
         .single();
       if (error) {
-        throw ResourceErrors.notFound("Model", parent.model_id);
+        throw ResourceErrors.notFound("DataModel", parent.model_id);
       }
       return data;
     },
@@ -451,7 +457,7 @@ export const modelResolvers = {
         .single();
       if (error) {
         throw ResourceErrors.notFound(
-          "ModelRevision",
+          "DataModelRevision",
           parent.model_revision_id,
         );
       }

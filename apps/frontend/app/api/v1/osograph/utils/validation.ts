@@ -118,25 +118,25 @@ export const CreateDatasetSchema = z.object({
   type: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
 });
 
-export const CreateModelSchema = z.object({
+export const CreateDataModelSchema = z.object({
   orgId: z.string().uuid("Invalid organization ID"),
   datasetId: z.string().uuid("Invalid dataset ID"),
-  name: z.string().min(1, "Model name is required"),
+  name: z.string().min(1, "DataModel name is required"),
   isEnabled: z.boolean().optional(),
 });
 
-const ModelColumnSchema = z.object({
+const DataModelColumnSchema = z.object({
   name: z.string(),
   type: z.string(),
   description: z.string().optional(),
 });
 
-const ModelDependencySchema = z.object({
-  modelId: z.string().uuid(),
+const DataModelDependencySchema = z.object({
+  dataModelId: z.string().uuid(),
   alias: z.string().optional(),
 });
 
-const ModelKindOptionsSchema = z.object({
+const DataModelKindOptionsSchema = z.object({
   timeColumn: z.string().optional(),
   timeColumnFormat: z.string().optional(),
   batchSize: z.number().int().optional(),
@@ -153,8 +153,8 @@ const ModelKindOptionsSchema = z.object({
   executionTimeAsValidFrom: z.boolean().optional(),
 });
 
-export const CreateModelRevisionSchema = z.object({
-  modelId: z.string().uuid(),
+export const CreateDataModelRevisionSchema = z.object({
+  dataModelId: z.string().uuid(),
   name: z.string(),
   displayName: z.string(),
   description: z.string().optional(),
@@ -163,8 +163,8 @@ export const CreateModelRevisionSchema = z.object({
   cron: z.string(),
   start: z.string().datetime().optional(),
   end: z.string().datetime().optional(),
-  schema: z.array(ModelColumnSchema),
-  dependsOn: z.array(ModelDependencySchema).optional(),
+  schema: z.array(DataModelColumnSchema),
+  dependsOn: z.array(DataModelDependencySchema).optional(),
   partitionedBy: z.array(z.string()).optional(),
   clusteredBy: z.array(z.string()).optional(),
   kind: z.enum([
@@ -176,12 +176,12 @@ export const CreateModelRevisionSchema = z.object({
     "FULL",
     "VIEW",
   ]),
-  kindOptions: ModelKindOptionsSchema.optional(),
+  kindOptions: DataModelKindOptionsSchema.optional(),
 });
 
-export const CreateModelReleaseSchema = z.object({
-  modelId: z.string().uuid(),
-  modelRevisionId: z.string().uuid(),
+export const CreateDataModelReleaseSchema = z.object({
+  dataModelId: z.string().uuid(),
+  dataModelRevisionId: z.string().uuid(),
   description: z.string().optional(),
 });
 

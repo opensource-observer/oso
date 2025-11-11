@@ -34,7 +34,7 @@ import {
 import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
-import { getModelsConnection } from "@/app/api/v1/osograph/schema/resolvers/model";
+import { getDataModelsConnection } from "@/app/api/v1/osograph/schema/resolvers/data-model";
 
 export async function getRawDatasets(
   orgIds: string[],
@@ -298,11 +298,11 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       return getOrganization(parent.org_id);
     },
 
-    models: async (
+    dataModels: async (
       parent: { id: string; org_id: string },
       args: ConnectionArgs,
     ) => {
-      return getModelsConnection([parent.org_id], {
+      return getDataModelsConnection([parent.org_id], {
         ...args,
         datasetId: parent.id,
       });

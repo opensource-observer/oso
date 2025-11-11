@@ -1,4 +1,4 @@
-type Model {
+type DataModel {
   id: ID!
   orgId: ID!
   organization: Organization!
@@ -7,28 +7,28 @@ type Model {
   isEnabled: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
-  revisions(first: Int = 50, after: String): ModelRevisionConnection!
-  releases(first: Int = 50, after: String): ModelReleaseConnection!
-  latestRevision: ModelRevision
-  latestRelease: ModelRelease
+  revisions(first: Int = 50, after: String): DataModelRevisionConnection!
+  releases(first: Int = 50, after: String): DataModelReleaseConnection!
+  latestRevision: DataModelRevision
+  latestRelease: DataModelRelease
 }
 
-type ModelEdge {
-  node: Model!
+type DataModelEdge {
+  node: DataModel!
   cursor: String!
 }
 
-type ModelConnection {
-  edges: [ModelEdge!]!
+type DataModelConnection {
+  edges: [DataModelEdge!]!
   pageInfo: PageInfo!
   totalCount: Int
 }
 
-type ModelRevision {
+type DataModelRevision {
   id: ID!
   orgId: ID!
-  modelId: ID!
-  model: Model!
+  dataModelId: ID!
+  dataModel: DataModel!
   organization: Organization!
   name: String!
   displayName: String!
@@ -40,62 +40,62 @@ type ModelRevision {
   cron: String!
   start: DateTime
   end: DateTime
-  schema: [ModelColumn!]
-  dependsOn: [ModelDependency!]
+  schema: [DataModelColumn!]
+  dependsOn: [DataModelDependency!]
   partitionedBy: [String!]
   clusteredBy: [String!]
-  kind: ModelKind!
-  kindOptions: ModelKindOptions
+  kind: DataModelKind!
+  kindOptions: DataModelKindOptions
   createdAt: DateTime!
 }
 
-type ModelRevisionEdge {
-  node: ModelRevision!
+type DataModelRevisionEdge {
+  node: DataModelRevision!
   cursor: String!
 }
 
-type ModelRevisionConnection {
-  edges: [ModelRevisionEdge!]!
+type DataModelRevisionConnection {
+  edges: [DataModelRevisionEdge!]!
   pageInfo: PageInfo!
   totalCount: Int
 }
 
-type ModelRelease {
+type DataModelRelease {
   id: ID!
   orgId: ID!
-  modelId: ID!
+  dataModelId: ID!
   revisionId: ID!
-  model: Model!
-  revision: ModelRevision!
+  dataModel: DataModel!
+  revision: DataModelRevision!
   organization: Organization!
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
 }
 
-type ModelReleaseEdge {
-  node: ModelRelease!
+type DataModelReleaseEdge {
+  node: DataModelRelease!
   cursor: String!
 }
 
-type ModelReleaseConnection {
-  edges: [ModelReleaseEdge!]!
+type DataModelReleaseConnection {
+  edges: [DataModelReleaseEdge!]!
   pageInfo: PageInfo!
   totalCount: Int
 }
 
-type ModelDependency {
-  modelId: ID!
+type DataModelDependency {
+  dataModelId: ID!
   alias: String
 }
 
-type ModelColumn {
+type DataModelColumn {
   name: String!
   type: String!
   description: String
 }
 
-enum ModelKind {
+enum DataModelKind {
   INCREMENTAL_BY_TIME_RANGE
   INCREMENTAL_BY_UNIQUE_KEY
   INCREMENTAL_BY_PARTITION
@@ -105,7 +105,7 @@ enum ModelKind {
   VIEW
 }
 
-type ModelKindOptions {
+type DataModelKindOptions {
   timeColumn: String
   timeColumnFormat: String
   batchSize: Int
@@ -123,35 +123,35 @@ type ModelKindOptions {
 }
 
 extend type Query {
-  model(id: ID!): Model
-  models(first: Int = 50, after: String): ModelConnection!
+  dataModel(id: ID!): DataModel
+  dataModels(first: Int = 50, after: String): DataModelConnection!
 }
 
-input CreateModelInput {
+input CreateDataModelInput {
   orgId: ID!
   datasetId: ID!
   name: String!
   isEnabled: Boolean
 }
 
-type CreateModelPayload {
+type CreateDataModelPayload {
   success: Boolean!
-  model: Model
+  dataModel: DataModel
   message: String
 }
 
-input ModelColumnInput {
+input DataModelColumnInput {
   name: String!
   type: String!
   description: String
 }
 
-input ModelDependencyInput {
-  modelId: ID!
+input DataModelDependencyInput {
+  dataModelId: ID!
   alias: String
 }
 
-input ModelKindOptionsInput {
+input DataModelKindOptionsInput {
   timeColumn: String
   timeColumnFormat: String
   batchSize: Int
@@ -168,8 +168,8 @@ input ModelKindOptionsInput {
   executionTimeAsValidFrom: Boolean
 }
 
-input CreateModelRevisionInput {
-  modelId: ID!
+input CreateDataModelRevisionInput {
+  dataModelId: ID!
   name: String!
   displayName: String!
   description: String
@@ -178,38 +178,38 @@ input CreateModelRevisionInput {
   cron: String!
   start: DateTime
   end: DateTime
-  schema: [ModelColumnInput!]!
-  dependsOn: [ModelDependencyInput!]
+  schema: [DataModelColumnInput!]!
+  dependsOn: [DataModelDependencyInput!]
   partitionedBy: [String!]
   clusteredBy: [String!]
-  kind: ModelKind!
-  kindOptions: ModelKindOptionsInput
+  kind: DataModelKind!
+  kindOptions: DataModelKindOptionsInput
 }
 
-type CreateModelRevisionPayload {
+type CreateDataModelRevisionPayload {
   success: Boolean!
-  modelRevision: ModelRevision
+  dataModelRevision: DataModelRevision
   message: String
 }
 
-input CreateModelReleaseInput {
-  modelId: ID!
-  modelRevisionId: ID!
+input CreateDataModelReleaseInput {
+  dataModelId: ID!
+  dataModelRevisionId: ID!
   description: String
 }
 
-type CreateModelReleasePayload {
+type CreateDataModelReleasePayload {
   success: Boolean!
-  modelRelease: ModelRelease
+  dataModelRelease: DataModelRelease
   message: String
 }
 
 extend type Mutation {
-  createModel(input: CreateModelInput!): CreateModelPayload!
-  createModelRevision(
-    input: CreateModelRevisionInput!
-  ): CreateModelRevisionPayload!
-  createModelRelease(
-    input: CreateModelReleaseInput!
-  ): CreateModelReleasePayload!
+  createDataModel(input: CreateDataModelInput!): CreateDataModelPayload!
+  createDataModelRevision(
+    input: CreateDataModelRevisionInput!
+  ): CreateDataModelRevisionPayload!
+  createDataModelRelease(
+    input: CreateDataModelReleaseInput!
+  ): CreateDataModelReleasePayload!
 }

@@ -2593,7 +2593,7 @@ class OsoAppClient {
     return payload.dataset;
   }
 
-  async createModel(
+  async createDataModel(
     args: Partial<{
       orgId: string;
       datasetId: string;
@@ -2608,12 +2608,12 @@ class OsoAppClient {
       isEnabled: args.isEnabled ?? false,
     };
 
-    const CREATE_MODEL_MUTATION = gql(`
-      mutation CreateModel($input: CreateModelInput!) {
-        createModel(input: $input) {
+    const CREATE_DATA_MODEL_MUTATION = gql(`
+      mutation CreateDataModel($input: CreateDataModelInput!) {
+        createDataModel(input: $input) {
           success
           message
-          model {
+          dataModel {
             id
             name
             isEnabled
@@ -2628,7 +2628,7 @@ class OsoAppClient {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: print(CREATE_MODEL_MUTATION),
+        query: print(CREATE_DATA_MODEL_MUTATION),
         variables: {
           input: {
             orgId,
@@ -2643,25 +2643,27 @@ class OsoAppClient {
     const result = await response.json();
 
     if (result.errors) {
-      logger.error("Failed to create model:", result.errors[0].message);
-      throw new Error(`Failed to create model: ${result.errors[0].message}`);
+      logger.error("Failed to create dataModel:", result.errors[0].message);
+      throw new Error(
+        `Failed to create dataModel: ${result.errors[0].message}`,
+      );
     }
 
-    const payload = result.data?.createModel;
+    const payload = result.data?.createDataModel;
     if (!payload) {
-      throw new Error("No response data from create model mutation");
+      throw new Error("No response data from create dataModel mutation");
     }
 
     if (payload.success) {
-      logger.log(`Successfully created model "${name}"`);
+      logger.log(`Successfully created dataModel "${name}"`);
     }
 
-    return payload.model;
+    return payload.dataModel;
   }
 
-  async createModelRevision(
+  async createDataModelRevision(
     args: Partial<{
-      modelId: string;
+      dataModelId: string;
       name: string;
       displayName: string;
       description: string;
@@ -2678,12 +2680,12 @@ class OsoAppClient {
       kindOptions: any;
     }>,
   ) {
-    const CREATE_MODEL_REVISION_MUTATION = gql(`
-      mutation CreateModelRevision($input: CreateModelRevisionInput!) {
-        createModelRevision(input: $input) {
+    const CREATE_DATA_MODEL_REVISION_MUTATION = gql(`
+      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {
+        createDataModelRevision(input: $input) {
           success
           message
-          modelRevision {
+          dataModelRevision {
             id
             revisionNumber
           }
@@ -2697,7 +2699,7 @@ class OsoAppClient {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: print(CREATE_MODEL_REVISION_MUTATION),
+        query: print(CREATE_DATA_MODEL_REVISION_MUTATION),
         variables: {
           input: args,
         },
@@ -2708,41 +2710,43 @@ class OsoAppClient {
 
     if (result.errors) {
       logger.error(
-        "Failed to create model revision:",
+        "Failed to create dataModel revision:",
         result.errors[0].message,
       );
       throw new Error(
-        `Failed to create model revision: ${result.errors[0].message}`,
+        `Failed to create dataModel revision: ${result.errors[0].message}`,
       );
     }
 
-    const payload = result.data?.createModelRevision;
+    const payload = result.data?.createDataModelRevision;
     if (!payload) {
-      throw new Error("No response data from create model revision mutation");
+      throw new Error(
+        "No response data from create dataModel revision mutation",
+      );
     }
 
     if (payload.success) {
       logger.log(
-        `Successfully created model revision for model "${args.modelId}"`,
+        `Successfully created dataModel revision for dataModel "${args.dataModelId}"`,
       );
     }
 
-    return payload.modelRevision;
+    return payload.dataModelRevision;
   }
 
-  async createModelRelease(
+  async createDataModelRelease(
     args: Partial<{
-      modelId: string;
-      modelRevisionId: string;
+      dataModelId: string;
+      dataModelRevisionId: string;
       description: string;
     }>,
   ) {
-    const CREATE_MODEL_RELEASE_MUTATION = gql(`
-      mutation CreateModelRelease($input: CreateModelReleaseInput!) {
-        createModelRelease(input: $input) {
+    const CREATE_DATA_MODEL_RELEASE_MUTATION = gql(`
+      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {
+        createDataModelRelease(input: $input) {
           success
           message
-          modelRelease {
+          dataModelRelease {
             id
           }
         }
@@ -2755,7 +2759,7 @@ class OsoAppClient {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: print(CREATE_MODEL_RELEASE_MUTATION),
+        query: print(CREATE_DATA_MODEL_RELEASE_MUTATION),
         variables: {
           input: args,
         },
@@ -2765,24 +2769,29 @@ class OsoAppClient {
     const result = await response.json();
 
     if (result.errors) {
-      logger.error("Failed to create model release:", result.errors[0].message);
+      logger.error(
+        "Failed to create dataModel release:",
+        result.errors[0].message,
+      );
       throw new Error(
-        `Failed to create model release: ${result.errors[0].message}`,
+        `Failed to create dataModel release: ${result.errors[0].message}`,
       );
     }
 
-    const payload = result.data?.createModelRelease;
+    const payload = result.data?.createDataModelRelease;
     if (!payload) {
-      throw new Error("No response data from create model release mutation");
+      throw new Error(
+        "No response data from create dataModel release mutation",
+      );
     }
 
     if (payload.success) {
       logger.log(
-        `Successfully created model release for model "${args.modelId}"`,
+        `Successfully created dataModel release for dataModel "${args.dataModelId}"`,
       );
     }
 
-    return payload.modelRelease;
+    return payload.dataModelRelease;
   }
 }
 

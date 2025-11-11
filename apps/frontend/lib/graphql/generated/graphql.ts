@@ -1185,6 +1185,58 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type CreateDataModelInput = {
+  datasetId: Scalars["ID"]["input"];
+  isEnabled?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
+export type CreateDataModelPayload = {
+  __typename?: "CreateDataModelPayload";
+  dataModel?: Maybe<DataModel>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDataModelReleaseInput = {
+  dataModelId: Scalars["ID"]["input"];
+  dataModelRevisionId: Scalars["ID"]["input"];
+  description?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type CreateDataModelReleasePayload = {
+  __typename?: "CreateDataModelReleasePayload";
+  dataModelRelease?: Maybe<DataModelRelease>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDataModelRevisionInput = {
+  clusteredBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  code: Scalars["String"]["input"];
+  cron: Scalars["String"]["input"];
+  dataModelId: Scalars["ID"]["input"];
+  dependsOn?: InputMaybe<Array<DataModelDependencyInput>>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  displayName: Scalars["String"]["input"];
+  end?: InputMaybe<Scalars["DateTime"]["input"]>;
+  kind: DataModelKind;
+  kindOptions?: InputMaybe<DataModelKindOptionsInput>;
+  language: Scalars["String"]["input"];
+  name: Scalars["String"]["input"];
+  partitionedBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  schema: Array<DataModelColumnInput>;
+  start?: InputMaybe<Scalars["DateTime"]["input"]>;
+};
+
+export type CreateDataModelRevisionPayload = {
+  __typename?: "CreateDataModelRevisionPayload";
+  dataModelRevision?: Maybe<DataModelRevision>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type CreateDatasetInput = {
   description?: InputMaybe<Scalars["String"]["input"]>;
   displayName?: InputMaybe<Scalars["String"]["input"]>;
@@ -1211,58 +1263,6 @@ export type CreateInvitationPayload = {
   __typename?: "CreateInvitationPayload";
   invitation?: Maybe<Invitation>;
   message?: Maybe<Scalars["String"]["output"]>;
-  success: Scalars["Boolean"]["output"];
-};
-
-export type CreateModelInput = {
-  datasetId: Scalars["ID"]["input"];
-  isEnabled?: InputMaybe<Scalars["Boolean"]["input"]>;
-  name: Scalars["String"]["input"];
-  orgId: Scalars["ID"]["input"];
-};
-
-export type CreateModelPayload = {
-  __typename?: "CreateModelPayload";
-  message?: Maybe<Scalars["String"]["output"]>;
-  model?: Maybe<Model>;
-  success: Scalars["Boolean"]["output"];
-};
-
-export type CreateModelReleaseInput = {
-  description?: InputMaybe<Scalars["String"]["input"]>;
-  modelId: Scalars["ID"]["input"];
-  modelRevisionId: Scalars["ID"]["input"];
-};
-
-export type CreateModelReleasePayload = {
-  __typename?: "CreateModelReleasePayload";
-  message?: Maybe<Scalars["String"]["output"]>;
-  modelRelease?: Maybe<ModelRelease>;
-  success: Scalars["Boolean"]["output"];
-};
-
-export type CreateModelRevisionInput = {
-  clusteredBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
-  code: Scalars["String"]["input"];
-  cron: Scalars["String"]["input"];
-  dependsOn?: InputMaybe<Array<ModelDependencyInput>>;
-  description?: InputMaybe<Scalars["String"]["input"]>;
-  displayName: Scalars["String"]["input"];
-  end?: InputMaybe<Scalars["DateTime"]["input"]>;
-  kind: ModelKind;
-  kindOptions?: InputMaybe<ModelKindOptionsInput>;
-  language: Scalars["String"]["input"];
-  modelId: Scalars["ID"]["input"];
-  name: Scalars["String"]["input"];
-  partitionedBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
-  schema: Array<ModelColumnInput>;
-  start?: InputMaybe<Scalars["DateTime"]["input"]>;
-};
-
-export type CreateModelRevisionPayload = {
-  __typename?: "CreateModelRevisionPayload";
-  message?: Maybe<Scalars["String"]["output"]>;
-  modelRevision?: Maybe<ModelRevision>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -1439,16 +1439,190 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
+export type DataModel = {
+  __typename?: "DataModel";
+  createdAt: Scalars["DateTime"]["output"];
+  dataset: Dataset;
+  id: Scalars["ID"]["output"];
+  isEnabled: Scalars["Boolean"]["output"];
+  latestRelease?: Maybe<DataModelRelease>;
+  latestRevision?: Maybe<DataModelRevision>;
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  releases: DataModelReleaseConnection;
+  revisions: DataModelRevisionConnection;
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type DataModelReleasesArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type DataModelRevisionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type DataModelColumn = {
+  __typename?: "DataModelColumn";
+  description?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
+  type: Scalars["String"]["output"];
+};
+
+export type DataModelColumnInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  name: Scalars["String"]["input"];
+  type: Scalars["String"]["input"];
+};
+
+export type DataModelConnection = {
+  __typename?: "DataModelConnection";
+  edges: Array<DataModelEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelDependency = {
+  __typename?: "DataModelDependency";
+  alias?: Maybe<Scalars["String"]["output"]>;
+  dataModelId: Scalars["ID"]["output"];
+};
+
+export type DataModelDependencyInput = {
+  alias?: InputMaybe<Scalars["String"]["input"]>;
+  dataModelId: Scalars["ID"]["input"];
+};
+
+export type DataModelEdge = {
+  __typename?: "DataModelEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModel;
+};
+
+export enum DataModelKind {
+  Full = "FULL",
+  IncrementalByPartition = "INCREMENTAL_BY_PARTITION",
+  IncrementalByTimeRange = "INCREMENTAL_BY_TIME_RANGE",
+  IncrementalByUniqueKey = "INCREMENTAL_BY_UNIQUE_KEY",
+  ScdType_2ByColumn = "SCD_TYPE_2_BY_COLUMN",
+  ScdType_2ByTime = "SCD_TYPE_2_BY_TIME",
+  View = "VIEW",
+}
+
+export type DataModelKindOptions = {
+  __typename?: "DataModelKindOptions";
+  batchSize?: Maybe<Scalars["Int"]["output"]>;
+  executionTimeAsValidFrom?: Maybe<Scalars["Boolean"]["output"]>;
+  invalidateHardDeletes?: Maybe<Scalars["Boolean"]["output"]>;
+  lookback?: Maybe<Scalars["Int"]["output"]>;
+  mergeFilter?: Maybe<Scalars["String"]["output"]>;
+  scdColumns?: Maybe<Array<Scalars["String"]["output"]>>;
+  timeColumn?: Maybe<Scalars["String"]["output"]>;
+  timeColumnFormat?: Maybe<Scalars["String"]["output"]>;
+  uniqueKeyColumns?: Maybe<Array<Scalars["String"]["output"]>>;
+  updatedAtAsValidFrom?: Maybe<Scalars["Boolean"]["output"]>;
+  updatedAtColumn?: Maybe<Scalars["String"]["output"]>;
+  validFromName?: Maybe<Scalars["String"]["output"]>;
+  validToName?: Maybe<Scalars["String"]["output"]>;
+  whenMatchedSql?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type DataModelKindOptionsInput = {
+  batchSize?: InputMaybe<Scalars["Int"]["input"]>;
+  executionTimeAsValidFrom?: InputMaybe<Scalars["Boolean"]["input"]>;
+  invalidateHardDeletes?: InputMaybe<Scalars["Boolean"]["input"]>;
+  lookback?: InputMaybe<Scalars["Int"]["input"]>;
+  mergeFilter?: InputMaybe<Scalars["String"]["input"]>;
+  scdColumns?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  timeColumn?: InputMaybe<Scalars["String"]["input"]>;
+  timeColumnFormat?: InputMaybe<Scalars["String"]["input"]>;
+  uniqueKeyColumns?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  updatedAtAsValidFrom?: InputMaybe<Scalars["Boolean"]["input"]>;
+  updatedAtColumn?: InputMaybe<Scalars["String"]["input"]>;
+  validFromName?: InputMaybe<Scalars["String"]["input"]>;
+  validToName?: InputMaybe<Scalars["String"]["input"]>;
+  whenMatchedSql?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type DataModelRelease = {
+  __typename?: "DataModelRelease";
+  createdAt: Scalars["DateTime"]["output"];
+  dataModel: DataModel;
+  dataModelId: Scalars["ID"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  revision: DataModelRevision;
+  revisionId: Scalars["ID"]["output"];
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type DataModelReleaseConnection = {
+  __typename?: "DataModelReleaseConnection";
+  edges: Array<DataModelReleaseEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelReleaseEdge = {
+  __typename?: "DataModelReleaseEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModelRelease;
+};
+
+export type DataModelRevision = {
+  __typename?: "DataModelRevision";
+  clusteredBy?: Maybe<Array<Scalars["String"]["output"]>>;
+  code: Scalars["String"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  cron: Scalars["String"]["output"];
+  dataModel: DataModel;
+  dataModelId: Scalars["ID"]["output"];
+  dependsOn?: Maybe<Array<DataModelDependency>>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName: Scalars["String"]["output"];
+  end?: Maybe<Scalars["DateTime"]["output"]>;
+  hash: Scalars["String"]["output"];
+  id: Scalars["ID"]["output"];
+  kind: DataModelKind;
+  kindOptions?: Maybe<DataModelKindOptions>;
+  language: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  partitionedBy?: Maybe<Array<Scalars["String"]["output"]>>;
+  revisionNumber: Scalars["Int"]["output"];
+  schema?: Maybe<Array<DataModelColumn>>;
+  start?: Maybe<Scalars["DateTime"]["output"]>;
+};
+
+export type DataModelRevisionConnection = {
+  __typename?: "DataModelRevisionConnection";
+  edges: Array<DataModelRevisionEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelRevisionEdge = {
+  __typename?: "DataModelRevisionEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModelRevision;
+};
+
 export type Dataset = {
   __typename?: "Dataset";
   createdAt: Scalars["DateTime"]["output"];
   creator: User;
   creatorId: Scalars["ID"]["output"];
+  dataModels: DataModelConnection;
   description?: Maybe<Scalars["String"]["output"]>;
   displayName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   isPublic: Scalars["Boolean"]["output"];
-  models: ModelConnection;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
@@ -1456,7 +1630,7 @@ export type Dataset = {
   updatedAt: Scalars["DateTime"]["output"];
 };
 
-export type DatasetModelsArgs = {
+export type DatasetDataModelsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
 };
@@ -2971,180 +3145,6 @@ export type ModeNotFoundError = Error & {
   mode: Scalars["String"]["output"];
 };
 
-export type Model = {
-  __typename?: "Model";
-  createdAt: Scalars["DateTime"]["output"];
-  dataset: Dataset;
-  id: Scalars["ID"]["output"];
-  isEnabled: Scalars["Boolean"]["output"];
-  latestRelease?: Maybe<ModelRelease>;
-  latestRevision?: Maybe<ModelRevision>;
-  name: Scalars["String"]["output"];
-  orgId: Scalars["ID"]["output"];
-  organization: Organization;
-  releases: ModelReleaseConnection;
-  revisions: ModelRevisionConnection;
-  updatedAt: Scalars["DateTime"]["output"];
-};
-
-export type ModelReleasesArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-};
-
-export type ModelRevisionsArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-};
-
-export type ModelColumn = {
-  __typename?: "ModelColumn";
-  description?: Maybe<Scalars["String"]["output"]>;
-  name: Scalars["String"]["output"];
-  type: Scalars["String"]["output"];
-};
-
-export type ModelColumnInput = {
-  description?: InputMaybe<Scalars["String"]["input"]>;
-  name: Scalars["String"]["input"];
-  type: Scalars["String"]["input"];
-};
-
-export type ModelConnection = {
-  __typename?: "ModelConnection";
-  edges: Array<ModelEdge>;
-  pageInfo: PageInfo;
-  totalCount?: Maybe<Scalars["Int"]["output"]>;
-};
-
-export type ModelDependency = {
-  __typename?: "ModelDependency";
-  alias?: Maybe<Scalars["String"]["output"]>;
-  modelId: Scalars["ID"]["output"];
-};
-
-export type ModelDependencyInput = {
-  alias?: InputMaybe<Scalars["String"]["input"]>;
-  modelId: Scalars["ID"]["input"];
-};
-
-export type ModelEdge = {
-  __typename?: "ModelEdge";
-  cursor: Scalars["String"]["output"];
-  node: Model;
-};
-
-export enum ModelKind {
-  Full = "FULL",
-  IncrementalByPartition = "INCREMENTAL_BY_PARTITION",
-  IncrementalByTimeRange = "INCREMENTAL_BY_TIME_RANGE",
-  IncrementalByUniqueKey = "INCREMENTAL_BY_UNIQUE_KEY",
-  ScdType_2ByColumn = "SCD_TYPE_2_BY_COLUMN",
-  ScdType_2ByTime = "SCD_TYPE_2_BY_TIME",
-  View = "VIEW",
-}
-
-export type ModelKindOptions = {
-  __typename?: "ModelKindOptions";
-  batchSize?: Maybe<Scalars["Int"]["output"]>;
-  executionTimeAsValidFrom?: Maybe<Scalars["Boolean"]["output"]>;
-  invalidateHardDeletes?: Maybe<Scalars["Boolean"]["output"]>;
-  lookback?: Maybe<Scalars["Int"]["output"]>;
-  mergeFilter?: Maybe<Scalars["String"]["output"]>;
-  scdColumns?: Maybe<Array<Scalars["String"]["output"]>>;
-  timeColumn?: Maybe<Scalars["String"]["output"]>;
-  timeColumnFormat?: Maybe<Scalars["String"]["output"]>;
-  uniqueKeyColumns?: Maybe<Array<Scalars["String"]["output"]>>;
-  updatedAtAsValidFrom?: Maybe<Scalars["Boolean"]["output"]>;
-  updatedAtColumn?: Maybe<Scalars["String"]["output"]>;
-  validFromName?: Maybe<Scalars["String"]["output"]>;
-  validToName?: Maybe<Scalars["String"]["output"]>;
-  whenMatchedSql?: Maybe<Scalars["String"]["output"]>;
-};
-
-export type ModelKindOptionsInput = {
-  batchSize?: InputMaybe<Scalars["Int"]["input"]>;
-  executionTimeAsValidFrom?: InputMaybe<Scalars["Boolean"]["input"]>;
-  invalidateHardDeletes?: InputMaybe<Scalars["Boolean"]["input"]>;
-  lookback?: InputMaybe<Scalars["Int"]["input"]>;
-  mergeFilter?: InputMaybe<Scalars["String"]["input"]>;
-  scdColumns?: InputMaybe<Array<Scalars["String"]["input"]>>;
-  timeColumn?: InputMaybe<Scalars["String"]["input"]>;
-  timeColumnFormat?: InputMaybe<Scalars["String"]["input"]>;
-  uniqueKeyColumns?: InputMaybe<Array<Scalars["String"]["input"]>>;
-  updatedAtAsValidFrom?: InputMaybe<Scalars["Boolean"]["input"]>;
-  updatedAtColumn?: InputMaybe<Scalars["String"]["input"]>;
-  validFromName?: InputMaybe<Scalars["String"]["input"]>;
-  validToName?: InputMaybe<Scalars["String"]["input"]>;
-  whenMatchedSql?: InputMaybe<Scalars["String"]["input"]>;
-};
-
-export type ModelRelease = {
-  __typename?: "ModelRelease";
-  createdAt: Scalars["DateTime"]["output"];
-  description?: Maybe<Scalars["String"]["output"]>;
-  id: Scalars["ID"]["output"];
-  model: Model;
-  modelId: Scalars["ID"]["output"];
-  orgId: Scalars["ID"]["output"];
-  organization: Organization;
-  revision: ModelRevision;
-  revisionId: Scalars["ID"]["output"];
-  updatedAt: Scalars["DateTime"]["output"];
-};
-
-export type ModelReleaseConnection = {
-  __typename?: "ModelReleaseConnection";
-  edges: Array<ModelReleaseEdge>;
-  pageInfo: PageInfo;
-  totalCount?: Maybe<Scalars["Int"]["output"]>;
-};
-
-export type ModelReleaseEdge = {
-  __typename?: "ModelReleaseEdge";
-  cursor: Scalars["String"]["output"];
-  node: ModelRelease;
-};
-
-export type ModelRevision = {
-  __typename?: "ModelRevision";
-  clusteredBy?: Maybe<Array<Scalars["String"]["output"]>>;
-  code: Scalars["String"]["output"];
-  createdAt: Scalars["DateTime"]["output"];
-  cron: Scalars["String"]["output"];
-  dependsOn?: Maybe<Array<ModelDependency>>;
-  description?: Maybe<Scalars["String"]["output"]>;
-  displayName: Scalars["String"]["output"];
-  end?: Maybe<Scalars["DateTime"]["output"]>;
-  hash: Scalars["String"]["output"];
-  id: Scalars["ID"]["output"];
-  kind: ModelKind;
-  kindOptions?: Maybe<ModelKindOptions>;
-  language: Scalars["String"]["output"];
-  model: Model;
-  modelId: Scalars["ID"]["output"];
-  name: Scalars["String"]["output"];
-  orgId: Scalars["ID"]["output"];
-  organization: Organization;
-  partitionedBy?: Maybe<Array<Scalars["String"]["output"]>>;
-  revisionNumber: Scalars["Int"]["output"];
-  schema?: Maybe<Array<ModelColumn>>;
-  start?: Maybe<Scalars["DateTime"]["output"]>;
-};
-
-export type ModelRevisionConnection = {
-  __typename?: "ModelRevisionConnection";
-  edges: Array<ModelRevisionEdge>;
-  pageInfo: PageInfo;
-  totalCount?: Maybe<Scalars["Int"]["output"]>;
-};
-
-export type ModelRevisionEdge = {
-  __typename?: "ModelRevisionEdge";
-  cursor: Scalars["String"]["output"];
-  node: ModelRevision;
-};
-
 export type MultiPartitionStatuses = {
   __typename?: "MultiPartitionStatuses";
   primaryDimensionName: Scalars["String"]["output"];
@@ -3164,13 +3164,13 @@ export type Mutation = {
   addUserByEmail: AddUserByEmailPayload;
   /** Cancels a set of partition backfill runs. */
   cancelPartitionBackfill: CancelBackfillResult;
+  createDataModel: CreateDataModelPayload;
+  createDataModelRelease: CreateDataModelReleasePayload;
+  createDataModelRevision: CreateDataModelRevisionPayload;
   /** Create a new dataset */
   createDataset: CreateDatasetPayload;
   /** Create an invitation */
   createInvitation: CreateInvitationPayload;
-  createModel: CreateModelPayload;
-  createModelRelease: CreateModelReleasePayload;
-  createModelRevision: CreateModelRevisionPayload;
   /** Create a new notebook */
   createNotebook: CreateNotebookPayload;
   /** Sets the concurrency limit for a given concurrency key. */
@@ -3280,6 +3280,21 @@ export type MutationCancelPartitionBackfillArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelArgs = {
+  input: CreateDataModelInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelReleaseArgs = {
+  input: CreateDataModelReleaseInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelRevisionArgs = {
+  input: CreateDataModelRevisionInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateDatasetArgs = {
   input: CreateDatasetInput;
 };
@@ -3287,21 +3302,6 @@ export type MutationCreateDatasetArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateInvitationArgs = {
   input: CreateInvitationInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationCreateModelArgs = {
-  input: CreateModelInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationCreateModelReleaseArgs = {
-  input: CreateModelReleaseInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationCreateModelRevisionArgs = {
-  input: CreateModelRevisionInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -5646,6 +5646,8 @@ export type Query = {
   capturedLogs: CapturedLogs;
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
+  dataModel?: Maybe<DataModel>;
+  dataModels: DataModelConnection;
   /** Get a dataset by ID */
   dataset?: Maybe<Dataset>;
   /** Get table column metadata */
@@ -5672,8 +5674,6 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
-  model?: Maybe<Model>;
-  models: ModelConnection;
   /** List invitations for current user */
   myInvitations: InvitationConnection;
   /** Get a notebook by ID */
@@ -5919,6 +5919,17 @@ export type QueryCapturedLogsMetadataArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDataModelArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDataModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryDatasetArgs = {
   id: Scalars["ID"]["input"];
 };
@@ -5977,17 +5988,6 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   runId: Scalars["ID"]["input"];
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryModelArgs = {
-  id: Scalars["ID"]["input"];
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryModelsArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -8288,18 +8288,18 @@ export type UpdateDatasetMutation = {
   };
 };
 
-export type CreateModelMutationVariables = Exact<{
-  input: CreateModelInput;
+export type CreateDataModelMutationVariables = Exact<{
+  input: CreateDataModelInput;
 }>;
 
-export type CreateModelMutation = {
+export type CreateDataModelMutation = {
   __typename?: "Mutation";
-  createModel: {
-    __typename?: "CreateModelPayload";
+  createDataModel: {
+    __typename?: "CreateDataModelPayload";
     success: boolean;
     message?: string | null;
-    model?: {
-      __typename?: "Model";
+    dataModel?: {
+      __typename?: "DataModel";
       id: string;
       name: string;
       isEnabled: boolean;
@@ -8307,35 +8307,35 @@ export type CreateModelMutation = {
   };
 };
 
-export type CreateModelRevisionMutationVariables = Exact<{
-  input: CreateModelRevisionInput;
+export type CreateDataModelRevisionMutationVariables = Exact<{
+  input: CreateDataModelRevisionInput;
 }>;
 
-export type CreateModelRevisionMutation = {
+export type CreateDataModelRevisionMutation = {
   __typename?: "Mutation";
-  createModelRevision: {
-    __typename?: "CreateModelRevisionPayload";
+  createDataModelRevision: {
+    __typename?: "CreateDataModelRevisionPayload";
     success: boolean;
     message?: string | null;
-    modelRevision?: {
-      __typename?: "ModelRevision";
+    dataModelRevision?: {
+      __typename?: "DataModelRevision";
       id: string;
       revisionNumber: number;
     } | null;
   };
 };
 
-export type CreateModelReleaseMutationVariables = Exact<{
-  input: CreateModelReleaseInput;
+export type CreateDataModelReleaseMutationVariables = Exact<{
+  input: CreateDataModelReleaseInput;
 }>;
 
-export type CreateModelReleaseMutation = {
+export type CreateDataModelReleaseMutation = {
   __typename?: "Mutation";
-  createModelRelease: {
-    __typename?: "CreateModelReleasePayload";
+  createDataModelRelease: {
+    __typename?: "CreateDataModelReleasePayload";
     success: boolean;
     message?: string | null;
-    modelRelease?: { __typename?: "ModelRelease"; id: string } | null;
+    dataModelRelease?: { __typename?: "DataModelRelease"; id: string } | null;
   };
 };
 
@@ -8718,13 +8718,13 @@ export const UpdateDatasetDocument = {
   UpdateDatasetMutation,
   UpdateDatasetMutationVariables
 >;
-export const CreateModelDocument = {
+export const CreateDataModelDocument = {
   kind: "Document",
   definitions: [
     {
       kind: "OperationDefinition",
       operation: "mutation",
-      name: { kind: "Name", value: "CreateModel" },
+      name: { kind: "Name", value: "CreateDataModel" },
       variableDefinitions: [
         {
           kind: "VariableDefinition",
@@ -8736,7 +8736,7 @@ export const CreateModelDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: { kind: "Name", value: "CreateModelInput" },
+              name: { kind: "Name", value: "CreateDataModelInput" },
             },
           },
         },
@@ -8746,7 +8746,7 @@ export const CreateModelDocument = {
         selections: [
           {
             kind: "Field",
-            name: { kind: "Name", value: "createModel" },
+            name: { kind: "Name", value: "createDataModel" },
             arguments: [
               {
                 kind: "Argument",
@@ -8764,7 +8764,7 @@ export const CreateModelDocument = {
                 { kind: "Field", name: { kind: "Name", value: "message" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "model" },
+                  name: { kind: "Name", value: "dataModel" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
@@ -8784,14 +8784,17 @@ export const CreateModelDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<CreateModelMutation, CreateModelMutationVariables>;
-export const CreateModelRevisionDocument = {
+} as unknown as DocumentNode<
+  CreateDataModelMutation,
+  CreateDataModelMutationVariables
+>;
+export const CreateDataModelRevisionDocument = {
   kind: "Document",
   definitions: [
     {
       kind: "OperationDefinition",
       operation: "mutation",
-      name: { kind: "Name", value: "CreateModelRevision" },
+      name: { kind: "Name", value: "CreateDataModelRevision" },
       variableDefinitions: [
         {
           kind: "VariableDefinition",
@@ -8803,7 +8806,7 @@ export const CreateModelRevisionDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: { kind: "Name", value: "CreateModelRevisionInput" },
+              name: { kind: "Name", value: "CreateDataModelRevisionInput" },
             },
           },
         },
@@ -8813,7 +8816,7 @@ export const CreateModelRevisionDocument = {
         selections: [
           {
             kind: "Field",
-            name: { kind: "Name", value: "createModelRevision" },
+            name: { kind: "Name", value: "createDataModelRevision" },
             arguments: [
               {
                 kind: "Argument",
@@ -8831,7 +8834,7 @@ export const CreateModelRevisionDocument = {
                 { kind: "Field", name: { kind: "Name", value: "message" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "modelRevision" },
+                  name: { kind: "Name", value: "dataModelRevision" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
@@ -8851,16 +8854,16 @@ export const CreateModelRevisionDocument = {
     },
   ],
 } as unknown as DocumentNode<
-  CreateModelRevisionMutation,
-  CreateModelRevisionMutationVariables
+  CreateDataModelRevisionMutation,
+  CreateDataModelRevisionMutationVariables
 >;
-export const CreateModelReleaseDocument = {
+export const CreateDataModelReleaseDocument = {
   kind: "Document",
   definitions: [
     {
       kind: "OperationDefinition",
       operation: "mutation",
-      name: { kind: "Name", value: "CreateModelRelease" },
+      name: { kind: "Name", value: "CreateDataModelRelease" },
       variableDefinitions: [
         {
           kind: "VariableDefinition",
@@ -8872,7 +8875,7 @@ export const CreateModelReleaseDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: { kind: "Name", value: "CreateModelReleaseInput" },
+              name: { kind: "Name", value: "CreateDataModelReleaseInput" },
             },
           },
         },
@@ -8882,7 +8885,7 @@ export const CreateModelReleaseDocument = {
         selections: [
           {
             kind: "Field",
-            name: { kind: "Name", value: "createModelRelease" },
+            name: { kind: "Name", value: "createDataModelRelease" },
             arguments: [
               {
                 kind: "Argument",
@@ -8900,7 +8903,7 @@ export const CreateModelReleaseDocument = {
                 { kind: "Field", name: { kind: "Name", value: "message" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "modelRelease" },
+                  name: { kind: "Name", value: "dataModelRelease" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
@@ -8916,8 +8919,8 @@ export const CreateModelReleaseDocument = {
     },
   ],
 } as unknown as DocumentNode<
-  CreateModelReleaseMutation,
-  CreateModelReleaseMutationVariables
+  CreateDataModelReleaseMutation,
+  CreateDataModelReleaseMutationVariables
 >;
 export const AssetGraphDocument = {
   kind: "Document",
