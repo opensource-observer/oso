@@ -2980,6 +2980,7 @@ export type Model = {
   latestRelease?: Maybe<ModelRelease>;
   latestRevision?: Maybe<ModelRevision>;
   name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
   organization: Organization;
   releases: ModelReleaseConnection;
   revisions: ModelRevisionConnection;
@@ -3084,8 +3085,11 @@ export type ModelRelease = {
   description?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   model: Model;
+  modelId: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
   organization: Organization;
   revision: ModelRevision;
+  revisionId: Scalars["ID"]["output"];
   updatedAt: Scalars["DateTime"]["output"];
 };
 
@@ -3118,7 +3122,9 @@ export type ModelRevision = {
   kindOptions?: Maybe<ModelKindOptions>;
   language: Scalars["String"]["output"];
   model: Model;
+  modelId: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
   organization: Organization;
   partitionedBy?: Maybe<Array<Scalars["String"]["output"]>>;
   revisionNumber: Scalars["Int"]["output"];

@@ -313,6 +313,7 @@ export const modelResolvers = {
     },
   },
   Model: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
     organization: (parent: { org_id: string }) => {
       return getOrganization(parent.org_id);
     },
@@ -394,6 +395,8 @@ export const modelResolvers = {
   },
 
   ModelRevision: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
+    modelId: (parent: { model_id: string }) => parent.model_id,
     model: async (parent: { model_id: string }) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
@@ -423,6 +426,10 @@ export const modelResolvers = {
   },
 
   ModelRelease: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
+    modelId: (parent: { model_id: string }) => parent.model_id,
+    revisionId: (parent: { model_revision_id: string }) =>
+      parent.model_revision_id,
     model: async (parent: { model_id: string }) => {
       const supabase = createAdminClient();
       const { data, error } = await supabase
