@@ -31,18 +31,10 @@ import {
   emptyConnection,
   type Connection,
 } from "@/app/api/v1/osograph/utils/connection";
-import {
-  Catalog,
-  CatalogSchema,
-  Column,
-  ColumnSchema,
-  Schema,
-} from "@/lib/types/catalog";
+import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
-import { assert } from "@opensource-observer/utils";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
-
-const TRINO_SCHEMA_TIMEOUT = 10_000; // 10 seconds
+import { getDataModelsConnection } from "@/app/api/v1/osograph/schema/resolvers/data-model";
 
 export async function getRawDatasets(
   orgIds: string[],
@@ -93,126 +85,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         return buildConnectionOrEmpty(null, args, 0);
       }
 
-      const trinoJwt = await signTrinoJWT({
-        ...authenticatedUser,
-        orgId: orgIds[0],
-        orgName: "",
-        orgRole: "member",
-      });
-
-      const trino = getTrinoClient(trinoJwt);
-
-      const { data: catalogsResult, error } =
-        await trino.queryAll("SHOW CATALOGS");
-      if (error || !catalogsResult) {
-        logger.error(
-          `Failed to fetch catalogs for user ${authenticatedUser.userId}:`,
-          error.message,
-        );
-        throw ServerErrors.externalService("Failed to fetch catalogs");
-      }
-
-      const results = await Promise.all(
-        catalogsResult
-          .flatMap((catalog) => catalog.data)
-          .map(
-            async (catalog: string[] | undefined): Promise<Catalog | null> => {
-              if (!catalog || catalog.length === 0) {
-                return null;
-              }
-              const catalogName = catalog[0];
-
-              const query = `
-        SELECT table_schema, table_name
-        FROM ${catalogName}.information_schema.tables
-        WHERE ${
-          catalogName === "iceberg"
-            ? "table_schema = 'oso'"
-            : "table_schema != 'information_schema'"
-        }
-      `;
-              try {
-                const queryPromise = trino.queryAll(query);
-                const timeoutPromise = new Promise<{
-                  data: null;
-                  error: Error;
-                }>((resolve) =>
-                  setTimeout(
-                    () => resolve({ data: null, error: new Error("Timeout") }),
-                    TRINO_SCHEMA_TIMEOUT,
-                  ),
-                );
-                const { data: tablesResult, error } = await Promise.race([
-                  queryPromise,
-                  timeoutPromise,
-                ]);
-                if (error || !tablesResult) {
-                  logger.warn(
-                    `Could not query tables for catalog ${catalogName}:`,
-                    error?.message,
-                  );
-                  return null;
-                }
-                const schemas: Record<string, Schema> = {};
-                for (const table of tablesResult.flatMap((t) => t.data)) {
-                  if (!table || table.length < 2) continue;
-                  const [schemaName, tableName] = table;
-                  assert(
-                    typeof schemaName === "string" &&
-                      typeof tableName === "string",
-                    "Invalid table metadata",
-                  );
-                  if (!schemas[schemaName]) {
-                    schemas[schemaName] = { name: schemaName, tables: [] };
-                  }
-                  schemas[schemaName].tables.push({
-                    name: tableName,
-                  });
-                }
-                return CatalogSchema.parse({
-                  name: catalogName,
-                  schemas: Object.values(schemas),
-                });
-              } catch (error) {
-                logger.warn(
-                  `Could not query tables for catalog ${catalogName}:`,
-                  error,
-                );
-                return null;
-              }
-            },
-          ),
-      );
-      const filteredResults = results.filter(
-        (result): result is Catalog => result !== null,
-      );
-
-      const { data: datasetsList, count } = await getRawDatasets(orgIds, args);
-
-      if (!datasetsList || datasetsList.length === 0) {
-        return buildConnectionOrEmpty(null, args, count);
-      }
-
-      const tablesByCatalogAndSchema = filteredResults.reduce(
-        (acc, catalog) => {
-          for (const schema of catalog.schemas) {
-            const key = `${catalog.name}.${schema.name}`;
-            acc[key] = schema.tables;
-          }
-          return acc;
-        },
-        {} as Record<string, { name: string }[]>,
-      );
-
-      const response = datasetsList.map((dataset) => {
-        const key = `${dataset.catalog}.${dataset.schema}`;
-        return {
-          ...dataset,
-          tables: tablesByCatalogAndSchema[key] ?? [],
-        };
-      });
-
-      return buildConnectionOrEmpty(response, args, count);
+      return getDatasetsConnection(orgIds, args);
     },
 
     dataset: async (
@@ -383,7 +256,12 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const { data, error } = await supabase
         .from("datasets")
-        .update(input)
+        .update({
+          name: input.name,
+          display_name: input.displayName,
+          description: input.description,
+          is_public: input.isPublic,
+        })
         .eq("id", input.id)
         .select()
         .single();
@@ -418,6 +296,16 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     organization: async (parent: { org_id: string }) => {
       return getOrganization(parent.org_id);
+    },
+
+    dataModels: async (
+      parent: { id: string; org_id: string },
+      args: ConnectionArgs,
+    ) => {
+      return getDataModelsConnection([parent.org_id], {
+        ...args,
+        datasetId: parent.id,
+      });
     },
   },
 };

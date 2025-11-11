@@ -118,6 +118,73 @@ export const CreateDatasetSchema = z.object({
   type: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
 });
 
+export const CreateDataModelSchema = z.object({
+  orgId: z.string().uuid("Invalid organization ID"),
+  datasetId: z.string().uuid("Invalid dataset ID"),
+  name: z.string().min(1, "DataModel name is required"),
+  isEnabled: z.boolean().optional(),
+});
+
+const DataModelColumnSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  description: z.string().optional(),
+});
+
+const DataModelDependencySchema = z.object({
+  dataModelId: z.string().uuid(),
+  alias: z.string().optional(),
+});
+
+const DataModelKindOptionsSchema = z.object({
+  timeColumn: z.string().optional(),
+  timeColumnFormat: z.string().optional(),
+  batchSize: z.number().int().optional(),
+  lookback: z.number().int().optional(),
+  uniqueKeyColumns: z.array(z.string()).optional(),
+  whenMatchedSql: z.string().optional(),
+  mergeFilter: z.string().optional(),
+  validFromName: z.string().optional(),
+  validToName: z.string().optional(),
+  invalidateHardDeletes: z.boolean().optional(),
+  updatedAtColumn: z.string().optional(),
+  updatedAtAsValidFrom: z.boolean().optional(),
+  scdColumns: z.array(z.string()).optional(),
+  executionTimeAsValidFrom: z.boolean().optional(),
+});
+
+export const CreateDataModelRevisionSchema = z.object({
+  dataModelId: z.string().uuid(),
+  name: z.string(),
+  displayName: z.string(),
+  description: z.string().optional(),
+  language: z.string(),
+  code: z.string(),
+  cron: z.string(),
+  start: z.string().datetime().optional(),
+  end: z.string().datetime().optional(),
+  schema: z.array(DataModelColumnSchema),
+  dependsOn: z.array(DataModelDependencySchema).optional(),
+  partitionedBy: z.array(z.string()).optional(),
+  clusteredBy: z.array(z.string()).optional(),
+  kind: z.enum([
+    "INCREMENTAL_BY_TIME_RANGE",
+    "INCREMENTAL_BY_UNIQUE_KEY",
+    "INCREMENTAL_BY_PARTITION",
+    "SCD_TYPE_2_BY_TIME",
+    "SCD_TYPE_2_BY_COLUMN",
+    "FULL",
+    "VIEW",
+  ]),
+  kindOptions: DataModelKindOptionsSchema.optional(),
+});
+
+export const CreateDataModelReleaseSchema = z.object({
+  dataModelId: z.string().uuid(),
+  dataModelRevisionId: z.string().uuid(),
+  description: z.string().optional(),
+});
+
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
   const result = schema.safeParse(input);
 

@@ -11,6 +11,7 @@ type Dataset {
   updatedAt: DateTime!
   creator: User!
   organization: Organization!
+  dataModels(first: Int = 50, after: String): DataModelConnection!
 }
 
 type DatasetEdge {

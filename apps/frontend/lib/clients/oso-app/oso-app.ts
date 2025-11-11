@@ -2449,7 +2449,7 @@ class OsoAppClient {
 
   async createDataset(
     args: Partial<{
-      orgName: string;
+      orgId: string;
       name: string;
       displayName: string;
       description: string;
@@ -2457,8 +2457,8 @@ class OsoAppClient {
       isPublic: boolean;
     }>,
   ) {
-    const { orgName, name, displayName, description, datasetType, isPublic } = {
-      orgName: ensure(args.orgName, "Missing orgName argument"),
+    const { orgId, name, displayName, description, datasetType, isPublic } = {
+      orgId: ensure(args.orgId, "Missing orgName argument"),
       name: ensure(args.name, "Missing name argument"),
       displayName: ensure(args.displayName, "Missing displayName argument"),
       description: args.description,
@@ -2483,8 +2483,6 @@ class OsoAppClient {
       }
     `);
 
-    const org = await this.getOrganizationByName({ orgName });
-
     const response = await fetch("/api/v1/osograph", {
       method: "POST",
       headers: {
@@ -2494,7 +2492,7 @@ class OsoAppClient {
         query: print(CREATE_DATASET_MUTATION),
         variables: {
           input: {
-            orgId: org.id,
+            orgId,
             name,
             displayName,
             description,
@@ -2593,6 +2591,207 @@ class OsoAppClient {
     }
 
     return payload.dataset;
+  }
+
+  async createDataModel(
+    args: Partial<{
+      orgId: string;
+      datasetId: string;
+      name: string;
+      isEnabled: boolean;
+    }>,
+  ) {
+    const { orgId, datasetId, name, isEnabled } = {
+      orgId: ensure(args.orgId, "Missing orgId argument"),
+      datasetId: ensure(args.datasetId, "Missing datasetId argument"),
+      name: ensure(args.name, "Missing name argument"),
+      isEnabled: args.isEnabled ?? false,
+    };
+
+    const CREATE_DATA_MODEL_MUTATION = gql(`
+      mutation CreateDataModel($input: CreateDataModelInput!) {
+        createDataModel(input: $input) {
+          success
+          message
+          dataModel {
+            id
+            name
+            isEnabled
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_DATA_MODEL_MUTATION),
+        variables: {
+          input: {
+            orgId,
+            datasetId,
+            name,
+            isEnabled,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to create dataModel:", result.errors[0].message);
+      throw new Error(
+        `Failed to create dataModel: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createDataModel;
+    if (!payload) {
+      throw new Error("No response data from create dataModel mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully created dataModel "${name}"`);
+    }
+
+    return payload.dataModel;
+  }
+
+  async createDataModelRevision(
+    args: Partial<{
+      dataModelId: string;
+      name: string;
+      displayName: string;
+      description: string;
+      language: string;
+      code: string;
+      cron: string;
+      start: string;
+      end: string;
+      schema: any[];
+      dependsOn: any[];
+      partitionedBy: string[];
+      clusteredBy: string[];
+      kind: string;
+      kindOptions: any;
+    }>,
+  ) {
+    const CREATE_DATA_MODEL_REVISION_MUTATION = gql(`
+      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {
+        createDataModelRevision(input: $input) {
+          success
+          message
+          dataModelRevision {
+            id
+            revisionNumber
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_DATA_MODEL_REVISION_MUTATION),
+        variables: {
+          input: args,
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error(
+        "Failed to create dataModel revision:",
+        result.errors[0].message,
+      );
+      throw new Error(
+        `Failed to create dataModel revision: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createDataModelRevision;
+    if (!payload) {
+      throw new Error(
+        "No response data from create dataModel revision mutation",
+      );
+    }
+
+    if (payload.success) {
+      logger.log(
+        `Successfully created dataModel revision for dataModel "${args.dataModelId}"`,
+      );
+    }
+
+    return payload.dataModelRevision;
+  }
+
+  async createDataModelRelease(
+    args: Partial<{
+      dataModelId: string;
+      dataModelRevisionId: string;
+      description: string;
+    }>,
+  ) {
+    const CREATE_DATA_MODEL_RELEASE_MUTATION = gql(`
+      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {
+        createDataModelRelease(input: $input) {
+          success
+          message
+          dataModelRelease {
+            id
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_DATA_MODEL_RELEASE_MUTATION),
+        variables: {
+          input: args,
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error(
+        "Failed to create dataModel release:",
+        result.errors[0].message,
+      );
+      throw new Error(
+        `Failed to create dataModel release: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createDataModelRelease;
+    if (!payload) {
+      throw new Error(
+        "No response data from create dataModel release mutation",
+      );
+    }
+
+    if (payload.success) {
+      logger.log(
+        `Successfully created dataModel release for dataModel "${args.dataModelId}"`,
+      );
+    }
+
+    return payload.dataModelRelease;
   }
 }
 
