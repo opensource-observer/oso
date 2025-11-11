@@ -1214,7 +1214,7 @@ wheels = [
 
 [[package]]
 name = "dagster-sqlmesh"
-version = "0.21.0"
+version = "0.22.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dagster" },
@@ -1223,9 +1223,9 @@ dependencies = [
     { name = "pytest" },
     { name = "sqlmesh" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/fb/3b4d6d84ff26ca4c90264422e3c505d6d837d211d422e024db67bbd418ee/dagster_sqlmesh-0.21.0.tar.gz", hash = "sha256:04c90fcb5f03b0eed66b4818fc0d898fac84c3da81cd2a288425bcbdf40c731c", size = 224484, upload-time = "2025-11-09T04:26:51.713Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/ba/8f7d5474a9f850c8cbb82544eed6ffdea59bedba48aebfc739491fa4810a/dagster_sqlmesh-0.22.0.tar.gz", hash = "sha256:f12098d0d563d155e3bc9b0dc14469bec5622cf153e2e55ca40381c1392ab8f5", size = 224801, upload-time = "2025-11-11T21:57:22.893Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/6a/9c7893ba9fe599f98aa5be2baf86da4a4a9c511c2bd9ec38c23c78557ec2/dagster_sqlmesh-0.21.0-py3-none-any.whl", hash = "sha256:75a58bd48e70123375c29c074b17716b8e229583bced8b871c96c97e9574cf10", size = 40503, upload-time = "2025-11-09T04:26:50.045Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/b1/f7164f47763ea536d7913ed9a15432bd81d8ea63f11e556bb8dfd756efba/dagster_sqlmesh-0.22.0-py3-none-any.whl", hash = "sha256:668050f705dae960072d65b898cdec2b1af80d3ed1437951c723dc1475125fb5", size = 40193, upload-time = "2025-11-11T21:57:21.7Z" },
 ]
 
 [[package]]
@@ -4214,7 +4214,7 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
     { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
     { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = ">=0.21.0" },
+    { name = "dagster-sqlmesh", specifier = ">=0.22.0" },
     { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2024.4.2,<2025.8.0" },
     { name = "dask-kubernetes", specifier = ">=2024.4.2,<2025.8.0" },

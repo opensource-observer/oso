@@ -22,7 +22,6 @@ from oso_dagster.resources import (
     K8sResource,
     NessieResource,
     PostgresResource,
-    PrefixedSQLMeshTranslator,
     SQLMeshExporter,
     Trino2ClickhouseSQLMeshExporter,
     TrinoEngineAdapterResource,
@@ -44,6 +43,7 @@ from oso_dagster.resources.heartbeat import (
     HeartBeatResource,
     RedisHeartBeatResource,
 )
+from oso_dagster.resources.sqlmesh import PrefixedSQLMeshContextConfig
 from oso_dagster.resources.storage import (
     GCSTimeOrderedStorageResource,
     TimeOrderedStorageResource,
@@ -142,14 +142,20 @@ def cache_factory(
     )
 
 
-@resource_factory("sqlmesh_translator")
+@resource_factory("sqlmesh_context_config")
 @time_function(logger)
-def sqlmesh_translator_factory(
-    global_config: DagsterConfig, sqlmesh_context_config: SQLMeshContextConfig
-) -> PrefixedSQLMeshTranslator:
-    sqlmesh_config = sqlmesh_context_config.sqlmesh_config
-    if sqlmesh_config is None:
-        raise ValueError("SQLMesh configuration is not set in the context config.")
+def sqlmesh_context_config_factory(
+    global_config: DagsterConfig,
+) -> PrefixedSQLMeshContextConfig:
+    base_context_config = SQLMeshContextConfig(
+        path=global_config.sqlmesh_dir,
+        gateway=global_config.sqlmesh_gateway,
+    )
+
+    sqlmesh_config = base_context_config.sqlmesh_config
+
+    # This is a hack for now to support some changes in dagster-sqlmesh
+    # So we can pass the default_catalog properly to the translator
     gateway = sqlmesh_config.gateways[global_config.sqlmesh_gateway]
     connection = gateway.connection
     if connection is None:
@@ -168,17 +174,11 @@ def sqlmesh_translator_factory(
             raise ValueError(
                 f"Unsupported SQLMesh connection type: {type(connection).__name__}"
             )
-    return PrefixedSQLMeshTranslator("sqlmesh", default_catalog)
-
-
-@resource_factory("sqlmesh_context_config")
-@time_function(logger)
-def sqlmesh_context_config_factory(
-    global_config: DagsterConfig,
-) -> SQLMeshContextConfig:
-    return SQLMeshContextConfig(
+    return PrefixedSQLMeshContextConfig(
         path=global_config.sqlmesh_dir,
         gateway=global_config.sqlmesh_gateway,
+        default_catalog=default_catalog,
+        prefix="sqlmesh",
     )
 
 
@@ -211,13 +211,9 @@ def trino_resource_factory(
 
 
 @resource_factory("sqlmesh")
-def sqlmesh_resource_factory(
-    sqlmesh_context_config: SQLMeshContextConfig,
-) -> SQLMeshResource:
+def sqlmesh_resource_factory() -> SQLMeshResource:
     """Factory function to create a SQLMesh resource."""
-    return SQLMeshResource(
-        config=sqlmesh_context_config,
-    )
+    return SQLMeshResource()
 
 
 @resource_factory("sqlmesh_exporters")
@@ -483,7 +479,6 @@ def default_resource_registry():
     registry.add(clickhouse_resource_factory)
     registry.add(gcs_resource_factory)
     registry.add(sqlmesh_resource_factory)
-    registry.add(sqlmesh_translator_factory)
     registry.add(sqlmesh_context_config_factory)
     registry.add(cache_factory)
     registry.add(k8s_resource_factory)

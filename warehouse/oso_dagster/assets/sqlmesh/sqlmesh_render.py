@@ -6,6 +6,7 @@ from dagster import AssetExecutionContext
 from dagster_sqlmesh import SQLMeshResource
 from dagster_sqlmesh.controller.base import DEFAULT_CONTEXT_FACTORY
 from oso_dagster.factories import dlt_factory
+from oso_dagster.resources.sqlmesh import PrefixedSQLMeshContextConfig
 from sqlglot import exp
 
 
@@ -17,6 +18,7 @@ from sqlglot import exp
 def get_rendered_models(
     context: AssetExecutionContext,
     sqlmesh: SQLMeshResource,
+    sqlmesh_context_config: PrefixedSQLMeshContextConfig,
     environment: str,
 ):
     """
@@ -31,7 +33,9 @@ def get_rendered_models(
         Dict: Information about each rendered model
     """
     controller = sqlmesh.get_controller(
-        context_factory=DEFAULT_CONTEXT_FACTORY, log_override=context.log
+        config=sqlmesh_context_config,
+        context_factory=DEFAULT_CONTEXT_FACTORY,
+        log_override=context.log,
     )
 
     with controller.instance(environment, "model_renderer") as mesh:
@@ -71,6 +75,7 @@ def get_rendered_models(
 def sqlmesh_render_models(
     context: AssetExecutionContext,
     sqlmesh: SQLMeshResource,
+    sqlmesh_context_config: PrefixedSQLMeshContextConfig,
     sqlmesh_infra_config: dict,
 ):
     """
@@ -90,4 +95,5 @@ def sqlmesh_render_models(
         context=context,
         sqlmesh=sqlmesh,
         environment=environment,
+        sqlmesh_context_config=sqlmesh_context_config,
     )

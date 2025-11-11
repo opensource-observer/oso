@@ -19,7 +19,9 @@ from sqlmesh.utils.metaprogramming import (
 
 logger = logging.getLogger(__name__)
 
-CallableAliasList = t.List[t.Callable[..., t.Any] | t.Tuple[t.Callable[..., t.Any], t.List[str]]]
+CallableAliasList = t.List[
+    t.Callable[..., t.Any] | t.Tuple[t.Callable[..., t.Any], t.List[str]]
+]
 
 
 class MacroOverridingModel(model):
@@ -41,12 +43,12 @@ class MacroOverridingModel(model):
         if len(self._additional_macros) > 0:
             macros = MacroRegistry(f"macros_for_{self.name}")
             system_macros = kwargs.get("macros", macros)
-            macros.update(system_macros) 
+            macros.update(system_macros)
             macros.update(macro.get_registry())
 
             additional_macros = create_macro_registry_from_list(self._additional_macros)
             macros.update(additional_macros)
-            if not macros.get('datetrunc'):
+            if not macros.get("datetrunc"):
                 raise ValueError("FUCL")
             kwargs["macros"] = macros
 
@@ -68,12 +70,14 @@ def escape_triple_quotes(input_string: str) -> str:
 
 
 def create_unregistered_macro_registry(
-    macros: t.List[t.Callable[..., t.Any] | t.Tuple[t.Callable[..., t.Any], t.List[str]]]
+    macros: t.List[
+        t.Callable[..., t.Any] | t.Tuple[t.Callable[..., t.Any], t.List[str]]
+    ],
 ):
     registry = MacroRegistry(f"macro_registry_{uuid.uuid4().hex}")
     for additional_macro in macros:
         if isinstance(additional_macro, tuple):
-            registry.update(create_unregistered_wrapped_macro(*additional_macro)) # type: ignore
+            registry.update(create_unregistered_wrapped_macro(*additional_macro))  # type: ignore
         else:
             registry.update(create_unregistered_wrapped_macro(additional_macro))
     return registry
@@ -218,11 +222,31 @@ def create_basic_python_env(
     return serialized
 
 
+def _dict_sort(obj: t.Any) -> str:
+    """Copied from sqlmesh for now"""
+    try:
+        if isinstance(obj, dict):
+            obj = dict(sorted(obj.items(), key=lambda x: str(x[0])))
+    except Exception:
+        logger.warning("Failed to sort non-recursive dict", exc_info=True)
+    return repr(obj)
+
+
 class PrettyExecutable(Executable):
     @classmethod
-    def value(cls, v: t.Any, is_metadata: t.Optional[bool] = None) -> Executable:
-        pretty_v = json.dumps(v, indent=1)
-        return cls(payload=pretty_v, kind=ExecutableKind.VALUE)
+    def value(
+        cls,
+        v: t.Any,
+        is_metadata: t.Optional[bool] = None,
+        sort_root_dict: bool = False,
+    ) -> Executable:
+        payload = _dict_sort(v) if sort_root_dict else repr(v)
+        pretty_v = json.dumps(payload, indent=1)
+        return Executable(
+            payload=pretty_v,
+            kind=ExecutableKind.VALUE,
+            is_metadata=is_metadata or None,
+        )
 
 
 def create_import_call_env(
@@ -291,7 +315,7 @@ def create_macro_registry_from_list(macro_list: CallableAliasList):
     registry = MacroRegistry("macros")
     for additional_macro in macro_list:
         if isinstance(additional_macro, tuple):
-            registry.update(create_unregistered_wrapped_macro(*additional_macro)) # type: ignore
+            registry.update(create_unregistered_wrapped_macro(*additional_macro))  # type: ignore
         else:
             registry.update(create_unregistered_wrapped_macro(additional_macro))
     return registry
