@@ -11,6 +11,7 @@ type Dataset {
   updatedAt: DateTime!
   creator: User!
   organization: Organization!
+  tables: TableConnection!
 }
 
 type DatasetEdge {
@@ -28,6 +29,24 @@ type TableColumn {
   name: String!
   type: String!
   nullable: Boolean!
+}
+
+type Table {
+  catalogName: String!
+  name: String!
+  dataset: Dataset!
+  columns: [TableColumn!]!
+}
+
+type TableEdge {
+  node: Table!
+  cursor: String!
+}
+
+type TableConnection {
+  edges: [TableEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
 }
 
 extend type Query {

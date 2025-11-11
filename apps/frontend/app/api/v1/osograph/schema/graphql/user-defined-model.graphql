@@ -1,0 +1,305 @@
+type UserDefinedModel {
+  id: ID!
+  orgId: ID!
+  datasetId: ID!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  isEnabled: Boolean!
+
+  organization: Organization!
+  revisions: UserDefinedModelRevisionConnection!
+  latestRevision: UserDefinedModelRevision!
+  releases: UserDefinedModelReleaseConnection!
+  runs: UserDefinedModelRunConnection!
+}
+
+enum ModelLanguage {
+  PYTHON
+  SQL
+}
+
+type UserDefinedModelEdge {
+  node: UserDefinedModel!
+  cursor: String!
+}
+
+type UserDefinedModelConnection {
+  edges: [UserDefinedModelEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type UserDefinedModelDependency {
+  table: Table!
+  alias: String!
+}
+
+enum UserDefinedModelKind {
+  INCREMENTAL_BY_TIME_RANGE
+  INCREMENTAL_BY_UNIQUE_KEY
+  INCREMENTAL_BY_PARTITION
+  SCD_TYPE_2_BY_TIME
+  SCD_TYPE_2_BY_COLUMN
+  FULL
+  VIEW
+}
+
+type UserDefinedModelKindOptions {
+  timeColumn: String
+  timeColumnFormat: String
+  batchSize: Int
+  lookback: Int
+  uniqueKeyColumns: [String!]
+  whenMatchedSql: String
+  mergeFilter: String
+  validFromName: String
+  validToName: String
+  invalidateHardDeletes: Boolean
+  updatedAtColumn: String
+  updatedAtAsValidFrom: Boolean
+  scdColumns: [String!]
+  executionTimeAsValidFrom: Boolean
+}
+
+# Revisions
+type UserDefinedModelRevision {
+  id: ID!
+  orgId: ID!
+  model: UserDefinedModel!
+  createdAt: DateTime!
+  createdBy: User!
+  name: String!
+  displayName: String!
+  description: String
+  revisionNumber: Int!
+
+  hash: String!
+  code: String!
+  language: ModelLanguage!
+  
+  cron: String!
+  start: DateTime
+  end: DateTime
+
+  schema: [TableColumn!]!
+
+  dependsOn: [UserDefinedModelDependency!]!
+  partitionedBy: [String!]!
+  clusteredBy: [String!]!
+
+  kind: UserDefinedModelKind!
+  kindOptions: UserDefinedModelKindOptions!
+}
+
+type UserDefinedModelRevisionEdge {
+  node: UserDefinedModelRevision!
+  cursor: String!
+}
+
+type UserDefinedModelRevisionConnection {
+  edges: [UserDefinedModelRevisionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+# Releases
+type UserDefinedModelRelease {
+  id: ID!
+  orgId: ID!
+  modelId: ID!
+  model: UserDefinedModel!
+  revision: UserDefinedModelRevision!
+  createdAt: DateTime!
+  releasedBy: User!
+}
+
+type UserDefinedModelReleaseEdge {
+  node: UserDefinedModelRelease!
+  cursor: String!
+}
+
+type UserDefinedModelReleaseConnection {
+  edges: [UserDefinedModelReleaseEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+enum UserDefinedModelRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+# Runs
+type UserDefinedModelRun {
+  id: ID!
+  orgId: ID!
+  modelId: ID!
+  releaseId: ID!
+  startedAt: DateTime!
+  finishedAt: DateTime
+  status: UserDefinedModelRunStatus!
+  logsUrl: String!
+
+  model: UserDefinedModel!
+  release: UserDefinedModelRelease!
+}
+
+type UserDefinedModelRunEdge {
+  node: UserDefinedModelRun!
+  cursor: String!
+}
+
+type UserDefinedModelRunConnection {
+  edges: [UserDefinedModelRunEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+} 
+
+
+extend type Query {
+  """ 
+  List all user-defined models
+  """
+  userDefinedModels(first: Int = 50, after: String): UserDefinedModelConnection!
+  
+  """
+  Get a user-defined model by ID
+  """
+  userDefinedModel(id: ID!): UserDefinedModel
+}
+
+
+extend type Mutation {
+  """
+  Initializes a new user-defined model within the given dataset.
+  """
+  initializeUserDefinedModel(
+    input: InitializeUserDefinedModelInput!
+  ): InitializeUserDefinedModelPayload!
+
+  """
+  Updates a user-defined model. Internally this creates a new revision if code or
+  configuration is changed.
+  """
+  updateUserDefinedModel(
+    input: UpdateUserDefinedModelInput!
+  ): UpdateUserDefinedModelPayload!
+
+  """
+  Creates a new release for a user-defined model.
+  """
+  createUserDefinedModelRelease(
+    input: CreateUserDefinedModelReleaseInput!
+  ): CreateUserDefinedModelReleasePayload!
+
+  """
+  Initialize run of a user-defined model. This is a system operation. Normal users
+  will not be able to call this directly.
+  """
+  startUserDefinedModelRun(
+    input: StartUserDefinedModelRunInput!
+  ): StartUserDefinedModelRunPayload!
+
+  """
+  Update the status of a user-defined model run. This is a system operation. Normal users
+  will not be able to call this directly.
+  """
+  updateUserDefinedModelRunStatus(
+    input: UpdateUserDefinedModelRunStatusInput!
+  ): UpdateUserDefinedModelRunStatusPayload!
+}
+
+"""
+Initializes a new user-defined model within the given dataset.
+"""
+type InitializeUserDefinedModelInput {
+  datasetId: ID!
+  language: ModelLanguage! = SQL
+}
+
+type InitializeUserDefinedModelPayload {
+  success: Boolean!
+  model: UserDefinedModel!
+  message: String
+}
+
+"""
+Updates a user-defined model. Internally this creates a new revision if code or
+configuration is changed.
+"""
+type UpdateUserDefinedModelInput {
+  id: ID!
+  currentRevisionNumber: Int!
+  name: String
+  description: String
+  code: String
+  cron: String
+  start: DateTime
+  end: DateTime
+
+  """
+  Dependencies need to be specified by as a list of table references. Tables may
+  be specified either the following reference syntax:
+  `<catalog>.<dataset>.<table_name>`. If the `<catalog>` is omitted the datasets
+  will be chosen from this model's owning organization. If the `<dataset>` is
+  omitted then the table will be looked up from the tables in the current
+  dataset. If both the `<dataset>` and `<catalog>` are omitted then the table
+  will be looked up from this model's own dataset.
+
+  To unset dependencies, provide an empty list.
+  """
+  dependsOn: [String!]
+
+  partitionedBy: [String!]
+  clusteredBy: [String!]
+  kind: UserDefinedModelKind
+  kindOptions: UserDefinedModelKindOptions
+
+  isEnabled: Boolean
+}
+
+type UpdateUserDefinedModelPayload {
+  success: Boolean!
+  model: UserDefinedModel
+  message: String
+}
+
+type CreateUserDefinedModelReleaseInput {
+  id: ID!
+  revisionNumber: Int!
+}
+
+type CreateUserDefinedModelReleasePayload {
+  success: Boolean!
+  release: UserDefinedModelRelease
+  message: String
+}
+
+type StartUserDefinedModelRunInput {
+  modelId: ID!
+  releaseId: ID!
+}
+
+type StartUserDefinedModelRunPayload {
+  success: Boolean!
+  runId: ID
+  message: String
+}
+
+type UpdateUserDefinedModelRunStatusInput {
+  id: ID!
+  status: UserDefinedModelRunStatus!
+  finishedAt: DateTime
+  logsUrl: String
+}
+
+type UpdateUserDefinedModelRunStatusPayload {
+  success: Boolean!
+  runId: ID
+  message: String
+}
