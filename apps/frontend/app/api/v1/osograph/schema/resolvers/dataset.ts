@@ -256,7 +256,12 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const { data, error } = await supabase
         .from("datasets")
-        .update(input)
+        .update({
+          name: input.name,
+          display_name: input.displayName,
+          description: input.description,
+          is_public: input.isPublic,
+        })
         .eq("id", input.id)
         .select()
         .single();
