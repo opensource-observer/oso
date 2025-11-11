@@ -38,7 +38,7 @@ def sqlmesh_export_factory(
     )
     def cacheable_exported_assets_defs(
         sqlmesh_infra_config: dict,
-        sqlmesh_context_config: SQLMeshContextConfig,
+        sqlmesh_context_config: ResourceParam[SQLMeshContextConfig],
         sqlmesh_exporters: ResourceParam[t.List[SQLMeshExporter]],
     ) -> SQLMeshExportedAssetsCollection:
         environment = sqlmesh_infra_config["environment"]

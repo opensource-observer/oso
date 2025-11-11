@@ -132,7 +132,7 @@ def sqlmesh_factory(
     def cacheable_sqlmesh_multi_asset_options(
         *,
         sqlmesh_infra_config: dict,
-        sqlmesh_context_config: PrefixedSQLMeshContextConfig,
+        sqlmesh_context_config: ResourceParam[PrefixedSQLMeshContextConfig],
     ) -> CacheableSQLMeshMultiAssetOptions:
         environment = sqlmesh_infra_config["environment"]
 
@@ -161,7 +161,7 @@ def sqlmesh_factory(
             context: AssetExecutionContext,
             global_config: ResourceParam[DagsterConfig],
             sqlmesh: SQLMeshResource,
-            sqlmesh_context_config: PrefixedSQLMeshContextConfig,
+            sqlmesh_context_config: ResourceParam[PrefixedSQLMeshContextConfig],
             trino: TrinoResource,
             config: SQLMeshRunConfig,
         ):
