@@ -15,7 +15,7 @@ module_logger = logging.getLogger(__name__)
 
 
 class UserDefinedModelEngineAdapterResource(dg.ConfigurableResource):
-    """Base Trino resource"""
+    """Base UserDefinedModel engine adapter resource"""
 
     @asynccontextmanager
     def get_adapter(
