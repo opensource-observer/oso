@@ -1,0 +1,10 @@
+"""
+Special type for system related operations that are only allowed by
+authenticated accounts that have system privileges.
+"""
+type System {
+  """
+  Resolve tables by their reference names to the backend reference format
+  """
+  resolve_tables(references: [String!]!): [String!]!
+}
