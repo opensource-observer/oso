@@ -12,6 +12,7 @@ type Dataset {
   creator: User!
   organization: Organization!
   tables(first: Int = 50, after: String): TableConnection!
+  runs(first: Int = 50, after: String): RunConnection!
 }
 
 type DatasetEdge {

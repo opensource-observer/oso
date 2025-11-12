@@ -1,0 +1,36 @@
+"""
+The scheduler schema defines types and queries related to scheduling data model
+runs and ingest jobs.
+
+Runs are a generic representation of a data task that has been executed. So it's
+meant to be quite flexible to accommodate different types of runs in the future.
+"""
+
+type RunDefinition {
+  modelId: ID
+  model: DataModel
+  datasetId: ID!
+  dataset: Dataset!
+}
+
+type Runs {
+  id: ID!
+  datasetId: ID!
+
+  startedAt: DateTime!
+  finishedAt: DateTime
+  status: String!
+  logsUrl: String!
+  definition: RunDefinition!
+}
+
+type RunEdge {
+  node: Runs!
+  cursor: String!
+}
+
+type RunConnection {
+  edges: [RunEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
