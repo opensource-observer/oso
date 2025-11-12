@@ -12,7 +12,36 @@ type Dataset {
   creator: User!
   organization: Organization!
   tables(first: Int = 50, after: String): TableConnection!
+
+  """
+  The runs for this dataset. For USER_MODEL datasets, each run is related to individual data models.
+  FOR DATA_INGESTION datasets, each run is related to individual ingestion jobs.
+  For DATA_CONNECTOR datasets, runs are not applicable and this field will be an empty list.
+  """
   runs(first: Int = 50, after: String): RunConnection!
+
+  typeDefinition: DatasetTypeDefinition!
+}
+
+type DatasetTypeDefinition {
+  """
+  If the dataset is of type USER_MODEL, this field will contain the list of data models
+  associated with the dataset. Otherwise it will be an empty list.
+  """
+  dataModels: DataModelConnection!
+
+  """
+  If the dataset is of type DATA_INGESTION, this field will contain the data ingestion
+  configuration. Otherwise it will be null.
+  """
+  # dataIngestionDefinition: DataIngestionDefinition
+
+
+  """
+  If the dataset is of type DATA_CONNECTOR, this field will contain the data connector
+  configuration. Otherwise it will be null.
+  """
+  # dataConnectorDefinition: DataConnectorDefinition
 }
 
 type DatasetEdge {
