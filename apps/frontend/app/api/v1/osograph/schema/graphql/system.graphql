@@ -4,7 +4,12 @@ authenticated accounts that have system privileges.
 """
 type System {
   """
-  Resolve tables by their reference names to the backend reference format
+  Resolve tables by their reference names to the backend reference format.
+  This is used by the query rewriter to batch resolve table references.
   """
-  resolve_tables(references: [String!]!): [String!]!
+  resolveTables(references: [String!]!): [String!]!
+
+  dataModelsToRun(first: Int = 50, after: String): DataModelConnection!
+
+   #ingestJobsToRun(first: Int = 50, after: String): IngestJobConnection!
 }

@@ -32,10 +32,16 @@ type TableColumn {
 }
 
 type Table {
+  id: ID!
+  datasetId: ID!
   catalogName: String!
   name: String!
   dataset: Dataset!
   columns: [TableColumn!]!
+  """
+  If a table is generated from a data model, this field will be populated with the data model information.
+  """
+  source: DataModel
 }
 
 type TableEdge {
