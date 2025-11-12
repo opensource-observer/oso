@@ -32,7 +32,7 @@ type UserDataModelDatasetDefinition {
   If the dataset is of type USER_MODEL, this field will contain the list of data models
   associated with the dataset. Otherwise it will be an empty list.
   """
-  dataModels: DataModelConnection!
+  dataModels(first: Int = 50, after: String): DataModelConnection!
 }
 
 type DatasetEdge {
