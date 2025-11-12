@@ -1,0 +1,20 @@
+type DataIngestion {
+  id: ID!
+  orgId: ID!
+  name: String!
+  description: String
+  config: JSON! # Stub, replace with a proper config type later
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type DataIngestionEdge {
+  node: DataIngestion!
+  cursor: String!
+}
+
+type DataIngestionConnection {
+  edges: [DataIngestionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}

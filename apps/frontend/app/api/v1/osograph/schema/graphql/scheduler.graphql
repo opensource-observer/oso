@@ -6,12 +6,7 @@ Runs are a generic representation of a data task that has been executed. So it's
 meant to be quite flexible to accommodate different types of runs in the future.
 """
 
-type RunDefinition {
-  modelId: ID
-  model: DataModel
-  datasetId: ID!
-  dataset: Dataset!
-}
+union RunDefinition = DataModel | DataIngestion | DataConnector
 
 type Runs {
   id: ID!

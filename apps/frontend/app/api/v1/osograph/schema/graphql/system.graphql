@@ -4,12 +4,13 @@ authenticated accounts that have system privileges.
 """
 type System {
   """
-  Resolve tables by their reference names to the backend reference format.
-  This is used by the query rewriter to batch resolve table references.
+  Resolve tables by their reference names to the backend reference format that
+  will be used when the query is run on trino. This is used by the query rewriter
+  to batch resolve table references as well as other internal operations.
   """
   resolveTables(references: [String!]!): [String!]!
 
   dataModelsToRun(first: Int = 50, after: String): DataModelConnection!
 
-   #ingestJobsToRun(first: Int = 50, after: String): IngestJobConnection!
+  dataIngestionsToRun(first: Int = 50, after: String): DataIngestionConnection!
 }

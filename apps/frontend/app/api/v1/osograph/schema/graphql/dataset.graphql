@@ -23,25 +23,16 @@ type Dataset {
   typeDefinition: DatasetTypeDefinition!
 }
 
-type DatasetTypeDefinition {
+union DatasetTypeDefinition = UserDataModelDatasetDefinition
+  | DataIngestion
+  | DataConnector
+
+type UserDataModelDatasetDefinition {
   """
   If the dataset is of type USER_MODEL, this field will contain the list of data models
   associated with the dataset. Otherwise it will be an empty list.
   """
   dataModels: DataModelConnection!
-
-  """
-  If the dataset is of type DATA_INGESTION, this field will contain the data ingestion
-  configuration. Otherwise it will be null.
-  """
-  # dataIngestionDefinition: DataIngestionDefinition
-
-
-  """
-  If the dataset is of type DATA_CONNECTOR, this field will contain the data connector
-  configuration. Otherwise it will be null.
-  """
-  # dataConnectorDefinition: DataConnectorDefinition
 }
 
 type DatasetEdge {
@@ -61,6 +52,8 @@ type TableColumn {
   nullable: Boolean!
 }
 
+union TableSource = DataModel | DataIngestion | DataConnector
+
 type Table {
   id: ID!
   datasetId: ID!
@@ -68,10 +61,7 @@ type Table {
   name: String!
   dataset: Dataset!
   columns: [TableColumn!]!
-  """
-  If a table is generated from a data model, this field will be populated with the data model information.
-  """
-  source: DataModel
+  source: TableSource!
 }
 
 type TableEdge {
