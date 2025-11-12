@@ -1,0 +1,28 @@
+[project]
+name = "scheduler"
+version = "0.1.0"
+description = "Simple scheduler for private user models"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    { name = "Reuven Gonzales", email = "reuven@karibalabs.co" }
+]
+dependencies = [
+    "duckdb>=1.4.1",
+    "pandas>=1.2.0",
+    "pydantic>=2.10.5",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "requests>=2.32.4",
+    "sqlmesh>=0.227.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pandas-stubs>=2.2.3.250308",
+    "pip>=25.2",
+]
