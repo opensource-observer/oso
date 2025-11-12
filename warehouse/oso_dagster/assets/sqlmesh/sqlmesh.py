@@ -165,6 +165,20 @@ def sqlmesh_factory(
             trino: TrinoResource,
             config: SQLMeshRunConfig,
         ):
+            # If this is a retry of a restatement job we simply cancel it.
+            # FIXME this is a bit of a blunt instrument. We probably want to know if
+            # the restatement successfully started. Otherwise we might fail to
+            # restate the models we intended to restate.
+            if context.op_execution_context.retry_number != 0 and (
+                config.restate_models or config.restate_by_entity_category
+            ):
+                context.log.info(
+                    "Retry detected for restatement job. Cancelling to avoid duplicate restatement."
+                )
+                raise Exception(
+                    "Restatement job retry cancelled to avoid duplicate restatement."
+                )
+
             restate_models = config.restate_models[:] if config.restate_models else []
 
             # We use this helper function so we can run sqlmesh both locally and in
