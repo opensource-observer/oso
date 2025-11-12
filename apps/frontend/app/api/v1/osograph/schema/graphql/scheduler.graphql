@@ -8,19 +8,39 @@ meant to be quite flexible to accommodate different types of runs in the future.
 
 union RunDefinition = DataModel | DataIngestion | DataConnector
 
-type Runs {
+type RunRequest {
+  id: ID!
+  definition: RunDefinition!
+  requestedAt: DateTime!
+  requestedByUserId: ID!
+  requestedBy: User!
+}
+
+enum RunTriggerType {
+  MANUAL
+  SCHEDULED
+}
+
+enum RunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+type Run {
   id: ID!
   datasetId: ID!
-
+  triggerType: RunTriggerType!
   startedAt: DateTime!
   finishedAt: DateTime
-  status: String!
+  status: RunStatus!
   logsUrl: String!
   definition: RunDefinition!
 }
 
 type RunEdge {
-  node: Runs!
+  node: Run!
   cursor: String!
 }
 
@@ -28,4 +48,102 @@ type RunConnection {
   edges: [RunEdge!]!
   pageInfo: PageInfo!
   totalCount: Int
+}
+
+type RunSummary {
+  runId: ID!
+  status: String!
+  startedAt: DateTime!
+  finishedAt: DateTime
+}
+
+type RunSummaryEdge {
+  node: RunSummary!
+  cursor: String!
+}
+
+type RunSummaryConnection {
+  edges: [RunSummaryEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+extend type Query {
+  """
+  When fetching public runs, we only return a summary of each run. If the user
+  has access to the run details, they can fetch the full run information via the
+  `run` query. For a list of full runs, use either the Organization, Dataset, or
+  DataModel.
+  """
+  runSummaries(first: Int = 50, after: String): RunSummaryConnection!
+
+  """
+  Get a run by ID
+  """
+  run(id: ID!): Run
+}
+
+extend type Mutation {
+  """
+  Request a run
+  """
+  createRunRequest(input: CreateRunRequestInput!): CreateRunRequestPayload!
+
+  """
+  Cancel a run
+  """
+  cancelRun(input: CancelRunInput!): CancelRunPayload!
+
+  """
+  System only. Mark a run as started.
+  """
+  startRun(input: StartRunInput!): StartRunPayload!
+
+  """
+  System only. Mark a run as finished.
+  """
+  finishRun(input: FinishRunInput!): FinishRunPayload!
+}
+
+input CreateRunRequestInput {
+  definition: RunDefinition!
+}
+
+type CreateRunRequestPayload {
+  success: Boolean!
+  message: String
+  runRequest: RunRequest!
+}
+
+input CancelRunInput {
+  runId: ID!
+}
+
+type CancelRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input StartRunInput {
+  definition: RunDefinition!
+  runRequestId: ID
+}
+
+type StartRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input FinishRunInput {
+  runId: ID!
+  status: RunStatus!
+  logsUrl: String!
+}
+
+type FinishRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
 }
