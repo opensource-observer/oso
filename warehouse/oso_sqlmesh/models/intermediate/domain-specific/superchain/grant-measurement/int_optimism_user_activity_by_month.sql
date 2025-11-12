@@ -34,5 +34,5 @@ FROM oso.int_events__superchain_transactions
 WHERE
   event_source = 'OPTIMISM'
   AND event_type = 'TRANSACTION'
-  time BETWEEN @start_dt AND @end_dt
+  AND time BETWEEN @start_dt AND @end_dt
 GROUP BY 1, 2, 3
