@@ -11,8 +11,8 @@ MODEL (
 WITH user_first_day AS (
   SELECT
     from_artifact_id,
-    MIN(bucket_day) AS first_day
-  FROM oso.int_optimism_dex_trades_daily
+    MIN(date_first_transaction) AS first_day
+  FROM oso.int_optimism_dex_user_ltv
   GROUP BY 1
 ),
 user_first_dex AS (
@@ -50,9 +50,8 @@ user_dex_first_day AS (
   SELECT
     from_artifact_id,
     dex_address,
-    MIN(bucket_day) AS first_day_with_dex
-  FROM oso.int_optimism_dex_trades_daily
-  GROUP BY 1,2
+    date_first_transaction AS first_day_with_dex
+  FROM oso.int_optimism_dex_user_ltv
 ),
 user_day_dex AS (
   SELECT
