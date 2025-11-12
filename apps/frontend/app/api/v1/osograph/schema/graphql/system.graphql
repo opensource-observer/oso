@@ -1,7 +1,36 @@
 """
-Special type for system related operations that are only allowed by
-authenticated accounts that have system privileges.
+Special type for system related reads that are only allowed by authenticated
+service accounts that have system privileges.
 """
+
+# Don't take these run queue types too seriously yet. It is probable these won't
+# live in graphql at all as they're more suited to some other internal queuing
+# system for scheduling, but because we are calling for state of the run queue
+# from python we need these somewhere. None of these types will be available to
+# users without system privileges. No humans should have long lived system
+# privileges either. That's part of the reason these live in this graphql schema
+# doc.
+type RunQueueItem {
+  id: ID!
+  definition: RunDefinition!
+  scheduledAt: DateTime!
+
+  # run requests only exist if the run has been explicitly requested by a user
+  runRequestId: ID
+  runRequest: RunRequest
+}
+
+type RunQueueItemEdge {
+  node: RunQueueItem!
+  cursor: String!
+}
+
+type RunQueueItemConnection {
+  edges: [RunQueueItemEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
 type System {
   """
   Resolve tables by their reference names to the backend reference format that
@@ -10,7 +39,7 @@ type System {
   """
   resolveTables(references: [String!]!): [String!]!
 
-  dataModelsToRun(first: Int = 50, after: String): DataModelConnection!
+  dataModelRunQueue(first: Int = 50, after: String): RunQueueItemConnection!
 
-  dataIngestionsToRun(first: Int = 50, after: String): DataIngestionConnection!
+  dataIngestionRunQueue(first: Int = 50, after: String): RunQueueItemConnection!
 }
