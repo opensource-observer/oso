@@ -15,10 +15,11 @@ MODEL (
 @DEF(alpha, 0.5);
 @DEF(num_iterations, 2);
 
--- 1. base repo scores
-WITH repo_base AS (
+-- 1. pretrust scores (ethereum repos only)
+WITH pretrust AS (
   SELECT
     repo_artifact_id,
+    url,
     score AS repo_score_base
   FROM oso.int_ddp_repo_pretrust
 ),
@@ -30,7 +31,23 @@ edges_raw AS (
     edge_weight
   FROM oso.int_ddp_repo_to_dev_graph
 ),
--- 3. normalize outgoing edges per developer 
+-- 3. all repos in the graph (pretrust + discovered)
+all_repos AS (
+  SELECT DISTINCT
+    repo_artifact_id
+  FROM edges_raw
+),
+-- 4. base scores for all repos (0 for discovered repos)
+repo_base AS (
+  SELECT
+    a.repo_artifact_id,
+    COALESCE(p.repo_score_base, 0.0) AS repo_score_base,
+    CASE WHEN p.repo_artifact_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_pretrust
+  FROM all_repos a
+  LEFT JOIN pretrust p
+    ON a.repo_artifact_id = p.repo_artifact_id
+),
+-- 5. normalize outgoing edges per developer 
 edges_norm AS (
   SELECT
     git_user,
@@ -39,7 +56,7 @@ edges_norm AS (
     edge_weight / NULLIF(sum(edge_weight) OVER (PARTITION BY git_user),0) AS edge_weight_norm
   FROM edges_raw
 ),
--- 4. developer trust v1 = weighted average of base repo scores they touched
+-- 6. developer trust v1 = weighted average of base repo scores they touched
 dev_trust_v1 AS (
   SELECT
     e.git_user,
@@ -49,7 +66,7 @@ dev_trust_v1 AS (
     ON e.repo_artifact_id = r.repo_artifact_id
   GROUP BY 1
 ),
--- 5. repo contribution from developers (pull dev trust back to repos using same normalized edges)
+-- 7. repo contribution from developers (pull dev trust back to repos using same normalized edges)
 repo_from_dev_v1 AS (
   SELECT
     e.repo_artifact_id,
@@ -59,11 +76,12 @@ repo_from_dev_v1 AS (
     ON e.git_user = d.git_user
   GROUP BY 1
 ),
--- 6. mix base score and dev contrib using alpha to get repo_score_v1
+-- 8. mix base score and dev contrib using alpha to get repo_score_v1
 repo_score_v1 AS (
   SELECT
     r.repo_artifact_id,
     r.repo_score_base,
+    r.is_pretrust,
     COALESCE(c.repo_dev_contrib_v1,0.0) AS repo_dev_contrib_v1,
     ( @alpha * r.repo_score_base )
       + ( (1 - @alpha) * COALESCE(c.repo_dev_contrib_v1,0.0) ) AS repo_score_v1
@@ -71,7 +89,7 @@ repo_score_v1 AS (
   LEFT JOIN repo_from_dev_v1 AS c
     ON r.repo_artifact_id = c.repo_artifact_id
 ),
--- 7. second iteration: recompute dev trust from repo_score_v1
+-- 9. second iteration: recompute dev trust from repo_score_v1
 dev_trust_v2 AS (
   SELECT
     e.git_user,
@@ -92,6 +110,7 @@ repo_score_v2 AS (
   SELECT
     r.repo_artifact_id,
     r.repo_score_base,
+    r.is_pretrust,
     COALESCE(v1.repo_dev_contrib_v1,0.0) AS repo_dev_contrib_v1,
     COALESCE(v2.repo_dev_contrib_v2,0.0) AS repo_dev_contrib_v2,
     ( @alpha * r.repo_score_base )
@@ -102,10 +121,11 @@ repo_score_v2 AS (
   LEFT JOIN repo_from_dev_v2 AS v2
     ON r.repo_artifact_id = v2.repo_artifact_id
 )
--- 8. output: ranked repos with diagnostics
+-- 10. output: ranked repos with diagnostics, join to get URLs for all repos
 SELECT
   r.repo_artifact_id,
   a.artifact_url AS url,
+  r.is_pretrust,
   r.repo_score_base AS base_score,
   r.repo_dev_contrib_v1 AS dev_contrib_v1,
   r.repo_dev_contrib_v2 AS dev_contrib_v2,
