@@ -3,8 +3,9 @@ MODEL (
   description 'Monthly retention cohort analysis for DEX users on OP Mainnet with New/Retained/Dormant/Resurrected/Churned labels',
   dialect trino,
   kind full,
+  grain (user_address, dex_project_name, activity_month),
   audits (
-    HAS_AT_LEAST_N_ROWS(threshold := 0)
+    has_at_least_n_rows(threshold := 0)
   )
 );
 
@@ -17,7 +18,6 @@ WITH user_activity_monthly AS (
     SUM(total_transactions) AS monthly_transactions,
     COUNT(DISTINCT bucket_day) AS days_active_in_month
   FROM oso.int_optimism_dex_user_events_daily
-  WHERE dex_project_name IS NOT NULL
   GROUP BY 1, 2, 3
 ),
 user_dex_first_month AS (
@@ -87,12 +87,7 @@ activity_windows AS (
         PARTITION BY user_address, dex_project_name 
         ORDER BY activity_month 
         ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-      ) AS last_active_month,
-    -- Was active in previous month
-    LAG(is_active, 1) OVER (
-      PARTITION BY user_address, dex_project_name 
-      ORDER BY activity_month
-    ) AS was_active_prev_month
+      ) AS last_active_month
   FROM user_month_status
 ),
 -- Classify retention status

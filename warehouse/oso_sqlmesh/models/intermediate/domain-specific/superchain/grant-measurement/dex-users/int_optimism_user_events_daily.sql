@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_optimism_dex_user_events_daily,
-  description 'DEX user events on OP Mainnet by day',
+  name oso.int_optimism_user_events_daily,
+  description 'User events on OP Mainnet by day',
   dialect trino,
   kind incremental_by_time_range(
     time_column bucket_day,
@@ -13,7 +13,7 @@ MODEL (
   start @blockchain_incremental_start,
   cron '@monthly',
   partitioned_by MONTH("bucket_day"),
-  grain (bucket_day, user_address, dex_project_name),
+  grain (bucket_day, user_address),
   audits (
     has_at_least_n_rows(threshold := 0),
     no_gaps(
@@ -23,27 +23,14 @@ MODEL (
   )
 );
 
-WITH dexs AS (
-  SELECT
-    artifact_id,
-    project_name AS dex_project_name
-  FROM oso.int_artifacts_by_project_in_openlabelsinitiative
-  WHERE
-    artifact_source = 'OPTIMISM'
-    AND usage_category = 'dex'
-    AND project_name IS NOT NULL
-)
-
 SELECT
   tx.time::DATE AS bucket_day,
   tx.from_artifact_name AS user_address,
-  dexs.dex_project_name,
   SUM(tx.l2_gas_fee / 1e18)::DOUBLE AS total_gas_fees,
   COUNT(*) AS total_transactions
 FROM oso.int_events__superchain_transactions AS tx
-JOIN dexs ON tx.to_artifact_id = dexs.artifact_id
 WHERE
   tx.event_source = 'OPTIMISM'
   AND tx.event_type = 'TRANSACTION'
   AND tx.time BETWEEN @start_dt AND @end_dt
-GROUP BY 1, 2, 3
+GROUP BY 1, 2
