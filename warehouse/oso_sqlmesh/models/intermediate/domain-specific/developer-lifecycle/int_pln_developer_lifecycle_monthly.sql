@@ -150,22 +150,44 @@ state_with_history AS (
     is_active,
     months_since_last_active,
     current_state,
+    -- LAG cannot use a window with a frame in Trino, so give it its own OVER clause
     LAG(current_state) OVER (
       PARTITION BY developer_id, project_id
       ORDER BY bucket_month
     ) AS prev_state,
-    MAX(
-      CASE 
-        WHEN current_state IN ('first_month', 'engaged_part_time', 'engaged_full_time') 
-          THEN current_state 
-        ELSE NULL 
-      END
-    ) OVER (
-      PARTITION BY developer_id, project_id
-      ORDER BY bucket_month
-      ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-    ) AS last_engaged_state
+    -- These aggregates can use the framed window alias
+    MAX(CASE WHEN current_state = 'engaged_full_time' THEN 1 ELSE 0 END) OVER w AS had_full_time,
+    MAX(CASE WHEN current_state = 'engaged_part_time' THEN 1 ELSE 0 END) OVER w AS had_part_time,
+    MAX(CASE WHEN current_state = 'first_month' THEN 1 ELSE 0 END) OVER w AS had_first_month
   FROM state_tracking
+  WINDOW w AS (
+    PARTITION BY developer_id, project_id
+    ORDER BY bucket_month
+    ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+  )
+),
+
+-- Step 8b: Apply priority logic to determine highest engaged state
+state_with_priority AS (
+  SELECT
+    developer_id,
+    project_id,
+    bucket_month,
+    first_contribution_month,
+    last_contribution_month,
+    days_active,
+    activity_level,
+    is_active,
+    months_since_last_active,
+    current_state,
+    prev_state,
+    CASE
+      WHEN had_full_time = 1 THEN 'engaged_full_time'
+      WHEN had_part_time = 1 THEN 'engaged_part_time'
+      WHEN had_first_month = 1 THEN 'first_month'
+      ELSE NULL
+    END AS highest_engaged_state
+  FROM state_with_history
 ),
 
 -- Step 9: Apply lifecycle labels based on state transitions
@@ -181,7 +203,7 @@ lifecycle_labels AS (
     months_since_last_active,
     prev_state,
     current_state,
-    last_engaged_state,
+    highest_engaged_state,
     -- Apply lifecycle labels according to state transition rules
     CASE
       -- First time: First month of activity
@@ -209,15 +231,15 @@ lifecycle_labels AS (
       WHEN current_state = 'dormant' AND prev_state = 'first_month' THEN 'first time to dormant'
       WHEN current_state = 'dormant' AND prev_state = 'dormant' THEN 'dormant'
       
-      -- Churned states based on last engaged state
-      WHEN current_state = 'churned' AND last_engaged_state = 'first_month' THEN 'churned (after first time)'
-      WHEN current_state = 'churned' AND last_engaged_state = 'engaged_part_time' THEN 'churned (after reaching part time)'
-      WHEN current_state = 'churned' AND last_engaged_state = 'engaged_full_time' THEN 'churned (after reaching full time)'
+      -- Churned states based on highest engaged state
+      WHEN current_state = 'churned' AND highest_engaged_state = 'first_month' THEN 'churned (after first time)'
+      WHEN current_state = 'churned' AND highest_engaged_state = 'engaged_part_time' THEN 'churned (after reaching part time)'
+      WHEN current_state = 'churned' AND highest_engaged_state = 'engaged_full_time' THEN 'churned (after reaching full time)'
       WHEN prev_state = 'churned' AND current_state = 'churned' THEN 'churned'
       
       ELSE 'unknown'
     END AS label
-  FROM state_with_history
+  FROM state_with_priority
 )
 
 SELECT
@@ -225,10 +247,12 @@ SELECT
   developer_id,
   project_id,
   label,
-  first_contribution_month,
-  last_contribution_month,
   days_active,
   activity_level,
   months_since_last_active,
-  prev_state
+  current_state,
+  prev_state,
+  highest_engaged_state,
+  first_contribution_month,
+  last_contribution_month
 FROM lifecycle_labels
