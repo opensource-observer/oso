@@ -222,7 +222,7 @@ lifecycle_labels AS (
       
       -- Churned continuation (label will be carried forward)
       WHEN prev_state = 'churned' AND current_state = 'churned' THEN 
-        NULL
+        'churned'
       
       -- Everything else
       ELSE 'unknown'
