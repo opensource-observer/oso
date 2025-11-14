@@ -150,7 +150,12 @@ state_with_history AS (
     is_active,
     months_since_last_active,
     current_state,
-    LAG(current_state) OVER w AS prev_state,
+    -- LAG cannot use a window with a frame in Trino, so give it its own OVER clause
+    LAG(current_state) OVER (
+      PARTITION BY developer_id, project_id
+      ORDER BY bucket_month
+    ) AS prev_state,
+    -- These aggregates can use the framed window alias
     MAX(CASE WHEN current_state = 'engaged_full_time' THEN 1 ELSE 0 END) OVER w AS had_full_time,
     MAX(CASE WHEN current_state = 'engaged_part_time' THEN 1 ELSE 0 END) OVER w AS had_part_time,
     MAX(CASE WHEN current_state = 'first_month' THEN 1 ELSE 0 END) OVER w AS had_first_month
