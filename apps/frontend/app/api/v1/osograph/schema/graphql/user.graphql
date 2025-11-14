@@ -30,6 +30,7 @@ type Viewer {
   notebooks(first: Int = 50, after: String): NotebookConnection!
   datasets(first: Int = 50, after: String): DatasetConnection!
   invitations(first: Int = 50, after: String): InvitationConnection!
+  runs(first: Int = 50, after: String): RunConnection!
 }
 
 extend type Query {
