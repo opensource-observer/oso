@@ -57,7 +57,6 @@ union TableSource = DataModel | DataIngestion | DataConnector
 type Table {
   id: ID!
   datasetId: ID!
-  catalogName: String!
   name: String!
   dataset: Dataset!
   columns: [TableColumn!]!

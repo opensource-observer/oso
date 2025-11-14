@@ -21,6 +21,12 @@ enum RunTriggerType {
   SCHEDULED
 }
 
+enum RunDefinitionType {
+  DATA_MODEL
+  DATA_INGESTION
+  DATA_CONNECTOR
+}
+
 enum RunStatus {
   RUNNING
   SUCCESS
@@ -80,7 +86,8 @@ extend type Mutation {
 }
 
 input CreateRunRequestInput {
-  definition: RunDefinition!
+  definitionType: RunDefinitionType!
+  definitionId: ID!
 }
 
 type CreateRunRequestPayload {
@@ -100,7 +107,8 @@ type CancelRunPayload {
 }
 
 input StartRunInput {
-  definition: RunDefinition!
+  definitionType: RunDefinitionType!
+  definitionId: ID!
   runRequestId: ID
 }
 
