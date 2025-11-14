@@ -3,7 +3,8 @@ type DataConnector {
   orgId: ID!
   name: String!
   type: String!
-  config: JSON! # stub. please replace with a proper config type later
   createdAt: DateTime!
   updatedAt: DateTime!
+
+  # TODO: Add fields for the data connector configuration
 }

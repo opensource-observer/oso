@@ -3,9 +3,10 @@ type DataIngestion {
   orgId: ID!
   name: String!
   description: String
-  config: JSON! # Stub, replace with a proper config type later
   createdAt: DateTime!
   updatedAt: DateTime!
+
+  # TODO: Add fields for the data ingestion configuration
 }
 
 type DataIngestionEdge {
