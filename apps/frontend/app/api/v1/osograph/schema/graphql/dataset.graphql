@@ -23,11 +23,11 @@ type Dataset {
   typeDefinition: DatasetTypeDefinition!
 }
 
-union DatasetTypeDefinition = UserDataModelDatasetDefinition
+union DatasetTypeDefinition = DataModelDefinition
   | DataIngestion
   | DataConnector
 
-type UserDataModelDatasetDefinition {
+type DataModelDefinition {
   """
   If the dataset is of type USER_MODEL, this field will contain the list of data models
   associated with the dataset. Otherwise it will be an empty list.

@@ -50,33 +50,7 @@ type RunConnection {
   totalCount: Int
 }
 
-type RunSummary {
-  runId: ID!
-  status: String!
-  startedAt: DateTime!
-  finishedAt: DateTime
-}
-
-type RunSummaryEdge {
-  node: RunSummary!
-  cursor: String!
-}
-
-type RunSummaryConnection {
-  edges: [RunSummaryEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int
-}
-
 extend type Query {
-  """
-  When fetching public runs, we only return a summary of each run. If the user
-  has access to the run details, they can fetch the full run information via the
-  `run` query. For a list of full runs, use either the Organization, Dataset, or
-  DataModel.
-  """
-  runSummaries(first: Int = 50, after: String): RunSummaryConnection!
-
   """
   Get a run by ID
   """
