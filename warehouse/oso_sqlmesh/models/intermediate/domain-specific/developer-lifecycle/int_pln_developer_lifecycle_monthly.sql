@@ -8,7 +8,7 @@ MODEL (
     batch_concurrency 2,
     forward_only true,
     on_destructive_change warn,
-    lookback @default_daily_incremental_lookback,
+    lookback 3,
     auto_restatement_cron @default_auto_restatement_cron
   ),
   start @github_incremental_start,
@@ -211,6 +211,9 @@ lifecycle_labels AS (
       -- From dormant state returning to engagement
       WHEN prev_state = 'dormant' AND current_state = 'engaged_part_time' THEN 'part time'
       WHEN prev_state = 'dormant' AND current_state = 'engaged_full_time' THEN 'full time'
+
+      -- Dormant months get an explicit label
+      WHEN current_state = 'dormant' THEN 'dormant'
       
       -- Churned states based on last engaged state
       WHEN current_state = 'churned' AND last_engaged_state = 'first_month' THEN 'churned (after first time)'
@@ -243,7 +246,6 @@ final_labels AS (
   FROM lifecycle_labels
 ),
 
--- Step 11: Fill in churned continuation labels
 labeled_with_carryforward AS (
   SELECT
     developer_id,
