@@ -31,18 +31,18 @@ MODEL (
 @DEF("full_time_days", 10);
 @DEF("part_time_days", 1);
 
--- Step 1: Get developer first activity month per project
+-- Step 1: Get developer first activity month per project (over full history up to @end_dt)
 WITH developer_first_month AS (
   SELECT
     developer_id,
     project_id,
     MIN(bucket_month) AS first_contribution_month
   FROM oso.int_pln_developer_activity_monthly
-  WHERE bucket_month BETWEEN @start_dt AND @end_dt
+  WHERE bucket_month <= @end_dt
   GROUP BY 1, 2
 ),
 
--- Step 2: Get all months in the time range
+-- Step 2: Get all months in the incremental time range
 all_months AS (
   SELECT DISTINCT bucket_month
   FROM oso.int_pln_developer_activity_monthly
@@ -148,7 +148,7 @@ state_tracking AS (
   FROM activity_windows
 ),
 
--- Step 8: Get previous state for transition labeling
+-- Step 8: Get previous state and last engaged state for transition labeling
 state_with_history AS (
   SELECT
     developer_id,
@@ -163,7 +163,18 @@ state_with_history AS (
     LAG(current_state) OVER (
       PARTITION BY developer_id, project_id
       ORDER BY bucket_month
-    ) AS prev_state
+    ) AS prev_state,
+    MAX(
+      CASE 
+        WHEN current_state IN ('first_month', 'engaged_part_time', 'engaged_full_time') 
+          THEN current_state 
+        ELSE NULL 
+      END
+    ) OVER (
+      PARTITION BY developer_id, project_id
+      ORDER BY bucket_month
+      ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+    ) AS last_engaged_state
   FROM state_tracking
 ),
 
@@ -179,45 +190,38 @@ lifecycle_labels AS (
     months_since_last_active,
     prev_state,
     current_state,
+    last_engaged_state,
     -- Apply lifecycle labels according to state transition rules
     CASE
       -- First time: First month of activity
       WHEN current_state = 'first_month' THEN 'first_time'
       
-      -- From first_month state
+      -- From first_month state into engagement
       WHEN prev_state = 'first_month' AND activity_level = 'part_time' THEN 'new part time'
       WHEN prev_state = 'first_month' AND activity_level = 'full_time' THEN 'new full time'
-      WHEN prev_state = 'first_month' AND current_state = 'churned' THEN 'churned (after first time)'
       
       -- From engaged_part_time state
       WHEN prev_state = 'engaged_part_time' AND current_state = 'engaged_part_time' THEN 'part time'
       WHEN prev_state = 'engaged_part_time' AND current_state = 'engaged_full_time' THEN 'part time to full time'
-      WHEN prev_state = 'engaged_part_time' AND current_state = 'churned' THEN 'churned (after reaching part time)'
       
       -- From engaged_full_time state
       WHEN prev_state = 'engaged_full_time' AND current_state = 'engaged_full_time' THEN 'full time'
       WHEN prev_state = 'engaged_full_time' AND current_state = 'engaged_part_time' THEN 'full time to part time'
-      WHEN prev_state = 'engaged_full_time' AND current_state = 'churned' THEN 'churned (after reaching full time)'
       
-      -- From churned state (reactivation)
-      WHEN prev_state = 'churned' AND current_state = 'engaged_part_time' THEN 'reactivated part time'
-      WHEN prev_state = 'churned' AND current_state = 'engaged_full_time' THEN 'reactivated full time'
-      
-      -- From dormant state (maintain previous engaged state context)
+      -- From dormant state returning to engagement
       WHEN prev_state = 'dormant' AND current_state = 'engaged_part_time' THEN 'part time'
       WHEN prev_state = 'dormant' AND current_state = 'engaged_full_time' THEN 'full time'
-      WHEN prev_state = 'dormant' AND current_state = 'churned' THEN 
-        -- Need to look back to find what state we were in before dormant
-        CASE
-          WHEN bucket_month = DATE_ADD('month', 1, first_contribution_month) THEN 'churned (after first time)'
-          ELSE 'churned (after reaching part time)'  -- Default assumption
-        END
       
-      -- Churned continuation
+      -- Churned states based on last engaged state
+      WHEN current_state = 'churned' AND last_engaged_state = 'first_month' THEN 'churned (after first time)'
+      WHEN current_state = 'churned' AND last_engaged_state = 'engaged_part_time' THEN 'churned (after reaching part time)'
+      WHEN current_state = 'churned' AND last_engaged_state = 'engaged_full_time' THEN 'churned (after reaching full time)'
+      
+      -- Churned continuation (label will be carried forward)
       WHEN prev_state = 'churned' AND current_state = 'churned' THEN 
-        -- Maintain the specific churn label from previous month
-        NULL  -- Will be handled by carrying forward the label
+        NULL
       
+      -- Everything else
       ELSE 'unknown'
     END AS label
   FROM state_with_history
@@ -253,7 +257,7 @@ labeled_with_carryforward AS (
     CASE
       -- For churned months after the first churned month, carry forward the label
       WHEN label IS NULL AND current_state = 'churned' THEN
-        FIRST_VALUE(label) IGNORE NULLS OVER (
+        LAST_VALUE(label) IGNORE NULLS OVER (
           PARTITION BY developer_id, project_id
           ORDER BY bucket_month
           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
@@ -274,8 +278,3 @@ SELECT
   months_since_last_active,
   prev_state
 FROM labeled_with_carryforward
-WHERE label != 'unknown'
-ORDER BY
-  developer_id,
-  project_id,
-  bucket_month

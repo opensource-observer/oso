@@ -44,7 +44,7 @@ WHERE
   AND e.event_type IN (
     'COMMIT_CODE',
     'ISSUE_CLOSED',
-    'ISSUE_COMMENT',    
+    'ISSUE_COMMENT',
     'ISSUE_OPENED',
     'ISSUE_REOPENED',
     'PULL_REQUEST_CLOSED',
