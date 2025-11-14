@@ -5913,6 +5913,8 @@ export type Query = {
   sensorsOrError: SensorsOrError;
   /** Whether or not the NUX should be shown to the user */
   shouldShowNux: Scalars["Boolean"]["output"];
+  /** System only. Access system level queries. */
+  system: System;
   /** Provides fields for testing behavior */
   test?: Maybe<TestFields>;
   /** Retrieve a top level resource by its location name, repository name, and resource name. */
