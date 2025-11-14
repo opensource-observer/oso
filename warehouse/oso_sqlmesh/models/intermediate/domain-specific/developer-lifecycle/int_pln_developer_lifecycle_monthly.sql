@@ -45,6 +45,7 @@ developer_project_month_grid AS (
   FROM developer_activity_bounds AS dab
   CROSS JOIN all_months AS m
   WHERE m.bucket_month >= dab.first_contribution_month
+    AND m.bucket_month <= DATE_ADD('month', 1, dab.last_contribution_month)
 ),
 
 -- Step 4: Join actual activity data
