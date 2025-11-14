@@ -43,3 +43,10 @@ type System {
 
   dataIngestionRunQueue(first: Int = 50, after: String): RunQueueItemConnection!
 }
+
+extend type Query {
+  """
+  System only. Access system level queries.
+  """
+  system: System!
+}
