@@ -207,7 +207,7 @@ lifecycle_labels AS (
     -- Apply lifecycle labels according to state transition rules
     CASE
       -- First time: First month of activity
-      WHEN current_state = 'first_month' THEN 'first_time'
+      WHEN current_state = 'first_month' THEN 'first time'
       
       -- From first_month state into engagement
       WHEN prev_state = 'first_month' AND activity_level = 'part_time' THEN 'new part time'
