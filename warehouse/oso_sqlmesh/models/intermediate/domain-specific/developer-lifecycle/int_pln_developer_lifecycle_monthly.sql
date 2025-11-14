@@ -2,25 +2,11 @@ MODEL (
   name oso.int_pln_developer_lifecycle_monthly,
   description 'Developer lifecycle states for Protocol Labs Network developers with full/part time classification and state transitions',
   dialect trino,
-  kind incremental_by_time_range(
-    time_column bucket_month,
-    batch_size 12,
-    batch_concurrency 2,
-    forward_only true,
-    on_destructive_change warn,
-    lookback 3,
-    auto_restatement_cron @default_auto_restatement_cron
-  ),
-  start @github_incremental_start,
-  cron '@monthly',
-  partitioned_by MONTH("bucket_month"),
+  kind full,
+  partitioned_by YEAR("bucket_month"),
   grain (bucket_month, developer_id, project_id),
   audits (
     has_at_least_n_rows(threshold := 0),
-    no_gaps(
-      time_column := bucket_month,
-      no_gap_date_part := 'month',
-    ),
   ),
   tags (
     'entity_category=project',
@@ -31,34 +17,35 @@ MODEL (
 @DEF("full_time_days", 10);
 @DEF("part_time_days", 1);
 
--- Step 1: Get developer first activity month per project (over full history up to @end_dt)
-WITH developer_first_month AS (
+-- Step 1: Get developer first and last activity months per project (full history)
+WITH developer_activity_bounds AS (
   SELECT
     developer_id,
     project_id,
-    MIN(bucket_month) AS first_contribution_month
+    MIN(bucket_month) AS first_contribution_month,
+    MAX(bucket_month) AS last_contribution_month
   FROM oso.int_pln_developer_activity_monthly
-  WHERE bucket_month <= @end_dt
   GROUP BY 1, 2
 ),
 
--- Step 2: Get all months in the incremental time range
+-- Step 2: Get all distinct months in the activity table
 all_months AS (
   SELECT DISTINCT bucket_month
   FROM oso.int_pln_developer_activity_monthly
-  WHERE bucket_month BETWEEN @start_dt AND @end_dt
 ),
 
 -- Step 3: Create complete grid of developer+project+month combinations
 developer_project_month_grid AS (
   SELECT
-    dfm.developer_id,
-    dfm.project_id,
-    dfm.first_contribution_month,
+    dab.developer_id,
+    dab.project_id,
+    dab.first_contribution_month,
+    dab.last_contribution_month,
     m.bucket_month
-  FROM developer_first_month AS dfm
+  FROM developer_activity_bounds AS dab
   CROSS JOIN all_months AS m
-  WHERE m.bucket_month >= dfm.first_contribution_month
+  WHERE m.bucket_month >= dab.first_contribution_month
+    AND m.bucket_month <= DATE_ADD('month', 1, dab.last_contribution_month)
 ),
 
 -- Step 4: Join actual activity data
@@ -68,6 +55,7 @@ developer_month_activity AS (
     g.project_id,
     g.bucket_month,
     g.first_contribution_month,
+    g.last_contribution_month,
     COALESCE(a.days_active, 0) AS days_active
   FROM developer_project_month_grid AS g
   LEFT JOIN oso.int_pln_developer_activity_monthly AS a
@@ -83,6 +71,7 @@ activity_classification AS (
     project_id,
     bucket_month,
     first_contribution_month,
+    last_contribution_month,
     days_active,
     CASE
       WHEN days_active >= @full_time_days THEN 'full_time'
@@ -101,6 +90,7 @@ activity_windows AS (
     project_id,
     bucket_month,
     first_contribution_month,
+    last_contribution_month,
     days_active,
     activity_level,
     is_active,
@@ -121,6 +111,7 @@ state_tracking AS (
     project_id,
     bucket_month,
     first_contribution_month,
+    last_contribution_month,
     days_active,
     activity_level,
     is_active,
@@ -134,16 +125,14 @@ state_tracking AS (
     CASE
       -- First month state
       WHEN bucket_month = first_contribution_month THEN 'first_month'
-      -- Churned: 3+ months of inactivity
-      WHEN is_active = 0 AND last_active_month IS NOT NULL
-        AND DATE_DIFF('month', last_active_month, bucket_month) >= 3 THEN 'churned'
-      -- Dormant: 1-2 months of inactivity (intermediate state)
-      WHEN is_active = 0 AND last_active_month IS NOT NULL
-        AND DATE_DIFF('month', last_active_month, bucket_month) BETWEEN 1 AND 2 THEN 'dormant'
+      -- Post-last months are churned by definition (no future activity)
+      WHEN bucket_month > last_contribution_month THEN 'churned'
+      -- Dormant: inactive months before last_contribution_month (pre-churn)
+      WHEN is_active = 0 AND last_active_month IS NOT NULL THEN 'dormant'
       -- Engaged states based on current activity
       WHEN is_active = 1 AND activity_level = 'full_time' THEN 'engaged_full_time'
       WHEN is_active = 1 AND activity_level = 'part_time' THEN 'engaged_part_time'
-      ELSE 'unknown'
+      ELSE 'unknown_state'
     END AS current_state
   FROM activity_windows
 ),
@@ -155,6 +144,7 @@ state_with_history AS (
     project_id,
     bucket_month,
     first_contribution_month,
+    last_contribution_month,
     days_active,
     activity_level,
     is_active,
@@ -185,6 +175,7 @@ lifecycle_labels AS (
     project_id,
     bucket_month,
     first_contribution_month,
+    last_contribution_month,
     days_active,
     activity_level,
     months_since_last_active,
@@ -203,70 +194,30 @@ lifecycle_labels AS (
       -- From engaged_part_time state
       WHEN prev_state = 'engaged_part_time' AND current_state = 'engaged_part_time' THEN 'part time'
       WHEN prev_state = 'engaged_part_time' AND current_state = 'engaged_full_time' THEN 'part time to full time'
+      WHEN prev_state = 'engaged_part_time' AND current_state = 'dormant' THEN 'part time to dormant'
       
       -- From engaged_full_time state
       WHEN prev_state = 'engaged_full_time' AND current_state = 'engaged_full_time' THEN 'full time'
       WHEN prev_state = 'engaged_full_time' AND current_state = 'engaged_part_time' THEN 'full time to part time'
+      WHEN prev_state = 'engaged_full_time' AND current_state = 'dormant' THEN 'full time to dormant'
       
       -- From dormant state returning to engagement
-      WHEN prev_state = 'dormant' AND current_state = 'engaged_part_time' THEN 'part time'
-      WHEN prev_state = 'dormant' AND current_state = 'engaged_full_time' THEN 'full time'
-
-      -- Dormant months get an explicit label
-      WHEN current_state = 'dormant' THEN 'dormant'
+      WHEN prev_state = 'dormant' AND current_state = 'engaged_part_time' THEN 'dormant to part time'
+      WHEN prev_state = 'dormant' AND current_state = 'engaged_full_time' THEN 'dormant to full time'
+      
+      -- Dormant months with no transition context
+      WHEN current_state = 'dormant' AND prev_state = 'first_month' THEN 'first time to dormant'
+      WHEN current_state = 'dormant' AND prev_state = 'dormant' THEN 'dormant'
       
       -- Churned states based on last engaged state
       WHEN current_state = 'churned' AND last_engaged_state = 'first_month' THEN 'churned (after first time)'
       WHEN current_state = 'churned' AND last_engaged_state = 'engaged_part_time' THEN 'churned (after reaching part time)'
       WHEN current_state = 'churned' AND last_engaged_state = 'engaged_full_time' THEN 'churned (after reaching full time)'
+      WHEN prev_state = 'churned' AND current_state = 'churned' THEN 'churned'
       
-      -- Churned continuation (label will be carried forward)
-      WHEN prev_state = 'churned' AND current_state = 'churned' THEN 
-        'churned'
-      
-      -- Everything else
       ELSE 'unknown'
     END AS label
   FROM state_with_history
-),
-
--- Step 10: Carry forward churned labels (they persist until reactivation)
-final_labels AS (
-  SELECT
-    developer_id,
-    project_id,
-    bucket_month,
-    first_contribution_month,
-    days_active,
-    activity_level,
-    months_since_last_active,
-    prev_state,
-    current_state,
-    label
-  FROM lifecycle_labels
-),
-
-labeled_with_carryforward AS (
-  SELECT
-    developer_id,
-    project_id,
-    bucket_month,
-    first_contribution_month,
-    days_active,
-    activity_level,
-    months_since_last_active,
-    prev_state,
-    CASE
-      -- For churned months after the first churned month, carry forward the label
-      WHEN label IS NULL AND current_state = 'churned' THEN
-        LAST_VALUE(label) IGNORE NULLS OVER (
-          PARTITION BY developer_id, project_id
-          ORDER BY bucket_month
-          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        )
-      ELSE label
-    END AS label
-  FROM final_labels
 )
 
 SELECT
@@ -275,8 +226,9 @@ SELECT
   project_id,
   label,
   first_contribution_month,
+  last_contribution_month,
   days_active,
   activity_level,
   months_since_last_active,
   prev_state
-FROM labeled_with_carryforward
+FROM lifecycle_labels
