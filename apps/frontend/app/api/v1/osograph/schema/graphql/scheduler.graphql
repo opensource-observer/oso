@@ -1,0 +1,131 @@
+"""
+The scheduler schema defines types and queries related to scheduling data model
+runs and ingest jobs.
+
+Runs are a generic representation of a data task that has been executed. So it's
+meant to be quite flexible to accommodate different types of runs in the future.
+"""
+
+union RunDefinition = DataModel | DataIngestion | DataConnector
+
+type RunRequest {
+  id: ID!
+  definition: RunDefinition!
+  requestedAt: DateTime!
+  requestedByUserId: ID!
+  requestedBy: User!
+}
+
+enum RunTriggerType {
+  MANUAL
+  SCHEDULED
+}
+
+enum RunDefinitionType {
+  DATA_MODEL
+  DATA_INGESTION
+  DATA_CONNECTOR
+}
+
+enum RunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+type Run {
+  id: ID!
+  datasetId: ID!
+  triggerType: RunTriggerType!
+  startedAt: DateTime!
+  finishedAt: DateTime
+  status: RunStatus!
+  logsUrl: String!
+  definition: RunDefinition!
+}
+
+type RunEdge {
+  node: Run!
+  cursor: String!
+}
+
+type RunConnection {
+  edges: [RunEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+extend type Query {
+  """
+  Get a run by ID
+  """
+  run(id: ID!): Run
+}
+
+extend type Mutation {
+  """
+  Request a run
+  """
+  createRunRequest(input: CreateRunRequestInput!): CreateRunRequestPayload!
+
+  """
+  Cancel a run
+  """
+  cancelRun(input: CancelRunInput!): CancelRunPayload!
+
+  """
+  System only. Mark a run as started.
+  """
+  startRun(input: StartRunInput!): StartRunPayload!
+
+  """
+  System only. Mark a run as finished.
+  """
+  finishRun(input: FinishRunInput!): FinishRunPayload!
+}
+
+input CreateRunRequestInput {
+  definitionType: RunDefinitionType!
+  definitionId: ID!
+}
+
+type CreateRunRequestPayload {
+  success: Boolean!
+  message: String
+  runRequest: RunRequest!
+}
+
+input CancelRunInput {
+  runId: ID!
+}
+
+type CancelRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input StartRunInput {
+  definitionType: RunDefinitionType!
+  definitionId: ID!
+  runRequestId: ID
+}
+
+type StartRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input FinishRunInput {
+  runId: ID!
+  status: RunStatus!
+  logsUrl: String!
+}
+
+type FinishRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}

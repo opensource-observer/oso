@@ -85,7 +85,7 @@ type DataModelReleaseConnection {
 }
 
 type DataModelDependency {
-  dataModelId: ID!
+  tableId: ID!
   alias: String
 }
 

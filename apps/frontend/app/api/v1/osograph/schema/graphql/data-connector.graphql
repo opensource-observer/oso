@@ -1,0 +1,10 @@
+type DataConnector {
+  id: ID!
+  orgId: ID!
+  name: String!
+  type: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # TODO: Add fields for the data connector configuration
+}

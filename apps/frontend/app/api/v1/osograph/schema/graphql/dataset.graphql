@@ -11,6 +11,27 @@ type Dataset {
   updatedAt: DateTime!
   creator: User!
   organization: Organization!
+  tables(first: Int = 50, after: String): TableConnection!
+
+  """
+  The runs for this dataset. For USER_MODEL datasets, each run is related to individual data models.
+  FOR DATA_INGESTION datasets, each run is related to individual ingestion jobs.
+  For DATA_CONNECTOR datasets, runs are not applicable and this field will be an empty list.
+  """
+  runs(first: Int = 50, after: String): RunConnection!
+
+  typeDefinition: DatasetTypeDefinition!
+}
+
+union DatasetTypeDefinition = DataModelDefinition
+  | DataIngestion
+  | DataConnector
+
+type DataModelDefinition {
+  """
+  If the dataset is of type USER_MODEL, this field will contain the list of data models
+  associated with the dataset. Otherwise it will be an empty list.
+  """
   dataModels(first: Int = 50, after: String, where: JSON): DataModelConnection!
 }
 
@@ -29,6 +50,28 @@ type TableColumn {
   name: String!
   type: String!
   nullable: Boolean!
+}
+
+union TableSource = DataModel | DataIngestion | DataConnector
+
+type Table {
+  id: ID!
+  datasetId: ID!
+  name: String!
+  dataset: Dataset!
+  columns: [TableColumn!]!
+  source: TableSource!
+}
+
+type TableEdge {
+  node: Table!
+  cursor: String!
+}
+
+type TableConnection {
+  edges: [TableEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
 }
 
 extend type Query {
