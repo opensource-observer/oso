@@ -15,8 +15,25 @@ with
                 'oso.int_first_contribution_to_{entity_type}'
             ) as first_contribution
     ),
-    -- Get current month activity for each contributor
-    current_month_activity as (
+    -- Get last contribution per contributor and artifact (deduplicated)
+    last_contribution_to_entity as (
+        select
+            from_artifact_id,
+            event_source,
+            @metrics_entity_type_col(
+                'to_{entity_type}_id',
+                table_alias := last_contribution,
+                include_column_alias := true
+            ),
+            max(time) as time
+        from
+            @metrics_entity_type_table(
+                'oso.int_last_contribution_to_{entity_type}'
+            ) as last_contribution
+        group by from_artifact_id, event_source, @metrics_entity_type_col('to_{entity_type}_id', table_alias := last_contribution)
+    ),
+    -- Get current month activity level for each contributor
+    current_month_activity_level as (
         select
             active.metrics_sample_date,
             active.event_source,
@@ -52,29 +69,32 @@ with
             ),
             curr.activity_level,
             first_contrib.first_contribution_date,
-            -- Get previous period's activity date using LAG
-            lag(curr.metrics_sample_date) over (
-                partition by
-                    @metrics_entity_type_col('to_{entity_type}_id', table_alias := curr),
-                    curr.from_artifact_id,
-                    curr.event_source
-                order by curr.metrics_sample_date
-            ) as prev_contribution_date,
-            -- Get previous period's activity level using LAG
-            lag(curr.activity_level) over (
-                partition by
-                    @metrics_entity_type_col('to_{entity_type}_id', table_alias := curr),
-                    curr.from_artifact_id,
-                    curr.event_source
-                order by curr.metrics_sample_date
-            ) as prev_activity_level
-        from current_month_activity as curr
+            -- NOTE: we removed LAG() usage and will instead derive previous
+            -- sample-period activity by joining the previous period's activity row
+            -- to get prev_contribution_date and prev_activity_level. The
+            -- `last_contribution_time`/`last_contribution_period` are still used
+            -- as a fallback for reactivation logic.
+            -- Also include the last CONTRIBUTION event time (event-level model) so
+            -- it can be used for fallback or extra sanity checks for reactivation and churn.
+            last_contrib.time as last_contribution_time,
+            case @time_aggregation
+                when 'monthly' then date_trunc('month', last_contrib.time)
+                when 'yearly' then date_trunc('year', last_contrib.time)
+            end as last_contribution_period
+        from current_month_activity_level as curr
         left join first_contribution_to_entity as first_contrib
             on curr.from_artifact_id = first_contrib.from_artifact_id
             and curr.event_source = first_contrib.event_source
             and @metrics_entity_type_col('to_{entity_type}_id', table_alias := curr)
                 = @metrics_entity_type_col('to_{entity_type}_id', table_alias := first_contrib)
+        -- join to the deduplicated last contribution CTE
+        left join last_contribution_to_entity as last_contrib
+            on curr.from_artifact_id = last_contrib.from_artifact_id
+            and curr.event_source = last_contrib.event_source
+            and @metrics_entity_type_col('to_{entity_type}_id', table_alias := curr)
+                = @metrics_entity_type_col('to_{entity_type}_id', table_alias := last_contrib)
     ),
+    -- TODO: This should be abstracted into a metric function
     -- Calculate expected previous period for gap detection and look ahead for next period
     contributor_with_expected_dates as (
         select
@@ -97,7 +117,20 @@ with
                 when 'monthly' then date_add('month', 1, cwh.metrics_sample_date)
                 when 'yearly' then date_add('year', 1, cwh.metrics_sample_date)
             end as expected_next_date
+            , prev_active.metrics_sample_date as prev_contribution_date
+            , prev_active.activity_level as prev_activity_level
         from contributor_with_history as cwh
+        left join current_month_activity_level as prev_active
+            on prev_active.from_artifact_id = cwh.from_artifact_id
+            and prev_active.event_source = cwh.event_source
+            and @metrics_entity_type_col('to_{entity_type}_id', table_alias := prev_active)
+                = @metrics_entity_type_col('to_{entity_type}_id', table_alias := cwh)
+            and prev_active.metrics_sample_date = (
+                case @time_aggregation
+                    when 'monthly' then date_add('month', -1, cwh.metrics_sample_date)
+                    when 'yearly' then date_add('year', -1, cwh.metrics_sample_date)
+                end
+            )
     ),
     contributor_with_expected_prev as (
         select * from contributor_with_expected_dates
@@ -114,19 +147,30 @@ with
                 include_column_alias := true
             ),
             cwep.activity_level,
+            cwep.last_contribution_time,
+            cwep.last_contribution_period,
             -- Determine contributor classification
             case
                 -- First-time contributor: first contribution date equals current period
                 when cwep.first_contribution_date = cwep.metrics_sample_date
                     then 'first_time_contributor'
                 -- New part-time contributor: was first-time last period, now part-time
-                when cwep.first_contribution_date = cwep.prev_contribution_date
-                    and cwep.prev_contribution_date = cwep.expected_prev_date
+                when (
+                    (cwep.first_contribution_date = cwep.prev_contribution_date
+                        and cwep.prev_contribution_date = cwep.expected_prev_date)
+                    -- Fallback: if we didn't have a prev sample row, use last_contribution_period
+                    or (cwep.first_contribution_date = cwep.last_contribution_period
+                        and cwep.last_contribution_period = cwep.expected_prev_date)
+                )
                     and cwep.activity_level = 'part_time'
                     then 'new_part_time_contributor'
                 -- New full-time contributor: was first-time last period, now full-time
-                when cwep.first_contribution_date = cwep.prev_contribution_date
-                    and cwep.prev_contribution_date = cwep.expected_prev_date
+                when (
+                    (cwep.first_contribution_date = cwep.prev_contribution_date
+                        and cwep.prev_contribution_date = cwep.expected_prev_date)
+                    or (cwep.first_contribution_date = cwep.last_contribution_period
+                        and cwep.last_contribution_period = cwep.expected_prev_date)
+                )
                     and cwep.activity_level = 'full_time'
                     then 'new_full_time_contributor'
                 -- Active part-time contributor: was part-time last period, still part-time
@@ -150,13 +194,19 @@ with
                     and cwep.activity_level = 'part_time'
                     then 'full_time_to_part_time_contributor'
                 -- Reactivated part-time contributor: had activity before but not in immediate previous period, now part-time
-                when cwep.prev_contribution_date is not null
-                    and cwep.prev_contribution_date < cwep.expected_prev_date
+                when (
+                    -- either we saw an earlier sample row (LAG) and it was older than the expected previous
+                    (cwep.prev_contribution_date is not null and cwep.prev_contribution_date < cwep.expected_prev_date)
+                    -- or we didn't have a previous sample row (LAG is NULL), but the raw last-event time shows activity earlier than expected
+                    or (cwep.prev_contribution_date is null and cwep.last_contribution_period is not null and cwep.last_contribution_period < cwep.expected_prev_date)
+                )
                     and cwep.activity_level = 'part_time'
                     then 'reactivated_part_time_contributor'
                 -- Reactivated full-time contributor: had activity before but not in immediate previous period, now full-time
-                when cwep.prev_contribution_date is not null
-                    and cwep.prev_contribution_date < cwep.expected_prev_date
+                when (
+                    (cwep.prev_contribution_date is not null and cwep.prev_contribution_date < cwep.expected_prev_date)
+                    or (cwep.prev_contribution_date is null and cwep.last_contribution_period is not null and cwep.last_contribution_period < cwep.expected_prev_date)
+                )
                     and cwep.activity_level = 'full_time'
                     then 'reactivated_full_time_contributor'
             end as contributor_label
@@ -173,6 +223,8 @@ with
                 table_alias := cwep,
                 include_column_alias := true
             ),
+            cwep.last_contribution_time,
+            cwep.last_contribution_period,
             -- Determine churn classification based on last known state
             case
                 -- Churned after first-time: first contribution was in the last period and now they're gone
@@ -191,6 +243,14 @@ with
             cwep.next_contribution_date is null
             or cwep.next_contribution_date > cwep.expected_next_date
         )
+        -- And ensure the last raw-event contribution time is not after the next period
+        -- If the last raw event is on or after the expected next period, it means
+        -- a contribution exists in the next sampling period and the contributor
+        -- should not be counted as churned.
+        and (
+            cwep.last_contribution_time is null
+            or cwep.last_contribution_time < cwep.expected_next_date
+        )
         and cwep.expected_next_date <= @metrics_end('DATE')  -- Only churn events within date range
     ),
     -- Combine active and churned contributors
@@ -204,6 +264,8 @@ with
                 include_column_alias := true
             ),
             cc.from_artifact_id,
+            cc.last_contribution_time,
+            cc.last_contribution_period,
             cc.contributor_label
         from contributor_classifications as cc
         where cc.contributor_label is not null
@@ -217,6 +279,8 @@ with
                 include_column_alias := true
             ),
             churned.from_artifact_id,
+            churned.last_contribution_time,
+            churned.last_contribution_period,
             churned.contributor_label
         from churned_contributors as churned
     )
