@@ -15,9 +15,9 @@ export function TimedSideEffect({
   intervalMs = 30000,
 }: TimedSideEffectProps) {
   React.useEffect(() => {
-    const timer = setTimeout(() => void onTick?.(), intervalMs);
+    const timer = setInterval(() => void onTick?.(), intervalMs);
     return () => {
-      clearTimeout(timer);
+      clearInterval(timer);
       void onUnmount?.();
     };
   }, [...(deps ?? []), intervalMs]);
