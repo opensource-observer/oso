@@ -27,14 +27,16 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
-  /** DateTime custom scalar type */
-  DateTime: { input: any; output: any };
+  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.This scalar is serialized to a string in ISO 8601 format and parsed from a string in ISO 8601 format. */
+  DateTimeISO: { input: any; output: any };
   /**
    * The `GenericScalar` scalar type represents a generic
    * GraphQL scalar value that could be:
    * String, Boolean, Int, Float, List or Object.
    */
   GenericScalar: { input: any; output: any };
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
+  JSON: { input: any; output: any };
   /**
    * Allows use of a JSON String for input / output from the GraphQL schema.
    *
@@ -1231,14 +1233,14 @@ export type CreateDataModelRevisionInput = {
   dependsOn?: InputMaybe<Array<DataModelDependencyInput>>;
   description?: InputMaybe<Scalars["String"]["input"]>;
   displayName: Scalars["String"]["input"];
-  end?: InputMaybe<Scalars["DateTime"]["input"]>;
+  end?: InputMaybe<Scalars["DateTimeISO"]["input"]>;
   kind: DataModelKind;
   kindOptions?: InputMaybe<DataModelKindOptionsInput>;
   language: Scalars["String"]["input"];
   name: Scalars["String"]["input"];
   partitionedBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
   schema: Array<DataModelColumnInput>;
-  start?: InputMaybe<Scalars["DateTime"]["input"]>;
+  start?: InputMaybe<Scalars["DateTimeISO"]["input"]>;
 };
 
 export type CreateDataModelRevisionPayload = {
@@ -1464,22 +1466,22 @@ export type DagsterTypeOrError =
 
 export type DataConnector = {
   __typename?: "DataConnector";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   type: Scalars["String"]["output"];
-  updatedAt: Scalars["DateTime"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type DataIngestion = {
   __typename?: "DataIngestion";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
-  updatedAt: Scalars["DateTime"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type DataIngestionConnection = {
@@ -1497,7 +1499,7 @@ export type DataIngestionEdge = {
 
 export type DataModel = {
   __typename?: "DataModel";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   dataset: Dataset;
   id: Scalars["ID"]["output"];
   isEnabled: Scalars["Boolean"]["output"];
@@ -1508,7 +1510,7 @@ export type DataModel = {
   organization: Organization;
   releases: DataModelReleaseConnection;
   revisions: DataModelRevisionConnection;
-  updatedAt: Scalars["DateTime"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type DataModelReleasesArgs = {
@@ -1553,6 +1555,7 @@ export type DataModelDefinition = {
 export type DataModelDefinitionDataModelsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelDependency = {
@@ -1619,7 +1622,7 @@ export type DataModelKindOptionsInput = {
 
 export type DataModelRelease = {
   __typename?: "DataModelRelease";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   dataModel: DataModel;
   dataModelId: Scalars["ID"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
@@ -1628,7 +1631,7 @@ export type DataModelRelease = {
   organization: Organization;
   revision: DataModelRevision;
   revisionId: Scalars["ID"]["output"];
-  updatedAt: Scalars["DateTime"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type DataModelReleaseConnection = {
@@ -1648,14 +1651,14 @@ export type DataModelRevision = {
   __typename?: "DataModelRevision";
   clusteredBy?: Maybe<Array<Scalars["String"]["output"]>>;
   code: Scalars["String"]["output"];
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   cron: Scalars["String"]["output"];
   dataModel: DataModel;
   dataModelId: Scalars["ID"]["output"];
   dependsOn?: Maybe<Array<DataModelDependency>>;
   description?: Maybe<Scalars["String"]["output"]>;
   displayName: Scalars["String"]["output"];
-  end?: Maybe<Scalars["DateTime"]["output"]>;
+  end?: Maybe<Scalars["DateTimeISO"]["output"]>;
   hash: Scalars["String"]["output"];
   id: Scalars["ID"]["output"];
   kind: DataModelKind;
@@ -1667,7 +1670,7 @@ export type DataModelRevision = {
   partitionedBy?: Maybe<Array<Scalars["String"]["output"]>>;
   revisionNumber: Scalars["Int"]["output"];
   schema?: Maybe<Array<DataModelColumn>>;
-  start?: Maybe<Scalars["DateTime"]["output"]>;
+  start?: Maybe<Scalars["DateTimeISO"]["output"]>;
 };
 
 export type DataModelRevisionConnection = {
@@ -1685,7 +1688,7 @@ export type DataModelRevisionEdge = {
 
 export type Dataset = {
   __typename?: "Dataset";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   creator: User;
   creatorId: Scalars["ID"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
@@ -1704,7 +1707,7 @@ export type Dataset = {
   tables: TableConnection;
   type: DatasetType;
   typeDefinition: DatasetTypeDefinition;
-  updatedAt: Scalars["DateTime"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type DatasetRunsArgs = {
@@ -2716,12 +2719,12 @@ export type InvalidSubsetError = Error & {
 
 export type Invitation = {
   __typename?: "Invitation";
-  acceptedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  acceptedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
   acceptedBy?: Maybe<User>;
-  createdAt: Scalars["DateTime"]["output"];
-  deletedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  createdAt: Scalars["DateTimeISO"]["output"];
+  deletedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
   email: Scalars["String"]["output"];
-  expiresAt: Scalars["DateTime"]["output"];
+  expiresAt: Scalars["DateTimeISO"]["output"];
   id: Scalars["ID"]["output"];
   invitedBy: User;
   orgId: Scalars["ID"]["output"];
@@ -3685,7 +3688,7 @@ export type NodeInvocationSite = {
 
 export type Notebook = {
   __typename?: "Notebook";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   creator: User;
   creatorId: Scalars["ID"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
@@ -3694,7 +3697,7 @@ export type Notebook = {
   orgId: Scalars["ID"]["output"];
   organization: Organization;
   preview?: Maybe<Scalars["String"]["output"]>;
-  updatedAt: Scalars["DateTime"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type NotebookConnection = {
@@ -3835,7 +3838,7 @@ export enum OrderBy {
 
 export type Organization = {
   __typename?: "Organization";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   datasets: DatasetConnection;
   description?: Maybe<Scalars["String"]["output"]>;
   displayName?: Maybe<Scalars["String"]["output"]>;
@@ -3843,22 +3846,25 @@ export type Organization = {
   members: UserConnection;
   name: Scalars["String"]["output"];
   notebooks: NotebookConnection;
-  updatedAt: Scalars["DateTime"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type OrganizationDatasetsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type OrganizationMembersArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type OrganizationNotebooksArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type OrganizationConnection = {
@@ -3876,7 +3882,7 @@ export type OrganizationEdge = {
 
 export type OrganizationMember = {
   __typename?: "OrganizationMember";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
   id: Scalars["ID"]["output"];
   orgId: Scalars["ID"]["output"];
   user: User;
@@ -5781,12 +5787,35 @@ export type Query = {
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
   dataModel?: Maybe<DataModel>;
+  /**
+   * List all data models with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * {
+   *   "name": { "like": "%user%" },
+   *   "is_enabled": { "eq": true }
+   * }
+   */
   dataModels: DataModelConnection;
   /** Get a dataset by ID */
   dataset?: Maybe<Dataset>;
   /** Get table column metadata */
   datasetTableMetadata: Array<TableColumn>;
-  /** List all datasets */
+  /**
+   * List all datasets with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * {
+   *   "name": { "like": "%hello%" },
+   *   "type": { "eq": "USER_MODEL" }
+   * }
+   */
   datasets: DatasetConnection;
   /** Retrieve the execution plan for a job and its run configuration. */
   executionPlanOrError: ExecutionPlanOrError;
@@ -5808,15 +5837,48 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
-  /** List invitations for current user */
+  /**
+   * List invitations for current user with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * {
+   *   "status": { "eq": "PENDING" },
+   *   "created_at": { "gte": "2024-01-01T00:00:00Z" }
+   * }
+   */
   myInvitations: InvitationConnection;
-  /** Get a notebook by ID */
-  notebook?: Maybe<Notebook>;
-  /** List all notebooks */
+  /**
+   * Query notebooks with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is.
+   *
+   * Example:
+   * ```json
+   * {
+   *   "notebook_name": { "like": "%churn%" },
+   *   "created_at": { "gte": "2024-01-01T00:00:00Z" }
+   * }
+   * ```
+   */
   notebooks: NotebookConnection;
-  /** Get an organization by ID or name */
-  organization?: Maybe<Organization>;
-  /** List all organizations */
+  /**
+   * Query organizations with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * ```json
+   * {
+   *   "name": { "like": "%oso%" },
+   *   "created_at": { "gte": "2024-01-01T00:00:00Z" }
+   * }
+   * ```
+   */
   organizations: OrganizationConnection;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
@@ -6065,6 +6127,7 @@ export type QueryDataModelArgs = {
 export type QueryDataModelsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6084,6 +6147,7 @@ export type QueryDatasetTableMetadataArgs = {
 export type QueryDatasetsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6132,29 +6196,21 @@ export type QueryLogsForRunArgs = {
 export type QueryMyInvitationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryNotebookArgs = {
-  id: Scalars["ID"]["input"];
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryNotebooksArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOrganizationArgs = {
-  id?: InputMaybe<Scalars["ID"]["input"]>;
-  name?: InputMaybe<Scalars["String"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryOrganizationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6980,7 +7036,7 @@ export type Run = PipelineRun &
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
     externalJobSource?: Maybe<Scalars["String"]["output"]>;
-    finishedAt?: Maybe<Scalars["DateTime"]["output"]>;
+    finishedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
     hasConcurrencyKeySlots: Scalars["Boolean"]["output"];
     hasDeletePermission: Scalars["Boolean"]["output"];
     hasReExecutePermission: Scalars["Boolean"]["output"];
@@ -7007,7 +7063,7 @@ export type Run = PipelineRun &
     runStatus: RunStatus;
     solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     startTime?: Maybe<Scalars["Float"]["output"]>;
-    startedAt: Scalars["DateTime"]["output"];
+    startedAt: Scalars["DateTimeISO"]["output"];
     stats: RunStatsSnapshotOrError;
     status: RunStatus;
     stepKeysToExecute?: Maybe<Array<Scalars["String"]["output"]>>;
@@ -7261,7 +7317,7 @@ export type RunQueueItem = {
   id: Scalars["ID"]["output"];
   runRequest?: Maybe<RunRequest>;
   runRequestId?: Maybe<Scalars["ID"]["output"]>;
-  scheduledAt: Scalars["DateTime"]["output"];
+  scheduledAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type RunQueueItemConnection = {
@@ -7284,7 +7340,7 @@ export type RunRequest = {
   definition: RunDefinition;
   id: Scalars["ID"]["output"];
   jobName?: Maybe<Scalars["String"]["output"]>;
-  requestedAt: Scalars["DateTime"]["output"];
+  requestedAt: Scalars["DateTimeISO"]["output"];
   requestedBy: User;
   requestedByUserId: Scalars["ID"]["output"];
   runConfigYaml: Scalars["String"]["output"];
@@ -8375,6 +8431,7 @@ export type User = {
 export type UserOrganizationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type UserAssetOwner = {
@@ -8418,30 +8475,35 @@ export type Viewer = {
 export type ViewerDatasetsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** Currently authenticated user */
 export type ViewerInvitationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** Currently authenticated user */
 export type ViewerNotebooksArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** Currently authenticated user */
 export type ViewerOrganizationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** Currently authenticated user */
 export type ViewerRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type WaitingOnKeysRuleEvaluationData = {
