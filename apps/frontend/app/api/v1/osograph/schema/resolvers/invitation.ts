@@ -14,7 +14,7 @@ import {
   ServerErrors,
   UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
   getUserInvitationsConnection,
   requireOrganizationAccess,
@@ -26,7 +26,9 @@ import {
   CreateInvitationSchema,
   AcceptInvitationSchema,
   RevokeInvitationSchema,
+  InvitationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
+import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 
 export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -67,7 +69,7 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     myInvitations: async (
       _: unknown,
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -77,7 +79,15 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
         throw UserErrors.emailNotFound();
       }
 
-      return getUserInvitationsConnection(userEmail, args);
+      const validatedWhere = args.where
+        ? validateInput(InvitationWhereSchema, args.where)
+        : undefined;
+
+      return getUserInvitationsConnection(
+        userEmail,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
   },
 

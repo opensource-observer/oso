@@ -14,12 +14,17 @@ import {
   validateInput,
   CreateDatasetSchema,
   UpdateDatasetSchema,
+  DatasetWhereSchema,
+  DataModelWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
   ResourceErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import {
   getUserOrganizationIds,
   requireOrganizationAccess,
@@ -27,47 +32,53 @@ import {
   buildConnectionOrEmpty,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import {
-  emptyConnection,
-  type Connection,
-} from "@/app/api/v1/osograph/utils/connection";
+import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
 import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { getDataModelsConnection } from "@/app/api/v1/osograph/schema/resolvers/data-model";
-
-export async function getRawDatasets(
-  orgIds: string[],
-  args: ConnectionArgs,
-): Promise<{ data: any[] | null; count: number | null }> {
-  const supabase = createAdminClient();
-  const [start, end] = preparePaginationRange(args);
-
-  const query = supabase
-    .from("datasets")
-    .select("*", { count: "exact" })
-    .is("deleted_at", null)
-    .range(start, end);
-
-  const { data: datasets, count } =
-    orgIds.length === 1
-      ? await query.eq("org_id", orgIds[0])
-      : await query.in("org_id", orgIds);
-
-  return { data: datasets, count };
-}
+import {
+  buildQuery,
+  mergePredicates,
+  type QueryPredicate,
+} from "@/app/api/v1/osograph/utils/query-builder";
+import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 
 export async function getDatasetsConnection(
   orgIds: string | string[],
   args: ConnectionArgs,
-): Promise<Connection<any>> {
+  additionalPredicate?: Partial<QueryPredicate<"datasets">>,
+) {
+  const supabase = createAdminClient();
   const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
 
   if (orgIdArray.length === 0) {
     return emptyConnection();
   }
 
-  const { data: datasets, count } = await getRawDatasets(orgIdArray, args);
+  const [start, end] = preparePaginationRange(args);
+
+  const basePredicate: Partial<QueryPredicate<"datasets">> = {
+    in: [{ key: "org_id", value: orgIdArray }],
+    is: [{ key: "deleted_at", value: null }],
+  };
+
+  const predicate = additionalPredicate
+    ? mergePredicates(basePredicate, additionalPredicate)
+    : basePredicate;
+
+  const {
+    data: datasets,
+    count,
+    error,
+  } = await buildQuery(supabase, "datasets", predicate, (query) =>
+    query.range(start, end),
+  );
+
+  if (error) {
+    throw ServerErrors.database(`Failed to fetch datasets: ${error.message}`);
+  }
+
   return buildConnectionOrEmpty(datasets, args, count);
 }
 
@@ -75,7 +86,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     datasets: async (
       _: unknown,
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -85,7 +96,15 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         return buildConnectionOrEmpty(null, args, 0);
       }
 
-      return getDatasetsConnection(orgIds, args);
+      const validatedWhere = args.where
+        ? validateInput(DatasetWhereSchema, args.where)
+        : undefined;
+
+      return getDatasetsConnection(
+        orgIds,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
 
     dataset: async (
@@ -300,12 +319,20 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     dataModels: async (
       parent: { id: string; org_id: string },
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
     ) => {
-      return getDataModelsConnection([parent.org_id], {
-        ...args,
-        datasetId: parent.id,
-      });
+      const validatedWhere = args.where
+        ? validateInput(DataModelWhereSchema, args.where)
+        : undefined;
+
+      return getDataModelsConnection(
+        [parent.org_id],
+        {
+          ...args,
+          datasetId: parent.id,
+        },
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
   },
 };

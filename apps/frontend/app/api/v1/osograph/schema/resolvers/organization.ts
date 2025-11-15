@@ -2,7 +2,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
   getOrganization,
-  getOrganizationByName,
   getUserProfile,
   requireAuthentication,
   requireOrgMembership,
@@ -14,54 +13,44 @@ import {
   ServerErrors,
   UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getUserOrganizationsConnection,
   buildConnectionOrEmpty,
+  getUserOrganizationsConnection,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { getNotebooksConnection } from "@/app/api/v1/osograph/schema/resolvers/notebook";
 import { getDatasetsConnection } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
-  validateInput,
   AddUserByEmailSchema,
+  DatasetWhereSchema,
+  NotebookWhereSchema,
+  OrganizationWhereSchema,
   RemoveMemberSchema,
   UpdateMemberRoleSchema,
+  validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
+import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 
 export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     organizations: async (
       _: unknown,
-      args: ConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      return getUserOrganizationsConnection(authenticatedUser.userId, args);
-    },
-
-    organization: async (
-      _: unknown,
-      args: { id?: string; name?: string },
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
 
-      if (!args.id && !args.name) {
-        return null;
-      }
+      const validatedWhere = args.where
+        ? validateInput(OrganizationWhereSchema, args.where)
+        : undefined;
 
-      try {
-        const org = args.id
-          ? await getOrganization(args.id)
-          : await getOrganizationByName(args.name!);
-
-        await requireOrgMembership(authenticatedUser.userId, org.id);
-        return org;
-      } catch {
-        return null;
-      }
+      return getUserOrganizationsConnection(
+        authenticatedUser.userId,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
   },
 
@@ -207,7 +196,7 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     members: async (
       parent: { id: string },
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -236,22 +225,40 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     notebooks: async (
       parent: { id: string },
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
       await requireOrgMembership(authenticatedUser.userId, parent.id);
-      return getNotebooksConnection(parent.id, args);
+
+      const validatedWhere = args.where
+        ? validateInput(NotebookWhereSchema, args.where)
+        : undefined;
+
+      return getNotebooksConnection(
+        parent.id,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
 
     datasets: async (
       parent: { id: string },
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
       await requireOrgMembership(authenticatedUser.userId, parent.id);
-      return getDatasetsConnection(parent.id, args);
+
+      const validatedWhere = args.where
+        ? validateInput(DatasetWhereSchema, args.where)
+        : undefined;
+
+      return getDatasetsConnection(
+        parent.id,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
   },
 

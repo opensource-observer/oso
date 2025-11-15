@@ -16,41 +16,67 @@ import {
   getResourceById,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import { createHash } from "crypto";
 import {
   validateInput,
   CreateDataModelSchema,
   CreateDataModelRevisionSchema,
   CreateDataModelReleaseSchema,
+  DataModelWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
+import {
+  buildQuery,
+  mergePredicates,
+  type QueryPredicate,
+} from "@/app/api/v1/osograph/utils/query-builder";
+import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
+import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
 
 export async function getDataModelsConnection(
   orgIds: string[],
   args: ConnectionArgs & {
     datasetId?: string;
   },
+  additionalPredicate?: Partial<QueryPredicate<"model">>,
 ) {
   const supabase = createAdminClient();
-  let query = supabase
-    .from("model")
-    .select("*", { count: "exact" })
-    .in("org_id", orgIds)
-    .is("deleted_at", null);
 
-  if (args.datasetId) {
-    query = query.eq("dataset_id", args.datasetId);
+  if (orgIds.length === 0) {
+    return emptyConnection();
   }
 
   const [start, end] = preparePaginationRange(args);
-  query = query.range(start, end);
 
-  const { data: dataModels, error, count } = await query;
+  const basePredicate: Partial<QueryPredicate<"model">> = {
+    in: [{ key: "org_id", value: orgIds }],
+    is: [{ key: "deleted_at", value: null }],
+  };
+
+  if (args.datasetId) {
+    basePredicate.eq = [{ key: "dataset_id", value: args.datasetId }];
+  }
+
+  const predicate = additionalPredicate
+    ? mergePredicates(basePredicate, additionalPredicate)
+    : basePredicate;
+
+  const {
+    data: dataModels,
+    count,
+    error,
+  } = await buildQuery(supabase, "model", predicate, (query) =>
+    query.range(start, end),
+  );
 
   if (error) {
-    logger.error("Failed to fetch dataModels:", error);
-    throw ServerErrors.database("Failed to fetch dataModels");
+    throw ServerErrors.database(
+      `Failed to fetch data models: ${error.message}`,
+    );
   }
 
   return buildConnectionOrEmpty(dataModels, args, count);
@@ -82,7 +108,7 @@ export const dataModelResolvers = {
     },
     dataModels: async (
       _: unknown,
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
@@ -90,7 +116,16 @@ export const dataModelResolvers = {
       if (orgIds.length === 0) {
         return buildConnectionOrEmpty(null, args, 0);
       }
-      return getDataModelsConnection(orgIds, args);
+
+      const validatedWhere = args.where
+        ? validateInput(DataModelWhereSchema, args.where)
+        : undefined;
+
+      return getDataModelsConnection(
+        orgIds,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
   },
   Mutation: {
