@@ -25,6 +25,10 @@ export interface ConnectionArgs {
   after?: string;
 }
 
+export interface FilterableConnectionArgs extends ConnectionArgs {
+  where?: unknown;
+}
+
 export function getPaginationParams(args: ConnectionArgs): {
   offset: number;
   limit: number;
