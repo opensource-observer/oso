@@ -23,7 +23,6 @@ import type {
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
   buildConnectionOrEmpty,
-  getUserOrganizationIds,
   preparePaginationRange,
   requireOrganizationAccess,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -41,7 +40,7 @@ import {
   mergePredicates,
   type QueryPredicate,
 } from "@/app/api/v1/osograph/utils/query-builder";
-import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 const PREVIEWS_BUCKET = "notebook-previews";
 const SIGNED_URL_EXPIRY = 900;
@@ -91,18 +90,16 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const orgIds = await getUserOrganizationIds(authenticatedUser.userId);
-
-      const validatedWhere = args.where
-        ? validateInput(NotebookWhereSchema, args.where)
-        : undefined;
-
-      return getNotebooksConnection(
-        orgIds,
-        args,
-        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
-      );
+      return queryWithPagination(args, context, {
+        tableName: "notebooks",
+        whereSchema: NotebookWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+        buildBasePredicate: ({ userOrgIds }) => ({
+          in: [{ key: "org_id", value: userOrgIds }],
+          is: [{ key: "deleted_at", value: null }],
+        }),
+      });
     },
   },
 

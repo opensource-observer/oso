@@ -27,7 +27,6 @@ import type {
   FilterableConnectionArgs,
 } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getUserOrganizationIds,
   requireOrganizationAccess,
   buildConnectionOrEmpty,
   preparePaginationRange,
@@ -36,13 +35,12 @@ import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
 import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
-import { getDataModelsConnection } from "@/app/api/v1/osograph/schema/resolvers/data-model";
 import {
   buildQuery,
   mergePredicates,
   type QueryPredicate,
 } from "@/app/api/v1/osograph/utils/query-builder";
-import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export async function getDatasetsConnection(
   orgIds: string | string[],
@@ -89,22 +87,16 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-
-      const orgIds = await getUserOrganizationIds(authenticatedUser.userId);
-      if (orgIds.length === 0) {
-        return buildConnectionOrEmpty(null, args, 0);
-      }
-
-      const validatedWhere = args.where
-        ? validateInput(DatasetWhereSchema, args.where)
-        : undefined;
-
-      return getDatasetsConnection(
-        orgIds,
-        args,
-        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
-      );
+      return queryWithPagination(args, context, {
+        tableName: "datasets",
+        whereSchema: DatasetWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+        buildBasePredicate: ({ userOrgIds }) => ({
+          in: [{ key: "org_id", value: userOrgIds }],
+          is: [{ key: "deleted_at", value: null }],
+        }),
+      });
     },
 
     tables: async (
@@ -313,19 +305,20 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
     dataModels: async (
       parent: { id: string; org_id: string },
       args: FilterableConnectionArgs,
+      context: GraphQLContext,
     ) => {
-      const validatedWhere = args.where
-        ? validateInput(DataModelWhereSchema, args.where)
-        : undefined;
-
-      return getDataModelsConnection(
-        [parent.org_id],
-        {
-          ...args,
-          datasetId: parent.id,
-        },
-        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
-      );
+      return queryWithPagination(args, context, {
+        tableName: "model",
+        whereSchema: DataModelWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        buildBasePredicate: ({ parentOrgIds }) => ({
+          in: [{ key: "org_id", value: parentOrgIds }],
+          is: [{ key: "deleted_at", value: null }],
+          eq: [{ key: "dataset_id", value: parent.id }],
+        }),
+      });
     },
   },
 };

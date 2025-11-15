@@ -16,7 +16,6 @@ import {
 import {
   requireOrganizationAccess,
   checkMembershipExists,
-  getUserOrganizationIds,
   preparePaginationRange,
   buildConnectionOrEmpty,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -37,8 +36,8 @@ import {
   mergePredicates,
   type QueryPredicate,
 } from "@/app/api/v1/osograph/utils/query-builder";
-import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export async function getInvitationsConnection(
   orgIds: string | string[],
@@ -86,18 +85,15 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const orgIds = await getUserOrganizationIds(authenticatedUser.userId);
-
-      const validatedWhere = args.where
-        ? validateInput(InvitationWhereSchema, args.where)
-        : undefined;
-
-      return getInvitationsConnection(
-        orgIds,
-        args,
-        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
-      );
+      return queryWithPagination(args, context, {
+        tableName: "invitations",
+        whereSchema: InvitationWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+        buildBasePredicate: ({ userOrgIds }) => ({
+          in: [{ key: "org_id", value: userOrgIds }],
+        }),
+      });
     },
   },
 

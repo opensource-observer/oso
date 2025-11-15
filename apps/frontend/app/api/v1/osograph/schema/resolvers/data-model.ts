@@ -3,7 +3,6 @@ import { logger } from "@/lib/logger";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
   getOrganization,
-  getUserOrgIds,
   requireAuthentication,
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
@@ -36,8 +35,8 @@ import {
   mergePredicates,
   type QueryPredicate,
 } from "@/app/api/v1/osograph/utils/query-builder";
-import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export async function getDataModelsConnection(
   orgIds: string[],
@@ -91,21 +90,16 @@ export const dataModelResolvers = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const orgIds = await getUserOrgIds(authenticatedUser.userId);
-      if (orgIds.length === 0) {
-        return buildConnectionOrEmpty(null, args, 0);
-      }
-
-      const validatedWhere = args.where
-        ? validateInput(DataModelWhereSchema, args.where)
-        : undefined;
-
-      return getDataModelsConnection(
-        orgIds,
-        args,
-        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
-      );
+      return queryWithPagination(args, context, {
+        tableName: "model",
+        whereSchema: DataModelWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+        buildBasePredicate: ({ userOrgIds }) => ({
+          in: [{ key: "org_id", value: userOrgIds }],
+          is: [{ key: "deleted_at", value: null }],
+        }),
+      });
     },
   },
   Mutation: {
@@ -343,78 +337,38 @@ export const dataModelResolvers = {
       });
     },
     revisions: async (
-      parent: { id: string },
+      parent: { id: string; org_id: string },
       args: FilterableConnectionArgs,
+      context: GraphQLContext,
     ) => {
-      const supabase = createAdminClient();
-      const [start, end] = preparePaginationRange(args);
-
-      const validatedWhere = args.where
-        ? validateInput(DataModelRevisionWhereSchema, args.where)
-        : undefined;
-
-      const basePredicate: Partial<QueryPredicate<"model_revision">> = {
-        eq: [{ key: "model_id", value: parent.id }],
-      };
-
-      const predicate = validatedWhere
-        ? mergePredicates(basePredicate, parseWhereClause(validatedWhere))
-        : basePredicate;
-
-      const { data, error, count } = await buildQuery(
-        supabase,
-        "model_revision",
-        predicate,
-        (query) =>
-          query
-            .order("revision_number", { ascending: false })
-            .range(start, end),
-      );
-
-      if (error) {
-        logger.error(
-          `Failed to fetch revisions for dataModel ${parent.id}:`,
-          error,
-        );
-        return buildConnectionOrEmpty(null, args, 0);
-      }
-      return buildConnectionOrEmpty(data, args, count);
+      return queryWithPagination(args, context, {
+        tableName: "model_revision",
+        whereSchema: DataModelRevisionWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        buildBasePredicate: ({ parentOrgIds }) => ({
+          in: [{ key: "org_id", value: parentOrgIds }],
+          eq: [{ key: "model_id", value: parent.id }],
+        }),
+      });
     },
     releases: async (
-      parent: { id: string },
+      parent: { id: string; org_id: string },
       args: FilterableConnectionArgs,
+      context: GraphQLContext,
     ) => {
-      const supabase = createAdminClient();
-      const [start, end] = preparePaginationRange(args);
-
-      const validatedWhere = args.where
-        ? validateInput(DataModelReleaseWhereSchema, args.where)
-        : undefined;
-
-      const basePredicate: Partial<QueryPredicate<"model_release">> = {
-        eq: [{ key: "model_id", value: parent.id }],
-      };
-
-      const predicate = validatedWhere
-        ? mergePredicates(basePredicate, parseWhereClause(validatedWhere))
-        : basePredicate;
-
-      const { data, error, count } = await buildQuery(
-        supabase,
-        "model_release",
-        predicate,
-        (query) =>
-          query.order("created_at", { ascending: false }).range(start, end),
-      );
-
-      if (error) {
-        logger.error(
-          `Failed to fetch releases for dataModel ${parent.id}:`,
-          error,
-        );
-        return buildConnectionOrEmpty(null, args, 0);
-      }
-      return buildConnectionOrEmpty(data, args, count);
+      return queryWithPagination(args, context, {
+        tableName: "model_release",
+        whereSchema: DataModelReleaseWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        buildBasePredicate: ({ parentOrgIds }) => ({
+          in: [{ key: "org_id", value: parentOrgIds }],
+          eq: [{ key: "model_id", value: parent.id }],
+        }),
+      });
     },
     isEnabled: (parent: { is_enabled: boolean }) => parent.is_enabled,
     createdAt: (parent: { created_at: string }) => parent.created_at,

@@ -51,7 +51,7 @@ export type QueryPredicate<T extends ValidTableName> = {
   is?: NullableFilterEntry<T>[];
 };
 
-function _inferQueryType<TTable extends ValidTableName>(
+export function _inferQueryType<TTable extends ValidTableName>(
   client: SupabaseClient,
   tableName: TTable,
 ) {

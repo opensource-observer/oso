@@ -19,8 +19,6 @@ import {
   getUserOrganizationsConnection,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { getNotebooksConnection } from "@/app/api/v1/osograph/schema/resolvers/notebook";
-import { getDatasetsConnection } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
   AddUserByEmailSchema,
@@ -32,6 +30,7 @@ import {
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -231,15 +230,17 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       const authenticatedUser = requireAuthentication(context.user);
       await requireOrgMembership(authenticatedUser.userId, parent.id);
 
-      const validatedWhere = args.where
-        ? validateInput(NotebookWhereSchema, args.where)
-        : undefined;
-
-      return getNotebooksConnection(
-        parent.id,
-        args,
-        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
-      );
+      return queryWithPagination(args, context, {
+        tableName: "notebooks",
+        whereSchema: NotebookWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.id,
+        buildBasePredicate: ({ parentOrgIds }) => ({
+          in: [{ key: "org_id", value: parentOrgIds }],
+          is: [{ key: "deleted_at", value: null }],
+        }),
+      });
     },
 
     datasets: async (
@@ -250,15 +251,17 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       const authenticatedUser = requireAuthentication(context.user);
       await requireOrgMembership(authenticatedUser.userId, parent.id);
 
-      const validatedWhere = args.where
-        ? validateInput(DatasetWhereSchema, args.where)
-        : undefined;
-
-      return getDatasetsConnection(
-        parent.id,
-        args,
-        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
-      );
+      return queryWithPagination(args, context, {
+        tableName: "datasets",
+        whereSchema: DatasetWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.id,
+        buildBasePredicate: ({ parentOrgIds }) => ({
+          in: [{ key: "org_id", value: parentOrgIds }],
+          is: [{ key: "deleted_at", value: null }],
+        }),
+      });
     },
   },
 
