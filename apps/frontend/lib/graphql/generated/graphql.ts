@@ -1516,11 +1516,13 @@ export type DataModel = {
 export type DataModelReleasesArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelRevisionsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelColumn = {
@@ -1713,11 +1715,13 @@ export type Dataset = {
 export type DatasetRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DatasetTablesArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DatasetConnection = {
@@ -5786,7 +5790,6 @@ export type Query = {
   capturedLogs: CapturedLogs;
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
-  dataModel?: Maybe<DataModel>;
   /**
    * List all data models with optional filtering and pagination.
    *
@@ -5794,16 +5797,14 @@ export type Query = {
    * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
    *
    * Example:
+   * ```json
    * {
    *   "name": { "like": "%user%" },
    *   "is_enabled": { "eq": true }
    * }
+   * ```
    */
   dataModels: DataModelConnection;
-  /** Get a dataset by ID */
-  dataset?: Maybe<Dataset>;
-  /** Get table column metadata */
-  datasetTableMetadata: Array<TableColumn>;
   /**
    * List all datasets with optional filtering and pagination.
    *
@@ -5811,10 +5812,12 @@ export type Query = {
    * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
    *
    * Example:
+   * ```json
    * {
    *   "name": { "like": "%hello%" },
    *   "type": { "eq": "USER_MODEL" }
    * }
+   * ```
    */
   datasets: DatasetConnection;
   /** Retrieve the execution plan for a job and its run configuration. */
@@ -5827,8 +5830,21 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   /** Retrieve the state for a group of instigators (schedule/sensor) by their containing repository id. */
   instigationStatesOrError: InstigationStatesOrError;
-  /** Get an invitation by ID */
-  invitation?: Maybe<Invitation>;
+  /**
+   * List all invitations with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * ```json
+   * {
+   *   "status": { "eq": "PENDING" },
+   *   "email": { "ilike": "%@example.com" }
+   * }
+   * ```
+   */
+  invitations: InvitationConnection;
   /** Retrieve whether the run configuration is valid or invalid. */
   isPipelineConfigValid: PipelineConfigValidationResult;
   /** Retrieve the latest available DefsStateInfo for the current workspace. */
@@ -5837,19 +5853,6 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
-  /**
-   * List invitations for current user with optional filtering and pagination.
-   *
-   * The where parameter accepts a JSON object with field-level filtering.
-   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
-   *
-   * Example:
-   * {
-   *   "status": { "eq": "PENDING" },
-   *   "created_at": { "gte": "2024-01-01T00:00:00Z" }
-   * }
-   */
-  myInvitations: InvitationConnection;
   /**
    * Query notebooks with optional filtering and pagination.
    *
@@ -5943,8 +5946,6 @@ export type Query = {
   repositoryOrError: RepositoryOrError;
   /** Retrieve the list of resources for a given job. */
   resourcesOrError: ResourcesOrError;
-  /** Get a run by ID */
-  run?: Maybe<Run>;
   /** Retrieve the run configuration schema for a job. */
   runConfigSchemaOrError: RunConfigSchemaOrError;
   /** Retrieve a group of runs with the matching root run id. */
@@ -5957,6 +5958,21 @@ export type Query = {
   runTagKeysOrError?: Maybe<RunTagKeysOrError>;
   /** Retrieve all the distinct key-value tags from all runs. */
   runTagsOrError?: Maybe<RunTagsOrError>;
+  /**
+   * List all runs with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * ```json
+   * {
+   *   "status": { "eq": "RUNNING" },
+   *   "datasetId": { "eq": "dataset-uuid" }
+   * }
+   * ```
+   */
+  runs: RunConnection;
   /** Retrieve the number of entries for the Runs Feed after applying a filter. */
   runsFeedCountOrError: RunsFeedCountOrError;
   /** Retrieve entries for the Runs Feed after applying a filter, cursor and limit. */
@@ -5977,6 +5993,24 @@ export type Query = {
   shouldShowNux: Scalars["Boolean"]["output"];
   /** System only. Access system level queries. */
   system: System;
+  /**
+   * Get table column metadata. The where parameter must include:
+   * - orgId: Organization ID
+   * - catalogName: Catalog name
+   * - schemaName: Schema name
+   * - tableName: Table name
+   *
+   * Example:
+   * ```json
+   * {
+   *   "orgId": { "eq": "org-uuid" },
+   *   "catalogName": { "eq": "user_iceberg" },
+   *   "schemaName": { "eq": "ds_schema" },
+   *   "tableName": { "eq": "my_table" }
+   * }
+   * ```
+   */
+  tables: Array<TableColumn>;
   /** Provides fields for testing behavior */
   test?: Maybe<TestFields>;
   /** Retrieve a top level resource by its location name, repository name, and resource name. */
@@ -6119,28 +6153,10 @@ export type QueryCapturedLogsMetadataArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryDataModelArgs = {
-  id: Scalars["ID"]["input"];
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryDataModelsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryDatasetArgs = {
-  id: Scalars["ID"]["input"];
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryDatasetTableMetadataArgs = {
-  catalogName: Scalars["String"]["input"];
-  orgId: Scalars["ID"]["input"];
-  schemaName: Scalars["String"]["input"];
-  tableName: Scalars["String"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6174,8 +6190,10 @@ export type QueryInstigationStatesOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryInvitationArgs = {
-  id: Scalars["ID"]["input"];
+export type QueryInvitationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6190,13 +6208,6 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   runId: Scalars["ID"]["input"];
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryMyInvitationsArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6521,11 +6532,6 @@ export type QueryResourcesOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryRunArgs = {
-  id: Scalars["ID"]["input"];
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunConfigSchemaOrErrorArgs = {
   mode?: InputMaybe<Scalars["String"]["input"]>;
   selector: PipelineSelector;
@@ -6553,6 +6559,13 @@ export type QueryRunTagsOrErrorArgs = {
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   tagKeys?: InputMaybe<Array<Scalars["String"]["input"]>>;
   valuePrefix?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryRunsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6596,6 +6609,11 @@ export type QuerySensorOrErrorArgs = {
 export type QuerySensorsOrErrorArgs = {
   repositorySelector: RepositorySelector;
   sensorStatus?: InputMaybe<InstigationStatus>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryTablesArgs = {
+  where: Scalars["JSON"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
