@@ -7,6 +7,29 @@
 import { z } from "zod";
 import { type Json } from "@/lib/types/supabase";
 
+export const publicDatasetTypeSchema = z.union([
+  z.literal("USER_MODEL"),
+  z.literal("DATA_CONNECTOR"),
+  z.literal("DATA_INGESTION"),
+]);
+
+export const publicModelKindSchema = z.union([
+  z.literal("INCREMENTAL_BY_TIME_RANGE"),
+  z.literal("INCREMENTAL_BY_UNIQUE_KEY"),
+  z.literal("INCREMENTAL_BY_PARTITION"),
+  z.literal("SCD_TYPE_2_BY_TIME"),
+  z.literal("SCD_TYPE_2_BY_COLUMN"),
+  z.literal("FULL"),
+  z.literal("VIEW"),
+]);
+
+export const publicModelRunStatusSchema = z.union([
+  z.literal("running"),
+  z.literal("completed"),
+  z.literal("failed"),
+  z.literal("canceled"),
+]);
+
 export const jsonSchema: z.ZodSchema<Json> = z.lazy(() =>
   z
     .union([
@@ -236,6 +259,112 @@ export const connectorRelationshipsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const datasetsRowSchema = z.object({
+  catalog: z.string(),
+  created_at: z.string(),
+  created_by: z.string(),
+  dataset_type: publicDatasetTypeSchema,
+  deleted_at: z.string().nullable(),
+  description: z.string().nullable(),
+  display_name: z.string(),
+  id: z.string(),
+  is_public: z.boolean(),
+  name: z.string(),
+  org_id: z.string(),
+  schema: z.string(),
+  updated_at: z.string(),
+});
+
+export const datasetsInsertSchema = z.object({
+  catalog: z.string(),
+  created_at: z.string().optional(),
+  created_by: z.string(),
+  dataset_type: publicDatasetTypeSchema,
+  deleted_at: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  display_name: z.string(),
+  id: z.string().optional(),
+  is_public: z.boolean().optional(),
+  name: z.string(),
+  org_id: z.string(),
+  schema: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const datasetsUpdateSchema = z.object({
+  catalog: z.string().optional(),
+  created_at: z.string().optional(),
+  created_by: z.string().optional(),
+  dataset_type: publicDatasetTypeSchema.optional(),
+  deleted_at: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  display_name: z.string().optional(),
+  id: z.string().optional(),
+  is_public: z.boolean().optional(),
+  name: z.string().optional(),
+  org_id: z.string().optional(),
+  schema: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const datasetsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("datasets_created_by_fkey"),
+    columns: z.tuple([z.literal("created_by")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("datasets_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const datasetsByOrganizationRowSchema = z.object({
+  created_at: z.string(),
+  dataset_id: z.string(),
+  deleted_at: z.string().nullable(),
+  id: z.string(),
+  org_id: z.string(),
+});
+
+export const datasetsByOrganizationInsertSchema = z.object({
+  created_at: z.string().optional(),
+  dataset_id: z.string(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string(),
+});
+
+export const datasetsByOrganizationUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  dataset_id: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+});
+
+export const datasetsByOrganizationRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("datasets_by_organization_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("datasets_by_organization_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const dynamicColumnContextsRowSchema = z.object({
   column_name: z.string(),
   data_type: z.string(),
@@ -458,6 +587,258 @@ export const invitationsRelationshipsSchema = z.tuple([
   }),
   z.object({
     foreignKeyName: z.literal("invitations_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const modelRowSchema = z.object({
+  created_at: z.string(),
+  dataset_id: z.string(),
+  deleted_at: z.string().nullable(),
+  id: z.string(),
+  is_enabled: z.boolean(),
+  name: z.string(),
+  org_id: z.string(),
+  updated_at: z.string(),
+});
+
+export const modelInsertSchema = z.object({
+  created_at: z.string().optional(),
+  dataset_id: z.string(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  is_enabled: z.boolean().optional(),
+  name: z.string(),
+  org_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const modelUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  dataset_id: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  is_enabled: z.boolean().optional(),
+  name: z.string().optional(),
+  org_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const modelRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("model_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const modelReleaseRowSchema = z.object({
+  created_at: z.string(),
+  description: z.string().nullable(),
+  id: z.string(),
+  model_id: z.string(),
+  model_revision_id: z.string(),
+  org_id: z.string(),
+  updated_at: z.string(),
+});
+
+export const modelReleaseInsertSchema = z.object({
+  created_at: z.string().optional(),
+  description: z.string().optional().nullable(),
+  id: z.string().optional(),
+  model_id: z.string(),
+  model_revision_id: z.string(),
+  org_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const modelReleaseUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  description: z.string().optional().nullable(),
+  id: z.string().optional(),
+  model_id: z.string().optional(),
+  model_revision_id: z.string().optional(),
+  org_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const modelReleaseRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("model_release_model_id_fkey"),
+    columns: z.tuple([z.literal("model_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("model"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_release_model_revision_id_fkey"),
+    columns: z.tuple([z.literal("model_revision_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("model_revision"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_release_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const publicModelDependencyTypeSchema = z.object({
+  model_id: z.string().nullable(),
+  alias: z.string().nullable(),
+});
+
+export const publicModelKindOptionsSchema = z.object({
+  time_column: z.string().nullable(),
+  time_column_format: z.string().nullable(),
+  batch_size: z.number().nullable(),
+  lookback: z.number().nullable(),
+  unique_key_columns: z.array(z.string()).nullable(),
+  when_matched_sql: z.string().nullable(),
+  merge_filter: z.string().nullable(),
+  valid_from_name: z.string().nullable(),
+  valid_to_name: z.string().nullable(),
+  invalidate_hard_deletes: z.boolean().nullable(),
+  updated_at_column: z.string().nullable(),
+  updated_at_as_valid_from: z.boolean().nullable(),
+  scd_columns: z.array(z.string()).nullable(),
+  execution_time_as_valid_from: z.boolean().nullable(),
+});
+
+export const publicModelColumnTypeSchema = z.object({
+  name: z.string().nullable(),
+  type: z.string().nullable(),
+  description: z.string().nullable(),
+});
+
+export const modelRevisionInsertSchema = z.object({
+  clustered_by: z.array(z.string()).optional().nullable(),
+  code: z.string(),
+  created_at: z.string().optional(),
+  cron: z.string(),
+  depends_on: z.array(publicModelDependencyTypeSchema).optional().nullable(),
+  description: z.string().optional().nullable(),
+  display_name: z.string(),
+  end: z.string().optional().nullable(),
+  hash: z.string(),
+  id: z.string().optional(),
+  kind: publicModelKindSchema,
+  kind_options: publicModelKindOptionsSchema.optional().nullable(),
+  language: z.string(),
+  model_id: z.string(),
+  name: z.string(),
+  org_id: z.string(),
+  partitioned_by: z.array(z.string()).optional().nullable(),
+  revision_number: z.number(),
+  schema: z.array(publicModelColumnTypeSchema),
+  start: z.string().optional().nullable(),
+});
+
+export const modelRevisionUpdateSchema = z.object({
+  clustered_by: z.array(z.string()).optional().nullable(),
+  code: z.string().optional(),
+  created_at: z.string().optional(),
+  cron: z.string().optional(),
+  depends_on: z.array(publicModelDependencyTypeSchema).optional().nullable(),
+  description: z.string().optional().nullable(),
+  display_name: z.string().optional(),
+  end: z.string().optional().nullable(),
+  hash: z.string().optional(),
+  id: z.string().optional(),
+  kind: publicModelKindSchema.optional(),
+  kind_options: publicModelKindOptionsSchema.optional().nullable(),
+  language: z.string().optional(),
+  model_id: z.string().optional(),
+  name: z.string().optional(),
+  org_id: z.string().optional(),
+  partitioned_by: z.array(z.string()).optional().nullable(),
+  revision_number: z.number().optional(),
+  schema: z.array(publicModelColumnTypeSchema).optional(),
+  start: z.string().optional().nullable(),
+});
+
+export const modelRevisionRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("model_revision_model_id_fkey"),
+    columns: z.tuple([z.literal("model_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("model"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_revision_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const modelRunRowSchema = z.object({
+  completed_at: z.string().nullable(),
+  id: z.string(),
+  logs_url: z.string().nullable(),
+  model_id: z.string(),
+  model_release_id: z.string(),
+  org_id: z.string(),
+  started_at: z.string(),
+  status: publicModelRunStatusSchema,
+});
+
+export const modelRunInsertSchema = z.object({
+  completed_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  logs_url: z.string().optional().nullable(),
+  model_id: z.string(),
+  model_release_id: z.string(),
+  org_id: z.string(),
+  started_at: z.string().optional(),
+  status: publicModelRunStatusSchema.optional(),
+});
+
+export const modelRunUpdateSchema = z.object({
+  completed_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  logs_url: z.string().optional().nullable(),
+  model_id: z.string().optional(),
+  model_release_id: z.string().optional(),
+  org_id: z.string().optional(),
+  started_at: z.string().optional(),
+  status: publicModelRunStatusSchema.optional(),
+});
+
+export const modelRunRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("model_run_model_id_fkey"),
+    columns: z.tuple([z.literal("model_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("model"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_run_model_release_id_fkey"),
+    columns: z.tuple([z.literal("model_release_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("model_release"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_run_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("organizations"),
@@ -1003,7 +1384,7 @@ export const checkResourcePermissionArgsSchema = z.object({
 
 export const checkResourcePermissionReturnsSchema = jsonSchema;
 
-export const cleanupOrphanedInvitationsArgsSchema = z.object({});
+export const cleanupOrphanedInvitationsArgsSchema = z.never();
 
 export const cleanupOrphanedInvitationsReturnsSchema = z.undefined();
 
@@ -1017,7 +1398,7 @@ export const deductCreditsArgsSchema = z.object({
 
 export const deductCreditsReturnsSchema = z.boolean();
 
-export const expireOldInvitationsArgsSchema = z.object({});
+export const expireOldInvitationsArgsSchema = z.never();
 
 export const expireOldInvitationsReturnsSchema = z.undefined();
 
@@ -1070,3 +1451,26 @@ export const validateOwnershipLimitsArgsSchema = z.object({
 });
 
 export const validateOwnershipLimitsReturnsSchema = z.boolean();
+
+export const modelRevisionRowSchema = z.object({
+  clustered_by: z.array(z.string()).nullable(),
+  code: z.string(),
+  created_at: z.string(),
+  cron: z.string(),
+  depends_on: z.array(publicModelDependencyTypeSchema).nullable(),
+  description: z.string().nullable(),
+  display_name: z.string(),
+  end: z.string().nullable(),
+  hash: z.string(),
+  id: z.string(),
+  kind: publicModelKindSchema,
+  kind_options: publicModelKindOptionsSchema.nullable(),
+  language: z.string(),
+  model_id: z.string(),
+  name: z.string(),
+  org_id: z.string(),
+  partitioned_by: z.array(z.string()).nullable(),
+  revision_number: z.number(),
+  schema: z.array(publicModelColumnTypeSchema),
+  start: z.string().nullable(),
+});

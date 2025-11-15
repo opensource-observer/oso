@@ -37,6 +37,7 @@ type ToolTipProps = {
   content?: React.ReactElement; // Show this
   side?: ToolTipSide; // Position of the tooltip
   forceOpen?: boolean; // Force the tooltip to show
+  disabled?: boolean; // Disable the tooltip
 };
 
 const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
@@ -57,11 +58,20 @@ const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
       editOnly: true,
       helpText: "Force the tooltip content to show.",
     },
+    disabled: {
+      type: "boolean",
+      helpText: "Disable the tooltip functionality.",
+    },
   },
 };
 
 function ToolTip(props: ToolTipProps) {
-  const { className, trigger, content, side, forceOpen } = props;
+  const { className, trigger, content, side, forceOpen, disabled } = props;
+
+  if (disabled) {
+    return <div className={className}>{trigger}</div>;
+  }
+
   return (
     <TooltipProvider>
       <TooltipRoot open={forceOpen}>

@@ -1,7 +1,7 @@
 import typing as t
 
 from sqlglot import exp
-from sqlmesh.core.linter.rule import Rule, RuleViolation
+from sqlmesh.core.linter.rule import Fix, Range, Rule, RuleViolation
 from sqlmesh.core.model import Model
 
 
@@ -46,7 +46,12 @@ class TimePartitionsMustBeBucketed(Rule):
 
         return None
 
-    def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
+    def violation(
+        self,
+        violation_msg: t.Optional[str] = None,
+        violation_range: t.Optional[Range] = None,
+        fixes: t.Optional[t.List[Fix]] = None,
+    ) -> RuleViolation:
         # Create a RuleViolation object with the specified violation message
         return RuleViolation(
             rule=self,

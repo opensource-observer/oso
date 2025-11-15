@@ -255,6 +255,9 @@ class ResourcesContext:
         """Resolve a resource by name. If the resource is not resolved yet, it
         will be resolved and cached."""
 
+        if name == ResourcesContext.resources_keyword_name:
+            return self
+
         if name not in self._resolved_resources:
             resource_factory = self._registry.get(name)
 

@@ -1,0 +1,51 @@
+test_int_addresses_by_ens_user:
+  model: oso.int_addresses_by_ens_user
+  inputs:
+    oso.stg_ens__domains:
+      rows:
+        - name: 'test1.eth'
+          owner: {id: "0x1111111111111111111111111111111111111111"}
+          registrant: {id: "0x2222222222222222222222222222222222222222"}
+        - name: 'test1.eth' # Duplicate, should be handled
+          owner: {id: "0x1111111111111111111111111111111111111111"}
+          registrant: {id: "0x2222222222222222222222222222222222222222"}
+        - name: 'test2.eth' # Another valid user
+          owner: {id: "0x3333333333333333333333333333333333333333"}
+          registrant: {id: "0x4444444444444444444444444444444444444444"}
+        - name: 'null_owner.eth' # Null owner, should be filtered out
+          owner: null
+          registrant: {id: "0x5555555555555555555555555555555555555555"}
+        - name: 'short_owner.eth' # Invalid owner address (too short), should be filtered out
+          owner: {id: "0x123"}
+          registrant: {id: "0x6666666666666666666666666666666666666666"}
+        - name: 'no_prefix_owner.eth' # Invalid owner address (no 0x prefix), should be filtered out
+          owner: {id: "7777777777777777777777777777777777777777"}
+          registrant: {id: "0x7777777777777777777777777777777777777777"}
+        - name: 'null_id_owner.eth' # Owner with null id field, should be filtered out
+          owner: {id: null}
+          registrant: {id: "0x8888888888888888888888888888888888888888"}
+  outputs:
+    query:
+      rows:
+        - user_id: '4c1af79ddcc5aee9d287f9946eb66e391c36872650859b4a49da35842e71529e'
+          user_source_id: 'test1.eth'
+          user_source: 'ENS'
+          user_namespace: ''
+          user_name: 'test1.eth'
+          display_name: 'test1.eth'
+          artifact_source: 'MAINNET'
+          artifact_namespace: ''
+          artifact_name: '0x1111111111111111111111111111111111111111'
+          artifact_id: 'e79d6e6596d72c20caee5be1bce7c5f573433f46346ffd72e02015a706d898db'
+          artifact_type: 'SOCIAL_HANDLE'
+        - user_id: 'b3fe8e1796fdf9b8d12bfd2e6f267dad283dedb2011fd33e177e51e914f086cb'
+          user_source_id: 'test2.eth'
+          user_source: 'ENS'
+          user_namespace: ''
+          user_name: 'test2.eth'
+          display_name: 'test2.eth'
+          artifact_source: 'MAINNET'
+          artifact_namespace: ''
+          artifact_name: '0x3333333333333333333333333333333333333333'
+          artifact_id: '0b8d4d221d3e1cfa97c9f8b4f4436d89a2b739f093823f8f208a74b8ed4cde3b'
+          artifact_type: 'SOCIAL_HANDLE'

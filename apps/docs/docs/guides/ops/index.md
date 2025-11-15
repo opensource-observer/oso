@@ -16,3 +16,4 @@ The OSO architecture runs on the following platforms:
 - [Ops Video Guides](./video-guides.md): Ops video guides for managing the infrastructure
 - [Dagster Playbook](./dagster): Common tasks executed in Dagster
 - [Archive Node Guide](./archive-nodes.md): Guide on creating a new archive node
+- [OSO Graph API Guide](./osograph.md): Adding queries and mutations to OSOGraph

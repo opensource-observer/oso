@@ -97,6 +97,11 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "deductOrganizationCredits",
   "updateOrganizationTier",
   "setOrganizationCredits",
+  "createDataset",
+  "updateDataset",
+  "createDataModel",
+  "createDataModelRevision",
+  "createDataModelRelease",
 ]);
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [
@@ -150,7 +155,7 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       errorCodeMap[error.code] ?? `${error.code}: ${error.message}`,
       DEFAULT_TOAST_OPTIONS,
     );
-    return error;
+    throw error;
   };
 
   const actions = React.useMemo(

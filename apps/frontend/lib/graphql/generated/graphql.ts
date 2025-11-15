@@ -27,12 +27,21 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
+  /** DateTime custom scalar type */
+  DateTime: { input: any; output: any };
   /**
    * The `GenericScalar` scalar type represents a generic
    * GraphQL scalar value that could be:
    * String, Boolean, Int, Float, List or Object.
    */
   GenericScalar: { input: any; output: any };
+  /**
+   * Allows use of a JSON String for input / output from the GraphQL schema.
+   *
+   * Use of this type is *not recommended* as you lose the benefits of having a defined, static
+   * schema (one of the key benefits of GraphQL).
+   */
+  JSONString: { input: any; output: any };
   Oso_Bool: { input: any; output: any };
   Oso_Date: { input: any; output: any };
   Oso_DateTime: { input: any; output: any };
@@ -48,6 +57,20 @@ export type Scalars = {
    *
    */
   RunConfigData: { input: any; output: any };
+  _Any: { input: any; output: any };
+  federation__FieldSet: { input: any; output: any };
+  link__Import: { input: any; output: any };
+};
+
+export type AcceptInvitationInput = {
+  invitationId: Scalars["ID"]["input"];
+};
+
+export type AcceptInvitationPayload = {
+  __typename?: "AcceptInvitationPayload";
+  member?: Maybe<OrganizationMember>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type AddDynamicPartitionResult =
@@ -60,6 +83,19 @@ export type AddDynamicPartitionSuccess = {
   __typename?: "AddDynamicPartitionSuccess";
   partitionKey: Scalars["String"]["output"];
   partitionsDefName: Scalars["String"]["output"];
+};
+
+export type AddUserByEmailInput = {
+  email: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  role: MemberRole;
+};
+
+export type AddUserByEmailPayload = {
+  __typename?: "AddUserByEmailPayload";
+  member?: Maybe<OrganizationMember>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type AlertFailureEvent = MessageEvent &
@@ -139,18 +175,33 @@ export type ArrayConfigType = ConfigType &
 
 export type Asset = {
   __typename?: "Asset";
+  assetEventHistory: AssetResultEventHistoryConnection;
+  assetHealth?: Maybe<AssetHealth>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition?: Maybe<AssetNode>;
+  freshnessStatusChangedTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  hasDefinitionOrRecord: Scalars["Boolean"]["output"];
   id: Scalars["String"]["output"];
   key: AssetKey;
+  latestEventSortKey?: Maybe<Scalars["ID"]["output"]>;
+  latestFailedToMaterializeTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  latestMaterializationTimestamp?: Maybe<Scalars["Float"]["output"]>;
+};
+
+export type AssetAssetEventHistoryArgs = {
+  afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
+  limit: Scalars["Int"]["input"];
+  partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type AssetAssetMaterializationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
-  partitionInLast?: InputMaybe<Scalars["Int"]["input"]>;
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
@@ -158,7 +209,6 @@ export type AssetAssetObservationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   beforeTimestampMillis?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
-  partitionInLast?: InputMaybe<Scalars["Int"]["input"]>;
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
@@ -376,6 +426,12 @@ export type AssetDependency = {
   partitionMapping?: Maybe<PartitionMapping>;
 };
 
+export enum AssetEventHistoryEventTypeSelector {
+  FailedToMaterialize = "FAILED_TO_MATERIALIZE",
+  Materialization = "MATERIALIZATION",
+  Observation = "OBSERVATION",
+}
+
 /** The event type of an asset event. */
 export enum AssetEventType {
   AssetMaterialization = "ASSET_MATERIALIZATION",
@@ -406,6 +462,78 @@ export type AssetGroupSelector = {
   repositoryName: Scalars["String"]["input"];
 };
 
+export type AssetHealth = {
+  __typename?: "AssetHealth";
+  assetChecksStatus: AssetHealthStatus;
+  assetChecksStatusMetadata?: Maybe<AssetHealthCheckMeta>;
+  assetHealth: AssetHealthStatus;
+  freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata?: Maybe<AssetHealthFreshnessMeta>;
+  materializationStatus: AssetHealthStatus;
+  materializationStatusMetadata?: Maybe<AssetHealthMaterializationMeta>;
+};
+
+export type AssetHealthCheckDegradedMeta = {
+  __typename?: "AssetHealthCheckDegradedMeta";
+  numFailedChecks: Scalars["Int"]["output"];
+  numWarningChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckUnknownMeta
+  | AssetHealthCheckWarningMeta;
+
+export type AssetHealthCheckUnknownMeta = {
+  __typename?: "AssetHealthCheckUnknownMeta";
+  numNotExecutedChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthCheckWarningMeta = {
+  __typename?: "AssetHealthCheckWarningMeta";
+  numWarningChecks: Scalars["Int"]["output"];
+  totalNumChecks: Scalars["Int"]["output"];
+};
+
+export type AssetHealthFreshnessMeta = {
+  __typename?: "AssetHealthFreshnessMeta";
+  lastMaterializedTimestamp?: Maybe<Scalars["Float"]["output"]>;
+};
+
+export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationDegradedNotPartitionedMeta";
+  failedRunId: Scalars["String"]["output"];
+};
+
+export type AssetHealthMaterializationDegradedPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationDegradedPartitionedMeta";
+  numFailedPartitions: Scalars["Int"]["output"];
+  numMissingPartitions: Scalars["Int"]["output"];
+  totalNumPartitions: Scalars["Int"]["output"];
+};
+
+export type AssetHealthMaterializationHealthyPartitionedMeta = {
+  __typename?: "AssetHealthMaterializationHealthyPartitionedMeta";
+  numMissingPartitions: Scalars["Int"]["output"];
+  totalNumPartitions: Scalars["Int"]["output"];
+};
+
+export type AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta;
+
+/** Enum for the health status of an asset. */
+export enum AssetHealthStatus {
+  Degraded = "DEGRADED",
+  Healthy = "HEALTHY",
+  NotApplicable = "NOT_APPLICABLE",
+  Unknown = "UNKNOWN",
+  Warning = "WARNING",
+}
+
 export type AssetKey = {
   __typename?: "AssetKey";
   path: Array<Scalars["String"]["output"]>;
@@ -430,6 +558,29 @@ export type AssetLineageInfo = {
   assetKey: AssetKey;
   partitions: Array<Scalars["String"]["output"]>;
 };
+
+/**
+ * Enumerate the reasons an asset may have failed to materialize. Can be used to provide more granular
+ *     information about the failure to the user.
+ *
+ */
+export enum AssetMaterializationFailureReason {
+  FailedToMaterialize = "FAILED_TO_MATERIALIZE",
+  RunTerminated = "RUN_TERMINATED",
+  Unknown = "UNKNOWN",
+  UpstreamFailedToMaterialize = "UPSTREAM_FAILED_TO_MATERIALIZE",
+}
+
+/**
+ * An asset can fail to materialize in two ways: an unexpected/unintentional failure that should update
+ *     the global state of the asset to Failed, and one that indicates that the asset not materializing
+ *     is expected (like an optional asset or a user canceled the run).
+ *
+ */
+export enum AssetMaterializationFailureType {
+  Failed = "FAILED",
+  Skipped = "SKIPPED",
+}
 
 export type AssetMaterializationPlannedEvent = MessageEvent &
   RunEvent & {
@@ -477,12 +628,15 @@ export type AssetNode = {
   description?: Maybe<Scalars["String"]["output"]>;
   freshnessInfo?: Maybe<AssetFreshnessInfo>;
   freshnessPolicy?: Maybe<FreshnessPolicy>;
+  freshnessStatusInfo?: Maybe<FreshnessStatusInfo>;
   graphName?: Maybe<Scalars["String"]["output"]>;
   groupName: Scalars["String"]["output"];
   hasAssetChecks: Scalars["Boolean"]["output"];
   hasMaterializePermission: Scalars["Boolean"]["output"];
   hasReportRunlessAssetEventPermission: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
+  internalFreshnessPolicy?: Maybe<InternalFreshnessPolicy>;
+  isAutoCreatedStub: Scalars["Boolean"]["output"];
   isExecutable: Scalars["Boolean"]["output"];
   isMaterializable: Scalars["Boolean"]["output"];
   isObservable: Scalars["Boolean"]["output"];
@@ -490,6 +644,7 @@ export type AssetNode = {
   jobNames: Array<Scalars["String"]["output"]>;
   jobs: Array<Pipeline>;
   kinds: Array<Scalars["String"]["output"]>;
+  lastAutoMaterializationEvaluationRecord?: Maybe<AutoMaterializeAssetEvaluationRecord>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
   latestRunForPartition?: Maybe<Run>;
   metadataEntries: Array<MetadataEntry>;
@@ -499,6 +654,7 @@ export type AssetNode = {
   opVersion?: Maybe<Scalars["String"]["output"]>;
   owners: Array<AssetOwner>;
   partitionDefinition?: Maybe<PartitionDefinition>;
+  partitionKeyConnection?: Maybe<PartitionKeyConnection>;
   partitionKeys: Array<Scalars["String"]["output"]>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats?: Maybe<PartitionStats>;
@@ -543,12 +699,22 @@ export type AssetNodeDataVersionByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
+export type AssetNodeLastAutoMaterializationEvaluationRecordArgs = {
+  asOfEvaluationId?: InputMaybe<Scalars["ID"]["input"]>;
+};
+
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type AssetNodeLatestRunForPartitionArgs = {
   partition: Scalars["String"]["input"];
+};
+
+export type AssetNodePartitionKeyConnectionArgs = {
+  ascending: Scalars["Boolean"]["input"];
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit: Scalars["Int"]["input"];
 };
 
 export type AssetNodePartitionKeysByDimensionArgs = {
@@ -614,6 +780,31 @@ export type AssetPartitionsStatusCounts = {
   numPartitionsMaterialized: Scalars["Int"]["output"];
   numPartitionsTargeted: Scalars["Int"]["output"];
 };
+
+export type AssetRecord = {
+  __typename?: "AssetRecord";
+  id: Scalars["String"]["output"];
+  key: AssetKey;
+};
+
+export type AssetRecordConnection = {
+  __typename?: "AssetRecordConnection";
+  assets: Array<AssetRecord>;
+  cursor?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type AssetRecordsOrError = AssetRecordConnection | PythonError;
+
+export type AssetResultEventHistoryConnection = {
+  __typename?: "AssetResultEventHistoryConnection";
+  cursor: Scalars["String"]["output"];
+  results: Array<AssetResultEventType>;
+};
+
+export type AssetResultEventType =
+  | FailedToMaterializeEvent
+  | MaterializationEvent
+  | ObservationEvent;
 
 export type AssetSelection = {
   __typename?: "AssetSelection";
@@ -731,10 +922,12 @@ export type AutomationConditionEvaluationNode = {
   __typename?: "AutomationConditionEvaluationNode";
   childUniqueIds: Array<Scalars["String"]["output"]>;
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   expandedLabel: Array<Scalars["String"]["output"]>;
   isPartitioned: Scalars["Boolean"]["output"];
   numCandidates?: Maybe<Scalars["Int"]["output"]>;
   numTrue: Scalars["Int"]["output"];
+  operatorType: Scalars["String"]["output"];
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
   uniqueId: Scalars["String"]["output"];
   userLabel?: Maybe<Scalars["String"]["output"]>;
@@ -773,6 +966,7 @@ export enum BulkActionStatus {
   CompletedFailed = "COMPLETED_FAILED",
   CompletedSuccess = "COMPLETED_SUCCESS",
   Failed = "FAILED",
+  Failing = "FAILING",
   Requested = "REQUESTED",
 }
 
@@ -791,6 +985,17 @@ export type CancelBackfillResult =
 export type CancelBackfillSuccess = {
   __typename?: "CancelBackfillSuccess";
   backfillId: Scalars["String"]["output"];
+};
+
+export type CancelRunInput = {
+  runId: Scalars["ID"]["input"];
+};
+
+export type CancelRunPayload = {
+  __typename?: "CancelRunPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run?: Maybe<Run>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type CapturedLogs = {
@@ -991,6 +1196,119 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type CreateDataModelInput = {
+  datasetId: Scalars["ID"]["input"];
+  isEnabled?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
+export type CreateDataModelPayload = {
+  __typename?: "CreateDataModelPayload";
+  dataModel?: Maybe<DataModel>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDataModelReleaseInput = {
+  dataModelId: Scalars["ID"]["input"];
+  dataModelRevisionId: Scalars["ID"]["input"];
+  description?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type CreateDataModelReleasePayload = {
+  __typename?: "CreateDataModelReleasePayload";
+  dataModelRelease?: Maybe<DataModelRelease>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDataModelRevisionInput = {
+  clusteredBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  code: Scalars["String"]["input"];
+  cron: Scalars["String"]["input"];
+  dataModelId: Scalars["ID"]["input"];
+  dependsOn?: InputMaybe<Array<DataModelDependencyInput>>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  displayName: Scalars["String"]["input"];
+  end?: InputMaybe<Scalars["DateTime"]["input"]>;
+  kind: DataModelKind;
+  kindOptions?: InputMaybe<DataModelKindOptionsInput>;
+  language: Scalars["String"]["input"];
+  name: Scalars["String"]["input"];
+  partitionedBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  schema: Array<DataModelColumnInput>;
+  start?: InputMaybe<Scalars["DateTime"]["input"]>;
+};
+
+export type CreateDataModelRevisionPayload = {
+  __typename?: "CreateDataModelRevisionPayload";
+  dataModelRevision?: Maybe<DataModelRevision>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDatasetInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  displayName?: InputMaybe<Scalars["String"]["input"]>;
+  isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  type?: InputMaybe<DatasetType>;
+};
+
+export type CreateDatasetPayload = {
+  __typename?: "CreateDatasetPayload";
+  dataset?: Maybe<Dataset>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateInvitationInput = {
+  email: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  role?: MemberRole;
+};
+
+export type CreateInvitationPayload = {
+  __typename?: "CreateInvitationPayload";
+  invitation?: Maybe<Invitation>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateNotebookInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
+export type CreateNotebookPayload = {
+  __typename?: "CreateNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateRunRequestInput = {
+  definitionId: Scalars["ID"]["input"];
+  definitionType: RunDefinitionType;
+};
+
+export type CreateRunRequestPayload = {
+  __typename?: "CreateRunRequestPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  runRequest: RunRequest;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CronFreshnessPolicy = {
+  __typename?: "CronFreshnessPolicy";
+  deadlineCron: Scalars["String"]["output"];
+  lowerBoundDeltaSeconds: Scalars["Int"]["output"];
+  timezone: Scalars["String"]["output"];
+};
+
 export type DaemonHealth = {
   __typename?: "DaemonHealth";
   allDaemonStatuses: Array<DaemonStatus>;
@@ -1019,11 +1337,16 @@ export enum DagsterEventType {
   AlertSuccess = "ALERT_SUCCESS",
   AssetCheckEvaluation = "ASSET_CHECK_EVALUATION",
   AssetCheckEvaluationPlanned = "ASSET_CHECK_EVALUATION_PLANNED",
+  AssetFailedToMaterialize = "ASSET_FAILED_TO_MATERIALIZE",
+  AssetHealthChanged = "ASSET_HEALTH_CHANGED",
   AssetMaterialization = "ASSET_MATERIALIZATION",
   AssetMaterializationPlanned = "ASSET_MATERIALIZATION_PLANNED",
   AssetObservation = "ASSET_OBSERVATION",
   AssetStoreOperation = "ASSET_STORE_OPERATION",
+  AssetWiped = "ASSET_WIPED",
   EngineEvent = "ENGINE_EVENT",
+  FreshnessStateChange = "FRESHNESS_STATE_CHANGE",
+  FreshnessStateEvaluation = "FRESHNESS_STATE_EVALUATION",
   HandledOutput = "HANDLED_OUTPUT",
   HookCompleted = "HOOK_COMPLETED",
   HookErrored = "HOOK_ERRORED",
@@ -1085,7 +1408,9 @@ export type DagsterRunEvent =
   | ExecutionStepStartEvent
   | ExecutionStepSuccessEvent
   | ExecutionStepUpForRetryEvent
+  | FailedToMaterializeEvent
   | HandledOutputEvent
+  | HealthChangedEvent
   | HookCompletedEvent
   | HookErroredEvent
   | HookSkippedEvent
@@ -1137,6 +1462,292 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
+export type DataConnector = {
+  __typename?: "DataConnector";
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  type: Scalars["String"]["output"];
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type DataIngestion = {
+  __typename?: "DataIngestion";
+  createdAt: Scalars["DateTime"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type DataIngestionConnection = {
+  __typename?: "DataIngestionConnection";
+  edges: Array<DataIngestionEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataIngestionEdge = {
+  __typename?: "DataIngestionEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataIngestion;
+};
+
+export type DataModel = {
+  __typename?: "DataModel";
+  createdAt: Scalars["DateTime"]["output"];
+  dataset: Dataset;
+  id: Scalars["ID"]["output"];
+  isEnabled: Scalars["Boolean"]["output"];
+  latestRelease?: Maybe<DataModelRelease>;
+  latestRevision?: Maybe<DataModelRevision>;
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  releases: DataModelReleaseConnection;
+  revisions: DataModelRevisionConnection;
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type DataModelReleasesArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type DataModelRevisionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type DataModelColumn = {
+  __typename?: "DataModelColumn";
+  description?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
+  type: Scalars["String"]["output"];
+};
+
+export type DataModelColumnInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  name: Scalars["String"]["input"];
+  type: Scalars["String"]["input"];
+};
+
+export type DataModelConnection = {
+  __typename?: "DataModelConnection";
+  edges: Array<DataModelEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelDefinition = {
+  __typename?: "DataModelDefinition";
+  /**
+   * If the dataset is of type USER_MODEL, this field will contain the list of data models
+   * associated with the dataset. Otherwise it will be an empty list.
+   */
+  dataModels: DataModelConnection;
+};
+
+export type DataModelDefinitionDataModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type DataModelDependency = {
+  __typename?: "DataModelDependency";
+  alias?: Maybe<Scalars["String"]["output"]>;
+  tableId: Scalars["ID"]["output"];
+};
+
+export type DataModelDependencyInput = {
+  alias?: InputMaybe<Scalars["String"]["input"]>;
+  dataModelId: Scalars["ID"]["input"];
+};
+
+export type DataModelEdge = {
+  __typename?: "DataModelEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModel;
+};
+
+export enum DataModelKind {
+  Full = "FULL",
+  IncrementalByPartition = "INCREMENTAL_BY_PARTITION",
+  IncrementalByTimeRange = "INCREMENTAL_BY_TIME_RANGE",
+  IncrementalByUniqueKey = "INCREMENTAL_BY_UNIQUE_KEY",
+  ScdType_2ByColumn = "SCD_TYPE_2_BY_COLUMN",
+  ScdType_2ByTime = "SCD_TYPE_2_BY_TIME",
+  View = "VIEW",
+}
+
+export type DataModelKindOptions = {
+  __typename?: "DataModelKindOptions";
+  batchSize?: Maybe<Scalars["Int"]["output"]>;
+  executionTimeAsValidFrom?: Maybe<Scalars["Boolean"]["output"]>;
+  invalidateHardDeletes?: Maybe<Scalars["Boolean"]["output"]>;
+  lookback?: Maybe<Scalars["Int"]["output"]>;
+  mergeFilter?: Maybe<Scalars["String"]["output"]>;
+  scdColumns?: Maybe<Array<Scalars["String"]["output"]>>;
+  timeColumn?: Maybe<Scalars["String"]["output"]>;
+  timeColumnFormat?: Maybe<Scalars["String"]["output"]>;
+  uniqueKeyColumns?: Maybe<Array<Scalars["String"]["output"]>>;
+  updatedAtAsValidFrom?: Maybe<Scalars["Boolean"]["output"]>;
+  updatedAtColumn?: Maybe<Scalars["String"]["output"]>;
+  validFromName?: Maybe<Scalars["String"]["output"]>;
+  validToName?: Maybe<Scalars["String"]["output"]>;
+  whenMatchedSql?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type DataModelKindOptionsInput = {
+  batchSize?: InputMaybe<Scalars["Int"]["input"]>;
+  executionTimeAsValidFrom?: InputMaybe<Scalars["Boolean"]["input"]>;
+  invalidateHardDeletes?: InputMaybe<Scalars["Boolean"]["input"]>;
+  lookback?: InputMaybe<Scalars["Int"]["input"]>;
+  mergeFilter?: InputMaybe<Scalars["String"]["input"]>;
+  scdColumns?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  timeColumn?: InputMaybe<Scalars["String"]["input"]>;
+  timeColumnFormat?: InputMaybe<Scalars["String"]["input"]>;
+  uniqueKeyColumns?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  updatedAtAsValidFrom?: InputMaybe<Scalars["Boolean"]["input"]>;
+  updatedAtColumn?: InputMaybe<Scalars["String"]["input"]>;
+  validFromName?: InputMaybe<Scalars["String"]["input"]>;
+  validToName?: InputMaybe<Scalars["String"]["input"]>;
+  whenMatchedSql?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type DataModelRelease = {
+  __typename?: "DataModelRelease";
+  createdAt: Scalars["DateTime"]["output"];
+  dataModel: DataModel;
+  dataModelId: Scalars["ID"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  revision: DataModelRevision;
+  revisionId: Scalars["ID"]["output"];
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type DataModelReleaseConnection = {
+  __typename?: "DataModelReleaseConnection";
+  edges: Array<DataModelReleaseEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelReleaseEdge = {
+  __typename?: "DataModelReleaseEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModelRelease;
+};
+
+export type DataModelRevision = {
+  __typename?: "DataModelRevision";
+  clusteredBy?: Maybe<Array<Scalars["String"]["output"]>>;
+  code: Scalars["String"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  cron: Scalars["String"]["output"];
+  dataModel: DataModel;
+  dataModelId: Scalars["ID"]["output"];
+  dependsOn?: Maybe<Array<DataModelDependency>>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName: Scalars["String"]["output"];
+  end?: Maybe<Scalars["DateTime"]["output"]>;
+  hash: Scalars["String"]["output"];
+  id: Scalars["ID"]["output"];
+  kind: DataModelKind;
+  kindOptions?: Maybe<DataModelKindOptions>;
+  language: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  partitionedBy?: Maybe<Array<Scalars["String"]["output"]>>;
+  revisionNumber: Scalars["Int"]["output"];
+  schema?: Maybe<Array<DataModelColumn>>;
+  start?: Maybe<Scalars["DateTime"]["output"]>;
+};
+
+export type DataModelRevisionConnection = {
+  __typename?: "DataModelRevisionConnection";
+  edges: Array<DataModelRevisionEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelRevisionEdge = {
+  __typename?: "DataModelRevisionEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModelRevision;
+};
+
+export type Dataset = {
+  __typename?: "Dataset";
+  createdAt: Scalars["DateTime"]["output"];
+  creator: User;
+  creatorId: Scalars["ID"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  isPublic: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  /**
+   * The runs for this dataset. For USER_MODEL datasets, each run is related to individual data models.
+   * FOR DATA_INGESTION datasets, each run is related to individual ingestion jobs.
+   * For DATA_CONNECTOR datasets, runs are not applicable and this field will be an empty list.
+   */
+  runs: RunConnection;
+  tables: TableConnection;
+  type: DatasetType;
+  typeDefinition: DatasetTypeDefinition;
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type DatasetRunsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type DatasetTablesArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type DatasetConnection = {
+  __typename?: "DatasetConnection";
+  edges: Array<DatasetEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DatasetEdge = {
+  __typename?: "DatasetEdge";
+  cursor: Scalars["String"]["output"];
+  node: Dataset;
+};
+
+/**
+ * Dataset types
+ *
+ * * USER_MODEL: Contains user-defined models
+ * * DATA_CONNECTOR: Derived from a data connector to an external data source
+ * * DATA_INGESTION: Derived from data ingestion pipelines
+ */
+export enum DatasetType {
+  DataConnector = "DATA_CONNECTOR",
+  DataIngestion = "DATA_INGESTION",
+  UserModel = "USER_MODEL",
+}
+
+export type DatasetTypeDefinition =
+  | DataConnector
+  | DataIngestion
+  | DataModelDefinition;
+
 export type DefaultPartitionStatuses = {
   __typename?: "DefaultPartitionStatuses";
   failedPartitions: Array<Scalars["String"]["output"]>;
@@ -1145,11 +1756,38 @@ export type DefaultPartitionStatuses = {
   unmaterializedPartitions: Array<Scalars["String"]["output"]>;
 };
 
+export type DefinitionOwner = TeamDefinitionOwner | UserDefinitionOwner;
+
 export type DefinitionTag = {
   __typename?: "DefinitionTag";
   key: Scalars["String"]["output"];
   value: Scalars["String"]["output"];
 };
+
+export type DefsKeyStateInfo = {
+  __typename?: "DefsKeyStateInfo";
+  createTimestamp: Scalars["Float"]["output"];
+  managementType: DefsStateManagementType;
+  version: Scalars["String"]["output"];
+};
+
+export type DefsStateInfo = {
+  __typename?: "DefsStateInfo";
+  keyStateInfo: Array<DefsStateInfoEntry>;
+};
+
+export type DefsStateInfoEntry = {
+  __typename?: "DefsStateInfoEntry";
+  info?: Maybe<DefsKeyStateInfo>;
+  name: Scalars["String"]["output"];
+};
+
+/** An enumeration. */
+export enum DefsStateManagementType {
+  LegacyCodeServerSnapshots = "LEGACY_CODE_SERVER_SNAPSHOTS",
+  LocalFilesystem = "LOCAL_FILESYSTEM",
+  VersionedStateStorage = "VERSIONED_STATE_STORAGE",
+}
 
 export type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
@@ -1457,6 +2095,8 @@ export type ExecutionParams = {
 export type ExecutionPlan = {
   __typename?: "ExecutionPlan";
   artifactsPersisted: Scalars["Boolean"]["output"];
+  assetKeys: Array<AssetKey>;
+  assetSelection: Array<Scalars["String"]["output"]>;
   steps: Array<ExecutionStep>;
 };
 
@@ -1612,6 +2252,29 @@ export type ExpectationResult = DisplayableEvent & {
   success: Scalars["Boolean"]["output"];
 };
 
+export type FailedToMaterializeEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "FailedToMaterializeEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    materializationFailureReason: AssetMaterializationFailureReason;
+    materializationFailureType: AssetMaterializationFailureType;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
+
 export type FailureMetadata = DisplayableEvent & {
   __typename?: "FailureMetadata";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -1643,9 +2306,24 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
   stack: EvaluationStack;
 };
 
+export type FinishRunInput = {
+  logsUrl: Scalars["String"]["input"];
+  runId: Scalars["ID"]["input"];
+  status: RunStatus;
+};
+
+export type FinishRunPayload = {
+  __typename?: "FinishRunPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run?: Maybe<Run>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type FloatMetadataEntry = MetadataEntry & {
   __typename?: "FloatMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
+  /** String representation of the float to support nan/inf/-inf */
+  floatRepr: Scalars["String"]["output"];
   floatValue?: Maybe<Scalars["Float"]["output"]>;
   label: Scalars["String"]["output"];
 };
@@ -1656,6 +2334,12 @@ export type FreshnessPolicy = {
   cronScheduleTimezone?: Maybe<Scalars["String"]["output"]>;
   lastEvaluationTimestamp?: Maybe<Scalars["String"]["output"]>;
   maximumLagMinutes: Scalars["Float"]["output"];
+};
+
+export type FreshnessStatusInfo = {
+  __typename?: "FreshnessStatusInfo";
+  freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata?: Maybe<AssetHealthFreshnessMeta>;
 };
 
 export type Graph = SolidContainer & {
@@ -1715,6 +2399,27 @@ export type HandledOutputEvent = DisplayableEvent &
     timestamp: Scalars["String"]["output"];
   };
 
+export type HealthChangedEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename?: "HealthChangedEvent";
+    assetKey?: Maybe<AssetKey>;
+    description?: Maybe<Scalars["String"]["output"]>;
+    eventType?: Maybe<DagsterEventType>;
+    label?: Maybe<Scalars["String"]["output"]>;
+    level: LogLevel;
+    message: Scalars["String"]["output"];
+    metadataEntries: Array<MetadataEntry>;
+    partition?: Maybe<Scalars["String"]["output"]>;
+    runId: Scalars["String"]["output"];
+    runOrError: RunOrError;
+    solidHandleID?: Maybe<Scalars["String"]["output"]>;
+    stepKey?: Maybe<Scalars["String"]["output"]>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars["String"]["output"];
+  };
+
 export type HookCompletedEvent = MessageEvent &
   StepEvent & {
     __typename?: "HookCompletedEvent";
@@ -1761,6 +2466,7 @@ export type IPipelineSnapshot = {
   metadataEntries: Array<MetadataEntry>;
   modes: Array<Mode>;
   name: Scalars["String"]["output"];
+  owners: Array<DefinitionOwner>;
   parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
   pipelineSnapshotId: Scalars["String"]["output"];
   runs: Array<Run>;
@@ -1828,6 +2534,7 @@ export type Instance = {
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars["String"]["output"];
+  freshnessEvaluationEnabled: Scalars["Boolean"]["output"];
   hasInfo: Scalars["Boolean"]["output"];
   id: Scalars["String"]["output"];
   info?: Maybe<Scalars["String"]["output"]>;
@@ -1981,6 +2688,10 @@ export type IntMetadataEntry = MetadataEntry & {
   label: Scalars["String"]["output"];
 };
 
+export type InternalFreshnessPolicy =
+  | CronFreshnessPolicy
+  | TimeWindowFreshnessPolicy;
+
 export type InvalidOutputError = {
   __typename?: "InvalidOutputError";
   invalidOutputName: Scalars["String"]["output"];
@@ -2003,12 +2714,50 @@ export type InvalidSubsetError = Error & {
   pipeline: Pipeline;
 };
 
+export type Invitation = {
+  __typename?: "Invitation";
+  acceptedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  acceptedBy?: Maybe<User>;
+  createdAt: Scalars["DateTime"]["output"];
+  deletedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  email: Scalars["String"]["output"];
+  expiresAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
+  invitedBy: User;
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  status: InvitationStatus;
+  userRole: MemberRole;
+};
+
+export type InvitationConnection = {
+  __typename?: "InvitationConnection";
+  edges: Array<InvitationEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type InvitationEdge = {
+  __typename?: "InvitationEdge";
+  cursor: Scalars["String"]["output"];
+  node: Invitation;
+};
+
+/** Invitation status */
+export enum InvitationStatus {
+  Accepted = "ACCEPTED",
+  Expired = "EXPIRED",
+  Pending = "PENDING",
+  Revoked = "REVOKED",
+}
+
 export type Job = IPipelineSnapshot &
   SolidContainer & {
     __typename?: "Job";
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
@@ -2016,6 +2765,7 @@ export type Job = IPipelineSnapshot &
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     partition?: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -2109,6 +2859,7 @@ export type LaunchBackfillParams = {
   partitionNames?: InputMaybe<Array<Scalars["String"]["input"]>>;
   partitionsByAssets?: InputMaybe<Array<InputMaybe<PartitionsByAssetSelector>>>;
   reexecutionSteps?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  runConfigData?: InputMaybe<Scalars["RunConfigData"]["input"]>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
   title?: InputMaybe<Scalars["String"]["input"]>;
@@ -2245,6 +2996,13 @@ export type LocalFileCodeReference = {
   label?: Maybe<Scalars["String"]["output"]>;
   lineNumber?: Maybe<Scalars["Int"]["output"]>;
 };
+
+export type LocationDocsJson = {
+  __typename?: "LocationDocsJson";
+  json: Scalars["JSONString"]["output"];
+};
+
+export type LocationDocsJsonOrError = LocationDocsJson | PythonError;
 
 export type LocationStateChangeEvent = {
   __typename?: "LocationStateChangeEvent";
@@ -2429,6 +3187,11 @@ export type MaterializedPartitionRangeStatuses2D = {
   secondaryDim: PartitionStatus1D;
 };
 
+export enum MemberRole {
+  Admin = "admin",
+  Owner = "owner",
+}
+
 export type MessageEvent = {
   eventType?: Maybe<DagsterEventType>;
   level: LogLevel;
@@ -2497,11 +3260,29 @@ export type MultiPartitionStatuses = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type Mutation = {
   __typename?: "Mutation";
+  _empty?: Maybe<Scalars["String"]["output"]>;
   _no_fields_accessible?: Maybe<Scalars["String"]["output"]>;
+  /** Accept an invitation */
+  acceptInvitation: AcceptInvitationPayload;
   /** Adds a partition to a dynamic partition set. */
   addDynamicPartition: AddDynamicPartitionResult;
+  /** Add a user to organization */
+  addUserByEmail: AddUserByEmailPayload;
   /** Cancels a set of partition backfill runs. */
   cancelPartitionBackfill: CancelBackfillResult;
+  /** Cancel a run */
+  cancelRun: CancelRunPayload;
+  createDataModel: CreateDataModelPayload;
+  createDataModelRelease: CreateDataModelReleasePayload;
+  createDataModelRevision: CreateDataModelRevisionPayload;
+  /** Create a new dataset */
+  createDataset: CreateDatasetPayload;
+  /** Create an invitation */
+  createInvitation: CreateInvitationPayload;
+  /** Create a new notebook */
+  createNotebook: CreateNotebookPayload;
+  /** Request a run */
+  createRunRequest: CreateRunRequestPayload;
   /** Sets the concurrency limit for a given concurrency key. */
   deleteConcurrencyLimit: Scalars["Boolean"]["output"];
   /** Deletes partitions from a dynamic partition set. */
@@ -2510,6 +3291,8 @@ export type Mutation = {
   deletePipelineRun: DeletePipelineRunResult;
   /** Deletes a run from storage. */
   deleteRun: DeletePipelineRunResult;
+  /** System only. Mark a run as finished. */
+  finishRun: FinishRunPayload;
   /** Frees concurrency slots. */
   freeConcurrencySlots: Scalars["Boolean"]["output"];
   /** Frees the concurrency slots occupied by a specific run. */
@@ -2534,6 +3317,8 @@ export type Mutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   /** Reloads the workspace and its code location servers. */
   reloadWorkspace: ReloadWorkspaceMutationResult;
+  /** Remove a member from organization */
+  removeMember: RemoveMemberPayload;
   /** Reports runless events for an asset or a subset of its partitions. */
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
   /** Reset a schedule to its status defined in code, otherwise disable it from launching runs for a job. */
@@ -2542,6 +3327,10 @@ export type Mutation = {
   resetSensor: SensorOrError;
   /** Resumes a set of partition backfill runs. Resuming a backfill will not retry any failed runs. */
   resumePartitionBackfill: ResumeBackfillResult;
+  /** Revoke an invitation */
+  revokeInvitation: RevokeInvitationPayload;
+  /** Save notebook preview image */
+  saveNotebookPreview: SaveNotebookPreviewPayload;
   /** Enable a schedule to launch runs for a job based on external state change. */
   scheduleDryRun: ScheduleDryRunResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
@@ -2556,6 +3345,8 @@ export type Mutation = {
   setSensorCursor: SensorOrError;
   /** Shuts down a code location server. */
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
+  /** System only. Mark a run as started. */
+  startRun: StartRunPayload;
   /** Enable a schedule to launch runs for a job at a fixed interval. */
   startSchedule: ScheduleMutationResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
@@ -2570,8 +3361,19 @@ export type Mutation = {
   terminateRun: TerminateRunResult;
   /** Terminates a set of runs given their run IDs. */
   terminateRuns: TerminateRunsResultOrError;
+  /** Update a dataset */
+  updateDataset: UpdateDatasetPayload;
+  /** Update member role */
+  updateMemberRole: UpdateMemberRolePayload;
+  /** Update a notebook */
+  updateNotebook: UpdateNotebookPayload;
   /** Deletes asset history from storage. */
   wipeAssets: AssetWipeMutationResult;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationAcceptInvitationArgs = {
+  input: AcceptInvitationInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2582,8 +3384,53 @@ export type MutationAddDynamicPartitionArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationAddUserByEmailArgs = {
+  input: AddUserByEmailInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCancelPartitionBackfillArgs = {
   backfillId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCancelRunArgs = {
+  input: CancelRunInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelArgs = {
+  input: CreateDataModelInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelReleaseArgs = {
+  input: CreateDataModelReleaseInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelRevisionArgs = {
+  input: CreateDataModelRevisionInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDatasetArgs = {
+  input: CreateDatasetInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateInvitationArgs = {
+  input: CreateInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateNotebookArgs = {
+  input: CreateNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateRunRequestArgs = {
+  input: CreateRunRequestInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2606,6 +3453,11 @@ export type MutationDeletePipelineRunArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteRunArgs = {
   runId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationFinishRunArgs = {
+  input: FinishRunInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2670,6 +3522,11 @@ export type MutationReloadRepositoryLocationArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationRemoveMemberArgs = {
+  input: RemoveMemberInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReportRunlessAssetEventsArgs = {
   eventParams: ReportRunlessAssetEventsParams;
 };
@@ -2687,6 +3544,16 @@ export type MutationResetSensorArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationResumePartitionBackfillArgs = {
   backfillId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationRevokeInvitationArgs = {
+  input: RevokeInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationSaveNotebookPreviewArgs = {
+  input: SaveNotebookPreviewInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2721,6 +3588,11 @@ export type MutationSetSensorCursorArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationShutdownRepositoryLocationArgs = {
   repositoryLocationName: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationStartRunArgs = {
+  input: StartRunInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2766,6 +3638,21 @@ export type MutationTerminateRunsArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateDatasetArgs = {
+  input: UpdateDatasetInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateMemberRoleArgs = {
+  input: UpdateMemberRoleInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateNotebookArgs = {
+  input: UpdateNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationWipeAssetsArgs = {
   assetPartitionRanges: Array<PartitionsByAssetSelector>;
 };
@@ -2794,6 +3681,33 @@ export type NodeInvocationSite = {
   __typename?: "NodeInvocationSite";
   pipeline: Pipeline;
   solidHandle: SolidHandle;
+};
+
+export type Notebook = {
+  __typename?: "Notebook";
+  createdAt: Scalars["DateTime"]["output"];
+  creator: User;
+  creatorId: Scalars["ID"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  preview?: Maybe<Scalars["String"]["output"]>;
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type NotebookConnection = {
+  __typename?: "NotebookConnection";
+  edges: Array<NotebookEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type NotebookEdge = {
+  __typename?: "NotebookEdge";
+  cursor: Scalars["String"]["output"];
+  node: Notebook;
 };
 
 export type NotebookMetadataEntry = MetadataEntry & {
@@ -2918,6 +3832,57 @@ export enum OrderBy {
   /** Sorts the data in descending order */
   Desc = "Desc",
 }
+
+export type Organization = {
+  __typename?: "Organization";
+  createdAt: Scalars["DateTime"]["output"];
+  datasets: DatasetConnection;
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  members: UserConnection;
+  name: Scalars["String"]["output"];
+  notebooks: NotebookConnection;
+  updatedAt: Scalars["DateTime"]["output"];
+};
+
+export type OrganizationDatasetsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type OrganizationMembersArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type OrganizationNotebooksArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type OrganizationConnection = {
+  __typename?: "OrganizationConnection";
+  edges: Array<OrganizationEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type OrganizationEdge = {
+  __typename?: "OrganizationEdge";
+  cursor: Scalars["String"]["output"];
+  node: Organization;
+};
+
+export type OrganizationMember = {
+  __typename?: "OrganizationMember";
+  createdAt: Scalars["DateTime"]["output"];
+  id: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  user: User;
+  userId: Scalars["ID"]["output"];
+  userRole: MemberRole;
+};
 
 export type Oso_ArtifactsByCollectionV1 = {
   __typename?: "Oso_ArtifactsByCollectionV1";
@@ -4069,6 +5034,15 @@ export type OutputMapping = {
   mappedOutput: Output;
 };
 
+/** Cursor-based pagination information */
+export type PageInfo = {
+  __typename?: "PageInfo";
+  endCursor?: Maybe<Scalars["String"]["output"]>;
+  hasNextPage: Scalars["Boolean"]["output"];
+  hasPreviousPage: Scalars["Boolean"]["output"];
+  startCursor?: Maybe<Scalars["String"]["output"]>;
+};
+
 export type ParentMaterializedRuleEvaluationData = {
   __typename?: "ParentMaterializedRuleEvaluationData";
   updatedAssetKeys?: Maybe<Array<AssetKey>>;
@@ -4182,6 +5156,13 @@ export enum PartitionDefinitionType {
   Static = "STATIC",
   TimeWindow = "TIME_WINDOW",
 }
+
+export type PartitionKeyConnection = {
+  __typename?: "PartitionKeyConnection";
+  cursor: Scalars["String"]["output"];
+  hasMore: Scalars["Boolean"]["output"];
+  results: Array<Scalars["String"]["output"]>;
+};
 
 export type PartitionKeyRange = {
   __typename?: "PartitionKeyRange";
@@ -4362,6 +5343,7 @@ export type PartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   numCandidates?: Maybe<Scalars["Int"]["output"]>;
   numTrue: Scalars["Int"]["output"];
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
@@ -4416,6 +5398,7 @@ export type Pipeline = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
@@ -4423,6 +5406,7 @@ export type Pipeline = IPipelineSnapshot &
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     partition?: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -4648,11 +5632,13 @@ export type PipelineSnapshot = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<DagsterType>;
     description?: Maybe<Scalars["String"]["output"]>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
     id: Scalars["ID"]["output"];
     metadataEntries: Array<MetadataEntry>;
     modes: Array<Mode>;
     name: Scalars["String"]["output"];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId?: Maybe<Scalars["String"]["output"]>;
     pipelineSnapshotId: Scalars["String"]["output"];
     runTags: Array<PipelineTag>;
@@ -4752,6 +5738,7 @@ export type PythonError = Error & {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type Query = {
   __typename?: "Query";
+  _empty?: Maybe<Scalars["String"]["output"]>;
   _service: _Service;
   /** Retrieve all the top level resources. */
   allTopLevelResourceDetailsOrError: ResourceDetailsListOrError;
@@ -4771,13 +5758,15 @@ export type Query = {
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   /** Retrieve an asset node by asset key. */
   assetNodeOrError: AssetNodeOrError;
-  /** Retrieve asset nodes after applying a filter on asset group, job, and asset keys. */
+  /** Retrieve asset nodes (assets with a definition) after applying a filter on asset group, job, and asset keys. */
   assetNodes: Array<AssetNode>;
   /** Retrieve an asset by asset key. */
   assetOrError: AssetOrError;
+  /** Retrieve materialized asset records after applying a prefix filter, cursor, and limit. */
+  assetRecordsOrError: AssetRecordsOrError;
   /** Retrieve the latest materializations for a set of assets by asset keys. */
   assetsLatestInfo: Array<AssetLatestInfo>;
-  /** Retrieve assets after applying a prefix filter, cursor, and limit. */
+  /** Retrieve all assets (both with or without a definition) after providing a list of asset keys, applying a prefix filter, cursor, and limit. */
   assetsOrError: AssetsOrError;
   /** Retrieve the auto materialization evaluation records for an asset. */
   autoMaterializeAssetEvaluationsOrError?: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
@@ -4791,6 +5780,14 @@ export type Query = {
   capturedLogs: CapturedLogs;
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
+  dataModel?: Maybe<DataModel>;
+  dataModels: DataModelConnection;
+  /** Get a dataset by ID */
+  dataset?: Maybe<Dataset>;
+  /** Get table column metadata */
+  datasetTableMetadata: Array<TableColumn>;
+  /** List all datasets */
+  datasets: DatasetConnection;
   /** Retrieve the execution plan for a job and its run configuration. */
   executionPlanOrError: ExecutionPlanOrError;
   /** Retrieve a graph by its location name, repository name, and graph name. */
@@ -4801,12 +5798,26 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   /** Retrieve the state for a group of instigators (schedule/sensor) by their containing repository id. */
   instigationStatesOrError: InstigationStatesOrError;
+  /** Get an invitation by ID */
+  invitation?: Maybe<Invitation>;
   /** Retrieve whether the run configuration is valid or invalid. */
   isPipelineConfigValid: PipelineConfigValidationResult;
+  /** Retrieve the latest available DefsStateInfo for the current workspace. */
+  latestDefsStateInfo?: Maybe<DefsStateInfo>;
   /** Retrieve location status for workspace locations. */
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
+  /** List invitations for current user */
+  myInvitations: InvitationConnection;
+  /** Get a notebook by ID */
+  notebook?: Maybe<Notebook>;
+  /** List all notebooks */
+  notebooks: NotebookConnection;
+  /** Get an organization by ID or name */
+  organization?: Maybe<Organization>;
+  /** List all organizations */
+  organizations: OrganizationConnection;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
   oso_artifactsByUserV1?: Maybe<Array<Oso_ArtifactsByUserV1>>;
@@ -4870,6 +5881,8 @@ export type Query = {
   repositoryOrError: RepositoryOrError;
   /** Retrieve the list of resources for a given job. */
   resourcesOrError: ResourcesOrError;
+  /** Get a run by ID */
+  run?: Maybe<Run>;
   /** Retrieve the run configuration schema for a job. */
   runConfigSchemaOrError: RunConfigSchemaOrError;
   /** Retrieve a group of runs with the matching root run id. */
@@ -4900,6 +5913,8 @@ export type Query = {
   sensorsOrError: SensorsOrError;
   /** Whether or not the NUX should be shown to the user */
   shouldShowNux: Scalars["Boolean"]["output"];
+  /** System only. Access system level queries. */
+  system: System;
   /** Provides fields for testing behavior */
   test?: Maybe<TestFields>;
   /** Retrieve a top level resource by its location name, repository name, and resource name. */
@@ -4912,6 +5927,8 @@ export type Query = {
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   /** Retrieve the version of Dagster running in the Dagster deployment. */
   version: Scalars["String"]["output"];
+  /** Get the currently authenticated user */
+  viewer: Viewer;
   /** Retrieve a workspace entry by name. */
   workspaceLocationEntryOrError?: Maybe<WorkspaceLocationEntryOrError>;
   /** Retrieve the workspace and its locations. */
@@ -4985,12 +6002,20 @@ export type QueryAssetOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryAssetRecordsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars["String"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  prefix?: InputMaybe<Array<Scalars["String"]["input"]>>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetsLatestInfoArgs = {
   assetKeys: Array<AssetKeyInput>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryAssetsOrErrorArgs = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   cursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   prefix?: InputMaybe<Array<Scalars["String"]["input"]>>;
@@ -5032,6 +6057,36 @@ export type QueryCapturedLogsMetadataArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDataModelArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDataModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDatasetArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDatasetTableMetadataArgs = {
+  catalogName: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  schemaName: Scalars["String"]["input"];
+  tableName: Scalars["String"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDatasetsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryExecutionPlanOrErrorArgs = {
   mode: Scalars["String"]["input"];
   pipeline: PipelineSelector;
@@ -5055,6 +6110,11 @@ export type QueryInstigationStatesOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryInvitationArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryIsPipelineConfigValidArgs = {
   mode: Scalars["String"]["input"];
   pipeline: PipelineSelector;
@@ -5066,6 +6126,35 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars["String"]["input"]>;
   limit?: InputMaybe<Scalars["Int"]["input"]>;
   runId: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryMyInvitationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryNotebookArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryNotebooksArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOrganizationArgs = {
+  id?: InputMaybe<Scalars["ID"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryOrganizationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5376,6 +6465,11 @@ export type QueryResourcesOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryRunArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunConfigSchemaOrErrorArgs = {
   mode?: InputMaybe<Scalars["String"]["input"]>;
   selector: PipelineSelector;
@@ -5471,12 +6565,17 @@ export type QueryWorkspaceLocationEntryOrErrorArgs = {
 };
 
 export type ReexecutionParams = {
+  /** When re-executing a single run, pass new tags which will upsert over tags on the parent run. */
+  extraTags?: InputMaybe<Array<ExecutionTag>>;
   parentRunId: Scalars["String"]["input"];
   strategy: ReexecutionStrategy;
+  /** When re-executing a single run, pass false to avoid adding the parent run tags by default. */
+  useParentRunTags?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
 export enum ReexecutionStrategy {
   AllSteps = "ALL_STEPS",
+  FromAssetFailure = "FROM_ASSET_FAILURE",
   FromFailure = "FROM_FAILURE",
 }
 
@@ -5563,6 +6662,17 @@ export type ReloadWorkspaceMutationResult =
   | UnauthorizedError
   | Workspace;
 
+export type RemoveMemberInput = {
+  orgId: Scalars["ID"]["input"];
+  userId: Scalars["ID"]["input"];
+};
+
+export type RemoveMemberPayload = {
+  __typename?: "RemoveMemberPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type ReportRunlessAssetEventsParams = {
   assetKey: AssetKeyInput;
   description?: InputMaybe<Scalars["String"]["input"]>;
@@ -5593,9 +6703,13 @@ export type Repository = {
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
   displayMetadata: Array<RepositoryMetadata>;
+  /** Retrieves whether the code location has integrated docs. */
+  hasLocationDocs: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   jobs: Array<Job>;
   location: RepositoryLocation;
+  /** Retrieves JSON blob to drive integrated code location docs. */
+  locationDocsJsonOrError: LocationDocsJsonOrError;
   name: Scalars["String"]["output"];
   origin: RepositoryOrigin;
   partitionSets: Array<PartitionSet>;
@@ -5833,6 +6947,16 @@ export type ResumeBackfillSuccess = {
   backfillId: Scalars["String"]["output"];
 };
 
+export type RevokeInvitationInput = {
+  invitationId: Scalars["ID"]["input"];
+};
+
+export type RevokeInvitationPayload = {
+  __typename?: "RevokeInvitationPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename?: "Run";
@@ -5850,9 +6974,13 @@ export type Run = PipelineRun &
      */
     capturedLogs: CapturedLogs;
     creationTime: Scalars["Float"]["output"];
+    datasetId: Scalars["ID"]["output"];
+    definition: RunDefinition;
     endTime?: Maybe<Scalars["Float"]["output"]>;
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
+    externalJobSource?: Maybe<Scalars["String"]["output"]>;
+    finishedAt?: Maybe<Scalars["DateTime"]["output"]>;
     hasConcurrencyKeySlots: Scalars["Boolean"]["output"];
     hasDeletePermission: Scalars["Boolean"]["output"];
     hasReExecutePermission: Scalars["Boolean"]["output"];
@@ -5861,6 +6989,7 @@ export type Run = PipelineRun &
     hasUnconstrainedRootNodes: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
+    logsUrl: Scalars["String"]["output"];
     mode: Scalars["String"]["output"];
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
     parentRunId?: Maybe<Scalars["String"]["output"]>;
@@ -5878,11 +7007,13 @@ export type Run = PipelineRun &
     runStatus: RunStatus;
     solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     startTime?: Maybe<Scalars["Float"]["output"]>;
+    startedAt: Scalars["DateTime"]["output"];
     stats: RunStatsSnapshotOrError;
     status: RunStatus;
     stepKeysToExecute?: Maybe<Array<Scalars["String"]["output"]>>;
     stepStats: Array<RunStepStats>;
     tags: Array<PipelineTag>;
+    triggerType: RunTriggerType;
     updateTime?: Maybe<Scalars["Float"]["output"]>;
   };
 
@@ -5991,6 +7122,28 @@ export type RunConflict = Error &
     message: Scalars["String"]["output"];
   };
 
+export type RunConnection = {
+  __typename?: "RunConnection";
+  edges: Array<RunEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+/**
+ * The scheduler schema defines types and queries related to scheduling data model
+ * runs and ingest jobs.
+ *
+ * Runs are a generic representation of a data task that has been executed. So it's
+ * meant to be quite flexible to accommodate different types of runs in the future.
+ */
+export type RunDefinition = DataConnector | DataIngestion | DataModel;
+
+export enum RunDefinitionType {
+  DataConnector = "DATA_CONNECTOR",
+  DataIngestion = "DATA_INGESTION",
+  DataModel = "DATA_MODEL",
+}
+
 export type RunDequeuedEvent = MessageEvent &
   RunEvent & {
     __typename?: "RunDequeuedEvent";
@@ -6003,6 +7156,12 @@ export type RunDequeuedEvent = MessageEvent &
     stepKey?: Maybe<Scalars["String"]["output"]>;
     timestamp: Scalars["String"]["output"];
   };
+
+export type RunEdge = {
+  __typename?: "RunEdge";
+  cursor: Scalars["String"]["output"];
+  node: Run;
+};
 
 export type RunEnqueuedEvent = MessageEvent &
   RunEvent & {
@@ -6092,10 +7251,42 @@ export type RunQueueConfig = {
   tagConcurrencyLimitsYaml?: Maybe<Scalars["String"]["output"]>;
 };
 
+/**
+ * Special type for system related reads that are only allowed by authenticated
+ * service accounts that have system privileges.
+ */
+export type RunQueueItem = {
+  __typename?: "RunQueueItem";
+  definition: RunDefinition;
+  id: Scalars["ID"]["output"];
+  runRequest?: Maybe<RunRequest>;
+  runRequestId?: Maybe<Scalars["ID"]["output"]>;
+  scheduledAt: Scalars["DateTime"]["output"];
+};
+
+export type RunQueueItemConnection = {
+  __typename?: "RunQueueItemConnection";
+  edges: Array<RunQueueItemEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type RunQueueItemEdge = {
+  __typename?: "RunQueueItemEdge";
+  cursor: Scalars["String"]["output"];
+  node: RunQueueItem;
+};
+
 export type RunRequest = {
   __typename?: "RunRequest";
+  assetChecks?: Maybe<Array<AssetCheckhandle>>;
   assetSelection?: Maybe<Array<AssetKey>>;
+  definition: RunDefinition;
+  id: Scalars["ID"]["output"];
   jobName?: Maybe<Scalars["String"]["output"]>;
+  requestedAt: Scalars["DateTime"]["output"];
+  requestedBy: User;
+  requestedByUserId: Scalars["ID"]["output"];
   runConfigYaml: Scalars["String"]["output"];
   runKey?: Maybe<Scalars["String"]["output"]>;
   tags: Array<PipelineTag>;
@@ -6149,6 +7340,7 @@ export enum RunStatus {
   Canceled = "CANCELED",
   /** Runs that are in-progress and pending to be canceled. */
   Canceling = "CANCELING",
+  Failed = "FAILED",
   /** Runs that have failed to complete. */
   Failure = "FAILURE",
   /** Runs that are managed outside of the Dagster control plane. */
@@ -6157,6 +7349,7 @@ export enum RunStatus {
   NotStarted = "NOT_STARTED",
   /** Runs waiting to be launched by the Dagster Daemon. */
   Queued = "QUEUED",
+  Running = "RUNNING",
   /** Runs that have been launched and execution has started. */
   Started = "STARTED",
   /** Runs that have been launched, but execution has not yet started. */
@@ -6204,6 +7397,11 @@ export type RunTags = {
 };
 
 export type RunTagsOrError = PythonError | RunTags;
+
+export enum RunTriggerType {
+  Manual = "MANUAL",
+  Scheduled = "SCHEDULED",
+}
 
 export type Runs = PipelineRuns & {
   __typename?: "Runs";
@@ -6277,6 +7475,19 @@ export type RuntimeMismatchConfigError = PipelineConfigValidationError & {
   valueRep?: Maybe<Scalars["String"]["output"]>;
 };
 
+export type SaveNotebookPreviewInput = {
+  notebookId: Scalars["ID"]["input"];
+  preview: Scalars["String"]["input"];
+};
+
+export type SaveNotebookPreviewPayload = {
+  __typename?: "SaveNotebookPreviewPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
+  previewUrl?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type ScalarUnionConfigType = ConfigType & {
   __typename?: "ScalarUnionConfigType";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -6329,6 +7540,7 @@ export type Schedule = {
   metadataEntries: Array<MetadataEntry>;
   mode: Scalars["String"]["output"];
   name: Scalars["String"]["output"];
+  owners: Array<DefinitionOwner>;
   partitionSet?: Maybe<PartitionSet>;
   pipelineName: Scalars["String"]["output"];
   potentialTickTimestamps: Array<Scalars["Float"]["output"]>;
@@ -6465,6 +7677,7 @@ export type Sensor = {
   minIntervalSeconds: Scalars["Int"]["output"];
   name: Scalars["String"]["output"];
   nextTick?: Maybe<DryRunInstigationTick>;
+  owners: Array<DefinitionOwner>;
   sensorState: InstigationState;
   sensorType: SensorType;
   tags: Array<DefinitionTag>;
@@ -6624,6 +7837,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename?: "SpecificPartitionAssetConditionEvaluationNode";
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
+  entityKey: EntityKey;
   metadataEntries: Array<MetadataEntry>;
   status: AssetConditionEvaluationStatus;
   uniqueId: Scalars["String"]["output"];
@@ -6652,6 +7866,19 @@ export enum StaleStatus {
   Missing = "MISSING",
   Stale = "STALE",
 }
+
+export type StartRunInput = {
+  definitionId: Scalars["ID"]["input"];
+  definitionType: RunDefinitionType;
+  runRequestId?: InputMaybe<Scalars["ID"]["input"]>;
+};
+
+export type StartRunPayload = {
+  __typename?: "StartRunPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run?: Maybe<Run>;
+  success: Scalars["Boolean"]["output"];
+};
 
 /** Enable a schedule to launch runs for a job at a fixed interval. */
 export type StartScheduleMutation = {
@@ -6787,10 +8014,42 @@ export type SubscriptionPipelineRunLogsArgs = {
   runId: Scalars["ID"]["input"];
 };
 
+export type System = {
+  __typename?: "System";
+  dataIngestionRunQueue: RunQueueItemConnection;
+  dataModelRunQueue: RunQueueItemConnection;
+  /**
+   * Resolve tables by their reference names to the backend reference format that
+   * will be used when the query is run on trino. This is used by the query rewriter
+   * to batch resolve table references as well as other internal operations.
+   */
+  resolveTables: Array<Scalars["String"]["output"]>;
+};
+
+export type SystemDataIngestionRunQueueArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type SystemDataModelRunQueueArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+export type SystemResolveTablesArgs = {
+  references: Array<Scalars["String"]["input"]>;
+};
+
 export type Table = {
   __typename?: "Table";
+  columns: Array<TableColumn>;
+  dataset: Dataset;
+  datasetId: Scalars["ID"]["output"];
+  id: Scalars["ID"]["output"];
+  name: Scalars["String"]["output"];
   records: Array<Scalars["String"]["output"]>;
   schema: TableSchema;
+  source: TableSource;
 };
 
 export type TableColumn = {
@@ -6798,6 +8057,7 @@ export type TableColumn = {
   constraints: TableColumnConstraints;
   description?: Maybe<Scalars["String"]["output"]>;
   name: Scalars["String"]["output"];
+  nullable: Scalars["Boolean"]["output"];
   tags: Array<DefinitionTag>;
   type: Scalars["String"]["output"];
 };
@@ -6828,9 +8088,22 @@ export type TableColumnLineageMetadataEntry = MetadataEntry & {
   lineage: Array<TableColumnLineageEntry>;
 };
 
+export type TableConnection = {
+  __typename?: "TableConnection";
+  edges: Array<TableEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type TableConstraints = {
   __typename?: "TableConstraints";
   other: Array<Scalars["String"]["output"]>;
+};
+
+export type TableEdge = {
+  __typename?: "TableEdge";
+  cursor: Scalars["String"]["output"];
+  node: Table;
 };
 
 export type TableMetadataEntry = MetadataEntry & {
@@ -6853,6 +8126,8 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
   schema: TableSchema;
 };
 
+export type TableSource = DataConnector | DataIngestion | DataModel;
+
 export type TagInput = {
   key: Scalars["String"]["input"];
   value: Scalars["String"]["input"];
@@ -6867,6 +8142,11 @@ export type Target = {
 
 export type TeamAssetOwner = {
   __typename?: "TeamAssetOwner";
+  team: Scalars["String"]["output"];
+};
+
+export type TeamDefinitionOwner = {
+  __typename?: "TeamDefinitionOwner";
   team: Scalars["String"]["output"];
 };
 
@@ -6964,6 +8244,12 @@ export type TimePartitionStatuses = {
   ranges: Array<TimePartitionRangeStatus>;
 };
 
+export type TimeWindowFreshnessPolicy = {
+  __typename?: "TimeWindowFreshnessPolicy";
+  failWindowSeconds: Scalars["Int"]["output"];
+  warnWindowSeconds?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type TimestampMetadataEntry = MetadataEntry & {
   __typename?: "TimestampMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -6995,6 +8281,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars["String"]["output"]>;
   description: Scalars["String"]["output"];
   endTimestamp?: Maybe<Scalars["Float"]["output"]>;
+  entityKey: EntityKey;
   metadataEntries: Array<MetadataEntry>;
   startTimestamp?: Maybe<Scalars["Float"]["output"]>;
   status: AssetConditionEvaluationStatus;
@@ -7012,6 +8299,47 @@ export type UnpartitionedAssetStatus = {
 export type UnsupportedOperationError = Error & {
   __typename?: "UnsupportedOperationError";
   message: Scalars["String"]["output"];
+};
+
+export type UpdateDatasetInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  displayName?: InputMaybe<Scalars["String"]["input"]>;
+  id: Scalars["ID"]["input"];
+  isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type UpdateDatasetPayload = {
+  __typename?: "UpdateDatasetPayload";
+  dataset?: Maybe<Dataset>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateMemberRoleInput = {
+  orgId: Scalars["ID"]["input"];
+  role: MemberRole;
+  userId: Scalars["ID"]["input"];
+};
+
+export type UpdateMemberRolePayload = {
+  __typename?: "UpdateMemberRolePayload";
+  member?: Maybe<OrganizationMember>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateNotebookInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  id: Scalars["ID"]["input"];
+  name?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type UpdateNotebookPayload = {
+  __typename?: "UpdateNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type UrlCodeReference = {
@@ -7034,9 +8362,86 @@ export type UsedSolid = {
   invocations: Array<NodeInvocationSite>;
 };
 
+export type User = {
+  __typename?: "User";
+  avatarUrl?: Maybe<Scalars["String"]["output"]>;
+  email: Scalars["String"]["output"];
+  fullName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  organizations: OrganizationConnection;
+  role: Scalars["String"]["output"];
+};
+
+export type UserOrganizationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
 export type UserAssetOwner = {
   __typename?: "UserAssetOwner";
   email: Scalars["String"]["output"];
+};
+
+export type UserConnection = {
+  __typename?: "UserConnection";
+  edges: Array<UserEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type UserDefinitionOwner = {
+  __typename?: "UserDefinitionOwner";
+  email: Scalars["String"]["output"];
+};
+
+export type UserEdge = {
+  __typename?: "UserEdge";
+  cursor: Scalars["String"]["output"];
+  node: User;
+};
+
+/** Currently authenticated user */
+export type Viewer = {
+  __typename?: "Viewer";
+  avatarUrl?: Maybe<Scalars["String"]["output"]>;
+  datasets: DatasetConnection;
+  email: Scalars["String"]["output"];
+  fullName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  invitations: InvitationConnection;
+  notebooks: NotebookConnection;
+  organizations: OrganizationConnection;
+  runs: RunConnection;
+};
+
+/** Currently authenticated user */
+export type ViewerDatasetsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** Currently authenticated user */
+export type ViewerInvitationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** Currently authenticated user */
+export type ViewerNotebooksArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** Currently authenticated user */
+export type ViewerOrganizationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+};
+
+/** Currently authenticated user */
+export type ViewerRunsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type WaitingOnKeysRuleEvaluationData = {
@@ -7052,6 +8457,7 @@ export type Workspace = {
 
 export type WorkspaceLocationEntry = {
   __typename?: "WorkspaceLocationEntry";
+  defsStateInfo?: Maybe<DefsStateInfo>;
   displayMetadata: Array<RepositoryMetadata>;
   featureFlags: Array<FeatureFlag>;
   id: Scalars["ID"]["output"];
@@ -7099,6 +8505,120 @@ export type WrappingDagsterType = {
 export type _Service = {
   __typename?: "_Service";
   sdl: Scalars["String"]["output"];
+};
+
+export enum Link__Purpose {
+  /** `EXECUTION` features provide metadata necessary for operation execution. */
+  Execution = "EXECUTION",
+  /** `SECURITY` features provide metadata necessary to securely resolve fields. */
+  Security = "SECURITY",
+}
+
+export type SavePreviewMutationVariables = Exact<{
+  input: SaveNotebookPreviewInput;
+}>;
+
+export type SavePreviewMutation = {
+  __typename?: "Mutation";
+  saveNotebookPreview: {
+    __typename?: "SaveNotebookPreviewPayload";
+    success: boolean;
+    message?: string | null;
+  };
+};
+
+export type CreateDatasetMutationVariables = Exact<{
+  input: CreateDatasetInput;
+}>;
+
+export type CreateDatasetMutation = {
+  __typename?: "Mutation";
+  createDataset: {
+    __typename?: "CreateDatasetPayload";
+    success: boolean;
+    message?: string | null;
+    dataset?: {
+      __typename?: "Dataset";
+      id: string;
+      name: string;
+      displayName?: string | null;
+      description?: string | null;
+      type: DatasetType;
+      isPublic: boolean;
+    } | null;
+  };
+};
+
+export type UpdateDatasetMutationVariables = Exact<{
+  input: UpdateDatasetInput;
+}>;
+
+export type UpdateDatasetMutation = {
+  __typename?: "Mutation";
+  updateDataset: {
+    __typename?: "UpdateDatasetPayload";
+    success: boolean;
+    message?: string | null;
+    dataset?: {
+      __typename?: "Dataset";
+      id: string;
+      name: string;
+      displayName?: string | null;
+      description?: string | null;
+      isPublic: boolean;
+    } | null;
+  };
+};
+
+export type CreateDataModelMutationVariables = Exact<{
+  input: CreateDataModelInput;
+}>;
+
+export type CreateDataModelMutation = {
+  __typename?: "Mutation";
+  createDataModel: {
+    __typename?: "CreateDataModelPayload";
+    success: boolean;
+    message?: string | null;
+    dataModel?: {
+      __typename?: "DataModel";
+      id: string;
+      name: string;
+      isEnabled: boolean;
+    } | null;
+  };
+};
+
+export type CreateDataModelRevisionMutationVariables = Exact<{
+  input: CreateDataModelRevisionInput;
+}>;
+
+export type CreateDataModelRevisionMutation = {
+  __typename?: "Mutation";
+  createDataModelRevision: {
+    __typename?: "CreateDataModelRevisionPayload";
+    success: boolean;
+    message?: string | null;
+    dataModelRevision?: {
+      __typename?: "DataModelRevision";
+      id: string;
+      revisionNumber: number;
+    } | null;
+  };
+};
+
+export type CreateDataModelReleaseMutationVariables = Exact<{
+  input: CreateDataModelReleaseInput;
+}>;
+
+export type CreateDataModelReleaseMutation = {
+  __typename?: "Mutation";
+  createDataModelRelease: {
+    __typename?: "CreateDataModelReleasePayload";
+    success: boolean;
+    message?: string | null;
+    dataModelRelease?: { __typename?: "DataModelRelease"; id: string } | null;
+  };
 };
 
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
@@ -7271,6 +8791,419 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const SavePreviewDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SavePreview" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "SaveNotebookPreviewInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "saveNotebookPreview" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SavePreviewMutation, SavePreviewMutationVariables>;
+export const CreateDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataset" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "displayName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "type" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isPublic" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDatasetMutation,
+  CreateDatasetMutationVariables
+>;
+export const UpdateDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataset" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "displayName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isPublic" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateDatasetMutation,
+  UpdateDatasetMutationVariables
+>;
+export const CreateDataModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataModelInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataModel" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isEnabled" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataModelMutation,
+  CreateDataModelMutationVariables
+>;
+export const CreateDataModelRevisionDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataModelRevision" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataModelRevisionInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataModelRevision" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataModelRevision" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "revisionNumber" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataModelRevisionMutation,
+  CreateDataModelRevisionMutationVariables
+>;
+export const CreateDataModelReleaseDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataModelRelease" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataModelReleaseInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataModelRelease" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataModelRelease" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataModelReleaseMutation,
+  CreateDataModelReleaseMutationVariables
+>;
 export const AssetGraphDocument = {
   kind: "Document",
   definitions: [

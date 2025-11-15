@@ -13,8 +13,6 @@ from dagster_sqlmesh import (
     IntermediateAssetDep,
     IntermediateAssetOut,
     PlanOptions,
-    SQLMeshContextConfig,
-    SQLMeshDagsterTranslator,
     SQLMeshMultiAssetOptions,
     SQLMeshResource,
     sqlmesh_asset_from_multi_asset_options,
@@ -24,6 +22,7 @@ from oso_core.cache.types import CacheMetadataOptions
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import AssetFactoryResponse, cacheable_asset_factory
 from oso_dagster.factories.common import CacheableDagsterContext
+from oso_dagster.resources.sqlmesh import PrefixedSQLMeshContextConfig
 from oso_dagster.resources.trino import TrinoResource
 from oso_dagster.utils.asynctools import multiple_async_contexts
 from pydantic import BaseModel
@@ -126,14 +125,14 @@ def sqlmesh_factory(
             sqlmesh_gateway=global_config.sqlmesh_gateway,
         ),
         cache_metadata_options=CacheMetadataOptions.with_no_expiration_if(
-            global_config.run_mode == "build" and global_config.in_deployed_container
+            global_config.run_mode == "build" and global_config.in_deployed_container,
+            default_ttl_seconds=global_config.asset_cache_default_ttl_seconds,
         ),
     )
     def cacheable_sqlmesh_multi_asset_options(
         *,
         sqlmesh_infra_config: dict,
-        sqlmesh_context_config: SQLMeshContextConfig,
-        sqlmesh_translator: SQLMeshDagsterTranslator,
+        sqlmesh_context_config: ResourceParam[PrefixedSQLMeshContextConfig],
     ) -> CacheableSQLMeshMultiAssetOptions:
         environment = sqlmesh_infra_config["environment"]
 
@@ -141,7 +140,7 @@ def sqlmesh_factory(
             sqlmesh_to_multi_asset_options(
                 config=sqlmesh_context_config,
                 environment=environment,
-                dagster_sqlmesh_translator=sqlmesh_translator,
+                # dagster_sqlmesh_translator=sqlmesh_translator,
             )
         )
 
@@ -162,9 +161,24 @@ def sqlmesh_factory(
             context: AssetExecutionContext,
             global_config: ResourceParam[DagsterConfig],
             sqlmesh: SQLMeshResource,
+            sqlmesh_context_config: ResourceParam[PrefixedSQLMeshContextConfig],
             trino: TrinoResource,
             config: SQLMeshRunConfig,
         ):
+            # If this is a retry of a restatement job we simply cancel it.
+            # FIXME this is a bit of a blunt instrument. We probably want to know if
+            # the restatement successfully started. Otherwise we might fail to
+            # restate the models we intended to restate.
+            if context.op_execution_context.retry_number != 0 and (
+                config.restate_models or config.restate_by_entity_category
+            ):
+                context.log.info(
+                    "Retry detected for restatement job. Cancelling to avoid duplicate restatement."
+                )
+                raise Exception(
+                    "Restatement job retry cancelled to avoid duplicate restatement."
+                )
+
             restate_models = config.restate_models[:] if config.restate_models else []
 
             # We use this helper function so we can run sqlmesh both locally and in
@@ -209,6 +223,7 @@ def sqlmesh_factory(
                     all(
                         sqlmesh.run(
                             context,
+                            config=sqlmesh_context_config,
                             environment=dev_environment,
                             plan_options=copy.deepcopy(plan_options),
                             start=config.start,
@@ -222,6 +237,7 @@ def sqlmesh_factory(
                 context.log.info("Starting to process prod environment")
                 for result in sqlmesh.run(
                     context,
+                    config=sqlmesh_context_config,
                     environment=environment,
                     plan_options=copy.deepcopy(plan_options),
                     start=config.start,

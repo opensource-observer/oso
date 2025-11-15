@@ -17,7 +17,7 @@ from dagster import (
     MaterializeResult,
     multi_asset,
 )
-from dagster_sqlmesh import SQLMeshDagsterTranslator
+from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshDagsterTranslator
 from dagster_sqlmesh.controller.base import SQLMeshInstance
 from metrics_service.types import TableMetadata, TableReference
 from metrics_tools.transfer.coordinator import Destination, Source, transfer
@@ -69,7 +69,7 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
 
         Skipped tags: index, order_by
         """
-        tags: t.Dict[str, str] = self.get_unfiltered_tags(context, model)
+        tags: t.Dict[str, str] = get_models_unfiltered_tags(model)
         for blocked_tag in ["index", "order_by"]:
             if blocked_tag in tags:
                 del tags[blocked_tag]
@@ -78,19 +78,34 @@ class PrefixedSQLMeshTranslator(SQLMeshDagsterTranslator):
         tags["opensource.observer/source"] = "sqlmesh"
         return tags
 
-    def get_unfiltered_tags(self, context: Context, model: Model) -> t.Dict[str, str]:
-        """Loads unfiltered tags for a model.
 
-        This is similar to get_tags but does not filter out the index and order_by tags.
-        """
-        tags: t.Dict[str, str] = {}
-        for tag in model.tags:
-            if "=" in tag:
-                key, value = tag.split("=")
-                tags[key] = value
-            else:
-                tags[tag] = "true"
-        return tags
+def get_models_unfiltered_tags(model: Model) -> t.Dict[str, str]:
+    """Loads unfiltered tags for a model.
+
+    This is similar to get_tags but does not filter out the index and order_by tags.
+    """
+    tags: t.Dict[str, str] = {}
+    for tag in model.tags:
+        if "=" in tag:
+            key, value = tag.split("=")
+            tags[key] = value
+        else:
+            tags[tag] = "true"
+    return tags
+
+
+class PrefixedSQLMeshContextConfig(SQLMeshContextConfig):
+    prefix: str = Field(
+        default="sqlmesh",
+        description="Prefix to use for asset keys",
+    )
+    default_catalog: str = Field(
+        default="default_catalog",
+        description="Default catalog to use for asset keys",
+    )
+
+    def get_translator(self):
+        return PrefixedSQLMeshTranslator(self.prefix, self.default_catalog)
 
 
 class SQLMeshExportedAssetDefinition(BaseModel):
@@ -154,7 +169,7 @@ class SQLMeshExporter(abc.ABC):
     def create_export_asset(
         self,
         mesh: SQLMeshInstance,
-        translator: PrefixedSQLMeshTranslator,
+        translator: SQLMeshDagsterTranslator,
         to_export: t.List[t.Tuple[Model, AssetKey]],
     ) -> SQLMeshExportedAssetDefinition:
         """This creates an export asset that can be cached"""
@@ -228,7 +243,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
     def create_export_asset(
         self,
         mesh: SQLMeshInstance,
-        translator: PrefixedSQLMeshTranslator,
+        translator: SQLMeshDagsterTranslator,
         to_export: t.List[t.Tuple[Model, AssetKey]],
     ) -> SQLMeshExportedAssetDefinition:
         clickhouse_outs = {
@@ -242,7 +257,7 @@ class Trino2ClickhouseSQLMeshExporter(SQLMeshExporter):
         table_metadata: dict[str, dict] = {}
 
         for model, asset_key in to_export:
-            tags = translator.get_unfiltered_tags(mesh.context, model)
+            tags = get_models_unfiltered_tags(model)
             index = "index" in tags and json.loads(tags["index"]) or None
             order_by = "order_by" in tags and json.loads(tags["order_by"]) or None
             table_metadata[asset_key.path[-1]] = TableMetadata(

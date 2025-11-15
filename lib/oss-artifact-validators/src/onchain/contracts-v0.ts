@@ -1,14 +1,15 @@
-import { gql, request } from "graphql-request";
+import { gql, GraphQLClient } from "graphql-request";
 import { createPublicClient, http, PublicClient } from "viem";
 import { EVMNetworkValidator } from "./evm.js";
 
 const ANY_EVM = "ANY_EVM";
-const DEFAULT_API_URL = "https://www.opensource.observer/api/v1/graphql";
+const DEFAULT_API_URL = "https://www.oso.xyz/api/v1/graphql";
 
 export interface ContractsV0ValidatorOptions {
   apiUrl?: string;
   contractNamespace?: string;
   rpcUrl: string;
+  apiKey?: string;
 }
 
 interface ContractsV0Response {
@@ -24,16 +25,22 @@ interface ContractsV0Response {
 }
 
 export class ContractsV0Validator implements EVMNetworkValidator {
-  private readonly apiUrl: string;
+  private readonly graphqlClient: GraphQLClient;
   private readonly contractNamespace: string;
   private readonly client: PublicClient;
 
   constructor(options: ContractsV0ValidatorOptions) {
-    this.apiUrl = options.apiUrl ?? DEFAULT_API_URL;
+    const apiUrl = options.apiUrl ?? DEFAULT_API_URL;
     this.contractNamespace = options.contractNamespace ?? ANY_EVM;
     this.client = createPublicClient({
       transport: http(options.rpcUrl),
     });
+
+    const headers: Record<string, string> = {};
+    if (options.apiKey) {
+      headers.Authorization = `Bearer ${options.apiKey}`;
+    }
+    this.graphqlClient = new GraphQLClient(apiUrl, { headers });
   }
 
   private normalizeAddress(address: string): `0x${string}` {
@@ -106,8 +113,7 @@ export class ContractsV0Validator implements EVMNetworkValidator {
     variables: Record<string, string>,
   ): Promise<boolean> {
     try {
-      const response = await request<ContractsV0Response>(
-        this.apiUrl,
+      const response = await this.graphqlClient.request<ContractsV0Response>(
         query,
         variables,
       );
@@ -129,28 +135,43 @@ export class ContractsV0Validator implements EVMNetworkValidator {
 export const createContractsV0Validator = (
   rpcUrl: string,
   network?: string,
+  apiKey?: string,
 ): ContractsV0Validator => {
   const contractNamespace = network ?? ANY_EVM;
 
-  return new ContractsV0Validator({ contractNamespace, rpcUrl });
+  return new ContractsV0Validator({ contractNamespace, rpcUrl, apiKey });
 };
 
 export const EthereumContractsV0Validator = (
   rpcUrl: string,
-): ContractsV0Validator => createContractsV0Validator(rpcUrl, "ETHEREUM");
+  apiKey?: string,
+): ContractsV0Validator =>
+  createContractsV0Validator(rpcUrl, "ETHEREUM", apiKey);
 
 export const ArbitrumContractsV0Validator = (
   rpcUrl: string,
-): ContractsV0Validator => createContractsV0Validator(rpcUrl, "ARBITRUM");
+  apiKey?: string,
+): ContractsV0Validator =>
+  createContractsV0Validator(rpcUrl, "ARBITRUM", apiKey);
 
 export const BaseContractsV0Validator = (
   rpcUrl: string,
-): ContractsV0Validator => createContractsV0Validator(rpcUrl, "BASE");
+  apiKey?: string,
+): ContractsV0Validator => createContractsV0Validator(rpcUrl, "BASE", apiKey);
 
 export const OptimismContractsV0Validator = (
   rpcUrl: string,
-): ContractsV0Validator => createContractsV0Validator(rpcUrl, "OPTIMISM");
+  apiKey?: string,
+): ContractsV0Validator =>
+  createContractsV0Validator(rpcUrl, "OPTIMISM", apiKey);
 
 export const AnyEVMContractsV0Validator = (
   rpcUrl: string,
-): ContractsV0Validator => createContractsV0Validator(rpcUrl, ANY_EVM);
+  apiKey?: string,
+): ContractsV0Validator => createContractsV0Validator(rpcUrl, ANY_EVM, apiKey);
+
+export const UnichainContractsV0Validator = (
+  rpcUrl: string,
+  apiKey?: string,
+): ContractsV0Validator =>
+  createContractsV0Validator(rpcUrl, "UNICHAIN", apiKey);

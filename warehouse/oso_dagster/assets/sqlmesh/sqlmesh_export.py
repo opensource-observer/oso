@@ -8,7 +8,7 @@ from oso_core.cache.types import CacheMetadataOptions
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import AssetFactoryResponse, cacheable_asset_factory
 from oso_dagster.factories.common import CacheableDagsterContext
-from oso_dagster.resources import PrefixedSQLMeshTranslator, SQLMeshExporter
+from oso_dagster.resources import SQLMeshExporter
 from oso_dagster.resources.sqlmesh import SQLMeshExportedAssetDefinition
 from pydantic import BaseModel
 from sqlmesh.core.model import Model
@@ -38,8 +38,7 @@ def sqlmesh_export_factory(
     )
     def cacheable_exported_assets_defs(
         sqlmesh_infra_config: dict,
-        sqlmesh_context_config: SQLMeshContextConfig,
-        sqlmesh_translator: PrefixedSQLMeshTranslator,
+        sqlmesh_context_config: ResourceParam[SQLMeshContextConfig],
         sqlmesh_exporters: ResourceParam[t.List[SQLMeshExporter]],
     ) -> SQLMeshExportedAssetsCollection:
         environment = sqlmesh_infra_config["environment"]
@@ -49,6 +48,7 @@ def sqlmesh_export_factory(
             context_factory=DEFAULT_CONTEXT_FACTORY,
         )
         assets_map: dict[str, SQLMeshExportedAssetDefinition] = {}
+        sqlmesh_translator = sqlmesh_context_config.get_translator()
 
         with controller.instance(environment) as mesh:
             models = mesh.models()

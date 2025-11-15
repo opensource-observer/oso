@@ -10,8 +10,10 @@ import {
   HeadBucketCommand,
   PutBucketLifecycleConfigurationCommand,
   NotFound,
+  PutObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
-import type { NodeJsClient } from "@smithy/types";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createHash } from "node:crypto";
 import {
   CLOUDFLARE_R2_ENDPOINT,
@@ -35,7 +37,7 @@ const S3 = new S3Client({
     accessKeyId: CLOUDFLARE_R2_ACCESS_KEY_ID,
     secretAccessKey: CLOUDFLARE_R2_SECRET_ACCESS_KEY,
   },
-}) as NodeJsClient<S3Client>;
+});
 
 function queryToKey(queryBody: any): string {
   const queryStr = JSON.stringify(queryBody);
@@ -205,9 +207,68 @@ async function createBucketWithLifecycle(bucketName: string) {
   logger.log(`Set 14-day expiration policy on bucket: ${bucketName}`);
 }
 
+async function putBase64Image(
+  bucketName: string,
+  objectKey: string,
+  base64Data: string,
+  contentType: string = "image/png",
+): Promise<void> {
+  const base64Clean = base64Data.replace(/^data:[^;]+;base64,/, "");
+  const buffer = Buffer.from(base64Clean, "base64");
+
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+    Body: buffer,
+    ContentType: contentType,
+  });
+
+  await S3.send(command);
+}
+
+async function objectExists(
+  bucketName: string,
+  objectKey: string,
+): Promise<boolean> {
+  try {
+    await S3.send(
+      new HeadObjectCommand({
+        Bucket: bucketName,
+        Key: objectKey,
+      }),
+    );
+    return true;
+  } catch (error) {
+    if (error instanceof NotFound) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function getPreviewSignedUrl(
+  bucketName: string,
+  objectKey: string,
+  expirationSeconds: number = 900,
+): Promise<string | null> {
+  const exists = await objectExists(bucketName, objectKey);
+  if (!exists) {
+    return null;
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+  });
+
+  return getSignedUrl(S3, command, { expiresIn: expirationSeconds });
+}
+
 export {
   getObjectByQuery,
   putObjectByQuery,
   copyObjectByQuery,
   createBucketWithLifecycle,
+  putBase64Image,
+  getPreviewSignedUrl,
 };

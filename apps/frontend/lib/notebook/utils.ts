@@ -1,4 +1,7 @@
+import { z } from "zod";
 import { compressToEncodedURIComponent } from "lz-string";
+import { logger } from "@/lib/logger";
+import type { OsoAppClient } from "@/lib/clients/oso-app/oso-app";
 
 export type NotebookUrlOptions = {
   initialCode?: string;
@@ -13,6 +16,11 @@ export type NotebookUrlOptions = {
   enablePostMessageStore?: boolean;
   enableDebug?: boolean;
 };
+
+const previewResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+});
 
 export function generateNotebookUrl(options: NotebookUrlOptions) {
   const {
@@ -79,4 +87,35 @@ export function generatePublishedNotebookPath(
   orgId: string,
 ) {
   return `${orgId}/${notebookId}.html.gz`;
+}
+
+export async function saveNotebookPreview(
+  client: OsoAppClient | null,
+  notebookId: string,
+  base64Image: string,
+): Promise<void> {
+  if (!notebookId) {
+    logger.error("No notebookId provided, cannot save preview");
+    return;
+  }
+
+  if (!client) {
+    throw new Error("OsoAppClient not initialized");
+  }
+
+  try {
+    const payload = await client.saveNotebookPreview({
+      notebookId,
+      base64Image,
+    });
+
+    const validatedPayload = previewResponseSchema.parse(payload);
+
+    if (validatedPayload.success) {
+      logger.info("Notebook preview saved successfully");
+    }
+  } catch (error) {
+    logger.error("Error saving notebook preview:", error);
+    throw error;
+  }
 }

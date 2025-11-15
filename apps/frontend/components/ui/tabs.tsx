@@ -5,7 +5,34 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 import { cn } from "@/lib/utils";
 
-const Tabs = TabsPrimitive.Root;
+type TabsProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root> & {
+  previewValue?: string;
+};
+
+export const TabsMeta: CodeComponentMeta<TabsProps> = {
+  name: "Tabs",
+  displayName: "Tabs",
+  props: {
+    children: "slot",
+    defaultValue: "string",
+    previewValue: {
+      type: "string",
+      editOnly: true,
+    },
+  },
+};
+
+const Tabs = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Root>,
+  TabsProps
+>((props, ref) => {
+  const { previewValue, ...rest } = props;
+
+  return (
+    <TabsPrimitive.Root ref={ref} {...rest} value={previewValue ?? undefined} />
+  );
+});
+Tabs.displayName = TabsPrimitive.Root.displayName;
 
 type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>;
 
@@ -87,16 +114,5 @@ const TabsContent = React.forwardRef<
   />
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
-
-type TabsProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root>;
-
-export const TabsMeta: CodeComponentMeta<TabsProps> = {
-  name: "Tabs",
-  displayName: "Tabs",
-  props: {
-    children: "slot",
-    defaultValue: "string",
-  },
-};
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };

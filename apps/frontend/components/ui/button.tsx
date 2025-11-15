@@ -61,7 +61,15 @@ export const ButtonMeta: CodeComponentMeta<ButtonPropsWithMeta> = {
   name: "Button",
   description: "shadcn/ui Button component",
   props: {
-    children: "slot",
+    children: {
+      type: "slot",
+      defaultValue: [
+        {
+          type: "text",
+          value: "Button",
+        },
+      ],
+    },
     variant: {
       type: "choice",
       options: [

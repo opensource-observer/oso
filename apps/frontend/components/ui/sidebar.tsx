@@ -55,6 +55,7 @@ function useSidebar() {
 }
 
 type SidebarProviderProps = React.ComponentProps<"div"> & {
+  name?: string;
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -66,6 +67,10 @@ const SidebarProviderMeta: CodeComponentMeta<SidebarProviderProps> = {
   props: {
     children: "slot",
     defaultOpen: "boolean",
+    name: {
+      type: "string",
+      defaultValueHint: "default",
+    },
     open: "boolean",
     onOpenChange: {
       type: "eventHandler",
@@ -88,6 +93,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
       className,
       style,
       children,
+      name = "default",
       ...props
     },
     ref,
@@ -109,7 +115,7 @@ const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
         }
 
         // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+        document.cookie = `${SIDEBAR_COOKIE_NAME}:${name}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
       },
       [setOpenProp, open],
     );
@@ -316,13 +322,15 @@ type SidebarTriggerProps = React.ComponentProps<typeof Button>;
 const SidebarTriggerMeta: CodeComponentMeta<SidebarTriggerProps> = {
   name: "SidebarTrigger",
   description: "shadcn/ui SidebarTrigger component",
-  props: {},
+  props: {
+    children: "slot",
+  },
 };
 
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   SidebarTriggerProps
->(({ className, onClick, ...props }, ref) => {
+>(({ className, onClick, children, ...props }, ref) => {
   const { toggleSidebar } = useSidebar();
 
   return (
@@ -330,15 +338,14 @@ const SidebarTrigger = React.forwardRef<
       ref={ref}
       data-sidebar="trigger"
       variant="ghost"
-      size="icon"
-      className={cn("h-7 w-7", className)}
+      className={className}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
       }}
       {...props}
     >
-      <PanelLeft />
+      {children ?? <PanelLeft className="h-7 w-7" size="icon" />}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
@@ -749,6 +756,10 @@ const SidebarMenuButtonMeta: CodeComponentMeta<SidebarMenuButtonProps> = {
           label: "Pressed",
         },
       ],
+    },
+    onClick: {
+      type: "eventHandler",
+      argTypes: [{ name: "event", type: "object" }],
     },
   },
 };
