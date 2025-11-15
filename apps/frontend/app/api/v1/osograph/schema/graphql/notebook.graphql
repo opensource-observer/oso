@@ -24,14 +24,24 @@ type NotebookConnection {
 
 extend type Query {
   """
-  List all notebooks
-  """
-  notebooks(first: Int = 50, after: String): NotebookConnection!
+  Query notebooks with optional filtering and pagination.
 
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is.
+
+  Example:
+  ```json
+  {
+    "notebook_name": { "like": "%churn%" },
+    "created_at": { "gte": "2024-01-01T00:00:00Z" }
+  }
+  ```
   """
-  Get a notebook by ID
-  """
-  notebook(id: ID!): Notebook
+  notebooks(
+    where: JSON
+    first: Int = 50
+    after: String
+  ): NotebookConnection!
 }
 
 extend type Mutation {

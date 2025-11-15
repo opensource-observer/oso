@@ -4,7 +4,7 @@ type User {
   fullName: String
   avatarUrl: String
   role: String!
-  organizations(first: Int = 50, after: String): OrganizationConnection!
+  organizations(first: Int = 50, after: String, where: JSON): OrganizationConnection!
 }
 
 type UserEdge {
@@ -26,11 +26,11 @@ type Viewer {
   email: String!
   fullName: String
   avatarUrl: String
-  organizations(first: Int = 50, after: String): OrganizationConnection!
-  notebooks(first: Int = 50, after: String): NotebookConnection!
-  datasets(first: Int = 50, after: String): DatasetConnection!
-  invitations(first: Int = 50, after: String): InvitationConnection!
-  runs(first: Int = 50, after: String): RunConnection!
+  organizations(first: Int = 50, after: String, where: JSON): OrganizationConnection!
+  notebooks(first: Int = 50, after: String, where: JSON): NotebookConnection!
+  datasets(first: Int = 50, after: String, where: JSON): DatasetConnection!
+  invitations(first: Int = 50, after: String, where: JSON): InvitationConnection!
+  runs(first: Int = 50, after: String, where: JSON): RunConnection!
 }
 
 extend type Query {

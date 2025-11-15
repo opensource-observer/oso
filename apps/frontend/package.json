@@ -86,6 +86,7 @@
     "dayjs": "^1.11.18",
     "generate-api-key": "^1.0.2",
     "graphql": "^16.11.0",
+    "graphql-scalars": "^1.25.0",
     "graphql-tag": "^2.12.6",
     "instantsearch.css": "^8.5.1",
     "jose": "^6.1.0",

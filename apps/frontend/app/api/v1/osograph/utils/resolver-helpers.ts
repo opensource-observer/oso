@@ -1,8 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildConnection,
-  emptyConnection,
   type Connection,
+  emptyConnection,
 } from "@/app/api/v1/osograph/utils/connection";
 import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
@@ -14,6 +14,12 @@ import {
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
 import { Database } from "@/lib/types/supabase";
+import {
+  buildQuery,
+  mergePredicates,
+  type QueryPredicate,
+} from "@/app/api/v1/osograph/utils/query-builder";
+import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
 
 export function preparePaginationRange(args: ConnectionArgs): [number, number] {
   const limit = getFetchLimit(args);
@@ -49,32 +55,68 @@ export async function getUserOrganizationIds(
 export async function getUserOrganizationsConnection(
   userId: string,
   args: ConnectionArgs,
-): Promise<Connection<any>> {
+  additionalPredicate?: Partial<QueryPredicate<"organizations">>,
+) {
   const supabase = createAdminClient();
   const [start, end] = preparePaginationRange(args);
 
-  const { data: memberships, count } = await supabase
-    .from("users_by_organization")
-    .select("org_id, organizations(*)", { count: "exact" })
-    .eq("user_id", userId)
-    .is("deleted_at", null)
-    .range(start, end);
+  const membershipPredicate: Partial<QueryPredicate<"users_by_organization">> =
+    {
+      eq: [{ key: "user_id", value: userId }],
+      is: [{ key: "deleted_at", value: null }],
+    };
+
+  const {
+    data: memberships,
+    count: membershipCount,
+    error: membershipError,
+  } = await buildQuery(
+    supabase,
+    "users_by_organization",
+    membershipPredicate,
+    (query) => query.range(start, end),
+  );
+
+  if (membershipError) {
+    throw ServerErrors.database(
+      `Failed to fetch memberships: ${membershipError.message}`,
+    );
+  }
 
   if (!memberships || memberships.length === 0) {
     return emptyConnection();
   }
 
-  const organizations = memberships
-    .map((m) => m.organizations)
-    .filter((org) => org !== null);
+  const orgIds = memberships.map((m) => m.org_id);
 
-  return buildConnectionOrEmpty(organizations, args, count);
+  const basePredicate: Partial<QueryPredicate<"organizations">> = {
+    in: [{ key: "id", value: orgIds }],
+  };
+
+  const predicate = additionalPredicate
+    ? mergePredicates(basePredicate, additionalPredicate)
+    : basePredicate;
+
+  const { data: organizations, error: orgError } = await buildQuery(
+    supabase,
+    "organizations",
+    predicate,
+  );
+
+  if (orgError) {
+    throw ServerErrors.database(
+      `Failed to fetch organizations: ${orgError.message}`,
+    );
+  }
+
+  return buildConnectionOrEmpty(organizations, args, membershipCount);
 }
 
 export async function getUserInvitationsConnection(
   email: string | null | undefined,
   args: ConnectionArgs,
-): Promise<Connection<any>> {
+  additionalPredicate?: Partial<QueryPredicate<"invitations">>,
+) {
   if (!email) {
     return emptyConnection();
   }
@@ -83,22 +125,37 @@ export async function getUserInvitationsConnection(
   const userEmail = email.toLowerCase();
   const [start, end] = preparePaginationRange(args);
 
-  const { data: invitations, count } = await supabase
-    .from("invitations")
-    .select("*", { count: "exact" })
-    .ilike("email", userEmail)
-    .is("accepted_at", null)
-    .is("deleted_at", null)
-    .gt("expires_at", new Date().toISOString())
-    .range(start, end);
+  const basePredicate: Partial<QueryPredicate<"invitations">> = {
+    ilike: [{ key: "email", value: userEmail }],
+    is: [
+      { key: "accepted_at", value: null },
+      { key: "deleted_at", value: null },
+    ],
+    gt: [{ key: "expires_at", value: new Date().toISOString() }],
+  };
+
+  const predicate = additionalPredicate
+    ? mergePredicates(basePredicate, additionalPredicate)
+    : basePredicate;
+
+  const {
+    data: invitations,
+    count,
+    error,
+  } = await buildQuery(supabase, "invitations", predicate, (query) =>
+    query.range(start, end),
+  );
+
+  if (error) {
+    throw ServerErrors.database(
+      `Failed to fetch invitations: ${error.message}`,
+    );
+  }
 
   return buildConnectionOrEmpty(invitations, args, count);
 }
 
-export async function requireOrganizationAccess(
-  userId: string,
-  orgId: string,
-): Promise<any> {
+export async function requireOrganizationAccess(userId: string, orgId: string) {
   const org = await getOrganization(orgId);
   await requireOrgMembership(userId, org.id);
   return org;

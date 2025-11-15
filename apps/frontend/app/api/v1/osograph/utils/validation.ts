@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ValidationErrors } from "@/app/api/v1/osograph/utils/errors";
+import type { ValidTableName } from "@/app/api/v1/osograph/utils/query-builder";
 
 const MAX_PREVIEW_SIZE_MB = 1 * 1024 * 1024;
 const PNG_HEADER = Buffer.from([
@@ -184,6 +185,58 @@ export const CreateDataModelReleaseSchema = z.object({
   dataModelRevisionId: z.string().uuid(),
   description: z.string().optional(),
 });
+
+export const TableMetadataWhereSchema = z.object({
+  orgId: z.object({ eq: z.string().uuid() }),
+  catalogName: z.object({ eq: z.string() }),
+  schemaName: z.object({ eq: z.string() }),
+  tableName: z.object({ eq: z.string() }),
+});
+
+export function createWhereSchema<T extends ValidTableName>(_tableName: T) {
+  const comparisonOperators = z.object({
+    eq: z.unknown().optional(),
+    neq: z.unknown().optional(),
+    gt: z.unknown().optional(),
+    gte: z.unknown().optional(),
+    lt: z.unknown().optional(),
+    lte: z.unknown().optional(),
+    in: z.array(z.unknown()).optional(),
+    like: z.string().optional(),
+    ilike: z.string().optional(),
+    is: z.union([z.null(), z.boolean()]).optional(),
+  });
+
+  return z.record(z.string(), comparisonOperators).refine(
+    (data) => {
+      if (Object.keys(data).length === 0) {
+        return false;
+      }
+
+      for (const [_field, operators] of Object.entries(data)) {
+        const hasOperator = Object.values(operators).some(
+          (val) => val !== undefined,
+        );
+        if (!hasOperator) {
+          return false;
+        }
+      }
+      return true;
+    },
+    {
+      message:
+        "Where clause must have at least one field with at least one operator",
+    },
+  );
+}
+
+export const NotebookWhereSchema = createWhereSchema("notebooks");
+export const DatasetWhereSchema = createWhereSchema("datasets");
+export const DataModelWhereSchema = createWhereSchema("model");
+export const InvitationWhereSchema = createWhereSchema("invitations");
+export const OrganizationWhereSchema = createWhereSchema("organizations");
+export const DataModelRevisionWhereSchema = createWhereSchema("model_revision");
+export const DataModelReleaseWhereSchema = createWhereSchema("model_release");
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
   const result = schema.safeParse(input);

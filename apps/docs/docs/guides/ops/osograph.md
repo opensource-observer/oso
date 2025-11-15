@@ -30,7 +30,7 @@ The API follows **Relay's cursor-based pagination spec**. Every list query retur
 **Data Flow:**
 
 ```
-Query → Auth Check → preparePaginationRange() → Supabase (with count) → buildConnectionOrEmpty() → { edges, pageInfo, totalCount }
+Query → Auth Check → Validate Where Clause → parseWhereClause() → mergePredicates() → buildQuery() → Supabase (with count) → buildConnectionOrEmpty() → { edges, pageInfo, totalCount }
 ```
 
 ## Directory Structure
@@ -40,7 +40,7 @@ frontend/app/api/v1/osograph/
 ├── route.ts                   # Apollo Server setup
 ├── schema/
 │   ├── graphql/               # SDL type definitions
-│   │   ├── base.graphql       # Base types, PageInfo, enums
+│   │   ├── base.graphql       # Base types, PageInfo, enums, JSON scalar
 │   │   └── *.graphql          # Domain schemas
 │   └── resolvers/             # Resolver implementations
 │       ├── index.ts           # Combines all resolvers
@@ -53,7 +53,9 @@ frontend/app/api/v1/osograph/
     ├── pagination.ts          # Cursor pagination (constants & encoding)
     ├── connection.ts          # Connection builder
     ├── validation.ts          # Zod schemas & input validation
-    └── resolver-helpers.ts    # Shared resolver utilities
+    ├── resolver-helpers.ts    # Shared resolver utilities
+    ├── query-builder.ts       # Builds Supabase queries from predicates
+    └── where-parser.ts        # Parses GraphQL where input to predicates
 ```
 
 ## Adding a Query
@@ -84,7 +86,12 @@ type WidgetConnection {
 
 extend type Query {
   widget(id: ID!): Widget
-  widgets(orgId: ID!, first: Int = 50, after: String): WidgetConnection!
+  widgets(
+    orgId: ID!
+    where: JSON
+    first: Int = 50
+    after: String
+  ): WidgetConnection!
 }
 ```
 
@@ -103,7 +110,23 @@ import {
   buildConnectionOrEmpty,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
+import {
+  validateInput,
+  createWhereSchema,
+} from "@/app/api/v1/osograph/utils/validation";
+import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
+import {
+  buildQuery,
+  mergePredicates,
+} from "@/app/api/v1/osograph/utils/query-builder";
+import type { QueryPredicate } from "@/app/api/v1/osograph/utils/query-builder";
+import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
+
+const WidgetWhereSchema = createWhereSchema("widgets");
 
 export const widgetResolvers = {
   Query: {
@@ -130,21 +153,49 @@ export const widgetResolvers = {
 
     widgets: async (
       _: unknown,
-      args: ConnectionArgs & { orgId: string },
+      args: FilterableConnectionArgs & { orgId: string },
       context: GraphQLContext,
     ) => {
       const user = requireAuthentication(context.user);
       await requireOrgMembership(user.userId, args.orgId);
 
+      // Validate where clause if provided
+      const validatedWhere = args.where
+        ? validateInput(WidgetWhereSchema, args.where)
+        : undefined;
+
       const supabase = createAdminClient();
       const [start, end] = preparePaginationRange(args);
 
-      const { data: widgets, count } = await supabase
-        .from("widgets")
-        .select("*", { count: "exact" })
-        .eq("org_id", args.orgId)
-        .is("deleted_at", null)
-        .range(start, end);
+      // Build base predicate (system filters)
+      const basePredicate: Partial<QueryPredicate<"widgets">> = {
+        eq: [{ key: "org_id", value: args.orgId }],
+        is: [{ key: "deleted_at", value: null }],
+      };
+
+      // Parse and merge user filters
+      const userPredicate = validatedWhere
+        ? parseWhereClause(validatedWhere)
+        : undefined;
+
+      const predicate = userPredicate
+        ? mergePredicates(basePredicate, userPredicate)
+        : basePredicate;
+
+      // Build and execute query
+      const {
+        data: widgets,
+        count,
+        error,
+      } = await buildQuery(supabase, "widgets", predicate, (query) =>
+        query.range(start, end),
+      );
+
+      if (error) {
+        throw ServerErrors.database(
+          `Failed to fetch widgets: ${error.message}`,
+        );
+      }
 
       return buildConnectionOrEmpty(widgets, args, count);
     },
@@ -277,6 +328,234 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
 
 Export the validation schema in `utils/validation.ts` so it's available for import.
 
+## Filtering with Where Clauses
+
+List queries support flexible filtering via the `where` parameter, which accepts a JSON object specifying field-level filters.
+
+### Filter Structure
+
+```json
+{
+  "field_name": { "operator": value },
+  "another_field": { "operator": value }
+}
+```
+
+Multiple operators can be applied to the same field:
+
+```json
+{
+  "created_at": {
+    "gte": "2024-01-01T00:00:00Z",
+    "lt": "2024-12-31T23:59:59Z"
+  }
+}
+```
+
+### Supported Operators
+
+| Operator | Description                      | Example                                     |
+| -------- | -------------------------------- | ------------------------------------------- |
+| `eq`     | Equals                           | `{ "status": { "eq": "active" } }`          |
+| `neq`    | Not equals                       | `{ "status": { "neq": "deleted" } }`        |
+| `gt`     | Greater than                     | `{ "count": { "gt": 100 } }`                |
+| `gte`    | Greater than or equal            | `{ "created_at": { "gte": "2024-01-01" } }` |
+| `lt`     | Less than                        | `{ "count": { "lt": 1000 } }`               |
+| `lte`    | Less than or equal               | `{ "updated_at": { "lte": "2024-12-31" } }` |
+| `in`     | In array                         | `{ "id": { "in": ["id1", "id2", "id3"] } }` |
+| `like`   | Pattern match (case-sensitive)   | `{ "name": { "like": "%search%" } }`        |
+| `ilike`  | Pattern match (case-insensitive) | `{ "email": { "ilike": "%@example.com" } }` |
+| `is`     | Null/boolean check               | `{ "deleted_at": { "is": null } }`          |
+
+**Notes:**
+
+- `like` and `ilike` use SQL wildcards: `%` (any characters), `_` (single character)
+- `in` accepts an array of values
+- `is` accepts `null` or boolean values
+
+### GraphQL Query Examples
+
+**Filter by name pattern:**
+
+```graphql
+query {
+  notebooks(where: { notebook_name: { like: "%churn%" } }) {
+    edges {
+      node {
+        id
+        notebookName
+      }
+    }
+  }
+}
+```
+
+**Filter by date range:**
+
+```graphql
+query {
+  datasets(
+    where: {
+      created_at: { gte: "2024-01-01T00:00:00Z", lt: "2024-12-31T23:59:59Z" }
+    }
+  ) {
+    edges {
+      node {
+        id
+        name
+        createdAt
+      }
+    }
+  }
+}
+```
+
+**Multiple field filters:**
+
+```graphql
+query {
+  dataModels(
+    where: {
+      name: { ilike: "%user%" }
+      is_enabled: { eq: true }
+      created_at: { gte: "2024-01-01T00:00:00Z" }
+    }
+  ) {
+    edges {
+      node {
+        id
+        name
+        isEnabled
+      }
+    }
+  }
+}
+```
+
+**Combine with pagination:**
+
+```graphql
+query {
+  notebooks(
+    where: { notebook_name: { like: "%analysis%" } }
+    first: 20
+    after: "cursor123"
+  ) {
+    edges {
+      node {
+        id
+        notebookName
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+```
+
+### Resolver Implementation Pattern
+
+**1. Add where parameter to schema:**
+
+```graphql
+extend type Query {
+  widgets(
+    orgId: ID!
+    where: JSON
+    first: Int = 50
+    after: String
+  ): WidgetConnection!
+}
+```
+
+**2. Create validation schema:**
+
+```typescript
+import { createWhereSchema } from "@/app/api/v1/osograph/utils/validation";
+
+const WidgetWhereSchema = createWhereSchema("widgets");
+```
+
+**3. Implement filtering in resolver:**
+
+```typescript
+import { validateInput } from "@/app/api/v1/osograph/utils/validation";
+import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
+import {
+  buildQuery,
+  mergePredicates,
+} from "@/app/api/v1/osograph/utils/query-builder";
+import type { QueryPredicate } from "@/app/api/v1/osograph/utils/query-builder";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+
+widgets: async (
+  _: unknown,
+  args: FilterableConnectionArgs & { orgId: string },
+  context: GraphQLContext,
+) => {
+  const user = requireAuthentication(context.user);
+  await requireOrgMembership(user.userId, args.orgId);
+
+  // 1. Validate where clause
+  const validatedWhere = args.where
+    ? validateInput(WidgetWhereSchema, args.where)
+    : undefined;
+
+  const [start, end] = preparePaginationRange(args);
+
+  // 2. Build base predicate (system filters)
+  const basePredicate: Partial<QueryPredicate<"widgets">> = {
+    eq: [{ key: "org_id", value: args.orgId }],
+    is: [{ key: "deleted_at", value: null }],
+  };
+
+  // 3. Parse and merge user filters
+  const userPredicate = validatedWhere
+    ? parseWhereClause(validatedWhere)
+    : undefined;
+
+  const predicate = userPredicate
+    ? mergePredicates(basePredicate, userPredicate)
+    : basePredicate;
+
+  // 4. Build and execute query
+  const {
+    data: widgets,
+    count,
+    error,
+  } = await buildQuery(supabase, "widgets", predicate, (query) =>
+    query.range(start, end),
+  );
+
+  if (error) {
+    throw ServerErrors.database(`Failed to fetch widgets: ${error.message}`);
+  }
+
+  return buildConnectionOrEmpty(widgets, args, count);
+};
+```
+
+### Security Considerations
+
+**System filters are always enforced:**
+
+```typescript
+const basePredicate = {
+  in: [{ key: "org_id", value: userOrgIds }], // ← Access control
+  is: [{ key: "deleted_at", value: null }], // ← Soft delete filter
+};
+```
+
+User-provided `where` filters are **merged** with system filters, ensuring:
+
+- Users can only query resources in their organizations
+- Soft-deleted resources are excluded
+- Authorization checks are never bypassed
+
 ## Patterns
 
 ### Pagination
@@ -288,6 +567,37 @@ const { data, count } = await supabase
   .select("*", { count: "exact" })
   .range(start, end);
 return buildConnectionOrEmpty(data, args, count); // Build connection
+```
+
+### Filtering
+
+```typescript
+// Validate and parse where clause
+const validatedWhere = args.where
+  ? validateInput(createWhereSchema("table_name"), args.where)
+  : undefined;
+
+const userPredicate = validatedWhere
+  ? parseWhereClause(validatedWhere)
+  : undefined;
+
+// Merge with system filters
+const basePredicate = {
+  eq: [{ key: "org_id", value: orgId }],
+  is: [{ key: "deleted_at", value: null }],
+};
+
+const predicate = userPredicate
+  ? mergePredicates(basePredicate, userPredicate)
+  : basePredicate;
+
+// Build and execute query
+const { data, count, error } = await buildQuery(
+  supabase,
+  "table_name",
+  predicate,
+  (query) => query.range(start, end),
+);
 ```
 
 ### Field Mapping
@@ -321,6 +631,10 @@ Widget: {
 - Return structured payloads: `{ success, resource, message }`
 - Fetch counts for pagination: `.select("*", { count: "exact" })`
 - Use validation schemas: `validateInput(Schema, input)`
+- Validate where clauses: `validateInput(createWhereSchema("table"), args.where)`
+- Merge predicates: Always combine user filters with system filters via `mergePredicates()`
+- Use appropriate operators: Match filter operators to field types (dates with `gte`/`lte`, strings with `like`/`ilike`)
+- Use type-safe query builder: `buildQuery()` for all filtered queries
 
 **DON'T:**
 
@@ -331,6 +645,10 @@ Widget: {
 - Mix domain logic across resolvers
 - Create custom connection types
 - Skip input validation for mutations
+- Apply user filters without validation
+- Bypass system filters when merging predicates
+- Use raw Supabase queries when filtering (use `buildQuery()` instead)
+- Allow filtering on sensitive fields without proper authorization
 
 **Naming:**
 
