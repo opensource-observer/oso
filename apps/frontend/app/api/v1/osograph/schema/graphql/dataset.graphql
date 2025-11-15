@@ -11,7 +11,7 @@ type Dataset {
   updatedAt: DateTime!
   creator: User!
   organization: Organization!
-  dataModels(first: Int = 50, after: String): DataModelConnection!
+  dataModels(first: Int = 50, after: String, where: JSON): DataModelConnection!
 }
 
 type DatasetEdge {
@@ -33,9 +33,18 @@ type TableColumn {
 
 extend type Query {
   """
-  List all datasets
+  List all datasets with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+
+  Example:
+  {
+    "name": { "like": "%hello%" },
+    "type": { "eq": "USER_MODEL" }
+  }
   """
-  datasets(first: Int = 50, after: String): DatasetConnection!
+  datasets(first: Int = 50, after: String, where: JSON): DatasetConnection!
 
   """
   Get a dataset by ID
