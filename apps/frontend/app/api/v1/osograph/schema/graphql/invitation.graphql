@@ -26,23 +26,20 @@ type InvitationConnection {
 
 extend type Query {
   """
-  Get an invitation by ID
-  """
-  invitation(id: ID!): Invitation
-
-  """
-  List invitations for current user with optional filtering and pagination.
+  List all invitations with optional filtering and pagination.
 
   The where parameter accepts a JSON object with field-level filtering.
   Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
 
   Example:
+  ```json
   {
     "status": { "eq": "PENDING" },
-    "created_at": { "gte": "2024-01-01T00:00:00Z" }
+    "email": { "ilike": "%@example.com" }
   }
+  ```
   """
-  myInvitations(first: Int = 50, after: String, where: JSON): InvitationConnection!
+  invitations(first: Int = 50, after: String, where: JSON): InvitationConnection!
 }
 
 extend type Mutation {

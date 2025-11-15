@@ -16,6 +16,7 @@ import {
   UpdateDatasetSchema,
   DatasetWhereSchema,
   DataModelWhereSchema,
+  TableMetadataWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
   ResourceErrors,
@@ -28,7 +29,6 @@ import type {
 import {
   getUserOrganizationIds,
   requireOrganizationAccess,
-  getResourceById,
   buildConnectionOrEmpty,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -107,34 +107,27 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       );
     },
 
-    dataset: async (
+    tables: async (
       _: unknown,
-      args: { id: string },
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      return getResourceById({
-        tableName: "datasets",
-        id: args.id,
-        userId: authenticatedUser.userId,
-        checkMembership: true,
-      });
-    },
+      const validatedWhere = validateInput(
+        TableMetadataWhereSchema,
+        args.where,
+      );
 
-    datasetTableMetadata: async (
-      _: unknown,
-      args: {
-        orgId: string;
-        catalogName: string;
-        schemaName: string;
-        tableName: string;
-      },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
+      const { orgId, catalogName, schemaName, tableName } = {
+        orgId: validatedWhere.orgId.eq,
+        catalogName: validatedWhere.catalogName.eq,
+        schemaName: validatedWhere.schemaName.eq,
+        tableName: validatedWhere.tableName.eq,
+      };
+
       const org = await requireOrganizationAccess(
         authenticatedUser.userId,
-        args.orgId,
+        orgId,
       );
 
       const trinoJwt = await signTrinoJWT({
@@ -148,16 +141,16 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const query = `
         SELECT column_name, data_type, column_comment
-        FROM ${args.catalogName}.information_schema.columns
-        WHERE table_schema = '${args.schemaName}' AND table_name = '${args.tableName}'
+        FROM ${catalogName}.information_schema.columns
+        WHERE table_schema = '${schemaName}' AND table_name = '${tableName}'
       `;
       const { data: columnResult, error } = await trino.queryAll(query);
       if (error || !columnResult) {
         logger.error(
-          `Failed to fetch catalogs for user ${authenticatedUser.userId}:`,
+          `Failed to fetch table metadata for user ${authenticatedUser.userId}:`,
           error.message,
         );
-        throw ServerErrors.externalService("Failed to fetch catalogs");
+        throw ServerErrors.externalService("Failed to fetch table metadata");
       }
 
       const results = await Promise.all(

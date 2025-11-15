@@ -186,6 +186,13 @@ export const CreateDataModelReleaseSchema = z.object({
   description: z.string().optional(),
 });
 
+export const TableMetadataWhereSchema = z.object({
+  orgId: z.object({ eq: z.string().uuid() }),
+  catalogName: z.object({ eq: z.string() }),
+  schemaName: z.object({ eq: z.string() }),
+  tableName: z.object({ eq: z.string() }),
+});
+
 export function createWhereSchema<T extends ValidTableName>(_tableName: T) {
   const comparisonOperators = z.object({
     eq: z.unknown().optional(),
@@ -228,6 +235,8 @@ export const DatasetWhereSchema = createWhereSchema("datasets");
 export const DataModelWhereSchema = createWhereSchema("model");
 export const InvitationWhereSchema = createWhereSchema("invitations");
 export const OrganizationWhereSchema = createWhereSchema("organizations");
+export const DataModelRevisionWhereSchema = createWhereSchema("model_revision");
+export const DataModelReleaseWhereSchema = createWhereSchema("model_release");
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
   const result = schema.safeParse(input);

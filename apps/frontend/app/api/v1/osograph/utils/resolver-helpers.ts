@@ -87,7 +87,7 @@ export async function getUserOrganizationsConnection(
     return emptyConnection();
   }
 
-  const orgIds = memberships.map((m: any) => m.org_id);
+  const orgIds = memberships.map((m) => m.org_id);
 
   const basePredicate: Partial<QueryPredicate<"organizations">> = {
     in: [{ key: "id", value: orgIds }],
@@ -155,10 +155,7 @@ export async function getUserInvitationsConnection(
   return buildConnectionOrEmpty(invitations, args, count);
 }
 
-export async function requireOrganizationAccess(
-  userId: string,
-  orgId: string,
-): Promise<any> {
+export async function requireOrganizationAccess(userId: string, orgId: string) {
   const org = await getOrganization(orgId);
   await requireOrgMembership(userId, org.id);
   return org;

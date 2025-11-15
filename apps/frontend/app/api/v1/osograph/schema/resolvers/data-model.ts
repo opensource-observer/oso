@@ -2,10 +2,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
-  requireAuthentication,
-  requireOrgMembership,
   getOrganization,
   getUserOrgIds,
+  requireAuthentication,
+  requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
   ResourceErrors,
@@ -22,11 +22,13 @@ import {
 } from "@/app/api/v1/osograph/utils/pagination";
 import { createHash } from "crypto";
 import {
-  validateInput,
-  CreateDataModelSchema,
-  CreateDataModelRevisionSchema,
   CreateDataModelReleaseSchema,
+  CreateDataModelRevisionSchema,
+  CreateDataModelSchema,
+  DataModelReleaseWhereSchema,
+  DataModelRevisionWhereSchema,
   DataModelWhereSchema,
+  validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
 import {
@@ -84,28 +86,6 @@ export async function getDataModelsConnection(
 
 export const dataModelResolvers = {
   Query: {
-    dataModel: async (
-      _: unknown,
-      args: { id: string },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-
-      const { data: dataModel, error } = await supabase
-        .from("model")
-        .select("*")
-        .eq("id", args.id)
-        .is("deleted_at", null)
-        .single();
-
-      if (error || !dataModel) {
-        return null;
-      }
-      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
-
-      return dataModel;
-    },
     dataModels: async (
       _: unknown,
       args: FilterableConnectionArgs,
@@ -362,15 +342,34 @@ export const dataModelResolvers = {
         userId: "",
       });
     },
-    revisions: async (parent: { id: string }, args: ConnectionArgs) => {
+    revisions: async (
+      parent: { id: string },
+      args: FilterableConnectionArgs,
+    ) => {
       const supabase = createAdminClient();
       const [start, end] = preparePaginationRange(args);
-      const { data, error, count } = await supabase
-        .from("model_revision")
-        .select("*", { count: "exact" })
-        .eq("model_id", parent.id)
-        .order("revision_number", { ascending: false })
-        .range(start, end);
+
+      const validatedWhere = args.where
+        ? validateInput(DataModelRevisionWhereSchema, args.where)
+        : undefined;
+
+      const basePredicate: Partial<QueryPredicate<"model_revision">> = {
+        eq: [{ key: "model_id", value: parent.id }],
+      };
+
+      const predicate = validatedWhere
+        ? mergePredicates(basePredicate, parseWhereClause(validatedWhere))
+        : basePredicate;
+
+      const { data, error, count } = await buildQuery(
+        supabase,
+        "model_revision",
+        predicate,
+        (query) =>
+          query
+            .order("revision_number", { ascending: false })
+            .range(start, end),
+      );
 
       if (error) {
         logger.error(
@@ -381,15 +380,32 @@ export const dataModelResolvers = {
       }
       return buildConnectionOrEmpty(data, args, count);
     },
-    releases: async (parent: { id: string }, args: ConnectionArgs) => {
+    releases: async (
+      parent: { id: string },
+      args: FilterableConnectionArgs,
+    ) => {
       const supabase = createAdminClient();
       const [start, end] = preparePaginationRange(args);
-      const { data, error, count } = await supabase
-        .from("model_release")
-        .select("*", { count: "exact" })
-        .eq("model_id", parent.id)
-        .order("created_at", { ascending: false })
-        .range(start, end);
+
+      const validatedWhere = args.where
+        ? validateInput(DataModelReleaseWhereSchema, args.where)
+        : undefined;
+
+      const basePredicate: Partial<QueryPredicate<"model_release">> = {
+        eq: [{ key: "model_id", value: parent.id }],
+      };
+
+      const predicate = validatedWhere
+        ? mergePredicates(basePredicate, parseWhereClause(validatedWhere))
+        : basePredicate;
+
+      const { data, error, count } = await buildQuery(
+        supabase,
+        "model_release",
+        predicate,
+        (query) =>
+          query.order("created_at", { ascending: false }).range(start, end),
+      );
 
       if (error) {
         logger.error(
@@ -458,11 +474,11 @@ export const dataModelResolvers = {
       parent.revision_number,
     start: (parent: { start: string | null }) => parent.start,
     end: (parent: { end: string | null }) => parent.end,
-    dependsOn: (parent: { depends_on: any[] }) => parent.depends_on,
+    dependsOn: (parent: { depends_on: unknown[] }) => parent.depends_on,
     partitionedBy: (parent: { partitioned_by: string[] }) =>
       parent.partitioned_by,
     clusteredBy: (parent: { clustered_by: string[] }) => parent.clustered_by,
-    kindOptions: (parent: { kind_options: any }) => parent.kind_options,
+    kindOptions: (parent: { kind_options: unknown }) => parent.kind_options,
     createdAt: (parent: { created_at: string }) => parent.created_at,
   },
 

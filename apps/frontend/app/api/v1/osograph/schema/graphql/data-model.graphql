@@ -7,8 +7,8 @@ type DataModel {
   isEnabled: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
-  revisions(first: Int = 50, after: String): DataModelRevisionConnection!
-  releases(first: Int = 50, after: String): DataModelReleaseConnection!
+  revisions(first: Int = 50, after: String, where: JSON): DataModelRevisionConnection!
+  releases(first: Int = 50, after: String, where: JSON): DataModelReleaseConnection!
   latestRevision: DataModelRevision
   latestRelease: DataModelRelease
 }
@@ -123,8 +123,6 @@ type DataModelKindOptions {
 }
 
 extend type Query {
-  dataModel(id: ID!): DataModel
-
   """
   List all data models with optional filtering and pagination.
 
@@ -132,10 +130,12 @@ extend type Query {
   Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
 
   Example:
+  ```json
   {
     "name": { "like": "%user%" },
     "is_enabled": { "eq": true }
   }
+  ```
   """
   dataModels(first: Int = 50, after: String, where: JSON): DataModelConnection!
 }
