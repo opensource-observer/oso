@@ -95,10 +95,9 @@ export const dataModelResolvers = {
         whereSchema: DataModelWhereSchema,
         requireAuth: true,
         filterByUserOrgs: true,
-        buildBasePredicate: ({ userOrgIds }) => ({
-          in: [{ key: "org_id", value: userOrgIds }],
+        basePredicate: {
           is: [{ key: "deleted_at", value: null }],
-        }),
+        },
       });
     },
   },
@@ -347,10 +346,9 @@ export const dataModelResolvers = {
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
-        buildBasePredicate: ({ parentOrgIds }) => ({
-          in: [{ key: "org_id", value: parentOrgIds }],
+        basePredicate: {
           eq: [{ key: "model_id", value: parent.id }],
-        }),
+        },
       });
     },
     releases: async (
@@ -364,10 +362,9 @@ export const dataModelResolvers = {
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
-        buildBasePredicate: ({ parentOrgIds }) => ({
-          in: [{ key: "org_id", value: parentOrgIds }],
+        basePredicate: {
           eq: [{ key: "model_id", value: parent.id }],
-        }),
+        },
       });
     },
     isEnabled: (parent: { is_enabled: boolean }) => parent.is_enabled,

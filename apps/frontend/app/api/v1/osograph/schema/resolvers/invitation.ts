@@ -90,9 +90,6 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
         whereSchema: InvitationWhereSchema,
         requireAuth: true,
         filterByUserOrgs: true,
-        buildBasePredicate: ({ userOrgIds }) => ({
-          in: [{ key: "org_id", value: userOrgIds }],
-        }),
       });
     },
   },

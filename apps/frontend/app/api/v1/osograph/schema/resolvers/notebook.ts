@@ -95,10 +95,9 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
         whereSchema: NotebookWhereSchema,
         requireAuth: true,
         filterByUserOrgs: true,
-        buildBasePredicate: ({ userOrgIds }) => ({
-          in: [{ key: "org_id", value: userOrgIds }],
+        basePredicate: {
           is: [{ key: "deleted_at", value: null }],
-        }),
+        },
       });
     },
   },

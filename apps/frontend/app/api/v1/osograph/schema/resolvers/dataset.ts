@@ -92,10 +92,9 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         whereSchema: DatasetWhereSchema,
         requireAuth: true,
         filterByUserOrgs: true,
-        buildBasePredicate: ({ userOrgIds }) => ({
-          in: [{ key: "org_id", value: userOrgIds }],
+        basePredicate: {
           is: [{ key: "deleted_at", value: null }],
-        }),
+        },
       });
     },
 
@@ -313,11 +312,10 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
-        buildBasePredicate: ({ parentOrgIds }) => ({
-          in: [{ key: "org_id", value: parentOrgIds }],
+        basePredicate: {
           is: [{ key: "deleted_at", value: null }],
           eq: [{ key: "dataset_id", value: parent.id }],
-        }),
+        },
       });
     },
   },

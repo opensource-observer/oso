@@ -20,61 +20,71 @@ import {
 import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 import type { z } from "zod";
 
-type OrgIdsContext<TKey extends string> = {
-  [K in TKey]: string[];
-};
+export type TableWithOrgId = Extract<
+  ValidTableName,
+  {
+    [K in ValidTableName]: "org_id" extends keyof TableRow<K> ? K : never;
+  }[ValidTableName]
+>;
 
-type PredicateBuilder<TTable extends ValidTableName, TKey extends string> = (
-  context: OrgIdsContext<TKey>,
-) => Partial<QueryPredicate<TTable>>;
-
-interface BaseQueryOptions<TTable extends ValidTableName> {
+interface BaseQueryOptions<TTable extends TableWithOrgId> {
   tableName: TTable;
   whereSchema: z.ZodSchema;
   errorMessage?: string;
+  basePredicate?: Partial<QueryPredicate<TTable>>;
 }
 
-export type QueryConnectionOptions<TTable extends ValidTableName> =
+export type QueryConnectionOptions<TTable extends TableWithOrgId> =
   | (BaseQueryOptions<TTable> & {
       filterByUserOrgs: true;
       requireAuth: true;
-      buildBasePredicate: PredicateBuilder<TTable, "userOrgIds">;
     })
   | (BaseQueryOptions<TTable> & {
       filterByUserOrgs: false;
       requireAuth: boolean;
       parentOrgIds: string | string[];
-      buildBasePredicate: PredicateBuilder<TTable, "parentOrgIds">;
     });
 
-export async function queryWithPagination<TTable extends ValidTableName>(
+async function resolveOrgIds<TTable extends TableWithOrgId>(
+  options: QueryConnectionOptions<TTable>,
+  context: GraphQLContext,
+): Promise<string[]> {
+  if (options.filterByUserOrgs) {
+    const authenticatedUser = requireAuthentication(context.user);
+    return await getUserOrganizationIds(authenticatedUser.userId);
+  }
+
+  if (options.requireAuth) {
+    requireAuthentication(context.user);
+  }
+
+  return Array.isArray(options.parentOrgIds)
+    ? options.parentOrgIds
+    : [options.parentOrgIds];
+}
+
+export async function queryWithPagination<TTable extends TableWithOrgId>(
   args: FilterableConnectionArgs,
   context: GraphQLContext,
   options: QueryConnectionOptions<TTable>,
 ) {
   const supabase = createAdminClient();
 
-  let orgIds: string[];
-  if (options.filterByUserOrgs) {
-    const authenticatedUser = requireAuthentication(context.user);
-    orgIds = await getUserOrganizationIds(authenticatedUser.userId);
-    if (orgIds.length === 0) {
-      return emptyConnection<TableRow<TTable>>();
-    }
-  } else {
-    if (options.requireAuth) {
-      requireAuthentication(context.user);
-    }
-    orgIds = Array.isArray(options.parentOrgIds)
-      ? options.parentOrgIds
-      : [options.parentOrgIds];
+  const orgIds = await resolveOrgIds(options, context);
+  if (orgIds.length === 0) {
+    return emptyConnection<TableRow<TTable>>();
   }
 
   const [start, end] = preparePaginationRange(args);
 
-  const basePredicate = options.filterByUserOrgs
-    ? options.buildBasePredicate({ userOrgIds: orgIds })
-    : options.buildBasePredicate({ parentOrgIds: orgIds });
+  const orgIdPredicate: Partial<QueryPredicate<TTable>> = {
+    // @ts-expect-error - TS can't correlate that org_id exists on all TableWithOrgId tables
+    in: [{ key: "org_id", value: orgIds }],
+  };
+
+  const basePredicate = options.basePredicate
+    ? mergePredicates(orgIdPredicate, options.basePredicate)
+    : orgIdPredicate;
 
   const validatedWhere = args.where
     ? validateInput(options.whereSchema, args.where)

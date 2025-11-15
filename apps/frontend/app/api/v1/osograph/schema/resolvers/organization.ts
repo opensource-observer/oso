@@ -236,10 +236,9 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.id,
-        buildBasePredicate: ({ parentOrgIds }) => ({
-          in: [{ key: "org_id", value: parentOrgIds }],
+        basePredicate: {
           is: [{ key: "deleted_at", value: null }],
-        }),
+        },
       });
     },
 
@@ -257,10 +256,9 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.id,
-        buildBasePredicate: ({ parentOrgIds }) => ({
-          in: [{ key: "org_id", value: parentOrgIds }],
+        basePredicate: {
           is: [{ key: "deleted_at", value: null }],
-        }),
+        },
       });
     },
   },
