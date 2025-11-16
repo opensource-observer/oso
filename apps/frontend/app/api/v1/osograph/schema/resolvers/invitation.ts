@@ -12,11 +12,8 @@ import {
 import {
   InvitationErrors,
   ServerErrors,
-  UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getUserInvitationsConnection,
   requireOrganizationAccess,
   checkMembershipExists,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -26,58 +23,24 @@ import {
   CreateInvitationSchema,
   AcceptInvitationSchema,
   RevokeInvitationSchema,
+  InvitationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
-    invitation: async (
+    invitations: async (
       _: unknown,
-      args: { id: string },
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-      const { data: invitation, error } = await supabase
-        .from("invitations")
-        .select("*")
-        .eq("id", args.id)
-        .single();
-
-      if (error || !invitation) {
-        throw InvitationErrors.notFound();
-      }
-
-      const { data: membership } = await supabase
-        .from("users_by_organization")
-        .select("id")
-        .eq("user_id", authenticatedUser.userId)
-        .eq("org_id", invitation.org_id)
-        .is("deleted_at", null)
-        .single();
-
-      const userEmail = authenticatedUser.email?.toLowerCase();
-      const isInvitee = userEmail === invitation.email.toLowerCase();
-
-      if (!membership && !isInvitee) {
-        throw InvitationErrors.wrongRecipient();
-      }
-
-      return invitation;
-    },
-
-    myInvitations: async (
-      _: unknown,
-      args: ConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const userEmail = authenticatedUser.email?.toLowerCase();
-
-      if (!userEmail) {
-        throw UserErrors.emailNotFound();
-      }
-
-      return getUserInvitationsConnection(userEmail, args);
+      return queryWithPagination(args, context, {
+        tableName: "invitations",
+        whereSchema: InvitationWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+      });
     },
   },
 

@@ -1,4 +1,4 @@
-import { GraphQLScalarType, Kind } from "graphql";
+import { DateTimeISOResolver, GraphQLJSON } from "graphql-scalars";
 import type { GraphQLResolverMap } from "@apollo/subgraph/dist/schema-helper/resolverMap";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { viewerResolvers } from "@/app/api/v1/osograph/schema/resolvers/viewer";
@@ -9,34 +9,9 @@ import { notebookResolvers } from "@/app/api/v1/osograph/schema/resolvers/notebo
 import { datasetResolvers } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 import { dataModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/data-model";
 
-const dateTimeScalar = new GraphQLScalarType({
-  name: "DateTime",
-  description: "DateTime custom scalar type",
-  serialize(value) {
-    if (value instanceof Date) {
-      return value.toISOString();
-    }
-    if (typeof value === "string") {
-      return value;
-    }
-    throw Error("DateTime must be a Date object or ISO string");
-  },
-  parseValue(value) {
-    if (typeof value === "string") {
-      return new Date(value);
-    }
-    throw Error("DateTime must be a string");
-  },
-  parseLiteral(ast) {
-    if (ast.kind === Kind.STRING) {
-      return new Date(ast.value);
-    }
-    return null;
-  },
-});
-
 export const resolvers: GraphQLResolverMap<GraphQLContext> = {
-  DateTime: dateTimeScalar,
+  DateTime: DateTimeISOResolver,
+  JSON: GraphQLJSON,
 
   Query: {
     ...viewerResolvers.Query,

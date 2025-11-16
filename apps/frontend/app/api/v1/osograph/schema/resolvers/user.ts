@@ -1,7 +1,12 @@
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { getUserOrganizationsConnection } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import {
+  validateInput,
+  OrganizationWhereSchema,
+} from "@/app/api/v1/osograph/utils/validation";
+import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
 
 export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
   User: {
@@ -10,10 +15,18 @@ export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     organizations: async (
       parent: { id: string },
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       _context: GraphQLContext,
     ) => {
-      return getUserOrganizationsConnection(parent.id, args);
+      const validatedWhere = args.where
+        ? validateInput(OrganizationWhereSchema, args.where)
+        : undefined;
+
+      return getUserOrganizationsConnection(
+        parent.id,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
   },
 };

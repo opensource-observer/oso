@@ -18,18 +18,6 @@ export function requireAuthentication(user: User): AuthenticatedUser {
   return user;
 }
 
-export async function getUserOrgIds(userId: string): Promise<string[]> {
-  const supabase = createAdminClient();
-
-  const { data: memberships } = await supabase
-    .from("users_by_organization")
-    .select("org_id")
-    .eq("user_id", userId)
-    .is("deleted_at", null);
-
-  return memberships?.map((m) => m.org_id) || [];
-}
-
 export async function requireOrgMembership(
   userId: string,
   orgId: string,
@@ -72,22 +60,6 @@ export async function getOrganization(orgId: string) {
     .from("organizations")
     .select("*")
     .eq("id", orgId)
-    .single();
-
-  if (error || !org) {
-    throw OrganizationErrors.notFound();
-  }
-
-  return org;
-}
-
-export async function getOrganizationByName(orgName: string) {
-  const supabase = createAdminClient();
-
-  const { data: org, error } = await supabase
-    .from("organizations")
-    .select("*")
-    .eq("org_name", orgName)
     .single();
 
   if (error || !org) {

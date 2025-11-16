@@ -58,9 +58,20 @@ type RunConnection {
 
 extend type Query {
   """
-  Get a run by ID
+  List all runs with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+
+  Example:
+  ```json
+  {
+    "status": { "eq": "RUNNING" },
+    "datasetId": { "eq": "dataset-uuid" }
+  }
+  ```
   """
-  run(id: ID!): Run
+  runs(first: Int = 50, after: String, where: JSON): RunConnection!
 }
 
 extend type Mutation {

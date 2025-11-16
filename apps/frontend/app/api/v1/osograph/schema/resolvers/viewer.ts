@@ -2,15 +2,22 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { UserErrors } from "@/app/api/v1/osograph/utils/errors";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
   getUserOrganizationsConnection,
   getUserInvitationsConnection,
   getUserOrganizationIds,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { getNotebooksConnection } from "@/app/api/v1/osograph/schema/resolvers/notebook";
-import { getDatasetsConnection } from "@/app/api/v1/osograph/schema/resolvers/dataset";
+import {
+  validateInput,
+  OrganizationWhereSchema,
+  NotebookWhereSchema,
+  DatasetWhereSchema,
+  InvitationWhereSchema,
+} from "@/app/api/v1/osograph/utils/validation";
+import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -38,36 +45,72 @@ export const viewerResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     organizations: async (
       parent: { id: string },
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       _context: GraphQLContext,
     ) => {
-      return getUserOrganizationsConnection(parent.id, args);
+      const validatedWhere = args.where
+        ? validateInput(OrganizationWhereSchema, args.where)
+        : undefined;
+
+      return getUserOrganizationsConnection(
+        parent.id,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
 
     notebooks: async (
       parent: { id: string },
-      args: ConnectionArgs,
-      _context: GraphQLContext,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
     ) => {
       const orgIds = await getUserOrganizationIds(parent.id);
-      return getNotebooksConnection(orgIds, args);
+
+      return queryWithPagination(args, context, {
+        tableName: "notebooks",
+        whereSchema: NotebookWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: orgIds,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+        },
+      });
     },
 
     datasets: async (
       parent: { id: string },
-      args: ConnectionArgs,
-      _context: GraphQLContext,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
     ) => {
       const orgIds = await getUserOrganizationIds(parent.id);
-      return getDatasetsConnection(orgIds, args);
+
+      return queryWithPagination(args, context, {
+        tableName: "datasets",
+        whereSchema: DatasetWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: orgIds,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+        },
+      });
     },
 
     invitations: async (
       parent: { id: string; email: string },
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       _context: GraphQLContext,
     ) => {
-      return getUserInvitationsConnection(parent.email, args);
+      const validatedWhere = args.where
+        ? validateInput(InvitationWhereSchema, args.where)
+        : undefined;
+
+      return getUserInvitationsConnection(
+        parent.email,
+        args,
+        validatedWhere ? parseWhereClause(validatedWhere) : undefined,
+      );
     },
   },
 };
