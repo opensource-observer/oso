@@ -1,6 +1,6 @@
 import pytest
 from queryrewriter import rewrite_query
-from queryrewriter.types import TableResolverProtocol
+from queryrewriter.types import TableResolver
 from sqlglot import parse_one
 
 
@@ -90,11 +90,30 @@ def fake_table_resolver():
             "org2",
             None,
         ),
+        (
+            # Test CTEs
+            """
+            SELECT * FROM dataset1.table1
+            UNION ALL
+            SELECT * FROM dataset2.table2
+            UNION ALL
+            SELECT * FROM dataset3.table3
+            """,
+            """
+            SELECT * FROM "table1"."dataset1"."org1" as "table1"
+            UNION ALL
+            SELECT * FROM "table2"."dataset2"."org1" as "table2"
+            UNION ALL
+            SELECT * FROM "table3"."dataset3"."org1" as "table3"
+            """,
+            "org1",
+            None,
+        ),
     ],
 )
 @pytest.mark.asyncio
 async def test_rewrite_query(
-    fake_table_resolver: TableResolverProtocol,
+    fake_table_resolver: TableResolver,
     input_query: str,
     expected_query: str,
     org_name: str,
@@ -108,3 +127,43 @@ async def test_rewrite_query(
         default_dataset_name=default_dataset_name,
     )
     assert_same_sql(rewritten_query, expected_query)
+
+
+@pytest.mark.parametrize(
+    "input_query,org_name,default_dataset_name,error_string",
+    [
+        (
+            """
+            WITH "test" (
+                select * from "test" where id = 1
+            ), "boop" (
+                select * from "test"
+            )
+            select * from "test"
+            """,
+            "org1",
+            "dataset1",
+            "circular reference",
+        )
+    ],
+)
+@pytest.mark.asyncio
+async def test_inputs_should_fail(
+    fake_table_resolver: TableResolver,
+    input_query: str,
+    org_name: str,
+    default_dataset_name: str | None,
+    error_string: str,
+):
+    try:
+        await rewrite_query(
+            org_name=org_name,
+            query=input_query,
+            table_resolver=fake_table_resolver,
+            dialect="trino",
+            default_dataset_name=default_dataset_name,
+        )
+    except Exception as e:
+        assert error_string in str(e), f"Expected an error message with: {error_string}"
+    else:
+        assert False, "Expected an exception but none was raised."

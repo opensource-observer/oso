@@ -5,7 +5,7 @@ from sqlglot.optimizer.qualify import qualify
 from sqlglot.optimizer.scope import Scope, build_scope
 from sqlmesh.core.dialect import parse
 
-from .types import TableResolverProtocol
+from .types import TableResolver
 
 
 def table_to_fqn(
@@ -49,22 +49,28 @@ def table_transformer(table: exp.Table, new_table: exp.Table) -> TransformCallab
 def find_all_table_sources(expr: exp.Expression) -> set[exp.Table]:
     """Find all table sources in a sqlglot expression."""
 
-    def _recurse_table_scope_for_tables(scope: Scope):
+    def _recurse_table_scope_for_tables(scope_name: str | None, scope: Scope):
         tables: set[exp.Table] = set()
-        for source in scope.sources.values():
+        for inner_scope_name, source in scope.sources.items():
             if isinstance(source, exp.Table):
+                if not source.db and source.name == scope_name:
+                    error_message = f"{source.name} is a either a circular reference. This is due to overloading the name `{source.name}`. Please use the form <dataset>.<table> to refer to tables where possible."
+                    raise ValueError(error_message)
                 tables.add(source)
             elif isinstance(source, Scope):
-                tables = _recurse_table_scope_for_tables(source)
-                tables = tables.union(tables)
+                new_tables = _recurse_table_scope_for_tables(inner_scope_name, source)
+                tables = tables.union(new_tables)
             else:
                 raise ValueError(f"Unhandled source type: {type(source)}")
+        for union_scope in scope.union_scopes:
+            new_tables = _recurse_table_scope_for_tables(scope_name, union_scope)
+            tables = tables.union(new_tables)
         return tables
 
     scope = build_scope(expr)
     if not scope:
         raise ValueError("Could not build scope for expression.")
-    return _recurse_table_scope_for_tables(scope)
+    return _recurse_table_scope_for_tables(None, scope)
 
 
 def apply_transforms_to_expression(
@@ -78,7 +84,7 @@ def apply_transforms_to_expression(
 async def rewrite_query(
     org_name: str,
     query: str,
-    table_resolver: TableResolverProtocol,
+    table_resolver: TableResolver,
     *,
     default_dataset_name: str | None = None,
     dialect: str = "trino",
@@ -90,8 +96,8 @@ async def rewrite_query(
     Args:
         org_name (str): The organization name for the query. This is either the
             user making the query or the org the query is being made on behalf of.
-        query (str): The original SQL query. table_resolver
-        (TableResolverProtocol): An instance that resolves table names.
+        query (str): The original SQL query.
+        table_resolver (TableResolver): An instance that resolves table names.
     Returns:
         str: The rewritten SQL query.
     """
