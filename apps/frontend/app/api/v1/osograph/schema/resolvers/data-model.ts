@@ -10,15 +10,8 @@ import {
   ResourceErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import {
-  buildConnectionOrEmpty,
-  getResourceById,
-  preparePaginationRange,
-} from "@/app/api/v1/osograph/utils/resolver-helpers";
-import {
-  ConnectionArgs,
-  FilterableConnectionArgs,
-} from "@/app/api/v1/osograph/utils/pagination";
+import { getResourceById } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { createHash } from "crypto";
 import {
   CreateDataModelReleaseSchema,
@@ -30,58 +23,7 @@ import {
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
-import {
-  buildQuery,
-  mergePredicates,
-  type QueryPredicate,
-} from "@/app/api/v1/osograph/utils/query-builder";
-import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
-
-export async function getDataModelsConnection(
-  orgIds: string[],
-  args: ConnectionArgs & {
-    datasetId?: string;
-  },
-  additionalPredicate?: Partial<QueryPredicate<"model">>,
-) {
-  const supabase = createAdminClient();
-
-  if (orgIds.length === 0) {
-    return emptyConnection();
-  }
-
-  const [start, end] = preparePaginationRange(args);
-
-  const basePredicate: Partial<QueryPredicate<"model">> = {
-    in: [{ key: "org_id", value: orgIds }],
-    is: [{ key: "deleted_at", value: null }],
-  };
-
-  if (args.datasetId) {
-    basePredicate.eq = [{ key: "dataset_id", value: args.datasetId }];
-  }
-
-  const predicate = additionalPredicate
-    ? mergePredicates(basePredicate, additionalPredicate)
-    : basePredicate;
-
-  const {
-    data: dataModels,
-    count,
-    error,
-  } = await buildQuery(supabase, "model", predicate, (query) =>
-    query.range(start, end),
-  );
-
-  if (error) {
-    throw ServerErrors.database(
-      `Failed to fetch data models: ${error.message}`,
-    );
-  }
-
-  return buildConnectionOrEmpty(dataModels, args, count);
-}
 
 export const dataModelResolvers = {
   Query: {
