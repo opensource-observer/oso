@@ -30,7 +30,7 @@ The API follows **Relay's cursor-based pagination spec**. Every list query retur
 **Data Flow:**
 
 ```
-Query → Auth Check → preparePaginationRange() → Supabase (with count) → buildConnectionOrEmpty() → { edges, pageInfo, totalCount }
+Query → Auth Check → Validate Where Clause → parseWhereClause() → mergePredicates() → buildQuery() → Supabase (with count) → buildConnectionOrEmpty() → { edges, pageInfo, totalCount }
 ```
 
 ## Directory Structure
@@ -40,20 +40,24 @@ frontend/app/api/v1/osograph/
 ├── route.ts                   # Apollo Server setup
 ├── schema/
 │   ├── graphql/               # SDL type definitions
-│   │   ├── base.graphql       # Base types, PageInfo, enums
+│   │   ├── base.graphql       # Base types, PageInfo, enums, JSON scalar
 │   │   └── *.graphql          # Domain schemas
 │   └── resolvers/             # Resolver implementations
 │       ├── index.ts           # Combines all resolvers
 │       └── *.ts               # Domain resolvers
 ├── types/
-│   └── context.ts             # GraphQL context
+│   ├── context.ts             # GraphQL context
+│   └── utils.ts               # Type utilities
 └── utils/
     ├── auth.ts                # Auth helpers
+    ├── connection.ts          # Connection builder
     ├── errors.ts              # Error helpers
     ├── pagination.ts          # Cursor pagination (constants & encoding)
-    ├── connection.ts          # Connection builder
+    ├── query-builder.ts       # Builds Supabase queries from predicates
+    ├── query-helpers.ts       # High-level query helpers (queryWithPagination)
+    ├── resolver-helpers.ts    # Shared resolver utilities
     ├── validation.ts          # Zod schemas & input validation
-    └── resolver-helpers.ts    # Shared resolver utilities
+    └── where-parser.ts        # Parses GraphQL where input to predicates
 ```
 
 ## Adding a Query
@@ -62,12 +66,15 @@ frontend/app/api/v1/osograph/
 
 **1. Define Schema** (`schema/graphql/widget.graphql`)
 
-```graphql
+````graphql
 type Widget {
   id: ID!
   name: String!
   orgId: ID!
   createdAt: DateTime!
+  updatedAt: DateTime!
+  creatorId: ID!
+  creator: User!
   organization: Organization!
 }
 
@@ -83,85 +90,80 @@ type WidgetConnection {
 }
 
 extend type Query {
-  widget(id: ID!): Widget
-  widgets(orgId: ID!, first: Int = 50, after: String): WidgetConnection!
+  """
+  Query widgets with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is.
+
+  Example:
+  ```json
+  {
+    "name": { "like": "%search%" },
+    "created_at": { "gte": "2024-01-01T00:00:00Z" }
+  }
+  ```
+  """
+  widgets(where: JSON, first: Int = 50, after: String): WidgetConnection!
 }
+````
+
+:::tip
+To query a single widget, use filtering:
+
+```graphql
+widgets(where: { id: { eq: "widget_id" } })
 ```
 
-**Note:** The default value `50` matches the `DEFAULT_PAGE_SIZE` constant in `utils/pagination.ts`. Maximum allowed is `MAX_PAGE_SIZE = 100`.
+:::
 
 **2. Implement Resolver** (`schema/resolvers/widget.ts`)
 
 ```typescript
-import { createAdminClient } from "@/lib/supabase/admin";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
-  requireAuthentication,
-  requireOrgMembership,
+  getOrganization,
+  getUserProfile,
 } from "@/app/api/v1/osograph/utils/auth";
-import {
-  buildConnectionOrEmpty,
-  preparePaginationRange,
-} from "@/app/api/v1/osograph/utils/resolver-helpers";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import { createWhereSchema } from "@/app/api/v1/osograph/utils/validation";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 
-export const widgetResolvers = {
+const WidgetWhereSchema = createWhereSchema("widgets");
+
+export const widgetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
-    widget: async (
-      _: unknown,
-      args: { id: string },
-      context: GraphQLContext,
-    ) => {
-      const user = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-
-      const { data: widget } = await supabase
-        .from("widgets")
-        .select("*")
-        .eq("id", args.id)
-        .is("deleted_at", null)
-        .single();
-
-      if (!widget) return null;
-
-      await requireOrgMembership(user.userId, widget.org_id);
-      return widget;
-    },
-
     widgets: async (
       _: unknown,
-      args: ConnectionArgs & { orgId: string },
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const user = requireAuthentication(context.user);
-      await requireOrgMembership(user.userId, args.orgId);
-
-      const supabase = createAdminClient();
-      const [start, end] = preparePaginationRange(args);
-
-      const { data: widgets, count } = await supabase
-        .from("widgets")
-        .select("*", { count: "exact" })
-        .eq("org_id", args.orgId)
-        .is("deleted_at", null)
-        .range(start, end);
-
-      return buildConnectionOrEmpty(widgets, args, count);
+      return queryWithPagination(args, context, {
+        tableName: "widgets",
+        whereSchema: WidgetWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+        },
+      });
     },
   },
 
   Widget: {
+    name: (parent: { widget_name: string }) => parent.widget_name,
     orgId: (parent: { org_id: string }) => parent.org_id,
     createdAt: (parent: { created_at: string }) => parent.created_at,
+    updatedAt: (parent: { updated_at: string }) => parent.updated_at,
+    creatorId: (parent: { created_by: string }) => parent.created_by,
+
+    creator: async (parent: { created_by: string }) => {
+      return getUserProfile(parent.created_by);
+    },
 
     organization: async (parent: { org_id: string }) => {
-      const supabase = createAdminClient();
-      const { data: org } = await supabase
-        .from("organizations")
-        .select("*")
-        .eq("id", parent.org_id)
-        .single();
-      return org;
+      return getOrganization(parent.org_id);
     },
   },
 };
@@ -277,17 +279,335 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
 
 Export the validation schema in `utils/validation.ts` so it's available for import.
 
-## Patterns
+## Filtering with Where Clauses
 
-### Pagination
+List queries support flexible filtering via the `where` parameter, which accepts a JSON object specifying field-level filters.
+
+:::warning
+Field names in `where` filters **must use snake_case** (database column names), not camelCase (GraphQL field names). This is a known limitation due to the current 1:1 mapping with Supabase.
+
+For example, use `notebook_name` instead of `notebookName`, and `created_at` instead of `createdAt`.
+:::
+
+### Filter Structure
+
+```json
+{
+  "field_name": { "operator": value },
+  "another_field": { "operator": value }
+}
+```
+
+Multiple operators can be applied to the same field:
+
+```json
+{
+  "created_at": {
+    "gte": "2024-01-01T00:00:00Z",
+    "lt": "2024-12-31T23:59:59Z"
+  }
+}
+```
+
+### Supported Operators
+
+| Operator | Description                      | Example                                     |
+| -------- | -------------------------------- | ------------------------------------------- |
+| `eq`     | Equals                           | `{ "status": { "eq": "active" } }`          |
+| `neq`    | Not equals                       | `{ "status": { "neq": "deleted" } }`        |
+| `gt`     | Greater than                     | `{ "count": { "gt": 100 } }`                |
+| `gte`    | Greater than or equal            | `{ "created_at": { "gte": "2024-01-01" } }` |
+| `lt`     | Less than                        | `{ "count": { "lt": 1000 } }`               |
+| `lte`    | Less than or equal               | `{ "updated_at": { "lte": "2024-12-31" } }` |
+| `in`     | In array                         | `{ "id": { "in": ["id1", "id2", "id3"] } }` |
+| `like`   | Pattern match (case-sensitive)   | `{ "name": { "like": "%search%" } }`        |
+| `ilike`  | Pattern match (case-insensitive) | `{ "email": { "ilike": "%@example.com" } }` |
+| `is`     | Null/boolean check               | `{ "deleted_at": { "is": null } }`          |
+
+:::note
+
+- `like` and `ilike` use SQL wildcards: `%` (any characters), `_` (single character)
+- `in` accepts an array of values
+- `is` accepts `null` or boolean values
+  :::
+
+### GraphQL Query Examples
+
+**Single resource by ID:**
+
+```graphql
+query {
+  notebooks(where: { id: { eq: "123e4567-e89b-12d3-a456-426614174000" } }) {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}
+```
+
+**Filter by name pattern:**
+
+```graphql
+query {
+  notebooks(where: { notebook_name: { like: "%churn%" } }) {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}
+```
+
+**Filter by date range:**
+
+```graphql
+query {
+  datasets(
+    where: {
+      created_at: { gte: "2024-01-01T00:00:00Z", lt: "2024-12-31T23:59:59Z" }
+    }
+  ) {
+    edges {
+      node {
+        id
+        name
+        createdAt
+      }
+    }
+  }
+}
+```
+
+**Multiple field filters:**
+
+```graphql
+query {
+  dataModels(
+    where: {
+      name: { ilike: "%user%" }
+      is_enabled: { eq: true }
+      created_at: { gte: "2024-01-01T00:00:00Z" }
+    }
+  ) {
+    edges {
+      node {
+        id
+        name
+        isEnabled
+      }
+    }
+  }
+}
+```
+
+**Combine with pagination:**
+
+```graphql
+query {
+  notebooks(
+    where: { notebook_name: { like: "%analysis%" } }
+    first: 20
+    after: "cursor123"
+  ) {
+    edges {
+      node {
+        id
+        name
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+```
+
+### Using the `queryWithPagination` Helper
+
+For the common use case of querying a single table with pagination, filtering, and org-scoped access control, use the `queryWithPagination` helper. This abstracts away all the boilerplate of validating where clauses, building predicates, and executing queries.
+
+**1. Schema is already defined** (from the example above - no additional parameters needed)
+
+The `where` parameter provides flexible filtering, eliminating the need for separate singular and plural queries.
+
+**2. Create validation schema:**
 
 ```typescript
-const [start, end] = preparePaginationRange(args); // Get offset range
+import { createWhereSchema } from "@/app/api/v1/osograph/utils/validation";
+
+const WidgetWhereSchema = createWhereSchema("widgets");
+```
+
+**3. Use the helper in your resolver:**
+
+```typescript
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+
+widgets: async (
+  _: unknown,
+  args: FilterableConnectionArgs,
+  context: GraphQLContext,
+) => {
+  return queryWithPagination(args, context, {
+    tableName: "widgets",
+    whereSchema: WidgetWhereSchema,
+    requireAuth: true,
+    filterByUserOrgs: true,
+    basePredicate: {
+      is: [{ key: "deleted_at", value: null }],
+    },
+  });
+};
+```
+
+**Helper Options:**
+
+| Option             | Type                 | Description                                                               |
+| ------------------ | -------------------- | ------------------------------------------------------------------------- |
+| `tableName`        | `string`             | The database table to query                                               |
+| `whereSchema`      | `ZodSchema`          | Validation schema for the where clause                                    |
+| `requireAuth`      | `boolean`            | Whether to require authentication                                         |
+| `filterByUserOrgs` | `boolean`            | If `true`, automatically filters by user's org memberships                |
+| `parentOrgIds`     | `string \| string[]` | Specific org ID(s) to filter by (used when `filterByUserOrgs` is `false`) |
+| `basePredicate`    | `QueryPredicate`     | Additional system filters (e.g., soft delete, status checks)              |
+| `errorMessage`     | `string`             | Optional custom error message                                             |
+
+**Examples:**
+
+Top-level user resources:
+
+```typescript
+// Query all resources the authenticated user can access
+return queryWithPagination(args, context, {
+  tableName: "notebooks",
+  whereSchema: NotebookWhereSchema,
+  requireAuth: true,
+  filterByUserOrgs: true, // ← Automatically scopes to user's orgs
+  basePredicate: {
+    is: [{ key: "deleted_at", value: null }],
+  },
+});
+```
+
+Nested resources in field resolvers:
+
+```typescript
+// In Dataset type resolver
+dataModels: async (parent: { id: string; org_id: string }, args, context) => {
+  return queryWithPagination(args, context, {
+    tableName: "model",
+    whereSchema: DataModelWhereSchema,
+    requireAuth: false,
+    filterByUserOrgs: false,
+    parentOrgIds: parent.org_id, // ← Use parent's org_id
+    basePredicate: {
+      is: [{ key: "deleted_at", value: null }],
+      eq: [{ key: "dataset_id", value: parent.id }],
+    },
+  });
+};
+```
+
+The helper automatically handles:
+
+- Authentication (if `requireAuth` is `true`)
+- Organization access validation
+- Where clause validation and parsing
+- Predicate merging (system filters + user filters)
+- Query building and execution
+- Connection building with pagination
+- Error handling
+
+### Security Considerations
+
+:::warning
+System filters (access control, soft deletes) are **always enforced** and cannot be bypassed by user-provided `where` filters.
+:::
+
+```typescript
+const basePredicate = {
+  in: [{ key: "org_id", value: userOrgIds }], // ← Access control
+  is: [{ key: "deleted_at", value: null }], // ← Soft delete filter
+};
+```
+
+User-provided `where` filters are **merged** with system filters using `mergePredicates()`, ensuring:
+
+- Users can only query resources in their organizations
+- Soft-deleted resources are excluded
+- Authorization checks are never bypassed
+
+## Patterns
+
+### Pagination & Filtering (Recommended)
+
+For standard list queries with pagination and filtering, use the `queryWithPagination` helper:
+
+```typescript
+return queryWithPagination(args, context, {
+  tableName: "table_name",
+  whereSchema: TableWhereSchema,
+  requireAuth: true,
+  filterByUserOrgs: true,
+  basePredicate: {
+    is: [{ key: "deleted_at", value: null }],
+  },
+});
+```
+
+### Manual Pagination (for custom queries)
+
+When you need more control (e.g., complex joins, custom logic):
+
+```typescript
+const [start, end] = preparePaginationRange(args);
 const { data, count } = await supabase
   .from("t")
   .select("*", { count: "exact" })
   .range(start, end);
-return buildConnectionOrEmpty(data, args, count); // Build connection
+return buildConnectionOrEmpty(data, args, count);
+```
+
+### Manual Filtering (for custom queries)
+
+When `queryWithPagination` doesn't fit your use case:
+
+```typescript
+// Validate and parse where clause
+const validatedWhere = args.where
+  ? validateInput(createWhereSchema("table_name"), args.where)
+  : undefined;
+
+const userPredicate = validatedWhere
+  ? parseWhereClause(validatedWhere)
+  : undefined;
+
+// Merge with system filters
+const basePredicate = {
+  eq: [{ key: "org_id", value: orgId }],
+  is: [{ key: "deleted_at", value: null }],
+};
+
+const predicate = userPredicate
+  ? mergePredicates(basePredicate, userPredicate)
+  : basePredicate;
+
+// Build and execute query
+const { data, count, error } = await buildQuery(
+  supabase,
+  "table_name",
+  predicate,
+  (query) => query.range(start, end),
+);
 ```
 
 ### Field Mapping
@@ -312,6 +632,7 @@ Widget: {
 
 **DO:**
 
+- Use `queryWithPagination` for standard list queries (pagination + filtering + org-scoping)
 - Authenticate first: `requireAuthentication(context.user)`
 - Check org membership: `requireOrgMembership(userId, orgId)`
 - Use error helpers: `ResourceErrors.notFound()`, `ValidationErrors.invalidInput()`
@@ -321,6 +642,10 @@ Widget: {
 - Return structured payloads: `{ success, resource, message }`
 - Fetch counts for pagination: `.select("*", { count: "exact" })`
 - Use validation schemas: `validateInput(Schema, input)`
+- Validate where clauses: `validateInput(createWhereSchema("table"), args.where)`
+- Merge predicates: Always combine user filters with system filters via `mergePredicates()`
+- Use appropriate operators: Match filter operators to field types (dates with `gte`/`lte`, strings with `like`/`ilike`)
+- Use type-safe query builder: `buildQuery()` for all filtered queries
 
 **DON'T:**
 
@@ -331,6 +656,10 @@ Widget: {
 - Mix domain logic across resolvers
 - Create custom connection types
 - Skip input validation for mutations
+- Apply user filters without validation
+- Bypass system filters when merging predicates
+- Use raw Supabase queries when filtering (use `buildQuery()` instead)
+- Allow filtering on sensitive fields without proper authorization
 
 **Naming:**
 

@@ -16,26 +16,31 @@ import {
   putBase64Image,
 } from "@/lib/clients/cloudflare-r2";
 import { logger } from "@/lib/logger";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
-  getUserOrganizationIds,
-  requireOrganizationAccess,
-  getResourceById,
   buildConnectionOrEmpty,
   preparePaginationRange,
+  requireOrganizationAccess,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import {
-  validateInput,
   CreateNotebookSchema,
-  UpdateNotebookSchema,
+  NotebookWhereSchema,
   SaveNotebookPreviewSchema,
+  UpdateNotebookSchema,
   validateBase64PngImage,
+  validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
+import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
 import {
-  emptyConnection,
-  type Connection,
-} from "@/app/api/v1/osograph/utils/connection";
+  buildQuery,
+  mergePredicates,
+  type QueryPredicate,
+} from "@/app/api/v1/osograph/utils/query-builder";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 const PREVIEWS_BUCKET = "notebook-previews";
 const SIGNED_URL_EXPIRY = 900;
@@ -43,7 +48,8 @@ const SIGNED_URL_EXPIRY = 900;
 export async function getNotebooksConnection(
   orgIds: string | string[],
   args: ConnectionArgs,
-): Promise<Connection<any>> {
+  additionalPredicate?: Partial<QueryPredicate<"notebooks">>,
+) {
   const supabase = createAdminClient();
   const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
 
@@ -53,16 +59,26 @@ export async function getNotebooksConnection(
 
   const [start, end] = preparePaginationRange(args);
 
-  const query = supabase
-    .from("notebooks")
-    .select("*", { count: "exact" })
-    .is("deleted_at", null)
-    .range(start, end);
+  const basePredicate: Partial<QueryPredicate<"notebooks">> = {
+    in: [{ key: "org_id", value: orgIdArray }],
+    is: [{ key: "deleted_at", value: null }],
+  };
 
-  const { data: notebooks, count } =
-    orgIdArray.length === 1
-      ? await query.eq("org_id", orgIdArray[0])
-      : await query.in("org_id", orgIdArray);
+  const predicate = additionalPredicate
+    ? mergePredicates(basePredicate, additionalPredicate)
+    : basePredicate;
+
+  const {
+    data: notebooks,
+    count,
+    error,
+  } = await buildQuery(supabase, "notebooks", predicate, (query) =>
+    query.range(start, end),
+  );
+
+  if (error) {
+    throw ServerErrors.database(`Failed to fetch notebooks: ${error.message}`);
+  }
 
   return buildConnectionOrEmpty(notebooks, args, count);
 }
@@ -71,25 +87,17 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     notebooks: async (
       _: unknown,
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const orgIds = await getUserOrganizationIds(authenticatedUser.userId);
-      return getNotebooksConnection(orgIds, args);
-    },
-
-    notebook: async (
-      _: unknown,
-      args: { id: string },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      return getResourceById({
+      return queryWithPagination(args, context, {
         tableName: "notebooks",
-        id: args.id,
-        userId: authenticatedUser.userId,
-        checkMembership: true,
+        whereSchema: NotebookWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+        },
       });
     },
   },

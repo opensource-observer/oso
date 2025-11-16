@@ -14,60 +14,69 @@ import {
   validateInput,
   CreateDatasetSchema,
   UpdateDatasetSchema,
+  DatasetWhereSchema,
+  DataModelWhereSchema,
+  TableMetadataWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
   ResourceErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getUserOrganizationIds,
   requireOrganizationAccess,
-  getResourceById,
   buildConnectionOrEmpty,
   preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import {
-  emptyConnection,
-  type Connection,
-} from "@/app/api/v1/osograph/utils/connection";
+import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
 import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
-import { getDataModelsConnection } from "@/app/api/v1/osograph/schema/resolvers/data-model";
-
-export async function getRawDatasets(
-  orgIds: string[],
-  args: ConnectionArgs,
-): Promise<{ data: any[] | null; count: number | null }> {
-  const supabase = createAdminClient();
-  const [start, end] = preparePaginationRange(args);
-
-  const query = supabase
-    .from("datasets")
-    .select("*", { count: "exact" })
-    .is("deleted_at", null)
-    .range(start, end);
-
-  const { data: datasets, count } =
-    orgIds.length === 1
-      ? await query.eq("org_id", orgIds[0])
-      : await query.in("org_id", orgIds);
-
-  return { data: datasets, count };
-}
+import {
+  buildQuery,
+  mergePredicates,
+  type QueryPredicate,
+} from "@/app/api/v1/osograph/utils/query-builder";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export async function getDatasetsConnection(
   orgIds: string | string[],
   args: ConnectionArgs,
-): Promise<Connection<any>> {
+  additionalPredicate?: Partial<QueryPredicate<"datasets">>,
+) {
+  const supabase = createAdminClient();
   const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
 
   if (orgIdArray.length === 0) {
     return emptyConnection();
   }
 
-  const { data: datasets, count } = await getRawDatasets(orgIdArray, args);
+  const [start, end] = preparePaginationRange(args);
+
+  const basePredicate: Partial<QueryPredicate<"datasets">> = {
+    in: [{ key: "org_id", value: orgIdArray }],
+    is: [{ key: "deleted_at", value: null }],
+  };
+
+  const predicate = additionalPredicate
+    ? mergePredicates(basePredicate, additionalPredicate)
+    : basePredicate;
+
+  const {
+    data: datasets,
+    count,
+    error,
+  } = await buildQuery(supabase, "datasets", predicate, (query) =>
+    query.range(start, end),
+  );
+
+  if (error) {
+    throw ServerErrors.database(`Failed to fetch datasets: ${error.message}`);
+  }
+
   return buildConnectionOrEmpty(datasets, args, count);
 }
 
@@ -75,47 +84,41 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
     datasets: async (
       _: unknown,
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-
-      const orgIds = await getUserOrganizationIds(authenticatedUser.userId);
-      if (orgIds.length === 0) {
-        return buildConnectionOrEmpty(null, args, 0);
-      }
-
-      return getDatasetsConnection(orgIds, args);
-    },
-
-    dataset: async (
-      _: unknown,
-      args: { id: string },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      return getResourceById({
+      return queryWithPagination(args, context, {
         tableName: "datasets",
-        id: args.id,
-        userId: authenticatedUser.userId,
-        checkMembership: true,
+        whereSchema: DatasetWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+        },
       });
     },
 
-    datasetTableMetadata: async (
+    tables: async (
       _: unknown,
-      args: {
-        orgId: string;
-        catalogName: string;
-        schemaName: string;
-        tableName: string;
-      },
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
+      const validatedWhere = validateInput(
+        TableMetadataWhereSchema,
+        args.where,
+      );
+
+      const { orgId, catalogName, schemaName, tableName } = {
+        orgId: validatedWhere.orgId.eq,
+        catalogName: validatedWhere.catalogName.eq,
+        schemaName: validatedWhere.schemaName.eq,
+        tableName: validatedWhere.tableName.eq,
+      };
+
       const org = await requireOrganizationAccess(
         authenticatedUser.userId,
-        args.orgId,
+        orgId,
       );
 
       const trinoJwt = await signTrinoJWT({
@@ -129,16 +132,16 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const query = `
         SELECT column_name, data_type, column_comment
-        FROM ${args.catalogName}.information_schema.columns
-        WHERE table_schema = '${args.schemaName}' AND table_name = '${args.tableName}'
+        FROM ${catalogName}.information_schema.columns
+        WHERE table_schema = '${schemaName}' AND table_name = '${tableName}'
       `;
       const { data: columnResult, error } = await trino.queryAll(query);
       if (error || !columnResult) {
         logger.error(
-          `Failed to fetch catalogs for user ${authenticatedUser.userId}:`,
+          `Failed to fetch table metadata for user ${authenticatedUser.userId}:`,
           error.message,
         );
-        throw ServerErrors.externalService("Failed to fetch catalogs");
+        throw ServerErrors.externalService("Failed to fetch table metadata");
       }
 
       const results = await Promise.all(
@@ -300,11 +303,19 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     dataModels: async (
       parent: { id: string; org_id: string },
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
     ) => {
-      return getDataModelsConnection([parent.org_id], {
-        ...args,
-        datasetId: parent.id,
+      return queryWithPagination(args, context, {
+        tableName: "model",
+        whereSchema: DataModelWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+          eq: [{ key: "dataset_id", value: parent.id }],
+        },
       });
     },
   },

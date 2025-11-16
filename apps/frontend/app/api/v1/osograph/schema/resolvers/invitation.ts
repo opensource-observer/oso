@@ -12,13 +12,12 @@ import {
 import {
   InvitationErrors,
   ServerErrors,
-  UserErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getUserInvitationsConnection,
   requireOrganizationAccess,
   checkMembershipExists,
+  preparePaginationRange,
+  buildConnectionOrEmpty,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
@@ -26,58 +25,72 @@ import {
   CreateInvitationSchema,
   AcceptInvitationSchema,
   RevokeInvitationSchema,
+  InvitationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
+import type {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
+import {
+  buildQuery,
+  mergePredicates,
+  type QueryPredicate,
+} from "@/app/api/v1/osograph/utils/query-builder";
+import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+
+export async function getInvitationsConnection(
+  orgIds: string | string[],
+  args: ConnectionArgs,
+  additionalPredicate?: Partial<QueryPredicate<"invitations">>,
+) {
+  const supabase = createAdminClient();
+  const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
+
+  if (orgIdArray.length === 0) {
+    return emptyConnection();
+  }
+
+  const [start, end] = preparePaginationRange(args);
+
+  const basePredicate: Partial<QueryPredicate<"invitations">> = {
+    in: [{ key: "org_id", value: orgIdArray }],
+  };
+
+  const predicate = additionalPredicate
+    ? mergePredicates(basePredicate, additionalPredicate)
+    : basePredicate;
+
+  const {
+    data: invitations,
+    count,
+    error,
+  } = await buildQuery(supabase, "invitations", predicate, (query) =>
+    query.range(start, end),
+  );
+
+  if (error) {
+    throw ServerErrors.database(
+      `Failed to fetch invitations: ${error.message}`,
+    );
+  }
+
+  return buildConnectionOrEmpty(invitations, args, count);
+}
 
 export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
-    invitation: async (
+    invitations: async (
       _: unknown,
-      args: { id: string },
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-      const { data: invitation, error } = await supabase
-        .from("invitations")
-        .select("*")
-        .eq("id", args.id)
-        .single();
-
-      if (error || !invitation) {
-        throw InvitationErrors.notFound();
-      }
-
-      const { data: membership } = await supabase
-        .from("users_by_organization")
-        .select("id")
-        .eq("user_id", authenticatedUser.userId)
-        .eq("org_id", invitation.org_id)
-        .is("deleted_at", null)
-        .single();
-
-      const userEmail = authenticatedUser.email?.toLowerCase();
-      const isInvitee = userEmail === invitation.email.toLowerCase();
-
-      if (!membership && !isInvitee) {
-        throw InvitationErrors.wrongRecipient();
-      }
-
-      return invitation;
-    },
-
-    myInvitations: async (
-      _: unknown,
-      args: ConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const userEmail = authenticatedUser.email?.toLowerCase();
-
-      if (!userEmail) {
-        throw UserErrors.emailNotFound();
-      }
-
-      return getUserInvitationsConnection(userEmail, args);
+      return queryWithPagination(args, context, {
+        tableName: "invitations",
+        whereSchema: InvitationWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+      });
     },
   },
 
