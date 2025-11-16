@@ -19,66 +19,15 @@ import {
   TableMetadataWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
-  ResourceErrors,
+  DatasetErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import type {
-  ConnectionArgs,
-  FilterableConnectionArgs,
-} from "@/app/api/v1/osograph/utils/pagination";
-import {
-  requireOrganizationAccess,
-  buildConnectionOrEmpty,
-  preparePaginationRange,
-} from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import { requireOrganizationAccess } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
-import {
-  buildQuery,
-  mergePredicates,
-  type QueryPredicate,
-} from "@/app/api/v1/osograph/utils/query-builder";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
-
-export async function getDatasetsConnection(
-  orgIds: string | string[],
-  args: ConnectionArgs,
-  additionalPredicate?: Partial<QueryPredicate<"datasets">>,
-) {
-  const supabase = createAdminClient();
-  const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
-
-  if (orgIdArray.length === 0) {
-    return emptyConnection();
-  }
-
-  const [start, end] = preparePaginationRange(args);
-
-  const basePredicate: Partial<QueryPredicate<"datasets">> = {
-    in: [{ key: "org_id", value: orgIdArray }],
-    is: [{ key: "deleted_at", value: null }],
-  };
-
-  const predicate = additionalPredicate
-    ? mergePredicates(basePredicate, additionalPredicate)
-    : basePredicate;
-
-  const {
-    data: datasets,
-    count,
-    error,
-  } = await buildQuery(supabase, "datasets", predicate, (query) =>
-    query.range(start, end),
-  );
-
-  if (error) {
-    throw ServerErrors.database(`Failed to fetch datasets: ${error.message}`);
-  }
-
-  return buildConnectionOrEmpty(datasets, args, count);
-}
 
 export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -249,7 +198,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         .single();
 
       if (existingError || !existingDataset) {
-        throw ResourceErrors.notFound("Dataset", input.id);
+        throw DatasetErrors.notFound();
       }
 
       await requireOrgMembership(
