@@ -16,8 +16,6 @@ import {
 import {
   requireOrganizationAccess,
   checkMembershipExists,
-  preparePaginationRange,
-  buildConnectionOrEmpty,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
@@ -27,56 +25,8 @@ import {
   RevokeInvitationSchema,
   InvitationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
-import type {
-  ConnectionArgs,
-  FilterableConnectionArgs,
-} from "@/app/api/v1/osograph/utils/pagination";
-import {
-  buildQuery,
-  mergePredicates,
-  type QueryPredicate,
-} from "@/app/api/v1/osograph/utils/query-builder";
-import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
-
-export async function getInvitationsConnection(
-  orgIds: string | string[],
-  args: ConnectionArgs,
-  additionalPredicate?: Partial<QueryPredicate<"invitations">>,
-) {
-  const supabase = createAdminClient();
-  const orgIdArray = Array.isArray(orgIds) ? orgIds : [orgIds];
-
-  if (orgIdArray.length === 0) {
-    return emptyConnection();
-  }
-
-  const [start, end] = preparePaginationRange(args);
-
-  const basePredicate: Partial<QueryPredicate<"invitations">> = {
-    in: [{ key: "org_id", value: orgIdArray }],
-  };
-
-  const predicate = additionalPredicate
-    ? mergePredicates(basePredicate, additionalPredicate)
-    : basePredicate;
-
-  const {
-    data: invitations,
-    count,
-    error,
-  } = await buildQuery(supabase, "invitations", predicate, (query) =>
-    query.range(start, end),
-  );
-
-  if (error) {
-    throw ServerErrors.database(
-      `Failed to fetch invitations: ${error.message}`,
-    );
-  }
-
-  return buildConnectionOrEmpty(invitations, args, count);
-}
 
 export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
