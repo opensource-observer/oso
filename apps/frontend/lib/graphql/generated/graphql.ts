@@ -3361,6 +3361,7 @@ export type Mutation = {
   terminateRun: TerminateRunResult;
   /** Terminates a set of runs given their run IDs. */
   terminateRuns: TerminateRunsResultOrError;
+  updateDataModel: CreateDataModelPayload;
   /** Update a dataset */
   updateDataset: UpdateDatasetPayload;
   /** Update member role */
@@ -3635,6 +3636,11 @@ export type MutationTerminateRunArgs = {
 export type MutationTerminateRunsArgs = {
   runIds: Array<Scalars["String"]["input"]>;
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateDataModelArgs = {
+  input: UpdateDataModelInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -8301,6 +8307,12 @@ export type UnsupportedOperationError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type UpdateDataModelInput = {
+  dataModelId: Scalars["ID"]["input"];
+  isEnabled?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name: Scalars["String"]["input"];
+};
+
 export type UpdateDatasetInput = {
   description?: InputMaybe<Scalars["String"]["input"]>;
   displayName?: InputMaybe<Scalars["String"]["input"]>;
@@ -8577,6 +8589,25 @@ export type CreateDataModelMutationVariables = Exact<{
 export type CreateDataModelMutation = {
   __typename?: "Mutation";
   createDataModel: {
+    __typename?: "CreateDataModelPayload";
+    success: boolean;
+    message?: string | null;
+    dataModel?: {
+      __typename?: "DataModel";
+      id: string;
+      name: string;
+      isEnabled: boolean;
+    } | null;
+  };
+};
+
+export type UpdateDataModelMutationVariables = Exact<{
+  input: UpdateDataModelInput;
+}>;
+
+export type UpdateDataModelMutation = {
+  __typename?: "Mutation";
+  updateDataModel: {
     __typename?: "CreateDataModelPayload";
     success: boolean;
     message?: string | null;
@@ -9069,6 +9100,76 @@ export const CreateDataModelDocument = {
 } as unknown as DocumentNode<
   CreateDataModelMutation,
   CreateDataModelMutationVariables
+>;
+export const UpdateDataModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateDataModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateDataModelInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateDataModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataModel" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isEnabled" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateDataModelMutation,
+  UpdateDataModelMutationVariables
 >;
 export const CreateDataModelRevisionDocument = {
   kind: "Document",

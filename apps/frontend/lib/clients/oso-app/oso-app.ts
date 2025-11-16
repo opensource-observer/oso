@@ -2661,6 +2661,71 @@ class OsoAppClient {
     return payload.dataModel;
   }
 
+  async updateDataModel(
+    args: Partial<{
+      dataModelId: string;
+      name?: string;
+      isEnabled?: boolean;
+    }>,
+  ) {
+    const { dataModelId, name, isEnabled } = {
+      dataModelId: ensure(args.dataModelId, "Missing dataModelId argument"),
+      name: args.name,
+      isEnabled: args.isEnabled ?? false,
+    };
+
+    const UPDATE_DATA_MODEL_MUTATION = gql(`
+      mutation UpdateDataModel($input: UpdateDataModelInput!) {
+        updateDataModel(input: $input) {
+          success
+          message
+          dataModel {
+            id
+            name
+            isEnabled
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(UPDATE_DATA_MODEL_MUTATION),
+        variables: {
+          input: {
+            dataModelId,
+            name,
+            isEnabled,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to update dataModel:", result.errors[0].message);
+      throw new Error(
+        `Failed to update dataModel: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.updateDataModel;
+    if (!payload) {
+      throw new Error("No response data from update dataModel mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully updated dataModel "${name}"`);
+    }
+
+    return payload.dataModel;
+  }
+
   async createDataModelRevision(
     args: Partial<{
       dataModelId: string;

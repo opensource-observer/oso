@@ -140,6 +140,12 @@ type CreateDataModelPayload {
   message: String
 }
 
+input UpdateDataModelInput {
+  dataModelId: ID!
+  name: String!
+  isEnabled: Boolean
+}
+
 input DataModelColumnInput {
   name: String!
   type: String!
@@ -206,6 +212,7 @@ type CreateDataModelReleasePayload {
 
 extend type Mutation {
   createDataModel(input: CreateDataModelInput!): CreateDataModelPayload!
+  updateDataModel(input: UpdateDataModelInput!): CreateDataModelPayload!
   createDataModelRevision(
     input: CreateDataModelRevisionInput!
   ): CreateDataModelRevisionPayload!
