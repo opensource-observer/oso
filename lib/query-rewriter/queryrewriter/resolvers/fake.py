@@ -1,7 +1,9 @@
 import typing as t
 
+from queryrewriter.types import TableResolver
 
-class FakeTableResolver:
+
+class FakeTableResolver(TableResolver):
     def __init__(self, rewrite_rules: list[t.Callable[[str], str | None]]):
         self.rewrite_rules = rewrite_rules
 
