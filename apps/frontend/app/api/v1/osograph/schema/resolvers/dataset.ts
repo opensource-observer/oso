@@ -28,6 +28,7 @@ import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+import { DatasetType } from "@/lib/graphql/generated/graphql";
 
 export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -249,8 +250,29 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
     organization: async (parent: { org_id: string }) => {
       return getOrganization(parent.org_id);
     },
+    typeDefinition: async (parent: {
+      id: string;
+      org_id: string;
+      dataset_type: DatasetType;
+    }) => {
+      // console.log("Fetching type definition for dataset:", parent);
+      // For future use when we have multiple dataset types with different definitions
+      switch (parent.dataset_type) {
+        case DatasetType.UserModel: {
+          return {
+            __typename: "DataModelDefinition",
+            org_id: parent.org_id,
+            dataset_id: parent.id,
+          };
+        }
+        default:
+          throw new Error(
+            `Dataset type "${parent.dataset_type}" is not supported yet.`,
+          );
+      }
+    },
 
-    dataModels: async (
+    tables: async (
       parent: { id: string; org_id: string },
       args: FilterableConnectionArgs,
       context: GraphQLContext,
@@ -264,6 +286,28 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         basePredicate: {
           is: [{ key: "deleted_at", value: null }],
           eq: [{ key: "dataset_id", value: parent.id }],
+        },
+      });
+    },
+  },
+
+  DataModelDefinition: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
+    datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
+    dataModels: async (
+      parent: { dataset_id: string; org_id: string },
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return await queryWithPagination(args, context, {
+        tableName: "model",
+        whereSchema: DataModelWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+          eq: [{ key: "dataset_id", value: parent.dataset_id }],
         },
       });
     },
