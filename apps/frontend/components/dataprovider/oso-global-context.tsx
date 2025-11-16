@@ -100,6 +100,7 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "createDataset",
   "updateDataset",
   "createDataModel",
+  "updateDataModel",
   "createDataModelRevision",
   "createDataModelRelease",
 ]);

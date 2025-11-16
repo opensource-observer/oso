@@ -33,6 +33,11 @@ const simpleSchema: FormSchema = {
     required: true,
     description: "Please enter your age in years.",
   },
+  birthDate: {
+    type: "date",
+    label: "Birth Date",
+    required: true,
+  },
 };
 
 export const SimpleForm: Story = {

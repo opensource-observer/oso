@@ -25,14 +25,15 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 interface FormSchemaField {
-  type: "string" | "number" | "object" | "boolean";
+  type: "string" | "number" | "object" | "boolean" | "date";
   label: string;
   required?: boolean;
   description?: string;
-  options?: string[]; // For string type, renders a select
+  options?: (string | { value: string; label: string })[]; // For string type, renders a select
   properties?: FormSchema; // For object type
   defaultValue?: any;
   placeholder?: string;
@@ -52,7 +53,9 @@ type FormBuilderZodField =
   | z.ZodObject<any>
   | z.ZodOptional<z.ZodObject<any>>
   | z.ZodBoolean
-  | z.ZodOptional<z.ZodBoolean>;
+  | z.ZodOptional<z.ZodBoolean>
+  | z.ZodDate
+  | z.ZodOptional<z.ZodDate>;
 
 function generateFormConfig(schema: FormSchema): {
   zodSchema: z.ZodObject<any>;
@@ -95,6 +98,13 @@ function generateFormConfig(schema: FormSchema): {
       case "boolean": {
         const booleanField = z.boolean();
         zodField = field.required ? booleanField : booleanField.optional();
+        break;
+      }
+      case "date": {
+        const dateField = z.date({
+          invalid_type_error: `${field.label} must be a date.`,
+        });
+        zodField = field.required ? dateField : dateField.optional();
         break;
       }
       case "object": {
@@ -148,7 +158,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
             <FormItem
               className={cn(horizontal && "grid grid-cols-4 items-start gap-4")}
             >
-              <FormLabel className={cn(horizontal && "text-right pt-2")}>
+              <FormLabel className={cn(horizontal && "text-left pt-2")}>
                 {fieldSchema.label}
               </FormLabel>
               <div className={cn(horizontal && "col-span-3")}>
@@ -164,11 +174,18 @@ const RenderField: React.FC<RenderFieldProps> = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {fieldSchema.options.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
+                      {fieldSchema.options.map((option) => {
+                        const { value, label } =
+                          typeof option === "string"
+                            ? { value: option, label: option }
+                            : option;
+
+                        return (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 ) : (
@@ -199,7 +216,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
             <FormItem
               className={cn(horizontal && "grid grid-cols-4 items-start gap-4")}
             >
-              <FormLabel className={cn(horizontal && "text-right pt-2")}>
+              <FormLabel className={cn(horizontal && "text-left pt-2")}>
                 {fieldSchema.label}
               </FormLabel>
               <div className={cn(horizontal && "col-span-3")}>
@@ -253,6 +270,36 @@ const RenderField: React.FC<RenderFieldProps> = ({
         />
       );
 
+    case "date":
+      return (
+        <FormField
+          control={control}
+          name={currentPath}
+          render={({ field }) => (
+            <FormItem
+              className={cn(horizontal && "grid grid-cols-4 items-start gap-4")}
+            >
+              <FormLabel className={cn(horizontal && "text-left pt-2")}>
+                {fieldSchema.label}
+              </FormLabel>
+              <div className={cn(horizontal && "col-span-3")}>
+                <FormControl>
+                  <DatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={fieldSchema.disabled}
+                  />
+                </FormControl>
+                {fieldSchema.description && (
+                  <FormDescription>{fieldSchema.description}</FormDescription>
+                )}
+                <FormMessage />
+              </div>
+            </FormItem>
+          )}
+        />
+      );
+
     case "object":
       return (
         <div className={cn("space-y-4 p-4 border rounded-md", objectClassName)}>
@@ -285,55 +332,61 @@ interface FormBuilderProps {
   horizontal?: boolean;
 }
 
-const FormBuilder: React.FC<FormBuilderProps> = ({
-  schema,
-  onSubmit,
-  className,
-  objectClassName,
-  footer,
-  horizontal,
-}) => {
-  const { zodSchema, defaultValues } = React.useMemo(
-    () => generateFormConfig(schema),
-    [schema],
-  );
+const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
+  function _FormBuilder(
+    { schema = {}, onSubmit, className, objectClassName, footer, horizontal },
+    ref,
+  ) {
+    const { zodSchema, defaultValues } = React.useMemo(
+      () => generateFormConfig(schema),
+      [schema],
+    );
 
-  const form = useForm<z.infer<typeof zodSchema>>({
-    resolver: zodResolver(zodSchema),
-    defaultValues,
-  });
-
-  return (
-    <FormProvider {...form}>
-      <Form {...form}>
-        <form
-          onSubmit={safeSubmit(form.handleSubmit(onSubmit))}
-          className={cn("space-y-6", className)}
-        >
-          {Object.entries(schema).map(([key, value]) => (
-            <RenderField
-              key={key}
-              fieldName={key}
-              fieldSchema={value}
-              objectClassName={objectClassName}
-              path=""
-              horizontal={horizontal}
-            />
-          ))}
-          {horizontal ? (
-            <div className="grid grid-cols-4 items-start gap-4">
-              <div className="col-start-2 col-span-3">
-                {footer ?? <Button type="submit">Submit</Button>}
+    const form = useForm<z.infer<typeof zodSchema>>({
+      resolver: zodResolver(zodSchema),
+      defaultValues,
+    });
+    React.useImperativeHandle(
+      ref,
+      () => ({
+        submit: () => {
+          void form.handleSubmit(onSubmit)();
+        },
+      }),
+      [form.handleSubmit, onSubmit],
+    );
+    return (
+      <FormProvider {...form}>
+        <Form {...form}>
+          <form
+            onSubmit={safeSubmit(form.handleSubmit(onSubmit))}
+            className={cn("space-y-6", className)}
+          >
+            {Object.entries(schema).map(([key, value]) => (
+              <RenderField
+                key={key}
+                fieldName={key}
+                fieldSchema={value}
+                objectClassName={objectClassName}
+                path=""
+                horizontal={horizontal}
+              />
+            ))}
+            {horizontal ? (
+              <div className="grid grid-cols-4 items-start gap-4">
+                <div className="col-start-2 col-span-3">
+                  {footer ?? <Button type="submit">Submit</Button>}
+                </div>
               </div>
-            </div>
-          ) : (
-            (footer ?? <Button type="submit">Submit</Button>)
-          )}
-        </form>
-      </Form>
-    </FormProvider>
-  );
-};
+            ) : (
+              (footer ?? <Button type="submit">Submit</Button>)
+            )}
+          </form>
+        </Form>
+      </FormProvider>
+    );
+  },
+);
 
 const FormBuilderMeta: CodeComponentMeta<FormBuilderProps> = {
   name: "FormBuilder",
@@ -360,6 +413,12 @@ const FormBuilderMeta: CodeComponentMeta<FormBuilderProps> = {
     horizontal: {
       type: "boolean",
       description: "Whether to display form items horizontally.",
+    },
+  },
+  refActions: {
+    submit: {
+      description: "Submits the form programmatically.",
+      argTypes: [],
     },
   },
 };

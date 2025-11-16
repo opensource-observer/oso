@@ -2,95 +2,45 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
+  getOrganization,
   requireAuthentication,
   requireOrgMembership,
-  getOrganization,
-  getUserOrgIds,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
   ResourceErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import {
-  buildConnectionOrEmpty,
-  getResourceById,
-  preparePaginationRange,
-} from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import { getResourceById } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { createHash } from "crypto";
 import {
-  validateInput,
-  CreateDataModelSchema,
-  CreateDataModelRevisionSchema,
   CreateDataModelReleaseSchema,
+  CreateDataModelRevisionSchema,
+  CreateDataModelSchema,
+  DataModelReleaseWhereSchema,
+  DataModelRevisionWhereSchema,
+  DataModelWhereSchema,
+  validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
-
-export async function getDataModelsConnection(
-  orgIds: string[],
-  args: ConnectionArgs & {
-    datasetId?: string;
-  },
-) {
-  const supabase = createAdminClient();
-  let query = supabase
-    .from("model")
-    .select("*", { count: "exact" })
-    .in("org_id", orgIds)
-    .is("deleted_at", null);
-
-  if (args.datasetId) {
-    query = query.eq("dataset_id", args.datasetId);
-  }
-
-  const [start, end] = preparePaginationRange(args);
-  query = query.range(start, end);
-
-  const { data: dataModels, error, count } = await query;
-
-  if (error) {
-    logger.error("Failed to fetch dataModels:", error);
-    throw ServerErrors.database("Failed to fetch dataModels");
-  }
-
-  return buildConnectionOrEmpty(dataModels, args, count);
-}
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export const dataModelResolvers = {
   Query: {
-    dataModel: async (
-      _: unknown,
-      args: { id: string },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-
-      const { data: dataModel, error } = await supabase
-        .from("model")
-        .select("*")
-        .eq("id", args.id)
-        .is("deleted_at", null)
-        .single();
-
-      if (error || !dataModel) {
-        return null;
-      }
-      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
-
-      return dataModel;
-    },
     dataModels: async (
       _: unknown,
-      args: ConnectionArgs,
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const orgIds = await getUserOrgIds(authenticatedUser.userId);
-      if (orgIds.length === 0) {
-        return buildConnectionOrEmpty(null, args, 0);
-      }
-      return getDataModelsConnection(orgIds, args);
+      return queryWithPagination(args, context, {
+        tableName: "model",
+        whereSchema: DataModelWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+        },
+      });
     },
   },
   Mutation: {
@@ -327,43 +277,37 @@ export const dataModelResolvers = {
         userId: "",
       });
     },
-    revisions: async (parent: { id: string }, args: ConnectionArgs) => {
-      const supabase = createAdminClient();
-      const [start, end] = preparePaginationRange(args);
-      const { data, error, count } = await supabase
-        .from("model_revision")
-        .select("*", { count: "exact" })
-        .eq("model_id", parent.id)
-        .order("revision_number", { ascending: false })
-        .range(start, end);
-
-      if (error) {
-        logger.error(
-          `Failed to fetch revisions for dataModel ${parent.id}:`,
-          error,
-        );
-        return buildConnectionOrEmpty(null, args, 0);
-      }
-      return buildConnectionOrEmpty(data, args, count);
+    revisions: async (
+      parent: { id: string; org_id: string },
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "model_revision",
+        whereSchema: DataModelRevisionWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          eq: [{ key: "model_id", value: parent.id }],
+        },
+      });
     },
-    releases: async (parent: { id: string }, args: ConnectionArgs) => {
-      const supabase = createAdminClient();
-      const [start, end] = preparePaginationRange(args);
-      const { data, error, count } = await supabase
-        .from("model_release")
-        .select("*", { count: "exact" })
-        .eq("model_id", parent.id)
-        .order("created_at", { ascending: false })
-        .range(start, end);
-
-      if (error) {
-        logger.error(
-          `Failed to fetch releases for dataModel ${parent.id}:`,
-          error,
-        );
-        return buildConnectionOrEmpty(null, args, 0);
-      }
-      return buildConnectionOrEmpty(data, args, count);
+    releases: async (
+      parent: { id: string; org_id: string },
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "model_release",
+        whereSchema: DataModelReleaseWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          eq: [{ key: "model_id", value: parent.id }],
+        },
+      });
     },
     isEnabled: (parent: { is_enabled: boolean }) => parent.is_enabled,
     createdAt: (parent: { created_at: string }) => parent.created_at,
@@ -423,11 +367,11 @@ export const dataModelResolvers = {
       parent.revision_number,
     start: (parent: { start: string | null }) => parent.start,
     end: (parent: { end: string | null }) => parent.end,
-    dependsOn: (parent: { depends_on: any[] }) => parent.depends_on,
+    dependsOn: (parent: { depends_on: unknown[] }) => parent.depends_on,
     partitionedBy: (parent: { partitioned_by: string[] }) =>
       parent.partitioned_by,
     clusteredBy: (parent: { clustered_by: string[] }) => parent.clustered_by,
-    kindOptions: (parent: { kind_options: any }) => parent.kind_options,
+    kindOptions: (parent: { kind_options: unknown }) => parent.kind_options,
     createdAt: (parent: { created_at: string }) => parent.created_at,
   },
 

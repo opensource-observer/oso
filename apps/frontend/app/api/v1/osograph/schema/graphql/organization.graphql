@@ -5,9 +5,9 @@ type Organization {
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  members(first: Int = 50, after: String): UserConnection!
-  notebooks(first: Int = 50, after: String): NotebookConnection!
-  datasets(first: Int = 50, after: String): DatasetConnection!
+  members(first: Int = 50, after: String, where: JSON): UserConnection!
+  notebooks(first: Int = 50, after: String, where: JSON): NotebookConnection!
+  datasets(first: Int = 50, after: String, where: JSON): DatasetConnection!
 }
 
 type OrganizationMember {
@@ -32,14 +32,24 @@ type OrganizationConnection {
 
 extend type Query {
   """
-  List all organizations
-  """
-  organizations(first: Int = 50, after: String): OrganizationConnection!
+  Query organizations with optional filtering and pagination.
 
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+
+  Example:
+  ```json
+  {
+    "name": { "like": "%oso%" },
+    "created_at": { "gte": "2024-01-01T00:00:00Z" }
+  }
+  ```
   """
-  Get an organization by ID or name
-  """
-  organization(id: ID, name: String): Organization
+  organizations(
+    where: JSON
+    first: Int = 50
+    after: String
+  ): OrganizationConnection!
 }
 
 extend type Mutation {
