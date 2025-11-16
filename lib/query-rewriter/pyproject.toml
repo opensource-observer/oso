@@ -1,0 +1,15 @@
+[project]
+name = "query-rewriter"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = [
+    "sqlglot>=27.28.1",
+    "sqlmesh>=0.227.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
