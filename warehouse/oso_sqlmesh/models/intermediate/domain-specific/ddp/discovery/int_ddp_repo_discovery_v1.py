@@ -1,20 +1,26 @@
 """
-v0 discovery algorithm for finding related repositories to Ethereum development.
+SQLMesh Python model for repo discovery trust scores.
 
-This script is a Python and pandas implementation of the SQL query in
-`warehouse/oso_sqlmesh/models/intermediate/domain-specific/ddp/discovery/int_ddp_repo_discovery_v0.sql`.
+This is a faithful Python / pandas implementation of
+`int_ddp_repo_discovery_v0.sql`, which computes a PageRank‑like trust score
+for repositories based on a repo↔developer interaction graph.
 """
 
+from __future__ import annotations
+
+import typing as t
+
 import pandas as pd
+from sqlmesh import ExecutionContext, model
 
 
-def discover_repos(context):
+def _discover_repos_df(context: ExecutionContext) -> pd.DataFrame:
     """
     Calculates repository trust scores based on a discovery algorithm.
 
     Args:
-        context: An object with a `fetchdf` method to execute SQL queries
-                 and return pandas DataFrames.
+        context: SQLMesh ExecutionContext with a `fetchdf` method to execute SQL
+                 queries and return pandas DataFrames.
 
     Returns:
         A pandas DataFrame with ranked repositories and their trust scores.
@@ -24,28 +30,38 @@ def discover_repos(context):
     NUM_ITERATIONS = 2  # In the SQL, this is hardcoded to 2 iterations.
 
     # --- 1. Fetch initial data ---
-    pretrust_df = context.fetchdf("""
+    pretrust_table = context.resolve_table("oso.int_ddp_repo_pretrust")
+    graph_table = context.resolve_table("oso.int_ddp_repo_to_dev_graph")
+    artifacts_table = context.resolve_table("oso.int_artifacts__github")
+
+    pretrust_df = context.fetchdf(
+        f"""
         SELECT
             repo_artifact_id,
             url,
             score AS repo_score_base
-        FROM oso.int_ddp_repo_pretrust
-    """)
+        FROM {pretrust_table}
+        """
+    )
 
-    edges_raw_df = context.fetchdf("""
+    edges_raw_df = context.fetchdf(
+        f"""
         SELECT
             git_user,
             repo_artifact_id,
             edge_weight
-        FROM oso.int_ddp_repo_to_dev_graph
-    """)
+        FROM {graph_table}
+        """
+    )
 
-    artifacts_df = context.fetchdf("""
+    artifacts_df = context.fetchdf(
+        f"""
         SELECT
             artifact_id,
             artifact_url AS url
-        FROM oso.int_artifacts__github
-    """)
+        FROM {artifacts_table}
+        """
+    )
 
     # --- 2. Prepare base dataframes ---
 
@@ -194,31 +210,54 @@ def discover_repos(context):
     return output_df
 
 
-# Example usage:
-# class MockContext:
-#     def fetchdf(self, query):
-#         # In a real scenario, this would connect to a database
-#         print(f"Fetching data with query:\n{query}")
-#         # Return mock dataframes for testing
-#         if "pretrust" in query:
-#             return pd.DataFrame({
-#                 'repo_artifact_id': [1, 2], 'url': ['url1', 'url2'], 'repo_score_base': [1.0, 0.8]
-#             })
-#         if "graph" in query:
-#             return pd.DataFrame({
-#                 'git_user': ['dev1', 'dev1', 'dev2', 'dev3'],
-#                 'repo_artifact_id': [1, 3, 3, 4],
-#                 'edge_weight': [10, 5, 8, 12]
-#             })
-#         if "artifacts" in query:
-#             return pd.DataFrame({
-#                 'artifact_id': [1, 2, 3, 4],
-#                 'url': ['url1', 'url2', 'url3', 'url4']
-#             })
-#         return pd.DataFrame()
+@model(
+    "oso.int_ddp_repo_discovery_v1",
+    kind="full",
+    columns={
+        "repo_artifact_id": "TEXT",
+        "url": "TEXT",
+        "is_pretrust": "BOOLEAN",
+        "base_score": "DOUBLE",
+        "dev_contrib_v1": "DOUBLE",
+        "dev_contrib_v2": "DOUBLE",
+        "final_score": "DOUBLE",
+        "delta_score": "DOUBLE",
+        "trust_rank": "INTEGER",
+    },
+    grain=("repo_artifact_id",),
+    audits=[
+        ("has_at_least_n_rows", {"threshold": 0}),
+    ],
+)
+def execute(
+    context: ExecutionContext,
+    start: t.Optional[str] = None,
+    end: t.Optional[str] = None,
+    execution_time: t.Optional[str] = None,
+    **kwargs: t.Any,
+) -> t.Iterator[pd.DataFrame]:
+    """
+    SQLMesh model entrypoint for the repo discovery trust score algorithm.
 
-# if __name__ == '__main__':
-#     mock_context = MockContext()
-#     results = discover_repos(mock_context)
-#     print("\n--- Final Results ---")
-#     print(results)
+    This is a FULL model with no incremental windowing; `start`/`end` are
+    accepted for signature compatibility but not used.
+    """
+    df = _discover_repos_df(context)
+    if df.empty:
+        yield from ()
+        return
+
+    ordered = df[
+        [
+            "repo_artifact_id",
+            "url",
+            "is_pretrust",
+            "base_score",
+            "dev_contrib_v1",
+            "dev_contrib_v2",
+            "final_score",
+            "delta_score",
+            "trust_rank",
+        ]
+    ].copy()
+    yield ordered  # type: ignore[misc]
