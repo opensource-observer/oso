@@ -6233,6 +6233,7 @@ export type QueryLogsForRunArgs = {
 export type QueryNotebooksArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -6240,6 +6241,7 @@ export type QueryNotebooksArgs = {
 export type QueryOrganizationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 

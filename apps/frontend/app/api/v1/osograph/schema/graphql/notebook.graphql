@@ -38,9 +38,10 @@ extend type Query {
   ```
   """
   notebooks(
-    where: JSON
     first: Int = 50
     after: String
+    single: Boolean
+    where: JSON
   ): NotebookConnection!
 }
 
