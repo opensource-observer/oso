@@ -1516,12 +1516,14 @@ export type DataModel = {
 export type DataModelReleasesArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelRevisionsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -1552,11 +1554,14 @@ export type DataModelDefinition = {
    * associated with the dataset. Otherwise it will be an empty list.
    */
   dataModels: DataModelConnection;
+  datasetId: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
 };
 
 export type DataModelDefinitionDataModelsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -1715,12 +1720,14 @@ export type Dataset = {
 export type DatasetRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DatasetTablesArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -3862,18 +3869,21 @@ export type Organization = {
 export type OrganizationDatasetsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type OrganizationMembersArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type OrganizationNotebooksArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -6162,6 +6172,7 @@ export type QueryCapturedLogsMetadataArgs = {
 export type QueryDataModelsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -6169,6 +6180,7 @@ export type QueryDataModelsArgs = {
 export type QueryDatasetsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -6199,6 +6211,7 @@ export type QueryInstigationStatesOrErrorArgs = {
 export type QueryInvitationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -6571,6 +6584,7 @@ export type QueryRunTagsOrErrorArgs = {
 export type QueryRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -8461,6 +8475,7 @@ export type User = {
 export type UserOrganizationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -8505,6 +8520,7 @@ export type Viewer = {
 export type ViewerDatasetsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -8512,6 +8528,7 @@ export type ViewerDatasetsArgs = {
 export type ViewerInvitationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -8519,6 +8536,7 @@ export type ViewerInvitationsArgs = {
 export type ViewerNotebooksArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -8526,6 +8544,7 @@ export type ViewerNotebooksArgs = {
 export type ViewerOrganizationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
@@ -8533,6 +8552,7 @@ export type ViewerOrganizationsArgs = {
 export type ViewerRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 

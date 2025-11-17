@@ -99,6 +99,7 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
     options.tableName,
     predicate,
     (query) => query.range(start, end),
+    args.single,
   );
 
   if (error) {
