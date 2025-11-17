@@ -46,9 +46,10 @@ extend type Query {
   ```
   """
   organizations(
-    where: JSON
     first: Int = 50
     after: String
+    single: Boolean
+    where: JSON
   ): OrganizationConnection!
 }
 
