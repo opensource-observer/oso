@@ -107,7 +107,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.62.0",
     "react-instantsearch": "^7.16.3",
-    "react-instantsearch-nextjs": "^1.0.1",
+    "react-instantsearch-nextjs": "^1.0.5",
     "react-markdown": "^10.1.0",
     "react-use": "^17.6.0",
     "remark-gfm": "^4.0.1",
