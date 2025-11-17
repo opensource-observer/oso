@@ -285,7 +285,11 @@ const RenderField: React.FC<RenderFieldProps> = ({
               <div className={cn(horizontal && "col-span-3")}>
                 <FormControl>
                   <DatePicker
-                    value={field.value}
+                    value={
+                      typeof field.value === "string"
+                        ? new Date(field.value)
+                        : field.value
+                    }
                     onChange={field.onChange}
                     disabled={fieldSchema.disabled}
                   />
@@ -350,7 +354,7 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
       ref,
       () => ({
         submit: () => {
-          void form.handleSubmit(onSubmit)();
+          onSubmit(form.getValues());
         },
       }),
       [form.handleSubmit, onSubmit],
