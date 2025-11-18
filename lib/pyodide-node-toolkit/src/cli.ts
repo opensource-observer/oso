@@ -1,9 +1,10 @@
 import yargs from "yargs";
 //import { ArgumentsCamelCase } from "yargs";
 import { hideBin } from "yargs/helpers";
-import { packagePythonArtifacts } from "./build.js";
+import { packagePythonArtifacts, loadPyodideEnvironment } from "./build.js";
 import { logger } from "@opensource-observer/utils";
 import * as path from "path";
+import * as fsPromises from "fs/promises";
 
 // type BeforeClientArgs = ArgumentsCamelCase<{
 //   "github-app-private-key": unknown;
@@ -15,6 +16,11 @@ interface PackageForNodePyodide {
   outputPath: string;
   pypiDeps: string[];
   uvProjects: string[];
+}
+
+interface RunPython {
+  runtimeArchive: string;
+  pythonFile: string;
 }
 
 const cli = yargs(hideBin(process.argv))
@@ -39,15 +45,45 @@ const cli = yargs(hideBin(process.argv))
       });
     },
     (args) => {
-      console.log("Packaging python artifacts for pyodide in node", args);
+      console.log("Packaging python artifacts for pyodide in node");
 
-      return packagePythonArtifacts(
-        args.pypiDeps as string[],
-        args.uvProjects as string[],
-        path.resolve(args.outputPath),
-      ).then((outputTarBallPath) => {
+      return packagePythonArtifacts({
+        outputPath: path.resolve(args.outputPath),
+        pypiDeps: args.pypiDeps,
+        uvProjects: args.uvProjects,
+      }).then((outputTarBallPath) => {
         console.log(`Packaged python artifacts at ${outputTarBallPath}`);
       });
+    },
+  )
+  .command<RunPython>(
+    "run <runtime-archive> <python-file>",
+    "Run python code in pyodide in node",
+    (yags) => {
+      yags.positional("runtime-archive", {
+        type: "string",
+        description: "The runtime archive to use",
+      });
+      yags.positional("python-file", {
+        type: "string",
+        description: "The python code to run",
+      });
+    },
+    async (args) => {
+      return loadPyodideEnvironment(path.resolve(args.runtimeArchive)).then(
+        async (pyodide) => {
+          console.log("Running python code in pyodide in node");
+
+          const code = await fsPromises.readFile(
+            path.resolve(args.pythonFile),
+            {
+              encoding: "utf-8",
+            },
+          );
+
+          return await pyodide.runPythonAsync(code);
+        },
+      );
     },
   )
   .demandCommand()

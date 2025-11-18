@@ -1,10 +1,15 @@
-import { loadPyodide } from "pyodide";
+import { loadPyodide, PyodideAPI } from "pyodide";
 import { exec } from "child_process";
 import * as fsPromises from "fs/promises";
+import * as os from "os";
+import * as path from "path";
 import util from "util";
-import { create } from "tar";
+import { create, extract } from "tar";
 import { mkdirp } from "mkdirp";
 import { logger } from "@opensource-observer/utils";
+import { createWriteStream } from "fs";
+import { Readable } from "stream";
+import type { ReadableStream } from "stream/web";
 
 // Wrap exec in a promise
 const execPromise = util.promisify(exec);
@@ -18,19 +23,48 @@ export type PyPIPackage = string | PyPIPackageWithMocks;
 
 export type PackageForNodePyodideOptions = {
   outputPath: string;
-  pypiDeps: string[];
-  uvProjects: string[];
+  pypiDeps: PyPIPackage[];
+  uvProjects?: string[];
 };
 
 /**
- * Allows packaging of python artifacts for loading the environment without
- * installing anything.
+ * Streams a URL to a file.
+ *
+ * @param url The URL to download.
+ * @param outputPath The local file path to save the downloaded content.
  */
-export async function packagePythonArtifacts(
-  pypiDependencies: PyPIPackage[],
-  uvProjects: string[],
-  outputPath: string,
-): Promise<string> {
+async function downloadUrlToFile(url: string, outputPath: string) {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Failed to download ${url}: ${response.statusText}`);
+  }
+
+  const fileStream = createWriteStream(outputPath);
+  const responseBody = response.body;
+  if (!responseBody) {
+    throw new Error(`Response body is null for ${url}`);
+  }
+  const readableStream = Readable.fromWeb(
+    responseBody as ReadableStream<Uint8Array>,
+  );
+  await new Promise((resolve, reject) => {
+    readableStream.pipe(fileStream);
+    fileStream.on("finish", resolve);
+    fileStream.on("error", reject);
+  });
+}
+
+/**
+ * Allows packaging of python artifacts for loading the environment without
+ * installing anything. This should allow for fully offline loading of a
+ * pyodide environment with the specified packages.
+ */
+export async function packagePythonArtifacts({
+  pypiDeps,
+  outputPath,
+  uvProjects = [],
+}: PackageForNodePyodideOptions): Promise<string> {
   const distPath = `${outputPath}/dist`;
   await mkdirp(distPath);
 
@@ -45,10 +79,10 @@ export async function packagePythonArtifacts(
   });
   await pyodide.loadPackage("micropip");
 
-  const pypiDependenciesWithMocks = pypiDependencies.filter(
+  const pypiDepsWithMocks = pypiDeps.filter(
     (dep) => typeof dep !== "string",
   ) as PyPIPackageWithMocks[];
-  const pypiDependenciesWithoutMocks = pypiDependencies.filter(
+  const pypiDepsWithoutMocks = pypiDeps.filter(
     (dep) => typeof dep === "string",
   ) as string[];
 
@@ -59,7 +93,7 @@ export async function packagePythonArtifacts(
   // specific functionality required doesn't use the mocked parts or pyodide
   // provides a different version that _might_ work but the dependency might try
   // to require a version that doesn't exist for pyodide.
-  for (const pkg of pypiDependenciesWithMocks) {
+  for (const pkg of pypiDepsWithMocks) {
     const micropipInstallLocals = pyodide.toPy({
       packageName: pkg.name,
       mockPackages: pkg.mockPackages,
@@ -85,7 +119,7 @@ export async function packagePythonArtifacts(
 
   // Install PyPI dependencies without any mocks
   const micropipInstallLocals = pyodide.toPy({
-    packages: pypiDependenciesWithoutMocks,
+    packages: pypiDepsWithoutMocks,
   });
   await pyodide.runPythonAsync(
     `
@@ -111,12 +145,39 @@ export async function packagePythonArtifacts(
     const [sourcePath, packageName] = dep.split(":");
     await buildLocalUvWorkspaceWheel(packageName, sourcePath, distPath);
     // Delete all tarballs that were created in the outputPath
-    // const files = await fsPromises.readdir(outputPath);
-    // for (const file of files) {
-    //   if (file.endsWith(".tar.gz")) {
-    //     await fsPromises.unlink(`${outputPath}/${file}`);
-    //   }
-    // }
+    const files = await fsPromises.readdir(distPath);
+    for (const file of files) {
+      if (file.endsWith(".tar.gz")) {
+        await fsPromises.unlink(`${distPath}/${file}`);
+      }
+    }
+  }
+
+  // Load the lock file
+  const lockFileContent = await pyodide.runPythonAsync(`
+      import micropip
+      micropip.freeze()
+  `);
+  // If there are _any_ packages in the lock file that reference using http/https
+  // Download those packages and rehost them in the distPath
+
+  const lockFile = JSON.parse(lockFileContent);
+  if (!lockFile.packages) {
+    throw new Error("Invalid lock file format: missing 'packages' key");
+  }
+  for (const [packageName, packageInfo] of Object.entries(lockFile.packages)) {
+    const fileName: string = (packageInfo as any).file_name;
+    if (fileName.startsWith("http://") || fileName.startsWith("https://")) {
+      console.log(
+        `Rehosting package ${packageName} from ${fileName} into local dist`,
+      );
+      // Download the file
+      const url = new URL(fileName);
+      const pathname = url.pathname;
+      const localFileName = pathname.substring(pathname.lastIndexOf("/") + 1);
+      const localFilePath = `${distPath}/${localFileName}`;
+      await downloadUrlToFile(fileName, localFilePath);
+    }
   }
 
   // List all wheel files in the distPath
@@ -138,16 +199,51 @@ export async function packagePythonArtifacts(
   return outputTarBallPath;
 }
 
+export async function loadLocalWheelFileIntoPyodide(
+  pyodide: PyodideAPI,
+  wheelFilePath: string,
+): Promise<void> {
+  // Load file into memory
+  const wheelData = await fsPromises.readFile(wheelFilePath);
+
+  // Get uint8array from whl file data
+  const wheelUint8Array = new Uint8Array(wheelData.buffer);
+  pyodide.unpackArchive(wheelUint8Array, "whl");
+}
+
 /**
  * Given a path to a python artifact packaged with `packagePythonArtifacts`,
- * load a pyodide environment. This allows loading the environment without
- * any downloading at runtime.
+ * load a pyodide environment. This allows loading the environment offline.
  *
- * @param artifactPath
+ * @param runtimeEnvironmentPath
  */
 export async function loadPyodideEnvironment(
-  _artifactPath: string,
-): Promise<any> {}
+  runtimeEnvironmentPath: string,
+): Promise<PyodideAPI> {
+  const tmpDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "temp-dir-"));
+  const pyodide = await loadPyodide();
+
+  try {
+    // Unpack the artifact to a temp directory
+    await extract({
+      file: runtimeEnvironmentPath,
+      cwd: tmpDir,
+    });
+
+    // List all the whl files in the unpacked directory
+    const files = await fsPromises.readdir(tmpDir);
+    const whlFiles = files.filter((f) => f.endsWith(".whl"));
+
+    // Load all of the wheel files using unpackArchive
+    for (const whlFile of whlFiles) {
+      await loadLocalWheelFileIntoPyodide(pyodide, `${tmpDir}/${whlFile}`);
+    }
+  } finally {
+    // Clean up the temporary directory
+    await fsPromises.rm(tmpDir, { recursive: true, force: true });
+  }
+  return pyodide;
+}
 
 /**
  * Given a uv project that is accessible on the local filesystem, this builds a
