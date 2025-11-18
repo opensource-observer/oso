@@ -69,10 +69,15 @@ export async function packagePythonArtifacts(
       import micropip
       for mock in mockPackages:
           print(f"Adding mock package {mock['name']}=={mock['version']}")
-          await micropip.add_mock_package(mock['name'], mock['version'])
+          micropip.add_mock_package(mock['name'], mock['version'])
       print(f"Installing {packageName} with mocks")
-      await micropip.install(packageName)
-      print(f"done installing {packageName} with mocks")
+      try:
+          await micropip.install(packageName)
+          print(f"done installing {packageName} with mocks")
+      finally:
+          for mock in mockPackages:
+              print(f"Removing mock package {mock['name']}")
+              micropip.remove_mock_package(mock['name'])
     `,
       { locals: micropipInstallLocals },
     );
