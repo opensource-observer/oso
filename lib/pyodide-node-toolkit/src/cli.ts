@@ -1,10 +1,12 @@
 import yargs from "yargs";
 //import { ArgumentsCamelCase } from "yargs";
 import { hideBin } from "yargs/helpers";
-import { packagePythonArtifacts, loadPyodideEnvironment } from "./build.js";
+import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build.ts";
 import { logger } from "@opensource-observer/utils";
 import * as path from "path";
 import * as fsPromises from "fs/promises";
+import { withContext } from "@opensource-observer/utils";
+import { TempDirContext } from "@/utils.ts";
 
 // type BeforeClientArgs = ArgumentsCamelCase<{
 //   "github-app-private-key": unknown;
@@ -28,9 +30,9 @@ const cli = yargs(hideBin(process.argv))
     "package <output-path>",
     "Package python artifacts for pyodide in node",
     (yags) => {
-      yags.positional("output-path", {
+      yags.option("output-path", {
         type: "string",
-        description: "The output-path to use",
+        description: "The destination path for the generated pyodide environment tarball",
       });
       yags.option("pypi-deps", {
         type: "array",
@@ -47,12 +49,17 @@ const cli = yargs(hideBin(process.argv))
     (args) => {
       console.log("Packaging python artifacts for pyodide in node");
 
-      return packagePythonArtifacts({
-        outputPath: path.resolve(args.outputPath),
-        pypiDeps: args.pypiDeps,
-        uvProjects: args.uvProjects,
-      }).then((outputTarBallPath) => {
-        console.log(`Packaged python artifacts at ${outputTarBallPath}`);
+      const absOutputPath = path.resolve(args.outputPath);
+      return withContext(new TempDirContext("pyodide-package-"), async (tempDir) => {
+        const outputTarBallPath = await packagePythonArtifacts({
+          buildDirPath: tempDir,
+          pypiDeps: args.pypiDeps,
+          uvProjects: args.uvProjects,
+          outputPath: absOutputPath
+        });
+        console.log(
+          `Packaged python artifacts at ${absOutputPath}`,
+        );
       });
     },
   )

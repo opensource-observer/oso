@@ -1,7 +1,7 @@
+import 'module-alias/register';
 import { loadPyodide, PyodideAPI } from "pyodide";
 import { exec } from "child_process";
 import * as fsPromises from "fs/promises";
-import * as os from "os";
 import * as path from "path";
 import util from "util";
 import { create, extract } from "tar";
@@ -10,6 +10,8 @@ import { logger } from "@opensource-observer/utils";
 import { createWriteStream } from "fs";
 import { Readable } from "stream";
 import type { ReadableStream } from "stream/web";
+import { withContext } from "@opensource-observer/utils";
+import { TempDirContext } from "@/utils";
 
 // Wrap exec in a promise
 const execPromise = util.promisify(exec);
@@ -22,6 +24,7 @@ export type PyPIPackageWithMocks = {
 export type PyPIPackage = string | PyPIPackageWithMocks;
 
 export type PackageForNodePyodideOptions = {
+  buildDirPath: string;
   outputPath: string;
   pypiDeps: PyPIPackage[];
   uvProjects?: string[];
@@ -62,22 +65,21 @@ async function downloadUrlToFile(url: string, outputPath: string) {
  */
 export async function packagePythonArtifacts({
   pypiDeps,
+  buildDirPath,
   outputPath,
   uvProjects = [],
 }: PackageForNodePyodideOptions): Promise<string> {
-  const distPath = `${outputPath}/dist`;
+  const distPath = `${buildDirPath}/dist`;
   await mkdirp(distPath);
 
   console.log("distPath", distPath);
 
   const pyodide = await loadPyodide({
-    // packages: [
-    //   "micropip",
-    //   ...pypiDependencies,
-    // ],
+    packages: [
+      "micropip",
+    ],
     packageCacheDir: distPath,
   });
-  await pyodide.loadPackage("micropip");
 
   const pypiDepsWithMocks = pypiDeps.filter(
     (dep) => typeof dep !== "string",
@@ -184,7 +186,7 @@ export async function packagePythonArtifacts({
   const distFiles = await fsPromises.readdir(distPath);
   console.log("Packaged files:", distFiles);
 
-  const outputTarBallPath = `${outputPath}/python_artifacts.tar.gz`;
+  const outputTarBallPath = `${buildDirPath}/python_artifacts.tar.gz`;
 
   // Tarball all the wheel files in the outputPath
   await create(
@@ -194,9 +196,16 @@ export async function packagePythonArtifacts({
       cwd: distPath,
     },
     distFiles,
+  );        
+  
+  const absOutputPath = path.resolve(outputPath)
+
+  await fsPromises.rename(
+    outputTarBallPath,
+    absOutputPath,
   );
 
-  return outputTarBallPath;
+  return absOutputPath;
 }
 
 export async function loadLocalWheelFileIntoPyodide(
@@ -220,10 +229,8 @@ export async function loadLocalWheelFileIntoPyodide(
 export async function loadPyodideEnvironment(
   runtimeEnvironmentPath: string,
 ): Promise<PyodideAPI> {
-  const tmpDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), "temp-dir-"));
   const pyodide = await loadPyodide();
-
-  try {
+  await withContext(new TempDirContext("pyodide-runtime-"), async (tmpDir) => {
     // Unpack the artifact to a temp directory
     await extract({
       file: runtimeEnvironmentPath,
@@ -238,10 +245,7 @@ export async function loadPyodideEnvironment(
     for (const whlFile of whlFiles) {
       await loadLocalWheelFileIntoPyodide(pyodide, `${tmpDir}/${whlFile}`);
     }
-  } finally {
-    // Clean up the temporary directory
-    await fsPromises.rm(tmpDir, { recursive: true, force: true });
-  }
+  });
   return pyodide;
 }
 

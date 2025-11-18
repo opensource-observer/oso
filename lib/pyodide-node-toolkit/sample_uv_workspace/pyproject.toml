@@ -1,0 +1,21 @@
+[project]
+authors = [{ name = "Kariba Labs" }]
+license = { text = "Apache-2.0" }
+requires-python = "==3.12.*"
+dependencies = []
+name = "sample"
+version = "1.0.0"
+description = "Impact measurement for open source software"
+readme = "README.md"
+
+[tool.uv.sources]
+sample_project = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "sample",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.10,<0.10.0"]
+build-backend = "uv_build"
