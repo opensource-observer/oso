@@ -54,42 +54,73 @@ lineage_family_flattened AS (
   CROSS JOIN UNNEST(lin.family_artifact_ids) AS t(artifact_id)
   WHERE lin.family_artifact_ids IS NOT NULL
 ),
--- Consolidated boolean checks using LEFT JOINs instead of separate CTEs with IN subqueries
 repo_checks AS (
   SELECT
     s.repo_artifact_id,
-    CASE WHEN gu.artifact_name IS NOT NULL THEN TRUE END AS is_personal_repo,
-    CASE WHEN pkg.package_owner_artifact_id IS NOT NULL THEN TRUE END AS is_package_owner,
-    CASE WHEN ce.artifact_id IS NOT NULL THEN TRUE END AS is_in_crypto_ecosystems,
-    CASE WHEN ce_maintainer.artifact_namespace IS NOT NULL THEN TRUE END AS is_maintainer_in_crypto_ecosystems,
-    CASE WHEN ossd.artifact_id IS NOT NULL THEN TRUE END AS is_in_ossd,
-    CASE WHEN op_atlas.artifact_id IS NOT NULL THEN TRUE END AS is_in_op_atlas,
-    CASE WHEN gitcoin.artifact_id IS NOT NULL THEN TRUE END AS is_in_gitcoin,
-    CASE WHEN lff.family_artifact_id IS NOT NULL THEN TRUE END AS is_in_lineage_family
+    CASE 
+      WHEN EXISTS (
+        SELECT 1 FROM oso.int_github_users AS gu
+        WHERE gu.artifact_name = s.repo_maintainer
+      ) THEN TRUE 
+      ELSE FALSE 
+    END AS is_personal_repo,
+    CASE 
+      WHEN EXISTS (
+        SELECT 1 FROM oso.int_packages__current_maintainer_only AS pkg
+        WHERE pkg.package_owner_artifact_id = s.repo_artifact_id
+      ) THEN TRUE 
+      ELSE FALSE 
+    END AS is_package_owner,
+    CASE 
+      WHEN EXISTS (
+        SELECT 1 FROM oso.int_artifacts_by_project_in_crypto_ecosystems AS ce
+        WHERE ce.artifact_id = s.repo_artifact_id
+          AND ce.project_source = 'CRYPTO_ECOSYSTEMS'
+          AND ce.project_namespace = 'eco'
+      ) THEN TRUE 
+      ELSE FALSE 
+    END AS is_in_crypto_ecosystems,
+    CASE 
+      WHEN EXISTS (
+        SELECT 1 FROM oso.int_artifacts_by_project_in_crypto_ecosystems AS ce_maintainer
+        WHERE ce_maintainer.artifact_namespace = s.repo_maintainer
+          AND ce_maintainer.project_source = 'CRYPTO_ECOSYSTEMS'
+          AND ce_maintainer.project_namespace = 'eco'
+      ) THEN TRUE 
+      ELSE FALSE 
+    END AS is_maintainer_in_crypto_ecosystems,
+    CASE 
+      WHEN EXISTS (
+        SELECT 1 FROM oso.int_artifacts_by_project_in_ossd AS ossd
+        WHERE ossd.artifact_id = s.repo_artifact_id
+          AND ossd.artifact_source = 'GITHUB'
+      ) THEN TRUE 
+      ELSE FALSE 
+    END AS is_in_ossd,
+    CASE 
+      WHEN EXISTS (
+        SELECT 1 FROM oso.int_artifacts_by_project_in_op_atlas AS op_atlas
+        WHERE op_atlas.artifact_id = s.repo_artifact_id
+          AND op_atlas.artifact_source = 'GITHUB'
+      ) THEN TRUE 
+      ELSE FALSE 
+    END AS is_in_op_atlas,
+    CASE 
+      WHEN EXISTS (
+        SELECT 1 FROM oso.int_artifacts_by_project__gitcoin AS gitcoin
+        WHERE gitcoin.artifact_id = s.repo_artifact_id
+          AND gitcoin.artifact_source = 'GITHUB'
+      ) THEN TRUE 
+      ELSE FALSE 
+    END AS is_in_gitcoin,
+    CASE 
+      WHEN EXISTS (
+        SELECT 1 FROM lineage_family_flattened AS lff
+        WHERE lff.family_artifact_id = s.repo_artifact_id
+      ) THEN TRUE 
+      ELSE FALSE 
+    END AS is_in_lineage_family
   FROM shortlist AS s
-  LEFT JOIN oso.int_github_users AS gu
-    ON s.repo_maintainer = gu.artifact_name
-  LEFT JOIN oso.int_packages__current_maintainer_only AS pkg
-    ON s.repo_artifact_id = pkg.package_owner_artifact_id
-  LEFT JOIN oso.int_artifacts_by_project_in_crypto_ecosystems AS ce
-    ON s.repo_artifact_id = ce.artifact_id
-    AND ce.project_source = 'CRYPTO_ECOSYSTEMS'
-    AND ce.project_namespace = 'eco'
-  LEFT JOIN oso.int_artifacts_by_project_in_crypto_ecosystems AS ce_maintainer
-    ON s.repo_maintainer = ce_maintainer.artifact_namespace
-    AND ce_maintainer.project_source = 'CRYPTO_ECOSYSTEMS'
-    AND ce_maintainer.project_namespace = 'eco'
-  LEFT JOIN oso.int_artifacts_by_project_in_ossd AS ossd
-    ON s.repo_artifact_id = ossd.artifact_id
-    AND ossd.artifact_source = 'GITHUB'
-  LEFT JOIN oso.int_artifacts_by_project_in_op_atlas AS op_atlas
-    ON s.repo_artifact_id = op_atlas.artifact_id
-    AND op_atlas.artifact_source = 'GITHUB'
-  LEFT JOIN oso.int_artifacts_by_project__gitcoin AS gitcoin
-    ON s.repo_artifact_id = gitcoin.artifact_id
-    AND gitcoin.artifact_source = 'GITHUB'
-  LEFT JOIN lineage_family_flattened AS lff
-    ON s.repo_artifact_id = lff.family_artifact_id
 ),
 commit_metrics AS (
   SELECT
