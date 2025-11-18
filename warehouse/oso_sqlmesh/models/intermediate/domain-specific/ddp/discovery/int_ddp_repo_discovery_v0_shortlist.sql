@@ -34,16 +34,17 @@ MODEL (
 
 WITH shortlist AS (
   SELECT DISTINCT
-    url,
-    repo_artifact_id,
+    ddp.url,
+    ddp.repo_artifact_id,
     a.artifact_namespace AS repo_maintainer,
     a.artifact_name AS repo_name,
-    final_score
-  FROM oso.int_ddp_repo_discovery_v0
-  CROSS JOIN @parse_github_repository_artifact(url) AS a
+    ddp.final_score
+  FROM oso.int_ddp_repo_discovery_v0 AS ddp
+  CROSS JOIN LATERAL @parse_github_repository_artifact(ddp.url) AS a
   WHERE
-    final_score >= @trust_score_threshold
-    AND NOT is_pretrust
+    ddp.url IS NOT NULL
+    AND ddp.final_score >= @trust_score_threshold
+    AND NOT ddp.is_pretrust
 ),
 -- Flatten lineage family artifact IDs for efficient lookup
 lineage_family_flattened AS (
