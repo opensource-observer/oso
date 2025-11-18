@@ -1,7 +1,7 @@
 {
-  "name": "@opensource-observer/utils",
+  "name": "@opensource-observer/pyodide-node-toolkit",
   "version": "0.0.1",
-  "description": "Utility functions used in OSO",
+  "description": "Pyodide node toolkit for OSO",
   "author": "Kariba Labs",
   "license": "Apache-2.0",
   "private": false,
@@ -18,23 +18,30 @@
     "url": "git+https://github.com/opensource-observer/oso.git"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "tsc",
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --max-warnings 0 .",
-    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,ts,md,json}"
+    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,ts,md,json}",
+    "cli": "node --loader ts-node/esm src/cli.ts"
   },
   "keywords": [],
   "devDependencies": {
     "@types/node": "^20.14.10",
+    "@types/yargs": "^17.0.35",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@opensource-observer/utils": "workspace:*",
     "@types/lodash": "^4.17.6",
     "lodash": "^4.17.21",
-    "winston": "^3.18.3"
+    "mkdirp": "^3.0.1",
+    "pyodide": "^0.29.0",
+    "smol-toml": "^1.5.2",
+    "tar": "^7.5.2",
+    "yargs": "^18.0.0"
   }
 }
