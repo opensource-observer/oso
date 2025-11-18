@@ -53,9 +53,6 @@ def no_gaps_audit_factory(config: MetricQueryConfig) -> MetricMetadataModifiers:
     if "worldchain_users_aggregation" in config["table_name"]:
         return {}
 
-    if "new_contributors" in config["table_name"]:
-        return {}
-
     if "data_category=blockchain" in config["additional_tags"]:
         options["ignore_before"] = constants.superchain_audit_start
         options["ignore_after"] = constants.superchain_audit_end
@@ -256,8 +253,8 @@ timeseries_metrics(
             ),
             additional_tags=["data_category=code"],
         ),
-        "new_contributors": MetricQueryDef(
-            ref="code/new_contributors.sql",
+        "first_time_contributor": MetricQueryDef(
+            ref="code/first_time_contributor.sql",
             time_aggregations=[
                 "daily",
                 "weekly",
@@ -266,11 +263,10 @@ timeseries_metrics(
                 # "biannually",
                 "yearly",
             ],
-            entity_types=["artifact", "project", "collection"],
             over_all_time=True,
             metadata=MetricMetadata(
-                display_name="New Contributors",
-                description="Metrics related to new GitHub contributors identified by author_association = 'FIRST_TIME_CONTRIBUTOR'",
+                display_name="First Time Contributors",
+                description="Metrics related to first time GitHub contributors",
             ),
             additional_tags=["data_category=code"],
         ),

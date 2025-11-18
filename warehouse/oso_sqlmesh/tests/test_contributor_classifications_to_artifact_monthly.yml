@@ -6,21 +6,21 @@ test_contributor_classifications_to_artifact_monthly:
   inputs:
     oso.contributor_active_days_to_artifact_monthly:
       rows:
-      # Full-time contributor to artifact_1 (25 active days out of 31)
+      # Contributor to artifact_1 (not first-time)
       - to_artifact_id: artifact_1
         from_artifact_id: contributor_1
         event_source: GITHUB
         metrics_sample_date: 2024-01-01
         metric: contributor_active_days
         amount: 25
-      # Part-time contributor to artifact_1 (7 active days out of 31)
+      # First-time contributor to artifact_1
       - to_artifact_id: artifact_1
         from_artifact_id: contributor_2
         event_source: GITHUB
         metrics_sample_date: 2024-01-01
         metric: contributor_active_days
         amount: 7
-      # Full-time contributor to artifact_2 (28 active days out of 31)
+      # First-time contributor to artifact_2
       - to_artifact_id: artifact_2
         from_artifact_id: contributor_3
         event_source: GITHUB
@@ -29,202 +29,630 @@ test_contributor_classifications_to_artifact_monthly:
         amount: 28
     oso.int_first_contribution_to_artifact:
       rows:
-      # First contribution for contributor_1 was in 2023 (not new)
+      # First contribution for contributor_1 was in 2023 (not first-time in Jan 2024)
       - time: 2023-05-20
         event_source: GITHUB
         from_artifact_id: contributor_1
         to_artifact_id: artifact_1
-      # First contribution for contributor_2 was in current period (new contributor)
+      # First contribution for contributor_2 was in current period (first-time)
       - time: 2024-01-12
         event_source: GITHUB
         from_artifact_id: contributor_2
         to_artifact_id: artifact_1
-      # First contribution for contributor_3 was in current period (new contributor)
+      # First contribution for contributor_3 was in current period (first-time)
       - time: 2024-01-05
         event_source: GITHUB
         from_artifact_id: contributor_3
         to_artifact_id: artifact_2
-    oso.int_events_daily__github_with_lag:
+    oso.int_last_contribution_to_artifact:
       rows:
-      # contributor_1 had some historical activity
-      - bucket_day: 2023-12-20
+      - time: 2024-01-25
         event_source: GITHUB
         from_artifact_id: contributor_1
         to_artifact_id: artifact_1
-        event_type: COMMIT_CODE
-        last_event: 2023-12-20
+      - time: 2024-01-12
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: artifact_1
+      - time: 2024-01-05
+        event_source: GITHUB
+        from_artifact_id: contributor_3
+        to_artifact_id: artifact_2
   outputs:
     query:
       partial: true
       rows:
-      # Full-time contributors (active_days / 31 >= 10/30 = 0.33)
-      # contributor_1: 25/31 = 0.81 >= 0.33 (full-time)
+      # First-time contributors - contributor_2 to artifact_1
       - metrics_sample_date: 2024-01-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: full_time_contributors_monthly
+        metric: first_time_contributor_monthly
         amount: 1
-      # contributor_3: 28/31 = 0.90 >= 0.33 (full-time)
+      # First-time contributors - contributor_3 to artifact_2
       - metrics_sample_date: 2024-01-01
         event_source: GITHUB
         to_artifact_id: artifact_2
         from_artifact_id: ''
-        metric: full_time_contributors_monthly
+        metric: first_time_contributor_monthly
         amount: 1
-      # Part-time contributors (active_days / 31 < 10/30 = 0.33)
-      # contributor_2: 7/31 = 0.23 < 0.33 (part-time)
-      - metrics_sample_date: 2024-01-01
+      # Churn events at the end of the test period (Feb 2024)
+      # All contributors churn because there's no activity in the next period
+      # For artifact_1:
+      # - contributor_1 was NOT first-time (first contribution was in 2023), churns as full-time
+      - metrics_sample_date: 2024-02-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: part_time_contributors_monthly
+        metric: churned_after_full_time_contributor_monthly
         amount: 1
-      # New contributors (first contribution in current period)
-      # contributor_2 to artifact_1
-      - metrics_sample_date: 2024-01-01
+      # - contributor_2 was first-time in Jan, churns as first-time
+      - metrics_sample_date: 2024-02-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: new_contributors_monthly
+        metric: churned_after_first_time_contributor_monthly
         amount: 1
-      # contributor_3 to artifact_2
-      - metrics_sample_date: 2024-01-01
+      # For artifact_2:
+      # - contributor_3 was first-time in Jan, churns as first-time
+      - metrics_sample_date: 2024-02-01
         event_source: GITHUB
         to_artifact_id: artifact_2
         from_artifact_id: ''
-        metric: new_contributors_monthly
-        amount: 1
-      # Active contributors (all contributors)
-      # artifact_1 has 2 active contributors
-      - metrics_sample_date: 2024-01-01
-        event_source: GITHUB
-        to_artifact_id: artifact_1
-        from_artifact_id: ''
-        metric: active_contributors_monthly
-        amount: 2
-      # artifact_2 has 1 active contributor
-      - metrics_sample_date: 2024-01-01
-        event_source: GITHUB
-        to_artifact_id: artifact_2
-        from_artifact_id: ''
-        metric: active_contributors_monthly
+        metric: churned_after_first_time_contributor_monthly
         amount: 1
 
-
-test_new_contributors_monthly_multi_month:
+test_active_contributors_consistency:
   model: oso.contributor_classifications_to_artifact_monthly
   vars:
     start: 2024-01-01
-    end: 2024-02-29
+    end: 2024-03-31
   inputs:
     oso.contributor_active_days_to_artifact_monthly:
       rows:
-      # Month 1 activity
+      # Month 1: Initial activity
       - to_artifact_id: artifact_1
         from_artifact_id: contributor_1
         event_source: GITHUB
         metrics_sample_date: 2024-01-01
         metric: contributor_active_days
-        amount: 10
-      # Month 2 activity
+        amount: 5  # Part-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 15  # Full-time
+      # Month 2: Continued activity with same levels
       - to_artifact_id: artifact_1
         from_artifact_id: contributor_1
         event_source: GITHUB
         metrics_sample_date: 2024-02-01
         metric: contributor_active_days
-        amount: 10
+        amount: 5  # Still part-time
       - to_artifact_id: artifact_1
         from_artifact_id: contributor_2
         event_source: GITHUB
         metrics_sample_date: 2024-02-01
         metric: contributor_active_days
-        amount: 10
+        amount: 15  # Still full-time
+      # Month 3: Continued activity with same levels
       - to_artifact_id: artifact_1
-        from_artifact_id: contributor_3
+        from_artifact_id: contributor_1
         event_source: GITHUB
-        metrics_sample_date: 2024-02-01
+        metrics_sample_date: 2024-03-01
         metric: contributor_active_days
-        amount: 10
+        amount: 6  # Still part-time
       - to_artifact_id: artifact_1
-        from_artifact_id: contributor_4
+        from_artifact_id: contributor_2
         event_source: GITHUB
-        metrics_sample_date: 2024-02-01
+        metrics_sample_date: 2024-03-01
         metric: contributor_active_days
-        amount: 10
+        amount: 18  # Still full-time
     oso.int_first_contribution_to_artifact:
       rows:
-      # New contributor in month 1
+      # Both were first-time in month 1
       - time: 2024-01-15
         event_source: GITHUB
         from_artifact_id: contributor_1
         to_artifact_id: artifact_1
-      # 3 new contributors in month 2
-      - time: 2024-02-10
+      - time: 2024-01-20
         event_source: GITHUB
         from_artifact_id: contributor_2
         to_artifact_id: artifact_1
-      - time: 2024-02-15
-        event_source: GITHUB
-        from_artifact_id: contributor_3
-        to_artifact_id: artifact_1
-      - time: 2024-02-20
-        event_source: GITHUB
-        from_artifact_id: contributor_4
-        to_artifact_id: artifact_1
-    oso.int_events_daily__github_with_lag:
+    oso.int_last_contribution_to_artifact:
       rows:
-      - bucket_day: 2024-01-15
+      - time: 2024-01-25
         event_source: GITHUB
         from_artifact_id: contributor_1
         to_artifact_id: artifact_1
-        event_type: COMMIT_CODE
-        last_event: 2024-01-15
-      - bucket_day: 2024-02-10
+      - time: 2024-02-20
         event_source: GITHUB
         from_artifact_id: contributor_2
         to_artifact_id: artifact_1
-        event_type: PULL_REQUEST_OPENED
-        last_event: 2024-02-10
   outputs:
     query:
       partial: true
       rows:
-      # Month 1 should have 1 new contributor
+      # Month 1: Both are first-time contributors
       - metrics_sample_date: 2024-01-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: new_contributors_monthly
+        metric: first_time_contributor_monthly
+        amount: 2
+      # Month 2: Transition to new_part_time and new_full_time
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: new_part_time_contributor_monthly
         amount: 1
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: new_full_time_contributor_monthly
+        amount: 1
+      # Month 3: Transition to active_part_time and active_full_time
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: active_part_time_contributor_monthly
+        amount: 1
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: active_full_time_contributor_monthly
+        amount: 1
+      # Churn events at the end of the test period (April 2024)
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_part_time_contributor_monthly
+        amount: 1
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_full_time_contributor_monthly
+        amount: 1
+
+
+test_activity_level_transitions:
+  model: oso.contributor_classifications_to_artifact_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-04-30
+  inputs:
+    oso.contributor_active_days_to_artifact_monthly:
+      rows:
+      # Month 1: Initial activity
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 5  # Part-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 15  # Full-time
+      # Month 2: Transition to new_part_time and new_full_time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-02-01
+        metric: contributor_active_days
+        amount: 6  # Still part-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-02-01
+        metric: contributor_active_days
+        amount: 16  # Still full-time
+      # Month 3: Contributor 1 increases to full-time, Contributor 2 decreases to part-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-03-01
+        metric: contributor_active_days
+        amount: 15  # Now full-time (15/31 = 0.48 >= 0.33)
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-03-01
+        metric: contributor_active_days
+        amount: 8  # Now part-time (8/31 = 0.26 < 0.33)
+      # Month 4: Both maintain their new levels
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-04-01
+        metric: contributor_active_days
+        amount: 14  # Still full-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-04-01
+        metric: contributor_active_days
+        amount: 7  # Still part-time
+    oso.int_first_contribution_to_artifact:
+      rows:
+      # Both were first-time in month 1
+      - time: 2024-01-15
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+      - time: 2024-01-20
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: artifact_1
+    oso.int_last_contribution_to_artifact:
+      rows:
+      - time: 2024-02-20
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+      - time: 2024-02-21
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: artifact_1
+  outputs:
+    query:
+      partial: true
+      rows:
+      # Month 1: Both are first-time contributors
       - metrics_sample_date: 2024-01-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: active_contributors_monthly
+        metric: first_time_contributor_monthly
+        amount: 2
+      # Month 2: Transition to new contributors
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: new_part_time_contributor_monthly
         amount: 1
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: new_full_time_contributor_monthly
+        amount: 1
+      # Month 3: Activity level changes
+      # contributor_1: part-time → full-time
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: part_time_to_full_time_contributor_monthly
+        amount: 1
+      # contributor_2: full-time → part-time
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: full_time_to_part_time_contributor_monthly
+        amount: 1
+      # Month 4: Both maintain their new activity levels
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: active_full_time_contributor_monthly
+        amount: 1
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: active_part_time_contributor_monthly
+        amount: 1
+      # Churn events at the end of the test period (May 2024)
+      - metrics_sample_date: 2024-05-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_part_time_contributor_monthly
+        amount: 1
+      - metrics_sample_date: 2024-05-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_full_time_contributor_monthly
+        amount: 1
+
+
+test_reactivated_contributors:
+  model: oso.contributor_classifications_to_artifact_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-05-31
+  inputs:
+    oso.contributor_active_days_to_artifact_monthly:
+      rows:
+      # Month 1: Initial activity
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 5  # Part-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 15  # Full-time
+      # Month 2: Both continue (to establish they're not first-timers)
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-02-01
+        metric: contributor_active_days
+        amount: 6  # Part-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-02-01
+        metric: contributor_active_days
+        amount: 16  # Full-time
+      # Month 3: Both are inactive (churned)
+      # No entries for this month = gap in activity
+      # Month 4: contributor_1 returns as part-time, contributor_2 returns as full-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-04-01
+        metric: contributor_active_days
+        amount: 7  # Part-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-04-01
+        metric: contributor_active_days
+        amount: 18  # Full-time
+      # Month 5: Test edge case - contributor_1 churns again, contributor_2 stays active
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-05-01
+        metric: contributor_active_days
+        amount: 17  # Full-time
+    oso.int_first_contribution_to_artifact:
+      rows:
+      # Both were first-time in month 1
+      - time: 2024-01-15
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+      - time: 2024-01-20
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: artifact_1
+    oso.int_last_contribution_to_artifact:
+      rows:
+      - time: 2024-02-20
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+      - time: 2024-02-21
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: artifact_1
+  outputs:
+    query:
+      partial: true
+      rows:
+      # Month 1: Both are first-time contributors
       - metrics_sample_date: 2024-01-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: part_time_contributors_monthly
+        metric: first_time_contributor_monthly
+        amount: 2
+      # Month 2: Transition to new contributors
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: new_part_time_contributor_monthly
         amount: 1
-      # Month 2 should have 3 new contributors
       - metrics_sample_date: 2024-02-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: new_contributors_monthly
-        amount: 3
+        metric: new_full_time_contributor_monthly
+        amount: 1
+      # Month 3: No activity (churned) - no output rows expected
+      # Month 4: Both reactivate after churning in month 3
+      # contributor_1: last active in Feb, expected prev is Mar, now active in Apr as part-time
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: reactivated_part_time_contributor_monthly
+        amount: 1
+      # contributor_2: last active in Feb, expected prev is Mar, now active in Apr as full-time
+      - metrics_sample_date: 2024-04-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: reactivated_full_time_contributor_monthly
+        amount: 1
+      # Month 5: contributor_2 continues as active_full_time (no gap)
+      - metrics_sample_date: 2024-05-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: active_full_time_contributor_monthly
+        amount: 1
+      # Churn events within the test period
+      # Month 3: Both contributors churned (gap in activity)
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_part_time_contributor_monthly
+        amount: 1
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_full_time_contributor_monthly
+        amount: 1
+      # Month 5: contributor_1 churned again (no activity in May)
+      - metrics_sample_date: 2024-05-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_part_time_contributor_monthly
+        amount: 1
+      # Month 6: contributor_2 churned at end of test period
+      - metrics_sample_date: 2024-06-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_full_time_contributor_monthly
+        amount: 1
+
+
+test_churned_contributors:
+  model: oso.contributor_classifications_to_artifact_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-04-30
+  inputs:
+    oso.contributor_active_days_to_artifact_monthly:
+      rows:
+      # Month 1: Both contributors start
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 5  # Part-time
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 15  # Full-time
+      # Month 2: contributor_1 churns, contributor_2 continues
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_2
+        event_source: GITHUB
+        metrics_sample_date: 2024-02-01
+        metric: contributor_active_days
+        amount: 16  # Full-time
+      # Month 3: contributor_2 churns too (no entries)
+      # Month 4: No activity from either (to validate churn events are within date range)
+    oso.int_first_contribution_to_artifact:
+      rows:
+      # Both were first-time in month 1
+      - time: 2024-01-15
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+      - time: 2024-01-20
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: artifact_1
+    oso.int_last_contribution_to_artifact:
+      rows:
+      - time: 2024-01-15
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+      - time: 2024-02-20
+        event_source: GITHUB
+        from_artifact_id: contributor_2
+        to_artifact_id: artifact_1
+  outputs:
+    query:
+      partial: true
+      rows:
+      # Month 1: Both are first-time contributors
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: first_time_contributor_monthly
+        amount: 2
+      # Month 2: contributor_1 is missing (churned), contributor_2 continues
       - metrics_sample_date: 2024-02-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: active_contributors_monthly
-        amount: 4
+        metric: new_full_time_contributor_monthly
+        amount: 1
+      # contributor_1 churned after being first-time in month 1 (never progressed)
       - metrics_sample_date: 2024-02-01
         event_source: GITHUB
         to_artifact_id: artifact_1
         from_artifact_id: ''
-        metric: full_time_contributors_monthly
-        amount: 4
+        metric: churned_after_first_time_contributor_monthly
+        amount: 1
+      # Month 3: contributor_2 is missing (churned)
+      # contributor_2 churned after being full-time in month 2
+      - metrics_sample_date: 2024-03-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_full_time_contributor_monthly
+        amount: 1
+
+
+test_churned_after_first_time:
+  model: oso.contributor_classifications_to_artifact_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-03-31
+  inputs:
+    oso.contributor_active_days_to_artifact_monthly:
+      rows:
+      # Month 1: First-time contributor
+      - to_artifact_id: artifact_1
+        from_artifact_id: contributor_1
+        event_source: GITHUB
+        metrics_sample_date: 2024-01-01
+        metric: contributor_active_days
+        amount: 5  # Part-time
+      # Month 2: No activity (churned immediately after first time)
+    oso.int_first_contribution_to_artifact:
+      rows:
+      - time: 2024-01-15
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+    oso.int_last_contribution_to_artifact:
+      rows:
+      - time: 2024-01-15
+        event_source: GITHUB
+        from_artifact_id: contributor_1
+        to_artifact_id: artifact_1
+  outputs:
+    query:
+      partial: true
+      rows:
+      # Month 1: First-time contributor
+      - metrics_sample_date: 2024-01-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: first_time_contributor_monthly
+        amount: 1
+      # Month 2: Churned after first-time
+      - metrics_sample_date: 2024-02-01
+        event_source: GITHUB
+        to_artifact_id: artifact_1
+        from_artifact_id: ''
+        metric: churned_after_first_time_contributor_monthly
+        amount: 1
