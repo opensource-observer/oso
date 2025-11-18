@@ -7,8 +7,18 @@ type DataModel {
   isEnabled: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
-  revisions(first: Int = 50, after: String, where: JSON): DataModelRevisionConnection!
-  releases(first: Int = 50, after: String, where: JSON): DataModelReleaseConnection!
+  revisions(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataModelRevisionConnection!
+  releases(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataModelReleaseConnection!
   latestRevision: DataModelRevision
   latestRelease: DataModelRelease
 }
@@ -137,7 +147,12 @@ extend type Query {
   }
   ```
   """
-  dataModels(first: Int = 50, after: String, where: JSON): DataModelConnection!
+  dataModels(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataModelConnection!
 }
 
 input CreateDataModelInput {

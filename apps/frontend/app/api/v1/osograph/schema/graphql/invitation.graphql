@@ -39,7 +39,7 @@ extend type Query {
   }
   ```
   """
-  invitations(first: Int = 50, after: String, where: JSON): InvitationConnection!
+  invitations(first: Int = 50, after: String, single: Boolean, where: JSON): InvitationConnection!
 }
 
 extend type Mutation {

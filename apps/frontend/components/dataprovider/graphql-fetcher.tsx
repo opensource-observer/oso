@@ -70,10 +70,12 @@ async function performFetch({ url, method, body, headers }: FetchProps) {
     json = { text };
   }
 
-  // @see https://swr.vercel.app/docs/error-handling
-  // If the status code is not in the range 200-299,
-  // we still try to parse and throw it.
-  if (!response.ok) {
+  if (json.errors) {
+    throw new Error(`GraphQL Fetch Error: ${json.errors[0].message}`);
+  } else if (!response.ok) {
+    // @see https://swr.vercel.app/docs/error-handling
+    // If the status code is not in the range 200-299,
+    // we still try to parse and throw it.
     const error = new Error(response.statusText) as CustomError;
     // Attach extra info to the error object.
     error.info = json;

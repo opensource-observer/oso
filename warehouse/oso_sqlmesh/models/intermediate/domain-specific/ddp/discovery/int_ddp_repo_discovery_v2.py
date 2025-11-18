@@ -275,6 +275,7 @@ def _discover_repos_df(context: ExecutionContext) -> pd.DataFrame:
         "trust_rank": "INTEGER",
     },
     grain=("repo_artifact_id",),
+    enabled=False,
     audits=[
         ("has_at_least_n_rows", {"threshold": 0}),
     ],

@@ -65,6 +65,7 @@ export async function buildQuery<TTable extends ValidTableName>(
   hook?: <TQuery extends ReturnType<typeof _inferQueryType<TTable>>>(
     query: TQuery,
   ) => TQuery,
+  single?: boolean,
 ) {
   type TQuery = ReturnType<typeof _inferQueryType<TTable>>;
   let query = client.from(tableName).select("*", { count: "exact" });
@@ -138,7 +139,16 @@ export async function buildQuery<TTable extends ValidTableName>(
     }
   }
 
-  return hook?.(query) ?? query;
+  const result = hook?.(query) ?? query;
+  if (single) {
+    const finalResult = await result.single();
+    return {
+      ...finalResult,
+      data: finalResult.data == null ? null : [finalResult.data],
+    };
+  }
+
+  return result;
 }
 
 export function mergePredicates<T extends ValidTableName>(

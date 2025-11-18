@@ -26,6 +26,7 @@ export interface ConnectionArgs {
 }
 
 export interface FilterableConnectionArgs extends ConnectionArgs {
+  single?: boolean;
   where?: unknown;
 }
 

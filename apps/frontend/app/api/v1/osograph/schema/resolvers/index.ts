@@ -37,6 +37,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   Invitation: invitationResolvers.Invitation,
   Notebook: notebookResolvers.Notebook,
   Dataset: datasetResolvers.Dataset,
+  DataModelDefinition: datasetResolvers.DataModelDefinition,
   DataModel: dataModelResolvers.DataModel,
   DataModelRevision: dataModelResolvers.DataModelRevision,
   DataModelRelease: dataModelResolvers.DataModelRelease,
