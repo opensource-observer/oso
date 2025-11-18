@@ -1,15 +1,25 @@
 [project]
 name = "query-rewriter"
 version = "0.1.0"
-description = "Add your description here"
+description = "Query rewriter for OSO queries"
 readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
+    "pandas>=2.3.3",
     "sqlglot>=27.28.1",
-    "sqlmesh>=0.227.1",
 ]
 
 [dependency-groups]
 dev = [
+    "ipython>=9.6.0",
     "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
 ]
+
+[build-system]
+requires = ["uv_build>=0.9.10,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "queryrewriter"
+module-root = ""
