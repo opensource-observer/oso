@@ -1,11 +1,41 @@
+import logging
 import typing as t
 
-from queryrewriter.dialect import parse
+from queryrewriter.dialect import extend_sqlglot, parse
 from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
 from sqlglot.optimizer.scope import Scope, build_scope
 
 from .types import TableResolver
+
+logger = logging.getLogger(__name__)
+
+_extended_sqlglot = False
+
+
+def safe_extend_sqlglot():
+    """This will only extend sqlglot once in any given process."""
+    from sqlglot import parse_one
+    from sqlglot.errors import ParseError
+
+    global _extended_sqlglot
+
+    if _extended_sqlglot:
+        return
+
+    try:
+        import sqlmesh  # noqa: F401
+
+        logger.debug("sqlmesh is installed, assuming sqlglot is already extended.")
+    except ImportError:
+        try:
+            mf = parse_one("@fake_macro('what')")
+            if mf.__class__.__name__ != "MacroFunc":
+                logger.debug("sqlmesh is not installed, extending sqlglot.")
+                extend_sqlglot()
+        except ParseError:
+            logger.debug("sqlmesh is not installed, extending sqlglot.")
+            extend_sqlglot()
 
 
 def table_to_fqn(
@@ -101,6 +131,8 @@ async def rewrite_query(
     Returns:
         str: The rewritten SQL query.
     """
+
+    safe_extend_sqlglot()
 
     # Parse the query. It could be many statements
     statements = parse(query)

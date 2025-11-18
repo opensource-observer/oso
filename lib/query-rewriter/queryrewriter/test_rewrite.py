@@ -1,7 +1,9 @@
 import pytest
-from queryrewriter import rewrite_query
+from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import TableResolver
 from sqlglot import parse_one
+
+# extend_sqlglot()
 
 
 def compare_sql_queries(query1: str, query2: str) -> bool:
