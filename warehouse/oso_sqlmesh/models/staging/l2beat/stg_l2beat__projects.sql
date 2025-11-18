@@ -16,7 +16,6 @@ SELECT
   host_chain::VARCHAR AS host_chain,
   category::VARCHAR AS category,
   providers::VARCHAR AS providers,
-  JSON_EXTRACT_SCALAR(providers::VARCHAR, '$[0]')::VARCHAR AS provider,
   is_archived::BOOLEAN AS is_archived,
   is_upcoming::BOOLEAN AS is_upcoming,
   is_under_review::BOOLEAN AS is_under_review,
