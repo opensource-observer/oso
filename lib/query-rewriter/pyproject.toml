@@ -23,6 +23,3 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "queryrewriter"
 module-root = ""
-
-# [tool.hatch.build.targets.wheel]
-# packages = ["queryrewriter"]
