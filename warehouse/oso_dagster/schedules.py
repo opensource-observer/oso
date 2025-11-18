@@ -126,6 +126,20 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
         sbom_source_tag,
     )
 
+    materialize_third_party_crypto_assets = define_asset_job(
+        "materialize_third_party_crypto_assets_job",
+        AssetSelection.key_prefixes("defillama", "l2beat", "growthepie"),
+        config={
+            "execution": {
+                "config": {
+                    "multiprocess": {
+                        "max_concurrent": 1,
+                    }
+                }
+            }
+        },
+    )
+
     schedules: list[ScheduleDefinition] = [
         # Run core pipeline assets once a month at 00:00 UTC
         ScheduleDefinition(
@@ -158,6 +172,14 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
                 "dagster/priority": "-1",
             },
         ),
+        # Run third-party crypto datasets on Sunday at 6:00 AM UTC
+        ScheduleDefinition(
+            job=materialize_third_party_crypto_assets,
+            cron_schedule="0 6 * * 0",
+            tags={
+                "dagster/priority": "-1",
+            },
+        ),
     ]
 
     jobs: list[FactoryJobDefinition] = [
@@ -166,6 +188,7 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
         materialize_unstable_source_assets,
         materialize_sbom_source_assets,
         materialize_sqlmesh_assets,
+        materialize_third_party_crypto_assets,
     ]
 
     if global_config.sqlmesh_assets_on_default_code_location_enabled:
