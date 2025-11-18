@@ -1,9 +1,9 @@
 import typing as t
 
+from queryrewriter.dialect import parse
 from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
 from sqlglot.optimizer.scope import Scope, build_scope
-from sqlmesh.core.dialect import parse
 
 from .types import TableResolver
 

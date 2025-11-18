@@ -109,6 +109,21 @@ def fake_table_resolver():
             "org1",
             None,
         ),
+        (
+            # Test rewriting with macros
+            """
+            SELECT * FROM dataset1.table1
+            WHERE created_at >= @start AND created_at < @end
+            AND country = @some_macro_func('test')
+            """,
+            """
+            SELECT * FROM "table1"."dataset1"."org1" as "table1"
+            WHERE "created_at" >= @start AND "created_at" < @end
+            AND "country" = @some_macro_func('test')
+            """,
+            "org1",
+            None,
+        ),
     ],
 )
 @pytest.mark.asyncio
