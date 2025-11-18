@@ -1,5 +1,7 @@
+from dagster import AssetExecutionContext
+from dlt.sources.rest_api import rest_api_resources
 from dlt.sources.rest_api.typing import RESTAPIConfig
-from oso_dagster.factories.rest import create_rest_factory_asset
+from oso_dagster.factories import dlt_factory
 
 metrics = [
     "daa",  # Daily Active Addresses
@@ -34,11 +36,21 @@ config: RESTAPIConfig = {
     ],
 }
 
-dlt_assets = create_rest_factory_asset(
-    config=config,
-)
 
-growthepie_assets = dlt_assets(
+@dlt_factory(
     key_prefix="growthepie",
     name="fundamentals",
+    log_intermediate_results=True,
 )
+def growthepie_assets(context: AssetExecutionContext):
+    """
+    Asset that combines all growthepie metrics into a single table.
+    """
+    resources = rest_api_resources(config)
+
+    # Set all resources to use the same table name so they union into one table
+    for resource in resources:
+        context.log.info(f"Processing metric: {resource.name}")
+        resource.table_name = "fundamentals_full"
+
+    yield from resources
