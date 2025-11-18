@@ -109,7 +109,7 @@ export const dataModelResolvers = {
 
       const { data: latestRevision } = await supabase
         .from("model_revision")
-        .select("revision_number, hash")
+        .select("*")
         .eq("model_id", validatedInput.dataModelId)
         .order("revision_number", { ascending: false })
         .limit(1)
@@ -152,8 +152,8 @@ export const dataModelResolvers = {
           language: validatedInput.language,
           code: validatedInput.code,
           cron: validatedInput.cron,
-          start: validatedInput.start,
-          end: validatedInput.end,
+          start: validatedInput.start?.toISOString() ?? null,
+          end: validatedInput.end?.toISOString() ?? null,
           schema: validatedInput.schema.map((col) => ({
             name: col.name,
             type: col.type,

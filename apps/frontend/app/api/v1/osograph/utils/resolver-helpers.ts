@@ -4,7 +4,10 @@ import {
   type Connection,
   emptyConnection,
 } from "@/app/api/v1/osograph/utils/connection";
-import type { ConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import type {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import {
   getFetchLimit,
   getPaginationParams,
@@ -54,7 +57,7 @@ export async function getUserOrganizationIds(
 
 export async function getUserOrganizationsConnection(
   userId: string,
-  args: ConnectionArgs,
+  args: FilterableConnectionArgs,
   additionalPredicate?: Partial<QueryPredicate<"organizations">>,
 ) {
   const supabase = createAdminClient();
@@ -101,6 +104,8 @@ export async function getUserOrganizationsConnection(
     supabase,
     "organizations",
     predicate,
+    undefined,
+    args.single,
   );
 
   if (orgError) {

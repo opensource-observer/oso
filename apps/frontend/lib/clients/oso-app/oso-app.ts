@@ -2745,6 +2745,15 @@ class OsoAppClient {
       kindOptions: any;
     }>,
   ) {
+    ensure(args.dataModelId, "Missing dataModelId argument");
+    ensure(args.name, "Missing name argument");
+    ensure(args.displayName, "Missing displayName argument");
+    ensure(args.language, "Missing language argument");
+    ensure(args.code, "Missing code argument");
+    ensure(args.cron, "Missing cron argument");
+    ensure(args.schema, "Missing schema argument");
+    ensure(args.kind, "Missing kind argument");
+
     const CREATE_DATA_MODEL_REVISION_MUTATION = gql(`
       mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {
         createDataModelRevision(input: $input) {
