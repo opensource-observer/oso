@@ -59,7 +59,6 @@ WHERE
     'sui',
     'aptos',
     'avalanche',
-    'optimism',
     'starknet',
     'ipfs',
     'celo',

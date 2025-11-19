@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_crypto_ecosystem_developer_lifecycle_monthly_enriched,
+  name oso.int_crypto_ecosystems_developer_lifecycle_monthly_enriched,
   description 'Developer lifecycle states for Crypto Ecosystems with full/part time classification and state transitions, enriched with project and developer information',
   dialect trino,
   kind full,
