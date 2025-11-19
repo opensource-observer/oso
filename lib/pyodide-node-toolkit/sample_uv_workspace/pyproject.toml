@@ -9,11 +9,11 @@ description = "Impact measurement for open source software"
 readme = "README.md"
 
 [tool.uv.sources]
-sample_project = { workspace = true }
+sample-project = { workspace = true }
 
 [tool.uv.workspace]
 members = [
-    "sample",
+    "sample-project",
 ]
 
 [build-system]

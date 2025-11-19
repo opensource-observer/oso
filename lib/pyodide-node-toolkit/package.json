@@ -26,23 +26,22 @@
     "lint:eslint": "eslint --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,ts,md,json}",
     "cli": "node --loader ts-node/esm src/cli.ts",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "vitest --run"
   },
   "keywords": [],
   "devDependencies": {
-    "@types/jest": "^30.0.0",
     "@types/node": "^20.14.10",
     "@types/yargs": "^17.0.35",
-    "jest": "^30.0.5",
-    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@opensource-observer/utils": "workspace:*",
     "@types/lodash": "^4.17.6",
     "lodash": "^4.17.21",
     "mkdirp": "^3.0.1",
+    "module-alias": "^2.2.3",
     "pyodide": "^0.29.0",
     "smol-toml": "^1.5.2",
     "tar": "^7.5.2",
@@ -50,6 +49,6 @@
     "yargs": "^18.0.0"
   },
   "_moduleAliases": {
-    "@": "dist"
+    "@/": "dist"
   }
 }

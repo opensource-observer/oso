@@ -1,12 +1,12 @@
 import yargs from "yargs";
-//import { ArgumentsCamelCase } from "yargs";
 import { hideBin } from "yargs/helpers";
-import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build.ts";
 import { logger } from "@opensource-observer/utils";
 import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { withContext } from "@opensource-observer/utils";
-import { TempDirContext } from "@/utils.ts";
+
+import { TempDirContext } from "@/utils";
+import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build";
 
 // type BeforeClientArgs = ArgumentsCamelCase<{
 //   "github-app-private-key": unknown;
@@ -32,7 +32,8 @@ const cli = yargs(hideBin(process.argv))
     (yags) => {
       yags.option("output-path", {
         type: "string",
-        description: "The destination path for the generated pyodide environment tarball",
+        description:
+          "The destination path for the generated pyodide environment tarball",
       });
       yags.option("pypi-deps", {
         type: "array",
@@ -50,17 +51,18 @@ const cli = yargs(hideBin(process.argv))
       console.log("Packaging python artifacts for pyodide in node");
 
       const absOutputPath = path.resolve(args.outputPath);
-      return withContext(new TempDirContext("pyodide-package-"), async (tempDir) => {
-        const outputTarBallPath = await packagePythonArtifacts({
-          buildDirPath: tempDir,
-          pypiDeps: args.pypiDeps,
-          uvProjects: args.uvProjects,
-          outputPath: absOutputPath
-        });
-        console.log(
-          `Packaged python artifacts at ${absOutputPath}`,
-        );
-      });
+      return withContext(
+        new TempDirContext("pyodide-package-"),
+        async (tempDir) => {
+          await packagePythonArtifacts({
+            buildDirPath: tempDir,
+            pypiDeps: args.pypiDeps,
+            uvProjects: args.uvProjects,
+            outputPath: absOutputPath,
+          });
+          console.log(`Packaged python artifacts at ${absOutputPath}`);
+        },
+      );
     },
   )
   .command<RunPython>(

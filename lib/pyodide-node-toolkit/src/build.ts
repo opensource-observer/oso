@@ -1,4 +1,3 @@
-import 'module-alias/register';
 import { loadPyodide, PyodideAPI } from "pyodide";
 import { exec } from "child_process";
 import * as fsPromises from "fs/promises";
@@ -11,6 +10,8 @@ import { createWriteStream } from "fs";
 import { Readable } from "stream";
 import type { ReadableStream } from "stream/web";
 import { withContext } from "@opensource-observer/utils";
+import { parse, TomlTable } from "smol-toml";
+
 import { TempDirContext } from "@/utils";
 
 // Wrap exec in a promise
@@ -58,6 +59,30 @@ async function downloadUrlToFile(url: string, outputPath: string) {
   });
 }
 
+async function loadPyprojectTomlFromTarball(
+  tarballPath: string,
+): Promise<TomlTable> {
+  return withContext(new TempDirContext(), async (tmpDir) => {
+    // Extract the tarball to the temp directory
+    await extract({
+      file: tarballPath,
+      cwd: tmpDir,
+    });
+
+    // Assume the pyproject.toml is in `<filename>/pyproject.toml`
+    const files = await fsPromises.readdir(tmpDir);
+    if (files.length === 0) {
+      throw new Error(`No files found in tarball ${tarballPath}`);
+    }
+    const firstDir = files[0];
+    const pyprojectPath = path.join(tmpDir, firstDir, "pyproject.toml");
+    const pyprojectRaw = await fsPromises.readFile(pyprojectPath, {
+      encoding: "utf-8",
+    });
+    return parse(pyprojectRaw);
+  });
+}
+
 /**
  * Allows packaging of python artifacts for loading the environment without
  * installing anything. This should allow for fully offline loading of a
@@ -72,12 +97,8 @@ export async function packagePythonArtifacts({
   const distPath = `${buildDirPath}/dist`;
   await mkdirp(distPath);
 
-  console.log("distPath", distPath);
-
   const pyodide = await loadPyodide({
-    packages: [
-      "micropip",
-    ],
+    packages: ["micropip"],
     packageCacheDir: distPath,
   });
 
@@ -135,23 +156,51 @@ export async function packagePythonArtifacts({
     { locals: micropipInstallLocals },
   );
 
-  await pyodide.runPythonAsync(`
-    from sqlglot import parse_one
-
-    print(repr(parse_one("SELECT * FROM test")))
-  `);
-
-  // Load uv project dependencies
   for (const dep of uvProjects) {
     // Build the wheel file for the uv project
     const [sourcePath, packageName] = dep.split(":");
     await buildLocalUvWorkspaceWheel(packageName, sourcePath, distPath);
-    // Delete all tarballs that were created in the outputPath
-    const files = await fsPromises.readdir(distPath);
-    for (const file of files) {
-      if (file.endsWith(".tar.gz")) {
-        await fsPromises.unlink(`${distPath}/${file}`);
-      }
+
+    const expectedTarballPrefix = `${packageName.replace("-", "_")}-`;
+    // Find the tarball that was created
+    const distFiles = await fsPromises.readdir(distPath);
+    const matchingTarballs = distFiles.filter(
+      (f) => f.startsWith(expectedTarballPrefix) && f.endsWith(".tar.gz"),
+    );
+    if (matchingTarballs.length === 0) {
+      throw new Error(`No tarball found for UV package ${packageName}`);
+    }
+    const tarballPath = `${distPath}/${matchingTarballs[0]}`;
+
+    // Load the pyproject.toml from the tarball to find the wheel file name
+    const pyproject = await loadPyprojectTomlFromTarball(tarballPath);
+    const pyprojectProjectSection = pyproject.project as TomlTable;
+    if (!pyprojectProjectSection) {
+      throw new Error(`Invalid pyproject.toml format: missing 'project' key`);
+    }
+    const dependencies = (pyprojectProjectSection.dependencies ||
+      []) as string[];
+
+    const uvDeps = pyodide.toPy({
+      packages: dependencies,
+    });
+    await pyodide.runPythonAsync(
+      `
+      import micropip
+      for pkg in packages:
+          print(f"Installing {pkg}")
+          await micropip.install(pkg)
+          print(f"done installing {pkg}")
+      micropip.freeze()
+    `,
+      { locals: uvDeps },
+    );
+  }
+  // Delete any other tarballs that may have been created in the outputPath
+  const files = await fsPromises.readdir(distPath);
+  for (const file of files) {
+    if (file.endsWith(".tar.gz")) {
+      await fsPromises.unlink(`${distPath}/${file}`);
     }
   }
 
@@ -170,7 +219,7 @@ export async function packagePythonArtifacts({
   for (const [packageName, packageInfo] of Object.entries(lockFile.packages)) {
     const fileName: string = (packageInfo as any).file_name;
     if (fileName.startsWith("http://") || fileName.startsWith("https://")) {
-      console.log(
+      logger.debug(
         `Rehosting package ${packageName} from ${fileName} into local dist`,
       );
       // Download the file
@@ -184,7 +233,7 @@ export async function packagePythonArtifacts({
 
   // List all wheel files in the distPath
   const distFiles = await fsPromises.readdir(distPath);
-  console.log("Packaged files:", distFiles);
+  logger.debug("Packaged files:", distFiles);
 
   const outputTarBallPath = `${buildDirPath}/python_artifacts.tar.gz`;
 
@@ -196,14 +245,11 @@ export async function packagePythonArtifacts({
       cwd: distPath,
     },
     distFiles,
-  );        
-  
-  const absOutputPath = path.resolve(outputPath)
-
-  await fsPromises.rename(
-    outputTarBallPath,
-    absOutputPath,
   );
+
+  const absOutputPath = path.resolve(outputPath);
+
+  await fsPromises.rename(outputTarBallPath, absOutputPath);
 
   return absOutputPath;
 }
