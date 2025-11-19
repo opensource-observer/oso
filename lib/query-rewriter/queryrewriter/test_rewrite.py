@@ -1,7 +1,9 @@
 import pytest
-from queryrewriter import rewrite_query
+from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import TableResolver
 from sqlglot import parse_one
+
+# extend_sqlglot()
 
 
 def compare_sql_queries(query1: str, query2: str) -> bool:
@@ -105,6 +107,21 @@ def fake_table_resolver():
             SELECT * FROM "table2"."dataset2"."org1" as "table2"
             UNION ALL
             SELECT * FROM "table3"."dataset3"."org1" as "table3"
+            """,
+            "org1",
+            None,
+        ),
+        (
+            # Test rewriting with macros
+            """
+            SELECT * FROM dataset1.table1
+            WHERE created_at >= @start AND created_at < @end
+            AND country = @some_macro_func('test')
+            """,
+            """
+            SELECT * FROM "table1"."dataset1"."org1" as "table1"
+            WHERE "created_at" >= @start AND "created_at" < @end
+            AND "country" = @some_macro_func('test')
             """,
             "org1",
             None,

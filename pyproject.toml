@@ -121,6 +121,7 @@ members = [
     "lib/oso-core",
     "warehouse/oso_semantic",
     "warehouse/scheduler",
+    "lib/query-rewriter"
 ]
 
 [build-system]
