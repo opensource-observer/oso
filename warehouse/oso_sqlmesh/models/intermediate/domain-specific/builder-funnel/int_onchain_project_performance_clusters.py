@@ -54,10 +54,12 @@ class ModelArtifact:
 
 
 def ensure_numeric(df: pd.DataFrame, cols: list[str]) -> None:
-    """Convert columns to numeric, coercing errors to 0."""
+    """Convert columns to numeric, coercing errors to 0 and replacing inf values."""
     for c in cols:
         if c in df.columns:
-            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+            col_data = pd.to_numeric(df[c], errors="coerce")
+            col_data = col_data.replace([np.inf, -np.inf], 0)
+            df[c] = col_data.fillna(0)
 
 
 def clip_range_to_data(
@@ -130,8 +132,12 @@ def pivot_metrics(
     for m in metric_models:
         if m not in wide.columns:
             wide[m] = 0.0
-        wide[m] = pd.to_numeric(wide[m], errors="coerce").fillna(0)
+        col_data = pd.to_numeric(wide[m], errors="coerce")
+        col_data = col_data.replace([np.inf, -np.inf], 0)
+        wide[m] = col_data.fillna(0)
     wide[config.date_col] = pd.to_datetime(wide[config.date_col])
+    # Remove rows with missing dates
+    wide = wide[wide[config.date_col].notna()].copy()
     return wide
 
 
@@ -163,13 +169,19 @@ def build_features(
         base = m.id
         if m.transform == "log1p":
             col = f"log1p_{base}"
-            dfc[col] = np.log1p(dfc[base].astype(float))
+            col_data = np.log1p(dfc[base].astype(float))
+            col_data = np.where(np.isfinite(col_data), col_data, 0)
+            dfc[col] = col_data
         elif m.transform in ("log", "log10"):
             col = f"log10_{base}"
-            dfc[col] = np.log10(dfc[base].astype(float) + 1e-6)
+            col_data = np.log10(dfc[base].astype(float) + 1e-6)
+            col_data = np.where(np.isfinite(col_data), col_data, 0)
+            dfc[col] = col_data
         elif m.transform == "linear":
             col = f"linear_{base}"
-            dfc[col] = dfc[base].astype(float)
+            col_data = dfc[base].astype(float)
+            col_data = np.where(np.isfinite(col_data), col_data, 0)
+            dfc[col] = col_data
         else:
             raise ValueError(f"unknown transform: {m.transform}")
         feature_cols.append(col)
@@ -254,6 +266,13 @@ def assign_month(
     """
     if df_month.empty:
         return pd.DataFrame()
+
+    # Filter out rows with missing dates before processing
+    config = ClusteringConfig()
+    if config.date_col in df_month.columns:
+        df_month = df_month[df_month[config.date_col].notna()].copy()
+        if df_month.empty:
+            return pd.DataFrame()
 
     feats, feature_cols = build_features(df_month, metrics)
     for c in feature_cols:
@@ -345,6 +364,10 @@ def build_monthly_history_full_range(
 
     df_wide = df_wide.copy()
     df_wide[config.date_col] = pd.to_datetime(df_wide[config.date_col])
+    # Remove rows with missing dates
+    df_wide = df_wide[df_wide[config.date_col].notna()].copy()
+    if df_wide.empty:
+        return pd.DataFrame()
 
     # compact metrics
     metric_ids = [
@@ -353,6 +376,7 @@ def build_monthly_history_full_range(
     for m in metric_ids:
         if m in df_wide.columns:
             col_numeric = pd.to_numeric(df_wide[m], errors="coerce")
+            col_numeric = col_numeric.replace([np.inf, -np.inf], 0)
             df_wide[m] = col_numeric.fillna(0).astype("float64")
 
     # inclusive training slice
@@ -374,9 +398,11 @@ def build_monthly_history_full_range(
         df_train, metrics, k_used, config, random_state=random_state
     )
 
-    # full grid: all projects × all months present
+    # full grid: all projects × all months present (filter out NaT dates)
     roster = df_wide[[config.project_col]].drop_duplicates().copy()
-    months = pd.DataFrame({config.date_col: sorted(df_wide[config.date_col].unique())})
+    unique_dates = df_wide[config.date_col].unique()
+    unique_dates = [d for d in unique_dates if pd.notna(d)]
+    months = pd.DataFrame({config.date_col: sorted(unique_dates)})
     roster["_k"] = 1
     months["_k"] = 1
     grid = roster.merge(months, on="_k").drop(columns="_k")
@@ -394,16 +420,22 @@ def build_monthly_history_full_range(
 
     merged = grid.merge(assigned, on=[config.project_col, config.date_col], how="left")
 
-    # ensure metric cols & stable dtypes
+    # ensure metric cols & stable dtypes (remove inf/NaN values)
     for spec in metrics:
         if spec.id not in merged.columns:
             merged[spec.id] = 0.0
         col_numeric = pd.to_numeric(merged[spec.id], errors="coerce")
+        col_numeric = col_numeric.replace([np.inf, -np.inf], 0)
         merged[spec.id] = col_numeric.fillna(0).astype("float64")
+
+    # Filter out rows with missing dates
+    merged = merged[merged[config.date_col].notna()].copy()
 
     merged["cluster_id"] = merged["cluster_id"].astype("Int64")
     sil_col = merged["silhouette"]
     merged["silhouette"] = sil_col.fillna(0.0)
+    # Ensure silhouette has no inf values
+    merged["silhouette"] = merged["silhouette"].replace([np.inf, -np.inf], 0.0)
 
     metric_cols = [m.id for m in metrics]
     cols = [
@@ -544,8 +576,12 @@ def execute(
         yield from ()
         return
 
-    # Determine training date range
+    # Ensure dates are datetime and filter out missing dates (pivot_metrics already does this, but double-check)
     df_wide[config.date_col] = pd.to_datetime(df_wide[config.date_col])
+    df_wide = df_wide[df_wide[config.date_col].notna()].copy()
+    if df_wide.empty:
+        yield from ()
+        return
 
     # Extract scalar date bounds and clip requested range to data (no helper)
     sdates = df_wide[config.date_col]
@@ -572,6 +608,19 @@ def execute(
         random_state=42,
         compute_silhouette=True,
     )
+
+    if df_clustered.empty:
+        yield from ()
+        return
+
+    # Final cleanup: ensure no missing dates and no inf values in any columns
+    df_clustered = df_clustered[df_clustered[config.date_col].notna()].copy()
+
+    # Replace any remaining inf values in numeric columns
+    numeric_cols = df_clustered.select_dtypes(include=[np.number]).columns
+    for col in numeric_cols:
+        if col in df_clustered.columns:
+            df_clustered[col] = df_clustered[col].replace([np.inf, -np.inf], 0.0)
 
     if df_clustered.empty:
         yield from ()
