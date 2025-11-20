@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
-    "target": "ES6",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
@@ -14,10 +14,9 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "strictPropertyInitialization": false,
+    "isolatedModules": true,
+    "incremental": true,
     "allowImportingTsExtensions": true,
     "emitDeclarationOnly": true
-  },
-  "exclude": ["node_modules"],
-  "include": ["./src/*.ts", "./src/**/*.ts", "./test"]
+  }
 }
