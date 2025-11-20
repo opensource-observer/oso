@@ -169,16 +169,12 @@ export const dataModelResolvers = {
         .limit(1)
         .single();
 
-      const {
-        name: _name,
-        displayName: _displayName,
-        description: _description,
-        ...config
-      } = validatedInput;
       const hash = createHash("sha256")
         .update(
           JSON.stringify(
-            Object.entries(config).sort((a, b) => a[0].localeCompare(b[0])),
+            Object.entries(validatedInput).sort((a, b) =>
+              a[0].localeCompare(b[0]),
+            ),
           ),
         )
         .digest("hex");
