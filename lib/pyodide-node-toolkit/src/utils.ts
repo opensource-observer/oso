@@ -19,7 +19,7 @@ export class TempDirContext implements Context<string> {
     this.tempDirPath = await fsPromises.mkdtemp(tempDirPrefix);
     return this.tempDirPath;
   }
-  
+
   async exit(): Promise<void> {
     if (this.tempDirPath) {
       await fsPromises.rm(this.tempDirPath, { recursive: true, force: true });
