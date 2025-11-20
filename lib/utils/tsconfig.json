@@ -2,8 +2,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "es6",
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
@@ -16,8 +16,10 @@
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
     "isolatedModules": true,
+    "incremental": true,
     "allowImportingTsExtensions": true,
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    "baseUrl": "./src"
   },
   "exclude": ["node_modules"],
   "include": ["./src/*.ts", "./src/**/*.ts", "./test"]

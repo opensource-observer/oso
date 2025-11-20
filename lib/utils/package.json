@@ -36,5 +36,9 @@
     "@types/lodash": "^4.17.6",
     "lodash": "^4.17.21",
     "winston": "^3.18.3"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": "./dist/*.js"
   }
 }
