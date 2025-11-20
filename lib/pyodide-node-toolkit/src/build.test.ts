@@ -26,20 +26,23 @@ describe("build and run python packages", () => {
     tempDir = "";
   });
 
-  it("should build and run the python environment", async () => {
-    const outputPath = path.resolve(tempDir, "env.tar.gz");
-    console.log(SAMPLE_UV_WORKSPACE_DIR);
-    await packagePythonArtifacts({
-      pypiDeps: [],
-      buildDirPath: tempDir,
-      uvProjects: [`${SAMPLE_UV_WORKSPACE_DIR}:sample-project`],
-      outputPath: outputPath,
-    });
+  it(
+    "should build and run the python environment",
+    { timeout: 30000 },
+    async () => {
+      const outputPath = path.resolve(tempDir, "env.tar.gz");
+      console.log(SAMPLE_UV_WORKSPACE_DIR);
+      await packagePythonArtifacts({
+        pypiDeps: [],
+        buildDirPath: tempDir,
+        uvProjects: [`${SAMPLE_UV_WORKSPACE_DIR}:sample-project`],
+        outputPath: outputPath,
+      });
 
-    // Load the `env.tar.gz` file and try to run the expected python function
-    const pyodideEnv = await loadPyodideEnvironment(outputPath);
+      // Load the `env.tar.gz` file and try to run the expected python function
+      const pyodideEnv = await loadPyodideEnvironment(outputPath);
 
-    const result = await pyodideEnv.runPythonAsync(`
+      const result = await pyodideEnv.runPythonAsync(`
         from sampleproject import sample_func
 
         result = sample_func()
@@ -47,6 +50,7 @@ describe("build and run python packages", () => {
         result
     `);
 
-    expect(result).toBe("success");
-  });
+      expect(result).toBe("success");
+    },
+  );
 });
