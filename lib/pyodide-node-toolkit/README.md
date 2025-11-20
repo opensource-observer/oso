@@ -3,7 +3,7 @@
 This library provides utilities for working with Pyodide and node in the OSO
 project.
 
-The following utilities are included:
+The following utilities are included (or planned):
 
 - Sandboxed execution of Python code using Pyodide.
   - Pluggable FS, network controllers, and environment for controlling resource
