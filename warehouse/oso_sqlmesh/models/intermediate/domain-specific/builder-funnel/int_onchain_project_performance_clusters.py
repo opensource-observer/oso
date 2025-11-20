@@ -443,6 +443,7 @@ def generate_query(
     WHERE metric_model IN ({metric_list})
       AND metric_event_source IN ({chain_list})
       AND collection_name = '{collection_name}'
+      AND sample_date < DATE_TRUNC('month', CURRENT_DATE)
     GROUP BY sample_date, project_id, metric_model
     """
     return sql

@@ -47,6 +47,7 @@ projects_by_collection AS (
     ON pbc.project_id = p.project_id
   JOIN oso.collections_v1 AS c
     ON pbc.collection_id = c.collection_id
+  WHERE pbc.collection_name IN ('optimism')
 )
 
 SELECT
