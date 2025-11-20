@@ -15,12 +15,17 @@ metrics = [
     "txcount",  # Transaction Count
 ]
 
+FUNDAMENTALS_TABLE_NAME = "fundamentals_full"
+FUNDAMENTALS_PRIMARY_KEY = ["metric_key", "origin_key", "date"]
+
 config: RESTAPIConfig = {
     "client": {
         "base_url": "https://api.growthepie.com/v1",
     },
     "resource_defaults": {
         "write_disposition": "replace",
+        "table_name": FUNDAMENTALS_TABLE_NAME,
+        "primary_key": FUNDAMENTALS_PRIMARY_KEY,
     },
     "resources": [
         {
@@ -34,11 +39,12 @@ config: RESTAPIConfig = {
     ],
 }
 
-dlt_assets = create_rest_factory_asset(
-    config=config,
-)
 
-growthepie_assets = dlt_assets(
+_growthepie_factory = create_rest_factory_asset(config=config)
+
+growthepie_assets = _growthepie_factory(
     key_prefix="growthepie",
     name="fundamentals",
+    log_intermediate_results=True,
+    description="Asset that combines all GrowthePie metrics into a single fundamentals_full table.",
 )
