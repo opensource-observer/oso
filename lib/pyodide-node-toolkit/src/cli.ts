@@ -1,12 +1,12 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { logger } from "@opensource-observer/utils/src/logger";
+import { logger } from "@opensource-observer/utils/logger";
 import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { withContext } from "@opensource-observer/utils";
 
-import { TempDirContext } from "@/utils";
-import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build";
+import { TempDirContext } from "@/utils.ts";
+import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build.ts";
 
 interface PackageForNodePyodide {
   outputPath: string;

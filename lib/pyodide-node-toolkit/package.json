@@ -25,7 +25,7 @@
     "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
     "lint:eslint": "eslint --max-warnings 0 .",
     "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,ts,md,json}",
-    "cli": "node --loader ts-node/esm src/cli.ts",
+    "cli": "node -r tsconfig-paths/register --loader ts-node/esm src/cli.ts",
     "test": "vitest --run"
   },
   "keywords": [],
@@ -33,6 +33,7 @@
     "@types/node": "^20.14.10",
     "@types/yargs": "^17.0.35",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
@@ -44,7 +45,13 @@
     "pyodide": "^0.29.0",
     "smol-toml": "^1.5.2",
     "tar": "^7.5.2",
-    "tsconfig-paths": "^4.2.0",
     "yargs": "^18.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./src/*": "./dist/*"
   }
 }

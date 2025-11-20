@@ -5,14 +5,14 @@ import * as path from "path";
 import util from "util";
 import { create, extract } from "tar";
 import { mkdirp } from "mkdirp";
-import { logger } from "@opensource-observer/utils/src/logger";
+import { logger } from "@opensource-observer/utils/logger";
 import { createWriteStream } from "fs";
 import { Readable } from "stream";
 import type { ReadableStream } from "stream/web";
 import { withContext } from "@opensource-observer/utils";
 import { parse, TomlTable } from "smol-toml";
 
-import { TempDirContext } from "@/utils";
+import { TempDirContext } from "@/utils.ts";
 
 // Wrap exec in a promise
 const execPromise = util.promisify(exec);

@@ -2,8 +2,9 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
@@ -15,13 +16,12 @@
     "strict": true,
     "strictNullChecks": true,
     "isolatedModules": true,
+    "incremental": true,
     "allowImportingTsExtensions": true,
     "emitDeclarationOnly": true,
-    "incremental": true,
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "baseUrl": "./"
+    }
   },
   "exclude": ["node_modules"],
   "include": ["./src/*.ts", "./src/**/*.ts", "./test", "vitest.config.ts"],
