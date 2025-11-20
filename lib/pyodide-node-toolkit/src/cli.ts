@@ -8,12 +8,6 @@ import { withContext } from "@opensource-observer/utils";
 import { TempDirContext } from "@/utils";
 import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build";
 
-// type BeforeClientArgs = ArgumentsCamelCase<{
-//   "github-app-private-key": unknown;
-//   "github-app-id": unknown;
-//   "admin-team-name": string;
-// }>;
-
 interface PackageForNodePyodide {
   outputPath: string;
   pypiDeps: string[];
