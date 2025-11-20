@@ -21,12 +21,6 @@ enum RunTriggerType {
   SCHEDULED
 }
 
-enum RunDefinitionType {
-  DATA_MODEL
-  DATA_INGESTION
-  DATA_CONNECTOR
-}
-
 enum RunStatus {
   RUNNING
   SUCCESS
@@ -42,7 +36,8 @@ type Run {
   finishedAt: DateTime
   status: RunStatus!
   logsUrl: String!
-  definition: RunDefinition!
+  definition: DatasetType!
+  schema: [DataModelColumn!]
 }
 
 type RunEdge {
@@ -71,7 +66,12 @@ extend type Query {
   }
   ```
   """
-  runs(first: Int = 50, after: String, single: Boolean, where: JSON): RunConnection!
+  runs(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): RunConnection!
 }
 
 extend type Mutation {
@@ -97,7 +97,7 @@ extend type Mutation {
 }
 
 input CreateRunRequestInput {
-  definitionType: RunDefinitionType!
+  definitionType: DatasetType!
   definitionId: ID!
 }
 
@@ -118,7 +118,7 @@ type CancelRunPayload {
 }
 
 input StartRunInput {
-  definitionType: RunDefinitionType!
+  definitionType: DatasetType!
   definitionId: ID!
   runRequestId: ID
 }

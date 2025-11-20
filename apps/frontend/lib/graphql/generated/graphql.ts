@@ -1294,7 +1294,7 @@ export type CreateNotebookPayload = {
 
 export type CreateRunRequestInput = {
   definitionId: Scalars["ID"]["input"];
-  definitionType: RunDefinitionType;
+  definitionType: DatasetType;
 };
 
 export type CreateRunRequestPayload = {
@@ -1510,6 +1510,7 @@ export type DataModel = {
   organization: Organization;
   releases: DataModelReleaseConnection;
   revisions: DataModelRevisionConnection;
+  runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
@@ -1521,6 +1522,13 @@ export type DataModelReleasesArgs = {
 };
 
 export type DataModelRevisionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataModelRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
   single?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -7071,7 +7079,7 @@ export type Run = PipelineRun &
     capturedLogs: CapturedLogs;
     creationTime: Scalars["Float"]["output"];
     datasetId: Scalars["ID"]["output"];
-    definition: RunDefinition;
+    definition: DatasetType;
     endTime?: Maybe<Scalars["Float"]["output"]>;
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
@@ -7101,6 +7109,7 @@ export type Run = PipelineRun &
     runId: Scalars["String"]["output"];
     /** Included to comply with RunsFeedEntry interface. Duplicate of status. */
     runStatus: RunStatus;
+    schema?: Maybe<Array<DataModelColumn>>;
     solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     startTime?: Maybe<Scalars["Float"]["output"]>;
     startedAt: Scalars["DateTimeISO"]["output"];
@@ -7233,12 +7242,6 @@ export type RunConnection = {
  * meant to be quite flexible to accommodate different types of runs in the future.
  */
 export type RunDefinition = DataConnector | DataIngestion | DataModel;
-
-export enum RunDefinitionType {
-  DataConnector = "DATA_CONNECTOR",
-  DataIngestion = "DATA_INGESTION",
-  DataModel = "DATA_MODEL",
-}
 
 export type RunDequeuedEvent = MessageEvent &
   RunEvent & {
@@ -7965,7 +7968,7 @@ export enum StaleStatus {
 
 export type StartRunInput = {
   definitionId: Scalars["ID"]["input"];
-  definitionType: RunDefinitionType;
+  definitionType: DatasetType;
   runRequestId?: InputMaybe<Scalars["ID"]["input"]>;
 };
 
