@@ -1,6 +1,6 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { logger } from "@opensource-observer/utils";
+import { logger } from "@opensource-observer/utils/src/logger";
 import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { withContext } from "@opensource-observer/utils";
