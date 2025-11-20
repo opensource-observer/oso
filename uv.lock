@@ -402,18 +402,6 @@ wheels = [
 ]
 
 [[package]]
-name = "asyncache"
-version = "0.3.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cachetools" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/49/cf/17f8a6b6b97f77b5981fbce1266913e718daaa3467b46f60a785cbaadc29/asyncache-0.3.1.tar.gz", hash = "sha256:9a1e60a75668e794657489bdea6540ee7e3259c483517b934670db7600bf5035", size = 3797, upload-time = "2022-11-15T10:06:47.476Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2f/94/51927deb4f40872361ec4f5534f68f7a9ce81c4ef20bf5cd765307f4c15d/asyncache-0.3.1-py3-none-any.whl", hash = "sha256:ef20a1024d265090dd1e0785c961cf98b9c32cc7d9478973dcf25ac1b80011f5", size = 3722, upload-time = "2022-11-15T10:06:45.546Z" },
-]
-
-[[package]]
 name = "asyncio"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2881,22 +2869,22 @@ wheels = [
 
 [[package]]
 name = "kr8s"
-version = "0.20.9"
+version = "0.20.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
-    { name = "asyncache" },
+    { name = "cachetools" },
     { name = "cryptography" },
     { name = "httpx" },
     { name = "httpx-ws" },
+    { name = "packaging" },
     { name = "python-box" },
     { name = "python-jsonpath" },
     { name = "pyyaml" },
-    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f3/66/a8114ac587439c328f1c12ead34e58620a680ccdf89cb82c671e882dcbfa/kr8s-0.20.9.tar.gz", hash = "sha256:e8a840a4ecffa6bfe3351d47aeb6b5824dbb7eed9938593c2327d5253f7b13a3", size = 2888491, upload-time = "2025-07-08T17:31:02.399Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/69/0d/b37d8c3ba167279028edfa07b7fbc4a3bc4478158ba35ea554ba95dc6517/kr8s-0.20.12.tar.gz", hash = "sha256:6062411e7d2fa0dd0c087437c457e3defbb770a0c882c62da8b3c7a8d906b96b", size = 2837309, upload-time = "2025-10-24T11:28:24.706Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/10/8dd3f680054f6384141c61dc33b96ce47824e91546e235cceeeff3dfcc73/kr8s-0.20.9-py3-none-any.whl", hash = "sha256:f176ea23b4bde3a5ae559610c960321b4d309d5a29b4c82592a349beb1cbc30d", size = 78770, upload-time = "2025-07-08T17:31:00.636Z" },
+    { url = "https://files.pythonhosted.org/packages/33/45/27d69f1986051d5360d03723c0e2bc613cafd9fb1b2b1e7e45706c33ecd5/kr8s-0.20.12-py3-none-any.whl", hash = "sha256:6bfbd0295f1a87ba2937b40dafe846dda8029315b7206b99578201f866ce42d8", size = 85985, upload-time = "2025-10-24T11:28:23.287Z" },
 ]
 
 [[package]]
@@ -3571,7 +3559,6 @@ dependencies = [
     { name = "google-cloud-service-management" },
     { name = "google-cloud-service-usage" },
     { name = "google-cloud-storage" },
-    { name = "kr8s" },
     { name = "lz4" },
     { name = "minio" },
     { name = "openrank-sdk" },
@@ -3637,7 +3624,6 @@ requires-dist = [
     { name = "google-cloud-service-management", specifier = ">=1.8.3,<2.0.0" },
     { name = "google-cloud-service-usage", specifier = ">=1.10.3,<2.0.0" },
     { name = "google-cloud-storage", specifier = ">=2.14.0,<4.0.0" },
-    { name = "kr8s", specifier = "==0.20.9" },
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
     { name = "minio", specifier = ">=7.2.15,<8.0.0" },
     { name = "openrank-sdk", specifier = ">=0.4.0,<1.0.0" },
@@ -4235,7 +4221,7 @@ requires-dist = [
     { name = "google-cloud-service-management", specifier = ">=1.8.3,<2.0.0" },
     { name = "google-cloud-service-usage", specifier = ">=1.10.3,<2.0.0" },
     { name = "google-cloud-storage", specifier = ">=2.14.0,<4.0.0" },
-    { name = "kr8s", specifier = "==0.20.9" },
+    { name = "kr8s", specifier = "==0.20.12" },
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
     { name = "metrics-service", editable = "warehouse/metrics-service" },
     { name = "minio", specifier = ">=7.2.15,<8.0.0" },
