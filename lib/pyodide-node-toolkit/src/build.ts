@@ -5,7 +5,7 @@ import * as path from "path";
 import util from "util";
 import { create, extract } from "tar";
 import { mkdirp } from "mkdirp";
-import { logger } from "@opensource-observer/utils";
+import { logger } from "@opensource-observer/utils/src/logger";
 import { createWriteStream } from "fs";
 import { Readable } from "stream";
 import type { ReadableStream } from "stream/web";
