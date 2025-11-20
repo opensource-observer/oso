@@ -1,7 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { useForm, useFormContext, FormProvider } from "react-hook-form";
+import {
+  useForm,
+  useFormContext,
+  FormProvider,
+  UseFormReturn,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -329,6 +334,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
 
 interface FormBuilderProps {
   schema: FormSchema;
+  setForm?: (form: UseFormReturn<any>) => void;
   onSubmit: (data: any) => void;
   className?: string;
   objectClassName?: string;
@@ -338,8 +344,16 @@ interface FormBuilderProps {
 
 const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
   function _FormBuilder(
-    { schema = {}, onSubmit, className, objectClassName, footer, horizontal },
-    ref,
+    {
+      schema = {},
+      setForm,
+      onSubmit,
+      className,
+      objectClassName,
+      footer,
+      horizontal,
+    },
+    _ref,
   ) {
     const { zodSchema, defaultValues } = React.useMemo(
       () => generateFormConfig(schema),
@@ -350,15 +364,11 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
       resolver: zodResolver(zodSchema),
       defaultValues,
     });
-    React.useImperativeHandle(
-      ref,
-      () => ({
-        submit: () => {
-          onSubmit(form.getValues());
-        },
-      }),
-      [form.handleSubmit, onSubmit],
-    );
+
+    React.useEffect(() => {
+      setForm?.(form);
+    }, [form]);
+
     return (
       <FormProvider {...form}>
         <Form {...form}>
@@ -404,7 +414,10 @@ const FormBuilderMeta: CodeComponentMeta<FormBuilderProps> = {
     objectClassName: {
       type: "class",
     },
-    footer: "slot",
+    footer: {
+      type: "slot",
+      hidePlaceholder: true,
+    },
     onSubmit: {
       type: "eventHandler",
       argTypes: [
@@ -414,15 +427,26 @@ const FormBuilderMeta: CodeComponentMeta<FormBuilderProps> = {
         },
       ],
     },
+    setForm: {
+      type: "eventHandler",
+      argTypes: [
+        {
+          name: "form",
+          type: "object",
+        },
+      ],
+      advanced: true,
+    },
     horizontal: {
       type: "boolean",
       description: "Whether to display form items horizontally.",
     },
   },
-  refActions: {
-    submit: {
-      description: "Submits the form programmatically.",
-      argTypes: [],
+  states: {
+    form: {
+      type: "readonly",
+      onChangeProp: "setForm",
+      variableType: "object",
     },
   },
 };
