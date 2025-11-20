@@ -21,6 +21,12 @@ type DataModel {
   ): DataModelReleaseConnection!
   latestRevision: DataModelRevision
   latestRelease: DataModelRelease
+  runs(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): RunConnection!
 }
 
 type DataModelEdge {

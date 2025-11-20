@@ -13,6 +13,7 @@ import { validateInput } from "@/app/api/v1/osograph/utils/validation";
 import {
   buildQuery,
   mergePredicates,
+  OrderBy,
   type QueryPredicate,
   type TableRow,
   type ValidTableName,
@@ -32,6 +33,7 @@ interface BaseQueryOptions<TTable extends TableWithOrgId> {
   whereSchema: z.ZodSchema;
   errorMessage?: string;
   basePredicate?: Partial<QueryPredicate<TTable>>;
+  orderBy?: OrderBy<TTable>;
 }
 
 export type QueryConnectionOptions<TTable extends TableWithOrgId> =
@@ -77,6 +79,8 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
 
   const [start, end] = preparePaginationRange(args);
 
+  const orderBy = options.orderBy;
+
   const orgIdPredicate: Partial<QueryPredicate<TTable>> = {
     // @ts-expect-error - TS can't correlate that org_id exists on all TableWithOrgId tables
     in: [{ key: "org_id", value: orgIds }],
@@ -98,7 +102,13 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
     supabase,
     options.tableName,
     predicate,
-    (query) => query.range(start, end),
+    (query) =>
+      (orderBy
+        ? query.order(orderBy.key, {
+            ascending: orderBy.ascending ?? false,
+          })
+        : query
+      ).range(start, end),
     args.single,
   );
 

@@ -51,6 +51,11 @@ export type QueryPredicate<T extends ValidTableName> = {
   is?: NullableFilterEntry<T>[];
 };
 
+export type OrderBy<T extends ValidTableName> = {
+  key: StringKeys<TableRow<T>>;
+  ascending: boolean;
+};
+
 export function _inferQueryType<TTable extends ValidTableName>(
   client: SupabaseClient,
   tableName: TTable,

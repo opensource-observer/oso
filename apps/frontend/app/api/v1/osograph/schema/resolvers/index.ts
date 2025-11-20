@@ -8,6 +8,7 @@ import { invitationResolvers } from "@/app/api/v1/osograph/schema/resolvers/invi
 import { notebookResolvers } from "@/app/api/v1/osograph/schema/resolvers/notebook";
 import { datasetResolvers } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 import { dataModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/data-model";
+import { schedulerResolvers } from "@/app/api/v1/osograph/schema/resolvers/scheduler";
 
 export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DateTime: DateTimeISOResolver,
@@ -41,4 +42,5 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DataModel: dataModelResolvers.DataModel,
   DataModelRevision: dataModelResolvers.DataModelRevision,
   DataModelRelease: dataModelResolvers.DataModelRelease,
+  Run: schedulerResolvers.Run,
 };
