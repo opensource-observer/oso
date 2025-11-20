@@ -1,5 +1,5 @@
 import { loadPyodide, PyodideAPI } from "pyodide";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import * as fsPromises from "fs/promises";
 import * as path from "path";
 import util from "util";
@@ -15,7 +15,7 @@ import { parse, TomlTable } from "smol-toml";
 import { TempDirContext } from "@/utils.ts";
 
 // Wrap exec in a promise
-const execPromise = util.promisify(exec);
+const execFilePromise = util.promisify(execFile);
 
 export type PyPIPackageWithMocks = {
   name: string;
@@ -306,9 +306,13 @@ export async function buildLocalUvWorkspaceWheel(
 ): Promise<void> {
   // Execute `uv build` in the sourcePath that outputs to outputPath
   try {
-    await execPromise(`uv build --package ${packageName} -o ${outputPath}`, {
-      cwd: sourcePath,
-    });
+    await execFilePromise(
+      `uv`,
+      ["build", "--package", packageName, "-o", outputPath],
+      {
+        cwd: sourcePath,
+      },
+    );
   } catch (error) {
     logger.error(`Error building UV package: ${error}`);
     throw error;
