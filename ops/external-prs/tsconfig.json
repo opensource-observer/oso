@@ -14,7 +14,9 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true
   },
   "exclude": ["node_modules"],
   "include": ["./src/*.ts", "./src/**/*.ts", "./test"]
