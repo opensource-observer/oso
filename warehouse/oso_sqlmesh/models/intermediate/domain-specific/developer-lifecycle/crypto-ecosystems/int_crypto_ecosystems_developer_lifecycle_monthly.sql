@@ -48,7 +48,18 @@ developer_project_month_grid AS (
     AND m.bucket_month <= DATE_ADD('month', 1, dab.last_contribution_month)
 ),
 
--- Step 4: Join actual activity data
+-- Step 4: Deduplicate activity data to ensure grain uniqueness
+deduplicated_activity AS (
+  SELECT
+    bucket_month,
+    developer_id,
+    project_id,
+    MAX(days_active) AS days_active
+  FROM oso.int_crypto_ecosystems_developer_activity_monthly
+  GROUP BY 1, 2, 3
+),
+
+-- Step 5: Join actual activity data
 developer_month_activity AS (
   SELECT
     g.developer_id,
@@ -58,13 +69,13 @@ developer_month_activity AS (
     g.last_contribution_month,
     COALESCE(a.days_active, 0) AS days_active
   FROM developer_project_month_grid AS g
-  LEFT JOIN oso.int_crypto_ecosystems_developer_activity_monthly AS a
+  LEFT JOIN deduplicated_activity AS a
     ON g.developer_id = a.developer_id
     AND g.project_id = a.project_id
     AND g.bucket_month = a.bucket_month
 ),
 
--- Step 5: Classify activity level based on days active
+-- Step 6: Classify activity level based on days active
 activity_classification AS (
   SELECT
     developer_id,
@@ -83,7 +94,7 @@ activity_classification AS (
   FROM developer_month_activity
 ),
 
--- Step 6: Track last active month and calculate state transitions
+-- Step 7: Track last active month and calculate state transitions
 activity_windows AS (
   SELECT
     developer_id,
@@ -104,7 +115,7 @@ activity_windows AS (
   FROM activity_classification
 ),
 
--- Step 7: Calculate months since last activity and determine internal state
+-- Step 8: Calculate months since last activity and determine internal state
 state_tracking AS (
   SELECT
     developer_id,
@@ -137,7 +148,7 @@ state_tracking AS (
   FROM activity_windows
 ),
 
--- Step 8: Get previous state and last engaged state for transition labeling
+-- Step 9: Get previous state and last engaged state for transition labeling
 state_with_history AS (
   SELECT
     developer_id,
@@ -167,7 +178,7 @@ state_with_history AS (
   )
 ),
 
--- Step 8b: Apply priority logic to determine highest engaged state
+-- Step 9b: Apply priority logic to determine highest engaged state
 state_with_priority AS (
   SELECT
     developer_id,
@@ -190,7 +201,7 @@ state_with_priority AS (
   FROM state_with_history
 ),
 
--- Step 9: Apply lifecycle labels based on state transitions
+-- Step 10: Apply lifecycle labels based on state transitions
 lifecycle_labels AS (
   SELECT
     developer_id,
