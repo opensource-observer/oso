@@ -34,6 +34,7 @@ env:
   CLICKHOUSE_PASSWORD: "password"
   # SQLMesh variables
   SQLMESH_DUCKDB_LOCAL_PATH: "/tmp/oso.duckdb"
+  APOLLO_TELEMETRY_DISABLED: "true"
 
 # Trigger the workflow when:
 on:
@@ -98,7 +99,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "22.x"
           cache: "pnpm"
 
       - name: Setup Python and UV
