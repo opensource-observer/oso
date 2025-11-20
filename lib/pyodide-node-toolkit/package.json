@@ -41,14 +41,10 @@
     "@types/lodash": "^4.17.6",
     "lodash": "^4.17.21",
     "mkdirp": "^3.0.1",
-    "module-alias": "^2.2.3",
     "pyodide": "^0.29.0",
     "smol-toml": "^1.5.2",
     "tar": "^7.5.2",
     "tsconfig-paths": "^4.2.0",
     "yargs": "^18.0.0"
-  },
-  "_moduleAliases": {
-    "@/": "dist"
   }
 }

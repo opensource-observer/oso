@@ -190,7 +190,6 @@ export async function packagePythonArtifacts({
       for pkg in packages:
           print(f"Installing {pkg}")
           await micropip.install(pkg)
-          print(f"done installing {pkg}")
       micropip.freeze()
     `,
       { locals: uvDeps },
