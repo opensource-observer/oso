@@ -34,6 +34,7 @@ env:
   CLICKHOUSE_PASSWORD: "password"
   # SQLMesh variables
   SQLMESH_DUCKDB_LOCAL_PATH: "/tmp/oso.duckdb"
+  APOLLO_TELEMETRY_DISABLED: "true"
 
 # Trigger the workflow when:
 on:
