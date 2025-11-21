@@ -5,8 +5,9 @@ import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { withContext } from "@opensource-observer/utils";
 
-import { TempDirContext } from "@/utils.ts";
-import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build.ts";
+import { TempDirContext } from "./utils.ts";
+import { packagePythonArtifacts } from "./build.ts";
+import { loadPyodideEnvironment } from "./load.ts";
 
 interface PackageForNodePyodide {
   outputPath: string;
