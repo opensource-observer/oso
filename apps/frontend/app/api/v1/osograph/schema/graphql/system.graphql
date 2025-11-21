@@ -31,13 +31,18 @@ type RunQueueItemConnection {
   totalCount: Int
 }
 
+type SystemResolvedTableReference {
+  input: String!
+  resolved: String!
+}
+
 type System {
   """
   Resolve tables by their reference names to the backend reference format that
   will be used when the query is run on trino. This is used by the query rewriter
   to batch resolve table references as well as other internal operations.
   """
-  resolveTables(references: [String!]!): [String!]!
+  resolveTables(references: [String!]!): [SystemResolvedTableReference!]!
 
   dataModelRunQueue(first: Int = 50, after: String): RunQueueItemConnection!
 
