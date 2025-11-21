@@ -8122,7 +8122,7 @@ export type System = {
    * will be used when the query is run on trino. This is used by the query rewriter
    * to batch resolve table references as well as other internal operations.
    */
-  resolveTables: Array<Scalars["String"]["output"]>;
+  resolveTables: Array<SystemResolvedTableReference>;
 };
 
 export type SystemDataIngestionRunQueueArgs = {
@@ -8137,6 +8137,12 @@ export type SystemDataModelRunQueueArgs = {
 
 export type SystemResolveTablesArgs = {
   references: Array<Scalars["String"]["input"]>;
+};
+
+export type SystemResolvedTableReference = {
+  __typename?: "SystemResolvedTableReference";
+  input: Scalars["String"]["output"];
+  resolved: Scalars["String"]["output"];
 };
 
 export type Table = {
