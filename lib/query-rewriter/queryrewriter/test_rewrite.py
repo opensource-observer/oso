@@ -1,7 +1,11 @@
+import typing as t
+
 import pytest
+from queryrewriter.resolvers.fqn import InferFQN
+from queryrewriter.resolvers.legacy import LegacyTableResolver
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import TableResolver
-from sqlglot import parse_one
+from sqlglot import exp, parse_one
 
 # extend_sqlglot()
 
@@ -24,8 +28,8 @@ def assert_same_sql(query1: str, query2: str):
     assert sql_equal, "SQL queries do not match structurally."
 
 
-def reverse_table_name(table_name: str) -> str:
-    parts = table_name.split(".")
+def reverse_table_name(table: exp.Table) -> str:
+    parts = [table.catalog, table.db, table.name]
     return ".".join(reversed(parts))
 
 
@@ -37,19 +41,21 @@ def fake_table_resolver():
 
 
 @pytest.mark.parametrize(
-    "input_query,expected_query,org_name,default_dataset_name",
+    "input_query,expected_query,org_name,default_dataset_name,additional_table_resolvers",
     [
         (
             """SELECT * FROM org1.dataset1.table1""",
             '''SELECT * FROM "table1"."dataset1"."org1" as "table1"''',
             "org1",
             None,
+            [],
         ),
         (
             """SELECT * FROM table1""",
             '''SELECT * FROM "table1"."default_dataset"."org1" as "table1"''',
             "org1",
             "default_dataset",
+            [],
         ),
         # Test with CTEs
         (
@@ -71,6 +77,7 @@ def fake_table_resolver():
             """,
             "org1",
             None,
+            [],
         ),
         (
             """
@@ -91,6 +98,7 @@ def fake_table_resolver():
             """,
             "org2",
             None,
+            [],
         ),
         (
             # Test CTEs
@@ -110,6 +118,7 @@ def fake_table_resolver():
             """,
             "org1",
             None,
+            [],
         ),
         (
             # Test rewriting with macros
@@ -125,6 +134,63 @@ def fake_table_resolver():
             """,
             "org1",
             None,
+            [],
+        ),
+        (
+            # Test using a table_fqn override
+            """
+            SELECT * FROM iceberg.dataset1.table1
+            """,
+            """
+            SELECT * FROM "table1"."dataset1"."iceberg" as "table1"
+            """,
+            "org1",
+            None,
+            [LegacyTableResolver()],
+        ),
+        (
+            # Test table_fqn override of a table without a dataset name
+            """
+            WITH "oso" (
+                select * from table1
+            )
+            SELECT * FROM oso
+            """,
+            """
+            WITH "oso" AS (
+                select * from "table1"."oso"."iceberg" as "table1"
+            )
+            SELECT * FROM "oso" as "oso"
+            """,
+            "org1",
+            None,
+            [LegacyTableResolver()],
+        ),
+        (
+            # Test table_fqn override shouldn't interfere if the dataset is _not_ oso
+            """
+            WITH "t1" as (
+                SELECT * FROM dataset1.table1
+            ), "t2" as (
+                SELECT * FROM oso.table2
+            )
+            select * from t1
+            union all
+            select * from t2
+            """,
+            """
+            WITH "t1" AS (
+                SELECT * FROM "table1"."dataset1"."org1" as "table1"
+            ), "t2" AS (
+                SELECT * FROM "table2"."oso"."iceberg" as "table2"
+            )
+            select * from "t1" as "t1"
+            union all
+            select * from "t2" as "t2"
+            """,
+            "org1",
+            None,
+            [LegacyTableResolver()],
         ),
     ],
 )
@@ -135,13 +201,21 @@ async def test_rewrite_query(
     expected_query: str,
     org_name: str,
     default_dataset_name: str | None,
+    additional_table_resolvers: list[TableResolver],
 ):
+    resolvers: t.List[TableResolver] = additional_table_resolvers[:]
+    resolvers.append(
+        InferFQN(
+            org_name=org_name,
+            default_dataset_name=default_dataset_name,
+        )
+    )
+    resolvers.append(fake_table_resolver)
+
     rewritten_query = await rewrite_query(
-        org_name=org_name,
         query=input_query,
-        table_resolver=fake_table_resolver,
+        table_resolvers=resolvers,
         dialect="trino",
-        default_dataset_name=default_dataset_name,
     )
     assert_same_sql(rewritten_query, expected_query)
 
@@ -172,13 +246,19 @@ async def test_inputs_should_fail(
     default_dataset_name: str | None,
     error_string: str,
 ):
+    resolvers: t.List[TableResolver] = []
+    resolvers.append(
+        InferFQN(
+            org_name=org_name,
+            default_dataset_name=default_dataset_name,
+        )
+    )
+    resolvers.append(fake_table_resolver)
     try:
         await rewrite_query(
-            org_name=org_name,
             query=input_query,
-            table_resolver=fake_table_resolver,
+            table_resolvers=resolvers,
             dialect="trino",
-            default_dataset_name=default_dataset_name,
         )
     except Exception as e:
         assert error_string in str(e), f"Expected an error message with: {error_string}"
