@@ -59,10 +59,7 @@ import {
   FormBuilder,
   FormBuilderMeta,
 } from "@/components/widgets/form-builder";
-import {
-  TimedSideEffect,
-  TimedSideEffectMeta,
-} from "@/components/widgets/timed-side-effect";
+import { FormSaver, FormSaverMeta } from "@/components/widgets/form-saver";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -97,5 +94,5 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
     MultiplayerUserProviderMeta,
   );
   PLASMIC.registerComponent(FormBuilder, FormBuilderMeta);
-  PLASMIC.registerComponent(TimedSideEffect, TimedSideEffectMeta);
+  PLASMIC.registerComponent(FormSaver, FormSaverMeta);
 }

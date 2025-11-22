@@ -1,4 +1,4 @@
-import { NullOrUndefinedValueError, AssertionError } from "./errors.js";
+import { NullOrUndefinedValueError, AssertionError } from "./errors.ts";
 /**
  * Explicitly marks a promise as something we won't await
  * @param _promise

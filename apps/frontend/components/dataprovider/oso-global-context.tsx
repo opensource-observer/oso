@@ -107,7 +107,12 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [
     name,
-    { parameters: [{ name: "args", type: "object" }] },
+    {
+      parameters: [
+        { name: "args", type: "object" },
+        { name: "skipToast", type: "boolean" },
+      ],
+    },
   ]),
 );
 
@@ -142,10 +147,12 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
     actionError,
   };
 
-  const handleSuccess = (result: any) => {
+  const handleSuccess = (result: any, skipToast: boolean) => {
     console.log("Success: ", result);
     setResult(result);
-    toast.success(SUCCESS_MESSAGE, DEFAULT_TOAST_OPTIONS);
+    if (!skipToast) {
+      toast.success(SUCCESS_MESSAGE, DEFAULT_TOAST_OPTIONS);
+    }
     return result;
   };
   const handleError = (error: any) => {
@@ -164,8 +171,11 @@ function OsoGlobalContext(props: OsoGlobalContextProps) {
       _.fromPairs(
         OsoGlobalActionNames.map((method) => [
           method,
-          (args: any) =>
-            client![method](args).then(handleSuccess).catch(handleError),
+          (args: any, skipToast: boolean) =>
+            client!
+              [method](args)
+              .then((result) => handleSuccess(result, skipToast))
+              .catch(handleError),
         ]),
       ),
     [client],

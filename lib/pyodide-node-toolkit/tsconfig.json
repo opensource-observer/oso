@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "exclude": ["node_modules"],
+  "include": ["./src/*.ts", "./src/**/*.ts", "./test", "vitest.config.ts"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
+}

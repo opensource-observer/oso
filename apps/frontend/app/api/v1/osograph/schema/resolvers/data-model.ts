@@ -20,6 +20,7 @@ import {
   DataModelReleaseWhereSchema,
   DataModelRevisionWhereSchema,
   DataModelWhereSchema,
+  ModelRunWhereSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
@@ -341,6 +342,27 @@ export const dataModelResolvers = {
         return null;
       }
       return data;
+    },
+
+    runs: async (
+      parent: { id: string; org_id: string },
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "model_run",
+        whereSchema: ModelRunWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          eq: [{ key: "model_id", value: parent.id }],
+        },
+        orderBy: {
+          key: "started_at",
+          ascending: false,
+        },
+      });
     },
   },
 
