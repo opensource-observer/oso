@@ -42,9 +42,9 @@ latest_packages_ranked AS (
     package_artifact_id,
     package_owner_project_name,
     -- improved semver parse: major.minor.patch, handles pre-release/build metadata and two-part versions
-    COALESCE(TRY(CAST(regexp_extract(package_version, '^([0-9]+)', 1) AS integer)), 0) AS v_major,
-    COALESCE(TRY(CAST(regexp_extract(package_version, '^[0-9]+\\.([0-9]+)', 1) AS integer)), 0) AS v_minor,
-    COALESCE(TRY(CAST(regexp_extract(package_version, '^[0-9]+\\.[0-9]+\\.([0-9]+)', 1) AS integer)), 0) AS v_patch,
+    @semver_extract(package_version, 'major') AS v_major,
+    @semver_extract(package_version, 'minor') AS v_minor,
+    @semver_extract(package_version, 'patch') AS v_patch,
     row_number() OVER (
       PARTITION BY package_artifact_id
       ORDER BY v_major DESC NULLS LAST, v_minor DESC NULLS LAST, v_patch DESC NULLS LAST, package_version DESC
