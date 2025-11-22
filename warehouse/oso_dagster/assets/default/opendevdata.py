@@ -134,7 +134,7 @@ def get_opendevdata_datasets(
                         batch_dict = batch.to_pydict()
 
                         # Convert to records and add metadata during iteration
-                        for i in range(len(batch)):
+                        for i in range(batch.num_rows):
                             record = {key: values[i] for key, values in batch_dict.items()}
                             # Add metadata columns
                             record["_source_file"] = parquet_file.name
