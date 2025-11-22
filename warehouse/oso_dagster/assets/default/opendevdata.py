@@ -14,6 +14,11 @@ from oso_dagster.factories import dlt_factory
 
 logger = logging.getLogger(__name__)
 
+# Configuration constants
+OUTPUT_BUFFER_LINES = 100  # Number of output lines to keep for error context
+PARQUET_BATCH_SIZE = 100_000  # Batch size for parquet processing, balancing memory vs overhead
+DOWNLOAD_TIMEOUT_SECONDS = 10800  # 3 hours for large dataset downloads
+
 K8S_CONFIG = {
     "merge_behavior": "SHALLOW",
     "container_config": {
@@ -57,8 +62,8 @@ def get_opendevdata_datasets(
                 bufsize=1,
             )
 
-            # Stream output in real-time, storing only last 100 lines for error context
-            output_lines = deque(maxlen=100)
+            # Stream output in real-time, storing only last N lines for error context
+            output_lines = deque(maxlen=OUTPUT_BUFFER_LINES)
             if process.stdout:
                 for line in process.stdout:
                     line_stripped = line.rstrip()
@@ -66,16 +71,14 @@ def get_opendevdata_datasets(
                     # Log every line to show progress
                     context.log.info(f"Download: {line_stripped}")
 
-            # Wait with timeout (3 hours for 40GB download)
-            # Increased timeout to handle large dataset downloads
-            download_timeout = 10800  # 3 hours
+            # Wait with timeout
             try:
-                process.wait(timeout=download_timeout)
+                process.wait(timeout=DOWNLOAD_TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()
                 context.log.error(
-                    f"Download command timed out after {download_timeout // 3600} hours"
+                    f"Download command timed out after {DOWNLOAD_TIMEOUT_SECONDS // 3600} hours"
                 )
                 raise
 
@@ -104,6 +107,7 @@ def get_opendevdata_datasets(
             # Process each parquet file
             total_files = len(parquet_files)
             total_rows = 0
+            failed_files = []
             context.log.info(f"Starting to process {total_files} parquet files")
 
             for file_idx, parquet_file in enumerate(parquet_files, 1):
@@ -123,43 +127,35 @@ def get_opendevdata_datasets(
                     # Use pyarrow to read parquet file in batches for memory efficiency
                     parquet_file_obj = pq.ParquetFile(parquet_file)
                     file_rows = parquet_file_obj.metadata.num_rows
-                    
-                    # Process in batches of 100k rows
-                    batch_size = 100000
                     rows_yielded = 0
-                    
-                    for batch in parquet_file_obj.iter_batches(batch_size=batch_size):
-                        # Convert batch to pandas dataframe for easier manipulation
-                        df_batch = batch.to_pandas()
-                        
-                        # Add metadata columns
-                        df_batch["_source_file"] = parquet_file.name
-                        df_batch["_source_table"] = table_name
-                        df_batch["_source_path"] = str(relative_path)
-                        
-                        # Convert to records
-                        records = df_batch.to_dict("records")
-                        
-                        # Explicitly delete dataframe to free memory
-                        del df_batch
-                        
-                        # Yield records
-                        for record in records:
-                            # Ensure all keys are strings for type compatibility
-                            typed_record: Dict[str, Any] = {
-                                str(k): v for k, v in record.items()
-                            }
-                            yield typed_record
+
+                    for batch in parquet_file_obj.iter_batches(batch_size=PARQUET_BATCH_SIZE):
+                        # Convert batch directly to list of dicts for efficiency
+                        batch_dict = batch.to_pydict()
+
+                        # Add metadata columns to each column list
+                        batch_dict["_source_file"] = [parquet_file.name] * len(batch)
+                        batch_dict["_source_table"] = [table_name] * len(batch)
+                        batch_dict["_source_path"] = [str(relative_path)] * len(batch)
+
+                        # Convert to records by zipping column values
+                        num_rows = len(batch)
+                        for i in range(num_rows):
+                            record = {key: values[i] for key, values in batch_dict.items()}
+                            yield record
                             rows_yielded += 1
-                        
-                        # Explicitly delete records to free memory
-                        del records
-                        
+
                         # Log progress every batch
-                        context.log.info(
-                            f"File {file_idx}/{total_files}: Yielded {rows_yielded:,}/{file_rows:,} rows "
-                            f"({rows_yielded / file_rows * 100:.1f}%)"
-                        )
+                        if file_rows > 0:
+                            percentage = (rows_yielded / file_rows * 100)
+                            context.log.info(
+                                f"File {file_idx}/{total_files}: Yielded {rows_yielded:,}/{file_rows:,} rows "
+                                f"({percentage:.1f}%)"
+                            )
+                        else:
+                            context.log.info(
+                                f"File {file_idx}/{total_files}: Yielded {rows_yielded:,}/{file_rows:,} rows"
+                            )
 
                     total_rows += file_rows
 
@@ -172,11 +168,20 @@ def get_opendevdata_datasets(
                     context.log.warning(
                         f"Error processing file {parquet_file} ({file_idx}/{total_files}): {e}"
                     )
+                    failed_files.append((parquet_file.name, str(e)))
                     continue
 
+            # Log summary including any failures
             context.log.info(
                 f"Finished processing all files. Total rows: {total_rows:,}"
             )
+            if failed_files:
+                context.log.warning(
+                    f"Failed to process {len(failed_files)} file(s): "
+                    f"{', '.join(f[0] for f in failed_files)}"
+                )
+                for filename, error in failed_files:
+                    context.log.warning(f"  - {filename}: {error}")
 
         except subprocess.CalledProcessError as e:
             context.log.error(f"Download command failed: {e}")
@@ -184,9 +189,6 @@ def get_opendevdata_datasets(
             captured_output = getattr(e, "output", getattr(e, "stdout", None))
             if captured_output:
                 context.log.error(f"Captured output: {captured_output}")
-            raise
-        except subprocess.TimeoutExpired:
-            context.log.error("Download command timed out after 3 hours")
             raise
         except Exception as e:
             context.log.error(f"Error processing Open Dev Data: {e}")
