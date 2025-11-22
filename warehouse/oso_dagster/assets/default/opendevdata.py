@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Generator
 
 import dlt
-import pandas as pd
+import pyarrow.parquet as pq
 from dagster import AssetExecutionContext, ResourceParam
 from dlt.destinations.adapters import bigquery_adapter
 from oso_dagster.config import DagsterConfig
@@ -120,43 +120,46 @@ def get_opendevdata_datasets(
                         f"({file_size_mb:.2f} MB) - Table: {table_name}"
                     )
 
-                    # Read parquet file - pandas doesn't support chunksize for parquet
-                    # Read entire file and process in chunks for memory efficiency
-                    df = pd.read_parquet(parquet_file)
-                    file_rows = len(df)
+                    # Use pyarrow to read parquet file in batches for memory efficiency
+                    parquet_file_obj = pq.ParquetFile(parquet_file)
+                    file_rows = parquet_file_obj.metadata.num_rows
                     
-                    # Add metadata columns to the dataframe before converting
-                    df["_source_file"] = parquet_file.name
-                    df["_source_table"] = table_name
-                    df["_source_path"] = str(relative_path)
-                    
-                    # Convert to records (much faster than iterrows)
-                    records = df.to_dict("records")
-                    
-                    # Explicitly delete dataframe to free memory
-                    del df
-                    
-                    # Yield records with progress logging
+                    # Process in batches of 100k rows
+                    batch_size = 100000
                     rows_yielded = 0
-                    for record in records:
-                        # Ensure all keys are strings for type compatibility
-                        # Column names from parquet should already be strings,
-                        # but type checker requires explicit conversion
-                        typed_record: Dict[str, Any] = {
-                            str(k): v for k, v in record.items()
-                        }
-                        yield typed_record
-                        rows_yielded += 1
-                        
-                        # Log progress every 100k rows for large files
-                        if rows_yielded % 100000 == 0:
-                            context.log.info(
-                                f"File {file_idx}/{total_files}: Yielded {rows_yielded:,}/{file_rows:,} rows "
-                                f"({rows_yielded / file_rows * 100:.1f}%)"
-                            )
                     
-                    # Explicitly delete records to free memory
-                    del records
+                    for batch in parquet_file_obj.iter_batches(batch_size=batch_size):
+                        # Convert batch to pandas dataframe for easier manipulation
+                        df_batch = batch.to_pandas()
+                        
+                        # Add metadata columns
+                        df_batch["_source_file"] = parquet_file.name
+                        df_batch["_source_table"] = table_name
+                        df_batch["_source_path"] = str(relative_path)
+                        
+                        # Convert to records
+                        records = df_batch.to_dict("records")
+                        
+                        # Explicitly delete dataframe to free memory
+                        del df_batch
+                        
+                        # Yield records
+                        for record in records:
+                            # Ensure all keys are strings for type compatibility
+                            typed_record: Dict[str, Any] = {
+                                str(k): v for k, v in record.items()
+                            }
+                            yield typed_record
+                            rows_yielded += 1
+                        
+                        # Explicitly delete records to free memory
+                        del records
+                        
+                        # Log progress every batch
+                        context.log.info(
+                            f"File {file_idx}/{total_files}: Yielded {rows_yielded:,}/{file_rows:,} rows "
+                            f"({rows_yielded / file_rows * 100:.1f}%)"
+                        )
 
                     total_rows += file_rows
 
