@@ -55,7 +55,6 @@ def get_opendevdata_datasets(
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                universal_newlines=True,
             )
 
             # Stream output in real-time, storing only last 100 lines for error context
@@ -89,7 +88,7 @@ def get_opendevdata_datasets(
                 raise subprocess.CalledProcessError(
                     process.returncode,
                     ["uvx", "open-dev-data", "download"],
-                    error_output,
+                    output=error_output,
                 )
 
             context.log.info("Download completed successfully")
@@ -121,64 +120,43 @@ def get_opendevdata_datasets(
                         f"({file_size_mb:.2f} MB) - Table: {table_name}"
                     )
 
-                    # Read parquet file in chunks for memory efficiency
-                    # Process large files in chunks to avoid memory issues
-                    chunk_size = 100000  # Process 100k rows at a time
-                    parquet_file_handle = pd.read_parquet(
-                        parquet_file, chunksize=chunk_size
-                    )
-
-                    # Check if parquet_file returned an iterator (chunked) or DataFrame
-                    if isinstance(parquet_file_handle, pd.DataFrame):
-                        # File is small enough to read all at once
-                        df = parquet_file_handle
-                        chunks = [df]
-                    else:
-                        # File is large, read in chunks
-                        chunks = parquet_file_handle
-
-                    file_rows = 0
+                    # Read parquet file - pandas doesn't support chunksize for parquet
+                    # Read entire file and process in chunks for memory efficiency
+                    df = pd.read_parquet(parquet_file)
+                    file_rows = len(df)
+                    
+                    # Add metadata columns to the dataframe before converting
+                    df["_source_file"] = parquet_file.name
+                    df["_source_table"] = table_name
+                    df["_source_path"] = str(relative_path)
+                    
+                    # Convert to records (much faster than iterrows)
+                    records = df.to_dict("records")
+                    
+                    # Explicitly delete dataframe to free memory
+                    del df
+                    
+                    # Yield records with progress logging
                     rows_yielded = 0
-
-                    for chunk_idx, df_chunk in enumerate(chunks):
-                        chunk_rows = len(df_chunk)
-                        file_rows += chunk_rows
-
-                        if chunk_idx == 0:
-                            # Log initial read
+                    for record in records:
+                        # Ensure all keys are strings for type compatibility
+                        # Column names from parquet should already be strings,
+                        # but type checker requires explicit conversion
+                        typed_record: Dict[str, Any] = {
+                            str(k): v for k, v in record.items()
+                        }
+                        yield typed_record
+                        rows_yielded += 1
+                        
+                        # Log progress every 100k rows for large files
+                        if rows_yielded % 100000 == 0:
                             context.log.info(
-                                f"File {file_idx}/{total_files}: Started reading (chunked mode)"
+                                f"File {file_idx}/{total_files}: Yielded {rows_yielded:,}/{file_rows:,} rows "
+                                f"({rows_yielded / file_rows * 100:.1f}%)"
                             )
-
-                        # Add metadata columns to the chunk
-                        df_chunk["_source_file"] = parquet_file.name
-                        df_chunk["_source_table"] = table_name
-                        df_chunk["_source_path"] = str(relative_path)
-
-                        # Convert chunk to records (much faster than iterrows)
-                        records = df_chunk.to_dict("records")
-
-                        # Yield records with progress logging
-                        for record in records:
-                            # Ensure all keys are strings for type compatibility
-                            # Column names from parquet should already be strings,
-                            # but type checker requires explicit conversion
-                            typed_record: Dict[str, Any] = {
-                                str(k): v for k, v in record.items()
-                            }
-                            yield typed_record
-                            rows_yielded += 1
-
-                            # Log progress every 100k rows for large files
-                            if rows_yielded % 100000 == 0:
-                                context.log.info(
-                                    f"File {file_idx}/{total_files}: Yielded {rows_yielded:,} rows "
-                                    f"({file_rows:,} total in file so far)"
-                                )
-
-                        # Explicitly delete chunk to free memory immediately
-                        del df_chunk
-                        del records
+                    
+                    # Explicitly delete records to free memory
+                    del records
 
                     total_rows += file_rows
 
@@ -205,7 +183,7 @@ def get_opendevdata_datasets(
                 context.log.error(f"Captured output: {captured_output}")
             raise
         except subprocess.TimeoutExpired:
-            context.log.error("Download command timed out after 1 hour")
+            context.log.error("Download command timed out after 3 hours")
             raise
         except Exception as e:
             context.log.error(f"Error processing Open Dev Data: {e}")
