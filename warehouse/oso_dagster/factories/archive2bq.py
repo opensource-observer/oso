@@ -128,7 +128,7 @@ def extract_to_tempdir(
             file_name = os.path.basename(source_url)
             file_path = os.path.join(tempdir, file_name)
             with open(file_path, "wb") as f:
-                f.write(response.read())
+                shutil.copyfileobj(response, f)
 
         is_archive = any(
             file_name.endswith(ext)
