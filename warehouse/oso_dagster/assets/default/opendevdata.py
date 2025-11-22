@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import tempfile
+from collections import deque
 from pathlib import Path
 from typing import Any, Dict, Generator
 
@@ -57,15 +58,27 @@ def get_opendevdata_datasets(
                 universal_newlines=True,
             )
 
-            # Stream output in real-time
-            output_lines = []
+            # Stream output in real-time, storing only last 100 lines for error context
+            output_lines = deque(maxlen=100)
             if process.stdout:
                 for line in process.stdout:
-                    output_lines.append(line.rstrip())
+                    line_stripped = line.rstrip()
+                    output_lines.append(line_stripped)
                     # Log every line to show progress
-                    context.log.info(f"Download: {line.rstrip()}")
+                    context.log.info(f"Download: {line_stripped}")
 
-            process.wait()
+            # Wait with timeout (3 hours for 40GB download)
+            # Increased timeout to handle large dataset downloads
+            download_timeout = 10800  # 3 hours
+            try:
+                process.wait(timeout=download_timeout)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                context.log.error(
+                    f"Download command timed out after {download_timeout // 3600} hours"
+                )
+                raise
 
             if process.returncode != 0:
                 error_output = "\n".join(output_lines)
@@ -74,7 +87,9 @@ def get_opendevdata_datasets(
                 )
                 context.log.error(f"Output: {error_output}")
                 raise subprocess.CalledProcessError(
-                    process.returncode, ["uvx", "open-dev-data", "download"]
+                    process.returncode,
+                    ["uvx", "open-dev-data", "download"],
+                    error_output,
                 )
 
             context.log.info("Download completed successfully")
@@ -106,38 +121,70 @@ def get_opendevdata_datasets(
                         f"({file_size_mb:.2f} MB) - Table: {table_name}"
                     )
 
-                    # Read parquet file
-                    df = pd.read_parquet(parquet_file)
-                    file_rows = len(df)
+                    # Read parquet file in chunks for memory efficiency
+                    # Process large files in chunks to avoid memory issues
+                    chunk_size = 100000  # Process 100k rows at a time
+                    parquet_file_handle = pd.read_parquet(
+                        parquet_file, chunksize=chunk_size
+                    )
+
+                    # Check if parquet_file returned an iterator (chunked) or DataFrame
+                    if isinstance(parquet_file_handle, pd.DataFrame):
+                        # File is small enough to read all at once
+                        df = parquet_file_handle
+                        chunks = [df]
+                    else:
+                        # File is large, read in chunks
+                        chunks = parquet_file_handle
+
+                    file_rows = 0
+                    rows_yielded = 0
+
+                    for chunk_idx, df_chunk in enumerate(chunks):
+                        chunk_rows = len(df_chunk)
+                        file_rows += chunk_rows
+
+                        if chunk_idx == 0:
+                            # Log initial read
+                            context.log.info(
+                                f"File {file_idx}/{total_files}: Started reading (chunked mode)"
+                            )
+
+                        # Add metadata columns to the chunk
+                        df_chunk["_source_file"] = parquet_file.name
+                        df_chunk["_source_table"] = table_name
+                        df_chunk["_source_path"] = str(relative_path)
+
+                        # Convert chunk to records (much faster than iterrows)
+                        records = df_chunk.to_dict("records")
+
+                        # Yield records with progress logging
+                        for record in records:
+                            # Ensure all keys are strings for type compatibility
+                            # Column names from parquet should already be strings,
+                            # but type checker requires explicit conversion
+                            typed_record: Dict[str, Any] = {
+                                str(k): v for k, v in record.items()
+                            }
+                            yield typed_record
+                            rows_yielded += 1
+
+                            # Log progress every 100k rows for large files
+                            if rows_yielded % 100000 == 0:
+                                context.log.info(
+                                    f"File {file_idx}/{total_files}: Yielded {rows_yielded:,} rows "
+                                    f"({file_rows:,} total in file so far)"
+                                )
+
+                        # Explicitly delete chunk to free memory immediately
+                        del df_chunk
+                        del records
+
                     total_rows += file_rows
 
                     context.log.info(
-                        f"File {file_idx}/{total_files}: Read {file_rows:,} rows "
-                        f"(Total processed so far: {total_rows:,} rows)"
-                    )
-
-                    # Yield each row with metadata about the source file
-                    rows_yielded = 0
-                    for idx, row in df.iterrows():
-                        record = row.to_dict()
-                        # Add metadata about the source
-                        record["_source_file"] = parquet_file.name
-                        record["_source_table"] = table_name
-                        record["_source_path"] = str(relative_path)
-
-                        yield record
-                        rows_yielded += 1
-
-                        # Log progress every 100k rows for large files
-                        if rows_yielded % 100000 == 0:
-                            context.log.info(
-                                f"File {file_idx}/{total_files}: Yielded {rows_yielded:,}/{file_rows:,} rows "
-                                f"({rows_yielded / file_rows * 100:.1f}%)"
-                            )
-
-                    context.log.info(
-                        f"Completed file {file_idx}/{total_files}: {parquet_file.name} "
-                        f"({file_rows:,} rows)"
+                        f"File {file_idx}/{total_files}: Completed {parquet_file.name} "
+                        f"({file_rows:,} rows) - Total processed so far: {total_rows:,} rows"
                     )
 
                 except Exception as e:
@@ -152,7 +199,10 @@ def get_opendevdata_datasets(
 
         except subprocess.CalledProcessError as e:
             context.log.error(f"Download command failed: {e}")
-            context.log.error(f"stderr: {e.stderr}")
+            # stderr was redirected to stdout, so log the captured output instead
+            captured_output = getattr(e, "output", getattr(e, "stdout", None))
+            if captured_output:
+                context.log.error(f"Captured output: {captured_output}")
             raise
         except subprocess.TimeoutExpired:
             context.log.error("Download command timed out after 1 hour")
