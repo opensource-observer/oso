@@ -41,6 +41,7 @@ logs/
 dev-tests/
 coverage.json
 dev-tests/
+warehouse/oso_sqlmesh/models/intermediate/int_my_first_model.sql
 
 # typescript
 *.tsbuildinfo
