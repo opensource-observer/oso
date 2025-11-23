@@ -13,7 +13,7 @@ SELECT
   repo_id::BIGINT AS repo_id,
   created_at::TIMESTAMP AS created_at,
   connected_at::DATE AS connected_at,
-  path::TEXT AS path,
+  CAST(path AS ROW(list ARRAY(ROW(element BIGINT)))) AS path,
   distance::BIGINT AS distance,
   is_explicit::BOOLEAN AS is_explicit,
   is_direct_exclusive::BOOLEAN AS is_direct_exclusive,

@@ -12,7 +12,7 @@ SELECT
   ecosystem_id::BIGINT AS ecosystem_id,
   day::DATE AS day,
   canonical_developer_id::BIGINT AS canonical_developer_id,
-  repo_ids::TEXT AS repo_ids,
+  CAST(repo_ids AS ROW(list ARRAY(ROW(element BIGINT)))) AS repo_ids,
   num_commits::BIGINT AS num_commits,
   is_exclusive::BOOLEAN AS is_exclusive
 FROM @oso_source('bigquery.opendevdata.eco_developer_activities')

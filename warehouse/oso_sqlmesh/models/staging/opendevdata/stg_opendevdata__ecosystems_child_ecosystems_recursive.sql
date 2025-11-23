@@ -12,8 +12,8 @@ SELECT
   parent_id::BIGINT AS parent_id,
   child_id::BIGINT AS child_id,
   created_at::TIMESTAMP AS created_at,
-  ecosystem_ecosystem_paths::TEXT AS ecosystem_ecosystem_paths,
-  ecosystem_chain_ecosystem_paths::TEXT AS ecosystem_chain_ecosystem_paths,
-  connection_dates::TEXT AS connection_dates,
+  CAST(ecosystem_ecosystem_paths AS ROW(list ARRAY(ROW(element BIGINT)))) AS ecosystem_ecosystem_paths,
+  CAST(ecosystem_chain_ecosystem_paths AS ROW(list ARRAY(ROW(element BIGINT)))) AS ecosystem_chain_ecosystem_paths,
+  CAST(connection_dates AS ROW(list ARRAY(ROW(element DATE)))) AS connection_dates,
   connected_at::DATE AS connected_at
 FROM @oso_source('bigquery.opendevdata.ecosystems_child_ecosystems_recursive')
