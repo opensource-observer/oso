@@ -176,7 +176,7 @@ type CreateDataModelPayload {
 
 input UpdateDataModelInput {
   dataModelId: ID!
-  name: String!
+  name: String
   isEnabled: Boolean
 }
 

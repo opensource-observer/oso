@@ -8403,7 +8403,7 @@ export type UnsupportedOperationError = Error & {
 export type UpdateDataModelInput = {
   dataModelId: Scalars["ID"]["input"];
   isEnabled?: InputMaybe<Scalars["Boolean"]["input"]>;
-  name: Scalars["String"]["input"];
+  name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type UpdateDatasetInput = {

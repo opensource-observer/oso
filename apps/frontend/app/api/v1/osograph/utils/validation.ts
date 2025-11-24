@@ -126,6 +126,12 @@ export const CreateDataModelSchema = z.object({
   isEnabled: z.boolean().optional(),
 });
 
+export const UpdateDataModelSchema = z.object({
+  dataModelId: z.string().uuid("Invalid data model ID"),
+  name: z.string().min(1).optional(),
+  isEnabled: z.boolean().optional(),
+});
+
 const DataModelColumnSchema = z.object({
   name: z.string(),
   type: z.string(),
