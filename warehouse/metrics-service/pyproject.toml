@@ -36,7 +36,7 @@ dependencies = [
     "oss-directory==0.2.5",
     "pendulum<4.0.0,>=3.0.0",
     "polars<2.0.0",
-    "pytest<9.0.0,>=8.2.1",
+    "pytest>=8.2.1,<10.0.0",
     "python-dotenv<2.0.0,>=1.0.1",
     "requests<3.0.0,>=2.31.0",
     "ruamel-yaml<1.0.0,>=0.18.6",
