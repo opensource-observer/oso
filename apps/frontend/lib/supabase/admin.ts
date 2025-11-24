@@ -7,3 +7,5 @@ export function createAdminClient() {
     process.env.SUPABASE_SERVICE_KEY!,
   );
 }
+
+export type SupabaseAdminClient = ReturnType<typeof createAdminClient>;

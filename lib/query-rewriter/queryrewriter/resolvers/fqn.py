@@ -14,6 +14,8 @@ class InferFQN(TableResolver):
     async def resolve_tables(
         self,
         tables: dict[str, exp.Table],
+        *,
+        metadata: dict | None = None,
     ) -> dict[str, exp.Table]:
         resolved: dict[str, exp.Table] = {}
         for table_name, table in tables.items():

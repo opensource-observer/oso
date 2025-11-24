@@ -130,6 +130,7 @@ async def rewrite_query(
     query: str,
     table_resolvers: list[TableResolver],
     *,
+    metadata: dict | None = None,
     dialect: str = "trino",
 ) -> str:
     """

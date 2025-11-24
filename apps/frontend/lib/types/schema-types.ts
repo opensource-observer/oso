@@ -254,6 +254,18 @@ export type ResourcePermissionsUpdate = z.infer<
 export type ResourcePermissionsRelationships = z.infer<
   typeof generated.resourcePermissionsRelationshipsSchema
 >;
+export type TableDirectoryRow = z.infer<
+  typeof generated.tableDirectoryRowSchema
+>;
+export type TableDirectoryInsert = z.infer<
+  typeof generated.tableDirectoryInsertSchema
+>;
+export type TableDirectoryUpdate = z.infer<
+  typeof generated.tableDirectoryUpdateSchema
+>;
+export type TableDirectoryRelationships = z.infer<
+  typeof generated.tableDirectoryRelationshipsSchema
+>;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
   typeof generated.userCreditsInsertSchema

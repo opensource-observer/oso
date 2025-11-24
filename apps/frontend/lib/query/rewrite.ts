@@ -2,6 +2,8 @@
  * Wrap the query rewriter in typescript.
  */
 import { loadPyodideEnvironment } from "@opensource-observer/pyodide-node-toolkit";
+import { TableResolutionMap, TableResolver } from "@/lib/query/resolver";
+import { Table } from "../types/table";
 
 export type RewriteOptions = {
   orgName: string;
@@ -9,19 +11,15 @@ export type RewriteOptions = {
   dialect?: string;
 };
 
-export interface TableResolver {
-  resolveTables(tables: string[]): Promise<Record<string, string>>;
-}
-
 export class PyodideQueryRewriter {
-  private tableResolver: TableResolver;
+  private tableResolvers: TableResolver[];
   private envTarballPath: string;
   private pyodide: Awaited<ReturnType<typeof loadPyodideEnvironment>> | null =
     null;
 
-  constructor(envTarballPath: string, tableResolver: TableResolver) {
+  constructor(envTarballPath: string, tableResolvers: TableResolver[]) {
     this.envTarballPath = envTarballPath;
-    this.tableResolver = tableResolver;
+    this.tableResolvers = tableResolvers;
     this.pyodide = null;
   }
 
@@ -29,8 +27,19 @@ export class PyodideQueryRewriter {
     this.pyodide = await loadPyodideEnvironment(this.envTarballPath);
 
     this.pyodide.registerJsModule("js_table_resolver", {
-      resolve_tables: async (tables: string[]) => {
-        return await this.tableResolver.resolveTables(tables);
+      resolve_tables: async (tables: string[], metadata: Record<string, unknown>): Promise<Record<string, string>> => {
+        let tableResolutionMap: TableResolutionMap = {};
+        for (const tableName of tables) {
+          tableResolutionMap[tableName] = Table.fromString(tableName);
+        }
+        for (const resolver of this.tableResolvers) {
+          tableResolutionMap = await resolver.resolveTables(tableResolutionMap, metadata);
+        }
+        const resolvedTables: Record<string, string> = {};
+        for (const [originalName, tableObj] of Object.entries(tableResolutionMap)) {
+          resolvedTables[originalName] = tableObj.toFQN();
+        }
+        return resolvedTables;
       },
     });
   }

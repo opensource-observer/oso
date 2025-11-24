@@ -731,6 +731,9 @@ export type Database = {
           model_id: string;
           model_release_id: string;
           org_id: string;
+          schema:
+            | Database["public"]["CompositeTypes"]["model_column_type"][]
+            | null;
           started_at: string;
           status: Database["public"]["Enums"]["model_run_status"];
         };
@@ -741,6 +744,9 @@ export type Database = {
           model_id: string;
           model_release_id: string;
           org_id: string;
+          schema?:
+            | Database["public"]["CompositeTypes"]["model_column_type"][]
+            | null;
           started_at?: string;
           status?: Database["public"]["Enums"]["model_run_status"];
         };
@@ -751,6 +757,9 @@ export type Database = {
           model_id?: string;
           model_release_id?: string;
           org_id?: string;
+          schema?:
+            | Database["public"]["CompositeTypes"]["model_column_type"][]
+            | null;
           started_at?: string;
           status?: Database["public"]["Enums"]["model_run_status"];
         };
@@ -1153,6 +1162,44 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "user_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      table_directory: {
+        Row: {
+          column_name: string;
+          column_type: string;
+          dataset_id: string;
+          dataset_name: string;
+          org_id: string;
+          org_name: string;
+          table_name: string;
+        };
+        Insert: {
+          column_name: string;
+          column_type: string;
+          dataset_id: string;
+          dataset_name: string;
+          org_id: string;
+          org_name: string;
+          table_name: string;
+        };
+        Update: {
+          column_name?: string;
+          column_type?: string;
+          dataset_id?: string;
+          dataset_name?: string;
+          org_id?: string;
+          org_name?: string;
+          table_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "table_directory_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
         ];

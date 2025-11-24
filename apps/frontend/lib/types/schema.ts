@@ -796,6 +796,7 @@ export const modelRunRowSchema = z.object({
   model_id: z.string(),
   model_release_id: z.string(),
   org_id: z.string(),
+  schema: z.array(publicModelColumnTypeSchema).nullable(),
   started_at: z.string(),
   status: publicModelRunStatusSchema,
 });
@@ -807,6 +808,7 @@ export const modelRunInsertSchema = z.object({
   model_id: z.string(),
   model_release_id: z.string(),
   org_id: z.string(),
+  schema: z.array(publicModelColumnTypeSchema).optional().nullable(),
   started_at: z.string().optional(),
   status: publicModelRunStatusSchema.optional(),
 });
@@ -818,6 +820,7 @@ export const modelRunUpdateSchema = z.object({
   model_id: z.string().optional(),
   model_release_id: z.string().optional(),
   org_id: z.string().optional(),
+  schema: z.array(publicModelColumnTypeSchema).optional().nullable(),
   started_at: z.string().optional(),
   status: publicModelRunStatusSchema.optional(),
 });
@@ -1235,6 +1238,46 @@ export const resourcePermissionsRelationshipsSchema = z.tuple([
     columns: z.tuple([z.literal("user_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const tableDirectoryRowSchema = z.object({
+  column_name: z.string(),
+  column_type: z.string(),
+  dataset_id: z.string(),
+  dataset_name: z.string(),
+  org_id: z.string(),
+  org_name: z.string(),
+  table_name: z.string(),
+});
+
+export const tableDirectoryInsertSchema = z.object({
+  column_name: z.string(),
+  column_type: z.string(),
+  dataset_id: z.string(),
+  dataset_name: z.string(),
+  org_id: z.string(),
+  org_name: z.string(),
+  table_name: z.string(),
+});
+
+export const tableDirectoryUpdateSchema = z.object({
+  column_name: z.string().optional(),
+  column_type: z.string().optional(),
+  dataset_id: z.string().optional(),
+  dataset_name: z.string().optional(),
+  org_id: z.string().optional(),
+  org_name: z.string().optional(),
+  table_name: z.string().optional(),
+});
+
+export const tableDirectoryRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("table_directory_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
 ]);

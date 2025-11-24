@@ -9,7 +9,10 @@ class FakeTableResolver(TableResolver):
         self.rewrite_rules = rewrite_rules
 
     async def resolve_tables(
-        self, tables: dict[str, exp.Table]
+        self,
+        tables: dict[str, exp.Table],
+        *,
+        metadata: dict | None = None,
     ) -> dict[str, exp.Table]:
         resolved: dict[str, exp.Table] = {}
         for table_id, table in tables.items():
