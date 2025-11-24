@@ -17,6 +17,7 @@ import {
   CreateDataModelReleaseSchema,
   CreateDataModelRevisionSchema,
   CreateDataModelSchema,
+  UpdateDataModelSchema,
   DataModelReleaseWhereSchema,
   DataModelRevisionWhereSchema,
   DataModelWhereSchema,
@@ -25,6 +26,7 @@ import {
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+import { ModelUpdate } from "@/lib/types/schema-types";
 
 export const dataModelResolvers = {
   Query: {
@@ -81,6 +83,57 @@ export const dataModelResolvers = {
       return {
         success: true,
         message: "DataModel created successfully",
+        dataModel: data,
+      };
+    },
+    updateDataModel: async (
+      _: unknown,
+      {
+        input,
+      }: {
+        input: z.infer<typeof UpdateDataModelSchema>;
+      },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const validatedInput = validateInput(UpdateDataModelSchema, input);
+      const supabase = createAdminClient();
+
+      const { data: dataModel, error: dataModelError } = await supabase
+        .from("model")
+        .select("org_id")
+        .eq("id", validatedInput.dataModelId)
+        .single();
+
+      if (dataModelError || !dataModel) {
+        throw ResourceErrors.notFound("DataModel", validatedInput.dataModelId);
+      }
+
+      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
+
+      const updateData: ModelUpdate = {};
+      if (validatedInput.name !== undefined) {
+        updateData.name = validatedInput.name;
+      }
+      if (validatedInput.isEnabled !== undefined) {
+        updateData.is_enabled = validatedInput.isEnabled;
+      }
+
+      const { data, error } = await supabase
+        .from("model")
+        .update(updateData)
+        .eq("id", validatedInput.dataModelId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error("Failed to update dataModel:", error);
+        throw ServerErrors.database("Failed to update dataModel");
+      }
+
+      return {
+        success: true,
+        message: "DataModel updated successfully",
         dataModel: data,
       };
     },
