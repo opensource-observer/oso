@@ -127,7 +127,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@apollo/rover": "^0.35.0",
+    "@apollo/rover": "^0.36.2",
     "@chromatic-com/storybook": "^4.1.0",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.38.0",
