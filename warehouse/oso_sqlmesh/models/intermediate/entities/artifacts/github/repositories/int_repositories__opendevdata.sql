@@ -1,6 +1,7 @@
 MODEL (
   name oso.int_repositories__opendevdata,
   description 'All repositories in OpenDevData',
+  dialect trino,
   kind FULL,
   audits (
     has_at_least_n_rows(threshold := 0)
@@ -8,7 +9,7 @@ MODEL (
 );
 
 SELECT DISTINCT
-  @oso_entity_id('GITHUB', artifact_fields.artifact_namespace, artifact_fields.artifact_name) AS artifact_id,
+  @oso_entity_id(artifact_fields.artifact_source, artifact_fields.artifact_namespace, artifact_fields.artifact_name) AS artifact_id,
   artifact_fields.artifact_source,
   artifact_fields.artifact_namespace,
   artifact_fields.artifact_name,
