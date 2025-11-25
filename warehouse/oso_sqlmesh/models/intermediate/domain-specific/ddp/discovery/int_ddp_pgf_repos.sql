@@ -3,7 +3,7 @@ MODEL (
   description "Repositories that have Public Goods Funding from Ethereum partners",
   kind FULL,
   dialect trino,
-  grain (artifact_id),
+  grain (artifact_id, project_id),
   tags (
     'entity_category=artifact',
     'entity_category=project'
@@ -19,7 +19,7 @@ WITH funded_projects AS (
   JOIN oso.projects_v1 USING project_id
   JOIN oso.metrics_v0 USING metric_id
   WHERE
-    metric_model LIKE 'funding_awarded'
+    metric_model = 'funding_awarded'
     AND project_source = 'OSS_DIRECTORY'
     AND metric_time_aggregation = 'over_all_time'
     AND metric_event_source IN (
