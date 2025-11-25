@@ -60,7 +60,10 @@ import {
   FormBuilderMeta,
 } from "@/components/widgets/form-builder";
 import { FormSaver, FormSaverMeta } from "@/components/widgets/form-saver";
-import { CodeEditorMeta } from "@/components/widgets/code-editor/types";
+import {
+  CodeDiffMeta,
+  CodeEditorMeta,
+} from "@/components/widgets/code-editor/utils";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -79,6 +82,10 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(
     dynamic(() => import("./code-editor/code-editor"), { ssr: false }),
     CodeEditorMeta,
+  );
+  PLASMIC.registerComponent(
+    dynamic(() => import("./code-editor/code-diff"), { ssr: false }),
+    CodeDiffMeta,
   );
   PLASMIC.registerComponent(OsoNavbar, OsoNavbarMeta);
   PLASMIC.registerComponent(OsoSidebar, OsoSidebarMeta);
