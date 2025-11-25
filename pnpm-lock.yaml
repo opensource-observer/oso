@@ -434,8 +434,8 @@ importers:
         version: 3.25.76
     devDependencies:
       '@apollo/rover':
-        specifier: ^0.35.0
-        version: 0.35.0
+        specifier: ^0.36.2
+        version: 0.36.2
       '@chromatic-com/storybook':
         specifier: ^4.1.0
         version: 4.1.0(storybook@9.1.16(@testing-library/dom@10.4.1)(bufferutil@4.0.9)(prettier@3.6.2)(vite@7.1.1(@types/node@24.2.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.1)))
@@ -1061,8 +1061,8 @@ packages:
     peerDependencies:
       graphql: ^16.5.0
 
-  '@apollo/rover@0.35.0':
-    resolution: {integrity: sha512-Z9qoNFrfevDP3yjrK8UXdlXP47Io/FQ0JW2LTg3/vSX6ZRdyh2vnadqt77zBFaxIKGHLTNXoOFu+57Ra0z8RQA==}
+  '@apollo/rover@0.36.2':
+    resolution: {integrity: sha512-64D1AkHpkzEYCBUzaQsOLcHcGNVI1XTQgKp+X1wL3wMAdCrT4YgtkNhe7Ov0h1P6qm6FD6pwenY2X03njwVkaw==}
     engines: {node: '>=14', npm: '>=6'}
     hasBin: true
 
@@ -6971,8 +6971,8 @@ packages:
   axios@1.11.0:
     resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
 
-  axios@1.13.1:
-    resolution: {integrity: sha512-hU4EGxxt+j7TQijx1oYdAjw4xuIp1wRQSsbMFwSthCWeBQur1eF+qJ5iQ5sN3Tw8YRzQNKb8jszgBdMDVqwJcw==}
+  axios@1.13.2:
+    resolution: {integrity: sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA==}
 
   axobject-query@3.1.1:
     resolution: {integrity: sha512-goKlv8DZrK9hUh975fnHzhNIO4jUnFCfv/dszV5VwUGDFjI6vQ2VwoyjYjYNEbBE8AH87TduWP5uyDR1D+Iteg==}
@@ -8365,10 +8365,6 @@ packages:
     engines: {node: '>=0.10'}
     hasBin: true
 
-  detect-libc@2.0.4:
-    resolution: {integrity: sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA==}
-    engines: {node: '>=8'}
-
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
@@ -9202,6 +9198,10 @@ packages:
 
   form-data@4.0.4:
     resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
+    engines: {node: '>= 6'}
+
+  form-data@4.0.5:
+    resolution: {integrity: sha512-8RipRLol37bNs2bhoV67fiTEvdTrbMUYcFTiy3+wuuOnUog2QBHCZWXDRijWQfAkhBj2Uf5UnVaiWwA5vdd82w==}
     engines: {node: '>= 6'}
 
   format@0.2.2:
@@ -11203,10 +11203,6 @@ packages:
   minizlib@2.1.2:
     resolution: {integrity: sha512-bAxsR8BVfj60DWXHE3u30oHzfl4G7khkSuPW+qvpd7jFRHm7dLxOjUk1EHACJ/hxLY8phGJ0YhYHZo7jil7Qdg==}
     engines: {node: '>= 8'}
-
-  minizlib@3.0.2:
-    resolution: {integrity: sha512-oG62iEk+CYt5Xj2YqI5Xi9xWUeZhDI8jjQmC5oThVH5JGCTgIjr7ciJDzC7MBzYd//WvR1OTmP5Q38Q8ShQtVA==}
-    engines: {node: '>= 18'}
 
   minizlib@3.1.0:
     resolution: {integrity: sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==}
@@ -13668,10 +13664,6 @@ packages:
     resolution: {integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==}
     engines: {node: '>=10'}
 
-  tar@7.4.3:
-    resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
-    engines: {node: '>=18'}
-
   tar@7.5.1:
     resolution: {integrity: sha512-nlGpxf+hv0v7GkWBK2V9spgactGOp0qvfWRxUMjqHyzrt3SgwE48DIv/FhqPHJYLHpgW1opq3nERbz5Anq7n1g==}
     engines: {node: '>=18'}
@@ -15199,13 +15191,13 @@ snapshots:
       graphql: 16.11.0
       pretty-format: 29.7.0
 
-  '@apollo/rover@0.35.0':
+  '@apollo/rover@0.36.2':
     dependencies:
-      axios: 1.11.0
+      axios: 1.13.2
       axios-proxy-builder: 0.1.2
       console.table: 0.10.0
-      detect-libc: 2.0.4
-      tar: 7.4.3
+      detect-libc: 2.1.2
+      tar: 7.5.2
     transitivePeerDependencies:
       - debug
 
@@ -19642,12 +19634,12 @@ snapshots:
   '@mapbox/node-pre-gyp@2.0.0(encoding@0.1.13)':
     dependencies:
       consola: 3.4.2
-      detect-libc: 2.0.4
+      detect-libc: 2.1.2
       https-proxy-agent: 7.0.6
       node-fetch: 2.7.0(encoding@0.1.13)
       nopt: 8.1.0
       semver: 7.7.3
-      tar: 7.5.1
+      tar: 7.5.2
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -20435,7 +20427,7 @@ snapshots:
 
   '@posthog/cli@0.5.7':
     dependencies:
-      axios: 1.13.1
+      axios: 1.13.2
       axios-proxy-builder: 0.1.2
       console.table: 0.10.0
       detect-libc: 2.1.2
@@ -23638,10 +23630,10 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  axios@1.13.1:
+  axios@1.13.2:
     dependencies:
       follow-redirects: 1.15.11(debug@4.4.3)
-      form-data: 4.0.4
+      form-data: 4.0.5
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
@@ -25175,8 +25167,6 @@ snapshots:
 
   detect-libc@1.0.3: {}
 
-  detect-libc@2.0.4: {}
-
   detect-libc@2.1.2: {}
 
   detect-newline@3.1.0: {}
@@ -26377,6 +26367,14 @@ snapshots:
   form-data-encoder@2.1.4: {}
 
   form-data@4.0.4:
+    dependencies:
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      es-set-tostringtag: 2.1.0
+      hasown: 2.0.2
+      mime-types: 2.1.35
+
+  form-data@4.0.5:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
@@ -29105,10 +29103,6 @@ snapshots:
     dependencies:
       minipass: 3.3.6
       yallist: 4.0.0
-
-  minizlib@3.0.2:
-    dependencies:
-      minipass: 7.1.2
 
   minizlib@3.1.0:
     dependencies:
@@ -31970,15 +31964,6 @@ snapshots:
       minizlib: 2.1.2
       mkdirp: 1.0.4
       yallist: 4.0.0
-
-  tar@7.4.3:
-    dependencies:
-      '@isaacs/fs-minipass': 4.0.1
-      chownr: 3.0.0
-      minipass: 7.1.2
-      minizlib: 3.0.2
-      mkdirp: 3.0.1
-      yallist: 5.0.0
 
   tar@7.5.1:
     dependencies:
