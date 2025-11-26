@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS "public"."run" (
   FOREIGN KEY ("dataset_id") REFERENCES "public"."datasets"("id") ON DELETE CASCADE
 );
 
+-- Create an index to speed up lookups by dataset_id 
+CREATE INDEX idx_run_dataset_id ON public.run("dataset_id");
+-- dataset_id and started_at for finding recent runs
+CREATE INDEX idx_run_dataset_id_started_at ON public.run("dataset_id", "started_at");
+-- dataset_id and completed_at for finding recent completed runs
+CREATE INDEX idx_run_dataset_id_completed_at ON public.run("dataset_id", "completed_at");
+-- Create an index to speed up lookups by dataset_id and status
+CREATE INDEX idx_run_dataset_id_status ON public.run("dataset_id", "status");
+ 
 ALTER TABLE "public"."run" ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE IF NOT EXISTS "public"."materialization" (
@@ -51,6 +60,11 @@ CREATE TABLE IF NOT EXISTS "public"."materialization" (
   FOREIGN KEY ("dataset_id") REFERENCES "public"."datasets"("id") ON DELETE CASCADE,
   FOREIGN KEY ("run_id") REFERENCES "public"."run"("id") ON DELETE CASCADE
 );
+
+CREATE INDEX idx_materialization_dataset_id ON public.materialization("dataset_id");
+CREATE INDEX idx_materialization_dataset_id_table_id ON public.materialization("dataset_id", "table_id");
+CREATE INDEX idx_materialization_created_at ON public.materialization("created_at");
+CREATE INDEX idx_materialization_run_id ON public.materialization("run_id");
 
 -- We need to have an abstract concept of a "table" for looking up the latest
 -- table reference for any given User Data Model, Data Connector, or Data
