@@ -1,9 +1,11 @@
 import { Table } from "@/lib/types/table";
 import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
 
-
 export class LegacyInferredTableResolver implements TableResolver {
-  async resolveTables(tables: TableResolutionMap, metadata: Record<string, unknown>): Promise<TableResolutionMap> {
+  async resolveTables(
+    tables: TableResolutionMap,
+    _metadata: Record<string, unknown>,
+  ): Promise<TableResolutionMap> {
     const resolvedTables: TableResolutionMap = {};
     for (const [originalName, tableObj] of Object.entries(tables)) {
       if (tableObj.isFQN()) {

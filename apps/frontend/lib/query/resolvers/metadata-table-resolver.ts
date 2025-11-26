@@ -4,15 +4,16 @@
 import { Table } from "@/lib/types/table";
 import { queryMetadataSchema } from "@/lib/types/query-metadata";
 import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
-import { resolve } from "path";
-
 
 /**
  * Uses metadata to infer and resolve table names. After this resolver, all
  * tables will be fully qualified.
  */
 export class MetadataInferredTableResolver implements TableResolver {
-  async resolveTables(tables: TableResolutionMap, metadata: Record<string, unknown>): Promise<TableResolutionMap> {
+  async resolveTables(
+    tables: TableResolutionMap,
+    metadata: Record<string, unknown>,
+  ): Promise<TableResolutionMap> {
     // Check for the orgName in metadata to infer table mappings
     const parsedMetadata = queryMetadataSchema.parse(metadata);
 
@@ -30,13 +31,12 @@ export class MetadataInferredTableResolver implements TableResolver {
             );
           }
           datasetName = parsedMetadata.datasetName;
-        } 
+        }
         resolvedTables[unresolvedName] = new Table(
           parsedMetadata.orgName,
           datasetName,
           tableObj.table,
         );
-
       }
     }
     return resolvedTables;

@@ -1,12 +1,13 @@
+"use server";
 /**
  * Wrap the query rewriter in typescript.
  */
 import { loadPyodideEnvironment } from "@opensource-observer/pyodide-node-toolkit";
 import { TableResolutionMap, TableResolver } from "@/lib/query/resolver";
-import { Table } from "../types/table";
+import { Table } from "@/apps/frontend/lib/types/table";
 
 export type RewriteOptions = {
-  orgName: string;
+  metadata: Record<string, unknown>;
   query: string;
   dialect?: string;
 };
@@ -27,16 +28,24 @@ export class PyodideQueryRewriter {
     this.pyodide = await loadPyodideEnvironment(this.envTarballPath);
 
     this.pyodide.registerJsModule("js_table_resolver", {
-      resolve_tables: async (tables: string[], metadata: Record<string, unknown>): Promise<Record<string, string>> => {
+      resolve_tables: async (
+        tables: string[],
+        metadata: Record<string, unknown>,
+      ): Promise<Record<string, string>> => {
         let tableResolutionMap: TableResolutionMap = {};
         for (const tableName of tables) {
           tableResolutionMap[tableName] = Table.fromString(tableName);
         }
         for (const resolver of this.tableResolvers) {
-          tableResolutionMap = await resolver.resolveTables(tableResolutionMap, metadata);
+          tableResolutionMap = await resolver.resolveTables(
+            tableResolutionMap,
+            metadata,
+          );
         }
         const resolvedTables: Record<string, string> = {};
-        for (const [originalName, tableObj] of Object.entries(tableResolutionMap)) {
+        for (const [originalName, tableObj] of Object.entries(
+          tableResolutionMap,
+        )) {
           resolvedTables[originalName] = tableObj.toFQN();
         }
         return resolvedTables;
@@ -46,7 +55,7 @@ export class PyodideQueryRewriter {
 
   async rewrite({
     query,
-    orgName,
+    metadata,
     dialect = "trino",
   }: RewriteOptions): Promise<string> {
     if (!this.pyodide) {
@@ -54,7 +63,7 @@ export class PyodideQueryRewriter {
     }
     const pyLocals = this.pyodide!.toPy({
       query: query,
-      org_name: orgName,
+      metadata: metadata,
       dialect: dialect,
     });
 
@@ -66,8 +75,9 @@ export class PyodideQueryRewriter {
 
         await default_oso_table_rewrite_js(
             query=query,
-            org_name=org_name, 
-            js_name_resolver=js_table_resolver.resolve_tables
+            metadata=metadata,
+            js_name_resolver=js_table_resolver.resolve_tables,
+            dialect=dialect,
         )
     `,
       pyLocals,
