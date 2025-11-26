@@ -33,7 +33,7 @@ export class Table {
   get catalog(): string {
     return this._catalog;
   }
-  
+
   get dataset(): string {
     return this._dataset;
   }
@@ -49,4 +49,3 @@ export class Table {
     return `${this._catalog}.${this._dataset}.${this._table}`;
   }
 }
-

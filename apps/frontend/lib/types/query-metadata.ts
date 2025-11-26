@@ -8,6 +8,4 @@ export const queryMetadataSchema = z.object({
   datasetName: z.string().optional(),
 });
 
-export type QueryMetadata = z.infer<
-  typeof queryMetadataSchema
->;
+export type QueryMetadata = z.infer<typeof queryMetadataSchema>;
