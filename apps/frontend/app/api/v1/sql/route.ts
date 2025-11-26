@@ -24,6 +24,8 @@ import {
   copyObjectByQuery,
 } from "@/lib/clients/cloudflare-r2";
 import { withPostHogTracking } from "@/lib/clients/posthog";
+import { rewriteQuery } from "@/lib/query/defaults";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Next.js route control
 export const revalidate = 0;
@@ -133,18 +135,27 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
   const jwt = await signTrinoJWT(user);
   const tables = getTableNamesFromSql(query);
 
+  const adminClient = createAdminClient();
+
+  // Rewrite the query
+  const rewrittenQuery = await rewriteQuery({
+    query,
+    orgName: user.orgName,
+    adminClient,
+  });
+
   try {
     tracker.track(EVENTS.API_CALL, {
       type: "sql",
       models: tables,
-      query: query,
+      query: rewrittenQuery,
       apiKeyName: user.keyName,
       host: user.host,
     });
 
     const client = getTrinoClient(jwt);
     const [trinoData, assets] = await Promise.all([
-      client.query(query),
+      client.query(rewrittenQuery),
       includeAnalytics
         ? safeGetAssetsMaterializations(tables)
         : Promise.resolve([]),
