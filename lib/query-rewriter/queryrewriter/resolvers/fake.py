@@ -5,6 +5,10 @@ from sqlglot import exp
 
 
 class FakeTableResolver(TableResolver):
+    """A fake table resolver for testing purposes. It applies a set of rewrite rules
+    to the table names.
+    """
+
     def __init__(self, rewrite_rules: list[t.Callable[[exp.Table], str | None]]):
         self.rewrite_rules = rewrite_rules
 
