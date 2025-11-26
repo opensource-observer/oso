@@ -12,7 +12,7 @@ jest.mock("../../supabase/server", () => ({
   createAdminClient: jest.fn(() => testSupabaseClient),
 }));
 
-describe("DBTablesResolver", () => {
+describe("DBTableResolver", () => {
   /**
    * Ideally we'd have more control over the fixture state of this by using some
    * kind of data layer abstraction. However, for now we just create a more
