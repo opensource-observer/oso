@@ -294,7 +294,7 @@ export const dataModelResolvers = {
 
       const { data, error } = await supabase
         .from("model_release")
-        .insert({
+        .upsert({
           org_id: dataModel.org_id,
           model_id: validatedInput.dataModelId,
           model_revision_id: validatedInput.dataModelRevisionId,
@@ -356,6 +356,10 @@ export const dataModelResolvers = {
         parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [{ key: "model_id", value: parent.id }],
+        },
+        orderBy: {
+          key: "created_at",
+          ascending: false,
         },
       });
     },
