@@ -47,6 +47,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const PAGE_SIZES = [10, 20, 25, 30, 40, 50];
+
 interface DataTablePaginationProps<TData> {
   table: TableState<TData>;
 }
@@ -73,7 +75,7 @@ export function DataTablePagination<TData>({
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
-              {[10, 20, 25, 30, 40, 50].map((pageSize) => (
+              {PAGE_SIZES.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>
@@ -150,6 +152,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   pagination?: boolean;
+  defaultPageSize?: number;
   className: string;
   onRowSelectionListener?: (rows: TData[]) => void;
   rowActions?: RowAction[];
@@ -160,6 +163,7 @@ function DataTable<TData, TValue>({
   columns,
   data,
   pagination = true,
+  defaultPageSize = 25,
   className,
   onRowSelectionListener,
   rowActions,
@@ -183,7 +187,7 @@ function DataTable<TData, TValue>({
     },
     initialState: {
       pagination: {
-        pageSize: 25,
+        pageSize: defaultPageSize,
       },
     },
     enableMultiRowSelection: false,
@@ -344,6 +348,12 @@ const DataTableMeta: CodeComponentMeta<DataTableProps<any, any>> = {
       type: "boolean",
       defaultValueHint: true,
     },
+    defaultPageSize: {
+      type: "choice",
+      options: PAGE_SIZES,
+      defaultValueHint: 25,
+      hidden: (props) => props.pagination === false,
+    },
     onRowSelectionListener: {
       type: "eventHandler",
       argTypes: [
@@ -382,10 +392,7 @@ const DataTableMeta: CodeComponentMeta<DataTableProps<any, any>> = {
                 },
                 onClick: {
                   type: "eventHandler",
-                  argTypes: [
-                    { name: "rowKey", type: "string" },
-                    { name: "row", type: "object" },
-                  ],
+                  argTypes: [{ name: "row", type: "object" }],
                 },
               },
             },
@@ -394,10 +401,7 @@ const DataTableMeta: CodeComponentMeta<DataTableProps<any, any>> = {
           onClick: {
             type: "eventHandler",
             displayName: "Action",
-            argTypes: [
-              { name: "rowKey", type: "string" },
-              { name: "row", type: "object" },
-            ],
+            argTypes: [{ name: "row", type: "object" }],
             hidden: (_ps, _ctx, { item }) => item.type !== "item",
           },
         },
