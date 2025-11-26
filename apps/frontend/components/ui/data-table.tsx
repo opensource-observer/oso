@@ -55,11 +55,11 @@ export function DataTablePagination<TData>({
   table,
 }: DataTablePaginationProps<TData>) {
   return (
-    <div className="flex items-center justify-between px-2">
-      <div className="text-muted-foreground flex-1 text-sm">
+    <div className="flex items-center justify-end px-2">
+      {/* <div className="text-muted-foreground flex-1 text-sm">
         {table.getFilteredSelectedRowModel().rows.length} of{" "}
         {table.getFilteredRowModel().rows.length} row(s) selected.
-      </div>
+      </div> */}
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">Rows per page</p>
@@ -149,6 +149,7 @@ type RowAction = RowActionItem | RowActionMenu;
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  pagination?: boolean;
   className: string;
   onRowSelectionListener?: (rows: TData[]) => void;
   rowActions?: RowAction[];
@@ -158,6 +159,7 @@ interface DataTableProps<TData, TValue> {
 function DataTable<TData, TValue>({
   columns,
   data,
+  pagination = true,
   className,
   onRowSelectionListener,
   rowActions,
@@ -174,7 +176,7 @@ function DataTable<TData, TValue>({
     data,
     columns: normalizedColumns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: pagination ? getPaginationRowModel() : undefined,
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
@@ -246,7 +248,7 @@ function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      {pagination && <DataTablePagination table={table} />}
     </div>
   );
 }
@@ -337,6 +339,10 @@ const DataTableMeta: CodeComponentMeta<DataTableProps<any, any>> = {
     data: {
       type: "array",
       description: "Data to display in the table",
+    },
+    pagination: {
+      type: "boolean",
+      defaultValueHint: true,
     },
     onRowSelectionListener: {
       type: "eventHandler",
