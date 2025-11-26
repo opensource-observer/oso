@@ -1,4 +1,6 @@
 name: Supabase DB Migration
+permissions:
+  contents: read
 
 on:
   merge_group:
