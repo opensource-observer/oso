@@ -5,7 +5,8 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "build": "pnpm build:next",
+    "build": "pnpm build:pyodide && pnpm build:next",
+    "build:pyodide": "mkdir -p .pyodide && pnpm pyodide-node-toolkit package .pyodide/queryrewriter.tar.gz --uv-projects ../../:query-rewriter",
     "build:next": "next build",
     "codegen": "pnpm supabase:codegen && pnpm graphql:codegen && pnpm graphql:rover",
     "deploy": "pnpm build:next",
