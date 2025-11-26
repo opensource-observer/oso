@@ -29,17 +29,12 @@ async def default_oso_table_rewrite(
 
 async def default_oso_table_rewrite_js(
     query: str,
-    org_name: str,
+    metadata: dict,
     js_name_resolver: JSResolverCallable,
     *,
-    default_dataset_name: str | None = None,
+    dialect: str = "trino",
 ):
     """Calls the table rewriter with default settings and a JS table resolver"""
-    js_final_resolver = JSResolver(js_name_resolver)
+    js_resolver = JSResolver(js_name_resolver)
 
-    return await default_oso_table_rewrite(
-        query,
-        org_name,
-        js_final_resolver,
-        default_dataset_name=default_dataset_name,
-    )
+    return await rewrite_query(query, [js_resolver], metadata=metadata, dialect=dialect)
