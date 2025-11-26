@@ -7132,7 +7132,6 @@ export type Run = PipelineRun &
     runId: Scalars["String"]["output"];
     /** Included to comply with RunsFeedEntry interface. Duplicate of status. */
     runStatus: RunStatus;
-    schema?: Maybe<Array<DataModelColumn>>;
     solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     startTime?: Maybe<Scalars["Float"]["output"]>;
     startedAt: Scalars["DateTimeISO"]["output"];
