@@ -1,7 +1,7 @@
-import { ModelRunRow } from "@/lib/types/schema-types";
+import { RunRow } from "@/lib/types/schema-types";
 import { RunStatus } from "@/lib/graphql/generated/graphql";
 
-function mapRunStatus(status: ModelRunRow["status"]): RunStatus {
+function mapRunStatus(status: RunRow["status"]): RunStatus {
   switch (status) {
     case "running":
       return RunStatus.Running;
@@ -18,8 +18,8 @@ function mapRunStatus(status: ModelRunRow["status"]): RunStatus {
 
 export const schedulerResolvers = {
   Run: {
-    status: (parent: ModelRunRow) => mapRunStatus(parent.status),
-    startedAt: (parent: ModelRunRow) => parent.started_at,
-    finishedAt: (parent: ModelRunRow) => parent.completed_at,
+    status: (parent: RunRow) => mapRunStatus(parent.status),
+    startedAt: (parent: RunRow) => parent.started_at,
+    finishedAt: (parent: RunRow) => parent.completed_at,
   },
 };

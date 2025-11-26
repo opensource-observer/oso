@@ -243,7 +243,7 @@ export const InvitationWhereSchema = createWhereSchema("invitations");
 export const OrganizationWhereSchema = createWhereSchema("organizations");
 export const DataModelRevisionWhereSchema = createWhereSchema("model_revision");
 export const DataModelReleaseWhereSchema = createWhereSchema("model_release");
-export const ModelRunWhereSchema = createWhereSchema("model_run");
+export const RunWhereSchema = createWhereSchema("run");
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
   const result = schema.safeParse(input);
