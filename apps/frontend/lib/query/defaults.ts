@@ -1,8 +1,8 @@
-import { SupabaseAdminClient } from "@/apps/frontend/lib/supabase/admin";
-import { DBTableResolver } from "@/apps/frontend/lib/query/resolvers/db-table-resolver";
-import { LegacyInferredTableResolver } from "@/apps/frontend/lib/query/resolvers/legacy-table-resolver";
-import { MetadataInferredTableResolver } from "@/apps/frontend/lib/query/resolvers/metadata-table-resolver";
-import { PyodideQueryRewriter } from "@/apps/frontend/lib/query/rewrite";
+import { SupabaseAdminClient } from "@/lib/supabase/admin";
+import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
+import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-resolver";
+import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
+import { PyodideQueryRewriter } from "@/lib/query/rewrite";
 
 export type RewriteQueryOptions = {
   query: string;

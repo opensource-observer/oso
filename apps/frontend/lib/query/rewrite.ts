@@ -4,7 +4,7 @@
  */
 import { loadPyodideEnvironment } from "@opensource-observer/pyodide-node-toolkit";
 import { TableResolutionMap, TableResolver } from "@/lib/query/resolver";
-import { Table } from "@/apps/frontend/lib/types/table";
+import { Table } from "@/lib/types/table";
 
 export type RewriteOptions = {
   metadata: Record<string, unknown>;
