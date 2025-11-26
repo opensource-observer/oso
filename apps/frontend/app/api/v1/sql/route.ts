@@ -137,17 +137,33 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
 
   const adminClient = createAdminClient();
 
+  let rewrittenQuery: string;
   // Rewrite the query
-  const rewrittenQuery = await rewriteQuery({
-    query,
-    metadata: {
-      orgName: user.orgName,
-      orgId: user.orgId,
-      user: user.userId,
-      timestamp: new Date().toISOString(),
-    },
-    adminClient,
-  });
+  try {
+    rewrittenQuery = await rewriteQuery({
+      query,
+      metadata: {
+        orgName: user.orgName,
+        orgId: user.orgId,
+        user: user.userId,
+        timestamp: new Date().toISOString(),
+      },
+      adminClient,
+    });
+  } catch (error) {
+    logger.log(`/api/sql: Error rewriting query: ${error}`);
+    // For now we will not fail if rewriting fails
+    rewrittenQuery = query;
+
+    tracker.track(EVENTS.QUERY_REWRITE_ERROR, {
+      type: "sql",
+      models: tables,
+      query,
+      error: String(error),
+      apiKeyName: user.keyName,
+      host: user.host,
+    });
+  }
 
   try {
     tracker.track(EVENTS.API_CALL, {
