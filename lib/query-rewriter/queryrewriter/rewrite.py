@@ -117,13 +117,15 @@ def apply_transforms_to_expression(
     return expr
 
 
-def raw_table_to_fqn(
+def raw_table_to_reference(
     table: exp.Table,
 ) -> str:
-    catalog = table.catalog or ""
-    db = table.db or ""
-    name = table.name
-    return f"{catalog}.{db}.{name}"
+    assert table.name, "Table must have a name."
+    if table.catalog and table.db:
+        return f"{table.catalog}.{table.db}.{table.name}"
+    if table.db:
+        return f"{table.db}.{table.name}"
+    return table.name
 
 
 async def rewrite_query(
@@ -169,7 +171,7 @@ async def rewrite_query(
 
     # By default, assume all tables are resolved as-is
     resolved_tables_dict = {
-        raw_table_to_fqn(table): table for table in table_references
+        raw_table_to_reference(table): table for table in table_references
     }
 
     # Each resolver gets to transform the set of resolved tables in order. This
@@ -183,7 +185,7 @@ async def rewrite_query(
     table_rewriters: list[TransformCallable] = []
 
     for table in table_references:
-        fqn = raw_table_to_fqn(table)
+        fqn = raw_table_to_reference(table)
 
         # Get the resolved table info
         resolved_table = resolved_tables_dict.get(fqn)
