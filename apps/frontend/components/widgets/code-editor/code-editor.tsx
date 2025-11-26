@@ -1,38 +1,11 @@
 "use client";
 
-import React, { useMemo } from "react";
-import CodeMirror, {
-  basicSetup,
-  EditorView,
-  Extension,
-} from "@uiw/react-codemirror";
-import { python } from "@codemirror/lang-python";
-import { sql, SQLNamespace } from "@codemirror/lang-sql";
-import { CodeEditorProps } from "@/components/widgets/code-editor/types";
-
-const DEFAULT_THEME = EditorView.theme({
-  "&": {
-    fontFamily: "Menlo, Monaco, 'Courier New', monospace",
-    fontSize: "14px",
-  },
-});
-
-function createLanguageExtension(
-  language: string,
-  schema: SQLNamespace,
-): Extension {
-  switch (language) {
-    case "python":
-      return python();
-    case "sql":
-      return sql({
-        upperCaseKeywords: true,
-        schema: schema,
-      });
-    default:
-      throw new Error(`Unsupported language: ${language}`);
-  }
-}
+import React from "react";
+import CodeMirror from "@uiw/react-codemirror";
+import {
+  CodeEditorProps,
+  useCodeMirrorExtensions,
+} from "@/components/widgets/code-editor/utils";
 
 function CodeEditor({
   className,
@@ -44,28 +17,18 @@ function CodeEditor({
   editable = true,
   editorOptions,
 }: CodeEditorProps) {
-  const languageExtension = useMemo(
-    () => createLanguageExtension(language, schema),
-    [language, schema],
-  );
+  const extensions = useCodeMirrorExtensions({
+    language,
+    schema,
+    editorOptions,
+  });
 
   return (
     <CodeMirror
       className={className}
       value={defaultValue}
       theme="light"
-      extensions={[
-        languageExtension,
-        basicSetup({
-          tabSize: 2,
-          autocompletion: true,
-          bracketMatching: true,
-          foldGutter: false,
-          indentOnInput: true,
-          ...editorOptions,
-        }),
-        DEFAULT_THEME,
-      ]}
+      extensions={extensions}
       height={`${height}px`}
       onChange={onChange ? onChange : undefined}
       editable={editable}
