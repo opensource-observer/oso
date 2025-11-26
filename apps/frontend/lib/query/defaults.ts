@@ -3,10 +3,11 @@ import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
 import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-resolver";
 import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 import { PyodideQueryRewriter } from "@/lib/query/rewrite";
+import { QueryMetadata } from "@/lib/types/query-metadata";
 
 export type RewriteQueryOptions = {
   query: string;
-  orgName: string;
+  metadata: QueryMetadata;
   adminClient: SupabaseAdminClient;
   pyodideEnvironmentPath?: string;
 };
@@ -53,6 +54,6 @@ export async function rewriteQuery(
   );
   return rewriter.rewrite({
     query: options.query,
-    metadata: { orgName: options.orgName },
+    metadata: options.metadata,
   });
 }

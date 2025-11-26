@@ -1,5 +1,5 @@
 import { Table } from "@/lib/types/table";
-import { MetadataInferredTableResolver } from "@/apps/frontend/lib/query/resolvers/metadata-table-resolver";
+import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 
 describe("MetadataInferredTableResolver", () => {
   let resolver: MetadataInferredTableResolver;

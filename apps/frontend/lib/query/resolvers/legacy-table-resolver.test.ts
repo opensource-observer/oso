@@ -1,5 +1,5 @@
 import { Table } from "@/lib/types/table";
-import { LegacyInferredTableResolver } from "@/apps/frontend/lib/query/resolvers/legacy-table-resolver";
+import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-resolver";
 
 describe("LegacyInferredTableResolver", () => {
   let resolver: LegacyInferredTableResolver;

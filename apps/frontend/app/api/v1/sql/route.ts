@@ -140,7 +140,12 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
   // Rewrite the query
   const rewrittenQuery = await rewriteQuery({
     query,
-    orgName: user.orgName,
+    metadata: {
+      orgName: user.orgName,
+      orgId: user.orgId,
+      user: user.userId,
+      timestamp: new Date().toISOString(),
+    },
     adminClient,
   });
 
