@@ -5,7 +5,7 @@
   "author": "Kariba Labs",
   "license": "Apache-2.0",
   "private": false,
-  "types": "./dist/index.d.ts",
+  "types": "./dist/src/index.d.ts",
   "type": "module",
   "files": [
     "dist",
@@ -18,6 +18,9 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "bin": {
+    "pyodide-node-toolkit": "./dist/src/cli.js"
   },
   "scripts": {
     "build": "tsc",

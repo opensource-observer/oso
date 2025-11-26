@@ -5,7 +5,7 @@ import { extract } from "tar";
 import { logger } from "@opensource-observer/utils/logger";
 import { withContext } from "@opensource-observer/utils";
 
-import { TempDirContext } from "./utils.ts";
+import { TempDirContext } from "./utils.js";
 
 export async function loadLocalWheelFileIntoPyodide(
   pyodide: PyodideAPI,

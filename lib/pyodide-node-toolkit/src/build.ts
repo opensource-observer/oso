@@ -13,7 +13,7 @@ import type { ReadableStream } from "stream/web";
 import { withContext } from "@opensource-observer/utils";
 import { parse, TomlTable } from "smol-toml";
 
-import { TempDirContext } from "./utils.ts";
+import { TempDirContext } from "./utils.js";
 
 // Wrap exec in a promise
 const execFilePromise = util.promisify(execFile);
@@ -249,7 +249,10 @@ export async function packagePythonArtifacts({
 
   const absOutputPath = path.resolve(outputPath);
 
-  await fsPromises.rename(outputTarBallPath, absOutputPath);
+  // We can't just do rename in case the two paths are on different devices at
+  // least on posix machines
+  await fsPromises.copyFile(outputTarBallPath, absOutputPath);
+  await fsPromises.rm(outputTarBallPath);
 
   return absOutputPath;
 }

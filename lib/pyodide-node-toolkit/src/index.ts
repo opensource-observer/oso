@@ -1,3 +1,3 @@
-import { loadPyodideEnvironment } from "./load.ts";
+import { loadPyodideEnvironment } from "./load.js";
 
 export { loadPyodideEnvironment };
