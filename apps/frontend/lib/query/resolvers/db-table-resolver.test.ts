@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_SERVICE_KEY, SUPABASE_URL } from "@/lib/config";
 import type { Database } from "@/lib/types/supabase";
 import * as crypto from "crypto";
-import { DBTableResolver } from "@/apps/frontend/lib/query/resolvers/db-table-resolver";
+import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
 import { Table } from "@/lib/types/table";
 
 let testSupabaseClient: ReturnType<typeof createClient<Database>>;
