@@ -192,8 +192,6 @@ async def rewrite_query(
             raise ValueError(f"Table {fqn} could not be resolved.")
 
         qualified_resolved_table = qualify(resolved_table)
-        print(qualified_resolved_table)
-        print(type(qualified_resolved_table))
         assert isinstance(qualified_resolved_table, exp.Table), (
             "Resolved table is not a Table expression."
         )

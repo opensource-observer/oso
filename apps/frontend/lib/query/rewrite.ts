@@ -1,4 +1,3 @@
-"use server";
 /**
  * Wrap the query rewriter in typescript.
  */

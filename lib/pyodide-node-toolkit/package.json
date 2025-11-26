@@ -5,6 +5,7 @@
   "author": "Kariba Labs",
   "license": "Apache-2.0",
   "private": false,
+  "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "type": "module",
   "files": [
@@ -50,7 +51,7 @@
     "yargs": "^18.0.0"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    ".": "./dist/src/index.js",
+    "./*": "./dist/src/*.js"
   }
 }
