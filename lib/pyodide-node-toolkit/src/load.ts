@@ -28,24 +28,28 @@ export async function loadLocalWheelFileIntoPyodide(
 export async function loadPyodideEnvironment(
   runtimeEnvironmentPath: string,
 ): Promise<PyodideAPI> {
-  const pyodide = await loadPyodide();
+  logger.debug(`Loading pyodide environment from ${runtimeEnvironmentPath}`);
+  return await withContext(
+    new TempDirContext("pyodide-runtime-"),
+    async (tmpDir) => {
+      // Unpack the artifact to a temp directory
+      await extract({
+        file: runtimeEnvironmentPath,
+        cwd: tmpDir,
+      });
+      const pyodide = await loadPyodide({
+        indexURL: `${tmpDir}/core/`,
+      });
 
-  logger.debug("Loading pyodide environment from ", runtimeEnvironmentPath);
-  await withContext(new TempDirContext("pyodide-runtime-"), async (tmpDir) => {
-    // Unpack the artifact to a temp directory
-    await extract({
-      file: runtimeEnvironmentPath,
-      cwd: tmpDir,
-    });
+      // List all the whl files in the unpacked directory
+      const files = await fsPromises.readdir(tmpDir);
+      const whlFiles = files.filter((f) => f.endsWith(".whl"));
 
-    // List all the whl files in the unpacked directory
-    const files = await fsPromises.readdir(tmpDir);
-    const whlFiles = files.filter((f) => f.endsWith(".whl"));
-
-    // Load all of the wheel files using unpackArchive
-    for (const whlFile of whlFiles) {
-      await loadLocalWheelFileIntoPyodide(pyodide, `${tmpDir}/${whlFile}`);
-    }
-  });
-  return pyodide;
+      // Load all of the wheel files using unpackArchive
+      for (const whlFile of whlFiles) {
+        await loadLocalWheelFileIntoPyodide(pyodide, `${tmpDir}/${whlFile}`);
+      }
+      return pyodide;
+    },
+  );
 }
