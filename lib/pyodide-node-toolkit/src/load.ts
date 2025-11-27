@@ -29,14 +29,30 @@ export async function loadPyodideEnvironment(
   runtimeEnvironmentPath: string,
 ): Promise<PyodideAPI> {
   logger.debug(`Loading pyodide environment from ${runtimeEnvironmentPath}`);
+  // Check that the runtimeEnvironmentPath exists on the file system
+  const stat = await fsPromises.stat(runtimeEnvironmentPath);
+  if (!stat.isFile()) {
+    throw new Error(`${runtimeEnvironmentPath} is not a file`);
+  }
+
   return await withContext(
     new TempDirContext("pyodide-runtime-"),
     async (tmpDir) => {
+      logger.info(`Extracting pyodide environment into ${tmpDir}`);
+
       // Unpack the artifact to a temp directory
       await extract({
         file: runtimeEnvironmentPath,
         cwd: tmpDir,
       });
+
+      // TEMP FOR DEBUGGING ONLY
+      logger.info("Listing files in the pyodide environment");
+      const pythonEnvFiles = await fsPromises.readdir(tmpDir, {
+        recursive: true,
+      });
+      logger.info(`pyodide-env: ${pythonEnvFiles}`);
+
       const pyodide = await loadPyodide({
         indexURL: `${tmpDir}/core/`,
       });
