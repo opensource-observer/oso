@@ -89,7 +89,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20251127221043-659a83d # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20251127222651-4b6c5d8 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -104,7 +104,7 @@ spec:
           - name: "dynamic"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20251127221043-659a83d # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20251127222651-4b6c5d8 # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
