@@ -40,7 +40,7 @@ WITH raw_logs AS (
     logs.transaction_hash,
     logs.transaction_index,
     logs.log_index,
-    logs.address AS contract_address,
+    LOWER(logs.address) AS contract_address,
     logs.topic0,
     logs.indexed_args.list AS indexed_args_list,
     logs.data,
@@ -77,8 +77,21 @@ parsed_logs AS (
         SUBSTRING(indexed_args_list[2].element, 27)
       )
     ) AS to_address,
-    -- Extract token_id from data field (uint256, 64 hex characters)
-    @safe_hex_to_int(SUBSTRING(raw_logs.data, 3, 64)) AS token_id
+    -- Extract token_id from indexed_args.list[3] (topic3, third indexed parameter)
+    -- ERC721 Transfer events have tokenId as an indexed parameter in topic3
+    -- Fall back to data field if topic3 is not available (for non-standard implementations)
+    COALESCE(
+      CASE 
+        WHEN CARDINALITY(indexed_args_list) >= 3 AND indexed_args_list[3].element IS NOT NULL
+        THEN @safe_hex_to_int(indexed_args_list[3].element)
+        ELSE NULL
+      END,
+      CASE 
+        WHEN raw_logs.data IS NOT NULL AND raw_logs.data != '0x' AND LENGTH(raw_logs.data) >= 67
+        THEN @safe_hex_to_int(SUBSTRING(raw_logs.data, 3, 64))
+        ELSE NULL
+      END
+    ) AS token_id
   FROM raw_logs
 )
 
@@ -89,10 +102,9 @@ SELECT
   transaction_hash,
   transaction_index,
   log_index,
-  LOWER(contract_address) AS contract_address,
+  contract_address,
   from_address,
   to_address,
   token_id,
   @chain_name(chain) AS chain
 FROM parsed_logs
-
