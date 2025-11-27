@@ -1,5 +1,5 @@
 "use server";
-import { loadPyodide } from "pyodide";
+import { loadPyodide, version as PYODIDE_VERSION } from "pyodide";
 import { execFile } from "child_process";
 import * as fsPromises from "fs/promises";
 import * as path from "path";
@@ -231,9 +231,29 @@ export async function packagePythonArtifacts({
     }
   }
 
-  // List all wheel files in the distPath
-  const distFiles = await fsPromises.readdir(distPath);
-  logger.debug("Packaged files:", distFiles);
+  // Download the pyodide version's core files into the distPath
+  const pyodideBaseUrl = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+  const coreFiles = [
+    "python_stdlib.zip",
+    "pyodide.asm.wasm",
+    "pyodide.asm.js",
+    "pyodide-lock.json",
+  ];
+  // Download each of the core files into the `${distPath}/core`
+  const coreDistPath = `${distPath}/core`;
+  await mkdirp(coreDistPath);
+  for (const coreFile of coreFiles) {
+    const fileUrl = `${pyodideBaseUrl}${coreFile}`;
+    const localFilePath = `${coreDistPath}/${coreFile}`;
+    logger.debug(
+      `Downloading pyodide core file ${fileUrl} to ${localFilePath}`,
+    );
+    await downloadUrlToFile(fileUrl, localFilePath);
+  }
+
+  // List all files in the distPath
+  const distFiles = await fsPromises.readdir(distPath, { recursive: true });
+  logger.debug(`Packaged files: ${distFiles}`);
 
   const outputTarBallPath = `${buildDirPath}/python_artifacts.tar.gz`;
 
