@@ -74,20 +74,17 @@ const cli = yargs(hideBin(process.argv))
       });
     },
     async (args) => {
-      return loadPyodideEnvironment(path.resolve(args.runtimeArchive)).then(
-        async (pyodide) => {
-          console.log("Running python code in pyodide in node");
+      return loadPyodideEnvironment({
+        runtimeEnvironmentPath: path.resolve(args.runtimeArchive),
+      }).then(async (pyodide) => {
+        console.log("Running python code in pyodide in node");
 
-          const code = await fsPromises.readFile(
-            path.resolve(args.pythonFile),
-            {
-              encoding: "utf-8",
-            },
-          );
+        const code = await fsPromises.readFile(path.resolve(args.pythonFile), {
+          encoding: "utf-8",
+        });
 
-          return await pyodide.runPythonAsync(code);
-        },
-      );
+        return await pyodide.runPythonAsync(code);
+      });
     },
   )
   .demandCommand()
