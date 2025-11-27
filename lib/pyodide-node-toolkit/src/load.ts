@@ -3,7 +3,7 @@ import { loadPyodide, PyodideAPI } from "pyodide";
 import * as fsPromises from "fs/promises";
 import { extract } from "tar";
 import { logger } from "@opensource-observer/utils/logger";
-import { type Context, withContext } from "@opensource-observer/utils";
+import { Context, withContext } from "@opensource-observer/utils";
 
 import { TempDirContext } from "./utils.js";
 
