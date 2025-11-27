@@ -41,7 +41,9 @@ describe("build and run python packages", () => {
       });
 
       // Load the `env.tar.gz` file and try to run the expected python function
-      const pyodideEnv = await loadPyodideEnvironment(outputPath);
+      const pyodideEnv = await loadPyodideEnvironment({
+        runtimeEnvironmentPath: outputPath,
+      });
 
       const result = await pyodideEnv.runPythonAsync(`
         from sampleproject import sample_func

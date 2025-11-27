@@ -38,7 +38,7 @@ class ExistingPath implements Context<string> {
 type LoadPyodideOptions = {
   runtimeEnvironmentPath: string;
   unpackPath?: string;
-  noExtract: boolean;
+  noExtract?: boolean;
 };
 
 export async function loadPyodideFromDirectory(
