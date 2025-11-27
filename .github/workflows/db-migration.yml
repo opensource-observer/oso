@@ -24,14 +24,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "22.x"
           cache: "pnpm"
 
       - name: Push Supabase migrations
         working-directory: apps/frontend
         run: |
-          pnpm supabase db push
+          pnpm supabase db push --db-url $SUPABASE_DB_URL
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
