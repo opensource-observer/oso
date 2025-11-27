@@ -114,7 +114,7 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ["typeorm", "graphql"],
     outputFileTracingIncludes: {
-      "/api/v1/sql": ["./.pyodide/queryrewriter.tar.gz"],
+      "/api/v1/sql": ["./.pyodide/**/**", "./pyodide/**"],
     },
   },
   // This is required to support PostHog trailing slash API requests
