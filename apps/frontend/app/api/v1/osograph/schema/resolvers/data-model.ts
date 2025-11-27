@@ -21,12 +21,12 @@ import {
   DataModelReleaseWhereSchema,
   DataModelRevisionWhereSchema,
   DataModelWhereSchema,
-  RunWhereSchema,
   validateInput,
+  MaterializationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
-import { ModelUpdate } from "@/lib/types/schema-types";
+import { ModelRow, ModelUpdate } from "@/lib/types/schema-types";
 
 export const dataModelResolvers = {
   Query: {
@@ -397,22 +397,25 @@ export const dataModelResolvers = {
       return data;
     },
 
-    runs: async (
-      parent: { id: string; org_id: string },
+    materializations: async (
+      parent: ModelRow,
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       return queryWithPagination(args, context, {
-        tableName: "run",
-        whereSchema: RunWhereSchema,
+        tableName: "materialization",
+        whereSchema: MaterializationWhereSchema,
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
         basePredicate: {
-          eq: [{ key: "dataset_id", value: parent.id }],
+          eq: [
+            { key: "table_id", value: parent.id },
+            { key: "dataset_id", value: parent.dataset_id },
+          ],
         },
         orderBy: {
-          key: "started_at",
+          key: "created_at",
           ascending: false,
         },
       });

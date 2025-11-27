@@ -43,4 +43,5 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DataModelRevision: dataModelResolvers.DataModelRevision,
   DataModelRelease: dataModelResolvers.DataModelRelease,
   Run: schedulerResolvers.Run,
+  Materialization: schedulerResolvers.Materialization,
 };
