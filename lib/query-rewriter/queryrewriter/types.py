@@ -1,13 +1,22 @@
 import abc
 
+from sqlglot import exp
+
 
 class TableResolver(abc.ABC):
     @abc.abstractmethod
-    async def resolve_tables(self, tables: list[str]) -> dict[str, str]:
-        """Given a list of table names, resolve them to their full names.
+    async def resolve_tables(
+        self,
+        tables: dict[str, exp.Table],
+        *,
+        metadata: dict | None = None,
+    ) -> dict[str, exp.Table]:
+        """Given a list of table names, resolve them to a different table
+        expression.
 
         Args:
             tables: List of table names to resolve.
+            metadata: Optional metadata that can be used during resolution.
         Returns:
             A dictionary mapping the original table names to their resolved names.
         """

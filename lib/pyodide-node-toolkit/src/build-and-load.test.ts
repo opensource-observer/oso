@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { TempDirContext } from "@/utils.ts";
-import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build.ts";
+import { TempDirContext } from "./utils.js";
+import { packagePythonArtifacts } from "./build.js";
+import { loadPyodideEnvironment } from "./load.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

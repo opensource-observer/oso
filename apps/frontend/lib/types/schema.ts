@@ -23,7 +23,7 @@ export const publicModelKindSchema = z.union([
   z.literal("VIEW"),
 ]);
 
-export const publicModelRunStatusSchema = z.union([
+export const publicRunStatusSchema = z.union([
   z.literal("running"),
   z.literal("completed"),
   z.literal("failed"),
@@ -594,6 +594,60 @@ export const invitationsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const materializationRowSchema = z.object({
+  created_at: z.string(),
+  dataset_id: z.string(),
+  id: z.string(),
+  org_id: z.string(),
+  run_id: z.string(),
+  table_id: z.string(),
+  warehouse_fqn: z.string(),
+});
+
+export const materializationInsertSchema = z.object({
+  created_at: z.string().optional(),
+  dataset_id: z.string(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  run_id: z.string(),
+  table_id: z.string(),
+  warehouse_fqn: z.string(),
+});
+
+export const materializationUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  dataset_id: z.string().optional(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  run_id: z.string().optional(),
+  table_id: z.string().optional(),
+  warehouse_fqn: z.string().optional(),
+});
+
+export const materializationRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("materialization_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("materialization_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("materialization_run_id_fkey"),
+    columns: z.tuple([z.literal("run_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("run"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const modelRowSchema = z.object({
   created_at: z.string(),
   dataset_id: z.string(),
@@ -782,63 +836,6 @@ export const modelRevisionRelationshipsSchema = z.tuple([
   }),
   z.object({
     foreignKeyName: z.literal("model_revision_org_id_fkey"),
-    columns: z.tuple([z.literal("org_id")]),
-    isOneToOne: z.literal(false),
-    referencedRelation: z.literal("organizations"),
-    referencedColumns: z.tuple([z.literal("id")]),
-  }),
-]);
-
-export const modelRunRowSchema = z.object({
-  completed_at: z.string().nullable(),
-  id: z.string(),
-  logs_url: z.string().nullable(),
-  model_id: z.string(),
-  model_release_id: z.string(),
-  org_id: z.string(),
-  started_at: z.string(),
-  status: publicModelRunStatusSchema,
-});
-
-export const modelRunInsertSchema = z.object({
-  completed_at: z.string().optional().nullable(),
-  id: z.string().optional(),
-  logs_url: z.string().optional().nullable(),
-  model_id: z.string(),
-  model_release_id: z.string(),
-  org_id: z.string(),
-  started_at: z.string().optional(),
-  status: publicModelRunStatusSchema.optional(),
-});
-
-export const modelRunUpdateSchema = z.object({
-  completed_at: z.string().optional().nullable(),
-  id: z.string().optional(),
-  logs_url: z.string().optional().nullable(),
-  model_id: z.string().optional(),
-  model_release_id: z.string().optional(),
-  org_id: z.string().optional(),
-  started_at: z.string().optional(),
-  status: publicModelRunStatusSchema.optional(),
-});
-
-export const modelRunRelationshipsSchema = z.tuple([
-  z.object({
-    foreignKeyName: z.literal("model_run_model_id_fkey"),
-    columns: z.tuple([z.literal("model_id")]),
-    isOneToOne: z.literal(false),
-    referencedRelation: z.literal("model"),
-    referencedColumns: z.tuple([z.literal("id")]),
-  }),
-  z.object({
-    foreignKeyName: z.literal("model_run_model_release_id_fkey"),
-    columns: z.tuple([z.literal("model_release_id")]),
-    isOneToOne: z.literal(false),
-    referencedRelation: z.literal("model_release"),
-    referencedColumns: z.tuple([z.literal("id")]),
-  }),
-  z.object({
-    foreignKeyName: z.literal("model_run_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("organizations"),
@@ -1239,6 +1236,53 @@ export const resourcePermissionsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const runRowSchema = z.object({
+  completed_at: z.string().nullable(),
+  dataset_id: z.string(),
+  id: z.string(),
+  logs_url: z.string().nullable(),
+  org_id: z.string(),
+  started_at: z.string(),
+  status: publicRunStatusSchema,
+});
+
+export const runInsertSchema = z.object({
+  completed_at: z.string().optional().nullable(),
+  dataset_id: z.string(),
+  id: z.string().optional(),
+  logs_url: z.string().optional().nullable(),
+  org_id: z.string(),
+  started_at: z.string().optional(),
+  status: publicRunStatusSchema.optional(),
+});
+
+export const runUpdateSchema = z.object({
+  completed_at: z.string().optional().nullable(),
+  dataset_id: z.string().optional(),
+  id: z.string().optional(),
+  logs_url: z.string().optional().nullable(),
+  org_id: z.string().optional(),
+  started_at: z.string().optional(),
+  status: publicRunStatusSchema.optional(),
+});
+
+export const runRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("run_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("run_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const userCreditsRowSchema = z.object({
   created_at: z.string(),
   credits_balance: z.number(),
@@ -1333,6 +1377,56 @@ export const usersByOrganizationRelationshipsSchema = z.tuple([
     columns: z.tuple([z.literal("user_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("user_profiles"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const modelAsTableRowSchema = z.object({
+  dataset_id: z.string().nullable(),
+  org_id: z.string().nullable(),
+  table_id: z.string().nullable(),
+  table_name: z.string().nullable(),
+});
+
+export const modelAsTableRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("model_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_release_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
+export const tableLookupRowSchema = z.object({
+  dataset_id: z.string().nullable(),
+  logical_fqn: z.string().nullable(),
+  org_id: z.string().nullable(),
+  table_id: z.string().nullable(),
+  table_name: z.string().nullable(),
+  warehouse_fqn: z.string().nullable(),
+});
+
+export const tableLookupRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("model_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_release_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
 ]);

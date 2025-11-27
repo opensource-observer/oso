@@ -3166,6 +3166,28 @@ export type MarshalledOutput = {
   outputName: Scalars["String"]["input"];
 };
 
+export type Materialization = {
+  __typename?: "Materialization";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  datasetId: Scalars["ID"]["output"];
+  id: Scalars["ID"]["output"];
+  runId: Scalars["ID"]["output"];
+  schema?: Maybe<Array<DataModelColumn>>;
+};
+
+export type MaterializationConnection = {
+  __typename?: "MaterializationConnection";
+  edges: Array<MaterializationEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type MaterializationEdge = {
+  __typename?: "MaterializationEdge";
+  cursor: Scalars["String"]["output"];
+  node: Materialization;
+};
+
 export type MaterializationEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -7094,6 +7116,7 @@ export type Run = PipelineRun &
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
     logsUrl: Scalars["String"]["output"];
+    materializations: MaterializationConnection;
     mode: Scalars["String"]["output"];
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
     parentRunId?: Maybe<Scalars["String"]["output"]>;
@@ -7109,7 +7132,6 @@ export type Run = PipelineRun &
     runId: Scalars["String"]["output"];
     /** Included to comply with RunsFeedEntry interface. Duplicate of status. */
     runStatus: RunStatus;
-    schema?: Maybe<Array<DataModelColumn>>;
     solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     startTime?: Maybe<Scalars["Float"]["output"]>;
     startedAt: Scalars["DateTimeISO"]["output"];
@@ -8118,11 +8140,11 @@ export type System = {
   dataIngestionRunQueue: RunQueueItemConnection;
   dataModelRunQueue: RunQueueItemConnection;
   /**
-   * Resolve tables by their reference names to the backend reference format that
-   * will be used when the query is run on trino. This is used by the query rewriter
-   * to batch resolve table references as well as other internal operations.
+   * Resolve tables by their reference names to the actual table fqn in the data
+   * warehouse. This is used by the query rewriter to batch resolve table
+   * references as well as other internal operations.
    */
-  resolveTables: Array<Scalars["String"]["output"]>;
+  resolveTables: Array<SystemResolvedTableReference>;
 };
 
 export type SystemDataIngestionRunQueueArgs = {
@@ -8136,7 +8158,13 @@ export type SystemDataModelRunQueueArgs = {
 };
 
 export type SystemResolveTablesArgs = {
-  references: Array<Scalars["String"]["input"]>;
+  references?: InputMaybe<Array<Scalars["String"]["input"]>>;
+};
+
+export type SystemResolvedTableReference = {
+  __typename?: "SystemResolvedTableReference";
+  fqn: Scalars["String"]["output"];
+  reference: Scalars["String"]["output"];
 };
 
 export type Table = {
