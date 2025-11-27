@@ -1505,13 +1505,20 @@ export type DataModel = {
   isEnabled: Scalars["Boolean"]["output"];
   latestRelease?: Maybe<DataModelRelease>;
   latestRevision?: Maybe<DataModelRevision>;
+  materializations: MaterializationConnection;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
   releases: DataModelReleaseConnection;
   revisions: DataModelRevisionConnection;
-  runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelReleasesArgs = {
@@ -1522,13 +1529,6 @@ export type DataModelReleasesArgs = {
 };
 
 export type DataModelRevisionsArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-  single?: InputMaybe<Scalars["Boolean"]["input"]>;
-  where?: InputMaybe<Scalars["JSON"]["input"]>;
-};
-
-export type DataModelRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
   single?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -3171,6 +3171,7 @@ export type Materialization = {
   createdAt: Scalars["DateTimeISO"]["output"];
   datasetId: Scalars["ID"]["output"];
   id: Scalars["ID"]["output"];
+  run: Run;
   runId: Scalars["ID"]["output"];
   schema?: Maybe<Array<DataModelColumn>>;
 };

@@ -35,7 +35,7 @@ type Run {
   startedAt: DateTime!
   finishedAt: DateTime
   status: RunStatus!
-  logsUrl: String!
+  logsUrl: String
   definition: DatasetType!
   materializations: MaterializationConnection!
 }
@@ -54,6 +54,7 @@ type RunConnection {
 type Materialization {
   id: ID!
   runId: ID!
+  run: Run!
   datasetId: ID!
   createdAt: DateTime!
   schema: [DataModelColumn!]

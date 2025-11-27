@@ -122,8 +122,8 @@ export type InvitationsUpdate = z.infer<
 export type InvitationsRelationships = z.infer<
   typeof generated.invitationsRelationshipsSchema
 >;
-export type MaterializationRow = z.infer<
-  typeof generated.materializationRowSchema
+export type PublicModelColumnType = z.infer<
+  typeof generated.publicModelColumnTypeSchema
 >;
 export type MaterializationInsert = z.infer<
   typeof generated.materializationInsertSchema
@@ -155,9 +155,6 @@ export type PublicModelDependencyType = z.infer<
 >;
 export type PublicModelKindOptions = z.infer<
   typeof generated.publicModelKindOptionsSchema
->;
-export type PublicModelColumnType = z.infer<
-  typeof generated.publicModelColumnTypeSchema
 >;
 export type ModelRevisionInsert = z.infer<
   typeof generated.modelRevisionInsertSchema
@@ -387,5 +384,8 @@ export type ValidateOwnershipLimitsArgs = z.infer<
 >;
 export type ValidateOwnershipLimitsReturns = z.infer<
   typeof generated.validateOwnershipLimitsReturnsSchema
+>;
+export type MaterializationRow = z.infer<
+  typeof generated.materializationRowSchema
 >;
 export type ModelRevisionRow = z.infer<typeof generated.modelRevisionRowSchema>;

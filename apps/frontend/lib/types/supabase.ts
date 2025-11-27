@@ -534,6 +534,7 @@ export type Database = {
           id: string;
           org_id: string;
           run_id: string;
+          schema: Database["public"]["CompositeTypes"]["model_column_type"][];
           table_id: string;
           warehouse_fqn: string;
         };
@@ -543,6 +544,7 @@ export type Database = {
           id?: string;
           org_id: string;
           run_id: string;
+          schema: Database["public"]["CompositeTypes"]["model_column_type"][];
           table_id: string;
           warehouse_fqn: string;
         };
@@ -552,6 +554,7 @@ export type Database = {
           id?: string;
           org_id?: string;
           run_id?: string;
+          schema?: Database["public"]["CompositeTypes"]["model_column_type"][];
           table_id?: string;
           warehouse_fqn?: string;
         };

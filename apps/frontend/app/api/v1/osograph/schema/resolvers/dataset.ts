@@ -17,6 +17,7 @@ import {
   DatasetWhereSchema,
   DataModelWhereSchema,
   TableMetadataWhereSchema,
+  RunWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
   DatasetErrors,
@@ -286,6 +287,27 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         basePredicate: {
           is: [{ key: "deleted_at", value: null }],
           eq: [{ key: "dataset_id", value: parent.id }],
+        },
+      });
+    },
+
+    runs: async (
+      parent: { id: string; org_id: string },
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "run",
+        whereSchema: RunWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          eq: [{ key: "dataset_id", value: parent.id }],
+        },
+        orderBy: {
+          key: "started_at",
+          ascending: false,
         },
       });
     },
