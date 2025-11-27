@@ -253,8 +253,7 @@ export async function packagePythonArtifacts({
 
   // List all files in the distPath
   const distFiles = await fsPromises.readdir(distPath, { recursive: true });
-  logger.debug("Packaged files:");
-  logger.debug(distFiles);
+  logger.debug(`Packaged files: ${distFiles}`);
 
   const outputTarBallPath = `${buildDirPath}/python_artifacts.tar.gz`;
 
