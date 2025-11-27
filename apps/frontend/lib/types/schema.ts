@@ -594,14 +594,10 @@ export const invitationsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const materializationRowSchema = z.object({
-  created_at: z.string(),
-  dataset_id: z.string(),
-  id: z.string(),
-  org_id: z.string(),
-  run_id: z.string(),
-  table_id: z.string(),
-  warehouse_fqn: z.string(),
+export const publicModelColumnTypeSchema = z.object({
+  name: z.string().nullable(),
+  type: z.string().nullable(),
+  description: z.string().nullable(),
 });
 
 export const materializationInsertSchema = z.object({
@@ -610,6 +606,7 @@ export const materializationInsertSchema = z.object({
   id: z.string().optional(),
   org_id: z.string(),
   run_id: z.string(),
+  schema: z.array(publicModelColumnTypeSchema),
   table_id: z.string(),
   warehouse_fqn: z.string(),
 });
@@ -620,6 +617,7 @@ export const materializationUpdateSchema = z.object({
   id: z.string().optional(),
   org_id: z.string().optional(),
   run_id: z.string().optional(),
+  schema: z.array(publicModelColumnTypeSchema).optional(),
   table_id: z.string().optional(),
   warehouse_fqn: z.string().optional(),
 });
@@ -772,12 +770,6 @@ export const publicModelKindOptionsSchema = z.object({
   updated_at_as_valid_from: z.boolean().nullable(),
   scd_columns: z.array(z.string()).nullable(),
   execution_time_as_valid_from: z.boolean().nullable(),
-});
-
-export const publicModelColumnTypeSchema = z.object({
-  name: z.string().nullable(),
-  type: z.string().nullable(),
-  description: z.string().nullable(),
 });
 
 export const modelRevisionInsertSchema = z.object({
@@ -1545,6 +1537,17 @@ export const validateOwnershipLimitsArgsSchema = z.object({
 });
 
 export const validateOwnershipLimitsReturnsSchema = z.boolean();
+
+export const materializationRowSchema = z.object({
+  created_at: z.string(),
+  dataset_id: z.string(),
+  id: z.string(),
+  org_id: z.string(),
+  run_id: z.string(),
+  schema: z.array(publicModelColumnTypeSchema),
+  table_id: z.string(),
+  warehouse_fqn: z.string(),
+});
 
 export const modelRevisionRowSchema = z.object({
   clustered_by: z.array(z.string()).nullable(),
