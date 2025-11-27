@@ -1,3 +1,3 @@
-import { loadPyodideEnvironment } from "./load.js";
+import { loadPyodideEnvironment, loadPyodideFromDirectory } from "./load.js";
 
-export { loadPyodideEnvironment };
+export { loadPyodideEnvironment, loadPyodideFromDirectory };

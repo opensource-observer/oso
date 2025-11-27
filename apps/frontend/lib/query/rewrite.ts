@@ -1,10 +1,9 @@
 /**
  * Wrap the query rewriter in typescript.
  */
-import { loadPyodideEnvironment } from "@opensource-observer/pyodide-node-toolkit";
+import { loadPyodideFromDirectory } from "@opensource-observer/pyodide-node-toolkit";
 import { TableResolutionMap, TableResolver } from "@/lib/query/resolver";
 import { Table } from "@/lib/types/table";
-import * as path from "node:path";
 
 export type RewriteOptions = {
   metadata: Record<string, unknown>;
@@ -14,24 +13,18 @@ export type RewriteOptions = {
 
 export class PyodideQueryRewriter {
   private tableResolvers: TableResolver[];
-  private envTarballPath: string;
-  private pyodide: Awaited<ReturnType<typeof loadPyodideEnvironment>> | null =
+  private pyodideDir: string;
+  private pyodide: Awaited<ReturnType<typeof loadPyodideFromDirectory>> | null =
     null;
 
-  constructor(envTarballPath: string, tableResolvers: TableResolver[]) {
-    this.envTarballPath = envTarballPath;
+  constructor(pyodideDir: string, tableResolvers: TableResolver[]) {
+    this.pyodideDir = pyodideDir;
     this.tableResolvers = tableResolvers;
     this.pyodide = null;
   }
 
   async initialize() {
-    // We will unpack into the base directory of the envTarballPath
-    const pyodideUnpackingPath = path.dirname(this.envTarballPath);
-
-    this.pyodide = await loadPyodideEnvironment(
-      this.envTarballPath,
-      pyodideUnpackingPath,
-    );
+    this.pyodide = await loadPyodideFromDirectory(this.pyodideDir);
 
     this.pyodide.registerJsModule("js_table_resolver", {
       resolve_tables: async (
