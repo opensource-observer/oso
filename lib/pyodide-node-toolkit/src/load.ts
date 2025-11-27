@@ -4,6 +4,7 @@ import * as fsPromises from "fs/promises";
 import { extract } from "tar";
 import { logger } from "@opensource-observer/utils/logger";
 import { Context, withContext } from "@opensource-observer/utils";
+import * as path from "path";
 
 import { TempDirContext } from "./utils.js";
 
@@ -59,10 +60,12 @@ export async function loadPyodideEnvironment(
   return await withContext(context, async (workDir) => {
     logger.info(`Extracting pyodide environment into ${workDir}`);
 
+    const workDirAbsPath = path.resolve(workDir);
+
     // Unpack the artifact to a temp directory
     await extract({
       file: runtimeEnvironmentPath,
-      cwd: workDir,
+      cwd: workDirAbsPath,
     });
 
     // TEMP FOR DEBUGGING ONLY
