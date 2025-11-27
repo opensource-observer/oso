@@ -3,7 +3,8 @@ import { loadPyodide, PyodideAPI } from "pyodide";
 import * as fsPromises from "fs/promises";
 import { extract } from "tar";
 import { logger } from "@opensource-observer/utils/logger";
-import { withContext } from "@opensource-observer/utils";
+import { Context, withContext } from "@opensource-observer/utils";
+import * as path from "path";
 
 import { TempDirContext } from "./utils.js";
 
@@ -19,6 +20,21 @@ export async function loadLocalWheelFileIntoPyodide(
   pyodide.unpackArchive(wheelUint8Array, "whl");
 }
 
+class ExistingPath implements Context<string> {
+  private path: string;
+
+  constructor(path: string) {
+    this.path = path;
+  }
+  async enter(): Promise<string> {
+    return this.path;
+  }
+
+  async exit(): Promise<void> {
+    return;
+  }
+}
+
 /**
  * Given a path to a python artifact packaged with `packagePythonArtifacts`,
  * load a pyodide environment. This allows loading the environment offline.
@@ -27,6 +43,7 @@ export async function loadLocalWheelFileIntoPyodide(
  */
 export async function loadPyodideEnvironment(
   runtimeEnvironmentPath: string,
+  unpackPath?: string,
 ): Promise<PyodideAPI> {
   logger.debug(`Loading pyodide environment from ${runtimeEnvironmentPath}`);
   // Check that the runtimeEnvironmentPath exists on the file system
@@ -34,38 +51,42 @@ export async function loadPyodideEnvironment(
   if (!stat.isFile()) {
     throw new Error(`${runtimeEnvironmentPath} is not a file`);
   }
+  let context: Context<string> = new TempDirContext("pyodide-runtime-");
+  if (unpackPath) {
+    logger.info("unpacking pyodide into an already existing directory");
+    context = new ExistingPath(unpackPath);
+  }
 
-  return await withContext(
-    new TempDirContext("pyodide-runtime-"),
-    async (tmpDir) => {
-      logger.info(`Extracting pyodide environment into ${tmpDir}`);
+  return await withContext(context, async (workDir) => {
+    logger.info(`Extracting pyodide environment into ${workDir}`);
 
-      // Unpack the artifact to a temp directory
-      await extract({
-        file: runtimeEnvironmentPath,
-        cwd: tmpDir,
-      });
+    const workDirAbsPath = path.resolve(workDir);
 
-      // TEMP FOR DEBUGGING ONLY
-      logger.info("Listing files in the pyodide environment");
-      const pythonEnvFiles = await fsPromises.readdir(tmpDir, {
-        recursive: true,
-      });
-      logger.info(`pyodide-env: ${pythonEnvFiles}`);
+    // Unpack the artifact to a temp directory
+    await extract({
+      file: runtimeEnvironmentPath,
+      cwd: workDirAbsPath,
+    });
 
-      const pyodide = await loadPyodide({
-        indexURL: `${tmpDir}/core/`,
-      });
+    // TEMP FOR DEBUGGING ONLY
+    logger.info("Listing files in the pyodide environment");
+    const pythonEnvFiles = await fsPromises.readdir(workDir, {
+      recursive: true,
+    });
+    logger.info(`pyodide-env: ${pythonEnvFiles}`);
 
-      // List all the whl files in the unpacked directory
-      const files = await fsPromises.readdir(tmpDir);
-      const whlFiles = files.filter((f) => f.endsWith(".whl"));
+    const pyodide = await loadPyodide({
+      indexURL: `${workDir}/core/`,
+    });
 
-      // Load all of the wheel files using unpackArchive
-      for (const whlFile of whlFiles) {
-        await loadLocalWheelFileIntoPyodide(pyodide, `${tmpDir}/${whlFile}`);
-      }
-      return pyodide;
-    },
-  );
+    // List all the whl files in the unpacked directory
+    const files = await fsPromises.readdir(workDir);
+    const whlFiles = files.filter((f) => f.endsWith(".whl"));
+
+    // Load all of the wheel files using unpackArchive
+    for (const whlFile of whlFiles) {
+      await loadLocalWheelFileIntoPyodide(pyodide, `${workDir}/${whlFile}`);
+    }
+    return pyodide;
+  });
 }
