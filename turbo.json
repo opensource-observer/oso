@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local", "**/.env"],
+  "globalPassThroughEnv": ["COREPACK_HOME"],
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
@@ -21,13 +22,13 @@
     "test": {},
     "@opensource-observer/frontend#build": {
       "dependsOn": ["^build"],
-      "outputs": ["out/**", ".next/**", "!.next/cache/**"],
+      "outputs": ["out/**", ".next/**", "!.next/cache/**", ".pyodide/**"],
       "env": ["PLASMIC_PROJECT_ID", "PLASMIC_PROJECT_API_TOKEN"],
       "cache": false
     },
     "@opensource-observer/frontend#deploy": {
       "dependsOn": ["^build"],
-      "outputs": ["out/**", ".next/**", "!.next/cache/**"],
+      "outputs": ["out/**", ".next/**", "!.next/cache/**", ".pyodide/**"],
       "env": ["PLASMIC_PROJECT_ID", "PLASMIC_PROJECT_API_TOKEN"],
       "cache": false
     },
