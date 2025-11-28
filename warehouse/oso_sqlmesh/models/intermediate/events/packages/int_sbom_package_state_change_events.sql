@@ -13,13 +13,19 @@ WITH base_raw AS (
     dependent_artifact_id,
     package_artifact_id,
     snapshot_at,
-    package_version
+    package_version,
+    major,
+    minor,
+    patch
   FROM (
     SELECT
       dependent_artifact_id,
       package_artifact_id,
       snapshot_at,
       package_version,
+      @semver_extract(package_version, 'major') AS major,
+      @semver_extract(package_version, 'minor') AS minor,
+      @semver_extract(package_version, 'patch') AS patch,
       ROW_NUMBER() OVER(
         PARTITION BY dependent_artifact_id, package_artifact_id, snapshot_at
         ORDER BY
@@ -61,14 +67,20 @@ presence AS (
     dependent_artifact_id,
     package_artifact_id,
     package_version,
-    snapshot_at
+    snapshot_at,
+    major,
+    minor,
+    patch
   FROM monthly_base
 ),
 presence_seq AS (
   SELECT
     p.*,
     ROW_NUMBER() OVER(PARTITION BY dependent_artifact_id, package_artifact_id ORDER BY snapshot_at) AS rn,
-    LAG(package_version) OVER(PARTITION BY dependent_artifact_id, package_artifact_id ORDER BY snapshot_at) AS prev_version
+    LAG(package_version) OVER(PARTITION BY dependent_artifact_id, package_artifact_id ORDER BY snapshot_at) AS prev_version,
+    LAG(major) OVER(PARTITION BY dependent_artifact_id, package_artifact_id ORDER BY snapshot_at) AS prev_major,
+    LAG(minor) OVER(PARTITION BY dependent_artifact_id, package_artifact_id ORDER BY snapshot_at) AS prev_minor,
+    LAG(patch) OVER(PARTITION BY dependent_artifact_id, package_artifact_id ORDER BY snapshot_at) AS prev_patch
   FROM presence AS p
 ),
 adds AS (
@@ -91,7 +103,13 @@ upgrades AS (
     prev_version AS version_before,
     package_version AS version_after
   FROM presence_seq
-  WHERE prev_version IS NOT NULL AND package_version <> prev_version
+  WHERE prev_version IS NOT NULL
+    AND package_version <> prev_version
+    AND (
+      major > prev_major
+      OR (major = prev_major AND minor > prev_minor)
+      OR (major = prev_major AND minor = prev_minor AND patch > prev_patch)
+    )
 ),
 last_presence AS (
   SELECT
