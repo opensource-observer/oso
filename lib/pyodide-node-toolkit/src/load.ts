@@ -47,6 +47,11 @@ export async function loadPyodideFromDirectory(
   const workDirAbsPath = path.resolve(workDir);
   logger.info(`Extracting pyodide environment into ${workDirAbsPath}`);
 
+  // Verify the contents of fake-import.js
+  const fakeImportPath = path.join(workDirAbsPath, "fake-import.js");
+  const fakeImportContents = await fsPromises.readFile(fakeImportPath, "utf-8");
+  logger.info(`Contents of fake-import.js: \n\n${fakeImportContents}`);
+
   // TEST IMPORTING THE fake-import.js FILE
   const fake = await (import(
     path.join(workDirAbsPath, "fake-import.js")
