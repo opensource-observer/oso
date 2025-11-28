@@ -47,6 +47,12 @@ export async function loadPyodideFromDirectory(
   const workDirAbsPath = path.resolve(workDir);
   logger.info(`Extracting pyodide environment into ${workDirAbsPath}`);
 
+  // TEST IMPORTING THE fake-import.js FILE
+  const fake = await (import(
+    path.join(workDirAbsPath, "fake-import.js")
+  ) as Promise<string>);
+  logger.info(`fake-import result: ${fake}`);
+
   // TEMP FOR DEBUGGING ONLY
   logger.info("Listing files in the pyodide environment");
   const pythonEnvFiles = await fsPromises.readdir(workDirAbsPath, {
