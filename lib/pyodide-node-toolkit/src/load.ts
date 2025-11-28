@@ -52,6 +52,13 @@ export async function loadPyodideFromDirectory(
     recursive: true,
   });
   logger.info(`pyodide-env: ${pythonEnvFiles}`);
+  // For each of the files list the stats (like size, isFile, isDirectory)
+  for (const file of pythonEnvFiles) {
+    const stat = await fsPromises.stat(path.join(workDir, file));
+    logger.info(
+      `pyodide-env-file: ${file} - size: ${stat.size} - isFile: ${stat.isFile()} - isDirectory: ${stat.isDirectory()}`,
+    );
+  }
 
   const pyodide = await loadPyodide({
     indexURL: `${workDir}/core/`,
