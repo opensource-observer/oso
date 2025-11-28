@@ -45,7 +45,6 @@ export async function loadPyodideFromDirectory(
   workDir: string,
 ): Promise<PyodideAPI> {
   const workDirAbsPath = path.resolve(workDir);
-  logger.info(`Current working directory: ${process.cwd()}`);
   logger.info(`Extracting pyodide environment into ${workDirAbsPath}`);
 
   // TEMP FOR DEBUGGING ONLY
