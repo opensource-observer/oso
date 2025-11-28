@@ -35,9 +35,9 @@ type Run {
   startedAt: DateTime!
   finishedAt: DateTime
   status: RunStatus!
-  logsUrl: String!
+  logsUrl: String
   definition: DatasetType!
-  schema: [DataModelColumn!]
+  materializations: MaterializationConnection!
 }
 
 type RunEdge {
@@ -47,6 +47,26 @@ type RunEdge {
 
 type RunConnection {
   edges: [RunEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type Materialization {
+  id: ID!
+  runId: ID!
+  run: Run!
+  datasetId: ID!
+  createdAt: DateTime!
+  schema: [DataModelColumn!]
+}
+
+type MaterializationEdge {
+  node: Materialization!
+  cursor: String!
+}
+
+type MaterializationConnection {
+  edges: [MaterializationEdge!]!
   pageInfo: PageInfo!
   totalCount: Int
 }

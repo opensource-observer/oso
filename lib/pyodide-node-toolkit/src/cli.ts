@@ -5,8 +5,9 @@ import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { withContext } from "@opensource-observer/utils";
 
-import { TempDirContext } from "@/utils.ts";
-import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build.ts";
+import { TempDirContext } from "./utils.js";
+import { packagePythonArtifacts } from "./build.js";
+import { loadPyodideEnvironment } from "./load.js";
 
 interface PackageForNodePyodide {
   outputPath: string;
@@ -73,20 +74,17 @@ const cli = yargs(hideBin(process.argv))
       });
     },
     async (args) => {
-      return loadPyodideEnvironment(path.resolve(args.runtimeArchive)).then(
-        async (pyodide) => {
-          console.log("Running python code in pyodide in node");
+      return loadPyodideEnvironment({
+        runtimeEnvironmentPath: path.resolve(args.runtimeArchive),
+      }).then(async (pyodide) => {
+        console.log("Running python code in pyodide in node");
 
-          const code = await fsPromises.readFile(
-            path.resolve(args.pythonFile),
-            {
-              encoding: "utf-8",
-            },
-          );
+        const code = await fsPromises.readFile(path.resolve(args.pythonFile), {
+          encoding: "utf-8",
+        });
 
-          return await pyodide.runPythonAsync(code);
-        },
-      );
+        return await pyodide.runPythonAsync(code);
+      });
     },
   )
   .demandCommand()

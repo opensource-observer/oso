@@ -113,6 +113,9 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
   experimental: {
     serverComponentsExternalPackages: ["typeorm", "graphql"],
+    outputFileTracingIncludes: {
+      "/api/v1/sql": ["./.pyodide/**/*", "./pyodide/**"],
+    },
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,

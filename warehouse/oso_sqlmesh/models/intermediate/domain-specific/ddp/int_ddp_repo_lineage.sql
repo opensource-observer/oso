@@ -197,6 +197,7 @@ SELECT
   d.artifact_id,
   d.artifact_namespace,
   d.artifact_name,
+  'https://github.com/' || d.artifact_namespace || '/' || d.artifact_name AS artifact_url,
   d.first_artifact_id,
   d.first_artifact_namespace,
   d.first_artifact_name,
