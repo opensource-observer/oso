@@ -47,10 +47,10 @@ WITH raw_logs AS (
     logs.chain
   FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.logs') AS logs
   WHERE
-    logs.network = 'mainnet'
-    AND logs.chain = 'unichain'
-    AND logs.topic0 = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
-    AND /* Bigquery requires we specify partitions to filter for this data source */ logs.dt BETWEEN @start_dt AND @end_dt
+    logs.network='mainnet'
+    AND logs.chain='unichain'
+    AND logs.topic0='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+    AND logs.dt BETWEEN @start_dt AND @end_dt
 ),
 
 parsed_logs AS (
@@ -63,32 +63,39 @@ parsed_logs AS (
     raw_logs.log_index,
     raw_logs.contract_address,
     raw_logs.chain,
-    -- Extract from_address from indexed_args.list[1] (topic1, first indexed parameter)
-    LOWER(
-      CONCAT(
-        '0x',
-        SUBSTRING(indexed_args_list[1].element, 27)
+
+    -- from_address from topic1
+    CASE
+      WHEN CARDINALITY(indexed_args_list)>=1 AND indexed_args_list[1].element IS NOT NULL THEN LOWER(
+        CONCAT(
+          '0x',
+          SUBSTRING(indexed_args_list[1].element,27)
+        )
       )
-    ) AS from_address,
-    -- Extract to_address from indexed_args.list[2] (topic2, second indexed parameter)
-    LOWER(
-      CONCAT(
-        '0x',
-        SUBSTRING(indexed_args_list[2].element, 27)
+      ELSE NULL
+    END AS from_address,
+
+    -- to_address from topic2
+    CASE
+      WHEN CARDINALITY(indexed_args_list)>=2 AND indexed_args_list[2].element IS NOT NULL THEN LOWER(
+        CONCAT(
+          '0x',
+          SUBSTRING(indexed_args_list[2].element,27)
+        )
       )
-    ) AS to_address,
-    -- Extract token_id from indexed_args.list[3] (topic3, third indexed parameter)
-    -- ERC721 Transfer events have tokenId as an indexed parameter in topic3
-    -- Fall back to data field if topic3 is not available (for non-standard implementations)
+      ELSE NULL
+    END AS to_address,
+
+    -- token_id from topic3, fallback to data
     COALESCE(
       CASE 
-        WHEN CARDINALITY(indexed_args_list) >= 3 AND indexed_args_list[3].element IS NOT NULL
-        THEN @safe_hex_to_int(indexed_args_list[3].element)
+        WHEN CARDINALITY(indexed_args_list)>=3 AND indexed_args_list[3].element IS NOT NULL
+        THEN @safe_hex_to_int(SUBSTRING(indexed_args_list[3].element,3))
         ELSE NULL
       END,
       CASE 
-        WHEN raw_logs.data IS NOT NULL AND raw_logs.data != '0x' AND LENGTH(raw_logs.data) >= 67
-        THEN @safe_hex_to_int(SUBSTRING(raw_logs.data, 3, 64))
+        WHEN raw_logs.data IS NOT NULL AND raw_logs.data!='0x' AND LENGTH(raw_logs.data)>=67
+        THEN @safe_hex_to_int(SUBSTRING(raw_logs.data,3,64))
         ELSE NULL
       END
     ) AS token_id
