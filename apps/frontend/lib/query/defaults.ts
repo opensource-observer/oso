@@ -4,6 +4,7 @@ import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-
 import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 import { PyodideQueryRewriter } from "@/lib/query/rewrite";
 import { QueryMetadata } from "@/lib/types/query-metadata";
+import * as path from "path";
 
 export type RewriteQueryOptions = {
   query: string;
@@ -47,11 +48,14 @@ export async function rewriteQuery(
       "Pyodide environment path must be provided either via options or PYODIDE_QUERY_WRITER_PATH env var",
     );
   }
+  let resolvedPath = pyodideEnvironmentPath;
+  if (!path.isAbsolute(pyodideEnvironmentPath)) {
+    resolvedPath = path.resolve(
+      path.join(process.cwd(), pyodideEnvironmentPath),
+    );
+  }
 
-  const rewriter = new PyodideQueryRewriter(
-    pyodideEnvironmentPath,
-    tableResolvers,
-  );
+  const rewriter = new PyodideQueryRewriter(resolvedPath, tableResolvers);
   return rewriter.rewrite({
     query: options.query,
     metadata: options.metadata,

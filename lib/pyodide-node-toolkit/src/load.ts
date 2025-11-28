@@ -44,11 +44,12 @@ type LoadPyodideOptions = {
 export async function loadPyodideFromDirectory(
   workDir: string,
 ): Promise<PyodideAPI> {
-  logger.info(`Extracting pyodide environment into ${workDir}`);
+  const workDirAbsPath = path.resolve(workDir);
+  logger.info(`Extracting pyodide environment into ${workDirAbsPath}`);
 
   // TEMP FOR DEBUGGING ONLY
   logger.info("Listing files in the pyodide environment");
-  const pythonEnvFiles = await fsPromises.readdir(workDir, {
+  const pythonEnvFiles = await fsPromises.readdir(workDirAbsPath, {
     recursive: true,
   });
   logger.info(`pyodide-env: ${pythonEnvFiles}`);
@@ -61,16 +62,19 @@ export async function loadPyodideFromDirectory(
   }
 
   const pyodide = await loadPyodide({
-    indexURL: `${workDir}/core/`,
+    indexURL: `${workDirAbsPath}/core/`,
   });
 
   // List all the whl files in the unpacked directory
-  const files = await fsPromises.readdir(workDir);
+  const files = await fsPromises.readdir(workDirAbsPath);
   const whlFiles = files.filter((f) => f.endsWith(".whl"));
 
   // Load all of the wheel files using unpackArchive
   for (const whlFile of whlFiles) {
-    await loadLocalWheelFileIntoPyodide(pyodide, `${workDir}/${whlFile}`);
+    await loadLocalWheelFileIntoPyodide(
+      pyodide,
+      `${workDirAbsPath}/${whlFile}`,
+    );
   }
   return pyodide;
 }
