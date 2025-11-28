@@ -53,10 +53,15 @@ export async function loadPyodideFromDirectory(
   logger.info(`Contents of fake-import.js: \n\n${fakeImportContents}`);
 
   // TEST IMPORTING THE fake-import.js FILE
-  const fake = await (import(
-    path.join(workDirAbsPath, "fake-import.js")
-  ) as Promise<string>);
-  logger.info(`fake-import result: ${fake}`);
+  try {
+    const fake = await (import(
+      path.join(workDirAbsPath, "fake-import.js")
+    ) as Promise<string>);
+    logger.info(`fake-import result: ${fake}`);
+  } catch (e) {
+    logger.error(`Error importing fake-import.js: ${e}`);
+    console.error(e); // eslint-disable-line no-restricted-properties
+  }
 
   // TEMP FOR DEBUGGING ONLY
   logger.info("Listing files in the pyodide environment");
