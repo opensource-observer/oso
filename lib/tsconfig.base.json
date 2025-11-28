@@ -15,8 +15,6 @@
     "strict": true,
     "strictNullChecks": true,
     "isolatedModules": true,
-    "incremental": true,
-    "allowImportingTsExtensions": true,
-    "emitDeclarationOnly": true
+    "incremental": true
   }
 }

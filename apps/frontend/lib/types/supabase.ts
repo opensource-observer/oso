@@ -527,6 +527,61 @@ export type Database = {
           },
         ];
       };
+      materialization: {
+        Row: {
+          created_at: string;
+          dataset_id: string;
+          id: string;
+          org_id: string;
+          run_id: string;
+          schema: Database["public"]["CompositeTypes"]["model_column_type"][];
+          table_id: string;
+          warehouse_fqn: string;
+        };
+        Insert: {
+          created_at?: string;
+          dataset_id: string;
+          id?: string;
+          org_id: string;
+          run_id: string;
+          schema: Database["public"]["CompositeTypes"]["model_column_type"][];
+          table_id: string;
+          warehouse_fqn: string;
+        };
+        Update: {
+          created_at?: string;
+          dataset_id?: string;
+          id?: string;
+          org_id?: string;
+          run_id?: string;
+          schema?: Database["public"]["CompositeTypes"]["model_column_type"][];
+          table_id?: string;
+          warehouse_fqn?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "materialization_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "materialization_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "materialization_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "run";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       model: {
         Row: {
           created_at: string;
@@ -716,61 +771,6 @@ export type Database = {
           },
           {
             foreignKeyName: "model_revision_org_id_fkey";
-            columns: ["org_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      model_run: {
-        Row: {
-          completed_at: string | null;
-          id: string;
-          logs_url: string | null;
-          model_id: string;
-          model_release_id: string;
-          org_id: string;
-          started_at: string;
-          status: Database["public"]["Enums"]["model_run_status"];
-        };
-        Insert: {
-          completed_at?: string | null;
-          id?: string;
-          logs_url?: string | null;
-          model_id: string;
-          model_release_id: string;
-          org_id: string;
-          started_at?: string;
-          status?: Database["public"]["Enums"]["model_run_status"];
-        };
-        Update: {
-          completed_at?: string | null;
-          id?: string;
-          logs_url?: string | null;
-          model_id?: string;
-          model_release_id?: string;
-          org_id?: string;
-          started_at?: string;
-          status?: Database["public"]["Enums"]["model_run_status"];
-        };
-        Relationships: [
-          {
-            foreignKeyName: "model_run_model_id_fkey";
-            columns: ["model_id"];
-            isOneToOne: false;
-            referencedRelation: "model";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "model_run_model_release_id_fkey";
-            columns: ["model_release_id"];
-            isOneToOne: false;
-            referencedRelation: "model_release";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "model_run_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -1157,6 +1157,51 @@ export type Database = {
           },
         ];
       };
+      run: {
+        Row: {
+          completed_at: string | null;
+          dataset_id: string;
+          id: string;
+          logs_url: string | null;
+          org_id: string;
+          started_at: string;
+          status: Database["public"]["Enums"]["run_status"];
+        };
+        Insert: {
+          completed_at?: string | null;
+          dataset_id: string;
+          id?: string;
+          logs_url?: string | null;
+          org_id: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["run_status"];
+        };
+        Update: {
+          completed_at?: string | null;
+          dataset_id?: string;
+          id?: string;
+          logs_url?: string | null;
+          org_id?: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["run_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "run_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "run_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_credits: {
         Row: {
           created_at: string;
@@ -1255,7 +1300,56 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      model_as_table: {
+        Row: {
+          dataset_id: string | null;
+          org_id: string | null;
+          table_id: string | null;
+          table_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "model_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_release_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      table_lookup: {
+        Row: {
+          dataset_id: string | null;
+          logical_fqn: string | null;
+          org_id: string | null;
+          table_id: string | null;
+          table_name: string | null;
+          warehouse_fqn: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "model_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_release_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
       accept_invitation: {
@@ -1343,7 +1437,7 @@ export type Database = {
         | "SCD_TYPE_2_BY_COLUMN"
         | "FULL"
         | "VIEW";
-      model_run_status: "running" | "completed" | "failed" | "canceled";
+      run_status: "running" | "completed" | "failed" | "canceled";
     };
     CompositeTypes: {
       model_column_type: {
@@ -1508,7 +1602,7 @@ export const Constants = {
         "FULL",
         "VIEW",
       ],
-      model_run_status: ["running", "completed", "failed", "canceled"],
+      run_status: ["running", "completed", "failed", "canceled"],
     },
   },
 } as const;

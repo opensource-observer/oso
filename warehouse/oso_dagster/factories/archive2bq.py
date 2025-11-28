@@ -59,8 +59,8 @@ TableSchemaOverrides: TypeAlias = Dict[
 
 @dataclass(kw_only=True)
 class Archive2BqAssetConfig:
-    # The URL of the archive file
-    source_url: str
+    # URL or list of URLs to download (archives or files). Strings or List[str].
+    source_url: str | List[str]
     # The source format of the archive file
     source_format: str
     # The function to retrieve the files from the archive
@@ -103,26 +103,38 @@ def cleanup_tempdir(tempdir: str):
     shutil.rmtree(tempdir, ignore_errors=True)
 
 
-def extract_to_tempdir(source_url: str, skip_uncompression: bool = False) -> str:
+def extract_to_tempdir(
+    source_urls: List[str],
+    skip_uncompression: bool = False,
+) -> str:
     """
-    Extracts the source URL to the temporary directory using the extract function.
+    Downloads one or more URLs into a temp directory. If the downloaded file is an
+    archive and skip_uncompression is False, it is unpacked in place.
 
     Args:
-        source_url (str): The URL of the archive file
-        skip_uncompression (bool): Whether to skip uncompression of the archive
+        source_urls (List[str]): URLs to download (archives or data files).
+        skip_uncompression (bool): Whether to skip uncompression of archives.
 
     Returns:
-        str: The path to the temporary directory
+        str: Path to the temporary directory containing the files.
     """
     tempdir = tempfile.mkdtemp()
 
-    with urllib.request.urlopen(source_url) as response:
-        file_name = os.path.basename(source_url)
-        file_path = os.path.join(tempdir, file_name)
-        with open(file_path, "wb") as f:
-            f.write(response.read())
+    for source_url in source_urls:
+        if not source_url:
+            continue
 
-        if not skip_uncompression:
+        with urllib.request.urlopen(source_url) as response:
+            file_name = os.path.basename(source_url)
+            file_path = os.path.join(tempdir, file_name)
+            with open(file_path, "wb") as f:
+                shutil.copyfileobj(response, f)
+
+        is_archive = any(
+            file_name.endswith(ext)
+            for ext in (".zip", ".tar", ".tar.gz", ".tgz", ".tar.bz2", ".gz")
+        )
+        if is_archive and not skip_uncompression:
             shutil.unpack_archive(file_path, tempdir)
 
     return tempdir
@@ -500,9 +512,12 @@ def create_archive2bq_asset(
             f"Materializing asset {asset_config.key_prefix}/{asset_config.asset_name}"
         )
 
-        tempdir = extract_to_tempdir(
-            asset_config.source_url, asset_config.skip_uncompression
-        )
+        if isinstance(asset_config.source_url, list):
+            urls = asset_config.source_url
+        else:
+            urls = [asset_config.source_url]
+
+        tempdir = extract_to_tempdir(urls, asset_config.skip_uncompression)
 
         context.log.info(
             f"Archive2Bq: Extracted {asset_config.source_url} to {tempdir}"

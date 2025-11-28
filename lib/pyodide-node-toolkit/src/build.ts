@@ -1,4 +1,5 @@
-import { loadPyodide, PyodideAPI } from "pyodide";
+"use server";
+import { loadPyodide, version as PYODIDE_VERSION } from "pyodide";
 import { execFile } from "child_process";
 import * as fsPromises from "fs/promises";
 import * as path from "path";
@@ -12,7 +13,7 @@ import type { ReadableStream } from "stream/web";
 import { withContext } from "@opensource-observer/utils";
 import { parse, TomlTable } from "smol-toml";
 
-import { TempDirContext } from "@/utils.ts";
+import { TempDirContext } from "./utils.js";
 
 // Wrap exec in a promise
 const execFilePromise = util.promisify(execFile);
@@ -230,9 +231,29 @@ export async function packagePythonArtifacts({
     }
   }
 
-  // List all wheel files in the distPath
-  const distFiles = await fsPromises.readdir(distPath);
-  logger.debug("Packaged files:", distFiles);
+  // Download the pyodide version's core files into the distPath
+  const pyodideBaseUrl = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+  const coreFiles = [
+    "python_stdlib.zip",
+    "pyodide.asm.wasm",
+    "pyodide.asm.js",
+    "pyodide-lock.json",
+  ];
+  // Download each of the core files into the `${distPath}/core`
+  const coreDistPath = `${distPath}/core`;
+  await mkdirp(coreDistPath);
+  for (const coreFile of coreFiles) {
+    const fileUrl = `${pyodideBaseUrl}${coreFile}`;
+    const localFilePath = `${coreDistPath}/${coreFile}`;
+    logger.debug(
+      `Downloading pyodide core file ${fileUrl} to ${localFilePath}`,
+    );
+    await downloadUrlToFile(fileUrl, localFilePath);
+  }
+
+  // List all files in the distPath
+  const distFiles = await fsPromises.readdir(distPath, { recursive: true });
+  logger.debug(`Packaged files: ${distFiles}`);
 
   const outputTarBallPath = `${buildDirPath}/python_artifacts.tar.gz`;
 
@@ -248,50 +269,12 @@ export async function packagePythonArtifacts({
 
   const absOutputPath = path.resolve(outputPath);
 
-  await fsPromises.rename(outputTarBallPath, absOutputPath);
+  // We can't just do rename in case the two paths are on different devices at
+  // least on posix machines
+  await fsPromises.copyFile(outputTarBallPath, absOutputPath);
+  await fsPromises.rm(outputTarBallPath);
 
   return absOutputPath;
-}
-
-export async function loadLocalWheelFileIntoPyodide(
-  pyodide: PyodideAPI,
-  wheelFilePath: string,
-): Promise<void> {
-  // Load file into memory
-  const wheelData = await fsPromises.readFile(wheelFilePath);
-
-  // Get uint8array from whl file data
-  const wheelUint8Array = new Uint8Array(wheelData.buffer);
-  pyodide.unpackArchive(wheelUint8Array, "whl");
-}
-
-/**
- * Given a path to a python artifact packaged with `packagePythonArtifacts`,
- * load a pyodide environment. This allows loading the environment offline.
- *
- * @param runtimeEnvironmentPath
- */
-export async function loadPyodideEnvironment(
-  runtimeEnvironmentPath: string,
-): Promise<PyodideAPI> {
-  const pyodide = await loadPyodide();
-  await withContext(new TempDirContext("pyodide-runtime-"), async (tmpDir) => {
-    // Unpack the artifact to a temp directory
-    await extract({
-      file: runtimeEnvironmentPath,
-      cwd: tmpDir,
-    });
-
-    // List all the whl files in the unpacked directory
-    const files = await fsPromises.readdir(tmpDir);
-    const whlFiles = files.filter((f) => f.endsWith(".whl"));
-
-    // Load all of the wheel files using unpackArchive
-    for (const whlFile of whlFiles) {
-      await loadLocalWheelFileIntoPyodide(pyodide, `${tmpDir}/${whlFile}`);
-    }
-  });
-  return pyodide;
 }
 
 /**

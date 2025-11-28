@@ -17,14 +17,16 @@ import {
   CreateDataModelReleaseSchema,
   CreateDataModelRevisionSchema,
   CreateDataModelSchema,
+  UpdateDataModelSchema,
   DataModelReleaseWhereSchema,
   DataModelRevisionWhereSchema,
   DataModelWhereSchema,
-  ModelRunWhereSchema,
   validateInput,
+  MaterializationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+import { ModelRow, ModelUpdate } from "@/lib/types/schema-types";
 
 export const dataModelResolvers = {
   Query: {
@@ -84,6 +86,57 @@ export const dataModelResolvers = {
         dataModel: data,
       };
     },
+    updateDataModel: async (
+      _: unknown,
+      {
+        input,
+      }: {
+        input: z.infer<typeof UpdateDataModelSchema>;
+      },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const validatedInput = validateInput(UpdateDataModelSchema, input);
+      const supabase = createAdminClient();
+
+      const { data: dataModel, error: dataModelError } = await supabase
+        .from("model")
+        .select("org_id")
+        .eq("id", validatedInput.dataModelId)
+        .single();
+
+      if (dataModelError || !dataModel) {
+        throw ResourceErrors.notFound("DataModel", validatedInput.dataModelId);
+      }
+
+      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
+
+      const updateData: ModelUpdate = {};
+      if (validatedInput.name !== undefined) {
+        updateData.name = validatedInput.name;
+      }
+      if (validatedInput.isEnabled !== undefined) {
+        updateData.is_enabled = validatedInput.isEnabled;
+      }
+
+      const { data, error } = await supabase
+        .from("model")
+        .update(updateData)
+        .eq("id", validatedInput.dataModelId)
+        .select()
+        .single();
+
+      if (error) {
+        logger.error("Failed to update dataModel:", error);
+        throw ServerErrors.database("Failed to update dataModel");
+      }
+
+      return {
+        success: true,
+        message: "DataModel updated successfully",
+        dataModel: data,
+      };
+    },
     createDataModelRevision: async (
       _: unknown,
       { input }: { input: z.infer<typeof CreateDataModelRevisionSchema> },
@@ -116,16 +169,12 @@ export const dataModelResolvers = {
         .limit(1)
         .single();
 
-      const {
-        name: _name,
-        displayName: _displayName,
-        description: _description,
-        ...config
-      } = validatedInput;
       const hash = createHash("sha256")
         .update(
           JSON.stringify(
-            Object.entries(config).sort((a, b) => a[0].localeCompare(b[0])),
+            Object.entries(validatedInput).sort((a, b) =>
+              a[0].localeCompare(b[0]),
+            ),
           ),
         )
         .digest("hex");
@@ -245,7 +294,7 @@ export const dataModelResolvers = {
 
       const { data, error } = await supabase
         .from("model_release")
-        .insert({
+        .upsert({
           org_id: dataModel.org_id,
           model_id: validatedInput.dataModelId,
           model_revision_id: validatedInput.dataModelRevisionId,
@@ -308,6 +357,10 @@ export const dataModelResolvers = {
         basePredicate: {
           eq: [{ key: "model_id", value: parent.id }],
         },
+        orderBy: {
+          key: "created_at",
+          ascending: false,
+        },
       });
     },
     isEnabled: (parent: { is_enabled: boolean }) => parent.is_enabled,
@@ -344,22 +397,25 @@ export const dataModelResolvers = {
       return data;
     },
 
-    runs: async (
-      parent: { id: string; org_id: string },
+    materializations: async (
+      parent: ModelRow,
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       return queryWithPagination(args, context, {
-        tableName: "model_run",
-        whereSchema: ModelRunWhereSchema,
+        tableName: "materialization",
+        whereSchema: MaterializationWhereSchema,
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
         basePredicate: {
-          eq: [{ key: "model_id", value: parent.id }],
+          eq: [
+            { key: "table_id", value: parent.id },
+            { key: "dataset_id", value: parent.dataset_id },
+          ],
         },
         orderBy: {
-          key: "started_at",
+          key: "created_at",
           ascending: false,
         },
       });

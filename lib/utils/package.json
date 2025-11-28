@@ -37,7 +37,7 @@
     "winston": "^3.18.3"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    ".": "./dist/index.js",
+    "./*": "./dist/*.js"
   }
 }

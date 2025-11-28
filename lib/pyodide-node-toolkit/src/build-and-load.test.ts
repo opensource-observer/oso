@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { TempDirContext } from "@/utils.ts";
-import { packagePythonArtifacts, loadPyodideEnvironment } from "@/build.ts";
+import { TempDirContext } from "./utils.js";
+import { packagePythonArtifacts } from "./build.js";
+import { loadPyodideEnvironment } from "./load.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,7 +41,9 @@ describe("build and run python packages", () => {
       });
 
       // Load the `env.tar.gz` file and try to run the expected python function
-      const pyodideEnv = await loadPyodideEnvironment(outputPath);
+      const pyodideEnv = await loadPyodideEnvironment({
+        runtimeEnvironmentPath: outputPath,
+      });
 
       const result = await pyodideEnv.runPythonAsync(`
         from sampleproject import sample_func

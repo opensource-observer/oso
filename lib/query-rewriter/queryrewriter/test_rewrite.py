@@ -1,7 +1,9 @@
+import typing as t
+
 import pytest
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import TableResolver
-from sqlglot import parse_one
+from sqlglot import exp, parse_one
 
 # extend_sqlglot()
 
@@ -24,9 +26,9 @@ def assert_same_sql(query1: str, query2: str):
     assert sql_equal, "SQL queries do not match structurally."
 
 
-def reverse_table_name(table_name: str) -> str:
-    parts = table_name.split(".")
-    return ".".join(reversed(parts))
+def reverse_table_name(table: exp.Table) -> str:
+    parts = [table.catalog, table.db, table.name]
+    return ".".join(reversed(list(filter(lambda x: x is not None and x != "", parts))))
 
 
 @pytest.fixture
@@ -37,19 +39,15 @@ def fake_table_resolver():
 
 
 @pytest.mark.parametrize(
-    "input_query,expected_query,org_name,default_dataset_name",
+    "input_query,expected_query",
     [
         (
             """SELECT * FROM org1.dataset1.table1""",
             '''SELECT * FROM "table1"."dataset1"."org1" as "table1"''',
-            "org1",
-            None,
         ),
         (
             """SELECT * FROM table1""",
-            '''SELECT * FROM "table1"."default_dataset"."org1" as "table1"''',
-            "org1",
-            "default_dataset",
+            '''SELECT * FROM "table1" as "table1"''',
         ),
         # Test with CTEs
         (
@@ -69,8 +67,6 @@ def fake_table_resolver():
             JOIN "table1"."dataset1"."org1" as "table1"
             ON "cte"."id" = "table1"."id"
             """,
-            "org1",
-            None,
         ),
         (
             """
@@ -83,14 +79,12 @@ def fake_table_resolver():
             """,
             """
             WITH "cte" AS (
-                SELECT * FROM "table2"."dataset2"."org2" as "table2"
+                SELECT * FROM "table2"."dataset2" as "table2"
             ) 
             SELECT * FROM "cte" as "cte"
-            JOIN "table1"."dataset1"."org2" as "table1"
+            JOIN "table1"."dataset1" as "table1"
             ON "cte"."id" = "table1"."id"
             """,
-            "org2",
-            None,
         ),
         (
             # Test CTEs
@@ -102,14 +96,12 @@ def fake_table_resolver():
             SELECT * FROM dataset3.table3
             """,
             """
-            SELECT * FROM "table1"."dataset1"."org1" as "table1"
+            SELECT * FROM "table1"."dataset1" as "table1"
             UNION ALL
-            SELECT * FROM "table2"."dataset2"."org1" as "table2"
+            SELECT * FROM "table2"."dataset2" as "table2"
             UNION ALL
-            SELECT * FROM "table3"."dataset3"."org1" as "table3"
+            SELECT * FROM "table3"."dataset3" as "table3"
             """,
-            "org1",
-            None,
         ),
         (
             # Test rewriting with macros
@@ -119,12 +111,10 @@ def fake_table_resolver():
             AND country = @some_macro_func('test')
             """,
             """
-            SELECT * FROM "table1"."dataset1"."org1" as "table1"
+            SELECT * FROM "table1"."dataset1" as "table1"
             WHERE "created_at" >= @start AND "created_at" < @end
             AND "country" = @some_macro_func('test')
             """,
-            "org1",
-            None,
         ),
     ],
 )
@@ -133,21 +123,19 @@ async def test_rewrite_query(
     fake_table_resolver: TableResolver,
     input_query: str,
     expected_query: str,
-    org_name: str,
-    default_dataset_name: str | None,
 ):
+    resolvers: t.List[TableResolver] = [fake_table_resolver]
+
     rewritten_query = await rewrite_query(
-        org_name=org_name,
         query=input_query,
-        table_resolver=fake_table_resolver,
+        table_resolvers=resolvers,
         dialect="trino",
-        default_dataset_name=default_dataset_name,
     )
     assert_same_sql(rewritten_query, expected_query)
 
 
 @pytest.mark.parametrize(
-    "input_query,org_name,default_dataset_name,error_string",
+    "input_query,error_string",
     [
         (
             """
@@ -158,8 +146,6 @@ async def test_rewrite_query(
             )
             select * from "test"
             """,
-            "org1",
-            "dataset1",
             "circular reference",
         )
     ],
@@ -168,17 +154,14 @@ async def test_rewrite_query(
 async def test_inputs_should_fail(
     fake_table_resolver: TableResolver,
     input_query: str,
-    org_name: str,
-    default_dataset_name: str | None,
     error_string: str,
 ):
+    resolvers: t.List[TableResolver] = [fake_table_resolver]
     try:
         await rewrite_query(
-            org_name=org_name,
             query=input_query,
-            table_resolver=fake_table_resolver,
+            table_resolvers=resolvers,
             dialect="trino",
-            default_dataset_name=default_dataset_name,
         )
     except Exception as e:
         assert error_string in str(e), f"Expected an error message with: {error_string}"

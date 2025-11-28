@@ -5,7 +5,7 @@ description = "Query rewriter for OSO queries"
 readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
-    "pandas>=2.3.3",
+    "pandas>=2.0.0",
     "sqlglot>=27.28.1",
 ]
 

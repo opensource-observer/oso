@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 _extended_sqlglot = False
 
+TableFQNResolver = t.Callable[[exp.Table], str | None]
+
 
 def safe_extend_sqlglot():
     """This will only extend sqlglot once in any given process."""
@@ -38,9 +40,9 @@ def safe_extend_sqlglot():
             extend_sqlglot()
 
 
-def table_to_fqn(
-    org_name: str, table: exp.Table, default_dataset_name: str | None
-) -> str:
+def default_table_to_fqn(
+    org_name: str, default_dataset_name: str | None
+) -> TableFQNResolver:
     """
     Converts a sqlglot Table expression to a fully qualified table name.
 
@@ -52,16 +54,20 @@ def table_to_fqn(
     Returns:
         str: The fully qualified table name.
     """
-    catalog = table.catalog or org_name
-    db = table.db
-    if not db:
-        if default_dataset_name is None:
-            raise ValueError(
-                f"Table {table} is missing a dataset name and is not provided."
-            )
-        db = default_dataset_name
-    name = table.name
-    return f"{catalog}.{db}.{name}"
+
+    def _resolver(table: exp.Table) -> str | None:
+        catalog = table.catalog or org_name
+        db = table.db
+        if not db:
+            if default_dataset_name is None:
+                raise ValueError(
+                    f"Table {table} is missing a dataset name and is not provided."
+                )
+            db = default_dataset_name
+        name = table.name
+        return f"{catalog}.{db}.{name}"
+
+    return _resolver
 
 
 TransformCallable = t.Callable[[exp.Expression], exp.Expression | None]
@@ -111,12 +117,22 @@ def apply_transforms_to_expression(
     return expr
 
 
+def raw_table_to_reference(
+    table: exp.Table,
+) -> str:
+    assert table.name, "Table must have a name."
+    if table.catalog and table.db:
+        return f"{table.catalog}.{table.db}.{table.name}"
+    if table.db:
+        return f"{table.db}.{table.name}"
+    return table.name
+
+
 async def rewrite_query(
-    org_name: str,
     query: str,
-    table_resolver: TableResolver,
+    table_resolvers: list[TableResolver],
     *,
-    default_dataset_name: str | None = None,
+    metadata: dict | None = None,
     dialect: str = "trino",
 ) -> str:
     """
@@ -127,7 +143,12 @@ async def rewrite_query(
         org_name (str): The organization name for the query. This is either the
             user making the query or the org the query is being made on behalf of.
         query (str): The original SQL query.
-        table_resolver (TableResolver): An instance that resolves table names.
+        table_resolvers (list[TableResolver]): A list of instances that resolve
+            table names. The resolvers will be applied in order.
+        default_dataset_name (str | None): The default dataset name to use when
+            a table does not have a dataset specified.
+        dialect (str): The SQL dialect to use for the final rendering of the query.
+
     Returns:
         str: The rewritten SQL query.
     """
@@ -148,13 +169,15 @@ async def rewrite_query(
         tables_in_statement = find_all_table_sources(statement)
         table_references = table_references.union(tables_in_statement)
 
-    table_reference_names = [
-        table_to_fqn(org_name, table, default_dataset_name=default_dataset_name)
-        for table in table_references
-    ]
+    # By default, assume all tables are resolved as-is
+    resolved_tables_dict = {
+        raw_table_to_reference(table): table for table in table_references
+    }
 
-    # Resolve table names using the provided resolver
-    resolved_tables_dict = await table_resolver.resolve_tables(table_reference_names)
+    # Each resolver gets to transform the set of resolved tables in order. This
+    # allows earlier resolvers to act as middleware.
+    for resolver in table_resolvers:
+        resolved_tables_dict = await resolver.resolve_tables(resolved_tables_dict)
 
     # Rewrite the query with resolved table names
     rewritten_statements: list[exp.Expression] = []
@@ -162,21 +185,25 @@ async def rewrite_query(
     table_rewriters: list[TransformCallable] = []
 
     for table in table_references:
-        fqn = table_to_fqn(org_name, table, default_dataset_name=default_dataset_name)
+        fqn = raw_table_to_reference(table)
 
         # Get the resolved table info
-        resolved_table_name = resolved_tables_dict.get(fqn)
+        resolved_table = resolved_tables_dict.get(fqn)
 
-        if not resolved_table_name:
+        if not resolved_table:
             raise ValueError(f"Table {fqn} could not be resolved.")
 
-        rewritten_table = t.cast(exp.Table, qualify(exp.to_table(resolved_table_name)))
+        qualified_resolved_table = qualify(resolved_table)
+        assert isinstance(qualified_resolved_table, exp.Table), (
+            "Resolved table is not a Table expression."
+        )
+
         # Ensure alias is preserved
         if table.alias:
-            rewritten_table.set("alias", table.alias)
+            qualified_resolved_table.set("alias", table.alias)
 
         # Create a transformation function for this table expression
-        table_rewriters.append(table_transformer(table, rewritten_table))
+        table_rewriters.append(table_transformer(table, qualified_resolved_table))
 
     for statement in qualified_statements:
         rewritten = apply_transforms_to_expression(statement, table_rewriters)

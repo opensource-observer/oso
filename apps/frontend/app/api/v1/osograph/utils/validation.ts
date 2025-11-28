@@ -126,6 +126,12 @@ export const CreateDataModelSchema = z.object({
   isEnabled: z.boolean().optional(),
 });
 
+export const UpdateDataModelSchema = z.object({
+  dataModelId: z.string().uuid("Invalid data model ID"),
+  name: z.string().min(1).optional(),
+  isEnabled: z.boolean().optional(),
+});
+
 const DataModelColumnSchema = z.object({
   name: z.string(),
   type: z.string(),
@@ -237,7 +243,8 @@ export const InvitationWhereSchema = createWhereSchema("invitations");
 export const OrganizationWhereSchema = createWhereSchema("organizations");
 export const DataModelRevisionWhereSchema = createWhereSchema("model_revision");
 export const DataModelReleaseWhereSchema = createWhereSchema("model_release");
-export const ModelRunWhereSchema = createWhereSchema("model_run");
+export const RunWhereSchema = createWhereSchema("run");
+export const MaterializationWhereSchema = createWhereSchema("materialization");
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
   const result = schema.safeParse(input);

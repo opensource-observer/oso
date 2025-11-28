@@ -10,9 +10,7 @@ export type PublicDatasetType = z.infer<
   typeof generated.publicDatasetTypeSchema
 >;
 export type PublicModelKind = z.infer<typeof generated.publicModelKindSchema>;
-export type PublicModelRunStatus = z.infer<
-  typeof generated.publicModelRunStatusSchema
->;
+export type PublicRunStatus = z.infer<typeof generated.publicRunStatusSchema>;
 export type Json = z.infer<typeof generated.jsonSchema>;
 export type AdminUsersRow = z.infer<typeof generated.adminUsersRowSchema>;
 export type AdminUsersInsert = z.infer<typeof generated.adminUsersInsertSchema>;
@@ -124,6 +122,18 @@ export type InvitationsUpdate = z.infer<
 export type InvitationsRelationships = z.infer<
   typeof generated.invitationsRelationshipsSchema
 >;
+export type PublicModelColumnType = z.infer<
+  typeof generated.publicModelColumnTypeSchema
+>;
+export type MaterializationInsert = z.infer<
+  typeof generated.materializationInsertSchema
+>;
+export type MaterializationUpdate = z.infer<
+  typeof generated.materializationUpdateSchema
+>;
+export type MaterializationRelationships = z.infer<
+  typeof generated.materializationRelationshipsSchema
+>;
 export type ModelRow = z.infer<typeof generated.modelRowSchema>;
 export type ModelInsert = z.infer<typeof generated.modelInsertSchema>;
 export type ModelUpdate = z.infer<typeof generated.modelUpdateSchema>;
@@ -146,9 +156,6 @@ export type PublicModelDependencyType = z.infer<
 export type PublicModelKindOptions = z.infer<
   typeof generated.publicModelKindOptionsSchema
 >;
-export type PublicModelColumnType = z.infer<
-  typeof generated.publicModelColumnTypeSchema
->;
 export type ModelRevisionInsert = z.infer<
   typeof generated.modelRevisionInsertSchema
 >;
@@ -157,12 +164,6 @@ export type ModelRevisionUpdate = z.infer<
 >;
 export type ModelRevisionRelationships = z.infer<
   typeof generated.modelRevisionRelationshipsSchema
->;
-export type ModelRunRow = z.infer<typeof generated.modelRunRowSchema>;
-export type ModelRunInsert = z.infer<typeof generated.modelRunInsertSchema>;
-export type ModelRunUpdate = z.infer<typeof generated.modelRunUpdateSchema>;
-export type ModelRunRelationships = z.infer<
-  typeof generated.modelRunRelationshipsSchema
 >;
 export type NotebooksRow = z.infer<typeof generated.notebooksRowSchema>;
 export type NotebooksInsert = z.infer<typeof generated.notebooksInsertSchema>;
@@ -254,6 +255,10 @@ export type ResourcePermissionsUpdate = z.infer<
 export type ResourcePermissionsRelationships = z.infer<
   typeof generated.resourcePermissionsRelationshipsSchema
 >;
+export type RunRow = z.infer<typeof generated.runRowSchema>;
+export type RunInsert = z.infer<typeof generated.runInsertSchema>;
+export type RunUpdate = z.infer<typeof generated.runUpdateSchema>;
+export type RunRelationships = z.infer<typeof generated.runRelationshipsSchema>;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
   typeof generated.userCreditsInsertSchema
@@ -279,6 +284,14 @@ export type UsersByOrganizationUpdate = z.infer<
 >;
 export type UsersByOrganizationRelationships = z.infer<
   typeof generated.usersByOrganizationRelationshipsSchema
+>;
+export type ModelAsTableRow = z.infer<typeof generated.modelAsTableRowSchema>;
+export type ModelAsTableRelationships = z.infer<
+  typeof generated.modelAsTableRelationshipsSchema
+>;
+export type TableLookupRow = z.infer<typeof generated.tableLookupRowSchema>;
+export type TableLookupRelationships = z.infer<
+  typeof generated.tableLookupRelationshipsSchema
 >;
 export type AcceptInvitationArgs = z.infer<
   typeof generated.acceptInvitationArgsSchema
@@ -371,5 +384,8 @@ export type ValidateOwnershipLimitsArgs = z.infer<
 >;
 export type ValidateOwnershipLimitsReturns = z.infer<
   typeof generated.validateOwnershipLimitsReturnsSchema
+>;
+export type MaterializationRow = z.infer<
+  typeof generated.materializationRowSchema
 >;
 export type ModelRevisionRow = z.infer<typeof generated.modelRevisionRowSchema>;

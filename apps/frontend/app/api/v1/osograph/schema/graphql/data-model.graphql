@@ -21,12 +21,12 @@ type DataModel {
   ): DataModelReleaseConnection!
   latestRevision: DataModelRevision
   latestRelease: DataModelRelease
-  runs(
+  materializations(
     first: Int = 50
     after: String
     single: Boolean
     where: JSON
-  ): RunConnection!
+  ): MaterializationConnection!
 }
 
 type DataModelEdge {
@@ -176,7 +176,7 @@ type CreateDataModelPayload {
 
 input UpdateDataModelInput {
   dataModelId: ID!
-  name: String!
+  name: String
   isEnabled: Boolean
 }
 

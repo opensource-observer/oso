@@ -1,4 +1,4 @@
-import { NullOrUndefinedValueError, AssertionError } from "./errors.ts";
+import { NullOrUndefinedValueError, AssertionError } from "./errors.js";
 /**
  * Explicitly marks a promise as something we won't await
  * @param _promise
@@ -39,8 +39,8 @@ export function assert<T>(cond: T, msg: string): asserts cond {
  * Useful for exhaustiveness checking.
  * @param _x
  */
-export function assertNever(_x: never): never {
-  throw new Error("unexpected branch taken");
+export function assertNever(_x: never, msg?: string): never {
+  throw new Error(msg || "unexpected branch taken");
 }
 
 /**
