@@ -58,7 +58,7 @@ seed = SeedConfig(
                 ]
             ),
             chain="worldchain",
-            dt=date.fromisoformat("2025-04-15"),
+            dt=date.today(),
         ),
         Logs(
             network="mainnet",
@@ -81,7 +81,36 @@ seed = SeedConfig(
                 ]
             ),
             chain="worldchain",
-            dt=date.fromisoformat("2025-04-15"),
+            dt=date.today(),
+        ),
+        Logs(
+            network="mainnet",
+            chain_id=130,
+            block_timestamp=1763334773,
+            block_number=32586414,
+            block_hash="0x882e9d4a5b2bfc2f619b61a81cfd8c788ded184c91c395070bb6e3cdc74c45d3",
+            transaction_hash="0xd7b4e87e4002aa690dc22443d79a2ac7c3ccb1999d1f9afd06077d29da81ac4f",
+            transaction_index=8,
+            log_index=86,
+            address="0x22c1f6050e56d2876009903609a2cc3fef83b415",
+            topics="0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef,0x0000000000000000000000000000000000000000000000000000000000000000,0x000000000000000000000000abbe765847c1ad0650f420dbe6686f758d26189d,0x0000000000000000000000000000000000000000000000000000000000726756",
+            data="0x",
+            topic0="0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            indexed_args=IndexedArgs(
+                list=[
+                    IndexedArgElement(
+                        element="0x0000000000000000000000000000000000000000000000000000000000000000"
+                    ),
+                    IndexedArgElement(
+                        element="0x000000000000000000000000abbe765847c1ad0650f420dbe6686f758d26189d"
+                    ),
+                    IndexedArgElement(
+                        element="0x0000000000000000000000000000000000000000000000000000000000726756"
+                    ),
+                ]
+            ),
+            chain="unichain",
+            dt=date.today(),
         ),
     ],
 )
