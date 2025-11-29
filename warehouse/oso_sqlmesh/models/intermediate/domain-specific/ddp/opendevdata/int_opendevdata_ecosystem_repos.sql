@@ -29,6 +29,8 @@ WITH ecosystems_repos AS (
   JOIN oso.stg_opendevdata__ecosystems AS e
     ON er.ecosystem_id = e.id
   CROSS JOIN LATERAL @parse_github_repository_artifact(r.link) AS repo_artifact_fields
+  WHERE r.link IS NOT NULL
+    AND repo_artifact_fields.artifact_name IS NOT NULL
 )
 SELECT
   @oso_entity_id(artifact_source, artifact_namespace, artifact_name) AS artifact_id,
