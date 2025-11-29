@@ -6,6 +6,7 @@ MODEL (
     batch_concurrency 2,
     lookback @default_daily_incremental_lookback,
     forward_only true,
+    on_destructive_change warn,
   ),
   dialect trino,
   start @blockchain_incremental_start,
@@ -13,11 +14,9 @@ MODEL (
   partitioned_by (DAY("block_timestamp"), "chain"),
   grain (
     block_timestamp,
-    chain,
     transaction_hash,
     log_index,
-    contract_address,
-    token_id
+    contract_address
   ),
   audits (
     has_at_least_n_rows(threshold := 0),
@@ -32,86 +31,20 @@ MODEL (
   ),
 );
 
-WITH raw_logs AS (
-  SELECT
-    logs.block_timestamp,
-    logs.block_number,
-    logs.block_hash,
-    logs.transaction_hash,
-    logs.transaction_index,
-    logs.log_index,
-    LOWER(logs.address) AS contract_address,
-    logs.topic0,
-    logs.indexed_args.list AS indexed_args_list,
-    logs.data,
-    logs.chain
-  FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.logs') AS logs
-  WHERE
-    logs.network='mainnet'
-    AND logs.chain='unichain'
-    AND logs.topic0='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
-    AND logs.dt BETWEEN @start_dt AND @end_dt
-),
-
-parsed_logs AS (
-  SELECT
-    raw_logs.block_timestamp,
-    raw_logs.block_number,
-    raw_logs.block_hash,
-    raw_logs.transaction_hash,
-    raw_logs.transaction_index,
-    raw_logs.log_index,
-    raw_logs.contract_address,
-    raw_logs.chain,
-
-    -- from_address from topic1
-    CASE
-      WHEN CARDINALITY(indexed_args_list)>=1 AND indexed_args_list[1].element IS NOT NULL THEN LOWER(
-        CONCAT(
-          '0x',
-          SUBSTRING(indexed_args_list[1].element,27)
-        )
-      )
-      ELSE NULL
-    END AS from_address,
-
-    -- to_address from topic2
-    CASE
-      WHEN CARDINALITY(indexed_args_list)>=2 AND indexed_args_list[2].element IS NOT NULL THEN LOWER(
-        CONCAT(
-          '0x',
-          SUBSTRING(indexed_args_list[2].element,27)
-        )
-      )
-      ELSE NULL
-    END AS to_address,
-
-    -- token_id from topic3, fallback to data
-    COALESCE(
-      CASE 
-        WHEN CARDINALITY(indexed_args_list)>=3 AND indexed_args_list[3].element IS NOT NULL
-        THEN @safe_hex_to_int(SUBSTRING(indexed_args_list[3].element,3))
-        ELSE NULL
-      END,
-      CASE 
-        WHEN raw_logs.data IS NOT NULL AND raw_logs.data!='0x' AND LENGTH(raw_logs.data)>=67
-        THEN @safe_hex_to_int(SUBSTRING(raw_logs.data,3,64))
-        ELSE NULL
-      END
-    ) AS token_id
-  FROM raw_logs
-)
-
 SELECT
-  @from_unix_timestamp(block_timestamp) AS block_timestamp,
-  block_number,
-  block_hash,
-  transaction_hash,
-  transaction_index,
-  log_index,
-  contract_address,
-  from_address,
-  to_address,
-  token_id,
+  @from_unix_timestamp(logs.block_timestamp) AS block_timestamp,
+  logs.block_number,
+  logs.block_hash,
+  logs.transaction_hash,
+  logs.transaction_index,
+  logs.log_index,
+  LOWER(logs.address) AS contract_address,
+  logs.indexed_args.list AS indexed_args_list,
+  logs.data,
   @chain_name(chain) AS chain
-FROM parsed_logs
+FROM @oso_source('bigquery.optimism_superchain_raw_onchain_data.logs') AS logs
+WHERE
+  logs.network = 'mainnet'
+  AND logs.chain = 'unichain'
+  AND logs.topic0 = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+  AND logs.dt BETWEEN @start_dt AND @end_dt
