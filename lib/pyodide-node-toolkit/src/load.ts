@@ -58,11 +58,10 @@ export async function loadPyodideFromDirectory(
       "utf-8",
     );
     logger.info(`Contents of fake-import.js: \n\n${fakeImportContents}`);
+    const fakeImportFileUrl = `file://${fakeImportPath}`;
 
     // TEST IMPORTING THE fake-import.js FILE
-    const fake = await (import(
-      `file://${path.join(workDirAbsPath, "fake-import.js")}`
-    ) as Promise<string>);
+    const fake = await (import(fakeImportFileUrl) as Promise<string>);
     logger.info(`fake-import result: ${fake}`);
   } else {
     logger.info(
