@@ -12,44 +12,55 @@ MODEL (
   )
 );
 
-WITH base_metadata AS (
+WITH maintainer_counts AS (
   SELECT
-    artifact_id,
     artifact_namespace,
-    artifact_name,
-    artifact_url,
-    is_fork,
-    created_at,
-    updated_at,
-    star_count,
-    fork_count,
-    language,
-    is_ethereum,
-    is_evm_l1,
-    is_evm_l2,
-    is_evm_stack,
-    is_solana,
-    ecosystem_count,
-    is_in_ossd,
-    is_owner_in_ossd,
-    COUNT(*) OVER (PARTITION BY artifact_namespace) AS num_repos_owned_by_maintainer
+    COUNT(*) AS num_repos_owned_by_maintainer
   FROM oso.int_ddp_repo_metadata
+  GROUP BY artifact_namespace
 ),
 
-pivoted_metrics AS (
+base_metadata AS (
+  SELECT
+    bm.artifact_id,
+    bm.artifact_namespace,
+    bm.artifact_name,
+    bm.artifact_url,
+    bm.is_fork,
+    bm.created_at,
+    bm.updated_at,
+    bm.star_count,
+    bm.fork_count,
+    bm.language,
+    bm.is_ethereum,
+    bm.is_evm_l1,
+    bm.is_evm_l2,
+    bm.is_evm_stack,
+    bm.is_solana,
+    bm.ecosystem_count,
+    bm.is_in_ossd,
+    bm.is_owner_in_ossd,
+    mc.num_repos_owned_by_maintainer
+  FROM oso.int_ddp_repo_metadata AS bm
+  LEFT JOIN maintainer_counts AS mc
+    ON bm.artifact_namespace = mc.artifact_namespace
+),
+
+packages_agg AS (
+  SELECT
+    package_owner_artifact_id AS artifact_id,
+    COUNT(DISTINCT package_artifact_id) AS package_count,
+    CAST(TRUE AS BOOLEAN) AS has_packages
+  FROM oso.int_packages__current_maintainer_only
+  GROUP BY package_owner_artifact_id
+),
+
+commit_times AS (
   SELECT
     artifact_id,
-    MAX(CASE WHEN metric_model = 'contributors' THEN metric_amount END) AS contributor_count,
-    MAX(CASE WHEN metric_model = 'commits' THEN metric_amount END) AS commit_count,
-    MAX(CASE WHEN metric_model = 'forks' THEN metric_amount END) AS fork_count,
-    MAX(CASE WHEN metric_model = 'stars' THEN metric_amount END) AS star_count,
-    MAX(CASE WHEN metric_model = 'opened_issues' THEN metric_amount END) AS opened_issue_count,
-    MAX(CASE WHEN metric_model = 'closed_issues' THEN metric_amount END) AS closed_issue_count,
-    MAX(CASE WHEN metric_model = 'opened_pull_requests' THEN metric_amount END) AS opened_pull_request_count,
-    MAX(CASE WHEN metric_model = 'merged_pull_requests' THEN metric_amount END) AS merged_pull_request_count,
-    MAX(CASE WHEN metric_model = 'releases' THEN metric_amount END) AS release_count,
-    MAX(CASE WHEN metric_model = 'comments' THEN metric_amount END) AS comment_count
-  FROM oso.int_ddp_repo_metrics
+    MIN(first_commit_time) AS first_commit_time,
+    MAX(last_commit_time) AS last_commit_time
+  FROM oso.int_first_last_commit_to_github_repository
   GROUP BY artifact_id
 ),
 
@@ -69,8 +80,8 @@ joined AS (
       WHEN bm.is_fork IS NULL THEN 'Unknown'
       ELSE 'No'
     END AS fork_status,
-    COALESCE(bm.created_at, ct.first_commit) AS first_activity_time,
-    COALESCE(bm.updated_at, ct.last_commit) AS last_activity_time,
+    COALESCE(bm.created_at, ct.first_commit_time) AS first_activity_time,
+    COALESCE(bm.updated_at, ct.last_commit_time) AS last_activity_time,
     COALESCE(bm.fork_count, pm.fork_count) AS fork_count,
     COALESCE(bm.star_count, pm.star_count) AS star_count,
     COALESCE(pm.contributor_count, 0) AS contributor_count,
@@ -94,18 +105,11 @@ joined AS (
   FROM base_metadata AS bm
   LEFT JOIN oso.int_ddp_repo_lineage AS lin
     ON bm.artifact_id = lin.artifact_id
-  LEFT JOIN oso.int_first_last_commit_to_github_repository AS ct
+  LEFT JOIN commit_times AS ct
     ON bm.artifact_id = ct.artifact_id
-  LEFT JOIN pivoted_metrics AS pm
+  LEFT JOIN oso.int_ddp_repo_metrics_pivoted AS pm
     ON bm.artifact_id = pm.artifact_id
-  LEFT JOIN (
-    SELECT
-      package_owner_artifact_id AS artifact_id,
-      COUNT(DISTINCT package_artifact_id) AS package_count,
-      CAST(TRUE AS BOOLEAN) AS has_packages
-    FROM oso.int_packages__current_maintainer_only
-    GROUP BY package_owner_artifact_id
-  ) AS rp
+  LEFT JOIN packages_agg AS rp
     ON bm.artifact_id = rp.artifact_id
   LEFT JOIN oso.int_github_users AS gu
     ON bm.artifact_namespace = gu.artifact_name
