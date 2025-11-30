@@ -4,14 +4,22 @@ MODEL (
   kind FULL,
   dialect trino,
   grain (artifact_id),
+  partitioned_by bucket(artifact_id, 16),
   tags (
-    'entity_category=artifact'
+    'entity_category=artifact',
+    'index={"idx_artifact_id": ["artifact_id"]}',
+    'order_by=["artifact_id"]'
+  ),
+  physical_properties (
+    parquet_bloom_filter_columns = ['artifact_id'],
+    sorted_by = ['artifact_id']
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
 );
 
+-- Pre-aggregate maintainer counts to reduce join size
 WITH maintainer_counts AS (
   SELECT
     artifact_namespace,
@@ -20,6 +28,35 @@ WITH maintainer_counts AS (
   GROUP BY artifact_namespace
 ),
 
+-- Get only the artifact_ids we need from base metadata first
+base_artifact_ids AS (
+  SELECT DISTINCT artifact_id
+  FROM oso.int_ddp_repo_metadata
+),
+
+-- Pre-aggregate packages to reduce join size
+packages_agg AS (
+  SELECT
+    package_owner_artifact_id AS artifact_id,
+    COUNT(DISTINCT package_artifact_id) AS package_count,
+    CAST(TRUE AS BOOLEAN) AS has_packages
+  FROM oso.int_packages__current_maintainer_only
+  WHERE package_owner_artifact_id IN (SELECT artifact_id FROM base_artifact_ids)
+  GROUP BY package_owner_artifact_id
+),
+
+-- Pre-aggregate commit times to reduce join size
+commit_times AS (
+  SELECT
+    artifact_id,
+    MIN(first_commit_time) AS first_commit_time,
+    MAX(last_commit_time) AS last_commit_time
+  FROM oso.int_first_last_commit_to_github_repository
+  WHERE artifact_id IN (SELECT artifact_id FROM base_artifact_ids)
+  GROUP BY artifact_id
+),
+
+-- Select only needed columns from base metadata
 base_metadata AS (
   SELECT
     bm.artifact_id,
@@ -42,28 +79,46 @@ base_metadata AS (
     bm.is_owner_in_ossd,
     mc.num_repos_owned_by_maintainer
   FROM oso.int_ddp_repo_metadata AS bm
-  LEFT JOIN maintainer_counts AS mc
+  INNER JOIN maintainer_counts AS mc
     ON bm.artifact_namespace = mc.artifact_namespace
 ),
 
-packages_agg AS (
-  SELECT
-    package_owner_artifact_id AS artifact_id,
-    COUNT(DISTINCT package_artifact_id) AS package_count,
-    CAST(TRUE AS BOOLEAN) AS has_packages
-  FROM oso.int_packages__current_maintainer_only
-  GROUP BY package_owner_artifact_id
-),
-
-commit_times AS (
+-- Pre-filter lineage to only DDP repos to reduce join size
+lineage_filtered AS (
   SELECT
     artifact_id,
-    MIN(first_commit_time) AS first_commit_time,
-    MAX(last_commit_time) AS last_commit_time
-  FROM oso.int_first_last_commit_to_github_repository
-  GROUP BY artifact_id
+    is_current_url,
+    alias_count
+  FROM oso.int_ddp_repo_lineage
+  WHERE artifact_id IN (SELECT artifact_id FROM base_artifact_ids)
 ),
 
+-- Pre-filter metrics to only DDP repos to reduce join size
+metrics_filtered AS (
+  SELECT
+    artifact_id,
+    contributor_count,
+    commit_count,
+    fork_count,
+    star_count,
+    opened_issue_count,
+    closed_issue_count,
+    opened_pull_request_count,
+    merged_pull_request_count,
+    release_count,
+    comment_count
+  FROM oso.int_ddp_repo_metrics_pivoted
+  WHERE artifact_id IN (SELECT artifact_id FROM base_artifact_ids)
+),
+
+-- Pre-filter github users to only relevant namespaces to reduce join size
+github_users_filtered AS (
+  SELECT DISTINCT artifact_name
+  FROM oso.int_github_users
+  WHERE artifact_name IN (SELECT DISTINCT artifact_namespace FROM oso.int_ddp_repo_metadata)
+),
+
+-- Join in optimal order: start with base, then join smaller aggregated tables
 joined AS (
   SELECT
     bm.artifact_id,
@@ -103,15 +158,15 @@ joined AS (
     bm.is_in_ossd,
     bm.is_owner_in_ossd
   FROM base_metadata AS bm
-  LEFT JOIN oso.int_ddp_repo_lineage AS lin
+  LEFT JOIN lineage_filtered AS lin
     ON bm.artifact_id = lin.artifact_id
   LEFT JOIN commit_times AS ct
     ON bm.artifact_id = ct.artifact_id
-  LEFT JOIN oso.int_ddp_repo_metrics_pivoted AS pm
+  LEFT JOIN metrics_filtered AS pm
     ON bm.artifact_id = pm.artifact_id
   LEFT JOIN packages_agg AS rp
     ON bm.artifact_id = rp.artifact_id
-  LEFT JOIN oso.int_github_users AS gu
+  LEFT JOIN github_users_filtered AS gu
     ON bm.artifact_namespace = gu.artifact_name
 )
 
