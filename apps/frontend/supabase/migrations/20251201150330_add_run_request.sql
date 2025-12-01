@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS "public"."run_request" (
   "id" uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
   "org_id" uuid NOT NULL,
   "dataset_id" uuid NOT NULL,
-  "created_by" uuid,
+  "created_by" uuid NOT NULL,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
   "deleted_at" timestamp with time zone,
   "definition_id" text NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS "public"."run_request" (
   PRIMARY KEY ("id"),
   FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE,
   FOREIGN KEY ("dataset_id") REFERENCES "public"."datasets"("id") ON DELETE CASCADE,
-  FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL
+  FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE CASCADE
 );
  
 CREATE INDEX idx_run_request_dataset_id ON public.run_request("dataset_id");
