@@ -84,5 +84,5 @@ SELECT
   contract_address,
   from_address,
   to_address,
-  @hex_to_int(token_id) AS token_id
+  @safe_hex_to_int(token_id, no_prefix := false) AS token_id
 FROM parsed_logs

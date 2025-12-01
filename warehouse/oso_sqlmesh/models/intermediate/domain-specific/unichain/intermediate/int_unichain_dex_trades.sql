@@ -46,7 +46,16 @@ parsed_transfers AS (
     LOWER(contract_address) AS token_address,
     CASE 
       WHEN data_hex IS NOT NULL AND data_hex != '0x' AND LENGTH(data_hex) >= 3
-      THEN SUBSTRING(data_hex, GREATEST(3, LENGTH(data_hex) - 63), 64)
+      THEN 
+        -- Remove 0x prefix if present, then extract last 64 hex characters (or all if shorter)
+        -- Trino's FROM_BASE works best with strings up to 64 hex digits
+        SUBSTRING(
+          CASE WHEN data_hex LIKE '0x%' THEN SUBSTRING(data_hex, 3) ELSE data_hex END,
+          GREATEST(
+            1, 
+            LENGTH(CASE WHEN data_hex LIKE '0x%' THEN SUBSTRING(data_hex, 3) ELSE data_hex END) - 63
+          )
+        )
       ELSE NULL
     END AS amount_hex,
     CASE
@@ -77,8 +86,8 @@ swaps AS (
     t1.transaction_hash,
     t1.token_address AS token0_address,
     t2.token_address AS token1_address,
-    @hex_to_int(t1.amount_hex) AS amount0,
-    @hex_to_int(t2.amount_hex) AS amount1,
+    @safe_hex_to_int(t1.amount_hex) AS amount0,
+    @safe_hex_to_int(t2.amount_hex) AS amount1,
     t1.from_address AS token0_from_address,
     t1.to_address AS token0_to_address,
     t2.from_address AS token1_from_address,
