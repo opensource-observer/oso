@@ -1,5 +1,5 @@
 MODEL (
-  name oso.stg_unichain_logs__erc721,
+  name oso.stg_unichain_logs__transfers,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column block_timestamp,
     batch_size 90,

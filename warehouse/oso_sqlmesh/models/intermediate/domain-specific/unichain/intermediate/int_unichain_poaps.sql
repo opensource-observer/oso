@@ -32,7 +32,7 @@ WITH raw_logs AS (
     transaction_hash,
     contract_address,
     indexed_args_list,
-  FROM oso.stg_unichain_logs__erc721
+  FROM oso.stg_unichain_logs__transfers
   WHERE
     contract_address = '0x22c1f6050e56d2876009903609a2cc3fef83b415'
     AND block_timestamp BETWEEN @start_dt AND @end_dt

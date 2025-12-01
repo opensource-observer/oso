@@ -34,7 +34,7 @@ WITH raw_logs AS (
     contract_address,
     indexed_args_list,
     data AS data_hex
-  FROM oso.stg_unichain_logs__erc721
+  FROM oso.stg_unichain_logs__transfers
   WHERE block_timestamp BETWEEN @start_dt AND @end_dt
 ),
 
