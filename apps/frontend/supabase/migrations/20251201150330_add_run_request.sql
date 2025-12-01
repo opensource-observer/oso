@@ -19,6 +19,13 @@ CREATE TABLE IF NOT EXISTS "public"."run_request" (
   FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE CASCADE
 );
  
-CREATE INDEX idx_run_request_dataset_id ON public.run_request("dataset_id");
-CREATE INDEX idx_run_request_dataset_id_created_at ON public.run_request("dataset_id", "created_at");
+CREATE INDEX IF NOT EXISTS idx_run_request_dataset_id ON public.run_request("dataset_id");
+CREATE INDEX IF NOT EXISTS idx_run_request_dataset_id_created_at ON public.run_request("dataset_id", "created_at");
  
+ALTER TABLE "public"."run_request" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."run" ADD COLUMN IF NOT EXISTS "run_request_id" uuid;
+
+ALTER TABLE "public"."run"
+ADD CONSTRAINT fk_run_request
+FOREIGN KEY ("run_request_id") REFERENCES "public"."run_request"("id") ON DELETE SET NULL;
