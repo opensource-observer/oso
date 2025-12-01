@@ -1202,6 +1202,51 @@ export type Database = {
           },
         ];
       };
+      run_request: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          dataset_id: string;
+          definition_id: string | null;
+          deleted_at: string | null;
+          id: string;
+          org_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          dataset_id: string;
+          definition_id?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          org_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          dataset_id?: string;
+          definition_id?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          org_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "run_request_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "run_request_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       user_credits: {
         Row: {
           created_at: string;

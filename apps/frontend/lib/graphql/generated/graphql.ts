@@ -7116,7 +7116,7 @@ export type Run = PipelineRun &
     hasUnconstrainedRootNodes: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
-    logsUrl: Scalars["String"]["output"];
+    logsUrl?: Maybe<Scalars["String"]["output"]>;
     materializations: MaterializationConnection;
     mode: Scalars["String"]["output"];
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
@@ -8786,6 +8786,20 @@ export type CreateDataModelReleaseMutation = {
   };
 };
 
+export type CreateRunRequestMutationVariables = Exact<{
+  input: CreateRunRequestInput;
+}>;
+
+export type CreateRunRequestMutation = {
+  __typename?: "Mutation";
+  createRunRequest: {
+    __typename?: "CreateRunRequestPayload";
+    success: boolean;
+    message?: string | null;
+    runRequest: { __typename?: "RunRequest"; id: string };
+  };
+};
+
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
 export type AssetGraphQuery = {
@@ -9438,6 +9452,71 @@ export const CreateDataModelReleaseDocument = {
 } as unknown as DocumentNode<
   CreateDataModelReleaseMutation,
   CreateDataModelReleaseMutationVariables
+>;
+export const CreateRunRequestDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateRunRequest" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateRunRequestInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createRunRequest" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "runRequest" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateRunRequestMutation,
+  CreateRunRequestMutationVariables
 >;
 export const AssetGraphDocument = {
   kind: "Document",
