@@ -27,7 +27,8 @@ MODEL (
     first_commit_time = 'The timestamp of the earliest commit to this repository across all observed artifact_source_ids. Aggregated from int_first_last_commit_to_github_repository.',
     last_commit_time = 'The timestamp of the most recent commit to this repository across all observed artifact_source_ids. Aggregated from int_first_last_commit_to_github_repository.',
     contributor_count = 'The total number of distinct contributors who have made commits to this repository. This value comes from pre-aggregated metrics in key_metrics_by_artifact_v0 and defaults to 0 if no contributor data is available.'
-  )
+  ),
+  enabled false
 );
 
 @DEF("trust_score_threshold", 0.5);

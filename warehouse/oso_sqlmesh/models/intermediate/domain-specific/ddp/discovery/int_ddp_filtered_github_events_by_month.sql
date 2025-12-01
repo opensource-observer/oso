@@ -9,7 +9,8 @@ MODEL (
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
-  )
+  ),
+  enabled false
 );
 
 WITH base_events AS (
