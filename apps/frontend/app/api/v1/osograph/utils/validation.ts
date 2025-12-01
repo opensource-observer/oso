@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ValidationErrors } from "@/app/api/v1/osograph/utils/errors";
 import type { ValidTableName } from "@/app/api/v1/osograph/utils/query-builder";
+import { DATASET_TYPES } from "@/lib/types/dataset";
 
 const MAX_PREVIEW_SIZE_MB = 1 * 1024 * 1024;
 const PNG_HEADER = Buffer.from([
@@ -116,7 +117,7 @@ export const CreateDatasetSchema = z.object({
   displayName: z.string().min(1, "Display name is required"),
   description: z.string().optional(),
   isPublic: z.boolean().optional(),
-  type: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
+  type: z.enum(DATASET_TYPES),
 });
 
 export const CreateDataModelSchema = z.object({
@@ -190,6 +191,11 @@ export const CreateDataModelReleaseSchema = z.object({
   dataModelId: z.string().uuid(),
   dataModelRevisionId: z.string().uuid(),
   description: z.string().optional(),
+});
+
+export const CreateRunRequestSchema = z.object({
+  definitionType: z.enum(DATASET_TYPES),
+  definitionId: z.string().uuid(),
 });
 
 export const TableMetadataWhereSchema = z.object({

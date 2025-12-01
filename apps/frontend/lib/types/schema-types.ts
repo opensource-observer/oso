@@ -259,6 +259,12 @@ export type RunRow = z.infer<typeof generated.runRowSchema>;
 export type RunInsert = z.infer<typeof generated.runInsertSchema>;
 export type RunUpdate = z.infer<typeof generated.runUpdateSchema>;
 export type RunRelationships = z.infer<typeof generated.runRelationshipsSchema>;
+export type RunRequestRow = z.infer<typeof generated.runRequestRowSchema>;
+export type RunRequestInsert = z.infer<typeof generated.runRequestInsertSchema>;
+export type RunRequestUpdate = z.infer<typeof generated.runRequestUpdateSchema>;
+export type RunRequestRelationships = z.infer<
+  typeof generated.runRequestRelationshipsSchema
+>;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<
   typeof generated.userCreditsInsertSchema
