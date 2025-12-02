@@ -29,12 +29,14 @@ WITH watch_events AS (
   WHERE
     ghe.type IN ('WatchEvent', 'ForkEvent')
     and ghe.created_at BETWEEN @start_dt AND @end_dt
+    and ghe.repo.id IS NOT NULL AND ghe.repo.name IS NOT NULL
+
 )
 SELECT
   we.id AS id,
   we.created_at AS created_at,
-  COALESCE(we.repo.id, CAST(we.payload ->> '$.forkee.id' AS BIGINT)) AS repository_id,
-  COALESCE(we.repo.name, we.payload ->> '$.forkee.full_name') AS repository_name,
+  we.repo.id AS repository_id,
+  we.repo.name AS repository_name,
   we.actor.id AS actor_id,
   we.actor.login AS actor_login,
   CASE we.type WHEN 'WatchEvent' THEN 'STARRED' WHEN 'ForkEvent' THEN 'FORKED' END AS "type"
