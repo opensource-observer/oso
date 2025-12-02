@@ -2459,7 +2459,7 @@ class OsoAppClient {
     }>,
   ) {
     const { orgId, name, displayName, description, datasetType, isPublic } = {
-      orgId: ensure(args.orgId, "Missing orgName argument"),
+      orgId: ensure(args.orgId, "Missing orgId argument"),
       name: ensure(args.name, "Missing name argument"),
       displayName: ensure(args.displayName, "Missing displayName argument"),
       description: args.description,
