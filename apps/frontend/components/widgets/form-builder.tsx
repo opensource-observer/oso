@@ -446,7 +446,7 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
             })()}
             {horizontal ? (
               <div className="grid grid-cols-4 items-start gap-4">
-                <div className="col-start-2 col-span-3">
+                <div className="col-start-2 col-span-3 flex justify-end">
                   {footer ?? <Button type="submit">Submit</Button>}
                 </div>
               </div>
