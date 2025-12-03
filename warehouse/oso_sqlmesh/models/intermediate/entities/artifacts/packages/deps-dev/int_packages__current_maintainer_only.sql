@@ -1,6 +1,6 @@
 MODEL (
   name oso.int_packages__current_maintainer_only,
-  kind VIEW,
+  kind FULL,
   ignored_rules (
     "nomissingaudits",
   ),
