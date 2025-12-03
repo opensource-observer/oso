@@ -224,6 +224,12 @@ export const CreateRunRequestSchema = z.object({
   definitionId: z.string().uuid(),
 });
 
+export const ResolveTablesSchema = z.object({
+  references: z.array(z.string()).min(1, "At least one reference is required"),
+  orgName: z.string().optional(),
+  datasetName: z.string().optional(),
+});
+
 export const TableMetadataWhereSchema = z.object({
   orgId: z.object({ eq: z.string().uuid() }),
   catalogName: z.object({ eq: z.string() }),

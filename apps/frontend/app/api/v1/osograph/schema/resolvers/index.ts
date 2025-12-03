@@ -9,6 +9,7 @@ import { notebookResolvers } from "@/app/api/v1/osograph/schema/resolvers/notebo
 import { datasetResolvers } from "@/app/api/v1/osograph/schema/resolvers/dataset";
 import { dataModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/data-model";
 import { schedulerResolvers } from "@/app/api/v1/osograph/schema/resolvers/scheduler";
+import { systemResolvers } from "@/app/api/v1/osograph/schema/resolvers/system";
 
 export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DateTime: DateTimeISOResolver,
@@ -21,6 +22,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
     ...notebookResolvers.Query,
     ...datasetResolvers.Query,
     ...dataModelResolvers.Query,
+    ...systemResolvers.Query,
   },
 
   Mutation: {
@@ -45,4 +47,5 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DataModelRelease: dataModelResolvers.DataModelRelease,
   Run: schedulerResolvers.Run,
   Materialization: schedulerResolvers.Materialization,
+  System: systemResolvers.System,
 };

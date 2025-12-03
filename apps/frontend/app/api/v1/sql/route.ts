@@ -144,9 +144,6 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
       query,
       metadata: {
         orgName: user.orgName,
-        orgId: user.orgId,
-        user: user.userId,
-        timestamp: new Date().toISOString(),
       },
       adminClient,
     });
