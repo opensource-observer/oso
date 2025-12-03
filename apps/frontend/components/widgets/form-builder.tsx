@@ -31,6 +31,12 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 interface FormSchemaField {
@@ -44,6 +50,8 @@ interface FormSchemaField {
   placeholder?: string;
   disabled?: boolean;
   hidden?: boolean;
+  advanced?: boolean;
+  advancedGroup?: string;
 }
 
 interface FormSchema {
@@ -376,19 +384,69 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
             onSubmit={safeSubmit(form.handleSubmit(onSubmit))}
             className={cn("space-y-6", className)}
           >
-            {Object.entries(schema).map(([key, value]) => (
-              <RenderField
-                key={key}
-                fieldName={key}
-                fieldSchema={value}
-                objectClassName={objectClassName}
-                path=""
-                horizontal={horizontal}
-              />
-            ))}
+            {Object.entries(schema)
+              .filter(([, field]) => !field.advanced)
+              .map(([key, value]) => (
+                <RenderField
+                  key={key}
+                  fieldName={key}
+                  fieldSchema={value}
+                  objectClassName={objectClassName}
+                  path=""
+                  horizontal={horizontal}
+                />
+              ))}
+
+            {(() => {
+              const advancedGroups = Object.entries(schema)
+                .filter(([, field]) => field.advanced)
+                .reduce<Record<string, [string, FormSchemaField][]>>(
+                  (groups, entry) => {
+                    const [fieldKey, field] = entry;
+                    const group = field.advancedGroup ?? "Advanced";
+                    groups[group] = groups[group] ?? [];
+                    groups[group].push([fieldKey, field]);
+                    return groups;
+                  },
+                  {},
+                );
+
+              if (Object.keys(advancedGroups).length === 0) {
+                return null;
+              }
+
+              return (
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="rounded-md border px-4"
+                  defaultValue="Advanced"
+                >
+                  {Object.entries(advancedGroups).map(([groupName, fields]) => (
+                    <AccordionItem key={groupName} value={groupName}>
+                      <AccordionTrigger>{groupName}</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-6 pt-2">
+                          {fields.map(([key, value]) => (
+                            <RenderField
+                              key={key}
+                              fieldName={key}
+                              fieldSchema={value}
+                              objectClassName={objectClassName}
+                              path=""
+                              horizontal={horizontal}
+                            />
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              );
+            })()}
             {horizontal ? (
               <div className="grid grid-cols-4 items-start gap-4">
-                <div className="col-start-2 col-span-3">
+                <div className="col-start-2 col-span-3 flex justify-end">
                   {footer ?? <Button type="submit">Submit</Button>}
                 </div>
               </div>
