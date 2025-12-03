@@ -34,6 +34,7 @@ import {
   adjectives,
   animals,
 } from "unique-names-generator";
+import { DatasetType } from "@/lib/types/dataset";
 
 const ADMIN_USER_ROLE = "admin";
 
@@ -2453,12 +2454,12 @@ class OsoAppClient {
       name: string;
       displayName: string;
       description: string;
-      datasetType: "USER_MODEL" | "DATA_CONNECTOR" | "DATA_INGESTION";
+      datasetType: DatasetType;
       isPublic: boolean;
     }>,
   ) {
     const { orgId, name, displayName, description, datasetType, isPublic } = {
-      orgId: ensure(args.orgId, "Missing orgName argument"),
+      orgId: ensure(args.orgId, "Missing orgId argument"),
       name: ensure(args.name, "Missing name argument"),
       displayName: ensure(args.displayName, "Missing displayName argument"),
       description: args.description,
@@ -2866,6 +2867,72 @@ class OsoAppClient {
     }
 
     return payload.dataModelRelease;
+  }
+
+  async createRunRequest(
+    args: Partial<{
+      definitionType: DatasetType;
+      definitionId: string;
+    }>,
+  ) {
+    const definitionType = ensure(
+      args.definitionType,
+      "Missing definitionType argument",
+    );
+    const definitionId = ensure(
+      args.definitionId,
+      "Missing definitionId argument",
+    );
+
+    const CREATE_RUN_REQUEST_MUTATION = gql(`
+      mutation CreateRunRequest($input: CreateRunRequestInput!) {
+        createRunRequest(input: $input) {
+          success
+          message
+          runRequest {
+            id
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_RUN_REQUEST_MUTATION),
+        variables: {
+          input: {
+            definitionType,
+            definitionId,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to create run request:", result.errors[0].message);
+      throw new Error(
+        `Failed to create run request: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createRunRequest;
+    if (!payload) {
+      throw new Error("No response data from create run request mutation");
+    }
+
+    if (payload.success) {
+      logger.log(
+        `Successfully created Run request for definition "${definitionId}"`,
+      );
+    }
+
+    return payload.runRequest;
   }
 }
 

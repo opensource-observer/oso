@@ -1275,6 +1275,53 @@ export const runRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const runRequestRowSchema = z.object({
+  created_at: z.string(),
+  created_by: z.string().nullable(),
+  dataset_id: z.string(),
+  definition_id: z.string().nullable(),
+  deleted_at: z.string().nullable(),
+  id: z.string(),
+  org_id: z.string(),
+});
+
+export const runRequestInsertSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string().optional().nullable(),
+  dataset_id: z.string(),
+  definition_id: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string(),
+});
+
+export const runRequestUpdateSchema = z.object({
+  created_at: z.string().optional(),
+  created_by: z.string().optional().nullable(),
+  dataset_id: z.string().optional(),
+  definition_id: z.string().optional().nullable(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+});
+
+export const runRequestRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("run_request_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("run_request_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const userCreditsRowSchema = z.object({
   created_at: z.string(),
   credits_balance: z.number(),

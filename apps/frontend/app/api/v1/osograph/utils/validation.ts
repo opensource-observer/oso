@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { ValidationErrors } from "@/app/api/v1/osograph/utils/errors";
 import type { ValidTableName } from "@/app/api/v1/osograph/utils/query-builder";
+import { DATASET_TYPES } from "@/lib/types/dataset";
 
+const NAME_REGEX = /^[a-z][a-z0-9_]*$/;
 const MAX_PREVIEW_SIZE_MB = 1 * 1024 * 1024;
 const PNG_HEADER = Buffer.from([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
@@ -98,7 +100,14 @@ export const SaveNotebookPreviewSchema = z.object({
 
 export const UpdateDatasetSchema = z.object({
   id: z.string().uuid("Invalid dataset ID"),
-  name: z.string().min(1).optional(),
+  name: z
+    .string()
+    .min(1)
+    .regex(
+      NAME_REGEX,
+      "Dataset name can only contain letters, numbers, and underscores",
+    )
+    .optional(),
   displayName: z.string().optional(),
   description: z.string().optional(),
   isPublic: z.boolean().optional(),
@@ -110,25 +119,38 @@ export const CreateDatasetSchema = z.object({
     .string()
     .min(1, "Dataset name is required")
     .regex(
-      /^[a-zA-Z][a-zA-Z0-9_]+$/,
+      NAME_REGEX,
       "Dataset name can only contain letters, numbers, and underscores",
     ),
   displayName: z.string().min(1, "Display name is required"),
   description: z.string().optional(),
   isPublic: z.boolean().optional(),
-  type: z.enum(["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"]),
+  type: z.enum(DATASET_TYPES),
 });
 
 export const CreateDataModelSchema = z.object({
   orgId: z.string().uuid("Invalid organization ID"),
   datasetId: z.string().uuid("Invalid dataset ID"),
-  name: z.string().min(1, "DataModel name is required"),
+  name: z
+    .string()
+    .min(1, "DataModel name is required")
+    .regex(
+      NAME_REGEX,
+      "DataModel name can only contain letters, numbers, and underscores",
+    ),
   isEnabled: z.boolean().optional(),
 });
 
 export const UpdateDataModelSchema = z.object({
   dataModelId: z.string().uuid("Invalid data model ID"),
-  name: z.string().min(1).optional(),
+  name: z
+    .string()
+    .min(1)
+    .regex(
+      NAME_REGEX,
+      "DataModel name can only contain letters, numbers, and underscores",
+    )
+    .optional(),
   isEnabled: z.boolean().optional(),
 });
 
@@ -162,7 +184,12 @@ const DataModelKindOptionsSchema = z.object({
 
 export const CreateDataModelRevisionSchema = z.object({
   dataModelId: z.string().uuid(),
-  name: z.string(),
+  name: z
+    .string()
+    .regex(
+      NAME_REGEX,
+      "DataModelRevision name can only contain letters, numbers, and underscores",
+    ),
   displayName: z.string(),
   description: z.string().optional(),
   language: z.string(),
@@ -190,6 +217,11 @@ export const CreateDataModelReleaseSchema = z.object({
   dataModelId: z.string().uuid(),
   dataModelRevisionId: z.string().uuid(),
   description: z.string().optional(),
+});
+
+export const CreateRunRequestSchema = z.object({
+  definitionType: z.enum(DATASET_TYPES),
+  definitionId: z.string().uuid(),
 });
 
 export const TableMetadataWhereSchema = z.object({

@@ -22,7 +22,7 @@ WITH pkg_deps AS (
     COUNT(DISTINCT CASE WHEN r.artifact_id IS NOT NULL THEN cd.dependent_artifact_id END) AS ethereum_dependent_repos,
     COUNT(DISTINCT cd.dependent_artifact_id) AS all_dependent_repos
   FROM oso.int_code_dependencies AS cd
-  LEFT JOIN oso.int_ddp_repo_features AS r
+  LEFT JOIN oso.int_ddp_repo_metadata AS r
     ON cd.dependent_artifact_id = r.artifact_id
     AND r.is_ethereum
   GROUP BY

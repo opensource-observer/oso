@@ -47,16 +47,33 @@ export async function loadPyodideFromDirectory(
   const workDirAbsPath = path.resolve(workDir);
   logger.info(`Extracting pyodide environment into ${workDirAbsPath}`);
 
-  // Verify the contents of fake-import.js
+  // Verify the contents of fake-import.js if it exists
+  // This is just a test file to verify that imports work correctly
+  // This is a temporary debug step
   const fakeImportPath = path.join(workDirAbsPath, "fake-import.js");
-  const fakeImportContents = await fsPromises.readFile(fakeImportPath, "utf-8");
-  logger.info(`Contents of fake-import.js: \n\n${fakeImportContents}`);
+  try {
+    const fakeImportStat = await fsPromises.stat(fakeImportPath);
+    if (fakeImportStat.isFile()) {
+      const fakeImportContents = await fsPromises.readFile(
+        fakeImportPath,
+        "utf-8",
+      );
+      logger.info(`Contents of fake-import.js: \n\n${fakeImportContents}`);
+      const fakeImportFileUrl = `file://${fakeImportPath}`;
 
-  // TEST IMPORTING THE fake-import.js FILE
-  const fake = await (import(
-    path.join(workDirAbsPath, "fake-import.js")
-  ) as Promise<string>);
-  logger.info(`fake-import result: ${fake}`);
+      // TEST IMPORTING THE fake-import.js FILE
+      const fake = await (import(fakeImportFileUrl) as Promise<string>);
+      logger.info(`fake-import result: ${fake}`);
+    } else {
+      logger.info(
+        `No fake-import.js file found at ${fakeImportPath}. Skipping import test.`,
+      );
+    }
+  } catch (err) {
+    logger.info(
+      `No fake-import.js file found at ${fakeImportPath}. Skipping import test. Failed with error: ${err}`,
+    );
+  }
 
   // TEMP FOR DEBUGGING ONLY
   logger.info("Listing files in the pyodide environment");

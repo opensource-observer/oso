@@ -27,3 +27,5 @@ SELECT DISTINCT
   repos.id AS repository_id
 FROM oso.stg_opendevdata__repos AS repos
 CROSS JOIN LATERAL @parse_github_repository_artifact(repos.link) AS artifact_fields
+WHERE repos.link IS NOT NULL
+  AND artifact_fields.artifact_name IS NOT NULL

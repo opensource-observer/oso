@@ -68,3 +68,5 @@ SELECT
   repos.ingestion_time
 FROM deduplicated_repositories AS repos
 CROSS JOIN LATERAL @parse_github_repository_artifact(repos.url) AS artifact_fields
+WHERE repos.url IS NOT NULL
+  AND artifact_fields.artifact_name IS NOT NULL
