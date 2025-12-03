@@ -193,3 +193,54 @@ export const HorizontalForm: Story = {
     horizontal: true,
   },
 };
+
+const advancedSchema: FormSchema = {
+  name: {
+    type: "string",
+    label: "Name",
+    required: true,
+    placeholder: "my_source",
+  },
+  endpoint: {
+    type: "string",
+    label: "Endpoint",
+    required: true,
+    placeholder: "https://api.example.com/graphql",
+  },
+  paginationType: {
+    type: "string",
+    label: "Pagination Type",
+    options: ["OFFSET", "CURSOR", "RELAY", "KEYSET"],
+    placeholder: "Select pagination",
+    advanced: true,
+    advancedGroup: "Pagination",
+  },
+  pageSize: {
+    type: "number",
+    label: "Page Size",
+    placeholder: "50",
+    advanced: true,
+    advancedGroup: "Pagination",
+  },
+  retryEnabled: {
+    type: "boolean",
+    label: "Enable Retry",
+    advanced: true,
+    advancedGroup: "Retry",
+  },
+  retryMax: {
+    type: "number",
+    label: "Max Retries",
+    placeholder: "3",
+    advanced: true,
+    advancedGroup: "Retry",
+  },
+};
+
+export const WithAdvancedGroups: Story = {
+  args: {
+    schema: advancedSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[600px]",
+  },
+};
