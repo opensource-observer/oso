@@ -8159,7 +8159,8 @@ export type SystemDataModelRunQueueArgs = {
 };
 
 export type SystemResolveTablesArgs = {
-  references?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  metadata?: InputMaybe<Scalars["JSON"]["input"]>;
+  references: Array<Scalars["String"]["input"]>;
 };
 
 export type SystemResolvedTableReference = {

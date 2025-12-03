@@ -22,6 +22,7 @@ import {
 import { Database } from "@/lib/types/supabase";
 import { OSO_JWT_SECRET, TRINO_JWT_SECRET } from "@/lib/config";
 import { SignJWT, jwtVerify } from "jose";
+import { SystemCredentials, systemCredentialsSchema } from "@/lib/types/system";
 
 // Constants
 const DEFAULT_KEY_NAME = "login";
@@ -277,7 +278,7 @@ async function getUserByAmbigiousToken(
 
   const user =
     apiKeyUser.role === "anonymous"
-      ? await verifyOsoJwt(token, host)
+      ? await verifyUserOsoJwt(token, host)
       : apiKeyUser;
   if (user.role === "anonymous") {
     return user;
@@ -417,16 +418,13 @@ async function signOsoJwt(
     .sign(new TextEncoder().encode(secret));
 }
 
-async function verifyOsoJwt(
-  token: string,
-  host: string | null,
-): Promise<AuthOrgUser | AnonUser> {
+async function verifyOsoJwt(token: string) {
   const secret = OSO_JWT_SECRET;
   if (!secret) {
     throw new Error("JWT Secret not found: unable to authenticate");
   }
   try {
-    const { payload } = await jwtVerify<AuthOrgUser>(
+    const { payload } = await jwtVerify(
       token,
       new TextEncoder().encode(secret),
       {
@@ -436,13 +434,31 @@ async function verifyOsoJwt(
       },
     );
 
-    return AuthOrgUserSchema.parse(payload);
+    return payload;
   } catch (e: unknown) {
     console.log(
-      `auth: Invalid JWT token: ${e instanceof Error ? e.message : ""} => anon`,
+      `auth: Invalid JWT token: ${e instanceof Error ? e.message : ""}`,
     );
+    return undefined;
+  }
+}
+
+async function verifyUserOsoJwt(
+  token: string,
+  host: string | null,
+): Promise<AuthUser | AnonUser> {
+  const jwtPayload = await verifyOsoJwt(token);
+  if (!jwtPayload) {
     return makeAnonUser(host);
   }
+
+  const maybeUser = AuthOrgUserSchema.safeParse(jwtPayload);
+  if (!maybeUser.success) {
+    console.log(`auth: Invalid Oso JWT payload: ${maybeUser.error} => anon`);
+    return makeAnonUser(host);
+  }
+
+  return maybeUser.data;
 }
 
 async function signTrinoJWT(user: AuthOrgUser) {
@@ -460,6 +476,27 @@ async function signTrinoJWT(user: AuthOrgUser) {
     .setIssuer("opensource-observer")
     .setExpirationTime("1h")
     .sign(new TextEncoder().encode(secret));
+}
+
+async function getSystemCredentials(
+  request: NextRequest,
+): Promise<SystemCredentials | undefined> {
+  const headers = request.headers;
+  const auth = headers.get("x-system-credentials");
+  if (!auth) {
+    return undefined;
+  }
+  const trimmedAuth = auth.trim();
+  const jwtPayload = await verifyOsoJwt(trimmedAuth);
+  if (!jwtPayload) {
+    return undefined;
+  }
+  const maybeSystemCredentials = systemCredentialsSchema.safeParse(jwtPayload);
+  if (maybeSystemCredentials.success) {
+    console.log(`auth: Valid system credentials received`);
+    return maybeSystemCredentials.data;
+  }
+  return undefined;
 }
 
 /**
@@ -493,8 +530,8 @@ async function setSupabaseSession(
 export {
   getOrgUser,
   getUser,
+  getSystemCredentials,
   setSupabaseSession,
   signOsoJwt,
-  verifyOsoJwt,
   signTrinoJWT,
 };
