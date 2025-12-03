@@ -2,7 +2,6 @@
 Special type for system related reads that are only allowed by authenticated
 service accounts that have system privileges.
 """
-
 # Don't take these run queue types too seriously yet. It is probable these won't
 # live in graphql at all as they're more suited to some other internal queuing
 # system for scheduling, but because we are calling for state of the run queue
@@ -42,7 +41,11 @@ type System {
   warehouse. This is used by the query rewriter to batch resolve table
   references as well as other internal operations.
   """
-  resolveTables(references: [String!]): [SystemResolvedTableReference!]!
+  resolveTables(
+    references: [String!]!
+    orgName: String
+    datasetName: String
+  ): [SystemResolvedTableReference!]!
 
   dataModelRunQueue(first: Int = 50, after: String): RunQueueItemConnection!
 
