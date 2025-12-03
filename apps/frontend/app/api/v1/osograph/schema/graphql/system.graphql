@@ -43,8 +43,7 @@ type System {
   """
   resolveTables(
     references: [String!]!
-    orgName: String
-    datasetName: String
+    metadata: JSON
   ): [SystemResolvedTableReference!]!
 
   dataModelRunQueue(first: Int = 50, after: String): RunQueueItemConnection!

@@ -24,14 +24,17 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
   System: {
     resolveTables: async (
       _: unknown,
-      input: { references: string[]; orgName: string; datasetName?: string },
+      input: {
+        references: string[];
+        metadata?: { orgName?: string; datasetName?: string };
+      },
       context: GraphQLContext,
     ) => {
       if (!context.systemCredentials) {
         throw AuthenticationErrors.notAuthorized();
       }
 
-      const { references, orgName, datasetName } = validateInput(
+      const { references, metadata } = validateInput(
         ResolveTablesSchema,
         input,
       );
@@ -40,7 +43,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const tableResolvers = [
         new LegacyInferredTableResolver(),
-        ...(orgName ? [new MetadataInferredTableResolver()] : []),
+        ...(metadata?.orgName ? [new MetadataInferredTableResolver()] : []),
         new DBTableResolver(supabase, [
           (table) => {
             // If the catalog is iceberg return the table as is
@@ -67,8 +70,8 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       for (const resolver of tableResolvers) {
         tableResolutionMap = await resolver.resolveTables(tableResolutionMap, {
-          orgName,
-          datasetName,
+          orgName: metadata?.orgName,
+          datasetName: metadata?.datasetName,
         });
       }
 

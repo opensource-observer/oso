@@ -226,8 +226,12 @@ export const CreateRunRequestSchema = z.object({
 
 export const ResolveTablesSchema = z.object({
   references: z.array(z.string()).min(1, "At least one reference is required"),
-  orgName: z.string().optional(),
-  datasetName: z.string().optional(),
+  metadata: z
+    .object({
+      orgName: z.string().optional(),
+      datasetName: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const TableMetadataWhereSchema = z.object({
