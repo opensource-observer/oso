@@ -17,7 +17,7 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0)
   ),
-  enabled false,
+  enabled true,
 );
 
 -- Get only the artifact_ids we need from base metadata first (materialized)
