@@ -7,6 +7,39 @@ from oso_dagster.factories.common import (
 from oso_dagster.resources.heartbeat import HeartBeatResource
 from oso_dagster.resources.trino import TrinoResource
 
+# This configuration ensures that we use one of the persistent node pools and
+# have a smaller resource request for the trino automation pod. It's doing
+# simple things and kubernetes doesn't show it being very resource intensive.
+TRINO_AUTOMATION_POD_CONFIG = {
+    "dagster-k8s/config": {
+        "merge_behavior": "SHALLOW",
+        "container_config": {
+            "resources": {
+                "requests": {
+                    "cpu": "50m",
+                    "memory": "256Mi",
+                },
+                "limits": {
+                    "memory": "1024Mi",
+                },
+            },
+        },
+        "pod_spec_config": {
+            "node_selector": {
+                "pool_type": "persistent",
+            },
+            "tolerations": [
+                {
+                    "key": "pool_type",
+                    "operator": "Equal",
+                    "value": "persistent",
+                    "effect": "NoSchedule",
+                }
+            ],
+        },
+    },
+}
+
 
 @early_resources_asset_factory()
 def trino_automation_assets() -> AssetFactoryResponse:
@@ -48,7 +81,7 @@ def trino_automation_assets() -> AssetFactoryResponse:
 
     # Use the in-process executor for the heartbeat monitor job to avoid
     # the overhead of spinning up a new k8s pod in addition to the run launcher
-    @dg.job(executor_def=dg.in_process_executor)
+    @dg.job(executor_def=dg.in_process_executor, tags=TRINO_AUTOMATION_POD_CONFIG)
     def trino_heartbeat_monitor_job():
         trino_heartbeat_checker()
 
