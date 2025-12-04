@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+/**
+ * A request to run a user defined model
+ */
+message DataModelRunRequest {
+  bytes run_id = 1;
+
+  // The dataset on which the models are to be run
+  string dataset_id = 2;
+
+  // IDs of the models to run on the dataset. Should not be empty.
+  repeated string model_release_ids = 3;
+}
