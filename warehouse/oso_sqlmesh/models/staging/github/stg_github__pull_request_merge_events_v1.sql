@@ -25,10 +25,10 @@ WITH pull_request_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
+    and ghe.created_at < TIMESTAMP '2025-10-07 00:00:00 UTC'
     -- We cast a wider net of pull request events to ensure we capture any
     -- random changes for a single pullrequest in a given time range
     and ghe.created_at BETWEEN @start_dt  - INTERVAL '15' DAY AND @end_dt + INTERVAL '1' DAY
-    and ghe.created_at < '2025-10-07'
 )
 SELECT DISTINCT
   pre.repo.id AS repository_id,

@@ -29,7 +29,10 @@ WITH pull_request_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
-    and ghe.created_at < '2025-10-07'
+    -- and ghe.created_at < CAST('2025-10-07T00:00:00Z' AS TIMESTAMP WITH TIME ZONE)
+    and ghe.created_at < TIMESTAMP '2025-10-07 00:00:00 UTC'
+    -- We cast a wider net of pull request events to ensure we capture any
+    -- random changes for a single pullrequest in a given time range
     and ghe.created_at BETWEEN @start_dt  - INTERVAL '1' DAY AND @end_dt + INTERVAL '1' DAY
     and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 )
