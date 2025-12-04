@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+/**
+ * A request to run a user defined model
+ */
+message DataModelRunRequest {
+  // The unique request ID for this data model run. This will be used to track
+  // the status and results of the run
+  string request_id = 1;
+
+  string dataset_id = 2;
+
+  // IDs of the models to run on the dataset. If empty, all models in the
+  // dataset are to be materialized
+  repeated string model_ids = 3;
+}

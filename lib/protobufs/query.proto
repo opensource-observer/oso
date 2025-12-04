@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+/**
+  * A request to run a query on the trino cluster. The results will be stored
+  * and can be retrieved later using the request_id.
+  */
+message QueryRunRequest {
+  // Results need to be stored at some location so that they can be retrieved
+  // later. This unique request ID will be used to identify the results.
+  string request_id = 1;
+
+  // The query should be sent as is to the workers. Any rewriting will be
+  // handled at the worker
+  string query = 2;
+
+  // The JWT of the user making the request. This is used to authenticate the 
+  // request and authorize access to the data on trino. 
+  string jwt = 3;
+
+  // Metadata passed on to the workers for query rewriting inference. This is
+  // expected to be a JSON string.
+  string metadata_json = 4;
+}

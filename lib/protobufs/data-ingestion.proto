@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+/**
+ * A request to materiaize a data ingestion dataset
+ */
+message DataIngestionRunRequest {
+  // The unique request ID for this data ingestion run. This will be used to
+  // track the status and results of the run
+  string request_id = 1;
+
+  string dataset_id = 2;
+
+  // The ID of the data ingestion dataset to materiaize
+  string data_ingestion_id = 3;
+}
