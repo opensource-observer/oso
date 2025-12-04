@@ -15,6 +15,7 @@ from oso_dagster.config import DagsterConfig
 from oso_dagster.factories.common import AssetFactoryResponse, FactoryJobDefinition
 from oso_dagster.utils.tags import (
     experimental_tag,
+    no_schedule_source_tag,
     partitioned_assets,
     sbom_source_tag,
     sqlmesh_source_downstream_tag,
@@ -88,6 +89,7 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
         - unstable_source_tag
         - sbom_source_tag
         - partitioned_assets
+        - no_schedule_source_tag
     )
 
     if global_config.sqlmesh_assets_on_default_code_location_enabled:

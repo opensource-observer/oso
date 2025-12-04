@@ -46,6 +46,9 @@ def get_endpoint(ens_api_key: Optional[str] = None, masked: bool = False) -> str
     op_tags={
         "dagster-k8s/config": K8S_CONFIG,
     },
+    tags={
+        "opensource.observer/source": "no-schedule",
+    },
     retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
 )
 def text_changeds(
@@ -94,6 +97,9 @@ def text_changeds(
     key_prefix="ens",
     op_tags={
         "dagster-k8s/config": K8S_CONFIG,
+    },
+    tags={
+        "opensource.observer/source": "no-schedule",
     },
     retry_policy=RetryPolicy(max_retries=MAX_RETRY_COUNT),
 )
