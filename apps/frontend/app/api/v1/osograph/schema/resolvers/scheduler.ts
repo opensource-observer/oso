@@ -66,6 +66,7 @@ export const schedulerResolvers = {
           }
           case "DATA_INGESTION":
           case "DATA_CONNECTOR":
+          case "STATIC_MODEL":
             throw new Error("Not implemented yet");
           default:
             assertNever(

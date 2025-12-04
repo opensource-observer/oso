@@ -30,6 +30,7 @@ import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { DatasetType } from "@/lib/graphql/generated/graphql";
+import { assertNever } from "@opensource-observer/utils";
 
 export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -140,9 +141,16 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           catalog = "user_iceberg";
           schema = `ds_${datasetId.replace(/-/g, "")}`;
           break;
-        default:
+        case "DATA_INGESTION":
+        case "DATA_CONNECTOR":
+        case "STATIC_MODEL":
           throw new Error(
             `Dataset type "${validated.type}" is not supported yet.`,
+          );
+        default:
+          assertNever(
+            validated.type,
+            `Unsupported dataset type: ${validated.type}`,
           );
       }
 
