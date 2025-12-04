@@ -28,7 +28,7 @@ MODEL (
     "incremental",
     "optimism"
   )
-)
+);
 
 WITH logs AS (
   SELECT
