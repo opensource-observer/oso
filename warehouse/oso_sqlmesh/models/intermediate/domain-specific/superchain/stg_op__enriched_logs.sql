@@ -11,7 +11,7 @@ MODEL (
   dialect trino,
   start @blockchain_incremental_start,
   cron '@daily',
-  partitioned_by (DAY("block_timestamp"),"chain"),
+  partitioned_by DAY("block_timestamp"),
   grain(
     block_timestamp,
     transaction_hash,
