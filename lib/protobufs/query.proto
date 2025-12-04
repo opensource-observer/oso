@@ -5,9 +5,7 @@ syntax = "proto3";
   * and can be retrieved later using the request_id.
   */
 message QueryRunRequest {
-  // Results need to be stored at some location so that they can be retrieved
-  // later. This unique request ID will be used to identify the results.
-  string request_id = 1;
+  bytes run_id = 1;
 
   // The query should be sent as is to the workers. Any rewriting will be
   // handled at the worker
