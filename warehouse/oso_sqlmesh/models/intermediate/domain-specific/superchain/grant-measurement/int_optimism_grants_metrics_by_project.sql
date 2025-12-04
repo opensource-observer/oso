@@ -36,7 +36,7 @@ metrics AS (
     ON tm.metric_id = m.metric_id
   WHERE
     m.metric_model NOT IN ('funding_awarded', 'funding_received')
-    AND tm.sample_date >= DATE('2022-01-01')
+    AND tm.sample_date >= DATE('2021-01-01')
     AND m.metric_time_aggregation IN ('daily', 'monthly')
 ),
 
