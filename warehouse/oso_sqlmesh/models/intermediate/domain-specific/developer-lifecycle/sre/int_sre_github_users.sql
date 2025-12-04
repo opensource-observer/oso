@@ -11,7 +11,7 @@ MODEL(
 WITH sre_github_users AS (
   SELECT
     LOWER(github_handle) AS github_handle,
-    DATE(createdAt) AS created_at,
+    CAST(CAST(createdAt AS TIMESTAMP) AS DATE) AS created_at,
     referrer,
     COALESCE(challengesCompleted, 0) AS challenges_completed,
     batchId AS batch_id
