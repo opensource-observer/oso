@@ -23,6 +23,7 @@ MODEL (
     ),
   ),
   tags (
+    "superchain",
     "incremental"
   )
 );
