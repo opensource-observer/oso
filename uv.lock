@@ -9,6 +9,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "async-worker",
     "metrics-service",
     "oso",
     "oso-agent",
@@ -399,6 +400,25 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/4a/e7/82da0a03e7ba5141f05cce0d302e6eed121ae055e0456ca228bf693984bc/asttokens-3.0.0.tar.gz", hash = "sha256:0dcd8baa8d62b0c1d118b399b2ddba3c4aff271d0d7a9e0d4c1681c79035bbc7", size = 61978, upload-time = "2024-11-30T04:30:14.439Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/25/8a/c46dcc25341b5bce5472c718902eb3d38600a903b14fa6aeecef3f21a46f/asttokens-3.0.0-py3-none-any.whl", hash = "sha256:e3078351a059199dd5138cb1c706e6430c05eff2ff136af5eb4790f9d28932e2", size = 26918, upload-time = "2024-11-30T04:30:10.946Z" },
+]
+
+[[package]]
+name = "async-worker"
+version = "0.1.0"
+source = { editable = "warehouse/async-worker" }
+dependencies = [
+    { name = "dotenv" },
+    { name = "google-cloud-pubsub" },
+    { name = "pydantic-cli" },
+    { name = "query-rewriter" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "google-cloud-pubsub", specifier = ">=2.33.0" },
+    { name = "pydantic-cli", specifier = ">=10.0.0" },
+    { name = "query-rewriter", editable = "lib/query-rewriter" },
 ]
 
 [[package]]
@@ -2074,6 +2094,26 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d6/b8/2b53838d2acd6ec6168fd284a990c76695e84c65deee79c9f3a4276f6b4f/google_cloud_core-2.4.3.tar.gz", hash = "sha256:1fab62d7102844b278fe6dead3af32408b1df3eb06f5c7e8634cbd40edc4da53", size = 35861, upload-time = "2025-03-10T21:05:38.948Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/86/bda7241a8da2d28a754aad2ba0f6776e35b67e37c36ae0c45d49370f1014/google_cloud_core-2.4.3-py2.py3-none-any.whl", hash = "sha256:5130f9f4c14b4fafdff75c79448f9495cfade0d8775facf1b09c3bf67e027f6e", size = 29348, upload-time = "2025-03-10T21:05:37.785Z" },
+]
+
+[[package]]
+name = "google-cloud-pubsub"
+version = "2.33.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpc-google-iam-v1" },
+    { name = "grpcio" },
+    { name = "grpcio-status" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a1/dd/6e016dc4c893b8a7eee9f5a4ca8659a886164580bfb129b744f47aff1cde/google_cloud_pubsub-2.33.0.tar.gz", hash = "sha256:83bc50c54f669efb924ad21385bc7092fa11f7576eabef3d0b4d7aa8efa90aa6", size = 393962, upload-time = "2025-10-30T20:13:08.226Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5b/35/6f341d8b2e94cb61b6ead415e582e3fd697472ccef9bc3972c6d83e6273f/google_cloud_pubsub-2.33.0-py3-none-any.whl", hash = "sha256:d7af3b6448c9adc171f677a989dafb4c67df6112140bd4633f4bf7e3ebe67aa0", size = 321254, upload-time = "2025-10-30T20:13:06.37Z" },
 ]
 
 [[package]]
@@ -4924,6 +4964,18 @@ wheels = [
 [package.optional-dependencies]
 email = [
     { name = "email-validator" },
+]
+
+[[package]]
+name = "pydantic-cli"
+version = "10.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/45/b383f86c77e9f38360f66253a223f127a74a58aa46e22e52011093f83b3a/pydantic_cli-10.0.0.tar.gz", hash = "sha256:1439d1db73664177c838ca1b90ae8eca19c65ce3b119a79a7b6c6f07cb79874a", size = 34984, upload-time = "2025-10-16T07:00:45.091Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1c/41/5262fca75b48906b03bd1e156b99330699b59a198b220051128a23917e9a/pydantic_cli-10.0.0-py3-none-any.whl", hash = "sha256:e3778aed1e412c9962812af6a11d92ba514df6266bd60835f843b6332dae6eed", size = 43076, upload-time = "2025-10-16T07:00:43.705Z" },
 ]
 
 [[package]]
