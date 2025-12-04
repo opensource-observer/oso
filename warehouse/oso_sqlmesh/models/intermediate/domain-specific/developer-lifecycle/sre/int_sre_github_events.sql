@@ -27,7 +27,7 @@ MODEL (
 );
 
 SELECT
-  created_at::TIMESTAMP AS event_time,
+  created_at AS event_time,
   actor.id AS actor_id,
   LOWER(actor.login) AS actor_login,
   repo.id AS repo_id,
