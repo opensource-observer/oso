@@ -10,6 +10,7 @@ model(
       has_at_least_n_rows(threshold := 0),
     ),
     tags (
+      "superchain",
       "incremental",
     ),
 )
