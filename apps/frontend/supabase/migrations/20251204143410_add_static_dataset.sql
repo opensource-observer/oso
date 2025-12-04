@@ -21,4 +21,4 @@ CREATE TABLE IF NOT EXISTS "public"."static_model" (
 ALTER TABLE "public"."static_model" ENABLE ROW LEVEL SECURITY;
 
 -- Add unique constraint for dataset_id, org_id, and name where deleted_at is null
-CREATE UNIQUE INDEX model_org_id_dataset_id_name_unique ON public.model("org_id", "dataset_id", "name") WHERE "deleted_at" IS NULL;
+CREATE UNIQUE INDEX static_model_org_id_dataset_id_name_unique ON public.model("org_id", "dataset_id", "name") WHERE "deleted_at" IS NULL;
