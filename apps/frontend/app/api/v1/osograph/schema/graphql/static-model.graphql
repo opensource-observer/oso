@@ -1,0 +1,58 @@
+type StaticModel {
+  id: ID!
+  orgId: ID!
+  organization: Organization!
+  dataset: Dataset!
+  name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  materializations(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
+}
+
+type StaticModelEdge {
+  node: StaticModel!
+  cursor: String!
+}
+
+type StaticModelConnection {
+  edges: [StaticModelEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+extend type Query {
+  staticModels(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataModelConnection!
+}
+
+input CreateStaticModelInput {
+  orgId: ID!
+  datasetId: ID!
+  name: String!
+}
+
+type CreateStaticModelPayload {
+  success: Boolean!
+  staticModel: StaticModel
+  message: String
+}
+
+input UpdateStaticModelInput {
+  staticModelId: ID!
+  name: String
+}
+
+extend type Mutation {
+  createStaticModel(input: CreateStaticModelInput!): CreateStaticModelPayload!
+  updateStaticModel(input: UpdateStaticModelInput!): CreateStaticModelPayload!
+  createStaticModelUploadUrl(staticModelId: ID!): String!
+}

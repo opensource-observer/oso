@@ -33,6 +33,7 @@ enum DatasetType {
   USER_MODEL
   DATA_CONNECTOR
   DATA_INGESTION
+  STATIC_MODEL
 }
 
 """
