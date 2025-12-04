@@ -32,8 +32,6 @@ extend type Query {
     single: Boolean
     where: JSON
   ): DataModelConnection!
-
-  fileUrl(staticModelId: ID!): String!
 }
 
 input CreateStaticModelInput {
@@ -56,4 +54,5 @@ input UpdateStaticModelInput {
 extend type Mutation {
   createStaticModel(input: CreateStaticModelInput!): CreateStaticModelPayload!
   updateStaticModel(input: UpdateStaticModelInput!): CreateStaticModelPayload!
+  createStaticModelUploadUrl(staticModelId: ID!): String!
 }
