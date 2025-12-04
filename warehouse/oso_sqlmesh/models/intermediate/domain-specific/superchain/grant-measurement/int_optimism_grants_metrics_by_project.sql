@@ -5,7 +5,7 @@ MODEL (
   kind full,
   audits (
     HAS_AT_LEAST_N_ROWS(threshold := 0)
-  )
+  ),
 );
 
 WITH projects AS (
@@ -34,7 +34,10 @@ metrics AS (
     ON tm.project_id = p.oso_project_id
   JOIN oso.metrics_v0 AS m
     ON tm.metric_id = m.metric_id
-  WHERE m.metric_model NOT IN ('funding_awarded', 'funding_received')
+  WHERE
+    m.metric_model NOT IN ('funding_awarded', 'funding_received')
+    AND tm.sample_date >= DATE('2022-01-01')
+    AND m.metric_time_aggregation IN ('daily', 'monthly')
 ),
 
 enriched_metrics AS (
