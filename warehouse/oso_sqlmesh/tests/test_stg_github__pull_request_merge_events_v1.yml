@@ -1,5 +1,5 @@
-test_stg_github__pull_request_merge_events_basic:
-  model: oso.stg_github__pull_request_merge_events
+test_stg_github__pull_request_merge_events_v1_basic:
+  model: oso.stg_github__pull_request_merge_events_v1
   vars:
     start_dt: 2024-01-01
     end_dt: 2024-01-05
@@ -139,7 +139,7 @@ test_stg_github__pull_request_merge_events_basic:
         number: 5
 
 test_stg_github__pull_request_merge_events_edge_cases:
-  model: oso.stg_github__pull_request_merge_events
+  model: oso.stg_github__pull_request_merge_events_v1
   vars:
     start_dt: 2024-02-01
     end_dt: 2024-02-05

@@ -37,5 +37,5 @@ SELECT
 FROM oso.stg_github__events AS ghe
 WHERE
   ghe.type = 'PushEvent'
-  and ghe.created_at >= TIMESTAMP '2025-10-07 00:00:00'
+  and ghe.created_at >= '2025-10-07'
   and ghe.created_at BETWEEN @start_dt AND @end_dt
