@@ -154,6 +154,30 @@ export const UpdateDataModelSchema = z.object({
   isEnabled: z.boolean().optional(),
 });
 
+export const CreateStaticModelSchema = z.object({
+  orgId: z.string().uuid("Invalid organization ID"),
+  datasetId: z.string().uuid("Invalid dataset ID"),
+  name: z
+    .string()
+    .min(1, "StaticModel name is required")
+    .regex(
+      NAME_REGEX,
+      "StaticModel name can only contain letters, numbers, and underscores",
+    ),
+});
+
+export const UpdateStaticModelSchema = z.object({
+  staticModelId: z.string().uuid("Invalid static model ID"),
+  name: z
+    .string()
+    .min(1)
+    .regex(
+      NAME_REGEX,
+      "StaticModel name can only contain letters, numbers, and underscores",
+    )
+    .optional(),
+});
+
 const DataModelColumnSchema = z.object({
   name: z.string(),
   type: z.string(),
@@ -293,6 +317,7 @@ export function createWhereSchema<T extends ValidTableName>(_tableName: T) {
 export const NotebookWhereSchema = createWhereSchema("notebooks");
 export const DatasetWhereSchema = createWhereSchema("datasets");
 export const DataModelWhereSchema = createWhereSchema("model");
+export const StaticModelWhereSchema = createWhereSchema("static_model");
 export const InvitationWhereSchema = createWhereSchema("invitations");
 export const OrganizationWhereSchema = createWhereSchema("organizations");
 export const DataModelRevisionWhereSchema = createWhereSchema("model_revision");

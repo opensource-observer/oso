@@ -118,6 +118,9 @@ export const dataModelResolvers = {
       if (validatedInput.isEnabled !== undefined) {
         updateData.is_enabled = validatedInput.isEnabled;
       }
+      if (Object.keys(updateData).length > 0) {
+        updateData.updated_at = new Date().toISOString();
+      }
 
       const { data, error } = await supabase
         .from("model")

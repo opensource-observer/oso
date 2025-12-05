@@ -81,9 +81,7 @@ describe("DBTableResolver", () => {
               org_id: org.id,
               name: "user",
               display_name: `User Dataset for ${org.org_name}`,
-              schema: "",
               created_by: TEST_USER_ID,
-              catalog: crypto.randomUUID(),
               dataset_type: "USER_MODEL" as const,
             },
             {
@@ -91,9 +89,7 @@ describe("DBTableResolver", () => {
               org_id: org.id,
               name: "connection",
               display_name: `Connection Dataset for ${org.org_name}`,
-              schema: "",
               created_by: TEST_USER_ID,
-              catalog: crypto.randomUUID(),
               dataset_type: "DATA_CONNECTOR" as const,
             },
             {
@@ -101,9 +97,7 @@ describe("DBTableResolver", () => {
               org_id: org.id,
               name: "ingestion",
               display_name: `Ingestion Dataset for ${org.org_name}`,
-              schema: "",
               created_by: TEST_USER_ID,
-              catalog: crypto.randomUUID(),
               dataset_type: "DATA_INGESTION" as const,
             },
           ];

@@ -31,7 +31,7 @@ extend type Query {
     after: String
     single: Boolean
     where: JSON
-  ): DataModelConnection!
+  ): StaticModelConnection!
 }
 
 input CreateStaticModelInput {
