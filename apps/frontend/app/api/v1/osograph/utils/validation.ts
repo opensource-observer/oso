@@ -219,9 +219,21 @@ export const CreateDataModelReleaseSchema = z.object({
   description: z.string().optional(),
 });
 
-export const CreateRunRequestSchema = z.object({
+export const CreateUserModelRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
-  selected: z.array(z.string()).optional(),
+  selectedModels: z.array(z.string()).optional(),
+});
+
+export const CreateDataIngestionRunRequestSchema = z.object({
+  datasetId: z.string().uuid(),
+});
+
+export const CreateDataConnectorRunRequestSchema = z.object({
+  datasetId: z.string().uuid(),
+});
+
+export const CreateStaticModelRunRequestSchema = z.object({
+  datasetId: z.string().uuid(),
 });
 
 export const ResolveTablesSchema = z.object({
