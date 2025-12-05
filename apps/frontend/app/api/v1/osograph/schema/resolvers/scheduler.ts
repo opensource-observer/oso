@@ -1,10 +1,14 @@
-import { MaterializationRow, RunRow } from "@/lib/types/schema-types";
+import {
+  DatasetsRow,
+  MaterializationRow,
+  RunRow,
+} from "@/lib/types/schema-types";
 import { RunStatus } from "@/lib/graphql/generated/graphql";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
-  CreateRunRequestSchema,
+  CreateUserModelRunRequestSchema,
   MaterializationWhereSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
@@ -12,11 +16,13 @@ import { assertNever } from "@opensource-observer/utils";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  ServerErrors,
+  AuthenticationErrors,
   ResourceErrors,
+  ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 import z from "zod";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
+import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
   switch (status) {
@@ -28,84 +34,110 @@ function mapRunStatus(status: RunRow["status"]): RunStatus {
       return RunStatus.Failed;
     case "canceled":
       return RunStatus.Canceled;
+    case "queued":
+      return RunStatus.Queued;
     default:
       assertNever(status, `Unknown run status: ${status}`);
   }
 }
 
+function genericRunRequestResolver<T extends z.ZodTypeAny, Q>(
+  inputSchema: T,
+  queueMessageFactory: (
+    input: z.infer<T>,
+    user: ReturnType<typeof requireAuthentication>,
+    dataset: DatasetsRow,
+    run: RunRow,
+  ) => Promise<Q>,
+): (
+  _: any,
+  args: { input: z.infer<T> },
+  context: GraphQLContext,
+) => Promise<{
+  success: boolean;
+  message: string;
+  run: RunRow;
+}> {
+  return async (
+    _: any,
+    args: { input: z.infer<T> },
+    context: GraphQLContext,
+  ) => {
+    const authenticatedUser = requireAuthentication(context.user);
+    const input = validateInput(inputSchema, args.input);
+    const supabase = createAdminClient();
+
+    // We need to get the org from the dataset and then verify the user belongs to that org
+    // First, get the dataset
+    const { datasetId } = input;
+    const { data: dataset, error: datasetError } = await supabase
+      .from("datasets")
+      .select("*")
+      .eq("id", datasetId)
+      .single();
+    if (datasetError || !dataset) {
+      logger.error(
+        `Error fetching dataset with id ${datasetId}: ${datasetError?.message}`,
+      );
+      throw ResourceErrors.notFound("Dataset not found");
+    }
+
+    // Now verify the user belongs to that org
+    if (
+      !(await checkMembershipExists(authenticatedUser.userId, dataset.org_id))
+    ) {
+      throw AuthenticationErrors.notAuthorized();
+    }
+
+    // Create a run to store the results of the run request
+    const { data: queuedRun, error: queuedRunError } = await supabase
+      .from("run")
+      .insert({
+        org_id: dataset.org_id,
+        dataset_id: datasetId,
+        run_type: "manual",
+        requested_by: authenticatedUser.userId,
+      })
+      .select()
+      .single();
+    if (queuedRunError || !queuedRun) {
+      logger.error(
+        `Error creating run for dataset ${datasetId}: ${queuedRunError?.message}`,
+      );
+      throw ServerErrors.database("Failed to create run request");
+    }
+
+    // Have the queue message factory create the message to be pushed to the
+    // queue
+    const message = await queueMessageFactory(
+      input,
+      authenticatedUser,
+      dataset,
+      queuedRun,
+    );
+
+    // Push the message onto the queue... this is a placeholder for now
+    logger.info(
+      `Would push message onto the queue: ${JSON.stringify(message)}`,
+    );
+
+    // Create a run to store the results of the run request
+    return {
+      success: true,
+      message: "Run request created successfully",
+      run: queuedRun,
+    };
+  };
+}
+
 export const schedulerResolvers = {
   Mutation: {
-    createRunRequest: async (
-      _: any,
-      args: { input: z.infer<typeof CreateRunRequestSchema> },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const { definitionId, definitionType } = validateInput(
-        CreateRunRequestSchema,
-        args.input,
-      );
-      const supabase = createAdminClient();
-
-      const getRunDefinition = async () => {
-        switch (definitionType) {
-          case "USER_MODEL": {
-            const { data: model, error: modelError } = await supabase
-              .from("model")
-              .select("*")
-              .eq("id", definitionId)
-              .single();
-
-            if (modelError || !model) {
-              logger.error(
-                `Error fetching model ${definitionId}: ${modelError?.message}`,
-              );
-              throw ResourceErrors.notFound("Model", definitionId);
-            }
-            return model;
-          }
-          case "DATA_INGESTION":
-          case "DATA_CONNECTOR":
-          case "STATIC_MODEL":
-            throw new Error("Not implemented yet");
-          default:
-            assertNever(
-              definitionType,
-              `Unsupported definition type: ${definitionType}`,
-            );
-        }
-      };
-
-      const runDefinition = await getRunDefinition();
-
-      const { data: runRequest, error: runRequestError } = await supabase
-        .from("run_request")
-        .insert({
-          dataset_id: runDefinition.dataset_id,
-          org_id: runDefinition.org_id,
-          created_by: authenticatedUser.userId,
-          definition_id: definitionId,
-        })
-        .select("*")
-        .single();
-
-      if (runRequestError || !runRequest) {
-        logger.error(`Error creating run request: ${runRequestError?.message}`);
-        throw ServerErrors.database("Failed to create run request");
-      }
-
-      return {
-        success: true,
-        message: "Run request created successfully",
-        runRequest: {
-          id: runRequest.id,
-          requestedAt: runRequest.created_at,
-          definition: runDefinition,
-          requestedByUserId: authenticatedUser.userId,
-          requestedBy: authenticatedUser,
-        },
-      };
-    },
+    createUserModelRunRequest: genericRunRequestResolver(
+      CreateUserModelRunRequestSchema,
+      async (_input, _user, _dataset, _run) => {
+        return {};
+      },
+    ),
   },
   Run: {
     status: (parent: RunRow) => mapRunStatus(parent.status),

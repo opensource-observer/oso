@@ -535,6 +535,7 @@ export type Database = {
           org_id: string;
           run_id: string;
           schema: Database["public"]["CompositeTypes"]["model_column_type"][];
+          step_id: string | null;
           table_id: string;
           warehouse_fqn: string;
         };
@@ -545,6 +546,7 @@ export type Database = {
           org_id: string;
           run_id: string;
           schema: Database["public"]["CompositeTypes"]["model_column_type"][];
+          step_id?: string | null;
           table_id: string;
           warehouse_fqn: string;
         };
@@ -555,10 +557,18 @@ export type Database = {
           org_id?: string;
           run_id?: string;
           schema?: Database["public"]["CompositeTypes"]["model_column_type"][];
+          step_id?: string | null;
           table_id?: string;
           warehouse_fqn?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "fk_step";
+            columns: ["step_id"];
+            isOneToOne: false;
+            referencedRelation: "step";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "materialization_dataset_id_fkey";
             columns: ["dataset_id"];
@@ -1164,8 +1174,12 @@ export type Database = {
           id: string;
           logs_url: string | null;
           org_id: string;
-          started_at: string;
+          queued_at: string;
+          requested_by: string | null;
+          run_type: Database["public"]["Enums"]["run_type"];
+          started_at: string | null;
           status: Database["public"]["Enums"]["run_status"];
+          ttl: string | null;
         };
         Insert: {
           completed_at?: string | null;
@@ -1173,8 +1187,12 @@ export type Database = {
           id?: string;
           logs_url?: string | null;
           org_id: string;
-          started_at?: string;
+          queued_at?: string;
+          requested_by?: string | null;
+          run_type?: Database["public"]["Enums"]["run_type"];
+          started_at?: string | null;
           status?: Database["public"]["Enums"]["run_status"];
+          ttl?: string | null;
         };
         Update: {
           completed_at?: string | null;
@@ -1182,8 +1200,12 @@ export type Database = {
           id?: string;
           logs_url?: string | null;
           org_id?: string;
-          started_at?: string;
+          queued_at?: string;
+          requested_by?: string | null;
+          run_type?: Database["public"]["Enums"]["run_type"];
+          started_at?: string | null;
           status?: Database["public"]["Enums"]["run_status"];
+          ttl?: string | null;
         };
         Relationships: [
           {
@@ -1202,47 +1224,98 @@ export type Database = {
           },
         ];
       };
-      run_request: {
+      static_model: {
         Row: {
           created_at: string;
-          created_by: string | null;
           dataset_id: string;
-          definition_id: string | null;
           deleted_at: string | null;
           id: string;
+          name: string;
           org_id: string;
+          updated_at: string;
         };
         Insert: {
           created_at?: string;
-          created_by?: string | null;
           dataset_id: string;
-          definition_id?: string | null;
           deleted_at?: string | null;
           id?: string;
+          name: string;
           org_id: string;
+          updated_at?: string;
         };
         Update: {
           created_at?: string;
-          created_by?: string | null;
           dataset_id?: string;
-          definition_id?: string | null;
           deleted_at?: string | null;
           id?: string;
+          name?: string;
           org_id?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "run_request_dataset_id_fkey";
+            foreignKeyName: "static_model_dataset_id_fkey";
             columns: ["dataset_id"];
             isOneToOne: false;
             referencedRelation: "datasets";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "run_request_org_id_fkey";
+            foreignKeyName: "static_model_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      step: {
+        Row: {
+          completed_at: string | null;
+          display_name: string;
+          id: string;
+          logs_url: string | null;
+          name: string;
+          org_id: string;
+          run_id: string;
+          started_at: string;
+          status: Database["public"]["Enums"]["step_status"];
+        };
+        Insert: {
+          completed_at?: string | null;
+          display_name: string;
+          id?: string;
+          logs_url?: string | null;
+          name: string;
+          org_id: string;
+          run_id: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["step_status"];
+        };
+        Update: {
+          completed_at?: string | null;
+          display_name?: string;
+          id?: string;
+          logs_url?: string | null;
+          name?: string;
+          org_id?: string;
+          run_id?: string;
+          started_at?: string;
+          status?: Database["public"]["Enums"]["step_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "step_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "step_run_id_fkey";
+            columns: ["run_id"];
+            isOneToOne: false;
+            referencedRelation: "run";
             referencedColumns: ["id"];
           },
         ];
@@ -1473,7 +1546,11 @@ export type Database = {
       };
     };
     Enums: {
-      dataset_type: "USER_MODEL" | "DATA_CONNECTOR" | "DATA_INGESTION";
+      dataset_type:
+        | "USER_MODEL"
+        | "DATA_CONNECTOR"
+        | "DATA_INGESTION"
+        | "STATIC_MODEL";
       model_kind:
         | "INCREMENTAL_BY_TIME_RANGE"
         | "INCREMENTAL_BY_UNIQUE_KEY"
@@ -1482,7 +1559,9 @@ export type Database = {
         | "SCD_TYPE_2_BY_COLUMN"
         | "FULL"
         | "VIEW";
-      run_status: "running" | "completed" | "failed" | "canceled";
+      run_status: "running" | "completed" | "failed" | "canceled" | "queued";
+      run_type: "manual" | "scheduled";
+      step_status: "running" | "success" | "failed" | "canceled";
     };
     CompositeTypes: {
       model_column_type: {
@@ -1637,7 +1716,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      dataset_type: ["USER_MODEL", "DATA_CONNECTOR", "DATA_INGESTION"],
+      dataset_type: [
+        "USER_MODEL",
+        "DATA_CONNECTOR",
+        "DATA_INGESTION",
+        "STATIC_MODEL",
+      ],
       model_kind: [
         "INCREMENTAL_BY_TIME_RANGE",
         "INCREMENTAL_BY_UNIQUE_KEY",
@@ -1647,7 +1731,9 @@ export const Constants = {
         "FULL",
         "VIEW",
       ],
-      run_status: ["running", "completed", "failed", "canceled"],
+      run_status: ["running", "completed", "failed", "canceled", "queued"],
+      run_type: ["manual", "scheduled"],
+      step_status: ["running", "success", "failed", "canceled"],
     },
   },
 } as const;

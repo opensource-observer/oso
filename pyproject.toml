@@ -119,7 +119,8 @@ members = [
     "lib/oso-core",
     "warehouse/oso_semantic",
     "warehouse/scheduler",
-    "lib/query-rewriter"
+    "lib/query-rewriter",
+    "warehouse/async-worker",
 ]
 
 [build-system]
