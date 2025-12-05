@@ -1,4 +1,4 @@
-import { SUPABASE_URL } from "@/apps/frontend/lib/config";
+import { SUPABASE_URL } from "@/lib/config";
 
 const setup = async (): Promise<void> => {
   // Ensure that tests are _always_ pointing to localhost or 127.0.0.1
