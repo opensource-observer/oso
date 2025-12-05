@@ -11,8 +11,6 @@ export type PublicDatasetType = z.infer<
 >;
 export type PublicModelKind = z.infer<typeof generated.publicModelKindSchema>;
 export type PublicRunStatus = z.infer<typeof generated.publicRunStatusSchema>;
-export type PublicRunType = z.infer<typeof generated.publicRunTypeSchema>;
-export type PublicStepStatus = z.infer<typeof generated.publicStepStatusSchema>;
 export type Json = z.infer<typeof generated.jsonSchema>;
 export type AdminUsersRow = z.infer<typeof generated.adminUsersRowSchema>;
 export type AdminUsersInsert = z.infer<typeof generated.adminUsersInsertSchema>;
@@ -261,6 +259,12 @@ export type RunRow = z.infer<typeof generated.runRowSchema>;
 export type RunInsert = z.infer<typeof generated.runInsertSchema>;
 export type RunUpdate = z.infer<typeof generated.runUpdateSchema>;
 export type RunRelationships = z.infer<typeof generated.runRelationshipsSchema>;
+export type RunRequestRow = z.infer<typeof generated.runRequestRowSchema>;
+export type RunRequestInsert = z.infer<typeof generated.runRequestInsertSchema>;
+export type RunRequestUpdate = z.infer<typeof generated.runRequestUpdateSchema>;
+export type RunRequestRelationships = z.infer<
+  typeof generated.runRequestRelationshipsSchema
+>;
 export type StaticModelRow = z.infer<typeof generated.staticModelRowSchema>;
 export type StaticModelInsert = z.infer<
   typeof generated.staticModelInsertSchema
@@ -270,12 +274,6 @@ export type StaticModelUpdate = z.infer<
 >;
 export type StaticModelRelationships = z.infer<
   typeof generated.staticModelRelationshipsSchema
->;
-export type StepRow = z.infer<typeof generated.stepRowSchema>;
-export type StepInsert = z.infer<typeof generated.stepInsertSchema>;
-export type StepUpdate = z.infer<typeof generated.stepUpdateSchema>;
-export type StepRelationships = z.infer<
-  typeof generated.stepRelationshipsSchema
 >;
 export type UserCreditsRow = z.infer<typeof generated.userCreditsRowSchema>;
 export type UserCreditsInsert = z.infer<

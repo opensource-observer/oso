@@ -208,7 +208,6 @@ export type Database = {
       };
       datasets: {
         Row: {
-          catalog: string;
           created_at: string;
           created_by: string;
           dataset_type: Database["public"]["Enums"]["dataset_type"];
@@ -219,11 +218,9 @@ export type Database = {
           is_public: boolean;
           name: string;
           org_id: string;
-          schema: string;
           updated_at: string;
         };
         Insert: {
-          catalog: string;
           created_at?: string;
           created_by: string;
           dataset_type: Database["public"]["Enums"]["dataset_type"];
@@ -234,11 +231,9 @@ export type Database = {
           is_public?: boolean;
           name: string;
           org_id: string;
-          schema: string;
           updated_at?: string;
         };
         Update: {
-          catalog?: string;
           created_at?: string;
           created_by?: string;
           dataset_type?: Database["public"]["Enums"]["dataset_type"];
@@ -249,7 +244,6 @@ export type Database = {
           is_public?: boolean;
           name?: string;
           org_id?: string;
-          schema?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -535,7 +529,6 @@ export type Database = {
           org_id: string;
           run_id: string;
           schema: Database["public"]["CompositeTypes"]["model_column_type"][];
-          step_id: string | null;
           table_id: string;
           warehouse_fqn: string;
         };
@@ -546,7 +539,6 @@ export type Database = {
           org_id: string;
           run_id: string;
           schema: Database["public"]["CompositeTypes"]["model_column_type"][];
-          step_id?: string | null;
           table_id: string;
           warehouse_fqn: string;
         };
@@ -557,18 +549,10 @@ export type Database = {
           org_id?: string;
           run_id?: string;
           schema?: Database["public"]["CompositeTypes"]["model_column_type"][];
-          step_id?: string | null;
           table_id?: string;
           warehouse_fqn?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: "fk_step";
-            columns: ["step_id"];
-            isOneToOne: false;
-            referencedRelation: "step";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "materialization_dataset_id_fkey";
             columns: ["dataset_id"];
@@ -1174,12 +1158,9 @@ export type Database = {
           id: string;
           logs_url: string | null;
           org_id: string;
-          queued_at: string;
-          requested_by: string | null;
-          run_type: Database["public"]["Enums"]["run_type"];
-          started_at: string | null;
+          run_request_id: string | null;
+          started_at: string;
           status: Database["public"]["Enums"]["run_status"];
-          ttl: string | null;
         };
         Insert: {
           completed_at?: string | null;
@@ -1187,12 +1168,9 @@ export type Database = {
           id?: string;
           logs_url?: string | null;
           org_id: string;
-          queued_at?: string;
-          requested_by?: string | null;
-          run_type?: Database["public"]["Enums"]["run_type"];
-          started_at?: string | null;
+          run_request_id?: string | null;
+          started_at?: string;
           status?: Database["public"]["Enums"]["run_status"];
-          ttl?: string | null;
         };
         Update: {
           completed_at?: string | null;
@@ -1200,14 +1178,18 @@ export type Database = {
           id?: string;
           logs_url?: string | null;
           org_id?: string;
-          queued_at?: string;
-          requested_by?: string | null;
-          run_type?: Database["public"]["Enums"]["run_type"];
-          started_at?: string | null;
+          run_request_id?: string | null;
+          started_at?: string;
           status?: Database["public"]["Enums"]["run_status"];
-          ttl?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "fk_run_request";
+            columns: ["run_request_id"];
+            isOneToOne: false;
+            referencedRelation: "run_request";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "run_dataset_id_fkey";
             columns: ["dataset_id"];
@@ -1217,6 +1199,51 @@ export type Database = {
           },
           {
             foreignKeyName: "run_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      run_request: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          dataset_id: string;
+          definition_id: string | null;
+          deleted_at: string | null;
+          id: string;
+          org_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          dataset_id: string;
+          definition_id?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          org_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          dataset_id?: string;
+          definition_id?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          org_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "run_request_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "run_request_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -1265,57 +1292,6 @@ export type Database = {
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      step: {
-        Row: {
-          completed_at: string | null;
-          display_name: string;
-          id: string;
-          logs_url: string | null;
-          name: string;
-          org_id: string;
-          run_id: string;
-          started_at: string;
-          status: Database["public"]["Enums"]["step_status"];
-        };
-        Insert: {
-          completed_at?: string | null;
-          display_name: string;
-          id?: string;
-          logs_url?: string | null;
-          name: string;
-          org_id: string;
-          run_id: string;
-          started_at?: string;
-          status?: Database["public"]["Enums"]["step_status"];
-        };
-        Update: {
-          completed_at?: string | null;
-          display_name?: string;
-          id?: string;
-          logs_url?: string | null;
-          name?: string;
-          org_id?: string;
-          run_id?: string;
-          started_at?: string;
-          status?: Database["public"]["Enums"]["step_status"];
-        };
-        Relationships: [
-          {
-            foreignKeyName: "step_org_id_fkey";
-            columns: ["org_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "step_run_id_fkey";
-            columns: ["run_id"];
-            isOneToOne: false;
-            referencedRelation: "run";
             referencedColumns: ["id"];
           },
         ];
@@ -1559,9 +1535,7 @@ export type Database = {
         | "SCD_TYPE_2_BY_COLUMN"
         | "FULL"
         | "VIEW";
-      run_status: "running" | "completed" | "failed" | "canceled" | "queued";
-      run_type: "manual" | "scheduled";
-      step_status: "running" | "success" | "failed" | "canceled";
+      run_status: "running" | "completed" | "failed" | "canceled";
     };
     CompositeTypes: {
       model_column_type: {
@@ -1731,9 +1705,7 @@ export const Constants = {
         "FULL",
         "VIEW",
       ],
-      run_status: ["running", "completed", "failed", "canceled", "queued"],
-      run_type: ["manual", "scheduled"],
-      step_status: ["running", "success", "failed", "canceled"],
+      run_status: ["running", "completed", "failed", "canceled"],
     },
   },
 } as const;
