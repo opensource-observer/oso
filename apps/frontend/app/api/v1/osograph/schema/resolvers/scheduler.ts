@@ -22,7 +22,7 @@ import {
 } from "@/app/api/v1/osograph/utils/errors";
 import z from "zod";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
-import { checkMembershipExists } from "@/apps/frontend/app/api/v1/osograph/utils/resolver-helpers";
+import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
   switch (status) {
