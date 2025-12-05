@@ -2921,7 +2921,7 @@ class OsoAppClient {
 
     if (payload.success) {
       logger.log(
-        `Successfully created Run request for definition "${definitionId}"`,
+        `Successfully created Run request for user model dataset "${datasetId}"`,
       );
     }
 
