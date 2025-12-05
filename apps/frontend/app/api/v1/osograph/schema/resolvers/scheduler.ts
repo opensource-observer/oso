@@ -11,12 +11,10 @@ import {
 import { assertNever } from "@opensource-observer/utils";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  ServerErrors,
-  ResourceErrors,
-} from "@/app/api/v1/osograph/utils/errors";
+import { ServerErrors, UserErrors } from "@/app/api/v1/osograph/utils/errors";
 import z from "zod";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
+import { AuthOrgUserSchema } from "@/lib/types/user";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
   switch (status) {
@@ -28,6 +26,8 @@ function mapRunStatus(status: RunRow["status"]): RunStatus {
       return RunStatus.Failed;
     case "canceled":
       return RunStatus.Canceled;
+    case "queued":
+      return RunStatus.Queued;
     default:
       assertNever(status, `Unknown run status: ${status}`);
   }
@@ -41,69 +41,40 @@ export const schedulerResolvers = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { definitionId, definitionType } = validateInput(
-        CreateRunRequestSchema,
-        args.input,
-      );
+      const { datasetId } = validateInput(CreateRunRequestSchema, args.input);
       const supabase = createAdminClient();
+      const parsedOrgUser = AuthOrgUserSchema.safeParse(authenticatedUser);
+      if (!parsedOrgUser.success) {
+        throw UserErrors.profileNotFound();
+      }
+      const orgUser = parsedOrgUser.data;
 
-      const getRunDefinition = async () => {
-        switch (definitionType) {
-          case "USER_MODEL": {
-            const { data: model, error: modelError } = await supabase
-              .from("model")
-              .select("*")
-              .eq("id", definitionId)
-              .single();
-
-            if (modelError || !model) {
-              logger.error(
-                `Error fetching model ${definitionId}: ${modelError?.message}`,
-              );
-              throw ResourceErrors.notFound("Model", definitionId);
-            }
-            return model;
-          }
-          case "DATA_INGESTION":
-          case "DATA_CONNECTOR":
-          case "STATIC_MODEL":
-            throw new Error("Not implemented yet");
-          default:
-            assertNever(
-              definitionType,
-              `Unsupported definition type: ${definitionType}`,
-            );
-        }
-      };
-
-      const runDefinition = await getRunDefinition();
-
-      const { data: runRequest, error: runRequestError } = await supabase
-        .from("run_request")
+      // Create a run to store the results of the run request
+      const { data: queuedRun, error: queuedRunError } = await supabase
+        .from("run")
         .insert({
-          dataset_id: runDefinition.dataset_id,
-          org_id: runDefinition.org_id,
-          created_by: authenticatedUser.userId,
-          definition_id: definitionId,
+          org_id: orgUser.orgId,
+          dataset_id: datasetId,
+          run_type: "manual",
+          requested_by: authenticatedUser.userId,
         })
-        .select("*")
+        .select()
         .single();
-
-      if (runRequestError || !runRequest) {
-        logger.error(`Error creating run request: ${runRequestError?.message}`);
+      if (queuedRunError || !queuedRun) {
+        logger.error(
+          `Error creating run for dataset ${datasetId}: ${queuedRunError?.message}`,
+        );
         throw ServerErrors.database("Failed to create run request");
       }
+
+      // At this point we should publish a message to the queue for processing
+      // the given run request. Run Requests have different messages on a per
+      // dataset type basis.
 
       return {
         success: true,
         message: "Run request created successfully",
-        runRequest: {
-          id: runRequest.id,
-          requestedAt: runRequest.created_at,
-          definition: runDefinition,
-          requestedByUserId: authenticatedUser.userId,
-          requestedBy: authenticatedUser,
-        },
+        run: queuedRun,
       };
     },
   },

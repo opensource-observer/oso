@@ -220,8 +220,8 @@ export const CreateDataModelReleaseSchema = z.object({
 });
 
 export const CreateRunRequestSchema = z.object({
-  definitionType: z.enum(DATASET_TYPES),
-  definitionId: z.string().uuid(),
+  datasetId: z.string().uuid(),
+  selected: z.array(z.string()).optional(),
 });
 
 export const ResolveTablesSchema = z.object({
