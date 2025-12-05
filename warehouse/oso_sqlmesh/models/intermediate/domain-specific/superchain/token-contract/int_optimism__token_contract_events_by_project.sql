@@ -16,7 +16,8 @@ MODEL (
   grain(
     block_timestamp,
     transaction_hash,
-    log_index
+    log_index,
+    to_project_id
   ),
   audits(
     has_at_least_n_rows(threshold := 0)
@@ -38,6 +39,7 @@ SELECT
   logs.log_index,
   logs.from_address,
   logs.to_address,
+  abp.project_id AS to_project_id,
   abp.project_name AS to_project_name,
   logs.topic0,
   logs.function_selector,
@@ -45,7 +47,7 @@ SELECT
   logs.indexed_args_list
 FROM oso.stg_optimism__enriched_logs AS logs
 JOIN oso.artifacts_by_project_v1 AS abp
-  ON to_address = abp.artifact_name
+  ON logs.to_address = abp.artifact_name
   AND abp.artifact_source = 'OPTIMISM'
   AND abp.project_source = 'OSS_DIRECTORY'
 WHERE
