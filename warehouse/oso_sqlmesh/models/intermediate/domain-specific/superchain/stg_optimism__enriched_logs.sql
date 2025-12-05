@@ -1,5 +1,5 @@
 MODEL (
-  name oso.stg_op__enriched_logs,
+  name oso.stg_optimism__enriched_logs,
   kind INCREMENTAL_BY_TIME_RANGE(
     time_column block_timestamp,
     batch_size 90,
@@ -74,7 +74,7 @@ enriched_logs AS (
     l.contract_address,
     t.from_address,
     t.to_address,
-    CAST(t.value_lossless AS DECIMAL(38,18)) AS value_lossless,
+    value_lossless,
     substr(t.input_hex,1,10) AS function_selector,
     l.topic0,
     l.data_hex,
