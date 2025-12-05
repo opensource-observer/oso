@@ -6,22 +6,25 @@ Runs are a generic representation of a data task that has been executed. So it's
 meant to be quite flexible to accommodate different types of runs in the future.
 """
 
-union RunDefinition = DataModel | DataIngestion | DataConnector
-
-type RunRequest {
-  id: ID!
-  definition: RunDefinition!
-  requestedAt: DateTime!
-  requestedByUserId: ID!
-  requestedBy: User!
-}
-
 enum RunTriggerType {
   MANUAL
   SCHEDULED
 }
 
+enum RunType {
+  MANUAL
+  SCHEDULED
+}
+
 enum RunStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+enum StepStatus {
   RUNNING
   SUCCESS
   FAILED
@@ -32,11 +35,13 @@ type Run {
   id: ID!
   datasetId: ID!
   triggerType: RunTriggerType!
-  startedAt: DateTime!
+  runType: RunType!
+  requestedBy: User
+  queuedAt: DateTime!
+  startedAt: DateTime
   finishedAt: DateTime
   status: RunStatus!
   logsUrl: String
-  definition: DatasetType!
   materializations: MaterializationConnection!
 }
 
@@ -49,6 +54,18 @@ type RunConnection {
   edges: [RunEdge!]!
   pageInfo: PageInfo!
   totalCount: Int
+}
+
+type Step {
+  id: ID!
+  runId: ID!
+  run: Run!
+  name: String!
+  displayName: String!
+  logsUrl: String!
+  startedAt: DateTime!
+  finishedAt: DateTime
+  status: StepStatus!
 }
 
 type Materialization {
@@ -114,17 +131,32 @@ extend type Mutation {
   System only. Mark a run as finished.
   """
   finishRun(input: FinishRunInput!): FinishRunPayload!
+
+  """
+  System only. Mark a step as started
+  """
+  startStep(input: StartStepInput!): StartStepPayload!
+
+  """
+  System only. Mark a step as finished
+  """
+  finishStep(input: FinishStepInput!): FinishStepPayload!
 }
 
 input CreateRunRequestInput {
-  definitionType: DatasetType!
-  definitionId: ID!
+  datasetId: ID!
+  """
+  Optionally specify subset of things in the dataset to run. For a dataset like
+  a data model this could be a list of specifin data models in the dataset to
+  run.
+  """
+  selected: [String!]
 }
 
 type CreateRunRequestPayload {
   success: Boolean!
   message: String
-  runRequest: RunRequest!
+  run: Run!
 }
 
 input CancelRunInput {
@@ -138,9 +170,7 @@ type CancelRunPayload {
 }
 
 input StartRunInput {
-  definitionType: DatasetType!
-  definitionId: ID!
-  runRequestId: ID
+  runId: ID!
 }
 
 type StartRunPayload {
@@ -159,4 +189,16 @@ type FinishRunPayload {
   success: Boolean!
   message: String
   run: Run
+}
+
+input StartStepInput {
+  runId: ID!
+  name: String!
+  displayName: String!
+}
+
+input FinishStepInput {
+  stepId: ID!
+  status: StepStatus!
+  logsUrl: String!
 }
