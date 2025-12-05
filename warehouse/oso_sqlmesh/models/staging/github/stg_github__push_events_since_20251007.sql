@@ -1,5 +1,5 @@
 MODEL (
-  name oso.stg_github__push_events_v2,
+  name oso.stg_github__push_events_since_20251007,
   description 'Gathers all github events for all github artifacts (version after 2025-10-07)',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column created_at,
@@ -8,7 +8,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
-  start @github_incremental_start,
+  start @github_api_change_date,
   partitioned_by DAY(created_at),
   dialect trino,
   audits (
@@ -40,5 +40,4 @@ SELECT
 FROM oso.stg_github__events AS ghe
 WHERE
   ghe.type = 'PushEvent'
-  and ghe.created_at >= TIMESTAMP '2025-10-07 00:00:00 UTC'
   and ghe.created_at BETWEEN @start_dt AND @end_dt

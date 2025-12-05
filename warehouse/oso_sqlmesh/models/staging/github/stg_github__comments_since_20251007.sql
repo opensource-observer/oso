@@ -1,5 +1,5 @@
 MODEL (
-  name oso.stg_github__comments_v2,
+  name oso.stg_github__comments_since_20251007,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column event_time,
     batch_size 90,
@@ -8,7 +8,7 @@ MODEL (
     forward_only true,
   ),
   dialect "duckdb",
-  start @github_incremental_start,
+  start @github_api_change_date,
   partitioned_by DAY(event_time),
   audits (
     has_at_least_n_rows(threshold := 0),
@@ -43,7 +43,6 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestReviewCommentEvent'
-    and ghe.created_at >= TIMESTAMP '2025-10-07 00:00:00 UTC'
     and ghe.created_at BETWEEN @start_dt  - INTERVAL '2' DAY AND @end_dt + INTERVAL '1' DAY
 ), issue_comment_events AS (
   SELECT
@@ -66,7 +65,6 @@ WITH pull_request_comment_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'IssueCommentEvent'
-    and ghe.created_at >= TIMESTAMP '2025-10-07 00:00:00 UTC'
     and ghe.created_at BETWEEN @start_dt  - INTERVAL '2' DAY AND @end_dt + INTERVAL '1' DAY
     and STRPTIME(ghe.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 ), all_events as (

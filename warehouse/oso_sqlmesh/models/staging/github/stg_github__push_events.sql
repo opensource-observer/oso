@@ -1,6 +1,6 @@
 MODEL (
   name oso.stg_github__push_events,
-  description 'Gathers all github events for all github artifacts',
+  description 'Gathers all github events for all github artifacts (version before 2025-10-07)',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column created_at,
     batch_size 90,
@@ -9,6 +9,7 @@ MODEL (
     forward_only true,
   ),
   start @github_incremental_start,
+  end @github_api_change_date,
   partitioned_by DAY(created_at),
   dialect trino,
   audits (
@@ -24,27 +25,17 @@ MODEL (
 );
 
 SELECT
-  created_at,
-  repository_id,
-  repository_name,
-  actor_id,
-  actor_login,
-  push_id,
-  ref,
-  commits,
-  available_commits_count,
-  actual_commits_count
-FROM oso.stg_github__push_events_v1
-UNION ALL
-SELECT
-  created_at,
-  repository_id,
-  repository_name,
-  actor_id,
-  actor_login,
-  push_id,
-  ref,
-  commits,
-  available_commits_count,
-  actual_commits_count
-FROM oso.stg_github__push_events_v2
+  ghe.created_at AS created_at,
+  ghe.repo.id AS repository_id,
+  ghe.repo.name AS repository_name,
+  ghe.actor.id AS actor_id,
+  ghe.actor.login AS actor_login,
+  JSON_EXTRACT_SCALAR(ghe.payload, '$.push_id') AS push_id,
+  JSON_EXTRACT_SCALAR(ghe.payload, '$.ref') AS ref,
+  JSON_FORMAT(JSON_EXTRACT(ghe.payload, '$.commits')) AS commits,
+  JSON_ARRAY_LENGTH(JSON_FORMAT(JSON_EXTRACT(ghe.payload, '$.commits'))) AS available_commits_count,
+  CAST(JSON_EXTRACT(ghe.payload, '$.distinct_size') AS INTEGER) AS actual_commits_count
+FROM oso.stg_github__events AS ghe
+WHERE
+  ghe.type = 'PushEvent'
+  and ghe.created_at BETWEEN @start_dt AND @end_dt
