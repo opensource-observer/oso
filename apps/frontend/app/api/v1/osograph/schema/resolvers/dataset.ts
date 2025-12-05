@@ -18,6 +18,7 @@ import {
   DataModelWhereSchema,
   TableMetadataWhereSchema,
   RunWhereSchema,
+  StaticModelWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
   DatasetErrors,
@@ -29,8 +30,8 @@ import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
-import { DatasetType } from "@/lib/graphql/generated/graphql";
 import { assertNever } from "@opensource-observer/utils";
+import { DatasetsRow } from "@/lib/types/schema-types";
 
 export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -133,26 +134,6 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const supabase = createAdminClient();
       const datasetId = uuidv4();
-      let catalog: string;
-      let schema: string;
-
-      switch (validated.type) {
-        case "USER_MODEL":
-          catalog = "user_iceberg";
-          schema = `ds_${datasetId.replace(/-/g, "")}`;
-          break;
-        case "DATA_INGESTION":
-        case "DATA_CONNECTOR":
-        case "STATIC_MODEL":
-          throw new Error(
-            `Dataset type "${validated.type}" is not supported yet.`,
-          );
-        default:
-          assertNever(
-            validated.type,
-            `Unsupported dataset type: ${validated.type}`,
-          );
-      }
 
       const { data: dataset, error } = await supabase
         .from("datasets")
@@ -162,8 +143,6 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           name: validated.name,
           display_name: validated.displayName,
           description: validated.description,
-          catalog,
-          schema,
           created_by: authenticatedUser.userId,
           is_public: validated.isPublic ?? false,
           dataset_type: validated.type,
@@ -259,44 +238,76 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
     organization: async (parent: { org_id: string }) => {
       return getOrganization(parent.org_id);
     },
-    typeDefinition: async (parent: {
-      id: string;
-      org_id: string;
-      dataset_type: DatasetType;
-    }) => {
-      // console.log("Fetching type definition for dataset:", parent);
-      // For future use when we have multiple dataset types with different definitions
+    typeDefinition: async (parent: DatasetsRow) => {
       switch (parent.dataset_type) {
-        case DatasetType.UserModel: {
+        case "USER_MODEL": {
           return {
             __typename: "DataModelDefinition",
             org_id: parent.org_id,
             dataset_id: parent.id,
           };
         }
-        default:
+        case "STATIC_MODEL":
+          return {
+            __typename: "StaticModelDefinition",
+            org_id: parent.org_id,
+            dataset_id: parent.id,
+          };
+        case "DATA_CONNECTOR":
+        case "DATA_INGESTION":
           throw new Error(
             `Dataset type "${parent.dataset_type}" is not supported yet.`,
+          );
+        default:
+          assertNever(
+            parent.dataset_type,
+            `Unknown dataset type: ${parent.dataset_type}`,
           );
       }
     },
 
     tables: async (
-      parent: { id: string; org_id: string },
+      parent: DatasetsRow,
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      return queryWithPagination(args, context, {
-        tableName: "model",
-        whereSchema: DataModelWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
-        basePredicate: {
-          is: [{ key: "deleted_at", value: null }],
-          eq: [{ key: "dataset_id", value: parent.id }],
-        },
-      });
+      switch (parent.dataset_type) {
+        case "USER_MODEL": {
+          return queryWithPagination(args, context, {
+            tableName: "model",
+            whereSchema: DataModelWhereSchema,
+            requireAuth: false,
+            filterByUserOrgs: false,
+            parentOrgIds: parent.org_id,
+            basePredicate: {
+              is: [{ key: "deleted_at", value: null }],
+              eq: [{ key: "dataset_id", value: parent.id }],
+            },
+          });
+        }
+        case "STATIC_MODEL":
+          return queryWithPagination(args, context, {
+            tableName: "static_model",
+            whereSchema: StaticModelWhereSchema,
+            requireAuth: false,
+            filterByUserOrgs: false,
+            parentOrgIds: parent.org_id,
+            basePredicate: {
+              is: [{ key: "deleted_at", value: null }],
+              eq: [{ key: "dataset_id", value: parent.id }],
+            },
+          });
+        case "DATA_CONNECTOR":
+        case "DATA_INGESTION":
+          throw new Error(
+            `Dataset type "${parent.dataset_type}" is not supported yet.`,
+          );
+        default:
+          assertNever(
+            parent.dataset_type,
+            `Unknown dataset type: ${parent.dataset_type}`,
+          );
+      }
     },
 
     runs: async (
