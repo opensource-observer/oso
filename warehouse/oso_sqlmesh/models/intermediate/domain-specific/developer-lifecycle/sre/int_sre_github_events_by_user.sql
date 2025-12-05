@@ -9,7 +9,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
-  start '2024-01-01',
+  start '2020-01-01',
   cron '@daily',
   partitioned_by (DAY("event_time"), "event_type"),
   grain (event_time, actor_id, repo_id),
