@@ -16,6 +16,10 @@ MODEL (
       time_column := event_time,
       no_gap_date_part := 'day',
     ),
+  ),
+  enabled false,
+  tags (
+    "incremental"
   )
 );
 

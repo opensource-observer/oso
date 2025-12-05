@@ -18,6 +18,7 @@ MODEL (
       no_gap_date_part := 'day',
     ),
   ),
+  enabled false,
   tags (
     "incremental"
   )
