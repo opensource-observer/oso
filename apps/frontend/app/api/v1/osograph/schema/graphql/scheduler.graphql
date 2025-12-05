@@ -113,9 +113,24 @@ extend type Query {
 
 extend type Mutation {
   """
-  Request a run
+  Request a run for a USER_MODEL dataset
   """
-  createRunRequest(input: CreateRunRequestInput!): CreateRunRequestPayload!
+  createUserModelRunRequest(input: CreateUserModelRunRequestInput!): CreateRunRequestPayload!
+
+  """
+  Request a run for a DATA_INGEST dataset
+  """
+  createDataIngestionRunRequest(input: CreateDataIngestionRunRequest!): CreateRunRequestPayload!
+
+  """
+  Request a run for a DATA_CONNECTOR dataset
+  """
+  createDataConnectorRunRequest(input: CreateDataConnectorRunRequest!): CreateRunRequestPayload!
+
+  """
+  Request a run for a STATIC_MODEL
+  """
+  createStaticModelRunRequest(input: CreateStaticModelRunRequest!): CreateRunRequestPayload!
 
   """
   Cancel a run
@@ -143,14 +158,21 @@ extend type Mutation {
   finishStep(input: FinishStepInput!): FinishStepPayload!
 }
 
-input CreateRunRequestInput {
+input CreateUserModelRunRequestInput {
   datasetId: ID!
-  """
-  Optionally specify subset of things in the dataset to run. For a dataset like
-  a data model this could be a list of specifin data models in the dataset to
-  run.
-  """
-  selected: [String!]
+  selectedModels: [String!]
+}
+
+input CreateDataIngestionRunRequest {
+  datasetId: ID!
+}
+
+input CreateDataConnectorRunRequest {
+  datasetId: ID!
+}
+
+input CreateStaticModelRunRequest {
+  datasetId: ID!
 }
 
 type CreateRunRequestPayload {
