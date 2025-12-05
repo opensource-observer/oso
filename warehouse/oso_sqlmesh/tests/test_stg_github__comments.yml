@@ -1,5 +1,5 @@
-test_stg_github__comments_v1_basic:
-  model: oso.stg_github__comments_v1
+test_stg_github__comments_basic:
+  model: oso.stg_github__comments
   vars:
     start_dt: 2024-01-01
     end_dt: 2024-01-05

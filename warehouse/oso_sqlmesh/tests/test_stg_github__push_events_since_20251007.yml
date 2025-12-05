@@ -1,5 +1,5 @@
-test_stg_github__push_events_v2_basic:
-  model: oso.stg_github__push_events_v2
+test_stg_github__push_events_since_20251007_basic:
+  model: oso.stg_github__push_events_since_20251007
   vars:
     start_dt: 2025-11-01
     end_dt: 2025-11-05
