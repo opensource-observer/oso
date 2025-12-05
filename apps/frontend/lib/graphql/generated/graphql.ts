@@ -1198,6 +1198,14 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type CreateDataConnectorRunRequest = {
+  datasetId: Scalars["ID"]["input"];
+};
+
+export type CreateDataIngestionRunRequest = {
+  datasetId: Scalars["ID"]["input"];
+};
+
 export type CreateDataModelInput = {
   datasetId: Scalars["ID"]["input"];
   isEnabled?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -1292,15 +1300,10 @@ export type CreateNotebookPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
-export type CreateRunRequestInput = {
-  definitionId: Scalars["ID"]["input"];
-  definitionType: DatasetType;
-};
-
 export type CreateRunRequestPayload = {
   __typename?: "CreateRunRequestPayload";
   message?: Maybe<Scalars["String"]["output"]>;
-  runRequest: RunRequest;
+  run: Run;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -1315,6 +1318,15 @@ export type CreateStaticModelPayload = {
   message?: Maybe<Scalars["String"]["output"]>;
   staticModel?: Maybe<StaticModel>;
   success: Scalars["Boolean"]["output"];
+};
+
+export type CreateStaticModelRunRequest = {
+  datasetId: Scalars["ID"]["input"];
+};
+
+export type CreateUserModelRunRequestInput = {
+  datasetId: Scalars["ID"]["input"];
+  selectedModels?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type CronFreshnessPolicy = {
@@ -2355,6 +2367,19 @@ export type FinishRunPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
+export type FinishStepInput = {
+  logsUrl: Scalars["String"]["input"];
+  status: StepStatus;
+  stepId: Scalars["ID"]["input"];
+};
+
+export type FinishStepPayload = {
+  __typename?: "FinishStepPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  step?: Maybe<Step>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type FloatMetadataEntry = MetadataEntry & {
   __typename?: "FloatMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -3331,6 +3356,10 @@ export type Mutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   /** Cancel a run */
   cancelRun: CancelRunPayload;
+  /** Request a run for a DATA_CONNECTOR dataset */
+  createDataConnectorRunRequest: CreateRunRequestPayload;
+  /** Request a run for a DATA_INGEST dataset */
+  createDataIngestionRunRequest: CreateRunRequestPayload;
   createDataModel: CreateDataModelPayload;
   createDataModelRelease: CreateDataModelReleasePayload;
   createDataModelRevision: CreateDataModelRevisionPayload;
@@ -3340,10 +3369,12 @@ export type Mutation = {
   createInvitation: CreateInvitationPayload;
   /** Create a new notebook */
   createNotebook: CreateNotebookPayload;
-  /** Request a run */
-  createRunRequest: CreateRunRequestPayload;
   createStaticModel: CreateStaticModelPayload;
+  /** Request a run for a STATIC_MODEL */
+  createStaticModelRunRequest: CreateRunRequestPayload;
   createStaticModelUploadUrl: Scalars["String"]["output"];
+  /** Request a run for a USER_MODEL dataset */
+  createUserModelRunRequest: CreateRunRequestPayload;
   /** Sets the concurrency limit for a given concurrency key. */
   deleteConcurrencyLimit: Scalars["Boolean"]["output"];
   /** Deletes partitions from a dynamic partition set. */
@@ -3354,6 +3385,8 @@ export type Mutation = {
   deleteRun: DeletePipelineRunResult;
   /** System only. Mark a run as finished. */
   finishRun: FinishRunPayload;
+  /** System only. Mark a step as finished */
+  finishStep: FinishStepPayload;
   /** Frees concurrency slots. */
   freeConcurrencySlots: Scalars["Boolean"]["output"];
   /** Frees the concurrency slots occupied by a specific run. */
@@ -3412,6 +3445,8 @@ export type Mutation = {
   startSchedule: ScheduleMutationResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
   startSensor: SensorOrError;
+  /** System only. Mark a step as started */
+  startStep: StartStepPayload;
   /** Disable a schedule from launching runs for a job. */
   stopRunningSchedule: ScheduleMutationResult;
   /** Disable a sensor from launching runs for a job. */
@@ -3462,6 +3497,16 @@ export type MutationCancelRunArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataConnectorRunRequestArgs = {
+  input: CreateDataConnectorRunRequest;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataIngestionRunRequestArgs = {
+  input: CreateDataIngestionRunRequest;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateDataModelArgs = {
   input: CreateDataModelInput;
 };
@@ -3492,18 +3537,23 @@ export type MutationCreateNotebookArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
-export type MutationCreateRunRequestArgs = {
-  input: CreateRunRequestInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateStaticModelArgs = {
   input: CreateStaticModelInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateStaticModelRunRequestArgs = {
+  input: CreateStaticModelRunRequest;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateStaticModelUploadUrlArgs = {
   staticModelId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateUserModelRunRequestArgs = {
+  input: CreateUserModelRunRequestInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3531,6 +3581,11 @@ export type MutationDeleteRunArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationFinishRunArgs = {
   input: FinishRunInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationFinishStepArgs = {
+  input: FinishStepInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3676,6 +3731,11 @@ export type MutationStartScheduleArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationStartSensorArgs = {
   sensorSelector: SensorSelector;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationStartStepArgs = {
+  input: StartStepInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -7143,7 +7203,6 @@ export type Run = PipelineRun &
     capturedLogs: CapturedLogs;
     creationTime: Scalars["Float"]["output"];
     datasetId: Scalars["ID"]["output"];
-    definition: DatasetType;
     endTime?: Maybe<Scalars["Float"]["output"]>;
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
@@ -7165,7 +7224,9 @@ export type Run = PipelineRun &
     pipeline: PipelineReference;
     pipelineName: Scalars["String"]["output"];
     pipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
+    queuedAt: Scalars["DateTimeISO"]["output"];
     repositoryOrigin?: Maybe<RepositoryOrigin>;
+    requestedBy?: Maybe<User>;
     resolvedOpSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     rootConcurrencyKeys?: Maybe<Array<Scalars["String"]["output"]>>;
     rootRunId?: Maybe<Scalars["String"]["output"]>;
@@ -7174,9 +7235,10 @@ export type Run = PipelineRun &
     runId: Scalars["String"]["output"];
     /** Included to comply with RunsFeedEntry interface. Duplicate of status. */
     runStatus: RunStatus;
+    runType: RunType;
     solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     startTime?: Maybe<Scalars["Float"]["output"]>;
-    startedAt: Scalars["DateTimeISO"]["output"];
+    startedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
     stats: RunStatsSnapshotOrError;
     status: RunStatus;
     stepKeysToExecute?: Maybe<Array<Scalars["String"]["output"]>>;
@@ -7298,15 +7360,6 @@ export type RunConnection = {
   totalCount?: Maybe<Scalars["Int"]["output"]>;
 };
 
-/**
- * The scheduler schema defines types and queries related to scheduling data model
- * runs and ingest jobs.
- *
- * Runs are a generic representation of a data task that has been executed. So it's
- * meant to be quite flexible to accommodate different types of runs in the future.
- */
-export type RunDefinition = DataConnector | DataIngestion | DataModel;
-
 export type RunDequeuedEvent = MessageEvent &
   RunEvent & {
     __typename?: "RunDequeuedEvent";
@@ -7414,42 +7467,11 @@ export type RunQueueConfig = {
   tagConcurrencyLimitsYaml?: Maybe<Scalars["String"]["output"]>;
 };
 
-/**
- * Special type for system related reads that are only allowed by authenticated
- * service accounts that have system privileges.
- */
-export type RunQueueItem = {
-  __typename?: "RunQueueItem";
-  definition: RunDefinition;
-  id: Scalars["ID"]["output"];
-  runRequest?: Maybe<RunRequest>;
-  runRequestId?: Maybe<Scalars["ID"]["output"]>;
-  scheduledAt: Scalars["DateTimeISO"]["output"];
-};
-
-export type RunQueueItemConnection = {
-  __typename?: "RunQueueItemConnection";
-  edges: Array<RunQueueItemEdge>;
-  pageInfo: PageInfo;
-  totalCount?: Maybe<Scalars["Int"]["output"]>;
-};
-
-export type RunQueueItemEdge = {
-  __typename?: "RunQueueItemEdge";
-  cursor: Scalars["String"]["output"];
-  node: RunQueueItem;
-};
-
 export type RunRequest = {
   __typename?: "RunRequest";
   assetChecks?: Maybe<Array<AssetCheckhandle>>;
   assetSelection?: Maybe<Array<AssetKey>>;
-  definition: RunDefinition;
-  id: Scalars["ID"]["output"];
   jobName?: Maybe<Scalars["String"]["output"]>;
-  requestedAt: Scalars["DateTimeISO"]["output"];
-  requestedBy: User;
-  requestedByUserId: Scalars["ID"]["output"];
   runConfigYaml: Scalars["String"]["output"];
   runKey?: Maybe<Scalars["String"]["output"]>;
   tags: Array<PipelineTag>;
@@ -7561,7 +7583,19 @@ export type RunTags = {
 
 export type RunTagsOrError = PythonError | RunTags;
 
+/**
+ * The scheduler schema defines types and queries related to scheduling data model
+ * runs and ingest jobs.
+ *
+ * Runs are a generic representation of a data task that has been executed. So it's
+ * meant to be quite flexible to accommodate different types of runs in the future.
+ */
 export enum RunTriggerType {
+  Manual = "MANUAL",
+  Scheduled = "SCHEDULED",
+}
+
+export enum RunType {
   Manual = "MANUAL",
   Scheduled = "SCHEDULED",
 }
@@ -8031,9 +8065,7 @@ export enum StaleStatus {
 }
 
 export type StartRunInput = {
-  definitionId: Scalars["ID"]["input"];
-  definitionType: DatasetType;
-  runRequestId?: InputMaybe<Scalars["ID"]["input"]>;
+  runId: Scalars["ID"]["input"];
 };
 
 export type StartRunPayload = {
@@ -8047,6 +8079,19 @@ export type StartRunPayload = {
 export type StartScheduleMutation = {
   __typename?: "StartScheduleMutation";
   Output: ScheduleMutationResult;
+};
+
+export type StartStepInput = {
+  displayName: Scalars["String"]["input"];
+  name: Scalars["String"]["input"];
+  runId: Scalars["ID"]["input"];
+};
+
+export type StartStepPayload = {
+  __typename?: "StartStepPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  step: Step;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type StaticModel = {
@@ -8079,6 +8124,19 @@ export type StaticModelEdge = {
   __typename?: "StaticModelEdge";
   cursor: Scalars["String"]["output"];
   node: StaticModel;
+};
+
+export type Step = {
+  __typename?: "Step";
+  displayName: Scalars["String"]["output"];
+  finishedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
+  id: Scalars["ID"]["output"];
+  logsUrl: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  run: Run;
+  runId: Scalars["ID"]["output"];
+  startedAt: Scalars["DateTimeISO"]["output"];
+  status: StepStatus;
 };
 
 export type StepEvent = {
@@ -8125,6 +8183,13 @@ export type StepOutputHandle = {
   outputName: Scalars["String"]["input"];
   stepKey: Scalars["String"]["input"];
 };
+
+export enum StepStatus {
+  Canceled = "CANCELED",
+  Failed = "FAILED",
+  Running = "RUNNING",
+  Success = "SUCCESS",
+}
 
 export type StepWorkerStartedEvent = DisplayableEvent &
   MarkerEvent &
@@ -8211,8 +8276,6 @@ export type SubscriptionPipelineRunLogsArgs = {
 
 export type System = {
   __typename?: "System";
-  dataIngestionRunQueue: RunQueueItemConnection;
-  dataModelRunQueue: RunQueueItemConnection;
   /**
    * Resolve tables by their reference names to the actual table fqn in the data
    * warehouse. This is used by the query rewriter to batch resolve table
@@ -8221,21 +8284,15 @@ export type System = {
   resolveTables: Array<SystemResolvedTableReference>;
 };
 
-export type SystemDataIngestionRunQueueArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-};
-
-export type SystemDataModelRunQueueArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-};
-
 export type SystemResolveTablesArgs = {
   metadata?: InputMaybe<Scalars["JSON"]["input"]>;
   references: Array<Scalars["String"]["input"]>;
 };
 
+/**
+ * Special type for system related reads that are only allowed by authenticated
+ * service accounts that have system privileges.
+ */
 export type SystemResolvedTableReference = {
   __typename?: "SystemResolvedTableReference";
   fqn: Scalars["String"]["output"];
@@ -8865,17 +8922,17 @@ export type CreateDataModelReleaseMutation = {
   };
 };
 
-export type CreateRunRequestMutationVariables = Exact<{
-  input: CreateRunRequestInput;
+export type CreateUserModelRunRequestMutationVariables = Exact<{
+  input: CreateUserModelRunRequestInput;
 }>;
 
-export type CreateRunRequestMutation = {
+export type CreateUserModelRunRequestMutation = {
   __typename?: "Mutation";
-  createRunRequest: {
+  createUserModelRunRequest: {
     __typename?: "CreateRunRequestPayload";
     success: boolean;
     message?: string | null;
-    runRequest: { __typename?: "RunRequest"; id: string };
+    run: { __typename?: "Run"; id: string };
   };
 };
 
@@ -9532,13 +9589,13 @@ export const CreateDataModelReleaseDocument = {
   CreateDataModelReleaseMutation,
   CreateDataModelReleaseMutationVariables
 >;
-export const CreateRunRequestDocument = {
+export const CreateUserModelRunRequestDocument = {
   kind: "Document",
   definitions: [
     {
       kind: "OperationDefinition",
       operation: "mutation",
-      name: { kind: "Name", value: "CreateRunRequest" },
+      name: { kind: "Name", value: "CreateUserModelRunRequest" },
       variableDefinitions: [
         {
           kind: "VariableDefinition",
@@ -9550,7 +9607,7 @@ export const CreateRunRequestDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: { kind: "Name", value: "CreateRunRequestInput" },
+              name: { kind: "Name", value: "CreateUserModelRunRequestInput" },
             },
           },
         },
@@ -9560,7 +9617,7 @@ export const CreateRunRequestDocument = {
         selections: [
           {
             kind: "Field",
-            name: { kind: "Name", value: "createRunRequest" },
+            name: { kind: "Name", value: "createUserModelRunRequest" },
             arguments: [
               {
                 kind: "Argument",
@@ -9578,7 +9635,7 @@ export const CreateRunRequestDocument = {
                 { kind: "Field", name: { kind: "Name", value: "message" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "runRequest" },
+                  name: { kind: "Name", value: "run" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
@@ -9594,8 +9651,8 @@ export const CreateRunRequestDocument = {
     },
   ],
 } as unknown as DocumentNode<
-  CreateRunRequestMutation,
-  CreateRunRequestMutationVariables
+  CreateUserModelRunRequestMutation,
+  CreateUserModelRunRequestMutationVariables
 >;
 export const AssetGraphDocument = {
   kind: "Document",
