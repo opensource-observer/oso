@@ -197,8 +197,20 @@ input StartStepInput {
   displayName: String!
 }
 
+type StartStepPayload {
+  success: Boolean!
+  message: String
+  step: Step!
+}
+
 input FinishStepInput {
   stepId: ID!
   status: StepStatus!
   logsUrl: String!
+}
+
+type FinishStepPayload {
+  success: Boolean!
+  message: String
+  step: Step
 }
