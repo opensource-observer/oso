@@ -31,6 +31,9 @@ SELECT
   ghe.actor.login AS actor_login,
   JSON_EXTRACT_SCALAR(ghe.payload, '$.push_id') AS push_id,
   JSON_EXTRACT_SCALAR(ghe.payload, '$.ref') AS ref,
+  JSON_EXTRACT_SCALAR(ghe.payload, '$.head') AS head,
+  JSON_EXTRACT_SCALAR(ghe.payload, '$.before') AS before,
+  -- TODO: Fill in commits data when available
   CAST(NULL AS VARCHAR) AS commits,
   CAST(NULL AS BIGINT) AS available_commits_count,
   CAST(NULL AS INTEGER) AS actual_commits_count

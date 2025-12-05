@@ -23,6 +23,28 @@ MODEL (
   )
 );
 
-SELECT * FROM oso.stg_github__push_events_v1
+SELECT
+  created_at,
+  repository_id,
+  repository_name,
+  actor_id,
+  actor_login,
+  push_id,
+  ref,
+  commits,
+  available_commits_count,
+  actual_commits_count
+FROM oso.stg_github__push_events_v1
 UNION ALL
-SELECT * FROM oso.stg_github__push_events_v2
+SELECT
+  created_at,
+  repository_id,
+  repository_name,
+  actor_id,
+  actor_login,
+  push_id,
+  ref,
+  commits,
+  available_commits_count,
+  actual_commits_count
+FROM oso.stg_github__push_events_v2
