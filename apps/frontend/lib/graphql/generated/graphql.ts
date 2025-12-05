@@ -1304,6 +1304,19 @@ export type CreateRunRequestPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
+export type CreateStaticModelInput = {
+  datasetId: Scalars["ID"]["input"];
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
+export type CreateStaticModelPayload = {
+  __typename?: "CreateStaticModelPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  staticModel?: Maybe<StaticModel>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type CronFreshnessPolicy = {
   __typename?: "CronFreshnessPolicy";
   deadlineCron: Scalars["String"]["output"];
@@ -1762,6 +1775,7 @@ export type DatasetEdge = {
 export enum DatasetType {
   DataConnector = "DATA_CONNECTOR",
   DataIngestion = "DATA_INGESTION",
+  StaticModel = "STATIC_MODEL",
   UserModel = "USER_MODEL",
 }
 
@@ -3328,6 +3342,8 @@ export type Mutation = {
   createNotebook: CreateNotebookPayload;
   /** Request a run */
   createRunRequest: CreateRunRequestPayload;
+  createStaticModel: CreateStaticModelPayload;
+  createStaticModelUploadUrl: Scalars["String"]["output"];
   /** Sets the concurrency limit for a given concurrency key. */
   deleteConcurrencyLimit: Scalars["Boolean"]["output"];
   /** Deletes partitions from a dynamic partition set. */
@@ -3413,6 +3429,7 @@ export type Mutation = {
   updateMemberRole: UpdateMemberRolePayload;
   /** Update a notebook */
   updateNotebook: UpdateNotebookPayload;
+  updateStaticModel: CreateStaticModelPayload;
   /** Deletes asset history from storage. */
   wipeAssets: AssetWipeMutationResult;
 };
@@ -3477,6 +3494,16 @@ export type MutationCreateNotebookArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateRunRequestArgs = {
   input: CreateRunRequestInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateStaticModelArgs = {
+  input: CreateStaticModelInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateStaticModelUploadUrlArgs = {
+  staticModelId: Scalars["ID"]["input"];
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3701,6 +3728,11 @@ export type MutationUpdateMemberRoleArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationUpdateNotebookArgs = {
   input: UpdateNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateStaticModelArgs = {
+  input: UpdateStaticModelInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -6038,6 +6070,7 @@ export type Query = {
   sensorsOrError: SensorsOrError;
   /** Whether or not the NUX should be shown to the user */
   shouldShowNux: Scalars["Boolean"]["output"];
+  staticModels: DataModelConnection;
   /** System only. Access system level queries. */
   system: System;
   /**
@@ -6662,6 +6695,14 @@ export type QuerySensorOrErrorArgs = {
 export type QuerySensorsOrErrorArgs = {
   repositorySelector: RepositorySelector;
   sensorStatus?: InputMaybe<InstigationStatus>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryStaticModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -8008,6 +8049,38 @@ export type StartScheduleMutation = {
   Output: ScheduleMutationResult;
 };
 
+export type StaticModel = {
+  __typename?: "StaticModel";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  dataset: Dataset;
+  id: Scalars["ID"]["output"];
+  materializations: MaterializationConnection;
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type StaticModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type StaticModelConnection = {
+  __typename?: "StaticModelConnection";
+  edges: Array<StaticModelEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type StaticModelEdge = {
+  __typename?: "StaticModelEdge";
+  cursor: Scalars["String"]["output"];
+  node: StaticModel;
+};
+
 export type StepEvent = {
   solidHandleID?: Maybe<Scalars["String"]["output"]>;
   stepKey?: Maybe<Scalars["String"]["output"]>;
@@ -8475,6 +8548,11 @@ export type UpdateNotebookPayload = {
   message?: Maybe<Scalars["String"]["output"]>;
   notebook?: Maybe<Notebook>;
   success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateStaticModelInput = {
+  name?: InputMaybe<Scalars["String"]["input"]>;
+  staticModelId: Scalars["ID"]["input"];
 };
 
 export type UrlCodeReference = {
