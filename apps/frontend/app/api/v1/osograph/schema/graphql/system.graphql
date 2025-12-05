@@ -18,10 +18,6 @@ type System {
     references: [String!]!
     metadata: JSON
   ): [SystemResolvedTableReference!]!
-
-  dataModelRunQueue(first: Int = 50, after: String): RunQueueItemConnection!
-
-  dataIngestionRunQueue(first: Int = 50, after: String): RunQueueItemConnection!
 }
 
 extend type Query {
