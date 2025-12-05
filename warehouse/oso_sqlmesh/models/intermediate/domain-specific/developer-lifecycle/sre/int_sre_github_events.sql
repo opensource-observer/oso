@@ -9,7 +9,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
-  start '2024-01-01',
+  start '2020-01-01',
   cron '@daily',
   partitioned_by (DAY("event_time"), "event_type"),
   grain (event_time, actor_id, repo_id),
@@ -34,4 +34,14 @@ SELECT
   LOWER(repo.name) AS repo_name,
   type AS event_type,
 FROM oso.stg_github__events
-WHERE created_at BETWEEN @start_dt AND @end_dt
+WHERE
+  created_at BETWEEN @start_dt AND @end_dt
+  AND type IN (
+    'PushEvent',
+    'IssuesEvent',
+    'PullRequestEvent',
+    'PullRequestReviewEvent',
+    'PullRequestReviewCommentEvent',
+    'WatchEvent',
+    'ForkEvent'
+  )
