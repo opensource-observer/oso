@@ -20,6 +20,7 @@ from typing import (
     TypeVar,
 )
 
+import dagster as dg
 from dagster import (
     AssetExecutionContext,
     DefaultSensorStatus,
@@ -728,7 +729,7 @@ def setup_chunked_state_cleanup_sensor(
 
         context.log.info("Chunked state cleanup job completed successfully")
 
-    @job(name="chunked_state_cleanup_job")
+    @job(name="chunked_state_cleanup_job", executor_def=dg.in_process_executor)
     def cleanup_job():
         cleanup_op()
 

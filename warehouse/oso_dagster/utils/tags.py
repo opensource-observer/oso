@@ -16,6 +16,8 @@ sbom_source_tag = AssetSelection.tag("opensource.observer/source", "sbom")
 
 sqlmesh_source_tag = AssetSelection.tag("opensource.observer/source", "sqlmesh")
 
+no_schedule_source_tag = AssetSelection.tag("opensource.observer/source", "no-schedule")
+
 # Things derived from sqlmesh models
 sqlmesh_source_downstream_tag = sqlmesh_source_tag.downstream()
 
