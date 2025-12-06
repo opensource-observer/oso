@@ -1,0 +1,90 @@
+test_stg_github__push_events_since_20251007_basic:
+  model: oso.stg_github__push_events_since_20251007
+  vars:
+    start_dt: 2025-11-01
+    end_dt: 2025-11-05
+  inputs:
+    oso.stg_github__events:
+      rows:
+      # Push event after 2025-10-07, with missing distinct_size etc
+      - id: "push_event_1"
+        created_at: "2025-11-01 10:00:00"
+        type: "PushEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1001
+          login: "user1"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1001"
+          url: "https://api.github.com/users/user1"
+        org: null
+        other: ""
+        # Payload missing size, distinct_size, commits
+        payload: '{"push_id": 1234567890, "ref": "refs/heads/main", "head": "sha123", "before": "sha000"}'
+      # Push event with keys still present (should still return NULLs per model logic)
+      - id: "push_event_2"
+        created_at: "2025-11-02 12:00:00"
+        type: "PushEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1002
+          login: "user2"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1002"
+          url: "https://api.github.com/users/user2"
+        org: null
+        other: ""
+        payload: '{"push_id": 1234567891, "ref": "refs/heads/feature", "head": "sha456", "before": "sha123", "size": 1, "distinct_size": 1, "commits": [{"sha": "sha456", "message": "feat: test"}]}'
+      # Event before cutoff date (should be filtered out by model WHERE clause)
+      - id: "push_event_old"
+        created_at: "2025-01-01 10:00:00"
+        type: "PushEvent"
+        public: true
+        repo:
+          id: 12345
+          name: "owner1/repo1"
+          url: "https://api.github.com/repos/owner1/repo1"
+        actor:
+          id: 1001
+          login: "user1"
+          gravatar_url: ""
+          avatar_url: "https://avatars.githubusercontent.com/u/1001"
+          url: "https://api.github.com/users/user1"
+        org: null
+        other: ""
+        payload: '{"push_id": 111, "ref": "refs/heads/main", "head": "sha111", "before": "sha000"}'
+  outputs:
+    query:
+      rows:
+      - created_at: "2025-11-01 10:00:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1001
+        actor_login: "user1"
+        push_id: "1234567890"
+        ref: "refs/heads/main"
+        head: "sha123"
+        before: "sha000"
+        commits: null
+        available_commits_count: null
+        actual_commits_count: null
+      - created_at: "2025-11-02 12:00:00"
+        repository_id: 12345
+        repository_name: "owner1/repo1"
+        actor_id: 1002
+        actor_login: "user2"
+        push_id: "1234567891"
+        ref: "refs/heads/feature"
+        head: "sha456"
+        before: "sha123"
+        commits: null
+        available_commits_count: null
+        actual_commits_count: null
