@@ -1,0 +1,20 @@
+[project]
+name = "opsscripts"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = [
+    "click>=8.1.8",
+    "docker>=7.1.0",
+    "kr8s>=0.20.14",
+    "requests>=2.32.5",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.10,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "opsscripts"
+module-root = ""

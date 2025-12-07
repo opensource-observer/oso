@@ -1,0 +1,27 @@
+[project]
+name = "metrics-tools"
+version = "0.1.0"
+description = "Metrics factory tools"
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = [
+    "sqlmesh>=0.227.1",
+    "oso-core",
+    "metrics-service",
+    "sqlglot>=27.28.1",
+    "pandas>=2.3.3",
+    "boltons>=25.0.0",
+]
+
+[tool.uv.sources]
+oso-core = { workspace = true }
+metrics-service = { workspace = true }
+
+
+[build-system]
+requires = ["uv_build>=0.9.10,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "metrics_tools"
+module-root = ""

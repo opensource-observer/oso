@@ -9,7 +9,7 @@ from datetime import datetime
 import click
 import requests
 from metrics_service.client import Client
-from oso_core.mesh.definition import MetricModelDefinition
+from oso_core.sql.mesh.definition import MetricModelDefinition
 from pydantic_core import to_jsonable_python
 
 from .types import (
