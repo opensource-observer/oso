@@ -4192,6 +4192,7 @@ dependencies = [
     { name = "opsscripts" },
     { name = "oso-core" },
     { name = "oso-dagster" },
+    { name = "oso-lets-go" },
     { name = "pandas" },
     { name = "pandas-gbq" },
     { name = "pandas-stubs" },
@@ -4229,6 +4230,7 @@ requires-dist = [
     { name = "opsscripts", editable = "ops/opsscripts" },
     { name = "oso-core", editable = "lib/oso-core" },
     { name = "oso-dagster", editable = "warehouse/oso_dagster" },
+    { name = "oso-lets-go", editable = "warehouse/oso_lets_go" },
     { name = "pandas", specifier = ">=2.2.3,<3.0.0" },
     { name = "pandas-gbq", specifier = ">=0.29.2" },
     { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
@@ -4537,17 +4539,33 @@ name = "oso-sqlmesh"
 version = "0.1.0"
 source = { virtual = "warehouse/oso_sqlmesh" }
 dependencies = [
-    { name = "duckdb" },
+    { name = "arrow" },
     { name = "metrics-tools" },
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "openrank-sdk" },
+    { name = "oso-core" },
+    { name = "pandas" },
     { name = "python-dotenv" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "sqlglot" },
     { name = "sqlmesh", extra = ["trino"] },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "duckdb", specifier = ">=1.4.1" },
+    { name = "arrow", specifier = ">=1.4.0" },
     { name = "metrics-tools", editable = "warehouse/metrics_tools" },
+    { name = "networkx", specifier = ">=3.5" },
+    { name = "numpy", specifier = ">=2.3.4" },
+    { name = "openrank-sdk", specifier = ">=0.4.0" },
+    { name = "oso-core", editable = "lib/oso-core" },
+    { name = "pandas", specifier = ">=2.3.3" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "scikit-learn", specifier = ">=1.7.2" },
+    { name = "scipy", specifier = ">=1.16.2" },
+    { name = "sqlglot", specifier = ">=27.28.1" },
     { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
 ]
 

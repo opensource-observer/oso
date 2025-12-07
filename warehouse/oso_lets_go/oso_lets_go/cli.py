@@ -63,8 +63,8 @@ from metrics_tools.local.config import (
 from metrics_tools.local.utils import TABLE_MAPPING
 
 CURR_DIR = os.path.dirname(__file__)
-OSO_SQLMESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../oso_sqlmesh"))
-REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../"))
+OSO_SQLMESH_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../oso_sqlmesh"))
+REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../../"))
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID", "opensource-observer")
 
 

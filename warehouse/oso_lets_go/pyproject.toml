@@ -24,3 +24,7 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "oso_lets_go"
 module-root = ""
+
+[project.scripts]
+oso = "oso_lets_go.cli:cli"
+oso_lets_go = "oso_lets_go.wizard:run"

@@ -6,10 +6,19 @@ readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
     "sqlmesh[trino]<1.0.0,>=0.141.1",
-    "metrics-tools",
-    "duckdb>=1.4.1",
     "python-dotenv>=1.1.1",
+    "sqlglot>=27.28.1",
+    "metrics-tools",
+    "oso-core",
+    "pandas>=2.3.3",
+    "scipy>=1.16.2",
+    "scikit-learn>=1.7.2",
+    "networkx>=3.5",
+    "arrow>=1.4.0",
+    "numpy>=2.3.4",
+    "openrank-sdk>=0.4.0",
 ]
 
 [tool.uv.sources]
 metrics-tools = { workspace = true }
+oso-core = { workspace = true }
