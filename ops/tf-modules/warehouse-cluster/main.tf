@@ -459,6 +459,23 @@ module "gke" {
   node_pools_taints = local.node_pool_taints
 
   node_pools_tags = local.node_pool_tags
+
+  cluster_autoscaling = {
+    enabled                     = false
+    autoscaling_profile         = "OPTIMIZE_UTILIZATION"
+    max_cpu_cores               = 0
+    min_cpu_cores               = 0
+    max_memory_gb               = 0
+    min_memory_gb               = 0
+    gpu_resources               = []
+    auto_repair                 = true
+    auto_upgrade                = true
+    disk_size                   = 100
+    disk_type                   = "pd-standard"
+    image_type                  = "COS_CONTAINERD"
+    enable_secure_boot          = false
+    enable_integrity_monitoring = true
+  }
 }
 
 # Dagster bucket. In the future it would make more sense that this is managed at
