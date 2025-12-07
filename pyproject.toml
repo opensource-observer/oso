@@ -72,7 +72,7 @@ members = [
     "warehouse/oso_semantic",
     "warehouse/scheduler",
     "lib/query-rewriter",
-    "warehouse/async-worker",
+    "warehouse/asyncworker",
     "warehouse/oso_dagster",
     "warehouse/oso_sqlmesh",
     "warehouse/metrics_tools",

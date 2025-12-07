@@ -1,5 +1,5 @@
 [project]
-name = "async-worker"
+name = "asyncworker"
 version = "0.1.0"
 description = "Async workers for OSO"
 readme = "README.md"
@@ -17,7 +17,7 @@ query-rewriter = { workspace = true }
 pyoso = { workspace = true }
 
 [project.scripts]
-worker = "async_worker.cli:cli"
+asyncworker = "asyncworker.cli:cli"
 
 [build-system]
 requires = ["uv_build>=0.9.10,<0.10.0"]
