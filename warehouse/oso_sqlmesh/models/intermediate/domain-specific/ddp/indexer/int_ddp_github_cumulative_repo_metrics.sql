@@ -16,7 +16,7 @@ WITH repo_maintainers AS (
   SELECT DISTINCT
     repo_id,
     repo_name,
-    STR_SPLIT(repo_name, '/')[@array_index(0)] AS repo_maintainer
+    SPLIT_PART(repo_name, '/', 1) AS repo_maintainer
   FROM oso.int_ddp_github_events_daily
 ),
 contributor_event_types AS (
