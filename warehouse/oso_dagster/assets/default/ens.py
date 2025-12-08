@@ -16,7 +16,7 @@ from oso_dagster.utils.secrets import secret_ref_arg
 # count to account for the fact that spot instances can be terminated at any time.
 MAX_RETRY_COUNT = 25
 
-K8S_CONFIG = {
+K8S_CONFIG_SPOT = {
     "merge_behavior": "SHALLOW",
     "pod_spec_config": {
         "node_selector": {
@@ -27,6 +27,23 @@ K8S_CONFIG = {
                 "key": "pool_type",
                 "operator": "Equal",
                 "value": "spot",
+                "effect": "NoSchedule",
+            }
+        ],
+    },
+}
+
+K8S_CONFIG_PERSISTENT = {
+    "merge_behavior": "SHALLOW",
+    "pod_spec_config": {
+        "node_selector": {
+            "pool_type": "persistent",
+        },
+        "tolerations": [
+            {
+                "key": "pool_type",
+                "operator": "Equal",
+                "value": "persistent",
                 "effect": "NoSchedule",
             }
         ],
@@ -44,7 +61,7 @@ def get_endpoint(ens_api_key: Optional[str] = None, masked: bool = False) -> str
 @dlt_factory(
     key_prefix="ens",
     op_tags={
-        "dagster-k8s/config": K8S_CONFIG,
+        "dagster-k8s/config": K8S_CONFIG_SPOT,
     },
     tags={
         "opensource.observer/source": "no-schedule",
@@ -96,7 +113,7 @@ def text_changeds(
 @dlt_factory(
     key_prefix="ens",
     op_tags={
-        "dagster-k8s/config": K8S_CONFIG,
+        "dagster-k8s/config": K8S_CONFIG_PERSISTENT,
     },
     tags={
         "opensource.observer/source": "no-schedule",
