@@ -340,9 +340,31 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      return await queryWithPagination(args, context, {
+      return queryWithPagination(args, context, {
         tableName: "model",
         whereSchema: DataModelWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+          eq: [{ key: "dataset_id", value: parent.dataset_id }],
+        },
+      });
+    },
+  },
+
+  StaticModelDefinition: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
+    datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
+    staticModels: async (
+      parent: { dataset_id: string; org_id: string },
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "static_model",
+        whereSchema: StaticModelWhereSchema,
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
