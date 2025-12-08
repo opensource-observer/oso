@@ -1,0 +1,123 @@
+test_int_sbom_package_state_change_events:
+  model: oso.int_sbom_package_state_change_events
+  inputs:
+    oso.int_sbom_from_ossd:
+      rows:
+        # Snapshot 1: dep1 adds pkg1 v1.0.0
+        - dependent_artifact_id: dep1
+          package_artifact_id: pkg1
+          package_version: 1.0.0
+          snapshot_at: '2024-01-01 00:00:00'
+
+        # Snapshot 2: dep1 upgrades pkg1 to v1.1.0
+        - dependent_artifact_id: dep1
+          package_artifact_id: pkg1
+          package_version: 1.1.0
+          snapshot_at: '2024-02-01 00:00:00'
+
+        # Snapshot 3: dep1 keeps pkg1 v1.1.0 (no change)
+        - dependent_artifact_id: dep1
+          package_artifact_id: pkg1
+          package_version: 1.1.0
+          snapshot_at: '2024-03-01 00:00:00'
+
+        # Snapshot 4: dep1 removes pkg1, adds pkg2 v0.1.0
+        - dependent_artifact_id: dep1
+          package_artifact_id: pkg2
+          package_version: 0.1.0
+          snapshot_at: '2024-04-01 00:00:00'
+
+        # Semver check scenario: multiple versions in same snapshot, pick latest
+        - dependent_artifact_id: dep2
+          package_artifact_id: pkg3
+          package_version: 1.0.0
+          snapshot_at: '2024-01-01 00:00:00'
+        - dependent_artifact_id: dep2
+          package_artifact_id: pkg3
+          package_version: 2.0.0
+          snapshot_at: '2024-01-01 00:00:00'
+
+        # Downgrade scenario: dep3 downgrades pkg4 from v2.0.0 to v1.0.0
+        - dependent_artifact_id: dep3
+          package_artifact_id: pkg4
+          package_version: 2.0.0
+          snapshot_at: '2024-01-01 00:00:00'
+        - dependent_artifact_id: dep3
+          package_artifact_id: pkg4
+          package_version: 1.0.0
+          snapshot_at: '2024-02-01 00:00:00'
+
+        # Patch upgrade scenario: dep4 upgrades pkg5 from v1.0.0 to v1.0.1
+        - dependent_artifact_id: dep4
+          package_artifact_id: pkg5
+          package_version: 1.0.0
+          snapshot_at: '2024-01-01 00:00:00'
+        - dependent_artifact_id: dep4
+          package_artifact_id: pkg5
+          package_version: 1.0.1
+          snapshot_at: '2024-02-01 00:00:00'
+
+  outputs:
+    query:
+      rows:
+        # dep1 / pkg1 lifecycle
+        - event_type: ADD_DEPENDENCY
+          event_time: '2024-01-01 00:00:00'
+          dependent_artifact_id: dep1
+          package_artifact_id: pkg1
+          version_before: null
+          version_after: 1.0.0
+
+        - event_type: UPGRADE_DEPENDENCY
+          event_time: '2024-02-01 00:00:00'
+          dependent_artifact_id: dep1
+          package_artifact_id: pkg1
+          version_before: 1.0.0
+          version_after: 1.1.0
+
+        - event_type: REMOVE_DEPENDENCY
+          event_time: '2024-04-01 00:00:00'
+          dependent_artifact_id: dep1
+          package_artifact_id: pkg1
+          version_before: 1.1.0
+          version_after: null
+
+        # dep1 / pkg2 lifecycle
+        - event_type: ADD_DEPENDENCY
+          event_time: '2024-04-01 00:00:00'
+          dependent_artifact_id: dep1
+          package_artifact_id: pkg2
+          version_before: null
+          version_after: 0.1.0
+
+        # dep2 / pkg3 lifecycle (should pick v2.0.0)
+        - event_type: ADD_DEPENDENCY
+          event_time: '2024-01-01 00:00:00'
+          dependent_artifact_id: dep2
+          package_artifact_id: pkg3
+          version_before: null
+          version_after: 2.0.0
+
+        # dep3 / pkg4 lifecycle (downgrade ignored for UPGRADE event, but ADD still happens initially)
+        - event_type: ADD_DEPENDENCY
+          event_time: '2024-01-01 00:00:00'
+          dependent_artifact_id: dep3
+          package_artifact_id: pkg4
+          version_before: null
+          version_after: 2.0.0
+        # No UPGRADE event for 2.0.0 -> 1.0.0
+
+        # dep4 / pkg5 lifecycle (patch upgrade)
+        - event_type: ADD_DEPENDENCY
+          event_time: '2024-01-01 00:00:00'
+          dependent_artifact_id: dep4
+          package_artifact_id: pkg5
+          version_before: null
+          version_after: 1.0.0
+
+        - event_type: UPGRADE_DEPENDENCY
+          event_time: '2024-02-01 00:00:00'
+          dependent_artifact_id: dep4
+          package_artifact_id: pkg5
+          version_before: 1.0.0
+          version_after: 1.0.1
