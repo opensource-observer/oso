@@ -208,7 +208,6 @@ export type Database = {
       };
       datasets: {
         Row: {
-          catalog: string;
           created_at: string;
           created_by: string;
           dataset_type: Database["public"]["Enums"]["dataset_type"];
@@ -219,11 +218,9 @@ export type Database = {
           is_public: boolean;
           name: string;
           org_id: string;
-          schema: string;
           updated_at: string;
         };
         Insert: {
-          catalog: string;
           created_at?: string;
           created_by: string;
           dataset_type: Database["public"]["Enums"]["dataset_type"];
@@ -234,11 +231,9 @@ export type Database = {
           is_public?: boolean;
           name: string;
           org_id: string;
-          schema: string;
           updated_at?: string;
         };
         Update: {
-          catalog?: string;
           created_at?: string;
           created_by?: string;
           dataset_type?: Database["public"]["Enums"]["dataset_type"];
@@ -249,7 +244,6 @@ export type Database = {
           is_public?: boolean;
           name?: string;
           org_id?: string;
-          schema?: string;
           updated_at?: string;
         };
         Relationships: [

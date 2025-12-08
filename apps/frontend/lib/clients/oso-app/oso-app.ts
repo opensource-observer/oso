@@ -2869,6 +2869,133 @@ class OsoAppClient {
     return payload.dataModelRelease;
   }
 
+  async createStaticModel(
+    args: Partial<{
+      orgId: string;
+      datasetId: string;
+      name: string;
+    }>,
+  ) {
+    const { orgId, datasetId, name } = {
+      orgId: ensure(args.orgId, "Missing orgId argument"),
+      datasetId: ensure(args.datasetId, "Missing datasetId argument"),
+      name: ensure(args.name, "Missing name argument"),
+    };
+
+    const CREATE_STATIC_MODEL_MUTATION = gql(`
+      mutation CreateStaticModel($input: CreateStaticModelInput!) {
+        createStaticModel(input: $input) {
+          success
+          message
+          staticModel {
+            id
+            name
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_STATIC_MODEL_MUTATION),
+        variables: {
+          input: {
+            orgId,
+            datasetId,
+            name,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to create staticModel:", result.errors[0].message);
+      throw new Error(
+        `Failed to create staticModel: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createStaticModel;
+    if (!payload) {
+      throw new Error("No response data from create staticModel mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully created staticModel "${name}"`);
+    }
+
+    return payload.staticModel;
+  }
+
+  async updateStaticModel(
+    args: Partial<{
+      staticModelId: string;
+      name?: string;
+    }>,
+  ) {
+    const { staticModelId, name } = {
+      staticModelId: ensure(
+        args.staticModelId,
+        "Missing staticModelId argument",
+      ),
+      name: args.name,
+    };
+
+    const UPDATE_STATIC_MODEL_MUTATION = gql(`
+      mutation UpdateStaticModel($input: UpdateStaticModelInput!) {
+        updateStaticModel(input: $input) {
+          success
+          message
+          staticModel {
+            id
+            name
+          }
+        }
+      }
+    `);
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(UPDATE_STATIC_MODEL_MUTATION),
+        variables: {
+          input: {
+            staticModelId,
+            name,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to update staticModel:", result.errors[0].message);
+      throw new Error(
+        `Failed to update staticModel: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.updateStaticModel;
+    if (!payload) {
+      throw new Error("No response data from update staticModel mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully updated staticModel "${name}"`);
+    }
+
+    return payload.staticModel;
+  }
+
   async createUserModelRunRequest(
     args: Partial<{
       datasetId: string;

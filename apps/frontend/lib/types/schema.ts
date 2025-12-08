@@ -274,7 +274,6 @@ export const connectorRelationshipsRelationshipsSchema = z.tuple([
 ]);
 
 export const datasetsRowSchema = z.object({
-  catalog: z.string(),
   created_at: z.string(),
   created_by: z.string(),
   dataset_type: publicDatasetTypeSchema,
@@ -285,12 +284,10 @@ export const datasetsRowSchema = z.object({
   is_public: z.boolean(),
   name: z.string(),
   org_id: z.string(),
-  schema: z.string(),
   updated_at: z.string(),
 });
 
 export const datasetsInsertSchema = z.object({
-  catalog: z.string(),
   created_at: z.string().optional(),
   created_by: z.string(),
   dataset_type: publicDatasetTypeSchema,
@@ -301,12 +298,10 @@ export const datasetsInsertSchema = z.object({
   is_public: z.boolean().optional(),
   name: z.string(),
   org_id: z.string(),
-  schema: z.string(),
   updated_at: z.string().optional(),
 });
 
 export const datasetsUpdateSchema = z.object({
-  catalog: z.string().optional(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   dataset_type: publicDatasetTypeSchema.optional(),
@@ -317,7 +312,6 @@ export const datasetsUpdateSchema = z.object({
   is_public: z.boolean().optional(),
   name: z.string().optional(),
   org_id: z.string().optional(),
-  schema: z.string().optional(),
   updated_at: z.string().optional(),
 });
 
