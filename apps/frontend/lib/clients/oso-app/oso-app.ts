@@ -2869,27 +2869,20 @@ class OsoAppClient {
     return payload.dataModelRelease;
   }
 
-  async createRunRequest(
+  async createUserModelRunRequest(
     args: Partial<{
-      definitionType: DatasetType;
-      definitionId: string;
+      datasetId: string;
+      selectedModels: string[];
     }>,
   ) {
-    const definitionType = ensure(
-      args.definitionType,
-      "Missing definitionType argument",
-    );
-    const definitionId = ensure(
-      args.definitionId,
-      "Missing definitionId argument",
-    );
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
 
-    const CREATE_RUN_REQUEST_MUTATION = gql(`
-      mutation CreateRunRequest($input: CreateRunRequestInput!) {
-        createRunRequest(input: $input) {
+    const CREATE_USER_MODEL_RUN_REQUEST_MUTATION = gql(`
+      mutation CreateUserModelRunRequest($input: CreateUserModelRunRequestInput!) {
+        createUserModelRunRequest(input: $input) {
           success
           message
-          runRequest {
+          run {
             id
           }
         }
@@ -2902,11 +2895,11 @@ class OsoAppClient {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: print(CREATE_RUN_REQUEST_MUTATION),
+        query: print(CREATE_USER_MODEL_RUN_REQUEST_MUTATION),
         variables: {
           input: {
-            definitionType,
-            definitionId,
+            datasetId,
+            selectedModels: args.selectedModels || [],
           },
         },
       }),
@@ -2928,7 +2921,7 @@ class OsoAppClient {
 
     if (payload.success) {
       logger.log(
-        `Successfully created Run request for definition "${definitionId}"`,
+        `Successfully created Run request for user model dataset "${datasetId}"`,
       );
     }
 
