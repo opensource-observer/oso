@@ -1794,7 +1794,8 @@ export enum DatasetType {
 export type DatasetTypeDefinition =
   | DataConnector
   | DataIngestion
-  | DataModelDefinition;
+  | DataModelDefinition
+  | StaticModelDefinition;
 
 export type DefaultPartitionStatuses = {
   __typename?: "DefaultPartitionStatuses";
@@ -6130,7 +6131,7 @@ export type Query = {
   sensorsOrError: SensorsOrError;
   /** Whether or not the NUX should be shown to the user */
   shouldShowNux: Scalars["Boolean"]["output"];
-  staticModels: DataModelConnection;
+  staticModels: StaticModelConnection;
   /** System only. Access system level queries. */
   system: System;
   /**
@@ -8120,6 +8121,24 @@ export type StaticModelConnection = {
   totalCount?: Maybe<Scalars["Int"]["output"]>;
 };
 
+export type StaticModelDefinition = {
+  __typename?: "StaticModelDefinition";
+  datasetId: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  /**
+   * If the dataset is of type STATIC_MODEL, this field will contain the list of static models
+   * associated with the dataset. Otherwise it will be an empty list.
+   */
+  staticModels: StaticModelConnection;
+};
+
+export type StaticModelDefinitionStaticModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
 export type StaticModelEdge = {
   __typename?: "StaticModelEdge";
   cursor: Scalars["String"]["output"];
@@ -8385,7 +8404,11 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
   schema: TableSchema;
 };
 
-export type TableSource = DataConnector | DataIngestion | DataModel;
+export type TableSource =
+  | DataConnector
+  | DataIngestion
+  | DataModel
+  | StaticModel;
 
 export type TagInput = {
   key: Scalars["String"]["input"];
@@ -8919,6 +8942,42 @@ export type CreateDataModelReleaseMutation = {
     success: boolean;
     message?: string | null;
     dataModelRelease?: { __typename?: "DataModelRelease"; id: string } | null;
+  };
+};
+
+export type CreateStaticModelMutationVariables = Exact<{
+  input: CreateStaticModelInput;
+}>;
+
+export type CreateStaticModelMutation = {
+  __typename?: "Mutation";
+  createStaticModel: {
+    __typename?: "CreateStaticModelPayload";
+    success: boolean;
+    message?: string | null;
+    staticModel?: {
+      __typename?: "StaticModel";
+      id: string;
+      name: string;
+    } | null;
+  };
+};
+
+export type UpdateStaticModelMutationVariables = Exact<{
+  input: UpdateStaticModelInput;
+}>;
+
+export type UpdateStaticModelMutation = {
+  __typename?: "Mutation";
+  updateStaticModel: {
+    __typename?: "CreateStaticModelPayload";
+    success: boolean;
+    message?: string | null;
+    staticModel?: {
+      __typename?: "StaticModel";
+      id: string;
+      name: string;
+    } | null;
   };
 };
 
@@ -9588,6 +9647,138 @@ export const CreateDataModelReleaseDocument = {
 } as unknown as DocumentNode<
   CreateDataModelReleaseMutation,
   CreateDataModelReleaseMutationVariables
+>;
+export const CreateStaticModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateStaticModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateStaticModelInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createStaticModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "staticModel" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateStaticModelMutation,
+  CreateStaticModelMutationVariables
+>;
+export const UpdateStaticModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateStaticModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateStaticModelInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateStaticModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "staticModel" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateStaticModelMutation,
+  UpdateStaticModelMutationVariables
 >;
 export const CreateUserModelRunRequestDocument = {
   kind: "Document",

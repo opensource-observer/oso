@@ -37,6 +37,7 @@ union DatasetTypeDefinition =
   | DataModelDefinition
   | DataIngestion
   | DataConnector
+  | StaticModelDefinition
 
 type DataModelDefinition {
   orgId: ID!
@@ -51,6 +52,21 @@ type DataModelDefinition {
     single: Boolean
     where: JSON
   ): DataModelConnection!
+}
+
+type StaticModelDefinition {
+  orgId: ID!
+  datasetId: ID!
+  """
+  If the dataset is of type STATIC_MODEL, this field will contain the list of static models
+  associated with the dataset. Otherwise it will be an empty list.
+  """
+  staticModels(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): StaticModelConnection!
 }
 
 type DatasetEdge {
@@ -70,7 +86,7 @@ type TableColumn {
   nullable: Boolean!
 }
 
-union TableSource = DataModel | DataIngestion | DataConnector
+union TableSource = DataModel | StaticModel | DataIngestion | DataConnector
 
 type Table {
   id: ID!
