@@ -58,6 +58,9 @@ dependencies = [
     "pandas>=2.3.3",
 ]
 
+[project.scripts]
+oso_dagster = "oso_dagster.cli:cli"
+
 [dependency-groups]
 dev = [
     "pytest-asyncio>=0.24.0,<2.0.0",
