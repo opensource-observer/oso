@@ -34,9 +34,6 @@ homepage = "https://www.opensource.observer"
 repository = "https://github.com/opensource-observer/oso"
 documentation = "https://docs.opensource.observer/"
 
-# [project.scripts]
-# oso_dagster = "oso_dagster.cli:cli"
-
 [dependency-groups]
 dev = [
     "ipython>=8.21.0,<10.0.0",
