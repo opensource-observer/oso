@@ -48,6 +48,7 @@ dev = [
     "marimo>=0.13.15",
     "pytest<9.0.0,>=8.2.1",
     "pytest-asyncio>=0.24.0,<2.0.0",
+    "mypy-protobuf>=3.7.0",
 ]
 
 [tool.uv.sources]
@@ -60,6 +61,7 @@ metrics-tools = { workspace = true }
 oso_dagster = { workspace = true }
 opsscripts = { workspace = true }
 oso_lets_go = { workspace = true }
+osoprotobufs = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -78,6 +80,7 @@ members = [
     "warehouse/metrics_tools",
     "warehouse/oso_lets_go",
     "ops/opsscripts",
+    "lib/protobufs/python",
 ]
 
 [tool.dagster]
