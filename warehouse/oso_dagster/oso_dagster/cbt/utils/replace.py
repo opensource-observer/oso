@@ -1,8 +1,7 @@
 from typing import cast
 
+from oso_core.sql.compare import is_same_source_table
 from sqlglot import expressions as exp
-
-from .compare import is_same_source_table
 
 
 def replace_source_tables(search: exp.Table, replace: exp.Table):
