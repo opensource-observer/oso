@@ -1,0 +1,30 @@
+[project]
+name = "oso-lets-go"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = [
+    "gitpython<4.0.0,>=3.1.44",
+    "kr8s>=0.20.14",
+    "opsscripts",
+    "metrics-tools",
+    "oso-core",
+]
+
+[tool.uv.sources]
+metrics-tools = { workspace = true }
+opsscripts = { workspace = true }
+oso-core = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.9.10,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "oso_lets_go"
+module-root = ""
+
+[project.scripts]
+oso = "oso_lets_go.cli:cli"
+oso_lets_go = "oso_lets_go.wizard:run"
