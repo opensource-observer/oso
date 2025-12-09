@@ -10,41 +10,22 @@ MODEL (
     "github",
     "ddp",
   ),
-  enabled false,
 );
 
-WITH repos_with_code AS (
-  -- Filter to repos that have code contributions
-  SELECT DISTINCT repo_id, repo_name
-  FROM oso.int_ddp_github_repo_user_summary_metrics
-  WHERE event_type = 'COMMIT_CODE'
-),
-repo_base AS (
-  -- Get base repo info with maintainer computed once
-  SELECT DISTINCT
-    s.repo_id,
-    s.repo_name,
-    SPLIT_PART(s.repo_name, '/', 1) AS repo_maintainer
-  FROM oso.int_ddp_github_repo_user_summary_metrics AS s
-  INNER JOIN repos_with_code AS rwc
-    ON s.repo_id = rwc.repo_id
-),
-actor_activities AS (
+WITH actor_activities AS (
   -- Aggregate actor activities across event types per repo
   SELECT
     s.repo_id,
     s.repo_name,
     s.actor_id,
     s.actor_login,
-    rb.repo_maintainer,
+    MAX(CASE WHEN s.is_maintainer = TRUE THEN 1 ELSE 0 END) AS is_maintainer,
     MAX(CASE WHEN s.event_type = 'COMMIT_CODE' THEN 1 ELSE 0 END) AS has_commit_code,
     MAX(CASE WHEN s.event_type = 'OTHER' THEN 1 ELSE 0 END) AS has_other,
     MAX(CASE WHEN s.event_type = 'STARRED' THEN 1 ELSE 0 END) AS has_starred,
     MAX(CASE WHEN s.is_maintainer = TRUE AND s.event_type = 'COMMIT_CODE' THEN 1 ELSE 0 END) AS is_maintainer_committer
   FROM oso.int_ddp_github_repo_user_summary_metrics AS s
-  INNER JOIN repo_base AS rb
-    ON s.repo_id = rb.repo_id
-  GROUP BY s.repo_id, s.repo_name, s.actor_id, s.actor_login, rb.repo_maintainer
+  GROUP BY s.repo_id, s.repo_name, s.actor_id, s.actor_login
 ),
 contributor_categories AS (
   -- Categorize contributors with priority
@@ -53,7 +34,7 @@ contributor_categories AS (
     repo_name,
     actor_id,
     CASE
-      WHEN actor_login = repo_maintainer THEN 'PERSONAL_MAINTAINER'
+      WHEN is_maintainer = 1 THEN 'PERSONAL_MAINTAINER'
       WHEN has_commit_code = 1 THEN 'CODE_CONTRIBUTOR'
       WHEN has_other = 1 THEN 'OTHER_CONTRIBUTOR'
       WHEN has_starred = 1 THEN 'STARGAZER'
@@ -78,35 +59,29 @@ contributor_counts AS (
 event_aggregates AS (
   -- Aggregate event-level metrics per repo from summary table
   SELECT
-    s.repo_id,
-    s.repo_name,
-    SUM(s.total_events) AS total_events,
-    MAX(s.total_days_with_activity) AS total_days_with_activity,
-    MIN(CASE WHEN s.event_type = 'COMMIT_CODE' THEN s.first_event_date END) AS first_code_contribution_date,
-    MAX(CASE WHEN s.event_type = 'COMMIT_CODE' THEN s.last_event_date END) AS last_code_contribution_date
-  FROM oso.int_ddp_github_repo_user_summary_metrics AS s
-  INNER JOIN repo_base AS rb
-    ON s.repo_id = rb.repo_id
-  GROUP BY s.repo_id, s.repo_name
+    repo_id,
+    repo_name,
+    SUM(total_events) AS total_events,
+    MIN(CASE WHEN event_type = 'COMMIT_CODE' THEN first_event_date END) AS first_code_contribution_date,
+    MAX(CASE WHEN event_type = 'COMMIT_CODE' THEN last_event_date END) AS last_code_contribution_date
+  FROM oso.int_ddp_github_repo_user_summary_metrics
+  GROUP BY repo_id, repo_name
 ),
 repo_aggregates AS (
   -- Combine all metrics
   SELECT
     cc.repo_id,
     cc.repo_name,
-    rb.repo_maintainer,
+    SPLIT_PART(cc.repo_name, '/', 1) AS repo_maintainer,
     cc.code_contributor_count,
     cc.other_contributor_count,
     cc.stargazer_count,
     cc.personal_maintainer_count,
     cc.maintainer_code_contributor_count,
     ea.total_events,
-    ea.total_days_with_activity,
     ea.first_code_contribution_date,
     ea.last_code_contribution_date
   FROM contributor_counts AS cc
-  INNER JOIN repo_base AS rb
-    ON cc.repo_id = rb.repo_id
   INNER JOIN event_aggregates AS ea
     ON cc.repo_id = ea.repo_id
 )
@@ -120,7 +95,6 @@ SELECT
   personal_maintainer_count,
   maintainer_code_contributor_count,
   total_events,
-  total_days_with_activity,
   first_code_contribution_date,
   last_code_contribution_date
 FROM repo_aggregates  
