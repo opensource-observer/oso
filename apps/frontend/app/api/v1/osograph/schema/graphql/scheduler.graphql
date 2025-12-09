@@ -115,22 +115,30 @@ extend type Mutation {
   """
   Request a run for a USER_MODEL dataset
   """
-  createUserModelRunRequest(input: CreateUserModelRunRequestInput!): CreateRunRequestPayload!
+  createUserModelRunRequest(
+    input: CreateUserModelRunRequestInput!
+  ): CreateRunRequestPayload!
 
   """
   Request a run for a DATA_INGEST dataset
   """
-  createDataIngestionRunRequest(input: CreateDataIngestionRunRequest!): CreateRunRequestPayload!
+  createDataIngestionRunRequest(
+    input: CreateDataIngestionRunRequestInput!
+  ): CreateRunRequestPayload!
 
   """
   Request a run for a DATA_CONNECTOR dataset
   """
-  createDataConnectorRunRequest(input: CreateDataConnectorRunRequest!): CreateRunRequestPayload!
+  createDataConnectorRunRequest(
+    input: CreateDataConnectorRunRequestInput!
+  ): CreateRunRequestPayload!
 
   """
   Request a run for a STATIC_MODEL
   """
-  createStaticModelRunRequest(input: CreateStaticModelRunRequest!): CreateRunRequestPayload!
+  createStaticModelRunRequest(
+    input: CreateStaticModelRunRequestInput!
+  ): CreateRunRequestPayload!
 
   """
   Cancel a run
@@ -163,16 +171,17 @@ input CreateUserModelRunRequestInput {
   selectedModels: [String!]
 }
 
-input CreateDataIngestionRunRequest {
+input CreateDataIngestionRunRequestInput {
   datasetId: ID!
 }
 
-input CreateDataConnectorRunRequest {
+input CreateDataConnectorRunRequestInput {
   datasetId: ID!
 }
 
-input CreateStaticModelRunRequest {
+input CreateStaticModelRunRequestInput {
   datasetId: ID!
+  selectedModels: [String!]
 }
 
 type CreateRunRequestPayload {
