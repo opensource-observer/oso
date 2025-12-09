@@ -1,5 +1,6 @@
 import sqlglot as sql
-from oso_dagster.cbt.utils import is_same_sql, replace_source_tables
+from oso_core.sql.compare import is_same_sql
+from oso_dagster.cbt.utils import replace_source_tables
 from sqlglot.optimizer.normalize import normalize
 from sqlglot.optimizer.qualify import qualify
 
