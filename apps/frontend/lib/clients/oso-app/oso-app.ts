@@ -3054,6 +3054,65 @@ class OsoAppClient {
 
     return payload.runRequest;
   }
+
+  async createStaticModelRunRequest(
+    args: Partial<{
+      datasetId: string;
+      selectedModels: string[];
+    }>,
+  ) {
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
+
+    const CREATE_STATIC_MODEL_RUN_REQUEST_MUTATION = gql(`
+      mutation CreateStaticModelRunRequest($input: CreateStaticModelRunRequestInput!) {
+        createStaticModelRunRequest(input: $input) {
+          success
+          message
+          run {
+            id
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_STATIC_MODEL_RUN_REQUEST_MUTATION),
+        variables: {
+          input: {
+            datasetId,
+            selectedModels: args.selectedModels || [],
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to create run request:", result.errors[0].message);
+      throw new Error(
+        `Failed to create run request: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createStaticModelRunRequest;
+    if (!payload) {
+      throw new Error("No response data from create run request mutation");
+    }
+
+    if (payload.success) {
+      logger.log(
+        `Successfully created Run request for static model dataset "${datasetId}"`,
+      );
+    }
+
+    return payload.run;
+  }
 }
 
 export { OsoAppClient };

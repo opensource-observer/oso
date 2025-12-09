@@ -268,6 +268,7 @@ import {
   CardDescriptionMeta,
   CardContentMeta,
 } from "@/components/ui/card";
+import { FileInput, FileInputMeta } from "@/components/ui/file-input";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -395,6 +396,7 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(SelectLabel, SelectLabelMeta);
   PLASMIC.registerComponent(SelectItem, SelectItemMeta);
   PLASMIC.registerComponent(Input, InputMeta);
+  PLASMIC.registerComponent(FileInput, FileInputMeta);
   PLASMIC.registerComponent(Textarea, TextareaMeta);
   PLASMIC.registerComponent(Collapsible, CollapsibleMeta);
   PLASMIC.registerComponent(CollapsibleContent, CollapsibleContentMeta);

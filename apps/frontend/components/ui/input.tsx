@@ -34,7 +34,7 @@ const InputMeta: CodeComponentMeta<InputProps> = {
   props: {
     type: {
       type: "choice",
-      options: ["text", "email", "date", "password", "number", "file", "url"],
+      options: ["text", "email", "date", "password", "number", "url"],
       defaultValue: "text",
     },
     defaultValue: "string",
