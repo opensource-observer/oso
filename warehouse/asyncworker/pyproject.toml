@@ -9,6 +9,7 @@ dependencies = [
     "dotenv>=0.9.9",
     "google-cloud-pubsub>=2.33.0",
     "pydantic-cli>=10.0.0",
+    "pydantic-settings>=2.11.0",
     "query-rewriter",
 ]
 
