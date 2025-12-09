@@ -35,7 +35,7 @@ SELECT
   repo_name,
   CASE
     WHEN event_type = 'PushEvent' THEN 'COMMIT_CODE'
-    WHEN event_type = 'StarEvent' THEN 'STARRED'
+    WHEN event_type = 'WatchEvent' THEN 'STARRED'
     ELSE 'OTHER'
   END AS event_type,
   COUNT(*) AS amount
