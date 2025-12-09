@@ -84,17 +84,19 @@ repo_aggregates AS (
   FROM contributor_counts AS cc
   INNER JOIN event_aggregates AS ea
     ON cc.repo_id = ea.repo_id
+    AND cc.repo_name = ea.repo_name
 )
 SELECT
   repo_id,
-  repo_name,
-  repo_maintainer,
-  code_contributor_count,
-  other_contributor_count,
-  stargazer_count,
-  personal_maintainer_count,
-  maintainer_code_contributor_count,
-  total_events,
-  first_code_contribution_date,
-  last_code_contribution_date
-FROM repo_aggregates  
+  MAX_BY(repo_name, last_code_contribution_date) AS repo_name,
+  MAX_BY(repo_maintainer, last_code_contribution_date) AS repo_maintainer,
+  MAX(code_contributor_count) AS code_contributor_count,
+  MAX(other_contributor_count) AS other_contributor_count,
+  MAX(stargazer_count) AS stargazer_count,
+  MAX(personal_maintainer_count) AS personal_maintainer_count,
+  MAX(maintainer_code_contributor_count) AS maintainer_code_contributor_count,
+  MAX(total_events) AS total_events,
+  MIN(first_code_contribution_date) AS first_code_contribution_date,
+  MAX(last_code_contribution_date) AS last_code_contribution_date
+FROM repo_aggregates
+GROUP BY repo_id  
