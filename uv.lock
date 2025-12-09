@@ -424,6 +424,7 @@ dependencies = [
     { name = "dotenv" },
     { name = "google-cloud-pubsub" },
     { name = "pydantic-cli" },
+    { name = "pydantic-settings" },
     { name = "query-rewriter" },
 ]
 
@@ -432,6 +433,7 @@ requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "google-cloud-pubsub", specifier = ">=2.33.0" },
     { name = "pydantic-cli", specifier = ">=10.0.0" },
+    { name = "pydantic-settings", specifier = ">=2.11.0" },
     { name = "query-rewriter", editable = "lib/query-rewriter" },
 ]
 
