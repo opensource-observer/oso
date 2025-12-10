@@ -1,6 +1,6 @@
-from asyncworker.types import AsyncMessageQueueHandler
 from osoprotobufs.data_model_pb2 import DataModelRunRequest
 from scheduler.evaluator import UserDefinedModelEvaluator, UserDefinedModelStateClient
+from scheduler.types import AsyncMessageQueueHandler
 
 
 class DataModelRunRequestHandler(AsyncMessageQueueHandler[DataModelRunRequest]):

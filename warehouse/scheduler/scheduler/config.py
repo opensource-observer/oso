@@ -1,7 +1,6 @@
 import logging
 import os
 
-from asyncworker.types import GenericMessageQueueService
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1
 from google.pubsub_v1.types import Encoding, Schema
@@ -14,6 +13,7 @@ from pydantic_settings import (
     CliSubCommand,
     SettingsConfigDict,
 )
+from scheduler.types import GenericMessageQueueService
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ PROTOBUF_DIR = os.path.join(REPO_DIR, "lib/protobufs/definitions")
 class CommonSettings(BaseSettings):
     """Common options for async worker commands"""
 
-    model_config = SettingsConfigDict(env_prefix="asyncworker_")
+    model_config = SettingsConfigDict(env_prefix="scheduler_")
 
     k8s_enabled: bool = Field(
         default=False,

@@ -1,8 +1,5 @@
 import typing as t
 
-from asyncworker.handlers.data_model import DataModelRunRequestHandler
-from asyncworker.impl.pubsub import GCPPubSubMessageQueueService
-from asyncworker.types import GenericMessageQueueService, MessageQueueHandlerRegistry
 from oso_core.resources import ResourcesContext, ResourcesRegistry, resource_factory
 from oso_dagster.resources.duckdb import DuckDBResource
 from oso_dagster.resources.heartbeat import HeartBeatResource
@@ -22,11 +19,17 @@ from oso_dagster.resources.udm_state import (
     UserDefinedModelStateResource,
 )
 from scheduler.evaluator import UserDefinedModelEvaluator
+from scheduler.handlers.data_model import DataModelRunRequestHandler
+from scheduler.impl.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
-from scheduler.types import UserDefinedModelStateClient
+from scheduler.types import (
+    GenericMessageQueueService,
+    MessageQueueHandlerRegistry,
+    UserDefinedModelStateClient,
+)
 
 if t.TYPE_CHECKING:
-    from asyncworker.config import CommonSettings
+    from scheduler.config import CommonSettings
 
 
 @resource_factory("message_queue_service")

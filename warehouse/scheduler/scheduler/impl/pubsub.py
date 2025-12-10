@@ -1,11 +1,11 @@
 import logging
 
-from asyncworker.types import GenericMessageQueueService, MessageQueueHandlerRegistry
 from google.cloud.pubsub import SubscriberClient
 from google.cloud.pubsub_v1.subscriber.message import Message
 from google.protobuf.message import Message as ProtobufMessage
 from oso_core.asynctools import safe_run_until_complete
 from oso_core.resources import ResourcesContext
+from scheduler.types import GenericMessageQueueService, MessageQueueHandlerRegistry
 
 logger = logging.getLogger(__name__)
 
