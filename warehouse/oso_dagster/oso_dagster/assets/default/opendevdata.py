@@ -41,6 +41,11 @@ def opendevdata(global_config: DagsterConfig):
             staging_bucket=global_config.gcs_bucket,
             skip_uncompression=True,
             deps=[],
+            asset_kwargs={
+                "tags": {
+                    "opensource.observer/source": "weekly",
+                },
+            },
         )
     )
     return asset
