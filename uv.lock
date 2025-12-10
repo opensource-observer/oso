@@ -9,7 +9,6 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "asyncworker",
     "metrics-service",
     "metrics-tools",
     "opsscripts",
@@ -415,33 +414,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/71/ea/26c489a11f7ca862d5705db67683a7361ce11c23a7b98fc6c2deaeccede2/asyncio-4.0.0.tar.gz", hash = "sha256:570cd9e50db83bc1629152d4d0b7558d6451bb1bfd5dfc2e935d96fc2f40329b", size = 5371, upload-time = "2025-08-05T02:51:46.605Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/57/64/eff2564783bd650ca25e15938d1c5b459cda997574a510f7de69688cb0b4/asyncio-4.0.0-py3-none-any.whl", hash = "sha256:c1eddb0659231837046809e68103969b2bef8b0400d59cfa6363f6b5ed8cc88b", size = 5555, upload-time = "2025-08-05T02:51:45.767Z" },
-]
-
-[[package]]
-name = "asyncworker"
-version = "0.1.0"
-source = { editable = "warehouse/asyncworker" }
-dependencies = [
-    { name = "dotenv" },
-    { name = "google-cloud-pubsub" },
-    { name = "oso-core" },
-    { name = "oso-dagster" },
-    { name = "osoprotobufs" },
-    { name = "pydantic-cli" },
-    { name = "pydantic-settings" },
-    { name = "query-rewriter" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "google-cloud-pubsub", specifier = ">=2.33.0" },
-    { name = "oso-core", editable = "lib/oso-core" },
-    { name = "oso-dagster", editable = "warehouse/oso_dagster" },
-    { name = "osoprotobufs", editable = "lib/protobufs/python" },
-    { name = "pydantic-cli", specifier = ">=10.0.0" },
-    { name = "pydantic-settings", specifier = ">=2.11.0" },
-    { name = "query-rewriter", editable = "lib/query-rewriter" },
 ]
 
 [[package]]
@@ -5135,18 +5107,6 @@ email = [
 ]
 
 [[package]]
-name = "pydantic-cli"
-version = "10.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/45/b383f86c77e9f38360f66253a223f127a74a58aa46e22e52011093f83b3a/pydantic_cli-10.0.0.tar.gz", hash = "sha256:1439d1db73664177c838ca1b90ae8eca19c65ce3b119a79a7b6c6f07cb79874a", size = 34984, upload-time = "2025-10-16T07:00:45.091Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/41/5262fca75b48906b03bd1e156b99330699b59a198b220051128a23917e9a/pydantic_cli-10.0.0-py3-none-any.whl", hash = "sha256:e3778aed1e412c9962812af6a11d92ba514df6266bd60835f843b6332dae6eed", size = 43076, upload-time = "2025-10-16T07:00:43.705Z" },
-]
-
-[[package]]
 name = "pydantic-core"
 version = "2.41.4"
 source = { registry = "https://pypi.org/simple" }
@@ -6073,11 +6033,15 @@ dependencies = [
     { name = "dotenv" },
     { name = "duckdb" },
     { name = "google-cloud-pubsub" },
+    { name = "oso-core" },
+    { name = "oso-dagster" },
+    { name = "osoprotobufs" },
     { name = "pandas" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "query-rewriter" },
     { name = "requests" },
     { name = "sqlmesh" },
 ]
@@ -6093,11 +6057,15 @@ requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "duckdb", specifier = ">=1.4.1" },
     { name = "google-cloud-pubsub", specifier = ">=2.33.0" },
+    { name = "oso-core", editable = "lib/oso-core" },
+    { name = "oso-dagster", editable = "warehouse/oso_dagster" },
+    { name = "osoprotobufs", editable = "lib/protobufs/python" },
     { name = "pandas", specifier = ">=1.2.0" },
     { name = "pydantic", specifier = ">=2.10.5" },
     { name = "pydantic-settings", specifier = ">=2.11.0" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "query-rewriter", editable = "lib/query-rewriter" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "sqlmesh", specifier = ">=0.227.1" },
 ]
