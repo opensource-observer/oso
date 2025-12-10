@@ -26,19 +26,27 @@ will be added in the future.
 
 ## Running the scheduler's workers
 
-The primary implementation of the worker's work queue is through gcp pub/sub. As such, to run the
-workers locally, you will need to have the gcp pub/sub emulator running. You will need to make sure this is installed and running before starting the workers. See the [GCP Pub/Sub Emulator documentation](https://cloud.google.com/pubsub/docs/emulator) for instructions on how to set this up.
+The primary implementation of the worker's work queue is through gcp pub/sub. As
+such, to run the workers locally, you will need to have the gcp pub/sub emulator
+running. You will need to make sure this is installed and running before
+starting the workers. See the [GCP Pub/Sub Emulator
+documentation](https://cloud.google.com/pubsub/docs/emulator) for instructions
+on how to set this up.
 
-Once setup, you can run the emulator with the following command (if you didn't already based on the docs linked above):
+Once setup, you can run the emulator with the following command (if you didn't
+already based on the docs linked above):
 
 ```bash
 gcloud beta emulators pubsub start --project=oso-local-test
 ```
 
-Ensure that you set the following environment variables so that the workers can connect to the local emulator:
+Ensure that you set the following environment variables so that the workers can
+connect to the local emulator:
 
 ```bash
 export PUBSUB_EMULATOR_HOST=localhost:8085
+export SCHEDULER_GCP_PROJECT_ID=oso-local-test
+export SCHEDULER_OSO_API_URL=http://localhost:3000/api/v1/osograph
 ```
 
 ## Generating Python GraphQL client code
