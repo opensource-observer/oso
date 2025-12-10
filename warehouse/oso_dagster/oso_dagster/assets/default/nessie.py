@@ -11,7 +11,7 @@ from dagster import (
     define_asset_job,
 )
 from oso_dagster.factories import AssetFactoryResponse, early_resources_asset_factory
-from oso_dagster.resources import GCSResource, NessieResource, TrinoResource
+from oso_dagster.resources import GCSFileResource, NessieResource, TrinoResource
 
 K8S_CONFIG: dict[str, Any] = {
     "merge_behavior": "SHALLOW",
@@ -93,12 +93,12 @@ def nessie_job() -> AssetFactoryResponse:
     async def garbage_collect(
         context: AssetExecutionContext,
         trino: TrinoResource,
-        gcs: GCSResource,
+        gcs_file_manager: GCSFileResource,
         config: NessieGCConfig,
     ) -> None:
         async with trino.ensure_available(log_override=context.log):
             async with trino.async_get_client(log_override=context.log) as conn:
-                storage_client = gcs.get_client()
+                storage_client = gcs_file_manager.get_client()
 
                 try:
                     cur = await conn.cursor()

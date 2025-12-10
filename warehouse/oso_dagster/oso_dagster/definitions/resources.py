@@ -18,6 +18,7 @@ from oso_dagster.resources import (
     DuckdbEngineAdapterResource,
     DuckDBResource,
     FakeUserDefinedModelResource,
+    GCSFileResource,
     K8sApiResource,
     K8sResource,
     NessieResource,
@@ -123,6 +124,14 @@ def clickhouse_resource_factory(
 @time_function(logger)
 def gcs_resource_factory(global_config: DagsterConfig) -> GCSResource:
     return GCSResource(project=global_config.gcp_project_id)
+
+
+@resource_factory("gcs_file_manager")
+@time_function(logger)
+def gcs_file_manager_resource_factory(
+    global_config: DagsterConfig,
+) -> GCSFileResource:
+    return GCSFileResource(gcs_project=global_config.gcp_project_id)
 
 
 @resource_factory("cache")
@@ -465,14 +474,6 @@ def udm_state_factory() -> UserDefinedModelStateResource:
     return FakeUserDefinedModelResource()
 
 
-@resource_factory("gcs_resource")
-@time_function(logger)
-def gcs_resource(global_config: DagsterConfig) -> GCSResource:
-    """Factory function to create a GCS resource."""
-
-    return GCSResource(project=global_config.gcp_project_id)
-
-
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
@@ -486,6 +487,7 @@ def default_resource_registry():
     registry.add(bigquery_datatransfer_resource_factory)
     registry.add(clickhouse_resource_factory)
     registry.add(gcs_resource_factory)
+    registry.add(gcs_file_manager_resource_factory)
     registry.add(sqlmesh_resource_factory)
     registry.add(sqlmesh_context_config_factory)
     registry.add(cache_factory)
@@ -511,6 +513,5 @@ def default_resource_registry():
     registry.add(heartbeat_factory)
     registry.add(udm_engine_adapter_factory)
     registry.add(udm_state_factory)
-    registry.add(gcs_resource)
 
     return registry
