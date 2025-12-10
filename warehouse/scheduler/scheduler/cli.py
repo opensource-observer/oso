@@ -8,8 +8,12 @@ from scheduler.config import CommonSettings, Initialize, Run, Testing
 from scheduler.resources import default_resource_registry
 
 
-class AsyncWorker(
-    CommonSettings, cli_parse_args=True, cli_exit_on_error=False, cli_kebab_case=True
+class SchedulerCLI(
+    CommonSettings,
+    cli_parse_args=True,
+    cli_exit_on_error=False,
+    cli_kebab_case=True,
+    cli_prog_name="scheduler",
 ):
     initialize: CliSubCommand[Initialize]
     run: CliSubCommand[Run]
@@ -28,4 +32,4 @@ def cli():
     from oso_core.logging import setup_module_logging
 
     setup_module_logging("asyncworker")
-    CliApp.run(AsyncWorker, sys.argv[1:])
+    CliApp.run(SchedulerCLI, sys.argv[1:])
