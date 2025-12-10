@@ -52,6 +52,24 @@ class ResourcesRegistry:
             resources_dag=self._resources_dag.copy(),
         )
 
+    def add_singleton(self, name: str, value: t.Any):
+        """Add an unchanging global singleton value as a resource factory
+        without having to make a full factory function."""
+
+        if name in self._resources:
+            raise ValueError(f"Resource factory with name {name} already exists.")
+
+        def _constant_factory() -> t.Any:
+            return value
+
+        self._resources[name] = ResourceFactory(
+            name=name,
+            factory=_constant_factory,
+            dependencies={},
+            return_type=type(value),
+        )
+        self._resources_dag[name] = set()
+
     def add(self, resource_factory: ResourceFactory, override: bool = False):
         """Add a resource factory to the early resources container."""
         if resource_factory.name == "resources":
