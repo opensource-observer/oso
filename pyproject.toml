@@ -23,6 +23,7 @@ dependencies = [
     "oso_dagster",
     "opsscripts",
     "oso-lets-go",
+    "websockets>=15.0.1",
 ]
 name = "oso"
 version = "1.0.0"
@@ -90,7 +91,8 @@ pythonVersion = "3.12"
 typeCheckingMode = "standard"
 ignore = [
     "warehouse/oso_lets_go",
-    "warehouse/oso_dagster/oso_dagster/dlt_sources/sql_database"
+    "warehouse/oso_dagster/oso_dagster/dlt_sources/sql_database",
+    "warehouse/scheduler/scheduler/graphql_client/async_base_client.py"
 ]
 
 [tool.ruff]
