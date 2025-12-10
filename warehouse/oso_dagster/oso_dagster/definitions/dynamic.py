@@ -1,7 +1,7 @@
 import logging
 
 from oso_core.logging.decorators import time_function
-from oso_dagster.factories.common import ResourcesContext
+from oso_core.resources import ResourcesContext
 
 from .common import DefinitionsLoaderResponse, dagster_definitions
 
