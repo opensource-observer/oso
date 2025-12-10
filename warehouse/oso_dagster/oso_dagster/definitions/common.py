@@ -6,12 +6,9 @@ from dataclasses import dataclass
 import dagster as dg
 from dagster_k8s import k8s_job_executor
 from oso_core.logging import setup_module_logging
+from oso_core.resources import ResourceFactory, ResourcesRegistry
 from oso_dagster.config import DagsterConfig
-from oso_dagster.factories.common import (
-    AssetFactoryResponse,
-    ResourceFactory,
-    ResourcesRegistry,
-)
+from oso_dagster.factories.common import AssetFactoryResponse
 
 from .resources import default_resource_registry
 
