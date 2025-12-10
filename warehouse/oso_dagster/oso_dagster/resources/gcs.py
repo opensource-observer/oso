@@ -3,7 +3,7 @@ from dagster import ConfigurableResource
 from pydantic import Field
 
 
-class GCSResource(ConfigurableResource):
+class GCSFileResource(ConfigurableResource):
     """Resource for interacting with GCS."""
 
     gcs_project: str = Field(description="GCS project name.")
