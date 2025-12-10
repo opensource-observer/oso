@@ -3,8 +3,7 @@ from typing import Any, Iterator, Optional
 
 from dagster import ConfigurableResource, resource
 from dagster_gcp.bigquery.utils import setup_gcp_creds
-from google import auth
-from google.auth import impersonated_credentials
+from google.auth import default, impersonated_credentials
 from google.cloud.bigquery_datatransfer import DataTransferServiceClient
 from oso_dagster.config import DagsterConfig
 from pydantic import Field
@@ -79,7 +78,7 @@ class BigQueryDataTransferResource(ConfigurableResource):
         elif global_config.gcp_impersonate_service_account != "":
             # By default, create an impersonated credential for a service account.
             # This is necessary to create BigQuery DataTransfer jobs
-            credentials, project_id = auth.default()
+            credentials, project_id = default()
             target_credentials = impersonated_credentials.Credentials(
                 source_credentials=credentials,
                 target_principal=global_config.gcp_impersonate_service_account,
