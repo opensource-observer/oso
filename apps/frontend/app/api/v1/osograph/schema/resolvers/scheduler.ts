@@ -28,7 +28,8 @@ import z from "zod";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { createQueueService } from "@/lib/services/queue";
-import { DataModelRunRequest } from "@/lib/proto/generated/data-model";
+import { DataModelRunRequest } from "@/lib/protobufs/typescript/data-model";
+import { ProtobufEncoder, ProtobufMessage } from "@/lib/services/queue/types";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
   switch (status) {
@@ -47,14 +48,18 @@ function mapRunStatus(status: RunRow["status"]): RunStatus {
   }
 }
 
-function genericRunRequestResolver<T extends z.ZodTypeAny>(
+function genericRunRequestResolver<
+  T extends z.ZodTypeAny,
+  Q extends ProtobufMessage,
+>(
   inputSchema: T,
+  encoder: ProtobufEncoder<Q>,
   queueMessageFactory: (
     input: z.infer<T>,
     user: ReturnType<typeof requireAuthentication>,
     dataset: DatasetsRow,
     run: RunRow,
-  ) => Promise<DataModelRunRequest>,
+  ) => Promise<Q>,
 ): (
   _: any,
   args: { input: z.infer<T> },
@@ -124,7 +129,7 @@ function genericRunRequestResolver<T extends z.ZodTypeAny>(
 
     // Publish the message to the queue
     const queueService = createQueueService();
-    const result = await queueService.publishDataModelRun(message);
+    const result = await queueService.publishDataModelRun(message, encoder);
 
     if (!result.success) {
       logger.error(
@@ -151,6 +156,7 @@ export const schedulerResolvers = {
   Mutation: {
     createUserModelRunRequest: genericRunRequestResolver(
       CreateUserModelRunRequestSchema,
+      DataModelRunRequest,
       async (input, _user, dataset, run) => {
         const runIdBuffer = Buffer.from(run.id.replace(/-/g, ""), "hex");
 
