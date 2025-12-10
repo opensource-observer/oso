@@ -28,3 +28,30 @@ export interface QueueConfig {
 }
 
 export type MessageType = "data-model";
+
+export interface ProtobufMessage {
+  runId: Uint8Array;
+}
+
+export interface ProtobufEncoder<T> {
+  encode(message: T): { finish(): Uint8Array };
+  toJSON(message: T): unknown;
+}
+
+interface IQueueServiceBase {
+  close(): Promise<void>;
+}
+
+interface IDataModelRunQueueService {
+  publishDataModelRun<Q extends ProtobufMessage>(
+    request: Q,
+    encoder: ProtobufEncoder<Q>,
+  ): Promise<QueueResult>;
+}
+
+export interface IQueueService
+  extends IQueueServiceBase,
+    IDataModelRunQueueService {
+  // & IStaticModelRunQueueService
+  // & IDataIngestionQueueService
+}
