@@ -17,8 +17,8 @@ K8S_CONFIG: dict[str, Any] = {
     "merge_behavior": "SHALLOW",
     "container_config": {
         "resources": {
-            "requests": {"cpu": "1", "memory": "4Gi"},
-            "limits": {"memory": "7Gi"},
+            "requests": {"cpu": "1", "memory": "7Gi"},
+            "limits": {"memory": "12Gi"},
         },
     },
     "pod_spec_config": {
