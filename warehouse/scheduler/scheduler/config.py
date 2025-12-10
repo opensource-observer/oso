@@ -177,8 +177,11 @@ class Initialize(BaseSettings):
         )
 
 
-class RunPublisher(BaseSettings):
-    """Subcommand to run the async worker publisher"""
+class PublishDataModelRunRequest(BaseSettings):
+    """Subcommand to publish a DataModelRunRequest message"""
+
+    run_id: str = Field(description="The ID of the data model run")
+    dataset_id: str = Field(description="The ID of the dataset")
 
     async def cli_cmd(self, context: CliContext) -> None:
         resources_registry = context.get_data_as(
@@ -186,7 +189,6 @@ class RunPublisher(BaseSettings):
         )
         resources = resources_registry.context()
 
-        # In the future, we'd have more publisher implementations
         message_queue_service: GenericMessageQueueService = resources.resolve(
             "message_queue_service"
         )
@@ -194,8 +196,8 @@ class RunPublisher(BaseSettings):
         from osoprotobufs.data_model_pb2 import DataModelRunRequest
 
         message = DataModelRunRequest(
-            run_id=b"example_model_id",
-            dataset_id="example_dataset_id",
+            run_id=self.run_id.encode("utf-8"),
+            dataset_id=self.dataset_id,
         )
 
         await message_queue_service.publish_message(
@@ -204,10 +206,19 @@ class RunPublisher(BaseSettings):
         )
 
 
+class Publish(BaseSettings):
+    """Subcommand to run the async worker publisher"""
+
+    data_model_run_request: CliSubCommand[PublishDataModelRunRequest]
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        CliApp.run_subcommand(context, self)
+
+
 class Testing(BaseSettings):
     """Subcommand to run tests for the async worker"""
 
-    run_publisher: CliSubCommand[RunPublisher]
+    publish: CliSubCommand[Publish]
 
     async def cli_cmd(self, context: CliContext) -> None:
         # Here you would implement actual test running logic

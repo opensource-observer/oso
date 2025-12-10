@@ -1,6 +1,9 @@
 """
-There's going to be an open PR to `pydantic-settings` that adds this file
-so we can remove this file once that PR if that is merged and released.
+There's going to be an open PR to `pydantic-settings` that adds this file so we
+can remove this file once that PR if that is merged and released.
+
+We have added a `CliContext` that we can use to pass a context around to a
+hierachy of CLI commands.
 """
 
 import asyncio

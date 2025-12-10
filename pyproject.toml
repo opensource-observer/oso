@@ -24,6 +24,7 @@ dependencies = [
     "opsscripts",
     "oso-lets-go",
     "websockets>=15.0.1",
+    "scheduler",
 ]
 name = "oso"
 version = "1.0.0"

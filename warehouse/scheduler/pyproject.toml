@@ -35,7 +35,7 @@ oso-core = { workspace = true }
 oso-dagster = { workspace = true }
 
 [project.scripts]
-asyncworker = "scheduler.cli:cli"
+scheduler = "scheduler.cli:cli"
 
 [build-system]
 requires = ["uv_build>=0.9.10,<0.10.0"]

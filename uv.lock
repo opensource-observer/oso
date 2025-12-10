@@ -3838,19 +3838,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mypy-protobuf"
-version = "3.7.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "protobuf" },
-    { name = "types-protobuf" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/99/bd/92ee9e7d2ff30cb57b36bd6f61ee4da8a05acf32f6a6121883b58720e9d4/mypy_protobuf-3.7.0.tar.gz", hash = "sha256:912fb281f7c7b3e3a7c9b8695712618a716fddbab70f6ad63eaf68eda80c5efe", size = 25690, upload-time = "2025-11-17T22:11:12.809Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/32/709df4390d155bd72e75f2a9bce6004c2958a21f31817f3a2c7750299f70/mypy_protobuf-3.7.0-py3-none-any.whl", hash = "sha256:85256e9d4da935722ce8fbaa8d19397e1a2989aa8075c96577987de9fe7cea4d", size = 17488, upload-time = "2025-11-17T22:11:11.62Z" },
-]
-
-[[package]]
 name = "narwhals"
 version = "2.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4224,6 +4211,7 @@ dependencies = [
     { name = "pandas-stubs" },
     { name = "pyarrow-stubs" },
     { name = "pyoso" },
+    { name = "scheduler" },
     { name = "structlog" },
     { name = "websockets" },
 ]
@@ -4234,7 +4222,6 @@ dev = [
     { name = "ipython" },
     { name = "isort" },
     { name = "marimo" },
-    { name = "mypy-protobuf" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "python-on-whales" },
@@ -4264,6 +4251,7 @@ requires-dist = [
     { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
     { name = "pyarrow-stubs", specifier = ">=17.16,<21.0" },
     { name = "pyoso", editable = "warehouse/pyoso" },
+    { name = "scheduler", editable = "warehouse/scheduler" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "websockets", specifier = ">=15.0.1" },
 ]
@@ -4274,7 +4262,6 @@ dev = [
     { name = "ipython", specifier = ">=8.21.0,<10.0.0" },
     { name = "isort", specifier = ">=7.0.0,<8.0.0" },
     { name = "marimo", specifier = ">=0.13.15" },
-    { name = "mypy-protobuf", specifier = ">=3.7.0" },
     { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0,<2.0.0" },
     { name = "python-on-whales", specifier = ">=0.76.1" },
@@ -6904,15 +6891,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/21/ca/950278884e2ca20547ff3eb109478c6baf6b8cf219318e6bc4f666fad8e8/typer-0.19.2.tar.gz", hash = "sha256:9ad824308ded0ad06cc716434705f691d4ee0bfd0fb081839d2e426860e7fdca", size = 104755, upload-time = "2025-09-23T09:47:48.256Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/00/22/35617eee79080a5d071d0f14ad698d325ee6b3bf824fc0467c03b30e7fa8/typer-0.19.2-py3-none-any.whl", hash = "sha256:755e7e19670ffad8283db353267cb81ef252f595aa6834a0d1ca9312d9326cb9", size = 46748, upload-time = "2025-09-23T09:47:46.777Z" },
-]
-
-[[package]]
-name = "types-protobuf"
-version = "6.32.1.20251105"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f3/ab/0dce6a9841b5ebf3e37401879bb8cc20724ad9c770a7649bee997696cc75/types_protobuf-6.32.1.20251105.tar.gz", hash = "sha256:641002611ff87dd9fedc38a39a29cacb9907ae5ce61489b53e99ca2074bef764", size = 63846, upload-time = "2025-11-05T03:04:43.456Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ed/57/3a0d89b33b7485b7ffd99ec7cf53b0c5c89194c481f0bd673fd67e5f273f/types_protobuf-6.32.1.20251105-py3-none-any.whl", hash = "sha256:a15109d38f7cfefd2539ef86d3f93a6a41c7cad53924f8aa1a51eaddbb72a660", size = 77890, upload-time = "2025-11-05T03:04:42.067Z" },
 ]
 
 [[package]]
