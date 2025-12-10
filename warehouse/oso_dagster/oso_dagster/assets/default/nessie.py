@@ -62,6 +62,7 @@ class NessieGCConfig(Config):
     trino_schema: str = "sqlmesh__oso"
     catalogs: list[str] = ["iceberg", "iceberg_consumer"]
     concurrency_limit: int = 1
+    dry_run: bool = False
 
 
 class NessieTagJobConfig(Config):
@@ -128,6 +129,9 @@ def nessie_job() -> AssetFactoryResponse:
                     # Run the delete tasks concurrently with a limit
                     tasks = set()
                     for path in deleted_paths:
+                        if config.dry_run:
+                            context.log.info(f"Dry run: would delete {path}")
+                            continue
                         if len(tasks) >= config.concurrency_limit:
                             # Wait for task to finish before adding a new one
                             _done, tasks = await asyncio.wait(
