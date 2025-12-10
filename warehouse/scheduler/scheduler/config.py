@@ -167,6 +167,7 @@ class Initialize(BaseSettings):
 
     async def cli_cmd(self, context: CliContext) -> None:
         common_settings = context.get_data_as("common_settings", CommonSettings)
+
         ensure_topic_subscription(
             project_id=common_settings.gcp_project_id,
             topic_id="data_model_run_requests",

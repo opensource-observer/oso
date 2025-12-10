@@ -5,7 +5,7 @@ from google.cloud.pubsub_v1.subscriber.message import Message
 from google.protobuf.message import Message as ProtobufMessage
 from oso_core.asynctools import safe_run_until_complete
 from oso_core.resources import ResourcesContext
-from scheduler.types import GenericMessageQueueService, MessageQueueHandlerRegistry
+from scheduler.types import GenericMessageQueueService, MessageHandlerRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         self,
         project_id: str,
         resources: ResourcesContext,
-        registry: MessageQueueHandlerRegistry,
+        registry: MessageHandlerRegistry,
         emulator_enabled: bool = False,
     ) -> None:
         super().__init__(resources, registry)

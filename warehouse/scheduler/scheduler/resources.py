@@ -25,7 +25,7 @@ from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
     GenericMessageQueueService,
-    MessageQueueHandlerRegistry,
+    MessageHandlerRegistry,
     UserDefinedModelStateClient,
 )
 
@@ -39,7 +39,7 @@ def message_queue_service_factory(
     common_settings: "CommonSettings",
 ) -> GenericMessageQueueService:
     """Factory function to create a message queue service resource."""
-    registry = MessageQueueHandlerRegistry()
+    registry = MessageHandlerRegistry()
     registry.register(DataModelRunRequestHandler())
 
     return GCPPubSubMessageQueueService(

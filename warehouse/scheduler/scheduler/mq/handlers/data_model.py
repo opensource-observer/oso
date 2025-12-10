@@ -4,12 +4,12 @@ from scheduler.graphql_client.client import Client
 from scheduler.graphql_client.get_data_models import (
     GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition,
 )
-from scheduler.types import AsyncMessageQueueHandler
+from scheduler.types import MessageHandler
 
 logger = structlog.getLogger(__name__)
 
 
-class DataModelRunRequestHandler(AsyncMessageQueueHandler[DataModelRunRequest]):
+class DataModelRunRequestHandler(MessageHandler[DataModelRunRequest]):
     topic = "data_model_run_requests"
     message_type = DataModelRunRequest
 

@@ -149,7 +149,7 @@ class UserDefinedModelStateClient(abc.ABC):
 T = t.TypeVar("T", bound=Message)
 
 
-class AsyncMessageQueueHandler(abc.ABC, t.Generic[T]):
+class MessageHandler(abc.ABC, t.Generic[T]):
     topic: str
     message_type: t.Type[T]
 
@@ -173,28 +173,28 @@ class AsyncMessageQueueHandler(abc.ABC, t.Generic[T]):
         return destination
 
 
-class MessageQueueHandlerRegistry:
+class MessageHandlerRegistry:
     def __init__(self) -> None:
-        self._listeners: dict[str, AsyncMessageQueueHandler] = {}
+        self._listeners: dict[str, MessageHandler] = {}
 
-    def register(self, listener: AsyncMessageQueueHandler) -> None:
+    def register(self, listener: MessageHandler) -> None:
         if listener.topic not in self._listeners:
             self._listeners[listener.topic] = listener
         else:
             raise ValueError(f"Listener for topic {listener.topic} already registered")
 
-    def get_handler(self, topic: str) -> AsyncMessageQueueHandler | None:
+    def get_handler(self, topic: str) -> MessageHandler | None:
         return self._listeners.get(topic)
 
 
 class GenericMessageQueueService(abc.ABC):
     def __init__(
-        self, resources: ResourcesContext, registry: MessageQueueHandlerRegistry
+        self, resources: ResourcesContext, registry: MessageHandlerRegistry
     ) -> None:
         self.registry = registry
         self.resources = resources
 
-    def get_queue_listener(self, topic: str) -> AsyncMessageQueueHandler:
+    def get_queue_listener(self, topic: str) -> MessageHandler:
         listener = self.registry.get_handler(topic)
         if not listener:
             raise ValueError(f"No listener registered for topic {topic}")
