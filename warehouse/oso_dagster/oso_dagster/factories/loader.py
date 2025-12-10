@@ -8,8 +8,9 @@ from types import ModuleType
 import structlog
 from dagster import load_assets_from_modules
 from oso_core.logging.utils import time_context
+from oso_core.resources import ResourcesContext
 
-from .common import AssetFactoryResponse, EarlyResourcesAssetFactory, ResourcesContext
+from .common import AssetFactoryResponse, EarlyResourcesAssetFactory
 
 logger = structlog.get_logger(__name__)
 

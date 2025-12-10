@@ -9,9 +9,9 @@ from dagster_sqlmesh import SQLMeshContextConfig, SQLMeshResource
 from dlt.common.destination import Destination
 from oso_core.cache import Cache, CacheOptions, FileCacheBackend
 from oso_core.logging.decorators import time_function
+from oso_core.resources import ResourcesContext, ResourcesRegistry
 from oso_dagster.cbt.cbt import CBTResource
 from oso_dagster.factories import resource_factory
-from oso_dagster.factories.common import ResourcesContext, ResourcesRegistry
 from oso_dagster.resources import (
     BigQueryDataTransferResource,
     ClickhouseResource,

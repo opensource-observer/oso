@@ -1,28 +1,57 @@
 [project]
 name = "scheduler"
 version = "0.1.0"
-description = "Simple scheduler for private user models"
+description = "Scheduler for OSO user workloads"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 authors = [
     { name = "Reuven Gonzales", email = "reuven@karibalabs.co" }
 ]
+
 dependencies = [
+    "dotenv>=0.9.9",
     "duckdb>=1.4.1",
+    "google-cloud-pubsub>=2.33.0",
     "pandas>=1.2.0",
     "pydantic>=2.10.5",
+    "pydantic-settings>=2.11.0",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
     "requests>=2.32.4",
     "sqlmesh>=0.227.1",
+    "query-rewriter",
+    "osoprotobufs",
+    "oso-core",
+    "oso-dagster",
+    "ariadne-codegen>=0.16.0",
+    "httpx>=0.28.1",
 ]
 
+[tool.uv.sources]
+query-rewriter = { workspace = true }
+pyoso = { workspace = true }
+osoprotobufs = { workspace = true }
+oso-core = { workspace = true }
+oso-dagster = { workspace = true }
+
+[project.scripts]
+scheduler = "scheduler.cli:cli"
+
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.9.10,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "scheduler"
+module-root = ""
 
 [dependency-groups]
 dev = [
     "pandas-stubs>=2.2.3.250308",
     "pip>=25.2",
 ]
+
+[tool.ariadne-codegen]
+schema_path = "../../apps/frontend/app/api/v1/osograph/schema"
+queries_path = "scheduler/client.graphql"
+target_package_path = "scheduler"

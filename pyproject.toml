@@ -23,6 +23,8 @@ dependencies = [
     "oso_dagster",
     "opsscripts",
     "oso-lets-go",
+    "websockets>=15.0.1",
+    "scheduler",
 ]
 name = "oso"
 version = "1.0.0"
@@ -57,6 +59,7 @@ metrics-tools = { workspace = true }
 oso_dagster = { workspace = true }
 opsscripts = { workspace = true }
 oso_lets_go = { workspace = true }
+osoprotobufs = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -69,12 +72,12 @@ members = [
     "warehouse/oso_semantic",
     "warehouse/scheduler",
     "lib/query-rewriter",
-    "warehouse/async-worker",
     "warehouse/oso_dagster",
     "warehouse/oso_sqlmesh",
     "warehouse/metrics_tools",
     "warehouse/oso_lets_go",
     "ops/opsscripts",
+    "lib/protobufs/python",
 ]
 
 [tool.dagster]
@@ -85,7 +88,8 @@ pythonVersion = "3.12"
 typeCheckingMode = "standard"
 ignore = [
     "warehouse/oso_lets_go",
-    "warehouse/oso_dagster/oso_dagster/dlt_sources/sql_database"
+    "warehouse/oso_dagster/oso_dagster/dlt_sources/sql_database",
+    "warehouse/scheduler/scheduler/graphql_client/async_base_client.py"
 ]
 
 [tool.ruff]

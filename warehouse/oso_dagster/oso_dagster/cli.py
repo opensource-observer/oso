@@ -1,7 +1,7 @@
 import click
 from dotenv import load_dotenv
+from oso_core.resources import ResourcesContext, resource_factory
 from oso_dagster.config import DagsterConfig
-from oso_dagster.factories.common import ResourcesContext, resource_factory
 from oso_dagster.factories.loader import load_all_assets_from_package
 
 load_dotenv()
