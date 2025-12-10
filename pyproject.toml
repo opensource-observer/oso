@@ -66,7 +66,6 @@ members = [
     "warehouse/oso_agent",
     "warehouse/oso_mcp",
     "warehouse/pyoso",
-    "warehouse/pynessie-gc",
     "warehouse/metrics-service",
     "lib/oso-core",
     "warehouse/oso_semantic",

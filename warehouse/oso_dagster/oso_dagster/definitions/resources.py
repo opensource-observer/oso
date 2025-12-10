@@ -465,6 +465,14 @@ def udm_state_factory() -> UserDefinedModelStateResource:
     return FakeUserDefinedModelResource()
 
 
+@resource_factory("gcs_resource")
+@time_function(logger)
+def gcs_resource(global_config: DagsterConfig) -> GCSResource:
+    """Factory function to create a GCS resource."""
+
+    return GCSResource(project=global_config.gcp_project_id)
+
+
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
@@ -503,5 +511,6 @@ def default_resource_registry():
     registry.add(heartbeat_factory)
     registry.add(udm_engine_adapter_factory)
     registry.add(udm_state_factory)
+    registry.add(gcs_resource)
 
     return registry
