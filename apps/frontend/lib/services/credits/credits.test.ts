@@ -3,8 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_SERVICE_KEY, SUPABASE_URL } from "@/lib/config";
 import {
   CreditsService,
-  TransactionType,
   InsufficientCreditsError,
+  TransactionType,
 } from "@/lib/services/credits";
 import type { OrgUser } from "@/lib/types/user";
 import { PostHogTracker } from "@/lib/analytics/track";
@@ -12,7 +12,7 @@ import type { Database } from "@/lib/types/supabase";
 
 let testSupabaseClient: ReturnType<typeof createClient<Database>>;
 
-jest.mock("../supabase/server", () => ({
+jest.mock("@/lib/supabase/admin", () => ({
   createServerClient: jest.fn(() => testSupabaseClient),
   createAdminClient: jest.fn(() => testSupabaseClient),
 }));
