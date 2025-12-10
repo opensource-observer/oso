@@ -1,4 +1,11 @@
-import { PubSub, Topic } from "@google-cloud/pubsub";
+import {
+  ClientConfig,
+  Encodings,
+  PubSub,
+  SchemaEncoding,
+  Topic,
+} from "@google-cloud/pubsub";
+import { google } from "@google-cloud/pubsub/build/protos/protos";
 import { logger } from "@/lib/logger";
 import {
   QueueConfig,
@@ -11,7 +18,7 @@ export class PubSubClient {
   private topics: Map<string, Topic> = new Map();
 
   constructor(config: QueueConfig) {
-    const clientConfig: any = {
+    const clientConfig: ClientConfig = {
       projectId: config.projectId,
     };
 
@@ -44,13 +51,17 @@ export class PubSubClient {
 
   async publishMessage(
     topicName: string,
-    data: Buffer,
+    binaryData: Uint8Array,
+    jsonData: unknown,
     attributes?: Record<string, string>,
   ): Promise<string> {
     try {
       const topic = await this.getTopic(topicName);
-      const messageId = await topic.publishMessage({ data, attributes });
-      return messageId;
+      const [metadata] = await topic.getMetadata();
+      const encoding = metadata.schemaSettings?.encoding;
+      const data = this.encodeMessageData(encoding, binaryData, jsonData);
+
+      return await topic.publishMessage({ data, attributes });
     } catch (error) {
       if (error instanceof QueueError) {
         throw error;
@@ -61,6 +72,40 @@ export class PubSubClient {
         error as Error,
       );
     }
+  }
+
+  private encodeMessageData(
+    encoding: SchemaEncoding | google.pubsub.v1.Encoding | null | undefined,
+    binaryData: Uint8Array,
+    jsonData: unknown,
+  ): Buffer {
+    const normalizedEncoding = this.normalizeEncoding(encoding);
+
+    if (!normalizedEncoding || normalizedEncoding === Encodings.Binary) {
+      return Buffer.from(binaryData);
+    }
+
+    if (normalizedEncoding === Encodings.Json) {
+      return Buffer.from(JSON.stringify(jsonData));
+    }
+
+    throw new QueueError(
+      `Unknown schema encoding: ${normalizedEncoding}`,
+      QueueErrorCode.CONFIGURATION_ERROR,
+    );
+  }
+
+  private normalizeEncoding(
+    encoding: SchemaEncoding | google.pubsub.v1.Encoding | null | undefined,
+  ): SchemaEncoding | null | undefined {
+    if (encoding == null || typeof encoding === "string") {
+      return encoding;
+    }
+
+    if (encoding === google.pubsub.v1.Encoding.BINARY) return Encodings.Binary;
+    if (encoding === google.pubsub.v1.Encoding.JSON) return Encodings.Json;
+
+    return undefined;
   }
 
   async close(): Promise<void> {

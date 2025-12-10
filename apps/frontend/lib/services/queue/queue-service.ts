@@ -1,34 +1,46 @@
 import { PubSubClient } from "@/lib/services/queue/pubsub-client";
 import {
+  IQueueService,
+  ProtobufEncoder,
+  ProtobufMessage,
   QueueConfig,
   QueueError,
   QueueErrorCode,
   QueueResult,
 } from "@/lib/services/queue/types";
-import { DataModelRunRequest } from "@/lib/proto/generated/data-model";
+import {
+  DATA_MODEL_MESSAGE_TYPE,
+  DATA_MODEL_TOPIC_KEY,
+} from "@/lib/services/queue/constants";
 import { logger } from "@/lib/logger";
 import { NODE_ENV } from "@/lib/config";
 
-export class QueueService {
+export class QueueService implements IQueueService {
   private client: PubSubClient;
 
   constructor(config: QueueConfig) {
     this.client = new PubSubClient(config);
   }
 
-  async publishDataModelRun(
-    request: DataModelRunRequest,
+  async publishDataModelRun<Q extends ProtobufMessage>(
+    request: Q,
+    encoder: ProtobufEncoder<Q>,
   ): Promise<QueueResult> {
-    const topicName = this.getTopicName("data-model");
+    const topicName = this.getTopicName(DATA_MODEL_TOPIC_KEY);
 
     try {
-      const encoded = DataModelRunRequest.encode(request).finish();
-      const data = Buffer.from(encoded);
+      const binaryData = encoder.encode(request).finish();
+      const jsonData = encoder.toJSON(request);
 
-      const messageId = await this.client.publishMessage(topicName, data, {
-        messageType: "DataModelRunRequest",
-        timestamp: new Date().toISOString(),
-      });
+      const messageId = await this.client.publishMessage(
+        topicName,
+        binaryData,
+        jsonData,
+        {
+          messageType: DATA_MODEL_MESSAGE_TYPE,
+          timestamp: new Date().toISOString(),
+        },
+      );
 
       logger.info(`Published DataModelRunRequest to ${topicName}`, {
         messageId,
