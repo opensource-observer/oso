@@ -33,7 +33,7 @@ From the root of the repository, run the following command to generate the
 python protobuf code into the `lib/protobufs/python/osoprotobufs` directory:
 
 ```bash
-./lib/protobufs/.install/bin/protoc --proto_path=./lib/protobufs/definitions --python_out=./lib/protobufs/python/osoprotobufs ./lib/protobufs/definitions/*.proto --plugin=protoc-gen-mypy=.venv/bin/protoc-gen-mypy --mypy_out=./lib/protobufs/python/osoprotobufs
+./lib/protobufs/.install/bin/protoc --proto_path=./lib/protobufs/definitions --python_out=./lib/protobufs/python/osoprotobufs ./lib/protobufs/definitions/*.proto --plugin=protoc-gen-mypy=.venv/bin/protoc-gen-mypy --pyi_out=./lib/protobufs/python/osoprotobufs
 ```
 
 ### Generating for typescript
