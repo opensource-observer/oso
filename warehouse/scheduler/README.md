@@ -48,3 +48,28 @@ From inside the `warehouse/scheduler` directory, run:
 ```bash
 uv run ariadne-codegen
 ```
+
+## Running the workers
+
+At the moment, a single worker process can only handle a single queue at a time.
+To run a worker for a specific queue, use the following command from anywhere in
+the repo.
+
+```bash
+uv run scheduler run <name-of-queue>
+```
+
+## Publishing fake messages to the queues
+
+The scheduler includes a utility to publish fake messages to the queues for
+testing purposes. To use this utility, run the following command from anywhere in
+the repo:
+
+```bash
+uv run scheduler testing publish <name-of-fake-message>
+```
+
+The final argument is actually not an option but instead supposed to be a
+subcommand. You can add new fake messages publishers within the
+`warehouse/scheduler/scheduler/config.py` file by adding new subcommands to the
+`Publish` config model.
