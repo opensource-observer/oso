@@ -1,8 +1,9 @@
 import sys
 
-from asyncworker.config import CommonSettings, Initialize, Run
+from asyncworker.config import CommonSettings, Initialize, Run, Testing
+from asyncworker.resources import default_resource_registry
+from oso_core.cli.utils import CliApp, CliContext
 from pydantic_settings import (
-    CliApp,
     CliSubCommand,
 )
 
@@ -12,9 +13,15 @@ class AsyncWorker(
 ):
     initialize: CliSubCommand[Initialize]
     run: CliSubCommand[Run]
+    testing: CliSubCommand[Testing]
 
-    def cli_cmd(self) -> None:
-        CliApp.run_subcommand(self)
+    def cli_cmd(self, context: CliContext) -> None:
+        context.data["common_settings"] = self
+
+        resources_registry = default_resource_registry(self)
+        context.data["resources_registry"] = resources_registry
+
+        CliApp.run_subcommand(context, self)
 
 
 def cli():

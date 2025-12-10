@@ -1,5 +1,8 @@
 import typing as t
 
+from asyncworker.handlers.data_model import DataModelRunRequestHandler
+from asyncworker.impl.pubsub import GCPPubSubMessageQueueService
+from asyncworker.types import GenericMessageQueueService, MessageQueueHandlerRegistry
 from oso_core.resources import ResourcesContext, ResourcesRegistry, resource_factory
 from oso_dagster.resources.duckdb import DuckDBResource
 from oso_dagster.resources.heartbeat import HeartBeatResource
@@ -18,9 +21,29 @@ from oso_dagster.resources.udm_state import (
     FakeUserDefinedModelResource,
     UserDefinedModelStateResource,
 )
+from scheduler.evaluator import UserDefinedModelEvaluator
+from scheduler.testing.client import FakeUDMClient
+from scheduler.types import UserDefinedModelStateClient
 
 if t.TYPE_CHECKING:
     from asyncworker.config import CommonSettings
+
+
+@resource_factory("message_queue_service")
+def message_queue_service_factory(
+    resources: ResourcesContext,
+    common_settings: "CommonSettings",
+) -> GenericMessageQueueService:
+    """Factory function to create a message queue service resource."""
+    registry = MessageQueueHandlerRegistry()
+    registry.register(DataModelRunRequestHandler())
+
+    return GCPPubSubMessageQueueService(
+        project_id=common_settings.gcp_project_id,
+        resources=resources,
+        registry=registry,
+        emulator_enabled=common_settings.emulator_enabled,
+    )
 
 
 @resource_factory("udm_engine_adapter")
@@ -40,6 +63,12 @@ def udm_engine_adapter_factory(
         return DuckdbEngineAdapterResource(
             duckdb=duckdb,
         )
+
+
+@resource_factory("udm_client")
+def udm_client_factory() -> UserDefinedModelStateClient:
+    """Factory function to create a UDM client resource."""
+    return FakeUDMClient()
 
 
 @resource_factory("udm_state")
@@ -87,13 +116,25 @@ def k8s_resource_factory(
     return K8sApiResource()
 
 
-def default_resource_registry():
+@resource_factory("evaluator")
+def scheduler_evaluator_factory(
+    udm_client: UserDefinedModelStateClient,
+) -> UserDefinedModelEvaluator:
+    """Factory function to create a UDM evaluator."""
+    return UserDefinedModelEvaluator(udm_client)
+
+
+def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
+    registry.add_singleton("common_settings", common_settings)
 
     registry.add(udm_engine_adapter_factory)
     registry.add(udm_state_factory)
     registry.add(trino_resource_factory)
     registry.add(duckdb_resource_factory)
     registry.add(k8s_resource_factory)
+    registry.add(message_queue_service_factory)
+    registry.add(scheduler_evaluator_factory)
+    registry.add(udm_client_factory)
 
     return registry

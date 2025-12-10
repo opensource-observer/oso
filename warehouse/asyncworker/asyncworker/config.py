@@ -1,15 +1,19 @@
 import logging
 import os
 
-from asyncworker.handlers.data_model import DataModelRunRequestHandler
-from asyncworker.impl.pubsub import GCPPubSubMessageQueueService
-from asyncworker.resources import default_resource_registry
-from asyncworker.types import GenericMessageQueueService, MessageQueueHandlerRegistry
+from asyncworker.types import GenericMessageQueueService
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1
 from google.pubsub_v1.types import Encoding, Schema
+from oso_core.cli.utils import CliApp, CliContext
+from oso_core.resources import ResourcesRegistry
 from pydantic import Field, model_validator
-from pydantic_settings import BaseSettings, CliApp, CliPositionalArg, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    CliPositionalArg,
+    CliSubCommand,
+    SettingsConfigDict,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,28 +66,22 @@ class CommonSettings(BaseSettings):
             )
         return self
 
-    def get_message_queue_service(self) -> GenericMessageQueueService:
-        # In the future we'd be able to select different implementations here
-        registry = MessageQueueHandlerRegistry()
-        registry.register(DataModelRunRequestHandler())
 
-        resources_registry = default_resource_registry()
-
-        return GCPPubSubMessageQueueService(
-            project_id=self.gcp_project_id,
-            resources=resources_registry,
-            registry=registry,  # In real usage, we'd populate this registry
-        )
-
-
-class Run(CommonSettings):
+class Run(BaseSettings):
     """Subcommand to run the async worker"""
 
     queue: CliPositionalArg[str] = Field(description="The name of the queue to process")
 
-    async def cli_cmd(self) -> None:
+    async def cli_cmd(self, context: CliContext) -> None:
+        resources_registry = context.get_data_as(
+            "resources_registry", ResourcesRegistry
+        )
+        resources = resources_registry.context()
+
         # Listen on the given queue
-        message_queue_service = self.get_message_queue_service()
+        message_queue_service: GenericMessageQueueService = resources.resolve(
+            "message_queue_service"
+        )
 
         await message_queue_service.run_loop(self.queue)
 
@@ -156,24 +154,53 @@ def ensure_topic_subscription(
         logger.info(f"Subscription {subscription_id} already exists.")
 
 
-class Initialize(CommonSettings):
+class Initialize(BaseSettings):
     """Idempotently initializes the gcp pub/sub topics and subscriptions"""
 
-    async def cli_cmd(self) -> None:
+    async def cli_cmd(self, context: CliContext) -> None:
+        common_settings = context.get_data_as("common_settings", CommonSettings)
         ensure_topic_subscription(
-            project_id=self.gcp_project_id,
+            project_id=common_settings.gcp_project_id,
             topic_id="data_model_run_requests",
             subscription_id="data_model_run_requests",
             schema_id="data_model_run_request_schema",
             pb_file_path=os.path.join(PROTOBUF_DIR, "data-model.proto"),
-            emulator_enabled=self.emulator_enabled,
+            emulator_enabled=common_settings.emulator_enabled,
         )
 
 
-class Testing(CommonSettings):
+class RunPublisher(BaseSettings):
+    """Subcommand to run the async worker publisher"""
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        resources_registry = context.get_data_as(
+            "resources_registry", ResourcesRegistry
+        )
+        resources = resources_registry.context()
+
+        # In the future, we'd have more publisher implementations
+        message_queue_service: GenericMessageQueueService = resources.resolve(
+            "message_queue_service"
+        )
+
+        from osoprotobufs.data_model_pb2 import DataModelRunRequest
+
+        message = DataModelRunRequest(
+            run_id=b"example_model_id",
+            dataset_id="example_dataset_id",
+        )
+
+        await message_queue_service.publish_message(
+            "data_model_run_requests",
+            message,
+        )
+
+
+class Testing(BaseSettings):
     """Subcommand to run tests for the async worker"""
 
-    async def cli_cmd(self) -> None:
-        print("Running async worker tests...")
+    run_publisher: CliSubCommand[RunPublisher]
+
+    async def cli_cmd(self, context: CliContext) -> None:
         # Here you would implement actual test running logic
-        CliApp.run_subcommand(self)
+        CliApp.run_subcommand(context, self)

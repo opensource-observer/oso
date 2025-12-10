@@ -3,7 +3,7 @@ import typing as t
 
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
-from oso_core.resources import ResourcesContext, ResourcesRegistry
+from oso_core.resources import ResourcesContext
 
 T = t.TypeVar("T", bound=Message)
 
@@ -13,9 +13,7 @@ class AsyncMessageQueueHandler(abc.ABC, t.Generic[T]):
     message_type: t.Type[T]
 
     @abc.abstractmethod
-    async def handle_message(
-        self, *, resources: ResourcesContext, message: T, **kwargs
-    ) -> None: ...
+    async def handle_message(self, *, message: T, **kwargs) -> None: ...
 
     def new_message(self) -> T:
         """A method to create a new message instance"""
@@ -50,7 +48,7 @@ class MessageQueueHandlerRegistry:
 
 class GenericMessageQueueService(abc.ABC):
     def __init__(
-        self, resources: ResourcesRegistry, registry: MessageQueueHandlerRegistry
+        self, resources: ResourcesContext, registry: MessageQueueHandlerRegistry
     ) -> None:
         self.registry = registry
         self.resources = resources
@@ -64,4 +62,9 @@ class GenericMessageQueueService(abc.ABC):
     @abc.abstractmethod
     async def run_loop(self, queue: str) -> None:
         """A method that runs an endless loop listening to the given queue"""
+        ...
+
+    @abc.abstractmethod
+    async def publish_message(self, queue: str, message: Message) -> None:
+        """A method to publish a message to the given queue"""
         ...
