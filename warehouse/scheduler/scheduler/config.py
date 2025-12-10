@@ -1,5 +1,6 @@
 import logging
 import os
+import typing as t
 
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1
@@ -43,18 +44,21 @@ class CommonSettings(BaseSettings):
     )
 
     gcp_project_id: str = Field(description="GCP Project ID")
-    gcp_bigquery_enabled: bool = Field(
-        default=False,
-        description="Whether GCP BigQuery is enabled for UDM storage",
-    )
     emulator_enabled: bool = Field(
         default=False,
         description="Whether to use the GCP Pub/Sub emulator",
     )
 
+    env: t.Literal["dev", "production"] = "dev"
+
+    trino_enabled: bool = False
+
     local_duckdb_path: str = Field(
         default="",
         description="Path to the local DuckDB database file",
+    )
+    oso_api_url: str = Field(
+        description="URL for the OSO API GraphQL endpoint",
     )
 
     @model_validator(mode="after")
@@ -64,6 +68,10 @@ class CommonSettings(BaseSettings):
                 os.getcwd(),
                 "duckdb.db",
             )
+        if os.environ.get("PUBSUB_EMULATOR_HOST"):
+            self.emulator_enabled = True
+        if self.env == "production":
+            self.trino_enabled = True
         return self
 
 

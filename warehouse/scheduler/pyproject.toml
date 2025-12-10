@@ -23,6 +23,8 @@ dependencies = [
     "osoprotobufs",
     "oso-core",
     "oso-dagster",
+    "ariadne-codegen>=0.16.0",
+    "httpx>=0.28.1",
 ]
 
 [tool.uv.sources]
@@ -48,3 +50,8 @@ dev = [
     "pandas-stubs>=2.2.3.250308",
     "pip>=25.2",
 ]
+
+[tool.ariadne-codegen]
+schema_path = "../../apps/frontend/app/api/v1/osograph/schema"
+queries_path = "scheduler/client.graphql"
+target_package_path = "scheduler"

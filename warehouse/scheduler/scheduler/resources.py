@@ -19,8 +19,9 @@ from oso_dagster.resources.udm_state import (
     UserDefinedModelStateResource,
 )
 from scheduler.evaluator import UserDefinedModelEvaluator
-from scheduler.handlers.data_model import DataModelRunRequestHandler
-from scheduler.impl.pubsub import GCPPubSubMessageQueueService
+from scheduler.graphql_client.client import Client as OSOClient
+from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
+from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
     GenericMessageQueueService,
@@ -55,7 +56,7 @@ def udm_engine_adapter_factory(
 ) -> UserDefinedModelEngineAdapterResource:
     """Factory function to create a UDM engine adapter resource."""
 
-    if common_settings.gcp_bigquery_enabled:
+    if common_settings.trino_enabled:
         trino: TrinoResource = resources.resolve("trino")
         return TrinoEngineAdapterResource(
             trino=trino,
@@ -125,6 +126,13 @@ def scheduler_evaluator_factory(
 ) -> UserDefinedModelEvaluator:
     """Factory function to create a UDM evaluator."""
     return UserDefinedModelEvaluator(udm_client)
+
+
+@resource_factory("oso_client")
+def oso_client_factory(common_settings: "CommonSettings") -> OSOClient:
+    """Factory function to create an OSO client."""
+    # For now, return None as a placeholder.
+    return OSOClient(url=common_settings.oso_api_url)
 
 
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
