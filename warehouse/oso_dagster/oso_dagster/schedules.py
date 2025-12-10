@@ -22,6 +22,7 @@ from oso_dagster.utils.tags import (
     sqlmesh_source_tag,
     stable_source_tag,
     unstable_source_tag,
+    weekly_source_tag,
 )
 
 
@@ -90,6 +91,7 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
         - sbom_source_tag
         - partitioned_assets
         - no_schedule_source_tag
+        - weekly_source_tag
     )
 
     if global_config.sqlmesh_assets_on_default_code_location_enabled:
@@ -118,6 +120,11 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
     materialize_sbom_source_assets = define_asset_job(
         "materialize_sbom_assets_job",
         sbom_source_tag,
+    )
+
+    materialize_weekly_source_assets = define_asset_job(
+        "materialize_weekly_source_assets_job",
+        weekly_source_tag,
     )
 
     schedules: list[ScheduleDefinition] = [
@@ -152,6 +159,15 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
                 "dagster/priority": "-1",
             },
         ),
+        # Run weekly source assets on Sunday at midnight UTC
+        ScheduleDefinition(
+            job=materialize_weekly_source_assets,
+            cron_schedule="0 0 * * 0",
+            tags={
+                "dagster/priority": "-1",
+            },
+            default_status=DefaultScheduleStatus.STOPPED,
+        ),
     ]
 
     jobs: list[FactoryJobDefinition] = [
@@ -159,6 +175,7 @@ def default_schedules(global_config: DagsterConfig) -> AssetFactoryResponse:
         materialize_stable_source_assets,
         materialize_unstable_source_assets,
         materialize_sbom_source_assets,
+        materialize_weekly_source_assets,
         materialize_sqlmesh_assets,
     ]
 

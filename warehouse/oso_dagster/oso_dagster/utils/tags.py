@@ -14,6 +14,8 @@ unstable_source_tag = AssetSelection.tag("opensource.observer/source", "unstable
 
 sbom_source_tag = AssetSelection.tag("opensource.observer/source", "sbom")
 
+weekly_source_tag = AssetSelection.tag("opensource.observer/source", "weekly")
+
 sqlmesh_source_tag = AssetSelection.tag("opensource.observer/source", "sqlmesh")
 
 no_schedule_source_tag = AssetSelection.tag("opensource.observer/source", "no-schedule")
