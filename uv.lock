@@ -4336,6 +4336,7 @@ source = { editable = "lib/oso-core" }
 dependencies = [
     { name = "arrow" },
     { name = "orjson" },
+    { name = "pydantic-settings" },
     { name = "sqlmesh", extra = ["trino"] },
     { name = "structlog" },
 ]
@@ -4349,6 +4350,7 @@ dev = [
 requires-dist = [
     { name = "arrow", specifier = "<2.0.0" },
     { name = "orjson", specifier = ">=3.10.18" },
+    { name = "pydantic-settings", specifier = ">=2.11.0" },
     { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
     { name = "structlog", specifier = ">=25.4.0" },
 ]
