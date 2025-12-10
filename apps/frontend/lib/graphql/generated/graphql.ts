@@ -1198,11 +1198,11 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
-export type CreateDataConnectorRunRequest = {
+export type CreateDataConnectorRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
 
-export type CreateDataIngestionRunRequest = {
+export type CreateDataIngestionRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
 
@@ -1320,8 +1320,9 @@ export type CreateStaticModelPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
-export type CreateStaticModelRunRequest = {
+export type CreateStaticModelRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
+  selectedModels?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type CreateUserModelRunRequestInput = {
@@ -3499,12 +3500,12 @@ export type MutationCancelRunArgs = {
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateDataConnectorRunRequestArgs = {
-  input: CreateDataConnectorRunRequest;
+  input: CreateDataConnectorRunRequestInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateDataIngestionRunRequestArgs = {
-  input: CreateDataIngestionRunRequest;
+  input: CreateDataIngestionRunRequestInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3544,7 +3545,7 @@ export type MutationCreateStaticModelArgs = {
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateStaticModelRunRequestArgs = {
-  input: CreateStaticModelRunRequest;
+  input: CreateStaticModelRunRequestInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -8995,6 +8996,20 @@ export type CreateUserModelRunRequestMutation = {
   };
 };
 
+export type CreateStaticModelRunRequestMutationVariables = Exact<{
+  input: CreateStaticModelRunRequestInput;
+}>;
+
+export type CreateStaticModelRunRequestMutation = {
+  __typename?: "Mutation";
+  createStaticModelRunRequest: {
+    __typename?: "CreateRunRequestPayload";
+    success: boolean;
+    message?: string | null;
+    run: { __typename?: "Run"; id: string };
+  };
+};
+
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
 export type AssetGraphQuery = {
@@ -9844,6 +9859,71 @@ export const CreateUserModelRunRequestDocument = {
 } as unknown as DocumentNode<
   CreateUserModelRunRequestMutation,
   CreateUserModelRunRequestMutationVariables
+>;
+export const CreateStaticModelRunRequestDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateStaticModelRunRequest" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateStaticModelRunRequestInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createStaticModelRunRequest" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateStaticModelRunRequestMutation,
+  CreateStaticModelRunRequestMutationVariables
 >;
 export const AssetGraphDocument = {
   kind: "Document",

@@ -46,7 +46,7 @@ class DagsterConfig(BaseSettings):
 
     repo_dir: str = Field(
         default_factory=lambda: os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..")
+            os.path.join(os.path.dirname(__file__), "..", "..", "..")
         )
     )
 

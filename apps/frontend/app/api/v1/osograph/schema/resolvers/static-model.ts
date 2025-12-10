@@ -22,6 +22,10 @@ import {
   ResourceErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
+import { putSignedUrl } from "@/lib/clients/cloudflare-r2";
+
+const FILES_BUCKET = "static-model-files";
+const SIGNED_URL_EXPIRY = 900;
 
 export const staticModelResolvers = {
   Query: {
@@ -136,9 +140,31 @@ export const staticModelResolvers = {
     },
     createStaticModelUploadUrl: async (
       _: unknown,
-      _input: { staticModelId: string },
+      { staticModelId }: { staticModelId: string },
+      context: GraphQLContext,
     ) => {
-      throw new Error("Not implemented");
+      const authenticatedUser = requireAuthentication(context.user);
+      const supabase = createAdminClient();
+
+      const { data: dataModel, error: dataModelError } = await supabase
+        .from("static_model")
+        .select("org_id")
+        .eq("id", staticModelId)
+        .single();
+
+      if (dataModelError || !dataModel) {
+        throw ResourceErrors.notFound("StaticModel", staticModelId);
+      }
+
+      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
+
+      const presignedUrl = await putSignedUrl(
+        FILES_BUCKET,
+        `${dataModel.org_id}/${staticModelId}`,
+        SIGNED_URL_EXPIRY,
+      );
+
+      return presignedUrl;
     },
   },
   StaticModel: {
