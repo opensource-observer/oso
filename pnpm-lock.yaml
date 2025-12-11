@@ -200,7 +200,7 @@ importers:
         version: 4.7.0(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@opensource-observer/osoprotobufs':
         specifier: workspace:*
-        version: link:../../lib/protobufs/typescript
+        version: link:../../lib/osoprotobufs/typescript
       '@opensource-observer/pyodide-node-toolkit':
         specifier: workspace:*
         version: link:../../lib/pyodide-node-toolkit
@@ -646,7 +646,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
 
-  lib/protobufs/typescript:
+  lib/osoprotobufs/typescript:
     dependencies:
       '@bufbuild/protobuf':
         specifier: ^2.10.1

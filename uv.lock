@@ -4601,7 +4601,7 @@ requires-dist = [
 [[package]]
 name = "osoprotobufs"
 version = "0.1.0"
-source = { editable = "lib/protobufs/python" }
+source = { editable = "lib/osoprotobufs/python" }
 dependencies = [
     { name = "protobuf" },
 ]
@@ -6086,7 +6086,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "oso-core", editable = "lib/oso-core" },
     { name = "oso-dagster", editable = "warehouse/oso_dagster" },
-    { name = "osoprotobufs", editable = "lib/protobufs/python" },
+    { name = "osoprotobufs", editable = "lib/osoprotobufs/python" },
     { name = "pandas", specifier = ">=1.2.0" },
     { name = "pydantic", specifier = ">=2.10.5" },
     { name = "pydantic-settings", specifier = ">=2.11.0" },
