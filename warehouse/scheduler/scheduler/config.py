@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../../"))
-PROTOBUF_DIR = os.path.join(REPO_DIR, "lib/protobufs/definitions")
+PROTOBUF_DIR = os.path.join(REPO_DIR, "lib/osoprotobufs/definitions")
 
 
 class CommonSettings(BaseSettings):
