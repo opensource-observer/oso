@@ -9,7 +9,7 @@ MODEL (
     forward_only true,
   ),
   dialect "duckdb",
-  start @github_api_change_date,
+  start @github_events_v20251007_start_date,
   partitioned_by DAY(event_time),
   audits (
     has_at_least_n_rows(threshold := 0),

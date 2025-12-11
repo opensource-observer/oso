@@ -7,7 +7,7 @@ MODEL (
     lookback 14,
     forward_only true,
   ),
-  start @github_api_change_date,
+  start @github_events_v20251007_start_date,
   partitioned_by DAY(event_time),
   dialect duckdb,
   audits (

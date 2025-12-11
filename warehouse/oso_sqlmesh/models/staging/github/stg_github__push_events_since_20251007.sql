@@ -8,7 +8,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
-  start @github_api_change_date,
+  start @github_events_v20251007_start_date,
   partitioned_by DAY(created_at),
   dialect trino,
   audits (
