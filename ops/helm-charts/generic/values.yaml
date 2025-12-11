@@ -11,6 +11,7 @@ app:
     className: "default"
     annotations: {}
   service:
+    enabled: true
     annotations: {}
   host: 0.0.0.0
   hostEnvVar: APP_HOST
