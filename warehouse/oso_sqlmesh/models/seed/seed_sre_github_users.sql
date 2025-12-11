@@ -9,7 +9,8 @@ MODEL (
     createdAt TEXT,
     referrer TEXT,
     challengesCompleted INTEGER,
-    batchId FLOAT
+    batchId FLOAT,
+    location TEXT
   ),
   audits (
     has_at_least_n_rows(threshold := 0)
