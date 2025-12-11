@@ -12,6 +12,7 @@ logger = structlog.getLogger(__name__)
 class DataModelRunRequestHandler(MessageHandler[DataModelRunRequest]):
     topic = "data_model_run_requests"
     message_type = DataModelRunRequest
+    schema_file_name = "data-model.proto"
 
     async def handle_message(
         self,

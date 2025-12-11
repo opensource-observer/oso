@@ -37,15 +37,13 @@ if t.TYPE_CHECKING:
 def message_queue_service_factory(
     resources: ResourcesContext,
     common_settings: "CommonSettings",
+    message_handler_registry: MessageHandlerRegistry,
 ) -> GenericMessageQueueService:
     """Factory function to create a message queue service resource."""
-    registry = MessageHandlerRegistry()
-    registry.register(DataModelRunRequestHandler())
-
     return GCPPubSubMessageQueueService(
         project_id=common_settings.gcp_project_id,
         resources=resources,
-        registry=registry,
+        registry=message_handler_registry,
         emulator_enabled=common_settings.emulator_enabled,
     )
 
@@ -133,6 +131,14 @@ def oso_client_factory(common_settings: "CommonSettings") -> OSOClient:
     """Factory function to create an OSO client."""
     # For now, return None as a placeholder.
     return OSOClient(url=common_settings.oso_api_url)
+
+
+@resource_factory("message_handler_registry")
+def message_handler_registry_factory() -> MessageHandlerRegistry:
+    """Factory function to create a message handler registry."""
+    registry = MessageHandlerRegistry()
+    registry.register(DataModelRunRequestHandler())
+    return registry
 
 
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:

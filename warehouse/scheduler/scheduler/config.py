@@ -14,7 +14,7 @@ from pydantic_settings import (
     CliSubCommand,
     SettingsConfigDict,
 )
-from scheduler.types import GenericMessageQueueService
+from scheduler.types import GenericMessageQueueService, MessageHandlerRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -165,17 +165,20 @@ def ensure_topic_subscription(
 class Initialize(BaseSettings):
     """Idempotently initializes the gcp pub/sub topics and subscriptions"""
 
-    async def cli_cmd(self, context: CliContext) -> None:
+    async def cli_cmd(
+        self, context: CliContext, message_handler_registry: MessageHandlerRegistry
+    ) -> None:
         common_settings = context.get_data_as("common_settings", CommonSettings)
 
-        ensure_topic_subscription(
-            project_id=common_settings.gcp_project_id,
-            topic_id="data_model_run_requests",
-            subscription_id="data_model_run_requests",
-            schema_id="data_model_run_request_schema",
-            pb_file_path=os.path.join(PROTOBUF_DIR, "data-model.proto"),
-            emulator_enabled=common_settings.emulator_enabled,
-        )
+        for topic, handler in message_handler_registry:
+            ensure_topic_subscription(
+                project_id=common_settings.gcp_project_id,
+                topic_id=topic,
+                subscription_id=topic,
+                schema_id=f"{topic}_schema",
+                pb_file_path=os.path.join(PROTOBUF_DIR, handler.schema_file_name),
+                emulator_enabled=common_settings.emulator_enabled,
+            )
 
 
 class PublishDataModelRunRequest(BaseSettings):
