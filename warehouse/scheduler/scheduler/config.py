@@ -1,7 +1,7 @@
-import logging
 import os
 import typing as t
 
+import structlog
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1
 from google.pubsub_v1.types import Encoding, Schema
@@ -16,7 +16,7 @@ from pydantic_settings import (
 )
 from scheduler.types import GenericMessageQueueService, MessageHandlerRegistry
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../../"))
@@ -165,12 +165,20 @@ def ensure_topic_subscription(
 class Initialize(BaseSettings):
     """Idempotently initializes the gcp pub/sub topics and subscriptions"""
 
-    async def cli_cmd(
-        self, context: CliContext, message_handler_registry: MessageHandlerRegistry
-    ) -> None:
+    async def cli_cmd(self, context: CliContext) -> None:
         common_settings = context.get_data_as("common_settings", CommonSettings)
 
+        resources_registry = context.get_data_as(
+            "resources_registry", ResourcesRegistry
+        )
+        resources = resources_registry.context()
+
+        message_handler_registry: MessageHandlerRegistry = resources.resolve(
+            "message_handler_registry"
+        )
+
         for topic, handler in message_handler_registry:
+            logger.info(f"Initializing topic and subscription for {topic}")
             ensure_topic_subscription(
                 project_id=common_settings.gcp_project_id,
                 topic_id=topic,

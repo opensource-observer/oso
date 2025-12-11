@@ -25,6 +25,7 @@ dependencies = [
     "ariadne-codegen>=0.16.0",
     "httpx>=0.28.1",
     "python-dotenv>=1.1.1",
+    "structlog>=25.4.0",
 ]
 
 [tool.uv.sources]

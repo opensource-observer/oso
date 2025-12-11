@@ -2,6 +2,7 @@ import sys
 
 from dotenv import load_dotenv
 from oso_core.cli.utils import CliApp, CliContext
+from oso_core.logging.defaults import configure_structured_logging
 from pydantic_settings import (
     CliSubCommand,
 )
@@ -34,5 +35,6 @@ class SchedulerCLI(
 def cli():
     from oso_core.logging import setup_module_logging
 
-    setup_module_logging("asyncworker")
+    configure_structured_logging()
+    setup_module_logging("scheduler")
     CliApp.run(SchedulerCLI, sys.argv[1:])

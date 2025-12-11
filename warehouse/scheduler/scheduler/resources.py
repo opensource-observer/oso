@@ -153,5 +153,7 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(message_queue_service_factory)
     registry.add(scheduler_evaluator_factory)
     registry.add(udm_client_factory)
+    registry.add(oso_client_factory)
+    registry.add(message_handler_registry_factory)
 
     return registry
