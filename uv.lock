@@ -6069,6 +6069,7 @@ dependencies = [
     { name = "query-rewriter" },
     { name = "requests" },
     { name = "sqlmesh" },
+    { name = "structlog" },
 ]
 
 [package.dev-dependencies]
@@ -6095,6 +6096,7 @@ requires-dist = [
     { name = "query-rewriter", editable = "lib/query-rewriter" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "sqlmesh", specifier = ">=0.227.1" },
+    { name = "structlog", specifier = ">=25.4.0" },
 ]
 
 [package.metadata.requires-dev]
