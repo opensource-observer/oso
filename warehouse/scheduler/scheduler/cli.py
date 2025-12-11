@@ -1,11 +1,14 @@
 import sys
 
+from dotenv import load_dotenv
 from oso_core.cli.utils import CliApp, CliContext
 from pydantic_settings import (
     CliSubCommand,
 )
 from scheduler.config import CommonSettings, Initialize, Run, Testing
 from scheduler.resources import default_resource_registry
+
+load_dotenv()
 
 
 class SchedulerCLI(
