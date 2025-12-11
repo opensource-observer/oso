@@ -53,6 +53,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@opensource-observer/pyodide-node-toolkit": "workspace:*",
     "@opensource-observer/utils": "workspace:*",
+    "@opensource-observer/osoprotobufs": "workspace:*",
     "@plasmicapp/loader-nextjs": "^1.0.435",
     "@posthog/nextjs-config": "^1.3.9",
     "@radix-ui/react-accordion": "^1.2.12",

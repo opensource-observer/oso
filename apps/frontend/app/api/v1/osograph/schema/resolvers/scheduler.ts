@@ -28,7 +28,7 @@ import z from "zod";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { createQueueService } from "@/lib/services/queue";
-import { DataModelRunRequest } from "@/lib/protobufs/typescript/data-model";
+import { DataModelRunRequest } from "@opensource-observer/osoprotobufs/data-model";
 import { ProtobufEncoder, ProtobufMessage } from "@/lib/services/queue/types";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
