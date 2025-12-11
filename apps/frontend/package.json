@@ -7,10 +7,9 @@
   "scripts": {
     "build": "pnpm build:next",
     "build:next": "next build",
-    "codegen": "pnpm proto:codegen && pnpm supabase:codegen && pnpm graphql:codegen && pnpm graphql:rover",
+    "codegen": "pnpm supabase:codegen && pnpm graphql:codegen && pnpm graphql:rover",
     "deploy": "pnpm build",
     "dev": "pnpm codegen && next dev",
-    "proto:codegen": "mkdir -p ./lib/protobufs/typescript && protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./lib/protobufs/typescript --ts_proto_opt=esModuleInterop=true --ts_proto_opt=outputClientImpl=false --proto_path=../../lib/protobufs ../../lib/protobufs/*.proto",
     "pubsub:start": "gcloud beta emulators pubsub start --host-port=localhost:8085",
     "graphql:codegen": "dotenv -e .env.local -- graphql-codegen --require tsconfig-paths/register --config ./lib/graphql/codegen.ts && prettier --write ./lib/graphql/codegen.ts",
     "graphql:rover": "rover supergraph compose --elv2-license 'accept' --config ./supergraph-config.yaml > ./app/api/v1/graphql/supergraph.graphql",
@@ -107,7 +106,6 @@
     "openai": "^5.19.1",
     "posthog-js": "^1.260.1",
     "posthog-node": "^5.7.0",
-    "protobufjs": "^7.5.4",
     "puppeteer-core": "^24.23.0",
     "qs": "^6.14.0",
     "random-words": "^2.0.1",
@@ -178,7 +176,6 @@
     "tailwindcss": "^4.1.12",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
-    "ts-proto": "^2.8.3",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
