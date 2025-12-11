@@ -32,7 +32,7 @@ SELECT
   ghpe.actor_login AS actor_login,
   ghpe.head AS sha,
   CAST(NULL AS VARCHAR) AS author_email,
-  ghpe.actor_name AS author_name,
+  CAST(NULL AS VARCHAR) AS author_name,
   TRUE AS is_distinct,
   CAST(NULL AS VARCHAR) AS api_url
 FROM oso.stg_github__push_events_since_20251007 AS ghpe

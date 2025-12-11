@@ -3,7 +3,11 @@ import {
   MaterializationRow,
   RunRow,
 } from "@/lib/types/schema-types";
-import { RunStatus } from "@/lib/graphql/generated/graphql";
+import {
+  RunStatus,
+  RunTriggerType,
+  RunType,
+} from "@/lib/graphql/generated/graphql";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
@@ -23,6 +27,9 @@ import {
 import z from "zod";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import { createQueueService } from "@/lib/services/queue";
+import { DataModelRunRequest } from "@opensource-observer/osoprotobufs/data-model";
+import { ProtobufEncoder, ProtobufMessage } from "@/lib/services/queue/types";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
   switch (status) {
@@ -41,8 +48,12 @@ function mapRunStatus(status: RunRow["status"]): RunStatus {
   }
 }
 
-function genericRunRequestResolver<T extends z.ZodTypeAny, Q>(
+function genericRunRequestResolver<
+  T extends z.ZodTypeAny,
+  Q extends ProtobufMessage,
+>(
   inputSchema: T,
+  encoder: ProtobufEncoder<Q>,
   queueMessageFactory: (
     input: z.infer<T>,
     user: ReturnType<typeof requireAuthentication>,
@@ -116,12 +127,23 @@ function genericRunRequestResolver<T extends z.ZodTypeAny, Q>(
       queuedRun,
     );
 
-    // Push the message onto the queue... this is a placeholder for now
+    // Publish the message to the queue
+    const queueService = createQueueService();
+    const result = await queueService.publishDataModelRun(message, encoder);
+
+    if (!result.success) {
+      logger.error(
+        `Failed to publish message to queue: ${result.error?.message}`,
+      );
+      throw ServerErrors.queueError(
+        result.error?.message || "Failed to publish to queue",
+      );
+    }
+
     logger.info(
-      `Would push message onto the queue: ${JSON.stringify(message)}`,
+      `Published DataModelRunRequest to queue. MessageId: ${result.messageId}`,
     );
 
-    // Create a run to store the results of the run request
     return {
       success: true,
       message: "Run request created successfully",
@@ -134,12 +156,29 @@ export const schedulerResolvers = {
   Mutation: {
     createUserModelRunRequest: genericRunRequestResolver(
       CreateUserModelRunRequestSchema,
-      async (_input, _user, _dataset, _run) => {
-        return {};
+      DataModelRunRequest,
+      async (input, _user, dataset, run) => {
+        const runIdBuffer = Buffer.from(run.id.replace(/-/g, ""), "hex");
+
+        const message: DataModelRunRequest = {
+          runId: new Uint8Array(runIdBuffer),
+          datasetId: dataset.id,
+          modelReleaseIds: input.selectedModels || [],
+        };
+
+        return message;
       },
     ),
   },
   Run: {
+    datasetId: (parent: RunRow) => parent.dataset_id,
+    triggerType: (parent: RunRow) =>
+      parent.run_type === "manual"
+        ? RunTriggerType.Manual
+        : RunTriggerType.Scheduled,
+    runType: (parent: RunRow) =>
+      parent.run_type === "manual" ? RunType.Manual : RunType.Scheduled,
+    queuedAt: (parent: RunRow) => parent.queued_at,
     status: (parent: RunRow) => mapRunStatus(parent.status),
     startedAt: (parent: RunRow) => parent.started_at,
     finishedAt: (parent: RunRow) => parent.completed_at,

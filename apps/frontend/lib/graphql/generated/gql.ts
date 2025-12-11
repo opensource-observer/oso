@@ -21,7 +21,10 @@ type Documents = {
   "\n      mutation UpdateDataModel($input: UpdateDataModelInput!) {\n        updateDataModel(input: $input) {\n          success\n          message\n          dataModel {\n            id\n            name\n            isEnabled\n          }\n        }\n      }\n    ": typeof types.UpdateDataModelDocument;
   "\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            revisionNumber\n          }\n        }\n      }\n    ": typeof types.CreateDataModelRevisionDocument;
   "\n      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {\n        createDataModelRelease(input: $input) {\n          success\n          message\n          dataModelRelease {\n            id\n          }\n        }\n      }\n    ": typeof types.CreateDataModelReleaseDocument;
+  "\n      mutation CreateStaticModel($input: CreateStaticModelInput!) {\n        createStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ": typeof types.CreateStaticModelDocument;
+  "\n      mutation UpdateStaticModel($input: UpdateStaticModelInput!) {\n        updateStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ": typeof types.UpdateStaticModelDocument;
   "\n      mutation CreateUserModelRunRequest($input: CreateUserModelRunRequestInput!) {\n        createUserModelRunRequest(input: $input) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ": typeof types.CreateUserModelRunRequestDocument;
+  "\n      mutation CreateStaticModelRunRequest($input: CreateStaticModelRunRequestInput!) {\n        createStaticModelRunRequest(input: $input) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ": typeof types.CreateStaticModelRunRequestDocument;
   "\nquery AssetGraph {\n  assetNodes {\n    assetKey {\n      path\n    }\n    dependencyKeys {\n      path\n    }\n  }\n}": typeof types.AssetGraphDocument;
   '\nquery AssetMaterializedData($assetKeys: [AssetKeyInput!] = {path: ""}) {\n  assetNodes(assetKeys: $assetKeys) {\n    assetKey {\n      path\n    }\n    partitionStats {\n      numFailed\n      numMaterialized\n      numMaterializing\n      numPartitions\n    }\n    assetPartitionStatuses {\n      ... on TimePartitionStatuses {\n        __typename\n        ranges {\n          endKey\n          startKey\n          status\n        }\n      }\n    }\n    assetMaterializations(limit: 1) {\n      runOrError {\n        ... on Run {\n          endTime\n        }\n      }\n    }\n  }\n}': typeof types.AssetMaterializedDataDocument;
   "\n  query TimeseriesMetricsByArtifact(\n    $artifactIds: [String!],\n    $metricIds: [String!],\n    $startDate: Oso_Date!,\n    $endDate: Oso_Date!, \n  ) {\n    oso_timeseriesMetricsByArtifactV0(where: {\n      artifactId: {_in: $artifactIds},\n      metricId: {_in: $metricIds},\n      sampleDate: { _gte: $startDate, _lte: $endDate }\n    }) {\n      amount\n      artifactId\n      metricId\n      sampleDate\n      unit\n    }\n    oso_artifactsV1(where: { artifactId: { _in: $artifactIds }}) {\n      artifactId\n      artifactSource\n      artifactNamespace\n      artifactName\n    }\n    oso_metricsV0(where: {metricId: {_in: $metricIds}}) {\n      metricId\n      metricSource\n      metricNamespace\n      metricName\n      displayName\n      description\n    }\n  }\n": typeof types.TimeseriesMetricsByArtifactDocument;
@@ -43,8 +46,14 @@ const documents: Documents = {
     types.CreateDataModelRevisionDocument,
   "\n      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {\n        createDataModelRelease(input: $input) {\n          success\n          message\n          dataModelRelease {\n            id\n          }\n        }\n      }\n    ":
     types.CreateDataModelReleaseDocument,
+  "\n      mutation CreateStaticModel($input: CreateStaticModelInput!) {\n        createStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ":
+    types.CreateStaticModelDocument,
+  "\n      mutation UpdateStaticModel($input: UpdateStaticModelInput!) {\n        updateStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ":
+    types.UpdateStaticModelDocument,
   "\n      mutation CreateUserModelRunRequest($input: CreateUserModelRunRequestInput!) {\n        createUserModelRunRequest(input: $input) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ":
     types.CreateUserModelRunRequestDocument,
+  "\n      mutation CreateStaticModelRunRequest($input: CreateStaticModelRunRequestInput!) {\n        createStaticModelRunRequest(input: $input) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ":
+    types.CreateStaticModelRunRequestDocument,
   "\nquery AssetGraph {\n  assetNodes {\n    assetKey {\n      path\n    }\n    dependencyKeys {\n      path\n    }\n  }\n}":
     types.AssetGraphDocument,
   '\nquery AssetMaterializedData($assetKeys: [AssetKeyInput!] = {path: ""}) {\n  assetNodes(assetKeys: $assetKeys) {\n    assetKey {\n      path\n    }\n    partitionStats {\n      numFailed\n      numMaterialized\n      numMaterializing\n      numPartitions\n    }\n    assetPartitionStatuses {\n      ... on TimePartitionStatuses {\n        __typename\n        ranges {\n          endKey\n          startKey\n          status\n        }\n      }\n    }\n    assetMaterializations(limit: 1) {\n      runOrError {\n        ... on Run {\n          endTime\n        }\n      }\n    }\n  }\n}':
@@ -117,8 +126,26 @@ export function gql(
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(
+  source: "\n      mutation CreateStaticModel($input: CreateStaticModelInput!) {\n        createStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ",
+): (typeof documents)["\n      mutation CreateStaticModel($input: CreateStaticModelInput!) {\n        createStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    "];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(
+  source: "\n      mutation UpdateStaticModel($input: UpdateStaticModelInput!) {\n        updateStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ",
+): (typeof documents)["\n      mutation UpdateStaticModel($input: UpdateStaticModelInput!) {\n        updateStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    "];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(
   source: "\n      mutation CreateUserModelRunRequest($input: CreateUserModelRunRequestInput!) {\n        createUserModelRunRequest(input: $input) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ",
 ): (typeof documents)["\n      mutation CreateUserModelRunRequest($input: CreateUserModelRunRequestInput!) {\n        createUserModelRunRequest(input: $input) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    "];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(
+  source: "\n      mutation CreateStaticModelRunRequest($input: CreateStaticModelRunRequestInput!) {\n        createStaticModelRunRequest(input: $input) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    ",
+): (typeof documents)["\n      mutation CreateStaticModelRunRequest($input: CreateStaticModelRunRequestInput!) {\n        createStaticModelRunRequest(input: $input) {\n          success\n          message\n          run {\n            id\n          }\n        }\n      }\n    "];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

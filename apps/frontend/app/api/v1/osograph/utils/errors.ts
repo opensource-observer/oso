@@ -129,6 +129,9 @@ export const ServerErrors = {
 
   storage: (rawErrorMessage?: string) =>
     createError(ErrorCode.EXTERNAL_SERVICE_ERROR, rawErrorMessage),
+
+  queueError: (rawErrorMessage?: string) =>
+    createError(ErrorCode.EXTERNAL_SERVICE_ERROR, rawErrorMessage),
 } as const;
 
 export const OrganizationErrors = {

@@ -264,6 +264,19 @@ async function getPreviewSignedUrl(
   return getSignedUrl(S3, command, { expiresIn: expirationSeconds });
 }
 
+async function putSignedUrl(
+  bucketName: string,
+  objectKey: string,
+  expirationSeconds: number = 900,
+): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+  });
+
+  return getSignedUrl(S3, command, { expiresIn: expirationSeconds });
+}
+
 export {
   getObjectByQuery,
   putObjectByQuery,
@@ -271,4 +284,5 @@ export {
   createBucketWithLifecycle,
   putBase64Image,
   getPreviewSignedUrl,
+  putSignedUrl,
 };

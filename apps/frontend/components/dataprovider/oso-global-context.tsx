@@ -104,6 +104,9 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "createDataModelRevision",
   "createDataModelRelease",
   "createUserModelRunRequest",
+  "createStaticModel",
+  "updateStaticModel",
+  "createStaticModelRunRequest",
 ]);
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [

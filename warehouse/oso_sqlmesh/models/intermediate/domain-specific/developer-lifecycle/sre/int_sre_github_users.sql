@@ -14,7 +14,8 @@ WITH sre_github_users AS (
     CAST(CAST(createdAt AS TIMESTAMP) AS DATE) AS created_at,
     referrer,
     COALESCE(challengesCompleted, 0) AS challenges_completed,
-    batchId AS batch_id
+    batchId AS batch_id,
+    location AS location_code
   FROM oso.seed_sre_github_users
 )
 
@@ -24,5 +25,6 @@ SELECT
   created_at,
   referrer,
   challenges_completed,
-  batch_id
+  batch_id,
+  location_code
 FROM sre_github_users

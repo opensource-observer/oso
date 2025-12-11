@@ -9,14 +9,18 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "async-worker",
     "metrics-service",
+    "metrics-tools",
+    "opsscripts",
     "oso",
     "oso-agent",
     "oso-core",
+    "oso-dagster",
+    "oso-lets-go",
     "oso-mcp",
     "oso-semantic",
-    "pynessie-gc",
+    "oso-sqlmesh",
+    "osoprotobufs",
     "pyoso",
     "query-rewriter",
     "scheduler",
@@ -255,6 +259,26 @@ wheels = [
 ]
 
 [[package]]
+name = "ariadne-codegen"
+version = "0.16.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "autoflake" },
+    { name = "black" },
+    { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'" },
+    { name = "click", version = "8.3.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_python_implementation == 'PyPy' or sys_platform == 'emscripten'" },
+    { name = "graphql-core" },
+    { name = "httpx" },
+    { name = "isort" },
+    { name = "pydantic" },
+    { name = "toml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b6/40/cc08a3faed529af4684e91b7fa35cb4e6fed57db6bb6678a744c13b900c1/ariadne_codegen-0.16.0.tar.gz", hash = "sha256:d92b4b8bef1ac5dfb04eb808bb022ec0ab2c44e8c0f236e7c16eada6a61c21f7", size = 66902, upload-time = "2025-10-13T06:38:21.85Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/de/6e5eba9bdc6f95ef3477d48d2120b2797aa4fb7488933e324c3f91b2aa4b/ariadne_codegen-0.16.0-py3-none-any.whl", hash = "sha256:cf24ef2ae7afc607ff3fcc117674201f242cf2e1c93774ebd28f16f7e78a7fd7", size = 96360, upload-time = "2025-10-13T06:38:20.535Z" },
+]
+
+[[package]]
 name = "arize-phoenix"
 version = "11.28.0"
 source = { registry = "https://pypi.org/simple" }
@@ -403,34 +427,6 @@ wheels = [
 ]
 
 [[package]]
-name = "async-worker"
-version = "0.1.0"
-source = { editable = "warehouse/async-worker" }
-dependencies = [
-    { name = "dotenv" },
-    { name = "google-cloud-pubsub" },
-    { name = "pydantic-cli" },
-    { name = "query-rewriter" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "google-cloud-pubsub", specifier = ">=2.33.0" },
-    { name = "pydantic-cli", specifier = ">=10.0.0" },
-    { name = "query-rewriter", editable = "lib/query-rewriter" },
-]
-
-[[package]]
-name = "asyncio"
-version = "4.0.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/71/ea/26c489a11f7ca862d5705db67683a7361ce11c23a7b98fc6c2deaeccede2/asyncio-4.0.0.tar.gz", hash = "sha256:570cd9e50db83bc1629152d4d0b7558d6451bb1bfd5dfc2e935d96fc2f40329b", size = 5371, upload-time = "2025-08-05T02:51:46.605Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/64/eff2564783bd650ca25e15938d1c5b459cda997574a510f7de69688cb0b4/asyncio-4.0.0-py3-none-any.whl", hash = "sha256:c1eddb0659231837046809e68103969b2bef8b0400d59cfa6363f6b5ed8cc88b", size = 5555, upload-time = "2025-08-05T02:51:45.767Z" },
-]
-
-[[package]]
 name = "attrs"
 version = "25.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -465,6 +461,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cd/3f/1d3bbd0bf23bdd99276d4def22f29c27a914067b4cf66f753ff9b8bbd0f3/authlib-1.6.5.tar.gz", hash = "sha256:6aaf9c79b7cc96c900f0b284061691c5d4e61221640a948fe690b556a6d6d10b", size = 164553, upload-time = "2025-10-02T13:36:09.489Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f8/aa/5082412d1ee302e9e7d80b6949bc4d2a8fa1149aaab610c5fc24709605d6/authlib-1.6.5-py2.py3-none-any.whl", hash = "sha256:3e0e0507807f842b02175507bdee8957a1d5707fd4afb17c32fb43fee90b6e3a", size = 243608, upload-time = "2025-10-02T13:36:07.637Z" },
+]
+
+[[package]]
+name = "autoflake"
+version = "2.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyflakes" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2a/cb/486f912d6171bc5748c311a2984a301f4e2d054833a1da78485866c71522/autoflake-2.3.1.tar.gz", hash = "sha256:c98b75dc5b0a86459c4f01a1d32ac7eb4338ec4317a4469515ff1e687ecd909e", size = 27642, upload-time = "2024-03-13T03:41:28.977Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a2/ee/3fd29bf416eb4f1c5579cf12bf393ae954099258abd7bde03c4f9716ef6b/autoflake-2.3.1-py3-none-any.whl", hash = "sha256:3ae7495db9084b7b32818b4140e6dc4fc280b712fb414f5b8fe57b0a8e85a840", size = 32483, upload-time = "2024-03-13T03:41:26.969Z" },
 ]
 
 [[package]]
@@ -1827,11 +1835,11 @@ wheels = [
 
 [[package]]
 name = "fsspec"
-version = "2025.9.0"
+version = "2025.12.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/de/e0/bab50af11c2d75c9c4a2a26a5254573c0bd97cea152254401510950486fa/fsspec-2025.9.0.tar.gz", hash = "sha256:19fd429483d25d28b65ec68f9f4adc16c17ea2c7c7bf54ec61360d478fb19c19", size = 304847, upload-time = "2025-09-02T19:10:49.215Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b6/27/954057b0d1f53f086f681755207dda6de6c660ce133c829158e8e8fe7895/fsspec-2025.12.0.tar.gz", hash = "sha256:c505de011584597b1060ff778bb664c1bc022e87921b0e4f10cc9c44f9635973", size = 309748, upload-time = "2025-12-03T15:23:42.687Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/71/70db47e4f6ce3e5c37a607355f80da8860a33226be640226ac52cb05ef2e/fsspec-2025.9.0-py3-none-any.whl", hash = "sha256:530dc2a2af60a414a832059574df4a6e10cce927f6f4a78209390fe38955cfb7", size = 199289, upload-time = "2025-09-02T19:10:47.708Z" },
+    { url = "https://files.pythonhosted.org/packages/51/c7/b64cae5dba3a1b138d7123ec36bb5ccd39d39939f18454407e5468f4763f/fsspec-2025.12.0-py3-none-any.whl", hash = "sha256:8bf1fe301b7d8acfa6e8571e3b1c3d158f909666642431cc78a1b7b4dbc5ec5b", size = 201422, upload-time = "2025-12-03T15:23:41.434Z" },
 ]
 
 [[package]]
@@ -1867,7 +1875,7 @@ wheels = [
 
 [[package]]
 name = "gcsfs"
-version = "2025.9.0"
+version = "2025.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1876,11 +1884,12 @@ dependencies = [
     { name = "google-auth" },
     { name = "google-auth-oauthlib" },
     { name = "google-cloud-storage" },
+    { name = "google-cloud-storage-control" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/54/55/cd737f96929f9cf52666bd49e9b4d1aac697655b3ab17c49ab4fb587bb12/gcsfs-2025.9.0.tar.gz", hash = "sha256:36b8c379d9789d5332a45a3aa2840ec518ff73c6d21c1e962f53318d1cd65db9", size = 82843, upload-time = "2025-09-02T19:23:19.22Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3e/3e/453b42bbcda2177daba97ebc5202faf5c57cc0c2bb4aac7081c12b0471da/gcsfs-2025.12.0.tar.gz", hash = "sha256:9a9c1c32b7899a3967ba30a7e9422cdfda596266f03476cdf5545402b8af4cd5", size = 95148, upload-time = "2025-12-03T15:44:59.703Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4c/41/f793f3bae39f9fbaabf935d0afcf3aa99e417c92096f3e232ac085aaddbf/gcsfs-2025.9.0-py2.py3-none-any.whl", hash = "sha256:38208bc79af60c693e44ff2f0bd6fd3ca664fea1940fe6770ac1c6003aa0f559", size = 36893, upload-time = "2025-09-02T19:23:18.002Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/bf/e664cbeab8f2a8b097c0604252760410fde191fe6ac7d5081b29e601ac52/gcsfs-2025.12.0-py3-none-any.whl", hash = "sha256:e06aaec53797dc6b83d5cc90c4d3ae7247b4ee0cf8d8b1ce50e8d6b78e3a9aea", size = 41204, upload-time = "2025-12-03T15:44:58.464Z" },
 ]
 
 [[package]]
@@ -2198,6 +2207,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/36/76/4d965702e96bb67976e755bed9828fa50306dca003dbee08b67f41dd265e/google_cloud_storage-2.19.0.tar.gz", hash = "sha256:cd05e9e7191ba6cb68934d8eb76054d9be4562aa89dbc4236feee4d7d51342b2", size = 5535488, upload-time = "2024-12-05T01:35:06.49Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d5/94/6db383d8ee1adf45dc6c73477152b82731fa4c4a46d9c1932cc8757e0fd4/google_cloud_storage-2.19.0-py2.py3-none-any.whl", hash = "sha256:aeb971b5c29cf8ab98445082cbfe7b161a1f48ed275822f59ed3f1524ea54fba", size = 131787, upload-time = "2024-12-05T01:35:04.736Z" },
+]
+
+[[package]]
+name = "google-cloud-storage-control"
+version = "1.8.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpc-google-iam-v1" },
+    { name = "grpcio" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/56/24/ea82cba156377fb270d024c2b13e397d6e57663e0db529978736bc444d67/google_cloud_storage_control-1.8.0.tar.gz", hash = "sha256:e77f1365667e9cf8b6fbb0fc0de725a6045ee4b42220c3e6f863adace6c4033f", size = 112056, upload-time = "2025-10-20T14:57:18.086Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bc/88/bbf40bfebbce33c9aa421b6da8ea89d2771edd5142ee3f35f6b4b3efb98c/google_cloud_storage_control-1.8.0-py3-none-any.whl", hash = "sha256:1a3179438f82fc49b2ad3d4674d737164bd6a51e0a9b545a9ec7e7d118b8bee0", size = 86054, upload-time = "2025-10-20T14:54:06.198Z" },
 ]
 
 [[package]]
@@ -3689,6 +3715,29 @@ requires-dist = [
 ]
 
 [[package]]
+name = "metrics-tools"
+version = "0.1.0"
+source = { editable = "warehouse/metrics_tools" }
+dependencies = [
+    { name = "boltons" },
+    { name = "metrics-service" },
+    { name = "oso-core" },
+    { name = "pandas" },
+    { name = "sqlglot" },
+    { name = "sqlmesh" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boltons", specifier = ">=25.0.0" },
+    { name = "metrics-service", editable = "warehouse/metrics-service" },
+    { name = "oso-core", editable = "lib/oso-core" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "sqlglot", specifier = ">=27.28.1" },
+    { name = "sqlmesh", specifier = ">=0.227.1" },
+]
+
+[[package]]
 name = "minio"
 version = "7.2.18"
 source = { registry = "https://pypi.org/simple" }
@@ -4103,6 +4152,26 @@ wheels = [
 ]
 
 [[package]]
+name = "opsscripts"
+version = "0.1.0"
+source = { editable = "ops/opsscripts" }
+dependencies = [
+    { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'" },
+    { name = "click", version = "8.3.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_python_implementation == 'PyPy' or sys_platform == 'emscripten'" },
+    { name = "docker" },
+    { name = "kr8s" },
+    { name = "requests" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.1.8" },
+    { name = "docker", specifier = ">=7.1.0" },
+    { name = "kr8s", specifier = ">=0.20.14" },
+    { name = "requests", specifier = ">=2.32.5" },
+]
+
+[[package]]
 name = "orjson"
 version = "3.11.3"
 source = { registry = "https://pypi.org/simple" }
@@ -4128,89 +4197,41 @@ wheels = [
 [[package]]
 name = "oso"
 version = "1.0.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
-    { name = "aiotrino" },
     { name = "arrow" },
-    { name = "bokeh" },
-    { name = "boltons" },
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'" },
     { name = "click", version = "8.3.0", source = { registry = "https://pypi.org/simple" }, marker = "platform_python_implementation == 'PyPy' or sys_platform == 'emscripten'" },
-    { name = "clickhouse-connect" },
     { name = "cloud-sql-python-connector", extra = ["pg8000"] },
     { name = "colorlog" },
     { name = "connectorx" },
-    { name = "cryo" },
-    { name = "dagster" },
-    { name = "dagster-duckdb" },
-    { name = "dagster-duckdb-polars" },
-    { name = "dagster-embedded-elt" },
-    { name = "dagster-gcp" },
-    { name = "dagster-k8s" },
-    { name = "dagster-polars" },
-    { name = "dagster-postgres" },
-    { name = "dagster-sqlmesh" },
-    { name = "dagster-webserver" },
-    { name = "discord-webhook" },
-    { name = "dlt" },
     { name = "docker" },
     { name = "duckdb" },
-    { name = "fastapi", extra = ["standard"] },
-    { name = "gcloud-aio-storage" },
-    { name = "gcsfs" },
-    { name = "githubkit" },
-    { name = "gitpython" },
-    { name = "google-api-python-client" },
-    { name = "google-auth" },
-    { name = "google-cloud-bigquery" },
-    { name = "google-cloud-bigquery-datatransfer" },
-    { name = "google-cloud-bigquery-storage" },
-    { name = "google-cloud-resource-manager" },
-    { name = "google-cloud-secret-manager" },
-    { name = "google-cloud-service-management" },
-    { name = "google-cloud-service-usage" },
-    { name = "google-cloud-storage" },
-    { name = "kr8s" },
     { name = "lz4" },
     { name = "metrics-service" },
-    { name = "minio" },
-    { name = "networkx" },
     { name = "openrank-sdk" },
+    { name = "opsscripts" },
     { name = "oso-core" },
-    { name = "oss-directory" },
+    { name = "oso-dagster" },
+    { name = "oso-lets-go" },
     { name = "pandas" },
     { name = "pandas-gbq" },
     { name = "pandas-stubs" },
-    { name = "pendulum" },
-    { name = "polars" },
     { name = "pyarrow-stubs" },
-    { name = "pydantic-settings" },
-    { name = "pyee" },
-    { name = "pyiceberg", extra = ["hive", "s3fs"] },
-    { name = "pynessie" },
     { name = "pyoso" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "python-dotenv" },
-    { name = "redis" },
-    { name = "requests" },
-    { name = "ruamel-yaml" },
-    { name = "scikit-learn" },
-    { name = "sqlalchemy" },
-    { name = "sqlmesh", extra = ["trino"] },
+    { name = "scheduler" },
     { name = "structlog" },
-    { name = "uvicorn", extra = ["standard"] },
-    { name = "web3" },
     { name = "websockets" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "dagster-webserver" },
     { name = "ipykernel" },
     { name = "ipython" },
     { name = "isort" },
     { name = "marimo" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "python-on-whales" },
     { name = "ruff" },
     { name = "shandy-sqlfmt", version = "0.27.0", source = { registry = "https://pypi.org/simple" }, extra = ["jinjafmt"], marker = "platform_python_implementation == 'PyPy' or sys_platform == 'emscripten'" },
@@ -4219,86 +4240,38 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiotrino", specifier = ">=0.2.3,<1.0.0" },
     { name = "arrow", specifier = ">=1.3.0,<2.0.0" },
-    { name = "bokeh", specifier = ">=3.6.1,<4.0.0" },
-    { name = "boltons", specifier = ">=24.0.0,<26.0.0" },
     { name = "click", specifier = ">=8.1.7,<9.0.0" },
-    { name = "clickhouse-connect", specifier = ">=0.7.16,<1.0.0" },
     { name = "cloud-sql-python-connector", extras = ["pg8000"], specifier = ">=1.6.0,<2.0.0" },
     { name = "colorlog", specifier = ">=6.9.0,<7.0.0" },
     { name = "connectorx", specifier = ">=0.4.0,<1.0.0" },
-    { name = "cryo", specifier = ">=0.3.2" },
-    { name = "dagster", specifier = ">=1.8.6,<2.0.0" },
-    { name = "dagster-duckdb", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-duckdb-polars", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-embedded-elt", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-gcp", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
-    { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
-    { name = "dagster-sqlmesh", specifier = ">=0.22.0" },
-    { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
-    { name = "discord-webhook", specifier = ">=1.3.1,<2.0.0" },
-    { name = "dlt", specifier = ">=1.3.0,<2.0.0" },
     { name = "docker", specifier = ">=7.1.0,<8.0.0" },
     { name = "duckdb", specifier = ">=1.1.0,<2.0.0" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.115.6,<1.0.0" },
-    { name = "gcloud-aio-storage", specifier = ">=9.3.0,<10.0.0" },
-    { name = "gcsfs", specifier = ">=2024.6.1,<2026.0.0" },
-    { name = "githubkit", specifier = ">=0.12.13,<1.0.0" },
-    { name = "gitpython", specifier = ">=3.1.44,<4.0.0" },
-    { name = "google-api-python-client", specifier = ">=2.116.0,<3.0.0" },
-    { name = "google-auth", specifier = ">=2.34.0,<3.0.0" },
-    { name = "google-cloud-bigquery", specifier = ">=3.17.1,<4.0.0" },
-    { name = "google-cloud-bigquery-datatransfer", specifier = ">=3.15.3,<4.0.0" },
-    { name = "google-cloud-bigquery-storage", specifier = ">=2.25.0,<3.0.0" },
-    { name = "google-cloud-resource-manager", specifier = ">=1.12.3,<2.0.0" },
-    { name = "google-cloud-secret-manager", specifier = ">=2.20.0,<3.0.0" },
-    { name = "google-cloud-service-management", specifier = ">=1.8.3,<2.0.0" },
-    { name = "google-cloud-service-usage", specifier = ">=1.10.3,<2.0.0" },
-    { name = "google-cloud-storage", specifier = ">=2.14.0,<4.0.0" },
-    { name = "kr8s", specifier = "==0.20.14" },
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
     { name = "metrics-service", editable = "warehouse/metrics-service" },
-    { name = "minio", specifier = ">=7.2.15,<8.0.0" },
-    { name = "networkx", specifier = ">=3.0.0" },
     { name = "openrank-sdk", specifier = ">=0.4.0,<1.0.0" },
+    { name = "opsscripts", editable = "ops/opsscripts" },
     { name = "oso-core", editable = "lib/oso-core" },
-    { name = "oss-directory", specifier = "==0.2.5" },
+    { name = "oso-dagster", editable = "warehouse/oso_dagster" },
+    { name = "oso-lets-go", editable = "warehouse/oso_lets_go" },
     { name = "pandas", specifier = ">=2.2.3,<3.0.0" },
     { name = "pandas-gbq", specifier = ">=0.29.2" },
     { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
-    { name = "pendulum", specifier = ">=3.0.0,<4.0.0" },
-    { name = "polars", specifier = ">=1.31.0,<2.0.0" },
     { name = "pyarrow-stubs", specifier = ">=17.16,<21.0" },
-    { name = "pydantic-settings", specifier = ">=2.7.0,<3.0.0" },
-    { name = "pyee", specifier = ">=12.1.1,<14.0.0" },
-    { name = "pyiceberg", extras = ["hive", "s3fs"], specifier = ">=0.8.1,<1.0.0" },
-    { name = "pynessie", specifier = ">=0.67.0" },
     { name = "pyoso", editable = "warehouse/pyoso" },
-    { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0,<2.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
-    { name = "redis", specifier = ">=5.0.7,<7.0.0" },
-    { name = "requests", specifier = ">=2.31.0,<3.0.0" },
-    { name = "ruamel-yaml", specifier = ">=0.18.6,<1.0.0" },
-    { name = "scikit-learn", specifier = ">=1.7.2" },
-    { name = "sqlalchemy", specifier = ">=2.0.25,<3.0.0" },
-    { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
+    { name = "scheduler", editable = "warehouse/scheduler" },
     { name = "structlog", specifier = ">=25.4.0" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.1,<1.0.0" },
-    { name = "web3", specifier = ">=7.13.0" },
-    { name = "websockets", specifier = ">=14.1,<16.0" },
+    { name = "websockets", specifier = ">=15.0.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "dagster-webserver", specifier = ">=1.7.2,<2.0.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "ipython", specifier = ">=8.21.0,<10.0.0" },
     { name = "isort", specifier = ">=7.0.0,<8.0.0" },
     { name = "marimo", specifier = ">=0.13.15" },
+    { name = "pytest", specifier = ">=8.2.1,<9.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0,<2.0.0" },
     { name = "python-on-whales", specifier = ">=0.76.1" },
     { name = "ruff", specifier = ">=0.10.0" },
     { name = "shandy-sqlfmt", extras = ["jinjafmt"], specifier = ">=0.21.1,<1.0.0" },
@@ -4364,6 +4337,7 @@ source = { editable = "lib/oso-core" }
 dependencies = [
     { name = "arrow" },
     { name = "orjson" },
+    { name = "pydantic-settings" },
     { name = "sqlmesh", extra = ["trino"] },
     { name = "structlog" },
 ]
@@ -4377,12 +4351,161 @@ dev = [
 requires-dist = [
     { name = "arrow", specifier = "<2.0.0" },
     { name = "orjson", specifier = ">=3.10.18" },
+    { name = "pydantic-settings", specifier = ">=2.11.0" },
     { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
     { name = "structlog", specifier = ">=25.4.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.2.1,<9.0.0" }]
+
+[[package]]
+name = "oso-dagster"
+version = "0.1.0"
+source = { editable = "warehouse/oso_dagster" }
+dependencies = [
+    { name = "aiotrino" },
+    { name = "arrow" },
+    { name = "bokeh" },
+    { name = "clickhouse-connect" },
+    { name = "cryo" },
+    { name = "dagster" },
+    { name = "dagster-duckdb-polars" },
+    { name = "dagster-embedded-elt" },
+    { name = "dagster-gcp" },
+    { name = "dagster-k8s" },
+    { name = "dagster-polars" },
+    { name = "dagster-postgres" },
+    { name = "dagster-sqlmesh" },
+    { name = "dagster-webserver" },
+    { name = "discord-webhook" },
+    { name = "dlt" },
+    { name = "gcloud-aio-storage" },
+    { name = "gcsfs" },
+    { name = "githubkit" },
+    { name = "google-api-python-client" },
+    { name = "google-auth" },
+    { name = "google-cloud-bigquery" },
+    { name = "google-cloud-bigquery-datatransfer" },
+    { name = "google-cloud-bigquery-storage" },
+    { name = "google-cloud-resource-manager" },
+    { name = "google-cloud-secret-manager" },
+    { name = "google-cloud-service-management" },
+    { name = "google-cloud-service-usage" },
+    { name = "google-cloud-storage" },
+    { name = "oso-core" },
+    { name = "oss-directory" },
+    { name = "pandas" },
+    { name = "pandas-gbq" },
+    { name = "pandas-stubs" },
+    { name = "pendulum" },
+    { name = "polars" },
+    { name = "pydantic-settings" },
+    { name = "pyee" },
+    { name = "pyiceberg", extra = ["hive", "s3fs"] },
+    { name = "pynessie" },
+    { name = "pyoso" },
+    { name = "python-dotenv" },
+    { name = "redis" },
+    { name = "requests" },
+    { name = "ruamel-yaml" },
+    { name = "scheduler" },
+    { name = "scikit-learn" },
+    { name = "sqlalchemy" },
+    { name = "sqlglot" },
+    { name = "sqlmesh" },
+    { name = "web3" },
+    { name = "websockets" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "dagster-webserver" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiotrino", specifier = ">=0.2.3,<1.0.0" },
+    { name = "arrow", specifier = ">=1.3.0,<2.0.0" },
+    { name = "bokeh", specifier = ">=3.6.1,<4.0.0" },
+    { name = "clickhouse-connect", specifier = ">=0.7.16,<1.0.0" },
+    { name = "cryo", specifier = ">=0.3.2" },
+    { name = "dagster", specifier = ">=1.8.6,<2.0.0" },
+    { name = "dagster-duckdb-polars", specifier = ">=0.24.0,<1.0.0" },
+    { name = "dagster-embedded-elt", specifier = ">=0.24.0,<1.0.0" },
+    { name = "dagster-gcp", specifier = ">=0.24.0,<1.0.0" },
+    { name = "dagster-k8s", specifier = ">=0.24.6,<1.0.0" },
+    { name = "dagster-polars", specifier = ">=0.24.0,<1.0.0" },
+    { name = "dagster-postgres", specifier = ">=0.24.0,<1.0.0" },
+    { name = "dagster-sqlmesh", specifier = ">=0.22.0" },
+    { name = "dagster-webserver", specifier = ">=1.7.16,<2.0.0" },
+    { name = "discord-webhook", specifier = ">=1.3.1,<2.0.0" },
+    { name = "dlt", specifier = ">=1.3.0,<2.0.0" },
+    { name = "gcloud-aio-storage", specifier = ">=9.3.0,<10.0.0" },
+    { name = "gcsfs", specifier = ">=2025.12.0,<2026.0.0" },
+    { name = "githubkit", specifier = ">=0.12.13,<1.0.0" },
+    { name = "google-api-python-client", specifier = ">=2.116.0,<3.0.0" },
+    { name = "google-auth", specifier = ">=2.34.0,<3.0.0" },
+    { name = "google-cloud-bigquery", specifier = ">=3.17.1,<4.0.0" },
+    { name = "google-cloud-bigquery-datatransfer", specifier = ">=3.15.3,<4.0.0" },
+    { name = "google-cloud-bigquery-storage", specifier = ">=2.25.0,<3.0.0" },
+    { name = "google-cloud-resource-manager", specifier = ">=1.12.3,<2.0.0" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.20.0,<3.0.0" },
+    { name = "google-cloud-service-management", specifier = ">=1.8.3,<2.0.0" },
+    { name = "google-cloud-service-usage", specifier = ">=1.10.3,<2.0.0" },
+    { name = "google-cloud-storage", specifier = ">=2.14.0,<4.0.0" },
+    { name = "oso-core", editable = "lib/oso-core" },
+    { name = "oss-directory", specifier = "==0.2.5" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "pandas-gbq", specifier = ">=0.29.2" },
+    { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
+    { name = "pendulum", specifier = ">=3.0.0,<4.0.0" },
+    { name = "polars", specifier = ">=1.31.0,<2.0.0" },
+    { name = "pydantic-settings", specifier = ">=2.7.0,<3.0.0" },
+    { name = "pyee", specifier = ">=12.1.1,<14.0.0" },
+    { name = "pyiceberg", extras = ["hive", "s3fs"], specifier = ">=0.8.1,<1.0.0" },
+    { name = "pynessie", specifier = ">=0.67.0" },
+    { name = "pyoso", editable = "warehouse/pyoso" },
+    { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
+    { name = "redis", specifier = ">=5.0.7,<7.0.0" },
+    { name = "requests", specifier = ">=2.31.0,<3.0.0" },
+    { name = "ruamel-yaml", specifier = ">=0.18.6,<1.0.0" },
+    { name = "scheduler", editable = "warehouse/scheduler" },
+    { name = "scikit-learn", specifier = ">=1.7.2" },
+    { name = "sqlalchemy", specifier = ">=2.0.25,<3.0.0" },
+    { name = "sqlglot", specifier = ">=27.28.1" },
+    { name = "sqlmesh", specifier = ">=0.227.1" },
+    { name = "web3", specifier = ">=7.13.0" },
+    { name = "websockets", specifier = ">=14.1,<16.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "dagster-webserver", specifier = ">=1.7.2,<2.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0,<2.0.0" },
+]
+
+[[package]]
+name = "oso-lets-go"
+version = "0.1.0"
+source = { editable = "warehouse/oso_lets_go" }
+dependencies = [
+    { name = "gitpython" },
+    { name = "kr8s" },
+    { name = "metrics-tools" },
+    { name = "opsscripts" },
+    { name = "oso-core" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "gitpython", specifier = ">=3.1.44,<4.0.0" },
+    { name = "kr8s", specifier = ">=0.20.14" },
+    { name = "metrics-tools", editable = "warehouse/metrics_tools" },
+    { name = "opsscripts", editable = "ops/opsscripts" },
+    { name = "oso-core", editable = "lib/oso-core" },
+]
 
 [[package]]
 name = "oso-mcp"
@@ -4439,6 +4562,52 @@ dev = [
     { name = "pytest", specifier = ">=8.4.0" },
     { name = "pytest-pyodide", specifier = ">=0.58.6" },
 ]
+
+[[package]]
+name = "oso-sqlmesh"
+version = "0.1.0"
+source = { virtual = "warehouse/oso_sqlmesh" }
+dependencies = [
+    { name = "arrow" },
+    { name = "metrics-tools" },
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "openrank-sdk" },
+    { name = "oso-core" },
+    { name = "pandas" },
+    { name = "python-dotenv" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "sqlglot" },
+    { name = "sqlmesh", extra = ["trino"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "arrow", specifier = ">=1.4.0" },
+    { name = "metrics-tools", editable = "warehouse/metrics_tools" },
+    { name = "networkx", specifier = ">=3.5" },
+    { name = "numpy", specifier = ">=2.3.4" },
+    { name = "openrank-sdk", specifier = ">=0.4.0" },
+    { name = "oso-core", editable = "lib/oso-core" },
+    { name = "pandas", specifier = ">=2.3.3" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "scikit-learn", specifier = ">=1.7.2" },
+    { name = "scipy", specifier = ">=1.16.2" },
+    { name = "sqlglot", specifier = ">=27.28.1" },
+    { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
+]
+
+[[package]]
+name = "osoprotobufs"
+version = "0.1.0"
+source = { editable = "lib/protobufs/python" }
+dependencies = [
+    { name = "protobuf" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "protobuf", specifier = "==6.33.2" }]
 
 [[package]]
 name = "oss-directory"
@@ -4806,17 +4975,17 @@ wheels = [
 
 [[package]]
 name = "protobuf"
-version = "6.33.0"
+version = "6.33.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/19/ff/64a6c8f420818bb873713988ca5492cba3a7946be57e027ac63495157d97/protobuf-6.33.0.tar.gz", hash = "sha256:140303d5c8d2037730c548f8c7b93b20bb1dc301be280c378b82b8894589c954", size = 443463, upload-time = "2025-10-15T20:39:52.159Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/34/44/e49ecff446afeec9d1a66d6bbf9adc21e3c7cea7803a920ca3773379d4f6/protobuf-6.33.2.tar.gz", hash = "sha256:56dc370c91fbb8ac85bc13582c9e373569668a290aa2e66a590c2a0d35ddb9e4", size = 444296, upload-time = "2025-12-06T00:17:53.311Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/ee/52b3fa8feb6db4a833dfea4943e175ce645144532e8a90f72571ad85df4e/protobuf-6.33.0-cp310-abi3-win32.whl", hash = "sha256:d6101ded078042a8f17959eccd9236fb7a9ca20d3b0098bbcb91533a5680d035", size = 425593, upload-time = "2025-10-15T20:39:40.29Z" },
-    { url = "https://files.pythonhosted.org/packages/7b/c6/7a465f1825872c55e0341ff4a80198743f73b69ce5d43ab18043699d1d81/protobuf-6.33.0-cp310-abi3-win_amd64.whl", hash = "sha256:9a031d10f703f03768f2743a1c403af050b6ae1f3480e9c140f39c45f81b13ee", size = 436882, upload-time = "2025-10-15T20:39:42.841Z" },
-    { url = "https://files.pythonhosted.org/packages/e1/a9/b6eee662a6951b9c3640e8e452ab3e09f117d99fc10baa32d1581a0d4099/protobuf-6.33.0-cp39-abi3-macosx_10_9_universal2.whl", hash = "sha256:905b07a65f1a4b72412314082c7dbfae91a9e8b68a0cc1577515f8df58ecf455", size = 427521, upload-time = "2025-10-15T20:39:43.803Z" },
-    { url = "https://files.pythonhosted.org/packages/10/35/16d31e0f92c6d2f0e77c2a3ba93185130ea13053dd16200a57434c882f2b/protobuf-6.33.0-cp39-abi3-manylinux2014_aarch64.whl", hash = "sha256:e0697ece353e6239b90ee43a9231318302ad8353c70e6e45499fa52396debf90", size = 324445, upload-time = "2025-10-15T20:39:44.932Z" },
-    { url = "https://files.pythonhosted.org/packages/e6/eb/2a981a13e35cda8b75b5585aaffae2eb904f8f351bdd3870769692acbd8a/protobuf-6.33.0-cp39-abi3-manylinux2014_s390x.whl", hash = "sha256:e0a1715e4f27355afd9570f3ea369735afc853a6c3951a6afe1f80d8569ad298", size = 339159, upload-time = "2025-10-15T20:39:46.186Z" },
-    { url = "https://files.pythonhosted.org/packages/21/51/0b1cbad62074439b867b4e04cc09b93f6699d78fd191bed2bbb44562e077/protobuf-6.33.0-cp39-abi3-manylinux2014_x86_64.whl", hash = "sha256:35be49fd3f4fefa4e6e2aacc35e8b837d6703c37a2168a55ac21e9b1bc7559ef", size = 323172, upload-time = "2025-10-15T20:39:47.465Z" },
-    { url = "https://files.pythonhosted.org/packages/07/d1/0a28c21707807c6aacd5dc9c3704b2aa1effbf37adebd8caeaf68b17a636/protobuf-6.33.0-py3-none-any.whl", hash = "sha256:25c9e1963c6734448ea2d308cfa610e692b801304ba0908d7bfa564ac5132995", size = 170477, upload-time = "2025-10-15T20:39:51.311Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/91/1e3a34881a88697a7354ffd177e8746e97a722e5e8db101544b47e84afb1/protobuf-6.33.2-cp310-abi3-win32.whl", hash = "sha256:87eb388bd2d0f78febd8f4c8779c79247b26a5befad525008e49a6955787ff3d", size = 425603, upload-time = "2025-12-06T00:17:41.114Z" },
+    { url = "https://files.pythonhosted.org/packages/64/20/4d50191997e917ae13ad0a235c8b42d8c1ab9c3e6fd455ca16d416944355/protobuf-6.33.2-cp310-abi3-win_amd64.whl", hash = "sha256:fc2a0e8b05b180e5fc0dd1559fe8ebdae21a27e81ac77728fb6c42b12c7419b4", size = 436930, upload-time = "2025-12-06T00:17:43.278Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/ca/7e485da88ba45c920fb3f50ae78de29ab925d9e54ef0de678306abfbb497/protobuf-6.33.2-cp39-abi3-macosx_10_9_universal2.whl", hash = "sha256:d9b19771ca75935b3a4422957bc518b0cecb978b31d1dd12037b088f6bcc0e43", size = 427621, upload-time = "2025-12-06T00:17:44.445Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/4f/f743761e41d3b2b2566748eb76bbff2b43e14d5fcab694f494a16458b05f/protobuf-6.33.2-cp39-abi3-manylinux2014_aarch64.whl", hash = "sha256:b5d3b5625192214066d99b2b605f5783483575656784de223f00a8d00754fc0e", size = 324460, upload-time = "2025-12-06T00:17:45.678Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/fa/26468d00a92824020f6f2090d827078c09c9c587e34cbfd2d0c7911221f8/protobuf-6.33.2-cp39-abi3-manylinux2014_s390x.whl", hash = "sha256:8cd7640aee0b7828b6d03ae518b5b4806fdfc1afe8de82f79c3454f8aef29872", size = 339168, upload-time = "2025-12-06T00:17:46.813Z" },
+    { url = "https://files.pythonhosted.org/packages/56/13/333b8f421738f149d4fe5e49553bc2a2ab75235486259f689b4b91f96cec/protobuf-6.33.2-cp39-abi3-manylinux2014_x86_64.whl", hash = "sha256:1f8017c48c07ec5859106533b682260ba3d7c5567b1ca1f24297ce03384d1b4f", size = 323270, upload-time = "2025-12-06T00:17:48.253Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/15/4f02896cc3df04fc465010a4c6a0cd89810f54617a32a70ef531ed75d61c/protobuf-6.33.2-py3-none-any.whl", hash = "sha256:7636aad9bb01768870266de5dc009de2d1b936771b38a793f73cbbf279c91c5c", size = 170501, upload-time = "2025-12-06T00:17:52.211Z" },
 ]
 
 [[package]]
@@ -4969,18 +5138,6 @@ email = [
 ]
 
 [[package]]
-name = "pydantic-cli"
-version = "10.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/45/b383f86c77e9f38360f66253a223f127a74a58aa46e22e52011093f83b3a/pydantic_cli-10.0.0.tar.gz", hash = "sha256:1439d1db73664177c838ca1b90ae8eca19c65ce3b119a79a7b6c6f07cb79874a", size = 34984, upload-time = "2025-10-16T07:00:45.091Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/41/5262fca75b48906b03bd1e156b99330699b59a198b220051128a23917e9a/pydantic_cli-10.0.0-py3-none-any.whl", hash = "sha256:e3778aed1e412c9962812af6a11d92ba514df6266bd60835f843b6332dae6eed", size = 43076, upload-time = "2025-10-16T07:00:43.705Z" },
-]
-
-[[package]]
 name = "pydantic-core"
 version = "2.41.4"
 source = { registry = "https://pypi.org/simple" }
@@ -5047,6 +5204,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/95/03/1fd98d5841cd7964a27d729ccf2199602fe05eb7a405c1462eb7277945ed/pyee-13.0.0.tar.gz", hash = "sha256:b391e3c5a434d1f5118a25615001dbc8f669cf410ab67d04c4d4e07c55481c37", size = 31250, upload-time = "2025-03-17T18:53:15.955Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9b/4d/b9add7c84060d4c1906abe9a7e5359f2a60f7a9a4f67268b2766673427d8/pyee-13.0.0-py3-none-any.whl", hash = "sha256:48195a3cddb3b1515ce0695ed76036b5ccc2ef3a9f963ff9f77aec0139845498", size = 15730, upload-time = "2025-03-17T18:53:14.532Z" },
+]
+
+[[package]]
+name = "pyflakes"
+version = "3.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/dc/fd034dc20b4b264b3d015808458391acbf9df40b1e54750ef175d39180b1/pyflakes-3.4.0.tar.gz", hash = "sha256:b24f96fafb7d2ab0ec5075b7350b3d2d2218eab42003821c06344973d3ea2f58", size = 64669, upload-time = "2025-06-20T18:45:27.834Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c2/2f/81d580a0fb83baeb066698975cb14a618bdbed7720678566f1b046a95fe8/pyflakes-3.4.0-py2.py3-none-any.whl", hash = "sha256:f742a7dbd0d9cb9ea41e9a24a918996e8170c799fa528688d40dd582c8265f4f", size = 63551, upload-time = "2025-06-20T18:45:26.937Z" },
 ]
 
 [[package]]
@@ -5151,23 +5317,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/be/d6/2e3d168061e3b1075c4b487d753ff37bad02d28d0322837ebe36cd09383e/pynessie-0.67.0.tar.gz", hash = "sha256:cb46e072542e5978d4a27e2115294e3828414d1527fca70d84b6f0f585f6ac1a", size = 64988, upload-time = "2024-02-09T16:42:49.72Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/ed/c1422f7513a7d1d4dc2da6bc02707efa474c205935ad0e443c65e21b7c32/pynessie-0.67.0-py2.py3-none-any.whl", hash = "sha256:b1de9013f7c5a3ca5fa8ad179cf06cc3d81860b54a925f47968c363e21aa5bd2", size = 59536, upload-time = "2024-02-09T16:42:47.071Z" },
-]
-
-[[package]]
-name = "pynessie-gc"
-version = "0.1.0"
-source = { editable = "warehouse/pynessie-gc" }
-dependencies = [
-    { name = "aiotrino" },
-    { name = "asyncio" },
-    { name = "gcsfs" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiotrino", specifier = ">=0.2.3" },
-    { name = "asyncio", specifier = ">=3.4.3" },
-    { name = "gcsfs", specifier = ">=2024.12.0" },
 ]
 
 [[package]]
@@ -5875,16 +6024,16 @@ wheels = [
 
 [[package]]
 name = "s3fs"
-version = "2025.9.0"
+version = "2025.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiobotocore" },
     { name = "aiohttp" },
     { name = "fsspec" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/f3/8e6371436666aedfd16e63ff68a51b8a8fcf5f33a0eee33c35e0b2476b27/s3fs-2025.9.0.tar.gz", hash = "sha256:6d44257ef19ea64968d0720744c4af7a063a05f5c1be0e17ce943bef7302bc30", size = 77823, upload-time = "2025-09-02T19:18:21.781Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/26/fff848df6a76d6fec20208e61548244639c46a741e296244c3404d6e7df0/s3fs-2025.12.0.tar.gz", hash = "sha256:8612885105ce14d609c5b807553f9f9956b45541576a17ff337d9435ed3eb01f", size = 81217, upload-time = "2025-12-03T15:34:04.754Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/37/b3/ca7d58ca25b1bb6df57e6cbd0ca8d6437a4b9ce1cd35adc8a6b2949c113b/s3fs-2025.9.0-py3-none-any.whl", hash = "sha256:c33c93d48f66ed440dbaf6600be149cdf8beae4b6f8f0201a209c5801aeb7e30", size = 30319, upload-time = "2025-09-02T19:18:20.563Z" },
+    { url = "https://files.pythonhosted.org/packages/44/8c/04797ebb53748b4d594d4c334b2d9a99f2d2e06e19ad505f1313ca5d56eb/s3fs-2025.12.0-py3-none-any.whl", hash = "sha256:89d51e0744256baad7ae5410304a368ca195affd93a07795bc8ba9c00c9effbb", size = 30726, upload-time = "2025-12-03T15:34:03.576Z" },
 ]
 
 [[package]]
@@ -5904,11 +6053,20 @@ name = "scheduler"
 version = "0.1.0"
 source = { editable = "warehouse/scheduler" }
 dependencies = [
+    { name = "ariadne-codegen" },
+    { name = "dotenv" },
     { name = "duckdb" },
+    { name = "google-cloud-pubsub" },
+    { name = "httpx" },
+    { name = "oso-core" },
+    { name = "oso-dagster" },
+    { name = "osoprotobufs" },
     { name = "pandas" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "query-rewriter" },
     { name = "requests" },
     { name = "sqlmesh" },
 ]
@@ -5921,11 +6079,20 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "ariadne-codegen", specifier = ">=0.16.0" },
+    { name = "dotenv", specifier = ">=0.9.9" },
     { name = "duckdb", specifier = ">=1.4.1" },
+    { name = "google-cloud-pubsub", specifier = ">=2.33.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "oso-core", editable = "lib/oso-core" },
+    { name = "oso-dagster", editable = "warehouse/oso_dagster" },
+    { name = "osoprotobufs", editable = "lib/protobufs/python" },
     { name = "pandas", specifier = ">=1.2.0" },
     { name = "pydantic", specifier = ">=2.10.5" },
+    { name = "pydantic-settings", specifier = ">=2.11.0" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "query-rewriter", editable = "lib/query-rewriter" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "sqlmesh", specifier = ">=0.227.1" },
 ]

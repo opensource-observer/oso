@@ -10,6 +10,7 @@ import { datasetResolvers } from "@/app/api/v1/osograph/schema/resolvers/dataset
 import { dataModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/data-model";
 import { schedulerResolvers } from "@/app/api/v1/osograph/schema/resolvers/scheduler";
 import { systemResolvers } from "@/app/api/v1/osograph/schema/resolvers/system";
+import { staticModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/static-model";
 
 export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DateTime: DateTimeISOResolver,
@@ -22,6 +23,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
     ...notebookResolvers.Query,
     ...datasetResolvers.Query,
     ...dataModelResolvers.Query,
+    ...staticModelResolvers.Query,
     ...systemResolvers.Query,
   },
 
@@ -31,6 +33,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
     ...notebookResolvers.Mutation,
     ...datasetResolvers.Mutation,
     ...dataModelResolvers.Mutation,
+    ...staticModelResolvers.Mutation,
     ...schedulerResolvers.Mutation,
   },
 
@@ -42,9 +45,11 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   Notebook: notebookResolvers.Notebook,
   Dataset: datasetResolvers.Dataset,
   DataModelDefinition: datasetResolvers.DataModelDefinition,
+  StaticModelDefinition: datasetResolvers.StaticModelDefinition,
   DataModel: dataModelResolvers.DataModel,
   DataModelRevision: dataModelResolvers.DataModelRevision,
   DataModelRelease: dataModelResolvers.DataModelRelease,
+  StaticModel: staticModelResolvers.StaticModel,
   Run: schedulerResolvers.Run,
   Materialization: schedulerResolvers.Materialization,
   System: systemResolvers.System,

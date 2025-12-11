@@ -1,0 +1,108 @@
+mutation FinishRun(
+  $runId: ID!
+  $status: RunStatus!
+  $logsUrl: String!
+) {
+  finishRun(input: {runId: $runId, status: $status, logsUrl: $logsUrl}) {
+    success
+    message
+    run {
+      id
+    }
+  }
+}
+
+mutation StartStep(
+  $runId: ID!, 
+  $name: String!, 
+  $displayName: String!
+) {
+  startStep(input: {runId: $runId, name: $name, displayName: $displayName}) {
+    success
+    message
+    step {
+      id
+    }
+  }
+}
+
+mutation FinishStep(
+  $stepId: ID!, 
+  $status: StepStatus!, 
+  $logsUrl: String!
+) {
+  finishStep(input: {stepId: $stepId, status: $status, logsUrl: $logsUrl}) {
+    success
+    message
+    step {
+      id
+    }
+  }
+}
+
+query GetDataModels($datasetId: ID!) {
+  datasets(where: { id: { eq: $datasetId }}) {
+    edges {
+      node {
+        id
+        displayName
+        description
+        typeDefinition {
+          ... on DataModelDefinition {
+            orgId
+            datasetId
+            dataModels(where: { is_enabled: {eq: true}}) {
+              edges {
+                node {
+                  orgId
+                  createdAt
+                  isEnabled
+                  id
+                  latestRelease {
+                    id
+                    revision {
+                      name
+                      code
+                      dependsOn {
+                        alias
+                        tableId
+                      }
+                      hash
+                      kind
+                      kindOptions {
+                        timeColumn
+                        timeColumnFormat
+                        batchSize
+                        lookback
+                        uniqueKeyColumns
+                        whenMatchedSql
+                        mergeFilter
+                        validFromName
+                        validToName
+                        invalidateHardDeletes
+                        updatedAtColumn
+                        updatedAtAsValidFrom
+                        scdColumns
+                        executionTimeAsValidFrom
+                      }
+                      partitionedBy
+                      schema {
+                        name
+                        type
+                        description
+                      }
+                      start
+                      end
+                      clusteredBy
+                      language
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

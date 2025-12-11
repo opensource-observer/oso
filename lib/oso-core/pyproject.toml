@@ -8,6 +8,7 @@ authors = [{ name = "OSO Team", email = "opensource-observer@googlegroups.com" }
 dependencies = [
     "arrow<2.0.0",
     "orjson>=3.10.18",
+    "pydantic-settings>=2.11.0",
     "sqlmesh[trino]<1.0.0,>=0.141.1",
     "structlog>=25.4.0",
 ]
