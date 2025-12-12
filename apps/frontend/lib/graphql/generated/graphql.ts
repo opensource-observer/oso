@@ -3215,6 +3215,8 @@ export type Materialization = {
   run: Run;
   runId: Scalars["ID"]["output"];
   schema?: Maybe<Array<DataModelColumn>>;
+  step: Step;
+  stepId: Scalars["ID"]["output"];
 };
 
 export type MaterializationConnection = {
@@ -3369,6 +3371,8 @@ export type Mutation = {
   createDataset: CreateDatasetPayload;
   /** Create an invitation */
   createInvitation: CreateInvitationPayload;
+  /** System only. Create a materialization for a step */
+  createMaterialization: Materialization;
   /** Create a new notebook */
   createNotebook: CreateNotebookPayload;
   createStaticModel: CreateStaticModelPayload;
@@ -3531,6 +3535,13 @@ export type MutationCreateDatasetArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateInvitationArgs = {
   input: CreateInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateMaterializationArgs = {
+  datasetId: Scalars["ID"]["input"];
+  runId: Scalars["ID"]["input"];
+  schema: Array<DataModelColumnInput>;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -7219,7 +7230,6 @@ export type Run = PipelineRun &
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
     logsUrl?: Maybe<Scalars["String"]["output"]>;
-    materializations: MaterializationConnection;
     mode: Scalars["String"]["output"];
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
     parentRunId?: Maybe<Scalars["String"]["output"]>;
@@ -8152,6 +8162,7 @@ export type Step = {
   finishedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
   id: Scalars["ID"]["output"];
   logsUrl: Scalars["String"]["output"];
+  materializations: MaterializationConnection;
   name: Scalars["String"]["output"];
   run: Run;
   runId: Scalars["ID"]["output"];
