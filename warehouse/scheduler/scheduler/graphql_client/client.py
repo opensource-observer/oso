@@ -104,66 +104,77 @@ class Client(AsyncBaseClient):
               datasets(where: {id: {eq: $datasetId}}) {
                 edges {
                   node {
-                    id
-                    displayName
-                    description
+                    ...DatasetCommon
                     typeDefinition {
                       __typename
                       ... on DataModelDefinition {
-                        orgId
-                        datasetId
                         dataModels(where: {is_enabled: {eq: true}}) {
-                          edges {
-                            node {
-                              orgId
-                              createdAt
-                              isEnabled
-                              id
-                              latestRelease {
-                                id
-                                revision {
-                                  name
-                                  code
-                                  dependsOn {
-                                    alias
-                                    tableId
-                                  }
-                                  hash
-                                  kind
-                                  kindOptions {
-                                    timeColumn
-                                    timeColumnFormat
-                                    batchSize
-                                    lookback
-                                    uniqueKeyColumns
-                                    whenMatchedSql
-                                    mergeFilter
-                                    validFromName
-                                    validToName
-                                    invalidateHardDeletes
-                                    updatedAtColumn
-                                    updatedAtAsValidFrom
-                                    scdColumns
-                                    executionTimeAsValidFrom
-                                  }
-                                  partitionedBy
-                                  schema {
-                                    name
-                                    type
-                                    description
-                                  }
-                                  start
-                                  end
-                                  clusteredBy
-                                  language
-                                }
-                              }
-                            }
-                          }
+                          ...DataModels
                         }
                       }
                     }
                   }
+                }
+              }
+            }
+
+            fragment DataModels on DataModelConnection {
+              edges {
+                node {
+                  ...LatestDataModel
+                }
+              }
+            }
+
+            fragment DatasetCommon on Dataset {
+              id
+              orgId
+              displayName
+              description
+            }
+
+            fragment LatestDataModel on DataModel {
+              id
+              orgId
+              isEnabled
+              createdAt
+              latestRelease {
+                id
+                revision {
+                  name
+                  code
+                  dependsOn {
+                    alias
+                    tableId
+                  }
+                  hash
+                  kind
+                  kindOptions {
+                    timeColumn
+                    timeColumnFormat
+                    batchSize
+                    lookback
+                    uniqueKeyColumns
+                    whenMatchedSql
+                    mergeFilter
+                    validFromName
+                    validToName
+                    invalidateHardDeletes
+                    updatedAtColumn
+                    updatedAtAsValidFrom
+                    scdColumns
+                    executionTimeAsValidFrom
+                  }
+                  partitionedBy
+                  schema {
+                    name
+                    type
+                    description
+                  }
+                  start
+                  end
+                  clusteredBy
+                  language
                 }
               }
             }

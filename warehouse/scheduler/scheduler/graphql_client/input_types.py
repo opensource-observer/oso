@@ -156,16 +156,17 @@ class CreateUserModelRunRequestInput(BaseModel):
     selected_models: Optional[List[str]] = Field(alias="selectedModels", default=None)
 
 
-class CreateDataIngestionRunRequest(BaseModel):
+class CreateDataIngestionRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
 
 
-class CreateDataConnectorRunRequest(BaseModel):
+class CreateDataConnectorRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
 
 
-class CreateStaticModelRunRequest(BaseModel):
+class CreateStaticModelRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
+    selected_models: Optional[List[str]] = Field(alias="selectedModels", default=None)
 
 
 class CancelRunInput(BaseModel):
