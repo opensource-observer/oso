@@ -1,6 +1,7 @@
 import abc
 import typing as t
 
+import structlog
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
 from oso_core.resources import ResourcesContext
@@ -27,6 +28,14 @@ class SchemaRetreiver(abc.ABC):
             A dictionary mapping column names to their data types.
         """
         raise NotImplementedError("get_table_schema must be implemented by subclasses.")
+
+
+class Materialization(BaseModel):
+    """A materialization of a model."""
+
+    model_id: str
+    table_name: str
+    database_name: str
 
 
 class Model(BaseModel):
@@ -147,6 +156,34 @@ class UserDefinedModelStateClient(abc.ABC):
 
 
 T = t.TypeVar("T", bound=Message)
+
+
+class StepContext(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def log(self) -> structlog.BoundLogger:
+        """A logger for the message handler context."""
+        raise NotImplementedError("log must be implemented by subclasses.")
+
+    @abc.abstractmethod
+    def add_materialization(self) -> None:
+        """A method to add a materialization to the step context."""
+        raise NotImplementedError(
+            "add_materialization must be implemented by subclasses."
+        )
+
+
+class RunContext(abc.ABC):
+    @abc.abstractmethod
+    def step_context(self) -> t.AsyncContextManager["RunContext"]:
+        """An async context manager for the message handler context."""
+        raise NotImplementedError("step_context must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def log(self) -> structlog.BoundLogger:
+        """A logger for the message handler context."""
+        raise NotImplementedError("log must be implemented by subclasses.")
 
 
 class MessageHandler(abc.ABC, t.Generic[T]):

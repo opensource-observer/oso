@@ -53,5 +53,7 @@ class DataModelRunRequestHandler(MessageHandler[DataModelRunRequest]):
             f"Selected {len(selected_models)} models to run for dataset {message.dataset_id}"
         )
 
+        # For each selected model, run the evaluation
+
         # Turn the model into the scheduler's Model Type so we can run the evaluation
         # TODO Run each selected model in a DAG

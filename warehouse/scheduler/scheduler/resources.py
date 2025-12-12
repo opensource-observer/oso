@@ -130,7 +130,10 @@ def scheduler_evaluator_factory(
 def oso_client_factory(common_settings: "CommonSettings") -> OSOClient:
     """Factory function to create an OSO client."""
     # For now, return None as a placeholder.
-    return OSOClient(url=common_settings.oso_api_url)
+    return OSOClient(
+        url=common_settings.oso_api_url,
+        headers={"x-system-credentials": common_settings.oso_system_api_key},
+    )
 
 
 @resource_factory("message_handler_registry")
