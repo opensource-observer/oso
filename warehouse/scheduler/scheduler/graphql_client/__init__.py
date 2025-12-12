@@ -3,6 +3,11 @@
 from .async_base_client import AsyncBaseClient
 from .base_model import BaseModel, Upload
 from .client import Client
+from .create_materialization import (
+    CreateMaterialization,
+    CreateMaterializationCreateMaterialization,
+    CreateMaterializationCreateMaterializationMaterialization,
+)
 from .enums import (
     DataModelKind,
     DatasetType,
@@ -56,6 +61,7 @@ from .input_types import (
     CreateDataModelRevisionInput,
     CreateDatasetInput,
     CreateInvitationInput,
+    CreateMaterializationInput,
     CreateNotebookInput,
     CreateStaticModelInput,
     CreateStaticModelRunRequestInput,
@@ -76,6 +82,7 @@ from .input_types import (
     UpdateNotebookInput,
     UpdateStaticModelInput,
 )
+from .start_run import StartRun, StartRunStartRun
 from .start_step import StartStep, StartStepStartStep, StartStepStartStepStep
 
 __all__ = [
@@ -92,6 +99,10 @@ __all__ = [
     "CreateDataModelRevisionInput",
     "CreateDatasetInput",
     "CreateInvitationInput",
+    "CreateMaterialization",
+    "CreateMaterializationCreateMaterialization",
+    "CreateMaterializationCreateMaterializationMaterialization",
+    "CreateMaterializationInput",
     "CreateNotebookInput",
     "CreateStaticModelInput",
     "CreateStaticModelRunRequestInput",
@@ -141,7 +152,9 @@ __all__ = [
     "RunTriggerType",
     "RunType",
     "SaveNotebookPreviewInput",
+    "StartRun",
     "StartRunInput",
+    "StartRunStartRun",
     "StartStep",
     "StartStepInput",
     "StartStepStartStep",
