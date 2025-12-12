@@ -1,0 +1,21 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-scheduler
+spec:
+  postRenderers:
+    - kustomize:
+        images:
+          - name: ghcr.io/opensource-observer/oso
+            newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+            newTag: deploy-20251211062302-5108f2c # {"$imagepolicy": "flux-system:oso:tag"}
+  values:
+    app:
+      name: "oso-scheduler-data-model"
+      args:
+        - run
+        - --directory
+        - warehouse/scheduler
+        - scheduler
+        - run
+        - data_model_run_request
