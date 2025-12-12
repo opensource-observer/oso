@@ -3539,9 +3539,8 @@ export type MutationCreateInvitationArgs = {
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateMaterializationArgs = {
-  datasetId: Scalars["ID"]["input"];
-  runId: Scalars["ID"]["input"];
   schema: Array<DataModelColumnInput>;
+  stepId: Scalars["ID"]["input"];
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -7255,6 +7254,7 @@ export type Run = PipelineRun &
     status: RunStatus;
     stepKeysToExecute?: Maybe<Array<Scalars["String"]["output"]>>;
     stepStats: Array<RunStepStats>;
+    steps: StepConnection;
     tags: Array<PipelineTag>;
     triggerType: RunTriggerType;
     updateTime?: Maybe<Scalars["Float"]["output"]>;
@@ -8168,6 +8168,19 @@ export type Step = {
   runId: Scalars["ID"]["output"];
   startedAt: Scalars["DateTimeISO"]["output"];
   status: StepStatus;
+};
+
+export type StepConnection = {
+  __typename?: "StepConnection";
+  edges: Array<StepEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type StepEdge = {
+  __typename?: "StepEdge";
+  cursor: Scalars["String"]["output"];
+  node: Step;
 };
 
 export type StepEvent = {
