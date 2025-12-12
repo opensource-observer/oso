@@ -1,15 +1,20 @@
 import abc
+import logging
 import typing as t
 
 import structlog
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
 from oso_core.resources import ResourcesContext
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from scheduler.graphql_client.create_materialization import CreateMaterialization
+from scheduler.graphql_client.input_types import DataModelColumnInput
 from sqlglot import exp, parse_one
 from sqlglot.optimizer.qualify_columns import qualify_columns
 from sqlglot.optimizer.scope import build_scope
 from sqlmesh.core import dialect as sqlmesh_dialect
+
+logger = structlog.getLogger(__name__)
 
 
 class SchemaRetreiver(abc.ABC):
@@ -30,14 +35,6 @@ class SchemaRetreiver(abc.ABC):
         raise NotImplementedError("get_table_schema must be implemented by subclasses.")
 
 
-class Materialization(BaseModel):
-    """A materialization of a model."""
-
-    model_id: str
-    table_name: str
-    database_name: str
-
-
 class Model(BaseModel):
     """User defined model
 
@@ -45,11 +42,9 @@ class Model(BaseModel):
     """
 
     org_id: str
-    org_name: str
     id: str
     name: str
     dataset_id: str
-    dataset_name: str
     language: str
     code: str
 
@@ -161,29 +156,55 @@ T = t.TypeVar("T", bound=Message)
 class StepContext(abc.ABC):
     @property
     @abc.abstractmethod
-    def log(self) -> structlog.BoundLogger:
+    def log(self) -> logging.Logger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
 
     @abc.abstractmethod
-    def add_materialization(self) -> None:
+    async def create_materialization(
+        self, table_id: str, warehouse_fqn: str, schema: list[DataModelColumnInput]
+    ) -> CreateMaterialization:
         """A method to add a materialization to the step context."""
         raise NotImplementedError(
             "add_materialization must be implemented by subclasses."
         )
 
+    @property
+    @abc.abstractmethod
+    def step_id(self) -> str:
+        """The ID of the current step."""
+        raise NotImplementedError("step_id must be implemented by subclasses.")
+
 
 class RunContext(abc.ABC):
     @abc.abstractmethod
-    def step_context(self) -> t.AsyncContextManager["RunContext"]:
+    def step_context(
+        self, name: str, display_name: str
+    ) -> t.AsyncContextManager[StepContext]:
         """An async context manager for the message handler context."""
         raise NotImplementedError("step_context must be implemented by subclasses.")
 
     @property
     @abc.abstractmethod
-    def log(self) -> structlog.BoundLogger:
+    def log(self) -> logging.Logger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
+
+
+class HandlerResponse(BaseModel):
+    message: str
+
+
+class SkipResponse(HandlerResponse):
+    message: str = Field(default="Skipped processing the message.")
+
+
+class FailedResponse(HandlerResponse):
+    message: str = Field(default="Failed to process the message.")
+
+
+class SuccessResponse(HandlerResponse):
+    message: str = Field(default="Successfully processed the message.")
 
 
 class MessageHandler(abc.ABC, t.Generic[T]):
@@ -191,8 +212,9 @@ class MessageHandler(abc.ABC, t.Generic[T]):
     message_type: t.Type[T]
     schema_file_name: str
 
-    @abc.abstractmethod
-    async def handle_message(self, *, message: T, **kwargs) -> None: ...
+    async def handle_message(self, *args, **kwargs) -> HandlerResponse:
+        """A method to handle incoming messages"""
+        raise NotImplementedError("handle_message must be implemented by subclasses.")
 
     def new_message(self) -> T:
         """A method to create a new message instance"""
