@@ -20,6 +20,7 @@ from oso_dagster.resources.udm_state import (
 )
 from scheduler.evaluator import UserDefinedModelEvaluator
 from scheduler.graphql_client.client import Client as OSOClient
+from scheduler.mq.handlers.data_ingestion import DataIngestionRunRequestHandler
 from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
@@ -138,6 +139,7 @@ def message_handler_registry_factory() -> MessageHandlerRegistry:
     """Factory function to create a message handler registry."""
     registry = MessageHandlerRegistry()
     registry.register(DataModelRunRequestHandler())
+    registry.register(DataIngestionRunRequestHandler())
     return registry
 
 
