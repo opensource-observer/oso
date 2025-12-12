@@ -14,6 +14,7 @@ import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
+  CreateDataIngestionRunRequestSchema,
   CreateUserModelRunRequestSchema,
   MaterializationWhereSchema,
   StepWhereSchema,
@@ -32,6 +33,7 @@ import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { createQueueService } from "@/lib/services/queue";
 import { DataModelRunRequest } from "@opensource-observer/osoprotobufs/data-model";
+import { DataIngestionRunRequest } from "@opensource-observer/osoprotobufs/data-ingestion";
 import { ProtobufEncoder, ProtobufMessage } from "@/lib/services/queue/types";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
@@ -185,6 +187,40 @@ export const schedulerResolvers = {
           modelReleaseIds: input.selectedModels || [],
         };
         return message;
+      },
+    }),
+
+    createDataIngestionRunRequest: genericRunRequestResolver({
+      queueName: "data_ingestion_run_requests",
+      inputSchema: CreateDataIngestionRunRequestSchema,
+      encoder: DataIngestionRunRequest,
+      queueMessageFactory: async (input, _user, dataset, run) => {
+        const supabase = createAdminClient();
+        const { data: config, error: configError } = await supabase
+          .from("data_ingestions")
+          .select("*")
+          .eq("id", input.configId)
+          .eq("dataset_id", input.datasetId)
+          .single();
+
+        if (configError || !config) {
+          logger.error(
+            `Error fetching config with id ${input.configId}: ${configError?.message}`,
+          );
+          throw ResourceErrors.notFound("Config not found");
+        }
+
+        const runIdBuffer = Buffer.from(run.id.replace(/-/g, ""), "hex");
+        const configIdBuffer = Buffer.from(
+          input.configId.replace(/-/g, ""),
+          "hex",
+        );
+
+        return {
+          runId: new Uint8Array(runIdBuffer),
+          datasetId: dataset.id,
+          configId: new Uint8Array(configIdBuffer),
+        } satisfies DataIngestionRunRequest;
       },
     }),
   },
