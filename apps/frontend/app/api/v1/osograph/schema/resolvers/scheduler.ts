@@ -280,7 +280,7 @@ export const schedulerResolvers = {
       }
     },
     materializations: (
-      parent: RunRow,
+      parent: StepRow,
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
