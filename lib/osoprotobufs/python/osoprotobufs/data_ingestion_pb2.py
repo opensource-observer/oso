@@ -20,7 +20,7 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x14\x64\x61ta-ingestion.proto"=\n\x17\x44\x61taIngestionRunRequest\x12\x0e\n\x06run_id\x18\x01 \x01(\x0c\x12\x12\n\ndataset_id\x18\x02 \x01(\tb\x06proto3'
+    b'\n\x14\x64\x61ta-ingestion.proto"P\n\x17\x44\x61taIngestionRunRequest\x12\x0e\n\x06run_id\x18\x01 \x01(\x0c\x12\x12\n\ndataset_id\x18\x02 \x01(\t\x12\x11\n\tconfig_id\x18\x03 \x01(\x0c\x62\x06proto3'
 )
 
 _globals = globals()
@@ -29,5 +29,5 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "data_ingestion_pb2", _globa
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
     _globals["_DATAINGESTIONRUNREQUEST"]._serialized_start = 24
-    _globals["_DATAINGESTIONRUNREQUEST"]._serialized_end = 85
+    _globals["_DATAINGESTIONRUNREQUEST"]._serialized_end = 104
 # @@protoc_insertion_point(module_scope)
