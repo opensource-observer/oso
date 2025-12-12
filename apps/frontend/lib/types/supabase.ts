@@ -206,6 +206,44 @@ export type Database = {
           },
         ];
       };
+      data_ingestions: {
+        Row: {
+          config: Json;
+          created_at: string;
+          dataset_id: string;
+          deleted_at: string | null;
+          factory_type: string;
+          id: string;
+          updated_at: string;
+        };
+        Insert: {
+          config: Json;
+          created_at?: string;
+          dataset_id: string;
+          deleted_at?: string | null;
+          factory_type: string;
+          id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          config?: Json;
+          created_at?: string;
+          dataset_id?: string;
+          deleted_at?: string | null;
+          factory_type?: string;
+          id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "data_ingestions_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       datasets: {
         Row: {
           created_at: string;

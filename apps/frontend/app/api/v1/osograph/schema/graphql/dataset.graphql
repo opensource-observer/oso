@@ -69,6 +69,21 @@ type StaticModelDefinition {
   ): StaticModelConnection!
 }
 
+type DataIngestion {
+  orgId: ID!
+  datasetId: ID!
+  """
+  If the dataset is of type DATA_INGESTION, this field will contain the list of data ingestion configs
+  associated with the dataset. Otherwise it will be an empty list.
+  """
+  configs(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataIngestionConfigConnection!
+}
+
 type DatasetEdge {
   node: Dataset!
   cursor: String!

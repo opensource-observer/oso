@@ -273,6 +273,46 @@ export const connectorRelationshipsRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const dataIngestionsRowSchema = z.object({
+  config: jsonSchema,
+  created_at: z.string(),
+  dataset_id: z.string(),
+  deleted_at: z.string().nullable(),
+  factory_type: z.string(),
+  id: z.string(),
+  updated_at: z.string(),
+});
+
+export const dataIngestionsInsertSchema = z.object({
+  config: jsonSchema,
+  created_at: z.string().optional(),
+  dataset_id: z.string(),
+  deleted_at: z.string().optional().nullable(),
+  factory_type: z.string(),
+  id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const dataIngestionsUpdateSchema = z.object({
+  config: jsonSchema.optional(),
+  created_at: z.string().optional(),
+  dataset_id: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  factory_type: z.string().optional(),
+  id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const dataIngestionsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("data_ingestions_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const datasetsRowSchema = z.object({
   created_at: z.string(),
   created_by: z.string(),

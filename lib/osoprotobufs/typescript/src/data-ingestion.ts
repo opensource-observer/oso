@@ -13,10 +13,15 @@ export const protobufPackage = "";
 export interface DataIngestionRunRequest {
   runId: Uint8Array;
   datasetId: string;
+  configId: Uint8Array;
 }
 
 function createBaseDataIngestionRunRequest(): DataIngestionRunRequest {
-  return { runId: new Uint8Array(0), datasetId: "" };
+  return {
+    runId: new Uint8Array(0),
+    datasetId: "",
+    configId: new Uint8Array(0),
+  };
 }
 
 export const DataIngestionRunRequest: MessageFns<DataIngestionRunRequest> = {
@@ -29,6 +34,9 @@ export const DataIngestionRunRequest: MessageFns<DataIngestionRunRequest> = {
     }
     if (message.datasetId !== "") {
       writer.uint32(18).string(message.datasetId);
+    }
+    if (message.configId.length !== 0) {
+      writer.uint32(26).bytes(message.configId);
     }
     return writer;
   },
@@ -60,6 +68,14 @@ export const DataIngestionRunRequest: MessageFns<DataIngestionRunRequest> = {
           message.datasetId = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.configId = reader.bytes();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -77,6 +93,9 @@ export const DataIngestionRunRequest: MessageFns<DataIngestionRunRequest> = {
       datasetId: isSet(object.datasetId)
         ? globalThis.String(object.datasetId)
         : "",
+      configId: isSet(object.configId)
+        ? bytesFromBase64(object.configId)
+        : new Uint8Array(0),
     };
   },
 
@@ -87,6 +106,9 @@ export const DataIngestionRunRequest: MessageFns<DataIngestionRunRequest> = {
     }
     if (message.datasetId !== "") {
       obj.datasetId = message.datasetId;
+    }
+    if (message.configId.length !== 0) {
+      obj.configId = base64FromBytes(message.configId);
     }
     return obj;
   },
@@ -102,6 +124,7 @@ export const DataIngestionRunRequest: MessageFns<DataIngestionRunRequest> = {
     const message = createBaseDataIngestionRunRequest();
     message.runId = object.runId ?? new Uint8Array(0);
     message.datasetId = object.datasetId ?? "";
+    message.configId = object.configId ?? new Uint8Array(0);
     return message;
   },
 };

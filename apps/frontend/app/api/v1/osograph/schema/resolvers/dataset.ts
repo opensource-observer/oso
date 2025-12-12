@@ -253,8 +253,13 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             org_id: parent.org_id,
             dataset_id: parent.id,
           };
-        case "DATA_CONNECTOR":
         case "DATA_INGESTION":
+          return {
+            __typename: "DataIngestion",
+            org_id: parent.org_id,
+            dataset_id: parent.id,
+          };
+        case "DATA_CONNECTOR":
           throw new Error(
             `Dataset type "${parent.dataset_type}" is not supported yet.`,
           );
@@ -297,11 +302,20 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
               eq: [{ key: "dataset_id", value: parent.id }],
             },
           });
-        case "DATA_CONNECTOR":
         case "DATA_INGESTION":
-          throw new Error(
-            `Dataset type "${parent.dataset_type}" is not supported yet.`,
-          );
+        case "DATA_CONNECTOR":
+          // DATA_INGESTION and DATA_CONNECTOR datasets don't have table metadata
+          // Tables are created dynamically by ingestion jobs
+          return {
+            edges: [],
+            pageInfo: {
+              hasNextPage: false,
+              hasPreviousPage: false,
+              startCursor: null,
+              endCursor: null,
+            },
+            totalCount: 0,
+          };
         default:
           assertNever(
             parent.dataset_type,

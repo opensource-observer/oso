@@ -48,6 +48,18 @@ export type ConnectorRelationshipsUpdate = z.infer<
 export type ConnectorRelationshipsRelationships = z.infer<
   typeof generated.connectorRelationshipsRelationshipsSchema
 >;
+export type DataIngestionsRow = z.infer<
+  typeof generated.dataIngestionsRowSchema
+>;
+export type DataIngestionsInsert = z.infer<
+  typeof generated.dataIngestionsInsertSchema
+>;
+export type DataIngestionsUpdate = z.infer<
+  typeof generated.dataIngestionsUpdateSchema
+>;
+export type DataIngestionsRelationships = z.infer<
+  typeof generated.dataIngestionsRelationshipsSchema
+>;
 export type DatasetsRow = z.infer<typeof generated.datasetsRowSchema>;
 export type DatasetsInsert = z.infer<typeof generated.datasetsInsertSchema>;
 export type DatasetsUpdate = z.infer<typeof generated.datasetsUpdateSchema>;
