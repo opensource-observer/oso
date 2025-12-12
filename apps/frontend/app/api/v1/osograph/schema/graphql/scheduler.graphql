@@ -42,7 +42,6 @@ type Run {
   finishedAt: DateTime
   status: RunStatus!
   logsUrl: String
-  materializations: MaterializationConnection!
 }
 
 type RunEdge {
@@ -66,12 +65,15 @@ type Step {
   startedAt: DateTime!
   finishedAt: DateTime
   status: StepStatus!
+  materializations: MaterializationConnection!
 }
 
 type Materialization {
   id: ID!
   runId: ID!
   run: Run!
+  stepId: ID!
+  step: Step!
   datasetId: ID!
   createdAt: DateTime!
   schema: [DataModelColumn!]
@@ -164,6 +166,15 @@ extend type Mutation {
   System only. Mark a step as finished
   """
   finishStep(input: FinishStepInput!): FinishStepPayload!
+
+  """
+  System only. Create a materialization for a step
+  """
+  createMaterialization(
+    runId: ID!
+    datasetId: ID!
+    schema: [DataModelColumnInput!]!
+  ): Materialization!
 }
 
 input CreateUserModelRunRequestInput {
