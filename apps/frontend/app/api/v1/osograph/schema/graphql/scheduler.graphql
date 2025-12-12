@@ -42,6 +42,7 @@ type Run {
   finishedAt: DateTime
   status: RunStatus!
   logsUrl: String
+  steps: StepConnection!
 }
 
 type RunEdge {
@@ -66,6 +67,17 @@ type Step {
   finishedAt: DateTime
   status: StepStatus!
   materializations: MaterializationConnection!
+}
+
+type StepEdge {
+  node: Step!
+  cursor: String!
+}
+
+type StepConnection {
+  edges: [StepEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
 }
 
 type Materialization {
@@ -171,8 +183,7 @@ extend type Mutation {
   System only. Create a materialization for a step
   """
   createMaterialization(
-    runId: ID!
-    datasetId: ID!
+    stepId: ID!
     schema: [DataModelColumnInput!]!
   ): Materialization!
 }
