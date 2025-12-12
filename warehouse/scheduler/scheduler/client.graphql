@@ -81,6 +81,7 @@ fragment LatestDataModel on DataModel {
     id
     revision {
       name
+      description
       code
       dependsOn {
         alias
