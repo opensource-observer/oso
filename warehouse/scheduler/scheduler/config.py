@@ -60,6 +60,9 @@ class CommonSettings(BaseSettings):
     oso_api_url: str = Field(
         description="URL for the OSO API GraphQL endpoint",
     )
+    oso_system_api_key: str = Field(
+        description="API key for authenticating with the OSO system",
+    )
 
     @model_validator(mode="after")
     def handle_generated_config(self):
@@ -92,6 +95,25 @@ class Run(BaseSettings):
         )
 
         await message_queue_service.run_loop(self.queue)
+
+
+class CreateSystemJWTSecret(BaseSettings):
+    """Subcommand to create a system JWT secret in the OSO system"""
+
+    oso_jwt_secret: str = Field(
+        description="The JWT secret to set in the OSO system",
+    )
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        import jwt
+
+        payload = {
+            "iss": "opensource-observer",
+            "aud": "opensource-observer",
+            "source": "whatgoeshere",
+        }
+        token = jwt.encode(payload, self.oso_jwt_secret, algorithm="HS256")
+        print(f"Generated JWT Token:\n   {token}")
 
 
 def ensure_topic_subscription(
@@ -231,6 +253,7 @@ class Testing(BaseSettings):
     """Subcommand to run tests for the async worker"""
 
     publish: CliSubCommand[Publish]
+    create_system_jwt_secret: CliSubCommand[CreateSystemJWTSecret]
 
     async def cli_cmd(self, context: CliContext) -> None:
         # Here you would implement actual test running logic

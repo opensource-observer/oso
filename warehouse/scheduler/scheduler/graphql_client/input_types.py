@@ -156,16 +156,17 @@ class CreateUserModelRunRequestInput(BaseModel):
     selected_models: Optional[List[str]] = Field(alias="selectedModels", default=None)
 
 
-class CreateDataIngestionRunRequest(BaseModel):
+class CreateDataIngestionRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
 
 
-class CreateDataConnectorRunRequest(BaseModel):
+class CreateDataConnectorRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
 
 
-class CreateStaticModelRunRequest(BaseModel):
+class CreateStaticModelRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
+    selected_models: Optional[List[str]] = Field(alias="selectedModels", default=None)
 
 
 class CancelRunInput(BaseModel):
@@ -194,6 +195,13 @@ class FinishStepInput(BaseModel):
     logs_url: str = Field(alias="logsUrl")
 
 
+class CreateMaterializationInput(BaseModel):
+    step_id: str = Field(alias="stepId")
+    table_id: str = Field(alias="tableId")
+    warehouse_fqn: str = Field(alias="warehouseFqn")
+    schema_: List["DataModelColumnInput"] = Field(alias="schema")
+
+
 class CreateStaticModelInput(BaseModel):
     org_id: str = Field(alias="orgId")
     dataset_id: str = Field(alias="datasetId")
@@ -206,3 +214,4 @@ class UpdateStaticModelInput(BaseModel):
 
 
 CreateDataModelRevisionInput.model_rebuild()
+CreateMaterializationInput.model_rebuild()

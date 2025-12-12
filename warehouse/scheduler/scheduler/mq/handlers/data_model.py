@@ -1,30 +1,60 @@
 import structlog
+from oso_dagster.resources.udm_engine_adapter import (
+    UserDefinedModelEngineAdapterResource,
+)
 from osoprotobufs.data_model_pb2 import DataModelRunRequest
 from scheduler.graphql_client.client import Client
+from scheduler.graphql_client.fragments import DataModelsEdgesNode
 from scheduler.graphql_client.get_data_models import (
     GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition,
 )
-from scheduler.types import MessageHandler
+from scheduler.graphql_client.input_types import DataModelColumnInput
+from scheduler.mq.common import RunHandler
+from scheduler.types import HandlerResponse, Model, RunContext, SuccessResponse
+from sqlglot import exp
 
 logger = structlog.getLogger(__name__)
 
 
-class DataModelRunRequestHandler(MessageHandler[DataModelRunRequest]):
+def convert_model_to_scheduler_model(dataset_id: str):
+    """Convert a data model from the UDM client to the scheduler's Model type."""
+
+    def _convert(raw: DataModelsEdgesNode) -> "Model":
+        # Placeholder conversion logic
+
+        latest_release = raw.latest_release
+        assert latest_release is not None, "Model must have a latest release"
+
+        revision = latest_release.revision
+
+        return Model(
+            id=raw.id,
+            org_id=raw.org_id,
+            dataset_id=dataset_id,
+            name=revision.name,
+            code=revision.code,
+            language=revision.language,
+        )
+
+    return _convert
+
+
+class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
     topic = "data_model_run_requests"
     message_type = DataModelRunRequest
     schema_file_name = "data-model.proto"
 
-    async def handle_message(
+    async def handle_run_message(
         self,
-        *,
+        context: RunContext,
         message: DataModelRunRequest,
+        udm_engine_adapter: UserDefinedModelEngineAdapterResource,
         oso_client: Client,
-        **kwargs,
-    ) -> None:
+    ) -> HandlerResponse:
         # Process the DataModelRunRequest message
-        print(f"Handling DataModelRunRequest with ID: {message.run_id}")
+        context.log.info(f"Handling DataModelRunRequest with ID: {message.run_id}")
 
-        # Pull the model using the UDM client
+        # Pull the model using the OSO client
         dataset_and_models = await oso_client.get_data_models(message.dataset_id)
 
         dataset = dataset_and_models.datasets.edges[0]
@@ -34,6 +64,9 @@ class DataModelRunRequestHandler(MessageHandler[DataModelRunRequest]):
 
         # If no specific models are provided, run all models in the dataset
         data_model_def = dataset.node.type_definition
+
+        org_id = dataset.node.org_id
+        dataset_id = dataset.node.id
 
         assert isinstance(
             data_model_def,
@@ -49,9 +82,73 @@ class DataModelRunRequestHandler(MessageHandler[DataModelRunRequest]):
                 if edge.node.id in selected_model_release_ids
             ]
 
-        print(
+        # Remove models with no latest release
+        models_with_release = [
+            model for model in selected_models if model.latest_release is not None
+        ]
+
+        # Convert models into the scheduler's Model Type so we can run the evaluation
+        converted_models = list(
+            map(
+                convert_model_to_scheduler_model(dataset_id=message.dataset_id),
+                models_with_release,
+            )
+        )
+
+        context.log.info(
             f"Selected {len(selected_models)} models to run for dataset {message.dataset_id}"
         )
 
-        # Turn the model into the scheduler's Model Type so we can run the evaluation
-        # TODO Run each selected model in a DAG
+        if len(converted_models) == 0:
+            context.log.info("No models to run, skipping evaluation.")
+            return SuccessResponse(
+                message=f"No models to run for DataModelRunRequest with ID: {message.run_id}"
+            )
+
+        async with udm_engine_adapter.get_adapter() as adapter:
+            for model in converted_models:
+                async with context.step_context(
+                    name=f"evaluate_model_{model.name}",
+                    display_name=f"Evaluate Model {model.name}",
+                ) as step_context:
+                    step_context.log.info(f"Starting evaluation for model {model.name}")
+
+                    logger.info(model.ctas_query())
+
+                    target_table = udm_engine_adapter.generate_table(
+                        org_id, dataset_id, model.id
+                    )
+                    if not target_table.catalog:
+                        current_catalog = adapter.get_current_catalog()
+                        target_table = exp.to_table(
+                            f"{current_catalog}.{target_table.db}.{target_table.name}"
+                        )
+
+                    adapter.create_schema(
+                        f"{target_table.catalog}.{target_table.db}",
+                        ignore_if_exists=True,
+                    )
+
+                    adapter.ctas(
+                        table_name=target_table,
+                        query_or_df=model.ctas_query(),
+                        exists=True,
+                    )
+
+                    adapter.insert_append(
+                        table_name=target_table,
+                        query_or_df=model.query,
+                    )
+
+                    # Add a materialization
+                    schema: list[DataModelColumnInput] = [
+                        DataModelColumnInput(name="col1", type="STRING"),
+                    ]
+                    await step_context.create_materialization(
+                        table_id=model.id,
+                        warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
+                        schema=schema,
+                    )
+        return SuccessResponse(
+            message=f"Processed DataModelRunRequest with ID: {message.run_id}"
+        )

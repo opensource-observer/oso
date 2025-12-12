@@ -5,7 +5,13 @@ from google.cloud.pubsub_v1.subscriber.message import Message
 from google.protobuf.message import Message as ProtobufMessage
 from oso_core.asynctools import safe_run_until_complete
 from oso_core.resources import ResourcesContext
-from scheduler.types import GenericMessageQueueService, MessageHandlerRegistry
+from scheduler.types import (
+    FailedResponse,
+    GenericMessageQueueService,
+    MessageHandlerRegistry,
+    SkipResponse,
+    SuccessResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +49,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 raw_message.ack()
                 return
 
-            safe_run_until_complete(
+            response = safe_run_until_complete(
                 self.resources.run(
                     handler.handle_message,
                     additional_inject={
@@ -51,7 +57,18 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                     },
                 )
             )
-            raw_message.ack()
+            match response:
+                case SkipResponse():
+                    logger.info("Skipping message processing as per handler response.")
+                    raw_message.ack()
+                case FailedResponse():
+                    raw_message.ack()
+                case SuccessResponse():
+                    raw_message.ack()
+                case _:
+                    logger.warning(
+                        f"Unhandled response type {type(response)} from message handler."
+                    )
 
         subscriber = SubscriberClient()
         subscription_path = subscriber.subscription_path(self.project_id, queue)
