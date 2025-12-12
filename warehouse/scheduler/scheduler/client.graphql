@@ -1,3 +1,9 @@
+mutation StartRun($runId: ID!) {
+  startRun(input: {runId: $runId}) {
+    success
+  }
+}
+
 mutation FinishRun(
   $runId: ID!
   $status: RunStatus!
@@ -35,6 +41,25 @@ mutation FinishStep(
     success
     message
     step {
+      id
+    }
+  }
+}
+
+mutation CreateMaterialization(
+  $stepId: ID!
+  $tableId: ID!
+  $warehouseFqn: String!
+  $schema: [DataModelColumnInput!]!
+) {
+  createMaterialization(input: {
+    stepId: $stepId, 
+    tableId: $tableId,
+    warehouseFqn: $warehouseFqn,
+    schema: $schema
+  }) {
+    success
+    materialization {
       id
     }
   }
@@ -115,48 +140,5 @@ query GetDataModels($datasetId: ID!) {
         }
       }
     }
-  }
-}
-
-mutation StartRun($runId: ID!) {
-  startRun(input: {runId: $runId) {
-    success
-  }
-}
-
-mutation FinishRun($runId: ID!, $status: RunStatus!, $logsUrl: String!) {
-  finishRun(input: {runId: $runId, status: $status, logsUrl: $logsUrl}) {
-    success
-  }
-}
-
-mutation StartStep($runId: ID!, $name: String!, $displayName: String!) {
-  startStep(input: {runId: $runId, name: $name, displayName: $displayName}) {
-    success
-    step {
-      id
-    }
-  }
-}
-
-mutation FinishStep($stepId: ID!, $status: StepStatus!, $logsUrl: String!) {
-  finishStep(input: {stepId: $stepId, status: $status, logsUrl: $logsUrl}) {
-    success
-  }
-}
-
-mutation CreateMaterialization(
-  $stepId: ID!
-  $tableId: ID!
-  $warehouseFqn: String!
-  $schema: [DataModelColumnInput!]!
-) {
-  createMaterialization(
-    stepId: $stepId
-    tableId: $tableId
-    warehouseFqn: $warehouseFqn
-    schema: $schema
-  ) {
-    id
   }
 }
