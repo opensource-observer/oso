@@ -36,5 +36,5 @@ def cli():
     from oso_core.logging import setup_module_logging
 
     configure_structured_logging()
-    setup_module_logging("")
+    setup_module_logging("scheduler")
     CliApp.run(SchedulerCLI, sys.argv[1:])
