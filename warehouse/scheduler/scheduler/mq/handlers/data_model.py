@@ -11,6 +11,7 @@ from scheduler.graphql_client.get_data_models import (
 from scheduler.graphql_client.input_types import DataModelColumnInput
 from scheduler.mq.common import RunHandler
 from scheduler.types import HandlerResponse, Model, RunContext, SuccessResponse
+from sqlglot import exp
 
 logger = structlog.getLogger(__name__)
 
@@ -64,6 +65,9 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         # If no specific models are provided, run all models in the dataset
         data_model_def = dataset.node.type_definition
 
+        org_id = dataset.node.org_id
+        dataset_id = dataset.node.id
+
         assert isinstance(
             data_model_def,
             GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition,
@@ -109,14 +113,30 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 ) as step_context:
                     step_context.log.info(f"Starting evaluation for model {model.name}")
 
+                    logger.info(model.ctas_query())
+
+                    target_table = udm_engine_adapter.generate_table(
+                        org_id, dataset_id, model.id
+                    )
+                    if not target_table.catalog:
+                        current_catalog = adapter.get_current_catalog()
+                        target_table = exp.to_table(
+                            f"{current_catalog}.{target_table.db}.{target_table.name}"
+                        )
+
+                    adapter.create_schema(
+                        f"{target_table.catalog}.{target_table.db}",
+                        ignore_if_exists=True,
+                    )
+
                     adapter.ctas(
-                        table_name=model.backend_table(),
+                        table_name=target_table,
                         query_or_df=model.ctas_query(),
                         exists=True,
                     )
 
                     adapter.insert_append(
-                        table_name=model.backend_table(),
+                        table_name=target_table,
                         query_or_df=model.query,
                     )
 
@@ -125,8 +145,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                         DataModelColumnInput(name="col1", type="STRING"),
                     ]
                     await step_context.create_materialization(
-                        table_id="fake_table_id",
-                        warehouse_fqn="fake.warehouse.fqn",
+                        table_id=model.id,
+                        warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
                         schema=schema,
                     )
         return SuccessResponse(
