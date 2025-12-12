@@ -323,6 +323,7 @@ export const OrganizationWhereSchema = createWhereSchema("organizations");
 export const DataModelRevisionWhereSchema = createWhereSchema("model_revision");
 export const DataModelReleaseWhereSchema = createWhereSchema("model_release");
 export const RunWhereSchema = createWhereSchema("run");
+export const StepWhereSchema = createWhereSchema("step");
 export const MaterializationWhereSchema = createWhereSchema("materialization");
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
