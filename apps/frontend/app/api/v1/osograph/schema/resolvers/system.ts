@@ -21,6 +21,7 @@ import {
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import z from "zod";
+import { logger } from "@/lib/logger";
 
 type SystemMutationOptions<T extends z.ZodTypeAny, O> = {
   inputSchema: T;
@@ -32,14 +33,18 @@ function systemMutation<T extends z.ZodTypeAny, O>({
   resolver,
 }: SystemMutationOptions<T, O>): (
   _: any,
-  args: z.infer<T>,
+  args: { input: z.infer<T> },
   context: GraphQLContext,
 ) => Promise<O> {
-  return async (_: any, args: z.infer<T>, context: GraphQLContext) => {
+  return async (
+    _: any,
+    args: { input: z.infer<T> },
+    context: GraphQLContext,
+  ) => {
     if (!context.systemCredentials) {
       throw AuthenticationErrors.notAuthorized();
     }
-    const validatedInput = validateInput(inputSchema, args);
+    const validatedInput = validateInput(inputSchema, args.input);
     return resolver(validatedInput, context);
   };
 }
@@ -84,6 +89,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .from("run")
           .update({ status: "running" })
           .eq("id", runId)
+          .select()
           .single();
         if (updateError || !updatedRun) {
           throw ServerErrors.internal(
@@ -120,6 +126,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
             logs_url: logsUrl,
           })
           .eq("id", runId)
+          .select()
           .single();
         if (updateError || !updatedRun) {
           throw ServerErrors.internal(
@@ -195,6 +202,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
             completed_at: new Date().toISOString(),
           })
           .eq("id", stepId)
+          .select()
           .single();
         if (updateError || !updatedStep) {
           throw ServerErrors.internal(
@@ -215,13 +223,29 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
 
         const { stepId, tableId, schema, warehouseFqn } = input;
 
+        logger.info(`Creating materialization for step ${stepId}`);
+
+        // Get the step
+        const { data: stepData, error: stepError } = await supabase
+          .from("step")
+          .select("*")
+          .eq("id", stepId)
+          .single();
+        if (stepError || !stepData) {
+          logger.error(`Step ${stepId} not found: ${stepError?.message}`);
+          throw ResourceErrors.notFound(`Step ${stepId} not found`);
+        }
+
         // Get the dataset id from the run associated with the step
         const { data: runData, error: runError } = await supabase
           .from("run")
-          .select("id, org_id, dataset_id, step (id)")
-          .eq("step.id", stepId)
+          .select("id, org_id, dataset_id")
+          .eq("id", stepData.run_id)
           .single();
         if (runError || !runData) {
+          logger.error(
+            `Run for step ${stepId} not found: ${runError?.message}`,
+          );
           throw ResourceErrors.notFound(`Run for step ${stepId} not found`);
         }
 
