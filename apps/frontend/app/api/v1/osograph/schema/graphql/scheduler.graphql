@@ -182,12 +182,7 @@ extend type Mutation {
   """
   System only. Create a materialization for a step
   """
-  createMaterialization(
-    stepId: ID!
-    tableId: ID!
-    warehouseFqn: String!
-    schema: [DataModelColumnInput!]!
-  ): Materialization!
+  createMaterialization(input: CreateMaterializationInput!): CreateMaterializationPayload!
 }
 
 input CreateUserModelRunRequestInput {
@@ -268,4 +263,17 @@ type FinishStepPayload {
   success: Boolean!
   message: String
   step: Step
+}
+
+input CreateMaterializationInput {
+  stepId: ID!
+  tableId: ID!
+  warehouseFqn: String!
+  schema: [DataModelColumnInput!]!
+}
+
+type CreateMaterializationPayload {
+  success: Boolean!
+  message: String
+  materialization: Materialization!
 }
