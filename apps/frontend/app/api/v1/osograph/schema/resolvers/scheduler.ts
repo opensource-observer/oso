@@ -48,19 +48,30 @@ function mapRunStatus(status: RunRow["status"]): RunStatus {
   }
 }
 
-function genericRunRequestResolver<
+type RunRequestResolverOptions<
   T extends z.ZodTypeAny,
   Q extends ProtobufMessage,
->(
-  inputSchema: T,
-  encoder: ProtobufEncoder<Q>,
+> = {
+  queueName: string;
+  inputSchema: T;
+  encoder: ProtobufEncoder<Q>;
   queueMessageFactory: (
     input: z.infer<T>,
     user: ReturnType<typeof requireAuthentication>,
     dataset: DatasetsRow,
     run: RunRow,
-  ) => Promise<Q>,
-): (
+  ) => Promise<Q>;
+};
+
+function genericRunRequestResolver<
+  T extends z.ZodTypeAny,
+  Q extends ProtobufMessage,
+>({
+  inputSchema,
+  encoder,
+  queueMessageFactory,
+  queueName,
+}: RunRequestResolverOptions<T, Q>): (
   _: any,
   args: { input: z.infer<T> },
   context: GraphQLContext,
@@ -129,7 +140,11 @@ function genericRunRequestResolver<
 
     // Publish the message to the queue
     const queueService = createQueueService();
-    const result = await queueService.publishDataModelRun(message, encoder);
+    const result = await queueService.queueMessage({
+      queueName,
+      message,
+      encoder,
+    });
 
     if (!result.success) {
       logger.error(
@@ -154,10 +169,11 @@ function genericRunRequestResolver<
 
 export const schedulerResolvers = {
   Mutation: {
-    createUserModelRunRequest: genericRunRequestResolver(
-      CreateUserModelRunRequestSchema,
-      DataModelRunRequest,
-      async (input, _user, dataset, run) => {
+    createUserModelRunRequest: genericRunRequestResolver({
+      queueName: "data_model_run_requests",
+      inputSchema: CreateUserModelRunRequestSchema,
+      encoder: DataModelRunRequest,
+      queueMessageFactory: async (input, _user, dataset, run) => {
         const runIdBuffer = Buffer.from(run.id.replace(/-/g, ""), "hex");
 
         const message: DataModelRunRequest = {
@@ -165,10 +181,9 @@ export const schedulerResolvers = {
           datasetId: dataset.id,
           modelReleaseIds: input.selectedModels || [],
         };
-
         return message;
       },
-    ),
+    }),
   },
   Run: {
     datasetId: (parent: RunRow) => parent.dataset_id,

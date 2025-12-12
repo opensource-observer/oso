@@ -1,19 +1,14 @@
 import { PubSubClient } from "@/lib/services/queue/pubsub-client";
 import {
   IQueueService,
-  ProtobufEncoder,
+  PublishMessageOptions,
   ProtobufMessage,
   QueueConfig,
   QueueError,
   QueueErrorCode,
   QueueResult,
 } from "@/lib/services/queue/types";
-import {
-  DATA_MODEL_MESSAGE_TYPE,
-  DATA_MODEL_TOPIC_KEY,
-} from "@/lib/services/queue/constants";
 import { logger } from "@/lib/logger";
-import { NODE_ENV } from "@/lib/config";
 
 export class QueueService implements IQueueService {
   private client: PubSubClient;
@@ -22,34 +17,34 @@ export class QueueService implements IQueueService {
     this.client = new PubSubClient(config);
   }
 
-  async publishDataModelRun<Q extends ProtobufMessage>(
-    request: Q,
-    encoder: ProtobufEncoder<Q>,
-  ): Promise<QueueResult> {
-    const topicName = this.getTopicName(DATA_MODEL_TOPIC_KEY);
+  async queueMessage<Q extends ProtobufMessage>({
+    queueName,
+    message,
+    encoder,
+  }: PublishMessageOptions<Q>): Promise<QueueResult> {
+    const topicName = this.getTopicName(queueName);
 
     try {
-      const binaryData = encoder.encode(request).finish();
-      const jsonData = encoder.toJSON(request);
+      const binaryData = encoder.encode(message).finish();
+      const jsonData = encoder.toJSON(message);
 
       const messageId = await this.client.publishMessage(
         topicName,
         binaryData,
         jsonData,
         {
-          messageType: DATA_MODEL_MESSAGE_TYPE,
           timestamp: new Date().toISOString(),
         },
       );
 
-      logger.info(`Published DataModelRunRequest to ${topicName}`, {
+      logger.info(`Published Message to ${topicName}`, {
         messageId,
-        runId: Buffer.from(request.runId).toString("hex"),
+        runId: Buffer.from(message.runId).toString("hex"),
       });
 
       return { success: true, messageId };
     } catch (error) {
-      logger.error(`Failed to publish DataModelRunRequest`, {
+      logger.error(`Failed to publish message to ${topicName}`, {
         error,
         topicName,
       });
@@ -68,9 +63,8 @@ export class QueueService implements IQueueService {
     }
   }
 
-  private getTopicName(messageType: string): string {
-    const env = NODE_ENV === "production" ? "production" : "staging";
-    return `oso-${env}-${messageType}-tasks`;
+  private getTopicName(queueName: string): string {
+    return queueName;
   }
 
   async close(): Promise<void> {
