@@ -26,6 +26,7 @@ class LatestDataModelLatestRelease(BaseModel):
 
 class LatestDataModelLatestReleaseRevision(BaseModel):
     name: str
+    description: Optional[str]
     code: str
     depends_on: Optional[List["LatestDataModelLatestReleaseRevisionDependsOn"]] = Field(
         alias="dependsOn"

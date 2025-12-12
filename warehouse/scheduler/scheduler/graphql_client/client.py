@@ -199,6 +199,7 @@ class Client(AsyncBaseClient):
                 id
                 revision {
                   name
+                  description
                   code
                   dependsOn {
                     alias
