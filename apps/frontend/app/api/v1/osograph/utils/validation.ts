@@ -260,6 +260,35 @@ export const CreateStaticModelRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
 });
 
+export const StartRunSchema = z.object({
+  runId: z.string().uuid(),
+});
+
+export const FinishRunSchema = z.object({
+  runId: z.string().uuid(),
+  status: z.enum(["SUCCESS", "FAILED", "CANCELED"]),
+  logsUrl: z.string().url(),
+});
+
+export const StartStepSchema = z.object({
+  runId: z.string().uuid(),
+  name: z.string(),
+  displayName: z.string(),
+});
+
+export const FinishStepSchema = z.object({
+  stepId: z.string().uuid(),
+  status: z.enum(["SUCCESS", "FAILED", "CANCELED"]),
+  logsUrl: z.string().url(),
+});
+
+export const CreateMaterializationSchema = z.object({
+  stepId: z.string().uuid(),
+  tableId: z.string(),
+  warehouseFqn: z.string(),
+  schema: z.array(DataModelColumnSchema),
+});
+
 export const ResolveTablesSchema = z.object({
   references: z.array(z.string()).min(1, "At least one reference is required"),
   metadata: z

@@ -184,6 +184,8 @@ extend type Mutation {
   """
   createMaterialization(
     stepId: ID!
+    tableId: ID!
+    warehouseFqn: String!
     schema: [DataModelColumnInput!]!
   ): Materialization!
 }
