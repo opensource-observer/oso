@@ -1287,6 +1287,20 @@ export type CreateInvitationPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
+export type CreateMaterializationInput = {
+  schema: Array<DataModelColumnInput>;
+  stepId: Scalars["ID"]["input"];
+  tableId: Scalars["ID"]["input"];
+  warehouseFqn: Scalars["String"]["input"];
+};
+
+export type CreateMaterializationPayload = {
+  __typename?: "CreateMaterializationPayload";
+  materialization: Materialization;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type CreateNotebookInput = {
   description?: InputMaybe<Scalars["String"]["input"]>;
   name: Scalars["String"]["input"];
@@ -3372,7 +3386,7 @@ export type Mutation = {
   /** Create an invitation */
   createInvitation: CreateInvitationPayload;
   /** System only. Create a materialization for a step */
-  createMaterialization: Materialization;
+  createMaterialization: CreateMaterializationPayload;
   /** Create a new notebook */
   createNotebook: CreateNotebookPayload;
   createStaticModel: CreateStaticModelPayload;
@@ -3539,8 +3553,7 @@ export type MutationCreateInvitationArgs = {
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateMaterializationArgs = {
-  schema: Array<DataModelColumnInput>;
-  stepId: Scalars["ID"]["input"];
+  input: CreateMaterializationInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
