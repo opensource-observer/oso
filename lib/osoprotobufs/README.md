@@ -24,18 +24,40 @@ _must_ specify the protoc version to install. For example, to install version
 33.2, run (from the root of the repository):
 
 ```bash
-bash ./lib/protobufs/install_bash.sh 33.2 ./lib/protobufs/.install
+bash ./lib/osoprotobufs/install_bash.sh 33.2 ./lib/osoprotobufs/.install
 ```
 
 ### Generate the code for python
 
 From the root of the repository, run the following command to generate the
-python protobuf code into the `lib/protobufs/python/osoprotobufs` directory:
+python protobuf code into the `lib/osoprotobufs/python/osoprotobufs` directory:
 
 ```bash
-./lib/protobufs/.install/bin/protoc --proto_path=./lib/protobufs/definitions --python_out=./lib/protobufs/python/osoprotobufs ./lib/protobufs/definitions/*.proto --plugin=protoc-gen-mypy=.venv/bin/protoc-gen-mypy --pyi_out=./lib/protobufs/python/osoprotobufs
+./lib/osoprotobufs/.install/bin/protoc --proto_path=./lib/osoprotobufs/definitions --python_out=./lib/osoprotobufs/python/osoprotobufs ./lib/osoprotobufs/definitions/*.proto --plugin=protoc-gen-mypy=.venv/bin/protoc-gen-mypy --pyi_out=./lib/osoprotobufs/python/osoprotobufs
 ```
 
-### Generating for typescript
+### Generate the code for TypeScript
 
-TBD
+From the root of the repository, run the following command to generate the
+TypeScript protobuf code into the `lib/osoprotobufs/typescript/src` directory:
+
+```bash
+cd lib/osoprotobufs/typescript
+pnpm proto:codegen
+```
+
+This will:
+
+1. Install `protoc` (if not already installed) using the script
+2. Generate TypeScript bindings using `ts-proto` from all `.proto` files in
+   `lib/osoprotobufs/definitions`
+3. Output the generated code to `lib/osoprotobufs/typescript/src`
+
+After generating the TypeScript code, you need to build the package:
+
+```bash
+pnpm build
+```
+
+**Note:** The `proto:codegen` script uses `ts-proto` which generates TypeScript
+code compatible with `@bufbuild/protobuf` v2.

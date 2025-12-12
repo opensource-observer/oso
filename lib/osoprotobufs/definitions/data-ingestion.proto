@@ -7,4 +7,6 @@ message DataIngestionRunRequest {
   bytes run_id = 1;
 
   string dataset_id = 2;
+
+  bytes config_id = 3;
 }
