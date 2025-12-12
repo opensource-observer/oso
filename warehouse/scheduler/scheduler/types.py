@@ -152,6 +152,7 @@ T = t.TypeVar("T", bound=Message)
 class MessageHandler(abc.ABC, t.Generic[T]):
     topic: str
     message_type: t.Type[T]
+    schema_file_name: str
 
     @abc.abstractmethod
     async def handle_message(self, *, message: T, **kwargs) -> None: ...
@@ -182,6 +183,10 @@ class MessageHandlerRegistry:
             self._listeners[listener.topic] = listener
         else:
             raise ValueError(f"Listener for topic {listener.topic} already registered")
+
+    def __iter__(self):
+        for topic, listener in self._listeners.items():
+            yield (topic, listener)
 
     def get_handler(self, topic: str) -> MessageHandler | None:
         return self._listeners.get(topic)

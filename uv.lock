@@ -6054,7 +6054,6 @@ version = "0.1.0"
 source = { editable = "warehouse/scheduler" }
 dependencies = [
     { name = "ariadne-codegen" },
-    { name = "dotenv" },
     { name = "duckdb" },
     { name = "google-cloud-pubsub" },
     { name = "httpx" },
@@ -6066,9 +6065,11 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "python-dotenv" },
     { name = "query-rewriter" },
     { name = "requests" },
     { name = "sqlmesh" },
+    { name = "structlog" },
 ]
 
 [package.dev-dependencies]
@@ -6080,7 +6081,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ariadne-codegen", specifier = ">=0.16.0" },
-    { name = "dotenv", specifier = ">=0.9.9" },
     { name = "duckdb", specifier = ">=1.4.1" },
     { name = "google-cloud-pubsub", specifier = ">=2.33.0" },
     { name = "httpx", specifier = ">=0.28.1" },
@@ -6092,9 +6092,11 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.11.0" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "query-rewriter", editable = "lib/query-rewriter" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "sqlmesh", specifier = ">=0.227.1" },
+    { name = "structlog", specifier = ">=25.4.0" },
 ]
 
 [package.metadata.requires-dev]
