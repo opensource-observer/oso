@@ -1,5 +1,5 @@
 MODEL (
-  name oso.stg_github__comments,
+  name oso.stg_github__comments_since_20251007,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column event_time,
     batch_size 90,
@@ -8,8 +8,7 @@ MODEL (
     forward_only true,
   ),
   dialect "duckdb",
-  start @github_incremental_start,
-  end @github_events_pre_v20251007_end_date,
+  start @github_events_v20251007_start_date,
   partitioned_by DAY(event_time),
   audits (
     has_at_least_n_rows(threshold := 0),
@@ -23,23 +22,28 @@ MODEL (
 WITH pull_request_comment_events AS (
   SELECT
     ghe.id AS id,
-    STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS event_time,
+    -- TODO: Get the correct updated_at using the REST api
+    -- created_at here means the event created at, not the comment
+    ghe.created_at AS event_time,
     ghe.repo.id AS repository_id,
     ghe.repo.name AS repository_name,
     ghe.actor.id AS actor_id,
     ghe.actor.login AS actor_login,
     'PULL_REQUEST_REVIEW_COMMENT' AS "type",
     CAST(ghe.payload -> '$.pull_request.number' AS BIGINT) AS "number",
-    STRPTIME(ghe.payload ->> '$.pull_request.created_at', '%Y-%m-%dT%H:%M:%SZ') AS created_at,
-    STRPTIME(ghe.payload ->> '$.pull_request.merged_at', '%Y-%m-%dT%H:%M:%SZ') AS merged_at,
-    STRPTIME(ghe.payload ->> '$.pull_request.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
-    ghe.payload ->> '$.pull_request.state' AS "state",
-    CAST(ghe.payload -> '$.pull_request.comments' AS DOUBLE) AS comments
+    -- TODO: Get the correct created_at using the REST api.
+    -- created_at here means the event created at, not the comment
+    ghe.created_at AS created_at,
+    -- TODO: Get the correct following fields using the REST api
+    -- These fields were removed from the PullRequestReviewCommentEvent payload in v2 data.
+    CAST(NULL AS TIMESTAMP) AS merged_at,
+    CAST(NULL AS TIMESTAMP) AS closed_at,
+    CAST(NULL AS VARCHAR) AS "state",
+    CAST(NULL AS DOUBLE) AS comments
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestReviewCommentEvent'
     and ghe.created_at BETWEEN @start_dt  - INTERVAL '2' DAY AND @end_dt + INTERVAL '1' DAY
-    and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 ), issue_comment_events AS (
   SELECT
     ghe.id AS id,

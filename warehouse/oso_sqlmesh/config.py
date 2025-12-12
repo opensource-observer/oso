@@ -135,6 +135,8 @@ config = Config(
         "blockchain_incremental_start": constants.blockchain_incremental_start,
         "deps_dev_incremental_start": constants.deps_dev_incremental_start,
         "github_incremental_start": constants.github_incremental_start,
+        "github_events_v20251007_start_date": constants.github_events_v20251007_start_date,
+        "github_events_pre_v20251007_end_date": constants.github_events_pre_v20251007_end_date,
         "funding_incremental_start": constants.funding_incremental_start,
         "defillama_incremental_start": constants.defillama_incremental_start,
         "testing_enabled": constants.testing_enabled,

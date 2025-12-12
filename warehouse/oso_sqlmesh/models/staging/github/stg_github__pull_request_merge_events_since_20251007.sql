@@ -1,5 +1,5 @@
 MODEL (
-  name oso.stg_github__pull_request_merge_events,
+  name oso.stg_github__pull_request_merge_events_since_20251007,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column event_time,
     batch_size 365,
@@ -7,8 +7,7 @@ MODEL (
     lookback 14,
     forward_only true,
   ),
-  start @github_incremental_start,
-  end @github_events_pre_v20251007_end_date,
+  start @github_events_v20251007_start_date,
   partitioned_by DAY(event_time),
   dialect duckdb,
   audits (
@@ -35,27 +34,31 @@ SELECT DISTINCT
   pre.repo.name AS repository_name,
   'PULL_REQUEST_MERGED' AS "type",
   CAST(pre.payload ->> '$.pull_request.id' AS TEXT) AS id,
-  STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS event_time,
-  STRPTIME(pre.payload ->> '$.pull_request.merged_at', '%Y-%m-%dT%H:%M:%SZ') AS merged_at,
-  STRPTIME(pre.payload ->> '$.pull_request.created_at', '%Y-%m-%dT%H:%M:%SZ') AS created_at,
-  STRPTIME(pre.payload ->> '$.pull_request.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
+  -- TODO: Get the real details from the REST api
+  pre.created_at AS event_time,
+  CAST(NULL AS TIMESTAMP) AS merged_at,
+  pre.created_at AS created_at,
+  CAST(NULL AS TIMESTAMP) AS closed_at,
   CAST(pre.payload ->> '$.pull_request.user.id' AS INT) AS actor_id,
   pre.payload ->> '$.pull_request.user.login' AS actor_login,
-  pre.payload ->> '$.pull_request.state' AS state,
+  CAST(NULL AS VARCHAR) AS state,
   pre.payload ->> '$.pull_request.merge_commit_sha' AS merge_commit_sha,
-  CAST(pre.payload ->> '$.pull_request.changed_files' AS INT) AS changed_files,
-  CAST(pre.payload ->> '$.pull_request.additions' AS INT) AS additions,
-  CAST(pre.payload ->> '$.pull_request.deletions' AS INT) AS deletions,
-  CAST(pre.payload ->> '$.pull_request.review_comments' AS DOUBLE) AS review_comments,
-  CAST(pre.payload ->> '$.pull_request.comments' AS DOUBLE) AS comments,
-  pre.payload ->> '$.pull_request.author_association' AS author_association,
+  CAST(NULL AS INT) AS changed_files,
+  CAST(NULL AS INT) AS additions,
+  CAST(NULL AS INT) AS deletions,
+  CAST(NULL AS DOUBLE) AS review_comments,
+  CAST(NULL AS DOUBLE) AS comments,
+  CAST(NULL AS VARCHAR) AS author_association,
   CAST(pre.payload ->> '$.number' AS BIGINT) AS "number"
 FROM pull_request_events AS pre
 WHERE
+  -- This condition will fail for all v2 events because merged_at is missing/null
   NOT (
     pre.payload ->> '$.pull_request.merged_at'
   ) IS NULL
   AND (
     pre.payload ->> '$.action'
   ) = 'closed'
-  AND STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
+  -- Filter by event time since updated_at is missing, but this would create deuplicates
+  AND pre.created_at BETWEEN @start_dt AND @end_dt
+  -- AND STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
