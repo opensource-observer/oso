@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = "==3.12.*"
 resolution-markers = [
     "platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
@@ -4209,6 +4209,7 @@ dependencies = [
     { name = "duckdb" },
     { name = "lz4" },
     { name = "metrics-service" },
+    { name = "networkx" },
     { name = "openrank-sdk" },
     { name = "opsscripts" },
     { name = "oso-core" },
@@ -4249,6 +4250,7 @@ requires-dist = [
     { name = "duckdb", specifier = ">=1.1.0,<2.0.0" },
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
     { name = "metrics-service", editable = "warehouse/metrics-service" },
+    { name = "networkx" },
     { name = "openrank-sdk", specifier = ">=0.4.0,<1.0.0" },
     { name = "opsscripts", editable = "ops/opsscripts" },
     { name = "oso-core", editable = "lib/oso-core" },
