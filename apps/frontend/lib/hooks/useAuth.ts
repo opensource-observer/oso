@@ -1,18 +1,24 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createBrowserClient } from "@/lib/supabase/browser";
 import { UserDetails } from "@/lib/types/user";
 import { useRouter } from "next/navigation";
 import { logger } from "@/lib/logger";
-
-const supabaseClient = createBrowserClient();
+import { useSupabaseState } from "@/components/hooks/supabase";
+import { ensure } from "@opensource-observer/utils";
 
 export function useAuth() {
   const [user, setUser] = useState<UserDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const supabaseState = useSupabaseState();
+  const supabaseClient = supabaseState?.supabaseClient ?? null;
 
   useEffect(() => {
+    if (!supabaseClient) {
+      setLoading(supabaseState?._type === "loading");
+      return;
+    }
+
     const fetchUser = async () => {
       try {
         const {
@@ -58,10 +64,14 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabaseClient, supabaseState?._type]);
 
   const signOut = async () => {
-    await supabaseClient.auth.signOut();
+    const client = ensure(
+      supabaseClient,
+      "Supabase client not initialized yet",
+    );
+    await client.auth.signOut();
     router.push("/");
   };
 
