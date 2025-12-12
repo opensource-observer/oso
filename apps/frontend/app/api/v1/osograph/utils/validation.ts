@@ -260,6 +260,35 @@ export const CreateStaticModelRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
 });
 
+export const StartRunSchema = z.object({
+  runId: z.string().uuid(),
+});
+
+export const FinishRunSchema = z.object({
+  runId: z.string().uuid(),
+  status: z.enum(["SUCCESS", "FAILED", "CANCELED"]),
+  logsUrl: z.string().url(),
+});
+
+export const StartStepSchema = z.object({
+  runId: z.string().uuid(),
+  name: z.string(),
+  displayName: z.string(),
+});
+
+export const FinishStepSchema = z.object({
+  stepId: z.string().uuid(),
+  status: z.enum(["SUCCESS", "FAILED", "CANCELED"]),
+  logsUrl: z.string().url(),
+});
+
+export const CreateMaterializationSchema = z.object({
+  stepId: z.string().uuid(),
+  tableId: z.string(),
+  warehouseFqn: z.string(),
+  schema: z.array(DataModelColumnSchema),
+});
+
 export const ResolveTablesSchema = z.object({
   references: z.array(z.string()).min(1, "At least one reference is required"),
   metadata: z
@@ -323,6 +352,7 @@ export const OrganizationWhereSchema = createWhereSchema("organizations");
 export const DataModelRevisionWhereSchema = createWhereSchema("model_revision");
 export const DataModelReleaseWhereSchema = createWhereSchema("model_release");
 export const RunWhereSchema = createWhereSchema("run");
+export const StepWhereSchema = createWhereSchema("step");
 export const MaterializationWhereSchema = createWhereSchema("materialization");
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {

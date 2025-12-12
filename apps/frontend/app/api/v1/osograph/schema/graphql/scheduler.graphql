@@ -42,7 +42,7 @@ type Run {
   finishedAt: DateTime
   status: RunStatus!
   logsUrl: String
-  materializations: MaterializationConnection!
+  steps: StepConnection!
 }
 
 type RunEdge {
@@ -66,12 +66,26 @@ type Step {
   startedAt: DateTime!
   finishedAt: DateTime
   status: StepStatus!
+  materializations: MaterializationConnection!
+}
+
+type StepEdge {
+  node: Step!
+  cursor: String!
+}
+
+type StepConnection {
+  edges: [StepEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
 }
 
 type Materialization {
   id: ID!
   runId: ID!
   run: Run!
+  stepId: ID!
+  step: Step!
   datasetId: ID!
   createdAt: DateTime!
   schema: [DataModelColumn!]
@@ -164,6 +178,11 @@ extend type Mutation {
   System only. Mark a step as finished
   """
   finishStep(input: FinishStepInput!): FinishStepPayload!
+
+  """
+  System only. Create a materialization for a step
+  """
+  createMaterialization(input: CreateMaterializationInput!): CreateMaterializationPayload!
 }
 
 input CreateUserModelRunRequestInput {
@@ -244,4 +263,17 @@ type FinishStepPayload {
   success: Boolean!
   message: String
   step: Step
+}
+
+input CreateMaterializationInput {
+  stepId: ID!
+  tableId: ID!
+  warehouseFqn: String!
+  schema: [DataModelColumnInput!]!
+}
+
+type CreateMaterializationPayload {
+  success: Boolean!
+  message: String
+  materialization: Materialization!
 }
