@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_gharchive__events,
+  name oso.int_gharchive__github_events,
   description 'Raw GitHub Events from GitHub Archive',
   dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
@@ -9,7 +9,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
-  start @gharchive_start,
+  start @github_incremental_start,
   cron '@daily',
   partitioned_by (DAY("event_time"), "event_type"),
   grain (event_time, actor_id, repo_id),

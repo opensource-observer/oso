@@ -33,7 +33,17 @@ SELECT
   events.event_type AS event_type,
   events.actor_id AS github_user_id,
   events.repo_id AS github_repo_id  
-FROM oso.int_sre_github_events AS events
+FROM oso.int_gharchive__github_events AS events
 JOIN oso.int_sre_github_users AS users
   ON events.actor_login = users.github_handle
-WHERE events.event_time BETWEEN @start_dt AND @end_dt
+WHERE
+  events.event_time BETWEEN @start_dt AND @end_dt
+  AND events.event_type IN (
+    'PushEvent',
+    'IssuesEvent',
+    'PullRequestEvent',
+    'PullRequestReviewEvent',
+    'PullRequestReviewCommentEvent',
+    'WatchEvent',
+    'ForkEvent'
+  )

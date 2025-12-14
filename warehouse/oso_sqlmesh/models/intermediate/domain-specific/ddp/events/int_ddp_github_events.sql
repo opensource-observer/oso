@@ -28,16 +28,16 @@ MODEL (
 );
 
 SELECT
-  created_at AS event_time,
-  actor.id AS actor_id,
-  LOWER(actor.login) AS actor_login,
-  repo.id AS repo_id,
-  LOWER(repo.name) AS repo_name,
-  type AS event_type,
-FROM oso.stg_github__events
+  event_time,
+  actor_id,
+  actor_login,
+  repo_id,
+  repo_name,
+  event_type,
+FROM oso.int_gharchive__github_events
 WHERE
-  created_at BETWEEN @start_dt AND @end_dt
-  AND type IN (
+  event_time BETWEEN @start_dt AND @end_dt
+  AND event_type IN (
     'PushEvent',
     'IssuesEvent',
     'PullRequestEvent',
