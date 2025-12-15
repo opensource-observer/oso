@@ -1,8 +1,13 @@
 import typing as t
 
+import structlog
 from oso_core.resources import ResourcesContext, ResourcesRegistry, resource_factory
 from oso_dagster.resources.duckdb import DuckDBResource
-from oso_dagster.resources.heartbeat import HeartBeatResource
+from oso_dagster.resources.heartbeat import (
+    FilebasedHeartBeatResource,
+    HeartBeatResource,
+    RedisHeartBeatResource,
+)
 from oso_dagster.resources.kube import K8sApiResource, K8sResource
 from oso_dagster.resources.trino import (
     TrinoK8sResource,
@@ -34,6 +39,8 @@ from scheduler.types import (
 
 if t.TYPE_CHECKING:
     from scheduler.config import CommonSettings
+
+logger = structlog.get_logger(__name__)
 
 
 @resource_factory("message_queue_service")
@@ -104,6 +111,25 @@ def trino_resource_factory(
     )
 
 
+@resource_factory("heartbeat")
+def heartbeat_factory(common_settings: "CommonSettings") -> HeartBeatResource:
+    """Factory function to create a heartbeat resource."""
+    if common_settings.k8s_enabled or common_settings.redis_host:
+        assert common_settings.redis_host is not None, (
+            "Redis host must be set for Redis heartbeat."
+        )
+        logger.info("Using RedisHeartBeatResource for heartbeat.")
+        return RedisHeartBeatResource(
+            host=common_settings.redis_host,
+            port=common_settings.redis_port,
+        )
+    else:
+        logger.info("Using FilebasedHeartBeatResource for heartbeat.")
+        return FilebasedHeartBeatResource(
+            directory=common_settings.local_heartbeat_path,
+        )
+
+
 @resource_factory("duckdb")
 def duckdb_resource_factory(
     common_settings: "CommonSettings",
@@ -133,6 +159,11 @@ def scheduler_evaluator_factory(
 def oso_client_factory(common_settings: "CommonSettings") -> OSOClient:
     """Factory function to create an OSO client."""
     # For now, return None as a placeholder.
+    if not common_settings.oso_system_api_key:
+        raise ValueError(
+            "OSO system API key is not set. Set SCHEDULER_OSO_SYSTEM_API_KEY."
+        )
+
     return OSOClient(
         url=common_settings.oso_api_url,
         headers={"x-system-credentials": common_settings.oso_system_api_key},
@@ -172,6 +203,7 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(udm_client_factory)
     registry.add(oso_client_factory)
     registry.add(message_handler_registry_factory)
+    registry.add(heartbeat_factory)
     registry.add(materialization_strategy_factory)
 
     return registry

@@ -39,3 +39,6 @@ app:
   volumes: []
   volumeMounts: []
   livenessProbe: {}
+  roles:
+    clusterRoles: []
+    enableClusterRoleBinding: false
