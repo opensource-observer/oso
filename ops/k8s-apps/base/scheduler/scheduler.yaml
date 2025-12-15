@@ -46,3 +46,20 @@ spec:
         SCHEDULER_OSO_API_URL: "https://www.oso.xyz/api/v1/osograph"
         SCHEDULER_ENV: "production"
         SCHEDULER_OSO_SYSTEM_API_KEY: "gcp:secretmanager:production-scheduler-oso-system-api-key/versions/latest"
+        SCHEDULER_REDIS_HOST: "redis.production-redis.svc.cluster.local"
+        SCHEDULER_TRINO_ENABLED: "1"
+        SCHEDULER_K8S_ENABLED: "1"
+        SCHEDULER_TRINO_K8S_COORDINATOR_DEPLOYMENT_NAME: production-trino-trino-coordinator
+        SCHEDULER_TRINO_K8S_WORKER_DEPLOYMENT_NAME: production-trino-trino-worker
+        SCHEDULER_TRINO_K8S_SERVICE_NAME: production-trino-trino
+        SCHEDULER_TRINO_K8S_NAMESPACE: production-trino
+      roles:
+        clusterRoles:
+          - apiGroups: ["apps"] # API group for deployments
+            resources: ["deployments"] # Specific subresource for scaling
+            verbs: ["get", "update", "list", "patch", "watch"]
+          # Read only access to services
+          - apiGroups: [""]
+            resources: ["services"]
+            verbs: ["get", "list", "watch"]
+        enableClusterRoleBinding: true
