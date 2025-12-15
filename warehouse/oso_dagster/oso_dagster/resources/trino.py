@@ -160,6 +160,7 @@ class TrinoK8sResource(TrinoResource):
         self,
         session_properties: t.Optional[t.Dict[str, t.Any]] = None,
         log_override: t.Optional[logging.Logger] = None,
+        jwt_token: t.Optional[str] = None,
     ):
         # Bring both the coordinator and worker online if they aren't already
         async with self.ensure_available(log_override=log_override):
@@ -179,6 +180,9 @@ class TrinoK8sResource(TrinoResource):
                     user=self.user,
                     catalog=self.catalog,
                     schema=self.connection_schema,
+                    auth=aiotrino.auth.JWTAuthentication(jwt_token)
+                    if jwt_token
+                    else None,
                     **extra_connection_args,
                 )
 
