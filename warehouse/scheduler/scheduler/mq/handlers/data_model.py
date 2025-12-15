@@ -3,6 +3,7 @@ from oso_dagster.resources.udm_engine_adapter import (
     UserDefinedModelEngineAdapterResource,
 )
 from osoprotobufs.data_model_pb2 import DataModelRunRequest
+from queryrewriter.types import TableResolver
 from scheduler.graphql_client.client import Client
 from scheduler.graphql_client.fragments import DataModelsEdgesNode
 from scheduler.graphql_client.get_data_models import (
@@ -10,8 +11,17 @@ from scheduler.graphql_client.get_data_models import (
 )
 from scheduler.graphql_client.input_types import DataModelColumnInput
 from scheduler.mq.common import RunHandler
-from scheduler.types import HandlerResponse, Model, RunContext, SuccessResponse
-from sqlglot import exp
+from scheduler.types import (
+    HandlerResponse,
+    MaterializationStrategyResource,
+    Model,
+    ModelSorter,
+    ResolvedModel,
+    ResolvedSQLModel,
+    RunContext,
+    SuccessResponse,
+)
+from scheduler.utils import OSOClientTableResolver, ctas_query
 
 logger = structlog.getLogger(__name__)
 
@@ -50,6 +60,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         message: DataModelRunRequest,
         udm_engine_adapter: UserDefinedModelEngineAdapterResource,
         oso_client: Client,
+        materialization_strategy: MaterializationStrategyResource,
     ) -> HandlerResponse:
         # Process the DataModelRunRequest message
         context.log.info(f"Handling DataModelRunRequest with ID: {message.run_id}")
@@ -64,9 +75,6 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         # If no specific models are provided, run all models in the dataset
         data_model_def = dataset.node.type_definition
-
-        org_id = dataset.node.org_id
-        dataset_id = dataset.node.id
 
         assert isinstance(
             data_model_def,
@@ -88,7 +96,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         ]
 
         # Convert models into the scheduler's Model Type so we can run the evaluation
-        converted_models = list(
+        converted_models: list[Model] = list(
             map(
                 convert_model_to_scheduler_model(dataset_id=message.dataset_id),
                 models_with_release,
@@ -106,49 +114,80 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             )
 
         async with udm_engine_adapter.get_adapter() as adapter:
-            for model in converted_models:
-                async with context.step_context(
-                    name=f"evaluate_model_{model.name}",
-                    display_name=f"Evaluate Model {model.name}",
-                ) as step_context:
-                    step_context.log.info(f"Starting evaluation for model {model.name}")
-
-                    logger.info(model.ctas_query())
-
-                    target_table = udm_engine_adapter.generate_table(
-                        org_id, dataset_id, model.id
+            async with materialization_strategy.get_strategy(adapter) as strategy:
+                resolved_models: list[ResolvedModel] = []
+                table_resolvers: list[TableResolver] = [
+                    OSOClientTableResolver(oso_client=oso_client)
+                ]
+                logger.info("Determining model evaluation order...")
+                for model in converted_models:
+                    resolved_model = await model.as_resolved_sql_model(
+                        table_resolvers=table_resolvers,
+                        materialization_strategy=strategy,
                     )
-                    if not target_table.catalog:
-                        current_catalog = adapter.get_current_catalog()
-                        target_table = exp.to_table(
-                            f"{current_catalog}.{target_table.db}.{target_table.name}"
+                    resolved_models.append(resolved_model)
+
+                sorter = ModelSorter(resolved_models)
+                async for model in sorter.ordered_iter():
+                    logger.info(f"Evaluating model: {model.name}")
+                    async with context.step_context(
+                        name=f"evaluate_model_{model.name}",
+                        display_name=f"Evaluate Model {model.name}",
+                    ) as step_context:
+                        step_context.log.info(
+                            f"Starting evaluation for model {model.name}"
                         )
 
-                    adapter.create_schema(
-                        f"{target_table.catalog}.{target_table.db}",
-                        ignore_if_exists=True,
-                    )
+                        assert isinstance(model, ResolvedSQLModel), (
+                            "Only SQL models are supported for evaluation at this time."
+                        )
 
-                    adapter.ctas(
-                        table_name=target_table,
-                        query_or_df=model.ctas_query(),
-                        exists=True,
-                    )
+                        table_ref = model.table_reference()
 
-                    adapter.insert_append(
-                        table_name=target_table,
-                        query_or_df=model.query,
-                    )
+                        target_table = await strategy.table_reference_to_table_exp(
+                            table_ref
+                        )
 
-                    # Add a materialization
-                    schema: list[DataModelColumnInput] = [
-                        DataModelColumnInput(name="col1", type="STRING"),
-                    ]
-                    await step_context.create_materialization(
-                        table_id=model.id,
-                        warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
-                        schema=schema,
-                    )
+                        logger.info("Writing to target table: %s", target_table)
+                        adapter.create_schema(
+                            f"{target_table.catalog}.{target_table.db}",
+                            ignore_if_exists=True,
+                        )
+
+                        create_query = ctas_query(model.resolved_query())
+
+                        adapter.ctas(
+                            table_name=target_table,
+                            query_or_df=create_query,
+                            exists=True,
+                        )
+
+                        adapter.insert_append(
+                            table_name=target_table,
+                            query_or_df=model.resolved_query(),
+                        )
+
+                        columns = adapter.columns(table_name=target_table)
+
+                        # Create the schema for the materialization
+                        schema: list[DataModelColumnInput] = []
+                        for name, data_type in columns.items():
+                            data_type_name = data_type.sql(dialect=adapter.dialect)
+                            step_context.log.info(
+                                f"Column: {name}, Type: {data_type_name}"
+                            )
+                            schema.append(
+                                DataModelColumnInput(
+                                    name=name,
+                                    type=data_type_name,
+                                )
+                            )
+
+                        await step_context.create_materialization(
+                            table_id=f"data_model_{table_ref.table_id}",
+                            warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
+                            schema=schema,
+                        )
         return SuccessResponse(
             message=f"Processed DataModelRunRequest with ID: {message.run_id}"
         )

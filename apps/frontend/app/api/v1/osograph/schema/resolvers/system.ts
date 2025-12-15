@@ -4,6 +4,7 @@ import {
   AuthenticationErrors,
   ResourceErrors,
   ServerErrors,
+  ValidationErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { Table } from "@/lib/types/table";
@@ -87,7 +88,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
         // Update the status of the run to "RUNNING"
         const { data: updatedRun, error: updateError } = await supabase
           .from("run")
-          .update({ status: "running" })
+          .update({ status: "running", started_at: new Date().toISOString() })
           .eq("id", runId)
           .select()
           .single();
@@ -124,6 +125,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .update({
             status: RunStatusMap[status] || "failed",
             logs_url: logsUrl,
+            completed_at: new Date().toISOString(),
           })
           .eq("id", runId)
           .select()
@@ -222,6 +224,18 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
         const supabase = createAdminClient();
 
         const { stepId, tableId, schema, warehouseFqn } = input;
+
+        // Assert that the tableId has one of the appropriate prefixes
+        const tableIdHasValidPrefix =
+          tableId.startsWith("data_model_") ||
+          tableId.startsWith("data_ingestion_") ||
+          tableId.startsWith("data_connection_");
+        if (!tableIdHasValidPrefix) {
+          throw ValidationErrors.invalidInput(
+            "tableId",
+            "tableId must start with one of the following prefixes: data_model_, data_ingestion_, data_connection_",
+          );
+        }
 
         logger.info(`Creating materialization for step ${stepId}`);
 

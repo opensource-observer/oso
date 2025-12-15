@@ -20,11 +20,14 @@ from oso_dagster.resources.udm_state import (
 )
 from scheduler.evaluator import UserDefinedModelEvaluator
 from scheduler.graphql_client.client import Client as OSOClient
+from scheduler.materialization.duckdb import DuckdbMaterializationStrategyResource
+from scheduler.materialization.trino import TrinoMaterializationStrategyResource
 from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
     GenericMessageQueueService,
+    MaterializationStrategyResource,
     MessageHandlerRegistry,
     UserDefinedModelStateClient,
 )
@@ -144,6 +147,17 @@ def message_handler_registry_factory() -> MessageHandlerRegistry:
     return registry
 
 
+@resource_factory("materialization_strategy")
+def materialization_strategy_factory(
+    common_settings: "CommonSettings",
+) -> MaterializationStrategyResource:
+    """Factory function to create a materialization strategy."""
+    if common_settings.trino_enabled:
+        return TrinoMaterializationStrategyResource(iceberg_catalog_name="iceberg")
+    else:
+        return DuckdbMaterializationStrategyResource()
+
+
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
     registry.add_singleton("common_settings", common_settings)
@@ -158,5 +172,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(udm_client_factory)
     registry.add(oso_client_factory)
     registry.add(message_handler_registry_factory)
+    registry.add(materialization_strategy_factory)
 
     return registry

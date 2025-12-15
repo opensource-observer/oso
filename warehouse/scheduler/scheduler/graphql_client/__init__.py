@@ -82,6 +82,11 @@ from .input_types import (
     UpdateNotebookInput,
     UpdateStaticModelInput,
 )
+from .resolve_tables import (
+    ResolveTables,
+    ResolveTablesSystem,
+    ResolveTablesSystemResolveTables,
+)
 from .start_run import StartRun, StartRunStartRun
 from .start_step import StartStep, StartStepStartStep, StartStepStartStepStep
 
@@ -147,6 +152,9 @@ __all__ = [
     "LatestDataModelLatestReleaseRevisionSchema",
     "MemberRole",
     "RemoveMemberInput",
+    "ResolveTables",
+    "ResolveTablesSystem",
+    "ResolveTablesSystemResolveTables",
     "RevokeInvitationInput",
     "RunStatus",
     "RunTriggerType",
