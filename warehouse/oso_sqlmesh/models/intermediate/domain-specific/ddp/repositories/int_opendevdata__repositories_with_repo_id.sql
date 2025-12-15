@@ -28,7 +28,14 @@ WITH opendevdata_with_graphql_match AS (
   LEFT JOIN oso.stg_ossd__current_repositories AS ossd
     ON odd.github_graphql_id = ossd.node_id
 ),
--- Get most recent name per repo_id from gharchive for fallback matching
+-- Identify repo_names that need fallback matching (no graphql match)
+opendevdata_needing_fallback AS (
+  SELECT DISTINCT repo_name
+  FROM opendevdata_with_graphql_match
+  WHERE repo_id_from_graphql IS NULL
+),
+-- Get most recent name per repo_id from gharchive, but ONLY for repo_names that need fallback
+-- This optimization reduces the ROW_NUMBER computation to only relevant repositories
 gharchive_current_names AS (
   SELECT
     repo_id,
@@ -38,6 +45,7 @@ gharchive_current_names AS (
       ORDER BY valid_from DESC
     ) AS rn
   FROM oso.int_gharchive__repositories
+  WHERE repo_name IN (SELECT repo_name FROM opendevdata_needing_fallback)
 ),
 
 final_output AS (
@@ -60,7 +68,7 @@ final_output AS (
 FROM opendevdata_with_graphql_match AS ogm
 LEFT JOIN gharchive_current_names AS gh
   ON ogm.repo_name = gh.repo_name
-  AND ogm.repo_id_from_graphql IS NULL 
+  AND ogm.repo_id_from_graphql IS NULL
   AND gh.rn = 1
 )
 

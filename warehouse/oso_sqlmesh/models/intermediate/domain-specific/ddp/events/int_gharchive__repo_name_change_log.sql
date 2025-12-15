@@ -31,6 +31,10 @@ MODEL (
   )
 );
 
+-- Get the last known repo_name for each repo_id from previous batches
+-- CRITICAL: Only query historical data (before @start_dt) to respect incremental boundaries
+-- This ensures we get the state at the start of the current batch without reading
+-- data that's being processed in this same incremental run
 WITH last_known AS (
   SELECT repo_id, repo_name AS last_repo_name
   FROM (
@@ -40,9 +44,11 @@ WITH last_known AS (
       valid_from,
       row_number() OVER (PARTITION BY repo_id ORDER BY valid_from DESC) AS rn
     FROM oso.int_gharchive__repo_name_change_log
+    WHERE valid_from < @start_dt  -- Only historical data before current batch
   ) t
   WHERE rn = 1
 ),
+-- Get events from the current batch time range
 batch_events AS (
   SELECT
     repo_id,
@@ -53,6 +59,13 @@ batch_events AS (
     AND repo_id IS NOT NULL
     AND repo_name IS NOT NULL
 ),
+-- Determine the previous repo_name for each event in the batch
+-- Algorithm:
+--   1. Use LAG to get the previous repo_name within the current batch
+--   2. For the first event of a repo_id in the batch, LAG returns NULL
+--   3. COALESCE with last_repo_name from historical data to bridge across batches
+--      This is necessary for incremental processing: we need to know what the
+--      repo_name was at the end of the previous batch to detect renames correctly
 ordered AS (
   SELECT
     e.repo_id,
@@ -66,6 +79,11 @@ ordered AS (
   LEFT JOIN last_known lk
     ON e.repo_id = lk.repo_id
 ),
+-- Detect change points: when repo_name changes or is first seen
+-- Change detection logic:
+--   - prev_repo_name IS NULL: First time we've seen this repo_name (first occurrence)
+--   - repo_name <> prev_repo_name: Repository was renamed (name changed)
+-- Both cases indicate a change point that should be recorded
 change_points AS (
   SELECT
     repo_id,
