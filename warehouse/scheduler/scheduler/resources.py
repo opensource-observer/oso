@@ -133,6 +133,11 @@ def scheduler_evaluator_factory(
 def oso_client_factory(common_settings: "CommonSettings") -> OSOClient:
     """Factory function to create an OSO client."""
     # For now, return None as a placeholder.
+    if not common_settings.oso_system_api_key:
+        raise ValueError(
+            "OSO system API key is not set. Set SCHEDULER_OSO_SYSTEM_API_KEY."
+        )
+
     return OSOClient(
         url=common_settings.oso_api_url,
         headers={"x-system-credentials": common_settings.oso_system_api_key},

@@ -45,3 +45,4 @@ spec:
         SCHEDULER_GCP_PROJECT_ID: "opensource-observer"
         SCHEDULER_OSO_API_URL: "https://www.oso.xyz/api/v1/osograph"
         SCHEDULER_ENV: "production"
+        SCHEDULER_OSO_SYSTEM_API_KEY: "gcp:secretmanager:production-scheduler-oso-system-api-key/versions/latest"

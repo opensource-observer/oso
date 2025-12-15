@@ -60,8 +60,9 @@ class CommonSettings(BaseSettings):
     oso_api_url: str = Field(
         description="URL for the OSO API GraphQL endpoint",
     )
-    oso_system_api_key: str = Field(
+    oso_system_api_key: str | None = Field(
         description="API key for authenticating with the OSO system",
+        default=None,
     )
 
     @model_validator(mode="after")
