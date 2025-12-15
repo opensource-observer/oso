@@ -5,12 +5,4 @@ metadata:
   name: {{ .Release.Name }}-cluster-role
 rules:
   {{- toYaml . | nindent 2 }}
-  # # Access to deployments for scaling
-  # - apiGroups: ["apps"] # API group for deployments
-  #   resources: ["deployments"] # Specific subresource for scaling
-  #   verbs: ["get", "update", "list", "patch", "watch"]
-  # # Read only access to services
-  # - apiGroups: [""]
-  #   resources: ["services"]
-  #   verbs: ["get", "list", "watch"]
 {{- end -}}
