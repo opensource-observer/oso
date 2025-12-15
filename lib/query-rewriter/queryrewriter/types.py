@@ -1,5 +1,6 @@
 import abc
 
+from pydantic import BaseModel
 from sqlglot import exp
 
 
@@ -21,3 +22,8 @@ class TableResolver(abc.ABC):
             A dictionary mapping the original table names to their resolved names.
         """
         ...
+
+
+class RewriteResponse(BaseModel):
+    rewritten_query: str
+    tables: dict[str, str]
