@@ -57,6 +57,14 @@ From inside the `warehouse/scheduler` directory, run:
 uv run ariadne-codegen
 ```
 
+## Initializing Pub/Sub topics
+
+Before running the workers, you need to initialize the topic and subscription on the emulator.
+
+```bash
+uv run scheduler initialize
+```
+
 ## Running the workers
 
 At the moment, a single worker process can only handle a single queue at a time.
