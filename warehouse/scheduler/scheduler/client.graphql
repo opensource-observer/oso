@@ -143,3 +143,12 @@ query GetDataModels($datasetId: ID!) {
     }
   }
 }
+
+query ResolveTables($references: [String!]!, $metadata: JSON) {
+  system {
+    resolveTables(references: $references, metadata: $metadata) {
+      reference
+      fqn
+    }
+  }
+}
