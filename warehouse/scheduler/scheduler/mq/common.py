@@ -134,6 +134,19 @@ class RunHandler(MessageHandler[T]):
         oso_client: OSOClient = resources.resolve("oso_client")
 
         run_context = OSORunContext.create(oso_client, run_id=run_id_str)
+
+        # Try to set the run to running in the database for user's visibility
+        try:
+            run_context.log.info(f"Reporting run {run_id_str} as started.")
+            await oso_client.start_run(run_id=run_id_str)
+        except Exception as e:
+            logger.error(f"Error starting run {run_id_str}: {e}")
+            return await self.report_response(
+                oso_client=oso_client,
+                run_id_str=run_id_str,
+                response=FailedResponse(message=f"Failed to start run {run_id_str}."),
+            )
+
         try:
             response = await resources.run(
                 self.handle_run_message,
@@ -147,7 +160,20 @@ class RunHandler(MessageHandler[T]):
             response = FailedResponse(
                 message=f"Failed to process the message for run_id {run_id_str}."
             )
+        return await self.report_response(
+            oso_client=oso_client,
+            run_id_str=run_id_str,
+            response=response,
+        )
 
+    async def report_response(
+        self, oso_client: OSOClient, run_id_str: str, response: HandlerResponse
+    ) -> HandlerResponse:
+        """Handle the response from processing a run message.
+
+        Args:
+            response: The response from processing the run message.
+        """
         # Write the response to the database
         match response:
             case SkipResponse():
