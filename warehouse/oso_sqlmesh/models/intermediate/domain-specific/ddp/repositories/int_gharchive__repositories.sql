@@ -3,6 +3,7 @@ MODEL (
   description 'Repositories from GitHub Archive',
   dialect trino,
   kind FULL,
+  partitioned_by DAY("valid_from"),
   grain (repo_id, repo_name, valid_from),
   tags (
     "github",
