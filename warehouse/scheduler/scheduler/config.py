@@ -38,6 +38,13 @@ class CommonSettings(BaseSettings):
     trino_k8s_coordinator_deployment_name: str = ""
     trino_k8s_worker_deployment_name: str = ""
     trino_connect_timeout: int = 240
+
+    redis_host: t.Optional[str] = None
+    redis_port: int = 6379
+    redis_ttl_seconds: int = 3600
+
+    local_heartbeat_path: str = ""
+
     k8s_use_port_forward: bool = Field(
         default=False,
         description="Whether to use port forwarding when connecting to k8s services",
@@ -53,6 +60,11 @@ class CommonSettings(BaseSettings):
 
     trino_enabled: bool = False
 
+    local_working_dir: str = Field(
+        default=os.path.join(os.getcwd(), ".scheduler_workdir"),
+        description="Local working directory for the scheduler",
+    )
+
     local_duckdb_path: str = Field(
         default="",
         description="Path to the local DuckDB database file",
@@ -60,17 +72,21 @@ class CommonSettings(BaseSettings):
     oso_api_url: str = Field(
         description="URL for the OSO API GraphQL endpoint",
     )
-    oso_system_api_key: str | None = Field(
+    oso_system_api_key: str = Field(
         description="API key for authenticating with the OSO system",
-        default=None,
     )
 
     @model_validator(mode="after")
     def handle_generated_config(self):
         if not self.local_duckdb_path:
             self.local_duckdb_path = os.path.join(
-                os.getcwd(),
+                self.local_working_dir,
                 "duckdb.db",
+            )
+        if not self.local_heartbeat_path:
+            self.local_heartbeat_path = os.path.join(
+                self.local_working_dir,
+                "heartbeat",
             )
         if os.environ.get("PUBSUB_EMULATOR_HOST"):
             self.emulator_enabled = True
