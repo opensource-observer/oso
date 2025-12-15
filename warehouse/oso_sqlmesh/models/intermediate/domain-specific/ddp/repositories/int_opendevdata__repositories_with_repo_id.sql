@@ -34,42 +34,44 @@ opendevdata_needing_fallback AS (
   FROM opendevdata_with_graphql_match
   WHERE repo_id_from_graphql IS NULL
 ),
--- Get most recent name per repo_id from gharchive, but ONLY for repo_names that need fallback
--- This optimization reduces the ROW_NUMBER computation to only relevant repositories
+-- Get most recent name per repo_id from gharchive,
+-- for repo_names that need fallback
 gharchive_current_names AS (
   SELECT
-    repo_id,
-    repo_name,
+    ghr.repo_id,
+    ghr.repo_name,
     ROW_NUMBER() OVER (
-      PARTITION BY repo_id
-      ORDER BY valid_from DESC
+      PARTITION BY ghr.repo_id
+      ORDER BY ghr.valid_from DESC
     ) AS rn
-  FROM oso.int_gharchive__repositories
-  WHERE repo_name IN (SELECT repo_name FROM opendevdata_needing_fallback)
+  FROM oso.int_gharchive__repositories AS ghr
+  INNER JOIN opendevdata_needing_fallback AS onf
+    ON ghr.repo_name = onf.repo_name
 ),
 
 final_output AS (
   SELECT
-  ogm.opendevdata_id,
-  ogm.repo_created_at,
-  ogm.repo_name,
-  ogm.github_graphql_id,
-  ogm.star_count,
-  ogm.fork_count,
-  ogm.is_opendevdata_blacklist,
-  COALESCE(
-    ogm.repo_id_from_graphql,
-    gh.repo_id
-  ) AS repo_id,
-  CASE WHEN ogm.repo_id_from_graphql IS NOT NULL THEN 'ossd'
-       WHEN gh.repo_id IS NOT NULL THEN 'gharchive'
-       ELSE 'opendevdata'
-  END AS repo_id_source
-FROM opendevdata_with_graphql_match AS ogm
-LEFT JOIN gharchive_current_names AS gh
-  ON ogm.repo_name = gh.repo_name
-  AND ogm.repo_id_from_graphql IS NULL
-  AND gh.rn = 1
+    ogm.opendevdata_id,
+    ogm.repo_created_at,
+    ogm.repo_name,
+    ogm.github_graphql_id,
+    ogm.star_count,
+    ogm.fork_count,
+    ogm.is_opendevdata_blacklist,
+    COALESCE(
+      ogm.repo_id_from_graphql,
+      gh.repo_id -- NULL if no match found
+    ) AS repo_id,
+    CASE
+      WHEN ogm.repo_id_from_graphql IS NOT NULL THEN 'ossd'
+      WHEN gh.repo_id IS NOT NULL THEN 'gharchive'
+      ELSE 'opendevdata'
+    END AS repo_id_source
+  FROM opendevdata_with_graphql_match AS ogm
+  LEFT JOIN gharchive_current_names AS gh
+    ON ogm.repo_name = gh.repo_name
+    AND ogm.repo_id_from_graphql IS NULL
+    AND gh.rn = 1
 )
 
 SELECT
