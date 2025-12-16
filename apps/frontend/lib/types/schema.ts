@@ -7,41 +7,38 @@
 import { z } from "zod";
 import { type Json } from "@/lib/types/supabase";
 
-export const publicDatasetTypeSchema = z.union([
-  z.literal("USER_MODEL"),
-  z.literal("DATA_CONNECTOR"),
-  z.literal("DATA_INGESTION"),
-  z.literal("STATIC_MODEL"),
+export const publicDatasetTypeSchema = z.enum([
+  "USER_MODEL",
+  "DATA_CONNECTOR",
+  "DATA_INGESTION",
+  "STATIC_MODEL",
 ]);
 
-export const publicModelKindSchema = z.union([
-  z.literal("INCREMENTAL_BY_TIME_RANGE"),
-  z.literal("INCREMENTAL_BY_UNIQUE_KEY"),
-  z.literal("INCREMENTAL_BY_PARTITION"),
-  z.literal("SCD_TYPE_2_BY_TIME"),
-  z.literal("SCD_TYPE_2_BY_COLUMN"),
-  z.literal("FULL"),
-  z.literal("VIEW"),
+export const publicModelKindSchema = z.enum([
+  "INCREMENTAL_BY_TIME_RANGE",
+  "INCREMENTAL_BY_UNIQUE_KEY",
+  "INCREMENTAL_BY_PARTITION",
+  "SCD_TYPE_2_BY_TIME",
+  "SCD_TYPE_2_BY_COLUMN",
+  "FULL",
+  "VIEW",
 ]);
 
-export const publicRunStatusSchema = z.union([
-  z.literal("running"),
-  z.literal("completed"),
-  z.literal("failed"),
-  z.literal("canceled"),
-  z.literal("queued"),
+export const publicRunStatusSchema = z.enum([
+  "running",
+  "completed",
+  "failed",
+  "canceled",
+  "queued",
 ]);
 
-export const publicRunTypeSchema = z.union([
-  z.literal("manual"),
-  z.literal("scheduled"),
-]);
+export const publicRunTypeSchema = z.enum(["manual", "scheduled"]);
 
-export const publicStepStatusSchema = z.union([
-  z.literal("running"),
-  z.literal("success"),
-  z.literal("failed"),
-  z.literal("canceled"),
+export const publicStepStatusSchema = z.enum([
+  "running",
+  "success",
+  "failed",
+  "canceled",
 ]);
 
 export const jsonSchema: z.ZodSchema<Json> = z.lazy(() =>
@@ -50,13 +47,13 @@ export const jsonSchema: z.ZodSchema<Json> = z.lazy(() =>
       z.string(),
       z.number(),
       z.boolean(),
-      z.record(z.union([jsonSchema, z.undefined()])),
+      z.record(z.string(), z.union([jsonSchema, z.undefined()])),
       z.array(jsonSchema),
     ])
     .nullable(),
 );
 
-export const adminUsersRowSchema = z.object({
+export const publicAdminUsersRowSchema = z.object({
   created_at: z.string(),
   description: z.string().nullable(),
   id: z.number(),
@@ -65,7 +62,7 @@ export const adminUsersRowSchema = z.object({
   user_id: z.string(),
 });
 
-export const adminUsersInsertSchema = z.object({
+export const publicAdminUsersInsertSchema = z.object({
   created_at: z.string().optional(),
   description: z.string().optional().nullable(),
   id: z.number().optional(),
@@ -74,7 +71,7 @@ export const adminUsersInsertSchema = z.object({
   user_id: z.string(),
 });
 
-export const adminUsersUpdateSchema = z.object({
+export const publicAdminUsersUpdateSchema = z.object({
   created_at: z.string().optional(),
   description: z.string().optional().nullable(),
   id: z.number().optional(),
@@ -83,7 +80,7 @@ export const adminUsersUpdateSchema = z.object({
   user_id: z.string().optional(),
 });
 
-export const adminUsersRelationshipsSchema = z.tuple([
+export const publicAdminUsersRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("admin_users_user_id_fkey"),
     columns: z.tuple([z.literal("user_id")]),
@@ -93,7 +90,7 @@ export const adminUsersRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const apiKeysRowSchema = z.object({
+export const publicApiKeysRowSchema = z.object({
   api_key: z.string(),
   created_at: z.string(),
   deleted_at: z.string().nullable(),
@@ -104,7 +101,7 @@ export const apiKeysRowSchema = z.object({
   user_id: z.string(),
 });
 
-export const apiKeysInsertSchema = z.object({
+export const publicApiKeysInsertSchema = z.object({
   api_key: z.string(),
   created_at: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
@@ -115,7 +112,7 @@ export const apiKeysInsertSchema = z.object({
   user_id: z.string(),
 });
 
-export const apiKeysUpdateSchema = z.object({
+export const publicApiKeysUpdateSchema = z.object({
   api_key: z.string().optional(),
   created_at: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
@@ -126,7 +123,7 @@ export const apiKeysUpdateSchema = z.object({
   user_id: z.string().optional(),
 });
 
-export const apiKeysRelationshipsSchema = z.tuple([
+export const publicApiKeysRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("api_keys_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
@@ -143,7 +140,7 @@ export const apiKeysRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const chatHistoryRowSchema = z.object({
+export const publicChatHistoryRowSchema = z.object({
   created_at: z.string(),
   created_by: z.string(),
   data: z.string().nullable(),
@@ -154,7 +151,7 @@ export const chatHistoryRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const chatHistoryInsertSchema = z.object({
+export const publicChatHistoryInsertSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string(),
   data: z.string().optional().nullable(),
@@ -165,7 +162,7 @@ export const chatHistoryInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const chatHistoryUpdateSchema = z.object({
+export const publicChatHistoryUpdateSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   data: z.string().optional().nullable(),
@@ -176,7 +173,7 @@ export const chatHistoryUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const chatHistoryRelationshipsSchema = z.tuple([
+export const publicChatHistoryRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("chat_history_created_by_fkey"),
     columns: z.tuple([z.literal("created_by")]),
@@ -193,7 +190,7 @@ export const chatHistoryRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const connectorRelationshipsRowSchema = z.object({
+export const publicConnectorRelationshipsRowSchema = z.object({
   id: z.string(),
   org_id: z.string(),
   source_column_name: z.string(),
@@ -203,7 +200,7 @@ export const connectorRelationshipsRowSchema = z.object({
   target_table_id: z.string().nullable(),
 });
 
-export const connectorRelationshipsInsertSchema = z.object({
+export const publicConnectorRelationshipsInsertSchema = z.object({
   id: z.string().optional(),
   org_id: z.string(),
   source_column_name: z.string(),
@@ -213,7 +210,7 @@ export const connectorRelationshipsInsertSchema = z.object({
   target_table_id: z.string().optional().nullable(),
 });
 
-export const connectorRelationshipsUpdateSchema = z.object({
+export const publicConnectorRelationshipsUpdateSchema = z.object({
   id: z.string().optional(),
   org_id: z.string().optional(),
   source_column_name: z.string().optional(),
@@ -223,7 +220,7 @@ export const connectorRelationshipsUpdateSchema = z.object({
   target_table_id: z.string().optional().nullable(),
 });
 
-export const connectorRelationshipsRelationshipsSchema = z.tuple([
+export const publicConnectorRelationshipsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("fk_org_id"),
     columns: z.tuple([z.literal("org_id")]),
@@ -273,7 +270,7 @@ export const connectorRelationshipsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const datasetsRowSchema = z.object({
+export const publicDatasetsRowSchema = z.object({
   created_at: z.string(),
   created_by: z.string(),
   dataset_type: publicDatasetTypeSchema,
@@ -287,7 +284,7 @@ export const datasetsRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const datasetsInsertSchema = z.object({
+export const publicDatasetsInsertSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string(),
   dataset_type: publicDatasetTypeSchema,
@@ -301,7 +298,7 @@ export const datasetsInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const datasetsUpdateSchema = z.object({
+export const publicDatasetsUpdateSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   dataset_type: publicDatasetTypeSchema.optional(),
@@ -315,7 +312,7 @@ export const datasetsUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const datasetsRelationshipsSchema = z.tuple([
+export const publicDatasetsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("datasets_created_by_fkey"),
     columns: z.tuple([z.literal("created_by")]),
@@ -332,7 +329,7 @@ export const datasetsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const datasetsByOrganizationRowSchema = z.object({
+export const publicDatasetsByOrganizationRowSchema = z.object({
   created_at: z.string(),
   dataset_id: z.string(),
   deleted_at: z.string().nullable(),
@@ -340,7 +337,7 @@ export const datasetsByOrganizationRowSchema = z.object({
   org_id: z.string(),
 });
 
-export const datasetsByOrganizationInsertSchema = z.object({
+export const publicDatasetsByOrganizationInsertSchema = z.object({
   created_at: z.string().optional(),
   dataset_id: z.string(),
   deleted_at: z.string().optional().nullable(),
@@ -348,7 +345,7 @@ export const datasetsByOrganizationInsertSchema = z.object({
   org_id: z.string(),
 });
 
-export const datasetsByOrganizationUpdateSchema = z.object({
+export const publicDatasetsByOrganizationUpdateSchema = z.object({
   created_at: z.string().optional(),
   dataset_id: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
@@ -356,7 +353,7 @@ export const datasetsByOrganizationUpdateSchema = z.object({
   org_id: z.string().optional(),
 });
 
-export const datasetsByOrganizationRelationshipsSchema = z.tuple([
+export const publicDatasetsByOrganizationRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("datasets_by_organization_dataset_id_fkey"),
     columns: z.tuple([z.literal("dataset_id")]),
@@ -373,7 +370,7 @@ export const datasetsByOrganizationRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const dynamicColumnContextsRowSchema = z.object({
+export const publicDynamicColumnContextsRowSchema = z.object({
   column_name: z.string(),
   data_type: z.string(),
   description: z.string().nullable(),
@@ -381,7 +378,7 @@ export const dynamicColumnContextsRowSchema = z.object({
   table_id: z.string(),
 });
 
-export const dynamicColumnContextsInsertSchema = z.object({
+export const publicDynamicColumnContextsInsertSchema = z.object({
   column_name: z.string(),
   data_type: z.string(),
   description: z.string().optional().nullable(),
@@ -389,7 +386,7 @@ export const dynamicColumnContextsInsertSchema = z.object({
   table_id: z.string(),
 });
 
-export const dynamicColumnContextsUpdateSchema = z.object({
+export const publicDynamicColumnContextsUpdateSchema = z.object({
   column_name: z.string().optional(),
   data_type: z.string().optional(),
   description: z.string().optional().nullable(),
@@ -397,7 +394,7 @@ export const dynamicColumnContextsUpdateSchema = z.object({
   table_id: z.string().optional(),
 });
 
-export const dynamicColumnContextsRelationshipsSchema = z.tuple([
+export const publicDynamicColumnContextsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("fk_table_context"),
     columns: z.tuple([z.literal("table_id")]),
@@ -407,7 +404,7 @@ export const dynamicColumnContextsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const dynamicConnectorsRowSchema = z.object({
+export const publicDynamicConnectorsRowSchema = z.object({
   config: jsonSchema.nullable(),
   connector_name: z.string(),
   connector_type: z.string(),
@@ -420,7 +417,7 @@ export const dynamicConnectorsRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const dynamicConnectorsInsertSchema = z.object({
+export const publicDynamicConnectorsInsertSchema = z.object({
   config: jsonSchema.optional().nullable(),
   connector_name: z.string(),
   connector_type: z.string(),
@@ -433,7 +430,7 @@ export const dynamicConnectorsInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const dynamicConnectorsUpdateSchema = z.object({
+export const publicDynamicConnectorsUpdateSchema = z.object({
   config: jsonSchema.optional().nullable(),
   connector_name: z.string().optional(),
   connector_type: z.string().optional(),
@@ -446,7 +443,7 @@ export const dynamicConnectorsUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const dynamicConnectorsRelationshipsSchema = z.tuple([
+export const publicDynamicConnectorsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("fk_org_id"),
     columns: z.tuple([z.literal("org_id")]),
@@ -456,7 +453,7 @@ export const dynamicConnectorsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const dynamicReplicationsRowSchema = z.object({
+export const publicDynamicReplicationsRowSchema = z.object({
   config: jsonSchema,
   created_at: z.string(),
   created_by: z.string(),
@@ -469,7 +466,7 @@ export const dynamicReplicationsRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const dynamicReplicationsInsertSchema = z.object({
+export const publicDynamicReplicationsInsertSchema = z.object({
   config: jsonSchema,
   created_at: z.string().optional(),
   created_by: z.string(),
@@ -482,7 +479,7 @@ export const dynamicReplicationsInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const dynamicReplicationsUpdateSchema = z.object({
+export const publicDynamicReplicationsUpdateSchema = z.object({
   config: jsonSchema.optional(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
@@ -495,7 +492,7 @@ export const dynamicReplicationsUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const dynamicReplicationsRelationshipsSchema = z.tuple([
+export const publicDynamicReplicationsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("fk_org_id"),
     columns: z.tuple([z.literal("org_id")]),
@@ -505,28 +502,28 @@ export const dynamicReplicationsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const dynamicTableContextsRowSchema = z.object({
+export const publicDynamicTableContextsRowSchema = z.object({
   connector_id: z.string(),
   description: z.string().nullable(),
   id: z.string(),
   table_name: z.string(),
 });
 
-export const dynamicTableContextsInsertSchema = z.object({
+export const publicDynamicTableContextsInsertSchema = z.object({
   connector_id: z.string(),
   description: z.string().optional().nullable(),
   id: z.string().optional(),
   table_name: z.string(),
 });
 
-export const dynamicTableContextsUpdateSchema = z.object({
+export const publicDynamicTableContextsUpdateSchema = z.object({
   connector_id: z.string().optional(),
   description: z.string().optional().nullable(),
   id: z.string().optional(),
   table_name: z.string().optional(),
 });
 
-export const dynamicTableContextsRelationshipsSchema = z.tuple([
+export const publicDynamicTableContextsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("fk_connector_id"),
     columns: z.tuple([z.literal("connector_id")]),
@@ -536,7 +533,7 @@ export const dynamicTableContextsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const invitationsRowSchema = z.object({
+export const publicInvitationsRowSchema = z.object({
   accepted_at: z.string().nullable(),
   accepted_by: z.string().nullable(),
   created_at: z.string(),
@@ -550,7 +547,7 @@ export const invitationsRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const invitationsInsertSchema = z.object({
+export const publicInvitationsInsertSchema = z.object({
   accepted_at: z.string().optional().nullable(),
   accepted_by: z.string().optional().nullable(),
   created_at: z.string().optional(),
@@ -564,7 +561,7 @@ export const invitationsInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const invitationsUpdateSchema = z.object({
+export const publicInvitationsUpdateSchema = z.object({
   accepted_at: z.string().optional().nullable(),
   accepted_by: z.string().optional().nullable(),
   created_at: z.string().optional(),
@@ -578,7 +575,7 @@ export const invitationsUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const invitationsRelationshipsSchema = z.tuple([
+export const publicInvitationsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("invitations_accepted_by_fkey"),
     columns: z.tuple([z.literal("accepted_by")]),
@@ -608,7 +605,7 @@ export const publicModelColumnTypeSchema = z.object({
   description: z.string().nullable(),
 });
 
-export const materializationInsertSchema = z.object({
+export const publicMaterializationInsertSchema = z.object({
   created_at: z.string().optional(),
   dataset_id: z.string(),
   id: z.string().optional(),
@@ -620,7 +617,7 @@ export const materializationInsertSchema = z.object({
   warehouse_fqn: z.string(),
 });
 
-export const materializationUpdateSchema = z.object({
+export const publicMaterializationUpdateSchema = z.object({
   created_at: z.string().optional(),
   dataset_id: z.string().optional(),
   id: z.string().optional(),
@@ -632,7 +629,7 @@ export const materializationUpdateSchema = z.object({
   warehouse_fqn: z.string().optional(),
 });
 
-export const materializationRelationshipsSchema = z.tuple([
+export const publicMaterializationRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("fk_step"),
     columns: z.tuple([z.literal("step_id")]),
@@ -663,7 +660,7 @@ export const materializationRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const modelRowSchema = z.object({
+export const publicModelRowSchema = z.object({
   created_at: z.string(),
   dataset_id: z.string(),
   deleted_at: z.string().nullable(),
@@ -674,7 +671,7 @@ export const modelRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const modelInsertSchema = z.object({
+export const publicModelInsertSchema = z.object({
   created_at: z.string().optional(),
   dataset_id: z.string(),
   deleted_at: z.string().optional().nullable(),
@@ -685,7 +682,7 @@ export const modelInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const modelUpdateSchema = z.object({
+export const publicModelUpdateSchema = z.object({
   created_at: z.string().optional(),
   dataset_id: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
@@ -696,7 +693,7 @@ export const modelUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const modelRelationshipsSchema = z.tuple([
+export const publicModelRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("model_dataset_id_fkey"),
     columns: z.tuple([z.literal("dataset_id")]),
@@ -713,7 +710,7 @@ export const modelRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const modelReleaseRowSchema = z.object({
+export const publicModelReleaseRowSchema = z.object({
   created_at: z.string(),
   description: z.string().nullable(),
   id: z.string(),
@@ -723,7 +720,7 @@ export const modelReleaseRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const modelReleaseInsertSchema = z.object({
+export const publicModelReleaseInsertSchema = z.object({
   created_at: z.string().optional(),
   description: z.string().optional().nullable(),
   id: z.string().optional(),
@@ -733,7 +730,7 @@ export const modelReleaseInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const modelReleaseUpdateSchema = z.object({
+export const publicModelReleaseUpdateSchema = z.object({
   created_at: z.string().optional(),
   description: z.string().optional().nullable(),
   id: z.string().optional(),
@@ -743,7 +740,7 @@ export const modelReleaseUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const modelReleaseRelationshipsSchema = z.tuple([
+export const publicModelReleaseRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("model_release_model_id_fkey"),
     columns: z.tuple([z.literal("model_id")]),
@@ -789,7 +786,7 @@ export const publicModelKindOptionsSchema = z.object({
   execution_time_as_valid_from: z.boolean().nullable(),
 });
 
-export const modelRevisionInsertSchema = z.object({
+export const publicModelRevisionInsertSchema = z.object({
   clustered_by: z.array(z.string()).optional().nullable(),
   code: z.string(),
   created_at: z.string().optional(),
@@ -811,7 +808,7 @@ export const modelRevisionInsertSchema = z.object({
   start: z.string().optional().nullable(),
 });
 
-export const modelRevisionUpdateSchema = z.object({
+export const publicModelRevisionUpdateSchema = z.object({
   clustered_by: z.array(z.string()).optional().nullable(),
   code: z.string().optional(),
   created_at: z.string().optional(),
@@ -833,7 +830,7 @@ export const modelRevisionUpdateSchema = z.object({
   start: z.string().optional().nullable(),
 });
 
-export const modelRevisionRelationshipsSchema = z.tuple([
+export const publicModelRevisionRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("model_revision_model_id_fkey"),
     columns: z.tuple([z.literal("model_id")]),
@@ -850,7 +847,7 @@ export const modelRevisionRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const notebooksRowSchema = z.object({
+export const publicNotebooksRowSchema = z.object({
   created_at: z.string(),
   created_by: z.string(),
   data: z.string().nullable(),
@@ -862,7 +859,7 @@ export const notebooksRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const notebooksInsertSchema = z.object({
+export const publicNotebooksInsertSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string(),
   data: z.string().optional().nullable(),
@@ -874,7 +871,7 @@ export const notebooksInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const notebooksUpdateSchema = z.object({
+export const publicNotebooksUpdateSchema = z.object({
   created_at: z.string().optional(),
   created_by: z.string().optional(),
   data: z.string().optional().nullable(),
@@ -886,7 +883,7 @@ export const notebooksUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const notebooksRelationshipsSchema = z.tuple([
+export const publicNotebooksRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("saved_queries_created_by_fkey"),
     columns: z.tuple([z.literal("created_by")]),
@@ -903,7 +900,7 @@ export const notebooksRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const organizationCreditTransactionsRowSchema = z.object({
+export const publicOrganizationCreditTransactionsRowSchema = z.object({
   amount: z.number(),
   api_endpoint: z.string().nullable(),
   created_at: z.string(),
@@ -914,7 +911,7 @@ export const organizationCreditTransactionsRowSchema = z.object({
   user_id: z.string(),
 });
 
-export const organizationCreditTransactionsInsertSchema = z.object({
+export const publicOrganizationCreditTransactionsInsertSchema = z.object({
   amount: z.number(),
   api_endpoint: z.string().optional().nullable(),
   created_at: z.string().optional(),
@@ -925,7 +922,7 @@ export const organizationCreditTransactionsInsertSchema = z.object({
   user_id: z.string(),
 });
 
-export const organizationCreditTransactionsUpdateSchema = z.object({
+export const publicOrganizationCreditTransactionsUpdateSchema = z.object({
   amount: z.number().optional(),
   api_endpoint: z.string().optional().nullable(),
   created_at: z.string().optional(),
@@ -936,7 +933,7 @@ export const organizationCreditTransactionsUpdateSchema = z.object({
   user_id: z.string().optional(),
 });
 
-export const organizationCreditTransactionsRelationshipsSchema = z.tuple([
+export const publicOrganizationCreditTransactionsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("organization_credit_transactions_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
@@ -946,7 +943,7 @@ export const organizationCreditTransactionsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const organizationCreditsRowSchema = z.object({
+export const publicOrganizationCreditsRowSchema = z.object({
   created_at: z.string(),
   credits_balance: z.number(),
   id: z.string(),
@@ -955,7 +952,7 @@ export const organizationCreditsRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const organizationCreditsInsertSchema = z.object({
+export const publicOrganizationCreditsInsertSchema = z.object({
   created_at: z.string().optional(),
   credits_balance: z.number().optional(),
   id: z.string().optional(),
@@ -964,7 +961,7 @@ export const organizationCreditsInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const organizationCreditsUpdateSchema = z.object({
+export const publicOrganizationCreditsUpdateSchema = z.object({
   created_at: z.string().optional(),
   credits_balance: z.number().optional(),
   id: z.string().optional(),
@@ -973,7 +970,7 @@ export const organizationCreditsUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const organizationCreditsRelationshipsSchema = z.tuple([
+export const publicOrganizationCreditsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("organization_credits_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
@@ -983,7 +980,7 @@ export const organizationCreditsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const organizationsRowSchema = z.object({
+export const publicOrganizationsRowSchema = z.object({
   billing_contact_email: z.string().nullable(),
   created_at: z.string(),
   created_by: z.string(),
@@ -995,7 +992,7 @@ export const organizationsRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const organizationsInsertSchema = z.object({
+export const publicOrganizationsInsertSchema = z.object({
   billing_contact_email: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string(),
@@ -1007,7 +1004,7 @@ export const organizationsInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const organizationsUpdateSchema = z.object({
+export const publicOrganizationsUpdateSchema = z.object({
   billing_contact_email: z.string().optional().nullable(),
   created_at: z.string().optional(),
   created_by: z.string().optional(),
@@ -1019,7 +1016,7 @@ export const organizationsUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const organizationsRelationshipsSchema = z.tuple([
+export const publicOrganizationsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("organizations_created_by_fkey1"),
     columns: z.tuple([z.literal("created_by")]),
@@ -1036,7 +1033,7 @@ export const organizationsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const pricingPlanRowSchema = z.object({
+export const publicPricingPlanRowSchema = z.object({
   created_at: z.string(),
   max_credits_per_cycle: z.number().nullable(),
   plan_id: z.string(),
@@ -1047,7 +1044,7 @@ export const pricingPlanRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const pricingPlanInsertSchema = z.object({
+export const publicPricingPlanInsertSchema = z.object({
   created_at: z.string().optional(),
   max_credits_per_cycle: z.number().optional().nullable(),
   plan_id: z.string().optional(),
@@ -1058,7 +1055,7 @@ export const pricingPlanInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const pricingPlanUpdateSchema = z.object({
+export const publicPricingPlanUpdateSchema = z.object({
   created_at: z.string().optional(),
   max_credits_per_cycle: z.number().optional().nullable(),
   plan_id: z.string().optional(),
@@ -1069,7 +1066,7 @@ export const pricingPlanUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const publishedNotebooksRowSchema = z.object({
+export const publicPublishedNotebooksRowSchema = z.object({
   created_at: z.string(),
   data_path: z.string(),
   deleted_at: z.string().nullable(),
@@ -1079,7 +1076,7 @@ export const publishedNotebooksRowSchema = z.object({
   updated_by: z.string().nullable(),
 });
 
-export const publishedNotebooksInsertSchema = z.object({
+export const publicPublishedNotebooksInsertSchema = z.object({
   created_at: z.string().optional(),
   data_path: z.string(),
   deleted_at: z.string().optional().nullable(),
@@ -1089,7 +1086,7 @@ export const publishedNotebooksInsertSchema = z.object({
   updated_by: z.string().optional().nullable(),
 });
 
-export const publishedNotebooksUpdateSchema = z.object({
+export const publicPublishedNotebooksUpdateSchema = z.object({
   created_at: z.string().optional(),
   data_path: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
@@ -1099,7 +1096,7 @@ export const publishedNotebooksUpdateSchema = z.object({
   updated_by: z.string().optional().nullable(),
 });
 
-export const publishedNotebooksRelationshipsSchema = z.tuple([
+export const publicPublishedNotebooksRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("published_notebooks_notebook_id_fkey"),
     columns: z.tuple([z.literal("notebook_id")]),
@@ -1109,7 +1106,7 @@ export const publishedNotebooksRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const purchaseIntentsRowSchema = z.object({
+export const publicPurchaseIntentsRowSchema = z.object({
   completed_at: z.string().nullable(),
   created_at: z.string(),
   credits_amount: z.number(),
@@ -1123,7 +1120,7 @@ export const purchaseIntentsRowSchema = z.object({
   user_id: z.string(),
 });
 
-export const purchaseIntentsInsertSchema = z.object({
+export const publicPurchaseIntentsInsertSchema = z.object({
   completed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   credits_amount: z.number(),
@@ -1137,7 +1134,7 @@ export const purchaseIntentsInsertSchema = z.object({
   user_id: z.string(),
 });
 
-export const purchaseIntentsUpdateSchema = z.object({
+export const publicPurchaseIntentsUpdateSchema = z.object({
   completed_at: z.string().optional().nullable(),
   created_at: z.string().optional(),
   credits_amount: z.number().optional(),
@@ -1151,7 +1148,7 @@ export const purchaseIntentsUpdateSchema = z.object({
   user_id: z.string().optional(),
 });
 
-export const purchaseIntentsRelationshipsSchema = z.tuple([
+export const publicPurchaseIntentsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("purchase_intents_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
@@ -1161,22 +1158,22 @@ export const purchaseIntentsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const reservedNamesRowSchema = z.object({
+export const publicReservedNamesRowSchema = z.object({
   created_at: z.string(),
   name: z.string(),
 });
 
-export const reservedNamesInsertSchema = z.object({
+export const publicReservedNamesInsertSchema = z.object({
   created_at: z.string().optional(),
   name: z.string(),
 });
 
-export const reservedNamesUpdateSchema = z.object({
+export const publicReservedNamesUpdateSchema = z.object({
   created_at: z.string().optional(),
   name: z.string().optional(),
 });
 
-export const resourcePermissionsRowSchema = z.object({
+export const publicResourcePermissionsRowSchema = z.object({
   chat_id: z.string().nullable(),
   created_at: z.string(),
   granted_by: z.string().nullable(),
@@ -1188,7 +1185,7 @@ export const resourcePermissionsRowSchema = z.object({
   user_id: z.string().nullable(),
 });
 
-export const resourcePermissionsInsertSchema = z.object({
+export const publicResourcePermissionsInsertSchema = z.object({
   chat_id: z.string().optional().nullable(),
   created_at: z.string().optional(),
   granted_by: z.string().optional().nullable(),
@@ -1200,7 +1197,7 @@ export const resourcePermissionsInsertSchema = z.object({
   user_id: z.string().optional().nullable(),
 });
 
-export const resourcePermissionsUpdateSchema = z.object({
+export const publicResourcePermissionsUpdateSchema = z.object({
   chat_id: z.string().optional().nullable(),
   created_at: z.string().optional(),
   granted_by: z.string().optional().nullable(),
@@ -1212,7 +1209,7 @@ export const resourcePermissionsUpdateSchema = z.object({
   user_id: z.string().optional().nullable(),
 });
 
-export const resourcePermissionsRelationshipsSchema = z.tuple([
+export const publicResourcePermissionsRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("resource_permissions_chat_id_fkey"),
     columns: z.tuple([z.literal("chat_id")]),
@@ -1243,9 +1240,9 @@ export const resourcePermissionsRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const runRowSchema = z.object({
+export const publicRunRowSchema = z.object({
   completed_at: z.string().nullable(),
-  dataset_id: z.string(),
+  dataset_id: z.string().nullable(),
   id: z.string(),
   logs_url: z.string().nullable(),
   org_id: z.string(),
@@ -1257,9 +1254,9 @@ export const runRowSchema = z.object({
   ttl: z.string().nullable(),
 });
 
-export const runInsertSchema = z.object({
+export const publicRunInsertSchema = z.object({
   completed_at: z.string().optional().nullable(),
-  dataset_id: z.string(),
+  dataset_id: z.string().optional().nullable(),
   id: z.string().optional(),
   logs_url: z.string().optional().nullable(),
   org_id: z.string(),
@@ -1271,9 +1268,9 @@ export const runInsertSchema = z.object({
   ttl: z.string().optional().nullable(),
 });
 
-export const runUpdateSchema = z.object({
+export const publicRunUpdateSchema = z.object({
   completed_at: z.string().optional().nullable(),
-  dataset_id: z.string().optional(),
+  dataset_id: z.string().optional().nullable(),
   id: z.string().optional(),
   logs_url: z.string().optional().nullable(),
   org_id: z.string().optional(),
@@ -1285,7 +1282,7 @@ export const runUpdateSchema = z.object({
   ttl: z.string().optional().nullable(),
 });
 
-export const runRelationshipsSchema = z.tuple([
+export const publicRunRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("run_dataset_id_fkey"),
     columns: z.tuple([z.literal("dataset_id")]),
@@ -1302,7 +1299,7 @@ export const runRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const staticModelRowSchema = z.object({
+export const publicStaticModelRowSchema = z.object({
   created_at: z.string(),
   dataset_id: z.string(),
   deleted_at: z.string().nullable(),
@@ -1312,7 +1309,7 @@ export const staticModelRowSchema = z.object({
   updated_at: z.string(),
 });
 
-export const staticModelInsertSchema = z.object({
+export const publicStaticModelInsertSchema = z.object({
   created_at: z.string().optional(),
   dataset_id: z.string(),
   deleted_at: z.string().optional().nullable(),
@@ -1322,7 +1319,7 @@ export const staticModelInsertSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const staticModelUpdateSchema = z.object({
+export const publicStaticModelUpdateSchema = z.object({
   created_at: z.string().optional(),
   dataset_id: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
@@ -1332,7 +1329,7 @@ export const staticModelUpdateSchema = z.object({
   updated_at: z.string().optional(),
 });
 
-export const staticModelRelationshipsSchema = z.tuple([
+export const publicStaticModelRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("static_model_dataset_id_fkey"),
     columns: z.tuple([z.literal("dataset_id")]),
@@ -1349,7 +1346,7 @@ export const staticModelRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const stepRowSchema = z.object({
+export const publicStepRowSchema = z.object({
   completed_at: z.string().nullable(),
   display_name: z.string(),
   id: z.string(),
@@ -1361,7 +1358,7 @@ export const stepRowSchema = z.object({
   status: publicStepStatusSchema,
 });
 
-export const stepInsertSchema = z.object({
+export const publicStepInsertSchema = z.object({
   completed_at: z.string().optional().nullable(),
   display_name: z.string(),
   id: z.string().optional(),
@@ -1373,7 +1370,7 @@ export const stepInsertSchema = z.object({
   status: publicStepStatusSchema.optional(),
 });
 
-export const stepUpdateSchema = z.object({
+export const publicStepUpdateSchema = z.object({
   completed_at: z.string().optional().nullable(),
   display_name: z.string().optional(),
   id: z.string().optional(),
@@ -1385,7 +1382,7 @@ export const stepUpdateSchema = z.object({
   status: publicStepStatusSchema.optional(),
 });
 
-export const stepRelationshipsSchema = z.tuple([
+export const publicStepRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("step_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
@@ -1402,7 +1399,7 @@ export const stepRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const userCreditsRowSchema = z.object({
+export const publicUserCreditsRowSchema = z.object({
   created_at: z.string(),
   credits_balance: z.number(),
   id: z.string(),
@@ -1410,7 +1407,7 @@ export const userCreditsRowSchema = z.object({
   user_id: z.string(),
 });
 
-export const userCreditsInsertSchema = z.object({
+export const publicUserCreditsInsertSchema = z.object({
   created_at: z.string().optional(),
   credits_balance: z.number().optional(),
   id: z.string().optional(),
@@ -1418,7 +1415,7 @@ export const userCreditsInsertSchema = z.object({
   user_id: z.string(),
 });
 
-export const userCreditsUpdateSchema = z.object({
+export const publicUserCreditsUpdateSchema = z.object({
   created_at: z.string().optional(),
   credits_balance: z.number().optional(),
   id: z.string().optional(),
@@ -1426,7 +1423,7 @@ export const userCreditsUpdateSchema = z.object({
   user_id: z.string().optional(),
 });
 
-export const userProfilesRowSchema = z.object({
+export const publicUserProfilesRowSchema = z.object({
   avatar_url: z.string().nullable(),
   email: z.string().nullable(),
   full_name: z.string().nullable(),
@@ -1435,7 +1432,7 @@ export const userProfilesRowSchema = z.object({
   website: z.string().nullable(),
 });
 
-export const userProfilesInsertSchema = z.object({
+export const publicUserProfilesInsertSchema = z.object({
   avatar_url: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
   full_name: z.string().optional().nullable(),
@@ -1444,7 +1441,7 @@ export const userProfilesInsertSchema = z.object({
   website: z.string().optional().nullable(),
 });
 
-export const userProfilesUpdateSchema = z.object({
+export const publicUserProfilesUpdateSchema = z.object({
   avatar_url: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
   full_name: z.string().optional().nullable(),
@@ -1453,7 +1450,7 @@ export const userProfilesUpdateSchema = z.object({
   website: z.string().optional().nullable(),
 });
 
-export const usersByOrganizationRowSchema = z.object({
+export const publicUsersByOrganizationRowSchema = z.object({
   created_at: z.string(),
   deleted_at: z.string().nullable(),
   id: z.string(),
@@ -1463,7 +1460,7 @@ export const usersByOrganizationRowSchema = z.object({
   user_role: z.string(),
 });
 
-export const usersByOrganizationInsertSchema = z.object({
+export const publicUsersByOrganizationInsertSchema = z.object({
   created_at: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
@@ -1473,7 +1470,7 @@ export const usersByOrganizationInsertSchema = z.object({
   user_role: z.string(),
 });
 
-export const usersByOrganizationUpdateSchema = z.object({
+export const publicUsersByOrganizationUpdateSchema = z.object({
   created_at: z.string().optional(),
   deleted_at: z.string().optional().nullable(),
   id: z.string().optional(),
@@ -1483,7 +1480,7 @@ export const usersByOrganizationUpdateSchema = z.object({
   user_role: z.string().optional(),
 });
 
-export const usersByOrganizationRelationshipsSchema = z.tuple([
+export const publicUsersByOrganizationRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("users_by_organization_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
@@ -1500,14 +1497,14 @@ export const usersByOrganizationRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const modelAsTableRowSchema = z.object({
+export const publicModelAsTableRowSchema = z.object({
   dataset_id: z.string().nullable(),
   org_id: z.string().nullable(),
   table_id: z.string().nullable(),
   table_name: z.string().nullable(),
 });
 
-export const modelAsTableRelationshipsSchema = z.tuple([
+export const publicModelAsTableRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("model_dataset_id_fkey"),
     columns: z.tuple([z.literal("dataset_id")]),
@@ -1524,7 +1521,7 @@ export const modelAsTableRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const tableLookupRowSchema = z.object({
+export const publicTableLookupRowSchema = z.object({
   dataset_id: z.string().nullable(),
   logical_fqn: z.string().nullable(),
   org_id: z.string().nullable(),
@@ -1533,7 +1530,7 @@ export const tableLookupRowSchema = z.object({
   warehouse_fqn: z.string().nullable(),
 });
 
-export const tableLookupRelationshipsSchema = z.tuple([
+export const publicTableLookupRelationshipsSchema = z.tuple([
   z.object({
     foreignKeyName: z.literal("model_dataset_id_fkey"),
     columns: z.tuple([z.literal("dataset_id")]),
@@ -1550,23 +1547,23 @@ export const tableLookupRelationshipsSchema = z.tuple([
   }),
 ]);
 
-export const acceptInvitationArgsSchema = z.object({
+export const publicAcceptInvitationArgsSchema = z.object({
   p_invitation_id: z.string(),
   p_user_id: z.string(),
 });
 
-export const acceptInvitationReturnsSchema = z.boolean();
+export const publicAcceptInvitationReturnsSchema = z.boolean();
 
-export const addCreditsArgsSchema = z.object({
+export const publicAddCreditsArgsSchema = z.object({
   p_amount: z.number(),
   p_metadata: jsonSchema.optional(),
   p_transaction_type: z.string(),
   p_user_id: z.string(),
 });
 
-export const addCreditsReturnsSchema = z.boolean();
+export const publicAddCreditsReturnsSchema = z.boolean();
 
-export const canGrantPermissionArgsSchema = z.object({
+export const publicCanGrantPermissionArgsSchema = z.object({
   granter_id: z.string(),
   permission_to_grant: z.string(),
   target_resource_id: z.string(),
@@ -1574,34 +1571,34 @@ export const canGrantPermissionArgsSchema = z.object({
   target_user_id: z.string().optional(),
 });
 
-export const canGrantPermissionReturnsSchema = z.boolean();
+export const publicCanGrantPermissionReturnsSchema = z.boolean();
 
-export const checkOrgAdminArgsSchema = z.object({
+export const publicCheckOrgAdminArgsSchema = z.object({
   check_org_id: z.string(),
   check_user_id: z.string(),
 });
 
-export const checkOrgAdminReturnsSchema = z.boolean();
+export const publicCheckOrgAdminReturnsSchema = z.boolean();
 
-export const checkOrgMembershipArgsSchema = z.object({
+export const publicCheckOrgMembershipArgsSchema = z.object({
   check_org_id: z.string(),
   check_user_id: z.string(),
 });
 
-export const checkOrgMembershipReturnsSchema = z.boolean();
+export const publicCheckOrgMembershipReturnsSchema = z.boolean();
 
-export const checkResourcePermissionArgsSchema = z.object({
+export const publicCheckResourcePermissionArgsSchema = z.object({
   p_resource_id: z.string(),
   p_resource_type: z.string(),
 });
 
-export const checkResourcePermissionReturnsSchema = jsonSchema;
+export const publicCheckResourcePermissionReturnsSchema = jsonSchema;
 
-export const cleanupOrphanedInvitationsArgsSchema = z.never();
+export const publicCleanupOrphanedInvitationsArgsSchema = z.never();
 
-export const cleanupOrphanedInvitationsReturnsSchema = z.undefined();
+export const publicCleanupOrphanedInvitationsReturnsSchema = z.undefined();
 
-export const deductCreditsArgsSchema = z.object({
+export const publicDeductCreditsArgsSchema = z.object({
   p_amount: z.number(),
   p_api_endpoint: z.string().optional(),
   p_metadata: jsonSchema.optional(),
@@ -1609,38 +1606,38 @@ export const deductCreditsArgsSchema = z.object({
   p_user_id: z.string(),
 });
 
-export const deductCreditsReturnsSchema = z.boolean();
+export const publicDeductCreditsReturnsSchema = z.boolean();
 
-export const expireOldInvitationsArgsSchema = z.never();
+export const publicExpireOldInvitationsArgsSchema = z.never();
 
-export const expireOldInvitationsReturnsSchema = z.undefined();
+export const publicExpireOldInvitationsReturnsSchema = z.undefined();
 
-export const getOgImageInfoArgsSchema = z.object({
+export const publicGetOgImageInfoArgsSchema = z.object({
   p_notebook_name: z.string(),
   p_org_name: z.string(),
 });
 
-export const getOgImageInfoReturnsSchema = jsonSchema;
+export const publicGetOgImageInfoReturnsSchema = jsonSchema;
 
-export const getOrganizationCreditsArgsSchema = z.object({
+export const publicGetOrganizationCreditsArgsSchema = z.object({
   p_org_id: z.string(),
 });
 
-export const getOrganizationCreditsReturnsSchema = z.number();
+export const publicGetOrganizationCreditsReturnsSchema = z.number();
 
-export const getUserCreditsArgsSchema = z.object({
+export const publicGetUserCreditsArgsSchema = z.object({
   p_user_id: z.string(),
 });
 
-export const getUserCreditsReturnsSchema = z.number();
+export const publicGetUserCreditsReturnsSchema = z.number();
 
-export const hasuraTokenHookArgsSchema = z.object({
+export const publicHasuraTokenHookArgsSchema = z.object({
   event: jsonSchema,
 });
 
-export const hasuraTokenHookReturnsSchema = jsonSchema;
+export const publicHasuraTokenHookReturnsSchema = jsonSchema;
 
-export const previewDeductCreditsArgsSchema = z.object({
+export const publicPreviewDeductCreditsArgsSchema = z.object({
   p_amount: z.number(),
   p_api_endpoint: z.string().optional(),
   p_metadata: jsonSchema.optional(),
@@ -1648,24 +1645,24 @@ export const previewDeductCreditsArgsSchema = z.object({
   p_user_id: z.string(),
 });
 
-export const previewDeductCreditsReturnsSchema = z.boolean();
+export const publicPreviewDeductCreditsReturnsSchema = z.boolean();
 
-export const uuidOrNullArgsSchema = z.object({
+export const publicUuidOrNullArgsSchema = z.object({
   str: z.string(),
 });
 
-export const uuidOrNullReturnsSchema = z.string();
+export const publicUuidOrNullReturnsSchema = z.string();
 
-export const validateOwnershipLimitsArgsSchema = z.object({
+export const publicValidateOwnershipLimitsArgsSchema = z.object({
   p_current_record_id: z.string().optional(),
   p_new_role: z.string(),
   p_old_role: z.string().optional(),
   p_user_id: z.string(),
 });
 
-export const validateOwnershipLimitsReturnsSchema = z.boolean();
+export const publicValidateOwnershipLimitsReturnsSchema = z.boolean();
 
-export const materializationRowSchema = z.object({
+export const publicMaterializationRowSchema = z.object({
   created_at: z.string(),
   dataset_id: z.string(),
   id: z.string(),
@@ -1677,7 +1674,7 @@ export const materializationRowSchema = z.object({
   warehouse_fqn: z.string(),
 });
 
-export const modelRevisionRowSchema = z.object({
+export const publicModelRevisionRowSchema = z.object({
   clustered_by: z.array(z.string()).nullable(),
   code: z.string(),
   created_at: z.string(),

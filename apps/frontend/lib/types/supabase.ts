@@ -1161,7 +1161,7 @@ export type Database = {
       run: {
         Row: {
           completed_at: string | null;
-          dataset_id: string;
+          dataset_id: string | null;
           id: string;
           logs_url: string | null;
           org_id: string;
@@ -1174,7 +1174,7 @@ export type Database = {
         };
         Insert: {
           completed_at?: string | null;
-          dataset_id: string;
+          dataset_id?: string | null;
           id?: string;
           logs_url?: string | null;
           org_id: string;
@@ -1187,7 +1187,7 @@ export type Database = {
         };
         Update: {
           completed_at?: string | null;
-          dataset_id?: string;
+          dataset_id?: string | null;
           id?: string;
           logs_url?: string | null;
           org_id?: string;
