@@ -73,6 +73,7 @@ class CommonSettings(BaseSettings):
         description="URL for the OSO API GraphQL endpoint",
     )
     oso_system_api_key: str = Field(
+        default="",
         description="API key for authenticating with the OSO system",
     )
 
