@@ -190,6 +190,29 @@ def materialization_strategy_factory(
         return DuckdbMaterializationStrategyResource()
 
 
+@resource_factory("dlt_destination")
+def dlt_destination_factory(
+    common_settings: "CommonSettings",
+):
+    """Factory function to create a DLT destination resource.
+
+    Returns a configured DLT destination object
+    """
+    # TODO(jabolo): Support trino destination as well
+    from dlt.destinations import duckdb
+    from dlt.destinations.impl.duckdb.configuration import DuckDbCredentials
+
+    if common_settings.trino_enabled:
+        logger.warning("DLT Trino destination is not yet implemented, returning None.")
+        return None
+
+    return duckdb(
+        credentials=DuckDbCredentials(
+            conn_or_path=common_settings.local_duckdb_path,
+        )
+    )
+
+
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
     registry.add_singleton("common_settings", common_settings)
@@ -206,5 +229,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(message_handler_registry_factory)
     registry.add(heartbeat_factory)
     registry.add(materialization_strategy_factory)
+    registry.add(dlt_destination_factory)
 
     return registry
