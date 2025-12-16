@@ -3,3 +3,9 @@ kind: Kustomization
 resources:
   - ../../base/scheduler
 namespace: production-scheduler
+patches:
+  - path: ./custom-helm-values.yaml
+    target:
+      kind: HelmRelease
+    options:
+      allowNameChange: true
