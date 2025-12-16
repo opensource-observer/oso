@@ -9382,6 +9382,10 @@ packages:
     resolution: {integrity: sha512-UcO3kefx6dCcZkgcTGgVOTFb7b1LlQ02hY1omMjjrrBzkajRMCFgYOjs7J71WqnuG1k2b+9ppGL7FsOfhZMQKQ==}
     engines: {node: '>=18'}
 
+  gcp-metadata@8.1.2:
+    resolution: {integrity: sha512-zV/5HKTfCeKWnxG0Dmrw51hEWFGfcF2xiXqcA3+J90WDuP0SvoiSO5ORvcBsifmx/FoIjgQN3oNOGaQ5PhLFkg==}
+    engines: {node: '>=18'}
+
   generate-api-key@1.0.2:
     resolution: {integrity: sha512-4rPSpXyboIXfugOTN3/0Qaoqpzbk0sepzPS0XyxPh3UMuu+Trk+0JMyJ6mB/7FEgp7oZ1juqsRW+8wSYeKDbfA==}
     engines: {node: '>=14'}
@@ -9523,6 +9527,10 @@ packages:
 
   google-auth-library@10.2.1:
     resolution: {integrity: sha512-HMxFl2NfeHYnaL1HoRIN1XgorKS+6CDaM+z9LSSN+i/nKDDL4KFFEWogMXu7jV4HZQy2MsxpY+wA5XIf3w410A==}
+    engines: {node: '>=18'}
+
+  google-auth-library@10.5.0:
+    resolution: {integrity: sha512-7ABviyMOlX5hIVD60YOfHw4/CxOfBhyduaYB+wbFWCWoni4N7SLcV46hrVRktuBbZjFC9ONyqamZITN7q3n32w==}
     engines: {node: '>=18'}
 
   google-gax@5.0.6:
@@ -18796,7 +18804,7 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.34.0
       arrify: 2.0.1
       extend: 3.0.2
-      google-auth-library: 10.2.1
+      google-auth-library: 10.5.0
       google-gax: 5.0.6
       heap-js: 2.7.1
       is-stream-ended: 0.1.4
@@ -19052,7 +19060,7 @@ snapshots:
       graphql-ws: 5.16.2(graphql@16.11.0)
       isomorphic-ws: 5.0.0(ws@8.18.3(bufferutil@4.0.9))
       tslib: 2.8.1
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -19066,7 +19074,7 @@ snapshots:
       graphql-ws: 6.0.6(graphql@16.11.0)(ws@8.18.3(bufferutil@4.0.9))
       isows: 1.0.7(ws@8.18.3(bufferutil@4.0.9))
       tslib: 2.8.1
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - '@fastify/websocket'
       - bufferutil
@@ -19109,7 +19117,7 @@ snapshots:
       graphql: 16.11.0
       isomorphic-ws: 5.0.0(ws@8.18.3(bufferutil@4.0.9))
       tslib: 2.8.1
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -19121,7 +19129,7 @@ snapshots:
       graphql: 16.11.0
       isomorphic-ws: 5.0.0(ws@8.18.3(bufferutil@4.0.9))
       tslib: 2.8.1
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -19291,7 +19299,7 @@ snapshots:
       isomorphic-ws: 5.0.0(ws@8.18.3(bufferutil@4.0.9))
       tslib: 2.8.1
       value-or-promise: 1.0.12
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
@@ -19313,7 +19321,7 @@ snapshots:
       isomorphic-ws: 5.0.0(ws@8.18.3(bufferutil@4.0.9))
       sync-fetch: 0.6.0-2
       tslib: 2.8.1
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - '@fastify/websocket'
       - '@types/node'
@@ -19652,7 +19660,7 @@ snapshots:
       '@types/node': 20.14.12
       jest-mock: 30.0.5
       jest-util: 30.0.5
-      jsdom: 26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      jsdom: 26.1.0(bufferutil@4.0.9)
 
   '@jest/environment@30.0.5':
     dependencies:
@@ -22147,7 +22155,7 @@ snapshots:
 
   '@sparticuz/chromium-min@141.0.0':
     dependencies:
-      follow-redirects: 1.15.11(debug@4.4.3)
+      follow-redirects: 1.15.11
       tar-fs: 3.1.1
     transitivePeerDependencies:
       - bare-buffer
@@ -22318,7 +22326,7 @@ snapshots:
       '@supabase/node-fetch': 2.6.15
       '@types/phoenix': 1.6.6
       '@types/ws': 8.18.1
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -23365,7 +23373,7 @@ snapshots:
       sirv: 3.0.1
       tinyrainbow: 2.0.0
       vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.2.1)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@26.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.1)
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     optionalDependencies:
       playwright: 1.56.1
     transitivePeerDependencies:
@@ -23919,7 +23927,7 @@ snapshots:
 
   axios@1.11.0:
     dependencies:
-      follow-redirects: 1.15.11(debug@4.4.3)
+      follow-redirects: 1.15.11
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -23927,7 +23935,7 @@ snapshots:
 
   axios@1.13.2:
     dependencies:
-      follow-redirects: 1.15.11(debug@4.4.3)
+      follow-redirects: 1.15.11
       form-data: 4.0.5
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -25936,7 +25944,7 @@ snapshots:
       eslint: 9.39.2(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@6.21.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.29.1)(eslint@9.39.2(jiti@2.6.1))
-      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@8.39.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.2(jiti@2.6.1))
+      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@6.21.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-typescript@3.6.1)(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-jsx-a11y: 6.9.0(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-react: 7.37.5(eslint@9.39.2(jiti@2.6.1))
       eslint-plugin-react-hooks: 4.6.2(eslint@9.39.2(jiti@2.6.1))
@@ -25966,7 +25974,7 @@ snapshots:
       enhanced-resolve: 5.18.3
       eslint: 9.39.2(jiti@2.6.1)
       eslint-module-utils: 2.8.1(@typescript-eslint/parser@6.21.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@9.39.2(jiti@2.6.1))
-      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@8.39.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.2(jiti@2.6.1))
+      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@6.21.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-typescript@3.6.1)(eslint@9.39.2(jiti@2.6.1))
       fast-glob: 3.3.3
       get-tsconfig: 4.7.5
       is-core-module: 2.14.0
@@ -25988,17 +25996,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.8.1(@typescript-eslint/parser@8.39.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1)):
-    dependencies:
-      debug: 3.2.7
-    optionalDependencies:
-      '@typescript-eslint/parser': 8.39.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
-      eslint: 9.39.2(jiti@2.6.1)
-      eslint-import-resolver-node: 0.3.9
-    transitivePeerDependencies:
-      - supports-color
-
-  eslint-plugin-import@2.29.1(@typescript-eslint/parser@8.39.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.2(jiti@2.6.1)):
+  eslint-plugin-import@2.29.1(@typescript-eslint/parser@6.21.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-typescript@3.6.1)(eslint@9.39.2(jiti@2.6.1)):
     dependencies:
       array-includes: 3.1.8
       array.prototype.findlastindex: 1.2.5
@@ -26008,7 +26006,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.2(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.8.1(@typescript-eslint/parser@8.39.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.2(jiti@2.6.1))
+      eslint-module-utils: 2.8.1(@typescript-eslint/parser@6.21.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@9.39.2(jiti@2.6.1))
       hasown: 2.0.2
       is-core-module: 2.14.0
       is-glob: 4.0.3
@@ -26019,7 +26017,7 @@ snapshots:
       semver: 6.3.1
       tsconfig-paths: 3.15.0
     optionalDependencies:
-      '@typescript-eslint/parser': 8.39.1(eslint@9.38.0(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser': 6.21.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2)
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
@@ -26664,6 +26662,8 @@ snapshots:
 
   fn.name@1.1.0: {}
 
+  follow-redirects@1.15.11: {}
+
   follow-redirects@1.15.11(debug@4.4.3):
     optionalDependencies:
       debug: 4.4.3(supports-color@8.1.1)
@@ -26782,6 +26782,14 @@ snapshots:
       - supports-color
 
   gcp-metadata@7.0.1:
+    dependencies:
+      gaxios: 7.1.1
+      google-logging-utils: 1.1.1
+      json-bigint: 1.0.0
+    transitivePeerDependencies:
+      - supports-color
+
+  gcp-metadata@8.1.2:
     dependencies:
       gaxios: 7.1.1
       google-logging-utils: 1.1.1
@@ -26973,12 +26981,24 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  google-auth-library@10.5.0:
+    dependencies:
+      base64-js: 1.5.1
+      ecdsa-sig-formatter: 1.0.11
+      gaxios: 7.1.1
+      gcp-metadata: 8.1.2
+      google-logging-utils: 1.1.1
+      gtoken: 8.0.0
+      jws: 4.0.0
+    transitivePeerDependencies:
+      - supports-color
+
   google-gax@5.0.6:
     dependencies:
       '@grpc/grpc-js': 1.14.2
       '@grpc/proto-loader': 0.8.0
       duplexify: 4.1.3
-      google-auth-library: 10.2.1
+      google-auth-library: 10.5.0
       google-logging-utils: 1.1.1
       node-fetch: 3.3.2
       object-hash: 3.0.0
@@ -27058,7 +27078,7 @@ snapshots:
     dependencies:
       graphql: 16.11.0
     optionalDependencies:
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
 
   graphql@16.11.0: {}
 
@@ -27840,7 +27860,7 @@ snapshots:
 
   isomorphic-ws@5.0.0(ws@8.18.3(bufferutil@4.0.9)):
     dependencies:
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
 
   isows@1.0.7(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)):
     dependencies:
@@ -27848,7 +27868,7 @@ snapshots:
 
   isows@1.0.7(ws@8.18.3(bufferutil@4.0.9)):
     dependencies:
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
 
   istanbul-lib-coverage@3.2.2: {}
 
@@ -28059,7 +28079,7 @@ snapshots:
       '@jest/environment-jsdom-abstract': 30.0.5(jsdom@26.1.0(bufferutil@4.0.9))
       '@types/jsdom': 21.1.7
       '@types/node': 20.14.12
-      jsdom: 26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      jsdom: 26.1.0(bufferutil@4.0.9)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -28339,6 +28359,33 @@ snapshots:
 
   jsbn@1.1.0: {}
 
+  jsdom@26.1.0(bufferutil@4.0.9):
+    dependencies:
+      cssstyle: 4.6.0
+      data-urls: 5.0.0
+      decimal.js: 10.6.0
+      html-encoding-sniffer: 4.0.0
+      http-proxy-agent: 7.0.2
+      https-proxy-agent: 7.0.6
+      is-potential-custom-element-name: 1.0.1
+      nwsapi: 2.2.20
+      parse5: 7.3.0
+      rrweb-cssom: 0.8.0
+      saxes: 6.0.0
+      symbol-tree: 3.2.4
+      tough-cookie: 5.1.2
+      w3c-xmlserializer: 5.0.0
+      webidl-conversions: 7.0.0
+      whatwg-encoding: 3.1.1
+      whatwg-mimetype: 4.0.0
+      whatwg-url: 14.2.0
+      ws: 8.18.3(bufferutil@4.0.9)
+      xml-name-validator: 5.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   jsdom@26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     dependencies:
       cssstyle: 4.6.0
@@ -28365,6 +28412,7 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+    optional: true
 
   jsesc@3.0.2: {}
 
@@ -29832,7 +29880,7 @@ snapshots:
 
   openai@5.19.1(ws@8.18.3(bufferutil@4.0.9))(zod@3.25.76):
     optionalDependencies:
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
       zod: 3.25.76
 
   opener@1.5.2: {}
@@ -30770,7 +30818,7 @@ snapshots:
       devtools-protocol: 0.0.1508733
       typed-query-selector: 2.12.0
       webdriver-bidi-protocol: 0.3.6
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     transitivePeerDependencies:
       - bare-buffer
       - bufferutil
@@ -32007,7 +32055,7 @@ snapshots:
       esbuild-register: 3.6.0(esbuild@0.25.8)
       recast: 0.23.11
       semver: 7.7.3
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)
     optionalDependencies:
       prettier: 3.6.2
     transitivePeerDependencies:
@@ -33280,7 +33328,7 @@ snapshots:
       '@types/debug': 4.1.12
       '@types/node': 24.2.1
       '@vitest/browser': 3.2.4(bufferutil@4.0.9)(playwright@1.56.1)(vite@7.1.1(@types/node@24.2.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.43.1)(yaml@2.8.1))(vitest@3.2.4)
-      jsdom: 26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      jsdom: 26.1.0(bufferutil@4.0.9)
     transitivePeerDependencies:
       - jiti
       - less
@@ -33665,6 +33713,10 @@ snapshots:
     optionalDependencies:
       bufferutil: 4.0.9
       utf-8-validate: 6.0.5
+
+  ws@8.18.3(bufferutil@4.0.9):
+    optionalDependencies:
+      bufferutil: 4.0.9
 
   ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     optionalDependencies:
