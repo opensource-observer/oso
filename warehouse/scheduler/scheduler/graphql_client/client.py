@@ -7,6 +7,7 @@ from .async_base_client import AsyncBaseClient
 from .enums import RunStatus, StepStatus
 from .finish_run import FinishRun
 from .finish_step import FinishStep
+from .get_data_ingestion_config import GetDataIngestionConfig
 from .get_data_models import GetDataModels
 from .start_step import StartStep
 
@@ -175,3 +176,44 @@ class Client(AsyncBaseClient):
         )
         data = self.get_data(response)
         return GetDataModels.model_validate(data)
+
+    async def get_data_ingestion_config(
+        self, dataset_id: str, config_id: str, **kwargs: Any
+    ) -> GetDataIngestionConfig:
+        query = gql(
+            """
+            query GetDataIngestionConfig($datasetId: ID!, $configId: ID!) {
+              datasets(where: {id: {eq: $datasetId}}) {
+                edges {
+                  node {
+                    id
+                    typeDefinition {
+                      __typename
+                      ... on DataIngestion {
+                        configs(where: {id: {eq: $configId}}) {
+                          edges {
+                            node {
+                              id
+                              datasetId
+                              factoryType
+                              config
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"datasetId": dataset_id, "configId": config_id}
+        response = await self.execute(
+            query=query,
+            operation_name="GetDataIngestionConfig",
+            variables=variables,
+            **kwargs,
+        )
+        data = self.get_data(response)
+        return GetDataIngestionConfig.model_validate(data)

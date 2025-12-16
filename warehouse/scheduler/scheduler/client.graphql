@@ -106,3 +106,27 @@ query GetDataModels($datasetId: ID!) {
     }
   }
 }
+
+query GetDataIngestionConfig($datasetId: ID!, $configId: ID!) {
+  datasets(where: { id: { eq: $datasetId }}) {
+    edges {
+      node {
+        id
+        typeDefinition {
+          ... on DataIngestion {
+            configs(where: { id: { eq: $configId }}) {
+              edges {
+                node {
+                  id
+                  datasetId
+                  factoryType
+                  config
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

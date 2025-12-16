@@ -6,7 +6,20 @@ from typing import Any, List, Optional
 from pydantic import Field
 
 from .base_model import BaseModel
-from .enums import DataModelKind, DatasetType, MemberRole, RunStatus, StepStatus
+from .enums import (
+    DataIngestionFactoryType,
+    DataModelKind,
+    DatasetType,
+    MemberRole,
+    RunStatus,
+    StepStatus,
+)
+
+
+class CreateDataIngestionConfigInput(BaseModel):
+    dataset_id: str = Field(alias="datasetId")
+    factory_type: DataIngestionFactoryType = Field(alias="factoryType")
+    config: Any
 
 
 class CreateDataModelInput(BaseModel):
@@ -156,16 +169,18 @@ class CreateUserModelRunRequestInput(BaseModel):
     selected_models: Optional[List[str]] = Field(alias="selectedModels", default=None)
 
 
-class CreateDataIngestionRunRequest(BaseModel):
+class CreateDataIngestionRunRequestInput(BaseModel):
+    dataset_id: str = Field(alias="datasetId")
+    config_id: str = Field(alias="configId")
+
+
+class CreateDataConnectorRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
 
 
-class CreateDataConnectorRunRequest(BaseModel):
+class CreateStaticModelRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
-
-
-class CreateStaticModelRunRequest(BaseModel):
-    dataset_id: str = Field(alias="datasetId")
+    selected_models: Optional[List[str]] = Field(alias="selectedModels", default=None)
 
 
 class CancelRunInput(BaseModel):
@@ -194,6 +209,13 @@ class FinishStepInput(BaseModel):
     logs_url: str = Field(alias="logsUrl")
 
 
+class CreateMaterializationInput(BaseModel):
+    step_id: str = Field(alias="stepId")
+    table_id: str = Field(alias="tableId")
+    warehouse_fqn: str = Field(alias="warehouseFqn")
+    schema_: List["DataModelColumnInput"] = Field(alias="schema")
+
+
 class CreateStaticModelInput(BaseModel):
     org_id: str = Field(alias="orgId")
     dataset_id: str = Field(alias="datasetId")
@@ -206,3 +228,4 @@ class UpdateStaticModelInput(BaseModel):
 
 
 CreateDataModelRevisionInput.model_rebuild()
+CreateMaterializationInput.model_rebuild()
