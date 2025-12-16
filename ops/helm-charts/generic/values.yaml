@@ -1,5 +1,6 @@
 global:
   fullnameOverride: ""
+  serviceAccountNameOverride: ""
 app:
   # name: "oso" # This must be set
   # command: []
