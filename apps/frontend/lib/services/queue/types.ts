@@ -25,6 +25,7 @@ export enum QueueErrorCode {
 export interface QueueConfig {
   projectId: string;
   emulatorHost?: string;
+  gcpCredentialsJson?: string;
 }
 
 export type MessageType = "data-model";

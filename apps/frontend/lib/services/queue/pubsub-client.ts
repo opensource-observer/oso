@@ -27,6 +27,11 @@ export class PubSubClient {
       clientConfig.apiEndpoint = config.emulatorHost;
     }
 
+    if (config.gcpCredentialsJson) {
+      logger.info(`Using provided GCP credentials for Pub/Sub client`);
+      clientConfig.credentials = JSON.parse(config.gcpCredentialsJson);
+    }
+
     this.client = new PubSub(clientConfig);
   }
 
