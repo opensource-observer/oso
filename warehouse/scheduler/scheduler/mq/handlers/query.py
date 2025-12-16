@@ -65,5 +65,5 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     writer.writerow(row)
 
         return SuccessResponse(
-            message=f"Processed DataModelRunRequest with ID: {message.run_id}"
+            message=f"Processed QueryRunRequest with ID: {message.run_id}"
         )
