@@ -1,12 +1,12 @@
-from typing import Optional
+import asyncio
 
 from dlt import pipeline
-from dlt.common.destination import Destination
 from dlt.sources.rest_api import rest_api_resources
 from dlt.sources.rest_api.typing import RESTAPIConfig
 from osoprotobufs.data_ingestion_pb2 import DataIngestionRunRequest
 from pydantic import BaseModel, ConfigDict, ValidationError
 from scheduler.config import CommonSettings
+from scheduler.dlt_destination import DLTDestinationResource
 from scheduler.graphql_client.client import Client
 from scheduler.graphql_client.get_data_ingestion_config import (
     GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion,
@@ -31,7 +31,7 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
         context: RunContext,
         message: DataIngestionRunRequest,
         oso_client: Client,
-        dlt_destination: Optional[Destination],
+        dlt_destination: DLTDestinationResource,
         common_settings: CommonSettings,
     ) -> HandlerResponse:
         config_id_bytes = bytes(message.config_id)
@@ -44,11 +44,6 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
             dataset_id=dataset_id,
             config_id=config_id,
         )
-
-        # TODO(jabolo): Add support for Trino destination
-        if not dlt_destination:
-            context.log.error("Data ingestion does not support Trino destination yet")
-            return FailedResponse(message="Trino destination not supported")
 
         try:
             config_response = await oso_client.get_data_ingestion_config(
@@ -120,20 +115,25 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
 
                 resources = rest_api_resources(rest_api_config)
 
+                dataset_schema = f"ingest_{dataset_id.replace('-', '_')}"
                 pipeline_name = f"data_ingestion_{dataset_id}_{config_id}"[:50]
-                p = pipeline(
-                    pipeline_name=pipeline_name,
-                    dataset_name=dataset_id.replace("-", "_"),
-                    destination=dlt_destination,
-                    pipelines_dir=common_settings.local_working_dir,
-                )
+                async with dlt_destination.get_destination(
+                    dataset_schema=dataset_schema
+                ) as destination:
+                    p = pipeline(
+                        pipeline_name=pipeline_name,
+                        dataset_name=dataset_schema,
+                        destination=destination,
+                        pipelines_dir=common_settings.local_working_dir,
+                    )
 
-                step_context.log.info(
-                    "Running dlt pipeline",
-                    pipeline_name=pipeline_name,
-                )
+                    step_context.log.info(
+                        "Running dlt pipeline",
+                        pipeline_name=pipeline_name,
+                        dataset_schema=dataset_schema,
+                    )
 
-                load_info = p.run(resources)
+                    load_info = await asyncio.to_thread(p.run, resources)
 
                 step_context.log.info(
                     "Data ingestion completed successfully",

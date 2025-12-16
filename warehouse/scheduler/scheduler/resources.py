@@ -24,6 +24,7 @@ from oso_dagster.resources.udm_state import (
     FakeUserDefinedModelResource,
     UserDefinedModelStateResource,
 )
+from scheduler.dlt_destination import DLTDestinationResource
 from scheduler.evaluator import UserDefinedModelEvaluator
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategyResource
@@ -221,25 +222,17 @@ def materialization_strategy_factory(
 
 @resource_factory("dlt_destination")
 def dlt_destination_factory(
+    resources: ResourcesContext,
     common_settings: "CommonSettings",
 ):
     """Factory function to create a DLT destination resource.
 
     Returns a configured DLT destination object
     """
-    # TODO(jabolo): Support trino destination as well
-    from dlt.destinations import duckdb
-    from dlt.destinations.impl.duckdb.configuration import DuckDbCredentials
-
-    if common_settings.trino_enabled:
-        logger.warning("DLT Trino destination is not yet implemented, returning None.")
-        return None
-
-    return duckdb(
-        credentials=DuckDbCredentials(
-            conn_or_path=common_settings.local_duckdb_path,
-        )
+    trino: TrinoResource | None = (
+        resources.resolve("trino") if common_settings.trino_enabled else None
     )
+    return DLTDestinationResource(common_settings=common_settings, trino=trino)
 
 
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
