@@ -1202,7 +1202,14 @@ export type CreateDataConnectorRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
 
+export type CreateDataIngestionConfigInput = {
+  config: Scalars["JSON"]["input"];
+  datasetId: Scalars["ID"]["input"];
+  factoryType: DataIngestionFactoryType;
+};
+
 export type CreateDataIngestionRunRequestInput = {
+  configId: Scalars["ID"]["input"];
   datasetId: Scalars["ID"]["input"];
 };
 
@@ -1516,26 +1523,50 @@ export type DataConnector = {
 
 export type DataIngestion = {
   __typename?: "DataIngestion";
-  createdAt: Scalars["DateTimeISO"]["output"];
-  description?: Maybe<Scalars["String"]["output"]>;
-  id: Scalars["ID"]["output"];
-  name: Scalars["String"]["output"];
+  /**
+   * If the dataset is of type DATA_INGESTION, this field will contain the list of data ingestion configs
+   * associated with the dataset. Otherwise it will be an empty list.
+   */
+  configs: DataIngestionConfigConnection;
+  datasetId: Scalars["ID"]["output"];
   orgId: Scalars["ID"]["output"];
+};
+
+export type DataIngestionConfigsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataIngestionConfig = {
+  __typename?: "DataIngestionConfig";
+  config: Scalars["JSON"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
+  datasetId: Scalars["ID"]["output"];
+  factoryType: DataIngestionFactoryType;
+  id: Scalars["ID"]["output"];
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
-export type DataIngestionConnection = {
-  __typename?: "DataIngestionConnection";
-  edges: Array<DataIngestionEdge>;
+export type DataIngestionConfigConnection = {
+  __typename?: "DataIngestionConfigConnection";
+  edges: Array<DataIngestionConfigEdge>;
   pageInfo: PageInfo;
   totalCount?: Maybe<Scalars["Int"]["output"]>;
 };
 
-export type DataIngestionEdge = {
-  __typename?: "DataIngestionEdge";
+export type DataIngestionConfigEdge = {
+  __typename?: "DataIngestionConfigEdge";
   cursor: Scalars["String"]["output"];
-  node: DataIngestion;
+  node: DataIngestionConfig;
 };
+
+export enum DataIngestionFactoryType {
+  Archive2Bq = "ARCHIVE2BQ",
+  Graphql = "GRAPHQL",
+  Rest = "REST",
+}
 
 export type DataModel = {
   __typename?: "DataModel";
@@ -3376,6 +3407,7 @@ export type Mutation = {
   cancelRun: CancelRunPayload;
   /** Request a run for a DATA_CONNECTOR dataset */
   createDataConnectorRunRequest: CreateRunRequestPayload;
+  createDataIngestionConfig: DataIngestionConfig;
   /** Request a run for a DATA_INGEST dataset */
   createDataIngestionRunRequest: CreateRunRequestPayload;
   createDataModel: CreateDataModelPayload;
@@ -3519,6 +3551,11 @@ export type MutationCancelRunArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateDataConnectorRunRequestArgs = {
   input: CreateDataConnectorRunRequestInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataIngestionConfigArgs = {
+  input: CreateDataIngestionConfigInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -9047,6 +9084,45 @@ export type CreateStaticModelRunRequestMutation = {
   };
 };
 
+export type CreateDataIngestionConfigMutationVariables = Exact<{
+  input: CreateDataIngestionConfigInput;
+}>;
+
+export type CreateDataIngestionConfigMutation = {
+  __typename?: "Mutation";
+  createDataIngestionConfig: {
+    __typename?: "DataIngestionConfig";
+    id: string;
+    datasetId: string;
+    factoryType: DataIngestionFactoryType;
+    config: any;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type CreateDataIngestionRunRequestMutationVariables = Exact<{
+  input: CreateDataIngestionRunRequestInput;
+}>;
+
+export type CreateDataIngestionRunRequestMutation = {
+  __typename?: "Mutation";
+  createDataIngestionRunRequest: {
+    __typename?: "CreateRunRequestPayload";
+    success: boolean;
+    message?: string | null;
+    run: {
+      __typename?: "Run";
+      id: string;
+      datasetId: string;
+      status: RunStatus;
+      queuedAt: any;
+      startedAt?: any | null;
+      finishedAt?: any | null;
+    };
+  };
+};
+
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
 export type AssetGraphQuery = {
@@ -9961,6 +10037,153 @@ export const CreateStaticModelRunRequestDocument = {
 } as unknown as DocumentNode<
   CreateStaticModelRunRequestMutation,
   CreateStaticModelRunRequestMutationVariables
+>;
+export const CreateDataIngestionConfigDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataIngestionConfig" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataIngestionConfigInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataIngestionConfig" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "datasetId" } },
+                { kind: "Field", name: { kind: "Name", value: "factoryType" } },
+                { kind: "Field", name: { kind: "Name", value: "config" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataIngestionConfigMutation,
+  CreateDataIngestionConfigMutationVariables
+>;
+export const CreateDataIngestionRunRequestDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataIngestionRunRequest" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: {
+                kind: "Name",
+                value: "CreateDataIngestionRunRequestInput",
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataIngestionRunRequest" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "datasetId" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "status" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "queuedAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "startedAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "finishedAt" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataIngestionRunRequestMutation,
+  CreateDataIngestionRunRequestMutationVariables
 >;
 export const AssetGraphDocument = {
   kind: "Document",

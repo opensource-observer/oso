@@ -3113,6 +3113,146 @@ class OsoAppClient {
 
     return payload.run;
   }
+
+  async createDataIngestionConfig(
+    args: Partial<{
+      datasetId: string;
+      factoryType: string;
+      config: Record<string, unknown>;
+    }>,
+  ) {
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
+    const factoryType = ensure(
+      args.factoryType,
+      "Missing factoryType argument",
+    );
+    const config = ensure(args.config, "Missing config argument");
+
+    const CREATE_DATA_INGESTION_CONFIG_MUTATION = gql(`
+      mutation CreateDataIngestionConfig($input: CreateDataIngestionConfigInput!) {
+        createDataIngestionConfig(input: $input) {
+          id
+          datasetId
+          factoryType
+          config
+          createdAt
+          updatedAt
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_DATA_INGESTION_CONFIG_MUTATION),
+        variables: {
+          input: {
+            datasetId,
+            factoryType,
+            config,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error(
+        "Failed to create data ingestion config:",
+        result.errors[0].message,
+      );
+      throw new Error(
+        `Failed to create data ingestion config: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createDataIngestionConfig;
+    if (!payload) {
+      throw new Error(
+        "No response data from create data ingestion config mutation",
+      );
+    }
+
+    logger.log(
+      `Successfully created data ingestion config for dataset "${datasetId}"`,
+    );
+
+    return payload;
+  }
+
+  async createDataIngestionRunRequest(
+    args: Partial<{
+      datasetId: string;
+      configId: string;
+    }>,
+  ) {
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
+    const configId = ensure(args.configId, "Missing configId argument");
+
+    const CREATE_DATA_INGESTION_RUN_REQUEST_MUTATION = gql(`
+      mutation CreateDataIngestionRunRequest($input: CreateDataIngestionRunRequestInput!) {
+        createDataIngestionRunRequest(input: $input) {
+          success
+          message
+          run {
+            id
+            datasetId
+            status
+            queuedAt
+            startedAt
+            finishedAt
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_DATA_INGESTION_RUN_REQUEST_MUTATION),
+        variables: {
+          input: {
+            datasetId,
+            configId,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error(
+        "Failed to create data ingestion run request:",
+        result.errors[0].message,
+      );
+      throw new Error(
+        `Failed to create data ingestion run request: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createDataIngestionRunRequest;
+    if (!payload) {
+      throw new Error(
+        "No response data from create data ingestion run request mutation",
+      );
+    }
+
+    if (payload.success) {
+      logger.log(
+        `Successfully created data ingestion run request for dataset "${datasetId}"`,
+      );
+    }
+
+    return payload.run;
+  }
 }
 
 export { OsoAppClient };
