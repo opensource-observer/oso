@@ -1,4 +1,4 @@
-{{ with .Values.roles.clusterRoles }}
+{{ with .Values.app.roles.clusterRoles }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
