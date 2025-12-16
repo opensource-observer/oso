@@ -25,6 +25,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
     ...datasetResolvers.Query,
     ...dataModelResolvers.Query,
     ...staticModelResolvers.Query,
+    ...schedulerResolvers.Query,
     ...systemResolvers.Query,
   },
 
@@ -55,6 +56,7 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   DataModelRelease: dataModelResolvers.DataModelRelease,
   StaticModel: staticModelResolvers.StaticModel,
   Run: schedulerResolvers.Run,
+  Step: schedulerResolvers.Step,
   Materialization: schedulerResolvers.Materialization,
   System: systemResolvers.System,
   DataIngestionConfig: dataIngestionResolvers.DataIngestionConfig,

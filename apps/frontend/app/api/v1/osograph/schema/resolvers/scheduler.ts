@@ -17,6 +17,7 @@ import {
   CreateDataIngestionRunRequestSchema,
   CreateUserModelRunRequestSchema,
   MaterializationWhereSchema,
+  RunWhereSchema,
   StepWhereSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
@@ -173,6 +174,20 @@ function genericRunRequestResolver<
 }
 
 export const schedulerResolvers = {
+  Query: {
+    runs: async (
+      _: unknown,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "run",
+        whereSchema: RunWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+      });
+    },
+  },
   Mutation: {
     createUserModelRunRequest: genericRunRequestResolver({
       queueName: "data_model_run_requests",
