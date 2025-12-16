@@ -1,5 +1,4 @@
 import abc
-import logging
 import typing as t
 from graphlib import TopologicalSorter
 
@@ -345,7 +344,7 @@ T = t.TypeVar("T", bound=Message)
 class StepContext(abc.ABC):
     @property
     @abc.abstractmethod
-    def log(self) -> logging.Logger:
+    def log(self) -> structlog.BoundLogger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
 
@@ -375,7 +374,7 @@ class RunContext(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def log(self) -> logging.Logger:
+    def log(self) -> structlog.BoundLogger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
 
