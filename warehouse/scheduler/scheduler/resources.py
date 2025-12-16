@@ -68,7 +68,6 @@ def udm_engine_adapter_factory(
         trino: TrinoResource = resources.resolve("trino")
         return TrinoEngineAdapterResource(
             trino=trino,
-            http_scheme="https",
         )
     else:
         duckdb: DuckDBResource = resources.resolve("duckdb")
