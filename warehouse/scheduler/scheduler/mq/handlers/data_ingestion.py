@@ -5,6 +5,7 @@ from dlt.common.destination import Destination
 from dlt.sources.rest_api import rest_api_resources
 from dlt.sources.rest_api.typing import RESTAPIConfig
 from osoprotobufs.data_ingestion_pb2 import DataIngestionRunRequest
+from pydantic import BaseModel, ConfigDict, ValidationError
 from scheduler.config import CommonSettings
 from scheduler.graphql_client.client import Client
 from scheduler.graphql_client.get_data_ingestion_config import (
@@ -13,6 +14,11 @@ from scheduler.graphql_client.get_data_ingestion_config import (
 from scheduler.mq.common import RunHandler
 from scheduler.types import FailedResponse, HandlerResponse, RunContext, SuccessResponse
 from scheduler.utils import convert_uuid_bytes_to_str
+
+
+class _RESTAPIConfigWrapper(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    config: RESTAPIConfig
 
 
 class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
@@ -96,7 +102,15 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
             display_name="Execute Data Ingestion Pipeline",
         ) as step_context:
             try:
-                rest_api_config: RESTAPIConfig = config.config
+                try:
+                    rest_api_config: RESTAPIConfig = (
+                        _RESTAPIConfigWrapper.model_validate(
+                            {"config": config.config}
+                        ).config
+                    )
+                except ValidationError as e:
+                    step_context.log.error("Invalid REST API config", errors=e.errors())
+                    return FailedResponse(message="Invalid REST API config")
 
                 step_context.log.info(
                     "Creating REST API resources",
