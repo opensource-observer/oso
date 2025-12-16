@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: production-scheduler
+  name: production-scheduler-data-model
 spec:
   postRenderers:
     - kustomize:
@@ -18,4 +18,16 @@ spec:
         - warehouse/scheduler
         - scheduler
         - run
-        - data_model_run_request
+        - data_model_run_requests
+      # This only needs to appear in one of the scheduler instances for now. We
+      # should likely combine these into a single scheduler chart at some point.
+      roles:
+        clusterRoles:
+          - apiGroups: ["apps"] # API group for deployments
+            resources: ["deployments"] # Specific subresource for scaling
+            verbs: ["get", "update", "list", "patch", "watch"]
+          # Read only access to services
+          - apiGroups: [""]
+            resources: ["services"]
+            verbs: ["get", "list", "watch"]
+        enableClusterRoleBinding: true
