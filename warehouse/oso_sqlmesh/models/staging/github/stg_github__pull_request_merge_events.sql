@@ -8,6 +8,7 @@ MODEL (
     forward_only true,
   ),
   start @github_incremental_start,
+  end @github_events_pre_v20251007_end_date,
   partitioned_by DAY(event_time),
   dialect duckdb,
   audits (

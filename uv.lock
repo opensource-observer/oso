@@ -4209,6 +4209,7 @@ dependencies = [
     { name = "duckdb" },
     { name = "lz4" },
     { name = "metrics-service" },
+    { name = "networkx" },
     { name = "openrank-sdk" },
     { name = "opsscripts" },
     { name = "oso-core" },
@@ -4249,6 +4250,7 @@ requires-dist = [
     { name = "duckdb", specifier = ">=1.1.0,<2.0.0" },
     { name = "lz4", specifier = ">=4.3.3,<5.0.0" },
     { name = "metrics-service", editable = "warehouse/metrics-service" },
+    { name = "networkx" },
     { name = "openrank-sdk", specifier = ">=0.4.0,<1.0.0" },
     { name = "opsscripts", editable = "ops/opsscripts" },
     { name = "oso-core", editable = "lib/oso-core" },
@@ -5701,6 +5703,7 @@ version = "0.1.0"
 source = { editable = "lib/query-rewriter" }
 dependencies = [
     { name = "pandas" },
+    { name = "pydantic" },
     { name = "sqlglot" },
 ]
 
@@ -5714,6 +5717,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "pandas", specifier = ">=2.0.0" },
+    { name = "pydantic", specifier = ">=2.10.5" },
     { name = "sqlglot", specifier = ">=27.28.1" },
 ]
 
@@ -6063,6 +6067,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pyjwt" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "python-dotenv" },
@@ -6090,6 +6095,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=1.2.0" },
     { name = "pydantic", specifier = ">=2.10.5" },
     { name = "pydantic-settings", specifier = ">=2.11.0" },
+    { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },

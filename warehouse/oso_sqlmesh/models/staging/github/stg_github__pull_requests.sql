@@ -1,6 +1,6 @@
 MODEL (
   name oso.stg_github__pull_requests,
-  description 'Turns all watch events into push events',
+  description 'Turns all watch events into push events (version before 2025-10-07)',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column event_time,
     batch_size 90,
@@ -10,6 +10,7 @@ MODEL (
   ),
   dialect "duckdb",
   start @github_incremental_start,
+  end @github_events_pre_v20251007_end_date,
   partitioned_by DAY(event_time),
   audits (
     has_at_least_n_rows(threshold := 0),
@@ -29,12 +30,14 @@ WITH pull_request_events AS (
   FROM oso.stg_github__events AS ghe
   WHERE
     ghe.type = 'PullRequestEvent'
+    -- We cast a wider net of pull request events to ensure we capture any
+    -- random changes for a single pullrequest in a given time range
     and ghe.created_at BETWEEN @start_dt  - INTERVAL '1' DAY AND @end_dt + INTERVAL '1' DAY
     and STRPTIME(ghe.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
 )
 SELECT
   pre.id AS id,
-  -- the stg_github__events.created_at means the time the event was fired, 
+  -- the stg_github__events.created_at means the time the event was fired,
   -- but not the time the pull request was updated (i.e. the time the PullRequestEvent was created)
   -- so we need to use the pull_request.updated_at field from the payload
   STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS event_time,

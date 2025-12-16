@@ -8,6 +8,7 @@ import dagster as dg
 from oso_dagster.resources.duckdb import DuckDBResource
 from oso_dagster.resources.trino import TrinoResource
 from pydantic import Field
+from sqlglot import exp
 from sqlmesh.core.config.connection import TrinoConnectionConfig
 from sqlmesh.core.engine_adapter.base import EngineAdapter
 
@@ -25,6 +26,9 @@ class UserDefinedModelEngineAdapterResource(dg.ConfigurableResource):
         raise NotImplementedError(
             "get_client not implemented on the base UserDefinedModelEngineAdapterResource"
         )
+
+    def generate_table(self, org_id: str, dataset_id: str, table_id: str) -> exp.Table:
+        raise NotImplementedError("generate_table_name not implemented")
 
 
 class DuckdbEngineAdapterResource(UserDefinedModelEngineAdapterResource):
@@ -52,6 +56,9 @@ class DuckdbEngineAdapterResource(UserDefinedModelEngineAdapterResource):
             )
             yield adapter
 
+    def generate_table(self, org_id: str, dataset_id: str, table_id: str) -> exp.Table:
+        return exp.to_table(f"org_{org_id}__ds_{dataset_id}.tbl_{table_id}")
+
 
 class TrinoEngineAdapterResource(UserDefinedModelEngineAdapterResource):
     """A Trino engine adapter resource for Dagster assets."""
@@ -63,6 +70,15 @@ class TrinoEngineAdapterResource(UserDefinedModelEngineAdapterResource):
     http_scheme: t.Literal["http", "https"] = Field(
         default="http", description="The connection scheme to use for Trino connections"
     )
+
+    target_catalog: str = Field(
+        default="iceberg", description="The catalog to write to"
+    )
+
+    def generate_table(self, org_id: str, dataset_id: str, table_id: str):
+        return exp.to_table(
+            f"{self.target_catalog}.org_{org_id}__ds_{dataset_id}.tbl_{table_id}"
+        )
 
     @asynccontextmanager
     async def get_adapter(

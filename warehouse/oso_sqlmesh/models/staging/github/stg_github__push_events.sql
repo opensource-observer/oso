@@ -1,6 +1,6 @@
 MODEL (
   name oso.stg_github__push_events,
-  description 'Gathers all github events for all github artifacts',
+  description 'Gathers all github events for all github artifacts (version before 2025-10-07)',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column created_at,
     batch_size 90,
@@ -9,6 +9,7 @@ MODEL (
     forward_only true,
   ),
   start @github_incremental_start,
+  end @github_events_pre_v20251007_end_date,
   partitioned_by DAY(created_at),
   dialect trino,
   audits (

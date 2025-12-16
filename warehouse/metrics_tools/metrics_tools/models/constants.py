@@ -23,6 +23,12 @@ superchain_audit_end = coalesce_str(
 blockchain_incremental_start = coalesce_start_value("BLOCKCHAIN", "2021-10-01")
 deps_dev_incremental_start = coalesce_start_value("DEPS_DEV", "2015-01-01")
 github_incremental_start = coalesce_start_value("GITHUB", "2015-01-01")
+github_events_v20251007_start_date = coalesce_start_value(
+    "GITHUB_EVENTS_V20251007_START_DATE", "2025-10-07"
+)
+github_events_pre_v20251007_end_date = coalesce_start_value(
+    "GITHUB_EVENTS_PRE_V20251007_END_DATE", "2025-10-06"
+)
 funding_incremental_start = coalesce_start_value("FUNDING", "2015-01-01")
 defillama_incremental_start = coalesce_start_value("DEFILLAMA", "2021-10-01")
 testing_enabled = ensure_bool("SQLMESH_TESTING_ENABLED", False)

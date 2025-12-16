@@ -126,12 +126,12 @@ async def test_rewrite_query(
 ):
     resolvers: t.List[TableResolver] = [fake_table_resolver]
 
-    rewritten_query = await rewrite_query(
+    response = await rewrite_query(
         query=input_query,
         table_resolvers=resolvers,
         dialect="trino",
     )
-    assert_same_sql(rewritten_query, expected_query)
+    assert_same_sql(response.rewritten_query, expected_query)
 
 
 @pytest.mark.parametrize(

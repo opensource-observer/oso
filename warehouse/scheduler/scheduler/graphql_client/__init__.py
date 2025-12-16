@@ -3,6 +3,11 @@
 from .async_base_client import AsyncBaseClient
 from .base_model import BaseModel, Upload
 from .client import Client
+from .create_materialization import (
+    CreateMaterialization,
+    CreateMaterializationCreateMaterialization,
+    CreateMaterializationCreateMaterializationMaterialization,
+)
 from .enums import (
     DataIngestionFactoryType,
     DataModelKind,
@@ -23,6 +28,18 @@ from .exceptions import (
 )
 from .finish_run import FinishRun, FinishRunFinishRun, FinishRunFinishRunRun
 from .finish_step import FinishStep, FinishStepFinishStep, FinishStepFinishStepStep
+from .fragments import (
+    DataModels,
+    DataModelsEdges,
+    DataModelsEdgesNode,
+    DatasetCommon,
+    LatestDataModel,
+    LatestDataModelLatestRelease,
+    LatestDataModelLatestReleaseRevision,
+    LatestDataModelLatestReleaseRevisionDependsOn,
+    LatestDataModelLatestReleaseRevisionKindOptions,
+    LatestDataModelLatestReleaseRevisionSchema,
+)
 from .get_data_ingestion_config import (
     GetDataIngestionConfig,
     GetDataIngestionConfigDatasets,
@@ -45,13 +62,6 @@ from .get_data_models import (
     GetDataModelsDatasetsEdgesNodeTypeDefinitionDataIngestion,
     GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition,
     GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModels,
-    GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdges,
-    GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNode,
-    GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestRelease,
-    GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestReleaseRevision,
-    GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestReleaseRevisionDependsOn,
-    GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestReleaseRevisionKindOptions,
-    GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestReleaseRevisionSchema,
     GetDataModelsDatasetsEdgesNodeTypeDefinitionStaticModelDefinition,
 )
 from .input_types import (
@@ -87,6 +97,12 @@ from .input_types import (
     UpdateNotebookInput,
     UpdateStaticModelInput,
 )
+from .resolve_tables import (
+    ResolveTables,
+    ResolveTablesSystem,
+    ResolveTablesSystemResolveTables,
+)
+from .start_run import StartRun, StartRunStartRun
 from .start_step import StartStep, StartStepStartStep, StartStepStartStepStep
 
 __all__ = [
@@ -104,6 +120,9 @@ __all__ = [
     "CreateDataModelRevisionInput",
     "CreateDatasetInput",
     "CreateInvitationInput",
+    "CreateMaterialization",
+    "CreateMaterializationCreateMaterialization",
+    "CreateMaterializationCreateMaterializationMaterialization",
     "CreateMaterializationInput",
     "CreateNotebookInput",
     "CreateStaticModelInput",
@@ -114,6 +133,10 @@ __all__ = [
     "DataModelDependencyInput",
     "DataModelKind",
     "DataModelKindOptionsInput",
+    "DataModels",
+    "DataModelsEdges",
+    "DataModelsEdgesNode",
+    "DatasetCommon",
     "DatasetType",
     "FinishRun",
     "FinishRunFinishRun",
@@ -142,13 +165,6 @@ __all__ = [
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataIngestion",
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition",
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModels",
-    "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdges",
-    "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNode",
-    "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestRelease",
-    "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestReleaseRevision",
-    "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestReleaseRevisionDependsOn",
-    "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestReleaseRevisionKindOptions",
-    "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModelsEdgesNodeLatestReleaseRevisionSchema",
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionStaticModelDefinition",
     "GraphQLClientError",
     "GraphQLClientGraphQLError",
@@ -156,14 +172,25 @@ __all__ = [
     "GraphQLClientHttpError",
     "GraphQLClientInvalidResponseError",
     "InvitationStatus",
+    "LatestDataModel",
+    "LatestDataModelLatestRelease",
+    "LatestDataModelLatestReleaseRevision",
+    "LatestDataModelLatestReleaseRevisionDependsOn",
+    "LatestDataModelLatestReleaseRevisionKindOptions",
+    "LatestDataModelLatestReleaseRevisionSchema",
     "MemberRole",
     "RemoveMemberInput",
+    "ResolveTables",
+    "ResolveTablesSystem",
+    "ResolveTablesSystemResolveTables",
     "RevokeInvitationInput",
     "RunStatus",
     "RunTriggerType",
     "RunType",
     "SaveNotebookPreviewInput",
+    "StartRun",
     "StartRunInput",
+    "StartRunStartRun",
     "StartStep",
     "StartStepInput",
     "StartStepStartStep",
