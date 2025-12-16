@@ -36,6 +36,7 @@ class TrinoResource(ConfigurableResource):
         self,
         session_properties: t.Optional[t.Dict[str, t.Any]] = None,
         log_override: t.Optional[logging.Logger] = None,
+        jwt_token: t.Optional[str] = None,
     ) -> t.AsyncGenerator[AsyncConnection, None]:
         raise NotImplementedError(
             "async_get_client not implemented on the base TrinoResource"
@@ -253,11 +254,22 @@ class TrinoRemoteResource(TrinoResource):
         description="Trino url",
     )
 
+    user: str = Field(
+        default="admin",
+        description="Trino user",
+    )
+
+    connect_timeout: int = Field(
+        default=600,
+        description="Timeout in seconds for waiting for the service to be online",
+    )
+
     @asynccontextmanager
     async def async_get_client(
         self,
         session_properties: t.Optional[t.Dict[str, t.Any]] = None,
         log_override: t.Optional[logging.Logger] = None,
+        jwt_token: t.Optional[str] = None,
     ):
         async with self.ensure_available(log_override=log_override):
             yield aiotrino.dbapi.connect(
