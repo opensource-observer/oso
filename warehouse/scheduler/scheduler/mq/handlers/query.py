@@ -4,12 +4,12 @@ import typing as t
 import aiotrino
 import aiotrino.utils
 import structlog
-from oso_dagster.resources import GCSFileResource, TrinoK8sResource
+from oso_dagster.resources import GCSFileResource, TrinoResource
 from osoprotobufs.query_pb2 import QueryRunRequest
 from queryrewriter import rewrite_query
 from queryrewriter.types import TableResolver
 from scheduler.graphql_client.client import Client
-from scheduler.mq.common import RunHandler
+from scheduler.mq.common import RunHandler, convert_uuid_bytes_to_str
 from scheduler.types import HandlerResponse, RunContext, SuccessResponse
 from scheduler.utils import OSOClientTableResolver
 
@@ -29,7 +29,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
         common_settings: "CommonSettings",
         context: RunContext,
         message: QueryRunRequest,
-        consumer_trino: TrinoK8sResource,
+        consumer_trino: TrinoResource,
         gcs: GCSFileResource,
         oso_client: Client,
     ) -> HandlerResponse:
@@ -40,18 +40,18 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
             OSOClientTableResolver(oso_client=oso_client)
         ]
 
-        query = rewrite_query(message.query, table_resolvers)
+        query = await rewrite_query(message.query, table_resolvers)
 
-        context.log.info(f"Rewritten query: {query}")
+        context.log.info(f"Rewritten query: {query.rewritten_query}")
 
         storage_client = gcs.get_client(asynchronous=False)
 
         async with consumer_trino.async_get_client(jwt_token=message.jwt) as client:
             cursor = await client.cursor()
-            cursor = await cursor.execute(query)
-            columns = await cursor.get_description()
+            cursor = await cursor.execute(query.rewritten_query)
+            columns = (column.name for column in await cursor.get_description())
             with storage_client.open(
-                f"gs://{common_settings.query_bucket}/{message.run_id}.csv.gz",
+                f"gs://{common_settings.query_bucket}/{convert_uuid_bytes_to_str(message.run_id)}.csv.gz",
                 "w",
                 encoding="utf-8",
                 compression="gzip",
