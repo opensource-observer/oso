@@ -48,6 +48,7 @@
     "@emotion/styled": "^11.14.1",
     "@feedbackfarm/react": "^4.0.10",
     "@google-cloud/pubsub": "^5.2.0",
+    "@google-cloud/storage": "^7.18.0",
     "@headlessui/tailwindcss": "^0.2.2",
     "@hookform/resolvers": "^5.2.2",
     "@monaco-editor/react": "^4.7.0",
