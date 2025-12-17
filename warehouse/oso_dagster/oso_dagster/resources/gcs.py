@@ -8,7 +8,7 @@ class GCSFileResource(ConfigurableResource):
 
     gcs_project: str = Field(description="GCS project name.")
 
-    def get_client(self):
+    def get_client(self, asynchronous: bool = True):
         """Provides a GCS connection."""
 
-        return gcsfs.GCSFileSystem(project=self.gcs_project, asynchronous=True)
+        return gcsfs.GCSFileSystem(project=self.gcs_project, asynchronous=asynchronous)

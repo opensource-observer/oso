@@ -23,7 +23,8 @@ MODEL (
   tags (
     "github",
     "incremental",
-  )
+  ),
+  enabled false
 );
 
 SELECT

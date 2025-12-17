@@ -25,6 +25,7 @@ export enum QueueErrorCode {
 export interface QueueConfig {
   projectId: string;
   emulatorHost?: string;
+  gcpCredentialsJsonB64?: string;
 }
 
 export type MessageType = "data-model";
@@ -38,20 +39,15 @@ export interface ProtobufEncoder<T> {
   toJSON(message: T): unknown;
 }
 
-interface IQueueServiceBase {
+export type PublishMessageOptions<Q extends ProtobufMessage> = {
+  queueName: string;
+  message: Q;
+  encoder: ProtobufEncoder<Q>;
+};
+
+export interface IQueueService {
   close(): Promise<void>;
-}
-
-interface IDataModelRunQueueService {
-  publishDataModelRun<Q extends ProtobufMessage>(
-    request: Q,
-    encoder: ProtobufEncoder<Q>,
+  queueMessage<Q extends ProtobufMessage>(
+    options: PublishMessageOptions<Q>,
   ): Promise<QueueResult>;
-}
-
-export interface IQueueService
-  extends IQueueServiceBase,
-    IDataModelRunQueueService {
-  // & IStaticModelRunQueueService
-  // & IDataIngestionQueueService
 }

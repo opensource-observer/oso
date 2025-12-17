@@ -6,7 +6,7 @@ from sqlglot import exp
 from sqlglot.optimizer.qualify import qualify
 from sqlglot.optimizer.scope import Scope, build_scope
 
-from .types import TableResolver
+from .types import RewriteResponse, TableResolver
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +134,7 @@ async def rewrite_query(
     *,
     metadata: dict | None = None,
     dialect: str = "trino",
-) -> str:
+) -> RewriteResponse:
     """
     Rewrites a SQL query written in the sqlmesh dialect using the provided table
     resolver.
@@ -216,4 +216,12 @@ async def rewrite_query(
     ]
     rewritten_sql = ";\n".join(rewritten_sql_statements)
 
-    return rewritten_sql
+    return RewriteResponse(
+        rewritten_query=rewritten_sql,
+        tables={
+            raw_table_to_reference(orig_table): raw_table_to_reference(
+                resolved_tables_dict[raw_table_to_reference(orig_table)]
+            )
+            for orig_table in table_references
+        },
+    )

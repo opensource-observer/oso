@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: base-scheduler
+  labels:
+    toolkit.fluxcd.io/tenant: apps
+    ops.opensource.observer/environment: base
+    kube-secrets-init.doit-intl.com/enable-mutation: "true"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: scheduler
+  namespace: base-scheduler
+spec:
+  chart:
+    spec:
+      chart: ./ops/helm-charts/generic
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  interval: 50m
+  timeout: 10m
+  install:
+    remediation:
+      retries: 3
+  values:
+    global:
+      serviceAccountNameOverride: "production-scheduler"
+    app:
+      service:
+        enabled: false
+      name: "oso-scheduler"
+      command: ["uv"]
+      # These args should be overridden in the environment-specific overlays
+      args:
+        - run
+        - --directory
+        - warehouse/scheduler
+        - scheduler
+        - run
+      # The next two values aren't actually used by the scheduler workers
+      hostEnvVar: "SCHEDULER_HOST"
+      portEnvVar: "SCHEDULER_PORT"
+      envVars:
+        SCHEDULER_GCP_PROJECT_ID: "opensource-observer"
+        SCHEDULER_OSO_API_URL: "https://www.oso.xyz/api/v1/osograph"
+        SCHEDULER_ENV: "production"
+        SCHEDULER_OSO_SYSTEM_API_KEY: "gcp:secretmanager:production-scheduler-oso-system-api-key/versions/latest"
+        SCHEDULER_REDIS_HOST: "redis.production-redis.svc.cluster.local"
+        SCHEDULER_TRINO_ENABLED: "1"
+        SCHEDULER_K8S_ENABLED: "1"
+        SCHEDULER_TRINO_K8S_COORDINATOR_DEPLOYMENT_NAME: production-trino-trino-coordinator
+        SCHEDULER_TRINO_K8S_WORKER_DEPLOYMENT_NAME: production-trino-trino-worker
+        SCHEDULER_TRINO_K8S_SERVICE_NAME: production-trino-trino
+        SCHEDULER_TRINO_K8S_NAMESPACE: production-trino

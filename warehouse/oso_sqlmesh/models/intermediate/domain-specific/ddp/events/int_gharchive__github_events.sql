@@ -1,6 +1,6 @@
 MODEL (
-  name oso.int_ddp_github_events,
-  description 'Raw GitHub Events from GitHub Archive Since 2025-01-01',
+  name oso.int_gharchive__github_events,
+  description 'Raw GitHub Events from GitHub Archive',
   dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column event_time,
@@ -9,7 +9,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
-  start '2025-01-01',
+  start @github_incremental_start,
   cron '@daily',
   partitioned_by (DAY("event_time"), "event_type"),
   grain (event_time, actor_id, repo_id),
@@ -23,7 +23,6 @@ MODEL (
   tags (
     "github",
     "incremental",
-    "ddp",
   )
 );
 
@@ -35,14 +34,4 @@ SELECT
   LOWER(repo.name) AS repo_name,
   type AS event_type,
 FROM oso.stg_github__events
-WHERE
-  created_at BETWEEN @start_dt AND @end_dt
-  AND type IN (
-    'PushEvent',
-    'IssuesEvent',
-    'PullRequestEvent',
-    'PullRequestReviewEvent',
-    'PullRequestReviewCommentEvent',
-    'WatchEvent',
-    'ForkEvent'
-  )
+WHERE created_at BETWEEN @start_dt AND @end_dt

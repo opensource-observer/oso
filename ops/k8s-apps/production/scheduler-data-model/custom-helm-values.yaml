@@ -1,0 +1,33 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: production-scheduler-data-model
+spec:
+  postRenderers:
+    - kustomize:
+        images:
+          - name: ghcr.io/opensource-observer/oso
+            newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
+            newTag: deploy-20251216190304-dd84fd1 # {"$imagepolicy": "flux-system:oso:tag"}
+  values:
+    app:
+      name: "oso-scheduler-data-model"
+      args:
+        - run
+        - --directory
+        - warehouse/scheduler
+        - scheduler
+        - run
+        - data_model_run_requests
+      # This only needs to appear in one of the scheduler instances for now. We
+      # should likely combine these into a single scheduler chart at some point.
+      roles:
+        clusterRoles:
+          - apiGroups: ["apps"] # API group for deployments
+            resources: ["deployments"] # Specific subresource for scaling
+            verbs: ["get", "update", "list", "patch", "watch"]
+          # Read only access to services
+          - apiGroups: [""]
+            resources: ["services"]
+            verbs: ["get", "list", "watch"]
+        enableClusterRoleBinding: true

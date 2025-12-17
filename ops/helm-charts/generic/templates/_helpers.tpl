@@ -81,3 +81,11 @@ app.kubernetes.io/name: {{ include "app.fullname" . }}
 {{ include "app.labels" . }}
 component: {{ required "app component name is required" .Values.app.name }}
 {{- end -}}
+
+{{- define "app.serviceAccountName" -}}
+{{- if .Values.global.serviceAccountNameOverride -}}
+{{ .Values.global.serviceAccountNameOverride }}
+{{- else -}}
+{{ include "app.fullname" }}
+{{- end -}}
+{{- end -}}

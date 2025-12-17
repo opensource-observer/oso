@@ -1287,6 +1287,20 @@ export type CreateInvitationPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
+export type CreateMaterializationInput = {
+  schema: Array<DataModelColumnInput>;
+  stepId: Scalars["ID"]["input"];
+  tableId: Scalars["ID"]["input"];
+  warehouseFqn: Scalars["String"]["input"];
+};
+
+export type CreateMaterializationPayload = {
+  __typename?: "CreateMaterializationPayload";
+  materialization: Materialization;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type CreateNotebookInput = {
   description?: InputMaybe<Scalars["String"]["input"]>;
   name: Scalars["String"]["input"];
@@ -3215,6 +3229,8 @@ export type Materialization = {
   run: Run;
   runId: Scalars["ID"]["output"];
   schema?: Maybe<Array<DataModelColumn>>;
+  step: Step;
+  stepId: Scalars["ID"]["output"];
 };
 
 export type MaterializationConnection = {
@@ -3369,6 +3385,8 @@ export type Mutation = {
   createDataset: CreateDatasetPayload;
   /** Create an invitation */
   createInvitation: CreateInvitationPayload;
+  /** System only. Create a materialization for a step */
+  createMaterialization: CreateMaterializationPayload;
   /** Create a new notebook */
   createNotebook: CreateNotebookPayload;
   createStaticModel: CreateStaticModelPayload;
@@ -3531,6 +3549,11 @@ export type MutationCreateDatasetArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateInvitationArgs = {
   input: CreateInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateMaterializationArgs = {
+  input: CreateMaterializationInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -7219,7 +7242,6 @@ export type Run = PipelineRun &
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
     logsUrl?: Maybe<Scalars["String"]["output"]>;
-    materializations: MaterializationConnection;
     mode: Scalars["String"]["output"];
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
     parentRunId?: Maybe<Scalars["String"]["output"]>;
@@ -7245,6 +7267,7 @@ export type Run = PipelineRun &
     status: RunStatus;
     stepKeysToExecute?: Maybe<Array<Scalars["String"]["output"]>>;
     stepStats: Array<RunStepStats>;
+    steps: StepConnection;
     tags: Array<PipelineTag>;
     triggerType: RunTriggerType;
     updateTime?: Maybe<Scalars["Float"]["output"]>;
@@ -8152,11 +8175,25 @@ export type Step = {
   finishedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
   id: Scalars["ID"]["output"];
   logsUrl: Scalars["String"]["output"];
+  materializations: MaterializationConnection;
   name: Scalars["String"]["output"];
   run: Run;
   runId: Scalars["ID"]["output"];
   startedAt: Scalars["DateTimeISO"]["output"];
   status: StepStatus;
+};
+
+export type StepConnection = {
+  __typename?: "StepConnection";
+  edges: Array<StepEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type StepEdge = {
+  __typename?: "StepEdge";
+  cursor: Scalars["String"]["output"];
+  node: Step;
 };
 
 export type StepEvent = {

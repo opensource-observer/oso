@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { ADT } from "ts-adt";
 import { createBrowserClient } from "@/lib/supabase/browser";
 import { Session, AuthError, SupabaseClient } from "@supabase/supabase-js";
@@ -46,14 +46,13 @@ function useSupabaseState() {
 }
 
 function SupabaseProvider({ children }: { children: React.ReactNode }) {
+  const supabaseClient = useMemo(() => createBrowserClient(), []);
   const [state, setState] = useState<SupabaseState>({
     _type: "loading",
     supabaseClient: null,
   });
 
   useEffect(() => {
-    const supabaseClient = createBrowserClient();
-
     const revalidate = async () => {
       const { data, error } = await supabaseClient.auth.getSession();
       if (error) {
@@ -87,7 +86,7 @@ function SupabaseProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabaseClient]);
 
   return (
     <SupabaseContext.Provider value={state}>

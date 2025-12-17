@@ -2,11 +2,13 @@ import {
   DatasetsRow,
   MaterializationRow,
   RunRow,
+  StepRow,
 } from "@/lib/types/schema-types";
 import {
   RunStatus,
   RunTriggerType,
   RunType,
+  StepStatus,
 } from "@/lib/graphql/generated/graphql";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
@@ -14,6 +16,7 @@ import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
   CreateUserModelRunRequestSchema,
   MaterializationWhereSchema,
+  StepWhereSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { assertNever } from "@opensource-observer/utils";
@@ -48,19 +51,30 @@ function mapRunStatus(status: RunRow["status"]): RunStatus {
   }
 }
 
-function genericRunRequestResolver<
+type RunRequestResolverOptions<
   T extends z.ZodTypeAny,
   Q extends ProtobufMessage,
->(
-  inputSchema: T,
-  encoder: ProtobufEncoder<Q>,
+> = {
+  queueName: string;
+  inputSchema: T;
+  encoder: ProtobufEncoder<Q>;
   queueMessageFactory: (
     input: z.infer<T>,
     user: ReturnType<typeof requireAuthentication>,
     dataset: DatasetsRow,
     run: RunRow,
-  ) => Promise<Q>,
-): (
+  ) => Promise<Q>;
+};
+
+function genericRunRequestResolver<
+  T extends z.ZodTypeAny,
+  Q extends ProtobufMessage,
+>({
+  inputSchema,
+  encoder,
+  queueMessageFactory,
+  queueName,
+}: RunRequestResolverOptions<T, Q>): (
   _: any,
   args: { input: z.infer<T> },
   context: GraphQLContext,
@@ -129,7 +143,11 @@ function genericRunRequestResolver<
 
     // Publish the message to the queue
     const queueService = createQueueService();
-    const result = await queueService.publishDataModelRun(message, encoder);
+    const result = await queueService.queueMessage({
+      queueName,
+      message,
+      encoder,
+    });
 
     if (!result.success) {
       logger.error(
@@ -154,10 +172,11 @@ function genericRunRequestResolver<
 
 export const schedulerResolvers = {
   Mutation: {
-    createUserModelRunRequest: genericRunRequestResolver(
-      CreateUserModelRunRequestSchema,
-      DataModelRunRequest,
-      async (input, _user, dataset, run) => {
+    createUserModelRunRequest: genericRunRequestResolver({
+      queueName: "data_model_run_requests",
+      inputSchema: CreateUserModelRunRequestSchema,
+      encoder: DataModelRunRequest,
+      queueMessageFactory: async (input, _user, dataset, run) => {
         const runIdBuffer = Buffer.from(run.id.replace(/-/g, ""), "hex");
 
         const message: DataModelRunRequest = {
@@ -165,10 +184,9 @@ export const schedulerResolvers = {
           datasetId: dataset.id,
           modelReleaseIds: input.selectedModels || [],
         };
-
         return message;
       },
-    ),
+    }),
   },
   Run: {
     datasetId: (parent: RunRow) => parent.dataset_id,
@@ -182,14 +200,14 @@ export const schedulerResolvers = {
     status: (parent: RunRow) => mapRunStatus(parent.status),
     startedAt: (parent: RunRow) => parent.started_at,
     finishedAt: (parent: RunRow) => parent.completed_at,
-    materializations: (
+    steps: (
       parent: RunRow,
       args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
       return queryWithPagination(args, context, {
-        tableName: "materialization",
-        whereSchema: MaterializationWhereSchema,
+        tableName: "step",
+        whereSchema: StepWhereSchema,
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
@@ -222,5 +240,60 @@ export const schedulerResolvers = {
     datasetId: (parent: MaterializationRow) => parent.dataset_id,
     createdAt: (parent: MaterializationRow) => parent.created_at,
     schema: (parent: MaterializationRow) => parent.schema,
+  },
+  Step: {
+    runId: (parent: StepRow) => parent.run_id,
+    run: async (parent: StepRow) => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("run")
+        .select("*")
+        .eq("id", parent.run_id)
+        .single();
+      if (error) {
+        logger.error(
+          `Error fetching run with id ${parent.run_id}: ${error.message}`,
+        );
+        throw ServerErrors.database(
+          `Failed to fetch run with id ${parent.run_id}`,
+        );
+      }
+      return data;
+    },
+    name: (parent: StepRow) => parent.name,
+    displayName: (parent: StepRow) => parent.display_name,
+    logsUrl: (parent: StepRow) => parent.logs_url,
+    startedAt: (parent: StepRow) => parent.started_at,
+    finishedAt: (parent: StepRow) => parent.completed_at,
+    status: (parent: StepRow) => {
+      switch (parent.status) {
+        case "running":
+          return StepStatus.Running;
+        case "failed":
+          return StepStatus.Failed;
+        case "canceled":
+          return StepStatus.Canceled;
+        case "success":
+          return StepStatus.Success;
+        default:
+          assertNever(parent.status, `Unknown step status: ${parent.status}`);
+      }
+    },
+    materializations: (
+      parent: StepRow,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "materialization",
+        whereSchema: MaterializationWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          eq: [{ key: "step_id", value: parent.id }],
+        },
+      });
+    },
   },
 };

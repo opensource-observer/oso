@@ -40,13 +40,13 @@ already based on the docs linked above):
 gcloud beta emulators pubsub start --project=oso-local-test
 ```
 
-Ensure that you set the following environment variables so that the workers can
-connect to the local emulator:
+Ensure that you set the following environment variables are set in the `.env`
+file (located wherever you call the script from):
 
 ```bash
-export PUBSUB_EMULATOR_HOST=localhost:8085
-export SCHEDULER_GCP_PROJECT_ID=oso-local-test
-export SCHEDULER_OSO_API_URL=http://localhost:3000/api/v1/osograph
+PUBSUB_EMULATOR_HOST=localhost:8085
+SCHEDULER_GCP_PROJECT_ID=oso-local-test
+SCHEDULER_OSO_API_URL=http://localhost:3000/api/v1/osograph
 ```
 
 ## Generating Python GraphQL client code
@@ -55,6 +55,14 @@ From inside the `warehouse/scheduler` directory, run:
 
 ```bash
 uv run ariadne-codegen
+```
+
+## Initializing Pub/Sub topics
+
+Before running the workers, you need to initialize the topic and subscription on the emulator.
+
+```bash
+uv run scheduler initialize
 ```
 
 ## Running the workers

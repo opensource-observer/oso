@@ -16,7 +16,7 @@ spec:
       labels:
         {{- include "app.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "app.fullname" . }}
+      serviceAccountName: {{ include "app.serviceAccountName" . }}
       {{- with .Values.app.affinity }}
       affinity:
         {{ toYaml . | nindent 8 }}

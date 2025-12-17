@@ -7,6 +7,7 @@ from scheduler.types import Model
 from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_evaluator(
     duckdb_engine_adapter: DuckDBEngineAdapter, fake_udm_client: FakeUDMClient

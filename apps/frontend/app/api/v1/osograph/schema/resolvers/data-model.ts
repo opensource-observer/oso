@@ -413,7 +413,7 @@ export const dataModelResolvers = {
         parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [
-            { key: "table_id", value: parent.id },
+            { key: "table_id", value: `data_model_${parent.id}` },
             { key: "dataset_id", value: parent.dataset_id },
           ],
         },
