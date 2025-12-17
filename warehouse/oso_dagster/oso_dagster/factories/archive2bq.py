@@ -486,6 +486,7 @@ def create_archive2bq_asset(
         AssetFactoryResponse: The asset factory response.
     """
     tags = {
+        **asset_config.asset_kwargs.pop("tags", {}),
         "opensource.observer/factory": "archive2bq",
     }
 
