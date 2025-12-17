@@ -1,0 +1,66 @@
+test_stg_github__distinct_commits_resolved_mergebot_basic:
+  model: oso.stg_github__distinct_commits_resolved_mergebot
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-02
+  inputs:
+    oso.stg_github__distinct_main_commits:
+      rows:
+      - repository_id: 101
+        sha: "sha1"
+        created_at: "2024-01-01 10:00:00"
+        repository_name: "owner/repo"
+        push_id: 123
+        ref: "refs/heads/main"
+        actor_id: 118344674
+        actor_login: "mergebot"
+        author_email: "bot@mail"
+        author_name: "Bot"
+        is_distinct: true
+        api_url: "url1"
+      - repository_id: 101
+        sha: "sha2"
+        created_at: "2024-01-01 11:00:00"
+        repository_name: "owner/repo"
+        push_id: 124
+        ref: "refs/heads/main"
+        actor_id: 999
+        actor_login: "user1"
+        author_email: "u1@mail"
+        author_name: "U1"
+        is_distinct: true
+        api_url: "url2"
+    oso.stg_github__pull_request_merge_events:
+      rows:
+      - repository_id: 101
+        merge_commit_sha: "sha1"
+        created_at: "2024-01-01 10:00:00"
+        actor_id: 888
+        actor_login: "user888"
+  outputs:
+    query:
+      rows:
+      - repository_id: 101
+        sha: "sha1"
+        created_at: "2024-01-01 10:00:00"
+        repository_name: "owner/repo"
+        push_id: 123
+        ref: "refs/heads/main"
+        actor_id: 888
+        actor_login: "user888"
+        author_email: "bot@mail"
+        author_name: "Bot"
+        is_distinct: true
+        api_url: "url1"
+      - repository_id: 101
+        sha: "sha2"
+        created_at: "2024-01-01 11:00:00"
+        repository_name: "owner/repo"
+        push_id: 124
+        ref: "refs/heads/main"
+        actor_id: 999
+        actor_login: "user1"
+        author_email: "u1@mail"
+        author_name: "U1"
+        is_distinct: true
+        api_url: "url2"
