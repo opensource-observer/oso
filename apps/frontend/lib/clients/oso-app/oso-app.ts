@@ -2748,7 +2748,6 @@ class OsoAppClient {
   ) {
     ensure(args.dataModelId, "Missing dataModelId argument");
     ensure(args.name, "Missing name argument");
-    ensure(args.displayName, "Missing displayName argument");
     ensure(args.language, "Missing language argument");
     ensure(args.code, "Missing code argument");
     ensure(args.cron, "Missing cron argument");
@@ -2762,11 +2761,18 @@ class OsoAppClient {
           message
           dataModelRevision {
             id
+            createdAt
             revisionNumber
           }
         }
       }
     `);
+
+    // Maintain backward compatibility for displayName briefly so frontend
+    // deploy on plasmic can continue to work.
+    if (args.displayName) {
+      delete args.displayName;
+    }
 
     const response = await fetch("/api/v1/osograph", {
       method: "POST",

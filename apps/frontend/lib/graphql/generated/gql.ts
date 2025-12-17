@@ -19,7 +19,7 @@ type Documents = {
   "\n      mutation UpdateDataset($input: UpdateDatasetInput!) {\n        updateDataset(input: $input) {\n          success\n          message\n          dataset {\n            id\n            name\n            displayName\n            description\n            isPublic\n          }\n        }\n      }\n    ": typeof types.UpdateDatasetDocument;
   "\n      mutation CreateDataModel($input: CreateDataModelInput!) {\n        createDataModel(input: $input) {\n          success\n          message\n          dataModel {\n            id\n            name\n            isEnabled\n          }\n        }\n      }\n    ": typeof types.CreateDataModelDocument;
   "\n      mutation UpdateDataModel($input: UpdateDataModelInput!) {\n        updateDataModel(input: $input) {\n          success\n          message\n          dataModel {\n            id\n            name\n            isEnabled\n          }\n        }\n      }\n    ": typeof types.UpdateDataModelDocument;
-  "\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            revisionNumber\n          }\n        }\n      }\n    ": typeof types.CreateDataModelRevisionDocument;
+  "\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            createdAt\n            revisionNumber\n          }\n        }\n      }\n    ": typeof types.CreateDataModelRevisionDocument;
   "\n      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {\n        createDataModelRelease(input: $input) {\n          success\n          message\n          dataModelRelease {\n            id\n          }\n        }\n      }\n    ": typeof types.CreateDataModelReleaseDocument;
   "\n      mutation CreateStaticModel($input: CreateStaticModelInput!) {\n        createStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ": typeof types.CreateStaticModelDocument;
   "\n      mutation UpdateStaticModel($input: UpdateStaticModelInput!) {\n        updateStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ": typeof types.UpdateStaticModelDocument;
@@ -42,7 +42,7 @@ const documents: Documents = {
     types.CreateDataModelDocument,
   "\n      mutation UpdateDataModel($input: UpdateDataModelInput!) {\n        updateDataModel(input: $input) {\n          success\n          message\n          dataModel {\n            id\n            name\n            isEnabled\n          }\n        }\n      }\n    ":
     types.UpdateDataModelDocument,
-  "\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            revisionNumber\n          }\n        }\n      }\n    ":
+  "\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            createdAt\n            revisionNumber\n          }\n        }\n      }\n    ":
     types.CreateDataModelRevisionDocument,
   "\n      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {\n        createDataModelRelease(input: $input) {\n          success\n          message\n          dataModelRelease {\n            id\n          }\n        }\n      }\n    ":
     types.CreateDataModelReleaseDocument,
@@ -114,8 +114,8 @@ export function gql(
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function gql(
-  source: "\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            revisionNumber\n          }\n        }\n      }\n    ",
-): (typeof documents)["\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            revisionNumber\n          }\n        }\n      }\n    "];
+  source: "\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            createdAt\n            revisionNumber\n          }\n        }\n      }\n    ",
+): (typeof documents)["\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            createdAt\n            revisionNumber\n          }\n        }\n      }\n    "];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
