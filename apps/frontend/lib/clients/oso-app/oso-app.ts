@@ -3041,7 +3041,7 @@ class OsoAppClient {
       );
     }
 
-    const payload = result.data?.createRunRequest;
+    const payload = result.data?.createUserModelRunRequest;
     if (!payload) {
       throw new Error("No response data from create run request mutation");
     }

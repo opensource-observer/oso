@@ -10,6 +10,7 @@ import {
 import { logger } from "@/lib/logger";
 import { NotebookHostRpc } from "@/lib/notebook/notebook-host-rpc";
 import { generateNotebookUrl, NotebookUrlOptions } from "@/lib/notebook/utils";
+import { v4 as uuidv4 } from "uuid";
 
 interface ControllableNotebookProps extends NotebookUrlOptions {
   className?: string; // Plasmic CSS class
@@ -89,7 +90,7 @@ class ConnectionState {
     // multiple independent notebooks on the same page. This is a purely ephemeral
     // value that is not to be persisted in a database, it's purely for the client
     // side.
-    this._notebookHostId = crypto.randomUUID();
+    this._notebookHostId = uuidv4();
   }
 
   get state() {

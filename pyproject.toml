@@ -77,7 +77,7 @@ members = [
     "warehouse/metrics_tools",
     "warehouse/oso_lets_go",
     "ops/opsscripts",
-    "lib/protobufs/python",
+    "lib/osoprotobufs/python",
 ]
 
 [tool.dagster]

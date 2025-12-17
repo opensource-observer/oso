@@ -1,7 +1,8 @@
-import logging
 import os
 import typing as t
+import uuid
 
+import structlog
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1
 from google.pubsub_v1.types import Encoding, Schema
@@ -14,13 +15,14 @@ from pydantic_settings import (
     CliSubCommand,
     SettingsConfigDict,
 )
-from scheduler.types import GenericMessageQueueService
 
-logger = logging.getLogger(__name__)
+from scheduler.types import GenericMessageQueueService, MessageHandlerRegistry
+
+logger = structlog.get_logger(__name__)
 
 CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_DIR = os.path.abspath(os.path.join(CURR_DIR, "../../../"))
-PROTOBUF_DIR = os.path.join(REPO_DIR, "lib/protobufs/definitions")
+PROTOBUF_DIR = os.path.join(REPO_DIR, "lib/osoprotobufs/definitions")
 
 
 class CommonSettings(BaseSettings):
@@ -38,12 +40,30 @@ class CommonSettings(BaseSettings):
     trino_k8s_coordinator_deployment_name: str = ""
     trino_k8s_worker_deployment_name: str = ""
     trino_connect_timeout: int = 240
+
+    consumer_trino_remote_url: str = "http://localhost:8080"
+    consumer_trino_k8s_namespace: str = ""
+    consumer_trino_k8s_service_name: str = ""
+    consumer_trino_k8s_coordinator_deployment_name: str = ""
+    consumer_trino_k8s_worker_deployment_name: str = ""
+    consumer_trino_connect_timeout: int = 240
+
+    redis_host: t.Optional[str] = None
+    redis_port: int = 6379
+    redis_ttl_seconds: int = 3600
+
+    local_heartbeat_path: str = ""
+
     k8s_use_port_forward: bool = Field(
         default=False,
         description="Whether to use port forwarding when connecting to k8s services",
     )
 
     gcp_project_id: str = Field(description="GCP Project ID")
+    query_bucket: str = Field(
+        default="oso-async-query",
+        description="GCS bucket for storing query results",
+    )
     emulator_enabled: bool = Field(
         default=False,
         description="Whether to use the GCP Pub/Sub emulator",
@@ -53,6 +73,11 @@ class CommonSettings(BaseSettings):
 
     trino_enabled: bool = False
 
+    local_working_dir: str = Field(
+        default=os.path.join(os.getcwd(), ".scheduler_workdir"),
+        description="Local working directory for the scheduler",
+    )
+
     local_duckdb_path: str = Field(
         default="",
         description="Path to the local DuckDB database file",
@@ -60,13 +85,22 @@ class CommonSettings(BaseSettings):
     oso_api_url: str = Field(
         description="URL for the OSO API GraphQL endpoint",
     )
+    oso_system_api_key: str = Field(
+        default="",
+        description="API key for authenticating with the OSO system",
+    )
 
     @model_validator(mode="after")
     def handle_generated_config(self):
         if not self.local_duckdb_path:
             self.local_duckdb_path = os.path.join(
-                os.getcwd(),
+                self.local_working_dir,
                 "duckdb.db",
+            )
+        if not self.local_heartbeat_path:
+            self.local_heartbeat_path = os.path.join(
+                self.local_working_dir,
+                "heartbeat",
             )
         if os.environ.get("PUBSUB_EMULATOR_HOST"):
             self.emulator_enabled = True
@@ -92,6 +126,25 @@ class Run(BaseSettings):
         )
 
         await message_queue_service.run_loop(self.queue)
+
+
+class CreateSystemJWTSecret(BaseSettings):
+    """Subcommand to create a system JWT secret in the OSO system"""
+
+    oso_jwt_secret: str = Field(
+        description="The JWT secret to set in the OSO system",
+    )
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        import jwt
+
+        payload = {
+            "iss": "opensource-observer",
+            "aud": "opensource-observer",
+            "source": "whatgoeshere",
+        }
+        token = jwt.encode(payload, self.oso_jwt_secret, algorithm="HS256")
+        print(f"Generated JWT Token:\n   {token}")
 
 
 def ensure_topic_subscription(
@@ -168,14 +221,25 @@ class Initialize(BaseSettings):
     async def cli_cmd(self, context: CliContext) -> None:
         common_settings = context.get_data_as("common_settings", CommonSettings)
 
-        ensure_topic_subscription(
-            project_id=common_settings.gcp_project_id,
-            topic_id="data_model_run_requests",
-            subscription_id="data_model_run_requests",
-            schema_id="data_model_run_request_schema",
-            pb_file_path=os.path.join(PROTOBUF_DIR, "data-model.proto"),
-            emulator_enabled=common_settings.emulator_enabled,
+        resources_registry = context.get_data_as(
+            "resources_registry", ResourcesRegistry
         )
+        resources = resources_registry.context()
+
+        message_handler_registry: MessageHandlerRegistry = resources.resolve(
+            "message_handler_registry"
+        )
+
+        for topic, handler in message_handler_registry:
+            logger.info(f"Initializing topic and subscription for {topic}")
+            ensure_topic_subscription(
+                project_id=common_settings.gcp_project_id,
+                topic_id=topic,
+                subscription_id=topic,
+                schema_id=f"{topic}_schema",
+                pb_file_path=os.path.join(PROTOBUF_DIR, handler.schema_file_name),
+                emulator_enabled=common_settings.emulator_enabled,
+            )
 
 
 class PublishDataModelRunRequest(BaseSettings):
@@ -207,10 +271,45 @@ class PublishDataModelRunRequest(BaseSettings):
         )
 
 
+class PublishQueryRunRequest(BaseSettings):
+    """Subcommand to publish a QueryRunRequest message"""
+
+    run_id: str = Field(description="The ID of the query run")
+    query: str = Field(description="The SQL query to run")
+    jwt: str = Field(description="The JWT token for authentication")
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        print(f"Publishing QueryRunRequest with run_id: {self.run_id}")
+        resources_registry = context.get_data_as(
+            "resources_registry", ResourcesRegistry
+        )
+        resources = resources_registry.context()
+
+        message_queue_service: GenericMessageQueueService = resources.resolve(
+            "message_queue_service"
+        )
+
+        from osoprotobufs.query_pb2 import QueryRunRequest
+
+        message = QueryRunRequest(
+            run_id=uuid.UUID(self.run_id).bytes,
+            query=self.query,
+            jwt=self.jwt,
+        )
+
+        print(f"Message constructed: {message}")
+
+        await message_queue_service.publish_message(
+            "query_run_requests",
+            message,
+        )
+
+
 class Publish(BaseSettings):
     """Subcommand to run the async worker publisher"""
 
     data_model_run_request: CliSubCommand[PublishDataModelRunRequest]
+    query_run_request: CliSubCommand[PublishQueryRunRequest]
 
     async def cli_cmd(self, context: CliContext) -> None:
         CliApp.run_subcommand(context, self)
@@ -220,6 +319,7 @@ class Testing(BaseSettings):
     """Subcommand to run tests for the async worker"""
 
     publish: CliSubCommand[Publish]
+    create_system_jwt_secret: CliSubCommand[CreateSystemJWTSecret]
 
     async def cli_cmd(self, context: CliContext) -> None:
         # Here you would implement actual test running logic

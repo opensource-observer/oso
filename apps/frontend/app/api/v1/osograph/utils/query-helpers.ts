@@ -72,19 +72,23 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
 ) {
   const supabase = createAdminClient();
 
-  const orgIds = await resolveOrgIds(options, context);
-  if (orgIds.length === 0) {
-    return emptyConnection<TableRow<TTable>>();
+  let orgIdPredicate: Partial<QueryPredicate<TTable>> = {};
+
+  if (!context.systemCredentials) {
+    const orgIds = await resolveOrgIds(options, context);
+    if (orgIds.length === 0) {
+      return emptyConnection<TableRow<TTable>>();
+    }
+
+    orgIdPredicate = {
+      // @ts-expect-error - TS can't correlate that org_id exists on all TableWithOrgId tables
+      in: [{ key: "org_id", value: orgIds }],
+    };
   }
 
   const [start, end] = preparePaginationRange(args);
 
   const orderBy = options.orderBy;
-
-  const orgIdPredicate: Partial<QueryPredicate<TTable>> = {
-    // @ts-expect-error - TS can't correlate that org_id exists on all TableWithOrgId tables
-    in: [{ key: "org_id", value: orgIds }],
-  };
 
   const basePredicate = options.basePredicate
     ? mergePredicates(orgIdPredicate, options.basePredicate)

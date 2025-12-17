@@ -1,6 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
-import { AuthenticationErrors } from "@/app/api/v1/osograph/utils/errors";
+import {
+  AuthenticationErrors,
+  ResourceErrors,
+  ServerErrors,
+  ValidationErrors,
+} from "@/app/api/v1/osograph/utils/errors";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { Table } from "@/lib/types/table";
 import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-resolver";
@@ -8,11 +13,294 @@ import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
 import { TableResolutionMap } from "@/lib/query/resolver";
 import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 import {
+  CreateMaterializationSchema,
+  FinishRunSchema,
+  FinishStepSchema,
   ResolveTablesSchema,
+  StartRunSchema,
+  StartStepSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
+import z from "zod";
+import { logger } from "@/lib/logger";
+
+type SystemMutationOptions<T extends z.ZodTypeAny, O> = {
+  inputSchema: T;
+  resolver: (input: z.infer<T>, context: GraphQLContext) => Promise<O>;
+};
+
+function systemMutation<T extends z.ZodTypeAny, O>({
+  inputSchema,
+  resolver,
+}: SystemMutationOptions<T, O>): (
+  _: any,
+  args: { input: z.infer<T> },
+  context: GraphQLContext,
+) => Promise<O> {
+  return async (
+    _: any,
+    args: { input: z.infer<T> },
+    context: GraphQLContext,
+  ) => {
+    if (!context.systemCredentials) {
+      throw AuthenticationErrors.notAuthorized();
+    }
+    const validatedInput = validateInput(inputSchema, args.input);
+    return resolver(validatedInput, context);
+  };
+}
+
+// Convert RunStatus enum from GraphQL to db run_status string
+type RunStatus = "queued" | "running" | "completed" | "failed" | "canceled";
+const RunStatusMap: Record<string, RunStatus> = {
+  QUEUED: "queued",
+  RUNNING: "running",
+  SUCCESS: "completed",
+  FAILED: "failed",
+  CANCELED: "canceled",
+};
+
+type StepStatus = "running" | "success" | "failed" | "canceled";
+const StepStatusMap: Record<string, StepStatus> = {
+  RUNNING: "running",
+  SUCCESS: "success",
+  FAILED: "failed",
+  CANCELED: "canceled",
+};
 
 export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
+  Mutation: {
+    startRun: systemMutation({
+      inputSchema: StartRunSchema,
+      resolver: async (input) => {
+        const supabase = createAdminClient();
+
+        const { runId } = input;
+
+        const { data: runData, error: runError } = await supabase
+          .from("run")
+          .select("*")
+          .eq("id", runId)
+          .single();
+        if (runError || !runData) {
+          throw ResourceErrors.notFound(`Run ${runId} not found`);
+        }
+        // Update the status of the run to "RUNNING"
+        const { data: updatedRun, error: updateError } = await supabase
+          .from("run")
+          .update({ status: "running", started_at: new Date().toISOString() })
+          .eq("id", runId)
+          .select()
+          .single();
+        if (updateError || !updatedRun) {
+          throw ServerErrors.internal(
+            `Failed to update run ${runId} status to running`,
+          );
+        }
+        return {
+          message: "Marked run as running",
+          success: true,
+          run: updatedRun,
+        };
+      },
+    }),
+    finishRun: systemMutation({
+      inputSchema: FinishRunSchema,
+      resolver: async (input) => {
+        const supabase = createAdminClient();
+
+        const { status, runId, logsUrl } = input;
+
+        const { data: runData, error: runError } = await supabase
+          .from("run")
+          .select("*")
+          .eq("id", runId)
+          .single();
+        if (runError || !runData) {
+          throw ResourceErrors.notFound(`Run ${runId} not found`);
+        }
+        // Update the status and logsUrl of the run based on the input
+        const { data: updatedRun, error: updateError } = await supabase
+          .from("run")
+          .update({
+            status: RunStatusMap[status] || "failed",
+            logs_url: logsUrl,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", runId)
+          .select()
+          .single();
+        if (updateError || !updatedRun) {
+          throw ServerErrors.internal(
+            `Failed to update run ${runId} status to ${input.status}`,
+          );
+        }
+        return {
+          message: "Committed run completion",
+          success: true,
+          run: updatedRun,
+        };
+      },
+    }),
+    startStep: systemMutation({
+      inputSchema: StartStepSchema,
+      resolver: async (input) => {
+        const supabase = createAdminClient();
+
+        const { runId, name, displayName } = input;
+
+        // Get the run to ensure it exists
+        const { data: runData, error: runError } = await supabase
+          .from("run")
+          .select("org_id")
+          .eq("id", runId)
+          .single();
+        if (runError || !runData) {
+          throw ResourceErrors.notFound(`Run ${runId} not found`);
+        }
+
+        // We start a new step for the given run
+        const { data: stepData, error: stepError } = await supabase
+          .from("step")
+          .insert({
+            run_id: runId,
+            name,
+            org_id: runData.org_id,
+            display_name: displayName,
+            status: "running",
+            started_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        if (stepError || !stepData) {
+          throw ServerErrors.internal(
+            `Failed to start step ${name} for run ${runId}`,
+          );
+        }
+        return { message: "Started step", success: true, step: stepData };
+      },
+    }),
+    finishStep: systemMutation({
+      inputSchema: FinishStepSchema,
+      resolver: async (input) => {
+        const supabase = createAdminClient();
+
+        const { stepId, logsUrl, status } = input;
+
+        const { data: stepData, error: stepError } = await supabase
+          .from("step")
+          .select("*")
+          .eq("id", stepId)
+          .single();
+        if (stepError || !stepData) {
+          throw ResourceErrors.notFound(`Step ${stepId} not found`);
+        }
+        // Update the status and logsUrl of the step based on the input
+        const { data: updatedStep, error: updateError } = await supabase
+          .from("step")
+          .update({
+            status: StepStatusMap[status] || "failed",
+            logs_url: logsUrl,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", stepId)
+          .select()
+          .single();
+        if (updateError || !updatedStep) {
+          throw ServerErrors.internal(
+            `Failed to update step ${stepId} status to ${input.status}`,
+          );
+        }
+        return {
+          message: "Committed step completion",
+          success: true,
+          step: updatedStep,
+        };
+      },
+    }),
+    createMaterialization: systemMutation({
+      inputSchema: CreateMaterializationSchema,
+      resolver: async (input) => {
+        const supabase = createAdminClient();
+
+        const { stepId, tableId, schema, warehouseFqn } = input;
+
+        // Assert that the tableId has one of the appropriate prefixes
+        const tableIdHasValidPrefix =
+          tableId.startsWith("data_model_") ||
+          tableId.startsWith("data_ingestion_") ||
+          tableId.startsWith("data_connection_");
+        if (!tableIdHasValidPrefix) {
+          throw ValidationErrors.invalidInput(
+            "tableId",
+            "tableId must start with one of the following prefixes: data_model_, data_ingestion_, data_connection_",
+          );
+        }
+
+        logger.info(`Creating materialization for step ${stepId}`);
+
+        // Get the step
+        const { data: stepData, error: stepError } = await supabase
+          .from("step")
+          .select("*")
+          .eq("id", stepId)
+          .single();
+        if (stepError || !stepData) {
+          logger.error(`Step ${stepId} not found: ${stepError?.message}`);
+          throw ResourceErrors.notFound(`Step ${stepId} not found`);
+        }
+
+        // Get the dataset id from the run associated with the step
+        const { data: runData, error: runError } = await supabase
+          .from("run")
+          .select("id, org_id, dataset_id")
+          .eq("id", stepData.run_id)
+          .single();
+        if (runError || !runData) {
+          logger.error(
+            `Run for step ${stepId} not found: ${runError?.message}`,
+          );
+          throw ResourceErrors.notFound(`Run for step ${stepId} not found`);
+        }
+
+        // Convert schema object to supported format (remove undefined)
+        const dbSafeSchema = schema.map((entry) => {
+          return {
+            name: entry.name,
+            type: entry.type,
+            description: entry.description || null,
+          };
+        });
+
+        // Create the materialization
+        const { data: materializationData, error: materializationError } =
+          await supabase
+            .from("materialization")
+            .insert({
+              run_id: runData.id,
+              org_id: runData.org_id,
+              dataset_id: runData.dataset_id,
+              step_id: stepId,
+              schema: dbSafeSchema,
+              created_at: new Date().toISOString(),
+              table_id: tableId,
+              warehouse_fqn: warehouseFqn,
+            })
+            .select()
+            .single();
+        if (materializationError || !materializationData) {
+          throw ServerErrors.internal(
+            `Failed to create materialization for step ${stepId}`,
+          );
+        }
+        return {
+          message: "Created materialization",
+          success: true,
+          materialization: materializationData,
+        };
+      },
+    }),
+  },
   Query: {
     system: async (_: unknown, _args: unknown, context: GraphQLContext) => {
       if (!context.systemCredentials) {

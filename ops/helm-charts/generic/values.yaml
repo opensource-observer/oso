@@ -1,5 +1,6 @@
 global:
   fullnameOverride: ""
+  serviceAccountNameOverride: ""
 app:
   # name: "oso" # This must be set
   # command: []
@@ -11,6 +12,7 @@ app:
     className: "default"
     annotations: {}
   service:
+    enabled: true
     annotations: {}
   host: 0.0.0.0
   hostEnvVar: APP_HOST
@@ -38,3 +40,6 @@ app:
   volumes: []
   volumeMounts: []
   livenessProbe: {}
+  roles:
+    clusterRoles: []
+    enableClusterRoleBinding: false
