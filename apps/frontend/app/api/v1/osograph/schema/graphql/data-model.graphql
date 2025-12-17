@@ -47,7 +47,6 @@ type DataModelRevision {
   dataModel: DataModel!
   organization: Organization!
   name: String!
-  displayName: String!
   description: String
   revisionNumber: Int!
   hash: String!
