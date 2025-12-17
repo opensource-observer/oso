@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_events_aux_prs,
+  name oso.int_events_aux_issues_since_20251007,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
@@ -7,8 +7,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true
   ),
-  start '2015-01-01',
-  end @github_events_pre_v20251007_end_date,
+  start @github_events_v20251007_start_date,
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
@@ -25,7 +24,54 @@ MODEL (
   )
 );
 
-WITH github_pull_requests AS (
+WITH github_comments AS (
+  /* noqa: ST06 */
+  SELECT
+    "event_time" AS "time",
+    type AS event_type,
+    id::TEXT AS event_source_id,
+    'GITHUB' AS event_source,
+    STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)] AS to_name,
+    STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)] AS to_namespace,
+    'REPOSITORY' AS to_type,
+    repository_id::TEXT AS to_artifact_source_id,
+    actor_login AS from_name,
+    actor_login AS from_namespace,
+    'GIT_USER' AS from_type,
+    actor_id::TEXT AS from_artifact_source_id,
+    "number" AS issue_number,
+    created_at,
+    merged_at,
+    closed_at,
+    comments
+  FROM oso.stg_github__comments_since_20251007
+  WHERE
+    event_time BETWEEN @start_dt AND @end_dt
+), github_issues AS (
+  /* noqa: ST06 */
+  /* Note: stg_github__issues is not affected by v2 payload changes, so we use the original model */
+  SELECT
+    event_time AS "time",
+    type AS event_type,
+    id::TEXT AS event_source_id,
+    'GITHUB' AS event_source,
+    STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)] AS to_name,
+    STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)] AS to_namespace,
+    'REPOSITORY' AS to_type,
+    repository_id::TEXT AS to_artifact_source_id,
+    actor_login AS from_name,
+    actor_login AS from_namespace,
+    'GIT_USER' AS from_type,
+    actor_id::TEXT AS from_artifact_source_id,
+    "number" AS issue_number,
+    created_at,
+    NULL::TIMESTAMP AS merged_at,
+    closed_at,
+    comments
+  FROM oso.stg_github__issues
+  WHERE
+    event_time BETWEEN @start_dt AND @end_dt
+), github_pull_requests AS (
   /* noqa: ST06 */
   SELECT
     event_time AS "time",
@@ -40,13 +86,12 @@ WITH github_pull_requests AS (
     actor_login AS from_namespace,
     'GIT_USER' AS from_type,
     actor_id::TEXT AS from_artifact_source_id,
-    "number" AS pr_number,
+    "number" AS issue_number,
     created_at,
     merged_at,
     closed_at,
-    comments,
-    author_association
-  FROM oso.stg_github__pull_requests
+    comments
+  FROM oso.stg_github__pull_requests_since_20251007
   WHERE
     event_time BETWEEN @start_dt AND @end_dt
 ), github_pull_request_merge_events AS (
@@ -64,41 +109,15 @@ WITH github_pull_requests AS (
     actor_login AS from_namespace,
     'GIT_USER' AS from_type,
     actor_id::TEXT AS from_artifact_source_id,
-    "number" AS pr_number,
+    "number" AS issue_number,
     created_at,
     merged_at,
     closed_at,
-    comments,
-    author_association
-  FROM oso.stg_github__pull_request_merge_events
+    comments
+  FROM oso.stg_github__pull_request_merge_events_since_20251007
   WHERE
     event_time BETWEEN @start_dt AND @end_dt
-), github_pr_comments AS (
-  /* noqa: ST06 */
-  SELECT
-    "event_time" AS "time",
-    type AS event_type,
-    id::TEXT AS event_source_id,
-    'GITHUB' AS event_source,
-    STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(1)] AS to_name,
-    STR_SPLIT(REPLACE(repository_name, '@', ''), '/')[@array_index(0)] AS to_namespace,
-    'REPOSITORY' AS to_type,
-    repository_id::TEXT AS to_artifact_source_id,
-    actor_login AS from_name,
-    actor_login AS from_namespace,
-    'GIT_USER' AS from_type,
-    actor_id::TEXT AS from_artifact_source_id,
-    "number" AS pr_number,
-    created_at,
-    merged_at,
-    closed_at,
-    comments,
-    NULL AS author_association
-  FROM oso.stg_github__comments
-  WHERE
-    event_time BETWEEN @start_dt AND @end_dt
-    AND type LIKE '%PULL_REQUEST%'
-), pr_events AS (
+), issue_events AS (
   SELECT
     time,
     event_type,
@@ -106,13 +125,16 @@ WITH github_pull_requests AS (
     event_source,
     @oso_entity_id(event_source, to_namespace, to_name) AS to_artifact_id,
     @oso_entity_id(event_source, from_namespace, from_name) AS from_artifact_id,
-    pr_number,
+    issue_number,
     created_at,
     merged_at,
     closed_at,
-    comments,
-    author_association
+    comments
   FROM (
+    SELECT
+      *
+    FROM github_issues
+    UNION ALL
     SELECT
       *
     FROM github_pull_requests
@@ -123,21 +145,20 @@ WITH github_pull_requests AS (
     UNION ALL
     SELECT
       *
-    FROM github_pr_comments
+    FROM github_comments
   )
 )
 SELECT
   time,
   to_artifact_id,
   from_artifact_id,
-  @oso_id(event_source, to_artifact_id, pr_number) AS pr_id,
-  pr_number,
+  @oso_id(event_source, to_artifact_id, issue_number) AS issue_id,
+  issue_number,
   created_at,
   merged_at,
   closed_at,
   comments,
-  author_association,
   UPPER(event_type) AS event_type,
   event_source_id::TEXT AS event_source_id,
   UPPER(event_source) AS event_source
-FROM pr_events
+FROM issue_events
