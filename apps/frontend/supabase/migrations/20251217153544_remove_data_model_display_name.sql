@@ -1,0 +1,1 @@
+ALTER TABLE "public"."model_revision" DROP COLUMN IF EXISTS display_name;
