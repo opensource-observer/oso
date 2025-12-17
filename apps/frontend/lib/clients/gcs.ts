@@ -20,6 +20,27 @@ function getStorage() {
   return storage;
 }
 
+export async function fileExists(
+  bucketName: string,
+  fileName: string,
+): Promise<boolean> {
+  const storage = getStorage();
+  const file = storage.bucket(bucketName).file(fileName);
+  const [exists] = await file.exists();
+  return exists;
+}
+
+export async function copyFile(
+  source: { bucketName: string; fileName: string },
+  destination: { bucketName: string; fileName: string },
+) {
+  const storage = getStorage();
+  return storage
+    .bucket(source.bucketName)
+    .file(source.fileName)
+    .copy(storage.bucket(destination.bucketName).file(destination.fileName));
+}
+
 export async function getSignedUrl(
   bucketName: string,
   fileName: string,

@@ -1164,6 +1164,7 @@ export type Database = {
           dataset_id: string | null;
           id: string;
           logs_url: string | null;
+          metadata: Json | null;
           org_id: string;
           queued_at: string;
           requested_by: string | null;
@@ -1177,6 +1178,7 @@ export type Database = {
           dataset_id?: string | null;
           id?: string;
           logs_url?: string | null;
+          metadata?: Json | null;
           org_id: string;
           queued_at?: string;
           requested_by?: string | null;
@@ -1190,6 +1192,7 @@ export type Database = {
           dataset_id?: string | null;
           id?: string;
           logs_url?: string | null;
+          metadata?: Json | null;
           org_id?: string;
           queued_at?: string;
           requested_by?: string | null;

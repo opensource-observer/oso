@@ -7,15 +7,19 @@ import { EVENTS } from "@/lib/types/posthog";
 import {
   CreditsService,
   InsufficientCreditsError,
+  OrganizationPlan,
   TransactionType,
 } from "@/lib/services/credits";
 import { createQueueService } from "@/lib/services/queue";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { QueryRunRequest } from "@opensource-observer/osoprotobufs/query";
-import { getSignedUrl } from "@/lib/clients/gcs";
+import { copyFile, fileExists, getSignedUrl } from "@/lib/clients/gcs";
 import { assertNever } from "@opensource-observer/utils";
 import { withPostHogTracking } from "@/lib/clients/posthog";
+import { hashObject } from "@/lib/utils-server";
 
+const PUBLIC_CACHE_BUCKET = "oso-public-sql-cache";
+const ORG_CACHE_BUCKET = "oso-org-sql-cache";
 const ASYNC_QUERY_BUCKET = "oso-async-query";
 
 // Next.js route control
@@ -36,7 +40,22 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
   const { query } = reqBody.data;
   logger.info(`/api/async-sql: ${query}`);
 
-  // TODO(icaro): Check cache here and avoid creating a run?
+  // First try to serve from a public cache (anon is okay)
+  const queryKey = hashObject(reqBody.data);
+
+  try {
+    if (await fileExists(PUBLIC_CACHE_BUCKET, queryKey)) {
+      logger.log(`/api/async-sql: Public cache hit, short-circuiting`);
+      const cachedUrl = await getSignedUrl(PUBLIC_CACHE_BUCKET, queryKey);
+      return NextResponse.json({
+        id: queryKey,
+        status: "completed",
+        url: cachedUrl,
+      });
+    }
+  } catch (error) {
+    logger.log(`/api/sql: No public cache hit, ${error}`);
+  }
 
   const user = await getOrgUser(request);
   const tracker = trackServerEvent(user);
@@ -52,8 +71,9 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
   }
 
   // Credit check
+  let orgPlan: OrganizationPlan | null = null;
   try {
-    await CreditsService.checkAndDeductOrganizationCredits(
+    orgPlan = await CreditsService.checkAndDeductOrganizationCredits(
       user,
       user.orgId,
       TransactionType.SQL_QUERY,
@@ -69,6 +89,38 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     );
   }
 
+  // Try to get from private organization cache
+  if (orgPlan?.plan_name === "ENTERPRISE") {
+    try {
+      if (await fileExists(ORG_CACHE_BUCKET, `${user.orgName}/${queryKey}`)) {
+        logger.log(`/api/async-sql: Private cache hit, short-circuiting`);
+        const cachedUrl = await getSignedUrl(
+          ORG_CACHE_BUCKET,
+          `${user.orgName}/${queryKey}`,
+        );
+
+        await copyFile(
+          {
+            bucketName: ORG_CACHE_BUCKET,
+            fileName: `${user.orgName}/${queryKey}`,
+          },
+          {
+            bucketName: PUBLIC_CACHE_BUCKET,
+            fileName: queryKey,
+          },
+        );
+
+        return NextResponse.json({
+          id: queryKey,
+          status: "completed",
+          url: cachedUrl,
+        });
+      }
+    } catch (error) {
+      logger.log(`/api/async-sql: No private cache hit, ${error}`);
+    }
+  }
+
   // Create run in Supabase
   const supabase = createAdminClient();
   const { data: run, error: runError } = await supabase
@@ -78,8 +130,9 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
       run_type: "manual",
       requested_by: user.userId,
       status: "queued",
+      metadata: { queryHash: queryKey },
     })
-    .select("id")
+    .select("id, status")
     .single();
 
   if (runError) {
@@ -118,7 +171,10 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
       runId: run.id,
     });
 
-    return NextResponse.json({ id: run.id }, { status: 202 });
+    return NextResponse.json(
+      { id: run.id, status: run.status },
+      { status: 202 },
+    );
   } catch (error) {
     logger.error(`/api/async-sql: Error queuing message: ${error}`);
     return makeErrorResponse("Failed to queue query execution", 500);
@@ -141,12 +197,16 @@ export const GET = withPostHogTracking(async (request: NextRequest) => {
   const supabase = createAdminClient();
   const { data: run, error } = await supabase
     .from("run")
-    .select("status, completed_at, logs_url") // minimal fields
+    .select("status, completed_at, logs_url, requested_by, metadata") // minimal fields
     .eq("id", runId)
     .single();
 
   if (error || !run) {
     return makeErrorResponse("Run not found", 404);
+  }
+
+  if (run.requested_by !== user.userId) {
+    return makeErrorResponse("Unauthorized", 403);
   }
 
   if (run.status === "queued" || run.status === "running") {
@@ -162,12 +222,31 @@ export const GET = withPostHogTracking(async (request: NextRequest) => {
     assertNever(run.status, `Unknown run status: ${run.status}`);
   }
 
-  const resultUrl = await getSignedUrl(ASYNC_QUERY_BUCKET, `${runId}.csv.gz`);
+  const url = await getSignedUrl(ASYNC_QUERY_BUCKET, runId);
+  const queryHash =
+    typeof run.metadata === "object" && !Array.isArray(run.metadata)
+      ? run.metadata?.["queryHash"]
+      : undefined;
+
+  if (queryHash) {
+    const orgPlan = await CreditsService.getOrganizationPlan(user.orgId);
+    if (orgPlan?.plan_name === "ENTERPRISE") {
+      await copyFile(
+        {
+          bucketName: ASYNC_QUERY_BUCKET,
+          fileName: runId,
+        },
+        {
+          bucketName: ORG_CACHE_BUCKET,
+          fileName: `${user.orgName}/${queryHash}`,
+        },
+      );
+    }
+  }
 
   return NextResponse.json({
     id: runId,
     status: run.status,
-    completedAt: run.completed_at,
-    resultUrl,
+    url,
   });
 });
