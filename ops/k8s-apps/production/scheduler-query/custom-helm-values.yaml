@@ -10,8 +10,6 @@ spec:
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
             newTag: deploy-20251217172327-3130d4c # {"$imagepolicy": "flux-system:oso:tag"}
   values:
-    global:
-      serviceAccountNameOverride: "production-scheduler-query"
     app:
       name: "oso-scheduler-query"
       args:
