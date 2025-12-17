@@ -52,13 +52,5 @@ SELECT DISTINCT
   CAST(pre.payload ->> '$.number' AS BIGINT) AS "number"
 FROM pull_request_events AS pre
 WHERE
-  -- This condition will fail for all v2 events because merged_at is missing/null
-  NOT (
-    pre.payload ->> '$.pull_request.merged_at'
-  ) IS NULL
-  AND (
-    pre.payload ->> '$.action'
-  ) = 'closed'
-  -- Filter by event time since updated_at is missing, but this would create deuplicates
+  pre.payload ->> '$.action' = 'closed'
   AND pre.created_at BETWEEN @start_dt AND @end_dt
-  -- AND STRPTIME(pre.payload ->> '$.pull_request.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
