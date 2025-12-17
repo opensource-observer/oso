@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_events__github,
+  name oso.int_events__github_since_20251007,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
@@ -8,8 +8,7 @@ MODEL (
     forward_only true,
     on_destructive_change warn,
   ),
-  start @github_incremental_start,
-  end @github_events_pre_v20251007_end_date,
+  start @github_events_v20251007_start_date,
   cron '@daily',
   dialect trino,
   partitioned_by (DAY("time"), "event_type"),
@@ -37,7 +36,7 @@ WITH raw_events AS (
     repository_id,
     COALESCE(actor_login, author_email) AS actor_name,
     CASE WHEN NOT actor_login IS NULL THEN actor_id::TEXT ELSE author_email END AS actor_id,
-  FROM oso.stg_github__distinct_commits_resolved_mergebot
+  FROM oso.stg_github__distinct_commits_resolved_mergebot_since_20251007
   WHERE created_at BETWEEN @start_dt AND @end_dt
 
   UNION ALL
@@ -56,7 +55,7 @@ WITH raw_events AS (
 
   UNION ALL
 
-  /* Comments, Issues, PRs, PR Merge Events */
+  /* Comments */
   SELECT
     event_time,
     type AS event_type,
@@ -65,11 +64,12 @@ WITH raw_events AS (
     repository_id,
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
-  FROM oso.stg_github__comments
+  FROM oso.stg_github__comments_since_20251007
   WHERE event_time BETWEEN @start_dt AND @end_dt
 
   UNION ALL
-  
+
+  /* Issues */
   SELECT
     event_time,
     type AS event_type,
@@ -83,6 +83,7 @@ WITH raw_events AS (
 
   UNION ALL
 
+  /* Pull Requests */
   SELECT
     event_time,
     type AS event_type,
@@ -91,11 +92,12 @@ WITH raw_events AS (
     repository_id,
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
-  FROM oso.stg_github__pull_requests
+  FROM oso.stg_github__pull_requests_since_20251007
   WHERE event_time BETWEEN @start_dt AND @end_dt
 
   UNION ALL
 
+  /* Pull Request Merge Events */
   SELECT
     event_time,
     type AS event_type,
@@ -104,7 +106,7 @@ WITH raw_events AS (
     repository_id,
     actor_login AS actor_name,
     actor_id::TEXT AS actor_id
-  FROM oso.stg_github__pull_request_merge_events
+  FROM oso.stg_github__pull_request_merge_events_since_20251007
   WHERE event_time BETWEEN @start_dt AND @end_dt
 
   UNION ALL
@@ -120,7 +122,7 @@ WITH raw_events AS (
     actor_id::TEXT AS actor_id
   FROM oso.stg_github__stars_and_forks
   WHERE created_at BETWEEN @start_dt AND @end_dt
-), 
+),
 
 parsed_events AS (
   SELECT
