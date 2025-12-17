@@ -47,7 +47,6 @@ type DataModelRevision {
   dataModel: DataModel!
   organization: Organization!
   name: String!
-  displayName: String!
   description: String
   revisionNumber: Int!
   hash: String!
@@ -211,7 +210,6 @@ input DataModelKindOptionsInput {
 input CreateDataModelRevisionInput {
   dataModelId: ID!
   name: String!
-  displayName: String!
   description: String
   language: String!
   code: String!

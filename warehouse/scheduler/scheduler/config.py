@@ -1,5 +1,6 @@
 import os
 import typing as t
+import uuid
 
 import structlog
 from google.api_core.exceptions import AlreadyExists
@@ -14,6 +15,7 @@ from pydantic_settings import (
     CliSubCommand,
     SettingsConfigDict,
 )
+
 from scheduler.types import GenericMessageQueueService, MessageHandlerRegistry
 
 logger = structlog.get_logger(__name__)
@@ -39,6 +41,13 @@ class CommonSettings(BaseSettings):
     trino_k8s_worker_deployment_name: str = ""
     trino_connect_timeout: int = 240
 
+    consumer_trino_remote_url: str = "http://localhost:8080"
+    consumer_trino_k8s_namespace: str = ""
+    consumer_trino_k8s_service_name: str = ""
+    consumer_trino_k8s_coordinator_deployment_name: str = ""
+    consumer_trino_k8s_worker_deployment_name: str = ""
+    consumer_trino_connect_timeout: int = 240
+
     redis_host: t.Optional[str] = None
     redis_port: int = 6379
     redis_ttl_seconds: int = 3600
@@ -51,6 +60,10 @@ class CommonSettings(BaseSettings):
     )
 
     gcp_project_id: str = Field(description="GCP Project ID")
+    query_bucket: str = Field(
+        default="oso-async-query",
+        description="GCS bucket for storing query results",
+    )
     emulator_enabled: bool = Field(
         default=False,
         description="Whether to use the GCP Pub/Sub emulator",
@@ -258,10 +271,45 @@ class PublishDataModelRunRequest(BaseSettings):
         )
 
 
+class PublishQueryRunRequest(BaseSettings):
+    """Subcommand to publish a QueryRunRequest message"""
+
+    run_id: str = Field(description="The ID of the query run")
+    query: str = Field(description="The SQL query to run")
+    jwt: str = Field(description="The JWT token for authentication")
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        print(f"Publishing QueryRunRequest with run_id: {self.run_id}")
+        resources_registry = context.get_data_as(
+            "resources_registry", ResourcesRegistry
+        )
+        resources = resources_registry.context()
+
+        message_queue_service: GenericMessageQueueService = resources.resolve(
+            "message_queue_service"
+        )
+
+        from osoprotobufs.query_pb2 import QueryRunRequest
+
+        message = QueryRunRequest(
+            run_id=uuid.UUID(self.run_id).bytes,
+            query=self.query,
+            jwt=self.jwt,
+        )
+
+        print(f"Message constructed: {message}")
+
+        await message_queue_service.publish_message(
+            "query_run_requests",
+            message,
+        )
+
+
 class Publish(BaseSettings):
     """Subcommand to run the async worker publisher"""
 
     data_model_run_request: CliSubCommand[PublishDataModelRunRequest]
+    query_run_request: CliSubCommand[PublishQueryRunRequest]
 
     async def cli_cmd(self, context: CliContext) -> None:
         CliApp.run_subcommand(context, self)

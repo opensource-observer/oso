@@ -696,7 +696,6 @@ export type Database = {
             | Database["public"]["CompositeTypes"]["model_dependency_type"][]
             | null;
           description: string | null;
-          display_name: string;
           end: string | null;
           hash: string;
           id: string;
@@ -722,7 +721,6 @@ export type Database = {
             | Database["public"]["CompositeTypes"]["model_dependency_type"][]
             | null;
           description?: string | null;
-          display_name: string;
           end?: string | null;
           hash: string;
           id?: string;
@@ -748,7 +746,6 @@ export type Database = {
             | Database["public"]["CompositeTypes"]["model_dependency_type"][]
             | null;
           description?: string | null;
-          display_name?: string;
           end?: string | null;
           hash?: string;
           id?: string;

@@ -2,6 +2,7 @@ import typing as t
 
 import structlog
 from oso_core.resources import ResourcesContext, ResourcesRegistry, resource_factory
+from oso_dagster.resources import GCSFileResource
 from oso_dagster.resources.duckdb import DuckDBResource
 from oso_dagster.resources.heartbeat import (
     FilebasedHeartBeatResource,
@@ -23,11 +24,13 @@ from oso_dagster.resources.udm_state import (
     FakeUserDefinedModelResource,
     UserDefinedModelStateResource,
 )
+
 from scheduler.evaluator import UserDefinedModelEvaluator
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategyResource
 from scheduler.materialization.trino import TrinoMaterializationStrategyResource
 from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
+from scheduler.mq.handlers.query import QueryRunRequestHandler
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
@@ -68,7 +71,6 @@ def udm_engine_adapter_factory(
         trino: TrinoResource = resources.resolve("trino")
         return TrinoEngineAdapterResource(
             trino=trino,
-            http_scheme="https",
         )
     else:
         duckdb: DuckDBResource = resources.resolve("duckdb")
@@ -130,6 +132,26 @@ def heartbeat_factory(common_settings: "CommonSettings") -> HeartBeatResource:
         )
 
 
+@resource_factory("consumer_trino")
+def consumer_trino_resource_factory(
+    common_settings: "CommonSettings",
+    k8s: K8sResource | K8sApiResource,
+    heartbeat: HeartBeatResource,
+) -> TrinoResource:
+    if not common_settings.k8s_enabled:
+        return TrinoRemoteResource()
+    return TrinoK8sResource(
+        k8s=k8s,
+        namespace=common_settings.consumer_trino_k8s_namespace,
+        service_name=common_settings.consumer_trino_k8s_service_name,
+        coordinator_deployment_name=common_settings.consumer_trino_k8s_coordinator_deployment_name,
+        worker_deployment_name=common_settings.consumer_trino_k8s_worker_deployment_name,
+        use_port_forward=common_settings.k8s_use_port_forward,
+        heartbeat_name="consumer_trino",
+        heartbeat=heartbeat,
+    )
+
+
 @resource_factory("duckdb")
 def duckdb_resource_factory(
     common_settings: "CommonSettings",
@@ -175,7 +197,14 @@ def message_handler_registry_factory() -> MessageHandlerRegistry:
     """Factory function to create a message handler registry."""
     registry = MessageHandlerRegistry()
     registry.register(DataModelRunRequestHandler())
+    registry.register(QueryRunRequestHandler())
     return registry
+
+
+@resource_factory("gcs")
+def gcs_factory(common_settings: "CommonSettings") -> GCSFileResource:
+    """Factory function to create a GCS file resource."""
+    return GCSFileResource(gcs_project=common_settings.gcp_project_id)
 
 
 @resource_factory("materialization_strategy")
@@ -196,6 +225,7 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(udm_engine_adapter_factory)
     registry.add(udm_state_factory)
     registry.add(trino_resource_factory)
+    registry.add(consumer_trino_resource_factory)
     registry.add(duckdb_resource_factory)
     registry.add(k8s_resource_factory)
     registry.add(message_queue_service_factory)
@@ -205,5 +235,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(message_handler_registry_factory)
     registry.add(heartbeat_factory)
     registry.add(materialization_strategy_factory)
+    registry.add(gcs_factory)
 
     return registry
