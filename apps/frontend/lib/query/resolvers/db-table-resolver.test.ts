@@ -144,7 +144,6 @@ describe("DBTableResolver", () => {
           org_id: model.org_id,
           model_id: model.id,
           name: model.name,
-          display_name: "",
           revision_number: 1,
           hash: crypto.randomUUID(),
           language: "sql",
