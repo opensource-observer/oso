@@ -2762,6 +2762,7 @@ class OsoAppClient {
           message
           dataModelRevision {
             id
+            createdAt
             revisionNumber
           }
         }
