@@ -126,7 +126,7 @@
     "swr": "^2.3.6",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
-    "trino-client": "^0.2.8",
+    "trino-client": "^0.2.9",
     "ts-adt": "^2.1.2",
     "unique-names-generator": "^4.7.1",
     "uuid": "^11.1.0",
