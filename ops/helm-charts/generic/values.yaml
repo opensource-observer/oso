@@ -6,6 +6,8 @@ app:
   # command: []
   # args: []
   # By default we enable json logs via the OSO_ENABLE_JSON_LOGS env var
+  serviceAccount:
+    create: true
   enableJsonLogs: true
   ingress:
     enabled: false
