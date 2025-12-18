@@ -40,9 +40,12 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
             OSOClientTableResolver(oso_client=oso_client)
         ]
 
-        query = await rewrite_query(message.query, table_resolvers)
+        context.log.info(f"Executing query: {message.query}")
 
-        context.log.info(f"Rewritten query: {query.rewritten_query}")
+        logger.info(f"Query: {message.query}")
+        query = await rewrite_query(message.query, table_resolvers)
+        logger.info(f"Rewritten Query: {query.rewritten_query}")
+
         storage_client = gcs.get_client(asynchronous=False)
         try:
             async with consumer_trino.async_get_client(jwt_token=message.jwt) as client:
@@ -63,8 +66,6 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                         if row is None:
                             continue
                         writer.writerow(row)
-
-                await client.close()
 
             return SuccessResponse(
                 message=f"Processed QueryRunRequest with ID: {message.run_id}"
