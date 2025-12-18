@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20251218201106-d307e60 # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20251218214656-dfe0cdf # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       name: "oso-scheduler-data-ingestion"
