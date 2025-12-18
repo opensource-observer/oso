@@ -253,12 +253,29 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             org_id: parent.org_id,
             dataset_id: parent.id,
           };
-        case "DATA_INGESTION":
+        case "DATA_INGESTION": {
+          const supabase = createAdminClient();
+          const { data: config, error } = await supabase
+            .from("data_ingestions")
+            .select("*")
+            .eq("dataset_id", parent.id)
+            .is("deleted_at", null)
+            .single();
+
+          if (error || !config) {
+            logger.error(
+              `Failed to fetch data ingestion config for dataset ${parent.id}: ${error?.message}`,
+            );
+            throw ServerErrors.database(
+              "Failed to fetch data ingestion config",
+            );
+          }
+
           return {
             __typename: "DataIngestion",
-            org_id: parent.org_id,
-            dataset_id: parent.id,
+            ...config,
           };
+        }
         case "DATA_CONNECTOR":
           throw new Error(
             `Dataset type "${parent.dataset_type}" is not supported yet.`,
@@ -304,8 +321,8 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           });
         case "DATA_INGESTION":
         case "DATA_CONNECTOR":
-          // DATA_INGESTION and DATA_CONNECTOR datasets don't have table metadata
-          // Tables are created dynamically by ingestion jobs
+          // Table metadata is not available until after the ingestion job completes
+          // Tables are created dynamically during ingestion
           return {
             edges: [],
             pageInfo: {

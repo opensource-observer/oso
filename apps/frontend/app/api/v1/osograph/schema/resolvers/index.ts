@@ -59,5 +59,4 @@ export const resolvers: GraphQLResolverMap<GraphQLContext> = {
   Step: schedulerResolvers.Step,
   Materialization: schedulerResolvers.Materialization,
   System: systemResolvers.System,
-  DataIngestionConfig: dataIngestionResolvers.DataIngestionConfig,
 };

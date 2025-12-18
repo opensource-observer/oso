@@ -214,27 +214,22 @@ export const schedulerResolvers = {
         const { data: config, error: configError } = await supabase
           .from("data_ingestions")
           .select("*")
-          .eq("id", input.configId)
           .eq("dataset_id", input.datasetId)
+          .is("deleted_at", null)
           .single();
 
         if (configError || !config) {
           logger.error(
-            `Error fetching config with id ${input.configId}: ${configError?.message}`,
+            `Error fetching config for dataset ${input.datasetId}: ${configError?.message}`,
           );
-          throw ResourceErrors.notFound("Config not found");
+          throw ResourceErrors.notFound("Config not found for dataset");
         }
 
         const runIdBuffer = Buffer.from(run.id.replace(/-/g, ""), "hex");
-        const configIdBuffer = Buffer.from(
-          input.configId.replace(/-/g, ""),
-          "hex",
-        );
 
         return {
           runId: new Uint8Array(runIdBuffer),
           datasetId: dataset.id,
-          configId: new Uint8Array(configIdBuffer),
         } satisfies DataIngestionRunRequest;
       },
     }),

@@ -1,35 +1,15 @@
 enum DataIngestionFactoryType {
   REST
   GRAPHQL
-  ARCHIVE2BQ
+  ARCHIVE_DIR
 }
 
-type DataIngestionConfig {
-  id: ID!
-  datasetId: ID!
-  factoryType: DataIngestionFactoryType!
-  config: JSON!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
-type DataIngestionConfigEdge {
-  node: DataIngestionConfig!
-  cursor: String!
-}
-
-type DataIngestionConfigConnection {
-  edges: [DataIngestionConfigEdge!]!
-  pageInfo: PageInfo!
-  totalCount: Int
-}
-
-input CreateDataIngestionConfigInput {
+input CreateDataIngestionInput {
   datasetId: ID!
   factoryType: DataIngestionFactoryType!
   config: JSON!
 }
 
 extend type Mutation {
-  createDataIngestionConfig(input: CreateDataIngestionConfigInput!): DataIngestionConfig!
+  createDataIngestionConfig(input: CreateDataIngestionInput!): DataIngestion!
 }

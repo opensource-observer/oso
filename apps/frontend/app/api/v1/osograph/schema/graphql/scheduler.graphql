@@ -192,7 +192,6 @@ input CreateUserModelRunRequestInput {
 
 input CreateDataIngestionRunRequestInput {
   datasetId: ID!
-  configId: ID!
 }
 
 input CreateDataConnectorRunRequestInput {

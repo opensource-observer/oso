@@ -1,6 +1,6 @@
 import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
-  CreateDataIngestionConfigSchema,
+  CreateDataIngestionSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
@@ -13,19 +13,17 @@ import {
 } from "@/app/api/v1/osograph/utils/errors";
 import { logger } from "@/lib/logger";
 import z from "zod";
-import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
 import { DataIngestionsRow } from "@/lib/types/schema-types";
-import { buildConnectionOrEmpty } from "@/app/api/v1/osograph/utils/resolver-helpers";
 
 export const dataIngestionResolvers = {
   Mutation: {
     async createDataIngestionConfig(
       _: unknown,
-      args: { input: z.infer<typeof CreateDataIngestionConfigSchema> },
+      args: { input: z.infer<typeof CreateDataIngestionSchema> },
       context: GraphQLContext,
     ) {
       const authenticatedUser = requireAuthentication(context.user);
-      const input = validateInput(CreateDataIngestionConfigSchema, args.input);
+      const input = validateInput(CreateDataIngestionSchema, args.input);
       const supabase = createAdminClient();
 
       const { data: dataset, error: datasetError } = await supabase
@@ -64,47 +62,35 @@ export const dataIngestionResolvers = {
         throw ServerErrors.database("Failed to create data ingestion config");
       }
 
-      // Return the raw row so the `DataIngestionConfig` field resolvers (which
-      // expect snake_case columns) can resolve non-null GraphQL fields.
+      // Return the raw row so the `DataIngestion` field resolvers can
+      // access snake_case database columns and resolve GraphQL fields.
       return config as DataIngestionsRow;
     },
   },
 
-  DataIngestionConfig: {
+  DataIngestion: {
     id: (parent: DataIngestionsRow) => parent.id,
+    async orgId(parent: DataIngestionsRow) {
+      const supabase = createAdminClient();
+      const { data: dataset, error } = await supabase
+        .from("datasets")
+        .select("org_id")
+        .eq("id", parent.dataset_id)
+        .single();
+
+      if (error || !dataset) {
+        logger.error(
+          `Error fetching dataset for data ingestion ${parent.id}: ${error?.message}`,
+        );
+        throw ServerErrors.database("Failed to fetch dataset");
+      }
+
+      return dataset.org_id;
+    },
     datasetId: (parent: DataIngestionsRow) => parent.dataset_id,
     factoryType: (parent: DataIngestionsRow) => parent.factory_type,
     config: (parent: DataIngestionsRow) => parent.config,
     createdAt: (parent: DataIngestionsRow) => parent.created_at,
     updatedAt: (parent: DataIngestionsRow) => parent.updated_at,
-  },
-
-  DataIngestion: {
-    orgId: (parent: { org_id: string }) => parent.org_id,
-    datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
-    configs: async (
-      parent: { dataset_id: string; org_id: string },
-      args: FilterableConnectionArgs,
-    ) => {
-      const supabase = createAdminClient();
-
-      const {
-        data: configs,
-        error,
-        count,
-      } = await supabase
-        .from("data_ingestions")
-        .select("*", { count: "exact" })
-        .eq("dataset_id", parent.dataset_id)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        logger.error(`Error fetching data ingestion configs: ${error.message}`);
-        throw ServerErrors.database("Failed to fetch data ingestion configs");
-      }
-
-      return buildConnectionOrEmpty(configs, args, count);
-    },
   },
 };
