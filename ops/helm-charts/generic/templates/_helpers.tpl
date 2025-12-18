@@ -86,6 +86,6 @@ component: {{ required "app component name is required" .Values.app.name }}
 {{- if .Values.global.serviceAccountNameOverride -}}
 {{ .Values.global.serviceAccountNameOverride }}
 {{- else -}}
-{{ include "app.fullname" }}
+{{ include "app.fullname" . }}
 {{- end -}}
 {{- end -}}
