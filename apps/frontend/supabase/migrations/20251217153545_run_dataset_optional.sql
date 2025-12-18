@@ -1,0 +1,3 @@
+ALTER TABLE "run" ALTER COLUMN "dataset_id" DROP NOT NULL;
+
+ALTER TABLE "run" ADD COLUMN "metadata" JSONB;

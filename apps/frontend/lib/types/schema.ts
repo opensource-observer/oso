@@ -836,7 +836,6 @@ export const modelRevisionInsertSchema = z.object({
   cron: z.string(),
   depends_on: z.array(publicModelDependencyTypeSchema).optional().nullable(),
   description: z.string().optional().nullable(),
-  display_name: z.string(),
   end: z.string().optional().nullable(),
   hash: z.string(),
   id: z.string().optional(),
@@ -859,7 +858,6 @@ export const modelRevisionUpdateSchema = z.object({
   cron: z.string().optional(),
   depends_on: z.array(publicModelDependencyTypeSchema).optional().nullable(),
   description: z.string().optional().nullable(),
-  display_name: z.string().optional(),
   end: z.string().optional().nullable(),
   hash: z.string().optional(),
   id: z.string().optional(),
@@ -1287,9 +1285,10 @@ export const resourcePermissionsRelationshipsSchema = z.tuple([
 
 export const runRowSchema = z.object({
   completed_at: z.string().nullable(),
-  dataset_id: z.string(),
+  dataset_id: z.string().nullable(),
   id: z.string(),
   logs_url: z.string().nullable(),
+  metadata: jsonSchema.nullable(),
   org_id: z.string(),
   queued_at: z.string(),
   requested_by: z.string().nullable(),
@@ -1301,9 +1300,10 @@ export const runRowSchema = z.object({
 
 export const runInsertSchema = z.object({
   completed_at: z.string().optional().nullable(),
-  dataset_id: z.string(),
+  dataset_id: z.string().optional().nullable(),
   id: z.string().optional(),
   logs_url: z.string().optional().nullable(),
+  metadata: jsonSchema.optional().nullable(),
   org_id: z.string(),
   queued_at: z.string().optional(),
   requested_by: z.string().optional().nullable(),
@@ -1315,9 +1315,10 @@ export const runInsertSchema = z.object({
 
 export const runUpdateSchema = z.object({
   completed_at: z.string().optional().nullable(),
-  dataset_id: z.string().optional(),
+  dataset_id: z.string().optional().nullable(),
   id: z.string().optional(),
   logs_url: z.string().optional().nullable(),
+  metadata: jsonSchema.optional().nullable(),
   org_id: z.string().optional(),
   queued_at: z.string().optional(),
   requested_by: z.string().optional().nullable(),
@@ -1726,7 +1727,6 @@ export const modelRevisionRowSchema = z.object({
   cron: z.string(),
   depends_on: z.array(publicModelDependencyTypeSchema).nullable(),
   description: z.string().nullable(),
-  display_name: z.string(),
   end: z.string().nullable(),
   hash: z.string(),
   id: z.string(),

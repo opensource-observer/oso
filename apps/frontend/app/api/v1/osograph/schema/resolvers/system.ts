@@ -263,6 +263,15 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           throw ResourceErrors.notFound(`Run for step ${stepId} not found`);
         }
 
+        if (runData.dataset_id === null) {
+          logger.error(`Dataset ID for run ${runData.id} is null`);
+          throw ValidationErrors.invalidInput(
+            "stepId",
+            `Associated run ${runData.id} does not have a dataset_id. ` +
+              "Can only create materializations for dataset runs.",
+          );
+        }
+
         // Convert schema object to supported format (remove undefined)
         const dbSafeSchema = schema.map((entry) => {
           return {

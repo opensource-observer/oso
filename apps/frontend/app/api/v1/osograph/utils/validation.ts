@@ -214,7 +214,6 @@ export const CreateDataModelRevisionSchema = z.object({
       NAME_REGEX,
       "DataModelRevision name can only contain letters, numbers, and underscores",
     ),
-  displayName: z.string(),
   description: z.string().optional(),
   language: z.string(),
   code: z.string(),

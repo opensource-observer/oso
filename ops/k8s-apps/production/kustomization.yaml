@@ -17,3 +17,4 @@ resources:
   - ./podinfo
   - ./scheduler-data-ingestion
   - ./scheduler-data-model
+  - ./scheduler-query

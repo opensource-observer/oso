@@ -9,6 +9,7 @@ MODEL (
     on_destructive_change warn,
   ),
   start @github_incremental_start,
+  end @github_events_pre_v20251007_end_date,
   cron '@daily',
   dialect trino,
   partitioned_by (DAY("time"), "event_type"),

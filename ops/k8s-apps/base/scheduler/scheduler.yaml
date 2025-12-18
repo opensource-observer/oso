@@ -1,12 +1,3 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: base-scheduler
-  labels:
-    toolkit.fluxcd.io/tenant: apps
-    ops.opensource.observer/environment: base
-    kube-secrets-init.doit-intl.com/enable-mutation: "true"
----
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -55,3 +46,8 @@ spec:
         SCHEDULER_TRINO_K8S_WORKER_DEPLOYMENT_NAME: production-trino-trino-worker
         SCHEDULER_TRINO_K8S_SERVICE_NAME: production-trino-trino
         SCHEDULER_TRINO_K8S_NAMESPACE: production-trino
+        SCHEDULER_CONSUMER_TRINO_K8S_COORDINATOR_DEPLOYMENT_NAME: production-consumer-trino-trino-coordinator
+        SCHEDULER_CONSUMER_TRINO_K8S_WORKER_DEPLOYMENT_NAME: production-consumer-trino-trino-worker
+        SCHEDULER_CONSUMER_TRINO_K8S_SERVICE_NAME: production-consumer-trino-trino
+        SCHEDULER_CONSUMER_TRINO_K8S_NAMESPACE: production-consumer-trino
+        SCHEDULER_QUERY_BUCKET: oso-async-query

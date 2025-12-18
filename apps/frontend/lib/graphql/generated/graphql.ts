@@ -1246,7 +1246,6 @@ export type CreateDataModelRevisionInput = {
   dataModelId: Scalars["ID"]["input"];
   dependsOn?: InputMaybe<Array<DataModelDependencyInput>>;
   description?: InputMaybe<Scalars["String"]["input"]>;
-  displayName: Scalars["String"]["input"];
   end?: InputMaybe<Scalars["DateTimeISO"]["input"]>;
   kind: DataModelKind;
   kindOptions?: InputMaybe<DataModelKindOptionsInput>;
@@ -8970,6 +8969,7 @@ export type CreateDataModelRevisionMutation = {
     dataModelRevision?: {
       __typename?: "DataModelRevision";
       id: string;
+      createdAt: any;
       revisionNumber: number;
     } | null;
   };
@@ -9713,6 +9713,10 @@ export const CreateDataModelRevisionDocument = {
                     kind: "SelectionSet",
                     selections: [
                       { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createdAt" },
+                      },
                       {
                         kind: "Field",
                         name: { kind: "Name", value: "revisionNumber" },

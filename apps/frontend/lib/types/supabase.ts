@@ -734,7 +734,6 @@ export type Database = {
             | Database["public"]["CompositeTypes"]["model_dependency_type"][]
             | null;
           description: string | null;
-          display_name: string;
           end: string | null;
           hash: string;
           id: string;
@@ -760,7 +759,6 @@ export type Database = {
             | Database["public"]["CompositeTypes"]["model_dependency_type"][]
             | null;
           description?: string | null;
-          display_name: string;
           end?: string | null;
           hash: string;
           id?: string;
@@ -786,7 +784,6 @@ export type Database = {
             | Database["public"]["CompositeTypes"]["model_dependency_type"][]
             | null;
           description?: string | null;
-          display_name?: string;
           end?: string | null;
           hash?: string;
           id?: string;
@@ -1202,9 +1199,10 @@ export type Database = {
       run: {
         Row: {
           completed_at: string | null;
-          dataset_id: string;
+          dataset_id: string | null;
           id: string;
           logs_url: string | null;
+          metadata: Json | null;
           org_id: string;
           queued_at: string;
           requested_by: string | null;
@@ -1215,9 +1213,10 @@ export type Database = {
         };
         Insert: {
           completed_at?: string | null;
-          dataset_id: string;
+          dataset_id?: string | null;
           id?: string;
           logs_url?: string | null;
+          metadata?: Json | null;
           org_id: string;
           queued_at?: string;
           requested_by?: string | null;
@@ -1228,9 +1227,10 @@ export type Database = {
         };
         Update: {
           completed_at?: string | null;
-          dataset_id?: string;
+          dataset_id?: string | null;
           id?: string;
           logs_url?: string | null;
+          metadata?: Json | null;
           org_id?: string;
           queued_at?: string;
           requested_by?: string | null;

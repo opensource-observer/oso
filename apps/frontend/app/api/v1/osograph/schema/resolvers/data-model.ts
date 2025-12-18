@@ -198,7 +198,6 @@ export const dataModelResolvers = {
           org_id: dataModel.org_id,
           model_id: validatedInput.dataModelId,
           name: validatedInput.name,
-          display_name: validatedInput.displayName,
           description: validatedInput.description,
           revision_number: revisionNumber,
           hash,
@@ -443,7 +442,6 @@ export const dataModelResolvers = {
     organization: (parent: { org_id: string }) => {
       return getOrganization(parent.org_id);
     },
-    displayName: (parent: { display_name: string }) => parent.display_name,
     revisionNumber: (parent: { revision_number: number }) =>
       parent.revision_number,
     start: (parent: { start: string | null }) => parent.start,
