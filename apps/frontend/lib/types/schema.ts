@@ -1245,9 +1245,10 @@ export const resourcePermissionsRelationshipsSchema = z.tuple([
 
 export const runRowSchema = z.object({
   completed_at: z.string().nullable(),
-  dataset_id: z.string(),
+  dataset_id: z.string().nullable(),
   id: z.string(),
   logs_url: z.string().nullable(),
+  metadata: jsonSchema.nullable(),
   org_id: z.string(),
   queued_at: z.string(),
   requested_by: z.string().nullable(),
@@ -1259,9 +1260,10 @@ export const runRowSchema = z.object({
 
 export const runInsertSchema = z.object({
   completed_at: z.string().optional().nullable(),
-  dataset_id: z.string(),
+  dataset_id: z.string().optional().nullable(),
   id: z.string().optional(),
   logs_url: z.string().optional().nullable(),
+  metadata: jsonSchema.optional().nullable(),
   org_id: z.string(),
   queued_at: z.string().optional(),
   requested_by: z.string().optional().nullable(),
@@ -1273,9 +1275,10 @@ export const runInsertSchema = z.object({
 
 export const runUpdateSchema = z.object({
   completed_at: z.string().optional().nullable(),
-  dataset_id: z.string().optional(),
+  dataset_id: z.string().optional().nullable(),
   id: z.string().optional(),
   logs_url: z.string().optional().nullable(),
+  metadata: jsonSchema.optional().nullable(),
   org_id: z.string().optional(),
   queued_at: z.string().optional(),
   requested_by: z.string().optional().nullable(),

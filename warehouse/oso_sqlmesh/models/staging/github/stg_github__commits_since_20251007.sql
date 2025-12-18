@@ -33,7 +33,7 @@ SELECT
   ghpe.head AS sha,
   CAST(NULL AS VARCHAR) AS author_email,
   CAST(NULL AS VARCHAR) AS author_name,
-  TRUE AS is_distinct,
+  CAST(NULL AS BOOLEAN) AS is_distinct,
   CAST(NULL AS VARCHAR) AS api_url
 FROM oso.stg_github__push_events_since_20251007 AS ghpe
 WHERE ghpe.created_at BETWEEN @start_dt AND @end_dt

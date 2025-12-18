@@ -43,27 +43,32 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
         query = await rewrite_query(message.query, table_resolvers)
 
         context.log.info(f"Rewritten query: {query.rewritten_query}")
-
         storage_client = gcs.get_client(asynchronous=False)
+        try:
+            async with consumer_trino.async_get_client(jwt_token=message.jwt) as client:
+                cursor = await client.cursor()
+                cursor = await cursor.execute(query.rewritten_query)
+                columns = (column.name for column in await cursor.get_description())
+                with storage_client.open(
+                    f"gs://{common_settings.query_bucket}/{convert_uuid_bytes_to_str(message.run_id)}",
+                    "w",
+                    encoding="utf-8",
+                    compression="gzip",
+                    content_type="text/csv",
+                    fixed_key_metadata={"content_encoding": "gzip"},
+                ) as f:
+                    writer = csv.writer(f)
+                    writer.writerow(columns)
+                    async for row in aiotrino.utils.aiter(cursor.fetchone, None):
+                        if row is None:
+                            continue
+                        writer.writerow(row)
 
-        async with consumer_trino.async_get_client(jwt_token=message.jwt) as client:
-            cursor = await client.cursor()
-            cursor = await cursor.execute(query.rewritten_query)
-            columns = (column.name for column in await cursor.get_description())
-            with storage_client.open(
-                f"gs://{common_settings.query_bucket}/{convert_uuid_bytes_to_str(message.run_id)}.csv.gz",
-                "w",
-                encoding="utf-8",
-                compression="gzip",
-                fixed_key_metadata={"content_encoding": "gzip"},
-            ) as f:
-                writer = csv.writer(f)
-                writer.writerow(columns)
-                async for row in aiotrino.utils.aiter(cursor.fetchone, None):
-                    if row is None:
-                        continue
-                    writer.writerow(row)
+                await client.close()
 
-        return SuccessResponse(
-            message=f"Processed QueryRunRequest with ID: {message.run_id}"
-        )
+            return SuccessResponse(
+                message=f"Processed QueryRunRequest with ID: {message.run_id}"
+            )
+        finally:
+            if storage_client.session:
+                await storage_client.session.close()

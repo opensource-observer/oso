@@ -1,6 +1,6 @@
 MODEL (
-  name oso.stg_github__distinct_main_commits,
-  description 'Gathers all github commits on the default branch of a repo that are distinct.',
+  name oso.stg_github__distinct_main_commits_since_20251007,
+  description 'Gathers all github commits on the default branch of a repo that are distinct (version after 2025-10-07)',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column created_at,
     batch_size 90,
@@ -8,8 +8,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
-  start @github_incremental_start,
-  end @github_events_pre_v20251007_end_date,
+  start @github_events_v20251007_start_date,
   partitioned_by DAY(created_at),
   dialect trino,
   audits (
@@ -52,7 +51,7 @@ WITH deduped_commits AS (
       PARTITION BY ghc.repository_id, ghc.sha
       ORDER BY ghc.created_at ASC
     ) AS rn
-  FROM oso.stg_github__commits AS ghc
+  FROM oso.stg_github__commits_since_20251007 AS ghc
   LEFT JOIN oso.stg_ossd__current_repositories AS repos
     ON ghc.repository_id = repos.id
   WHERE (
