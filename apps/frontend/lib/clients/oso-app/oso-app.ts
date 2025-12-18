@@ -3257,7 +3257,13 @@ class OsoAppClient {
     return payload.run;
   }
 
-  async getDataIngestionConfig(datasetId: string) {
+  async getDataIngestionConfig(
+    args: Partial<{
+      datasetId: string;
+    }>,
+  ) {
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
+
     const GET_DATA_INGESTION_CONFIG_QUERY = gql(`
       query GetDataIngestionConfig($datasetId: ID!) {
         datasets(where: { id: { eq: $datasetId }}, single: true) {
