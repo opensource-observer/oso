@@ -1,6 +1,7 @@
 /* Model that records the delta (in seconds) since the creation of the issue or */ /* pr. */
+/* Version for v2 data (post-2025-10-07) */
 MODEL (
-  name oso.int_issue_event_time_deltas,
+  name oso.int_issue_event_time_deltas_since_20251007,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
@@ -8,8 +9,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true,
   ),
-  start '2015-01-01',
-  end @github_events_pre_v20251007_end_date,
+  start @github_events_v20251007_start_date,
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
@@ -45,6 +45,6 @@ SELECT
     ELSE DATE_DIFF('SECOND', closed_at, "time")
   END::DOUBLE AS closed_delta,
   comments::DOUBLE
-FROM oso.int_events_aux_issues
+FROM oso.int_events_aux_issues_since_20251007
 WHERE
   "time" BETWEEN @start_dt AND @end_dt

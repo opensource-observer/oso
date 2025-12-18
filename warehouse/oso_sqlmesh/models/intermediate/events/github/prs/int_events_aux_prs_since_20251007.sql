@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_events_aux_prs,
+  name oso.int_events_aux_prs_since_20251007,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column time,
     batch_size 365,
@@ -7,8 +7,7 @@ MODEL (
     lookback @default_daily_incremental_lookback,
     forward_only true
   ),
-  start '2015-01-01',
-  end @github_events_pre_v20251007_end_date,
+  start @github_events_v20251007_start_date,
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),
@@ -46,7 +45,7 @@ WITH github_pull_requests AS (
     closed_at,
     comments,
     author_association
-  FROM oso.stg_github__pull_requests
+  FROM oso.stg_github__pull_requests_since_20251007
   WHERE
     event_time BETWEEN @start_dt AND @end_dt
 ), github_pull_request_merge_events AS (
@@ -70,7 +69,7 @@ WITH github_pull_requests AS (
     closed_at,
     comments,
     author_association
-  FROM oso.stg_github__pull_request_merge_events
+  FROM oso.stg_github__pull_request_merge_events_since_20251007
   WHERE
     event_time BETWEEN @start_dt AND @end_dt
 ), github_pr_comments AS (
@@ -94,7 +93,7 @@ WITH github_pull_requests AS (
     closed_at,
     comments,
     NULL AS author_association
-  FROM oso.stg_github__comments
+  FROM oso.stg_github__comments_since_20251007
   WHERE
     event_time BETWEEN @start_dt AND @end_dt
     AND type LIKE '%PULL_REQUEST%'

@@ -1,6 +1,6 @@
 MODEL (
   name oso.stg_github__pull_requests_since_20251007,
-  description 'Turns all watch events into push events (version after 2025-10-07)',
+  description 'Turns PullRequestEvent payloads into pull request records (version after 2025-10-07)',
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column event_time,
     batch_size 90,
@@ -43,10 +43,8 @@ SELECT
   pre.actor.login AS actor_login,
   CONCAT('PULL_REQUEST_', UPPER(pre.payload ->> '$.action')) AS "type",
   CAST(pre.payload -> '$.number' AS BIGINT) AS "number",
-  -- TODO: Get created_at by API
   pre.created_at AS created_at,
-  -- TODO: Get merged_at, closed_at, state, comments, author_association by API
-  -- These fields were removed from the PullRequestEvent payload in v2 data.
+  -- These fields were removed from the PullRequestEvent payload since 20251007
   CAST(NULL AS TIMESTAMP) AS merged_at,
   CAST(NULL AS TIMESTAMP) AS closed_at,
   CAST(NULL AS VARCHAR) AS "state",
