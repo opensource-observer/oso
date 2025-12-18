@@ -247,6 +247,12 @@ export const CreateUserModelRunRequestSchema = z.object({
   selectedModels: z.array(z.string()).optional(),
 });
 
+export const CreateDataIngestionSchema = z.object({
+  datasetId: z.string().uuid(),
+  factoryType: z.enum(["REST", "GRAPHQL", "ARCHIVE_DIR"]),
+  config: z.record(z.any()),
+});
+
 export const CreateDataIngestionRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
 });

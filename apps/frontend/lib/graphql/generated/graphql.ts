@@ -1202,6 +1202,12 @@ export type CreateDataConnectorRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
 
+export type CreateDataIngestionInput = {
+  config: Scalars["JSON"]["input"];
+  datasetId: Scalars["ID"]["input"];
+  factoryType: DataIngestionFactoryType;
+};
+
 export type CreateDataIngestionRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
@@ -1515,26 +1521,20 @@ export type DataConnector = {
 
 export type DataIngestion = {
   __typename?: "DataIngestion";
+  config: Scalars["JSON"]["output"];
   createdAt: Scalars["DateTimeISO"]["output"];
-  description?: Maybe<Scalars["String"]["output"]>;
+  datasetId: Scalars["ID"]["output"];
+  factoryType: DataIngestionFactoryType;
   id: Scalars["ID"]["output"];
-  name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
-export type DataIngestionConnection = {
-  __typename?: "DataIngestionConnection";
-  edges: Array<DataIngestionEdge>;
-  pageInfo: PageInfo;
-  totalCount?: Maybe<Scalars["Int"]["output"]>;
-};
-
-export type DataIngestionEdge = {
-  __typename?: "DataIngestionEdge";
-  cursor: Scalars["String"]["output"];
-  node: DataIngestion;
-};
+export enum DataIngestionFactoryType {
+  ArchiveDir = "ARCHIVE_DIR",
+  Graphql = "GRAPHQL",
+  Rest = "REST",
+}
 
 export type DataModel = {
   __typename?: "DataModel";
@@ -3375,6 +3375,7 @@ export type Mutation = {
   cancelRun: CancelRunPayload;
   /** Request a run for a DATA_CONNECTOR dataset */
   createDataConnectorRunRequest: CreateRunRequestPayload;
+  createDataIngestionConfig: DataIngestion;
   /** Request a run for a DATA_INGEST dataset */
   createDataIngestionRunRequest: CreateRunRequestPayload;
   createDataModel: CreateDataModelPayload;
@@ -3518,6 +3519,11 @@ export type MutationCancelRunArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateDataConnectorRunRequestArgs = {
   input: CreateDataConnectorRunRequestInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataIngestionConfigArgs = {
+  input: CreateDataIngestionInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -9047,6 +9053,96 @@ export type CreateStaticModelRunRequestMutation = {
   };
 };
 
+export type CreateDataIngestionConfigMutationVariables = Exact<{
+  input: CreateDataIngestionInput;
+}>;
+
+export type CreateDataIngestionConfigMutation = {
+  __typename?: "Mutation";
+  createDataIngestionConfig: {
+    __typename?: "DataIngestion";
+    id: string;
+    datasetId: string;
+    factoryType: DataIngestionFactoryType;
+    config: any;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type CreateDataIngestionRunRequestMutationVariables = Exact<{
+  input: CreateDataIngestionRunRequestInput;
+}>;
+
+export type CreateDataIngestionRunRequestMutation = {
+  __typename?: "Mutation";
+  createDataIngestionRunRequest: {
+    __typename?: "CreateRunRequestPayload";
+    success: boolean;
+    message?: string | null;
+    run: {
+      __typename?: "Run";
+      id: string;
+      datasetId: string;
+      status: RunStatus;
+      queuedAt: any;
+      startedAt?: any | null;
+      finishedAt?: any | null;
+    };
+  };
+};
+
+export type GetDataIngestionRunsQueryVariables = Exact<{
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  after?: InputMaybe<Scalars["String"]["input"]>;
+}>;
+
+export type GetDataIngestionRunsQuery = {
+  __typename?: "Query";
+  runs: {
+    __typename?: "RunConnection";
+    totalCount?: number | null;
+    edges: Array<{
+      __typename?: "RunEdge";
+      cursor: string;
+      node: {
+        __typename?: "Run";
+        id: string;
+        datasetId: string;
+        status: RunStatus;
+        queuedAt: any;
+        startedAt?: any | null;
+        finishedAt?: any | null;
+        logsUrl?: string | null;
+        steps: {
+          __typename?: "StepConnection";
+          edges: Array<{
+            __typename?: "StepEdge";
+            node: {
+              __typename?: "Step";
+              id: string;
+              name: string;
+              displayName: string;
+              status: StepStatus;
+              startedAt: any;
+              finishedAt?: any | null;
+              logsUrl: string;
+            };
+          }>;
+        };
+      };
+    }>;
+    pageInfo: {
+      __typename?: "PageInfo";
+      hasNextPage: boolean;
+      hasPreviousPage: boolean;
+      startCursor?: string | null;
+      endCursor?: string | null;
+    };
+  };
+};
+
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
 export type AssetGraphQuery = {
@@ -9965,6 +10061,384 @@ export const CreateStaticModelRunRequestDocument = {
 } as unknown as DocumentNode<
   CreateStaticModelRunRequestMutation,
   CreateStaticModelRunRequestMutationVariables
+>;
+export const CreateDataIngestionConfigDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataIngestionConfig" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataIngestionInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataIngestionConfig" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "datasetId" } },
+                { kind: "Field", name: { kind: "Name", value: "factoryType" } },
+                { kind: "Field", name: { kind: "Name", value: "config" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataIngestionConfigMutation,
+  CreateDataIngestionConfigMutationVariables
+>;
+export const CreateDataIngestionRunRequestDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataIngestionRunRequest" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: {
+                kind: "Name",
+                value: "CreateDataIngestionRunRequestInput",
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataIngestionRunRequest" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "datasetId" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "status" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "queuedAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "startedAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "finishedAt" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataIngestionRunRequestMutation,
+  CreateDataIngestionRunRequestMutationVariables
+>;
+export const GetDataIngestionRunsDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "query",
+      name: { kind: "Name", value: "GetDataIngestionRuns" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "where" },
+          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "JSON" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "first" },
+          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
+        },
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "after" },
+          },
+          type: { kind: "NamedType", name: { kind: "Name", value: "String" } },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "runs" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "where" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "where" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "first" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "first" },
+                },
+              },
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "after" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "after" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "edges" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "node" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "id" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "datasetId" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "status" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "queuedAt" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "startedAt" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "finishedAt" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "logsUrl" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "steps" },
+                              selectionSet: {
+                                kind: "SelectionSet",
+                                selections: [
+                                  {
+                                    kind: "Field",
+                                    name: { kind: "Name", value: "edges" },
+                                    selectionSet: {
+                                      kind: "SelectionSet",
+                                      selections: [
+                                        {
+                                          kind: "Field",
+                                          name: { kind: "Name", value: "node" },
+                                          selectionSet: {
+                                            kind: "SelectionSet",
+                                            selections: [
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "id",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "name",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "displayName",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "status",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "startedAt",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "finishedAt",
+                                                },
+                                              },
+                                              {
+                                                kind: "Field",
+                                                name: {
+                                                  kind: "Name",
+                                                  value: "logsUrl",
+                                                },
+                                              },
+                                            ],
+                                          },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "cursor" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "pageInfo" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "hasNextPage" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "hasPreviousPage" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "startCursor" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "endCursor" },
+                      },
+                    ],
+                  },
+                },
+                { kind: "Field", name: { kind: "Name", value: "totalCount" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  GetDataIngestionRunsQuery,
+  GetDataIngestionRunsQueryVariables
 >;
 export const AssetGraphDocument = {
   kind: "Document",

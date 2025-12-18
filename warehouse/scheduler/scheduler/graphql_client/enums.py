@@ -23,6 +23,12 @@ class DatasetType(str, Enum):
     STATIC_MODEL = "STATIC_MODEL"
 
 
+class DataIngestionFactoryType(str, Enum):
+    REST = "REST"
+    GRAPHQL = "GRAPHQL"
+    ARCHIVE_DIR = "ARCHIVE_DIR"
+
+
 class DataModelKind(str, Enum):
     INCREMENTAL_BY_TIME_RANGE = "INCREMENTAL_BY_TIME_RANGE"
     INCREMENTAL_BY_UNIQUE_KEY = "INCREMENTAL_BY_UNIQUE_KEY"
