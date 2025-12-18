@@ -116,6 +116,18 @@ def fake_table_resolver():
             AND "country" = @some_macro_func('test')
             """,
         ),
+        (
+            """SHOW CATALOGS""",
+            """SHOW CATALOGS""",
+        ),
+        (
+            """SHOW SCHEMAS FROM org1""",
+            """SHOW SCHEMAS FROM org1""",
+        ),
+        (
+            """SHOW TABLES FROM org1.dataset1""",
+            """SHOW TABLES FROM org1.dataset1""",
+        ),
     ],
 )
 @pytest.mark.asyncio
