@@ -1,4 +1,4 @@
-export type DataIngestionFactoryType = "REST" | "GRAPHQL" | "ARCHIVE2BQ";
+export type DataIngestionFactoryType = "REST" | "GRAPHQL" | "ARCHIVE_DIR";
 
 export interface DataIngestionConfig {
   id: string;
@@ -9,7 +9,7 @@ export interface DataIngestionConfig {
   updatedAt: string;
 }
 
-export interface CreateDataIngestionConfigInput {
+export interface CreateDataIngestionInput {
   datasetId: string;
   factoryType: DataIngestionFactoryType;
   config: Record<string, any>;
@@ -17,7 +17,6 @@ export interface CreateDataIngestionConfigInput {
 
 export interface CreateDataIngestionRunRequestInput {
   datasetId: string;
-  configId: string;
 }
 
 export interface DataIngestionRunResponse {

@@ -1202,14 +1202,13 @@ export type CreateDataConnectorRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
 
-export type CreateDataIngestionConfigInput = {
+export type CreateDataIngestionInput = {
   config: Scalars["JSON"]["input"];
   datasetId: Scalars["ID"]["input"];
   factoryType: DataIngestionFactoryType;
 };
 
 export type CreateDataIngestionRunRequestInput = {
-  configId: Scalars["ID"]["input"];
   datasetId: Scalars["ID"]["input"];
 };
 
@@ -1523,47 +1522,17 @@ export type DataConnector = {
 
 export type DataIngestion = {
   __typename?: "DataIngestion";
-  /**
-   * If the dataset is of type DATA_INGESTION, this field will contain the list of data ingestion configs
-   * associated with the dataset. Otherwise it will be an empty list.
-   */
-  configs: DataIngestionConfigConnection;
-  datasetId: Scalars["ID"]["output"];
-  orgId: Scalars["ID"]["output"];
-};
-
-export type DataIngestionConfigsArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-  single?: InputMaybe<Scalars["Boolean"]["input"]>;
-  where?: InputMaybe<Scalars["JSON"]["input"]>;
-};
-
-export type DataIngestionConfig = {
-  __typename?: "DataIngestionConfig";
   config: Scalars["JSON"]["output"];
   createdAt: Scalars["DateTimeISO"]["output"];
   datasetId: Scalars["ID"]["output"];
   factoryType: DataIngestionFactoryType;
   id: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
-export type DataIngestionConfigConnection = {
-  __typename?: "DataIngestionConfigConnection";
-  edges: Array<DataIngestionConfigEdge>;
-  pageInfo: PageInfo;
-  totalCount?: Maybe<Scalars["Int"]["output"]>;
-};
-
-export type DataIngestionConfigEdge = {
-  __typename?: "DataIngestionConfigEdge";
-  cursor: Scalars["String"]["output"];
-  node: DataIngestionConfig;
-};
-
 export enum DataIngestionFactoryType {
-  Archive2Bq = "ARCHIVE2BQ",
+  ArchiveDir = "ARCHIVE_DIR",
   Graphql = "GRAPHQL",
   Rest = "REST",
 }
@@ -3407,7 +3376,7 @@ export type Mutation = {
   cancelRun: CancelRunPayload;
   /** Request a run for a DATA_CONNECTOR dataset */
   createDataConnectorRunRequest: CreateRunRequestPayload;
-  createDataIngestionConfig: DataIngestionConfig;
+  createDataIngestionConfig: DataIngestion;
   /** Request a run for a DATA_INGEST dataset */
   createDataIngestionRunRequest: CreateRunRequestPayload;
   createDataModel: CreateDataModelPayload;
@@ -3555,7 +3524,7 @@ export type MutationCreateDataConnectorRunRequestArgs = {
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateDataIngestionConfigArgs = {
-  input: CreateDataIngestionConfigInput;
+  input: CreateDataIngestionInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -9085,13 +9054,13 @@ export type CreateStaticModelRunRequestMutation = {
 };
 
 export type CreateDataIngestionConfigMutationVariables = Exact<{
-  input: CreateDataIngestionConfigInput;
+  input: CreateDataIngestionInput;
 }>;
 
 export type CreateDataIngestionConfigMutation = {
   __typename?: "Mutation";
   createDataIngestionConfig: {
-    __typename?: "DataIngestionConfig";
+    __typename?: "DataIngestion";
     id: string;
     datasetId: string;
     factoryType: DataIngestionFactoryType;
@@ -10107,7 +10076,7 @@ export const CreateDataIngestionConfigDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: { kind: "Name", value: "CreateDataIngestionConfigInput" },
+              name: { kind: "Name", value: "CreateDataIngestionInput" },
             },
           },
         },

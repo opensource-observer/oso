@@ -3129,7 +3129,7 @@ class OsoAppClient {
     const config = ensure(args.config, "Missing config argument");
 
     const CREATE_DATA_INGESTION_CONFIG_MUTATION = gql(`
-      mutation CreateDataIngestionConfig($input: CreateDataIngestionConfigInput!) {
+      mutation CreateDataIngestionConfig($input: CreateDataIngestionInput!) {
         createDataIngestionConfig(input: $input) {
           id
           datasetId
@@ -3187,11 +3187,9 @@ class OsoAppClient {
   async createDataIngestionRunRequest(
     args: Partial<{
       datasetId: string;
-      configId: string;
     }>,
   ) {
     const datasetId = ensure(args.datasetId, "Missing datasetId argument");
-    const configId = ensure(args.configId, "Missing configId argument");
 
     const CREATE_DATA_INGESTION_RUN_REQUEST_MUTATION = gql(`
       mutation CreateDataIngestionRunRequest($input: CreateDataIngestionRunRequestInput!) {
@@ -3220,7 +3218,6 @@ class OsoAppClient {
         variables: {
           input: {
             datasetId,
-            configId,
           },
         },
       }),
