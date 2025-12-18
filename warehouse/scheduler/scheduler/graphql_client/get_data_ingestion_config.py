@@ -39,26 +39,6 @@ class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataModelDefinition(
 
 class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion(BaseModel):
     typename__: Literal["DataIngestion"] = Field(alias="__typename")
-    configs: "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionConfigs"
-
-
-class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionConfigs(
-    BaseModel
-):
-    edges: List[
-        "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionConfigsEdges"
-    ]
-
-
-class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionConfigsEdges(
-    BaseModel
-):
-    node: "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionConfigsEdgesNode"
-
-
-class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionConfigsEdgesNode(
-    BaseModel
-):
     id: str
     dataset_id: str = Field(alias="datasetId")
     factory_type: DataIngestionFactoryType = Field(alias="factoryType")
@@ -79,6 +59,3 @@ GetDataIngestionConfig.model_rebuild()
 GetDataIngestionConfigDatasets.model_rebuild()
 GetDataIngestionConfigDatasetsEdges.model_rebuild()
 GetDataIngestionConfigDatasetsEdgesNode.model_rebuild()
-GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion.model_rebuild()
-GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionConfigs.model_rebuild()
-GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionConfigsEdges.model_rebuild()

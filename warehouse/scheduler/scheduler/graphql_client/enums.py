@@ -26,7 +26,7 @@ class DatasetType(str, Enum):
 class DataIngestionFactoryType(str, Enum):
     REST = "REST"
     GRAPHQL = "GRAPHQL"
-    ARCHIVE2BQ = "ARCHIVE2BQ"
+    ARCHIVE_DIR = "ARCHIVE_DIR"
 
 
 class DataModelKind(str, Enum):

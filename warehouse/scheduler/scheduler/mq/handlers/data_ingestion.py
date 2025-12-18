@@ -13,7 +13,6 @@ from scheduler.graphql_client.get_data_ingestion_config import (
 )
 from scheduler.mq.common import RunHandler
 from scheduler.types import FailedResponse, HandlerResponse, RunContext, SuccessResponse
-from scheduler.utils import convert_uuid_bytes_to_str
 
 
 class _RESTAPIConfigWrapper(BaseModel):
@@ -34,31 +33,32 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
         dlt_destination: DLTDestinationResource,
         common_settings: CommonSettings,
     ) -> HandlerResponse:
-        config_id_bytes = bytes(message.config_id)
         dataset_id = message.dataset_id
-
-        config_id = convert_uuid_bytes_to_str(config_id_bytes)
 
         context.log.info(
             "Received DataIngestionRunRequest",
-            dataset_id=dataset_id,
-            config_id=config_id,
+            extra={
+                "dataset_id": dataset_id,
+            },
         )
 
         try:
             config_response = await oso_client.get_data_ingestion_config(
                 dataset_id=dataset_id,
-                config_id=config_id,
             )
         except Exception as e:
             context.log.error(
-                "Failed to fetch config", config_id=config_id, error=str(e)
+                "Failed to fetch config",
+                extra={
+                    "dataset_id": dataset_id,
+                    "error": str(e),
+                },
             )
             return FailedResponse(message=f"Config fetch failed: {e}")
 
         edges = config_response.datasets.edges
         if not edges or not edges[0].node.type_definition:
-            context.log.error("Config not found", config_id=config_id)
+            context.log.error("Config not found", extra={"dataset_id": dataset_id})
             return FailedResponse(message="Config not found")
 
         type_def = edges[0].node.type_definition
@@ -69,27 +69,26 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
         ):
             context.log.error(
                 "Dataset is not a DataIngestion type",
-                type=type_def.typename__,
+                extra={"type": type_def.typename__},
             )
             return FailedResponse(message=f"Wrong dataset type: {type_def.typename__}")
 
-        if not type_def.configs.edges:
-            context.log.error("No configs found")
-            return FailedResponse(message="Config not found")
-
-        config = type_def.configs.edges[0].node
+        config = type_def
 
         if config.factory_type != "REST":
             context.log.error(
                 "Unsupported factory type",
-                factory_type=config.factory_type,
+                extra={"factory_type": config.factory_type},
             )
             return FailedResponse(message=f"Unsupported type: {config.factory_type}")
 
         context.log.info(
             "Config validated",
-            config_id=config_id,
-            factory_type=config.factory_type,
+            extra={
+                "dataset_id": dataset_id,
+                "config_id": config.id,
+                "factory_type": config.factory_type,
+            },
         )
 
         async with context.step_context(
@@ -104,19 +103,24 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
                         ).config
                     )
                 except ValidationError as e:
-                    step_context.log.error("Invalid REST API config", errors=e.errors())
+                    step_context.log.error(
+                        "Invalid REST API config", extra={"errors": e.errors()}
+                    )
                     return FailedResponse(message="Invalid REST API config")
 
                 step_context.log.info(
                     "Creating REST API resources",
-                    config_id=config_id,
-                    num_endpoints=len(rest_api_config.get("resources", [])),
+                    extra={
+                        "dataset_id": dataset_id,
+                        "config_id": config.id,
+                        "num_endpoints": len(rest_api_config.get("resources", [])),
+                    },
                 )
 
                 resources = rest_api_resources(rest_api_config)
 
                 dataset_schema = f"ingest_{dataset_id.replace('-', '_')}"
-                pipeline_name = f"data_ingestion_{dataset_id}_{config_id}"[:50]
+                pipeline_name = f"data_ingestion_{dataset_id}"[:50]
                 async with dlt_destination.get_destination(
                     dataset_schema=dataset_schema
                 ) as destination:
@@ -129,22 +133,26 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
 
                     step_context.log.info(
                         "Running dlt pipeline",
-                        pipeline_name=pipeline_name,
-                        dataset_schema=dataset_schema,
+                        extra={
+                            "pipeline_name": pipeline_name,
+                            "dataset_schema": dataset_schema,
+                        },
                     )
 
                     load_info = await asyncio.to_thread(p.run, resources)
 
                 step_context.log.info(
                     "Data ingestion completed successfully",
-                    pipeline_name=pipeline_name,
-                    loaded_packages=len(load_info.loads_ids) if load_info else 0,
+                    extra={
+                        "pipeline_name": pipeline_name,
+                        "loaded_packages": len(load_info.loads_ids) if load_info else 0,
+                    },
                 )
 
             except Exception as e:
                 step_context.log.error(
                     "Data ingestion failed",
-                    error=str(e),
+                    extra={"error": str(e)},
                     exc_info=True,
                 )
                 return FailedResponse(message=f"Data ingestion failed: {e}")

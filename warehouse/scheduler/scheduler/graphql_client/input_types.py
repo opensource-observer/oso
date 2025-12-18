@@ -16,7 +16,7 @@ from .enums import (
 )
 
 
-class CreateDataIngestionConfigInput(BaseModel):
+class CreateDataIngestionInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
     factory_type: DataIngestionFactoryType = Field(alias="factoryType")
     config: Any
@@ -171,7 +171,6 @@ class CreateUserModelRunRequestInput(BaseModel):
 
 class CreateDataIngestionRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
-    config_id: str = Field(alias="configId")
 
 
 class CreateDataConnectorRunRequestInput(BaseModel):

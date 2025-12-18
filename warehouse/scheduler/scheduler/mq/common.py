@@ -2,6 +2,7 @@
 Implementations of the run context and step context for message handlers.
 """
 
+import logging
 import typing as t
 from contextlib import asynccontextmanager
 
@@ -43,8 +44,8 @@ class OSOStepContext(StepContext):
         self._logger = logger
 
     @property
-    def log(self) -> structlog.BoundLogger:
-        return self._logger
+    def log(self) -> logging.Logger:
+        return t.cast(logging.Logger, self._logger)
 
     async def create_materialization(
         self, table_id: str, warehouse_fqn: str, schema: list[DataModelColumnInput]
@@ -78,8 +79,8 @@ class OSORunContext(RunContext):
         self._logger = logger
 
     @property
-    def log(self) -> structlog.BoundLogger:
-        return self._logger
+    def log(self) -> logging.Logger:
+        return t.cast(logging.Logger, self._logger)
 
     @asynccontextmanager
     async def step_context(

@@ -249,28 +249,22 @@ class Client(AsyncBaseClient):
         return GetDataModels.model_validate(data)
 
     async def get_data_ingestion_config(
-        self, dataset_id: str, config_id: str, **kwargs: Any
+        self, dataset_id: str, **kwargs: Any
     ) -> GetDataIngestionConfig:
         query = gql(
             """
-            query GetDataIngestionConfig($datasetId: ID!, $configId: ID!) {
-              datasets(where: {id: {eq: $datasetId}}) {
+            query GetDataIngestionConfig($datasetId: ID!) {
+              datasets(where: {id: {eq: $datasetId}}, single: true) {
                 edges {
                   node {
                     id
                     typeDefinition {
                       __typename
                       ... on DataIngestion {
-                        configs(where: {id: {eq: $configId}}) {
-                          edges {
-                            node {
-                              id
-                              datasetId
-                              factoryType
-                              config
-                            }
-                          }
-                        }
+                        id
+                        datasetId
+                        factoryType
+                        config
                       }
                     }
                   }
@@ -279,7 +273,7 @@ class Client(AsyncBaseClient):
             }
             """
         )
-        variables: Dict[str, object] = {"datasetId": dataset_id, "configId": config_id}
+        variables: Dict[str, object] = {"datasetId": dataset_id}
         response = await self.execute(
             query=query,
             operation_name="GetDataIngestionConfig",
