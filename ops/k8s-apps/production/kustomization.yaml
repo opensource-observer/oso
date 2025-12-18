@@ -16,3 +16,4 @@ resources:
   - ./open-policy-agent
   - ./podinfo
   - ./scheduler-data-model
+  - ./scheduler-query
