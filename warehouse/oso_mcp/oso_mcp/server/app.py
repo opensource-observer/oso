@@ -1,8 +1,10 @@
+import base64
+import hashlib
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Any, Generic, List, Optional, TypeVar, Union
 
 import requests
 from mcp.server.fastmcp import Context, FastMCP
@@ -117,7 +119,7 @@ def setup_mcp_app(config: MCPConfig):
         description="Generates a deterministic OSO ID (SHA256 hash base64 encoded) from a list of input values. Use this to verify IDs in tests.",
     )
     async def generate_oso_id(
-        args: List[str | int | float | bool], ctx: Context
+        args: List[Any], ctx: Context
     ) -> McpResponse:
         """
         Generates a deterministic OSO ID.
@@ -125,9 +127,6 @@ def setup_mcp_app(config: MCPConfig):
         Args:
             args: List of values to concatenate and hash (e.g. ["GITHUB", "my-org", "my-repo"] or ["GITHUB", "<repo_id>", 1])
         """
-        import base64
-        import hashlib
-
         # Logic matches warehouse/oso_sqlmesh/macros/oso_id.py
         normalized_args: List[str] = [str(a) for a in args]
         concatenated = "".join(normalized_args)
