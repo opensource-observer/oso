@@ -105,7 +105,8 @@ def find_all_table_sources(expr: exp.Expression) -> set[exp.Table]:
 
     scope = build_scope(expr)
     if not scope:
-        raise ValueError("Could not build scope for expression.")
+        # If there is no scope, we might not have any tables, for example: SHOW CATALOGS.
+        return set()
     return _recurse_table_scope_for_tables(None, scope)
 
 

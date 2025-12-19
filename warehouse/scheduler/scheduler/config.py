@@ -275,7 +275,7 @@ class PublishQueryRunRequest(BaseSettings):
 
     run_id: str = Field(description="The ID of the query run")
     query: str = Field(description="The SQL query to run")
-    jwt: str = Field(description="The JWT token for authentication")
+    user: str = Field(description="The user for authentication")
 
     async def cli_cmd(self, context: CliContext) -> None:
         print(f"Publishing QueryRunRequest with run_id: {self.run_id}")
@@ -293,7 +293,7 @@ class PublishQueryRunRequest(BaseSettings):
         message = QueryRunRequest(
             run_id=uuid.UUID(self.run_id).bytes,
             query=self.query,
-            jwt=self.jwt,
+            user=self.user,
         )
 
         print(f"Message constructed: {message}")

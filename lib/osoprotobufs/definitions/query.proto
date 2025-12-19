@@ -11,9 +11,9 @@ message QueryRunRequest {
   // handled at the worker
   string query = 2;
 
-  // The JWT of the user making the request. This is used to authenticate the 
+  // The user making the request. This is used to authenticate the 
   // request and authorize access to the data on trino. 
-  string jwt = 3;
+  string user = 3;
 
   // Metadata passed on to the workers for query rewriting inference. This is
   // expected to be a JSON string.
