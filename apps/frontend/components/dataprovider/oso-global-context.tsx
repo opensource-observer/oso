@@ -109,7 +109,6 @@ const OsoGlobalActionNames: ExtractMethodNames<OsoAppClient>[] = _.sortBy([
   "createStaticModelRunRequest",
   "createDataIngestionConfig",
   "createDataIngestionRunRequest",
-  "getDataIngestionConfig",
 ]);
 const OsoGlobalActions: Partial<ExtractMethods<OsoAppClient>> = _.fromPairs(
   OsoGlobalActionNames.map((name) => [

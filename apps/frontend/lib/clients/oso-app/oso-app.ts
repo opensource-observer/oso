@@ -3257,68 +3257,6 @@ class OsoAppClient {
     return payload.run;
   }
 
-  async getDataIngestionConfig(
-    args: Partial<{
-      datasetId: string;
-    }>,
-  ) {
-    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
-
-    const GET_DATA_INGESTION_CONFIG_QUERY = gql(`
-      query GetDataIngestionConfig($datasetId: ID!) {
-        datasets(where: { id: { eq: $datasetId }}, single: true) {
-          edges {
-            node {
-              id
-              typeDefinition {
-                ... on DataIngestion {
-                  id
-                  datasetId
-                  factoryType
-                  config
-                  createdAt
-                  updatedAt
-                }
-              }
-            }
-          }
-        }
-      }
-    `);
-
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(GET_DATA_INGESTION_CONFIG_QUERY),
-        variables: {
-          datasetId,
-        },
-      }),
-    });
-
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error(
-        "Failed to get data ingestion config:",
-        result.errors[0].message,
-      );
-      throw new Error(
-        `Failed to get data ingestion config: ${result.errors[0].message}`,
-      );
-    }
-
-    const edge = result.data?.datasets?.edges?.[0];
-    if (!edge?.node?.typeDefinition) {
-      return null;
-    }
-
-    return edge.node.typeDefinition;
-  }
-
   async getDataIngestionRuns(
     args: Partial<{
       datasetId: string;
