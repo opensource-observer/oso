@@ -24,7 +24,6 @@ from oso_dagster.resources.udm_state import (
     FakeUserDefinedModelResource,
     UserDefinedModelStateResource,
 )
-
 from scheduler.dlt_destination import (
     DLTDestinationResource,
     DuckDBDLTDestinationResource,
@@ -158,7 +157,6 @@ def consumer_trino_resource_factory(
         # Consumer configuration
         catalog="iceberg",
         connection_schema="oso",
-        user=None,
     )
 
 
