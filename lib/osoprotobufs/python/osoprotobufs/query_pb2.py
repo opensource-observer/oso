@@ -20,7 +20,7 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x0bquery.proto"T\n\x0fQueryRunRequest\x12\x0e\n\x06run_id\x18\x01 \x01(\x0c\x12\r\n\x05query\x18\x02 \x01(\t\x12\x0b\n\x03jwt\x18\x03 \x01(\t\x12\x15\n\rmetadata_json\x18\x04 \x01(\tb\x06proto3'
+    b'\n\x0bquery.proto"U\n\x0fQueryRunRequest\x12\x0e\n\x06run_id\x18\x01 \x01(\x0c\x12\r\n\x05query\x18\x02 \x01(\t\x12\x0c\n\x04user\x18\x03 \x01(\t\x12\x15\n\rmetadata_json\x18\x04 \x01(\tb\x06proto3'
 )
 
 _globals = globals()
@@ -29,5 +29,5 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "query_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
     DESCRIPTOR._loaded_options = None
     _globals["_QUERYRUNREQUEST"]._serialized_start = 15
-    _globals["_QUERYRUNREQUEST"]._serialized_end = 99
+    _globals["_QUERYRUNREQUEST"]._serialized_end = 100
 # @@protoc_insertion_point(module_scope)
