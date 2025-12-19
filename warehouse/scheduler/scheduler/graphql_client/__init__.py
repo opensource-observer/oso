@@ -9,6 +9,7 @@ from .create_materialization import (
     CreateMaterializationCreateMaterializationMaterialization,
 )
 from .enums import (
+    DataIngestionFactoryType,
     DataModelKind,
     DatasetType,
     InvitationStatus,
@@ -39,6 +40,16 @@ from .fragments import (
     LatestDataModelLatestReleaseRevisionKindOptions,
     LatestDataModelLatestReleaseRevisionSchema,
 )
+from .get_data_ingestion_config import (
+    GetDataIngestionConfig,
+    GetDataIngestionConfigDatasets,
+    GetDataIngestionConfigDatasetsEdges,
+    GetDataIngestionConfigDatasetsEdgesNode,
+    GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataConnector,
+    GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion,
+    GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataModelDefinition,
+    GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionStaticModelDefinition,
+)
 from .get_data_models import (
     GetDataModels,
     GetDataModelsDatasets,
@@ -55,6 +66,7 @@ from .input_types import (
     AddUserByEmailInput,
     CancelRunInput,
     CreateDataConnectorRunRequestInput,
+    CreateDataIngestionInput,
     CreateDataIngestionRunRequestInput,
     CreateDataModelInput,
     CreateDataModelReleaseInput,
@@ -98,6 +110,7 @@ __all__ = [
     "CancelRunInput",
     "Client",
     "CreateDataConnectorRunRequestInput",
+    "CreateDataIngestionInput",
     "CreateDataIngestionRunRequestInput",
     "CreateDataModelInput",
     "CreateDataModelReleaseInput",
@@ -112,6 +125,7 @@ __all__ = [
     "CreateStaticModelInput",
     "CreateStaticModelRunRequestInput",
     "CreateUserModelRunRequestInput",
+    "DataIngestionFactoryType",
     "DataModelColumnInput",
     "DataModelDependencyInput",
     "DataModelKind",
@@ -129,6 +143,14 @@ __all__ = [
     "FinishStepFinishStep",
     "FinishStepFinishStepStep",
     "FinishStepInput",
+    "GetDataIngestionConfig",
+    "GetDataIngestionConfigDatasets",
+    "GetDataIngestionConfigDatasetsEdges",
+    "GetDataIngestionConfigDatasetsEdgesNode",
+    "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataConnector",
+    "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion",
+    "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataModelDefinition",
+    "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionStaticModelDefinition",
     "GetDataModels",
     "GetDataModelsDatasets",
     "GetDataModelsDatasetsEdges",

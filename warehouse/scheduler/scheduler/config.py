@@ -15,7 +15,6 @@ from pydantic_settings import (
     CliSubCommand,
     SettingsConfigDict,
 )
-
 from scheduler.types import GenericMessageQueueService, MessageHandlerRegistry
 
 logger = structlog.get_logger(__name__)

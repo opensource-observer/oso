@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: production-mcp
+  name: production-scheduler-data-ingestion
 spec:
   postRenderers:
     - kustomize:
@@ -11,5 +11,13 @@ spec:
             newTag: deploy-20251219004520-7c044dc # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
-      envVars:
-        "MCP_OSO_API_KEY": gcp:secretmanager:production-oso-api-key/versions/latest
+      name: "oso-scheduler-data-ingestion"
+      args:
+        - run
+        - --directory
+        - warehouse/scheduler
+        - scheduler
+        - run
+        - data_ingestion_run_requests
+      serviceAccount:
+        create: false

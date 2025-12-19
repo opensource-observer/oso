@@ -96,7 +96,7 @@ class TrinoK8sResource(TrinoResource):
 
     heartbeat: ResourceDependency[HeartBeatResource]
 
-    user: str = Field(
+    user: t.Optional[str] = Field(
         default="dagster",
         description="Trino user",
     )
@@ -175,7 +175,7 @@ class TrinoK8sResource(TrinoResource):
                 extra_connection_args = {}
                 if session_properties:
                     extra_connection_args["session_properties"] = session_properties
-                yield aiotrino.dbapi.connect(
+                async with aiotrino.dbapi.connect(
                     host=host,
                     port=port,
                     user=self.user,
@@ -185,7 +185,8 @@ class TrinoK8sResource(TrinoResource):
                     if jwt_token
                     else None,
                     **extra_connection_args,
-                )
+                ) as connection:
+                    yield connection
 
     @asynccontextmanager
     async def ensure_available(self, log_override: t.Optional[logging.Logger] = None):

@@ -9,6 +9,7 @@ from .create_materialization import CreateMaterialization
 from .enums import RunStatus, StepStatus
 from .finish_run import FinishRun
 from .finish_step import FinishStep
+from .get_data_ingestion_config import GetDataIngestionConfig
 from .get_data_models import GetDataModels
 from .input_types import DataModelColumnInput
 from .resolve_tables import ResolveTables
@@ -246,6 +247,41 @@ class Client(AsyncBaseClient):
         )
         data = self.get_data(response)
         return GetDataModels.model_validate(data)
+
+    async def get_data_ingestion_config(
+        self, dataset_id: str, **kwargs: Any
+    ) -> GetDataIngestionConfig:
+        query = gql(
+            """
+            query GetDataIngestionConfig($datasetId: ID!) {
+              datasets(where: {id: {eq: $datasetId}}, single: true) {
+                edges {
+                  node {
+                    id
+                    typeDefinition {
+                      __typename
+                      ... on DataIngestion {
+                        id
+                        datasetId
+                        factoryType
+                        config
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"datasetId": dataset_id}
+        response = await self.execute(
+            query=query,
+            operation_name="GetDataIngestionConfig",
+            variables=variables,
+            **kwargs,
+        )
+        data = self.get_data(response)
+        return GetDataIngestionConfig.model_validate(data)
 
     async def resolve_tables(
         self,

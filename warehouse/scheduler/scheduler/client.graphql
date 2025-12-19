@@ -144,6 +144,24 @@ query GetDataModels($datasetId: ID!) {
   }
 }
 
+query GetDataIngestionConfig($datasetId: ID!) {
+  datasets(where: { id: { eq: $datasetId }}, single: true) {
+    edges {
+      node {
+        id
+        typeDefinition {
+          ... on DataIngestion {
+            id
+            datasetId
+            factoryType
+            config
+          }
+        }
+      }
+    }
+  }
+}
+
 query ResolveTables($references: [String!]!, $metadata: JSON) {
   system {
     resolveTables(references: $references, metadata: $metadata) {

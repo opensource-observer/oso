@@ -69,6 +69,16 @@ type StaticModelDefinition {
   ): StaticModelConnection!
 }
 
+type DataIngestion {
+  id: ID!
+  orgId: ID!
+  datasetId: ID!
+  factoryType: DataIngestionFactoryType!
+  config: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
 type DatasetEdge {
   node: Dataset!
   cursor: String!

@@ -3119,6 +3119,242 @@ class OsoAppClient {
 
     return payload.run;
   }
+
+  async createDataIngestionConfig(
+    args: Partial<{
+      datasetId: string;
+      factoryType: string;
+      config: Record<string, unknown>;
+    }>,
+  ) {
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
+    const factoryType = ensure(
+      args.factoryType,
+      "Missing factoryType argument",
+    );
+    const config = ensure(args.config, "Missing config argument");
+
+    const CREATE_DATA_INGESTION_CONFIG_MUTATION = gql(`
+      mutation CreateDataIngestionConfig($input: CreateDataIngestionInput!) {
+        createDataIngestionConfig(input: $input) {
+          id
+          datasetId
+          factoryType
+          config
+          createdAt
+          updatedAt
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_DATA_INGESTION_CONFIG_MUTATION),
+        variables: {
+          input: {
+            datasetId,
+            factoryType,
+            config,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error(
+        "Failed to create data ingestion config:",
+        result.errors[0].message,
+      );
+      throw new Error(
+        `Failed to create data ingestion config: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createDataIngestionConfig;
+    if (!payload) {
+      throw new Error(
+        "No response data from create data ingestion config mutation",
+      );
+    }
+
+    logger.log(
+      `Successfully created data ingestion config for dataset "${datasetId}"`,
+    );
+
+    return payload;
+  }
+
+  async createDataIngestionRunRequest(
+    args: Partial<{
+      datasetId: string;
+    }>,
+  ) {
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
+
+    const CREATE_DATA_INGESTION_RUN_REQUEST_MUTATION = gql(`
+      mutation CreateDataIngestionRunRequest($input: CreateDataIngestionRunRequestInput!) {
+        createDataIngestionRunRequest(input: $input) {
+          success
+          message
+          run {
+            id
+            datasetId
+            status
+            queuedAt
+            startedAt
+            finishedAt
+          }
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(CREATE_DATA_INGESTION_RUN_REQUEST_MUTATION),
+        variables: {
+          input: {
+            datasetId,
+          },
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error(
+        "Failed to create data ingestion run request:",
+        result.errors[0].message,
+      );
+      throw new Error(
+        `Failed to create data ingestion run request: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.createDataIngestionRunRequest;
+    if (!payload) {
+      throw new Error(
+        "No response data from create data ingestion run request mutation",
+      );
+    }
+
+    if (payload.success) {
+      logger.log(
+        `Successfully created data ingestion run request for dataset "${datasetId}"`,
+      );
+    }
+
+    return payload.run;
+  }
+
+  async getDataIngestionRuns(
+    args: Partial<{
+      datasetId: string;
+      status: string;
+      first: number;
+      after: string;
+    }>,
+  ) {
+    const datasetId = args.datasetId;
+    const status = args.status;
+    const first = args.first ?? 10;
+    const after = args.after;
+
+    const GET_DATA_INGESTION_RUNS_QUERY = gql(`
+      query GetDataIngestionRuns($where: JSON, $first: Int, $after: String) {
+        runs(where: $where, first: $first, after: $after) {
+          edges {
+            node {
+              id
+              datasetId
+              status
+              queuedAt
+              startedAt
+              finishedAt
+              logsUrl
+              steps {
+                edges {
+                  node {
+                    id
+                    name
+                    displayName
+                    status
+                    startedAt
+                    finishedAt
+                    logsUrl
+                  }
+                }
+              }
+            }
+            cursor
+          }
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+          totalCount
+        }
+      }
+    `);
+
+    const where: Record<string, unknown> = {};
+    if (datasetId) {
+      where.dataset_id = { eq: datasetId };
+    }
+    if (status) {
+      where.status = { eq: status };
+    }
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(GET_DATA_INGESTION_RUNS_QUERY),
+        variables: {
+          where: Object.keys(where).length > 0 ? where : undefined,
+          first,
+          after,
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error(
+        "Failed to get data ingestion runs:",
+        result.errors[0].message,
+      );
+      throw new Error(
+        `Failed to get data ingestion runs: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.runs;
+    if (!payload) {
+      throw new Error("No response data from get data ingestion runs query");
+    }
+
+    logger.log(
+      `Successfully retrieved ${payload.edges.length} data ingestion runs`,
+    );
+
+    return payload;
+  }
 }
 
 export { OsoAppClient };

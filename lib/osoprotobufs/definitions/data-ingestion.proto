@@ -1,7 +1,8 @@
 syntax = "proto3";
 
 /**
- * A request to materiaize a data ingestion dataset
+ * A request to materialize a data ingestion dataset.
+ * Since each dataset has exactly one config, we only need the dataset_id.
  */
 message DataIngestionRunRequest {
   bytes run_id = 1;

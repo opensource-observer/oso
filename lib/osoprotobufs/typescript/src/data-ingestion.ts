@@ -9,7 +9,10 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "";
 
-/** A request to materiaize a data ingestion dataset */
+/**
+ * A request to materialize a data ingestion dataset.
+ * Since each dataset has exactly one config, we only need the dataset_id.
+ */
 export interface DataIngestionRunRequest {
   runId: Uint8Array;
   datasetId: string;

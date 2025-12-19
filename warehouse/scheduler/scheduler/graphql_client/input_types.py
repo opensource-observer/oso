@@ -6,7 +6,20 @@ from typing import Any, List, Optional
 from pydantic import Field
 
 from .base_model import BaseModel
-from .enums import DataModelKind, DatasetType, MemberRole, RunStatus, StepStatus
+from .enums import (
+    DataIngestionFactoryType,
+    DataModelKind,
+    DatasetType,
+    MemberRole,
+    RunStatus,
+    StepStatus,
+)
+
+
+class CreateDataIngestionInput(BaseModel):
+    dataset_id: str = Field(alias="datasetId")
+    factory_type: DataIngestionFactoryType = Field(alias="factoryType")
+    config: Any
 
 
 class CreateDataModelInput(BaseModel):

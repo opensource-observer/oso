@@ -25,10 +25,16 @@ from oso_dagster.resources.udm_state import (
     UserDefinedModelStateResource,
 )
 
+from scheduler.dlt_destination import (
+    DLTDestinationResource,
+    DuckDBDLTDestinationResource,
+    TrinoDLTDestinationResource,
+)
 from scheduler.evaluator import UserDefinedModelEvaluator
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategyResource
 from scheduler.materialization.trino import TrinoMaterializationStrategyResource
+from scheduler.mq.handlers.data_ingestion import DataIngestionRunRequestHandler
 from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
 from scheduler.mq.handlers.query import QueryRunRequestHandler
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
@@ -149,6 +155,10 @@ def consumer_trino_resource_factory(
         use_port_forward=common_settings.k8s_use_port_forward,
         heartbeat_name="consumer_trino",
         heartbeat=heartbeat,
+        # Consumer configuration
+        catalog="iceberg",
+        connection_schema="oso",
+        user=None,
     )
 
 
@@ -197,6 +207,7 @@ def message_handler_registry_factory() -> MessageHandlerRegistry:
     """Factory function to create a message handler registry."""
     registry = MessageHandlerRegistry()
     registry.register(DataModelRunRequestHandler())
+    registry.register(DataIngestionRunRequestHandler())
     registry.register(QueryRunRequestHandler())
     return registry
 
@@ -218,6 +229,25 @@ def materialization_strategy_factory(
         return DuckdbMaterializationStrategyResource()
 
 
+@resource_factory("dlt_destination")
+def dlt_destination_factory(
+    resources: ResourcesContext,
+    common_settings: "CommonSettings",
+) -> DLTDestinationResource:
+    """Factory function to create a DLT destination resource.
+
+    Returns a configured DLT destination based on the common_settings.
+    Uses Trino if trino_enabled is True, otherwise uses DuckDB.
+    """
+    if common_settings.trino_enabled:
+        trino: TrinoResource = resources.resolve("trino")
+        return TrinoDLTDestinationResource(trino=trino, catalog="iceberg")
+    else:
+        return DuckDBDLTDestinationResource(
+            database_path=common_settings.local_duckdb_path
+        )
+
+
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
     registry.add_singleton("common_settings", common_settings)
@@ -235,6 +265,7 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(message_handler_registry_factory)
     registry.add(heartbeat_factory)
     registry.add(materialization_strategy_factory)
+    registry.add(dlt_destination_factory)
     registry.add(gcs_factory)
 
     return registry
