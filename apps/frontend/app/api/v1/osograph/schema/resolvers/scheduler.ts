@@ -246,6 +246,29 @@ export const schedulerResolvers = {
     status: (parent: RunRow) => mapRunStatus(parent.status),
     startedAt: (parent: RunRow) => parent.started_at,
     finishedAt: (parent: RunRow) => parent.completed_at,
+    maxRetries: (parent: RunRow) => parent.max_retries,
+    retryNumber: (parent: RunRow) => parent.retry_number,
+    parentId: (parent: RunRow) => parent.parent_run_id,
+    parent: async (parent: RunRow) => {
+      if (!parent.parent_run_id) {
+        return null;
+      }
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("run")
+        .select("*")
+        .eq("id", parent.parent_run_id)
+        .single();
+      if (error) {
+        logger.error(
+          `Error fetching parent run with id ${parent.parent_run_id}: ${error.message}`,
+        );
+        throw ServerErrors.database(
+          `Failed to fetch parent run with id ${parent.parent_run_id}`,
+        );
+      }
+      return data;
+    },
     steps: (
       parent: RunRow,
       args: FilterableConnectionArgs,

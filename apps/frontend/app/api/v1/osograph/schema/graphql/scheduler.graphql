@@ -43,6 +43,10 @@ type Run {
   status: RunStatus!
   logsUrl: String
   steps: StepConnection!
+  maxRetries: Int!
+  retryNumber: Int!
+  parentId: ID
+  parent: Run
 }
 
 type RunEdge {
