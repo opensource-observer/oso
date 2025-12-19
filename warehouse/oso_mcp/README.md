@@ -6,6 +6,11 @@ A Model Context Protocol (MCP) server that connects your local IDE with the Open
 
 This MCP server allows you to connect your local IDE with our production text2sql agent, giving your IDE's AI assistant the ability to query and analyze data from the Open Source Observer (OSO) data lake using natural language. We have plans to add more connections to more agents down the line which will function similarly, and ultimately allow IDE LLMs to level up with our stack.
 
+## Available Tools
+
+- **`query_text2sql_agent`**: Convert a natural language question into a SQL query using the OSO text2sql agent.
+- **`generate_oso_id`**: Generates a deterministic OSO ID (SHA256 hash base64 encoded) from a list of input values. Useful for verifying IDs in tests.
+
 ## Installation
 
 ### Prerequisites
