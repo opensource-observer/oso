@@ -1711,7 +1711,6 @@ export type DataModelRevision = {
   dataModelId: Scalars["ID"]["output"];
   dependsOn?: Maybe<Array<DataModelDependency>>;
   description?: Maybe<Scalars["String"]["output"]>;
-  displayName: Scalars["String"]["output"];
   end?: Maybe<Scalars["DateTimeISO"]["output"]>;
   hash: Scalars["String"]["output"];
   id: Scalars["ID"]["output"];
