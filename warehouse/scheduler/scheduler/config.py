@@ -46,6 +46,7 @@ class CommonSettings(BaseSettings):
     consumer_trino_k8s_coordinator_deployment_name: str = ""
     consumer_trino_k8s_worker_deployment_name: str = ""
     consumer_trino_connect_timeout: int = 240
+    consumer_trino_jwt_secret: str = ""
 
     redis_host: t.Optional[str] = None
     redis_port: int = 6379

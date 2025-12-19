@@ -3,6 +3,7 @@ import typing as t
 
 import aiotrino
 import aiotrino.utils
+import jwt
 import structlog
 from oso_dagster.resources import GCSFileResource, TrinoResource
 from osoprotobufs.query_pb2 import QueryRunRequest
@@ -46,9 +47,17 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
         query = await rewrite_query(message.query, table_resolvers)
         logger.info(f"Rewritten Query: {query.rewritten_query}")
 
+        jwt_payload = jwt.decode(
+            jwt=message.jwt,
+            key=common_settings.consumer_trino_jwt_secret,
+            audience="consumer-trino",
+            issuer="opensource-observer",
+            algorithms=["HS256"],
+        )
+
         storage_client = gcs.get_client(asynchronous=False)
         try:
-            async with consumer_trino.async_get_client(jwt_token=message.jwt) as client:
+            async with consumer_trino.async_get_client(user=jwt_payload.sub) as client:
                 cursor = await client.cursor()
                 cursor = await cursor.execute(query.rewritten_query)
                 columns = (column.name for column in await cursor.get_description())
