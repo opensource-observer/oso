@@ -21,10 +21,10 @@ export interface QueryRunRequest {
    */
   query: string;
   /**
-   * The JWT of the user making the request. This is used to authenticate the
+   * The user making the request. This is used to authenticate the
    * request and authorize access to the data on trino.
    */
-  jwt: string;
+  user: string;
   /**
    * Metadata passed on to the workers for query rewriting inference. This is
    * expected to be a JSON string.
@@ -33,7 +33,7 @@ export interface QueryRunRequest {
 }
 
 function createBaseQueryRunRequest(): QueryRunRequest {
-  return { runId: new Uint8Array(0), query: "", jwt: "", metadataJson: "" };
+  return { runId: new Uint8Array(0), query: "", user: "", metadataJson: "" };
 }
 
 export const QueryRunRequest: MessageFns<QueryRunRequest> = {
@@ -47,8 +47,8 @@ export const QueryRunRequest: MessageFns<QueryRunRequest> = {
     if (message.query !== "") {
       writer.uint32(18).string(message.query);
     }
-    if (message.jwt !== "") {
-      writer.uint32(26).string(message.jwt);
+    if (message.user !== "") {
+      writer.uint32(26).string(message.user);
     }
     if (message.metadataJson !== "") {
       writer.uint32(34).string(message.metadataJson);
@@ -85,7 +85,7 @@ export const QueryRunRequest: MessageFns<QueryRunRequest> = {
             break;
           }
 
-          message.jwt = reader.string();
+          message.user = reader.string();
           continue;
         }
         case 4: {
@@ -111,7 +111,7 @@ export const QueryRunRequest: MessageFns<QueryRunRequest> = {
         ? bytesFromBase64(object.runId)
         : new Uint8Array(0),
       query: isSet(object.query) ? globalThis.String(object.query) : "",
-      jwt: isSet(object.jwt) ? globalThis.String(object.jwt) : "",
+      user: isSet(object.user) ? globalThis.String(object.user) : "",
       metadataJson: isSet(object.metadataJson)
         ? globalThis.String(object.metadataJson)
         : "",
@@ -126,8 +126,8 @@ export const QueryRunRequest: MessageFns<QueryRunRequest> = {
     if (message.query !== "") {
       obj.query = message.query;
     }
-    if (message.jwt !== "") {
-      obj.jwt = message.jwt;
+    if (message.user !== "") {
+      obj.user = message.user;
     }
     if (message.metadataJson !== "") {
       obj.metadataJson = message.metadataJson;
@@ -146,7 +146,7 @@ export const QueryRunRequest: MessageFns<QueryRunRequest> = {
     const message = createBaseQueryRunRequest();
     message.runId = object.runId ?? new Uint8Array(0);
     message.query = object.query ?? "";
-    message.jwt = object.jwt ?? "";
+    message.user = object.user ?? "";
     message.metadataJson = object.metadataJson ?? "";
     return message;
   },

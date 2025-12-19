@@ -50,5 +50,4 @@ spec:
         SCHEDULER_CONSUMER_TRINO_K8S_WORKER_DEPLOYMENT_NAME: production-consumer-trino-trino-worker
         SCHEDULER_CONSUMER_TRINO_K8S_SERVICE_NAME: production-consumer-trino-trino
         SCHEDULER_CONSUMER_TRINO_K8S_NAMESPACE: production-consumer-trino
-        SCHEDULER_CONSUMER_TRINO_JWT_SECRET: "gcp:secretmanager:production-scheduler-consumer-trino-jwt-secret/versions/latest"
         SCHEDULER_QUERY_BUCKET: oso-async-query

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getOrgUser, signTrinoJWT } from "@/lib/auth/auth";
+import { getOrgUser } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
 import { EVENTS } from "@/lib/types/posthog";
@@ -140,14 +140,11 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     return makeErrorResponse("Failed to create run", 500);
   }
 
-  // Sign JWT
-  const jwt = await signTrinoJWT(user);
-
   // Enqueue message
   const message: QueryRunRequest = {
     runId: new Uint8Array(Buffer.from(run.id.replace(/-/g, ""), "hex")),
     query: query,
-    jwt: jwt,
+    user: `jwt-${user.orgName}`, // Prefix with 'jwt-' for backwards compatibility for now
     metadataJson: JSON.stringify({}),
   };
 
