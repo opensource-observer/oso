@@ -7246,7 +7246,10 @@ export type Run = PipelineRun &
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
     logsUrl?: Maybe<Scalars["String"]["output"]>;
+    maxRetries: Scalars["Int"]["output"];
     mode: Scalars["String"]["output"];
+    parent?: Maybe<Run>;
+    parentId?: Maybe<Scalars["ID"]["output"]>;
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
     parentRunId?: Maybe<Scalars["String"]["output"]>;
     pipeline: PipelineReference;
@@ -7256,6 +7259,7 @@ export type Run = PipelineRun &
     repositoryOrigin?: Maybe<RepositoryOrigin>;
     requestedBy?: Maybe<User>;
     resolvedOpSelection?: Maybe<Array<Scalars["String"]["output"]>>;
+    retryNumber: Scalars["Int"]["output"];
     rootConcurrencyKeys?: Maybe<Array<Scalars["String"]["output"]>>;
     rootRunId?: Maybe<Scalars["String"]["output"]>;
     runConfig: Scalars["RunConfigData"]["output"];
