@@ -270,12 +270,13 @@ class TrinoRemoteResource(TrinoResource):
         user: t.Optional[str] = None,
     ):
         async with self.ensure_available(log_override=log_override):
-            yield aiotrino.dbapi.connect(
+            async with aiotrino.dbapi.connect(
                 host=self.url,
                 user=user or self.user,
                 catalog="hive",
                 schema="default",
-            )
+            ) as conn:
+                yield conn
 
     @asynccontextmanager
     async def ensure_available(self, log_override: t.Optional[logging.Logger] = None):
