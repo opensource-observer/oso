@@ -1202,10 +1202,13 @@ export type Database = {
           dataset_id: string | null;
           id: string;
           logs_url: string | null;
+          max_retries: number;
           metadata: Json | null;
           org_id: string;
+          parent_run_id: string | null;
           queued_at: string;
           requested_by: string | null;
+          retry_number: number;
           run_type: Database["public"]["Enums"]["run_type"];
           started_at: string | null;
           status: Database["public"]["Enums"]["run_status"];
@@ -1216,10 +1219,13 @@ export type Database = {
           dataset_id?: string | null;
           id?: string;
           logs_url?: string | null;
+          max_retries?: number;
           metadata?: Json | null;
           org_id: string;
+          parent_run_id?: string | null;
           queued_at?: string;
           requested_by?: string | null;
+          retry_number?: number;
           run_type?: Database["public"]["Enums"]["run_type"];
           started_at?: string | null;
           status?: Database["public"]["Enums"]["run_status"];
@@ -1230,16 +1236,26 @@ export type Database = {
           dataset_id?: string | null;
           id?: string;
           logs_url?: string | null;
+          max_retries?: number;
           metadata?: Json | null;
           org_id?: string;
+          parent_run_id?: string | null;
           queued_at?: string;
           requested_by?: string | null;
+          retry_number?: number;
           run_type?: Database["public"]["Enums"]["run_type"];
           started_at?: string | null;
           status?: Database["public"]["Enums"]["run_status"];
           ttl?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "fk_run_parent";
+            columns: ["parent_run_id"];
+            isOneToOne: false;
+            referencedRelation: "run";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "run_dataset_id_fkey";
             columns: ["dataset_id"];
@@ -1252,6 +1268,13 @@ export type Database = {
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "run_parent_run_id_fkey";
+            columns: ["parent_run_id"];
+            isOneToOne: false;
+            referencedRelation: "run";
             referencedColumns: ["id"];
           },
         ];
