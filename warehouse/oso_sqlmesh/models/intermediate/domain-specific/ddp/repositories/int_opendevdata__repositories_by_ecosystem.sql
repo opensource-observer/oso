@@ -1,5 +1,5 @@
 MODEL (
-  name oso.int_gharchive__repositories_by_ecosystem,
+  name oso.int_opendevdata__repositories_by_ecosystem,
   description 'GitHub repositories enriched with ecosystem information from OpenDevData',
   dialect trino,
   kind FULL,
@@ -16,7 +16,7 @@ MODEL (
 SELECT
   r.repo_id,
   e.name AS ecosystem_name,
-  er.ecosystem_id,     
+  er.ecosystem_id,
   r.opendevdata_id AS opendevdata_repo_id
 FROM oso.int_opendevdata__repositories_with_repo_id AS r
 JOIN oso.stg_opendevdata__ecosystems_repos_recursive AS er
