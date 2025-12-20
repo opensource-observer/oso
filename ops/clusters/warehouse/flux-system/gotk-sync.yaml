@@ -8,7 +8,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    branch: production
+    branch: ravenac95/temp-fix-tailscale
   secretRef:
     name: flux-system
   url: https://github.com/opensource-observer/oso.git
