@@ -13,6 +13,8 @@ CREATE TABLE public.data_ingestions (
     CONSTRAINT unique_data_ingestion_per_dataset UNIQUE (dataset_id, deleted_at)
 );
 
+ALTER TABLE public.data_ingestions ENABLE ROW LEVEL SECURITY;
+
 CREATE INDEX idx_data_ingestions_dataset_id
     ON public.data_ingestions(dataset_id) WHERE deleted_at IS NULL;
 
