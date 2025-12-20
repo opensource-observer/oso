@@ -26,7 +26,7 @@ WITH opendevdata_with_graphql_match AS (
     ossd.id AS repo_id_from_graphql
   FROM oso.stg_opendevdata__repos AS odd
   LEFT JOIN oso.stg_ossd__current_repositories AS ossd
-    ON odd.github_graphql_id = ossd.node_id
+    ON NULLIF(odd.github_graphql_id, '') = ossd.node_id
 ),
 -- Identify repo_names that need fallback matching (no graphql match)
 opendevdata_needing_fallback AS (
