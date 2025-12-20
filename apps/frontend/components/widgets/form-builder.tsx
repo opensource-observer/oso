@@ -40,12 +40,14 @@ import {
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
 
 interface FormSchemaField {
-  type: "string" | "number" | "object" | "boolean" | "date";
+  type: "string" | "number" | "object" | "boolean" | "date" | "array";
   label: string;
   required?: boolean;
   description?: string;
   options?: (string | { value: string; label: string })[]; // For string type, renders a select
   properties?: FormSchema; // For object type
+  itemType?: "string" | "number" | "object" | "boolean" | "date"; // For array type
+  itemProperties?: FormSchema; // For array of objects
   defaultValue?: any;
   placeholder?: string;
   disabled?: boolean;
@@ -68,7 +70,9 @@ type FormBuilderZodField =
   | z.ZodBoolean
   | z.ZodOptional<z.ZodBoolean>
   | z.ZodDate
-  | z.ZodOptional<z.ZodDate>;
+  | z.ZodOptional<z.ZodDate>
+  | z.ZodArray<any>
+  | z.ZodOptional<z.ZodArray<any>>;
 
 function generateFormConfig(schema: FormSchema): {
   zodSchema: z.ZodObject<any>;
@@ -125,6 +129,23 @@ function generateFormConfig(schema: FormSchema): {
           ? generateFormConfig(field.properties).zodSchema
           : z.object({});
         zodField = field.required ? objectField : objectField.optional();
+        break;
+      }
+      case "array": {
+        const schemaMap: Record<string, any> = {
+          string: z.string(),
+          number: z.number(),
+          boolean: z.boolean(),
+          date: z.date(),
+          object: field.itemProperties
+            ? generateFormConfig(field.itemProperties).zodSchema
+            : z.object({}),
+        };
+
+        const arrayItemSchema =
+          schemaMap[field.itemType || "string"] ?? z.any();
+        const arrayField = z.array(arrayItemSchema);
+        zodField = field.required ? arrayField : arrayField.optional();
         break;
       }
       default:
@@ -334,6 +355,45 @@ const RenderField: React.FC<RenderFieldProps> = ({
             ))}
         </div>
       );
+
+    case "array": {
+      return (
+        <FormField
+          control={control}
+          name={currentPath}
+          render={({ field }) => (
+            <FormItem
+              className={cn(horizontal && "grid grid-cols-4 items-start gap-4")}
+            >
+              <FormLabel className={cn(horizontal && "text-left pt-2")}>
+                {fieldSchema.label}
+              </FormLabel>
+              <div className={cn(horizontal && "col-span-3")}>
+                <FormControl>
+                  <Input
+                    placeholder={fieldSchema.placeholder || "Enter JSON array"}
+                    value={field.value ? JSON.stringify(field.value) : ""}
+                    disabled={fieldSchema.disabled}
+                    onChange={(e) => {
+                      try {
+                        const parsed = JSON.parse(e.target.value);
+                        field.onChange(Array.isArray(parsed) ? parsed : []);
+                      } catch {
+                        field.onChange(e.target.value);
+                      }
+                    }}
+                  />
+                </FormControl>
+                {fieldSchema.description && (
+                  <FormDescription>{fieldSchema.description}</FormDescription>
+                )}
+                <FormMessage />
+              </div>
+            </FormItem>
+          )}
+        />
+      );
+    }
 
     default:
       return null;
