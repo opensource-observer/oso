@@ -1,13 +1,14 @@
-import json
+import csv
+import io
 import os
-import typing as t
+import time
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import pandas as pd
 import requests
-from pydantic import BaseModel
-from pyoso.analytics import DataAnalytics, DataStatus
+from pydantic import BaseModel, Field
+from pyoso.analytics import DataAnalytics
 from pyoso.constants import DEFAULT_BASE_URL, OSO_API_KEY
 from pyoso.exceptions import InsufficientCreditError, OsoError, OsoHTTPError
 from pyoso.semantic import create_registry
@@ -55,30 +56,31 @@ class QueryResponse:
         return self._data
 
     @staticmethod
-    def from_response_chunks(
-        response_chunks: t.Iterable[t.Union[bytes, str]],
+    def from_csv_url(
+        url: str,
     ) -> "QueryResponse":
         """Parse HTTP response chunks into QueryResponse."""
-        columns = []
-        data = []
         analytics = {}
 
-        for chunk in response_chunks:
-            if chunk:
-                parsed_obj = json.loads(chunk)
+        response = requests.get(url)
+        response.raise_for_status()
 
-                if "assetStatus" in parsed_obj:
-                    for asset in parsed_obj["assetStatus"]:
-                        data_status = DataStatus.model_validate(asset)
-                        analytics[data_status.key] = data_status
-                elif "columns" in parsed_obj:
-                    columns.extend(parsed_obj["columns"])
-
-                if "data" in parsed_obj:
-                    data.extend(parsed_obj["data"])
+        f = io.StringIO(response.text)
+        reader = csv.reader(f)
+        try:
+            columns = next(reader)
+        except StopIteration:
+            columns = []
+        data = list(reader)
 
         query_data = QueryData(columns=columns, data=data)
         return QueryResponse(data=query_data, analytics=DataAnalytics(analytics))
+
+
+class JsonResponse(BaseModel):
+    id: str
+    status: Literal["queued", "running", "completed", "failed", "canceled"]
+    url: Optional[str] = Field(default=None)
 
 
 @lru_cache(maxsize=1)
@@ -168,19 +170,32 @@ class Client:
         headers["Authorization"] = f"Bearer {self._get_api_key()}"
         try:
             response = requests.post(
-                f"{self.__base_url}sql",
+                f"{self.__base_url}async-sql",
                 headers=headers,
                 json={
                     "query": translated_query,
-                    "format": "minimal",
-                    "includeAnalytics": include_analytics,
                 },
-                stream=True,
             )
             response.raise_for_status()
-            return QueryResponse.from_response_chunks(
-                response.iter_lines(chunk_size=None)
-            )
+            json_response = JsonResponse.model_validate(response.json())
+            period = 1
+            while json_response.status not in ("completed", "failed", "canceled"):
+                response = requests.get(
+                    f"{self.__base_url}async-sql",
+                    headers=headers,
+                    params={"id": json_response.id},
+                )
+                response.raise_for_status()
+                json_response = JsonResponse.model_validate(response.json())
+                time.sleep(period)
+                period = min(period * 2, 10)
+            if json_response.status != "completed" or json_response.url is None:
+                raise requests.HTTPError(
+                    f"Query failed with status: {json_response.status}",
+                    response=response,
+                )
+
+            return QueryResponse.from_csv_url(json_response.url)
         except requests.HTTPError as e:
             if e.response.status_code == 402:
                 error_message = e.response.json()["error"]
