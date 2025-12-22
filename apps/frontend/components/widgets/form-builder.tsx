@@ -128,8 +128,26 @@ function isEmpty(value: unknown): boolean {
   if (value === null || value === undefined) return true;
   if (typeof value === "string") return value.trim() === "";
   if (Array.isArray(value)) return value.length === 0;
-  if (typeof value === "object") return Object.keys(value).length === 0;
+  if (typeof value === "object" && value !== null) {
+    return Object.values(value).every((v) => isEmpty(v));
+  }
   return false;
+}
+
+function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map(stripUndefinedDeep).filter((v) => v !== undefined) as T;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .map(([k, v]) => [k, stripUndefinedDeep(v)])
+        .filter(([, v]) => v !== undefined),
+    ) as T;
+  }
+
+  return value;
 }
 
 function applySkipIfEmpty<T extends z.ZodTypeAny>(
@@ -866,7 +884,9 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
       <FormProvider {...form}>
         <Form {...form}>
           <form
-            onSubmit={safeSubmit(form.handleSubmit(onSubmit))}
+            onSubmit={safeSubmit(
+              form.handleSubmit((x) => onSubmit(stripUndefinedDeep(x))),
+            )}
             className={cn("space-y-6", className)}
           >
             {Object.entries(schema)
