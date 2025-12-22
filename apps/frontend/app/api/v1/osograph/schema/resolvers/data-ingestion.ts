@@ -47,11 +47,18 @@ export const dataIngestionResolvers = {
 
       const { data: config, error: configError } = await supabase
         .from("data_ingestions")
-        .insert({
-          dataset_id: input.datasetId,
-          factory_type: input.factoryType,
-          config: input.config,
-        })
+        .upsert(
+          {
+            dataset_id: input.datasetId,
+            factory_type: input.factoryType,
+            config: input.config,
+            deleted_at: null,
+          },
+          {
+            onConflict: "dataset_id,deleted_at",
+            ignoreDuplicates: false,
+          },
+        )
         .select()
         .single();
 
