@@ -1,0 +1,10 @@
+{{ if .Values.app.roles.clusterRoles }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "app.fullname" . }}-cluster-role
+rules:
+{{ with .Values.app.roles.clusterRoles }}
+  {{- toYaml . | nindent 2 }}
+{{ end }}
+{{ end }}
