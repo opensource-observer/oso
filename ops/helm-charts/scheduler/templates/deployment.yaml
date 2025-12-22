@@ -1,0 +1,95 @@
+{{ range .Values.app.queues }}
+{{ $resources := .resources | default $.Values.app.resources }}
+{{ $tolerations := .tolerations | default $.Values.app.tolerations }}
+{{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
+{{ $affinity := .affinity | default $.Values.app.affinity }}
+{{ $name := required "Queue name is required" .name }}
+{{ $volumeMounts := .volumeMounts | default $.Values.app.volumeMounts }}
+{{ $volumes := .volumes | default $.Values.app.volumes }}
+{{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
+{{ $image := .image | default $.Values.app.image }}
+{{ $extraEnvVars := .envVars | default dict }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.fullname" $ }}-{{ $name | replace "_" "-" }}
+  labels:
+    {{- include "app.labels" $ | nindent 4 }}
+spec:
+  # for now this application is a single process + thread
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ $.Values.app.name }}
+      queue: {{ $name }}
+  template:
+    metadata:
+      labels:
+        queue: {{ $name }}
+        {{- include "app.selectorLabels" $ | nindent 8 }}
+    spec:
+      {{- if .serviceAccountName }}
+      serviceAccountName: {{ .serviceAccountName }}
+      {{- else }}
+      serviceAccountName: {{ include "app.serviceAccountName" $ }}
+      {{- end }}
+      {{- with $affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ $.Values.app.name }}
+        image: {{ $image.repo }}:{{ $image.tag }}
+        {{ if .command -}}
+        command: {{ toYaml .command | nindent 10 }}
+        {{- else -}}
+        command: ["uv"]
+        {{- end }}
+        {{- if .args -}}
+        args: {{ toYaml .args | nindent 10 }}
+        {{- else }}
+        args: 
+          - run
+          - --directory
+          - warehouse/scheduler
+          - scheduler
+          - run
+          - "{{ $name }}"
+        {{- end }}
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 8000
+        {{- with $resources }}
+        resources:
+          {{ toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with $volumeMounts }}
+        volumeMounts:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        env:
+          {{- range $key, $value := $.Values.app.envVars }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
+          {{- range $key, $value := $extraEnvVars }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
+          {{- range $.Values.app.rawEnvVars }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with $volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
