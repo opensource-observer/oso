@@ -89,13 +89,18 @@ def nessie_job() -> AssetFactoryResponse:
         to_hash = config.to_hash or main_ref.hash_
         client.assign_tag("consumer", main_ref.name, to_hash, consumer_ref.hash_)
 
-    @asset(key_prefix="nessie", op_tags={"dagster-k8s/config": K8S_CONFIG})
+    @asset(
+        key_prefix="nessie",
+        op_tags={"dagster-k8s/config": K8S_CONFIG},
+        tags={"opensource.observer/source": "weekly"},
+    )
     async def garbage_collect(
         context: AssetExecutionContext,
         trino: TrinoResource,
         gcs_file_manager: GCSFileResource,
         config: NessieGCConfig,
     ) -> None:
+        print(config)
         async with trino.ensure_available(log_override=context.log):
             async with trino.async_get_client(log_override=context.log) as conn:
                 storage_client = gcs_file_manager.get_client()
@@ -159,7 +164,6 @@ def nessie_job() -> AssetFactoryResponse:
         name="nessie_garbage_collect_job",
         selection=AssetSelection.assets(garbage_collect),
         config=default_gc_job_config,
-        tags={"opensource.observer/source": "weekly"},
     )
 
     return AssetFactoryResponse(
