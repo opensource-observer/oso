@@ -1,0 +1,1 @@
+ALTER TABLE public.data_ingestions ENABLE ROW LEVEL SECURITY;
