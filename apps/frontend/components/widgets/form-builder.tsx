@@ -65,6 +65,7 @@ interface FormSchemaFieldBase {
   hidden?: boolean;
   advanced?: boolean;
   advancedGroup?: string;
+  skipIfEmpty?: boolean;
 }
 
 interface FormSchemaStringField extends FormSchemaFieldBase {
@@ -120,54 +121,68 @@ type FormBuilderZodField =
   | z.ZodDate
   | z.ZodOptional<z.ZodDate>
   | z.ZodArray<z.ZodTypeAny>
-  | z.ZodOptional<z.ZodArray<z.ZodTypeAny>>;
+  | z.ZodOptional<z.ZodArray<z.ZodTypeAny>>
+  | z.ZodEffects<any, any>;
+
+function isEmpty(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (typeof value === "string") return value.trim() === "";
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === "object") return Object.keys(value).length === 0;
+  return false;
+}
+
+function applySkipIfEmpty<T extends z.ZodTypeAny>(
+  schema: T,
+  shouldSkip: boolean,
+): T | z.ZodEffects<T, z.output<T> | undefined, z.input<T>> {
+  if (!shouldSkip) return schema;
+  return schema.transform((val) => (isEmpty(val) ? undefined : val));
+}
 
 const createZodSchema = (field: FormSchemaField): FormBuilderZodField => {
   const makeOptional = <T extends z.ZodTypeAny>(schema: T) =>
     field.required ? schema : schema.optional();
 
-  switch (field.type) {
-    case "string":
-      return makeOptional(
-        field.required
+  const getBaseSchema = (): z.ZodTypeAny => {
+    switch (field.type) {
+      case "string":
+        return field.required
           ? z.string().min(1, { message: `${field.label} is required.` })
-          : z.string(),
-      );
-    case "number":
-      return makeOptional(
-        z.number({ invalid_type_error: `${field.label} must be a number.` }),
-      );
-    case "boolean":
-      return makeOptional(z.boolean());
-    case "date":
-      return makeOptional(
-        z.date({ invalid_type_error: `${field.label} must be a date.` }),
-      );
-    case "object":
-      return makeOptional(
-        field.properties
+          : z.string();
+      case "number":
+        return z.number({
+          invalid_type_error: `${field.label} must be a number.`,
+        });
+      case "boolean":
+        return z.boolean();
+      case "date":
+        return z.date({ invalid_type_error: `${field.label} must be a date.` });
+      case "object":
+        return field.properties
           ? generateFormConfig(field.properties).zodSchema
-          : z.object({}),
-      );
-    case "array": {
-      const itemSchemas: Record<string, z.ZodTypeAny> = {
-        string: z.string(),
-        number: z.number(),
-        boolean: z.boolean(),
-        date: z.date(),
-        object: field.itemProperties
-          ? generateFormConfig(field.itemProperties).zodSchema
-          : z.object({}),
-      };
-      return makeOptional(
-        z.array(itemSchemas[field.itemType || "string"] ?? z.string()),
-      );
+          : z.object({});
+      case "array": {
+        const itemSchemas: Record<string, z.ZodTypeAny> = {
+          string: z.string(),
+          number: z.number(),
+          boolean: z.boolean(),
+          date: z.date(),
+          object: field.itemProperties
+            ? generateFormConfig(field.itemProperties).zodSchema
+            : z.object({}),
+        };
+        return z.array(itemSchemas[field.itemType || "string"] ?? z.string());
+      }
+      default:
+        throw new Error(
+          `Unsupported field type: ${(field as FormSchemaField).type}`,
+        );
     }
-    default:
-      throw new Error(
-        `Unsupported field type: ${(field as FormSchemaField).type}`,
-      );
-  }
+  };
+
+  const optionalWrapped = makeOptional(getBaseSchema());
+  return applySkipIfEmpty(optionalWrapped, field.skipIfEmpty ?? false);
 };
 
 function generateFormConfig<T extends FormSchema>(schema: T) {
