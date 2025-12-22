@@ -244,3 +244,93 @@ export const WithAdvancedGroups: Story = {
     className: "w-[600px]",
   },
 };
+
+const arraySchema: FormSchema = {
+  tags: {
+    type: "array",
+    label: "Tags",
+    itemType: "string",
+    description: "Add tags to categorize your item",
+    required: true,
+  },
+  priorities: {
+    type: "array",
+    label: "Priorities",
+    itemType: "number",
+    description: "Add priority values (numbers)",
+  },
+  features: {
+    type: "array",
+    label: "Features",
+    itemType: "boolean",
+    description: "Toggle features on/off",
+  },
+};
+
+export const WithArrayFields: Story = {
+  args: {
+    schema: arraySchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[600px]",
+  },
+};
+
+const arrayWithOptionsSchema: FormSchema = {
+  categories: {
+    type: "array",
+    label: "Categories",
+    itemType: "string",
+    itemOptions: ["Technology", "Science", "Arts", "Sports", "Music"],
+    description: "Select categories from the list",
+    required: true,
+  },
+  customRoles: {
+    type: "array",
+    label: "Custom Role Names",
+    itemType: "string",
+    description: "Enter custom role names",
+  },
+};
+
+export const WithArrayInputsAndOptions: Story = {
+  args: {
+    schema: arrayWithOptionsSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[600px]",
+  },
+};
+
+const arrayOfObjectsSchema: FormSchema = {
+  resources: {
+    type: "array",
+    label: "Resources",
+    itemType: "object",
+    itemProperties: {
+      name: {
+        type: "string",
+        label: "Resource Name",
+        required: true,
+      },
+      endpoint: {
+        type: "string",
+        label: "Endpoint",
+        required: true,
+      },
+      write_disposition: {
+        type: "string",
+        label: "Write Disposition",
+        options: ["merge", "append", "replace"],
+      },
+    },
+    description: "List of API endpoint definitions",
+    required: true,
+  },
+};
+
+export const WithArrayOfObjects: Story = {
+  args: {
+    schema: arrayOfObjectsSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[700px]",
+  },
+};
