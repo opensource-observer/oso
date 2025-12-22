@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = "==3.12.*"
 resolution-markers = [
     "platform_python_implementation != 'PyPy' and sys_platform != 'emscripten'",
@@ -5383,7 +5383,7 @@ wheels = [
 
 [[package]]
 name = "pyoso"
-version = "0.7.1"
+version = "0.8.0"
 source = { editable = "warehouse/pyoso" }
 dependencies = [
     { name = "pandas" },
