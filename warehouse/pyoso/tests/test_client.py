@@ -26,6 +26,7 @@ class TestClient(TestCase):
     ):
         mock_registry.return_value = Registry()
 
+        # Setup POST response
         mock_post_response = mock.Mock()
         mock_post_response.json.return_value = {
             "id": "query_123",
@@ -47,7 +48,8 @@ class TestClient(TestCase):
                     "url": "http://s3-bucket/result.csv",
                 }
             elif url == "http://s3-bucket/result.csv":
-                mock_resp.text = "column\ntest"
+                # Mock iter_lines for streaming response
+                mock_resp.iter_lines.return_value = iter(["column", "test"])
             else:
                 mock_resp.status_code = 404
 
@@ -98,7 +100,7 @@ class TestClient(TestCase):
             mock_resp = mock.Mock()
             mock_resp.raise_for_status.return_value = None
             if url == "http://s3-bucket/result_def.csv":
-                mock_resp.text = "column\ntest"
+                mock_resp.iter_lines.return_value = iter(["column", "test"])
             return mock_resp
 
         mock_get.side_effect = side_effect_get
@@ -116,7 +118,7 @@ class TestClient(TestCase):
             json={"query": query},
         )
 
-        mock_get.assert_called_with("http://s3-bucket/result_def.csv")
+        mock_get.assert_called_with("http://s3-bucket/result_def.csv", stream=True)
         self.assertEqual(df.columns.tolist(), ["column"])
         self.assertEqual(df.values.tolist(), [["test"]])
 
@@ -179,7 +181,9 @@ class TestClient(TestCase):
             if "connector" in url:
                 mock_resp.json.return_value = connector_response_data
             elif url == "http://s3/sem.csv":
-                mock_resp.text = "id,name\n1,Alice\n2,Bob"
+                mock_resp.iter_lines.return_value = iter(
+                    ["id,name", "1,Alice", "2,Bob"]
+                )
             return mock_resp
 
         mock_get.side_effect = side_effect_get
@@ -197,12 +201,7 @@ class TestClient(TestCase):
 
         # Check columns
         self.assertEqual(result_df.columns.tolist(), ["id", "name"])
-        # Check data - note: pandas convert_dtypes might handle type conversion if inferred,
-        # but mock csv reader returns strings.
-        # "1" (string) vs 1 (int).
-        # We check roughly what we expect.
-        # To be safe against type conversion nuances in test, we can check values or accept strings.
-        # Since the CSV input is string "1", "Alice".
+        # Check data
         self.assertEqual(result_df.iloc[0]["name"], "Alice")
         self.assertEqual(str(result_df.iloc[0]["id"]), "1")
 
@@ -229,7 +228,9 @@ class TestClient(TestCase):
             mock_resp = mock.Mock()
             mock_resp.raise_for_status.return_value = None
             if url == "http://s3/data.csv":
-                mock_resp.text = "column1,column2\nvalue1,value2"
+                mock_resp.iter_lines.return_value = iter(
+                    ["column1,column2", "value1,value2"]
+                )
             return mock_resp
 
         mock_get.side_effect = side_effect_get

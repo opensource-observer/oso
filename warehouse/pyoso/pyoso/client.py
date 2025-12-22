@@ -1,5 +1,4 @@
 import csv
-import io
 import os
 import time
 from functools import lru_cache
@@ -62,11 +61,10 @@ class QueryResponse:
         """Parse HTTP response chunks into QueryResponse."""
         analytics = {}
 
-        response = requests.get(url)
+        response = requests.get(url, stream=True)
         response.raise_for_status()
 
-        f = io.StringIO(response.text)
-        reader = csv.reader(f)
+        reader = csv.reader(response.iter_lines(decode_unicode=True))
         try:
             columns = next(reader)
         except StopIteration:
