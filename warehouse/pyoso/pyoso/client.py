@@ -1,4 +1,4 @@
-import csv
+import json
 import os
 import time
 from functools import lru_cache
@@ -55,7 +55,7 @@ class QueryResponse:
         return self._data
 
     @staticmethod
-    def from_csv_url(
+    def from_jsonl_url(
         url: str,
     ) -> "QueryResponse":
         """Parse HTTP response chunks into QueryResponse."""
@@ -64,12 +64,9 @@ class QueryResponse:
         response = requests.get(url, stream=True)
         response.raise_for_status()
 
-        reader = csv.reader(response.iter_lines(decode_unicode=True))
-        try:
-            columns = next(reader)
-        except StopIteration:
-            columns = []
-        data = list(reader)
+        iterator = response.iter_lines(decode_unicode=True)
+        columns = json.loads(next(iterator))
+        data = [json.loads(line) for line in iterator]
 
         query_data = QueryData(columns=columns, data=data)
         return QueryResponse(data=query_data, analytics=DataAnalytics(analytics))
@@ -186,14 +183,14 @@ class Client:
                 response.raise_for_status()
                 json_response = JsonResponse.model_validate(response.json())
                 time.sleep(period)
-                period = min(period * 2, 10)
+                period = min(period * 2, 5)
             if json_response.status != "completed" or json_response.url is None:
                 raise requests.HTTPError(
                     f"Query failed with status: {json_response.status}",
                     response=response,
                 )
 
-            return QueryResponse.from_csv_url(json_response.url)
+            return QueryResponse.from_jsonl_url(json_response.url)
         except requests.HTTPError as e:
             if e.response.status_code == 402:
                 error_message = e.response.json()["error"]
