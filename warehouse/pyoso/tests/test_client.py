@@ -49,7 +49,7 @@ class TestClient(TestCase):
                 }
             elif url == "http://s3-bucket/result.csv":
                 # Mock iter_lines for streaming response
-                mock_resp.iter_lines.return_value = iter(["column", "test"])
+                mock_resp.iter_lines.return_value = iter(['["column"]', '["test"]'])
             else:
                 mock_resp.status_code = 404
 
@@ -100,7 +100,7 @@ class TestClient(TestCase):
             mock_resp = mock.Mock()
             mock_resp.raise_for_status.return_value = None
             if url == "http://s3-bucket/result_def.csv":
-                mock_resp.iter_lines.return_value = iter(["column", "test"])
+                mock_resp.iter_lines.return_value = iter(['["column"]', '["test"]'])
             return mock_resp
 
         mock_get.side_effect = side_effect_get
@@ -182,7 +182,7 @@ class TestClient(TestCase):
                 mock_resp.json.return_value = connector_response_data
             elif url == "http://s3/sem.csv":
                 mock_resp.iter_lines.return_value = iter(
-                    ["id,name", "1,Alice", "2,Bob"]
+                    ['["id", "name"]', '[1, "Alice"]', '[2, "Bob"]']
                 )
             return mock_resp
 
@@ -229,7 +229,7 @@ class TestClient(TestCase):
             mock_resp.raise_for_status.return_value = None
             if url == "http://s3/data.csv":
                 mock_resp.iter_lines.return_value = iter(
-                    ["column1,column2", "value1,value2"]
+                    ['["column1", "column2"]', '["value1", "value2"]']
                 )
             return mock_resp
 
