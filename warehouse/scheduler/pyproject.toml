@@ -27,6 +27,7 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "structlog>=25.4.0",
     "pyjwt>=2.10.1",
+    "janus>=2.0.0",
 ]
 
 [tool.uv.sources]
