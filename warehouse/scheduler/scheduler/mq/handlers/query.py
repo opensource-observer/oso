@@ -1,4 +1,4 @@
-import csv
+import json
 import typing as t
 
 import aiotrino
@@ -51,7 +51,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
         async with consumer_trino.async_get_client(user=message.user) as client:
             cursor = await client.cursor()
             cursor = await cursor.execute(query.rewritten_query)
-            columns = (column.name for column in await cursor.get_description())
+            columns = [column.name for column in await cursor.get_description()]
             file_path = f"gs://{common_settings.query_bucket}/{convert_uuid_bytes_to_str(message.run_id)}"
             logger.info(f"Writing query results to: {file_path}")
             with storage_client.open(
@@ -59,15 +59,14 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 "w",
                 encoding="utf-8",
                 compression="gzip",
-                content_type="text/csv",
+                content_type="application/jsonl",
                 fixed_key_metadata={"content_encoding": "gzip"},
             ) as f:
-                writer = csv.writer(f)
-                writer.writerow(columns)
+                f.write(json.dumps(columns) + "\n")
                 async for row in aiotrino.utils.aiter(cursor.fetchone, None):
                     if row is None:
                         continue
-                    writer.writerow(row)
+                    f.write(json.dumps(row, default=str) + "\n")
         logger.info("Query results written successfully")
         return SuccessResponse(
             message=f"Processed QueryRunRequest with ID: {message.run_id}"
