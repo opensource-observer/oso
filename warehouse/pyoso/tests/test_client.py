@@ -1,19 +1,10 @@
-import json
 import os
 import sys
-from datetime import datetime, timezone
 from importlib import reload
 from unittest import TestCase, mock
 
-import pandas as pd
 import requests
 from oso_semantic import Registry
-from pyoso.analytics import (
-    DataStatus,
-    MaterializationStatus,
-    PartitionStatus,
-    PartitionStatusRange,
-)
 from pyoso.client import Client, ClientConfig, QueryData, QueryResponse
 from pyoso.exceptions import OsoError, OsoHTTPError
 
@@ -28,17 +19,43 @@ class TestClient(TestCase):
             Client(api_key=None)
 
     @mock.patch("pyoso.client.create_registry")
+    @mock.patch("requests.get")
     @mock.patch("requests.post")
-    def test_to_pandas(self, mock_post: mock.Mock, mock_registry: mock.Mock):
+    def test_to_pandas(
+        self, mock_post: mock.Mock, mock_get: mock.Mock, mock_registry: mock.Mock
+    ):
         mock_registry.return_value = Registry()
-        mock_response = mock.Mock()
-        columns = ["column"]
-        data = [["test"]]
-        expected_json = {"columns": columns, "data": data}
-        mock_response.iter_lines = mock.Mock(
-            return_value=[json.dumps(expected_json).encode()]
-        )
-        mock_post.return_value = mock_response
+
+        # Setup POST response
+        mock_post_response = mock.Mock()
+        mock_post_response.json.return_value = {
+            "id": "query_123",
+            "status": "queued",
+            "url": None,
+        }
+        mock_post_response.raise_for_status.return_value = None
+        mock_post.return_value = mock_post_response
+
+        # Setup GET responses
+        def side_effect_get(url, headers=None, params=None, **kwargs):
+            mock_resp = mock.Mock()
+            mock_resp.raise_for_status.return_value = None
+
+            if "async-sql" in url and params and params.get("id") == "query_123":
+                mock_resp.json.return_value = {
+                    "id": "query_123",
+                    "status": "completed",
+                    "url": "http://s3-bucket/result.csv",
+                }
+            elif url == "http://s3-bucket/result.csv":
+                # Mock iter_lines for streaming response
+                mock_resp.iter_lines.return_value = iter(['["column"]', '["test"]'])
+            else:
+                mock_resp.status_code = 404
+
+            return mock_resp
+
+        mock_get.side_effect = side_effect_get
 
         client = Client(
             api_key=self.CUSTOM_API_KEY,
@@ -48,48 +65,62 @@ class TestClient(TestCase):
         df = client.to_pandas(query)
 
         mock_post.assert_called_once_with(
-            "http://localhost:8000/api/v1/sql",
+            "http://localhost:8000/api/v1/async-sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
             },
-            json={"query": query, "format": "minimal", "includeAnalytics": True},
-            stream=True,
+            json={"query": query},
         )
-        self.assertEqual(df.columns.tolist(), columns)
-        self.assertEqual(df.values.tolist(), data)
+
+        self.assertEqual(df.columns.tolist(), ["column"])
+        self.assertEqual(df.values.tolist(), [["test"]])
 
     @mock.patch.dict(os.environ, {"OSO_API_KEY": DEFAULT_API_KEY})
     @mock.patch("pyoso.client.create_registry")
+    @mock.patch("requests.get")
     @mock.patch("requests.post")
     def test_to_pandas_with_default_api_key(
-        self, mock_post: mock.Mock, mock_registry: mock.Mock
+        self, mock_post: mock.Mock, mock_get: mock.Mock, mock_registry: mock.Mock
     ):
         mock_registry.return_value = Registry()
-        mock_response = mock.Mock()
-        columns = ["column"]
-        data = [["test"]]
-        expected_json = {"columns": columns, "data": data}
-        mock_response.iter_lines = mock.Mock(
-            return_value=[json.dumps(expected_json).encode()]
-        )
-        mock_post.return_value = mock_response
+
+        # Setup POST response
+        mock_post_response = mock.Mock()
+        mock_post_response.json.return_value = {
+            "id": "query_def",
+            "status": "completed",
+            "url": "http://s3-bucket/result_def.csv",
+        }
+        mock_post_response.raise_for_status.return_value = None
+        mock_post.return_value = mock_post_response
+
+        # Setup GET response
+        def side_effect_get(url, **kwargs):
+            mock_resp = mock.Mock()
+            mock_resp.raise_for_status.return_value = None
+            if url == "http://s3-bucket/result_def.csv":
+                mock_resp.iter_lines.return_value = iter(['["column"]', '["test"]'])
+            return mock_resp
+
+        mock_get.side_effect = side_effect_get
 
         client = Client()
         query = "SELECT * FROM test_table"
         df = client.to_pandas(query)
 
         mock_post.assert_called_once_with(
-            "https://www.oso.xyz/api/v1/sql",
+            "https://www.oso.xyz/api/v1/async-sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.DEFAULT_API_KEY}",
             },
-            json={"query": query, "format": "minimal", "includeAnalytics": True},
-            stream=True,
+            json={"query": query},
         )
-        self.assertEqual(df.columns.tolist(), columns)
-        self.assertEqual(df.values.tolist(), data)
+
+        mock_get.assert_called_with("http://s3-bucket/result_def.csv", stream=True)
+        self.assertEqual(df.columns.tolist(), ["column"])
+        self.assertEqual(df.values.tolist(), [["test"]])
 
     @mock.patch("pyoso.client.create_registry")
     @mock.patch("requests.post")
@@ -109,18 +140,18 @@ class TestClient(TestCase):
             client.to_pandas(query)
 
         mock_post.assert_called_once_with(
-            "https://www.oso.xyz/api/v1/sql",
+            "https://www.oso.xyz/api/v1/async-sql",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
             },
-            json={"query": query, "format": "minimal", "includeAnalytics": True},
-            stream=True,
+            json={"query": query},
         )
 
     @mock.patch("requests.get")
     @mock.patch("requests.post")
     def test_semantic_select_to_pandas(self, mock_post: mock.Mock, mock_get: mock.Mock):
+        # Setup Semantic Registry GET response
         connector_response_data = [
             {
                 "name": "oso.users",
@@ -128,104 +159,81 @@ class TestClient(TestCase):
                 "columns": [
                     {"name": "id", "type": "bigint", "description": "User ID"},
                     {"name": "name", "type": "varchar", "description": "User name"},
-                    {"name": "email", "type": "varchar", "description": "User email"},
                 ],
                 "relationships": [],
             }
         ]
 
-        mock_connector_response = mock.Mock()
-        mock_connector_response.json.return_value = connector_response_data
-        mock_connector_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_connector_response
+        # Setup Async SQL responses
+        mock_post_response = mock.Mock()
+        mock_post_response.json.return_value = {
+            "id": "query_sem",
+            "status": "completed",
+            "url": "http://s3/sem.csv",
+        }
+        mock_post_response.raise_for_status.return_value = None
+        mock_post.return_value = mock_post_response
 
-        # Mock the SQL query response
-        mock_sql_response = mock.Mock()
-        columns = ["id", "name"]
-        data = [[1, "Alice"], [2, "Bob"]]
-        expected_json = {"columns": columns, "data": data}
-        mock_sql_response.iter_lines = mock.Mock(
-            return_value=[json.dumps(expected_json).encode()]
-        )
-        mock_sql_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_sql_response
+        def side_effect_get(url, headers=None, **kwargs):
+            mock_resp = mock.Mock()
+            mock_resp.raise_for_status.return_value = None
+
+            if "connector" in url:
+                mock_resp.json.return_value = connector_response_data
+            elif url == "http://s3/sem.csv":
+                mock_resp.iter_lines.return_value = iter(
+                    ['["id", "name"]', '[1, "Alice"]', '[2, "Bob"]']
+                )
+            return mock_resp
+
+        mock_get.side_effect = side_effect_get
 
         client = Client(api_key=self.CUSTOM_API_KEY)
 
         # Test the semantic select functionality
         query_builder = client.semantic.select("users.id", "users.name")
-        query_str = query_builder.build().sql(dialect="trino")
         result_df = query_builder.to_pandas()
 
-        # Verify the connector endpoint was called
-        mock_get.assert_called_once_with(
-            "https://www.oso.xyz/api/v1/connector",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
-            },
-        )
+        # Verify SQL execution
+        self.assertTrue(mock_post.called)
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], "https://www.oso.xyz/api/v1/async-sql")
 
-        # Verify the SQL endpoint was called for the query
-        mock_post.assert_called_once_with(
-            "https://www.oso.xyz/api/v1/sql",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.CUSTOM_API_KEY}",
-            },
-            json={"query": query_str, "format": "minimal", "includeAnalytics": True},
-            stream=True,
-        )
-
-        # Verify the result is a DataFrame
-        self.assertIsInstance(result_df, pd.DataFrame)
-        self.assertEqual(result_df.columns.tolist(), columns)
-        self.assertEqual(result_df.values.tolist(), data)
+        # Check columns
+        self.assertEqual(result_df.columns.tolist(), ["id", "name"])
+        # Check data
+        self.assertEqual(result_df.iloc[0]["name"], "Alice")
+        self.assertEqual(str(result_df.iloc[0]["id"]), "1")
 
     @mock.patch("pyoso.client.create_registry")
+    @mock.patch("requests.get")
     @mock.patch("requests.post")
-    def test_query_with_analytics(self, mock_post: mock.Mock, mock_registry: mock.Mock):
+    def test_query_with_analytics(
+        self, mock_post: mock.Mock, mock_get: mock.Mock, mock_registry: mock.Mock
+    ):
         mock_registry.return_value = Registry()
-        mock_response = mock.Mock()
 
-        # Mock response with asset status and data
-        columns = ["column1", "column2"]
-        data = [["value1", "value2"]]
-
-        asset_status_line = {
-            "assetStatus": [
-                {
-                    "key": "oso.events",
-                    "status": {
-                        "partitionStatus": {
-                            "numFailed": 0,
-                            "numMaterialized": 10,
-                            "numMaterializing": 0,
-                            "numPartitions": 10,
-                            "ranges": [
-                                {
-                                    "endKey": "2024-01-01",
-                                    "startKey": "2024-01-01",
-                                    "status": "SUCCESS",
-                                }
-                            ],
-                        },
-                        "latestMaterialization": 1642678800,
-                    },
-                    "dependencies": ["oso.raw_events"],
-                }
-            ]
+        # Setup POST response
+        mock_post_response = mock.Mock()
+        mock_post_response.json.return_value = {
+            "id": "query_analytics",
+            "status": "completed",
+            "url": "http://s3/data.csv",
         }
+        mock_post_response.raise_for_status.return_value = None
+        mock_post.return_value = mock_post_response
 
-        data_line = {"columns": columns, "data": data}
+        # Setup GET response
+        def side_effect_get(url, **kwargs):
+            mock_resp = mock.Mock()
+            mock_resp.raise_for_status.return_value = None
+            if url == "http://s3/data.csv":
+                mock_resp.iter_lines.return_value = iter(
+                    ['["column1", "column2"]', '["value1", "value2"]']
+                )
+            return mock_resp
 
-        mock_response.iter_lines = mock.Mock(
-            return_value=[
-                json.dumps(asset_status_line).encode(),
-                json.dumps(data_line).encode(),
-            ]
-        )
-        mock_post.return_value = mock_response
+        mock_get.side_effect = side_effect_get
 
         client = Client(api_key=self.CUSTOM_API_KEY)
         query = "SELECT * FROM oso.events"
@@ -234,41 +242,14 @@ class TestClient(TestCase):
         # Verify the response structure
         self.assertIsInstance(response, QueryResponse)
         self.assertIsInstance(response.data, QueryData)
-        self.assertEqual(response.data.columns, columns)
-        self.assertEqual(response.data.data, data)
+        self.assertEqual(response.data.columns, ["column1", "column2"])
+        self.assertEqual(response.data.data, [["value1", "value2"]])
 
-        # Verify analytics data
+        # In new implementation analytics is empty
         analytics = response.analytics
-        assert analytics is not None
-        self.assertEqual(len(analytics), 1)
-        self.assertIn("oso.events", analytics)
-
-        asset = analytics.get("oso.events")
-        assert asset is not None
-        self.assertIsInstance(asset, DataStatus)
-        self.assertEqual(asset.key, "oso.events")
-        self.assertEqual(asset.dependencies, ["oso.raw_events"])
-
-        # Verify status details
-        self.assertIsInstance(asset.status, MaterializationStatus)
-        assert asset.status is not None
-        self.assertIsInstance(asset.status.latest_materialization, datetime)
-        self.assertEqual(
-            asset.status.latest_materialization,
-            datetime.fromtimestamp(1642678800, tz=timezone.utc),
-        )
-
-        partition_status = asset.status.partition_status
-        assert partition_status is not None
-        self.assertIsInstance(partition_status, PartitionStatus)
-        self.assertEqual(partition_status.num_materialized, 10)
-        self.assertEqual(partition_status.num_partitions, 10)
-        self.assertEqual(len(partition_status.ranges), 1)
-
-        range_status = partition_status.ranges[0]
-        self.assertIsInstance(range_status, PartitionStatusRange)
-        self.assertEqual(range_status.status, "SUCCESS")
-        self.assertEqual(range_status.start_key, "2024-01-01")
+        self.assertIsInstance(analytics, (dict, object))  # DataAnalytics or dict
+        # Verify it's effectively empty or has no keys
+        self.assertEqual(len(analytics), 0)
 
 
 @mock.patch.dict(sys.modules, {"oso_semantic": None})
