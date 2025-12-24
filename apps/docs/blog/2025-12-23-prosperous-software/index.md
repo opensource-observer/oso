@@ -8,6 +8,8 @@ tags: [featured, perspective, open-source]
 
 _Bringing sustainable funding to public goods by revenue-sharing towards dependencies_
 
+<!-- truncate -->
+
 ![prosperity-city](./prosperity-city.png)
 
 The past 2 open source movements have yielded transformative effects to the software industry. The **Free Software Movement** led to the birth of Linux, GNU, and countless fundamental technologies that lie at the heart of nearly all modern computing systems. The later **Open Source Movement** led to an explosion of open source software in nearly every industry. Today, 99% of companies use free and open source (FOSS) software, and 70%+ of lines of code shipped to production comes from open source libraries \[[1](https://www.synopsys.com/software-integrity/resources/analyst-reports/open-source-security-risk-analysis.html#introMenu),[2](https://www.linuxfoundation.org/blog/blog/a-summary-of-census-ii-open-source-software-application-libraries-the-world-depends-on)\]. FOSS software is the bedrock of the entire economy, which has been growing exponentially with technology.
