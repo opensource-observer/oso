@@ -1,7 +1,9 @@
+import asyncio
 import os
 import typing as t
 import uuid
 
+import httpx
 import structlog
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1
@@ -304,6 +306,62 @@ class PublishQueryRunRequest(BaseSettings):
         )
 
 
+class AsyncQueryBatchTest(BaseSettings):
+    """Subcommand to that expects the frontend service to be available and calls
+    the async query endpoint with many requests."""
+
+    model_config = SettingsConfigDict(env_prefix="scheduler_")
+
+    query: str = Field(
+        description="The SQL query to send in each request",
+    )
+    num_messages: int = Field(
+        default=10,
+        description="The number of QueryRunRequest messages to publish",
+    )
+    port: int = Field(
+        default=3000,
+        description="The port where the frontend service is running",
+    )
+    host: str = Field(
+        default="localhost",
+        description="The host where the frontend service is running",
+    )
+    path: str = Field(
+        default="/api/v1/async-sql",
+        description="The path for the async query endpoint",
+    )
+    oso_api_key: str = Field(
+        description="The OSO API key for authentication",
+    )
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        posted_requests: list[t.Coroutine[None, None, httpx.Response]] = []
+        async with httpx.AsyncClient() as client:
+            for i in range(self.num_messages):
+                query = self.query
+                payload = {
+                    "query": query,
+                }
+                url = f"http://{self.host}:{self.port}{self.path}"
+                headers = {"Authorization": f"Bearer {self.oso_api_key}"}
+                print(url)
+                posted_requests.append(client.post(url, json=payload, headers=headers))
+            success_count = 0
+            failed_count = 0
+            for response in await asyncio.gather(*posted_requests):
+                if response.status_code >= 200 and response.status_code < 300:
+                    success_count += 1
+                else:
+                    failed_count += 1
+                    print(
+                        f"Request failed with status {response.status_code}: {response.text}"
+                    )
+            print(
+                f"Batch test completed. Successful requests: {success_count}, Failed requests: {failed_count}"
+            )
+
+
 class Publish(BaseSettings):
     """Subcommand to run the async worker publisher"""
 
@@ -318,6 +376,7 @@ class Testing(BaseSettings):
     """Subcommand to run tests for the async worker"""
 
     publish: CliSubCommand[Publish]
+    async_query_batch_test: CliSubCommand[AsyncQueryBatchTest]
     create_system_jwt_secret: CliSubCommand[CreateSystemJWTSecret]
 
     async def cli_cmd(self, context: CliContext) -> None:
