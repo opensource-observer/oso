@@ -27,7 +27,7 @@
     "update:deps": "ncu -i",
     "storybook": "storybook dev -p 3000",
     "build:storybook": "storybook build",
-    "plasmic:info": "dotenv -e .env.local -- pnpm plasmic info $PLASMIC_PROJECT_ID >> .plasmic-latest-info.txt"
+    "plasmic:info": "dotenv -e .env.local -- bash -c 'pnpm plasmic info -p $PLASMIC_PROJECT_ID >> .plasmic-latest-info.txt'"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",
