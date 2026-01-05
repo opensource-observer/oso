@@ -5,17 +5,17 @@
 [gha]: https://github.com/opensource-observer/oso/actions/workflows/ci-default.yml
 [gha-badge]: https://github.com/opensource-observer/oso/actions/workflows/ci-default.yml/badge.svg
 
-Open Source Observer is a free analytics suite that helps funders measure the impact of open source software contributions to the health of their ecosystem.
+Open Source Observer (OSO) is an open source AI-driven data platform.
 
-[opensource.observer](https://www.opensource.observer)
+[oso.xyz](https://www.oso.xyz)
 
 ## Organization
 
 - `/apps`: The OSO apps
   - `/docs`: documentation (Docusaurus)
-    - [on Cloudflare](https://docs.opensource.observer/) - Production build
+    - [on Cloudflare](https://docs.oso.xyz/) - Production build
   - `/frontend`: frontend application (Next.js)
-    - [on Vercel](https://www.opensource.observer) - Production build
+    - [on Vercel](https://www.oso.xyz) - Production build
   - `/hasura-clickhouse`: API service (Hasura+Clickhouse) - Production
   - `/hasura-trino`: API service (Hasura+Trino) - Production
 - `/docker`: Docker files
@@ -68,7 +68,7 @@ uv sync --all-packages
 
 For setup and common operations for each subproject, navigate into the respective directory and check out the `README.md`.
 
-You can also find some operations guides on our [documentation](https://docs.opensource.observer/docs/guides/ops/).
+You can also find some operations guides on our [documentation](https://docs.oso.xyz/docs/guides/ops/).
 
 ## License
 
@@ -79,4 +79,4 @@ is released under Apache 2.0
 This repository does not contain data.
 Datasets may include material that may be subject to third party rights.
 For details on each dataset, see
-the [Data Overview](https://docs.opensource.observer/docs/integrate/datasets/).
+the [Data Overview](https://docs.oso.xyz/docs/integrate/datasets/).
