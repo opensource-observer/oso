@@ -13,8 +13,8 @@ MODEL (
 
 @DEF(min_package_connection_count, 3);
 @DEF(min_developer_connection_count, 5);
-@DEF(start_gas_date, DATE('2025-10-01'));
-@DEF(end_gas_date, DATE('2025-11-01'));
+@DEF(start_gas_date, DATE('2025-12-01'));
+@DEF(end_gas_date, DATE('2026-01-01'));
 
 WITH devtooling_projects AS (
   SELECT
