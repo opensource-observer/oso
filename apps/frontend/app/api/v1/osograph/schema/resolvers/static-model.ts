@@ -146,21 +146,21 @@ export const staticModelResolvers = {
       const authenticatedUser = requireAuthentication(context.user);
       const supabase = createAdminClient();
 
-      const { data: dataModel, error: dataModelError } = await supabase
+      const { data: staticModel, error: staticModelError } = await supabase
         .from("static_model")
-        .select("org_id")
+        .select("org_id, dataset_id")
         .eq("id", staticModelId)
         .single();
 
-      if (dataModelError || !dataModel) {
+      if (staticModelError || !staticModel) {
         throw ResourceErrors.notFound("StaticModel", staticModelId);
       }
 
-      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
+      await requireOrgMembership(authenticatedUser.userId, staticModel.org_id);
 
       const presignedUrl = await putSignedUrl(
         FILES_BUCKET,
-        `${dataModel.org_id}/${staticModelId}`,
+        `${staticModel.dataset_id}/${staticModelId}`,
         SIGNED_URL_EXPIRY,
       );
 
