@@ -17,4 +17,3 @@ SELECT DISTINCT
   LOWER(attester::VARCHAR) AS attester,
   @from_unix_timestamp(time_created) AS time_created
 FROM @oso_source('bigquery.openlabelsinitiative.labels_decoded') AS labels
-WHERE revoked = False
