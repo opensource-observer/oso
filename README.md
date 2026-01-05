@@ -7,7 +7,7 @@
 
 Open Source Observer (OSO) is an open source AI-driven data platform.
 
-[opensource.observer](https://www.oso.xyz)
+[oso.xyz](https://www.oso.xyz)
 
 ## Organization
 
