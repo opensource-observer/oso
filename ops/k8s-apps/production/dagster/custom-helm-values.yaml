@@ -3,6 +3,9 @@ kind: HelmRelease
 metadata:
   name: production-dagster
 spec:
+  install:
+    disableSchemaValidation: true
+    disableOpenAPIValidation: true
   values:
     # We should eventually set this to 0, but we are setting it to 1 to gather
     # timing data
