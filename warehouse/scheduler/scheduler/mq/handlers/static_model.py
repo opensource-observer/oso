@@ -1,3 +1,4 @@
+import asyncio
 import typing as t
 
 import dlt
@@ -59,10 +60,13 @@ class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
 
                     pipeline = dlt.pipeline(
                         pipeline_name=f"static_model_{model_id}",
+                        dataset_name=schema_name,
                         destination=dlt_destination_instance,
                     )
 
-                    pipeline.run(source_csvs.with_name(table_name))
+                    await asyncio.to_thread(
+                        pipeline.run, source_csvs.with_name(table_name)
+                    )
 
                     context.log.info(
                         f"Completed processing static model {model_id} for dataset {message.dataset_id}"
