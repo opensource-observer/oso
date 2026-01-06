@@ -1,6 +1,7 @@
 import typing as t
 
 import structlog
+from dlt.sources.credentials import AwsCredentials, FileSystemCredentials
 from oso_core.resources import ResourcesContext, ResourcesRegistry, resource_factory
 from oso_dagster.resources import GCSFileResource
 from oso_dagster.resources.duckdb import DuckDBResource
@@ -246,6 +247,24 @@ def dlt_destination_factory(
         )
 
 
+@resource_factory("upload_filesystem_credentials")
+def upload_filesystem_credentials_factory(
+    common_settings: "CommonSettings",
+) -> FileSystemCredentials | None:
+    """Factory function to create DLT filesystem credentials resource."""
+
+    if (
+        common_settings.upload_filesystem_access_key_id
+        and common_settings.upload_filesystem_secret_access_key
+    ):
+        return AwsCredentials(
+            aws_access_key_id=common_settings.upload_filesystem_access_key_id,
+            aws_secret_access_key=common_settings.upload_filesystem_secret_access_key,
+            endpoint_url=common_settings.upload_filesystem_endpoint_url,
+        )
+    return None
+
+
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
     registry.add_singleton("common_settings", common_settings)
@@ -265,5 +284,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(materialization_strategy_factory)
     registry.add(dlt_destination_factory)
     registry.add(gcs_factory)
+    registry.add(upload_filesystem_credentials_factory)
 
     return registry
