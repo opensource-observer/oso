@@ -6,7 +6,7 @@ metadata:
 spec:
   chart:
     spec:
-      chart: ./ops/helm-charts/generic
+      chart: ./ops/helm-charts/scheduler
       sourceRef:
         kind: GitRepository
         name: flux-system
