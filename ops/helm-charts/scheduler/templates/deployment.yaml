@@ -1,4 +1,4 @@
-{{ range .Values.app.queues }}
+{{- range .Values.app.queues -}}
 {{ $resources := .resources | default $.Values.app.resources }}
 {{ $tolerations := .tolerations | default $.Values.app.tolerations }}
 {{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
