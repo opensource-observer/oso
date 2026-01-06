@@ -37,6 +37,7 @@ from scheduler.materialization.trino import TrinoMaterializationStrategyResource
 from scheduler.mq.handlers.data_ingestion import DataIngestionRunRequestHandler
 from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
 from scheduler.mq.handlers.query import QueryRunRequestHandler
+from scheduler.mq.handlers.static_model import StaticModelRunRequestHandler
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
@@ -208,6 +209,7 @@ def message_handler_registry_factory() -> MessageHandlerRegistry:
     registry.register(DataModelRunRequestHandler())
     registry.register(DataIngestionRunRequestHandler())
     registry.register(QueryRunRequestHandler())
+    registry.register(StaticModelRunRequestHandler())
     return registry
 
 
@@ -261,6 +263,7 @@ def upload_filesystem_credentials_factory(
             aws_access_key_id=common_settings.upload_filesystem_access_key_id,
             aws_secret_access_key=common_settings.upload_filesystem_secret_access_key,
             endpoint_url=common_settings.upload_filesystem_endpoint_url,
+            region_name="auto",
         )
     return None
 

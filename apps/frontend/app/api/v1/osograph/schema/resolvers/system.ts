@@ -229,7 +229,8 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
         const tableIdHasValidPrefix =
           tableId.startsWith("data_model_") ||
           tableId.startsWith("data_ingestion_") ||
-          tableId.startsWith("data_connection_");
+          tableId.startsWith("data_connection_") ||
+          tableId.startsWith("static_model_");
         if (!tableIdHasValidPrefix) {
           throw ValidationErrors.invalidInput(
             "tableId",
