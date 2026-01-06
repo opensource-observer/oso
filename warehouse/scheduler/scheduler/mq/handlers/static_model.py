@@ -38,7 +38,7 @@ class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
             dataset_schema=f"static_model_{message.run_id}"
         ) as dlt_destination_instance:
             source_csvs = readers(
-                bucket_url="s3://${put_bucket_here}",
+                bucket_url=common_settings.upload_filesystem_bucket_url,
                 credentials=upload_filesystem_credentials,
                 file_glob="{dataset_id}/*",
             ).read_csv()
