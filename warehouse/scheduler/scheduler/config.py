@@ -92,7 +92,7 @@ class CommonSettings(BaseSettings):
     )
 
     upload_filesystem_bucket_url: str = Field(
-        default="static-model-files",
+        default="s3://static-model-files",
         description="The filesystem bucket URL for uploading static model files",
     )
 
