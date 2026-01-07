@@ -79,7 +79,7 @@ INTERVAL_CONVERSION: dict[str, tuple[int, str]] = {
 def time_aggregation_bucket(
     evaluator: MacroEvaluator, time_exp: exp.Expression, interval: str, offset: int = 0
 ):
-    if evaluator.runtime_stage in ["loading", "creating"]:
+    if evaluator.runtime_stage in ["loading"]:
         return parse_one("STR_TO_DATE('1970-01-01', '%Y-%m-%d')")
 
     if interval == "over_all_time":

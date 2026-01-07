@@ -18,7 +18,7 @@ def from_unix_timestamp(
         data_type, dialect=t.cast(str, evaluator.dialect), into=exp.DataType
     )
 
-    if evaluator.runtime_stage in ["loading", "creating"]:
+    if evaluator.runtime_stage in ["loading"]:
         return exp.Cast(
             this=exp.Literal(this="1970-01-01", is_string=True),
             to=exp.DataType(this=output_data_type),
