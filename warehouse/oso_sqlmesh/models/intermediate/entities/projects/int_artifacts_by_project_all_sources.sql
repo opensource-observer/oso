@@ -18,9 +18,27 @@ MODEL (
 );
 
 WITH unioned AS (
-  SELECT * FROM oso.int_artifacts_by_project_all_unioned_not_distinct
+  SELECT 
+    abp_unioned.project_id,
+    abp_unioned.artifact_id,
+    abp_unioned.artifact_source_id,
+    abp_unioned.artifact_source,
+    abp_unioned.artifact_type,
+    abp_unioned.artifact_namespace,
+    abp_unioned.artifact_name,
+    abp_unioned.artifact_url 
+  FROM oso.int_artifacts_by_project_all_unioned_not_distinct as abp_unioned
   UNION ALL
-  SELECT * FROM oso.int_artifacts_by_project_discovered
+  SELECT 
+    discovered.project_id,
+    discovered.artifact_id,
+    discovered.artifact_source_id,
+    discovered.artifact_source,
+    discovered.artifact_type,
+    discovered.artifact_namespace,
+    discovered.artifact_name,
+    discovered.artifact_url 
+  FROM oso.int_artifacts_by_project_discovered as discovered
 )
 
 SELECT DISTINCT
