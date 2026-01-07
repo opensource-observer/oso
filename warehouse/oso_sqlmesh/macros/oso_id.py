@@ -5,7 +5,7 @@ from sqlmesh.core.macros import MacroEvaluator
 
 def _generate_oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
     """Creates a deterministic ID by concatenating the arguments and hashing them."""
-    if evaluator.runtime_stage in ["loading"]:
+    if evaluator.runtime_stage == "loading":
         return exp.Literal(this="someid", is_string=True)
     concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
     if evaluator.engine_adapter.dialect == "trino":
