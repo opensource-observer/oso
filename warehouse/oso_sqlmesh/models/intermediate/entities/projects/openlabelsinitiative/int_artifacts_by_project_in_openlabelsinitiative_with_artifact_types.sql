@@ -22,5 +22,6 @@ SELECT
   oli.artifact_name,
   oli.artifact_url
 FROM oso.int_artifacts_by_project_in_openlabelsinitiative AS oli
-LEFT JOIN oso.artifacts_v1 AS artifacts
+LEFT JOIN oso.int_artifacts__blockchain AS artifacts
   ON artifacts.artifact_id = oli.artifact_id
+  AND artifacts.artifact_source = oli.artifact_source
