@@ -4,8 +4,7 @@ MODEL (
   dialect trino,
   partitioned_by (
     artifact_source,
-    artifact_type,
-    project_source
+    artifact_type
   ),
   grain (project_id, artifact_id),
   tags (
