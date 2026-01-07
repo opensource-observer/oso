@@ -2,7 +2,7 @@ MODEL (
   name oso.int_artifacts,
   description 'All artifacts',
   kind FULL,
-  partitioned_by ("artifact_source", "artifact_type"),
+  partitioned_by (bucket(artifact_id, 128), "artifact_source"),
   audits (
     has_at_least_n_rows(threshold := 0)
   )
