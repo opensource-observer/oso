@@ -3,7 +3,7 @@ import typing as t
 
 from queryrewriter.dialect import extend_sqlglot, parse
 from sqlglot import exp
-from sqlglot.optimizer.qualify import qualify
+from sqlglot.optimizer.qualify_tables import qualify_tables
 from sqlglot.optimizer.scope import Scope, build_scope
 
 from .types import RewriteResponse, TableResolver
@@ -161,7 +161,7 @@ async def rewrite_query(
 
     # Qualify all the statements. This is just good form to ensure consistent
     # rewriting comparisons for tests
-    qualified_statements = [qualify(statement) for statement in statements]
+    qualified_statements = [qualify_tables(statement) for statement in statements]
 
     # For each statement, find table references and store the references. We
     # will resolve all the table names at once and rewrite the query at the end.
@@ -194,7 +194,9 @@ async def rewrite_query(
         if not resolved_table:
             raise ValueError(f"Table {fqn} could not be resolved.")
 
-        qualified_resolved_table = qualify(resolved_table)
+        resolved_table = resolved_table.copy()
+
+        qualified_resolved_table = qualify_tables(resolved_table)
         assert isinstance(qualified_resolved_table, exp.Table), (
             "Resolved table is not a Table expression."
         )
