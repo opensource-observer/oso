@@ -4,6 +4,7 @@ MODEL (
   dialect trino,
   grain (project_id, artifact_id),
   tags (
+    'entity_category=artifact',
     'entity_category=project'
   ),
   audits (
