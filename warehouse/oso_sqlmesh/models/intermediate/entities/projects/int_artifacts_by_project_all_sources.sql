@@ -17,104 +17,10 @@ MODEL (
   )
 );
 
-WITH unioned_artifacts_by_project AS (
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM oso.int_artifacts_by_project_in_ossd
+WITH unioned AS (
+  SELECT * FROM oso.int_artifacts_by_project_all_unioned_not_distinct
   UNION ALL
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_name AS artifact_url
-  FROM oso.int_artifacts_by_project_in_ossd_downstream
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM oso.int_artifacts_by_project_in_op_atlas
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM oso.int_artifacts_by_project_in_op_atlas_downstream
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    'REPOSITORY' AS artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM oso.int_artifacts_by_project_in_crypto_ecosystems
-  UNION ALL
-  SELECT
-    project_id,
-    artifact_id,
-    artifact_source_id,
-    artifact_source,
-    'DEFILLAMA_PROTOCOL' AS artifact_type,
-    artifact_namespace,
-    artifact_name,
-    artifact_url
-  FROM oso.int_artifacts_by_project_in_defillama
-  UNION ALL
-  SELECT
-    oli.project_id,
-    oli.artifact_id,
-    oli.artifact_source_id,
-    oli.artifact_source,
-    artifacts.artifact_type,
-    oli.artifact_namespace,
-    oli.artifact_name,
-    oli.artifact_url
-  FROM oso.int_artifacts_by_project_in_openlabelsinitiative AS oli
-  LEFT JOIN oso.int_artifacts AS artifacts
-    ON artifacts.artifact_id = oli.artifact_id
-),
-discovered_artifacts_by_project AS (
-  SELECT
-    u.project_id,
-    p.package_artifact_id AS artifact_id,
-    p.package_artifact_name AS artifact_source_id,
-    p.package_artifact_source AS artifact_source,
-    'PACKAGE' AS artifact_type,
-    p.package_artifact_namespace AS artifact_namespace,
-    p.package_artifact_name AS artifact_name,
-    p.package_artifact_url AS artifact_url
-  FROM oso.int_packages__current_maintainer_only AS p
-  JOIN unioned_artifacts_by_project AS u
-    ON p.package_owner_artifact_id = u.artifact_id
-),
-unioned AS (
-  SELECT * FROM unioned_artifacts_by_project
-  UNION ALL
-  SELECT * FROM discovered_artifacts_by_project
+  SELECT * FROM oso.int_artifacts_by_project_discovered
 )
 
 SELECT DISTINCT
