@@ -91,6 +91,25 @@ class CommonSettings(BaseSettings):
         description="API key for authenticating with the OSO system",
     )
 
+    upload_filesystem_bucket_url: str = Field(
+        default="s3://static-model-files",
+        description="The filesystem bucket URL for uploading static model files",
+    )
+
+    upload_filesystem_access_key_id: str = Field(
+        default="",
+        description="The access key ID for the upload filesystem",
+    )
+
+    upload_filesystem_secret_access_key: str = Field(
+        default="",
+        description="The secret access key for the upload filesystem",
+    )
+    upload_filesystem_endpoint_url: str = Field(
+        default="",
+        description="The endpoint URL for the upload filesystem",
+    )
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         if not self.local_duckdb_path:
@@ -107,6 +126,17 @@ class CommonSettings(BaseSettings):
             self.emulator_enabled = True
         if self.env == "production":
             self.trino_enabled = True
+
+            assert self.upload_filesystem_access_key_id != "", (
+                "upload_filesystem_access_key_id must be set in production"
+            )
+            assert self.upload_filesystem_secret_access_key != "", (
+                "upload_filesystem_secret_access_key must be set in production"
+            )
+            assert self.upload_filesystem_endpoint_url != "", (
+                "upload_filesystem_endpoint_url must be set in production"
+            )
+
         return self
 
 

@@ -263,6 +263,7 @@ export const CreateDataConnectorRunRequestSchema = z.object({
 
 export const CreateStaticModelRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
+  selectedModels: z.array(z.string()),
 });
 
 export const StartRunSchema = z.object({

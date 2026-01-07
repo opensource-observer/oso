@@ -55,7 +55,7 @@ class TrinoDLTDestinationResource(DLTDestinationResource):
         async with self._trino.async_get_client(log_override=logger) as conn:
             cursor = await conn.cursor()
             await cursor.execute(
-                f"CREATE SCHEMA IF NOT EXISTS {self._catalog}.{dataset_schema}"
+                f'CREATE SCHEMA IF NOT EXISTS "{self._catalog}"."{dataset_schema}"'
             )
             user = conn.user or "scheduler"
             credentials = f"trino://{user}@{conn.host}:{conn.port}/{self._catalog}/{dataset_schema}"

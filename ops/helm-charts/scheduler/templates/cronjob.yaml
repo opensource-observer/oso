@@ -1,0 +1,79 @@
+{{ range .Values.app.crons }}
+{{ $resources := .resources | default $.Values.app.resources }}
+{{ $tolerations := .tolerations | default $.Values.app.tolerations }}
+{{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
+{{ $affinity := .affinity | default $.Values.app.affinity }}
+{{ $name := required "Cron name is required" .name }}
+{{ $volumeMounts := .volumeMounts | default $.Values.app.volumeMounts }}
+{{ $volumes := .volumes | default $.Values.app.volumes }}
+{{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
+{{ $image := .image | default $.Values.app.image }}
+{{ $extraEnvVars := .envVars | default dict }}
+{{ $args := required "Cron args are required" .args }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "app.fullname" $ }}-{{ $name | replace "_" "-" }}
+  labels:
+    {{- include "app.labels" $ | nindent 4 }}
+spec:
+  # Run the main cron every hour
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            cron: {{ $name }}
+            {{- include "app.selectorLabels" $ | nindent 12 }}
+        spec:
+          restartPolicy: OnFailure
+          {{- if .serviceAccountName }}
+          serviceAccountName: {{ .serviceAccountName }}
+          {{- else }}
+          serviceAccountName: {{ include "app.serviceAccountName" $ }}
+          {{- end }}
+          {{- with $affinity }}
+          affinity:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $nodeSelector }}
+          nodeSelector:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $tolerations }}
+          tolerations:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+          - name: {{ $.Values.app.name }}
+            image: {{ $image.repo }}:{{ $image.tag }}
+            {{- if .command -}}
+            command: {{ toYaml .command | nindent 12 }}
+            {{- else -}}
+            command: ["uv"]
+            {{- end }}
+            args: {{ toYaml $args | nindent 12 }}
+            imagePullPolicy: Always
+            {{- with $resources }}
+            resources:
+              {{ toYaml . | nindent 14 }}
+            {{- end }}
+            {{- with $volumeMounts }}
+            volumeMounts:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            env:
+              {{- range $key, $value := $.Values.app.envVars }}
+              - name: {{ $key }}
+                value: {{ $value | quote }}
+              {{- end }}
+              {{- range $.Values.app.rawEnvVars }}
+                {{- toYaml . | nindent 14 }}
+              {{- end }}
+          {{- with $volumes }}
+          volumes:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end -}}

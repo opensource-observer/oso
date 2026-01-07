@@ -1,8 +1,10 @@
 import uuid
 
 import structlog
+from dlt.common.schema import TTableSchemaColumns
 from queryrewriter.types import TableResolver
 from scheduler.graphql_client.client import Client as OSOClient
+from scheduler.types import DataModelColumnInput
 from sqlglot import exp
 
 logger = structlog.getLogger(__name__)
@@ -83,3 +85,30 @@ class OSOClientTableResolver(TableResolver):
             result[key] = exp.to_table(resolved.fqn)
 
         return result
+
+
+def dlt_to_oso_schema(
+    columns: TTableSchemaColumns | None,
+) -> list[DataModelColumnInput]:
+    """Convert DLT schema to OSO schema.
+
+    Args:
+        columns: The DLT columns.
+
+    Returns:
+        The OSO schema.
+    """
+    if not columns:
+        return []
+    oso_columns: list[DataModelColumnInput] = []
+    for col in columns.values():
+        name = col.get("name")
+        data_type = col.get("data_type")
+        if not name or not data_type:
+            logger.warning(
+                "Column missing name or data_type",
+                extra={"column": col},
+            )
+            continue
+        oso_columns.append(DataModelColumnInput(name=name, type=data_type))
+    return oso_columns

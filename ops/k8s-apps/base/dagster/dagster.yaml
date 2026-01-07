@@ -22,6 +22,8 @@ spec:
         namespace: flux-system
   interval: 50m
   install:
+    disableSchemaValidation: true
+    disableOpenAPIValidation: true
     timeout: 15m
     remediation:
       retries: 3
