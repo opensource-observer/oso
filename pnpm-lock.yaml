@@ -148,8 +148,8 @@ importers:
         specifier: ^2.11.2
         version: 2.11.2(encoding@0.1.13)(graphql@16.11.0)
       '@apollo/sandbox':
-        specifier: ^2.7.2
-        version: 2.7.2(bufferutil@4.0.9)(graphql@16.11.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^2.7.3
+        version: 2.7.3(bufferutil@4.0.9)(graphql@16.11.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@apollo/server':
         specifier: ^5.0.0
         version: 5.0.0(graphql@16.11.0)
@@ -1097,8 +1097,8 @@ packages:
     engines: {node: '>=14', npm: '>=6'}
     hasBin: true
 
-  '@apollo/sandbox@2.7.2':
-    resolution: {integrity: sha512-NlH6bcPPkL8tA1mVJFno3ZvhQMzx77Scd+8KTgZl48sikbULKTR5LVdzMd8gFJIxd6uRhBd6nrWY7E80IP7J8Q==}
+  '@apollo/sandbox@2.7.3':
+    resolution: {integrity: sha512-HbjNameLY/uSme7CASmRyoPxYJrfL/0G6E6X48FWvHSkCu6OMw79XBL3uIPVWTxdOKZ3bsF0U7AdwqE4935I8g==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
@@ -14832,6 +14832,7 @@ packages:
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@3.0.0:
     resolution: {integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==}
@@ -15466,7 +15467,7 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@apollo/sandbox@2.7.2(bufferutil@4.0.9)(graphql@16.11.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@apollo/sandbox@2.7.3(bufferutil@4.0.9)(graphql@16.11.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@types/whatwg-mimetype': 3.0.2
       eventemitter3: 3.1.0
