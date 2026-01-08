@@ -40,9 +40,11 @@ allow if {
 # catch any unauthorized table access.
 
 allow if {
+	# These are the base required read-only actions for accessing a table
+	allowed_actions := {"SelectFromColumns", "AccessCatalog", "FilterCatalogs", "FilterTables", "FilterColumns"}
 	startswith(user, "jwt-")
 	current_catalog_name == "user_shared"
-	input.action.operation == "SelectFromColumns"
+	input.action.operation in allowed_actions
 }
 
 # When trying to query a private catalog
