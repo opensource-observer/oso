@@ -40,7 +40,9 @@ allow if {
 # catch any unauthorized table access.
 
 allow if {
-	# These are the base required read-only actions for accessing a table
+	# These are the base required read-only actions for accessing a table 
+	# Unfortunately, Trino does not have good docs for this so this was trial and
+	# error.
 	allowed_actions := {"SelectFromColumns", "AccessCatalog", "FilterCatalogs", "FilterTables", "FilterColumns"}
 	startswith(user, "jwt-")
 	current_catalog_name == "user_shared"
