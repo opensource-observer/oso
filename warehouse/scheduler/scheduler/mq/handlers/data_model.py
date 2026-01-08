@@ -162,7 +162,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                             exists=True,
                         )
 
-                        adapter.insert_append(
+                        adapter.replace_query(
                             table_name=target_table,
                             query_or_df=model.resolved_query(),
                         )
