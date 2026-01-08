@@ -34,6 +34,17 @@ allow if {
 	user in admin_users
 }
 
+# Allow read access to the user_shared iceberg catalog. This currently does
+# limit access to tables within the catalog, that will require additional data
+# in the OPA bundle to enforce. For now, we need to rely on the query rewriter to
+# catch any unauthorized table access.
+
+allow if {
+	startswith(user, "jwt-")
+	current_catalog_name == "user_shared"
+	input.action.operation == "SelectFromColumns"
+}
+
 # When trying to query a private catalog
 allow if {
 	startswith(user, "jwt-")
