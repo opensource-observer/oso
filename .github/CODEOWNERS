@@ -1,4 +1,4 @@
 # Any changes to .github should trigger require one of the ops team to review
-/.github/* @opensource-observer/ops
-/ops/* @opensource-observer/ops
+/.github/**/* @opensource-observer/ops
+/ops/**/* @opensource-observer/ops
 /opa/* @opensource-observer/ops
