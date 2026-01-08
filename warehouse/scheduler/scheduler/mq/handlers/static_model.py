@@ -83,7 +83,7 @@ class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
 
                     await step_context.create_materialization(
                         table_id=f"static_model_{model_id}",
-                        warehouse_fqn=f"iceberg.{schema_name}.{table.get('name')}",
+                        warehouse_fqn=f"{common_settings.warehouse_shared_catalog_name}.{schema_name}.{table.get('name')}",
                         schema=dlt_to_oso_schema(table.get("columns")),
                     )
 

@@ -79,10 +79,11 @@ class CommonSettings(BaseSettings):
         description="Local working directory for the scheduler",
     )
 
-    local_duckdb_path: str = Field(
+    local_duckdb_dir_path: str = Field(
         default="",
-        description="Path to the local DuckDB database file",
+        description="Path to the a directory to store local DuckDB files",
     )
+
     oso_api_url: str = Field(
         description="URL for the OSO API GraphQL endpoint",
     )
@@ -109,14 +110,20 @@ class CommonSettings(BaseSettings):
         default="",
         description="The endpoint URL for the upload filesystem",
     )
+    warehouse_shared_catalog_name: str = Field(
+        default="user_shared",
+        description="The name of the shared catalog in the data warehouse",
+    )
 
     @model_validator(mode="after")
     def handle_generated_config(self):
-        if not self.local_duckdb_path:
-            self.local_duckdb_path = os.path.join(
+        if not self.local_duckdb_dir_path:
+            self.local_duckdb_dir_path = os.path.join(
                 self.local_working_dir,
-                "duckdb.db",
+                ".duckdb_catalogs",
             )
+            # Ensure the directory exists
+            os.makedirs(self.local_duckdb_dir_path, exist_ok=True)
         if not self.local_heartbeat_path:
             self.local_heartbeat_path = os.path.join(
                 self.local_working_dir,
@@ -138,6 +145,13 @@ class CommonSettings(BaseSettings):
             )
 
         return self
+
+    @property
+    def local_duckdb_path(self) -> str:
+        return os.path.join(
+            self.local_duckdb_dir_path,
+            f"{self.warehouse_shared_catalog_name}.duckdb",
+        )
 
 
 class Run(BaseSettings):
