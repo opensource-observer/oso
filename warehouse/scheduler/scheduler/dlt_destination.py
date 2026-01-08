@@ -42,7 +42,7 @@ class DuckDBDLTDestinationResource(DLTDestinationResource):
 class TrinoDLTDestinationResource(DLTDestinationResource):
     """DLT destination resource for Trino."""
 
-    def __init__(self, *, trino: TrinoResource, catalog: str = "iceberg") -> None:
+    def __init__(self, *, trino: TrinoResource, catalog: str) -> None:
         self._trino = trino
         self._catalog = catalog
 

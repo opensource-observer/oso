@@ -225,7 +225,7 @@ def materialization_strategy_factory(
 ) -> MaterializationStrategyResource:
     """Factory function to create a materialization strategy."""
     if common_settings.trino_enabled:
-        return TrinoMaterializationStrategyResource(iceberg_catalog_name="iceberg")
+        return TrinoMaterializationStrategyResource(iceberg_catalog_name="user_shared")
     else:
         return DuckdbMaterializationStrategyResource()
 
@@ -242,7 +242,9 @@ def dlt_destination_factory(
     """
     if common_settings.trino_enabled:
         trino: TrinoResource = resources.resolve("trino")
-        return TrinoDLTDestinationResource(trino=trino, catalog="iceberg")
+        return TrinoDLTDestinationResource(
+            trino=trino, catalog=common_settings.warehouse_shared_catalog_name
+        )
     else:
         return DuckDBDLTDestinationResource(
             database_path=common_settings.local_duckdb_path
