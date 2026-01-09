@@ -1724,6 +1724,37 @@ describe("Billing and Credits", () => {
       )
       .throwOnError();
 
+    await adminSupabase
+      .from("users_by_organization")
+      .delete()
+      .or(`user_id.eq.${REGULAR_USER_ID},user_id.eq.${ADMIN_USER_ID}`);
+
+    await adminSupabase
+      .from("users_by_organization")
+      .insert([
+        {
+          user_id: REGULAR_USER_ID,
+          org_id: FREE_ORG_ID,
+          user_role: "owner",
+        },
+        {
+          user_id: ADMIN_USER_ID,
+          org_id: FREE_ORG_ID,
+          user_role: "member",
+        },
+        {
+          user_id: ADMIN_USER_ID,
+          org_id: ENTERPRISE_ORG_ID,
+          user_role: "owner",
+        },
+        {
+          user_id: REGULAR_USER_ID,
+          org_id: ENTERPRISE_ORG_ID,
+          user_role: "member",
+        },
+      ])
+      .throwOnError();
+
     const adminUserSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { storageKey: "admin-billing-client-auth" },
     });
