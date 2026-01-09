@@ -1,18 +1,25 @@
 DROP POLICY IF EXISTS "Organizations are viewable by public" ON "public"."users_by_organization";
 
+CREATE OR REPLACE FUNCTION public.user_orgs()
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT org_id
+  FROM public.users_by_organization
+  WHERE user_id = auth.uid()
+    AND deleted_at IS NULL;
+$$;
+
 CREATE POLICY "Users can view their org memberships and co-members"
 ON "public"."users_by_organization"
 FOR SELECT
 TO authenticated
 USING (
   user_id = auth.uid()
-  OR
-  EXISTS (
-    SELECT 1 FROM users_by_organization ubo
-    WHERE ubo.user_id = auth.uid()
-      AND ubo.org_id = users_by_organization.org_id
-      AND ubo.deleted_at IS NULL
-  )
+  OR org_id IN (SELECT public.user_orgs())
 );
 
 DROP POLICY IF EXISTS "Organizations are viewable by public." ON "public"."organizations";
@@ -24,10 +31,5 @@ TO authenticated
 USING (
   created_by = auth.uid()
   OR
-  EXISTS (
-    SELECT 1 FROM users_by_organization
-    WHERE org_id = organizations.id
-      AND user_id = auth.uid()
-      AND deleted_at IS NULL
-  )
+  id IN (SELECT public.user_orgs())
 );
