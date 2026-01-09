@@ -1543,6 +1543,30 @@ export const usersByOrganizationRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const dataIngestionAsTableRowSchema = z.object({
+  dataset_id: z.string().nullable(),
+  org_id: z.string().nullable(),
+  table_id: z.string().nullable(),
+  table_name: z.string().nullable(),
+});
+
+export const dataIngestionAsTableRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("data_ingestions_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("datasets_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const modelAsTableRowSchema = z.object({
   dataset_id: z.string().nullable(),
   org_id: z.string().nullable(),
@@ -1567,6 +1591,30 @@ export const modelAsTableRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const staticModelAsTableRowSchema = z.object({
+  dataset_id: z.string().nullable(),
+  org_id: z.string().nullable(),
+  table_id: z.string().nullable(),
+  table_name: z.string().nullable(),
+});
+
+export const staticModelAsTableRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("static_model_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("static_model_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const tableLookupRowSchema = z.object({
   dataset_id: z.string().nullable(),
   logical_fqn: z.string().nullable(),
@@ -1575,23 +1623,6 @@ export const tableLookupRowSchema = z.object({
   table_name: z.string().nullable(),
   warehouse_fqn: z.string().nullable(),
 });
-
-export const tableLookupRelationshipsSchema = z.tuple([
-  z.object({
-    foreignKeyName: z.literal("model_dataset_id_fkey"),
-    columns: z.tuple([z.literal("dataset_id")]),
-    isOneToOne: z.literal(false),
-    referencedRelation: z.literal("datasets"),
-    referencedColumns: z.tuple([z.literal("id")]),
-  }),
-  z.object({
-    foreignKeyName: z.literal("model_release_org_id_fkey"),
-    columns: z.tuple([z.literal("org_id")]),
-    isOneToOne: z.literal(false),
-    referencedRelation: z.literal("organizations"),
-    referencedColumns: z.tuple([z.literal("id")]),
-  }),
-]);
 
 export const acceptInvitationArgsSchema = z.object({
   p_invitation_id: z.string(),

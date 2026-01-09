@@ -315,14 +315,23 @@ export type UsersByOrganizationUpdate = z.infer<
 export type UsersByOrganizationRelationships = z.infer<
   typeof generated.usersByOrganizationRelationshipsSchema
 >;
+export type DataIngestionAsTableRow = z.infer<
+  typeof generated.dataIngestionAsTableRowSchema
+>;
+export type DataIngestionAsTableRelationships = z.infer<
+  typeof generated.dataIngestionAsTableRelationshipsSchema
+>;
 export type ModelAsTableRow = z.infer<typeof generated.modelAsTableRowSchema>;
 export type ModelAsTableRelationships = z.infer<
   typeof generated.modelAsTableRelationshipsSchema
 >;
-export type TableLookupRow = z.infer<typeof generated.tableLookupRowSchema>;
-export type TableLookupRelationships = z.infer<
-  typeof generated.tableLookupRelationshipsSchema
+export type StaticModelAsTableRow = z.infer<
+  typeof generated.staticModelAsTableRowSchema
 >;
+export type StaticModelAsTableRelationships = z.infer<
+  typeof generated.staticModelAsTableRelationshipsSchema
+>;
+export type TableLookupRow = z.infer<typeof generated.tableLookupRowSchema>;
 export type AcceptInvitationArgs = z.infer<
   typeof generated.acceptInvitationArgsSchema
 >;

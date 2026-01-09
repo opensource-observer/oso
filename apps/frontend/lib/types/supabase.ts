@@ -1450,6 +1450,30 @@ export type Database = {
       };
     };
     Views: {
+      data_ingestion_as_table: {
+        Row: {
+          dataset_id: string | null;
+          org_id: string | null;
+          table_id: string | null;
+          table_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "data_ingestions_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "datasets_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       model_as_table: {
         Row: {
           dataset_id: string | null;
@@ -1474,6 +1498,30 @@ export type Database = {
           },
         ];
       };
+      static_model_as_table: {
+        Row: {
+          dataset_id: string | null;
+          org_id: string | null;
+          table_id: string | null;
+          table_name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "static_model_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "static_model_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       table_lookup: {
         Row: {
           dataset_id: string | null;
@@ -1483,22 +1531,7 @@ export type Database = {
           table_name: string | null;
           warehouse_fqn: string | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: "model_dataset_id_fkey";
-            columns: ["dataset_id"];
-            isOneToOne: false;
-            referencedRelation: "datasets";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "model_release_org_id_fkey";
-            columns: ["org_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-        ];
+        Relationships: [];
       };
     };
     Functions: {
