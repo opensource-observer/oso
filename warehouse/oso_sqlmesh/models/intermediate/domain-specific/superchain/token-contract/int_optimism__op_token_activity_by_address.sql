@@ -30,8 +30,12 @@ MODEL (
   )
 );
 
--- Address-level OP token activity inference
--- Aggregates transfer activity by address and function category
+/*
+  Daily address-level OP token activity aggregation.
+  
+  Summarizes transfer activity by sender address and function category,
+  providing transaction counts, value totals, and sample counterparties.
+*/
 
 WITH activity AS (
   SELECT
@@ -48,7 +52,6 @@ WITH activity AS (
   WHERE block_timestamp BETWEEN @start_dt AND @end_dt
 ),
 
--- Aggregate by address (op_from_address) and function bucket
 address_stats AS (
   SELECT
     DATE_TRUNC('day', block_timestamp) AS block_timestamp,
@@ -57,8 +60,6 @@ address_stats AS (
     COUNT(*) AS tx_count,
     SUM(value_op) AS total_value,
     AVG(value_op) AS avg_value,
-    -- Use arbitrary() as Trino equivalent of anyHeavy()
-    -- Returns an arbitrary value from the group
     ARBITRARY(tx_from_address) AS sample_tx_from,
     ARBITRARY(called_contract) AS sample_counterparty
   FROM activity
