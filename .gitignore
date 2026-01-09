@@ -80,3 +80,6 @@ core.1
 # opa
 opa/**/bundle.tar.gz
 .vercel
+
+# scheduler
+.scheduler_workdir/
