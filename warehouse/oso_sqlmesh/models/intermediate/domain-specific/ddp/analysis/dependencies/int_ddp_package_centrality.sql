@@ -11,7 +11,7 @@ MODEL (
   audits (
     has_at_least_n_rows(threshold := 0)
   ),
-  enabled false
+  enabled true
 );
 
 WITH pkg_deps AS (
