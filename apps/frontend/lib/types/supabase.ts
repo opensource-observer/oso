@@ -1203,6 +1203,7 @@ export type Database = {
           id: string;
           logs_url: string | null;
           metadata: Json | null;
+          models: string[] | null;
           org_id: string;
           queued_at: string;
           requested_by: string | null;
@@ -1217,6 +1218,7 @@ export type Database = {
           id?: string;
           logs_url?: string | null;
           metadata?: Json | null;
+          models?: string[] | null;
           org_id: string;
           queued_at?: string;
           requested_by?: string | null;
@@ -1231,6 +1233,7 @@ export type Database = {
           id?: string;
           logs_url?: string | null;
           metadata?: Json | null;
+          models?: string[] | null;
           org_id?: string;
           queued_at?: string;
           requested_by?: string | null;
