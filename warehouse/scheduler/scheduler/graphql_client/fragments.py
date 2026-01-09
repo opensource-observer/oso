@@ -90,9 +90,15 @@ class DataModelsEdgesNode(LatestDataModel):
 
 class DatasetCommon(BaseModel):
     id: str
-    org_id: str = Field(alias="orgId")
+    name: str
     display_name: Optional[str] = Field(alias="displayName")
     description: Optional[str]
+    organization: "DatasetCommonOrganization"
+
+
+class DatasetCommonOrganization(BaseModel):
+    id: str
+    name: str
 
 
 LatestDataModel.model_rebuild()

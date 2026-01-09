@@ -7,8 +7,15 @@ from dlt.sources.credentials import FileSystemCredentials
 from dlt.sources.filesystem import readers
 from osoprotobufs.static_model_pb2 import StaticModelRunRequest
 from scheduler.dlt_destination import DLTDestinationResource
+from scheduler.graphql_client.client import Client
 from scheduler.mq.common import RunHandler
-from scheduler.types import FailedResponse, HandlerResponse, RunContext, SuccessResponse
+from scheduler.types import (
+    FailedResponse,
+    HandlerResponse,
+    RunContext,
+    SuccessResponse,
+    TableReference,
+)
 from scheduler.utils import dlt_to_oso_schema
 
 if t.TYPE_CHECKING:
@@ -29,6 +36,7 @@ class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
         common_settings: "CommonSettings",
         dlt_destination: DLTDestinationResource,
         upload_filesystem_credentials: FileSystemCredentials | None,
+        oso_client: Client,
     ) -> HandlerResponse:
         # Process the StaticModelRunRequest message
         context.log.info(f"Handling StaticModelRunRequest with ID: {message.run_id}")
@@ -36,7 +44,24 @@ class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
         if not upload_filesystem_credentials:
             raise ValueError("Upload filesystem credentials are not provided.")
 
-        schema_name = message.dataset_id.replace("-", "_")
+        # Get the static model dataset from the server
+        dataset_and_models = await oso_client.get_static_models(message.dataset_id)
+        dataset = dataset_and_models.datasets.edges[0]
+
+        org_id = dataset.node.organization.id
+
+        placeholder_table_ref = TableReference(
+            org_id=org_id,
+            dataset_id=message.dataset_id,
+            table_id="placeholder_table",
+        )
+
+        placeholder_destination_table = context.generate_destination_table_exp(
+            placeholder_table_ref
+        )
+
+        catalog_name = placeholder_destination_table.catalog
+        schema_name = placeholder_destination_table.db
 
         async with dlt_destination.get_destination(
             dataset_schema=schema_name,
@@ -84,7 +109,7 @@ class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
 
                     await step_context.create_materialization(
                         table_id=f"static_model_{model_id}",
-                        warehouse_fqn=f"{common_settings.warehouse_shared_catalog_name}.{schema_name}.{table.get('name')}",
+                        warehouse_fqn=f"{catalog_name}.{schema_name}.{table.get('name')}",
                         schema=dlt_to_oso_schema(table.get("columns")),
                     )
 
