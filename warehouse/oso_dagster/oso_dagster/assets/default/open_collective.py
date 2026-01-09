@@ -15,11 +15,19 @@ from gql.transport.exceptions import TransportQueryError
 from gql.transport.requests import RequestsHTTPTransport
 from oso_dagster.config import DagsterConfig
 from oso_dagster.factories import dlt_factory, pydantic_to_dlt_nullable_columns
+from oso_dagster.factories.graphql import (
+    GraphQLResourceConfig,
+    PaginationConfig,
+    PaginationType,
+    RetryConfig,
+    graphql_factory,
+)
 from oso_dagster.utils.common import (
     QueryArguments,
     QueryConfig,
     QueryRetriesExceeded,
     query_with_retry,
+    stringify_large_integers,
 )
 from oso_dagster.utils.secrets import secret_ref_arg
 from pydantic import UUID4, BaseModel, Field
@@ -204,6 +212,9 @@ class Transaction(BaseModel):
 
 # The first transaction on Open Collective was on January 23, 2015
 OPEN_COLLECTIVE_TX_EPOCH = "2015-01-23T05:00:00.000Z"
+
+# The first account creation date on Open Collective was on November 1, 2015
+OPEN_COLLECTIVE_ACCOUNT_EPOCH = "2015-11-01T00:00:00.000Z"
 
 # The maximum is 1000 nodes per page, we will retry until a minimum of 100 nodes per page is reached
 OPEN_COLLECTIVE_MAX_NODES_PER_PAGE = 1000
@@ -723,74 +734,107 @@ def deposits(
     yield resource
 
 
-# TODO(jabolo): Enable back on #6062
-# @dlt_factory(
-#     key_prefix="open_collective",
-# )
-# def accounts(
-#     context: AssetExecutionContext,
-#     global_config: DagsterConfig,
-#     personal_token: str = secret_ref_arg(
-#         group_name="open_collective", key="personal_token"
-#     ),
-# ):
-#     config = GraphQLResourceConfig(
-#         name="accounts",
-#         endpoint="https://api.opencollective.com/graphql/v2",
-#         target_type="Query",
-#         target_query="accounts",
-#         transform_fn=lambda result: stringify_large_integers(
-#             result["accounts"]["nodes"]
-#         ),
-#         headers={
-#             "Personal-Token": personal_token,
-#         },
-#         exclude=[
-#             "nodes.activitySubscriptions",
-#             "nodes.feed",
-#             "nodes.parentAccount.activitySubscriptions",
-#             "nodes.parentAccount.feed",
-#             "nodes.stats.managedAmount",
-#             "nodes.stats.activitySubscriptions",
-#             "nodes.stats.contributionsAmountTimeSeries",
-#             "nodes.stats.expensesTagsTimeSeries",
-#             "nodes.stats.totalNetAmountReceivedTimeSeries",
-#         ],
-#         pagination=PaginationConfig(
-#             type=PaginationType.OFFSET,
-#             page_size=200,
-#             offset_field="offset",
-#             limit_field="limit",
-#             total_count_path="totalCount",
-#             rate_limit_seconds=1.0,
-#         ),
-#         max_depth=3,
-#         retry=RetryConfig(
-#             max_retries=10,
-#             initial_delay=1.0,
-#             max_delay=5.0,
-#             backoff_multiplier=1.5,
-#             jitter=True,
-#             reduce_page_size=True,
-#             min_page_size=10,
-#             page_size_reduction_factor=0.6,
-#             continue_on_failure=True,
-#         ),
-#     )
+@dlt_factory(
+    key_prefix="open_collective",
+    partitions_def=WeeklyPartitionsDefinition(
+        start_date=OPEN_COLLECTIVE_ACCOUNT_EPOCH.split("T", maxsplit=1)[0],
+        end_offset=1,
+    ),
+    op_tags={
+        "dagster-k8s/config": K8S_CONFIG,
+    },
+)
+def accounts(
+    context: AssetExecutionContext,
+    global_config: DagsterConfig,
+    personal_token: str = secret_ref_arg(
+        group_name="open_collective", key="personal_token"
+    ),
+):
+    start = datetime.strptime(context.partition_key, "%Y-%m-%d")
+    end = start + timedelta(weeks=1)
 
-#     resource = graphql_factory(
-#         config,
-#         global_config,
-#         context,
-#         max_table_nesting=0,
-#         write_disposition="merge",
-#         merge_key="id",
-#     )
+    start_date = f"{start.isoformat().split('.')[0]}Z"
+    end_date = f"{end.isoformat().split('.')[0]}Z"
 
-#     if global_config.gcp_bigquery_enabled:
-#         bigquery_adapter(
-#             resource,
-#             partition="created_at",
-#         )
+    context.log.info(
+        f"Fetching accounts with transactions between {start_date} and {end_date}"
+    )
 
-#     yield resource
+    config = GraphQLResourceConfig(
+        name="accounts",
+        endpoint="https://api.opencollective.com/graphql/v2",
+        target_type="Query",
+        target_query="accounts",
+        transform_fn=lambda result: stringify_large_integers(
+            result["accounts"]["nodes"]
+        ),
+        headers={
+            "Personal-Token": personal_token,
+        },
+        parameters={
+            "lastTransactionFrom": {
+                "type": "DateTime!",
+                "value": start_date,
+            },
+            "lastTransactionTo": {
+                "type": "DateTime!",
+                "value": end_date,
+            },
+            "orderBy": {
+                "type": "OrderByInput",
+                "value": {
+                    "field": "CREATED_AT",
+                    "direction": "DESC",
+                },
+            },
+        },
+        exclude=[
+            "nodes.activitySubscriptions",
+            "nodes.feed",
+            "nodes.parentAccount.activitySubscriptions",
+            "nodes.parentAccount.feed",
+            "nodes.stats.managedAmount",
+            "nodes.stats.activitySubscriptions",
+            "nodes.stats.contributionsAmountTimeSeries",
+            "nodes.stats.expensesTagsTimeSeries",
+            "nodes.stats.totalNetAmountReceivedTimeSeries",
+        ],
+        pagination=PaginationConfig(
+            type=PaginationType.OFFSET,
+            page_size=200,
+            offset_field="offset",
+            limit_field="limit",
+            total_count_path="totalCount",
+            rate_limit_seconds=1.0,
+        ),
+        max_depth=3,
+        retry=RetryConfig(
+            max_retries=10,
+            initial_delay=1.0,
+            max_delay=5.0,
+            backoff_multiplier=1.5,
+            jitter=True,
+            reduce_page_size=True,
+            min_page_size=10,
+            page_size_reduction_factor=0.6,
+            continue_on_failure=True,
+        ),
+    )
+
+    resource = graphql_factory(
+        config,
+        global_config,
+        context,
+        max_table_nesting=0,
+        write_disposition="merge",
+        merge_key="id",
+    )
+
+    if global_config.gcp_bigquery_enabled:
+        bigquery_adapter(
+            resource,
+            partition="created_at",
+        )
+
+    yield resource

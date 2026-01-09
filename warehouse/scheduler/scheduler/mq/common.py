@@ -16,6 +16,7 @@ from scheduler.graphql_client.input_types import DataModelColumnInput
 from scheduler.types import (
     FailedResponse,
     HandlerResponse,
+    MaterializationStrategy,
     MessageHandler,
     RunContext,
     SkipResponse,
@@ -32,20 +33,33 @@ T = t.TypeVar("T", bound=ProtobufMessage)
 class OSOStepContext(StepContext):
     @classmethod
     def create(
-        cls, step_id: str, oso_client: OSOClient, logger: structlog.BoundLogger
+        cls,
+        step_id: str,
+        oso_client: OSOClient,
+        materialization_strategy: MaterializationStrategy,
+        logger: structlog.BoundLogger,
     ) -> "OSOStepContext":
-        return cls(step_id, oso_client, logger)
+        return cls(step_id, oso_client, materialization_strategy, logger)
 
     def __init__(
-        self, step_id: str, oso_client: OSOClient, logger: structlog.BoundLogger
+        self,
+        step_id: str,
+        oso_client: OSOClient,
+        materialization_strategy: MaterializationStrategy,
+        logger: structlog.BoundLogger,
     ) -> None:
         self._step_id = step_id
         self._oso_client = oso_client
+        self._materialization_strategy = materialization_strategy
         self._logger = logger
 
     @property
     def log(self) -> logging.Logger:
         return t.cast(logging.Logger, self._logger)
+
+    @property
+    def materialization_strategy(self) -> MaterializationStrategy:
+        return self._materialization_strategy
 
     async def create_materialization(
         self, table_id: str, warehouse_fqn: str, schema: list[DataModelColumnInput]
@@ -67,20 +81,34 @@ class OSOStepContext(StepContext):
 
 class OSORunContext(RunContext):
     @classmethod
-    def create(cls, oso_client: OSOClient, run_id: str) -> "OSORunContext":
+    def create(
+        cls,
+        oso_client: OSOClient,
+        run_id: str,
+        materialization_strategy: MaterializationStrategy,
+    ) -> "OSORunContext":
         logger = structlog.get_logger(run_id)
-        return cls(run_id, oso_client, logger)
+        return cls(run_id, oso_client, materialization_strategy, logger)
 
     def __init__(
-        self, run_id: str, oso_client: OSOClient, logger: structlog.BoundLogger
+        self,
+        run_id: str,
+        oso_client: OSOClient,
+        materialization_strategy: MaterializationStrategy,
+        logger: structlog.BoundLogger,
     ) -> None:
         self._run_id = run_id
         self._oso_client = oso_client
+        self._materialization_strategy = materialization_strategy
         self._logger = logger
 
     @property
     def log(self) -> logging.Logger:
         return t.cast(logging.Logger, self._logger)
+
+    @property
+    def materialization_strategy(self) -> MaterializationStrategy:
+        return self._materialization_strategy
 
     @asynccontextmanager
     async def step_context(
@@ -96,6 +124,7 @@ class OSORunContext(RunContext):
             yield OSOStepContext.create(
                 step.id,
                 self._oso_client,
+                self._materialization_strategy,
                 self._logger.bind(step=name, step_display_name=display_name),
             )
         except Exception as e:
@@ -117,7 +146,10 @@ class RunHandler(MessageHandler[T]):
     """A message handler that processes run messages."""
 
     async def handle_message(
-        self, message: ProtobufMessage, resources: ResourcesContext
+        self,
+        message: ProtobufMessage,
+        resources: ResourcesContext,
+        materialization_strategy: MaterializationStrategy,
     ) -> HandlerResponse:
         run_id = getattr(message, "run_id", None)
         if not run_id:
@@ -133,7 +165,11 @@ class RunHandler(MessageHandler[T]):
 
         oso_client: OSOClient = resources.resolve("oso_client")
 
-        run_context = OSORunContext.create(oso_client, run_id=run_id_str)
+        run_context = OSORunContext.create(
+            oso_client,
+            run_id=run_id_str,
+            materialization_strategy=materialization_strategy,
+        )
 
         # Try to set the run to running in the database for user's visibility
         try:

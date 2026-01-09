@@ -12,7 +12,13 @@ from scheduler.graphql_client.get_data_ingestion_config import (
     GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion,
 )
 from scheduler.mq.common import RunHandler
-from scheduler.types import FailedResponse, HandlerResponse, RunContext, SuccessResponse
+from scheduler.types import (
+    FailedResponse,
+    HandlerResponse,
+    RunContext,
+    SuccessResponse,
+    TableReference,
+)
 from scheduler.utils import dlt_to_oso_schema
 
 
@@ -64,7 +70,7 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
 
         node = edges[0].node
         type_def = node.type_definition
-        org_id = node.org_id
+        org_id = node.organization.id
 
         if not isinstance(
             type_def,
@@ -122,7 +128,15 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
 
                 resources = rest_api_resources(rest_api_config)
 
-                dataset_schema = f"org_{org_id}__{dataset_id}".replace("-", "")
+                placeholder_target_table = step_context.generate_destination_table_exp(
+                    TableReference(
+                        org_id=org_id,
+                        dataset_id=dataset_id,
+                        table_id="placeholder_table",
+                    )
+                )
+
+                dataset_schema = placeholder_target_table.db
                 pipeline_name = f"{org_id}_{dataset_id}".replace("-", "")[:50]
                 async with dlt_destination.get_destination(
                     dataset_schema=dataset_schema
