@@ -19,11 +19,15 @@
       "cache": false
     },
     "test": {},
-    "@opensource-observer/frontend#build": {
-      "dependsOn": ["^build"],
-      "outputs": ["out/**", ".next/**", "!.next/cache/**", ".pyodide/**"],
+    "@opensource-observer/frontend#plasmic:info": {
+      "outputs": [".plasmic-latest-info.txt"],
       "env": ["PLASMIC_PROJECT_ID", "PLASMIC_PROJECT_API_TOKEN"],
       "cache": false
+    },
+    "@opensource-observer/frontend#build": {
+      "dependsOn": ["^build", "@opensource-observer/frontend#plasmic:info"],
+      "outputs": ["out/**", ".next/**", "!.next/cache/**", ".pyodide/**"],
+      "env": ["PLASMIC_PROJECT_ID", "PLASMIC_PROJECT_API_TOKEN"]
     },
     "@opensource-observer/frontend#deploy": {
       "dependsOn": ["^build"],
