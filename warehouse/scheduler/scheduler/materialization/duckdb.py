@@ -10,4 +10,7 @@ class DuckdbMaterializationStrategy(MaterializationStrategy):
 
     def destination_fqn(self, ref: TableReference) -> str:
         """Get the fully qualified destination name for the given table reference."""
-        return f"{self._base_catalog_name}.org_{ref.org_id}__{ref.dataset_id}.{ref.table_id}"
+        org_id = ref.org_id.replace("-", "")
+        dataset_id = ref.dataset_id.replace("-", "")
+
+        return f"{self._base_catalog_name}.org_{org_id}__{dataset_id}.{ref.table_id}"
