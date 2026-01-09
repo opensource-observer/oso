@@ -257,7 +257,7 @@ class Client(AsyncBaseClient):
               datasets(where: {id: {eq: $datasetId}}, single: true) {
                 edges {
                   node {
-                    id
+                    ...DatasetCommon
                     typeDefinition {
                       __typename
                       ... on DataIngestion {
@@ -270,6 +270,13 @@ class Client(AsyncBaseClient):
                   }
                 }
               }
+            }
+
+            fragment DatasetCommon on Dataset {
+              id
+              orgId
+              displayName
+              description
             }
             """
         )
