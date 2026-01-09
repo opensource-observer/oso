@@ -50,11 +50,13 @@ WITH op_transfers AS (
     CASE
       WHEN CARDINALITY(indexed_args_list) >= 1 
         AND indexed_args_list[1].element IS NOT NULL 
+        AND LENGTH(indexed_args_list[1].element) >= 66
       THEN LOWER(CONCAT('0x', SUBSTRING(indexed_args_list[1].element, 27)))
     END AS op_from_address,
     CASE
       WHEN CARDINALITY(indexed_args_list) >= 2 
         AND indexed_args_list[2].element IS NOT NULL 
+        AND LENGTH(indexed_args_list[2].element) >= 66
       THEN LOWER(CONCAT('0x', SUBSTRING(indexed_args_list[2].element, 27)))
     END AS op_to_address,
     CASE
