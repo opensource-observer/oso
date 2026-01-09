@@ -3,6 +3,9 @@ kind: HelmRelease
 metadata:
   name: production-dagster
 spec:
+  install:
+    disableSchemaValidation: true
+    disableOpenAPIValidation: true
   values:
     # We should eventually set this to 0, but we are setting it to 1 to gather
     # timing data
@@ -89,7 +92,7 @@ spec:
           - name: "default"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20260105180025-a284980 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20260109143934-39f46ec # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env
@@ -104,7 +107,7 @@ spec:
           - name: "dynamic"
             image:
               repository: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-              tag: deploy-20260105180025-a284980 # {"$imagepolicy": "flux-system:oso:tag"}
+              tag: deploy-20260109143934-39f46ec # {"$imagepolicy": "flux-system:oso:tag"}
               pullPolicy: IfNotPresent
             envConfigMaps:
               - name: dagster-oso-extra-env

@@ -200,3 +200,23 @@ test_allow_dynamic_catalog_access_schema_allowed if {
 		},
 	}
 }
+
+test_allow_reading_user_shared_catalog_allowed if {
+	trino.allow with input as {
+		"context": {
+			"identity": {"user": "jwt-some-id"},
+			"softwareStack": {"trinoVersion": "434"},
+		},
+		"action": {
+			"operation": "SelectFromColumns",
+			"resource": {
+				"table": {
+					"catalogName": "user_shared",
+					"schemaName": "random_schema",
+					"tableName": "random_table",
+					"columns": ["col1", "col2"]
+				},
+			},
+		},
+	}
+}

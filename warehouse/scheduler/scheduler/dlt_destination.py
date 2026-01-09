@@ -42,7 +42,7 @@ class DuckDBDLTDestinationResource(DLTDestinationResource):
 class TrinoDLTDestinationResource(DLTDestinationResource):
     """DLT destination resource for Trino."""
 
-    def __init__(self, *, trino: TrinoResource, catalog: str = "iceberg") -> None:
+    def __init__(self, *, trino: TrinoResource, catalog: str) -> None:
         self._trino = trino
         self._catalog = catalog
 
@@ -55,7 +55,7 @@ class TrinoDLTDestinationResource(DLTDestinationResource):
         async with self._trino.async_get_client(log_override=logger) as conn:
             cursor = await conn.cursor()
             await cursor.execute(
-                f"CREATE SCHEMA IF NOT EXISTS {self._catalog}.{dataset_schema}"
+                f'CREATE SCHEMA IF NOT EXISTS "{self._catalog}"."{dataset_schema}"'
             )
             user = conn.user or "scheduler"
             credentials = f"trino://{user}@{conn.host}:{conn.port}/{self._catalog}/{dataset_schema}"

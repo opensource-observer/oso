@@ -15,6 +15,7 @@ import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination
 import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
   CreateDataIngestionRunRequestSchema,
+  CreateStaticModelRunRequestSchema,
   CreateUserModelRunRequestSchema,
   MaterializationWhereSchema,
   RunWhereSchema,
@@ -35,6 +36,7 @@ import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-help
 import { createQueueService } from "@/lib/services/queue";
 import { DataModelRunRequest } from "@opensource-observer/osoprotobufs/data-model";
 import { DataIngestionRunRequest } from "@opensource-observer/osoprotobufs/data-ingestion";
+import { StaticModelRunRequest } from "@opensource-observer/osoprotobufs/static-model";
 import { ProtobufEncoder, ProtobufMessage } from "@/lib/services/queue/types";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
@@ -233,7 +235,28 @@ export const schedulerResolvers = {
         } satisfies DataIngestionRunRequest;
       },
     }),
+
+    createStaticModelRunRequest: genericRunRequestResolver({
+      queueName: "static_model_run_requests",
+      inputSchema: CreateStaticModelRunRequestSchema,
+      encoder: StaticModelRunRequest,
+      queueMessageFactory: async (
+        input,
+        _user,
+        dataset,
+        run,
+      ): Promise<StaticModelRunRequest> => {
+        const runIdBuffer = Buffer.from(run.id.replace(/-/g, ""), "hex");
+
+        return {
+          runId: new Uint8Array(runIdBuffer),
+          datasetId: dataset.id,
+          modelIds: input.selectedModels || [],
+        };
+      },
+    }),
   },
+
   Run: {
     datasetId: (parent: RunRow) => parent.dataset_id,
     triggerType: (parent: RunRow) =>

@@ -5,7 +5,7 @@ from sqlmesh.core.macros import MacroEvaluator
 
 def _generate_oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
     """Creates a deterministic ID by concatenating the arguments and hashing them."""
-    if evaluator.runtime_stage in ["loading", "creating"]:
+    if evaluator.runtime_stage == "loading":
         return exp.Literal(this="someid", is_string=True)
     concatenated = exp.Concat(expressions=args, safe=True, coalesce=False)
     if evaluator.engine_adapter.dialect == "trino":
@@ -16,8 +16,6 @@ def _generate_oso_id(evaluator: MacroEvaluator, *args: exp.Expression):
         this=concatenated,
         length=exp.Literal(this=256, is_string=False),
     )
-    if evaluator.runtime_stage in ["loading", "creating"]:
-        return exp.Literal(this="", is_string=True)
     if evaluator.engine_adapter.dialect == "duckdb":
         return sha
     return exp.ToBase64(this=sha)
@@ -37,7 +35,7 @@ def oso_entity_id(
     entity_name: exp.Expression,
 ) -> exp.Expression:
     """Creates a deterministic ID from entity source, namespace, and name.
-    
+
     Args:
         entity_source: The source system of the entity, eg, "GITHUB"
         entity_namespace: The namespace of the entity, eg, "my-org"

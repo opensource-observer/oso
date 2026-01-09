@@ -140,6 +140,7 @@ spec:
         iceberg.max-partitions-per-writer=1000
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
+        gcs.auth-type=APPLICATION_DEFAULT
         parquet.max-buffer-size=32768MB
       iceberg_consumer: |
         connector.name=iceberg
@@ -152,12 +153,27 @@ spec:
         iceberg.max-partitions-per-writer=1000
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
+        gcs.auth-type=APPLICATION_DEFAULT
+        parquet.max-buffer-size=32768MB
+      user_shared: |
+        connector.name=iceberg
+        iceberg.max-commit-retry=10
+        iceberg.catalog.type=rest
+        iceberg.rest-catalog.uri=http://production-nessie.production-nessie.svc.cluster.local:19120/iceberg
+        iceberg.rest-catalog.prefix=user-shared
+        iceberg.rest-catalog.warehouse=gs://oso-iceberg-usc1/warehouse/
+        iceberg.use-file-size-from-metadata=false
+        iceberg.max-partitions-per-writer=1000
+        fs.native-gcs.enabled=true
+        gcs.project-id=opensource-observer
+        gcs.auth-type=APPLICATION_DEFAULT
         parquet.max-buffer-size=32768MB
       source: |
         connector.name=hive
         hive.metastore.uri=thrift://10.145.192.30:9083
         fs.native-gcs.enabled=true
         gcs.project-id=opensource-observer
+        gcs.auth-type=APPLICATION_DEFAULT
         hive.non-managed-table-writes-enabled=true
       bigquery: |
         connector.name=bigquery

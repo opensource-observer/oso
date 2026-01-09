@@ -14,6 +14,9 @@ spec:
   - port: jmx-exporter
     path: /metrics
     interval: 30s
+  - port: http
+    path: /metrics
+    interval: 30s
   targetLabels:
     # We need to rename these labels because GCP does not allow '/' in label names
     # Also some of the labels are reserved by GCP so we rename them to avoid conflicts
@@ -38,6 +41,9 @@ spec:
       app.kubernetes.io/name: trino
   endpoints:
   - port: jmx-exporter
+    path: /metrics
+    interval: 30s
+  - port: http
     path: /metrics
     interval: 30s
   targetLabels:

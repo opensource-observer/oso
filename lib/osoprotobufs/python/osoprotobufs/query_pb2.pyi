@@ -1,8 +1,6 @@
-from typing import ClassVar as _ClassVar
-from typing import Optional as _Optional
-
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
+from typing import ClassVar as _ClassVar, Optional as _Optional
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -16,10 +14,4 @@ class QueryRunRequest(_message.Message):
     query: str
     user: str
     metadata_json: str
-    def __init__(
-        self,
-        run_id: _Optional[bytes] = ...,
-        query: _Optional[str] = ...,
-        user: _Optional[str] = ...,
-        metadata_json: _Optional[str] = ...,
-    ) -> None: ...
+    def __init__(self, run_id: _Optional[bytes] = ..., query: _Optional[str] = ..., user: _Optional[str] = ..., metadata_json: _Optional[str] = ...) -> None: ...

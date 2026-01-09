@@ -26,7 +26,7 @@ class K8sResource(ConfigurableResource):
         namespace: str,
         min_replicas: int = 1,
         log_override: t.Optional[logging.Logger] = None,
-        always_scale_down: bool = False,
+        scale_down: bool = False,
     ):
         """Ensures a deployment is running with at least `min_replicas` replicas."""
         raise NotImplementedError(
@@ -81,7 +81,7 @@ class K8sApiResource(ConfigurableResource):
         namespace: str,
         min_replicas: int = 1,
         log_override: t.Optional[logging.Logger] = None,
-        always_scale_down: bool = False,
+        scale_down: bool = False,
     ):
         """Ensures a deployment is running with at least `min_replicas` replicas."""
 
@@ -94,14 +94,7 @@ class K8sApiResource(ConfigurableResource):
         try:
             yield
         finally:
-            if always_scale_down:
-                await self.ensure_deployment_scale_down(
-                    name,
-                    namespace,
-                    0,
-                    log_override=log_override,
-                )
-            else:
+            if scale_down:
                 await self.ensure_deployment_scale_down(
                     name,
                     namespace,
