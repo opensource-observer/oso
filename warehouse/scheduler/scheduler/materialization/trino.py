@@ -9,4 +9,8 @@ class TrinoMaterializationStrategy(MaterializationStrategy):
         self._base_catalog_name = base_catalog_name
 
     def destination_fqn(self, ref: TableReference) -> str:
-        return f"{self._base_catalog_name}.org_{ref.org_id}__{ref.dataset_id}.{ref.table_id}"
+        # Remove all hyphens from org_id and dataset_id
+        org_id = ref.org_id.replace("-", "")
+        dataset_id = ref.dataset_id.replace("-", "")
+
+        return f"{self._base_catalog_name}.org_{org_id}__{dataset_id}.{ref.table_id}"
