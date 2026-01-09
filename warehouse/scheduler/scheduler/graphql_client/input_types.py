@@ -74,7 +74,6 @@ class DataModelKindOptionsInput(BaseModel):
 class CreateDataModelRevisionInput(BaseModel):
     data_model_id: str = Field(alias="dataModelId")
     name: str
-    display_name: str = Field(alias="displayName")
     description: Optional[str] = None
     language: str
     code: str

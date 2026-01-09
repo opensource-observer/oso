@@ -7,6 +7,7 @@ from pydantic import Field
 
 from .base_model import BaseModel
 from .enums import DataIngestionFactoryType
+from .fragments import DatasetCommon
 
 
 class GetDataIngestionConfig(BaseModel):
@@ -21,8 +22,7 @@ class GetDataIngestionConfigDatasetsEdges(BaseModel):
     node: "GetDataIngestionConfigDatasetsEdgesNode"
 
 
-class GetDataIngestionConfigDatasetsEdgesNode(BaseModel):
-    id: str
+class GetDataIngestionConfigDatasetsEdgesNode(DatasetCommon):
     type_definition: Union[
         "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataModelDefinition",
         "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion",
