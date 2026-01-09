@@ -104,11 +104,11 @@ def dlt_to_oso_schema(
     for col in columns.values():
         name = col.get("name")
         data_type = col.get("data_type")
-        if not name or not data_type:
+        if not name:
             logger.warning(
-                "Column missing name or data_type",
+                "Column missing name",
                 extra={"column": col},
             )
             continue
-        oso_columns.append(DataModelColumnInput(name=name, type=data_type))
+        oso_columns.append(DataModelColumnInput(name=name, type=data_type or "null"))
     return oso_columns

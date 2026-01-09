@@ -40,6 +40,9 @@ oso-dagster = { workspace = true }
 [project.scripts]
 scheduler = "scheduler.cli:cli"
 
+[project.entry-points."sqlalchemy.dialects"]
+trinoso = "scheduler.trino.dialect:TrinoDialect"
+
 [build-system]
 requires = ["uv_build>=0.9.10,<0.10.0"]
 build-backend = "uv_build"
@@ -58,3 +61,4 @@ dev = [
 schema_path = "../../apps/frontend/app/api/v1/osograph/schema"
 queries_path = "scheduler/client.graphql"
 target_package_path = "scheduler"
+

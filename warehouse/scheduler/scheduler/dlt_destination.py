@@ -35,7 +35,8 @@ class DuckDBDLTDestinationResource(DLTDestinationResource):
         yield duckdb(
             credentials=DuckDbCredentials(
                 conn_or_path=self._database_path,
-            )
+            ),
+            enable_dataset_name_normalization=False,
         )
 
 
@@ -58,5 +59,9 @@ class TrinoDLTDestinationResource(DLTDestinationResource):
                 f'CREATE SCHEMA IF NOT EXISTS "{self._catalog}"."{dataset_schema}"'
             )
             user = conn.user or "scheduler"
-            credentials = f"trino://{user}@{conn.host}:{conn.port}/{self._catalog}/{dataset_schema}"
-            yield sqlalchemy(credentials=credentials, destination_name="trino")
+            credentials = f"trinoso://{user}@{conn.host}:{conn.port}/{self._catalog}/{dataset_schema}"
+            yield sqlalchemy(
+                credentials=credentials,
+                destination_name="trino",
+                enable_dataset_name_normalization=False,
+            )

@@ -62,6 +62,7 @@ class StaticModelRunRequestHandler(RunHandler[StaticModelRunRequest]):
                         pipeline_name=f"static_model_{model_id}",
                         dataset_name=schema_name,
                         destination=dlt_destination_instance,
+                        pipelines_dir=common_settings.local_working_dir,
                     )
 
                     await asyncio.to_thread(
