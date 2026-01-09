@@ -11,6 +11,7 @@ from .finish_run import FinishRun
 from .finish_step import FinishStep
 from .get_data_ingestion_config import GetDataIngestionConfig
 from .get_data_models import GetDataModels
+from .get_static_models import GetStaticModels
 from .input_types import DataModelColumnInput
 from .resolve_tables import ResolveTables
 from .start_run import StartRun
@@ -188,9 +189,13 @@ class Client(AsyncBaseClient):
 
             fragment DatasetCommon on Dataset {
               id
-              orgId
+              name
               displayName
               description
+              organization {
+                id
+                name
+              }
             }
 
             fragment LatestDataModel on DataModel {
@@ -289,6 +294,53 @@ class Client(AsyncBaseClient):
         )
         data = self.get_data(response)
         return GetDataIngestionConfig.model_validate(data)
+
+    async def get_static_models(
+        self, dataset_id: str, **kwargs: Any
+    ) -> GetStaticModels:
+        query = gql(
+            """
+            query GetStaticModels($datasetId: ID!) {
+              datasets(where: {id: {eq: $datasetId}}) {
+                edges {
+                  node {
+                    ...DatasetCommon
+                    typeDefinition {
+                      __typename
+                      ... on StaticModelDefinition {
+                        staticModels {
+                          edges {
+                            node {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            fragment DatasetCommon on Dataset {
+              id
+              name
+              displayName
+              description
+              organization {
+                id
+                name
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"datasetId": dataset_id}
+        response = await self.execute(
+            query=query, operation_name="GetStaticModels", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return GetStaticModels.model_validate(data)
 
     async def resolve_tables(
         self,

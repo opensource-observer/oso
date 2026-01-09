@@ -67,9 +67,13 @@ mutation CreateMaterialization(
 
 fragment DatasetCommon on Dataset {
   id
-  orgId
+  name
   displayName
   description
+  organization {
+    id
+    name
+  }
 }
 
 fragment LatestDataModel on DataModel {
@@ -155,6 +159,28 @@ query GetDataIngestionConfig($datasetId: ID!) {
             datasetId
             factoryType
             config
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetStaticModels($datasetId: ID!) {
+  datasets(where: { id: { eq: $datasetId }}) {
+    edges {
+      node {
+        ...DatasetCommon
+        typeDefinition {
+          ... on StaticModelDefinition {
+            staticModels {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
           }
         }
       }
