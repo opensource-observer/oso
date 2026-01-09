@@ -1,0 +1,253 @@
+test_int_github__events_enriched_with_opendevdata_commits:
+  model: oso.int_github__events_enriched_with_opendevdata_commits
+  vars:
+    start_dt: "2024-01-01"
+    end_dt: "2024-01-02"
+    github_incremental_start: "2024-01-01"
+  inputs:
+    oso.stg_github__events:
+      columns:
+        id: text
+        type: text
+        created_at: timestamp
+        repo: STRUCT(id BIGINT, name VARCHAR, url VARCHAR)
+        actor: STRUCT(id BIGINT, login VARCHAR, avatar_url VARCHAR, url VARCHAR)
+        org: STRUCT(id BIGINT, login VARCHAR, avatar_url VARCHAR, url VARCHAR)
+        payload: text
+        public: boolean
+        other: text
+      rows:
+      - id: "event_1"
+        type: "PushEvent"
+        created_at: "2024-01-01 10:00:00"
+        public: true
+        other: ""
+        repo:
+          id: 101
+          name: "owner/repo1"
+          url: "url1"
+        actor:
+          id: 555
+          login: "user1"
+          avatar_url: "url"
+          url: "url"
+        org:
+          id: 999
+          login: "org1"
+          avatar_url: "url"
+          url: "url"
+        payload: |
+          {
+            "head": "sha_match",
+            "commits": [{"sha": "sha_match"}]
+          }
+      - id: "event_2"
+        type: "PushEvent"
+        created_at: "2024-01-01 11:00:00"
+        public: true
+        other: ""
+        repo:
+          id: 101
+          name: "owner/repo1"
+          url: "url1"
+        actor:
+          id: 555
+          login: "user1"
+          avatar_url: "url"
+          url: "url"
+        org:
+          id: 999
+          login: "org1"
+          avatar_url: "url"
+          url: "url"
+        payload: |
+          {
+            "head": "sha_no_match",
+            "commits": [{"sha": "sha_no_match"}]
+          }
+      - id: "event_3"
+        type: "WatchEvent"
+        created_at: "2024-01-01 12:00:00"
+        public: true
+        other: ""
+        repo:
+          id: 101
+          name: "owner/repo1"
+          url: "url1"
+        actor:
+          id: 555
+          login: "user1"
+          avatar_url: "url"
+          url: "url"
+        org:
+          id: 999
+          login: "org1"
+          avatar_url: "url"
+          url: "url"
+        payload: "{}"
+      - id: "event_4"
+        type: "PushEvent"
+        created_at: "2024-01-01 13:00:00"
+        public: true
+        other: ""
+        repo:
+          id: 102
+          name: "owner/repo2"
+          url: "url2"
+        actor:
+          id: 555
+          login: "user1"
+          avatar_url: "url"
+          url: "url"
+        org:
+          id: 999
+          login: "org1"
+          avatar_url: "url"
+          url: "url"
+        payload: |
+          {
+            "head": "sha_match_but_wrong_repo",
+            "commits": [{"sha": "sha_match_but_wrong_repo"}]
+          }
+
+    oso.int_opendevdata__repositories_with_repo_id:
+      rows:
+      - repo_id: 101
+        opendevdata_id: 5001
+        github_graphql_id: "NODE_A"
+      - repo_id: 888
+        opendevdata_id: 5002
+        github_graphql_id: "NODE_B"
+
+    oso.stg_opendevdata__commits:
+      rows:
+      - sha1: "sha_match"
+        repo_id: 5001
+        canonical_developer_id: 7001
+        additions: 10
+        deletions: 5
+      - sha1: "sha_match_but_wrong_repo"
+        repo_id: 9999
+        canonical_developer_id: 7002
+        additions: 1
+        deletions: 1
+
+  outputs:
+    query:
+      rows:
+      - type: "PushEvent"
+        public: true
+        payload: |
+          {
+            "head": "sha_match",
+            "commits": [{"sha": "sha_match"}]
+          }
+        repo:
+          id: 101
+          name: "owner/repo1"
+          url: "url1"
+        actor:
+          id: 555
+          login: "user1"
+          avatar_url: "url"
+          url: "url"
+        org:
+          id: 999
+          login: "org1"
+          avatar_url: "url"
+          url: "url"
+        created_at: "2024-01-01 10:00:00"
+        id: "event_1"
+        other: ""
+        repo_id: 101
+        opendevdata_repo_id: 5001
+        ossd_id: "NODE_A"
+        commit_canonical_developer_id: 7001
+        commit_additions: 10
+        commit_deletions: 5
+      - type: "PushEvent"
+        public: true
+        payload: |
+          {
+            "head": "sha_no_match",
+            "commits": [{"sha": "sha_no_match"}]
+          }
+        repo:
+          id: 101
+          name: "owner/repo1"
+          url: "url1"
+        actor:
+          id: 555
+          login: "user1"
+          avatar_url: "url"
+          url: "url"
+        org:
+          id: 999
+          login: "org1"
+          avatar_url: "url"
+          url: "url"
+        created_at: "2024-01-01 11:00:00"
+        id: "event_2"
+        other: ""
+        repo_id: 101
+        opendevdata_repo_id: 5001
+        ossd_id: "NODE_A"
+        commit_canonical_developer_id: null
+        commit_additions: null
+        commit_deletions: null
+      - type: "WatchEvent"
+        public: true
+        payload: "{}"
+        repo:
+          id: 101
+          name: "owner/repo1"
+          url: "url1"
+        actor:
+          id: 555
+          login: "user1"
+          avatar_url: "url"
+          url: "url"
+        org:
+          id: 999
+          login: "org1"
+          avatar_url: "url"
+          url: "url"
+        created_at: "2024-01-01 12:00:00"
+        id: "event_3"
+        other: ""
+        repo_id: 101
+        opendevdata_repo_id: 5001
+        ossd_id: "NODE_A"
+        commit_canonical_developer_id: null
+        commit_additions: null
+        commit_deletions: null
+      - type: "PushEvent"
+        public: true
+        payload: |
+          {
+            "head": "sha_match_but_wrong_repo",
+            "commits": [{"sha": "sha_match_but_wrong_repo"}]
+          }
+        repo:
+          id: 102
+          name: "owner/repo2"
+          url: "url2"
+        actor:
+          id: 555
+          login: "user1"
+          avatar_url: "url"
+          url: "url"
+        org:
+          id: 999
+          login: "org1"
+          avatar_url: "url"
+          url: "url"
+        created_at: "2024-01-01 13:00:00"
+        id: "event_4"
+        other: ""
+        repo_id: 102
+        opendevdata_repo_id: null
+        ossd_id: null
+        commit_canonical_developer_id: null
+        commit_additions: null
+        commit_deletions: null
