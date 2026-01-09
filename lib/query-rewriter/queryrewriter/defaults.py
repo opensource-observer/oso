@@ -13,4 +13,6 @@ async def default_oso_table_rewrite_js(
     """Calls the table rewriter with default settings and a JS table resolver"""
     js_resolver = JSResolver(js_name_resolver)
 
-    return await rewrite_query(query, [js_resolver], metadata=metadata, dialect=dialect)
+    return await rewrite_query(
+        query, [js_resolver], metadata=metadata, input_dialect=dialect
+    )

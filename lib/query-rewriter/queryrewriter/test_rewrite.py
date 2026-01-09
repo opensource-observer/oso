@@ -39,18 +39,24 @@ def fake_table_resolver():
 
 
 @pytest.mark.parametrize(
-    "input_query,expected_query",
+    "input_dialect,output_dialect,input_query,expected_query",
     [
         (
+            "trino",
+            "trino",
             """SELECT * FROM org1.dataset1.table1""",
             """SELECT * FROM table1.dataset1.org1 as table1""",
         ),
         (
+            "trino",
+            "trino",
             """SELECT * FROM table1""",
             """SELECT * FROM table1 as table1""",
         ),
         # Test with CTEs
         (
+            "trino",
+            "trino",
             """
             WITH cte AS (
                 SELECT * FROM org1.dataset2.table2
@@ -69,6 +75,8 @@ def fake_table_resolver():
             """,
         ),
         (
+            "trino",
+            "trino",
             """
             WITH cte AS (
                 SELECT * FROM dataset2.table2
@@ -88,6 +96,8 @@ def fake_table_resolver():
         ),
         (
             # Test CTEs
+            "trino",
+            "trino",
             """
             SELECT * FROM dataset1.table1
             UNION ALL
@@ -105,6 +115,8 @@ def fake_table_resolver():
         ),
         (
             # Test rewriting with macros
+            "trino",
+            "trino",
             """
             SELECT * FROM dataset1.table1
             WHERE created_at >= @start AND created_at < @end
@@ -117,18 +129,39 @@ def fake_table_resolver():
             """,
         ),
         (
+            "trino",
+            "trino",
             """SHOW CATALOGS""",
             """SHOW CATALOGS""",
         ),
         (
+            "trino",
+            "trino",
             """SHOW SCHEMAS FROM org1""",
             """SHOW SCHEMAS FROM org1""",
         ),
         (
+            "trino",
+            "trino",
             """SHOW TABLES FROM org1.dataset1""",
             """SHOW TABLES FROM org1.dataset1""",
         ),
         (
+            # Noticed this regression where array indexing was being altered
+            "trino",
+            "trino",
+            """SELECT ARRAY[1, 1.2, 4][2]""",
+            """SELECT ARRAY[1, 1.2, 4][2]""",
+        ),
+        (
+            "bigquery",
+            "trino",
+            """SELECT ARRAY[1, 1.2, 4][1]""",
+            """SELECT ARRAY[1, 1.2, 4][2]""",
+        ),
+        (
+            "trino",
+            "trino",
             """
             WITH lifecycle_metrics AS (
             SELECT
@@ -182,6 +215,8 @@ def fake_table_resolver():
 @pytest.mark.asyncio
 async def test_rewrite_query(
     fake_table_resolver: TableResolver,
+    input_dialect: str,
+    output_dialect: str,
     input_query: str,
     expected_query: str,
 ):
@@ -190,15 +225,18 @@ async def test_rewrite_query(
     response = await rewrite_query(
         query=input_query,
         table_resolvers=resolvers,
-        dialect="trino",
+        input_dialect=input_dialect,
+        output_dialect=output_dialect,
     )
     assert_same_sql(response.rewritten_query, expected_query)
 
 
 @pytest.mark.parametrize(
-    "input_query,error_string",
+    "input_dialect,output_dialect,input_query,error_string",
     [
         (
+            "trino",
+            "trino",
             """
             WITH "test" (
                 select * from "test" where id = 1
@@ -214,6 +252,8 @@ async def test_rewrite_query(
 @pytest.mark.asyncio
 async def test_inputs_should_fail(
     fake_table_resolver: TableResolver,
+    input_dialect: str,
+    output_dialect: str,
     input_query: str,
     error_string: str,
 ):
@@ -222,7 +262,8 @@ async def test_inputs_should_fail(
         await rewrite_query(
             query=input_query,
             table_resolvers=resolvers,
-            dialect="trino",
+            input_dialect=input_dialect,
+            output_dialect=output_dialect,
         )
     except Exception as e:
         assert error_string in str(e), f"Expected an error message with: {error_string}"
