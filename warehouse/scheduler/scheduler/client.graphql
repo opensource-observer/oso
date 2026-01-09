@@ -148,7 +148,7 @@ query GetDataIngestionConfig($datasetId: ID!) {
   datasets(where: { id: { eq: $datasetId }}, single: true) {
     edges {
       node {
-        id
+        ...DatasetCommon
         typeDefinition {
           ... on DataIngestion {
             id
