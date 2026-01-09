@@ -166,6 +166,28 @@ query GetDataIngestionConfig($datasetId: ID!) {
   }
 }
 
+query GetStaticModels($datasetId: ID!) {
+  datasets(where: { id: { eq: $datasetId }}) {
+    edges {
+      node {
+        ...DatasetCommon
+        typeDefinition {
+          ... on StaticModelDefinition {
+            staticModels {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 query ResolveTables($references: [String!]!, $metadata: JSON) {
   system {
     resolveTables(references: $references, metadata: $metadata) {

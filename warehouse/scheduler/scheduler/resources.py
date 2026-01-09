@@ -32,8 +32,8 @@ from scheduler.dlt_destination import (
 )
 from scheduler.evaluator import UserDefinedModelEvaluator
 from scheduler.graphql_client.client import Client as OSOClient
-from scheduler.materialization.duckdb import DuckdbMaterializationStrategyResource
-from scheduler.materialization.trino import TrinoMaterializationStrategyResource
+from scheduler.materialization.duckdb import DuckdbMaterializationStrategy
+from scheduler.materialization.trino import TrinoMaterializationStrategy
 from scheduler.mq.handlers.data_ingestion import DataIngestionRunRequestHandler
 from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
 from scheduler.mq.handlers.query import QueryRunRequestHandler
@@ -42,7 +42,7 @@ from scheduler.mq.pubsub import GCPPubSubMessageQueueService
 from scheduler.testing.client import FakeUDMClient
 from scheduler.types import (
     GenericMessageQueueService,
-    MaterializationStrategyResource,
+    MaterializationStrategy,
     MessageHandlerRegistry,
     UserDefinedModelStateClient,
 )
@@ -222,14 +222,16 @@ def gcs_factory(common_settings: "CommonSettings") -> GCSFileResource:
 @resource_factory("materialization_strategy")
 def materialization_strategy_factory(
     common_settings: "CommonSettings",
-) -> MaterializationStrategyResource:
+) -> MaterializationStrategy:
     """Factory function to create a materialization strategy."""
     if common_settings.trino_enabled:
-        return TrinoMaterializationStrategyResource(
-            iceberg_catalog_name=common_settings.warehouse_shared_catalog_name
+        return TrinoMaterializationStrategy(
+            base_catalog_name=common_settings.warehouse_shared_catalog_name
         )
     else:
-        return DuckdbMaterializationStrategyResource()
+        return DuckdbMaterializationStrategy(
+            base_catalog_name=common_settings.warehouse_shared_catalog_name
+        )
 
 
 @resource_factory("dlt_destination")

@@ -15,7 +15,6 @@ from scheduler.graphql_client.input_types import DataModelColumnInput
 from sqlglot import exp, parse_one
 from sqlglot.optimizer.qualify_columns import qualify_columns
 from sqlglot.optimizer.scope import build_scope
-from sqlmesh import EngineAdapter
 from sqlmesh.core import dialect as sqlmesh_dialect
 
 logger = structlog.getLogger(__name__)
@@ -53,63 +52,14 @@ class TableReference(BaseModel):
 class MaterializationStrategy(abc.ABC):
     """A strategy for materializing models using an engine adapter."""
 
-    @property
     @abc.abstractmethod
-    def engine_adapter(self) -> EngineAdapter:
-        """Get the engine adapter to use for materialization.
-
-        Returns:
-            An instance of EngineAdapter.
-        """
-        raise NotImplementedError("engine_adapter must be implemented by subclasses.")
-
-    @abc.abstractmethod
-    async def table_reference_to_fqn(self, ref: TableReference) -> str:
+    def destination_fqn(self, ref: TableReference) -> str:
         """Convert a TableReference to a fully qualified name in the engine adapter.
 
         Returns:
             The fully qualified name of the table.
         """
-        raise NotImplementedError(
-            "table_reference_to_fqn must be implemented by subclasses."
-        )
-
-    async def table_reference_to_table_exp(self, ref: TableReference) -> exp.Table:
-        """Convert a TableReference to a sqlglot Table expression.
-
-        Returns:
-            An instance of sqlglot.exp.Table.
-        """
-        fqn = await self.table_reference_to_fqn(ref)
-        return exp.to_table(fqn)
-
-    @abc.abstractmethod
-    async def fqn_to_table_reference(self, fqn: str) -> TableReference:
-        """Convert a fully qualified name to a TableReference.
-
-        Args:
-            fqn: The fully qualified name of the table.
-
-        Returns:
-            A TableReference object.:
-        """
-        raise NotImplementedError(
-            "fqn_to_table_reference must be implemented by subclasses."
-        )
-
-
-class MaterializationStrategyResource(abc.ABC):
-    """A resource that provides an EngineAdapterMaterializationStrategy."""
-
-    def get_strategy(
-        self, adapter: EngineAdapter
-    ) -> t.AsyncContextManager[MaterializationStrategy]:
-        """Get the materialization strategy.
-
-        Returns:
-            An instance of EngineAdapterMaterializationStrategy.
-        """
-        raise NotImplementedError("get_strategy must be implemented by subclasses.")
+        raise NotImplementedError("destination_fqn must be implemented by subclasses.")
 
 
 class ModelFQNResolver(TableResolver):
@@ -341,7 +291,7 @@ class Model(BaseModel):
         return TableReference(
             org_id=self.org_id,
             dataset_id=self.dataset_id,
-            table_id=self.id,
+            table_id=f"data_model_{self.id}",
         )
 
 
@@ -402,9 +352,26 @@ class StepContext(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def materialization_strategy(self) -> MaterializationStrategy:
+        """The materialization strategy for the current step."""
+        raise NotImplementedError(
+            "materialization_strategy must be implemented by subclasses."
+        )
+
+    @property
+    @abc.abstractmethod
     def step_id(self) -> str:
         """The ID of the current step."""
         raise NotImplementedError("step_id must be implemented by subclasses.")
+
+    def generate_destination_fqn(self, ref: TableReference) -> str:
+        """Generate the destination fully qualified name for a table reference."""
+        return self.materialization_strategy.destination_fqn(ref)
+
+    def generate_destination_table_exp(self, ref: TableReference) -> exp.Table:
+        """Generate the destination table expression for a table reference."""
+        fqn = self.generate_destination_fqn(ref)
+        return exp.to_table(fqn)
 
 
 class RunContext(abc.ABC):
@@ -420,6 +387,23 @@ class RunContext(abc.ABC):
     def log(self) -> logging.Logger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def materialization_strategy(self) -> MaterializationStrategy:
+        """The materialization strategy for the current step."""
+        raise NotImplementedError(
+            "materialization_strategy must be implemented by subclasses."
+        )
+
+    def generate_destination_fqn(self, ref: TableReference) -> str:
+        """Generate the destination fully qualified name for a table reference."""
+        return self.materialization_strategy.destination_fqn(ref)
+
+    def generate_destination_table_exp(self, ref: TableReference) -> exp.Table:
+        """Generate the destination table expression for a table reference."""
+        fqn = self.generate_destination_fqn(ref)
+        return exp.to_table(fqn)
 
 
 class HandlerResponse(BaseModel):
