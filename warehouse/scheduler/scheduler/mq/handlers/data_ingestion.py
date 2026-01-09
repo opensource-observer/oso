@@ -13,6 +13,7 @@ from scheduler.graphql_client.get_data_ingestion_config import (
 )
 from scheduler.mq.common import RunHandler
 from scheduler.types import FailedResponse, HandlerResponse, RunContext, SuccessResponse
+from scheduler.utils import dlt_to_oso_schema
 
 
 class _RESTAPIConfigWrapper(BaseModel):
@@ -61,7 +62,9 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
             context.log.error("Config not found", extra={"dataset_id": dataset_id})
             return FailedResponse(message="Config not found")
 
-        type_def = edges[0].node.type_definition
+        node = edges[0].node
+        type_def = node.type_definition
+        org_id = node.org_id
 
         if not isinstance(
             type_def,
@@ -119,8 +122,8 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
 
                 resources = rest_api_resources(rest_api_config)
 
-                dataset_schema = f"ingest_{dataset_id.replace('-', '_')}"
-                pipeline_name = f"data_ingestion_{dataset_id}"[:50]
+                dataset_schema = f"org_{org_id}__{dataset_id}".replace("-", "_")
+                pipeline_name = f"{org_id}_{dataset_id}".replace("-", "_")[:50]
                 async with dlt_destination.get_destination(
                     dataset_schema=dataset_schema
                 ) as destination:
@@ -148,6 +151,43 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
                         "loaded_packages": len(load_info.loads_ids) if load_info else 0,
                     },
                 )
+
+                tables = p.default_schema.data_tables()
+
+                step_context.log.info(
+                    "Creating materializations for ingested tables",
+                    extra={
+                        "num_tables": len(tables),
+                        "dataset_id": dataset_id,
+                    },
+                )
+
+                for table in tables:
+                    table_name = table.get("name")
+                    if not table_name:
+                        step_context.log.warning(
+                            "Skipping table without name",
+                            extra={"table": table},
+                        )
+                        continue
+
+                    schema = dlt_to_oso_schema(table.get("columns"))
+
+                    warehouse_fqn = f"{common_settings.warehouse_shared_catalog_name}.{dataset_schema}.{table_name}"
+
+                    await step_context.create_materialization(
+                        table_id=f"data_ingestion_{org_id}_{dataset_id}_{table_name}",
+                        warehouse_fqn=warehouse_fqn,
+                        schema=schema,
+                    )
+
+                    step_context.log.info(
+                        "Created materialization",
+                        extra={
+                            "table_name": table_name,
+                            "warehouse_fqn": warehouse_fqn,
+                        },
+                    )
 
             except Exception as e:
                 step_context.log.error(
