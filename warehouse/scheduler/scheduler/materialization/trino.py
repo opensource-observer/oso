@@ -38,7 +38,7 @@ class TrinoMaterializationStrategy(MaterializationStrategy):
 
     async def fqn_to_table_reference(self, fqn) -> TableReference:
         """Iceberg materialization is in the form
-        {iceberg_catalog_name}.org_{org_id}__ds_{dataset_id}.tbl_{table_id}
+        {iceberg_catalog_name}.org_{org_id}__{dataset_id}.tbl_{table_id}
         """
         table = exp.to_table(fqn)
         # Catalog is ignored for Trino as we set it to iceberg_catalog_name
@@ -51,7 +51,7 @@ class TrinoMaterializationStrategy(MaterializationStrategy):
             raise ValueError(f"Invalid Trino table FQN: {fqn}")
 
         org_id = split_db[0].replace("org_", "")
-        dataset_id = split_db[1].replace("ds_", "")
+        dataset_id = split_db[1]
         table_id = table_name.replace("tbl_", "")
 
         return TableReference(
@@ -61,4 +61,4 @@ class TrinoMaterializationStrategy(MaterializationStrategy):
         )
 
     async def table_reference_to_fqn(self, ref: TableReference) -> str:
-        return f"{self._iceberg_catalog_name}.org_{ref.org_id}__ds_{ref.dataset_id}.tbl_{ref.table_id}"
+        return f"{self._iceberg_catalog_name}.org_{ref.org_id}__{ref.dataset_id}.tbl_{ref.table_id}"

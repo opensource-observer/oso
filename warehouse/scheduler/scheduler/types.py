@@ -112,6 +112,48 @@ class MaterializationStrategyResource(abc.ABC):
         raise NotImplementedError("get_strategy must be implemented by subclasses.")
 
 
+class ModelFQNResolver(TableResolver):
+    """
+    A table resolver that resolves model table references to their fully
+    qualified names. For a USER_MODEL table references are resolved with the
+    following logic:
+    * {org_name}.{dataset_name}.{table_name}
+        * No further resolution is done. This is an FQN already.
+    * {dataset_name}.{table_name}
+        * The org_name is assumed to be the current org.
+    * {table_name}
+        * The org_name is assumed to be the current org.
+        * The dataset_name is assumed to be "default_dataset".
+    """
+
+    def __init__(self, org_name: str, dataset_name: str):
+        self.org_name = org_name
+        self.dataset_name = dataset_name
+
+    async def resolve_tables(
+        self,
+        tables: dict[str, exp.Table],
+        *,
+        metadata: dict | None = None,
+    ) -> dict[str, exp.Table]:
+        resolved: dict[str, exp.Table] = {}
+        for table_id, table in tables.items():
+            if table.catalog and table.db and table.name:
+                # Fully qualified name already
+                resolved[table_id] = table
+            elif table.db and table.name:
+                # Missing catalog/org
+                fqn = f"{self.org_name}.{table.db}.{table.name}"
+                resolved[table_id] = exp.to_table(fqn)
+            elif table.name:
+                # Missing catalog/org and db/dataset
+                fqn = f"{self.org_name}.{self.dataset_name}.{table.name}"
+                resolved[table_id] = exp.to_table(fqn)
+            else:
+                raise ValueError(f"Table {table_id} has no name.")
+        return resolved
+
+
 class Model(BaseModel):
     """User defined model
 
@@ -119,15 +161,19 @@ class Model(BaseModel):
     """
 
     org_id: str
+    org_name: str
     id: str
     name: str
     dataset_id: str
+    dataset_name: str
     language: str
     code: str
+    dialect: str = "trino"
 
     def __init__(self, *args: t.Any, **data: t.Any):
         super().__init__(*args, **data)
         self._parsed_query = None
+        self._resolved_intermediate_query: RewriteResponse | None = None
 
     @property
     def query(self) -> exp.Query:
@@ -137,11 +183,57 @@ class Model(BaseModel):
             self._parsed_query = t.cast(exp.Query, parsed)
         return self._parsed_query
 
-    async def as_resolved_sql_model(
+    async def _resolve_intermediate_query(self) -> RewriteResponse:
+        """
+        We want to resolve model queries in two steps. The intermediate
+        resolver step will ensure that _all_ table references are fully
+        qualified. This allows us to then determine internal dependency graphs
+        within a group of models.
+        """
+
+        if self._resolved_intermediate_query is None:
+            logger.info(f"Rewriting model {self.name} for intermediate resolution.")
+
+            resolver = ModelFQNResolver(self.org_name, self.dataset_name)
+            rewrite_response = await rewrite_query(
+                self.query.sql(self.dialect),
+                [resolver],
+                input_dialect=self.dialect,
+                output_dialect=self.dialect,
+            )
+            self._resolved_intermediate_query = rewrite_response
+
+        return self._resolved_intermediate_query
+
+    async def dependencies(self) -> list[str]:
+        """Get the table references for the model's dependencies."""
+        rewrite_response = await self._resolve_intermediate_query()
+        return list(rewrite_response.tables.values())
+
+    async def dataset_internal_dependencies(self) -> list[str]:
+        """List of dependencies in the same dataset as this model."""
+        rewrite_response = await self._resolve_intermediate_query()
+        internal_dependencies: list[str] = []
+        for table_fqn in rewrite_response.tables.values():
+            table = exp.to_table(table_fqn)
+            if table.db == self.dataset_name:
+                internal_dependencies.append(table_fqn)
+        return internal_dependencies
+
+    async def org_internal_dependencies(self) -> list[str]:
+        """List of dependencies in the same org as this model."""
+        rewrite_response = await self._resolve_intermediate_query()
+        internal_dependencies: list[str] = []
+        for table_fqn in rewrite_response.tables.values():
+            table = exp.to_table(table_fqn)
+            if table.catalog == self.org_name:
+                internal_dependencies.append(table_fqn)
+        return internal_dependencies
+
+    async def resolve_query(
         self,
         table_resolvers: list[TableResolver],
-        materialization_strategy: MaterializationStrategy,
-    ) -> "ResolvedSQLModel":
+    ) -> exp.Query:
         """Users write queries to virtual names for all of the tables. These
         names must be resolved. This resolver returns a ResolvedSQLModel which
         has the query with all of the virtual names replaced with the actual
@@ -149,15 +241,18 @@ class Model(BaseModel):
         for ordering materializations.
         """
         logger.info(f"Rewriting model {self.name} with table resolvers.")
-        rewrite_response = await rewrite_query(self.query.sql("trino"), table_resolvers)
+        rewrite_response = await rewrite_query(
+            self.query.sql(self.dialect),
+            table_resolvers,
+            input_dialect=self.dialect,
+            output_dialect=self.dialect,
+        )
         logger.info(
             f"Finished rewriting model {self.name} as {rewrite_response.rewritten_query}."
         )
-        return ResolvedSQLModel(
-            model=self,
-            rewrite_response=rewrite_response,
-            materialization_strategy=materialization_strategy,
-        )
+        parsed_query = parse_one(rewrite_response.rewritten_query)
+        assert isinstance(parsed_query, exp.Query)
+        return parsed_query
 
     async def calculate_columns(
         self, default_catalog: str, schema_retriever: SchemaRetreiver
@@ -238,92 +333,39 @@ class Model(BaseModel):
 
         return exp.to_table(f"{self.backend_db_name()}.{self.backend_table_name()}")
 
-
-class ResolvedModel(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def name(self) -> str:
-        """Get the name of the model."""
-        ...
-
-    @abc.abstractmethod
-    async def dependencies(self) -> list[TableReference]:
-        """Get the table references for the model's dependencies."""
-        raise NotImplementedError("table_references must be implemented by subclasses.")
-
-    @abc.abstractmethod
-    def table_reference(self) -> TableReference:
-        """Get the table reference for the model itself."""
-        raise NotImplementedError("table_reference must be implemented by subclasses.")
-
-
-class ResolvedSQLModel(ResolvedModel):
-    """A model with its SQL fully resolved."""
-
-    def __init__(
-        self,
-        model: Model,
-        rewrite_response: RewriteResponse,
-        materialization_strategy: MaterializationStrategy,
-        dialect: str = "trino",
-    ) -> None:
-        self._model = model
-        self._rewrite_response = rewrite_response
-        self._materialization_strategy = materialization_strategy
-        self._dialect = dialect
-
-    @property
-    def name(self):
-        return self._model.name
-
-    def resolved_query(self) -> exp.Query:
-        """Get the resolved query for the model."""
-        return t.cast(
-            exp.Query,
-            parse_one(self._rewrite_response.rewritten_query, read=self._dialect),
-        )
+    def __str__(self) -> str:
+        return f"{self.org_name}.{self.dataset_name}.{self.name}"
 
     def table_reference(self) -> TableReference:
         """Get the table reference for the model itself."""
         return TableReference(
-            org_id=self._model.org_id,
-            dataset_id=self._model.dataset_id,
-            table_id=self._model.id,
+            org_id=self.org_id,
+            dataset_id=self.dataset_id,
+            table_id=self.id,
         )
-
-    async def dependencies(self) -> list[TableReference]:
-        """Get the table references for the model's dependencies."""
-        references: list[TableReference] = []
-
-        for resolved in self._rewrite_response.tables.values():
-            reference = await self._materialization_strategy.fqn_to_table_reference(
-                resolved
-            )
-            references.append(reference)
-        return references
 
 
 class ModelSorter:
-    def __init__(self, models: list[ResolvedModel]) -> None:
+    def __init__(self, models: list[Model]) -> None:
         self._models = models
 
-    async def ordered_iter(self):
+    async def ordered_iter(self) -> t.AsyncGenerator[Model, None]:
         """An async generator that yields models in topological order."""
         # Iterates over the models in the dataset in topological order
 
         # Collect the table references of the current models
-        model_table_map: dict[str, ResolvedModel] = {}
+        model_table_map: dict[str, Model] = {}
         for model in self._models:
-            model_table_map[str(model.table_reference())] = model
+            model_table_map[str(model)] = model
 
         sorter = TopologicalSorter()
         for model in self._models:
-            dependencies = await model.dependencies()
+            dependencies = await model.dataset_internal_dependencies()
             # Only add dependencies that are in the current set of models
             dependencies_set = set(
                 [str(dep) for dep in dependencies if str(dep) in model_table_map]
             )
-            sorter.add(str(model.table_reference()), *dependencies_set)
+            sorter.add(str(model), *dependencies_set)
 
         for table_ref in sorter.static_order():
             yield model_table_map[table_ref]

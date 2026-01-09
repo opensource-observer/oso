@@ -188,9 +188,13 @@ class Client(AsyncBaseClient):
 
             fragment DatasetCommon on Dataset {
               id
-              orgId
+              name
               displayName
               description
+              organization {
+                id
+                name
+              }
             }
 
             fragment LatestDataModel on DataModel {

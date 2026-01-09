@@ -16,8 +16,6 @@ from scheduler.types import (
     MaterializationStrategyResource,
     Model,
     ModelSorter,
-    ResolvedModel,
-    ResolvedSQLModel,
     RunContext,
     SuccessResponse,
 )
@@ -26,7 +24,7 @@ from scheduler.utils import OSOClientTableResolver, ctas_query
 logger = structlog.getLogger(__name__)
 
 
-def convert_model_to_scheduler_model(dataset_id: str):
+def convert_model_to_scheduler_model(org_name: str, dataset_name: str, dataset_id: str):
     """Convert a data model from the UDM client to the scheduler's Model type."""
 
     def _convert(raw: DataModelsEdgesNode) -> "Model":
@@ -44,6 +42,8 @@ def convert_model_to_scheduler_model(dataset_id: str):
             name=revision.name,
             code=revision.code,
             language=revision.language,
+            org_name=org_name,
+            dataset_name=dataset_name,
         )
 
     return _convert
@@ -75,6 +75,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         # If no specific models are provided, run all models in the dataset
         data_model_def = dataset.node.type_definition
+        dataset_name = dataset.node.name
+        org_name = dataset.node.organization.name
 
         assert isinstance(
             data_model_def,
@@ -98,7 +100,11 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         # Convert models into the scheduler's Model Type so we can run the evaluation
         converted_models: list[Model] = list(
             map(
-                convert_model_to_scheduler_model(dataset_id=message.dataset_id),
+                convert_model_to_scheduler_model(
+                    org_name=org_name,
+                    dataset_name=dataset_name,
+                    dataset_id=message.dataset_id,
+                ),
                 models_with_release,
             )
         )
@@ -115,19 +121,11 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         async with udm_engine_adapter.get_adapter() as adapter:
             async with materialization_strategy.get_strategy(adapter) as strategy:
-                resolved_models: list[ResolvedModel] = []
                 table_resolvers: list[TableResolver] = [
                     OSOClientTableResolver(oso_client=oso_client)
                 ]
                 logger.info("Determining model evaluation order...")
-                for model in converted_models:
-                    resolved_model = await model.as_resolved_sql_model(
-                        table_resolvers=table_resolvers,
-                        materialization_strategy=strategy,
-                    )
-                    resolved_models.append(resolved_model)
-
-                sorter = ModelSorter(resolved_models)
+                sorter = ModelSorter(converted_models)
                 async for model in sorter.ordered_iter():
                     logger.info(f"Evaluating model: {model.name}")
                     async with context.step_context(
@@ -138,7 +136,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                             f"Starting evaluation for model {model.name}"
                         )
 
-                        assert isinstance(model, ResolvedSQLModel), (
+                        assert isinstance(model.language.lower() == "sql", Model), (
                             "Only SQL models are supported for evaluation at this time."
                         )
 
@@ -154,7 +152,11 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                             ignore_if_exists=True,
                         )
 
-                        create_query = ctas_query(model.resolved_query())
+                        resolved_query = await model.resolve_query(
+                            table_resolvers=table_resolvers
+                        )
+
+                        create_query = ctas_query(resolved_query)
 
                         adapter.ctas(
                             table_name=target_table,
@@ -164,7 +166,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
                         adapter.replace_query(
                             table_name=target_table,
-                            query_or_df=model.resolved_query(),
+                            query_or_df=resolved_query,
                         )
 
                         columns = adapter.columns(table_name=target_table)

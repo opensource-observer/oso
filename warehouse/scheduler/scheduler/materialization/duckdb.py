@@ -32,7 +32,7 @@ class DuckdbMaterializationStrategy(MaterializationStrategy):
 
     async def fqn_to_table_reference(self, fqn) -> TableReference:
         """Duckdb materialization is in the form
-        catalog.org_{org_id}__ds_{dataset_id}.tbl_{table_id}
+        catalog.org_{org_id}__{dataset_id}.tbl_{table_id}
         """
         table = exp.to_table(fqn)
         # Catalog is ignored for DuckDB
@@ -45,7 +45,7 @@ class DuckdbMaterializationStrategy(MaterializationStrategy):
             raise ValueError(f"Invalid DuckDB table FQN: {fqn}")
 
         org_id = split_db[0].replace("org_", "")
-        dataset_id = split_db[1].replace("ds_", "")
+        dataset_id = split_db[1]
         table_id = table_name.replace("tbl_", "")
 
         return TableReference(
@@ -56,4 +56,4 @@ class DuckdbMaterializationStrategy(MaterializationStrategy):
 
     async def table_reference_to_fqn(self, ref: TableReference) -> str:
         catalog = self._adapter.get_current_catalog()
-        return f"{catalog}.org_{ref.org_id}__ds_{ref.dataset_id}.tbl_{ref.table_id}"
+        return f"{catalog}.org_{ref.org_id}__{ref.dataset_id}.tbl_{ref.table_id}"
