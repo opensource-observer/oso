@@ -122,8 +122,8 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
 
                 resources = rest_api_resources(rest_api_config)
 
-                dataset_schema = f"org_{org_id}__{dataset_id}".replace("-", "_")
-                pipeline_name = f"{org_id}_{dataset_id}".replace("-", "_")[:50]
+                dataset_schema = f"org_{org_id}__{dataset_id}".replace("-", "")
+                pipeline_name = f"{org_id}_{dataset_id}".replace("-", "")[:50]
                 async with dlt_destination.get_destination(
                     dataset_schema=dataset_schema
                 ) as destination:
@@ -176,7 +176,7 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
                     warehouse_fqn = f"{common_settings.warehouse_shared_catalog_name}.{dataset_schema}.{table_name}"
 
                     await step_context.create_materialization(
-                        table_id=f"data_ingestion_{org_id}_{dataset_id}_{table_name}",
+                        table_id=f"data_ingestion_{table_name}",
                         warehouse_fqn=warehouse_fqn,
                         schema=schema,
                     )
