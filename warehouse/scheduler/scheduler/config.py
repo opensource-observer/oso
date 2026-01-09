@@ -114,6 +114,10 @@ class CommonSettings(BaseSettings):
         default="user_shared",
         description="The name of the shared catalog in the data warehouse",
     )
+    enable_fake_oso_client: bool = Field(
+        default=False,
+        description="Whether to use a fake OSO client for testing",
+    )
 
     @model_validator(mode="after")
     def handle_generated_config(self):
@@ -319,11 +323,18 @@ class PublishDataModelRunRequest(BaseSettings):
 class PublishQueryRunRequest(BaseSettings):
     """Subcommand to publish a QueryRunRequest message"""
 
-    run_id: str = Field(description="The ID of the query run")
+    run_id: str = Field(default="", description="The ID of the query run")
     query: str = Field(description="The SQL query to run")
     user: str = Field(description="The user for authentication")
+    queue_name: str = Field(
+        default="data_model_run_requests",
+        description="The name of the queue to publish to (can be changed for testing)",
+    )
 
     async def cli_cmd(self, context: CliContext) -> None:
+        if not self.run_id:
+            print("No run_id provided, generating a new UUID.")
+            self.run_id = uuid.uuid4().hex
         print(f"Publishing QueryRunRequest with run_id: {self.run_id}")
         resources_registry = context.get_data_as(
             "resources_registry", ResourcesRegistry
@@ -345,7 +356,7 @@ class PublishQueryRunRequest(BaseSettings):
         print(f"Message constructed: {message}")
 
         await message_queue_service.publish_message(
-            "query_run_requests",
+            self.queue_name,
             message,
         )
 

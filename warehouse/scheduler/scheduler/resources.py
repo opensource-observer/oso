@@ -36,10 +36,11 @@ from scheduler.materialization.duckdb import DuckdbMaterializationStrategyResour
 from scheduler.materialization.trino import TrinoMaterializationStrategyResource
 from scheduler.mq.handlers.data_ingestion import DataIngestionRunRequestHandler
 from scheduler.mq.handlers.data_model import DataModelRunRequestHandler
+from scheduler.mq.handlers.fake import FakeWaitForeverRunRequestHandler
 from scheduler.mq.handlers.query import QueryRunRequestHandler
 from scheduler.mq.handlers.static_model import StaticModelRunRequestHandler
 from scheduler.mq.pubsub import GCPPubSubMessageQueueService
-from scheduler.testing.client import FakeUDMClient
+from scheduler.testing.client import FakeOSOClient, FakeUDMClient
 from scheduler.types import (
     GenericMessageQueueService,
     MaterializationStrategyResource,
@@ -196,10 +197,11 @@ def oso_client_factory(common_settings: "CommonSettings") -> OSOClient:
             "OSO system API key is not set. Set SCHEDULER_OSO_SYSTEM_API_KEY."
         )
 
-    return OSOClient(
-        url=common_settings.oso_api_url,
-        headers={"x-system-credentials": common_settings.oso_system_api_key},
-    )
+    # return OSOClient(
+    #     url=common_settings.oso_api_url,
+    #     headers={"x-system-credentials": common_settings.oso_system_api_key},
+    # )
+    return FakeOSOClient()
 
 
 @resource_factory("message_handler_registry")
@@ -210,6 +212,7 @@ def message_handler_registry_factory() -> MessageHandlerRegistry:
     registry.register(DataIngestionRunRequestHandler())
     registry.register(QueryRunRequestHandler())
     registry.register(StaticModelRunRequestHandler())
+    registry.register(FakeWaitForeverRunRequestHandler())
     return registry
 
 

@@ -396,6 +396,10 @@ class SuccessResponse(HandlerResponse):
     message: str = Field(default="Successfully processed the message.")
 
 
+class CancelledResponse(HandlerResponse):
+    message: str = Field(default="Cancelled processing the message.")
+
+
 class MessageHandler(abc.ABC, t.Generic[T]):
     topic: str
     message_type: t.Type[T]
