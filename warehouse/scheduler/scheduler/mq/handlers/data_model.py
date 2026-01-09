@@ -131,7 +131,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 ) as step_context:
                     step_context.log.info(f"Starting evaluation for model {model.name}")
 
-                    assert isinstance(model.language.lower() == "sql", Model), (
+                    assert model.language.lower() == "sql", (
                         "Only SQL models are supported for evaluation at this time."
                     )
 
