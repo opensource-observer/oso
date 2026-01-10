@@ -2,173 +2,65 @@ import { v4 as uuid4 } from "uuid";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendInvitationEmail } from "@/lib/services/email";
 import { logger } from "@/lib/logger";
-import type { GraphQLResolverModule } from "@/app/api/v1/osograph/utils/types";
+import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
+  getOrganization,
+  getUserProfile,
   requireAuthentication,
   requireOrgMembership,
-  getUserProfile,
-  getOrganization,
-  getOrganizationByName,
-  type GraphQLContext,
 } from "@/app/api/v1/osograph/utils/auth";
+import {
+  InvitationErrors,
+  ServerErrors,
+} from "@/app/api/v1/osograph/utils/errors";
+import {
+  requireOrganizationAccess,
+  checkMembershipExists,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
+import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
   validateInput,
   CreateInvitationSchema,
   AcceptInvitationSchema,
   RevokeInvitationSchema,
+  InvitationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
-import {
-  InvitationErrors,
-  UserErrors,
-  ServerErrors,
-} from "@/app/api/v1/osograph/utils/errors";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
-    osoApp_invitation: async (
+    invitations: async (
       _: unknown,
-      { id }: { id: string },
+      args: FilterableConnectionArgs,
       context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-      const { data: invitation, error } = await supabase
-        .from("invitations")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error || !invitation) {
-        throw InvitationErrors.notFound();
-      }
-
-      const { data: membership } = await supabase
-        .from("users_by_organization")
-        .select("id")
-        .eq("user_id", authenticatedUser.userId)
-        .eq("org_id", invitation.org_id)
-        .is("deleted_at", null)
-        .single();
-
-      const userEmail = authenticatedUser.email?.toLowerCase();
-      const isInvitee = userEmail === invitation.email.toLowerCase();
-
-      if (!membership && !isInvitee) {
-        throw InvitationErrors.wrongRecipient();
-      }
-
-      return invitation;
+      return queryWithPagination(args, context, {
+        tableName: "invitations",
+        whereSchema: InvitationWhereSchema,
+        requireAuth: true,
+        filterByUserOrgs: true,
+      });
     },
-
-    osoApp_myInvitations: async (
-      _: unknown,
-      args: { status?: string },
-      context: GraphQLContext,
-    ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const supabase = createAdminClient();
-      const userEmail = authenticatedUser.email?.toLowerCase();
-
-      if (!userEmail) {
-        throw UserErrors.emailNotFound();
-      }
-
-      let query = supabase
-        .from("invitations")
-        .select("*")
-        .ilike("email", userEmail);
-
-      if (args.status) {
-        switch (args.status) {
-          case "PENDING":
-            query = query
-              .is("accepted_at", null)
-              .is("deleted_at", null)
-              .gt("expires_at", new Date().toISOString());
-            break;
-          case "ACCEPTED":
-            query = query.not("accepted_at", "is", null);
-            break;
-          case "EXPIRED":
-            query = query
-              .is("accepted_at", null)
-              .is("deleted_at", null)
-              .lt("expires_at", new Date().toISOString());
-            break;
-          case "DELETED":
-            query = query.not("deleted_at", "is", null);
-            break;
-        }
-      } else {
-        query = query
-          .is("accepted_at", null)
-          .is("deleted_at", null)
-          .gt("expires_at", new Date().toISOString());
-      }
-
-      const { data: invitations } = await query;
-      return invitations || [];
-    },
-  },
-
-  Invitation: {
-    __resolveReference: async (reference: { id: string }) => {
-      const supabase = createAdminClient();
-      const { data: invitation } = await supabase
-        .from("invitations")
-        .select("*")
-        .eq("id", reference.id)
-        .single();
-
-      return invitation;
-    },
-
-    organization: async (parent: { org_id: string }) => {
-      return getOrganization(parent.org_id);
-    },
-
-    invitedBy: async (parent: { invited_by: string }) => {
-      return getUserProfile(parent.invited_by);
-    },
-
-    acceptedBy: async (parent: { accepted_by: string | null }) => {
-      if (!parent.accepted_by) return null;
-      return getUserProfile(parent.accepted_by);
-    },
-
-    status: (parent: {
-      accepted_at: string | null;
-      deleted_at: string | null;
-      expires_at: string;
-    }) => {
-      if (parent.deleted_at) return "DELETED";
-      if (parent.accepted_at) return "ACCEPTED";
-      if (new Date(parent.expires_at) < new Date()) return "EXPIRED";
-      return "PENDING";
-    },
-
-    createdAt: (parent: { created_at: string }) => parent.created_at,
-    expiresAt: (parent: { expires_at: string }) => parent.expires_at,
-    acceptedAt: (parent: { accepted_at: string | null }) => parent.accepted_at,
   },
 
   Mutation: {
-    osoApp_createInvitation: async (
+    createInvitation: async (
       _: unknown,
-      { input }: { input: { email: string; orgName: string } },
+      args: { input: { orgId: string; email: string; role: string } },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const validated = validateInput(CreateInvitationSchema, input);
-      const normalizedEmail = validated.email.toLowerCase().trim();
+      const input = validateInput(CreateInvitationSchema, args.input);
 
       const supabase = createAdminClient();
-
+      const org = await requireOrganizationAccess(
+        authenticatedUser.userId,
+        input.orgId,
+      );
       const userProfile = await getUserProfile(authenticatedUser.userId);
 
-      const org = await getOrganizationByName(validated.orgName);
-
-      await requireOrgMembership(authenticatedUser.userId, org.id);
+      const normalizedEmail = input.email.toLowerCase().trim();
 
       if (authenticatedUser.email?.toLowerCase() === normalizedEmail) {
         throw InvitationErrors.cannotInviteSelf();
@@ -181,15 +73,12 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
         .single();
 
       if (existingUser) {
-        const { data: existingMembership } = await supabase
-          .from("users_by_organization")
-          .select("*")
-          .eq("user_id", existingUser.id)
-          .eq("org_id", org.id)
-          .is("deleted_at", null)
-          .single();
+        const membershipExists = await checkMembershipExists(
+          existingUser.id,
+          org.id,
+        );
 
-        if (existingMembership) {
+        if (membershipExists) {
           throw InvitationErrors.alreadyExists();
         }
       }
@@ -215,8 +104,8 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
         .insert({
           id: invitationId,
           email: normalizedEmail,
-          org_name: org.org_name,
           org_id: org.id,
+          org_name: org.org_name,
           invited_by: userProfile.id,
         })
         .select()
@@ -239,7 +128,9 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       } catch (emailError) {
         logger.error("Failed to send invitation email:", emailError);
         throw ServerErrors.externalService(
-          `Failed to send invitation email: ${emailError instanceof Error ? emailError.message : "Unknown error"}`,
+          `Failed to send invitation email: ${
+            emailError instanceof Error ? emailError.message : "Unknown error"
+          }`,
         );
       }
 
@@ -250,20 +141,20 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       };
     },
 
-    osoApp_acceptInvitation: async (
+    acceptInvitation: async (
       _: unknown,
-      args: { invitationId: string },
+      args: { input: { invitationId: string } },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const validated = validateInput(AcceptInvitationSchema, args);
+      const input = validateInput(AcceptInvitationSchema, args.input);
 
       const supabase = createAdminClient();
 
       const { data: invitation, error: invError } = await supabase
         .from("invitations")
         .select("*")
-        .eq("id", validated.invitationId)
+        .eq("id", input.invitationId)
         .single();
 
       if (invError || !invitation) {
@@ -305,7 +196,7 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
           accepted_at: new Date().toISOString(),
           accepted_by: authenticatedUser.userId,
         })
-        .eq("id", validated.invitationId);
+        .eq("id", input.invitationId);
 
       if (acceptError) {
         throw ServerErrors.database(
@@ -318,7 +209,7 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
         .insert({
           user_id: authenticatedUser.userId,
           org_id: invitation.org_id,
-          user_role: "member",
+          user_role: "admin",
         })
         .select()
         .single();
@@ -337,20 +228,20 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       };
     },
 
-    osoApp_revokeInvitation: async (
+    revokeInvitation: async (
       _: unknown,
-      args: { invitationId: string },
+      args: { input: { invitationId: string } },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const validated = validateInput(RevokeInvitationSchema, args);
+      const input = validateInput(RevokeInvitationSchema, args.input);
 
       const supabase = createAdminClient();
 
       const { data: invitation, error: invError } = await supabase
         .from("invitations")
         .select("*")
-        .eq("id", validated.invitationId)
+        .eq("id", input.invitationId)
         .single();
 
       if (invError || !invitation) {
@@ -362,7 +253,7 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       const { error } = await supabase
         .from("invitations")
         .update({ deleted_at: new Date().toISOString() })
-        .eq("id", validated.invitationId);
+        .eq("id", input.invitationId);
 
       if (error) {
         throw ServerErrors.database(
@@ -371,10 +262,45 @@ export const invitationResolvers: GraphQLResolverModule<GraphQLContext> = {
       }
 
       return {
-        invitationId: validated.invitationId,
         message: "Invitation revoked successfully",
         success: true,
       };
     },
+  },
+
+  Invitation: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
+
+    status: (parent: {
+      accepted_at: string | null;
+      deleted_at: string | null;
+      expires_at: string;
+    }) => {
+      if (parent.deleted_at) return "REVOKED";
+      if (parent.accepted_at) return "ACCEPTED";
+      if (new Date(parent.expires_at) < new Date()) return "EXPIRED";
+      return "PENDING";
+    },
+
+    createdAt: (parent: { created_at: string }) => parent.created_at,
+    expiresAt: (parent: { expires_at: string }) => parent.expires_at,
+    acceptedAt: (parent: { accepted_at: string | null }) => parent.accepted_at,
+    deletedAt: (parent: { deleted_at: string | null }) => parent.deleted_at,
+
+    organization: async (parent: { org_id: string }) => {
+      return getOrganization(parent.org_id);
+    },
+
+    invitedBy: async (parent: { invited_by: string }) => {
+      return getUserProfile(parent.invited_by);
+    },
+
+    acceptedBy: async (parent: { accepted_by: string | null }) => {
+      if (!parent.accepted_by) return null;
+      return getUserProfile(parent.accepted_by);
+    },
+
+    userRole: (parent: { user_role: string | undefined }) =>
+      parent.user_role?.toUpperCase() || "admin".toUpperCase(),
   },
 };

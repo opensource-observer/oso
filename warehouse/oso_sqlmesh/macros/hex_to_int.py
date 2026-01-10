@@ -14,7 +14,7 @@ def hex_to_int(
     """Converts a hex string to an integer."""
     from sqlmesh.core.dialect import parse_one
 
-    if evaluator.runtime_stage in ["loading", "creating"]:
+    if evaluator.runtime_stage == "loading":
         return parse_one("1::BIGINT", dialect="trino")
 
     to_data_type_exp = parse_one(
@@ -57,6 +57,7 @@ def hex_to_int(
         )
     raise ValueError(f"Unsupported dialect: {evaluator.engine_adapter.dialect}")
 
+
 @macro()
 def safe_hex_to_int(
     evaluator: MacroEvaluator,
@@ -68,9 +69,10 @@ def safe_hex_to_int(
     """Converts a hex string to an integer."""
     from sqlmesh.core.dialect import parse_one
 
-    if evaluator.runtime_stage in ["loading", "creating"]:
+    if evaluator.runtime_stage == "loading":
         return parse_one("1::BIGINT", dialect="trino")
 
-
-    resolved = hex_to_int(evaluator, hex_exp, to_data_type, to_data_type_dialect, no_prefix)
+    resolved = hex_to_int(
+        evaluator, hex_exp, to_data_type, to_data_type_dialect, no_prefix
+    )
     return exp.Try(this=resolved)

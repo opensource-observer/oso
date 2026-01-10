@@ -55,6 +55,15 @@ import {
   MultiplayerUserProvider,
   MultiplayerUserProviderMeta,
 } from "@/components/widgets/multiplayer-provider";
+import {
+  FormBuilder,
+  FormBuilderMeta,
+} from "@/components/widgets/form-builder";
+import { FormSaver, FormSaverMeta } from "@/components/widgets/form-saver";
+import {
+  CodeDiffMeta,
+  CodeEditorMeta,
+} from "@/components/widgets/code-editor/utils";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -70,6 +79,14 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(FeedbackWrapper, FeedbackWrapperMeta);
   PLASMIC.registerComponent(Markdown, MarkdownMeta);
   PLASMIC.registerComponent(MonacoEditor, MonacoEditorMeta);
+  PLASMIC.registerComponent(
+    dynamic(() => import("./code-editor/code-editor"), { ssr: false }),
+    CodeEditorMeta,
+  );
+  PLASMIC.registerComponent(
+    dynamic(() => import("./code-editor/code-diff"), { ssr: false }),
+    CodeDiffMeta,
+  );
   PLASMIC.registerComponent(OsoNavbar, OsoNavbarMeta);
   PLASMIC.registerComponent(OsoSidebar, OsoSidebarMeta);
   PLASMIC.registerComponent(OSOChat, OSOChatMeta);
@@ -88,4 +105,6 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
     MultiplayerUserProvider,
     MultiplayerUserProviderMeta,
   );
+  PLASMIC.registerComponent(FormBuilder, FormBuilderMeta);
+  PLASMIC.registerComponent(FormSaver, FormSaverMeta);
 }

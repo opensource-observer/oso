@@ -22,11 +22,13 @@ spec:
         namespace: flux-system
   interval: 50m
   install:
-    timeout: 10m
+    disableSchemaValidation: true
+    disableOpenAPIValidation: true
+    timeout: 15m
     remediation:
       retries: 3
   upgrade:
-    timeout: 10m
+    timeout: 15m
     remediation:
       retries: 3
   values:

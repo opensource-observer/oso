@@ -126,6 +126,12 @@ export const ServerErrors = {
 
   externalService: (rawErrorMessage?: string) =>
     createError(ErrorCode.EXTERNAL_SERVICE_ERROR, rawErrorMessage),
+
+  storage: (rawErrorMessage?: string) =>
+    createError(ErrorCode.EXTERNAL_SERVICE_ERROR, rawErrorMessage),
+
+  queueError: (rawErrorMessage?: string) =>
+    createError(ErrorCode.EXTERNAL_SERVICE_ERROR, rawErrorMessage),
 } as const;
 
 export const OrganizationErrors = {
@@ -189,4 +195,33 @@ export const UserErrors = {
 
   noFieldsToUpdate: () =>
     createError(ErrorCode.BAD_USER_INPUT, "No fields provided to update"),
+} as const;
+
+export const NotebookErrors = {
+  notFound: () => createError(ErrorCode.NOT_FOUND, "Notebook not found"),
+} as const;
+
+export const DatasetErrors = {
+  notFound: () => createError(ErrorCode.NOT_FOUND, "Dataset not found"),
+} as const;
+
+export const PaginationErrors = {
+  invalidCursor: () =>
+    createError(ErrorCode.BAD_USER_INPUT, "Invalid pagination cursor format", {
+      field: "after",
+    }),
+
+  invalidPageSize: (size: number) =>
+    createError(
+      ErrorCode.BAD_USER_INPUT,
+      `Page size must be between 0 and 100, received: ${size}`,
+      { field: "first" },
+    ),
+
+  negativePageSize: () =>
+    createError(
+      ErrorCode.BAD_USER_INPUT,
+      "Page size must be a non-negative integer",
+      { field: "first" },
+    ),
 } as const;

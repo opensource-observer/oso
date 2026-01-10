@@ -9,6 +9,7 @@ MODEL (
     forward_only true,
   ),
   start '2015-01-01',
+  end @github_events_pre_v20251007_end_date,
   cron '@daily',
   partitioned_by (DAY("time"), "event_type"),
   grain (time, event_type, event_source, from_artifact_id, to_artifact_id),

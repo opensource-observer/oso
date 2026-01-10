@@ -1,0 +1,99 @@
+type Notebook {
+  id: ID!
+  orgId: ID!
+  name: String!
+  description: String
+  creatorId: ID!
+  preview: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: User!
+  organization: Organization!
+}
+
+type NotebookEdge {
+  node: Notebook!
+  cursor: String!
+}
+
+type NotebookConnection {
+  edges: [NotebookEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+extend type Query {
+  """
+  Query notebooks with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is.
+
+  Example:
+  ```json
+  {
+    "notebook_name": { "like": "%churn%" },
+    "created_at": { "gte": "2024-01-01T00:00:00Z" }
+  }
+  ```
+  """
+  notebooks(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): NotebookConnection!
+}
+
+extend type Mutation {
+  """
+  Create a new notebook
+  """
+  createNotebook(input: CreateNotebookInput!): CreateNotebookPayload!
+
+  """
+  Update a notebook
+  """
+  updateNotebook(input: UpdateNotebookInput!): UpdateNotebookPayload!
+
+  """
+  Save notebook preview image
+  """
+  saveNotebookPreview(input: SaveNotebookPreviewInput!): SaveNotebookPreviewPayload!
+}
+
+input CreateNotebookInput {
+  orgId: ID!
+  name: String!
+  description: String
+}
+
+type CreateNotebookPayload {
+  success: Boolean!
+  notebook: Notebook
+  message: String
+}
+
+input UpdateNotebookInput {
+  id: ID!
+  name: String
+  description: String
+}
+
+type UpdateNotebookPayload {
+  success: Boolean!
+  notebook: Notebook
+  message: String
+}
+
+input SaveNotebookPreviewInput {
+  notebookId: ID!
+  preview: String!
+}
+
+type SaveNotebookPreviewPayload {
+  success: Boolean!
+  notebook: Notebook
+  previewUrl: String
+  message: String
+}

@@ -29,6 +29,8 @@ WITH watch_events AS (
   WHERE
     ghe.type IN ('WatchEvent', 'ForkEvent')
     and ghe.created_at BETWEEN @start_dt AND @end_dt
+    and ghe.repo.id IS NOT NULL AND ghe.repo.name IS NOT NULL
+
 )
 SELECT
   we.id AS id,

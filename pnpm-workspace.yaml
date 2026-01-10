@@ -3,7 +3,9 @@ packages:
   - apps/frontend
   - apps/hasura-clickhouse
   - lib/oss-artifact-validators
+  - lib/pyodide-node-toolkit
   - lib/utils
+  - lib/osoprotobufs/typescript
   - ops/external-prs
   - ops/github-app-utils
 
@@ -14,3 +16,6 @@ onlyBuiltDependencies:
   - '@apollo/rover'
   - '@tailwindcss/oxide'
   - supabase
+
+publicHoistPattern:
+  - '*eslint*'

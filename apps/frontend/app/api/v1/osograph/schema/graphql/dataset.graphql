@@ -1,0 +1,202 @@
+type Dataset {
+  id: ID!
+  orgId: ID!
+  name: String!
+  displayName: String
+  description: String
+  type: DatasetType!
+  creatorId: ID!
+  isPublic: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: User!
+  organization: Organization!
+  tables(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): TableConnection!
+
+  """
+  The runs for this dataset. For USER_MODEL datasets, each run is related to individual data models.
+  FOR DATA_INGESTION datasets, each run is related to individual ingestion jobs.
+  For DATA_CONNECTOR datasets, runs are not applicable and this field will be an empty list.
+  """
+  runs(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): RunConnection!
+
+  typeDefinition: DatasetTypeDefinition!
+}
+
+union DatasetTypeDefinition =
+  | DataModelDefinition
+  | DataIngestion
+  | DataConnector
+  | StaticModelDefinition
+
+type DataModelDefinition {
+  orgId: ID!
+  datasetId: ID!
+  """
+  If the dataset is of type USER_MODEL, this field will contain the list of data models
+  associated with the dataset. Otherwise it will be an empty list.
+  """
+  dataModels(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataModelConnection!
+}
+
+type StaticModelDefinition {
+  orgId: ID!
+  datasetId: ID!
+  """
+  If the dataset is of type STATIC_MODEL, this field will contain the list of static models
+  associated with the dataset. Otherwise it will be an empty list.
+  """
+  staticModels(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): StaticModelConnection!
+}
+
+type DataIngestion {
+  id: ID!
+  orgId: ID!
+  datasetId: ID!
+  factoryType: DataIngestionFactoryType!
+  config: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type DatasetEdge {
+  node: Dataset!
+  cursor: String!
+}
+
+type DatasetConnection {
+  edges: [DatasetEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type TableColumn {
+  name: String!
+  type: String!
+  nullable: Boolean!
+}
+
+union TableSource = DataModel | StaticModel | DataIngestion | DataConnector
+
+type Table {
+  id: ID!
+  datasetId: ID!
+  name: String!
+  dataset: Dataset!
+  columns: [TableColumn!]!
+  source: TableSource!
+}
+
+type TableEdge {
+  node: Table!
+  cursor: String!
+}
+
+type TableConnection {
+  edges: [TableEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+extend type Query {
+  """
+  List all datasets with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+
+  Example:
+  ```json
+  {
+    "name": { "like": "%hello%" },
+    "type": { "eq": "USER_MODEL" }
+  }
+  ```
+  """
+  datasets(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DatasetConnection!
+
+  """
+  Get table column metadata. The where parameter must include:
+  - orgId: Organization ID
+  - catalogName: Catalog name
+  - schemaName: Schema name
+  - tableName: Table name
+
+  Example:
+  ```json
+  {
+    "orgId": { "eq": "org-uuid" },
+    "catalogName": { "eq": "user_iceberg" },
+    "schemaName": { "eq": "ds_schema" },
+    "tableName": { "eq": "my_table" }
+  }
+  ```
+  """
+  tables(where: JSON!): [TableColumn!]!
+}
+
+extend type Mutation {
+  """
+  Create a new dataset
+  """
+  createDataset(input: CreateDatasetInput!): CreateDatasetPayload!
+
+  """
+  Update a dataset
+  """
+  updateDataset(input: UpdateDatasetInput!): UpdateDatasetPayload!
+}
+
+input CreateDatasetInput {
+  orgId: ID!
+  name: String!
+  displayName: String
+  description: String
+  type: DatasetType = USER_MODEL
+  isPublic: Boolean = false
+}
+
+type CreateDatasetPayload {
+  success: Boolean!
+  dataset: Dataset
+  message: String
+}
+
+input UpdateDatasetInput {
+  id: ID!
+  name: String
+  displayName: String
+  description: String
+  isPublic: Boolean
+}
+
+type UpdateDatasetPayload {
+  success: Boolean!
+  dataset: Dataset
+  message: String
+}

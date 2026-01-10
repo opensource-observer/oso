@@ -114,3 +114,10 @@ export const MARIMO_URL =
 
 export const PUPPETEER_CHROMIUM_PATH =
   process.env.PUPPETEER_CHROMIUM_PATH ?? "MISSING PUPPETEER_CHROMIUM_PATH";
+
+export const GOOGLE_PROJECT_ID =
+  process.env.GOOGLE_PROJECT_ID ?? "MISSING GOOGLE_PROJECT_ID";
+export const PUBSUB_EMULATOR_HOST =
+  process.env.PUBSUB_EMULATOR_HOST ?? undefined;
+export const GCP_CREDENTIALS_JSON_B64 =
+  process.env.GCP_CREDENTIALS_JSON_B64 ?? undefined;

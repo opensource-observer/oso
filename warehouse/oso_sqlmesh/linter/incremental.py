@@ -1,7 +1,7 @@
 import typing as t
 
 from sqlglot import exp
-from sqlmesh.core.linter.rule import Rule, RuleViolation
+from sqlmesh.core.linter.rule import Fix, Range, Rule, RuleViolation
 from sqlmesh.core.model import IncrementalByTimeRangeKind, Model
 
 
@@ -26,7 +26,12 @@ class IncrementalMustHaveTimePartition(Rule):
             f"Incremental by time range model {model.name} must have a time partition on {time_column.column.name}."
         )
 
-    def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
+    def violation(
+        self,
+        violation_msg: t.Optional[str] = None,
+        violation_range: t.Optional[Range] = None,
+        fixes: t.Optional[t.List[Fix]] = None,
+    ) -> RuleViolation:
         # Create a RuleViolation object with the specified violation message
         return RuleViolation(
             rule=self,
@@ -51,7 +56,12 @@ class IncrementalMustDefineNoGapsAudit(Rule):
             f"Incremental by time range model {model.name} must have a no_gaps audit."
         )
 
-    def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
+    def violation(
+        self,
+        violation_msg: t.Optional[str] = None,
+        violation_range: t.Optional[Range] = None,
+        fixes: t.Optional[t.List[Fix]] = None,
+    ) -> RuleViolation:
         # Create a RuleViolation object with the specified violation message
         return RuleViolation(
             rule=self,
@@ -95,7 +105,12 @@ class IncrementalMustHaveLookback(Rule):
             f"Incremental by time range model {model.name} must have a lookback of at least 3 days. Current lookback is {model.kind.lookback} {interval_unit.value}(s)."
         )
 
-    def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
+    def violation(
+        self,
+        violation_msg: t.Optional[str] = None,
+        violation_range: t.Optional[Range] = None,
+        fixes: t.Optional[t.List[Fix]] = None,
+    ) -> RuleViolation:
         # Create a RuleViolation object with the specified violation message
         return RuleViolation(
             rule=self,
@@ -118,7 +133,12 @@ class IncrementalMustHaveForwardOnly(Rule):
             f"Incremental by time range model {model.name} must have forward_only set to True or specifically ignore this rule."
         )
 
-    def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
+    def violation(
+        self,
+        violation_msg: t.Optional[str] = None,
+        violation_range: t.Optional[Range] = None,
+        fixes: t.Optional[t.List[Fix]] = None,
+    ) -> RuleViolation:
         # Create a RuleViolation object with the specified violation message
         return RuleViolation(
             rule=self,
@@ -146,7 +166,12 @@ class IncrementalProjectOrCollectionMustHaveAutoRestatement(Rule):
 
         return None
 
-    def violation(self, violation_msg: t.Optional[str] = None) -> RuleViolation:
+    def violation(
+        self,
+        violation_msg: t.Optional[str] = None,
+        violation_range: t.Optional[Range] = None,
+        fixes: t.Optional[t.List[Fix]] = None,
+    ) -> RuleViolation:
         # Create a RuleViolation object with the specified violation message
         return RuleViolation(
             rule=self,

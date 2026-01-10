@@ -23,6 +23,10 @@ import {
   OsoChatProvider,
   OsoChatProviderMeta,
 } from "@/components/dataprovider/oso-chat-provider";
+import {
+  GraphqlFetcher,
+  graphqlFetcherMeta,
+} from "@/components/dataprovider/graphql-fetcher";
 
 export function registerAllDataProvider(PLASMIC: NextJsPlasmicComponentLoader) {
   // Global Context
@@ -34,4 +38,5 @@ export function registerAllDataProvider(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(OsoDataProvider, OsoDataProviderMeta);
   PLASMIC.registerComponent(AuthRouter, AuthRouterMeta);
   PLASMIC.registerComponent(OsoChatProvider, OsoChatProviderMeta);
+  PLASMIC.registerComponent(GraphqlFetcher, graphqlFetcherMeta);
 }

@@ -1,0 +1,279 @@
+"""
+The scheduler schema defines types and queries related to scheduling data model
+runs and ingest jobs.
+
+Runs are a generic representation of a data task that has been executed. So it's
+meant to be quite flexible to accommodate different types of runs in the future.
+"""
+
+enum RunTriggerType {
+  MANUAL
+  SCHEDULED
+}
+
+enum RunType {
+  MANUAL
+  SCHEDULED
+}
+
+enum RunStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+enum StepStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+type Run {
+  id: ID!
+  datasetId: ID!
+  triggerType: RunTriggerType!
+  runType: RunType!
+  requestedBy: User
+  queuedAt: DateTime!
+  startedAt: DateTime
+  finishedAt: DateTime
+  status: RunStatus!
+  logsUrl: String
+  steps: StepConnection!
+}
+
+type RunEdge {
+  node: Run!
+  cursor: String!
+}
+
+type RunConnection {
+  edges: [RunEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type Step {
+  id: ID!
+  runId: ID!
+  run: Run!
+  name: String!
+  displayName: String!
+  logsUrl: String!
+  startedAt: DateTime!
+  finishedAt: DateTime
+  status: StepStatus!
+  materializations: MaterializationConnection!
+}
+
+type StepEdge {
+  node: Step!
+  cursor: String!
+}
+
+type StepConnection {
+  edges: [StepEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type Materialization {
+  id: ID!
+  runId: ID!
+  run: Run!
+  stepId: ID!
+  step: Step!
+  datasetId: ID!
+  createdAt: DateTime!
+  schema: [DataModelColumn!]
+}
+
+type MaterializationEdge {
+  node: Materialization!
+  cursor: String!
+}
+
+type MaterializationConnection {
+  edges: [MaterializationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+extend type Query {
+  """
+  List all runs with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+
+  Example:
+  ```json
+  {
+    "status": { "eq": "RUNNING" },
+    "datasetId": { "eq": "dataset-uuid" }
+  }
+  ```
+  """
+  runs(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): RunConnection!
+}
+
+extend type Mutation {
+  """
+  Request a run for a USER_MODEL dataset
+  """
+  createUserModelRunRequest(
+    input: CreateUserModelRunRequestInput!
+  ): CreateRunRequestPayload!
+
+  """
+  Request a run for a DATA_INGEST dataset
+  """
+  createDataIngestionRunRequest(
+    input: CreateDataIngestionRunRequestInput!
+  ): CreateRunRequestPayload!
+
+  """
+  Request a run for a DATA_CONNECTOR dataset
+  """
+  createDataConnectorRunRequest(
+    input: CreateDataConnectorRunRequestInput!
+  ): CreateRunRequestPayload!
+
+  """
+  Request a run for a STATIC_MODEL
+  """
+  createStaticModelRunRequest(
+    input: CreateStaticModelRunRequestInput!
+  ): CreateRunRequestPayload!
+
+  """
+  Cancel a run
+  """
+  cancelRun(input: CancelRunInput!): CancelRunPayload!
+
+  """
+  System only. Mark a run as started.
+  """
+  startRun(input: StartRunInput!): StartRunPayload!
+
+  """
+  System only. Mark a run as finished.
+  """
+  finishRun(input: FinishRunInput!): FinishRunPayload!
+
+  """
+  System only. Mark a step as started
+  """
+  startStep(input: StartStepInput!): StartStepPayload!
+
+  """
+  System only. Mark a step as finished
+  """
+  finishStep(input: FinishStepInput!): FinishStepPayload!
+
+  """
+  System only. Create a materialization for a step
+  """
+  createMaterialization(input: CreateMaterializationInput!): CreateMaterializationPayload!
+}
+
+input CreateUserModelRunRequestInput {
+  datasetId: ID!
+  selectedModels: [String!]
+}
+
+input CreateDataIngestionRunRequestInput {
+  datasetId: ID!
+}
+
+input CreateDataConnectorRunRequestInput {
+  datasetId: ID!
+}
+
+input CreateStaticModelRunRequestInput {
+  datasetId: ID!
+  selectedModels: [String!]
+}
+
+type CreateRunRequestPayload {
+  success: Boolean!
+  message: String
+  run: Run!
+}
+
+input CancelRunInput {
+  runId: ID!
+}
+
+type CancelRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input StartRunInput {
+  runId: ID!
+}
+
+type StartRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input FinishRunInput {
+  runId: ID!
+  status: RunStatus!
+  logsUrl: String!
+}
+
+type FinishRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input StartStepInput {
+  runId: ID!
+  name: String!
+  displayName: String!
+}
+
+type StartStepPayload {
+  success: Boolean!
+  message: String
+  step: Step!
+}
+
+input FinishStepInput {
+  stepId: ID!
+  status: StepStatus!
+  logsUrl: String!
+}
+
+type FinishStepPayload {
+  success: Boolean!
+  message: String
+  step: Step
+}
+
+input CreateMaterializationInput {
+  stepId: ID!
+  tableId: ID!
+  warehouseFqn: String!
+  schema: [DataModelColumnInput!]!
+}
+
+type CreateMaterializationPayload {
+  success: Boolean!
+  message: String
+  materialization: Materialization!
+}

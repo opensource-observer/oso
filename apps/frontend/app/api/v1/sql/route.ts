@@ -1,12 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { ReadableStream as WebReadableStream } from "node:stream/web";
 import { getTrinoClient } from "@/lib/clients/trino";
 import type { Iterator, QueryResult } from "trino-client";
 import { getTableNamesFromSql } from "@/lib/parsing";
-import { getOrgUser } from "@/lib/auth/auth";
+import { getOrgUser, signTrinoJWT } from "@/lib/auth/auth";
 import { trackServerEvent } from "@/lib/analytics/track";
 import { logger } from "@/lib/logger";
-import { AuthOrgUser } from "@/lib/types/user";
 import { EVENTS } from "@/lib/types/posthog";
 import {
   PlanName,
@@ -15,8 +13,6 @@ import {
   OrganizationPlan,
   TransactionType,
 } from "@/lib/services/credits";
-import { TRINO_JWT_SECRET } from "@/lib/config";
-import { SignJWT } from "jose";
 import {
   AssetMaterialization,
   safeGetAssetsMaterializations,
@@ -46,23 +42,6 @@ const RequestBodySchema = z.object({
 const makeErrorResponse = (errorMsg: string, status: number) =>
   NextResponse.json({ error: errorMsg }, { status });
 
-async function signJWT(user: AuthOrgUser) {
-  const secret = TRINO_JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT Secret not found: unable to authenticate");
-  }
-
-  return new SignJWT({
-    userId: user.userId,
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setSubject(`jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`)
-    .setAudience("consumer-trino")
-    .setIssuer("opensource-observer")
-    .setExpirationTime("1h")
-    .sign(new TextEncoder().encode(secret));
-}
-
 /**
  * Run arbitrary SQL queries against Consumer Trino
  * Note: Please make sure that the server is configured with a
@@ -80,9 +59,9 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
     const objResponse = await getObjectByQuery(PUBLIC_SQL_BUCKET, reqBody);
     //console.log(objResponse);
     if (objResponse.Body) {
-      const respStream = WebReadableStream.from(objResponse.Body);
+      const respStream = objResponse.Body.transformToWebStream();
       logger.log(`/api/sql: Public cache hit, short-circuiting`);
-      return new NextResponse(respStream as ReadableStream, {
+      return new NextResponse(respStream, {
         headers: {
           "Content-Type": "application/x-ndjson",
         },
@@ -131,13 +110,13 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
       const objResponse = await getObjectByQuery(user.orgName, reqBody);
       //console.log(objResponse);
       if (objResponse.Body) {
-        const respStream = WebReadableStream.from(objResponse.Body);
+        const respStream = objResponse.Body.transformToWebStream();
         logger.log(`/api/sql: Private cache hit, short-circuiting`);
 
         // TODO: this should be controlled by a `publishQuery` option
         await copyObjectByQuery(user.orgName, reqBody, PUBLIC_SQL_BUCKET);
 
-        return new NextResponse(respStream as ReadableStream, {
+        return new NextResponse(respStream, {
           headers: {
             "Content-Type": "application/x-ndjson",
           },
@@ -151,7 +130,7 @@ export const POST = withPostHogTracking(async (request: NextRequest) => {
   }
 
   // Trino query
-  const jwt = await signJWT(user);
+  const jwt = await signTrinoJWT(user);
   const tables = getTableNamesFromSql(query);
 
   try {

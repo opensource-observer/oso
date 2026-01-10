@@ -1,0 +1,31 @@
+test_stg_github__commits_basic:
+  model: oso.stg_github__commits
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-02
+  inputs:
+    oso.stg_github__push_events:
+      rows:
+      - push_id: 123
+        created_at: "2024-01-01 12:00:00"
+        repository_id: 101
+        repository_name: "owner/repo"
+        ref: "refs/heads/main"
+        actor_id: 555
+        actor_login: "user1"
+        commits: '[{"sha": "sha1", "author": {"email": "user1@example.com", "name": "User One"}, "distinct": true, "url": "http://api.github.com/commits/sha1"}]'
+  outputs:
+    query:
+      rows:
+      - created_at: "2024-01-01 12:00:00"
+        repository_id: 101
+        repository_name: "owner/repo"
+        push_id: 123
+        ref: "refs/heads/main"
+        actor_id: 555
+        actor_login: "user1"
+        sha: "sha1"
+        author_email: "user1@example.com"
+        author_name: "User One"
+        is_distinct: true
+        api_url: "http://api.github.com/commits/sha1"

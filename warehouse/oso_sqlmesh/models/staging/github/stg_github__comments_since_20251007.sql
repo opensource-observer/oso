@@ -1,0 +1,93 @@
+MODEL (
+  name oso.stg_github__comments_since_20251007,
+  kind INCREMENTAL_BY_TIME_RANGE (
+    time_column event_time,
+    batch_size 90,
+    batch_concurrency 3,
+    lookback @default_daily_incremental_lookback,
+    forward_only true,
+  ),
+  dialect "duckdb",
+  start @github_events_v20251007_start_date,
+  partitioned_by DAY(event_time),
+  audits (
+    has_at_least_n_rows(threshold := 0),
+    no_gaps(
+      time_column := event_time,
+      no_gap_date_part := 'day',
+    ),
+  )
+);
+
+WITH pull_request_comment_events AS (
+  SELECT
+    ghe.id AS id,
+    -- TODO: Get the correct updated_at using the REST api
+    -- created_at here means the event created at, not the comment
+    ghe.created_at AS event_time,
+    ghe.repo.id AS repository_id,
+    ghe.repo.name AS repository_name,
+    ghe.actor.id AS actor_id,
+    ghe.actor.login AS actor_login,
+    'PULL_REQUEST_REVIEW_COMMENT' AS "type",
+    CAST(ghe.payload -> '$.pull_request.number' AS BIGINT) AS "number",
+    -- TODO: Get the correct created_at using the REST api.
+    -- created_at here means the event created at, not the comment
+    ghe.created_at AS created_at,
+    -- TODO: Get the correct following fields using the REST api
+    -- These fields were removed from the PullRequestReviewCommentEvent payload in v2 data.
+    CAST(NULL AS TIMESTAMP) AS merged_at,
+    CAST(NULL AS TIMESTAMP) AS closed_at,
+    CAST(NULL AS VARCHAR) AS "state",
+    CAST(NULL AS DOUBLE) AS comments
+  FROM oso.stg_github__events AS ghe
+  WHERE
+    ghe.type = 'PullRequestReviewCommentEvent'
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '2' DAY AND @end_dt + INTERVAL '1' DAY
+), issue_comment_events AS (
+  SELECT
+    ghe.id AS id,
+    -- the stg_github__events.created_at means the time the event was fired,
+    -- but not the time the issue was updated (i.e. the time the IssuesEvent was created)
+    -- so we need to use the issue.updated_at field from the payload
+    STRPTIME(ghe.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') AS "event_time",
+    ghe.repo.id AS repository_id,
+    ghe.repo.name AS repository_name,
+    ghe.actor.id AS actor_id,
+    ghe.actor.login AS actor_login,
+    'ISSUE_COMMENT' AS "type",
+    CAST(ghe.payload -> '$.issue.number' AS INT) AS "number",
+    STRPTIME(ghe.payload ->> '$.issue.created_at', '%Y-%m-%dT%H:%M:%SZ') AS created_at,
+    NULL::TIMESTAMP AS merged_at,
+    STRPTIME(ghe.payload ->> '$.issue.closed_at', '%Y-%m-%dT%H:%M:%SZ') AS closed_at,
+    ghe.payload ->> '$.issue.state' AS "state",
+    CAST(ghe.payload -> '$.issue.comments' AS DOUBLE) AS comments
+  FROM oso.stg_github__events AS ghe
+  WHERE
+    ghe.type = 'IssueCommentEvent'
+    and ghe.created_at BETWEEN @start_dt  - INTERVAL '2' DAY AND @end_dt + INTERVAL '1' DAY
+    and STRPTIME(ghe.payload ->> '$.issue.updated_at', '%Y-%m-%dT%H:%M:%SZ') BETWEEN @start_dt AND @end_dt
+), all_events as (
+  SELECT
+    *
+  FROM pull_request_comment_events
+  UNION ALL
+  SELECT
+    *
+  FROM issue_comment_events
+)
+SELECT
+  id,
+  event_time,
+  repository_id,
+  repository_name,
+  actor_id,
+  actor_login,
+  "type",
+  "number",
+  created_at,
+  merged_at,
+  closed_at,
+  "state",
+  comments
+FROM all_events

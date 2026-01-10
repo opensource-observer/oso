@@ -76,7 +76,6 @@ function OsoDataProvider(props: OsoDataProviderProps) {
         }
         result[key] = await (client as any)[method](args);
       }
-      console.log("OsoDataProvider:", props, data);
       return result;
     },
     {

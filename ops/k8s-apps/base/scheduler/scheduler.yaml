@@ -1,0 +1,57 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: scheduler
+  namespace: base-scheduler
+spec:
+  chart:
+    spec:
+      chart: ./ops/helm-charts/scheduler
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  interval: 50m
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  values:
+    global:
+      serviceAccountNameOverride: "production-scheduler"
+    app:
+      service:
+        enabled: false
+      name: "oso-scheduler"
+      command: ["uv"]
+      # These args should be overridden in the environment-specific overlays
+      args:
+        - run
+        - --directory
+        - warehouse/scheduler
+        - scheduler
+        - run
+      # The next two values aren't actually used by the scheduler workers
+      hostEnvVar: "SCHEDULER_HOST"
+      portEnvVar: "SCHEDULER_PORT"
+      envVars:
+        SCHEDULER_GCP_PROJECT_ID: "opensource-observer"
+        SCHEDULER_OSO_API_URL: "https://www.oso.xyz/api/v1/osograph"
+        SCHEDULER_ENV: "production"
+        SCHEDULER_OSO_SYSTEM_API_KEY: "gcp:secretmanager:production-scheduler-oso-system-api-key/versions/latest"
+        SCHEDULER_REDIS_HOST: "redis.production-redis.svc.cluster.local"
+        SCHEDULER_TRINO_ENABLED: "1"
+        SCHEDULER_K8S_ENABLED: "1"
+        SCHEDULER_TRINO_K8S_COORDINATOR_DEPLOYMENT_NAME: production-trino-trino-coordinator
+        SCHEDULER_TRINO_K8S_WORKER_DEPLOYMENT_NAME: production-trino-trino-worker
+        SCHEDULER_TRINO_K8S_SERVICE_NAME: production-trino-trino
+        SCHEDULER_TRINO_K8S_NAMESPACE: production-trino
+        SCHEDULER_CONSUMER_TRINO_K8S_COORDINATOR_DEPLOYMENT_NAME: production-consumer-trino-trino-coordinator
+        SCHEDULER_CONSUMER_TRINO_K8S_WORKER_DEPLOYMENT_NAME: production-consumer-trino-trino-worker
+        SCHEDULER_CONSUMER_TRINO_K8S_SERVICE_NAME: production-consumer-trino-trino
+        SCHEDULER_CONSUMER_TRINO_K8S_NAMESPACE: production-consumer-trino
+        SCHEDULER_QUERY_BUCKET: oso-async-query
+        SCHEDULER_UPLOAD_FILESYSTEM_ACCESS_KEY_ID: "gcp:secretmanager:production-scheduler-upload-filesystem-access-key-id/versions/latest"
+        SCHEDULER_UPLOAD_FILESYSTEM_SECRET_ACCESS_KEY: "gcp:secretmanager:production-scheduler-upload-filesystem-secret-access-key/versions/latest"
+        SCHEDULER_UPLOAD_FILESYSTEM_ENDPOINT_URL: "gcp:secretmanager:production-scheduler-upload-filesystem-endpoint-url/versions/latest"
+        SCHEDULER_UPLOAD_FILESYSTEM_BUCKET_URL: "s3://static-model-files"

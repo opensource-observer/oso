@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useOsoAppClient } from "@/components/hooks/oso-app";
 import { NotebookHostControls } from "@/lib/notebook/notebook-controls";
 import { logger } from "@/lib/logger";
+import { saveNotebookPreview } from "@/lib/notebook/utils";
 import dynamic from "next/dynamic";
 
 export interface NotebookProps {
@@ -158,6 +159,7 @@ function NotebookFactory() {
               readNotebook: async () => {
                 return null;
               },
+              saveNotebookPreview: async (_base64Image: string) => {},
             });
 
           useEffect(() => {
@@ -220,6 +222,13 @@ function NotebookFactory() {
                 } catch (error) {
                   logger.error("Error reading notebook:", error);
                   return null;
+                }
+              },
+              saveNotebookPreview: async (base64Image: string) => {
+                try {
+                  await saveNotebookPreview(client, notebookId, base64Image);
+                } catch (error) {
+                  logger.error("Error saving notebook preview:", error);
                 }
               },
             });

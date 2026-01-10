@@ -50,3 +50,7 @@ VALUES
     ((SELECT id FROM organizations WHERE org_name = 'oso' LIMIT 1), (SELECT id FROM auth.users WHERE email = 'user@example.com' LIMIT 1), 'template-value-chain', '{"cells":[{"id":"1","type":"python","content":"print(\"Hello from value-chain notebook!\")"}]}');
 
 INSERT INTO resource_permissions (permission_level, notebook_id) SELECT 'read', id FROM notebooks;
+
+INSERT INTO datasets (org_id, created_by, name, display_name, description, dataset_type)
+VALUES
+    ((SELECT id FROM organizations WHERE org_name = 'oso' LIMIT 1), (SELECT id FROM auth.users WHERE email = 'user@example.com' LIMIT 1), 'oso-dataset', 'oso-dataset', 'OSO dataset', 'DATA_CONNECTOR');

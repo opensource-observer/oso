@@ -1,16 +1,20 @@
 global:
   fullnameOverride: ""
+  serviceAccountNameOverride: ""
 app:
   # name: "oso" # This must be set
   # command: []
   # args: []
   # By default we enable json logs via the OSO_ENABLE_JSON_LOGS env var
+  serviceAccount:
+    create: true
   enableJsonLogs: true
   ingress:
     enabled: false
     className: "default"
     annotations: {}
   service:
+    enabled: true
     annotations: {}
   host: 0.0.0.0
   hostEnvVar: APP_HOST
@@ -38,3 +42,6 @@ app:
   volumes: []
   volumeMounts: []
   livenessProbe: {}
+  roles:
+    clusterRoles: []
+    enableClusterRoleBinding: false

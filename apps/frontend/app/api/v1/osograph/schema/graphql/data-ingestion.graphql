@@ -1,0 +1,15 @@
+enum DataIngestionFactoryType {
+  REST
+  GRAPHQL
+  ARCHIVE_DIR
+}
+
+input CreateDataIngestionInput {
+  datasetId: ID!
+  factoryType: DataIngestionFactoryType!
+  config: JSON!
+}
+
+extend type Mutation {
+  createDataIngestionConfig(input: CreateDataIngestionInput!): DataIngestion!
+}

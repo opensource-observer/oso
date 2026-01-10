@@ -1,0 +1,296 @@
+---
+description: Use this rule to discover BigQuery table schemas and handle nested ROW/ARRAY types
+alwaysApply: false
+---
+
+# Cursor Rules – Auto-Discovering BigQuery Schemas & Nested Types
+
+Use this rule when you need to discover the schema of BigQuery tables before creating seed files or staging models. This is especially important for tables with nested RECORD or REPEATED types.
+
+## 1. When to Use This Rule
+
+- Creating seed files or staging models for a new BigQuery data source
+- Encountering type mismatch errors like `Cannot cast row(...) to varchar`
+- Working with tables that have nested structures (arrays, records)
+- Unsure about the exact schema shape of a BigQuery table
+
+## 2. Schema Discovery Script
+
+Run this script to discover table schemas and sample data. Save it to a temp file and execute:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Discover BigQuery table schemas and sample data for seed/staging model creation.
+# Usage: PROJECT_ID=... DATASET_ID=... OUT_DIR=... ROW_LIMIT=... ./refresh_schemas.sh
+
+PROJECT_ID=${PROJECT_ID:-opensource-observer}
+DATASET_ID=${DATASET_ID:-opendevdata}
+OUT_DIR=${OUT_DIR:-/tmp/oso_schemas}
+ROW_LIMIT=${ROW_LIMIT:-5}
+
+command -v bq >/dev/null 2>&1 || { echo "bq CLI not found; install Google Cloud SDK." >&2; exit 1; }
+command -v jq >/dev/null 2>&1 || { echo "jq is required but not installed." >&2; exit 1; }
+
+mkdir -p "${OUT_DIR}"
+rm -f "${OUT_DIR}/"*
+
+echo "Listing tables in ${PROJECT_ID}:${DATASET_ID}..."
+TABLES_JSON=$(bq ls --project_id "${PROJECT_ID}" --max_results 10000 --format=prettyjson "${PROJECT_ID}:${DATASET_ID}")
+TABLE_COUNT=$(echo "${TABLES_JSON}" | jq 'length')
+
+if [ "${TABLE_COUNT}" -eq 0 ]; then
+  echo "No tables found in ${PROJECT_ID}:${DATASET_ID}." >&2
+  exit 1
+fi
+
+echo "${TABLES_JSON}" | jq -r '.[].tableReference.tableId' | while IFS= read -r TABLE; do
+  echo "Processing ${TABLE}..."
+
+  SCHEMA_JSON=$(
+    bq show --project_id "${PROJECT_ID}" --format=prettyjson "${PROJECT_ID}:${DATASET_ID}.${TABLE}" \
+    | jq '.schema.fields'
+  )
+
+  SAMPLE_ROWS=$(
+    bq query --project_id "${PROJECT_ID}" --format=json --nouse_legacy_sql \
+      "SELECT * FROM \`${PROJECT_ID}.${DATASET_ID}.${TABLE}\` LIMIT ${ROW_LIMIT}"
+  )
+
+  jq -n \
+    --arg table "${TABLE}" \
+    --arg project "${PROJECT_ID}" \
+    --arg dataset "${DATASET_ID}" \
+    --argjson schema "${SCHEMA_JSON}" \
+    --argjson sample "${SAMPLE_ROWS}" \
+    '{table:$table, project:$project, dataset:$dataset, schema:$schema, sample_rows:$sample}' \
+> "${OUT_DIR}/${TABLE}.json"
+done
+
+echo "Done. Files written to ${OUT_DIR}/"
+```
+
+## 3. Workflow
+
+1. **Save and run the script**:
+   ```bash
+   # Save script to temp file
+   cat > /tmp/refresh_schemas.sh << 'EOF'
+   # (paste the script from Section 2)
+   EOF
+   chmod +x /tmp/refresh_schemas.sh
+
+   # Run for your target dataset
+   PROJECT_ID=opensource-observer DATASET_ID=your_dataset OUT_DIR=/tmp/oso_schemas /tmp/refresh_schemas.sh
+   ```
+
+2. **Read the generated JSON** for target table(s):
+   ```bash
+   cat /tmp/oso_schemas/your_table.json
+   ```
+
+3. **Identify nested RECORD/REPEATED fields** in the schema
+
+4. **Create seed file and staging model** using the patterns below
+
+5. **Cleanup** after generation:
+   ```bash
+   rm -rf /tmp/oso_schemas /tmp/refresh_schemas.sh
+   ```
+
+## 4. Detecting Nested Types in Schema JSON
+
+Look for these patterns in the schema output:
+
+**Array of integers** (BigQuery REPEATED RECORD with element):
+```json
+{
+  "fields": [
+    {
+      "fields": [{ "mode": "REQUIRED", "name": "element", "type": "INTEGER" }],
+      "mode": "REPEATED",
+      "name": "list",
+      "type": "RECORD"
+    }
+  ],
+  "mode": "REQUIRED",
+  "name": "repo_ids",
+  "type": "RECORD"
+}
+```
+
+**Sample data appears as nested object** (not a simple scalar):
+```json
+"repo_ids": { "list": [{ "element": "697325" }] }
+```
+
+## 5. BigQuery to Trino Type Mapping
+
+| BigQuery Schema Pattern | Trino Type |
+|------------------------|------------|
+| `RECORD { list: REPEATED RECORD { element: INTEGER } }` | `ROW(list ARRAY(ROW(element BIGINT)))` |
+| `RECORD { list: REPEATED RECORD { element: DATE } }` | `ROW(list ARRAY(ROW(element DATE)))` |
+| `RECORD { list: REPEATED RECORD { element: STRING } }` | `ROW(list ARRAY(ROW(element VARCHAR)))` |
+| `RECORD { field1: TYPE1, field2: TYPE2 }` | `ROW(field1 TYPE1, field2 TYPE2)` |
+| `REPEATED STRING` | `ARRAY(VARCHAR)` |
+| `REPEATED INTEGER` | `ARRAY(BIGINT)` |
+
+## 6. Nested Types in Seed Files
+
+You MUST use `ROW(...)` and `ARRAY(...)` types for BigQuery RECORD and REPEATED fields. NEVER use `TEXT` for nested structures.
+
+```python
+from datetime import date
+from typing import List, Optional
+
+from metrics_tools.seed.types import Column, SeedConfig
+from pydantic import BaseModel
+
+
+# Define nested structure models
+class RepoIdElement(BaseModel):
+    element: int
+
+
+class RepoIdsList(BaseModel):
+    list: List[RepoIdElement]
+
+
+class EcoDeveloperActivities(BaseModel):
+    """Seed model for opendevdata eco_developer_activities"""
+
+    ecosystem_id: int | None = Column("BIGINT", description="ecosystem id")
+    day: date | None = Column("DATE", description="day")
+    # Use the nested model type with proper ROW/ARRAY SQL type
+    repo_ids: Optional[RepoIdsList] = Column(
+        "ROW(list ARRAY(ROW(element BIGINT)))", description="repo ids"
+    )
+    num_commits: int | None = Column("BIGINT", description="num commits")
+
+
+seed = SeedConfig(
+    catalog="bigquery",
+    schema="opendevdata",
+    table="eco_developer_activities",
+    base=EcoDeveloperActivities,
+    rows=[
+        EcoDeveloperActivities(
+            ecosystem_id=1,
+            day=date.fromisoformat("2023-02-02"),
+            # Instantiate with nested objects, NOT JSON strings
+            repo_ids=RepoIdsList(list=[RepoIdElement(element=697325)]),
+            num_commits=1,
+        ),
+    ],
+)
+```
+
+## 7. Nested Types in Staging Models
+
+```sql
+MODEL (
+  name oso.stg_opendevdata__eco_developer_activities,
+  description 'Staging model for opendevdata eco_developer_activities',
+  dialect trino,
+  kind FULL,
+  audits (
+    has_at_least_n_rows(threshold := 0)
+  )
+);
+
+SELECT
+  ecosystem_id::BIGINT AS ecosystem_id,
+  day::DATE AS day,
+  -- Use CAST with full ROW/ARRAY type specification
+  CAST(repo_ids AS ROW(list ARRAY(ROW(element BIGINT)))) AS repo_ids,
+  num_commits::BIGINT AS num_commits
+FROM @oso_source('bigquery.opendevdata.eco_developer_activities')
+```
+
+## 8. Common Nested Type Patterns
+
+**Array of integers** (most common):
+```python
+# Seed file
+class IntElement(BaseModel):
+    element: int
+
+class IntList(BaseModel):
+    list: List[IntElement]
+
+field: Optional[IntList] = Column("ROW(list ARRAY(ROW(element BIGINT)))", ...)
+
+# Staging model
+CAST(field AS ROW(list ARRAY(ROW(element BIGINT)))) AS field
+```
+
+**Array of dates**:
+```python
+# Seed file
+class DateElement(BaseModel):
+    element: date
+
+class DateList(BaseModel):
+    list: List[DateElement]
+
+field: Optional[DateList] = Column("ROW(list ARRAY(ROW(element DATE)))", ...)
+
+# Staging model
+CAST(field AS ROW(list ARRAY(ROW(element DATE)))) AS field
+```
+
+**Multiple nested fields in one table**:
+```python
+# Reuse element classes, create separate list classes if needed
+class IntElement(BaseModel):
+    element: int
+
+class PathList(BaseModel):
+    list: List[IntElement]
+
+class EcosystemPathsList(BaseModel):
+    list: List[IntElement]
+
+# Use in model
+path: Optional[PathList] = Column("ROW(list ARRAY(ROW(element BIGINT)))", ...)
+ecosystem_paths: Optional[EcosystemPathsList] = Column("ROW(list ARRAY(ROW(element BIGINT)))", ...)
+```
+
+## 9. Bad vs Good Examples
+
+```python
+# BAD - Using TEXT for nested types (causes Iceberg errors)
+repo_ids: str | None = Column("TEXT", description="repo ids")
+# With string data
+repo_ids="[697325]"
+
+# GOOD - Using ROW/ARRAY with proper Pydantic models
+repo_ids: Optional[RepoIdsList] = Column(
+    "ROW(list ARRAY(ROW(element BIGINT)))", description="repo ids"
+)
+# With nested object data
+repo_ids=RepoIdsList(list=[RepoIdElement(element=697325)])
+```
+
+```sql
+-- BAD - Casting to TEXT (causes Iceberg errors)
+repo_ids::TEXT AS repo_ids
+
+-- GOOD - Casting to ROW/ARRAY type
+CAST(repo_ids AS ROW(list ARRAY(ROW(element BIGINT)))) AS repo_ids
+```
+
+## 10. Checklist
+
+- [ ] Ran schema discovery script to `/tmp/oso_schemas/`
+- [ ] Identified all nested RECORD/REPEATED fields in schema
+- [ ] Created Pydantic nested models for each nested field
+- [ ] Used `ROW(...)` and `ARRAY(...)` types (not TEXT) in Column definitions
+- [ ] Used nested object instantiation (not JSON strings) in sample data
+- [ ] Used `CAST(field AS ROW(...))` in staging model (not `::TEXT`)
+- [ ] Cleaned up `/tmp/oso_schemas/` after generation
+
+---
+
+**If you encounter `Cannot cast row(...) to varchar` errors, the field is using TEXT instead of ROW/ARRAY. Fix it using the patterns above.**

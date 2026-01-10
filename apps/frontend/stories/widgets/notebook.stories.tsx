@@ -40,6 +40,13 @@ export const Primary: Story = {
         console.log("Reading notebook, returning null");
         return null;
       },
+      saveNotebookPreview: async (base64Image: string) => {
+        action("saveNotebookPreview")(base64Image);
+        console.log(
+          "Saving notebook preview, base64 length:",
+          base64Image.length,
+        );
+      },
     },
     initialCode: "",
     notebookUrl:

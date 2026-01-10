@@ -1,3 +1,4 @@
+{{- if .Values.app.service.enabled -}}
 ---
 apiVersion: v1
 kind: Service
@@ -13,3 +14,4 @@ spec:
       protocol: TCP
       port: {{ .Values.app.port }}
       targetPort: {{ .Values.app.port }}
+{{ end }}

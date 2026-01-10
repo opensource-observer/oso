@@ -10,9 +10,10 @@ import {
   HeadBucketCommand,
   PutBucketLifecycleConfigurationCommand,
   NotFound,
+  PutObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
-import type { NodeJsClient } from "@smithy/types";
-import { createHash } from "node:crypto";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
   CLOUDFLARE_R2_ENDPOINT,
   CLOUDFLARE_R2_ACCESS_KEY_ID,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/config";
 import { assert } from "@opensource-observer/utils";
 import { logger } from "@/lib/logger";
+import { hashObject } from "@/lib/utils-server";
 
 const PART_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -35,18 +37,10 @@ const S3 = new S3Client({
     accessKeyId: CLOUDFLARE_R2_ACCESS_KEY_ID,
     secretAccessKey: CLOUDFLARE_R2_SECRET_ACCESS_KEY,
   },
-}) as NodeJsClient<S3Client>;
-
-function queryToKey(queryBody: any): string {
-  const queryStr = JSON.stringify(queryBody);
-  const normalized = queryStr.toLowerCase().trim();
-  const buffer = Buffer.from(normalized, "utf-8");
-  const hash = createHash("md5").update(buffer).digest("hex");
-  return hash;
-}
+});
 
 async function getObjectByQuery(orgName: string, queryBody: any) {
-  const key = queryToKey(queryBody);
+  const key = hashObject(queryBody);
   return getObject({ bucketName: orgName, objectKey: key });
 }
 
@@ -55,7 +49,7 @@ async function putObjectByQuery(
   queryBody: any,
   body: ReadableStream,
 ) {
-  const key = queryToKey(queryBody);
+  const key = hashObject(queryBody);
   return putObject({ bucketName: orgName, objectKey: key }, body);
 }
 
@@ -156,7 +150,7 @@ async function copyObjectByQuery(
   queryBody: any,
   destinationBucket: string,
 ) {
-  const key = queryToKey(queryBody);
+  const key = hashObject(queryBody);
   return copyObject(
     { bucketName: orgName, objectKey: key },
     { bucketName: destinationBucket, objectKey: key },
@@ -205,9 +199,82 @@ async function createBucketWithLifecycle(bucketName: string) {
   logger.log(`Set 14-day expiration policy on bucket: ${bucketName}`);
 }
 
+async function putBase64Image(
+  bucketName: string,
+  objectKey: string,
+  base64Data: string,
+  contentType: string = "image/png",
+): Promise<void> {
+  const base64Clean = base64Data.replace(/^data:[^;]+;base64,/, "");
+  const buffer = Buffer.from(base64Clean, "base64");
+
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+    Body: buffer,
+    ContentType: contentType,
+  });
+
+  await S3.send(command);
+}
+
+async function objectExists(
+  bucketName: string,
+  objectKey: string,
+): Promise<boolean> {
+  try {
+    await S3.send(
+      new HeadObjectCommand({
+        Bucket: bucketName,
+        Key: objectKey,
+      }),
+    );
+    return true;
+  } catch (error) {
+    if (error instanceof NotFound) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function getPreviewSignedUrl(
+  bucketName: string,
+  objectKey: string,
+  expirationSeconds: number = 900,
+): Promise<string | null> {
+  const exists = await objectExists(bucketName, objectKey);
+  if (!exists) {
+    return null;
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+  });
+
+  return getSignedUrl(S3, command, { expiresIn: expirationSeconds });
+}
+
+async function putSignedUrl(
+  bucketName: string,
+  objectKey: string,
+  expirationSeconds: number = 900,
+): Promise<string> {
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+  });
+
+  return getSignedUrl(S3, command, { expiresIn: expirationSeconds });
+}
+
 export {
   getObjectByQuery,
   putObjectByQuery,
   copyObjectByQuery,
   createBucketWithLifecycle,
+  putBase64Image,
+  getPreviewSignedUrl,
+  putSignedUrl,
 };

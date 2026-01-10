@@ -117,7 +117,7 @@ FROM @oso_source('bigquery.source_name.table_name')
 - **Chain IDs**: Use `BIGINT` for large chain IDs
 - **Large integers**: Use `BIGINT` for values that exceed INT32 range (e.g., TVS values, large transaction counts)
 - **Decimals**: Use `INTEGER` for currency decimals
-- **JSON**: Use `TEXT` for JSON strings
+- **Nested/Array types**: Use `ROW(...)` and `ARRAY(...)` for nested structures (see `autodiscover-bigquery-schema` rule)
 - **IPFS Hashes**: Use `TEXT` for IPFS content
 
 ## 6. Sample Data Guidelines
@@ -403,6 +403,7 @@ FROM @oso_source('bigquery.defillama.historical_chain_tvl')
 - [ ] File in correct path with proper naming
 - [ ] Model class has descriptive docstring
 - [ ] All fields have proper type hints and Column annotations
+- [ ] Nested RECORD/REPEATED types use ROW/ARRAY with Pydantic models (see `autodiscover-bigquery-schema` rule)
 - [ ] Sample data covers representative scenarios
 - [ ] Use `int(datetime.now().timestamp())` for timestamp fields instead of hardcoded dates
 - [ ] Import `from datetime import datetime` when using timestamps
@@ -415,6 +416,7 @@ FROM @oso_source('bigquery.defillama.historical_chain_tvl')
 - [ ] File in correct path with proper naming convention
 - [ ] Model header includes description and audits
 - [ ] All columns have proper type casting
+- [ ] Nested RECORD/REPEATED types use `CAST(field AS ROW(...))` (see `autodiscover-bigquery-schema` rule)
 - [ ] Address fields use LOWER() transformation
 - [ ] Timestamp fields use @from_unix_timestamp() when needed
 - [ ] Deduplication logic is implemented if needed

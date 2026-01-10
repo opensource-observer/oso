@@ -8,6 +8,7 @@ env:
   PR_TOOLS_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PR_TOOLS_GITHUB_APP_PRIVATE_KEY }}
   PR_TOOLS_GITHUB_APP_ID: ${{ secrets.PR_TOOLS_GITHUB_APP_ID }}
   PR_TOOLS_ADMIN_TEAM_NAME: ${{ secrets.PR_TOOLS_ADMIN_TEAM_NAME }}
+  APOLLO_TELEMETRY_DISABLED: "true"
 
   # should not be set to a legitimate value for testing. This will use up API
   # quota otherwise

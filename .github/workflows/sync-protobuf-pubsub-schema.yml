@@ -1,0 +1,46 @@
+name: Sync Protobuf GCP Pub/Sub Schemas
+permissions:
+  contents: read
+  id-token: write
+env:
+  SCHEDULER_ENV: production
+  SCHEDULER_GCP_PROJECT_ID: opensource-observer
+  SCHEDULER_OSO_API_URL: https://www.oso.xyz/api/v1/osograph
+  # We can use dummy values as these are not actively used in for the sync operation
+  SCHEDULER_UPLOAD_FILESYSTEM_ACCESS_KEY_ID: "xxx"
+  SCHEDULER_UPLOAD_FILESYSTEM_SECRET_ACCESS_KEY: "xxx"
+  SCHEDULER_UPLOAD_FILESYSTEM_ENDPOINT_URL: "xxx"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sync-protobuf-pubsub-schema:
+    runs-on: ubuntu-latest
+    environment: deploy
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: '>= 363.0.0'
+
+      - name: Setup Python and UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: 3.12
+  
+      - name: Install dependencies
+        run: uv sync --all-packages --all-extras
+
+      - name: Sync Protobuf Schemas to GCP Pub/Sub
+        run: uv run scheduler initialize

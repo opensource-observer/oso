@@ -1,0 +1,57 @@
+{
+  "name": "@opensource-observer/pyodide-node-toolkit",
+  "version": "0.0.1",
+  "description": "Pyodide node toolkit for OSO",
+  "author": "Kariba Labs",
+  "license": "Apache-2.0",
+  "private": false,
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opensource-observer/oso.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "pyodide-node-toolkit": "./dist/src/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit && pnpm lint:eslint && pnpm lint:prettier",
+    "lint:eslint": "eslint --max-warnings 0 .",
+    "lint:prettier": "prettier --ignore-path ../../.gitignore --log-level warn --check **/*.{js,ts,md,json}",
+    "cli": "node -r tsconfig-paths/register --loader ts-node/esm src/cli.ts",
+    "test": "vitest --run"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/yargs": "^17.0.35",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@opensource-observer/utils": "workspace:*",
+    "@types/lodash": "^4.17.6",
+    "lodash": "^4.17.21",
+    "mkdirp": "^3.0.1",
+    "pyodide": "^0.29.0",
+    "smol-toml": "^1.6.0",
+    "tar": "^7.5.2",
+    "yargs": "^18.0.0"
+  },
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./*": "./dist/src/*.js"
+  }
+}

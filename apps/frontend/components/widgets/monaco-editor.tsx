@@ -18,11 +18,11 @@ const MonacoEditorMeta: CodeComponentMeta<MonacoEditorProps> = {
   name: "MonacoEditor",
   description: "Monaco editor",
   props: {
-    defaultValue: {
-      type: "string",
-    },
     value: {
       type: "string",
+      editOnly: true,
+      displayName: "Initial value",
+      uncontrolledProp: "defaultValue",
     },
     onChange: {
       type: "eventHandler",

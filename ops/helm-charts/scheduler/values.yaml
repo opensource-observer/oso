@@ -1,0 +1,39 @@
+global:
+  fullnameOverride: ""
+  serviceAccountNameOverride: ""
+app:
+  queues: []
+  crons: []
+  # name: "oso" # This must be set
+  # command: []
+  # args: []
+  # By default we enable json logs via the OSO_ENABLE_JSON_LOGS env var
+  serviceAccount:
+    create: true
+  enableJsonLogs: true
+  image:
+    repo: ghcr.io/opensource-observer/oso
+    tag: latest
+  logging:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    root:
+      level: "ERROR"
+    oso_mcp:
+      level: "DEBUG"
+    uvicorn:
+      level: "INFO"
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  resources: {}
+  envVars: {}
+  # if you want to set env vars in a raw format but this makes it harder to
+  # extend with flux
+  rawEnvVars: [] 
+  volumes: []
+  volumeMounts: []
+  livenessProbe: {}
+  roles:
+    clusterRoles: []
+    enableClusterRoleBinding: false
+  

@@ -10,9 +10,18 @@ type CollapsibleProps = React.ComponentProps<typeof Collapsible>;
 const CollapsibleMeta: CodeComponentMeta<CollapsibleProps> = {
   name: "Collapsible",
   description: "shadcn/ui Collapsible component",
+  variants: {
+    open: {
+      cssSelector: '[data-state="open"]',
+      displayName: "Open",
+    },
+  },
   props: {
     children: "slot",
-    open: "boolean",
+    open: {
+      type: "boolean",
+      editOnly: true,
+    },
     defaultOpen: "boolean",
     onOpenChange: {
       type: "eventHandler",
@@ -31,6 +40,15 @@ const CollapsibleTriggerMeta: CodeComponentMeta<CollapsibleTriggerProps> = {
   props: {
     children: "slot",
     asChild: "boolean",
+    className: {
+      type: "class",
+      selectors: [
+        {
+          selector: ":hover",
+          label: "Hovered",
+        },
+      ],
+    },
   },
 };
 

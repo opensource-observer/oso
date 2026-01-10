@@ -1,0 +1,89 @@
+test_first_time_contributor_to_project_monthly_basic:
+  model: oso.first_time_contributor_to_project_monthly
+  vars:
+    start: 2024-01-01
+    end: 2024-03-31
+  inputs:
+    oso.int_events_daily__github:
+      rows:
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-01
+        amount: 3
+      - to_artifact_id: repo_1
+        from_artifact_id: user_1 # Not a first time contributor
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-01-15
+        amount: 3
+      - to_artifact_id: repo_1
+        from_artifact_id: user_2
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-01-20
+        amount: 1
+      - to_artifact_id: repo_2
+        from_artifact_id: user_1 # Not a first time contributor
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_OPENED
+        bucket_day: 2024-02-01
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: user_3
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_REVIEW_COMMENT # Not a contribution
+        bucket_day: 2024-02-10
+        amount: 5
+      - to_artifact_id: repo_1
+        from_artifact_id: user_4
+        event_source: SOURCE_PROVIDER
+        event_type: PULL_REQUEST_MERGED
+        bucket_day: 2024-02-15
+        amount: 2
+      - to_artifact_id: repo_1
+        from_artifact_id: user_5
+        event_source: SOURCE_PROVIDER
+        event_type: COMMIT_CODE
+        bucket_day: 2024-03-01
+        amount: 1
+      - to_artifact_id: repo_2
+        from_artifact_id: user_6
+        event_source: SOURCE_PROVIDER
+        event_type: ISSUE_OPENED
+        bucket_day: 2024-03-15
+        amount: 1
+    oso.artifacts_by_project_v1:
+      rows:
+      - artifact_id: repo_1
+        project_id: project_1
+      - artifact_id: repo_2
+        project_id: project_2
+  outputs:
+    query:
+      rows:
+      - metrics_sample_date: 2024-01-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: first_time_contributor_monthly
+        amount: 2
+      - metrics_sample_date: 2024-02-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: first_time_contributor_monthly
+        amount: 1
+      - metrics_sample_date: 2024-03-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_1
+        from_artifact_id: ''
+        metric: first_time_contributor_monthly
+        amount: 1
+      - metrics_sample_date: 2024-03-01
+        event_source: SOURCE_PROVIDER
+        to_project_id: project_2
+        from_artifact_id: ''
+        metric: first_time_contributor_monthly
+        amount: 1

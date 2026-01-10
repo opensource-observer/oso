@@ -1,51 +1,62 @@
-import { GraphQLScalarType, Kind } from "graphql";
+import { DateTimeISOResolver, GraphQLJSON } from "graphql-scalars";
 import type { GraphQLResolverMap } from "@apollo/subgraph/dist/schema-helper/resolverMap";
-import type { GraphQLContext } from "@/app/api/v1/osograph/utils/auth";
-import { organizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization";
+import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
+import { viewerResolvers } from "@/app/api/v1/osograph/schema/resolvers/viewer";
 import { userResolvers } from "@/app/api/v1/osograph/schema/resolvers/user";
-import { memberResolvers } from "@/app/api/v1/osograph/schema/resolvers/member";
+import { organizationResolvers } from "@/app/api/v1/osograph/schema/resolvers/organization";
 import { invitationResolvers } from "@/app/api/v1/osograph/schema/resolvers/invitation";
-
-const dateTimeScalar = new GraphQLScalarType({
-  name: "DateTime",
-  description: "DateTime custom scalar type",
-  serialize(value) {
-    if (value instanceof Date) {
-      return value.toISOString();
-    }
-    if (typeof value === "string") {
-      return value;
-    }
-    throw Error("DateTime must be a Date object or ISO string");
-  },
-  parseValue(value) {
-    if (typeof value === "string") {
-      return new Date(value);
-    }
-    throw Error("DateTime must be a string");
-  },
-  parseLiteral(ast) {
-    if (ast.kind === Kind.STRING) {
-      return new Date(ast.value);
-    }
-    return null;
-  },
-});
+import { notebookResolvers } from "@/app/api/v1/osograph/schema/resolvers/notebook";
+import { datasetResolvers } from "@/app/api/v1/osograph/schema/resolvers/dataset";
+import { dataModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/data-model";
+import { schedulerResolvers } from "@/app/api/v1/osograph/schema/resolvers/scheduler";
+import { systemResolvers } from "@/app/api/v1/osograph/schema/resolvers/system";
+import { staticModelResolvers } from "@/app/api/v1/osograph/schema/resolvers/static-model";
+import { dataIngestionResolvers } from "@/app/api/v1/osograph/schema/resolvers/data-ingestion";
 
 export const resolvers: GraphQLResolverMap<GraphQLContext> = {
-  DateTime: dateTimeScalar,
+  DateTime: DateTimeISOResolver,
+  JSON: GraphQLJSON,
+
   Query: {
-    ...userResolvers.Query,
+    ...viewerResolvers.Query,
     ...organizationResolvers.Query,
     ...invitationResolvers.Query,
+    ...notebookResolvers.Query,
+    ...datasetResolvers.Query,
+    ...dataModelResolvers.Query,
+    ...staticModelResolvers.Query,
+    ...schedulerResolvers.Query,
+    ...systemResolvers.Query,
   },
+
   Mutation: {
-    ...userResolvers.Mutation,
-    ...memberResolvers.Mutation,
+    ...organizationResolvers.Mutation,
     ...invitationResolvers.Mutation,
+    ...notebookResolvers.Mutation,
+    ...datasetResolvers.Mutation,
+    ...dataModelResolvers.Mutation,
+    ...staticModelResolvers.Mutation,
+    ...schedulerResolvers.Mutation,
+    ...systemResolvers.Mutation,
+    ...dataIngestionResolvers.Mutation,
   },
+
+  Viewer: viewerResolvers.Viewer,
   User: userResolvers.User,
   Organization: organizationResolvers.Organization,
-  OrganizationMember: memberResolvers.OrganizationMember,
+  OrganizationMember: organizationResolvers.OrganizationMember,
   Invitation: invitationResolvers.Invitation,
+  Notebook: notebookResolvers.Notebook,
+  Dataset: datasetResolvers.Dataset,
+  DataModelDefinition: datasetResolvers.DataModelDefinition,
+  StaticModelDefinition: datasetResolvers.StaticModelDefinition,
+  DataIngestion: dataIngestionResolvers.DataIngestion,
+  DataModel: dataModelResolvers.DataModel,
+  DataModelRevision: dataModelResolvers.DataModelRevision,
+  DataModelRelease: dataModelResolvers.DataModelRelease,
+  StaticModel: staticModelResolvers.StaticModel,
+  Run: schedulerResolvers.Run,
+  Step: schedulerResolvers.Step,
+  Materialization: schedulerResolvers.Materialization,
+  System: systemResolvers.System,
 };

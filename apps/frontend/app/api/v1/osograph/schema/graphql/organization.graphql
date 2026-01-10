@@ -1,0 +1,105 @@
+type Organization {
+  id: ID!
+  name: String!
+  displayName: String
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  members(first: Int = 50, after: String, single: Boolean, where: JSON): UserConnection!
+  notebooks(first: Int = 50, after: String, single: Boolean, where: JSON): NotebookConnection!
+  datasets(first: Int = 50, after: String, single: Boolean, where: JSON): DatasetConnection!
+}
+
+type OrganizationMember {
+  id: ID!
+  userId: ID!
+  orgId: ID!
+  userRole: MemberRole!
+  createdAt: DateTime!
+  user: User!
+}
+
+type OrganizationEdge {
+  node: Organization!
+  cursor: String!
+}
+
+type OrganizationConnection {
+  edges: [OrganizationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+extend type Query {
+  """
+  Query organizations with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+
+  Example:
+  ```json
+  {
+    "name": { "like": "%oso%" },
+    "created_at": { "gte": "2024-01-01T00:00:00Z" }
+  }
+  ```
+  """
+  organizations(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): OrganizationConnection!
+}
+
+extend type Mutation {
+  """
+  Add a user to organization
+  """
+  addUserByEmail(input: AddUserByEmailInput!): AddUserByEmailPayload!
+
+  """
+  Remove a member from organization
+  """
+  removeMember(input: RemoveMemberInput!): RemoveMemberPayload!
+
+  """
+  Update member role
+  """
+  updateMemberRole(input: UpdateMemberRoleInput!): UpdateMemberRolePayload!
+}
+
+input AddUserByEmailInput {
+  orgId: ID!
+  email: String!
+  role: MemberRole!
+}
+
+type AddUserByEmailPayload {
+  success: Boolean!
+  member: OrganizationMember
+  message: String
+}
+
+input RemoveMemberInput {
+  orgId: ID!
+  userId: ID!
+}
+
+type RemoveMemberPayload {
+  success: Boolean!
+  message: String
+}
+
+input UpdateMemberRoleInput {
+  orgId: ID!
+  userId: ID!
+  role: MemberRole!
+}
+
+type UpdateMemberRolePayload {
+  success: Boolean!
+  member: OrganizationMember
+  message: String
+}

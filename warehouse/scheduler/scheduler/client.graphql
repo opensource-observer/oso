@@ -1,0 +1,198 @@
+mutation StartRun($runId: ID!) {
+  startRun(input: {runId: $runId}) {
+    success
+  }
+}
+
+mutation FinishRun(
+  $runId: ID!
+  $status: RunStatus!
+  $logsUrl: String!
+) {
+  finishRun(input: {runId: $runId, status: $status, logsUrl: $logsUrl}) {
+    success
+    message
+    run {
+      id
+    }
+  }
+}
+
+mutation StartStep(
+  $runId: ID!, 
+  $name: String!, 
+  $displayName: String!
+) {
+  startStep(input: {runId: $runId, name: $name, displayName: $displayName}) {
+    success
+    message
+    step {
+      id
+    }
+  }
+}
+
+mutation FinishStep(
+  $stepId: ID!, 
+  $status: StepStatus!, 
+  $logsUrl: String!
+) {
+  finishStep(input: {stepId: $stepId, status: $status, logsUrl: $logsUrl}) {
+    success
+    message
+    step {
+      id
+    }
+  }
+}
+
+mutation CreateMaterialization(
+  $stepId: ID!
+  $tableId: ID!
+  $warehouseFqn: String!
+  $schema: [DataModelColumnInput!]!
+) {
+  createMaterialization(input: {
+    stepId: $stepId, 
+    tableId: $tableId,
+    warehouseFqn: $warehouseFqn,
+    schema: $schema
+  }) {
+    success
+    materialization {
+      id
+    }
+  }
+}
+
+fragment DatasetCommon on Dataset {
+  id
+  name
+  displayName
+  description
+  organization {
+    id
+    name
+  }
+}
+
+fragment LatestDataModel on DataModel {
+  id
+  orgId
+  isEnabled
+  createdAt
+  latestRelease {
+    id
+    revision {
+      name
+      description
+      code
+      dependsOn {
+        alias
+        tableId
+      }
+      hash
+      kind
+      kindOptions {
+        timeColumn
+        timeColumnFormat
+        batchSize
+        lookback
+        uniqueKeyColumns
+        whenMatchedSql
+        mergeFilter
+        validFromName
+        validToName
+        invalidateHardDeletes
+        updatedAtColumn
+        updatedAtAsValidFrom
+        scdColumns
+        executionTimeAsValidFrom
+      }
+      partitionedBy
+      schema {
+        name
+        type
+        description
+      }
+      start
+      end
+      clusteredBy
+      language
+    }
+  }
+}
+
+fragment DataModels on DataModelConnection {
+  edges {
+    node {
+      ...LatestDataModel
+    }
+  }
+}
+
+query GetDataModels($datasetId: ID!) {
+  datasets(where: { id: { eq: $datasetId }}) {
+    edges {
+      node {
+        ...DatasetCommon
+        typeDefinition {
+          ... on DataModelDefinition {
+            dataModels(where: { is_enabled: {eq: true}}) {
+              ...DataModels
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetDataIngestionConfig($datasetId: ID!) {
+  datasets(where: { id: { eq: $datasetId }}, single: true) {
+    edges {
+      node {
+        ...DatasetCommon
+        typeDefinition {
+          ... on DataIngestion {
+            id
+            datasetId
+            factoryType
+            config
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetStaticModels($datasetId: ID!) {
+  datasets(where: { id: { eq: $datasetId }}) {
+    edges {
+      node {
+        ...DatasetCommon
+        typeDefinition {
+          ... on StaticModelDefinition {
+            staticModels {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query ResolveTables($references: [String!]!, $metadata: JSON) {
+  system {
+    resolveTables(references: $references, metadata: $metadata) {
+      reference
+      fqn
+    }
+  }
+}

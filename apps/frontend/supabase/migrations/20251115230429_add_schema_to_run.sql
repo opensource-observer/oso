@@ -1,0 +1,1 @@
+ALTER TABLE "public"."model_run" ADD COLUMN IF NOT EXISTS "schema" model_column_type[];

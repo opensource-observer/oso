@@ -1,0 +1,254 @@
+type DataModel {
+  id: ID!
+  orgId: ID!
+  organization: Organization!
+  dataset: Dataset!
+  name: String!
+  isEnabled: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  revisions(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataModelRevisionConnection!
+  releases(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataModelReleaseConnection!
+  latestRevision: DataModelRevision
+  latestRelease: DataModelRelease
+  materializations(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
+}
+
+type DataModelEdge {
+  node: DataModel!
+  cursor: String!
+}
+
+type DataModelConnection {
+  edges: [DataModelEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type DataModelRevision {
+  id: ID!
+  orgId: ID!
+  dataModelId: ID!
+  dataModel: DataModel!
+  organization: Organization!
+  name: String!
+  description: String
+  revisionNumber: Int!
+  hash: String!
+  language: String!
+  code: String!
+  cron: String!
+  start: DateTime
+  end: DateTime
+  schema: [DataModelColumn!]
+  dependsOn: [DataModelDependency!]
+  partitionedBy: [String!]
+  clusteredBy: [String!]
+  kind: DataModelKind!
+  kindOptions: DataModelKindOptions
+  createdAt: DateTime!
+}
+
+type DataModelRevisionEdge {
+  node: DataModelRevision!
+  cursor: String!
+}
+
+type DataModelRevisionConnection {
+  edges: [DataModelRevisionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type DataModelRelease {
+  id: ID!
+  orgId: ID!
+  dataModelId: ID!
+  revisionId: ID!
+  dataModel: DataModel!
+  revision: DataModelRevision!
+  organization: Organization!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type DataModelReleaseEdge {
+  node: DataModelRelease!
+  cursor: String!
+}
+
+type DataModelReleaseConnection {
+  edges: [DataModelReleaseEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type DataModelDependency {
+  tableId: ID!
+  alias: String
+}
+
+type DataModelColumn {
+  name: String!
+  type: String!
+  description: String
+}
+
+enum DataModelKind {
+  INCREMENTAL_BY_TIME_RANGE
+  INCREMENTAL_BY_UNIQUE_KEY
+  INCREMENTAL_BY_PARTITION
+  SCD_TYPE_2_BY_TIME
+  SCD_TYPE_2_BY_COLUMN
+  FULL
+  VIEW
+}
+
+type DataModelKindOptions {
+  timeColumn: String
+  timeColumnFormat: String
+  batchSize: Int
+  lookback: Int
+  uniqueKeyColumns: [String!]
+  whenMatchedSql: String
+  mergeFilter: String
+  validFromName: String
+  validToName: String
+  invalidateHardDeletes: Boolean
+  updatedAtColumn: String
+  updatedAtAsValidFrom: Boolean
+  scdColumns: [String!]
+  executionTimeAsValidFrom: Boolean
+}
+
+extend type Query {
+  """
+  List all data models with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+
+  Example:
+  ```json
+  {
+    "name": { "like": "%user%" },
+    "is_enabled": { "eq": true }
+  }
+  ```
+  """
+  dataModels(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataModelConnection!
+}
+
+input CreateDataModelInput {
+  orgId: ID!
+  datasetId: ID!
+  name: String!
+  isEnabled: Boolean
+}
+
+type CreateDataModelPayload {
+  success: Boolean!
+  dataModel: DataModel
+  message: String
+}
+
+input UpdateDataModelInput {
+  dataModelId: ID!
+  name: String
+  isEnabled: Boolean
+}
+
+input DataModelColumnInput {
+  name: String!
+  type: String!
+  description: String
+}
+
+input DataModelDependencyInput {
+  dataModelId: ID!
+  alias: String
+}
+
+input DataModelKindOptionsInput {
+  timeColumn: String
+  timeColumnFormat: String
+  batchSize: Int
+  lookback: Int
+  uniqueKeyColumns: [String!]
+  whenMatchedSql: String
+  mergeFilter: String
+  validFromName: String
+  validToName: String
+  invalidateHardDeletes: Boolean
+  updatedAtColumn: String
+  updatedAtAsValidFrom: Boolean
+  scdColumns: [String!]
+  executionTimeAsValidFrom: Boolean
+}
+
+input CreateDataModelRevisionInput {
+  dataModelId: ID!
+  name: String!
+  description: String
+  language: String!
+  code: String!
+  cron: String!
+  start: DateTime
+  end: DateTime
+  schema: [DataModelColumnInput!]!
+  dependsOn: [DataModelDependencyInput!]
+  partitionedBy: [String!]
+  clusteredBy: [String!]
+  kind: DataModelKind!
+  kindOptions: DataModelKindOptionsInput
+}
+
+type CreateDataModelRevisionPayload {
+  success: Boolean!
+  dataModelRevision: DataModelRevision
+  message: String
+}
+
+input CreateDataModelReleaseInput {
+  dataModelId: ID!
+  dataModelRevisionId: ID!
+  description: String
+}
+
+type CreateDataModelReleasePayload {
+  success: Boolean!
+  dataModelRelease: DataModelRelease
+  message: String
+}
+
+extend type Mutation {
+  createDataModel(input: CreateDataModelInput!): CreateDataModelPayload!
+  updateDataModel(input: UpdateDataModelInput!): CreateDataModelPayload!
+  createDataModelRevision(
+    input: CreateDataModelRevisionInput!
+  ): CreateDataModelRevisionPayload!
+  createDataModelRelease(
+    input: CreateDataModelReleaseInput!
+  ): CreateDataModelReleasePayload!
+}

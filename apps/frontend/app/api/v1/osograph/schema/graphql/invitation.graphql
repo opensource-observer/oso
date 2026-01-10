@@ -1,0 +1,91 @@
+type Invitation {
+  id: ID!
+  orgId: ID!
+  email: String!
+  userRole: MemberRole!
+  createdAt: DateTime!
+  expiresAt: DateTime!
+  acceptedAt: DateTime
+  deletedAt: DateTime
+  status: InvitationStatus!
+  organization: Organization!
+  invitedBy: User!
+  acceptedBy: User
+}
+
+type InvitationEdge {
+  node: Invitation!
+  cursor: String!
+}
+
+type InvitationConnection {
+  edges: [InvitationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+extend type Query {
+  """
+  List all invitations with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+
+  Example:
+  ```json
+  {
+    "status": { "eq": "PENDING" },
+    "email": { "ilike": "%@example.com" }
+  }
+  ```
+  """
+  invitations(first: Int = 50, after: String, single: Boolean, where: JSON): InvitationConnection!
+}
+
+extend type Mutation {
+  """
+  Create an invitation
+  """
+  createInvitation(input: CreateInvitationInput!): CreateInvitationPayload!
+
+  """
+  Accept an invitation
+  """
+  acceptInvitation(input: AcceptInvitationInput!): AcceptInvitationPayload!
+
+  """
+  Revoke an invitation
+  """
+  revokeInvitation(input: RevokeInvitationInput!): RevokeInvitationPayload!
+}
+
+input CreateInvitationInput {
+  orgId: ID!
+  email: String!
+  role: MemberRole! = admin
+}
+
+type CreateInvitationPayload {
+  success: Boolean!
+  invitation: Invitation
+  message: String
+}
+
+input AcceptInvitationInput {
+  invitationId: ID!
+}
+
+type AcceptInvitationPayload {
+  success: Boolean!
+  member: OrganizationMember
+  message: String
+}
+
+input RevokeInvitationInput {
+  invitationId: ID!
+}
+
+type RevokeInvitationPayload {
+  success: Boolean!
+  message: String
+}

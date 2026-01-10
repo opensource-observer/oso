@@ -1,0 +1,28 @@
+"""
+Special type for system related reads that are only allowed by authenticated
+service accounts that have system privileges.
+"""
+
+type SystemResolvedTableReference {
+  reference: String!
+  fqn: String!
+}
+
+type System {
+  """
+  Resolve tables by their reference names to the actual table fqn in the data
+  warehouse. This is used by the query rewriter to batch resolve table
+  references as well as other internal operations.
+  """
+  resolveTables(
+    references: [String!]!
+    metadata: JSON
+  ): [SystemResolvedTableReference!]!
+}
+
+extend type Query {
+  """
+  System only. Access system level queries.
+  """
+  system: System!
+}

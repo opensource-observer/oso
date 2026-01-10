@@ -1,6 +1,7 @@
+/* eslint-disable */
 import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
 export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
+export type InputMaybe<T> = T | null | undefined;
 export type Exact<T extends { [key: string]: unknown }> = {
   [K in keyof T]: T[K];
 };
@@ -26,14 +27,16 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
-  /** DateTime custom scalar type */
-  DateTime: { input: any; output: any };
+  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.This scalar is serialized to a string in ISO 8601 format and parsed from a string in ISO 8601 format. */
+  DateTimeISO: { input: any; output: any };
   /**
    * The `GenericScalar` scalar type represents a generic
    * GraphQL scalar value that could be:
    * String, Boolean, Int, Float, List or Object.
    */
   GenericScalar: { input: any; output: any };
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
+  JSON: { input: any; output: any };
   /**
    * Allows use of a JSON String for input / output from the GraphQL schema.
    *
@@ -61,10 +64,14 @@ export type Scalars = {
   link__Import: { input: any; output: any };
 };
 
+export type AcceptInvitationInput = {
+  invitationId: Scalars["ID"]["input"];
+};
+
 export type AcceptInvitationPayload = {
   __typename?: "AcceptInvitationPayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -80,10 +87,16 @@ export type AddDynamicPartitionSuccess = {
   partitionsDefName: Scalars["String"]["output"];
 };
 
+export type AddUserByEmailInput = {
+  email: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  role: MemberRole;
+};
+
 export type AddUserByEmailPayload = {
   __typename?: "AddUserByEmailPayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -976,6 +989,17 @@ export type CancelBackfillSuccess = {
   backfillId: Scalars["String"]["output"];
 };
 
+export type CancelRunInput = {
+  runId: Scalars["ID"]["input"];
+};
+
+export type CancelRunPayload = {
+  __typename?: "CancelRunPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run?: Maybe<Run>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type CapturedLogs = {
   __typename?: "CapturedLogs";
   cursor?: Maybe<Scalars["String"]["output"]>;
@@ -1174,18 +1198,155 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type CreateDataConnectorRunRequestInput = {
+  datasetId: Scalars["ID"]["input"];
+};
+
+export type CreateDataIngestionInput = {
+  config: Scalars["JSON"]["input"];
+  datasetId: Scalars["ID"]["input"];
+  factoryType: DataIngestionFactoryType;
+};
+
+export type CreateDataIngestionRunRequestInput = {
+  datasetId: Scalars["ID"]["input"];
+};
+
+export type CreateDataModelInput = {
+  datasetId: Scalars["ID"]["input"];
+  isEnabled?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
+export type CreateDataModelPayload = {
+  __typename?: "CreateDataModelPayload";
+  dataModel?: Maybe<DataModel>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDataModelReleaseInput = {
+  dataModelId: Scalars["ID"]["input"];
+  dataModelRevisionId: Scalars["ID"]["input"];
+  description?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type CreateDataModelReleasePayload = {
+  __typename?: "CreateDataModelReleasePayload";
+  dataModelRelease?: Maybe<DataModelRelease>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDataModelRevisionInput = {
+  clusteredBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  code: Scalars["String"]["input"];
+  cron: Scalars["String"]["input"];
+  dataModelId: Scalars["ID"]["input"];
+  dependsOn?: InputMaybe<Array<DataModelDependencyInput>>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  end?: InputMaybe<Scalars["DateTimeISO"]["input"]>;
+  kind: DataModelKind;
+  kindOptions?: InputMaybe<DataModelKindOptionsInput>;
+  language: Scalars["String"]["input"];
+  name: Scalars["String"]["input"];
+  partitionedBy?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  schema: Array<DataModelColumnInput>;
+  start?: InputMaybe<Scalars["DateTimeISO"]["input"]>;
+};
+
+export type CreateDataModelRevisionPayload = {
+  __typename?: "CreateDataModelRevisionPayload";
+  dataModelRevision?: Maybe<DataModelRevision>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDatasetInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  displayName?: InputMaybe<Scalars["String"]["input"]>;
+  isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  type?: InputMaybe<DatasetType>;
+};
+
+export type CreateDatasetPayload = {
+  __typename?: "CreateDatasetPayload";
+  dataset?: Maybe<Dataset>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type CreateInvitationInput = {
-  /** Email address to invite */
   email: Scalars["String"]["input"];
-  /** Organization name to invite user to */
-  orgName: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  role?: MemberRole;
 };
 
 export type CreateInvitationPayload = {
   __typename?: "CreateInvitationPayload";
   invitation?: Maybe<Invitation>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
+};
+
+export type CreateMaterializationInput = {
+  schema: Array<DataModelColumnInput>;
+  stepId: Scalars["ID"]["input"];
+  tableId: Scalars["ID"]["input"];
+  warehouseFqn: Scalars["String"]["input"];
+};
+
+export type CreateMaterializationPayload = {
+  __typename?: "CreateMaterializationPayload";
+  materialization: Materialization;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateNotebookInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
+export type CreateNotebookPayload = {
+  __typename?: "CreateNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateRunRequestPayload = {
+  __typename?: "CreateRunRequestPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run: Run;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateStaticModelInput = {
+  datasetId: Scalars["ID"]["input"];
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+};
+
+export type CreateStaticModelPayload = {
+  __typename?: "CreateStaticModelPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  staticModel?: Maybe<StaticModel>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateStaticModelRunRequestInput = {
+  datasetId: Scalars["ID"]["input"];
+  selectedModels?: InputMaybe<Array<Scalars["String"]["input"]>>;
+};
+
+export type CreateUserModelRunRequestInput = {
+  datasetId: Scalars["ID"]["input"];
+  selectedModels?: InputMaybe<Array<Scalars["String"]["input"]>>;
 };
 
 export type CronFreshnessPolicy = {
@@ -1347,6 +1508,307 @@ export type DagsterTypeOrError =
   | PipelineNotFoundError
   | PythonError
   | RegularDagsterType;
+
+export type DataConnector = {
+  __typename?: "DataConnector";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  id: Scalars["ID"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  type: Scalars["String"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataIngestion = {
+  __typename?: "DataIngestion";
+  config: Scalars["JSON"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
+  datasetId: Scalars["ID"]["output"];
+  factoryType: DataIngestionFactoryType;
+  id: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export enum DataIngestionFactoryType {
+  ArchiveDir = "ARCHIVE_DIR",
+  Graphql = "GRAPHQL",
+  Rest = "REST",
+}
+
+export type DataModel = {
+  __typename?: "DataModel";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  dataset: Dataset;
+  id: Scalars["ID"]["output"];
+  isEnabled: Scalars["Boolean"]["output"];
+  latestRelease?: Maybe<DataModelRelease>;
+  latestRevision?: Maybe<DataModelRevision>;
+  materializations: MaterializationConnection;
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  releases: DataModelReleaseConnection;
+  revisions: DataModelRevisionConnection;
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataModelReleasesArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataModelRevisionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataModelColumn = {
+  __typename?: "DataModelColumn";
+  description?: Maybe<Scalars["String"]["output"]>;
+  name: Scalars["String"]["output"];
+  type: Scalars["String"]["output"];
+};
+
+export type DataModelColumnInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  name: Scalars["String"]["input"];
+  type: Scalars["String"]["input"];
+};
+
+export type DataModelConnection = {
+  __typename?: "DataModelConnection";
+  edges: Array<DataModelEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelDefinition = {
+  __typename?: "DataModelDefinition";
+  /**
+   * If the dataset is of type USER_MODEL, this field will contain the list of data models
+   * associated with the dataset. Otherwise it will be an empty list.
+   */
+  dataModels: DataModelConnection;
+  datasetId: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+};
+
+export type DataModelDefinitionDataModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataModelDependency = {
+  __typename?: "DataModelDependency";
+  alias?: Maybe<Scalars["String"]["output"]>;
+  tableId: Scalars["ID"]["output"];
+};
+
+export type DataModelDependencyInput = {
+  alias?: InputMaybe<Scalars["String"]["input"]>;
+  dataModelId: Scalars["ID"]["input"];
+};
+
+export type DataModelEdge = {
+  __typename?: "DataModelEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModel;
+};
+
+export enum DataModelKind {
+  Full = "FULL",
+  IncrementalByPartition = "INCREMENTAL_BY_PARTITION",
+  IncrementalByTimeRange = "INCREMENTAL_BY_TIME_RANGE",
+  IncrementalByUniqueKey = "INCREMENTAL_BY_UNIQUE_KEY",
+  ScdType_2ByColumn = "SCD_TYPE_2_BY_COLUMN",
+  ScdType_2ByTime = "SCD_TYPE_2_BY_TIME",
+  View = "VIEW",
+}
+
+export type DataModelKindOptions = {
+  __typename?: "DataModelKindOptions";
+  batchSize?: Maybe<Scalars["Int"]["output"]>;
+  executionTimeAsValidFrom?: Maybe<Scalars["Boolean"]["output"]>;
+  invalidateHardDeletes?: Maybe<Scalars["Boolean"]["output"]>;
+  lookback?: Maybe<Scalars["Int"]["output"]>;
+  mergeFilter?: Maybe<Scalars["String"]["output"]>;
+  scdColumns?: Maybe<Array<Scalars["String"]["output"]>>;
+  timeColumn?: Maybe<Scalars["String"]["output"]>;
+  timeColumnFormat?: Maybe<Scalars["String"]["output"]>;
+  uniqueKeyColumns?: Maybe<Array<Scalars["String"]["output"]>>;
+  updatedAtAsValidFrom?: Maybe<Scalars["Boolean"]["output"]>;
+  updatedAtColumn?: Maybe<Scalars["String"]["output"]>;
+  validFromName?: Maybe<Scalars["String"]["output"]>;
+  validToName?: Maybe<Scalars["String"]["output"]>;
+  whenMatchedSql?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type DataModelKindOptionsInput = {
+  batchSize?: InputMaybe<Scalars["Int"]["input"]>;
+  executionTimeAsValidFrom?: InputMaybe<Scalars["Boolean"]["input"]>;
+  invalidateHardDeletes?: InputMaybe<Scalars["Boolean"]["input"]>;
+  lookback?: InputMaybe<Scalars["Int"]["input"]>;
+  mergeFilter?: InputMaybe<Scalars["String"]["input"]>;
+  scdColumns?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  timeColumn?: InputMaybe<Scalars["String"]["input"]>;
+  timeColumnFormat?: InputMaybe<Scalars["String"]["input"]>;
+  uniqueKeyColumns?: InputMaybe<Array<Scalars["String"]["input"]>>;
+  updatedAtAsValidFrom?: InputMaybe<Scalars["Boolean"]["input"]>;
+  updatedAtColumn?: InputMaybe<Scalars["String"]["input"]>;
+  validFromName?: InputMaybe<Scalars["String"]["input"]>;
+  validToName?: InputMaybe<Scalars["String"]["input"]>;
+  whenMatchedSql?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type DataModelRelease = {
+  __typename?: "DataModelRelease";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  dataModel: DataModel;
+  dataModelId: Scalars["ID"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  revision: DataModelRevision;
+  revisionId: Scalars["ID"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataModelReleaseConnection = {
+  __typename?: "DataModelReleaseConnection";
+  edges: Array<DataModelReleaseEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelReleaseEdge = {
+  __typename?: "DataModelReleaseEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModelRelease;
+};
+
+export type DataModelRevision = {
+  __typename?: "DataModelRevision";
+  clusteredBy?: Maybe<Array<Scalars["String"]["output"]>>;
+  code: Scalars["String"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
+  cron: Scalars["String"]["output"];
+  dataModel: DataModel;
+  dataModelId: Scalars["ID"]["output"];
+  dependsOn?: Maybe<Array<DataModelDependency>>;
+  description?: Maybe<Scalars["String"]["output"]>;
+  end?: Maybe<Scalars["DateTimeISO"]["output"]>;
+  hash: Scalars["String"]["output"];
+  id: Scalars["ID"]["output"];
+  kind: DataModelKind;
+  kindOptions?: Maybe<DataModelKindOptions>;
+  language: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  partitionedBy?: Maybe<Array<Scalars["String"]["output"]>>;
+  revisionNumber: Scalars["Int"]["output"];
+  schema?: Maybe<Array<DataModelColumn>>;
+  start?: Maybe<Scalars["DateTimeISO"]["output"]>;
+};
+
+export type DataModelRevisionConnection = {
+  __typename?: "DataModelRevisionConnection";
+  edges: Array<DataModelRevisionEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataModelRevisionEdge = {
+  __typename?: "DataModelRevisionEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataModelRevision;
+};
+
+export type Dataset = {
+  __typename?: "Dataset";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  creator: User;
+  creatorId: Scalars["ID"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  isPublic: Scalars["Boolean"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  /**
+   * The runs for this dataset. For USER_MODEL datasets, each run is related to individual data models.
+   * FOR DATA_INGESTION datasets, each run is related to individual ingestion jobs.
+   * For DATA_CONNECTOR datasets, runs are not applicable and this field will be an empty list.
+   */
+  runs: RunConnection;
+  tables: TableConnection;
+  type: DatasetType;
+  typeDefinition: DatasetTypeDefinition;
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DatasetRunsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DatasetTablesArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DatasetConnection = {
+  __typename?: "DatasetConnection";
+  edges: Array<DatasetEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DatasetEdge = {
+  __typename?: "DatasetEdge";
+  cursor: Scalars["String"]["output"];
+  node: Dataset;
+};
+
+/**
+ * Dataset types
+ *
+ * * USER_MODEL: Contains user-defined models
+ * * DATA_CONNECTOR: Derived from a data connector to an external data source
+ * * DATA_INGESTION: Derived from data ingestion pipelines
+ */
+export enum DatasetType {
+  DataConnector = "DATA_CONNECTOR",
+  DataIngestion = "DATA_INGESTION",
+  StaticModel = "STATIC_MODEL",
+  UserModel = "USER_MODEL",
+}
+
+export type DatasetTypeDefinition =
+  | DataConnector
+  | DataIngestion
+  | DataModelDefinition
+  | StaticModelDefinition;
 
 export type DefaultPartitionStatuses = {
   __typename?: "DefaultPartitionStatuses";
@@ -1906,6 +2368,32 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
   stack: EvaluationStack;
 };
 
+export type FinishRunInput = {
+  logsUrl: Scalars["String"]["input"];
+  runId: Scalars["ID"]["input"];
+  status: RunStatus;
+};
+
+export type FinishRunPayload = {
+  __typename?: "FinishRunPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run?: Maybe<Run>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type FinishStepInput = {
+  logsUrl: Scalars["String"]["input"];
+  status: StepStatus;
+  stepId: Scalars["ID"]["input"];
+};
+
+export type FinishStepPayload = {
+  __typename?: "FinishStepPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  step?: Maybe<Step>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type FloatMetadataEntry = MetadataEntry & {
   __typename?: "FloatMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -2301,25 +2789,41 @@ export type InvalidSubsetError = Error & {
   pipeline: Pipeline;
 };
 
-/** Invitation to join an organization */
 export type Invitation = {
   __typename?: "Invitation";
-  acceptedAt?: Maybe<Scalars["DateTime"]["output"]>;
+  acceptedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
   acceptedBy?: Maybe<User>;
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
+  deletedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
   email: Scalars["String"]["output"];
-  expiresAt: Scalars["DateTime"]["output"];
+  expiresAt: Scalars["DateTimeISO"]["output"];
   id: Scalars["ID"]["output"];
   invitedBy: User;
+  orgId: Scalars["ID"]["output"];
   organization: Organization;
   status: InvitationStatus;
+  userRole: MemberRole;
 };
 
+export type InvitationConnection = {
+  __typename?: "InvitationConnection";
+  edges: Array<InvitationEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type InvitationEdge = {
+  __typename?: "InvitationEdge";
+  cursor: Scalars["String"]["output"];
+  node: Invitation;
+};
+
+/** Invitation status */
 export enum InvitationStatus {
   Accepted = "ACCEPTED",
-  Deleted = "DELETED",
   Expired = "EXPIRED",
   Pending = "PENDING",
+  Revoked = "REVOKED",
 }
 
 export type Job = IPipelineSnapshot &
@@ -2715,6 +3219,31 @@ export type MarshalledOutput = {
   outputName: Scalars["String"]["input"];
 };
 
+export type Materialization = {
+  __typename?: "Materialization";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  datasetId: Scalars["ID"]["output"];
+  id: Scalars["ID"]["output"];
+  run: Run;
+  runId: Scalars["ID"]["output"];
+  schema?: Maybe<Array<DataModelColumn>>;
+  step: Step;
+  stepId: Scalars["ID"]["output"];
+};
+
+export type MaterializationConnection = {
+  __typename?: "MaterializationConnection";
+  edges: Array<MaterializationEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type MaterializationEdge = {
+  __typename?: "MaterializationEdge";
+  cursor: Scalars["String"]["output"];
+  node: Materialization;
+};
+
 export type MaterializationEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -2759,9 +3288,8 @@ export type MaterializedPartitionRangeStatuses2D = {
 };
 
 export enum MemberRole {
-  Admin = "ADMIN",
-  Member = "MEMBER",
-  Owner = "OWNER",
+  Admin = "admin",
+  Owner = "owner",
 }
 
 export type MessageEvent = {
@@ -2832,11 +3360,40 @@ export type MultiPartitionStatuses = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type Mutation = {
   __typename?: "Mutation";
+  _empty?: Maybe<Scalars["String"]["output"]>;
   _no_fields_accessible?: Maybe<Scalars["String"]["output"]>;
+  /** Accept an invitation */
+  acceptInvitation: AcceptInvitationPayload;
   /** Adds a partition to a dynamic partition set. */
   addDynamicPartition: AddDynamicPartitionResult;
+  /** Add a user to organization */
+  addUserByEmail: AddUserByEmailPayload;
   /** Cancels a set of partition backfill runs. */
   cancelPartitionBackfill: CancelBackfillResult;
+  /** Cancel a run */
+  cancelRun: CancelRunPayload;
+  /** Request a run for a DATA_CONNECTOR dataset */
+  createDataConnectorRunRequest: CreateRunRequestPayload;
+  createDataIngestionConfig: DataIngestion;
+  /** Request a run for a DATA_INGEST dataset */
+  createDataIngestionRunRequest: CreateRunRequestPayload;
+  createDataModel: CreateDataModelPayload;
+  createDataModelRelease: CreateDataModelReleasePayload;
+  createDataModelRevision: CreateDataModelRevisionPayload;
+  /** Create a new dataset */
+  createDataset: CreateDatasetPayload;
+  /** Create an invitation */
+  createInvitation: CreateInvitationPayload;
+  /** System only. Create a materialization for a step */
+  createMaterialization: CreateMaterializationPayload;
+  /** Create a new notebook */
+  createNotebook: CreateNotebookPayload;
+  createStaticModel: CreateStaticModelPayload;
+  /** Request a run for a STATIC_MODEL */
+  createStaticModelRunRequest: CreateRunRequestPayload;
+  createStaticModelUploadUrl: Scalars["String"]["output"];
+  /** Request a run for a USER_MODEL dataset */
+  createUserModelRunRequest: CreateRunRequestPayload;
   /** Sets the concurrency limit for a given concurrency key. */
   deleteConcurrencyLimit: Scalars["Boolean"]["output"];
   /** Deletes partitions from a dynamic partition set. */
@@ -2845,6 +3402,10 @@ export type Mutation = {
   deletePipelineRun: DeletePipelineRunResult;
   /** Deletes a run from storage. */
   deleteRun: DeletePipelineRunResult;
+  /** System only. Mark a run as finished. */
+  finishRun: FinishRunPayload;
+  /** System only. Mark a step as finished */
+  finishStep: FinishStepPayload;
   /** Frees concurrency slots. */
   freeConcurrencySlots: Scalars["Boolean"]["output"];
   /** Frees the concurrency slots occupied by a specific run. */
@@ -2863,26 +3424,14 @@ export type Mutation = {
   launchRunReexecution: LaunchRunReexecutionResult;
   /** Log telemetry about the Dagster instance. */
   logTelemetry: LogTelemetryMutationResult;
-  /** Accept an invitation to join an organization */
-  osoApp_acceptInvitation: AcceptInvitationPayload;
-  /** Add a user to an organization by email */
-  osoApp_addUserByEmail: AddUserByEmailPayload;
-  /** Create and send an invitation to join an organization */
-  osoApp_createInvitation: CreateInvitationPayload;
-  /** Remove a member from an organization */
-  osoApp_removeMember: RemoveMemberPayload;
-  /** Revoke/delete an invitation */
-  osoApp_revokeInvitation: RevokeInvitationPayload;
-  /** Update a member's role in an organization */
-  osoApp_updateMemberRole: UpdateMemberRolePayload;
-  /** Update the current user's profile */
-  osoApp_updateMyProfile: UpdateProfilePayload;
   /** Retries a set of partition backfill runs. Retrying a backfill will create a new backfill to retry any failed partitions. */
   reexecutePartitionBackfill: LaunchBackfillResult;
   /** Reloads a code location server. */
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   /** Reloads the workspace and its code location servers. */
   reloadWorkspace: ReloadWorkspaceMutationResult;
+  /** Remove a member from organization */
+  removeMember: RemoveMemberPayload;
   /** Reports runless events for an asset or a subset of its partitions. */
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
   /** Reset a schedule to its status defined in code, otherwise disable it from launching runs for a job. */
@@ -2891,6 +3440,10 @@ export type Mutation = {
   resetSensor: SensorOrError;
   /** Resumes a set of partition backfill runs. Resuming a backfill will not retry any failed runs. */
   resumePartitionBackfill: ResumeBackfillResult;
+  /** Revoke an invitation */
+  revokeInvitation: RevokeInvitationPayload;
+  /** Save notebook preview image */
+  saveNotebookPreview: SaveNotebookPreviewPayload;
   /** Enable a schedule to launch runs for a job based on external state change. */
   scheduleDryRun: ScheduleDryRunResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
@@ -2905,10 +3458,14 @@ export type Mutation = {
   setSensorCursor: SensorOrError;
   /** Shuts down a code location server. */
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
+  /** System only. Mark a run as started. */
+  startRun: StartRunPayload;
   /** Enable a schedule to launch runs for a job at a fixed interval. */
   startSchedule: ScheduleMutationResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
   startSensor: SensorOrError;
+  /** System only. Mark a step as started */
+  startStep: StartStepPayload;
   /** Disable a schedule from launching runs for a job. */
   stopRunningSchedule: ScheduleMutationResult;
   /** Disable a sensor from launching runs for a job. */
@@ -2919,8 +3476,21 @@ export type Mutation = {
   terminateRun: TerminateRunResult;
   /** Terminates a set of runs given their run IDs. */
   terminateRuns: TerminateRunsResultOrError;
+  updateDataModel: CreateDataModelPayload;
+  /** Update a dataset */
+  updateDataset: UpdateDatasetPayload;
+  /** Update member role */
+  updateMemberRole: UpdateMemberRolePayload;
+  /** Update a notebook */
+  updateNotebook: UpdateNotebookPayload;
+  updateStaticModel: CreateStaticModelPayload;
   /** Deletes asset history from storage. */
   wipeAssets: AssetWipeMutationResult;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationAcceptInvitationArgs = {
+  input: AcceptInvitationInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2931,8 +3501,88 @@ export type MutationAddDynamicPartitionArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationAddUserByEmailArgs = {
+  input: AddUserByEmailInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCancelPartitionBackfillArgs = {
   backfillId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCancelRunArgs = {
+  input: CancelRunInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataConnectorRunRequestArgs = {
+  input: CreateDataConnectorRunRequestInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataIngestionConfigArgs = {
+  input: CreateDataIngestionInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataIngestionRunRequestArgs = {
+  input: CreateDataIngestionRunRequestInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelArgs = {
+  input: CreateDataModelInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelReleaseArgs = {
+  input: CreateDataModelReleaseInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataModelRevisionArgs = {
+  input: CreateDataModelRevisionInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDatasetArgs = {
+  input: CreateDatasetInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateInvitationArgs = {
+  input: CreateInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateMaterializationArgs = {
+  input: CreateMaterializationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateNotebookArgs = {
+  input: CreateNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateStaticModelArgs = {
+  input: CreateStaticModelInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateStaticModelRunRequestArgs = {
+  input: CreateStaticModelRunRequestInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateStaticModelUploadUrlArgs = {
+  staticModelId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateUserModelRunRequestArgs = {
+  input: CreateUserModelRunRequestInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -2955,6 +3605,16 @@ export type MutationDeletePipelineRunArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteRunArgs = {
   runId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationFinishRunArgs = {
+  input: FinishRunInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationFinishStepArgs = {
+  input: FinishStepInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3009,46 +3669,6 @@ export type MutationLogTelemetryArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_AcceptInvitationArgs = {
-  invitationId: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_AddUserByEmailArgs = {
-  email: Scalars["String"]["input"];
-  orgName: Scalars["String"]["input"];
-  role: MemberRole;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_CreateInvitationArgs = {
-  input: CreateInvitationInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_RemoveMemberArgs = {
-  orgName: Scalars["String"]["input"];
-  userId: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_RevokeInvitationArgs = {
-  invitationId: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_UpdateMemberRoleArgs = {
-  orgName: Scalars["String"]["input"];
-  role: MemberRole;
-  userId: Scalars["ID"]["input"];
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
-export type MutationOsoApp_UpdateMyProfileArgs = {
-  input: UpdateProfileInput;
-};
-
-/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReexecutePartitionBackfillArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
@@ -3056,6 +3676,11 @@ export type MutationReexecutePartitionBackfillArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReloadRepositoryLocationArgs = {
   repositoryLocationName: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationRemoveMemberArgs = {
+  input: RemoveMemberInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3076,6 +3701,16 @@ export type MutationResetSensorArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationResumePartitionBackfillArgs = {
   backfillId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationRevokeInvitationArgs = {
+  input: RevokeInvitationInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationSaveNotebookPreviewArgs = {
+  input: SaveNotebookPreviewInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3113,6 +3748,11 @@ export type MutationShutdownRepositoryLocationArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationStartRunArgs = {
+  input: StartRunInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationStartScheduleArgs = {
   scheduleSelector: ScheduleSelector;
 };
@@ -3120,6 +3760,11 @@ export type MutationStartScheduleArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationStartSensorArgs = {
   sensorSelector: SensorSelector;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationStartStepArgs = {
+  input: StartStepInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3155,6 +3800,31 @@ export type MutationTerminateRunsArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateDataModelArgs = {
+  input: UpdateDataModelInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateDatasetArgs = {
+  input: UpdateDatasetInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateMemberRoleArgs = {
+  input: UpdateMemberRoleInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateNotebookArgs = {
+  input: UpdateNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateStaticModelArgs = {
+  input: UpdateStaticModelInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationWipeAssetsArgs = {
   assetPartitionRanges: Array<PartitionsByAssetSelector>;
 };
@@ -3183,6 +3853,33 @@ export type NodeInvocationSite = {
   __typename?: "NodeInvocationSite";
   pipeline: Pipeline;
   solidHandle: SolidHandle;
+};
+
+export type Notebook = {
+  __typename?: "Notebook";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  creator: User;
+  creatorId: Scalars["ID"]["output"];
+  description?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  preview?: Maybe<Scalars["String"]["output"]>;
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type NotebookConnection = {
+  __typename?: "NotebookConnection";
+  edges: Array<NotebookEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type NotebookEdge = {
+  __typename?: "NotebookEdge";
+  cursor: Scalars["String"]["output"];
+  node: Notebook;
 };
 
 export type NotebookMetadataEntry = MetadataEntry & {
@@ -3308,32 +4005,61 @@ export enum OrderBy {
   Desc = "Desc",
 }
 
-/** Organization entity - represents a group of users working together */
 export type Organization = {
   __typename?: "Organization";
-  createdAt: Scalars["DateTime"]["output"];
+  createdAt: Scalars["DateTimeISO"]["output"];
+  datasets: DatasetConnection;
+  description?: Maybe<Scalars["String"]["output"]>;
+  displayName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  /** Get invitations for this organization, optionally filtered by status */
-  invitations: Array<Invitation>;
-  /** Get all members of this organization */
-  members: Array<OrganizationMember>;
-  orgName: Scalars["String"]["output"];
+  members: UserConnection;
+  name: Scalars["String"]["output"];
+  notebooks: NotebookConnection;
+  updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
-/** Organization entity - represents a group of users working together */
-export type OrganizationInvitationsArgs = {
-  status?: InputMaybe<InvitationStatus>;
+export type OrganizationDatasetsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
-/** Organization member - represents a user's membership in an organization */
+export type OrganizationMembersArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type OrganizationNotebooksArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type OrganizationConnection = {
+  __typename?: "OrganizationConnection";
+  edges: Array<OrganizationEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type OrganizationEdge = {
+  __typename?: "OrganizationEdge";
+  cursor: Scalars["String"]["output"];
+  node: Organization;
+};
+
 export type OrganizationMember = {
   __typename?: "OrganizationMember";
+  createdAt: Scalars["DateTimeISO"]["output"];
   id: Scalars["ID"]["output"];
-  joinedAt: Scalars["DateTime"]["output"];
-  organization: Organization;
-  role: MemberRole;
+  orgId: Scalars["ID"]["output"];
   user: User;
   userId: Scalars["ID"]["output"];
+  userRole: MemberRole;
 };
 
 export type Oso_ArtifactsByCollectionV1 = {
@@ -4486,6 +5212,15 @@ export type OutputMapping = {
   mappedOutput: Output;
 };
 
+/** Cursor-based pagination information */
+export type PageInfo = {
+  __typename?: "PageInfo";
+  endCursor?: Maybe<Scalars["String"]["output"]>;
+  hasNextPage: Scalars["Boolean"]["output"];
+  hasPreviousPage: Scalars["Boolean"]["output"];
+  startCursor?: Maybe<Scalars["String"]["output"]>;
+};
+
 export type ParentMaterializedRuleEvaluationData = {
   __typename?: "ParentMaterializedRuleEvaluationData";
   updatedAssetKeys?: Maybe<Array<AssetKey>>;
@@ -5181,7 +5916,7 @@ export type PythonError = Error & {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type Query = {
   __typename?: "Query";
-  _entities: Array<Maybe<_Entity>>;
+  _empty?: Maybe<Scalars["String"]["output"]>;
   _service: _Service;
   /** Retrieve all the top level resources. */
   allTopLevelResourceDetailsOrError: ResourceDetailsListOrError;
@@ -5223,6 +5958,36 @@ export type Query = {
   capturedLogs: CapturedLogs;
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
+  /**
+   * List all data models with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * ```json
+   * {
+   *   "name": { "like": "%user%" },
+   *   "is_enabled": { "eq": true }
+   * }
+   * ```
+   */
+  dataModels: DataModelConnection;
+  /**
+   * List all datasets with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * ```json
+   * {
+   *   "name": { "like": "%hello%" },
+   *   "type": { "eq": "USER_MODEL" }
+   * }
+   * ```
+   */
+  datasets: DatasetConnection;
   /** Retrieve the execution plan for a job and its run configuration. */
   executionPlanOrError: ExecutionPlanOrError;
   /** Retrieve a graph by its location name, repository name, and graph name. */
@@ -5233,6 +5998,21 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   /** Retrieve the state for a group of instigators (schedule/sensor) by their containing repository id. */
   instigationStatesOrError: InstigationStatesOrError;
+  /**
+   * List all invitations with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * ```json
+   * {
+   *   "status": { "eq": "PENDING" },
+   *   "email": { "ilike": "%@example.com" }
+   * }
+   * ```
+   */
+  invitations: InvitationConnection;
   /** Retrieve whether the run configuration is valid or invalid. */
   isPipelineConfigValid: PipelineConfigValidationResult;
   /** Retrieve the latest available DefsStateInfo for the current workspace. */
@@ -5241,14 +6021,36 @@ export type Query = {
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   /** Retrieve event logs after applying a run id filter, cursor, and limit. */
   logsForRun: EventConnectionOrError;
-  /** Get a specific invitation by ID */
-  osoApp_invitation?: Maybe<Invitation>;
-  /** Get the current authenticated user's profile */
-  osoApp_me: User;
-  /** Get invitations sent to the current user's email */
-  osoApp_myInvitations: Array<Invitation>;
-  /** Get a specific organization by name */
-  osoApp_organization?: Maybe<Organization>;
+  /**
+   * Query notebooks with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is.
+   *
+   * Example:
+   * ```json
+   * {
+   *   "notebook_name": { "like": "%churn%" },
+   *   "created_at": { "gte": "2024-01-01T00:00:00Z" }
+   * }
+   * ```
+   */
+  notebooks: NotebookConnection;
+  /**
+   * Query organizations with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * ```json
+   * {
+   *   "name": { "like": "%oso%" },
+   *   "created_at": { "gte": "2024-01-01T00:00:00Z" }
+   * }
+   * ```
+   */
+  organizations: OrganizationConnection;
   oso_artifactsByCollectionV1?: Maybe<Array<Oso_ArtifactsByCollectionV1>>;
   oso_artifactsByProjectV1?: Maybe<Array<Oso_ArtifactsByProjectV1>>;
   oso_artifactsByUserV1?: Maybe<Array<Oso_ArtifactsByUserV1>>;
@@ -5324,6 +6126,21 @@ export type Query = {
   runTagKeysOrError?: Maybe<RunTagKeysOrError>;
   /** Retrieve all the distinct key-value tags from all runs. */
   runTagsOrError?: Maybe<RunTagsOrError>;
+  /**
+   * List all runs with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   *
+   * Example:
+   * ```json
+   * {
+   *   "status": { "eq": "RUNNING" },
+   *   "datasetId": { "eq": "dataset-uuid" }
+   * }
+   * ```
+   */
+  runs: RunConnection;
   /** Retrieve the number of entries for the Runs Feed after applying a filter. */
   runsFeedCountOrError: RunsFeedCountOrError;
   /** Retrieve entries for the Runs Feed after applying a filter, cursor and limit. */
@@ -5342,6 +6159,27 @@ export type Query = {
   sensorsOrError: SensorsOrError;
   /** Whether or not the NUX should be shown to the user */
   shouldShowNux: Scalars["Boolean"]["output"];
+  staticModels: StaticModelConnection;
+  /** System only. Access system level queries. */
+  system: System;
+  /**
+   * Get table column metadata. The where parameter must include:
+   * - orgId: Organization ID
+   * - catalogName: Catalog name
+   * - schemaName: Schema name
+   * - tableName: Table name
+   *
+   * Example:
+   * ```json
+   * {
+   *   "orgId": { "eq": "org-uuid" },
+   *   "catalogName": { "eq": "user_iceberg" },
+   *   "schemaName": { "eq": "ds_schema" },
+   *   "tableName": { "eq": "my_table" }
+   * }
+   * ```
+   */
+  tables: Array<TableColumn>;
   /** Provides fields for testing behavior */
   test?: Maybe<TestFields>;
   /** Retrieve a top level resource by its location name, repository name, and resource name. */
@@ -5354,15 +6192,12 @@ export type Query = {
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   /** Retrieve the version of Dagster running in the Dagster deployment. */
   version: Scalars["String"]["output"];
+  /** Get the currently authenticated user */
+  viewer: Viewer;
   /** Retrieve a workspace entry by name. */
   workspaceLocationEntryOrError?: Maybe<WorkspaceLocationEntryOrError>;
   /** Retrieve the workspace and its locations. */
   workspaceOrError: WorkspaceOrError;
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type Query_EntitiesArgs = {
-  representations: Array<Scalars["_Any"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5487,6 +6322,22 @@ export type QueryCapturedLogsMetadataArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDataModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDatasetsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryExecutionPlanOrErrorArgs = {
   mode: Scalars["String"]["input"];
   pipeline: PipelineSelector;
@@ -5510,6 +6361,14 @@ export type QueryInstigationStatesOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryInvitationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryIsPipelineConfigValidArgs = {
   mode: Scalars["String"]["input"];
   pipeline: PipelineSelector;
@@ -5524,18 +6383,19 @@ export type QueryLogsForRunArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_InvitationArgs = {
-  id: Scalars["ID"]["input"];
+export type QueryNotebooksArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_MyInvitationsArgs = {
-  status?: InputMaybe<InvitationStatus>;
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryOsoApp_OrganizationArgs = {
-  orgName: Scalars["String"]["input"];
+export type QueryOrganizationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -5876,6 +6736,14 @@ export type QueryRunTagsOrErrorArgs = {
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryRunsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryRunsFeedCountOrErrorArgs = {
   filter?: InputMaybe<RunsFilter>;
   view: RunsFeedView;
@@ -5916,6 +6784,19 @@ export type QuerySensorOrErrorArgs = {
 export type QuerySensorsOrErrorArgs = {
   repositorySelector: RepositorySelector;
   sensorStatus?: InputMaybe<InstigationStatus>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryStaticModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryTablesArgs = {
+  where: Scalars["JSON"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -6038,12 +6919,15 @@ export type ReloadWorkspaceMutationResult =
   | UnauthorizedError
   | Workspace;
 
+export type RemoveMemberInput = {
+  orgId: Scalars["ID"]["input"];
+  userId: Scalars["ID"]["input"];
+};
+
 export type RemoveMemberPayload = {
   __typename?: "RemoveMemberPayload";
-  message: Scalars["String"]["output"];
-  orgName: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
-  userId: Scalars["ID"]["output"];
 };
 
 export type ReportRunlessAssetEventsParams = {
@@ -6320,10 +7204,13 @@ export type ResumeBackfillSuccess = {
   backfillId: Scalars["String"]["output"];
 };
 
+export type RevokeInvitationInput = {
+  invitationId: Scalars["ID"]["input"];
+};
+
 export type RevokeInvitationPayload = {
   __typename?: "RevokeInvitationPayload";
-  invitationId: Scalars["ID"]["output"];
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
@@ -6344,10 +7231,12 @@ export type Run = PipelineRun &
      */
     capturedLogs: CapturedLogs;
     creationTime: Scalars["Float"]["output"];
+    datasetId: Scalars["ID"]["output"];
     endTime?: Maybe<Scalars["Float"]["output"]>;
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
     externalJobSource?: Maybe<Scalars["String"]["output"]>;
+    finishedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
     hasConcurrencyKeySlots: Scalars["Boolean"]["output"];
     hasDeletePermission: Scalars["Boolean"]["output"];
     hasReExecutePermission: Scalars["Boolean"]["output"];
@@ -6356,13 +7245,16 @@ export type Run = PipelineRun &
     hasUnconstrainedRootNodes: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
+    logsUrl?: Maybe<Scalars["String"]["output"]>;
     mode: Scalars["String"]["output"];
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
     parentRunId?: Maybe<Scalars["String"]["output"]>;
     pipeline: PipelineReference;
     pipelineName: Scalars["String"]["output"];
     pipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
+    queuedAt: Scalars["DateTimeISO"]["output"];
     repositoryOrigin?: Maybe<RepositoryOrigin>;
+    requestedBy?: Maybe<User>;
     resolvedOpSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     rootConcurrencyKeys?: Maybe<Array<Scalars["String"]["output"]>>;
     rootRunId?: Maybe<Scalars["String"]["output"]>;
@@ -6371,13 +7263,17 @@ export type Run = PipelineRun &
     runId: Scalars["String"]["output"];
     /** Included to comply with RunsFeedEntry interface. Duplicate of status. */
     runStatus: RunStatus;
+    runType: RunType;
     solidSelection?: Maybe<Array<Scalars["String"]["output"]>>;
     startTime?: Maybe<Scalars["Float"]["output"]>;
+    startedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
     stats: RunStatsSnapshotOrError;
     status: RunStatus;
     stepKeysToExecute?: Maybe<Array<Scalars["String"]["output"]>>;
     stepStats: Array<RunStepStats>;
+    steps: StepConnection;
     tags: Array<PipelineTag>;
+    triggerType: RunTriggerType;
     updateTime?: Maybe<Scalars["Float"]["output"]>;
   };
 
@@ -6486,6 +7382,13 @@ export type RunConflict = Error &
     message: Scalars["String"]["output"];
   };
 
+export type RunConnection = {
+  __typename?: "RunConnection";
+  edges: Array<RunEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type RunDequeuedEvent = MessageEvent &
   RunEvent & {
     __typename?: "RunDequeuedEvent";
@@ -6498,6 +7401,12 @@ export type RunDequeuedEvent = MessageEvent &
     stepKey?: Maybe<Scalars["String"]["output"]>;
     timestamp: Scalars["String"]["output"];
   };
+
+export type RunEdge = {
+  __typename?: "RunEdge";
+  cursor: Scalars["String"]["output"];
+  node: Run;
+};
 
 export type RunEnqueuedEvent = MessageEvent &
   RunEvent & {
@@ -6645,6 +7554,7 @@ export enum RunStatus {
   Canceled = "CANCELED",
   /** Runs that are in-progress and pending to be canceled. */
   Canceling = "CANCELING",
+  Failed = "FAILED",
   /** Runs that have failed to complete. */
   Failure = "FAILURE",
   /** Runs that are managed outside of the Dagster control plane. */
@@ -6653,6 +7563,7 @@ export enum RunStatus {
   NotStarted = "NOT_STARTED",
   /** Runs waiting to be launched by the Dagster Daemon. */
   Queued = "QUEUED",
+  Running = "RUNNING",
   /** Runs that have been launched and execution has started. */
   Started = "STARTED",
   /** Runs that have been launched, but execution has not yet started. */
@@ -6700,6 +7611,23 @@ export type RunTags = {
 };
 
 export type RunTagsOrError = PythonError | RunTags;
+
+/**
+ * The scheduler schema defines types and queries related to scheduling data model
+ * runs and ingest jobs.
+ *
+ * Runs are a generic representation of a data task that has been executed. So it's
+ * meant to be quite flexible to accommodate different types of runs in the future.
+ */
+export enum RunTriggerType {
+  Manual = "MANUAL",
+  Scheduled = "SCHEDULED",
+}
+
+export enum RunType {
+  Manual = "MANUAL",
+  Scheduled = "SCHEDULED",
+}
 
 export type Runs = PipelineRuns & {
   __typename?: "Runs";
@@ -6771,6 +7699,19 @@ export type RuntimeMismatchConfigError = PipelineConfigValidationError & {
   reason: EvaluationErrorReason;
   stack: EvaluationStack;
   valueRep?: Maybe<Scalars["String"]["output"]>;
+};
+
+export type SaveNotebookPreviewInput = {
+  notebookId: Scalars["ID"]["input"];
+  preview: Scalars["String"]["input"];
+};
+
+export type SaveNotebookPreviewPayload = {
+  __typename?: "SaveNotebookPreviewPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
+  previewUrl?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type ScalarUnionConfigType = ConfigType & {
@@ -7152,10 +8093,111 @@ export enum StaleStatus {
   Stale = "STALE",
 }
 
+export type StartRunInput = {
+  runId: Scalars["ID"]["input"];
+};
+
+export type StartRunPayload = {
+  __typename?: "StartRunPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run?: Maybe<Run>;
+  success: Scalars["Boolean"]["output"];
+};
+
 /** Enable a schedule to launch runs for a job at a fixed interval. */
 export type StartScheduleMutation = {
   __typename?: "StartScheduleMutation";
   Output: ScheduleMutationResult;
+};
+
+export type StartStepInput = {
+  displayName: Scalars["String"]["input"];
+  name: Scalars["String"]["input"];
+  runId: Scalars["ID"]["input"];
+};
+
+export type StartStepPayload = {
+  __typename?: "StartStepPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  step: Step;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type StaticModel = {
+  __typename?: "StaticModel";
+  createdAt: Scalars["DateTimeISO"]["output"];
+  dataset: Dataset;
+  id: Scalars["ID"]["output"];
+  materializations: MaterializationConnection;
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  organization: Organization;
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type StaticModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type StaticModelConnection = {
+  __typename?: "StaticModelConnection";
+  edges: Array<StaticModelEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type StaticModelDefinition = {
+  __typename?: "StaticModelDefinition";
+  datasetId: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  /**
+   * If the dataset is of type STATIC_MODEL, this field will contain the list of static models
+   * associated with the dataset. Otherwise it will be an empty list.
+   */
+  staticModels: StaticModelConnection;
+};
+
+export type StaticModelDefinitionStaticModelsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type StaticModelEdge = {
+  __typename?: "StaticModelEdge";
+  cursor: Scalars["String"]["output"];
+  node: StaticModel;
+};
+
+export type Step = {
+  __typename?: "Step";
+  displayName: Scalars["String"]["output"];
+  finishedAt?: Maybe<Scalars["DateTimeISO"]["output"]>;
+  id: Scalars["ID"]["output"];
+  logsUrl: Scalars["String"]["output"];
+  materializations: MaterializationConnection;
+  name: Scalars["String"]["output"];
+  run: Run;
+  runId: Scalars["ID"]["output"];
+  startedAt: Scalars["DateTimeISO"]["output"];
+  status: StepStatus;
+};
+
+export type StepConnection = {
+  __typename?: "StepConnection";
+  edges: Array<StepEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type StepEdge = {
+  __typename?: "StepEdge";
+  cursor: Scalars["String"]["output"];
+  node: Step;
 };
 
 export type StepEvent = {
@@ -7202,6 +8244,13 @@ export type StepOutputHandle = {
   outputName: Scalars["String"]["input"];
   stepKey: Scalars["String"]["input"];
 };
+
+export enum StepStatus {
+  Canceled = "CANCELED",
+  Failed = "FAILED",
+  Running = "RUNNING",
+  Success = "SUCCESS",
+}
 
 export type StepWorkerStartedEvent = DisplayableEvent &
   MarkerEvent &
@@ -7286,10 +8335,41 @@ export type SubscriptionPipelineRunLogsArgs = {
   runId: Scalars["ID"]["input"];
 };
 
+export type System = {
+  __typename?: "System";
+  /**
+   * Resolve tables by their reference names to the actual table fqn in the data
+   * warehouse. This is used by the query rewriter to batch resolve table
+   * references as well as other internal operations.
+   */
+  resolveTables: Array<SystemResolvedTableReference>;
+};
+
+export type SystemResolveTablesArgs = {
+  metadata?: InputMaybe<Scalars["JSON"]["input"]>;
+  references: Array<Scalars["String"]["input"]>;
+};
+
+/**
+ * Special type for system related reads that are only allowed by authenticated
+ * service accounts that have system privileges.
+ */
+export type SystemResolvedTableReference = {
+  __typename?: "SystemResolvedTableReference";
+  fqn: Scalars["String"]["output"];
+  reference: Scalars["String"]["output"];
+};
+
 export type Table = {
   __typename?: "Table";
+  columns: Array<TableColumn>;
+  dataset: Dataset;
+  datasetId: Scalars["ID"]["output"];
+  id: Scalars["ID"]["output"];
+  name: Scalars["String"]["output"];
   records: Array<Scalars["String"]["output"]>;
   schema: TableSchema;
+  source: TableSource;
 };
 
 export type TableColumn = {
@@ -7297,6 +8377,7 @@ export type TableColumn = {
   constraints: TableColumnConstraints;
   description?: Maybe<Scalars["String"]["output"]>;
   name: Scalars["String"]["output"];
+  nullable: Scalars["Boolean"]["output"];
   tags: Array<DefinitionTag>;
   type: Scalars["String"]["output"];
 };
@@ -7327,9 +8408,22 @@ export type TableColumnLineageMetadataEntry = MetadataEntry & {
   lineage: Array<TableColumnLineageEntry>;
 };
 
+export type TableConnection = {
+  __typename?: "TableConnection";
+  edges: Array<TableEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type TableConstraints = {
   __typename?: "TableConstraints";
   other: Array<Scalars["String"]["output"]>;
+};
+
+export type TableEdge = {
+  __typename?: "TableEdge";
+  cursor: Scalars["String"]["output"];
+  node: Table;
 };
 
 export type TableMetadataEntry = MetadataEntry & {
@@ -7351,6 +8445,12 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
   label: Scalars["String"]["output"];
   schema: TableSchema;
 };
+
+export type TableSource =
+  | DataConnector
+  | DataIngestion
+  | DataModel
+  | StaticModel;
 
 export type TagInput = {
   key: Scalars["String"]["input"];
@@ -7525,25 +8625,56 @@ export type UnsupportedOperationError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type UpdateDataModelInput = {
+  dataModelId: Scalars["ID"]["input"];
+  isEnabled?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type UpdateDatasetInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  displayName?: InputMaybe<Scalars["String"]["input"]>;
+  id: Scalars["ID"]["input"];
+  isPublic?: InputMaybe<Scalars["Boolean"]["input"]>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+export type UpdateDatasetPayload = {
+  __typename?: "UpdateDatasetPayload";
+  dataset?: Maybe<Dataset>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateMemberRoleInput = {
+  orgId: Scalars["ID"]["input"];
+  role: MemberRole;
+  userId: Scalars["ID"]["input"];
+};
+
 export type UpdateMemberRolePayload = {
   __typename?: "UpdateMemberRolePayload";
   member?: Maybe<OrganizationMember>;
-  message: Scalars["String"]["output"];
+  message?: Maybe<Scalars["String"]["output"]>;
   success: Scalars["Boolean"]["output"];
 };
 
-export type UpdateProfileInput = {
-  /** User's avatar URL */
-  avatarUrl?: InputMaybe<Scalars["String"]["input"]>;
-  /** User's full name */
-  fullName?: InputMaybe<Scalars["String"]["input"]>;
+export type UpdateNotebookInput = {
+  description?: InputMaybe<Scalars["String"]["input"]>;
+  id: Scalars["ID"]["input"];
+  name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
-export type UpdateProfilePayload = {
-  __typename?: "UpdateProfilePayload";
-  message: Scalars["String"]["output"];
+export type UpdateNotebookPayload = {
+  __typename?: "UpdateNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  notebook?: Maybe<Notebook>;
   success: Scalars["Boolean"]["output"];
-  user: User;
+};
+
+export type UpdateStaticModelInput = {
+  name?: InputMaybe<Scalars["String"]["input"]>;
+  staticModelId: Scalars["ID"]["input"];
 };
 
 export type UrlCodeReference = {
@@ -7566,15 +8697,21 @@ export type UsedSolid = {
   invocations: Array<NodeInvocationSite>;
 };
 
-/** User entity - can be extended from other subgraphs */
 export type User = {
   __typename?: "User";
   avatarUrl?: Maybe<Scalars["String"]["output"]>;
-  email?: Maybe<Scalars["String"]["output"]>;
+  email: Scalars["String"]["output"];
   fullName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
-  /** Organizations this user belongs to */
-  organizations: Array<Organization>;
+  organizations: OrganizationConnection;
+  role: Scalars["String"]["output"];
+};
+
+export type UserOrganizationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type UserAssetOwner = {
@@ -7582,9 +8719,76 @@ export type UserAssetOwner = {
   email: Scalars["String"]["output"];
 };
 
+export type UserConnection = {
+  __typename?: "UserConnection";
+  edges: Array<UserEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
 export type UserDefinitionOwner = {
   __typename?: "UserDefinitionOwner";
   email: Scalars["String"]["output"];
+};
+
+export type UserEdge = {
+  __typename?: "UserEdge";
+  cursor: Scalars["String"]["output"];
+  node: User;
+};
+
+/** Currently authenticated user */
+export type Viewer = {
+  __typename?: "Viewer";
+  avatarUrl?: Maybe<Scalars["String"]["output"]>;
+  datasets: DatasetConnection;
+  email: Scalars["String"]["output"];
+  fullName?: Maybe<Scalars["String"]["output"]>;
+  id: Scalars["ID"]["output"];
+  invitations: InvitationConnection;
+  notebooks: NotebookConnection;
+  organizations: OrganizationConnection;
+  runs: RunConnection;
+};
+
+/** Currently authenticated user */
+export type ViewerDatasetsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** Currently authenticated user */
+export type ViewerInvitationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** Currently authenticated user */
+export type ViewerNotebooksArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** Currently authenticated user */
+export type ViewerOrganizationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+/** Currently authenticated user */
+export type ViewerRunsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type WaitingOnKeysRuleEvaluationData = {
@@ -7645,8 +8849,6 @@ export type WrappingDagsterType = {
   ofType: DagsterType;
 };
 
-export type _Entity = Invitation | Organization | OrganizationMember | User;
-
 export type _Service = {
   __typename?: "_Service";
   sdl: Scalars["String"]["output"];
@@ -7658,6 +8860,236 @@ export enum Link__Purpose {
   /** `SECURITY` features provide metadata necessary to securely resolve fields. */
   Security = "SECURITY",
 }
+
+export type SavePreviewMutationVariables = Exact<{
+  input: SaveNotebookPreviewInput;
+}>;
+
+export type SavePreviewMutation = {
+  __typename?: "Mutation";
+  saveNotebookPreview: {
+    __typename?: "SaveNotebookPreviewPayload";
+    success: boolean;
+    message?: string | null;
+  };
+};
+
+export type CreateDatasetMutationVariables = Exact<{
+  input: CreateDatasetInput;
+}>;
+
+export type CreateDatasetMutation = {
+  __typename?: "Mutation";
+  createDataset: {
+    __typename?: "CreateDatasetPayload";
+    success: boolean;
+    message?: string | null;
+    dataset?: {
+      __typename?: "Dataset";
+      id: string;
+      name: string;
+      displayName?: string | null;
+      description?: string | null;
+      type: DatasetType;
+      isPublic: boolean;
+    } | null;
+  };
+};
+
+export type UpdateDatasetMutationVariables = Exact<{
+  input: UpdateDatasetInput;
+}>;
+
+export type UpdateDatasetMutation = {
+  __typename?: "Mutation";
+  updateDataset: {
+    __typename?: "UpdateDatasetPayload";
+    success: boolean;
+    message?: string | null;
+    dataset?: {
+      __typename?: "Dataset";
+      id: string;
+      name: string;
+      displayName?: string | null;
+      description?: string | null;
+      isPublic: boolean;
+    } | null;
+  };
+};
+
+export type CreateDataModelMutationVariables = Exact<{
+  input: CreateDataModelInput;
+}>;
+
+export type CreateDataModelMutation = {
+  __typename?: "Mutation";
+  createDataModel: {
+    __typename?: "CreateDataModelPayload";
+    success: boolean;
+    message?: string | null;
+    dataModel?: {
+      __typename?: "DataModel";
+      id: string;
+      name: string;
+      isEnabled: boolean;
+    } | null;
+  };
+};
+
+export type UpdateDataModelMutationVariables = Exact<{
+  input: UpdateDataModelInput;
+}>;
+
+export type UpdateDataModelMutation = {
+  __typename?: "Mutation";
+  updateDataModel: {
+    __typename?: "CreateDataModelPayload";
+    success: boolean;
+    message?: string | null;
+    dataModel?: {
+      __typename?: "DataModel";
+      id: string;
+      name: string;
+      isEnabled: boolean;
+    } | null;
+  };
+};
+
+export type CreateDataModelRevisionMutationVariables = Exact<{
+  input: CreateDataModelRevisionInput;
+}>;
+
+export type CreateDataModelRevisionMutation = {
+  __typename?: "Mutation";
+  createDataModelRevision: {
+    __typename?: "CreateDataModelRevisionPayload";
+    success: boolean;
+    message?: string | null;
+    dataModelRevision?: {
+      __typename?: "DataModelRevision";
+      id: string;
+      createdAt: any;
+      revisionNumber: number;
+    } | null;
+  };
+};
+
+export type CreateDataModelReleaseMutationVariables = Exact<{
+  input: CreateDataModelReleaseInput;
+}>;
+
+export type CreateDataModelReleaseMutation = {
+  __typename?: "Mutation";
+  createDataModelRelease: {
+    __typename?: "CreateDataModelReleasePayload";
+    success: boolean;
+    message?: string | null;
+    dataModelRelease?: { __typename?: "DataModelRelease"; id: string } | null;
+  };
+};
+
+export type CreateStaticModelMutationVariables = Exact<{
+  input: CreateStaticModelInput;
+}>;
+
+export type CreateStaticModelMutation = {
+  __typename?: "Mutation";
+  createStaticModel: {
+    __typename?: "CreateStaticModelPayload";
+    success: boolean;
+    message?: string | null;
+    staticModel?: {
+      __typename?: "StaticModel";
+      id: string;
+      name: string;
+    } | null;
+  };
+};
+
+export type UpdateStaticModelMutationVariables = Exact<{
+  input: UpdateStaticModelInput;
+}>;
+
+export type UpdateStaticModelMutation = {
+  __typename?: "Mutation";
+  updateStaticModel: {
+    __typename?: "CreateStaticModelPayload";
+    success: boolean;
+    message?: string | null;
+    staticModel?: {
+      __typename?: "StaticModel";
+      id: string;
+      name: string;
+    } | null;
+  };
+};
+
+export type CreateUserModelRunRequestMutationVariables = Exact<{
+  input: CreateUserModelRunRequestInput;
+}>;
+
+export type CreateUserModelRunRequestMutation = {
+  __typename?: "Mutation";
+  createUserModelRunRequest: {
+    __typename?: "CreateRunRequestPayload";
+    success: boolean;
+    message?: string | null;
+    run: { __typename?: "Run"; id: string };
+  };
+};
+
+export type CreateStaticModelRunRequestMutationVariables = Exact<{
+  input: CreateStaticModelRunRequestInput;
+}>;
+
+export type CreateStaticModelRunRequestMutation = {
+  __typename?: "Mutation";
+  createStaticModelRunRequest: {
+    __typename?: "CreateRunRequestPayload";
+    success: boolean;
+    message?: string | null;
+    run: { __typename?: "Run"; id: string };
+  };
+};
+
+export type CreateDataIngestionConfigMutationVariables = Exact<{
+  input: CreateDataIngestionInput;
+}>;
+
+export type CreateDataIngestionConfigMutation = {
+  __typename?: "Mutation";
+  createDataIngestionConfig: {
+    __typename?: "DataIngestion";
+    id: string;
+    datasetId: string;
+    factoryType: DataIngestionFactoryType;
+    config: any;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type CreateDataIngestionRunRequestMutationVariables = Exact<{
+  input: CreateDataIngestionRunRequestInput;
+}>;
+
+export type CreateDataIngestionRunRequestMutation = {
+  __typename?: "Mutation";
+  createDataIngestionRunRequest: {
+    __typename?: "CreateRunRequestPayload";
+    success: boolean;
+    message?: string | null;
+    run: {
+      __typename?: "Run";
+      id: string;
+      datasetId: string;
+      status: RunStatus;
+      queuedAt: any;
+      startedAt?: any | null;
+      finishedAt?: any | null;
+    };
+  };
+};
 
 export type AssetGraphQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -7829,6 +9261,902 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const SavePreviewDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "SavePreview" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "SaveNotebookPreviewInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "saveNotebookPreview" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SavePreviewMutation, SavePreviewMutationVariables>;
+export const CreateDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataset" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "displayName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "type" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isPublic" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDatasetMutation,
+  CreateDatasetMutationVariables
+>;
+export const UpdateDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateDatasetInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataset" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "displayName" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "description" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isPublic" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateDatasetMutation,
+  UpdateDatasetMutationVariables
+>;
+export const CreateDataModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataModelInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataModel" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isEnabled" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataModelMutation,
+  CreateDataModelMutationVariables
+>;
+export const UpdateDataModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateDataModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateDataModelInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateDataModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataModel" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "isEnabled" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateDataModelMutation,
+  UpdateDataModelMutationVariables
+>;
+export const CreateDataModelRevisionDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataModelRevision" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataModelRevisionInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataModelRevision" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataModelRevision" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "createdAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "revisionNumber" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataModelRevisionMutation,
+  CreateDataModelRevisionMutationVariables
+>;
+export const CreateDataModelReleaseDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataModelRelease" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataModelReleaseInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataModelRelease" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataModelRelease" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataModelReleaseMutation,
+  CreateDataModelReleaseMutationVariables
+>;
+export const CreateStaticModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateStaticModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateStaticModelInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createStaticModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "staticModel" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateStaticModelMutation,
+  CreateStaticModelMutationVariables
+>;
+export const UpdateStaticModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateStaticModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateStaticModelInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateStaticModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "staticModel" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateStaticModelMutation,
+  UpdateStaticModelMutationVariables
+>;
+export const CreateUserModelRunRequestDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateUserModelRunRequest" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateUserModelRunRequestInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createUserModelRunRequest" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateUserModelRunRequestMutation,
+  CreateUserModelRunRequestMutationVariables
+>;
+export const CreateStaticModelRunRequestDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateStaticModelRunRequest" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateStaticModelRunRequestInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createStaticModelRunRequest" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateStaticModelRunRequestMutation,
+  CreateStaticModelRunRequestMutationVariables
+>;
+export const CreateDataIngestionConfigDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataIngestionConfig" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataIngestionInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataIngestionConfig" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "datasetId" } },
+                { kind: "Field", name: { kind: "Name", value: "factoryType" } },
+                { kind: "Field", name: { kind: "Name", value: "config" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataIngestionConfigMutation,
+  CreateDataIngestionConfigMutationVariables
+>;
+export const CreateDataIngestionRunRequestDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataIngestionRunRequest" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: {
+                kind: "Name",
+                value: "CreateDataIngestionRunRequestInput",
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataIngestionRunRequest" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "datasetId" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "status" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "queuedAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "startedAt" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "finishedAt" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataIngestionRunRequestMutation,
+  CreateDataIngestionRunRequestMutationVariables
+>;
 export const AssetGraphDocument = {
   kind: "Document",
   definitions: [
