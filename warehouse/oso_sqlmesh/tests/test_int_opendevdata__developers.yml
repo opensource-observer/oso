@@ -18,6 +18,7 @@ test_int_opendevdata__developers_single_entry:
           primary_github_user_id: "gh_123"
           author_name: "Open Dev"
           author_email: "dev@open.com"
+          hashed_author_email: "34c6fceca75e456f25e7e99531e2425c6c1de443@open.com"
           valid_from: "2024-01-01 10:00:00"
           valid_to: null
 
@@ -50,12 +51,14 @@ test_int_opendevdata__developers_scd_logic:
           primary_github_user_id: "gh_456"
           author_name: "Original Name"
           author_email: "original@test.com"
+          hashed_author_email: "d73ef92426f2b11dfc4aed4d4bfc41c49ee1087c@test.com"
           valid_from: "2024-01-01 10:00:00"
           valid_to: "2024-02-01 12:00:00"
         - canonical_developer_id: 202
           primary_github_user_id: "gh_456"
           author_name: "New Name"
           author_email: "original@test.com"
+          hashed_author_email: "d73ef92426f2b11dfc4aed4d4bfc41c49ee1087c@test.com"
           valid_from: "2024-02-01 12:00:00"
           valid_to: null
 
