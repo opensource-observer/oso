@@ -36,7 +36,7 @@ SELECT
 FROM oso.int_gharchive__developers AS gh
 FULL JOIN oso.int_opendevdata__developers AS odd
   ON gh.author_name = odd.author_name
-  AND gh.author_email = odd.author_email
+  AND gh.author_email = odd.hashed_author_email
   AND (
     (gh.valid_to IS NULL OR gh.valid_to > odd.valid_from)
     AND (odd.valid_to IS NULL OR odd.valid_to > gh.valid_from)

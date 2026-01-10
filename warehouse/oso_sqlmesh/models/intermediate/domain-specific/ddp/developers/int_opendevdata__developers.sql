@@ -20,12 +20,17 @@ WITH developer_history AS (
     devs.primary_github_user_id,
     commits.commit_author_name AS author_name,
     commits.commit_author_email AS author_email,
+    CONCAT(
+      @sha1_hex(SPLIT_PART(commits.commit_author_email, '@', 1)),
+      '@',
+      SPLIT_PART(commits.commit_author_email, '@', 2)
+    ) AS hashed_author_email,
     MIN(commits.created_at) AS valid_from
   FROM oso.stg_opendevdata__commits AS commits
   INNER JOIN oso.stg_opendevdata__canonical_developers AS devs
     ON commits.canonical_developer_id = devs.id
   WHERE commits.canonical_developer_id IS NOT NULL
-  GROUP BY 1, 2, 3, 4
+  GROUP BY 1, 2, 3, 4, 5
 ),
 developer_history_with_valid_to AS (
   SELECT
@@ -33,6 +38,7 @@ developer_history_with_valid_to AS (
     primary_github_user_id,
     author_name,
     author_email,
+    hashed_author_email,
     valid_from,
     LEAD(valid_from) OVER (
       PARTITION BY canonical_developer_id
@@ -46,6 +52,7 @@ SELECT
   primary_github_user_id,
   author_name,
   author_email,
+  hashed_author_email,
   valid_from,
   valid_to
 FROM developer_history_with_valid_to
