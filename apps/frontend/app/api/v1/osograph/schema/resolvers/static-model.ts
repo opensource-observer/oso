@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   CreateStaticModelSchema,
   MaterializationWhereSchema,
+  RunWhereSchema,
   StaticModelWhereSchema,
   UpdateStaticModelSchema,
   validateInput,
@@ -207,6 +208,26 @@ export const staticModelResolvers = {
         },
         orderBy: {
           key: "created_at",
+          ascending: false,
+        },
+      });
+    },
+    runs: async (
+      parent: StaticModelRow,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "run",
+        whereSchema: RunWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          contains: [{ key: "models", value: [parent.id] }],
+        },
+        orderBy: {
+          key: "queued_at",
           ascending: false,
         },
       });

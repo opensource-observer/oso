@@ -56,8 +56,13 @@ function mapRunStatus(status: RunRow["status"]): RunStatus {
   }
 }
 
+type BaseRunRequestInput = {
+  datasetId: string;
+  selectedModels?: string[];
+};
+
 type RunRequestResolverOptions<
-  T extends z.ZodTypeAny,
+  T extends z.ZodType<{ datasetId: string; selectedModels?: string[] }>,
   Q extends ProtobufMessage,
 > = {
   queueName: string;
@@ -72,7 +77,7 @@ type RunRequestResolverOptions<
 };
 
 function genericRunRequestResolver<
-  T extends z.ZodTypeAny,
+  T extends z.ZodType<BaseRunRequestInput>,
   Q extends ProtobufMessage,
 >({
   inputSchema,
@@ -127,6 +132,7 @@ function genericRunRequestResolver<
         dataset_id: datasetId,
         run_type: "manual",
         requested_by: authenticatedUser.userId,
+        models: input.selectedModels || [],
       })
       .select()
       .single();
