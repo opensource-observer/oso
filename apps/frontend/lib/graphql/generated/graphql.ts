@@ -1550,6 +1550,7 @@ export type DataModel = {
   organization: Organization;
   releases: DataModelReleaseConnection;
   revisions: DataModelRevisionConnection;
+  runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
@@ -1568,6 +1569,13 @@ export type DataModelReleasesArgs = {
 };
 
 export type DataModelRevisionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataModelRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
   single?: InputMaybe<Scalars["Boolean"]["input"]>;
@@ -2834,6 +2842,8 @@ export type Job = IPipelineSnapshot &
     description?: Maybe<Scalars["String"]["output"]>;
     externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
+    hasLaunchExecutionPermission: Scalars["Boolean"]["output"];
+    hasLaunchReexecutionPermission: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
     isJob: Scalars["Boolean"]["output"];
@@ -5405,6 +5415,8 @@ export type PartitionRunConfigOrError = PartitionRunConfig | PythonError;
 export type PartitionSet = {
   __typename?: "PartitionSet";
   backfills: Array<PartitionBackfill>;
+  hasCancelBackfillPermission: Scalars["Boolean"]["output"];
+  hasLaunchBackfillPermission: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   mode: Scalars["String"]["output"];
   name: Scalars["String"]["output"];
@@ -5578,6 +5590,8 @@ export type Pipeline = IPipelineSnapshot &
     description?: Maybe<Scalars["String"]["output"]>;
     externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
+    hasLaunchExecutionPermission: Scalars["Boolean"]["output"];
+    hasLaunchReexecutionPermission: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
     isJob: Scalars["Boolean"]["output"];
@@ -7896,6 +7910,7 @@ export type Sensor = {
   canReset: Scalars["Boolean"]["output"];
   defaultStatus: InstigationStatus;
   description?: Maybe<Scalars["String"]["output"]>;
+  hasCursorUpdatePermissions: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   jobOriginId: Scalars["String"]["output"];
   metadata: SensorMetadata;
@@ -8132,10 +8147,18 @@ export type StaticModel = {
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
+  runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
 export type StaticModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type StaticModelRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
   single?: InputMaybe<Scalars["Boolean"]["input"]>;
