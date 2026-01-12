@@ -1,7 +1,7 @@
 /**
  * Utils for run related operations.
  */
-import { Tables } from "@/apps/frontend/lib/types/supabase";
+import { Tables } from "@/lib/types/supabase";
 
 type Run = Partial<Tables<"run">>;
 
