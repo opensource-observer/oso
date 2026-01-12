@@ -35,7 +35,7 @@ type Dataset {
 
 union DatasetTypeDefinition =
   | DataModelDefinition
-  | DataIngestion
+  | DataIngestionDefinition
   | DataConnector
   | StaticModelDefinition
 
@@ -67,6 +67,21 @@ type StaticModelDefinition {
     single: Boolean
     where: JSON
   ): StaticModelConnection!
+}
+
+type DataIngestionDefinition {
+  orgId: ID!
+  datasetId: ID!
+  """
+  If the dataset is of type DATA_INGESTION, this field will contain the list of data ingestions
+  associated with the dataset. Otherwise it will be an empty list.
+  """
+  dataIngestions(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataIngestionConnection!
 }
 
 type DataIngestion {

@@ -4,6 +4,17 @@ enum DataIngestionFactoryType {
   ARCHIVE_DIR
 }
 
+type DataIngestionEdge {
+  node: DataIngestion!
+  cursor: String!
+}
+
+type DataIngestionConnection {
+  edges: [DataIngestionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
 input CreateDataIngestionInput {
   datasetId: ID!
   factoryType: DataIngestionFactoryType!
