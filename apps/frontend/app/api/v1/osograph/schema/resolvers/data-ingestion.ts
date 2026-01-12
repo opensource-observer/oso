@@ -45,22 +45,32 @@ export const dataIngestionResolvers = {
         throw AuthenticationErrors.notAuthorized();
       }
 
-      const { data: config, error: configError } = await supabase
+      const { data: existingConfig } = await supabase
         .from("data_ingestions")
-        .upsert(
-          {
-            dataset_id: input.datasetId,
-            factory_type: input.factoryType,
-            config: input.config,
-            deleted_at: null,
-          },
-          {
-            onConflict: "dataset_id,deleted_at",
-            ignoreDuplicates: false,
-          },
-        )
-        .select()
-        .single();
+        .select("id")
+        .eq("dataset_id", input.datasetId)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      const { data: config, error: configError } = existingConfig
+        ? await supabase
+            .from("data_ingestions")
+            .update({
+              factory_type: input.factoryType,
+              config: input.config,
+            })
+            .eq("id", existingConfig.id)
+            .select()
+            .single()
+        : await supabase
+            .from("data_ingestions")
+            .insert({
+              dataset_id: input.datasetId,
+              factory_type: input.factoryType,
+              config: input.config,
+            })
+            .select()
+            .single();
 
       if (configError || !config) {
         logger.error(
