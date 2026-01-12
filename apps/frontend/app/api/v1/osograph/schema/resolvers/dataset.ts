@@ -16,6 +16,7 @@ import {
   DatasetWhereSchema,
   RunWhereSchema,
   StaticModelWhereSchema,
+  DataIngestionsWhereSchema,
   TableMetadataWhereSchema,
   UpdateDatasetSchema,
   validateInput,
@@ -306,11 +307,12 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         case "DATA_INGESTION": {
           return queryWithPagination(args, context, {
             tableName: "data_ingestions",
-            whereSchema: DatasetWhereSchema,
+            whereSchema: DataIngestionsWhereSchema,
             requireAuth: false,
             filterByUserOrgs: false,
             parentOrgIds: parent.org_id,
             basePredicate: {
+              is: [{ key: "deleted_at", value: null }],
               eq: [{ key: "dataset_id", value: parent.id }],
             },
           });
@@ -391,6 +393,28 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
       return queryWithPagination(args, context, {
         tableName: "static_model",
         whereSchema: StaticModelWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+          eq: [{ key: "dataset_id", value: parent.dataset_id }],
+        },
+      });
+    },
+  },
+
+  DataIngestionDefinition: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
+    datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
+    dataIngestions: async (
+      parent: { dataset_id: string; org_id: string },
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "data_ingestions",
+        whereSchema: DataIngestionsWhereSchema,
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.org_id,
