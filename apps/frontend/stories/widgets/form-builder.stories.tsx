@@ -334,3 +334,17 @@ export const WithArrayOfObjects: Story = {
     className: "w-[700px]",
   },
 };
+
+export const WithDefaultValuesOverride: Story = {
+  args: {
+    schema: simpleSchema,
+    defaultValues: {
+      firstName: "Jane",
+      lastName: "Smith",
+      age: 30,
+      birthDate: new Date("1994-01-15"),
+    },
+    onSubmit: action("onSubmit"),
+    className: "w-[400px]",
+  },
+};
