@@ -19,7 +19,7 @@ export class LegacyInferredTableResolver implements TableResolver {
             "oso",
             tableObj.table,
           );
-        } else if (tableObj.dataset === "oso") {
+        } else if (tableObj.dataset === "oso" && tableObj.catalog === "") {
           resolvedTables[originalName] = new Table(
             "iceberg",
             tableObj.dataset,
