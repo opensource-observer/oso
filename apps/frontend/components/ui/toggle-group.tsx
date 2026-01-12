@@ -99,7 +99,7 @@ export const ToggleGroupMeta: CodeComponentMeta<ToggleGroupProps> = {
       type: "readonly",
       variableType: "object",
       onChangeProp: "onValueChange",
-      onChangeArgsToValue: (value) => value,
+      initFunc: (props) => props.defaultValue,
     },
   },
 };

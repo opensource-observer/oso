@@ -36,12 +36,14 @@ const SelectMeta: CodeComponentMeta<React.ComponentProps<typeof Select>> = {
       valueProp: "value",
       variableType: "text",
       onChangeProp: "onValueChange",
+      initFunc: (props) => props.defaultValue,
     },
     open: {
       type: "writable",
       valueProp: "open",
       variableType: "boolean",
       onChangeProp: "onOpenChange",
+      initFunc: (props) => props.defaultOpen,
     },
   },
 };
