@@ -68,6 +68,7 @@ export const dataIngestionResolvers = {
               dataset_id: input.datasetId,
               factory_type: input.factoryType,
               config: input.config,
+              org_id: dataset.org_id,
             })
             .select()
             .single();

@@ -280,6 +280,7 @@ export const dataIngestionsRowSchema = z.object({
   deleted_at: z.string().nullable(),
   factory_type: z.string(),
   id: z.string(),
+  org_id: z.string(),
   updated_at: z.string(),
 });
 
@@ -290,6 +291,7 @@ export const dataIngestionsInsertSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   factory_type: z.string(),
   id: z.string().optional(),
+  org_id: z.string(),
   updated_at: z.string().optional(),
 });
 
@@ -300,6 +302,7 @@ export const dataIngestionsUpdateSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   factory_type: z.string().optional(),
   id: z.string().optional(),
+  org_id: z.string().optional(),
   updated_at: z.string().optional(),
 });
 
@@ -309,6 +312,13 @@ export const dataIngestionsRelationshipsSchema = z.tuple([
     columns: z.tuple([z.literal("dataset_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("fk_data_ingestions_org_id"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
 ]);

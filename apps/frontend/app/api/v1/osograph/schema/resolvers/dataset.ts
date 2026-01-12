@@ -11,14 +11,14 @@ import {
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
-  validateInput,
   CreateDatasetSchema,
-  UpdateDatasetSchema,
-  DatasetWhereSchema,
   DataModelWhereSchema,
-  TableMetadataWhereSchema,
+  DatasetWhereSchema,
   RunWhereSchema,
   StaticModelWhereSchema,
+  TableMetadataWhereSchema,
+  UpdateDatasetSchema,
+  validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
   DatasetErrors,
@@ -254,26 +254,10 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             dataset_id: parent.id,
           };
         case "DATA_INGESTION": {
-          const supabase = createAdminClient();
-          const { data: config, error } = await supabase
-            .from("data_ingestions")
-            .select("*")
-            .eq("dataset_id", parent.id)
-            .is("deleted_at", null)
-            .single();
-
-          if (error || !config) {
-            logger.error(
-              `Failed to fetch data ingestion config for dataset ${parent.id}: ${error?.message}`,
-            );
-            throw ServerErrors.database(
-              "Failed to fetch data ingestion config",
-            );
-          }
-
           return {
-            __typename: "DataIngestion",
-            ...config,
+            __typename: "DataIngestionDefinition",
+            org_id: parent.org_id,
+            dataset_id: parent.id,
           };
         }
         case "DATA_CONNECTOR":
@@ -319,7 +303,18 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
               eq: [{ key: "dataset_id", value: parent.id }],
             },
           });
-        case "DATA_INGESTION":
+        case "DATA_INGESTION": {
+          return queryWithPagination(args, context, {
+            tableName: "data_ingestions",
+            whereSchema: DatasetWhereSchema,
+            requireAuth: false,
+            filterByUserOrgs: false,
+            parentOrgIds: parent.org_id,
+            basePredicate: {
+              eq: [{ key: "dataset_id", value: parent.id }],
+            },
+          });
+        }
         case "DATA_CONNECTOR":
           // Table metadata is not available until after the ingestion job completes
           // Tables are created dynamically during ingestion
