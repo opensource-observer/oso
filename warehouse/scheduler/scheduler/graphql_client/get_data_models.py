@@ -24,7 +24,7 @@ class GetDataModelsDatasetsEdges(BaseModel):
 class GetDataModelsDatasetsEdgesNode(DatasetCommon):
     type_definition: Union[
         "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition",
-        "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataIngestion",
+        "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataIngestionDefinition",
         "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataConnector",
         "GetDataModelsDatasetsEdgesNodeTypeDefinitionStaticModelDefinition",
     ] = Field(alias="typeDefinition", discriminator="typename__")
@@ -43,8 +43,8 @@ class GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModels(
     pass
 
 
-class GetDataModelsDatasetsEdgesNodeTypeDefinitionDataIngestion(BaseModel):
-    typename__: Literal["DataIngestion"] = Field(alias="__typename")
+class GetDataModelsDatasetsEdgesNodeTypeDefinitionDataIngestionDefinition(BaseModel):
+    typename__: Literal["DataIngestionDefinition"] = Field(alias="__typename")
 
 
 class GetDataModelsDatasetsEdgesNodeTypeDefinitionDataConnector(BaseModel):
