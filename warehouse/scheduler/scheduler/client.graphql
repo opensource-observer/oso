@@ -154,11 +154,17 @@ query GetDataIngestionConfig($datasetId: ID!) {
       node {
         ...DatasetCommon
         typeDefinition {
-          ... on DataIngestion {
-            id
-            datasetId
-            factoryType
-            config
+          ... on DataIngestionDefinition {
+            dataIngestions(where: { deleted_at: {is: null}}, single: true) {
+              edges {
+                node {
+                  id
+                  datasetId
+                  factoryType
+                  config
+                }
+              }
+            }
           }
         }
       }
