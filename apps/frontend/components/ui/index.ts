@@ -269,6 +269,13 @@ import {
   CardContentMeta,
 } from "@/components/ui/card";
 import { FileInput, FileInputMeta } from "@/components/ui/file-input";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+  ToggleGroupMeta,
+  ToggleGroupItemMeta,
+} from "@/components/ui/toggle-group";
+import { Toggle, ToggleMeta } from "@/components/ui/toggle";
 
 export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   // shadcn/ui
@@ -408,4 +415,7 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(CardDescription, CardDescriptionMeta);
   PLASMIC.registerComponent(CardContent, CardContentMeta);
   PLASMIC.registerComponent(CardFooter, CardFooterMeta);
+  PLASMIC.registerComponent(Toggle, ToggleMeta);
+  PLASMIC.registerComponent(ToggleGroup, ToggleGroupMeta);
+  PLASMIC.registerComponent(ToggleGroupItem, ToggleGroupItemMeta);
 }
