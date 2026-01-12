@@ -214,6 +214,7 @@ export type Database = {
           deleted_at: string | null;
           factory_type: string;
           id: string;
+          name: string;
           org_id: string;
           updated_at: string;
         };
@@ -224,6 +225,7 @@ export type Database = {
           deleted_at?: string | null;
           factory_type: string;
           id?: string;
+          name: string;
           org_id: string;
           updated_at?: string;
         };
@@ -234,6 +236,7 @@ export type Database = {
           deleted_at?: string | null;
           factory_type?: string;
           id?: string;
+          name?: string;
           org_id?: string;
           updated_at?: string;
         };

@@ -2834,6 +2834,8 @@ export type Job = IPipelineSnapshot &
     description?: Maybe<Scalars["String"]["output"]>;
     externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
+    hasLaunchExecutionPermission: Scalars["Boolean"]["output"];
+    hasLaunchReexecutionPermission: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
     isJob: Scalars["Boolean"]["output"];
@@ -5405,6 +5407,8 @@ export type PartitionRunConfigOrError = PartitionRunConfig | PythonError;
 export type PartitionSet = {
   __typename?: "PartitionSet";
   backfills: Array<PartitionBackfill>;
+  hasCancelBackfillPermission: Scalars["Boolean"]["output"];
+  hasLaunchBackfillPermission: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   mode: Scalars["String"]["output"];
   name: Scalars["String"]["output"];
@@ -5578,6 +5582,8 @@ export type Pipeline = IPipelineSnapshot &
     description?: Maybe<Scalars["String"]["output"]>;
     externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
+    hasLaunchExecutionPermission: Scalars["Boolean"]["output"];
+    hasLaunchReexecutionPermission: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
     isJob: Scalars["Boolean"]["output"];
@@ -7896,6 +7902,7 @@ export type Sensor = {
   canReset: Scalars["Boolean"]["output"];
   defaultStatus: InstigationStatus;
   description?: Maybe<Scalars["String"]["output"]>;
+  hasCursorUpdatePermissions: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   jobOriginId: Scalars["String"]["output"];
   metadata: SensorMetadata;

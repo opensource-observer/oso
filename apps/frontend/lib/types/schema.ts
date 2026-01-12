@@ -280,6 +280,7 @@ export const dataIngestionsRowSchema = z.object({
   deleted_at: z.string().nullable(),
   factory_type: z.string(),
   id: z.string(),
+  name: z.string(),
   org_id: z.string(),
   updated_at: z.string(),
 });
@@ -291,6 +292,7 @@ export const dataIngestionsInsertSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   factory_type: z.string(),
   id: z.string().optional(),
+  name: z.string(),
   org_id: z.string(),
   updated_at: z.string().optional(),
 });
@@ -302,6 +304,7 @@ export const dataIngestionsUpdateSchema = z.object({
   deleted_at: z.string().optional().nullable(),
   factory_type: z.string().optional(),
   id: z.string().optional(),
+  name: z.string().optional(),
   org_id: z.string().optional(),
   updated_at: z.string().optional(),
 });
