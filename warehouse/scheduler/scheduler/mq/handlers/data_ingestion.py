@@ -9,7 +9,7 @@ from scheduler.config import CommonSettings
 from scheduler.dlt_destination import DLTDestinationResource
 from scheduler.graphql_client.client import Client
 from scheduler.graphql_client.get_data_ingestion_config import (
-    GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion,
+    GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinition,
 )
 from scheduler.mq.common import RunHandler
 from scheduler.types import (
@@ -74,15 +74,24 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
 
         if not isinstance(
             type_def,
-            GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion,
+            GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinition,
         ):
             context.log.error(
-                "Dataset is not a DataIngestion type",
+                "Dataset is not a DataIngestionDefinition type",
                 extra={"type": type_def.typename__},
             )
             return FailedResponse(message=f"Wrong dataset type: {type_def.typename__}")
 
-        config = type_def
+        ingestion_edges = type_def.data_ingestions.edges
+
+        if not ingestion_edges or not ingestion_edges[0].node:
+            context.log.error(
+                "No data ingestion configuration found",
+                extra={"dataset_id": dataset_id},
+            )
+            return FailedResponse(message="No data ingestion configuration found")
+
+        config = ingestion_edges[0].node
 
         if config.factory_type != "REST":
             context.log.error(

@@ -214,6 +214,8 @@ export type Database = {
           deleted_at: string | null;
           factory_type: string;
           id: string;
+          name: string;
+          org_id: string;
           updated_at: string;
         };
         Insert: {
@@ -223,6 +225,8 @@ export type Database = {
           deleted_at?: string | null;
           factory_type: string;
           id?: string;
+          name: string;
+          org_id: string;
           updated_at?: string;
         };
         Update: {
@@ -232,6 +236,8 @@ export type Database = {
           deleted_at?: string | null;
           factory_type?: string;
           id?: string;
+          name?: string;
+          org_id?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -240,6 +246,13 @@ export type Database = {
             columns: ["dataset_id"];
             isOneToOne: false;
             referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fk_data_ingestions_org_id";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
             referencedColumns: ["id"];
           },
         ];

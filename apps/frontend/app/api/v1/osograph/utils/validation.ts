@@ -353,6 +353,7 @@ export const NotebookWhereSchema = createWhereSchema("notebooks");
 export const DatasetWhereSchema = createWhereSchema("datasets");
 export const DataModelWhereSchema = createWhereSchema("model");
 export const StaticModelWhereSchema = createWhereSchema("static_model");
+export const DataIngestionsWhereSchema = createWhereSchema("data_ingestions");
 export const InvitationWhereSchema = createWhereSchema("invitations");
 export const OrganizationWhereSchema = createWhereSchema("organizations");
 export const DataModelRevisionWhereSchema = createWhereSchema("model_revision");

@@ -25,7 +25,7 @@ class GetDataIngestionConfigDatasetsEdges(BaseModel):
 class GetDataIngestionConfigDatasetsEdgesNode(DatasetCommon):
     type_definition: Union[
         "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataModelDefinition",
-        "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion",
+        "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinition",
         "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataConnector",
         "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionStaticModelDefinition",
     ] = Field(alias="typeDefinition", discriminator="typename__")
@@ -37,8 +37,32 @@ class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataModelDefinition(
     typename__: Literal["DataModelDefinition"] = Field(alias="__typename")
 
 
-class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestion(BaseModel):
-    typename__: Literal["DataIngestion"] = Field(alias="__typename")
+class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinition(
+    BaseModel
+):
+    typename__: Literal["DataIngestionDefinition"] = Field(alias="__typename")
+    data_ingestions: "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinitionDataIngestions" = Field(
+        alias="dataIngestions"
+    )
+
+
+class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinitionDataIngestions(
+    BaseModel
+):
+    edges: List[
+        "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinitionDataIngestionsEdges"
+    ]
+
+
+class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinitionDataIngestionsEdges(
+    BaseModel
+):
+    node: "GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinitionDataIngestionsEdgesNode"
+
+
+class GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinitionDataIngestionsEdgesNode(
+    BaseModel
+):
     id: str
     dataset_id: str = Field(alias="datasetId")
     factory_type: DataIngestionFactoryType = Field(alias="factoryType")
@@ -59,3 +83,6 @@ GetDataIngestionConfig.model_rebuild()
 GetDataIngestionConfigDatasets.model_rebuild()
 GetDataIngestionConfigDatasetsEdges.model_rebuild()
 GetDataIngestionConfigDatasetsEdgesNode.model_rebuild()
+GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinition.model_rebuild()
+GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinitionDataIngestions.model_rebuild()
+GetDataIngestionConfigDatasetsEdgesNodeTypeDefinitionDataIngestionDefinitionDataIngestionsEdges.model_rebuild()

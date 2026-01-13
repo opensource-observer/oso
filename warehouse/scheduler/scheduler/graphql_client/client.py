@@ -265,11 +265,17 @@ class Client(AsyncBaseClient):
                     ...DatasetCommon
                     typeDefinition {
                       __typename
-                      ... on DataIngestion {
-                        id
-                        datasetId
-                        factoryType
-                        config
+                      ... on DataIngestionDefinition {
+                        dataIngestions(where: {deleted_at: {is: null}}, single: true) {
+                          edges {
+                            node {
+                              id
+                              datasetId
+                              factoryType
+                              config
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -279,9 +285,13 @@ class Client(AsyncBaseClient):
 
             fragment DatasetCommon on Dataset {
               id
-              orgId
+              name
               displayName
               description
+              organization {
+                id
+                name
+              }
             }
             """
         )
