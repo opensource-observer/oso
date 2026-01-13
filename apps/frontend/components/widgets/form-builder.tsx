@@ -207,17 +207,35 @@ function generateFormConfig<T extends FormSchema>(schema: T) {
   const zodSchema: Record<string, FormBuilderZodField> = {};
   const defaultValues: Record<string, FormDefaultValue> = {};
 
+  const getDefaultValueForType = (field: FormSchemaField): FormDefaultValue => {
+    if (field.defaultValue !== undefined) {
+      return field.defaultValue;
+    }
+    switch (field.type) {
+      case "string":
+        return "";
+      case "number":
+        return undefined;
+      case "boolean":
+        return false;
+      case "date":
+        return undefined;
+      case "array":
+        return [];
+      case "object":
+        if (field.properties) {
+          const nested = generateFormConfig(field.properties);
+          return nested.defaultValues;
+        }
+        return {};
+      default:
+        return undefined;
+    }
+  };
+
   Object.entries(schema).forEach(([key, field]) => {
     zodSchema[key] = createZodSchema(field);
-
-    if (field.type === "object" && field.properties) {
-      const nested = generateFormConfig(field.properties);
-      if (Object.keys(nested.defaultValues).length > 0) {
-        defaultValues[key] = nested.defaultValues;
-      }
-    } else if (field.defaultValue !== undefined) {
-      defaultValues[key] = field.defaultValue;
-    }
+    defaultValues[key] = getDefaultValueForType(field);
   });
 
   const finalZodSchema = z.object(zodSchema);
@@ -845,6 +863,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
 
 interface FormBuilderProps {
   schema: FormSchema;
+  defaultValues?: Record<string, FormDefaultValue>;
   setForm?: (form: UseFormReturn<any>) => void;
   onSubmit: (data: any) => void;
   className?: string;
@@ -857,6 +876,7 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
   function _FormBuilder(
     {
       schema = {},
+      defaultValues: propDefaultValues,
       setForm,
       onSubmit,
       className,
@@ -866,19 +886,28 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
     },
     _ref,
   ) {
-    const { zodSchema, defaultValues } = React.useMemo(
+    const { zodSchema, defaultValues: schemaDefaultValues } = React.useMemo(
       () => generateFormConfig(schema),
       [schema],
     );
 
+    const mergedDefaultValues = React.useMemo(
+      () => ({ ...schemaDefaultValues, ...propDefaultValues }),
+      [schemaDefaultValues, propDefaultValues],
+    );
+
     const form = useForm<z.infer<typeof zodSchema>>({
       resolver: zodResolver(zodSchema),
-      defaultValues,
+      defaultValues: mergedDefaultValues,
     });
 
     React.useEffect(() => {
       setForm?.(form);
     }, [form]);
+
+    React.useEffect(() => {
+      form.reset(mergedDefaultValues);
+    }, [form, mergedDefaultValues]);
 
     return (
       <FormProvider {...form}>
@@ -973,6 +1002,11 @@ const FormBuilderMeta: CodeComponentMeta<FormBuilderProps> = {
     schema: {
       type: "object",
       description: "The JSON schema to generate the form from.",
+    },
+    defaultValues: {
+      type: "object",
+      description:
+        "Default values for form fields. Maps 1:1 with schema keys and overrides schema defaultValue fields.",
     },
     objectClassName: {
       type: "class",
