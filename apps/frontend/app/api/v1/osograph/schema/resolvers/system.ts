@@ -16,6 +16,7 @@ import {
   CreateMaterializationSchema,
   FinishRunSchema,
   FinishStepSchema,
+  UpdateRunMetadataSchema,
   ResolveTablesSchema,
   StartRunSchema,
   StartStepSchema,
@@ -126,6 +127,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
             status: RunStatusMap[status] || "failed",
             logs_url: logsUrl,
             completed_at: new Date().toISOString(),
+            metadata: input.metadata ? input.metadata : runData.metadata,
           })
           .eq("id", runId)
           .select()
@@ -137,6 +139,42 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
         }
         return {
           message: "Committed run completion",
+          success: true,
+          run: updatedRun,
+        };
+      },
+    }),
+    updateRunMetadata: systemMutation({
+      inputSchema: UpdateRunMetadataSchema,
+      resolver: async (input) => {
+        const supabase = createAdminClient();
+
+        const { runId, metadata } = input;
+
+        const { data: runData, error: runError } = await supabase
+          .from("run")
+          .select("*")
+          .eq("id", runId)
+          .single();
+        if (runError || !runData) {
+          throw ResourceErrors.notFound(`Run ${runId} not found`);
+        }
+        // Update the metadata of the run
+        const { data: updatedRun, error: updateError } = await supabase
+          .from("run")
+          .update({
+            metadata: metadata,
+          })
+          .eq("id", runId)
+          .select()
+          .single();
+        if (updateError || !updatedRun) {
+          throw ServerErrors.internal(
+            `Failed to update metadata for run ${runId}`,
+          );
+        }
+        return {
+          message: "Updated run metadata",
           success: true,
           run: updatedRun,
         };

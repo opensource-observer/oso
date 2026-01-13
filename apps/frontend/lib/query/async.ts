@@ -24,7 +24,6 @@ import { QueryRunRequest } from "@opensource-observer/osoprotobufs/query";
 import { copyFile, fileExists, getSignedUrl } from "@/lib/clients/gcs";
 import { assertNever } from "@opensource-observer/utils";
 import { hashObject } from "@/lib/utils-server";
-import { queryContainsUDMsReferenceWithDefaults } from "@/lib/query/utils";
 
 import {
   ASYNC_QUERY_BUCKET,
@@ -154,11 +153,6 @@ export async function makeAsyncSqlQuery({
   // Get metadata for the query
   const metadataJson = JSON.stringify(metadata);
 
-  const containsUdmsReference = await queryContainsUDMsReferenceWithDefaults({
-    query,
-    metadata,
-  });
-
   // Create run in Supabase
   const supabase = createAdminClient();
   const { data: run, error: runError } = await supabase
@@ -171,7 +165,6 @@ export async function makeAsyncSqlQuery({
       metadata: {
         queryHash: queryKey,
         queryMetadataJson: metadataJson,
-        containsUdmsReference,
       },
     })
     .select("id, status")
@@ -264,10 +257,10 @@ export async function retrieveAsyncSqlQueryResults({
   const url = await getSignedUrl(ASYNC_QUERY_BUCKET, runId);
 
   const queryHash = getFromRunMetadata<string>(run, "queryHash");
-  const containsUdmsReference =
-    getFromRunMetadata<boolean>(run, "containsUdmsReference") || false;
+  const containsUdmReference =
+    getFromRunMetadata<boolean>(run, "containsUdmReference") || false;
 
-  if (queryHash && !containsUdmsReference) {
+  if (queryHash && !containsUdmReference) {
     const orgPlan = await CreditsService.getOrganizationPlan(user.orgId);
     if (orgPlan?.plan_name === "ENTERPRISE") {
       await copyFile(
