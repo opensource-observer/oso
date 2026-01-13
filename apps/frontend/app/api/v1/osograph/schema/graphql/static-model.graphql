@@ -15,8 +15,6 @@ type StaticModel {
   runs(
     first: Int = 50
     after: String
-    single: Boolean
-    where: JSON
   ): RunConnection!
 }
 

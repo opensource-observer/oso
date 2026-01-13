@@ -1,10 +1,12 @@
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
-import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import { z } from "zod";
 import {
   CreateStaticModelSchema,
   MaterializationWhereSchema,
-  RunWhereSchema,
   StaticModelWhereSchema,
   UpdateStaticModelSchema,
   validateInput,
@@ -16,7 +18,10 @@ import {
   requireAuthentication,
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
-import { getResourceById } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import {
+  getModelRunConnection,
+  getResourceById,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import {
@@ -212,25 +217,8 @@ export const staticModelResolvers = {
         },
       });
     },
-    runs: async (
-      parent: StaticModelRow,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      return queryWithPagination(args, context, {
-        tableName: "run",
-        whereSchema: RunWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
-        basePredicate: {
-          contains: [{ key: "models", value: [parent.id] }],
-        },
-        orderBy: {
-          key: "queued_at",
-          ascending: false,
-        },
-      });
+    runs: async (parent: StaticModelRow, args: ConnectionArgs) => {
+      return getModelRunConnection(parent.dataset_id, parent.id, args);
     },
   },
 };

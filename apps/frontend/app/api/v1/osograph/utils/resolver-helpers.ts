@@ -214,3 +214,22 @@ export async function checkMembershipExists(
 
   return !!existingMembership;
 }
+
+export async function getModelRunConnection(
+  datasetId: string,
+  modelId: string,
+  args: ConnectionArgs,
+) {
+  const supabase = createAdminClient();
+  const { data, count, error } = await supabase
+    .from("run")
+    .select("*")
+    .eq("dataset_id", datasetId)
+    .or(`models.cs.{"${modelId}"},models.eq.{}`); // If the run contains the model ID or is an empty array
+
+  if (error) {
+    throw ServerErrors.database(`Failed to fetch runs: ${error.message}`);
+  }
+
+  return buildConnectionOrEmpty(data, args, count);
+}

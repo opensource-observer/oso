@@ -1578,8 +1578,6 @@ export type DataModelRevisionsArgs = {
 export type DataModelRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
-  single?: InputMaybe<Scalars["Boolean"]["input"]>;
-  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelColumn = {
@@ -8161,8 +8159,6 @@ export type StaticModelMaterializationsArgs = {
 export type StaticModelRunsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
-  single?: InputMaybe<Scalars["Boolean"]["input"]>;
-  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type StaticModelConnection = {
