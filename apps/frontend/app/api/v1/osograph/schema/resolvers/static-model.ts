@@ -1,5 +1,8 @@
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
-import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import { z } from "zod";
 import {
   CreateStaticModelSchema,
@@ -15,7 +18,10 @@ import {
   requireAuthentication,
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
-import { getResourceById } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import {
+  getModelRunConnection,
+  getResourceById,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import {
@@ -210,6 +216,9 @@ export const staticModelResolvers = {
           ascending: false,
         },
       });
+    },
+    runs: async (parent: StaticModelRow, args: ConnectionArgs) => {
+      return getModelRunConnection(parent.dataset_id, parent.id, args);
     },
   },
 };

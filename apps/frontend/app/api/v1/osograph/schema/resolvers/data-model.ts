@@ -10,8 +10,14 @@ import {
   ResourceErrors,
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
-import { getResourceById } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  getModelRunConnection,
+  getResourceById,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
+import {
+  ConnectionArgs,
+  FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import { createHash } from "crypto";
 import {
   CreateDataModelReleaseSchema,
@@ -421,6 +427,9 @@ export const dataModelResolvers = {
           ascending: false,
         },
       });
+    },
+    runs: async (parent: ModelRow, args: ConnectionArgs) => {
+      return getModelRunConnection(parent.dataset_id, parent.id, args);
     },
   },
 

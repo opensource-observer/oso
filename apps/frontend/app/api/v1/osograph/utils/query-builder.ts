@@ -46,6 +46,7 @@ export type QueryPredicate<T extends ValidTableName> = {
   lt?: FilterEntry<T>[];
   lte?: FilterEntry<T>[];
   in?: ArrayFilterEntry<T>[];
+  contains?: ArrayFilterEntry<T>[];
   like?: StringFilterEntry<T>[];
   ilike?: StringFilterEntry<T>[];
   is?: NullableFilterEntry<T>[];
@@ -85,24 +86,24 @@ export async function buildQuery<TTable extends ValidTableName>(
     return q[method](key, value);
   }
 
-  function applyIn<K extends StringKeys<TableRow<TTable>>>(
+  function applyArrayFilter<K extends StringKeys<TableRow<TTable>>>(
     q: TQuery,
     key: K,
     value: Array<FilterMap<TTable>[K]>,
+    method: "in" | "contains",
   ): TQuery {
     // @ts-expect-error - TS can't narrow FilterMap<TTable>[K][] to Supabase types
-    return q.in(key, value);
+    return q[method](key, value);
   }
 
   function applyStringFilter<K extends StringKeys<TableRow<TTable>>>(
     q: TQuery,
     key: K,
     value: string,
-    method: "like" | "ilike",
+    method: "like" | "ilike" | "contains",
   ): TQuery {
     return q[method](key, value);
   }
-
   function applyIs<K extends StringKeys<TableRow<TTable>>>(
     q: TQuery,
     key: K,
@@ -123,7 +124,8 @@ export async function buildQuery<TTable extends ValidTableName>(
     gte: (q, f) => applyFilter(q, f.key, f.value, "gte"),
     lt: (q, f) => applyFilter(q, f.key, f.value, "lt"),
     lte: (q, f) => applyFilter(q, f.key, f.value, "lte"),
-    in: (q, f) => applyIn(q, f.key, f.value),
+    in: (q, f) => applyArrayFilter(q, f.key, f.value, "in"),
+    contains: (q, f) => applyArrayFilter(q, f.key, f.value, "contains"),
     like: (q, f) => applyStringFilter(q, f.key, f.value, "like"),
     ilike: (q, f) => applyStringFilter(q, f.key, f.value, "ilike"),
     is: (q, f) => applyIs(q, f.key, f.value),

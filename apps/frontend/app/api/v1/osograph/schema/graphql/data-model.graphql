@@ -27,6 +27,10 @@ type DataModel {
     single: Boolean
     where: JSON
   ): MaterializationConnection!
+  runs(
+    first: Int = 50
+    after: String
+  ): RunConnection!
 }
 
 type DataModelEdge {
