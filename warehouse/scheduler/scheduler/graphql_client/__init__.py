@@ -106,6 +106,7 @@ from .input_types import (
     UpdateDatasetInput,
     UpdateMemberRoleInput,
     UpdateNotebookInput,
+    UpdateRunMetadataInput,
     UpdateStaticModelInput,
 )
 from .resolve_tables import (
@@ -115,6 +116,11 @@ from .resolve_tables import (
 )
 from .start_run import StartRun, StartRunStartRun
 from .start_step import StartStep, StartStepStartStep, StartStepStartStepStep
+from .update_run_metadata import (
+    UpdateRunMetadata,
+    UpdateRunMetadataUpdateRunMetadata,
+    UpdateRunMetadataUpdateRunMetadataRun,
+)
 
 __all__ = [
     "AcceptInvitationInput",
@@ -220,6 +226,10 @@ __all__ = [
     "UpdateDatasetInput",
     "UpdateMemberRoleInput",
     "UpdateNotebookInput",
+    "UpdateRunMetadata",
+    "UpdateRunMetadataInput",
+    "UpdateRunMetadataUpdateRunMetadata",
+    "UpdateRunMetadataUpdateRunMetadataRun",
     "UpdateStaticModelInput",
     "Upload",
 ]

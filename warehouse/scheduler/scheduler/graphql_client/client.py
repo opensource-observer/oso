@@ -16,6 +16,7 @@ from .input_types import DataModelColumnInput
 from .resolve_tables import ResolveTables
 from .start_run import StartRun
 from .start_step import StartStep
+from .update_run_metadata import UpdateRunMetadata
 
 
 def gql(q: str) -> str:
@@ -40,13 +41,46 @@ class Client(AsyncBaseClient):
         data = self.get_data(response)
         return StartRun.model_validate(data)
 
+    async def update_run_metadata(
+        self, run_id: str, metadata: Any, **kwargs: Any
+    ) -> UpdateRunMetadata:
+        query = gql(
+            """
+            mutation UpdateRunMetadata($runId: ID!, $metadata: JSON!) {
+              updateRunMetadata(input: {runId: $runId, metadata: $metadata}) {
+                success
+                message
+                run {
+                  id
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"runId": run_id, "metadata": metadata}
+        response = await self.execute(
+            query=query,
+            operation_name="UpdateRunMetadata",
+            variables=variables,
+            **kwargs,
+        )
+        data = self.get_data(response)
+        return UpdateRunMetadata.model_validate(data)
+
     async def finish_run(
-        self, run_id: str, status: RunStatus, logs_url: str, **kwargs: Any
+        self,
+        run_id: str,
+        status: RunStatus,
+        logs_url: str,
+        metadata: Union[Optional[Any], UnsetType] = UNSET,
+        **kwargs: Any,
     ) -> FinishRun:
         query = gql(
             """
-            mutation FinishRun($runId: ID!, $status: RunStatus!, $logsUrl: String!) {
-              finishRun(input: {runId: $runId, status: $status, logsUrl: $logsUrl}) {
+            mutation FinishRun($runId: ID!, $status: RunStatus!, $logsUrl: String!, $metadata: JSON) {
+              finishRun(
+                input: {runId: $runId, status: $status, logsUrl: $logsUrl, metadata: $metadata}
+              ) {
                 success
                 message
                 run {
@@ -60,6 +94,7 @@ class Client(AsyncBaseClient):
             "runId": run_id,
             "status": status,
             "logsUrl": logs_url,
+            "metadata": metadata,
         }
         response = await self.execute(
             query=query, operation_name="FinishRun", variables=variables, **kwargs
@@ -279,9 +314,13 @@ class Client(AsyncBaseClient):
 
             fragment DatasetCommon on Dataset {
               id
-              orgId
+              name
               displayName
               description
+              organization {
+                id
+                name
+              }
             }
             """
         )
