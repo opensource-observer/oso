@@ -3,7 +3,7 @@ MODEL (
   description 'OpenDevData commits enriched with canonical repo_id',
   dialect trino,
   kind FULL,
-  partitioned_by DAY("created_at"),
+  partitioned_by DAY("committed_at"),
   tags (
     "opendevdata",
     "ddp",
@@ -18,7 +18,7 @@ SELECT
   odc.id,
   odc.repo_id AS opendevdata_repo_id,
   odc.sha1,
-  odc.created_at,
+  odc.created_at AS opendevdata_created_at,
   odc.additions,
   odc.deletions,
   odc.authored_at,
