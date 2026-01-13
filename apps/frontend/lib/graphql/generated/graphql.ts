@@ -2370,6 +2370,7 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
 
 export type FinishRunInput = {
   logsUrl: Scalars["String"]["input"];
+  metadata?: InputMaybe<Scalars["JSON"]["input"]>;
   runId: Scalars["ID"]["input"];
   status: RunStatus;
 };
@@ -2834,6 +2835,8 @@ export type Job = IPipelineSnapshot &
     description?: Maybe<Scalars["String"]["output"]>;
     externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
+    hasLaunchExecutionPermission: Scalars["Boolean"]["output"];
+    hasLaunchReexecutionPermission: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
     isJob: Scalars["Boolean"]["output"];
@@ -3483,6 +3486,8 @@ export type Mutation = {
   updateMemberRole: UpdateMemberRolePayload;
   /** Update a notebook */
   updateNotebook: UpdateNotebookPayload;
+  /** System only. Update run metadata. This can be called at any time */
+  updateRunMetadata: UpdateRunMetadataPayload;
   updateStaticModel: CreateStaticModelPayload;
   /** Deletes asset history from storage. */
   wipeAssets: AssetWipeMutationResult;
@@ -3817,6 +3822,11 @@ export type MutationUpdateMemberRoleArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationUpdateNotebookArgs = {
   input: UpdateNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateRunMetadataArgs = {
+  input: UpdateRunMetadataInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -5405,6 +5415,8 @@ export type PartitionRunConfigOrError = PartitionRunConfig | PythonError;
 export type PartitionSet = {
   __typename?: "PartitionSet";
   backfills: Array<PartitionBackfill>;
+  hasCancelBackfillPermission: Scalars["Boolean"]["output"];
+  hasLaunchBackfillPermission: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   mode: Scalars["String"]["output"];
   name: Scalars["String"]["output"];
@@ -5578,6 +5590,8 @@ export type Pipeline = IPipelineSnapshot &
     description?: Maybe<Scalars["String"]["output"]>;
     externalJobSource?: Maybe<Scalars["String"]["output"]>;
     graphName: Scalars["String"]["output"];
+    hasLaunchExecutionPermission: Scalars["Boolean"]["output"];
+    hasLaunchReexecutionPermission: Scalars["Boolean"]["output"];
     id: Scalars["ID"]["output"];
     isAssetJob: Scalars["Boolean"]["output"];
     isJob: Scalars["Boolean"]["output"];
@@ -7896,6 +7910,7 @@ export type Sensor = {
   canReset: Scalars["Boolean"]["output"];
   defaultStatus: InstigationStatus;
   description?: Maybe<Scalars["String"]["output"]>;
+  hasCursorUpdatePermissions: Scalars["Boolean"]["output"];
   id: Scalars["ID"]["output"];
   jobOriginId: Scalars["String"]["output"];
   metadata: SensorMetadata;
@@ -8669,6 +8684,18 @@ export type UpdateNotebookPayload = {
   __typename?: "UpdateNotebookPayload";
   message?: Maybe<Scalars["String"]["output"]>;
   notebook?: Maybe<Notebook>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateRunMetadataInput = {
+  metadata: Scalars["JSON"]["input"];
+  runId: Scalars["ID"]["input"];
+};
+
+export type UpdateRunMetadataPayload = {
+  __typename?: "UpdateRunMetadataPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run?: Maybe<Run>;
   success: Scalars["Boolean"]["output"];
 };
 
