@@ -110,7 +110,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
       resolver: async (input) => {
         const supabase = createAdminClient();
 
-        const { status, runId, logsUrl } = input;
+        const { status, statusCode, runId, logsUrl } = input;
 
         const { data: runData, error: runError } = await supabase
           .from("run")
@@ -125,6 +125,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .from("run")
           .update({
             status: RunStatusMap[status] || "failed",
+            status_code: statusCode,
             logs_url: logsUrl,
             completed_at: new Date().toISOString(),
             metadata: input.metadata ? input.metadata : runData.metadata,
