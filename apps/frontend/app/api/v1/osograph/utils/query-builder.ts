@@ -68,7 +68,11 @@ export function _inferQueryType<TTable extends ValidTableName>(
   tableName: TTable,
 ) {
   return client
-    .from(tableName as keyof Database["public"]["Tables"])
+    .from(
+      tableName as TTable extends keyof Database["public"]["Tables"]
+        ? TTable
+        : keyof Database["public"]["Tables"],
+    )
     .select("*", { count: "exact" });
 }
 
