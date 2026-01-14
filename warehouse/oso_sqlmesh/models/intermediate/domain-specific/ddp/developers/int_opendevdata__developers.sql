@@ -26,7 +26,7 @@ WITH developer_history AS (
       '@',
       SPLIT_PART(commits.commit_author_email, '@', 2)
     ) AS hashed_author_email,
-    MIN(commits.created_at) AS valid_from
+    MIN(commits.committed_at) AS valid_from
   FROM oso.stg_opendevdata__commits AS commits
   INNER JOIN oso.stg_opendevdata__canonical_developers AS devs
     ON commits.canonical_developer_id = devs.id
