@@ -1,6 +1,6 @@
 MODEL (
   name oso.int_opendevdata__developers_with_dev_id,
-  description 'Association between GitHub developers and OpenDevData canonical developers based on name, email and time',
+  description 'Association between GitHub developers and OpenDevData canonical developers, matching by actor_id (primary) or name/email (fallback)',
   dialect trino,
   kind FULL,
   partitioned_by DAY("valid_from"),
@@ -16,7 +16,7 @@ MODEL (
 );
 
 SELECT
-  gh.actor_id,
+  COALESCE(gh.actor_id, odd.actor_id) AS actor_id,
   gh.actor_login,
   COALESCE(gh.author_name, odd.author_name) AS author_name,
   COALESCE(gh.author_email, odd.author_email) AS author_email,
@@ -35,8 +35,16 @@ SELECT
   END AS valid_to
 FROM oso.int_gharchive__developers AS gh
 FULL JOIN oso.int_opendevdata__developers AS odd
-  ON gh.author_name = odd.author_name
-  AND gh.author_email = odd.hashed_author_email
+  ON (
+    -- Primary match: actor_id when both are available
+    (gh.actor_id = odd.actor_id AND odd.actor_id IS NOT NULL)
+    -- Fallback match: name/email when odd.actor_id is NULL
+    OR (
+      odd.actor_id IS NULL
+      AND gh.author_name = odd.author_name
+      AND gh.author_email = odd.hashed_author_email
+    )
+  )
   AND (
     (gh.valid_to IS NULL OR gh.valid_to > odd.valid_from)
     AND (odd.valid_to IS NULL OR odd.valid_to > gh.valid_from)

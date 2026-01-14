@@ -1,10 +1,10 @@
 MODEL (
   name oso.int_opendevdata__developers,
-  description 'Developers from OpenDevData commits, tracking canonical developer and author details history',
+  description 'Developers from OpenDevData commits, tracking canonical developer and author details history with decoded actor_id',
   dialect trino,
   kind FULL,
   partitioned_by DAY("valid_from"),
-  grain (canonical_developer_id, primary_github_user_id, author_name, author_email, valid_from),
+  grain (canonical_developer_id, primary_github_user_id, actor_id, author_name, author_email, valid_from),
   tags (
     "opendevdata",
     "ddp"
@@ -18,6 +18,7 @@ WITH developer_history AS (
   SELECT
     commits.canonical_developer_id,
     devs.primary_github_user_id,
+    @decode_github_node_id(devs.primary_github_user_id) AS actor_id,
     commits.commit_author_name AS author_name,
     commits.commit_author_email AS author_email,
     CONCAT(
@@ -30,12 +31,13 @@ WITH developer_history AS (
   INNER JOIN oso.stg_opendevdata__canonical_developers AS devs
     ON commits.canonical_developer_id = devs.id
   WHERE commits.canonical_developer_id IS NOT NULL
-  GROUP BY 1, 2, 3, 4, 5
+  GROUP BY 1, 2, 3, 4, 5, 6
 ),
 developer_history_with_valid_to AS (
   SELECT
     canonical_developer_id,
     primary_github_user_id,
+    actor_id,
     author_name,
     author_email,
     hashed_author_email,
@@ -50,6 +52,7 @@ developer_history_with_valid_to AS (
 SELECT
   canonical_developer_id,
   primary_github_user_id,
+  actor_id,
   author_name,
   author_email,
   hashed_author_email,
