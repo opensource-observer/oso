@@ -1568,14 +1568,14 @@ export const dataIngestionAsTableRowSchema = z.object({
 
 export const dataIngestionAsTableRelationshipsSchema = z.tuple([
   z.object({
-    foreignKeyName: z.literal("data_ingestions_dataset_id_fkey"),
+    foreignKeyName: z.literal("materialization_dataset_id_fkey"),
     columns: z.tuple([z.literal("dataset_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("datasets"),
     referencedColumns: z.tuple([z.literal("id")]),
   }),
   z.object({
-    foreignKeyName: z.literal("datasets_org_id_fkey"),
+    foreignKeyName: z.literal("materialization_org_id_fkey"),
     columns: z.tuple([z.literal("org_id")]),
     isOneToOne: z.literal(false),
     referencedRelation: z.literal("organizations"),
