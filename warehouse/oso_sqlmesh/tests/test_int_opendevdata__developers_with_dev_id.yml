@@ -10,7 +10,7 @@ test_int_opendevdata__developers_with_dev_id_match_by_actor_id:
         valid_from: timestamp
         valid_to: timestamp
       rows:
-        - actor_id: 4027037
+        - actor_id: 12345
           actor_login: "legacy_user"
           author_name: "Different Name"
           author_email: "different@example.com"
@@ -28,8 +28,8 @@ test_int_opendevdata__developers_with_dev_id_match_by_actor_id:
         valid_to: timestamp
       rows:
         - canonical_developer_id: 201
-          primary_github_user_id: "MDQ6VXNlcjQwMjcwMzc="
-          actor_id: 4027037
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+          actor_id: 12345
           author_name: "OpenDevData Name"
           author_email: "odd@test.com"
           hashed_author_email: "abc123@test.com"
@@ -38,10 +38,10 @@ test_int_opendevdata__developers_with_dev_id_match_by_actor_id:
   outputs:
     query:
       rows:
-        - actor_id: 4027037
+        - actor_id: 12345
           actor_login: "legacy_user"
           canonical_developer_id: 201
-          primary_github_user_id: "MDQ6VXNlcjQwMjcwMzc="
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
           author_name: "Different Name"
           author_email: "different@example.com"
           valid_from: "2024-01-15 00:00:00"
@@ -126,8 +126,8 @@ test_int_opendevdata__developers_with_dev_id_no_match:
         valid_to: timestamp
       rows:
         - canonical_developer_id: 202
-          primary_github_user_id: "U_kgDOA3N-eg"
-          actor_id: 57900666
+          primary_github_user_id: "U_kgDOAAGBzQ"
+          actor_id: 98765
           author_name: "ODD Only"
           author_email: "odd@test.com"
           hashed_author_email: "60f7a51208a50e4639fc53af2d60b808f4429a1e@test.com"
@@ -143,10 +143,10 @@ test_int_opendevdata__developers_with_dev_id_no_match:
           author_email: "1041179cbdda366fd7b0347f09255f775170e103@test.com"
           valid_from: "2024-01-01 00:00:00"
           valid_to: null
-        - actor_id: 57900666
+        - actor_id: 98765
           actor_login: null
           canonical_developer_id: 202
-          primary_github_user_id: "U_kgDOA3N-eg"
+          primary_github_user_id: "U_kgDOAAGBzQ"
           author_name: "ODD Only"
           author_email: "odd@test.com"
           valid_from: "2024-01-01 00:00:00"
@@ -164,7 +164,7 @@ test_int_opendevdata__developers_with_dev_id_no_overlap:
         valid_from: timestamp
         valid_to: timestamp
       rows:
-        - actor_id: 4027037
+        - actor_id: 12345
           actor_login: "dev3"
           author_name: "Overlap Dev"
           author_email: "5b0fe021bfa51a932a5d7fb2e143f28ac88a6dbc@test.com"
@@ -182,8 +182,8 @@ test_int_opendevdata__developers_with_dev_id_no_overlap:
         valid_to: timestamp
       rows:
         - canonical_developer_id: 203
-          primary_github_user_id: "MDQ6VXNlcjQwMjcwMzc="
-          actor_id: 4027037
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+          actor_id: 12345
           author_name: "Overlap Dev"
           author_email: "overlap@test.com"
           hashed_author_email: "5b0fe021bfa51a932a5d7fb2e143f28ac88a6dbc@test.com"
@@ -192,17 +192,17 @@ test_int_opendevdata__developers_with_dev_id_no_overlap:
   outputs:
     query:
       rows:
-        - actor_id: 4027037
+        - actor_id: 12345
           actor_login: "dev3"
           primary_github_user_id: null
           author_name: "Overlap Dev"
           author_email: "5b0fe021bfa51a932a5d7fb2e143f28ac88a6dbc@test.com"
           valid_from: "2024-01-01 00:00:00"
           valid_to: "2024-02-01 00:00:00"
-        - actor_id: 4027037
+        - actor_id: 12345
           actor_login: null
           canonical_developer_id: 203
-          primary_github_user_id: "MDQ6VXNlcjQwMjcwMzc="
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
           author_name: "Overlap Dev"
           author_email: "overlap@test.com"
           valid_from: "2024-03-01 00:00:00"
