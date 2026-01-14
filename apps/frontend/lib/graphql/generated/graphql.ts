@@ -1530,6 +1530,37 @@ export type DataIngestion = {
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
+export type DataIngestionConnection = {
+  __typename?: "DataIngestionConnection";
+  edges: Array<DataIngestionEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataIngestionDefinition = {
+  __typename?: "DataIngestionDefinition";
+  /**
+   * If the dataset is of type DATA_INGESTION, this field will contain the list of data ingestions
+   * associated with the dataset. Otherwise it will be an empty list.
+   */
+  dataIngestions: DataIngestionConnection;
+  datasetId: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+};
+
+export type DataIngestionDefinitionDataIngestionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataIngestionEdge = {
+  __typename?: "DataIngestionEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataIngestion;
+};
+
 export enum DataIngestionFactoryType {
   ArchiveDir = "ARCHIVE_DIR",
   Graphql = "GRAPHQL",
@@ -1812,7 +1843,7 @@ export enum DatasetType {
 
 export type DatasetTypeDefinition =
   | DataConnector
-  | DataIngestion
+  | DataIngestionDefinition
   | DataModelDefinition
   | StaticModelDefinition;
 
@@ -2379,6 +2410,7 @@ export type FinishRunInput = {
   metadata?: InputMaybe<Scalars["JSON"]["input"]>;
   runId: Scalars["ID"]["input"];
   status: RunStatus;
+  statusCode: Scalars["Int"]["input"];
 };
 
 export type FinishRunPayload = {
