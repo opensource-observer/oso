@@ -315,30 +315,34 @@ def _build_nextgen_decoder_trino(node_id_exp: exp.Expression) -> exp.Expression:
         expressions=[padded],
     )
 
-    # Helper: Extract byte at position (1-indexed)
-    def get_byte(blob_exp: exp.Expression, pos: int) -> exp.Expression:
-        # Trino lacks direct byte access; convert to hex and parse
-        single_byte = exp.Anonymous(
-            this="substr",
-            expressions=[blob_exp, exp.Literal.number(pos), exp.Literal.number(1)],
-        )
-        hex_str = exp.Anonymous(
-            this="to_hex",
-            expressions=[single_byte],
+    # Trino doesn't support substring on varbinary - convert entire blob to hex first
+    hex_str = exp.Anonymous(
+        this="to_hex",
+        expressions=[decoded_bytes],
+    )
+
+    # Helper: Extract byte at position (1-indexed) from hex string
+    def get_byte(hex_exp: exp.Expression, pos: int) -> exp.Expression:
+        # Position in hex string: (pos-1)*2 + 1 (each byte = 2 hex chars)
+        hex_pos = (pos - 1) * 2 + 1
+        two_chars = exp.Substring(
+            this=hex_exp,
+            start=exp.Literal.number(hex_pos),
+            length=exp.Literal.number(2),
         )
         return exp.Anonymous(
             this="from_base",
-            expressions=[hex_str, exp.Literal.number(16)],
+            expressions=[two_chars, exp.Literal.number(16)],
         )
 
     # Msgpack parsing
-    marker = get_byte(decoded_bytes, 3)
+    marker = get_byte(hex_str, 3)
 
     # uint32 (0xce)
-    byte4 = get_byte(decoded_bytes, 4)
-    byte5 = get_byte(decoded_bytes, 5)
-    byte6 = get_byte(decoded_bytes, 6)
-    byte7 = get_byte(decoded_bytes, 7)
+    byte4 = get_byte(hex_str, 4)
+    byte5 = get_byte(hex_str, 5)
+    byte6 = get_byte(hex_str, 6)
+    byte7 = get_byte(hex_str, 7)
 
     uint32_value = exp.BitwiseOr(
         this=exp.BitwiseOr(
