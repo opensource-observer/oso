@@ -5,4 +5,4 @@
 -- * 500s for server errors
 -- This allows for us to use these status codes to respond in REST APIs 
 -- and also gives us a familiar way to categorize different types of run results.
-ALTER TABLE "public"."run" ADD COLUMN "status_code" integer array;
+ALTER TABLE "public"."run" ADD COLUMN "status_code" integer;
