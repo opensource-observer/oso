@@ -15,6 +15,10 @@ const CollapsibleMeta: CodeComponentMeta<CollapsibleProps> = {
       cssSelector: '[data-state="open"]',
       displayName: "Open",
     },
+    hover: {
+      cssSelector: ":hover",
+      displayName: "Hover",
+    },
   },
   props: {
     children: "slot",
