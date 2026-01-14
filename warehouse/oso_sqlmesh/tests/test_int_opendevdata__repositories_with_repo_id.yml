@@ -3,7 +3,7 @@ test_int_opendevdata__repositories_with_repo_id:
   inputs:
     oso.stg_opendevdata__repos:
       rows:
-        # Scenario 1: Match found via GraphQL ID
+        # Scenario 1: Match found via GraphQL ID (OSSD match takes precedence)
         - id: 1
           repo_created_at: "2020-01-01"
           name: "Owner/Repo1"
@@ -11,7 +11,7 @@ test_int_opendevdata__repositories_with_repo_id:
           num_stars: 10
           num_forks: 5
           is_blacklist: 0
-        # Scenario 2: Match found via Repo Name (Fallback)
+        # Scenario 2: Match found via Repo Name (GHArchive fallback)
         - id: 2
           repo_created_at: "2020-02-01"
           name: "Owner/Repo2"
@@ -43,35 +43,69 @@ test_int_opendevdata__repositories_with_repo_id:
           num_stars: 2
           num_forks: 1
           is_blacklist: 0
+        # Scenario 6: Legacy Node ID format - decodes to repo_id 12345
+        # MDQ6UmVwb3NpdG9yeTEyMzQ1 decodes to "04:Repository12345"
+        - id: 6
+          repo_created_at: "2020-06-01"
+          name: "Owner/RepoLegacy"
+          github_graphql_id: "MDQ6UmVwb3NpdG9yeTEyMzQ1"
+          num_stars: 50
+          num_forks: 25
+          is_blacklist: 0
+        # Scenario 7: Next-gen Node ID format - decodes to repo_id 98765
+        # R_kgDOAAGBzQ is a synthetic next-gen Node ID (msgpack [0, 98765])
+        - id: 7
+          repo_created_at: "2020-07-01"
+          name: "Owner/RepoNextgen"
+          github_graphql_id: "R_kgDOAAGBzQ"
+          num_stars: 100
+          num_forks: 50
+          is_blacklist: 0
+        # Scenario 8: OSSD match takes precedence even when decoding would succeed
+        # This repo has a valid Node ID but also has an OSSD match
+        - id: 8
+          repo_created_at: "2020-08-01"
+          name: "Owner/RepoOssdPriority"
+          github_graphql_id: "NODE_OSSD_PRIORITY"
+          num_stars: 30
+          num_forks: 15
+          is_blacklist: 0
+        # Scenario 9: Node ID decoding takes precedence over GHArchive name match
+        # This repo has a valid Node ID and a matching GHArchive name
+        - id: 9
+          repo_created_at: "2020-09-01"
+          name: "owner/repo_node_over_gha"
+          github_graphql_id: "MDQ6UmVwb3NpdG9yeTk4NzY1NDMy"
+          num_stars: 40
+          num_forks: 20
+          is_blacklist: 0
 
     oso.stg_ossd__current_repositories:
       rows:
         - id: 1001
           node_id: "NODE_A"
-        # NODE_B, NODE_C, NODE_D not in OSSD
+        - id: 1002
+          node_id: "NODE_OSSD_PRIORITY"
 
     oso.int_gharchive__repositories:
       rows:
-        # Match for Repo2
+        # Match for Repo2 (GHArchive fallback)
         - repo_id: 2001
           repo_name: "owner/repo2"
           valid_from: "2020-01-01"
-        # Match for Repo2 but older (should not be picked if rn logic works, but rn=1 picks latest valid_from)
-        # Note: Removing this row to avoid ambiguity as the current model logic might pick both if they are distinct repo_ids with same name.
-        # We test the basic fallback mechanism here.
-        #- repo_id: 2002
-        #  repo_name: 'owner/repo2'
-        #  valid_from: '2019-01-01'
-        # No match for Repo1 (handled by GraphQL), Repo3, Repo4
         # Match for Empty GraphQL ID case
         - repo_id: 2003
           repo_name: "owner/repo_empty"
           valid_from: "2020-05-01"
+        # Match for Scenario 9 - but should NOT be used because Node ID decoding succeeds
+        - repo_id: 2009
+          repo_name: "owner/repo_node_over_gha"
+          valid_from: "2020-09-01"
 
   outputs:
     query:
       rows:
-        # Result 1: Linked via GraphQL
+        # Result 1: Linked via GraphQL (OSSD)
         - opendevdata_id: 1
           github_graphql_id: "NODE_A"
           repo_id: 1001
@@ -82,7 +116,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_id_source: "ossd"
           is_opendevdata_blacklist: false
 
-        # Result 2: Linked via Name Fallback
+        # Result 2: Linked via Name Fallback (GHArchive)
         - opendevdata_id: 2
           github_graphql_id: "NODE_B"
           repo_id: 2001
@@ -115,7 +149,7 @@ test_int_opendevdata__repositories_with_repo_id:
           repo_id_source: "opendevdata"
           is_opendevdata_blacklist: true
 
-        # Result 5: Empty GraphQL ID falls back to Name Match
+        # Result 5: Empty GraphQL ID falls back to Name Match (GHArchive)
         - opendevdata_id: 5
           github_graphql_id: ""
           repo_id: 2003
@@ -124,4 +158,48 @@ test_int_opendevdata__repositories_with_repo_id:
           fork_count: 1
           repo_created_at: "2020-05-01"
           repo_id_source: "gharchive"
+          is_opendevdata_blacklist: false
+
+        # Result 6: Legacy Node ID format - decoded via node_id
+        - opendevdata_id: 6
+          github_graphql_id: "MDQ6UmVwb3NpdG9yeTEyMzQ1"
+          repo_id: 12345
+          repo_name: "owner/repolegacy"
+          star_count: 50
+          fork_count: 25
+          repo_created_at: "2020-06-01"
+          repo_id_source: "node_id"
+          is_opendevdata_blacklist: false
+
+        # Result 7: Next-gen Node ID format - decoded via node_id
+        - opendevdata_id: 7
+          github_graphql_id: "R_kgDOAAGBzQ"
+          repo_id: 98765
+          repo_name: "owner/reponextgen"
+          star_count: 100
+          fork_count: 50
+          repo_created_at: "2020-07-01"
+          repo_id_source: "node_id"
+          is_opendevdata_blacklist: false
+
+        # Result 8: OSSD match takes precedence over Node ID decoding
+        - opendevdata_id: 8
+          github_graphql_id: "NODE_OSSD_PRIORITY"
+          repo_id: 1002
+          repo_name: "owner/repoossdpriority"
+          star_count: 30
+          fork_count: 15
+          repo_created_at: "2020-08-01"
+          repo_id_source: "ossd"
+          is_opendevdata_blacklist: false
+
+        # Result 9: Node ID decoding takes precedence over GHArchive match
+        - opendevdata_id: 9
+          github_graphql_id: "MDQ6UmVwb3NpdG9yeTk4NzY1NDMy"
+          repo_id: 98765432
+          repo_name: "owner/repo_node_over_gha"
+          star_count: 40
+          fork_count: 20
+          repo_created_at: "2020-09-01"
+          repo_id_source: "node_id"
           is_opendevdata_blacklist: false
