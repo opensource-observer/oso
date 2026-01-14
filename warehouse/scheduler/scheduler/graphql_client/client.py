@@ -71,15 +71,16 @@ class Client(AsyncBaseClient):
         self,
         run_id: str,
         status: RunStatus,
+        status_code: int,
         logs_url: str,
         metadata: Union[Optional[Any], UnsetType] = UNSET,
         **kwargs: Any,
     ) -> FinishRun:
         query = gql(
             """
-            mutation FinishRun($runId: ID!, $status: RunStatus!, $logsUrl: String!, $metadata: JSON) {
+            mutation FinishRun($runId: ID!, $status: RunStatus!, $statusCode: Int!, $logsUrl: String!, $metadata: JSON) {
               finishRun(
-                input: {runId: $runId, status: $status, logsUrl: $logsUrl, metadata: $metadata}
+                input: {runId: $runId, status: $status, statusCode: $statusCode, logsUrl: $logsUrl, metadata: $metadata}
               ) {
                 success
                 message
@@ -93,6 +94,7 @@ class Client(AsyncBaseClient):
         variables: Dict[str, object] = {
             "runId": run_id,
             "status": status,
+            "statusCode": status_code,
             "logsUrl": logs_url,
             "metadata": metadata,
         }
