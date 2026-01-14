@@ -322,6 +322,42 @@ export const dataModelResolvers = {
         dataModelRelease: data,
       };
     },
+    deleteDataModel: async (
+      _: unknown,
+      { id }: { id: string },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const supabase = createAdminClient();
+
+      const { data: dataModel, error: fetchError } = await supabase
+        .from("model")
+        .select("org_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !dataModel) {
+        throw ResourceErrors.notFound("DataModel", id);
+      }
+
+      await requireOrgMembership(authenticatedUser.userId, dataModel.org_id);
+
+      const { error } = await supabase
+        .from("model")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
+
+      if (error) {
+        throw ServerErrors.database(
+          `Failed to delete data model: ${error.message}`,
+        );
+      }
+
+      return {
+        success: true,
+        message: "DataModel deleted successfully",
+      };
+    },
   },
   DataModel: {
     orgId: (parent: { org_id: string }) => parent.org_id,

@@ -220,6 +220,43 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         success: true,
       };
     },
+
+    deleteDataset: async (
+      _: unknown,
+      { id }: { id: string },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const supabase = createAdminClient();
+
+      const { data: dataset, error: fetchError } = await supabase
+        .from("datasets")
+        .select("org_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !dataset) {
+        throw DatasetErrors.notFound();
+      }
+
+      await requireOrgMembership(authenticatedUser.userId, dataset.org_id);
+
+      const { error } = await supabase
+        .from("datasets")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
+
+      if (error) {
+        throw ServerErrors.database(
+          `Failed to delete dataset: ${error.message}`,
+        );
+      }
+
+      return {
+        success: true,
+        message: "Dataset deleted successfully",
+      };
+    },
   },
 
   Dataset: {

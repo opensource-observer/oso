@@ -12,10 +12,7 @@ type StaticModel {
     single: Boolean
     where: JSON
   ): MaterializationConnection!
-  runs(
-    first: Int = 50
-    after: String
-  ): RunConnection!
+  runs(first: Int = 50, after: String): RunConnection!
 }
 
 type StaticModelEdge {
@@ -55,8 +52,14 @@ input UpdateStaticModelInput {
   name: String
 }
 
+type DeleteStaticModelPayload {
+  success: Boolean!
+  message: String
+}
+
 extend type Mutation {
   createStaticModel(input: CreateStaticModelInput!): CreateStaticModelPayload!
   updateStaticModel(input: UpdateStaticModelInput!): CreateStaticModelPayload!
+  deleteStaticModel(id: ID!): DeleteStaticModelPayload!
   createStaticModelUploadUrl(staticModelId: ID!): String!
 }

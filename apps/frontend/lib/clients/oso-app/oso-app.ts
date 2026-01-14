@@ -2594,6 +2594,54 @@ class OsoAppClient {
     return payload.dataset;
   }
 
+  async deleteDataset(
+    args: Partial<{
+      datasetId: string;
+    }>,
+  ) {
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
+
+    const DELETE_DATASET_MUTATION = gql(`
+      mutation DeleteDataset($id: ID!) {
+        deleteDataset(id: $id) {
+          success
+          message
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(DELETE_DATASET_MUTATION),
+        variables: {
+          id: datasetId,
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to delete dataset:", result.errors[0].message);
+      throw new Error(`Failed to delete dataset: ${result.errors[0].message}`);
+    }
+
+    const payload = result.data?.deleteDataset;
+    if (!payload) {
+      throw new Error("No response data from delete dataset mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully deleted dataset "${datasetId}"`);
+    }
+
+    return payload;
+  }
+
   async createDataModel(
     args: Partial<{
       orgId: string;
@@ -2725,6 +2773,59 @@ class OsoAppClient {
     }
 
     return payload.dataModel;
+  }
+
+  async deleteDataModel(
+    args: Partial<{
+      dataModelId: string;
+    }>,
+  ) {
+    const dataModelId = ensure(
+      args.dataModelId,
+      "Missing dataModelId argument",
+    );
+
+    const DELETE_DATA_MODEL_MUTATION = gql(`
+      mutation DeleteDataModel($id: ID!) {
+        deleteDataModel(id: $id) {
+          success
+          message
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(DELETE_DATA_MODEL_MUTATION),
+        variables: {
+          id: dataModelId,
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to delete dataModel:", result.errors[0].message);
+      throw new Error(
+        `Failed to delete dataModel: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.deleteDataModel;
+    if (!payload) {
+      throw new Error("No response data from delete dataModel mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully deleted dataModel "${dataModelId}"`);
+    }
+
+    return payload;
   }
 
   async createDataModelRevision(
@@ -3000,6 +3101,59 @@ class OsoAppClient {
     }
 
     return payload.staticModel;
+  }
+
+  async deleteStaticModel(
+    args: Partial<{
+      staticModelId: string;
+    }>,
+  ) {
+    const staticModelId = ensure(
+      args.staticModelId,
+      "Missing staticModelId argument",
+    );
+
+    const DELETE_STATIC_MODEL_MUTATION = gql(`
+      mutation DeleteStaticModel($id: ID!) {
+        deleteStaticModel(id: $id) {
+          success
+          message
+        }
+      }
+    `);
+
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: print(DELETE_STATIC_MODEL_MUTATION),
+        variables: {
+          id: staticModelId,
+        },
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error("Failed to delete staticModel:", result.errors[0].message);
+      throw new Error(
+        `Failed to delete staticModel: ${result.errors[0].message}`,
+      );
+    }
+
+    const payload = result.data?.deleteStaticModel;
+    if (!payload) {
+      throw new Error("No response data from delete staticModel mutation");
+    }
+
+    if (payload.success) {
+      logger.log(`Successfully deleted staticModel "${staticModelId}"`);
+    }
+
+    return payload;
   }
 
   async createUserModelRunRequest(
