@@ -67,12 +67,12 @@ export function _inferQueryType<TTable extends ValidTableName>(
   client: SupabaseClient,
   tableName: TTable,
 ) {
+  type ResolvedTableName = TTable extends keyof Database["public"]["Tables"]
+    ? TTable
+    : keyof Database["public"]["Tables"];
+
   return client
-    .from(
-      tableName as TTable extends keyof Database["public"]["Tables"]
-        ? TTable
-        : keyof Database["public"]["Tables"],
-    )
+    .from(tableName as ResolvedTableName)
     .select("*", { count: "exact" });
 }
 
