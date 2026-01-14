@@ -1475,14 +1475,14 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "data_ingestions_dataset_id_fkey";
+            foreignKeyName: "materialization_dataset_id_fkey";
             columns: ["dataset_id"];
             isOneToOne: false;
             referencedRelation: "datasets";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "datasets_org_id_fkey";
+            foreignKeyName: "materialization_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";

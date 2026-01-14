@@ -32,7 +32,8 @@ import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { assertNever } from "@opensource-observer/utils";
-import { DatasetsRow } from "@/lib/types/schema-types";
+import { DataIngestionAsTableRow, DatasetsRow } from "@/lib/types/schema-types";
+import { Connection } from "@/app/api/v1/osograph/utils/connection";
 
 export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -305,17 +306,28 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             },
           });
         case "DATA_INGESTION": {
-          return queryWithPagination(args, context, {
-            tableName: "data_ingestions",
+          const result = (await queryWithPagination(args, context, {
+            tableName: "data_ingestion_as_table",
             whereSchema: DataIngestionsWhereSchema,
             requireAuth: false,
             filterByUserOrgs: false,
             parentOrgIds: parent.org_id,
             basePredicate: {
-              is: [{ key: "deleted_at", value: null }],
               eq: [{ key: "dataset_id", value: parent.id }],
             },
-          });
+          })) as Connection<DataIngestionAsTableRow>;
+
+          return {
+            ...result,
+            edges: result.edges.map((edge) => ({
+              node: {
+                id: edge.node.table_id,
+                name: edge.node.table_name,
+                datasetId: edge.node.dataset_id,
+              },
+              cursor: edge.cursor,
+            })),
+          };
         }
         case "DATA_CONNECTOR":
           // Table metadata is not available until after the ingestion job completes
