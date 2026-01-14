@@ -10,3 +10,20 @@ export interface TableResolver {
     metadata: Record<string, unknown>,
   ): Promise<TableResolutionMap>;
 }
+
+export type ResolveTablesOptions = {
+  tables: TableResolutionMap;
+  metadata: Record<string, unknown>;
+  resolvers: TableResolver[];
+};
+
+export async function resolveTablesWithResolvers({
+  tables,
+  metadata,
+  resolvers,
+}: ResolveTablesOptions): Promise<TableResolutionMap> {
+  for (const resolver of resolvers) {
+    tables = await resolver.resolveTables(tables, metadata);
+  }
+  return tables;
+}

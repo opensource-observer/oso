@@ -12,6 +12,7 @@ from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.input_types import DataModelColumnInput
+from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
 from sqlglot import exp, parse_one
 from sqlglot.optimizer.qualify_columns import qualify_columns
 from sqlglot.optimizer.scope import build_scope
@@ -404,6 +405,12 @@ class RunContext(abc.ABC):
         """Generate the destination table expression for a table reference."""
         fqn = self.generate_destination_fqn(ref)
         return exp.to_table(fqn)
+
+    def update_metadata(
+        self, metadata: dict[str, t.Any]
+    ) -> t.Awaitable[UpdateRunMetadata]:
+        """Updates the run metadata for the current run."""
+        raise NotImplementedError("update_metadata must be implemented by subclasses.")
 
 
 class HandlerResponse(BaseModel):

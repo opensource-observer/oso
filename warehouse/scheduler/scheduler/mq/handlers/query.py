@@ -45,6 +45,16 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
         logger.info(f"User: {message.user}")
         logger.info(f"Query: {message.query}")
         query = await rewrite_query(message.query, table_resolvers)
+        # Check if the rewritten tables use UDMs if so we disable caching by setting
+        # a metadata boolean `containsUdmReference` to true
+        contains_udm_reference = False
+        for table in query.tables.values():
+            if table.startswith(common_settings.warehouse_shared_catalog_name):
+                contains_udm_reference = True
+                break
+        if contains_udm_reference:
+            await context.update_metadata({"containsUdmReference": True})
+
         logger.info(f"Rewritten Query: {query.rewritten_query}")
 
         storage_client = gcs.get_client(asynchronous=False)

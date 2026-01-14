@@ -189,10 +189,16 @@ class StartRunInput(BaseModel):
     run_id: str = Field(alias="runId")
 
 
+class UpdateRunMetadataInput(BaseModel):
+    run_id: str = Field(alias="runId")
+    metadata: Any
+
+
 class FinishRunInput(BaseModel):
     run_id: str = Field(alias="runId")
     status: RunStatus
     logs_url: str = Field(alias="logsUrl")
+    metadata: Optional[Any] = None
 
 
 class StartStepInput(BaseModel):

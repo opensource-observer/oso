@@ -2376,6 +2376,7 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
 
 export type FinishRunInput = {
   logsUrl: Scalars["String"]["input"];
+  metadata?: InputMaybe<Scalars["JSON"]["input"]>;
   runId: Scalars["ID"]["input"];
   status: RunStatus;
 };
@@ -3491,6 +3492,8 @@ export type Mutation = {
   updateMemberRole: UpdateMemberRolePayload;
   /** Update a notebook */
   updateNotebook: UpdateNotebookPayload;
+  /** System only. Update run metadata. This can be called at any time */
+  updateRunMetadata: UpdateRunMetadataPayload;
   updateStaticModel: CreateStaticModelPayload;
   /** Deletes asset history from storage. */
   wipeAssets: AssetWipeMutationResult;
@@ -3825,6 +3828,11 @@ export type MutationUpdateMemberRoleArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationUpdateNotebookArgs = {
   input: UpdateNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateRunMetadataArgs = {
+  input: UpdateRunMetadataInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -8688,6 +8696,18 @@ export type UpdateNotebookPayload = {
   __typename?: "UpdateNotebookPayload";
   message?: Maybe<Scalars["String"]["output"]>;
   notebook?: Maybe<Notebook>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type UpdateRunMetadataInput = {
+  metadata: Scalars["JSON"]["input"];
+  runId: Scalars["ID"]["input"];
+};
+
+export type UpdateRunMetadataPayload = {
+  __typename?: "UpdateRunMetadataPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run?: Maybe<Run>;
   success: Scalars["Boolean"]["output"];
 };
 
