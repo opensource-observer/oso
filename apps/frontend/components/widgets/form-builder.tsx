@@ -875,7 +875,7 @@ interface FormBuilderProps {
 const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
   function _FormBuilder(
     {
-      schema = {},
+      schema,
       defaultValues: propDefaultValues,
       setForm,
       onSubmit,
@@ -886,10 +886,16 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
     },
     _ref,
   ) {
-    const { zodSchema, defaultValues: schemaDefaultValues } = React.useMemo(
-      () => generateFormConfig(schema),
-      [schema],
-    );
+    const { zodSchema, defaultValues: schemaDefaultValues } =
+      React.useMemo(() => {
+        if (!schema || Object.keys(schema).length === 0) {
+          return {
+            zodSchema: z.object({}),
+            defaultValues: {},
+          };
+        }
+        return generateFormConfig(schema);
+      }, [schema]);
 
     const mergedDefaultValues = React.useMemo(
       () => ({ ...schemaDefaultValues, ...propDefaultValues }),
@@ -906,8 +912,10 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
     }, [form]);
 
     React.useEffect(() => {
-      form.reset(mergedDefaultValues);
-    }, [form, mergedDefaultValues]);
+      if (schema && Object.keys(schema).length > 0) {
+        form.reset(mergedDefaultValues);
+      }
+    }, [schema]);
 
     return (
       <FormProvider {...form}>
