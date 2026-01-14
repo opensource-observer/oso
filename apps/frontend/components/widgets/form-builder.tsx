@@ -915,7 +915,7 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
       if (schema && Object.keys(schema).length > 0) {
         form.reset(mergedDefaultValues);
       }
-    }, [form, mergedDefaultValues, schema]);
+    }, [schema]);
 
     return (
       <FormProvider {...form}>
