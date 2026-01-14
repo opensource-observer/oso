@@ -6,19 +6,70 @@ test_int_opendevdata__developers_single_entry:
         - canonical_developer_id: 101
           commit_author_name: "Open Dev"
           commit_author_email: "dev@open.com"
-          created_at: "2024-01-01 10:00:00"
+          committed_at: "2024-01-01 10:00:00"
     oso.stg_opendevdata__canonical_developers:
       rows:
         - id: 101
-          primary_github_user_id: "gh_123"
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
   outputs:
     query:
       rows:
         - canonical_developer_id: 101
-          primary_github_user_id: "gh_123"
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+          actor_id: 12345
           author_name: "Open Dev"
           author_email: "dev@open.com"
           hashed_author_email: "34c6fceca75e456f25e7e99531e2425c6c1de443@open.com"
+          valid_from: "2024-01-01 10:00:00"
+          valid_to: null
+
+test_int_opendevdata__developers_nextgen_nodeid:
+  model: oso.int_opendevdata__developers
+  inputs:
+    oso.stg_opendevdata__commits:
+      rows:
+        - canonical_developer_id: 102
+          commit_author_name: "NextGen Dev"
+          commit_author_email: "nextgen@open.com"
+          committed_at: "2024-01-01 10:00:00"
+    oso.stg_opendevdata__canonical_developers:
+      rows:
+        - id: 102
+          primary_github_user_id: "U_kgDOAAGBzQ"
+  outputs:
+    query:
+      rows:
+        - canonical_developer_id: 102
+          primary_github_user_id: "U_kgDOAAGBzQ"
+          actor_id: 98765
+          author_name: "NextGen Dev"
+          author_email: "nextgen@open.com"
+          hashed_author_email: "81d755e2e5247f1835a3fef2330155e44879319d@open.com"
+          valid_from: "2024-01-01 10:00:00"
+          valid_to: null
+
+test_int_opendevdata__developers_null_github_user_id:
+  model: oso.int_opendevdata__developers
+  inputs:
+    oso.stg_opendevdata__commits:
+      rows:
+        - canonical_developer_id: 103
+          commit_author_name: "No GitHub Dev"
+          commit_author_email: "nogithub@open.com"
+          committed_at: "2024-01-01 10:00:00"
+    oso.stg_opendevdata__canonical_developers:
+      rows:
+        - id: 103
+          primary_github_user_id: null
+  outputs:
+    query:
+      rows:
+        - canonical_developer_id: 103
+          primary_github_user_id: null
+          actor_id: null
+          author_name: "No GitHub Dev"
+          author_email: "nogithub@open.com"
+          hashed_author_email: "7fecb4e0c9d812bb421dfc48ceeb0367773c0930@open.com"
           valid_from: "2024-01-01 10:00:00"
           valid_to: null
 
@@ -30,32 +81,33 @@ test_int_opendevdata__developers_scd_logic:
         - canonical_developer_id: 202
           commit_author_name: "Original Name"
           commit_author_email: "original@test.com"
-          created_at: "2024-01-01 10:00:00"
+          committed_at: "2024-01-01 10:00:00"
         - canonical_developer_id: 202
           commit_author_name: "New Name"
           commit_author_email: "original@test.com"
-          created_at: "2024-02-01 12:00:00"
-        # Duplicate record for first state
+          committed_at: "2024-02-01 12:00:00"
         - canonical_developer_id: 202
           commit_author_name: "Original Name"
           commit_author_email: "original@test.com"
-          created_at: "2024-01-15 10:00:00"
+          committed_at: "2024-01-15 10:00:00"
     oso.stg_opendevdata__canonical_developers:
       rows:
         - id: 202
-          primary_github_user_id: "gh_456"
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
   outputs:
     query:
       rows:
         - canonical_developer_id: 202
-          primary_github_user_id: "gh_456"
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+          actor_id: 12345
           author_name: "Original Name"
           author_email: "original@test.com"
           hashed_author_email: "d73ef92426f2b11dfc4aed4d4bfc41c49ee1087c@test.com"
           valid_from: "2024-01-01 10:00:00"
           valid_to: "2024-02-01 12:00:00"
         - canonical_developer_id: 202
-          primary_github_user_id: "gh_456"
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+          actor_id: 12345
           author_name: "New Name"
           author_email: "original@test.com"
           hashed_author_email: "d73ef92426f2b11dfc4aed4d4bfc41c49ee1087c@test.com"
@@ -70,7 +122,7 @@ test_int_opendevdata__developers_filter_nulls:
         - canonical_developer_id: null
           commit_author_name: "Ghost"
           commit_author_email: "ghost@test.com"
-          created_at: "2024-01-01 10:00:00"
+          committed_at: "2024-01-01 10:00:00"
     oso.stg_opendevdata__canonical_developers:
       rows: []
   outputs:

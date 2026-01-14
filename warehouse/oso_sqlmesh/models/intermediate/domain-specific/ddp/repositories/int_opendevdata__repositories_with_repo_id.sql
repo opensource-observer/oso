@@ -1,6 +1,6 @@
 MODEL (
   name oso.int_opendevdata__repositories_with_repo_id,
-  description 'OpenDevData repositories enriched with repo_id from OSSD (via github_graphql_id) or gharchive (via repo_name fallback)',
+  description 'OpenDevData repositories enriched with repo_id from OSSD (via github_graphql_id), Node ID decoding, or gharchive (via repo_name fallback)',
   dialect trino,
   kind FULL,
   grain (opendevdata_id),
@@ -13,7 +13,7 @@ MODEL (
   )
 );
 
--- Match opendevdata to ossd via github_graphql_id
+-- Match opendevdata to ossd via github_graphql_id and decode node_id
 WITH opendevdata_with_graphql_match AS (
   SELECT
     odd.id AS opendevdata_id,
@@ -23,16 +23,18 @@ WITH opendevdata_with_graphql_match AS (
     odd.num_stars AS star_count,
     odd.num_forks AS fork_count,
     CAST(odd.is_blacklist = 1 AS BOOLEAN) AS is_opendevdata_blacklist,
-    ossd.id AS repo_id_from_graphql
+    ossd.id AS repo_id_from_graphql,
+    @decode_github_node_id(NULLIF(odd.github_graphql_id, '')) AS repo_id_from_node_id
   FROM oso.stg_opendevdata__repos AS odd
   LEFT JOIN oso.stg_ossd__current_repositories AS ossd
     ON NULLIF(odd.github_graphql_id, '') = ossd.node_id
 ),
--- Identify repo_names that need fallback matching (no graphql match)
+-- Identify repo_names that need fallback matching (no graphql match AND no node_id decoding)
 opendevdata_needing_fallback AS (
   SELECT DISTINCT repo_name
   FROM opendevdata_with_graphql_match
   WHERE repo_id_from_graphql IS NULL
+    AND repo_id_from_node_id IS NULL
 ),
 -- Get most recent name per repo_id from gharchive,
 -- for repo_names that need fallback
@@ -60,10 +62,12 @@ final_output AS (
     ogm.is_opendevdata_blacklist,
     COALESCE(
       ogm.repo_id_from_graphql,
-      gh.repo_id -- NULL if no match found
+      ogm.repo_id_from_node_id,
+      gh.repo_id
     ) AS repo_id,
     CASE
       WHEN ogm.repo_id_from_graphql IS NOT NULL THEN 'ossd'
+      WHEN ogm.repo_id_from_node_id IS NOT NULL THEN 'node_id'
       WHEN gh.repo_id IS NOT NULL THEN 'gharchive'
       ELSE 'opendevdata'
     END AS repo_id_source
@@ -71,6 +75,7 @@ final_output AS (
   LEFT JOIN gharchive_current_names AS gh
     ON ogm.repo_name = gh.repo_name
     AND ogm.repo_id_from_graphql IS NULL
+    AND ogm.repo_id_from_node_id IS NULL
     AND gh.rn = 1
 )
 

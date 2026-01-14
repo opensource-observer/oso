@@ -1,4 +1,53 @@
-test_int_opendevdata__developers_with_dev_id_match:
+test_int_opendevdata__developers_with_dev_id_match_by_actor_id:
+  model: oso.int_opendevdata__developers_with_dev_id
+  inputs:
+    oso.int_gharchive__developers:
+      columns:
+        actor_id: bigint
+        actor_login: varchar
+        author_name: varchar
+        author_email: varchar
+        valid_from: timestamp
+        valid_to: timestamp
+      rows:
+        - actor_id: 12345
+          actor_login: "legacy_user"
+          author_name: "Different Name"
+          author_email: "different@example.com"
+          valid_from: "2024-01-01 00:00:00"
+          valid_to: "2024-02-01 00:00:00"
+    oso.int_opendevdata__developers:
+      columns:
+        canonical_developer_id: bigint
+        primary_github_user_id: varchar
+        actor_id: bigint
+        author_name: varchar
+        author_email: varchar
+        hashed_author_email: varchar
+        valid_from: timestamp
+        valid_to: timestamp
+      rows:
+        - canonical_developer_id: 201
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+          actor_id: 12345
+          author_name: "OpenDevData Name"
+          author_email: "odd@test.com"
+          hashed_author_email: "abc123@test.com"
+          valid_from: "2024-01-15 00:00:00"
+          valid_to: "2024-02-15 00:00:00"
+  outputs:
+    query:
+      rows:
+        - actor_id: 12345
+          actor_login: "legacy_user"
+          canonical_developer_id: 201
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+          author_name: "Different Name"
+          author_email: "different@example.com"
+          valid_from: "2024-01-15 00:00:00"
+          valid_to: "2024-02-01 00:00:00"
+
+test_int_opendevdata__developers_with_dev_id_fallback_to_name_email:
   model: oso.int_opendevdata__developers_with_dev_id
   inputs:
     oso.int_gharchive__developers:
@@ -20,6 +69,7 @@ test_int_opendevdata__developers_with_dev_id_match:
       columns:
         canonical_developer_id: bigint
         primary_github_user_id: varchar
+        actor_id: bigint
         author_name: varchar
         author_email: varchar
         hashed_author_email: varchar
@@ -27,7 +77,8 @@ test_int_opendevdata__developers_with_dev_id_match:
         valid_to: timestamp
       rows:
         - canonical_developer_id: 201
-          primary_github_user_id: "gh_101"
+          primary_github_user_id: null
+          actor_id: null
           author_name: "Match Dev"
           author_email: "match@test.com"
           hashed_author_email: "ef5c844eab88bcaca779bd2f3ad67b573bbbbfca@test.com"
@@ -39,7 +90,7 @@ test_int_opendevdata__developers_with_dev_id_match:
         - actor_id: 101
           actor_login: "dev1"
           canonical_developer_id: 201
-          primary_github_user_id: "gh_101"
+          primary_github_user_id: null
           author_name: "Match Dev"
           author_email: "ef5c844eab88bcaca779bd2f3ad67b573bbbbfca@test.com"
           valid_from: "2024-01-15 00:00:00"
@@ -67,6 +118,7 @@ test_int_opendevdata__developers_with_dev_id_no_match:
       columns:
         canonical_developer_id: bigint
         primary_github_user_id: varchar
+        actor_id: bigint
         author_name: varchar
         author_email: varchar
         hashed_author_email: varchar
@@ -74,7 +126,8 @@ test_int_opendevdata__developers_with_dev_id_no_match:
         valid_to: timestamp
       rows:
         - canonical_developer_id: 202
-          primary_github_user_id: "gh_202"
+          primary_github_user_id: "U_kgDOAAGBzQ"
+          actor_id: 98765
           author_name: "ODD Only"
           author_email: "odd@test.com"
           hashed_author_email: "60f7a51208a50e4639fc53af2d60b808f4429a1e@test.com"
@@ -90,9 +143,10 @@ test_int_opendevdata__developers_with_dev_id_no_match:
           author_email: "1041179cbdda366fd7b0347f09255f775170e103@test.com"
           valid_from: "2024-01-01 00:00:00"
           valid_to: null
-        - canonical_developer_id: 202
+        - actor_id: 98765
           actor_login: null
-          primary_github_user_id: "gh_202"
+          canonical_developer_id: 202
+          primary_github_user_id: "U_kgDOAAGBzQ"
           author_name: "ODD Only"
           author_email: "odd@test.com"
           valid_from: "2024-01-01 00:00:00"
@@ -110,7 +164,7 @@ test_int_opendevdata__developers_with_dev_id_no_overlap:
         valid_from: timestamp
         valid_to: timestamp
       rows:
-        - actor_id: 103
+        - actor_id: 12345
           actor_login: "dev3"
           author_name: "Overlap Dev"
           author_email: "5b0fe021bfa51a932a5d7fb2e143f28ac88a6dbc@test.com"
@@ -120,6 +174,7 @@ test_int_opendevdata__developers_with_dev_id_no_overlap:
       columns:
         canonical_developer_id: bigint
         primary_github_user_id: varchar
+        actor_id: bigint
         author_name: varchar
         author_email: varchar
         hashed_author_email: varchar
@@ -127,7 +182,8 @@ test_int_opendevdata__developers_with_dev_id_no_overlap:
         valid_to: timestamp
       rows:
         - canonical_developer_id: 203
-          primary_github_user_id: "gh_103"
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+          actor_id: 12345
           author_name: "Overlap Dev"
           author_email: "overlap@test.com"
           hashed_author_email: "5b0fe021bfa51a932a5d7fb2e143f28ac88a6dbc@test.com"
@@ -136,16 +192,17 @@ test_int_opendevdata__developers_with_dev_id_no_overlap:
   outputs:
     query:
       rows:
-        - actor_id: 103
+        - actor_id: 12345
           actor_login: "dev3"
           primary_github_user_id: null
           author_name: "Overlap Dev"
           author_email: "5b0fe021bfa51a932a5d7fb2e143f28ac88a6dbc@test.com"
           valid_from: "2024-01-01 00:00:00"
           valid_to: "2024-02-01 00:00:00"
-        - canonical_developer_id: 203
+        - actor_id: 12345
           actor_login: null
-          primary_github_user_id: "gh_103"
+          canonical_developer_id: 203
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
           author_name: "Overlap Dev"
           author_email: "overlap@test.com"
           valid_from: "2024-03-01 00:00:00"
