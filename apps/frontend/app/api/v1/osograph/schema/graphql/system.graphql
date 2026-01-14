@@ -20,9 +20,113 @@ type System {
   ): [SystemResolvedTableReference!]!
 }
 
+extend type Mutation {
+  """
+  System only. Mark a run as started.
+  """
+  startRun(input: StartRunInput!): StartRunPayload!
+  
+  """
+  System only. Update run metadata. This can be called at any time
+  """
+  updateRunMetadata(input: UpdateRunMetadataInput!): UpdateRunMetadataPayload!
+
+  """
+  System only. Mark a run as finished.
+  """
+  finishRun(input: FinishRunInput!): FinishRunPayload!
+
+  """
+  System only. Mark a step as started
+  """
+  startStep(input: StartStepInput!): StartStepPayload!
+
+  """
+  System only. Mark a step as finished
+  """
+  finishStep(input: FinishStepInput!): FinishStepPayload!
+
+  """
+  System only. Create a materialization for a step
+  """
+  createMaterialization(input: CreateMaterializationInput!): CreateMaterializationPayload!
+}
+
 extend type Query {
   """
   System only. Access system level queries.
   """
   system: System!
+}
+
+input StartRunInput {
+  runId: ID!
+}
+
+type StartRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input UpdateRunMetadataInput {
+  runId: ID!
+  metadata: JSON!
+}
+
+type UpdateRunMetadataPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input FinishRunInput {
+  runId: ID!
+  status: RunStatus!
+  statusCode: Int!
+  logsUrl: String!
+  metadata: JSON
+}
+
+type FinishRunPayload {
+  success: Boolean!
+  message: String
+  run: Run
+}
+
+input StartStepInput {
+  runId: ID!
+  name: String!
+  displayName: String!
+}
+
+type StartStepPayload {
+  success: Boolean!
+  message: String
+  step: Step!
+}
+
+input FinishStepInput {
+  stepId: ID!
+  status: StepStatus!
+  logsUrl: String!
+}
+
+type FinishStepPayload {
+  success: Boolean!
+  message: String
+  step: Step
+}
+
+input CreateMaterializationInput {
+  stepId: ID!
+  tableId: ID!
+  warehouseFqn: String!
+  schema: [DataModelColumnInput!]!
+}
+
+type CreateMaterializationPayload {
+  success: Boolean!
+  message: String
+  materialization: Materialization!
 }
