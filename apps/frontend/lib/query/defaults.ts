@@ -1,5 +1,8 @@
 import { SupabaseAdminClient } from "@/lib/supabase/admin";
-import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
+import {
+  DBTableResolver,
+  LegacyTableMappingRule,
+} from "@/lib/query/resolvers/db-table-resolver";
 import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-resolver";
 import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 import { PyodideQueryRewriter } from "@/lib/query/rewrite";
@@ -12,6 +15,26 @@ export type RewriteQueryOptions = {
   adminClient: SupabaseAdminClient;
   pyodideEnvironmentPath?: string;
 };
+
+export function defaultTableMappingRules(): LegacyTableMappingRule[] {
+  return [
+    (table) => {
+      // If the catalog is iceberg return the table as is
+      if (table.catalog === "iceberg") {
+        return table;
+      }
+      return null;
+    },
+    (table) => {
+      // If the catalog has a double underscore in the name we assume it's a
+      // legacy private connector catalog and return the table as is
+      if (table.catalog.includes("__")) {
+        return table;
+      }
+      return null;
+    },
+  ];
+}
 
 /**
  * The default query rewriting function that leverages the pyodide query

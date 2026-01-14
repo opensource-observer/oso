@@ -3,10 +3,16 @@ import { createServerClient } from "@/lib/supabase/server";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerClient>>;
 
-export type ValidTableName = keyof Database["public"]["Tables"];
+export type ValidTableName =
+  | keyof Database["public"]["Tables"]
+  | keyof Database["public"]["Views"];
 
 export type TableRow<T extends ValidTableName> =
-  Database["public"]["Tables"][T]["Row"];
+  T extends keyof Database["public"]["Tables"]
+    ? Database["public"]["Tables"][T]["Row"]
+    : T extends keyof Database["public"]["Views"]
+      ? Database["public"]["Views"][T]["Row"]
+      : never;
 
 export type StringKeys<T> = Extract<keyof T, string>;
 
@@ -61,7 +67,13 @@ export function _inferQueryType<TTable extends ValidTableName>(
   client: SupabaseClient,
   tableName: TTable,
 ) {
-  return client.from(tableName).select("*", { count: "exact" });
+  type ResolvedTableName = TTable extends keyof Database["public"]["Tables"]
+    ? TTable
+    : keyof Database["public"]["Tables"];
+
+  return client
+    .from(tableName as ResolvedTableName)
+    .select("*", { count: "exact" });
 }
 
 export async function buildQuery<TTable extends ValidTableName>(
@@ -74,7 +86,7 @@ export async function buildQuery<TTable extends ValidTableName>(
   single?: boolean,
 ) {
   type TQuery = ReturnType<typeof _inferQueryType<TTable>>;
-  let query = client.from(tableName).select("*", { count: "exact" });
+  let query = _inferQueryType(client, tableName);
 
   function applyFilter<K extends StringKeys<TableRow<TTable>>>(
     q: TQuery,
@@ -155,7 +167,7 @@ export async function buildQuery<TTable extends ValidTableName>(
     };
   }
 
-  return result;
+  return await result;
 }
 
 export function mergePredicates<T extends ValidTableName>(

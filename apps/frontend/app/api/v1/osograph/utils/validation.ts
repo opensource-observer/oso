@@ -274,6 +274,12 @@ export const FinishRunSchema = z.object({
   runId: z.string().uuid(),
   status: z.enum(["SUCCESS", "FAILED", "CANCELED"]),
   logsUrl: z.string().url(),
+  metadata: z.record(z.any()).optional(),
+});
+
+export const UpdateRunMetadataSchema = z.object({
+  runId: z.string().uuid(),
+  metadata: z.record(z.any()),
 });
 
 export const StartStepSchema = z.object({

@@ -13,6 +13,7 @@ from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.enums import RunStatus, StepStatus
 from scheduler.graphql_client.input_types import DataModelColumnInput
+from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
 from scheduler.types import (
     FailedResponse,
     HandlerResponse,
@@ -109,6 +110,14 @@ class OSORunContext(RunContext):
     @property
     def materialization_strategy(self) -> MaterializationStrategy:
         return self._materialization_strategy
+
+    async def update_metadata(self, metadata: dict[str, t.Any]) -> UpdateRunMetadata:
+        """Updates the run metadata for the current run."""
+        self._logger.info("Updating run metadata")
+        # Placeholder for actual metadata update logic
+        return await self._oso_client.update_run_metadata(
+            run_id=self._run_id, metadata=metadata
+        )
 
     @asynccontextmanager
     async def step_context(
