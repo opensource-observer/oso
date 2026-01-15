@@ -1,7 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { signTrinoJWT } from "@/lib/auth/auth";
-import { getTrinoClient } from "@/lib/clients/trino";
 import { logger } from "@/lib/logger";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
@@ -17,7 +15,6 @@ import {
   DatasetWhereSchema,
   RunWhereSchema,
   StaticModelWhereSchema,
-  TableMetadataWhereSchema,
   UpdateDatasetSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
@@ -26,8 +23,6 @@ import {
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import { requireOrganizationAccess } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
@@ -55,71 +50,10 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     tables: async (
       _: unknown,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
+      _args: FilterableConnectionArgs,
+      _context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const validatedWhere = validateInput(
-        TableMetadataWhereSchema,
-        args.where,
-      );
-
-      const { orgId, catalogName, schemaName, tableName } = {
-        orgId: validatedWhere.orgId.eq,
-        catalogName: validatedWhere.catalogName.eq,
-        schemaName: validatedWhere.schemaName.eq,
-        tableName: validatedWhere.tableName.eq,
-      };
-
-      const org = await requireOrganizationAccess(
-        authenticatedUser.userId,
-        orgId,
-      );
-
-      const trinoJwt = await signTrinoJWT({
-        ...authenticatedUser,
-        orgId: org.id,
-        orgName: org.org_name,
-        orgRole: "member",
-      });
-
-      const trino = getTrinoClient(trinoJwt);
-
-      const query = `
-        SELECT column_name, data_type, column_comment
-        FROM ${catalogName}.information_schema.columns
-        WHERE table_schema = '${schemaName}' AND table_name = '${tableName}'
-      `;
-      const { data: columnResult, error } = await trino.queryAll(query);
-      if (error || !columnResult) {
-        logger.error(
-          `Failed to fetch table metadata for user ${authenticatedUser.userId}:`,
-          error.message,
-        );
-        throw ServerErrors.externalService("Failed to fetch table metadata");
-      }
-
-      const results = await Promise.all(
-        columnResult
-          .flatMap((column) => column.data)
-          .map(
-            async (
-              column: (string | null)[] | undefined,
-            ): Promise<Column | null> => {
-              if (!column || column.length !== 3) {
-                return null;
-              }
-              const [columnName, columnType, columnComment] = column;
-              return ColumnSchema.parse({
-                name: columnName,
-                type: columnType,
-                description: columnComment ?? null,
-              });
-            },
-          ),
-      );
-      const filteredResults = results.filter((result) => result !== null);
-      return filteredResults;
+      throw new Error("Resolver not implemented");
     },
   },
 
