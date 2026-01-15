@@ -838,7 +838,7 @@ class OsoAppClient {
     const notebookId = ensure(args.id, "Missing notebook 'id' argument");
     const { error } = await this.supabaseClient
       .from("notebooks")
-      .update({ ...args })
+      .update({ ...args, updated_at: new Date().toISOString() })
       .eq("id", notebookId);
     if (error) {
       throw error;
