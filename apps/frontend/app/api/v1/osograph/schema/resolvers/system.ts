@@ -21,9 +21,11 @@ import {
   StartRunSchema,
   StartStepSchema,
   validateInput,
+  UpdateMetadataSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import z from "zod";
 import { logger } from "@/lib/logger";
+import { Json } from "@/lib/types/supabase";
 
 type SystemMutationOptions<T extends z.ZodTypeAny, O> = {
   inputSchema: T;
@@ -69,6 +71,24 @@ const StepStatusMap: Record<string, StepStatus> = {
   CANCELED: "canceled",
 };
 
+function updatedMetadata(
+  existing: Json,
+  update: z.infer<typeof UpdateMetadataSchema>,
+): Record<string, any> {
+  try {
+    const parsedExisting = z.record(z.any()).parse(existing);
+    if (update.merge) {
+      return { ...parsedExisting, ...update.value };
+    } else {
+      return update.value;
+    }
+  } catch (e) {
+    throw ServerErrors.internal(
+      `Existing metadata is not a valid object: ${e}`,
+    );
+  }
+}
+
 export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
   Mutation: {
     startRun: systemMutation({
@@ -110,7 +130,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
       resolver: async (input) => {
         const supabase = createAdminClient();
 
-        const { status, statusCode, runId, logsUrl } = input;
+        const { status, statusCode, runId, logsUrl, metadata } = input;
 
         const { data: runData, error: runError } = await supabase
           .from("run")
@@ -120,6 +140,12 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
         if (runError || !runData) {
           throw ResourceErrors.notFound(`Run ${runId} not found`);
         }
+
+        const newMetadata = updatedMetadata(runData.metadata, {
+          value: metadata || {},
+          merge: true,
+        });
+
         // Update the status and logsUrl of the run based on the input
         const { data: updatedRun, error: updateError } = await supabase
           .from("run")
@@ -128,7 +154,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
             status_code: statusCode,
             logs_url: logsUrl,
             completed_at: new Date().toISOString(),
-            metadata: input.metadata ? input.metadata : runData.metadata,
+            metadata: newMetadata,
           })
           .eq("id", runId)
           .select()
@@ -150,7 +176,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
       resolver: async (input) => {
         const supabase = createAdminClient();
 
-        const { runId, metadata } = input;
+        const { runId } = input;
 
         const { data: runData, error: runError } = await supabase
           .from("run")
@@ -160,11 +186,14 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
         if (runError || !runData) {
           throw ResourceErrors.notFound(`Run ${runId} not found`);
         }
+
+        const newMetadata = updatedMetadata(runData.metadata, input.metadata);
+
         // Update the metadata of the run
         const { data: updatedRun, error: updateError } = await supabase
           .from("run")
           .update({
-            metadata: metadata,
+            metadata: newMetadata,
           })
           .eq("id", runId)
           .select()

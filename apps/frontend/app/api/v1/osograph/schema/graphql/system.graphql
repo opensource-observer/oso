@@ -69,9 +69,14 @@ type StartRunPayload {
   run: Run
 }
 
+input UpdateMetadataInput {
+  value: JSON!
+  merge: Boolean = false
+}
+
 input UpdateRunMetadataInput {
   runId: ID!
-  metadata: JSON!
+  metadata: UpdateMetadataInput!
 }
 
 type UpdateRunMetadataPayload {
@@ -85,7 +90,7 @@ input FinishRunInput {
   status: RunStatus!
   statusCode: Int!
   logsUrl: String!
-  metadata: JSON
+  metadata: UpdateMetadataInput
 }
 
 type FinishRunPayload {
