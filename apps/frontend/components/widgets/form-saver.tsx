@@ -1,4 +1,4 @@
-import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
+import { CodeComponentMeta, DataProvider } from "@plasmicapp/loader-nextjs";
 import { debounce } from "lodash";
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
@@ -8,8 +8,12 @@ interface FormSaverProps {
   onSave?: (values: any) => Promise<void>;
 }
 
-function FormSaver({ form, onSave }: FormSaverProps) {
-  const [isDirty, setIsDirty] = React.useState<any>(false);
+function FormSaver({
+  form,
+  onSave,
+  children,
+}: React.PropsWithChildren<FormSaverProps>) {
+  const [isDirtyState, setIsDirtyState] = React.useState<any>(false);
   const debounceSave = React.useCallback(
     debounce(
       ({ values, isDirty }: { values: any; isDirty: boolean | undefined }) => {
@@ -19,7 +23,7 @@ function FormSaver({ form, onSave }: FormSaverProps) {
         }
         console.log("Auto-saving form Form with values:", values);
         onSave?.(values)
-          .then(() => form!.reset(values))
+          .then(() => console.log("Auto-save successful."))
           .catch((err) => {
             console.log("Error during auto-save:", err);
           });
@@ -39,7 +43,7 @@ function FormSaver({ form, onSave }: FormSaverProps) {
       }
     };
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
+      if (isDirtyState) {
         e.preventDefault();
         return "Unsaved changes";
       }
@@ -48,10 +52,16 @@ function FormSaver({ form, onSave }: FormSaverProps) {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
+      if (isDirtyState && form) {
+        console.log(
+          "Component unmounting with dirty form, attempting to save.",
+        );
+        void onSave?.(form.getValues());
+      }
       window.removeEventListener("keydown", handleKeyPress);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isDirty, form, onSave]);
+  }, [isDirtyState, form, onSave]);
 
   React.useEffect(() => {
     if (!form) {
@@ -63,7 +73,7 @@ function FormSaver({ form, onSave }: FormSaverProps) {
         values: true,
       },
       callback: ({ values, isDirty }) => {
-        setIsDirty(isDirty);
+        setIsDirtyState(isDirty);
         console.log("Form changed, scheduling auto-save. isDirty:", isDirty);
         debounceSave({ values, isDirty });
       },
@@ -71,7 +81,11 @@ function FormSaver({ form, onSave }: FormSaverProps) {
     return () => unsubscribe();
   }, [form]);
 
-  return null;
+  return (
+    <DataProvider name="isFormDirty" data={isDirtyState}>
+      {children}
+    </DataProvider>
+  );
 }
 
 const FormSaverMeta: CodeComponentMeta<FormSaverProps> = {
@@ -87,7 +101,9 @@ const FormSaverMeta: CodeComponentMeta<FormSaverProps> = {
         },
       ],
     },
+    children: "slot",
   },
+  providesData: true,
 };
 
 export { FormSaver, FormSaverMeta };
