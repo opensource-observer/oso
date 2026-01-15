@@ -92,6 +92,12 @@ type DataIngestion {
   config: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!
+  materializations(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
 }
 
 type DatasetEdge {
