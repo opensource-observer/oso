@@ -78,9 +78,10 @@ const StepStatusMap: Record<string, StepStatus> = {
  * The update can either replace the existing metadata or merge with it based on
  * the `merge` flag in the update argument.
  *
- * @param existing
- * @param update
- * @returns
+ * @param existing - existing metadata object
+ * @param update - optional update to apply
+ *
+ * @returns the updated metadata object
  */
 function updateMetadata(
   existing: Json,
