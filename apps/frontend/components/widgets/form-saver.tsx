@@ -23,7 +23,14 @@ function FormSaver({
         }
         console.log("Auto-saving form Form with values:", values);
         onSave?.(values)
-          .then(() => console.log("Auto-save successful."))
+          .then(() => {
+            form?.reset(values, {
+              keepValues: true,
+              keepDefaultValues: true,
+              keepDirtyValues: true,
+            });
+            console.log("Auto-save successful.");
+          })
           .catch((err) => {
             console.log("Error during auto-save:", err);
           });
@@ -52,12 +59,6 @@ function FormSaver({
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      if (isDirtyState && form) {
-        console.log(
-          "Component unmounting with dirty form, attempting to save.",
-        );
-        void onSave?.(form.getValues());
-      }
       window.removeEventListener("keydown", handleKeyPress);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
