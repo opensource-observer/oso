@@ -32,6 +32,8 @@ import {
 } from "@/lib/config";
 import { getFromRunMetadata } from "@/lib/runs/utils";
 import { validStatusCodeOr500 } from "@/lib/utils/status-codes";
+import { ErrorDetailsSchema } from "@/app/api/v1/osograph/utils/validation";
+import { Json } from "@/apps/frontend/lib/types/supabase";
 
 // Next.js route control
 export const revalidate = 0;
@@ -219,6 +221,27 @@ export type RetrieveAsyncSqlQueryResultsOptions = {
   user: Awaited<ReturnType<typeof getOrgUser>>;
 };
 
+function createErrorResponseFromErrorDetails(run: {
+  metadata: Json | null;
+  status_code: number;
+}): ReturnType<typeof makeErrorResponse> {
+  const errorDetails = getFromRunMetadata<string>(run, "errorDetails");
+  const { data, error, success } = ErrorDetailsSchema.safeParse(errorDetails);
+  if (!success) {
+    logger.error("Failed to parse error details from run metadata:", error);
+    // FIXME: we should setup alerts to monitor these cases
+    return makeErrorResponse(
+      "Query execution failed for unknown reasons. Contact support.",
+      500,
+    );
+  }
+  const statusCode = validStatusCodeOr500(run.status_code);
+  return makeErrorResponse(
+    `${data.error_type}: ${data.error_name} - ${data.message}`,
+    statusCode,
+  );
+}
+
 export async function retrieveAsyncSqlQueryResults({
   runId,
   user,
@@ -250,10 +273,7 @@ export async function retrieveAsyncSqlQueryResults({
       status: run.status,
     });
   } else if (run.status === "failed") {
-    return makeErrorResponse(
-      "Query execution failed",
-      validStatusCodeOr500(run.status_code),
-    );
+    return createErrorResponseFromErrorDetails(run);
   } else if (run.status === "canceled") {
     return makeErrorResponse(
       "Query execution canceled",

@@ -8,6 +8,7 @@ from aiotrino.exceptions import (
     TrinoExternalError,
     TrinoUserError,
 )
+from duckdb import ProgrammingError
 from oso_dagster.resources import GCSFileResource, TrinoResource
 from osoprotobufs.query_pb2 import QueryRunRequest
 from queryrewriter import rewrite_query
@@ -79,6 +80,29 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     message=f"Server error for QueryRunRequest ID: {message.run_id}",
                     status_code=500,
                     details=aiotrino_query_error_to_json(e),
+                )
+            # This will handle errors for other dbapi exceptions so
+            # we can remain compatible with duckdb as well
+            except ProgrammingError as e:
+                return FailedResponse(
+                    message=f"Programming error for QueryRunRequest ID: {message.run_id}",
+                    status_code=400,
+                    details={
+                        "message": f"Programming error in query execution. {e}",
+                        "error_type": "ProgrammingError",
+                        "error_name": "ProgrammingError",
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Unexpected error while executing query: {e}")
+                return FailedResponse(
+                    message=f"Unexpected error for QueryRunRequest ID: {message.run_id}",
+                    status_code=500,
+                    details={
+                        "message": str(e),
+                        "error_type": "UnknownError",
+                        "error_name": "UnknownError",
+                    },
                 )
 
             columns = [column.name for column in await cursor.get_description()]

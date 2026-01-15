@@ -317,6 +317,12 @@ export const ResolveTablesSchema = z.object({
     .optional(),
 });
 
+export const ErrorDetailsSchema = z.object({
+  message: z.string(),
+  error_type: z.string(),
+  error_name: z.string(),
+});
+
 export const TableMetadataWhereSchema = z.object({
   orgId: z.object({ eq: z.string().uuid() }),
   catalogName: z.object({ eq: z.string() }),

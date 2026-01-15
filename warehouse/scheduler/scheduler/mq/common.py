@@ -247,7 +247,7 @@ class RunHandler(MessageHandler[T]):
                     status_code=status_code,
                     logs_url="http://example.com/run_logs",
                     metadata=UpdateMetadataInput(
-                        value={"error_details": details},
+                        value={"errorDetails": details},
                         merge=True,
                     ),
                 )
