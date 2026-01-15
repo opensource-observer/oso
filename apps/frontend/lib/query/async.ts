@@ -33,7 +33,7 @@ import {
 import { getFromRunMetadata } from "@/lib/runs/utils";
 import { validStatusCodeOr500 } from "@/lib/utils/status-codes";
 import { ErrorDetailsSchema } from "@/app/api/v1/osograph/utils/validation";
-import { Json } from "@/apps/frontend/lib/types/supabase";
+import { Json } from "@/lib/types/supabase";
 
 // Next.js route control
 export const revalidate = 0;

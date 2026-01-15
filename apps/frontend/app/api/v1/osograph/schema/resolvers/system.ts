@@ -71,7 +71,18 @@ const StepStatusMap: Record<string, StepStatus> = {
   CANCELED: "canceled",
 };
 
-function updatedMetadata(
+/**
+ * Update the existing metadata with the provided update. The existing metadata
+ * _must_ be a valid object or an error is thrown which will result in a 500.
+ *
+ * The update can either replace the existing metadata or merge with it based on
+ * the `merge` flag in the update argument.
+ *
+ * @param existing
+ * @param update
+ * @returns
+ */
+function updateMetadata(
   existing: Json,
   update?: z.infer<typeof UpdateMetadataSchema>,
 ): Record<string, any> {
@@ -144,7 +155,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           throw ResourceErrors.notFound(`Run ${runId} not found`);
         }
 
-        const newMetadata = updatedMetadata(runData.metadata, metadata);
+        const updatedMetadata = updateMetadata(runData.metadata, metadata);
 
         // Update the status and logsUrl of the run based on the input
         const { data: updatedRun, error: updateError } = await supabase
@@ -154,7 +165,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
             status_code: statusCode,
             logs_url: logsUrl,
             completed_at: new Date().toISOString(),
-            metadata: newMetadata,
+            metadata: updatedMetadata,
           })
           .eq("id", runId)
           .select()
@@ -187,13 +198,16 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           throw ResourceErrors.notFound(`Run ${runId} not found`);
         }
 
-        const newMetadata = updatedMetadata(runData.metadata, input.metadata);
+        const updatedMetadata = updateMetadata(
+          runData.metadata,
+          input.metadata,
+        );
 
         // Update the metadata of the run
         const { data: updatedRun, error: updateError } = await supabase
           .from("run")
           .update({
-            metadata: newMetadata,
+            metadata: updatedMetadata,
           })
           .eq("id", runId)
           .select()
