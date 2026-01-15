@@ -27,10 +27,7 @@ type DataModel {
     single: Boolean
     where: JSON
   ): MaterializationConnection!
-  runs(
-    first: Int = 50
-    after: String
-  ): RunConnection!
+  runs(first: Int = 50, after: String): RunConnection!
 }
 
 type DataModelEdge {
@@ -246,9 +243,15 @@ type CreateDataModelReleasePayload {
   message: String
 }
 
+type DeleteDataModelPayload {
+  success: Boolean!
+  message: String
+}
+
 extend type Mutation {
   createDataModel(input: CreateDataModelInput!): CreateDataModelPayload!
   updateDataModel(input: UpdateDataModelInput!): CreateDataModelPayload!
+  deleteDataModel(id: ID!): DeleteDataModelPayload!
   createDataModelRevision(
     input: CreateDataModelRevisionInput!
   ): CreateDataModelRevisionPayload!

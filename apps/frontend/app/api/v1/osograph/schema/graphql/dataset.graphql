@@ -185,6 +185,11 @@ extend type Mutation {
   Update a dataset
   """
   updateDataset(input: UpdateDatasetInput!): UpdateDatasetPayload!
+
+  """
+  Delete a dataset
+  """
+  deleteDataset(id: ID!): DeleteDatasetPayload!
 }
 
 input CreateDatasetInput {
@@ -213,5 +218,10 @@ input UpdateDatasetInput {
 type UpdateDatasetPayload {
   success: Boolean!
   dataset: Dataset
+  message: String
+}
+
+type DeleteDatasetPayload {
+  success: Boolean!
   message: String
 }

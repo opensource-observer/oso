@@ -1530,6 +1530,37 @@ export type DataIngestion = {
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
 
+export type DataIngestionConnection = {
+  __typename?: "DataIngestionConnection";
+  edges: Array<DataIngestionEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataIngestionDefinition = {
+  __typename?: "DataIngestionDefinition";
+  /**
+   * If the dataset is of type DATA_INGESTION, this field will contain the list of data ingestions
+   * associated with the dataset. Otherwise it will be an empty list.
+   */
+  dataIngestions: DataIngestionConnection;
+  datasetId: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+};
+
+export type DataIngestionDefinitionDataIngestionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataIngestionEdge = {
+  __typename?: "DataIngestionEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataIngestion;
+};
+
 export enum DataIngestionFactoryType {
   ArchiveDir = "ARCHIVE_DIR",
   Graphql = "GRAPHQL",
@@ -1812,7 +1843,7 @@ export enum DatasetType {
 
 export type DatasetTypeDefinition =
   | DataConnector
-  | DataIngestion
+  | DataIngestionDefinition
   | DataModelDefinition
   | StaticModelDefinition;
 
@@ -1857,6 +1888,18 @@ export enum DefsStateManagementType {
   VersionedStateStorage = "VERSIONED_STATE_STORAGE",
 }
 
+export type DeleteDataModelPayload = {
+  __typename?: "DeleteDataModelPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type DeleteDatasetPayload = {
+  __typename?: "DeleteDatasetPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
   | PythonError
@@ -1884,6 +1927,12 @@ export type DeletePipelineRunSuccess = {
 export type DeleteRunMutation = {
   __typename?: "DeleteRunMutation";
   Output: DeletePipelineRunResult;
+};
+
+export type DeleteStaticModelPayload = {
+  __typename?: "DeleteStaticModelPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type DimensionDefinitionType = {
@@ -3405,12 +3454,16 @@ export type Mutation = {
   createUserModelRunRequest: CreateRunRequestPayload;
   /** Sets the concurrency limit for a given concurrency key. */
   deleteConcurrencyLimit: Scalars["Boolean"]["output"];
+  deleteDataModel: DeleteDataModelPayload;
+  /** Delete a dataset */
+  deleteDataset: DeleteDatasetPayload;
   /** Deletes partitions from a dynamic partition set. */
   deleteDynamicPartitions: DeleteDynamicPartitionsResult;
   /** Deletes a run from storage. */
   deletePipelineRun: DeletePipelineRunResult;
   /** Deletes a run from storage. */
   deleteRun: DeletePipelineRunResult;
+  deleteStaticModel: DeleteStaticModelPayload;
   /** System only. Mark a run as finished. */
   finishRun: FinishRunPayload;
   /** System only. Mark a step as finished */
@@ -3602,6 +3655,16 @@ export type MutationDeleteConcurrencyLimitArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationDeleteDataModelArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationDeleteDatasetArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteDynamicPartitionsArgs = {
   partitionKeys: Array<Scalars["String"]["input"]>;
   partitionsDefName: Scalars["String"]["input"];
@@ -3616,6 +3679,11 @@ export type MutationDeletePipelineRunArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteRunArgs = {
   runId: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationDeleteStaticModelArgs = {
+  id: Scalars["ID"]["input"];
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -8956,6 +9024,19 @@ export type UpdateDatasetMutation = {
   };
 };
 
+export type DeleteDatasetMutationVariables = Exact<{
+  id: Scalars["ID"]["input"];
+}>;
+
+export type DeleteDatasetMutation = {
+  __typename?: "Mutation";
+  deleteDataset: {
+    __typename?: "DeleteDatasetPayload";
+    success: boolean;
+    message?: string | null;
+  };
+};
+
 export type CreateDataModelMutationVariables = Exact<{
   input: CreateDataModelInput;
 }>;
@@ -8991,6 +9072,19 @@ export type UpdateDataModelMutation = {
       name: string;
       isEnabled: boolean;
     } | null;
+  };
+};
+
+export type DeleteDataModelMutationVariables = Exact<{
+  id: Scalars["ID"]["input"];
+}>;
+
+export type DeleteDataModelMutation = {
+  __typename?: "Mutation";
+  deleteDataModel: {
+    __typename?: "DeleteDataModelPayload";
+    success: boolean;
+    message?: string | null;
   };
 };
 
@@ -9060,6 +9154,19 @@ export type UpdateStaticModelMutation = {
       id: string;
       name: string;
     } | null;
+  };
+};
+
+export type DeleteStaticModelMutationVariables = Exact<{
+  id: Scalars["ID"]["input"];
+}>;
+
+export type DeleteStaticModelMutation = {
+  __typename?: "Mutation";
+  deleteStaticModel: {
+    __typename?: "DeleteStaticModelPayload";
+    success: boolean;
+    message?: string | null;
   };
 };
 
@@ -9509,6 +9616,55 @@ export const UpdateDatasetDocument = {
   UpdateDatasetMutation,
   UpdateDatasetMutationVariables
 >;
+export const DeleteDatasetDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "DeleteDataset" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deleteDataset" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  DeleteDatasetMutation,
+  DeleteDatasetMutationVariables
+>;
 export const CreateDataModelDocument = {
   kind: "Document",
   definitions: [
@@ -9648,6 +9804,55 @@ export const UpdateDataModelDocument = {
 } as unknown as DocumentNode<
   UpdateDataModelMutation,
   UpdateDataModelMutationVariables
+>;
+export const DeleteDataModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "DeleteDataModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deleteDataModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  DeleteDataModelMutation,
+  DeleteDataModelMutationVariables
 >;
 export const CreateDataModelRevisionDocument = {
   kind: "Document",
@@ -9918,6 +10123,55 @@ export const UpdateStaticModelDocument = {
 } as unknown as DocumentNode<
   UpdateStaticModelMutation,
   UpdateStaticModelMutationVariables
+>;
+export const DeleteStaticModelDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "DeleteStaticModel" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deleteStaticModel" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  DeleteStaticModelMutation,
+  DeleteStaticModelMutationVariables
 >;
 export const CreateUserModelRunRequestDocument = {
   kind: "Document",

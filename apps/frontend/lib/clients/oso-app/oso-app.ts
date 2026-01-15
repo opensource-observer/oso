@@ -7,6 +7,7 @@ import { MissingDataError, AuthError } from "@/lib/types/errors";
 import { logger } from "@/lib/logger";
 import { gql } from "@/lib/graphql/generated/gql";
 import { print } from "graphql";
+import { TypedDocumentNode } from "@graphql-typed-document-node/core";
 import {
   resourcePermissionResponseSchema,
   type ResourcePermissionResponse,
@@ -2370,6 +2371,39 @@ class OsoAppClient {
     });
   }
 
+  // GraphQL API methods
+
+  private async executeGraphQL<TResult, TVariables>(
+    document: TypedDocumentNode<TResult, TVariables>,
+    variables: TVariables,
+    errorMessage: string,
+  ): Promise<TResult> {
+    const query = print(document);
+    const response = await fetch("/api/v1/osograph", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.errors) {
+      logger.error(`${errorMessage}:`, result.errors[0].message);
+      throw new Error(`${errorMessage}: ${result.errors[0].message}`);
+    }
+
+    if (!result.data) {
+      throw new Error(`No response data from mutation`);
+    }
+
+    return result.data as TResult;
+  }
+
   async saveNotebookPreview(
     args: Partial<{
       notebookId: string;
@@ -2395,33 +2429,18 @@ class OsoAppClient {
       `Uploading notebook preview for ${notebookId}. Image size: ${base64Image.length} bytes`,
     );
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(SAVE_NOTEBOOK_PREVIEW_MUTATION),
-        variables: {
-          input: {
-            notebookId,
-            preview: base64Image,
-          },
+    const data = await this.executeGraphQL(
+      SAVE_NOTEBOOK_PREVIEW_MUTATION,
+      {
+        input: {
+          notebookId,
+          preview: base64Image,
         },
-      }),
-    });
+      },
+      "Failed to save preview",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to save preview:", result.errors[0].message);
-      throw new Error(`Failed to save preview: ${result.errors[0].message}`);
-    }
-
-    const payload = result.data?.saveNotebookPreview;
-    if (!payload) {
-      throw new Error("No response data from preview save mutation");
-    }
+    const payload = data.saveNotebookPreview;
 
     if (payload.success) {
       logger.log(
@@ -2484,37 +2503,22 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(CREATE_DATASET_MUTATION),
-        variables: {
-          input: {
-            orgId,
-            name,
-            displayName,
-            description,
-            type: datasetType,
-            isPublic,
-          },
+    const data = await this.executeGraphQL(
+      CREATE_DATASET_MUTATION,
+      {
+        input: {
+          orgId,
+          name,
+          displayName,
+          description,
+          type: datasetType as any,
+          isPublic,
         },
-      }),
-    });
+      },
+      "Failed to create dataset",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to create dataset:", result.errors[0].message);
-      throw new Error(`Failed to create dataset: ${result.errors[0].message}`);
-    }
-
-    const payload = result.data?.createDataset;
-    if (!payload) {
-      throw new Error("No response data from create dataset mutation");
-    }
+    const payload = data.createDataset;
 
     if (payload.success) {
       logger.log(`Successfully created dataset "${displayName}"`);
@@ -2556,42 +2560,60 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(UPDATE_DATASET_MUTATION),
-        variables: {
-          input: {
-            id: datasetId,
-            name,
-            displayName,
-            description,
-            isPublic,
-          },
+    const data = await this.executeGraphQL(
+      UPDATE_DATASET_MUTATION,
+      {
+        input: {
+          id: datasetId,
+          name,
+          displayName,
+          description,
+          isPublic,
         },
-      }),
-    });
+      },
+      "Failed to update dataset",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to update dataset:", result.errors[0].message);
-      throw new Error(`Failed to update dataset: ${result.errors[0].message}`);
-    }
-
-    const payload = result.data?.updateDataset;
-    if (!payload) {
-      throw new Error("No response data from update dataset mutation");
-    }
+    const payload = data.updateDataset;
 
     if (payload.success) {
       logger.log(`Successfully updated dataset "${displayName}"`);
     }
 
     return payload.dataset;
+  }
+
+  async deleteDataset(
+    args: Partial<{
+      datasetId: string;
+    }>,
+  ) {
+    const datasetId = ensure(args.datasetId, "Missing datasetId argument");
+
+    const DELETE_DATASET_MUTATION = gql(`
+      mutation DeleteDataset($id: ID!) {
+        deleteDataset(id: $id) {
+          success
+          message
+        }
+      }
+    `);
+
+    const data = await this.executeGraphQL(
+      DELETE_DATASET_MUTATION,
+      {
+        id: datasetId,
+      },
+      "Failed to delete dataset",
+    );
+
+    const payload = data.deleteDataset;
+
+    if (payload.success) {
+      logger.log(`Successfully deleted dataset "${datasetId}"`);
+    }
+
+    return payload;
   }
 
   async createDataModel(
@@ -2623,37 +2645,20 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(CREATE_DATA_MODEL_MUTATION),
-        variables: {
-          input: {
-            orgId,
-            datasetId,
-            name,
-            isEnabled,
-          },
+    const data = await this.executeGraphQL(
+      CREATE_DATA_MODEL_MUTATION,
+      {
+        input: {
+          orgId,
+          datasetId,
+          name,
+          isEnabled,
         },
-      }),
-    });
+      },
+      "Failed to create dataModel",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to create dataModel:", result.errors[0].message);
-      throw new Error(
-        `Failed to create dataModel: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.createDataModel;
-    if (!payload) {
-      throw new Error("No response data from create dataModel mutation");
-    }
+    const payload = data.createDataModel;
 
     if (payload.success) {
       logger.log(`Successfully created dataModel "${name}"`);
@@ -2689,42 +2694,61 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(UPDATE_DATA_MODEL_MUTATION),
-        variables: {
-          input: {
-            dataModelId,
-            name,
-            isEnabled,
-          },
+    const data = await this.executeGraphQL(
+      UPDATE_DATA_MODEL_MUTATION,
+      {
+        input: {
+          dataModelId,
+          name,
+          isEnabled,
         },
-      }),
-    });
+      },
+      "Failed to update dataModel",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to update dataModel:", result.errors[0].message);
-      throw new Error(
-        `Failed to update dataModel: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.updateDataModel;
-    if (!payload) {
-      throw new Error("No response data from update dataModel mutation");
-    }
+    const payload = data.updateDataModel;
 
     if (payload.success) {
       logger.log(`Successfully updated dataModel "${name}"`);
     }
 
     return payload.dataModel;
+  }
+
+  async deleteDataModel(
+    args: Partial<{
+      dataModelId: string;
+    }>,
+  ) {
+    const dataModelId = ensure(
+      args.dataModelId,
+      "Missing dataModelId argument",
+    );
+
+    const DELETE_DATA_MODEL_MUTATION = gql(`
+      mutation DeleteDataModel($id: ID!) {
+        deleteDataModel(id: $id) {
+          success
+          message
+        }
+      }
+    `);
+
+    const data = await this.executeGraphQL(
+      DELETE_DATA_MODEL_MUTATION,
+      {
+        id: dataModelId,
+      },
+      "Failed to delete dataModel",
+    );
+
+    const payload = data.deleteDataModel;
+
+    if (payload.success) {
+      logger.log(`Successfully deleted dataModel "${dataModelId}"`);
+    }
+
+    return payload;
   }
 
   async createDataModelRevision(
@@ -2774,37 +2798,15 @@ class OsoAppClient {
       delete args.displayName;
     }
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const data = await this.executeGraphQL(
+      CREATE_DATA_MODEL_REVISION_MUTATION,
+      {
+        input: args as any,
       },
-      body: JSON.stringify({
-        query: print(CREATE_DATA_MODEL_REVISION_MUTATION),
-        variables: {
-          input: args,
-        },
-      }),
-    });
+      "Failed to create dataModel revision",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error(
-        "Failed to create dataModel revision:",
-        result.errors[0].message,
-      );
-      throw new Error(
-        `Failed to create dataModel revision: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.createDataModelRevision;
-    if (!payload) {
-      throw new Error(
-        "No response data from create dataModel revision mutation",
-      );
-    }
+    const payload = data.createDataModelRevision;
 
     if (payload.success) {
       logger.log(
@@ -2834,37 +2836,22 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(CREATE_DATA_MODEL_RELEASE_MUTATION),
-        variables: {
-          input: args,
+    const data = await this.executeGraphQL(
+      CREATE_DATA_MODEL_RELEASE_MUTATION,
+      {
+        input: {
+          dataModelId: ensure(args.dataModelId, "Missing dataModelId argument"),
+          dataModelRevisionId: ensure(
+            args.dataModelRevisionId,
+            "Missing dataModelRevisionId argument",
+          ),
+          description: args.description,
         },
-      }),
-    });
+      },
+      "Failed to create dataModel release",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error(
-        "Failed to create dataModel release:",
-        result.errors[0].message,
-      );
-      throw new Error(
-        `Failed to create dataModel release: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.createDataModelRelease;
-    if (!payload) {
-      throw new Error(
-        "No response data from create dataModel release mutation",
-      );
-    }
+    const payload = data.createDataModelRelease;
 
     if (payload.success) {
       logger.log(
@@ -2901,36 +2888,19 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(CREATE_STATIC_MODEL_MUTATION),
-        variables: {
-          input: {
-            orgId,
-            datasetId,
-            name,
-          },
+    const data = await this.executeGraphQL(
+      CREATE_STATIC_MODEL_MUTATION,
+      {
+        input: {
+          orgId,
+          datasetId,
+          name,
         },
-      }),
-    });
+      },
+      "Failed to create staticModel",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to create staticModel:", result.errors[0].message);
-      throw new Error(
-        `Failed to create staticModel: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.createStaticModel;
-    if (!payload) {
-      throw new Error("No response data from create staticModel mutation");
-    }
+    const payload = data.createStaticModel;
 
     if (payload.success) {
       logger.log(`Successfully created staticModel "${name}"`);
@@ -2965,41 +2935,60 @@ class OsoAppClient {
         }
       }
     `);
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(UPDATE_STATIC_MODEL_MUTATION),
-        variables: {
-          input: {
-            staticModelId,
-            name,
-          },
+    const data = await this.executeGraphQL(
+      UPDATE_STATIC_MODEL_MUTATION,
+      {
+        input: {
+          staticModelId,
+          name,
         },
-      }),
-    });
+      },
+      "Failed to update staticModel",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to update staticModel:", result.errors[0].message);
-      throw new Error(
-        `Failed to update staticModel: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.updateStaticModel;
-    if (!payload) {
-      throw new Error("No response data from update staticModel mutation");
-    }
+    const payload = data.updateStaticModel;
 
     if (payload.success) {
       logger.log(`Successfully updated staticModel "${name}"`);
     }
 
     return payload.staticModel;
+  }
+
+  async deleteStaticModel(
+    args: Partial<{
+      staticModelId: string;
+    }>,
+  ) {
+    const staticModelId = ensure(
+      args.staticModelId,
+      "Missing staticModelId argument",
+    );
+
+    const DELETE_STATIC_MODEL_MUTATION = gql(`
+      mutation DeleteStaticModel($id: ID!) {
+        deleteStaticModel(id: $id) {
+          success
+          message
+        }
+      }
+    `);
+
+    const data = await this.executeGraphQL(
+      DELETE_STATIC_MODEL_MUTATION,
+      {
+        id: staticModelId,
+      },
+      "Failed to delete staticModel",
+    );
+
+    const payload = data.deleteStaticModel;
+
+    if (payload.success) {
+      logger.log(`Successfully deleted staticModel "${staticModelId}"`);
+    }
+
+    return payload;
   }
 
   async createUserModelRunRequest(
@@ -3022,35 +3011,18 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(CREATE_USER_MODEL_RUN_REQUEST_MUTATION),
-        variables: {
-          input: {
-            datasetId,
-            selectedModels: args.selectedModels || [],
-          },
+    const data = await this.executeGraphQL(
+      CREATE_USER_MODEL_RUN_REQUEST_MUTATION,
+      {
+        input: {
+          datasetId,
+          selectedModels: args.selectedModels || [],
         },
-      }),
-    });
+      },
+      "Failed to create run request",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to create run request:", result.errors[0].message);
-      throw new Error(
-        `Failed to create run request: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.createUserModelRunRequest;
-    if (!payload) {
-      throw new Error("No response data from create run request mutation");
-    }
+    const payload = data.createUserModelRunRequest;
 
     if (payload.success) {
       logger.log(
@@ -3058,7 +3030,7 @@ class OsoAppClient {
       );
     }
 
-    return payload.runRequest;
+    return payload.run;
   }
 
   async createStaticModelRunRequest(
@@ -3081,35 +3053,18 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(CREATE_STATIC_MODEL_RUN_REQUEST_MUTATION),
-        variables: {
-          input: {
-            datasetId,
-            selectedModels: args.selectedModels || [],
-          },
+    const data = await this.executeGraphQL(
+      CREATE_STATIC_MODEL_RUN_REQUEST_MUTATION,
+      {
+        input: {
+          datasetId,
+          selectedModels: args.selectedModels || [],
         },
-      }),
-    });
+      },
+      "Failed to create run request",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error("Failed to create run request:", result.errors[0].message);
-      throw new Error(
-        `Failed to create run request: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.createStaticModelRunRequest;
-    if (!payload) {
-      throw new Error("No response data from create run request mutation");
-    }
+    const payload = data.createStaticModelRunRequest;
 
     if (payload.success) {
       logger.log(
@@ -3147,41 +3102,19 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(CREATE_DATA_INGESTION_CONFIG_MUTATION),
-        variables: {
-          input: {
-            datasetId,
-            factoryType,
-            config,
-          },
+    const data = await this.executeGraphQL(
+      CREATE_DATA_INGESTION_CONFIG_MUTATION,
+      {
+        input: {
+          datasetId,
+          factoryType: factoryType as any,
+          config,
         },
-      }),
-    });
+      },
+      "Failed to create data ingestion config",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error(
-        "Failed to create data ingestion config:",
-        result.errors[0].message,
-      );
-      throw new Error(
-        `Failed to create data ingestion config: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.createDataIngestionConfig;
-    if (!payload) {
-      throw new Error(
-        "No response data from create data ingestion config mutation",
-      );
-    }
+    const payload = data.createDataIngestionConfig;
 
     logger.log(
       `Successfully created data ingestion config for dataset "${datasetId}"`,
@@ -3214,39 +3147,17 @@ class OsoAppClient {
       }
     `);
 
-    const response = await fetch("/api/v1/osograph", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: print(CREATE_DATA_INGESTION_RUN_REQUEST_MUTATION),
-        variables: {
-          input: {
-            datasetId,
-          },
+    const data = await this.executeGraphQL(
+      CREATE_DATA_INGESTION_RUN_REQUEST_MUTATION,
+      {
+        input: {
+          datasetId,
         },
-      }),
-    });
+      },
+      "Failed to create data ingestion run request",
+    );
 
-    const result = await response.json();
-
-    if (result.errors) {
-      logger.error(
-        "Failed to create data ingestion run request:",
-        result.errors[0].message,
-      );
-      throw new Error(
-        `Failed to create data ingestion run request: ${result.errors[0].message}`,
-      );
-    }
-
-    const payload = result.data?.createDataIngestionRunRequest;
-    if (!payload) {
-      throw new Error(
-        "No response data from create data ingestion run request mutation",
-      );
-    }
+    const payload = data.createDataIngestionRunRequest;
 
     if (payload.success) {
       logger.log(
