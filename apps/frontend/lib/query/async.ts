@@ -31,7 +31,7 @@ import {
   PUBLIC_CACHE_BUCKET,
 } from "@/lib/config";
 import { getFromRunMetadata } from "@/lib/runs/utils";
-import { validStatusCodeOr500 } from "@/apps/frontend/lib/utils/status-codes";
+import { validStatusCodeOr500 } from "@/lib/utils/status-codes";
 
 // Next.js route control
 export const revalidate = 0;
