@@ -229,7 +229,9 @@ export async function retrieveAsyncSqlQueryResults({
   const supabase = createAdminClient();
   const { data: run, error } = await supabase
     .from("run")
-    .select("status, completed_at, logs_url, requested_by, metadata") // minimal fields
+    .select(
+      "status, completed_at, logs_url, requested_by, metadata, status_code",
+    ) // minimal fields
     .eq("id", runId)
     .single();
 
@@ -247,9 +249,9 @@ export async function retrieveAsyncSqlQueryResults({
       status: run.status,
     });
   } else if (run.status === "failed") {
-    return makeErrorResponse("Query execution failed", 500);
+    return makeErrorResponse("Query execution failed", run.status_code);
   } else if (run.status === "canceled") {
-    return makeErrorResponse("Query execution canceled", 400);
+    return makeErrorResponse("Query execution canceled", run.status_code);
   } else if (run.status !== "completed") {
     assertNever(run.status, `Unknown run status: ${run.status}`);
   }
