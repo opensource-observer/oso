@@ -73,10 +73,13 @@ const StepStatusMap: Record<string, StepStatus> = {
 
 function updatedMetadata(
   existing: Json,
-  update: z.infer<typeof UpdateMetadataSchema>,
+  update?: z.infer<typeof UpdateMetadataSchema>,
 ): Record<string, any> {
   try {
-    const parsedExisting = z.record(z.any()).parse(existing);
+    const parsedExisting = z.record(z.any()).parse(existing || {});
+    if (!update) {
+      return parsedExisting;
+    }
     if (update.merge) {
       return { ...parsedExisting, ...update.value };
     } else {
@@ -141,10 +144,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           throw ResourceErrors.notFound(`Run ${runId} not found`);
         }
 
-        const newMetadata = updatedMetadata(runData.metadata, {
-          value: metadata || {},
-          merge: true,
-        });
+        const newMetadata = updatedMetadata(runData.metadata, metadata);
 
         // Update the status and logsUrl of the run based on the input
         const { data: updatedRun, error: updateError } = await supabase
