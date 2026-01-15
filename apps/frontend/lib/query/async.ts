@@ -31,6 +31,7 @@ import {
   PUBLIC_CACHE_BUCKET,
 } from "@/lib/config";
 import { getFromRunMetadata } from "@/lib/runs/utils";
+import { validStatusCodeOr500 } from "@/apps/frontend/lib/utils/status-codes";
 
 // Next.js route control
 export const revalidate = 0;
@@ -249,9 +250,15 @@ export async function retrieveAsyncSqlQueryResults({
       status: run.status,
     });
   } else if (run.status === "failed") {
-    return makeErrorResponse("Query execution failed", run.status_code);
+    return makeErrorResponse(
+      "Query execution failed",
+      validStatusCodeOr500(run.status_code),
+    );
   } else if (run.status === "canceled") {
-    return makeErrorResponse("Query execution canceled", run.status_code);
+    return makeErrorResponse(
+      "Query execution canceled",
+      validStatusCodeOr500(run.status_code),
+    );
   } else if (run.status !== "completed") {
     assertNever(run.status, `Unknown run status: ${run.status}`);
   }
