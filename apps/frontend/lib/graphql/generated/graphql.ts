@@ -2407,7 +2407,7 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
 
 export type FinishRunInput = {
   logsUrl: Scalars["String"]["input"];
-  metadata?: InputMaybe<Scalars["JSON"]["input"]>;
+  metadata?: InputMaybe<UpdateMetadataInput>;
   runId: Scalars["ID"]["input"];
   status: RunStatus;
   statusCode: Scalars["Int"]["input"];
@@ -8718,6 +8718,11 @@ export type UpdateMemberRolePayload = {
   success: Scalars["Boolean"]["output"];
 };
 
+export type UpdateMetadataInput = {
+  merge?: InputMaybe<Scalars["Boolean"]["input"]>;
+  value: Scalars["JSON"]["input"];
+};
+
 export type UpdateNotebookInput = {
   description?: InputMaybe<Scalars["String"]["input"]>;
   id: Scalars["ID"]["input"];
@@ -8732,7 +8737,7 @@ export type UpdateNotebookPayload = {
 };
 
 export type UpdateRunMetadataInput = {
-  metadata: Scalars["JSON"]["input"];
+  metadata: UpdateMetadataInput;
   runId: Scalars["ID"]["input"];
 };
 
