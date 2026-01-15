@@ -12,11 +12,11 @@ import {
 } from "@/app/api/v1/osograph/utils/auth";
 import {
   CreateDatasetSchema,
+  DataIngestionsWhereSchema,
   DataModelWhereSchema,
   DatasetWhereSchema,
   RunWhereSchema,
   StaticModelWhereSchema,
-  DataIngestionsWhereSchema,
   TableMetadataWhereSchema,
   UpdateDatasetSchema,
   validateInput,
@@ -456,22 +456,20 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   DataIngestionDefinition: {
     orgId: (parent: { org_id: string }) => parent.org_id,
     datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
-    dataIngestions: async (
+    dataIngestion: async (
       parent: { dataset_id: string; org_id: string },
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
+      _args: Record<string, never>,
     ) => {
-      return queryWithPagination(args, context, {
-        tableName: "data_ingestions",
-        whereSchema: DataIngestionsWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
-        basePredicate: {
-          is: [{ key: "deleted_at", value: null }],
-          eq: [{ key: "dataset_id", value: parent.dataset_id }],
-        },
-      });
+      const supabase = createAdminClient();
+
+      const { data: config } = await supabase
+        .from("data_ingestions")
+        .select("*")
+        .eq("dataset_id", parent.dataset_id)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      return config;
     },
   },
 };
