@@ -200,9 +200,14 @@ class StartRunInput(BaseModel):
     run_id: str = Field(alias="runId")
 
 
+class UpdateMetadataInput(BaseModel):
+    value: Any
+    merge: Optional[bool] = False
+
+
 class UpdateRunMetadataInput(BaseModel):
     run_id: str = Field(alias="runId")
-    metadata: Any
+    metadata: "UpdateMetadataInput"
 
 
 class FinishRunInput(BaseModel):
@@ -210,7 +215,7 @@ class FinishRunInput(BaseModel):
     status: RunStatus
     status_code: int = Field(alias="statusCode")
     logs_url: str = Field(alias="logsUrl")
-    metadata: Optional[Any] = None
+    metadata: Optional["UpdateMetadataInput"] = None
 
 
 class StartStepInput(BaseModel):
@@ -233,4 +238,6 @@ class CreateMaterializationInput(BaseModel):
 
 
 CreateDataModelRevisionInput.model_rebuild()
+UpdateRunMetadataInput.model_rebuild()
+FinishRunInput.model_rebuild()
 CreateMaterializationInput.model_rebuild()
