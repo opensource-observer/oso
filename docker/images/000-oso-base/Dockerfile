@@ -10,6 +10,8 @@ ARG REPO_SHA=
 ARG ORDERED_TAG=
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV DBUS_SESSION_BUS_ADDRESS=""
+
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
