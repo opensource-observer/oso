@@ -1223,6 +1223,7 @@ export type Database = {
           run_type: Database["public"]["Enums"]["run_type"];
           started_at: string | null;
           status: Database["public"]["Enums"]["run_status"];
+          status_code: number | null;
           ttl: string | null;
         };
         Insert: {
@@ -1238,6 +1239,7 @@ export type Database = {
           run_type?: Database["public"]["Enums"]["run_type"];
           started_at?: string | null;
           status?: Database["public"]["Enums"]["run_status"];
+          status_code?: number | null;
           ttl?: string | null;
         };
         Update: {
@@ -1253,6 +1255,7 @@ export type Database = {
           run_type?: Database["public"]["Enums"]["run_type"];
           started_at?: string | null;
           status?: Database["public"]["Enums"]["run_status"];
+          status_code?: number | null;
           ttl?: string | null;
         };
         Relationships: [

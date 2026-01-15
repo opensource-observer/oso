@@ -1309,6 +1309,7 @@ export const runRowSchema = z.object({
   run_type: publicRunTypeSchema,
   started_at: z.string().nullable(),
   status: publicRunStatusSchema,
+  status_code: z.number().nullable(),
   ttl: z.string().nullable(),
 });
 
@@ -1325,6 +1326,7 @@ export const runInsertSchema = z.object({
   run_type: publicRunTypeSchema.optional(),
   started_at: z.string().optional().nullable(),
   status: publicRunStatusSchema.optional(),
+  status_code: z.number().optional().nullable(),
   ttl: z.string().optional().nullable(),
 });
 
@@ -1341,6 +1343,7 @@ export const runUpdateSchema = z.object({
   run_type: publicRunTypeSchema.optional(),
   started_at: z.string().optional().nullable(),
   status: publicRunStatusSchema.optional(),
+  status_code: z.number().optional().nullable(),
   ttl: z.string().optional().nullable(),
 });
 

@@ -12,9 +12,13 @@ from oso_core.resources import ResourcesContext
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.enums import RunStatus, StepStatus
-from scheduler.graphql_client.input_types import DataModelColumnInput
+from scheduler.graphql_client.input_types import (
+    DataModelColumnInput,
+    UpdateMetadataInput,
+)
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
 from scheduler.types import (
+    AlreadyLockedMessageResponse,
     FailedResponse,
     HandlerResponse,
     MaterializationStrategy,
@@ -111,12 +115,15 @@ class OSORunContext(RunContext):
     def materialization_strategy(self) -> MaterializationStrategy:
         return self._materialization_strategy
 
-    async def update_metadata(self, metadata: dict[str, t.Any]) -> UpdateRunMetadata:
+    async def update_metadata(
+        self, metadata: dict[str, t.Any], merge: bool
+    ) -> UpdateRunMetadata:
         """Updates the run metadata for the current run."""
         self._logger.info("Updating run metadata")
         # Placeholder for actual metadata update logic
         return await self._oso_client.update_run_metadata(
-            run_id=self._run_id, metadata=metadata
+            run_id=self._run_id,
+            metadata=UpdateMetadataInput(value=metadata, merge=merge),
         )
 
     @asynccontextmanager
@@ -221,26 +228,36 @@ class RunHandler(MessageHandler[T]):
         """
         # Write the response to the database
         match response:
-            case SkipResponse():
+            case AlreadyLockedMessageResponse():
+                # No need to do anything here as another worker is processing it
+                return response
+            case SkipResponse(status_code=status_code):
                 await oso_client.finish_run(
                     run_id=run_id_str,
                     status=RunStatus.CANCELED,
+                    status_code=status_code,
                     logs_url="http://example.com/run_logs",
                 )
                 return response
-            case FailedResponse():
+            case FailedResponse(status_code=status_code, details=details):
                 logger.error(f"Failed to process run_id {run_id_str}.")
                 await oso_client.finish_run(
                     run_id=run_id_str,
                     status=RunStatus.FAILED,
+                    status_code=status_code,
                     logs_url="http://example.com/run_logs",
+                    metadata=UpdateMetadataInput(
+                        value={"error_details": details},
+                        merge=True,
+                    ),
                 )
                 return response
-            case SuccessResponse():
+            case SuccessResponse(status_code=status_code):
                 logger.info(f"Successfully processed run_id {run_id_str}.")
                 await oso_client.finish_run(
                     run_id=run_id_str,
                     status=RunStatus.SUCCESS,
+                    status_code=status_code,
                     logs_url="http://example.com/run_logs",
                 )
                 return response
@@ -251,6 +268,7 @@ class RunHandler(MessageHandler[T]):
                 await oso_client.finish_run(
                     run_id=run_id_str,
                     status=RunStatus.FAILED,
+                    status_code=500,
                     logs_url="http://example.com/run_logs",
                 )
                 return FailedResponse(message="Unhandled response type.")
