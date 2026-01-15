@@ -407,7 +407,7 @@ class RunContext(abc.ABC):
         return exp.to_table(fqn)
 
     def update_metadata(
-        self, metadata: dict[str, t.Any]
+        self, metadata: dict[str, t.Any], merge: bool
     ) -> t.Awaitable[UpdateRunMetadata]:
         """Updates the run metadata for the current run."""
         raise NotImplementedError("update_metadata must be implemented by subclasses.")
@@ -415,18 +415,43 @@ class RunContext(abc.ABC):
 
 class HandlerResponse(BaseModel):
     message: str
+    status_code: int = Field(
+        description="HTTP-like status code representing the result. 300s are unused."
+    )
+
+
+class AlreadyLockedMessageResponse(HandlerResponse):
+    """A response indicating that the message is already being processed by
+    another worker. The worker _should_ not update any run status and simply
+    nack the message.
+
+    Duplicate messages are expected in google pub/sub as we don't enable exactly-once
+    delivery (for now). The assumption is that it's better to be robust to duplicate
+    messages than to miss processing a message entirely.
+    """
+
+    message: str = Field(
+        default="Message is already being processed by another worker."
+    )
+    status_code: int = Field(default=0)
 
 
 class SkipResponse(HandlerResponse):
-    message: str = Field(default="Skipped processing the message.")
+    message: str = Field(
+        default="Skipped processing the message. No action is taken on the run by this worker."
+    )
+    status_code: int = Field(default=204)
 
 
 class FailedResponse(HandlerResponse):
     message: str = Field(default="Failed to process the message.")
+    status_code: int = Field(default=500)
+    details: dict[str, t.Any] = Field(default_factory=dict)
 
 
 class SuccessResponse(HandlerResponse):
     message: str = Field(default="Successfully processed the message.")
+    status_code: int = Field(default=200)
 
 
 class MessageHandler(abc.ABC, t.Generic[T]):

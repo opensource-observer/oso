@@ -39,6 +39,7 @@ from google.protobuf.message import Message as ProtobufMessage
 from janus import AsyncQueue, Queue, SyncQueue
 from oso_core.resources import ResourcesContext
 from scheduler.types import (
+    AlreadyLockedMessageResponse,
     FailedResponse,
     GenericMessageQueueService,
     HandlerResponse,
@@ -202,6 +203,11 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
 
             response = response_storage.pop_response(handle_id)
             match response:
+                case AlreadyLockedMessageResponse():
+                    logger.info(
+                        "Message is already being processed elsewhere; nack'ing"
+                    )
+                    raw_message.nack()
                 case SkipResponse():
                     logger.info("Skipping message processing as per handler response.")
                     raw_message.ack()
