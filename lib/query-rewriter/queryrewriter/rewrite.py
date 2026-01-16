@@ -2,6 +2,7 @@ import logging
 import typing as t
 
 from queryrewriter.dialect import extend_sqlglot, parse
+from queryrewriter.errors import TableResolutionError
 from sqlglot import exp
 from sqlglot.optimizer.qualify_tables import qualify_tables
 from sqlglot.optimizer.scope import Scope, build_scope
@@ -189,6 +190,8 @@ async def rewrite_query(
 
     table_rewriters: list[TransformCallable] = []
 
+    unresolved_tables: list[exp.Table] = []
+
     for table in table_references:
         fqn = raw_table_to_reference(table)
 
@@ -196,7 +199,8 @@ async def rewrite_query(
         resolved_table = resolved_tables_dict.get(fqn)
 
         if not resolved_table:
-            raise ValueError(f"Table {fqn} could not be resolved.")
+            unresolved_tables.append(table)
+            continue
 
         resolved_table = resolved_table.copy()
 
@@ -211,6 +215,11 @@ async def rewrite_query(
 
         # Create a transformation function for this table expression
         table_rewriters.append(table_transformer(table, qualified_resolved_table))
+
+    if unresolved_tables:
+        raise TableResolutionError(
+            [raw_table_to_reference(table) for table in unresolved_tables]
+        )
 
     for statement in qualified_statements:
         rewritten = apply_transforms_to_expression(statement, table_rewriters)
