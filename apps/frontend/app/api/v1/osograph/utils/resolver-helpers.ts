@@ -9,10 +9,6 @@ import type {
   FilterableConnectionArgs,
 } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getFetchLimit,
-  getPaginationParams,
-} from "@/app/api/v1/osograph/utils/pagination";
-import {
   getOrganization,
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
@@ -23,12 +19,7 @@ import {
   type QueryPredicate,
 } from "@/app/api/v1/osograph/utils/query-builder";
 import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
-
-export function preparePaginationRange(args: ConnectionArgs): [number, number] {
-  const limit = getFetchLimit(args);
-  const { offset } = getPaginationParams(args);
-  return [offset, offset + limit - 1];
-}
+import { maybeAddQueryPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export function buildConnectionOrEmpty<T>(
   data: T[] | null | undefined,
@@ -61,7 +52,6 @@ export async function getUserOrganizationsConnection(
   additionalPredicate?: Partial<QueryPredicate<"organizations">>,
 ) {
   const supabase = createAdminClient();
-  const [start, end] = preparePaginationRange(args);
 
   const membershipPredicate: Partial<QueryPredicate<"users_by_organization">> =
     {
@@ -77,7 +67,7 @@ export async function getUserOrganizationsConnection(
     supabase,
     "users_by_organization",
     membershipPredicate,
-    (query) => query.range(start, end),
+    (query) => maybeAddQueryPagination(query, args),
   );
 
   if (membershipError) {
@@ -128,7 +118,6 @@ export async function getUserInvitationsConnection(
 
   const supabase = createAdminClient();
   const userEmail = email.toLowerCase();
-  const [start, end] = preparePaginationRange(args);
 
   const basePredicate: Partial<QueryPredicate<"invitations">> = {
     ilike: [{ key: "email", value: userEmail }],
@@ -148,7 +137,7 @@ export async function getUserInvitationsConnection(
     count,
     error,
   } = await buildQuery(supabase, "invitations", predicate, (query) =>
-    query.range(start, end),
+    maybeAddQueryPagination(query, args),
   );
 
   if (error) {

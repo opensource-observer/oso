@@ -2,11 +2,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
-import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import {
+  getFetchLimit,
+  getPaginationParams,
+  type ConnectionArgs,
+  type FilterableConnectionArgs,
+} from "@/app/api/v1/osograph/utils/pagination";
 import {
   buildConnectionOrEmpty,
   getUserOrganizationIds,
-  preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { emptyConnection } from "@/app/api/v1/osograph/utils/connection";
 import { validateInput } from "@/app/api/v1/osograph/utils/validation";
@@ -86,8 +90,6 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
     };
   }
 
-  const [start, end] = preparePaginationRange(args);
-
   const orderBy = options.orderBy;
 
   const basePredicate = options.basePredicate
@@ -106,13 +108,14 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
     supabase,
     options.tableName,
     predicate,
-    (query) =>
-      (orderBy
+    (query) => {
+      query = orderBy
         ? query.order(orderBy.key, {
             ascending: orderBy.ascending ?? false,
           })
-        : query
-      ).range(start, end),
+        : query;
+      return maybeAddQueryPagination(query, args);
+    },
     args.single,
   );
 
@@ -124,4 +127,30 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
   }
 
   return buildConnectionOrEmpty(data, args, count);
+}
+
+/**
+ * Prepares the pagination range [start, end] based on the provided ConnectionArgs.
+ * @param args - The connection arguments containing pagination info. If first is 0, no pagination is needed.
+ * @returns the range as a tuple [start, end], or undefined if no pagination is needed.
+ */
+function preparePaginationRange(
+  args: ConnectionArgs,
+): [number, number] | undefined {
+  const { limit: first, offset } = getPaginationParams(args);
+  if (first === 0) {
+    return undefined;
+  }
+  const limit = getFetchLimit(args);
+  return [offset, offset + limit - 1];
+}
+
+export function maybeAddQueryPagination<
+  TQuery extends { range: (from: number, to: number) => TQuery },
+>(query: TQuery, args: FilterableConnectionArgs) {
+  const pagination = preparePaginationRange(args);
+  if (pagination) {
+    query = query.range(pagination[0], pagination[1]);
+  }
+  return query;
 }
