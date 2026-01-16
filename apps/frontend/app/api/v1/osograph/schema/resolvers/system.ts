@@ -424,7 +424,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
 
       const tableResolvers = [
         new LegacyInferredTableResolver(),
-        ...(metadata?.orgName ? [new MetadataInferredTableResolver()] : []),
+        new MetadataInferredTableResolver(),
         new DBTableResolver(supabase, [
           (table) => {
             // If the catalog is iceberg return the table as is

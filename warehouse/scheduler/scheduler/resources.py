@@ -1,7 +1,9 @@
 import typing as t
 
 import structlog
+from aioprometheus.collectors import Counter, Gauge, Summary
 from dlt.sources.credentials import AwsCredentials, FileSystemCredentials
+from oso_core.instrumentation import MetricsContainer
 from oso_core.resources import ResourcesContext, ResourcesRegistry, resource_factory
 from oso_dagster.resources import GCSFileResource
 from oso_dagster.resources.duckdb import DuckDBResource
@@ -58,6 +60,7 @@ def message_queue_service_factory(
     resources: ResourcesContext,
     common_settings: "CommonSettings",
     message_handler_registry: MessageHandlerRegistry,
+    metrics: MetricsContainer,
 ) -> GenericMessageQueueService:
     """Factory function to create a message queue service resource."""
     return GCPPubSubMessageQueueService(
@@ -65,6 +68,7 @@ def message_queue_service_factory(
         resources=resources,
         registry=message_handler_registry,
         emulator_enabled=common_settings.emulator_enabled,
+        metrics=metrics,
     )
 
 
@@ -272,6 +276,58 @@ def upload_filesystem_credentials_factory(
             region_name="auto",
         )
     return None
+
+
+@resource_factory("metrics")
+def metrics_factory() -> MetricsContainer:
+    """Factory function to create a metrics container resource."""
+    metrics = MetricsContainer()
+    metrics.initialize_counter(
+        "messages_processed_total",
+        Counter("messages_processed_total", "Total number of messages processed"),
+    )
+
+    metrics.initialize_counter(
+        "messages_failed_total",
+        Counter(
+            "messages_failed_total", "Total number of messages that failed processing"
+        ),
+    )
+
+    metrics.initialize_counter(
+        "messages_succeeded_total",
+        Counter(
+            "messages_succeeded_total",
+            "Total number of messages that succeeded processing",
+        ),
+    )
+
+    metrics.initialize_counter(
+        "messages_skipped_total",
+        Counter("messages_skipped_total", "Total number of messages that were skipped"),
+    )
+
+    metrics.initialize_counter(
+        "messages_cancelled_total",
+        Counter(
+            "messages_cancelled_total", "Total number of messages that were cancelled"
+        ),
+    )
+
+    metrics.initialize_gauge(
+        "messages_active",
+        Gauge("messages_active", "Number of active messages being processed"),
+    )
+
+    metrics.initialize_summary(
+        "message_handling_duration_ms",
+        Summary(
+            "message_handling_duration_ms",
+            "Duration of message handling in milliseconds",
+        ),
+    )
+
+    return metrics
 
 
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
