@@ -3,7 +3,7 @@ MODEL (
   description 'Unmatched OpenDevData developers',
   dialect trino,
   kind FULL,
-  partitioned_by MONTH("valid_from"),
+  partitioned_by YEAR("valid_from"),
   tags (
     "opendevdata",
     "github",
@@ -19,6 +19,7 @@ SELECT
   CAST(NULL AS VARCHAR) AS actor_login,
   odd.author_name,
   odd.author_email,
+  @oso_id(odd.author_name, odd.author_email) AS author_synthetic_id,
   odd.canonical_developer_id,
   odd.primary_github_user_id,
   odd.valid_from,

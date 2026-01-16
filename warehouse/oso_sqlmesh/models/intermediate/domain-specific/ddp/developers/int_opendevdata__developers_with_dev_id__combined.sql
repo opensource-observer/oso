@@ -3,7 +3,7 @@ MODEL (
   description 'Combined developer matches from GHArchive and OpenDevData',
   dialect trino,
   kind FULL,
-  partitioned_by MONTH("valid_from"),
+  partitioned_by YEAR("valid_from"),
   tags (
     "opendevdata",
     "github",
