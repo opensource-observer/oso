@@ -17,6 +17,8 @@ function CodeEditor({
   editable = true,
   editorOptions,
 }: CodeEditorProps) {
+  const [value, setValue] = React.useState<string>(defaultValue || "");
+
   const extensions = useCodeMirrorExtensions({
     language,
     schema,
@@ -26,11 +28,14 @@ function CodeEditor({
   return (
     <CodeMirror
       className={className}
-      value={defaultValue}
+      value={value}
       theme="light"
       extensions={extensions}
       height={`${height}px`}
-      onChange={onChange ? onChange : undefined}
+      onChange={(value) => {
+        setValue(value);
+        onChange?.(value);
+      }}
       editable={editable}
     />
   );

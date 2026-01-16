@@ -172,6 +172,42 @@ export const staticModelResolvers = {
 
       return presignedUrl;
     },
+    deleteStaticModel: async (
+      _: unknown,
+      { id }: { id: string },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const supabase = createAdminClient();
+
+      const { data: staticModel, error: fetchError } = await supabase
+        .from("static_model")
+        .select("org_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !staticModel) {
+        throw ResourceErrors.notFound("StaticModel", id);
+      }
+
+      await requireOrgMembership(authenticatedUser.userId, staticModel.org_id);
+
+      const { error } = await supabase
+        .from("static_model")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
+
+      if (error) {
+        throw ServerErrors.database(
+          `Failed to delete static model: ${error.message}`,
+        );
+      }
+
+      return {
+        success: true,
+        message: "StaticModel deleted successfully",
+      };
+    },
   },
   StaticModel: {
     orgId: (parent: StaticModelRow) => {
@@ -207,7 +243,7 @@ export const staticModelResolvers = {
         parentOrgIds: parent.org_id,
         basePredicate: {
           eq: [
-            { key: "table_id", value: parent.id },
+            { key: "table_id", value: `static_model_${parent.id}` },
             { key: "dataset_id", value: parent.dataset_id },
           ],
         },

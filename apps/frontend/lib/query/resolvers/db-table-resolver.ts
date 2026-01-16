@@ -1,6 +1,7 @@
 import { SupabaseAdminClient } from "@/lib/supabase/admin";
 import { Table } from "@/lib/types/table";
 import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
+import { logger } from "@/lib/logger";
 
 export type LegacyTableMappingRule = (table: Table) => Table | null;
 
@@ -95,7 +96,9 @@ export class DBTableResolver implements TableResolver {
       if (resolvedTable) {
         resolvedTables[unresolvedName] = resolvedTable;
       } else {
-        throw new Error(`Could not resolve table for FQN ${fqn}`);
+        logger.error(
+          `Could not resolve table ${fqn} from table_lookup, leaving unresolved.`,
+        );
       }
     }
 

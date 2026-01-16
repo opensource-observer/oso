@@ -875,7 +875,7 @@ interface FormBuilderProps {
 const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
   function _FormBuilder(
     {
-      schema = {},
+      schema,
       defaultValues: propDefaultValues,
       setForm,
       onSubmit,
@@ -886,14 +886,23 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
     },
     _ref,
   ) {
-    const { zodSchema, defaultValues: schemaDefaultValues } = React.useMemo(
-      () => generateFormConfig(schema),
-      [schema],
-    );
+    // Plasmic does not maintain object/array identity for props, so we
+    // stringify them to use as dependencies for useMemo.
+    const schemaKey = JSON.stringify(schema);
+    const { zodSchema, defaultValues: schemaDefaultValues } =
+      React.useMemo(() => {
+        if (!schema || Object.keys(schema).length === 0) {
+          return {
+            zodSchema: z.object({}),
+            defaultValues: {},
+          };
+        }
+        return generateFormConfig(schema);
+      }, [schemaKey]);
 
     const mergedDefaultValues = React.useMemo(
       () => ({ ...schemaDefaultValues, ...propDefaultValues }),
-      [schemaDefaultValues, propDefaultValues],
+      [], // The default values are only computed once on mount
     );
 
     const form = useForm<z.infer<typeof zodSchema>>({
@@ -906,8 +915,10 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
     }, [form]);
 
     React.useEffect(() => {
-      form.reset(mergedDefaultValues);
-    }, [form, mergedDefaultValues]);
+      if (schema && Object.keys(schema).length > 0) {
+        form.reset(mergedDefaultValues);
+      }
+    }, [schemaKey]);
 
     return (
       <FormProvider {...form}>

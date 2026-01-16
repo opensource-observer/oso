@@ -6,7 +6,7 @@ mutation StartRun($runId: ID!) {
 
 mutation UpdateRunMetadata(
   $runId: ID!
-  $metadata: JSON!
+  $metadata: UpdateMetadataInput!
 ) {
   updateRunMetadata(input: {runId: $runId, metadata: $metadata}) {
     success
@@ -20,10 +20,11 @@ mutation UpdateRunMetadata(
 mutation FinishRun(
   $runId: ID!
   $status: RunStatus!
+  $statusCode: Int!
   $logsUrl: String!
-  $metadata: JSON
+  $metadata: UpdateMetadataInput
 ) {
-  finishRun(input: {runId: $runId, status: $status, logsUrl: $logsUrl, metadata: $metadata}) {
+  finishRun(input: {runId: $runId, status: $status, statusCode: $statusCode, logsUrl: $logsUrl, metadata: $metadata}) {
     success
     message
     run {

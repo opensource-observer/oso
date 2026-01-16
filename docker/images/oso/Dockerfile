@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY . ./
 
 # Install everything onto the system path
-RUN ln -s /usr/bin/python3.12 /usr/local/bin/python
+#RUN ln -s /usr/bin/python3.12 /usr/local/bin/python
 ENV UV_PROJECT_ENVIRONMENT=/usr/local/
 
 RUN uv sync --all-packages --locked

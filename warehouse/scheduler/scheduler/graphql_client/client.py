@@ -12,7 +12,7 @@ from .finish_step import FinishStep
 from .get_data_ingestion_config import GetDataIngestionConfig
 from .get_data_models import GetDataModels
 from .get_static_models import GetStaticModels
-from .input_types import DataModelColumnInput
+from .input_types import DataModelColumnInput, UpdateMetadataInput
 from .resolve_tables import ResolveTables
 from .start_run import StartRun
 from .start_step import StartStep
@@ -42,11 +42,11 @@ class Client(AsyncBaseClient):
         return StartRun.model_validate(data)
 
     async def update_run_metadata(
-        self, run_id: str, metadata: Any, **kwargs: Any
+        self, run_id: str, metadata: UpdateMetadataInput, **kwargs: Any
     ) -> UpdateRunMetadata:
         query = gql(
             """
-            mutation UpdateRunMetadata($runId: ID!, $metadata: JSON!) {
+            mutation UpdateRunMetadata($runId: ID!, $metadata: UpdateMetadataInput!) {
               updateRunMetadata(input: {runId: $runId, metadata: $metadata}) {
                 success
                 message
@@ -71,15 +71,16 @@ class Client(AsyncBaseClient):
         self,
         run_id: str,
         status: RunStatus,
+        status_code: int,
         logs_url: str,
-        metadata: Union[Optional[Any], UnsetType] = UNSET,
+        metadata: Union[Optional[UpdateMetadataInput], UnsetType] = UNSET,
         **kwargs: Any,
     ) -> FinishRun:
         query = gql(
             """
-            mutation FinishRun($runId: ID!, $status: RunStatus!, $logsUrl: String!, $metadata: JSON) {
+            mutation FinishRun($runId: ID!, $status: RunStatus!, $statusCode: Int!, $logsUrl: String!, $metadata: UpdateMetadataInput) {
               finishRun(
-                input: {runId: $runId, status: $status, logsUrl: $logsUrl, metadata: $metadata}
+                input: {runId: $runId, status: $status, statusCode: $statusCode, logsUrl: $logsUrl, metadata: $metadata}
               ) {
                 success
                 message
@@ -93,6 +94,7 @@ class Client(AsyncBaseClient):
         variables: Dict[str, object] = {
             "runId": run_id,
             "status": status,
+            "statusCode": status_code,
             "logsUrl": logs_url,
             "metadata": metadata,
         }
