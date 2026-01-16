@@ -80,14 +80,38 @@ mutation CreateMaterialization(
   }
 }
 
+fragment OrganizationCommon on Organization {
+  id
+  name
+}
+
+fragment UserCommon on User {
+  id
+  email
+}
+
+fragment RunCommon on Run {
+  id
+  metadata
+  organization {
+    ...OrganizationCommon
+  }
+  dataset {
+    ...DatasetCommon
+  }
+  requestedBy {
+    ...UserCommon
+  }
+}
+
+
 fragment DatasetCommon on Dataset {
   id
   name
   displayName
   description
   organization {
-    id
-    name
+    ...OrganizationCommon
   }
 }
 
@@ -146,6 +170,16 @@ fragment DataModels on DataModelConnection {
   }
 }
 
+query GetRun($runId: ID!) {
+  runs(where: { id: { eq: $runId }}, single: true) {
+    edges {
+      node {
+        ...RunCommon
+      }
+    }
+  }
+}
+
 query GetDataModels($datasetId: ID!) {
   datasets(where: { id: { eq: $datasetId }}) {
     edges {
@@ -170,15 +204,11 @@ query GetDataIngestionConfig($datasetId: ID!) {
         ...DatasetCommon
         typeDefinition {
           ... on DataIngestionDefinition {
-            dataIngestions(where: { deleted_at: {is: null}}, single: true) {
-              edges {
-                node {
-                  id
-                  datasetId
-                  factoryType
-                  config
-                }
-              }
+            dataIngestion {
+              id
+              datasetId
+              factoryType
+              config
             }
           }
         }

@@ -11,6 +11,11 @@ from pydantic import BaseModel, Field
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
+from scheduler.graphql_client.fragments import (
+    DatasetCommon,
+    OrganizationCommon,
+    UserCommon,
+)
 from scheduler.graphql_client.input_types import DataModelColumnInput
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
 from sqlglot import exp, parse_one
@@ -411,6 +416,30 @@ class RunContext(abc.ABC):
     ) -> t.Awaitable[UpdateRunMetadata]:
         """Updates the run metadata for the current run."""
         raise NotImplementedError("update_metadata must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def run_id(self) -> str:
+        """The ID of the current run."""
+        raise NotImplementedError("run_id must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def organization(self) -> OrganizationCommon:
+        """The organization for the current run."""
+        raise NotImplementedError("organization must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def dataset(self) -> DatasetCommon | None:
+        """The dataset for the current run."""
+        raise NotImplementedError("dataset must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def requested_by(self) -> UserCommon | None:
+        """The user who requested the current run."""
+        raise NotImplementedError("requested_by must be implemented by subclasses.")
 
 
 class HandlerResponse(BaseModel):
