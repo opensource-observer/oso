@@ -3,7 +3,7 @@ MODEL (
   description 'Name and email matches for developers',
   dialect trino,
   kind FULL,
-  partitioned_by MONTH("valid_from"),
+  partitioned_by (bucket(actor_id, 8), bucket(author_synthetic_id, 8)),
   tags (
     "opendevdata",
     "github",
@@ -14,11 +14,15 @@ MODEL (
   )
 );
 
+@DEF(author_name, (gh, odd) -> COALESCE(gh.author_name, odd.author_name));
+@DEF(author_email, (gh, odd) -> COALESCE(gh.author_email, odd.author_email));
+
 SELECT
   gh.actor_id,
   gh.actor_login,
-  COALESCE(gh.author_name, odd.author_name) AS author_name,
-  COALESCE(gh.author_email, odd.author_email) AS author_email,
+  @author_name(gh, odd) AS author_name,
+  @author_email(gh, odd) AS author_email,
+  @oso_id(@author_name(gh, odd), @author_email(gh, odd)) AS author_synthetic_id,
   odd.canonical_developer_id,
   odd.primary_github_user_id,
   GREATEST(gh.valid_from, odd.valid_from) AS valid_from,

@@ -3,7 +3,7 @@ MODEL (
   description 'Association between GitHub developers and OpenDevData canonical developers. Uses two-pass join strategy: (1) actor_id match when both sides have non-NULL values, (2) name/email fallback when OpenDevData actor_id is NULL. This enables hash joins instead of nested loops.',
   dialect trino,
   kind FULL,
-  partitioned_by MONTH("valid_from"),
+  partitioned_by YEAR("valid_from"),
   grain (actor_id, canonical_developer_id, author_name, author_email, valid_from),
   tags (
     "opendevdata",

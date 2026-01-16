@@ -3,7 +3,7 @@ MODEL (
   description 'Unmatched GHArchive developers',
   dialect trino,
   kind FULL,
-  partitioned_by MONTH("valid_from"),
+  partitioned_by YEAR("valid_from"),
   tags (
     "opendevdata",
     "github",
@@ -19,6 +19,7 @@ SELECT
   gh.actor_login,
   gh.author_name,
   gh.author_email,
+  @oso_id(gh.author_name, gh.author_email) AS author_synthetic_id,
   CAST(NULL AS BIGINT) AS canonical_developer_id,
   CAST(NULL AS VARCHAR) AS primary_github_user_id,
   gh.valid_from,
@@ -32,8 +33,7 @@ LEFT JOIN oso.int_opendevdata__developers_with_dev_id__actor_id_matches AS m1
   AND (m1.valid_to IS NULL OR m1.valid_to > gh.valid_from)
 -- Check if matched via name/email (reuse precomputed matches)
 LEFT JOIN oso.int_opendevdata__developers_with_dev_id__name_email_matches AS m2
-  ON gh.author_name = m2.author_name
-  AND gh.author_email = m2.author_email
+  ON gh.author_synthetic_id = m2.author_synthetic_id
   AND (gh.valid_to IS NULL OR gh.valid_to > m2.valid_from)
   AND (m2.valid_to IS NULL OR m2.valid_to > gh.valid_from)
 -- Keep only rows that didn't match either way

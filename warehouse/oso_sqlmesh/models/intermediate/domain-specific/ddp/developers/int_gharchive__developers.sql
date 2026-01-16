@@ -3,7 +3,7 @@ MODEL (
   description 'Developers (actors) from GitHub Archive commits, tracking login and author details history',
   dialect trino,
   kind FULL,
-  partitioned_by MONTH("valid_from"),
+  partitioned_by (bucket(actor_id, 8), bucket(author_synthetic_id, 8)),
   grain (actor_id, actor_login, author_name, author_email, valid_from),
   tags (
     "github",
@@ -61,6 +61,7 @@ SELECT
   actor_login,
   author_name,
   author_email,
+  @oso_id(author_name, author_email) AS author_synthetic_id,
   valid_from,
   valid_to
 FROM developer_history_with_valid_to

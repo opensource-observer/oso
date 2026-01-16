@@ -3,7 +3,7 @@ MODEL (
   description 'Developers from OpenDevData commits, tracking canonical developer and author details history with decoded actor_id. Uses pre-computed Node ID mapping for efficient decoding.',
   dialect trino,
   kind FULL,
-  partitioned_by MONTH("valid_from"),
+  partitioned_by (bucket(actor_id, 8), bucket(author_synthetic_id, 8)),
   grain (canonical_developer_id, primary_github_user_id, actor_id, author_name, author_email, valid_from),
   tags (
     "opendevdata",
@@ -68,6 +68,7 @@ SELECT
   actor_id,
   author_name,
   author_email,
+  @oso_id(author_name, author_email) AS author_synthetic_id,
   hashed_author_email,
   valid_from,
   valid_to

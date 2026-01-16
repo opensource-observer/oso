@@ -17,6 +17,7 @@ test_int_gharchive__developers_single_entry:
           actor_login: "dev1"
           author_name: "Developer One"
           author_email: "dev1@example.com"
+          author_synthetic_id: "1facfdf7db24f616894dc628cefee011936ea41fed0d50c5f44b943f3bd49a2d"
           valid_from: "2024-01-01 10:00:00"
           valid_to: null
 
@@ -50,12 +51,14 @@ test_int_gharchive__developers_scd_logic:
           actor_login: "old_login"
           author_name: "Dave"
           author_email: "dave@old.com"
+          author_synthetic_id: "cf4c0ee07fecdd6dccf0d2dc4c3d5c3193d21b73102bbb8111dfd4ee7832f701"
           valid_from: "2024-01-01 10:00:00"
           valid_to: "2024-02-01 12:00:00"
         - actor_id: 456
           actor_login: "new_login"
           author_name: "Dave"
           author_email: "dave@new.com"
+          author_synthetic_id: "35c39a0a173e95f92cda0c7e188180cd34a8fea777f83d13484e9d1a8b0ef139"
           valid_from: "2024-02-01 12:00:00"
           valid_to: null
 
@@ -83,11 +86,13 @@ test_int_gharchive__developers_merge_sources:
           actor_login: "legacy_dev"
           author_name: "Legacy"
           author_email: "legacy@example.com"
+          author_synthetic_id: "6102cc8e5ceb890663c4c89458b6bd5bf919f9d0a3d4cf2c60a1b030edaa4239"
           valid_from: "2024-01-01 10:00:00"
           valid_to: "2026-01-01 10:00:00"
         - actor_id: 789
           actor_login: "modern_dev"
           author_name: null
           author_email: null
+          author_synthetic_id: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
           valid_from: "2026-01-01 10:00:00"
           valid_to: null
