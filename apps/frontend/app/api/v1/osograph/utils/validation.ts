@@ -270,16 +270,22 @@ export const StartRunSchema = z.object({
   runId: z.string().uuid(),
 });
 
+export const UpdateMetadataSchema = z.object({
+  value: z.record(z.any()),
+  merge: z.boolean().default(false),
+});
+
 export const FinishRunSchema = z.object({
   runId: z.string().uuid(),
   status: z.enum(["SUCCESS", "FAILED", "CANCELED"]),
+  statusCode: z.number().int(),
   logsUrl: z.string().url(),
-  metadata: z.record(z.any()).optional(),
+  metadata: UpdateMetadataSchema.optional(),
 });
 
 export const UpdateRunMetadataSchema = z.object({
   runId: z.string().uuid(),
-  metadata: z.record(z.any()),
+  metadata: UpdateMetadataSchema,
 });
 
 export const StartStepSchema = z.object({
@@ -309,6 +315,12 @@ export const ResolveTablesSchema = z.object({
       datasetName: z.string().optional(),
     })
     .optional(),
+});
+
+export const ErrorDetailsSchema = z.object({
+  message: z.string(),
+  error_type: z.string(),
+  error_name: z.string(),
 });
 
 export const TableMetadataWhereSchema = z.object({

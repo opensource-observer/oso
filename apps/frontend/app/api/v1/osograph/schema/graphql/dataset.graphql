@@ -73,15 +73,11 @@ type DataIngestionDefinition {
   orgId: ID!
   datasetId: ID!
   """
-  If the dataset is of type DATA_INGESTION, this field will contain the list of data ingestions
-  associated with the dataset. Otherwise it will be an empty list.
+  The data ingestion configuration for this dataset.
+  Unlike DataModels and StaticModels, only one ingestion config is allowed per dataset.
+  Returns null if no configuration has been created yet.
   """
-  dataIngestions(
-    first: Int = 50
-    after: String
-    single: Boolean
-    where: JSON
-  ): DataIngestionConnection!
+  dataIngestion: DataIngestion
 }
 
 type DataIngestion {
@@ -185,6 +181,11 @@ extend type Mutation {
   Update a dataset
   """
   updateDataset(input: UpdateDatasetInput!): UpdateDatasetPayload!
+
+  """
+  Delete a dataset
+  """
+  deleteDataset(id: ID!): DeleteDatasetPayload!
 }
 
 input CreateDatasetInput {
@@ -213,5 +214,10 @@ input UpdateDatasetInput {
 type UpdateDatasetPayload {
   success: Boolean!
   dataset: Dataset
+  message: String
+}
+
+type DeleteDatasetPayload {
+  success: Boolean!
   message: String
 }

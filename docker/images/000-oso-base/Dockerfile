@@ -1,7 +1,7 @@
 FROM ghcr.io/opensource-observer/oso-public-vars:latest AS public_vars
 
 
-FROM ubuntu:jammy
+FROM python:3.12-slim-bookworm
 
 ARG GCLOUD_VERSION=503.0.0
 ARG PYTHON_VERSION=3.12
@@ -10,15 +10,12 @@ ARG REPO_SHA=
 ARG ORDERED_TAG=
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV DBUS_SESSION_BUS_ADDRESS=""
+
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && \
-    apt-get install -y ${PYTHON_PACKAGE} && \
     apt-get install -y curl git && \
-    curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py && \
-    python${PYTHON_VERSION} get-pip.py && \
-    pip${PYTHON_VERSION} install uv && \
+    pip install uv && \
     curl -o gcloud.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz && \
     tar xvf gcloud.tar.gz && \
     bash ./google-cloud-sdk/install.sh && \

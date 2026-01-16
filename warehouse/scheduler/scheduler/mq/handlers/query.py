@@ -4,14 +4,20 @@ import typing as t
 import aiotrino
 import aiotrino.utils
 import structlog
+from aiotrino.exceptions import (
+    TrinoExternalError,
+    TrinoUserError,
+)
+from duckdb import ProgrammingError
 from oso_dagster.resources import GCSFileResource, TrinoResource
 from osoprotobufs.query_pb2 import QueryRunRequest
 from queryrewriter import rewrite_query
+from queryrewriter.errors import TableResolutionError
 from queryrewriter.types import TableResolver
 from scheduler.graphql_client.client import Client
 from scheduler.mq.common import RunHandler, convert_uuid_bytes_to_str
-from scheduler.types import HandlerResponse, RunContext, SuccessResponse
-from scheduler.utils import OSOClientTableResolver
+from scheduler.types import FailedResponse, HandlerResponse, RunContext, SuccessResponse
+from scheduler.utils import OSOClientTableResolver, aiotrino_query_error_to_json
 
 if t.TYPE_CHECKING:
     from scheduler.config import CommonSettings
@@ -44,7 +50,22 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
 
         logger.info(f"User: {message.user}")
         logger.info(f"Query: {message.query}")
-        query = await rewrite_query(message.query, table_resolvers)
+        try:
+            query = await rewrite_query(message.query, table_resolvers)
+        except TableResolutionError as e:
+            logger.error(f"Table resolution error: {e}")
+
+            return FailedResponse(
+                message=f"Table resolution error for QueryRunRequest ID: {message.run_id}",
+                status_code=404,
+                details={
+                    "message": str(e),
+                    # Match the error types used in trino
+                    "error_type": "USER_ERROR",
+                    "error_name": "TablesNotFound",
+                },
+            )
+
         # Check if the rewritten tables use UDMs if so we disable caching by setting
         # a metadata boolean `containsUdmReference` to true
         contains_udm_reference = False
@@ -53,14 +74,53 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 contains_udm_reference = True
                 break
         if contains_udm_reference:
-            await context.update_metadata({"containsUdmReference": True})
+            await context.update_metadata({"containsUdmReference": True}, merge=True)
 
         logger.info(f"Rewritten Query: {query.rewritten_query}")
 
         storage_client = gcs.get_client(asynchronous=False)
         async with consumer_trino.async_get_client(user=message.user) as client:
             cursor = await client.cursor()
-            cursor = await cursor.execute(query.rewritten_query)
+            try:
+                cursor = await cursor.execute(query.rewritten_query)
+            except TrinoUserError as e:
+                logger.error(f"Error executing query: {e}")
+                return FailedResponse(
+                    message=f"Failed to execute query for QueryRunRequest ID: {message.run_id}",
+                    status_code=400,
+                    details=aiotrino_query_error_to_json(e),
+                )
+            except TrinoExternalError as e:
+                logger.error(f"Server error while executing query: {e}")
+                return FailedResponse(
+                    message=f"Server error for QueryRunRequest ID: {message.run_id}",
+                    status_code=500,
+                    details=aiotrino_query_error_to_json(e),
+                )
+            # This will handle errors for other dbapi exceptions so
+            # we can remain compatible with duckdb as well
+            except ProgrammingError as e:
+                return FailedResponse(
+                    message=f"Programming error for QueryRunRequest ID: {message.run_id}",
+                    status_code=400,
+                    details={
+                        "message": f"Programming error in query execution. {e}",
+                        "error_type": "ProgrammingError",
+                        "error_name": "ProgrammingError",
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Unexpected error while executing query: {e}")
+                return FailedResponse(
+                    message=f"Unexpected error for QueryRunRequest ID: {message.run_id}",
+                    status_code=500,
+                    details={
+                        "message": str(e),
+                        "error_type": "UnknownError",
+                        "error_name": "UnknownError",
+                    },
+                )
+
             columns = [column.name for column in await cursor.get_description()]
             file_path = f"gs://{common_settings.query_bucket}/{convert_uuid_bytes_to_str(message.run_id)}"
             logger.info(f"Writing query results to: {file_path}")

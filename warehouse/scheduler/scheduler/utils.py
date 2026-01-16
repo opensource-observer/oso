@@ -1,6 +1,7 @@
 import uuid
 
 import structlog
+from aiotrino.exceptions import TrinoQueryError
 from dlt.common.schema import TTableSchemaColumns
 from queryrewriter.types import TableResolver
 from scheduler.graphql_client.client import Client as OSOClient
@@ -112,3 +113,23 @@ def dlt_to_oso_schema(
             continue
         oso_columns.append(DataModelColumnInput(name=name, type=data_type or "null"))
     return oso_columns
+
+
+def aiotrino_query_error_to_json(error: TrinoQueryError):
+    """Convert an aiotrino TrinoQueryError to a JSON-serializable dict.
+
+    Args:
+        error: The TrinoQueryError instance.
+
+    Returns:
+        A dictionary representation of the error.
+    """
+
+    return {
+        "message": error.message,
+        "error_code": error.error_code,
+        "error_name": error.error_name,
+        "error_type": error.error_type,
+        "failure_info": error.failure_info,
+        "query_id": error.query_id,
+    }

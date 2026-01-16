@@ -18,6 +18,7 @@ WITH developer_history AS (
   SELECT
     commits.canonical_developer_id,
     devs.primary_github_user_id,
+    @decode_github_node_id(devs.primary_github_user_id) AS actor_id,
     commits.commit_author_name AS author_name,
     commits.commit_author_email AS author_email,
     CONCAT(
@@ -30,7 +31,7 @@ WITH developer_history AS (
   INNER JOIN oso.stg_opendevdata__canonical_developers AS devs
     ON commits.canonical_developer_id = devs.id
   WHERE commits.canonical_developer_id IS NOT NULL
-  GROUP BY 1, 2, 3, 4, 5
+  GROUP BY 1, 2, 3, 4, 5, 6
 ),
 developer_history_with_actor_id AS (
   SELECT
