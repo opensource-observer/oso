@@ -1541,7 +1541,7 @@ export type DataIngestionDefinition = {
   __typename?: "DataIngestionDefinition";
   /**
    * The data ingestion configuration for this dataset.
-   * Unlike DataModels and StaticModels, only ONE ingestion config is allowed per dataset.
+   * Unlike DataModels and StaticModels, only one ingestion config is allowed per dataset.
    * Returns null if no configuration has been created yet.
    */
   dataIngestion?: Maybe<DataIngestion>;
@@ -3943,6 +3943,7 @@ export type Notebook = {
   createdAt: Scalars["DateTimeISO"]["output"];
   creator: User;
   creatorId: Scalars["ID"]["output"];
+  data: Scalars["String"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];

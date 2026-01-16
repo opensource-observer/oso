@@ -2,6 +2,7 @@ type Notebook {
   id: ID!
   orgId: ID!
   name: String!
+  data: String!
   description: String
   creatorId: ID!
   preview: String
