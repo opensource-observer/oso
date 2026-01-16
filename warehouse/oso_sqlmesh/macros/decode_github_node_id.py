@@ -2,6 +2,22 @@ from sqlglot import expressions as exp
 from sqlmesh import macro
 from sqlmesh.core.macros import MacroEvaluator
 
+# Msgpack format markers
+MSGPACK_UINT8 = 204  # 0xcc
+MSGPACK_UINT16 = 205  # 0xcd
+MSGPACK_UINT32 = 206  # 0xce
+MSGPACK_UINT64 = 207  # 0xcf
+MSGPACK_FIXINT_MAX = 127  # 0x7f - values 0x00-0x7f are fixint
+
+# Bit shift constants
+SHIFT_8 = 1 << 8
+SHIFT_16 = 1 << 16
+SHIFT_24 = 1 << 24
+SHIFT_32 = 1 << 32
+SHIFT_40 = 1 << 40
+SHIFT_48 = 1 << 48
+SHIFT_56 = 1 << 56
+
 
 @macro()
 def decode_github_node_id(
@@ -9,25 +25,25 @@ def decode_github_node_id(
     node_id_exp: exp.Expression,
 ):
     """
-    Decodes a GitHub GraphQL Node ID to its underlying integer actor ID.
+    Decodes a GitHub GraphQL Node ID to its underlying integer ID.
 
     Supports two formats:
-    1. Legacy: Base64 "Type:ID" (e.g., `MDQ6...` -> `4027037`).
-    2. Next-gen: URL-safe Base64 msgpack `[type, id]` (e.g., `U_kg...` -> `57900666`).
+    1. Legacy: Base64 "Type:ID" (e.g., `MDQ6VXNlcjEyMzQ1` -> `12345`).
+    2. Next-gen: URL-safe Base64 msgpack `[type, id]` (e.g., `U_kgDOBbc7Ag` -> `57900666`).
 
-    Format detection: `_` implies Next-gen.
+    Format detection: `_` in the string implies next-gen format.
 
     Next-gen Msgpack structure:
-    - Byte 0: 0x92 (fixarray)
-    - Byte 1: Type (0x00=User)
-    - Byte 2+: Integer (fixint 0x00-0x7f, uint8 0xcc, uint16 0xcd, uint32 0xce)
+    - Byte 0: 0x92 (fixarray of 2 elements)
+    - Byte 1: Type indicator (0x00=User, 0x01=Repo, etc.)
+    - Byte 2+: Integer encoded as fixint/uint8/uint16/uint32/uint64
 
     Args:
-        evaluator: Macro evaluator
-        node_id_exp: Node ID expression
+        evaluator: SQLMesh macro evaluator
+        node_id_exp: SQL expression containing the Node ID string
 
     Returns:
-        Expression returning integer ID or NULL.
+        SQL expression returning the decoded BIGINT ID, or NULL on failure.
     """
     from sqlmesh.core.dialect import parse_one
 
@@ -44,232 +60,160 @@ def decode_github_node_id(
         raise ValueError(f"Unsupported dialect: {dialect}")
 
 
-def _build_legacy_decoder_duckdb(node_id_exp: exp.Expression) -> exp.Expression:
-    """Decodes legacy Node ID (base64 "Type:ID") in DuckDB."""
-    # Decode base64 blob -> varchar
-    decoded = exp.Anonymous(
-        this="from_base64",
-        expressions=[node_id_exp],
+def _get_byte_from_hex_duckdb(hex_exp: exp.Expression, pos: int) -> exp.Expression:
+    """Extract byte at 1-indexed position from hex string (DuckDB)."""
+    hex_pos = (pos - 1) * 2 + 1
+    two_chars = exp.Substring(
+        this=hex_exp,
+        start=exp.Literal.number(hex_pos),
+        length=exp.Literal.number(2),
     )
-    decoded_str = exp.Cast(
-        this=decoded,
-        to=exp.DataType.build("VARCHAR"),
-    )
-    # Extract trailing digits (ID)
-    extracted = exp.RegexpExtract(
-        this=decoded_str,
-        expression=exp.Literal.string(r"(\d+)$"),
-        group=exp.Literal.number(1),
-    )
-    return exp.Cast(
-        this=extracted,
-        to=exp.DataType.build("BIGINT"),
-    )
-
-
-def _build_nextgen_decoder_duckdb(node_id_exp: exp.Expression) -> exp.Expression:
-    """Decodes next-gen Node ID (URL-safe base64 msgpack) in DuckDB."""
-    # Extract suffix after first underscore (safe for nested underscores)
-    underscore_pos = exp.Anonymous(
-        this="instr",
-        expressions=[node_id_exp, exp.Literal.string("_")],
-    )
-    suffix_part = exp.Substring(
-        this=node_id_exp,
-        start=exp.Add(this=underscore_pos, expression=exp.Literal.number(1)),
-    )
-
-    # Normalize URL-safe base64: '-' -> '+', '_' -> '/'
-    replaced1 = exp.Anonymous(
-        this="replace",
-        expressions=[suffix_part, exp.Literal.string("-"), exp.Literal.string("+")],
-    )
-    replaced2 = exp.Anonymous(
-        this="replace",
-        expressions=[replaced1, exp.Literal.string("_"), exp.Literal.string("/")],
-    )
-
-    # Calculate standard Base64 padding
-    suffix_len = exp.Length(this=replaced2)
-    padding_needed = exp.Mod(
-        this=exp.Sub(
-            this=exp.Literal.number(4),
-            expression=exp.Mod(this=suffix_len, expression=exp.Literal.number(4)),
-        ),
-        expression=exp.Literal.number(4),
-    )
-
-    padding = exp.Anonymous(
-        this="repeat",
-        expressions=[exp.Literal.string("="), padding_needed],
-    )
-    padded = exp.Concat(
-        expressions=[replaced2, padding],
+    hex_with_prefix = exp.Concat(
+        expressions=[exp.Literal.string("0x"), two_chars],
         safe=False,
         coalesce=False,
     )
+    return exp.Cast(this=hex_with_prefix, to=exp.DataType.build("BIGINT"))
 
-    decoded_bytes = exp.Anonymous(
-        this="from_base64",
-        expressions=[padded],
+
+def _get_byte_from_hex_trino(hex_exp: exp.Expression, pos: int) -> exp.Expression:
+    """Extract byte at 1-indexed position from hex string (Trino)."""
+    hex_pos = (pos - 1) * 2 + 1
+    two_chars = exp.Substring(
+        this=hex_exp,
+        start=exp.Literal.number(hex_pos),
+        length=exp.Literal.number(2),
+    )
+    return exp.Anonymous(
+        this="from_base",
+        expressions=[two_chars, exp.Literal.number(16)],
     )
 
-    # DuckDB lacks get_byte; convert to hex for byte extraction
-    hex_str = exp.Anonymous(
-        this="hex",
-        expressions=[decoded_bytes],
-    )
 
-    # Extract byte from hex string (1-indexed)
-    def get_byte(hex_exp: exp.Expression, pos: int) -> exp.Expression:
-        # Position in hex string: (pos-1)*2 + 1
-        hex_pos = (pos - 1) * 2 + 1
-        two_chars = exp.Substring(
-            this=hex_exp,
-            start=exp.Literal.number(hex_pos),
-            length=exp.Literal.number(2),
+def _build_uint_value_duckdb(bytes_list: list[exp.Expression]) -> exp.Expression:
+    """Build uint value from bytes using arithmetic (DuckDB)."""
+    num_bytes = len(bytes_list)
+    if num_bytes == 1:
+        return bytes_list[0]
+
+    shifts = [SHIFT_8, SHIFT_16, SHIFT_24, SHIFT_32, SHIFT_40, SHIFT_48, SHIFT_56]
+    result = bytes_list[-1]
+    for i, byte_exp in enumerate(reversed(bytes_list[:-1])):
+        shift_amount = shifts[i]
+        shifted = exp.Mul(this=byte_exp, expression=exp.Literal.number(shift_amount))
+        result = exp.Add(this=shifted, expression=result)
+    return result
+
+
+def _build_uint_value_trino(bytes_list: list[exp.Expression]) -> exp.Expression:
+    """Build uint value from bytes using bitwise ops (Trino)."""
+    num_bytes = len(bytes_list)
+    if num_bytes == 1:
+        return bytes_list[0]
+
+    shifts = [8, 16, 24, 32, 40, 48, 56]
+    result = bytes_list[-1]
+    for i, byte_exp in enumerate(reversed(bytes_list[:-1])):
+        shift_amount = shifts[i]
+        shifted = exp.Anonymous(
+            this="bitwise_left_shift",
+            expressions=[byte_exp, exp.Literal.number(shift_amount)],
         )
-        hex_with_prefix = exp.Concat(
-            expressions=[exp.Literal.string("0x"), two_chars],
-            safe=False,
-            coalesce=False,
-        )
-        return exp.Cast(
-            this=hex_with_prefix,
-            to=exp.DataType.build("INTEGER"),
-        )
+        result = exp.BitwiseOr(this=shifted, expression=result)
+    return result
 
-    # Msgpack parsing
-    marker = get_byte(hex_str, 3)
 
-    # DuckDB: Use arithmetic for bitwise ops (b4<<24 | ... | b7)
-    byte4 = get_byte(hex_str, 4)
-    byte5 = get_byte(hex_str, 5)
-    byte6 = get_byte(hex_str, 6)
-    byte7 = get_byte(hex_str, 7)
-
-    # uint32 (0xce)
-    uint32_value = exp.Add(
-        this=exp.Add(
-            this=exp.Add(
-                this=exp.Mul(
-                    this=byte4,
-                    expression=exp.Literal.number(1 << 24),
-                ),
-                expression=exp.Mul(
-                    this=byte5,
-                    expression=exp.Literal.number(1 << 16),
-                ),
-            ),
-            expression=exp.Mul(
-                this=byte6,
-                expression=exp.Literal.number(1 << 8),
-            ),
-        ),
-        expression=byte7,
-    )
-
-    # uint16 (0xcd)
-    uint16_value = exp.Add(
-        this=exp.Mul(
-            this=byte4,
-            expression=exp.Literal.number(1 << 8),
-        ),
-        expression=byte5,
-    )
-
-    # uint8 (0xcc)
-    uint8_value = byte4
-
-    # fixint (0x01-0x7f)
-    fixint_value = marker
-
+def _build_msgpack_case_expr(
+    marker: exp.Expression,
+    uint8_val: exp.Expression,
+    uint16_val: exp.Expression,
+    uint32_val: exp.Expression,
+    uint64_val: exp.Expression,
+) -> exp.Expression:
+    """Build CASE expression for msgpack integer decoding."""
     return exp.Case(
         ifs=[
             exp.If(
-                this=exp.EQ(this=marker, expression=exp.Literal.number(206)),  # 0xce
-                true=uint32_value,
+                this=exp.EQ(this=marker, expression=exp.Literal.number(MSGPACK_UINT64)),
+                true=uint64_val,
             ),
             exp.If(
-                this=exp.EQ(this=marker, expression=exp.Literal.number(205)),  # 0xcd
-                true=uint16_value,
+                this=exp.EQ(this=marker, expression=exp.Literal.number(MSGPACK_UINT32)),
+                true=uint32_val,
             ),
             exp.If(
-                this=exp.EQ(this=marker, expression=exp.Literal.number(204)),  # 0xcc
-                true=uint8_value,
+                this=exp.EQ(this=marker, expression=exp.Literal.number(MSGPACK_UINT16)),
+                true=uint16_val,
+            ),
+            exp.If(
+                this=exp.EQ(this=marker, expression=exp.Literal.number(MSGPACK_UINT8)),
+                true=uint8_val,
             ),
             exp.If(
                 this=exp.LTE(
-                    this=marker, expression=exp.Literal.number(127)
-                ),  # <= 0x7f
-                true=fixint_value,
+                    this=marker, expression=exp.Literal.number(MSGPACK_FIXINT_MAX)
+                ),
+                true=marker,  # fixint: marker IS the value
             ),
         ],
         default=exp.Null(),
     )
 
 
-def _build_duckdb_decoder(node_id_exp: exp.Expression) -> exp.Expression:
-    """Builds the complete DuckDB decoder handling both formats."""
-    # Check for underscore (next-gen format)
-    contains_underscore = exp.GT(
-        this=exp.Anonymous(
-            this="instr",
-            expressions=[node_id_exp, exp.Literal.string("_")],
-        ),
-        expression=exp.Literal.number(0),
+def _normalize_url_safe_base64(suffix_exp: exp.Expression) -> exp.Expression:
+    """Convert URL-safe base64 chars to standard base64."""
+    replaced1 = exp.Anonymous(
+        this="replace",
+        expressions=[suffix_exp, exp.Literal.string("-"), exp.Literal.string("+")],
+    )
+    return exp.Anonymous(
+        this="replace",
+        expressions=[replaced1, exp.Literal.string("_"), exp.Literal.string("/")],
     )
 
-    legacy_result = _build_legacy_decoder_duckdb(node_id_exp)
-    nextgen_result = _build_nextgen_decoder_duckdb(node_id_exp)
 
-    case_expr = exp.Case(
-        ifs=[
-            exp.If(
-                this=exp.Is(this=node_id_exp, expression=exp.Null()),
-                true=exp.Null(),
-            ),
-            exp.If(
-                this=contains_underscore,
-                true=nextgen_result,
-            ),
-        ],
-        default=legacy_result,
+def _build_legacy_decoder_duckdb(node_id_exp: exp.Expression) -> exp.Expression:
+    """Decode legacy Node ID (base64 'Type:ID') in DuckDB."""
+    decoded = exp.Anonymous(this="from_base64", expressions=[node_id_exp])
+    decoded_str = exp.Cast(this=decoded, to=exp.DataType.build("VARCHAR"))
+    extracted = exp.RegexpExtract(
+        this=decoded_str,
+        expression=exp.Literal.string(r"(\d+)$"),
+        group=exp.Literal.number(1),
     )
-
-    return exp.Try(this=case_expr)
+    return exp.Cast(this=extracted, to=exp.DataType.build("BIGINT"))
 
 
 def _build_legacy_decoder_trino(node_id_exp: exp.Expression) -> exp.Expression:
-    """Decodes legacy Node ID in Trino."""
-    # from_base64(node_id) -> varbinary -> varchar
-    decoded = exp.Anonymous(
-        this="from_base64",
-        expressions=[node_id_exp],
-    )
-    decoded_str = exp.Anonymous(
-        this="from_utf8",
-        expressions=[decoded],
-    )
-    # Extract trailing digits
+    """Decode legacy Node ID (base64 'Type:ID') in Trino."""
+    decoded = exp.Anonymous(this="from_base64", expressions=[node_id_exp])
+    decoded_str = exp.Anonymous(this="from_utf8", expressions=[decoded])
     extracted = exp.Anonymous(
         this="regexp_extract",
-        expressions=[
-            decoded_str,
-            exp.Literal.string(r"(\d+)$"),
-            exp.Literal.number(1),
-        ],
+        expressions=[decoded_str, exp.Literal.string(r"(\d+)$"), exp.Literal.number(1)],
     )
-    return exp.Cast(
-        this=extracted,
-        to=exp.DataType.build("BIGINT"),
+    return exp.Cast(this=extracted, to=exp.DataType.build("BIGINT"))
+
+
+def _extract_suffix_after_underscore_duckdb(
+    node_id_exp: exp.Expression,
+) -> exp.Expression:
+    """Extract substring after first underscore (DuckDB)."""
+    underscore_pos = exp.Anonymous(
+        this="instr",
+        expressions=[node_id_exp, exp.Literal.string("_")],
+    )
+    return exp.Substring(
+        this=node_id_exp,
+        start=exp.Add(this=underscore_pos, expression=exp.Literal.number(1)),
     )
 
 
-def _build_nextgen_decoder_trino(node_id_exp: exp.Expression) -> exp.Expression:
-    """Decodes next-gen Node ID in Trino."""
-    # Split on underscore, take second part
-    suffix_part = exp.Anonymous(
+def _extract_suffix_after_underscore_trino(
+    node_id_exp: exp.Expression,
+) -> exp.Expression:
+    """Extract substring after first underscore (Trino)."""
+    return exp.Anonymous(
         this="element_at",
         expressions=[
             exp.Anonymous(
@@ -280,134 +224,97 @@ def _build_nextgen_decoder_trino(node_id_exp: exp.Expression) -> exp.Expression:
         ],
     )
 
-    # Normalize URL-safe base64
-    replaced1 = exp.Anonymous(
-        this="replace",
-        expressions=[suffix_part, exp.Literal.string("-"), exp.Literal.string("+")],
-    )
-    replaced2 = exp.Anonymous(
-        this="replace",
-        expressions=[replaced1, exp.Literal.string("_"), exp.Literal.string("/")],
-    )
 
-    # Calculate padding
-    suffix_len = exp.Anonymous(
-        this="length",
-        expressions=[replaced2],
-    )
+def _pad_base64_duckdb(normalized_exp: exp.Expression) -> exp.Expression:
+    """Add base64 padding using repeat (DuckDB)."""
+    str_len = exp.Length(this=normalized_exp)
     padding_needed = exp.Mod(
         this=exp.Sub(
             this=exp.Literal.number(4),
-            expression=exp.Mod(this=suffix_len, expression=exp.Literal.number(4)),
+            expression=exp.Mod(this=str_len, expression=exp.Literal.number(4)),
         ),
         expression=exp.Literal.number(4),
     )
+    padding = exp.Anonymous(
+        this="repeat",
+        expressions=[exp.Literal.string("="), padding_needed],
+    )
+    return exp.Concat(expressions=[normalized_exp, padding], safe=False, coalesce=False)
 
-    # Apply padding
-    target_len = exp.Add(this=suffix_len, expression=padding_needed)
-    padded = exp.Anonymous(
+
+def _pad_base64_trino(normalized_exp: exp.Expression) -> exp.Expression:
+    """Add base64 padding using rpad (Trino)."""
+    str_len = exp.Anonymous(this="length", expressions=[normalized_exp])
+    padding_needed = exp.Mod(
+        this=exp.Sub(
+            this=exp.Literal.number(4),
+            expression=exp.Mod(this=str_len, expression=exp.Literal.number(4)),
+        ),
+        expression=exp.Literal.number(4),
+    )
+    target_len = exp.Add(this=str_len, expression=padding_needed)
+    return exp.Anonymous(
         this="rpad",
-        expressions=[replaced2, target_len, exp.Literal.string("=")],
+        expressions=[normalized_exp, target_len, exp.Literal.string("=")],
     )
 
-    decoded_bytes = exp.Anonymous(
-        this="from_base64",
-        expressions=[padded],
+
+def _build_nextgen_decoder_duckdb(node_id_exp: exp.Expression) -> exp.Expression:
+    """Decode next-gen Node ID (URL-safe base64 msgpack) in DuckDB."""
+    suffix = _extract_suffix_after_underscore_duckdb(node_id_exp)
+    normalized = _normalize_url_safe_base64(suffix)
+    padded = _pad_base64_duckdb(normalized)
+    decoded_bytes = exp.Anonymous(this="from_base64", expressions=[padded])
+    hex_str = exp.Anonymous(this="hex", expressions=[decoded_bytes])
+
+    marker = _get_byte_from_hex_duckdb(hex_str, 3)
+    bytes_4_to_11 = [_get_byte_from_hex_duckdb(hex_str, i) for i in range(4, 12)]
+
+    uint8_val = bytes_4_to_11[0]
+    uint16_val = _build_uint_value_duckdb(bytes_4_to_11[:2])
+    uint32_val = _build_uint_value_duckdb(bytes_4_to_11[:4])
+    uint64_val = _build_uint_value_duckdb(bytes_4_to_11[:8])
+
+    return _build_msgpack_case_expr(
+        marker, uint8_val, uint16_val, uint32_val, uint64_val
     )
 
-    # Trino doesn't support substring on varbinary - convert entire blob to hex first
-    hex_str = exp.Anonymous(
-        this="to_hex",
-        expressions=[decoded_bytes],
+
+def _build_nextgen_decoder_trino(node_id_exp: exp.Expression) -> exp.Expression:
+    """Decode next-gen Node ID (URL-safe base64 msgpack) in Trino."""
+    suffix = _extract_suffix_after_underscore_trino(node_id_exp)
+    normalized = _normalize_url_safe_base64(suffix)
+    padded = _pad_base64_trino(normalized)
+    decoded_bytes = exp.Anonymous(this="from_base64", expressions=[padded])
+    hex_str = exp.Anonymous(this="to_hex", expressions=[decoded_bytes])
+
+    marker = _get_byte_from_hex_trino(hex_str, 3)
+    bytes_4_to_11 = [_get_byte_from_hex_trino(hex_str, i) for i in range(4, 12)]
+
+    uint8_val = bytes_4_to_11[0]
+    uint16_val = _build_uint_value_trino(bytes_4_to_11[:2])
+    uint32_val = _build_uint_value_trino(bytes_4_to_11[:4])
+    uint64_val = _build_uint_value_trino(bytes_4_to_11[:8])
+
+    return _build_msgpack_case_expr(
+        marker, uint8_val, uint16_val, uint32_val, uint64_val
     )
 
-    # Helper: Extract byte at position (1-indexed) from hex string
-    def get_byte(hex_exp: exp.Expression, pos: int) -> exp.Expression:
-        # Position in hex string: (pos-1)*2 + 1 (each byte = 2 hex chars)
-        hex_pos = (pos - 1) * 2 + 1
-        two_chars = exp.Substring(
-            this=hex_exp,
-            start=exp.Literal.number(hex_pos),
-            length=exp.Literal.number(2),
-        )
-        return exp.Anonymous(
-            this="from_base",
-            expressions=[two_chars, exp.Literal.number(16)],
-        )
 
-    # Msgpack parsing
-    marker = get_byte(hex_str, 3)
-
-    # uint32 (0xce)
-    byte4 = get_byte(hex_str, 4)
-    byte5 = get_byte(hex_str, 5)
-    byte6 = get_byte(hex_str, 6)
-    byte7 = get_byte(hex_str, 7)
-
-    uint32_value = exp.BitwiseOr(
-        this=exp.BitwiseOr(
-            this=exp.BitwiseOr(
-                this=exp.Anonymous(
-                    this="bitwise_left_shift",
-                    expressions=[byte4, exp.Literal.number(24)],
-                ),
-                expression=exp.Anonymous(
-                    this="bitwise_left_shift",
-                    expressions=[byte5, exp.Literal.number(16)],
-                ),
-            ),
-            expression=exp.Anonymous(
-                this="bitwise_left_shift",
-                expressions=[byte6, exp.Literal.number(8)],
-            ),
-        ),
-        expression=byte7,
-    )
-
-    # uint16 (0xcd)
-    uint16_value = exp.BitwiseOr(
+def _contains_underscore_duckdb(node_id_exp: exp.Expression) -> exp.Expression:
+    """Check if string contains underscore (DuckDB)."""
+    return exp.GT(
         this=exp.Anonymous(
-            this="bitwise_left_shift",
-            expressions=[byte4, exp.Literal.number(8)],
+            this="instr",
+            expressions=[node_id_exp, exp.Literal.string("_")],
         ),
-        expression=byte5,
-    )
-
-    # uint8 (0xcc)
-    uint8_value = byte4
-
-    # fixint (0x01-0x7f)
-    fixint_value = marker
-
-    return exp.Case(
-        ifs=[
-            exp.If(
-                this=exp.EQ(this=marker, expression=exp.Literal.number(206)),  # 0xce
-                true=uint32_value,
-            ),
-            exp.If(
-                this=exp.EQ(this=marker, expression=exp.Literal.number(205)),  # 0xcd
-                true=uint16_value,
-            ),
-            exp.If(
-                this=exp.EQ(this=marker, expression=exp.Literal.number(204)),  # 0xcc
-                true=uint8_value,
-            ),
-            exp.If(
-                this=exp.LTE(
-                    this=marker, expression=exp.Literal.number(127)
-                ),  # <= 0x7f
-                true=fixint_value,
-            ),
-        ],
-        default=exp.Null(),
+        expression=exp.Literal.number(0),
     )
 
 
-def _build_trino_decoder(node_id_exp: exp.Expression) -> exp.Expression:
-    """Builds the complete Trino decoder handling both formats."""
-    # Check for underscore (next-gen format)
-    contains_underscore = exp.GT(
+def _contains_underscore_trino(node_id_exp: exp.Expression) -> exp.Expression:
+    """Check if string contains underscore (Trino)."""
+    return exp.GT(
         this=exp.Anonymous(
             this="strpos",
             expressions=[node_id_exp, exp.Literal.string("_")],
@@ -415,9 +322,14 @@ def _build_trino_decoder(node_id_exp: exp.Expression) -> exp.Expression:
         expression=exp.Literal.number(0),
     )
 
-    legacy_result = _build_legacy_decoder_trino(node_id_exp)
-    nextgen_result = _build_nextgen_decoder_trino(node_id_exp)
 
+def _build_decoder(
+    node_id_exp: exp.Expression,
+    contains_underscore_fn,
+    legacy_decoder_fn,
+    nextgen_decoder_fn,
+) -> exp.Expression:
+    """Build complete decoder with format detection and error handling."""
     case_expr = exp.Case(
         ifs=[
             exp.If(
@@ -425,11 +337,30 @@ def _build_trino_decoder(node_id_exp: exp.Expression) -> exp.Expression:
                 true=exp.Null(),
             ),
             exp.If(
-                this=contains_underscore,
-                true=nextgen_result,
+                this=contains_underscore_fn(node_id_exp),
+                true=nextgen_decoder_fn(node_id_exp),
             ),
         ],
-        default=legacy_result,
+        default=legacy_decoder_fn(node_id_exp),
+    )
+    return exp.Try(this=case_expr)
+
+
+def _build_duckdb_decoder(node_id_exp: exp.Expression) -> exp.Expression:
+    """Build complete DuckDB decoder."""
+    return _build_decoder(
+        node_id_exp,
+        _contains_underscore_duckdb,
+        _build_legacy_decoder_duckdb,
+        _build_nextgen_decoder_duckdb,
     )
 
-    return exp.Try(this=case_expr)
+
+def _build_trino_decoder(node_id_exp: exp.Expression) -> exp.Expression:
+    """Build complete Trino decoder."""
+    return _build_decoder(
+        node_id_exp,
+        _contains_underscore_trino,
+        _build_legacy_decoder_trino,
+        _build_nextgen_decoder_trino,
+    )

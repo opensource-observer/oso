@@ -87,6 +87,18 @@ test_int_opendevdata__repositories_with_repo_id:
         - id: 1002
           node_id: "NODE_OSSD_PRIORITY"
 
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows:
+        - node_id: "MDQ6UmVwb3NpdG9yeTEyMzQ1"
+          decoded_id: 12345
+        - node_id: "R_kgDOAAGBzQ"
+          decoded_id: 98765
+        - node_id: "MDQ6UmVwb3NpdG9yeTk4NzY1NDMy"
+          decoded_id: 98765432
+
     oso.int_gharchive__repositories:
       rows:
         # Match for Repo2 (GHArchive fallback)

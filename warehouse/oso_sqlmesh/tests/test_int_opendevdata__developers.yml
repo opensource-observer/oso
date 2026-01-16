@@ -11,6 +11,13 @@ test_int_opendevdata__developers_single_entry:
       rows:
         - id: 101
           primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows:
+        - node_id: "MDQ6VXNlcjEyMzQ1"
+          decoded_id: 12345
   outputs:
     query:
       rows:
@@ -36,6 +43,13 @@ test_int_opendevdata__developers_nextgen_nodeid:
       rows:
         - id: 102
           primary_github_user_id: "U_kgDOAAGBzQ"
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows:
+        - node_id: "U_kgDOAAGBzQ"
+          decoded_id: 98765
   outputs:
     query:
       rows:
@@ -61,6 +75,11 @@ test_int_opendevdata__developers_null_github_user_id:
       rows:
         - id: 103
           primary_github_user_id: null
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows: []
   outputs:
     query:
       rows:
@@ -94,6 +113,13 @@ test_int_opendevdata__developers_scd_logic:
       rows:
         - id: 202
           primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows:
+        - node_id: "MDQ6VXNlcjEyMzQ1"
+          decoded_id: 12345
   outputs:
     query:
       rows:
@@ -124,6 +150,11 @@ test_int_opendevdata__developers_filter_nulls:
           commit_author_email: "ghost@test.com"
           committed_at: "2024-01-01 10:00:00"
     oso.stg_opendevdata__canonical_developers:
+      rows: []
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
       rows: []
   outputs:
     query:
