@@ -32,4 +32,4 @@ SELECT
       valid_from
     ORDER BY match_priority
   ) AS rn
-FROM oso.int_opendevdata__developers_with_dev_id__unmatched_opendevdata__combined AS combined
+FROM oso.int_opendevdata__developers_with_dev_id__combined AS combined
