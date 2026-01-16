@@ -259,8 +259,7 @@ class Client(AsyncBaseClient):
               displayName
               description
               organization {
-                id
-                name
+                ...OrganizationCommon
               }
             }
 
@@ -310,6 +309,11 @@ class Client(AsyncBaseClient):
                 }
               }
             }
+
+            fragment OrganizationCommon on Organization {
+              id
+              name
+            }
             """
         )
         variables: Dict[str, object] = {"datasetId": dataset_id}
@@ -351,9 +355,13 @@ class Client(AsyncBaseClient):
               displayName
               description
               organization {
-                id
-                name
+                ...OrganizationCommon
               }
+            }
+
+            fragment OrganizationCommon on Organization {
+              id
+              name
             }
             """
         )
@@ -401,9 +409,13 @@ class Client(AsyncBaseClient):
               displayName
               description
               organization {
-                id
-                name
+                ...OrganizationCommon
               }
+            }
+
+            fragment OrganizationCommon on Organization {
+              id
+              name
             }
             """
         )

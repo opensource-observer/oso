@@ -5,6 +5,7 @@ import uuid
 
 import httpx
 import structlog
+from aioprometheus.service import Service
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1
 from google.pubsub_v1.types import Encoding, Schema
@@ -171,6 +172,14 @@ class Run(BaseSettings):
     """Subcommand to run the async worker"""
 
     queue: CliPositionalArg[str] = Field(description="The name of the queue to process")
+    host: str = Field(
+        default="localhost",
+        description="The host address to bind the worker",
+    )
+    port: int = Field(
+        default=8070,
+        description="The port to bind the worker",
+    )
 
     async def cli_cmd(self, context: CliContext) -> None:
         resources_registry = context.get_data_as(
@@ -183,7 +192,14 @@ class Run(BaseSettings):
             "message_queue_service"
         )
 
+        prometheus_service = Service()
+
+        await prometheus_service.start(addr=self.host, port=self.port)
+        logger.info(f"Prometheus service started at {self.host}:{self.port}")
+
         await message_queue_service.run_loop(self.queue)
+
+        await prometheus_service.stop()
 
 
 class CreateSystemJWTSecret(BaseSettings):

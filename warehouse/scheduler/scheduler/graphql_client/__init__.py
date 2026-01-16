@@ -40,6 +40,12 @@ from .fragments import (
     LatestDataModelLatestReleaseRevisionDependsOn,
     LatestDataModelLatestReleaseRevisionKindOptions,
     LatestDataModelLatestReleaseRevisionSchema,
+    OrganizationCommon,
+    RunCommon,
+    RunCommonDataset,
+    RunCommonOrganization,
+    RunCommonRequestedBy,
+    UserCommon,
 )
 from .get_data_ingestion_config import (
     GetDataIngestionConfig,
@@ -230,6 +236,10 @@ __all__ = [
     "ResolveTablesSystem",
     "ResolveTablesSystemResolveTables",
     "RevokeInvitationInput",
+    "RunCommon",
+    "RunCommonDataset",
+    "RunCommonOrganization",
+    "RunCommonRequestedBy",
     "RunStatus",
     "RunTriggerType",
     "RunType",
@@ -256,4 +266,5 @@ __all__ = [
     "UpdateRunMetadataUpdateRunMetadataRun",
     "UpdateStaticModelInput",
     "Upload",
+    "UserCommon",
 ]
