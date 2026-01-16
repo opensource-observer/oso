@@ -14,8 +14,8 @@ MODEL (
   )
 );
 
-@DEF(author_name, (gh, odd) -> COALESCE(gh.author_name, odd.author_name))
-@DEF(author_email, (gh, odd) -> COALESCE(gh.author_email, odd.author_email))
+@DEF(author_name, (gh, odd) -> COALESCE(gh.author_name, odd.author_name));
+@DEF(author_email, (gh, odd) -> COALESCE(gh.author_email, odd.author_email));
 
 SELECT
   gh.actor_id,
