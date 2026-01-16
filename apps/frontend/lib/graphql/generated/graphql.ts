@@ -1569,7 +1569,6 @@ export type DataModel = {
   isEnabled: Scalars["Boolean"]["output"];
   latestRelease?: Maybe<DataModelRelease>;
   latestRevision?: Maybe<DataModelRevision>;
-  materializations: MaterializationConnection;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
@@ -1577,13 +1576,6 @@ export type DataModel = {
   revisions: DataModelRevisionConnection;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
-};
-
-export type DataModelMaterializationsArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-  single?: InputMaybe<Scalars["Boolean"]["input"]>;
-  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelReleasesArgs = {
@@ -1779,6 +1771,11 @@ export type Dataset = {
   displayName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   isPublic: Scalars["Boolean"]["output"];
+  /**
+   * The materializations for this dataset. Returns all materializations regardless of their source
+   * (data model, static model, or data ingestion).
+   */
+  materializations: MaterializationConnection;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
@@ -1792,6 +1789,13 @@ export type Dataset = {
   type: DatasetType;
   typeDefinition: DatasetTypeDefinition;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DatasetMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DatasetRunsArgs = {
@@ -8212,19 +8216,11 @@ export type StaticModel = {
   createdAt: Scalars["DateTimeISO"]["output"];
   dataset: Dataset;
   id: Scalars["ID"]["output"];
-  materializations: MaterializationConnection;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
-};
-
-export type StaticModelMaterializationsArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-  single?: InputMaybe<Scalars["Boolean"]["input"]>;
-  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type StaticModelRunsArgs = {

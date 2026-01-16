@@ -28,7 +28,6 @@ import {
   DataModelRevisionWhereSchema,
   DataModelWhereSchema,
   validateInput,
-  MaterializationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import { z } from "zod";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
@@ -441,29 +440,6 @@ export const dataModelResolvers = {
       return data;
     },
 
-    materializations: async (
-      parent: ModelRow,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      return queryWithPagination(args, context, {
-        tableName: "materialization",
-        whereSchema: MaterializationWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
-        basePredicate: {
-          eq: [
-            { key: "table_id", value: `data_model_${parent.id}` },
-            { key: "dataset_id", value: parent.dataset_id },
-          ],
-        },
-        orderBy: {
-          key: "created_at",
-          ascending: false,
-        },
-      });
-    },
     runs: async (parent: ModelRow, args: ConnectionArgs) => {
       return getModelRunConnection(parent.dataset_id, parent.id, args);
     },

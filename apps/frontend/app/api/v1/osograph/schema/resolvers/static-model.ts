@@ -6,7 +6,6 @@ import {
 import { z } from "zod";
 import {
   CreateStaticModelSchema,
-  MaterializationWhereSchema,
   StaticModelWhereSchema,
   UpdateStaticModelSchema,
   validateInput,
@@ -229,29 +228,6 @@ export const staticModelResolvers = {
     },
     updatedAt: (parent: StaticModelRow) => {
       return parent.updated_at;
-    },
-    materializations: async (
-      parent: StaticModelRow,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      return queryWithPagination(args, context, {
-        tableName: "materialization",
-        whereSchema: MaterializationWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
-        basePredicate: {
-          eq: [
-            { key: "table_id", value: `static_model_${parent.id}` },
-            { key: "dataset_id", value: parent.dataset_id },
-          ],
-        },
-        orderBy: {
-          key: "created_at",
-          ascending: false,
-        },
-      });
     },
     runs: async (parent: StaticModelRow, args: ConnectionArgs) => {
       return getModelRunConnection(parent.dataset_id, parent.id, args);

@@ -30,6 +30,17 @@ type Dataset {
     where: JSON
   ): RunConnection!
 
+  """
+  The materializations for this dataset. Returns all materializations regardless of their source
+  (data model, static model, or data ingestion).
+  """
+  materializations(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
+
   typeDefinition: DatasetTypeDefinition!
 }
 

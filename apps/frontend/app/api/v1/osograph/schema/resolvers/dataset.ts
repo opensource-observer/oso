@@ -16,6 +16,7 @@ import {
   RunWhereSchema,
   StaticModelWhereSchema,
   UpdateDatasetSchema,
+  MaterializationWhereSchema,
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import {
@@ -337,6 +338,27 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         },
         orderBy: {
           key: "started_at",
+          ascending: false,
+        },
+      });
+    },
+
+    materializations: async (
+      parent: { id: string; org_id: string },
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return queryWithPagination(args, context, {
+        tableName: "materialization",
+        whereSchema: MaterializationWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.org_id,
+        basePredicate: {
+          eq: [{ key: "dataset_id", value: parent.id }],
+        },
+        orderBy: {
+          key: "created_at",
           ascending: false,
         },
       });
