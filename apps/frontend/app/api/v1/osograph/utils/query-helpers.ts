@@ -86,7 +86,7 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
     };
   }
 
-  const [start, end] = preparePaginationRange(args);
+  const pagination = preparePaginationRange(args);
 
   const orderBy = options.orderBy;
 
@@ -106,13 +106,14 @@ export async function queryWithPagination<TTable extends TableWithOrgId>(
     supabase,
     options.tableName,
     predicate,
-    (query) =>
-      (orderBy
+    (query) => {
+      query = orderBy
         ? query.order(orderBy.key, {
             ascending: orderBy.ascending ?? false,
           })
-        : query
-      ).range(start, end),
+        : query;
+      return pagination ? query.range(pagination[0], pagination[1]) : query;
+    },
     args.single,
   );
 

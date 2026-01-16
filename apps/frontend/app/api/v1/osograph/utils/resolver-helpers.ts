@@ -24,9 +24,19 @@ import {
 } from "@/app/api/v1/osograph/utils/query-builder";
 import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
 
-export function preparePaginationRange(args: ConnectionArgs): [number, number] {
+/**
+ * Prepares the pagination range [start, end] based on the provided ConnectionArgs.
+ * @param args - The connection arguments containing pagination info. If first is 0, no pagination is needed.
+ * @returns the range as a tuple [start, end], or undefined if no pagination is needed.
+ */
+export function preparePaginationRange(
+  args: ConnectionArgs,
+): [number, number] | undefined {
+  const { limit: first, offset } = getPaginationParams(args);
+  if (first === 0) {
+    return undefined;
+  }
   const limit = getFetchLimit(args);
-  const { offset } = getPaginationParams(args);
   return [offset, offset + limit - 1];
 }
 
@@ -61,7 +71,7 @@ export async function getUserOrganizationsConnection(
   additionalPredicate?: Partial<QueryPredicate<"organizations">>,
 ) {
   const supabase = createAdminClient();
-  const [start, end] = preparePaginationRange(args);
+  const pagination = preparePaginationRange(args);
 
   const membershipPredicate: Partial<QueryPredicate<"users_by_organization">> =
     {
@@ -77,7 +87,7 @@ export async function getUserOrganizationsConnection(
     supabase,
     "users_by_organization",
     membershipPredicate,
-    (query) => query.range(start, end),
+    (query) => (pagination ? query.range(pagination[0], pagination[1]) : query),
   );
 
   if (membershipError) {
@@ -128,7 +138,7 @@ export async function getUserInvitationsConnection(
 
   const supabase = createAdminClient();
   const userEmail = email.toLowerCase();
-  const [start, end] = preparePaginationRange(args);
+  const pagination = preparePaginationRange(args);
 
   const basePredicate: Partial<QueryPredicate<"invitations">> = {
     ilike: [{ key: "email", value: userEmail }],
@@ -148,7 +158,7 @@ export async function getUserInvitationsConnection(
     count,
     error,
   } = await buildQuery(supabase, "invitations", predicate, (query) =>
-    query.range(start, end),
+    pagination ? query.range(pagination[0], pagination[1]) : query,
   );
 
   if (error) {

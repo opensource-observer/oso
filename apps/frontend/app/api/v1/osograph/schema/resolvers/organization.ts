@@ -202,14 +202,17 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       await requireOrgMembership(authenticatedUser.userId, parent.id);
 
       const supabase = createAdminClient();
-      const [start, end] = preparePaginationRange(args);
+      const pagination = preparePaginationRange(args);
 
-      const { data: membersData, count } = await supabase
+      const query = supabase
         .from("users_by_organization")
         .select("*, user_profiles(*)", { count: "exact" })
         .eq("org_id", parent.id)
-        .is("deleted_at", null)
-        .range(start, end);
+        .is("deleted_at", null);
+
+      const { data: membersData, count } = pagination
+        ? await query.range(pagination[0], pagination[1])
+        : await query;
 
       if (!membersData || membersData.length === 0) {
         return buildConnectionOrEmpty(null, args, count);
