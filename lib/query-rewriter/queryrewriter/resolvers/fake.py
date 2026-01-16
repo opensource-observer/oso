@@ -28,3 +28,9 @@ class FakeTableResolver(TableResolver):
             if rewritten is not None:
                 resolved[table_id] = exp.to_table(rewritten)
         return resolved
+
+    def set_rewrite_rules(
+        self, rewrite_rules: list[t.Callable[[exp.Table], str | None]]
+    ) -> None:
+        """Sets the rewrite rules for the resolver."""
+        self.rewrite_rules = rewrite_rules
