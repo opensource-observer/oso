@@ -3,7 +3,7 @@ MODEL (
   description 'Actor ID matches for developers',
   dialect trino,
   kind FULL,
-  partitioned_by (bucket(actor_id, 8), bucket(author_synthetic_id, 8)),
+  partitioned_by YEAR("valid_from"),
   tags (
     "opendevdata",
     "github",
