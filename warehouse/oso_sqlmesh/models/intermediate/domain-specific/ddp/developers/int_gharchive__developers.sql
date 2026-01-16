@@ -3,7 +3,7 @@ MODEL (
   description 'Developers (actors) from GitHub Archive commits, tracking login and author details history',
   dialect trino,
   kind FULL,
-  partitioned_by DAY("valid_from"),
+  partitioned_by MONTH("valid_from"),
   grain (actor_id, actor_login, author_name, author_email, valid_from),
   tags (
     "github",

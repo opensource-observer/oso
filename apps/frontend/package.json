@@ -116,7 +116,7 @@
     "react-codemirror-merge": "^4.25.3",
     "react-day-picker": "^9.11.0",
     "react-dom": "^18.3.1",
-    "react-hook-form": "^7.62.0",
+    "react-hook-form": "^7.71.1",
     "react-instantsearch": "^7.16.3",
     "react-instantsearch-nextjs": "^1.0.5",
     "react-markdown": "^10.1.0",

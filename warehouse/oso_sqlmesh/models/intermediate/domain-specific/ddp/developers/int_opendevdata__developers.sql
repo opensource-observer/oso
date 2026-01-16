@@ -3,7 +3,7 @@ MODEL (
   description 'Developers from OpenDevData commits, tracking canonical developer and author details history with decoded actor_id. Uses pre-computed Node ID mapping for efficient decoding.',
   dialect trino,
   kind FULL,
-  partitioned_by DAY("valid_from"),
+  partitioned_by MONTH("valid_from"),
   grain (canonical_developer_id, primary_github_user_id, actor_id, author_name, author_email, valid_from),
   tags (
     "opendevdata",
