@@ -26,8 +26,6 @@ function FormSaver({
           .then(() => {
             form?.reset(values, {
               keepValues: true,
-              keepDefaultValues: true,
-              keepDirtyValues: true,
             });
             console.log("Auto-save successful.");
           })
@@ -72,6 +70,7 @@ function FormSaver({
     const unsubscribe = form.subscribe({
       formState: {
         values: true,
+        isDirty: true,
       },
       callback: ({ values, isDirty }) => {
         setIsDirtyState(isDirty);
