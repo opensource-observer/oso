@@ -296,5 +296,19 @@ describe("DBTableResolver", () => {
         seenTableFQNs.add(fqn);
       }
     });
+
+    it("doesn't throw an error for unresolvable tables", async () => {
+      const resolver = new DBTableResolver(testSupabaseClient, []);
+
+      const resolvedTables = await resolver.resolveTables(
+        {
+          valid_table: Table.fromString(`org_a_${RANDOM_SUFFIX}.user.alpha`),
+          invalid_table: Table.fromString(`nonexistent.org.nothing`),
+        },
+        {},
+      );
+      expect(resolvedTables["valid_table"]).toBeDefined();
+      expect(resolvedTables["invalid_table"]).toBeUndefined();
+    });
   });
 });
