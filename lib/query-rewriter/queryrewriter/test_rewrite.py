@@ -1,6 +1,7 @@
 import typing as t
 
 import pytest
+from queryrewriter.resolvers.fake import FakeTableResolver
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import TableResolver
 from sqlglot import exp, parse_one
@@ -33,8 +34,6 @@ def reverse_table_name(table: exp.Table) -> str:
 
 @pytest.fixture
 def fake_table_resolver():
-    from queryrewriter.resolvers.fake import FakeTableResolver
-
     return FakeTableResolver(rewrite_rules=[reverse_table_name])
 
 
@@ -232,7 +231,7 @@ async def test_rewrite_query(
 
 
 @pytest.mark.parametrize(
-    "input_dialect,output_dialect,input_query,error_string",
+    "input_dialect,output_dialect,input_query,error_string,rewrite_rules",
     [
         (
             "trino",
@@ -246,17 +245,28 @@ async def test_rewrite_query(
             select * from "test"
             """,
             "circular reference",
-        )
+            None,
+        ),
+        (
+            "trino",
+            "trino",
+            """SELECT * FROM non_existent_table""",
+            "Tables do not exist",
+            [],
+        ),
     ],
 )
 @pytest.mark.asyncio
 async def test_inputs_should_fail(
-    fake_table_resolver: TableResolver,
+    fake_table_resolver: FakeTableResolver,
     input_dialect: str,
     output_dialect: str,
     input_query: str,
     error_string: str,
+    rewrite_rules: list[t.Callable[[exp.Table], str | None]] | None,
 ):
+    if rewrite_rules is not None:
+        fake_table_resolver.set_rewrite_rules(rewrite_rules)
     resolvers: t.List[TableResolver] = [fake_table_resolver]
     try:
         await rewrite_query(

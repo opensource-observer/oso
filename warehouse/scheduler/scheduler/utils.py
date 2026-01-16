@@ -77,9 +77,8 @@ class OSOClientTableResolver(TableResolver):
         resolved_tables = await self._oso_client.resolve_tables(
             references=list(table_values_map.keys()), metadata=metadata or {}
         )
-        resolved_tables.system.resolve_tables
 
-        result: dict[str, exp.Table] = tables.copy()
+        result: dict[str, exp.Table] = {}
 
         for resolved in resolved_tables.system.resolve_tables:
             key = table_values_map[resolved.reference]
