@@ -12,6 +12,12 @@ from oso_core.resources import ResourcesContext
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.enums import RunStatus, StepStatus
+from scheduler.graphql_client.fragments import (
+    DatasetCommon,
+    OrganizationCommon,
+    RunCommon,
+    UserCommon,
+)
 from scheduler.graphql_client.input_types import (
     DataModelColumnInput,
     UpdateMetadataInput,
@@ -86,24 +92,30 @@ class OSOStepContext(StepContext):
 
 class OSORunContext(RunContext):
     @classmethod
-    def create(
+    async def create(
         cls,
         oso_client: OSOClient,
         run_id: str,
         materialization_strategy: MaterializationStrategy,
     ) -> "OSORunContext":
         logger = structlog.get_logger(run_id)
-        return cls(run_id, oso_client, materialization_strategy, logger)
+
+        get_run_data = await oso_client.get_run(run_id=run_id)
+        run_data = get_run_data.runs.edges[0].node
+
+        return cls(run_id, oso_client, run_data, materialization_strategy, logger)
 
     def __init__(
         self,
         run_id: str,
         oso_client: OSOClient,
+        run_data: RunCommon,
         materialization_strategy: MaterializationStrategy,
         logger: structlog.BoundLogger,
     ) -> None:
         self._run_id = run_id
         self._oso_client = oso_client
+        self._run_data = run_data
         self._materialization_strategy = materialization_strategy
         self._logger = logger
 
@@ -157,6 +169,22 @@ class OSORunContext(RunContext):
                 logs_url="https://example.com/logs",
             )
 
+    @property
+    def run_id(self) -> str:
+        return self._run_id
+
+    @property
+    def organization(self) -> OrganizationCommon:
+        return self._run_data.organization
+
+    @property
+    def dataset(self) -> t.Optional[DatasetCommon]:
+        return self._run_data.dataset
+
+    @property
+    def requested_by(self) -> t.Optional[UserCommon]:
+        return self._run_data.requested_by
+
 
 class RunHandler(MessageHandler[T]):
     """A message handler that processes run messages."""
@@ -181,7 +209,7 @@ class RunHandler(MessageHandler[T]):
 
         oso_client: OSOClient = resources.resolve("oso_client")
 
-        run_context = OSORunContext.create(
+        run_context = await OSORunContext.create(
             oso_client,
             run_id=run_id_str,
             materialization_strategy=materialization_strategy,
@@ -212,11 +240,19 @@ class RunHandler(MessageHandler[T]):
             response = FailedResponse(
                 message=f"Failed to process the message for run_id {run_id_str}."
             )
-        return await self.report_response(
-            oso_client=oso_client,
-            run_id_str=run_id_str,
-            response=response,
-        )
+
+        try:
+            return await self.report_response(
+                oso_client=oso_client,
+                run_id_str=run_id_str,
+                response=response,
+            )
+        except Exception as e:
+            logger.error(f"Error reporting response for run_id {run_id_str}: {e}")
+
+            return FailedResponse(
+                message=f"Failed to report the response for run_id {run_id_str}."
+            )
 
     async def report_response(
         self, oso_client: OSOClient, run_id_str: str, response: HandlerResponse
