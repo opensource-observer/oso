@@ -60,6 +60,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 status_code=404,
                 details={
                     "message": str(e),
+                    # Match the error types used in trino
                     "error_type": "USER_ERROR",
                     "error_name": "TablesNotFound",
                 },
