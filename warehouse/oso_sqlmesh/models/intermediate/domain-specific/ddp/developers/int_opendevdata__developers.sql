@@ -1,6 +1,6 @@
 MODEL (
   name oso.int_opendevdata__developers,
-  description 'Developers from OpenDevData commits, tracking canonical developer and author details history with decoded actor_id',
+  description 'Developers from OpenDevData commits, tracking canonical developer and author details history with decoded actor_id. Uses pre-computed Node ID mapping for efficient decoding.',
   dialect trino,
   kind FULL,
   partitioned_by DAY("valid_from"),
@@ -33,6 +33,19 @@ WITH developer_history AS (
   WHERE commits.canonical_developer_id IS NOT NULL
   GROUP BY 1, 2, 3, 4, 5, 6
 ),
+developer_history_with_actor_id AS (
+  SELECT
+    dh.canonical_developer_id,
+    dh.primary_github_user_id,
+    node_map.decoded_id AS actor_id,
+    dh.author_name,
+    dh.author_email,
+    dh.hashed_author_email,
+    dh.valid_from
+  FROM developer_history AS dh
+  LEFT JOIN oso.int_github__node_id_map AS node_map
+    ON dh.primary_github_user_id = node_map.node_id
+),
 developer_history_with_valid_to AS (
   SELECT
     canonical_developer_id,
@@ -46,7 +59,7 @@ developer_history_with_valid_to AS (
       PARTITION BY canonical_developer_id
       ORDER BY valid_from
     ) AS valid_to
-  FROM developer_history
+  FROM developer_history_with_actor_id
 )
 
 SELECT

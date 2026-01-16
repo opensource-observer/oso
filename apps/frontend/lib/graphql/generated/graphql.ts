@@ -1540,19 +1540,13 @@ export type DataIngestionConnection = {
 export type DataIngestionDefinition = {
   __typename?: "DataIngestionDefinition";
   /**
-   * If the dataset is of type DATA_INGESTION, this field will contain the list of data ingestions
-   * associated with the dataset. Otherwise it will be an empty list.
+   * The data ingestion configuration for this dataset.
+   * Unlike DataModels and StaticModels, only ONE ingestion config is allowed per dataset.
+   * Returns null if no configuration has been created yet.
    */
-  dataIngestions: DataIngestionConnection;
+  dataIngestion?: Maybe<DataIngestion>;
   datasetId: Scalars["ID"]["output"];
   orgId: Scalars["ID"]["output"];
-};
-
-export type DataIngestionDefinitionDataIngestionsArgs = {
-  after?: InputMaybe<Scalars["String"]["input"]>;
-  first?: InputMaybe<Scalars["Int"]["input"]>;
-  single?: InputMaybe<Scalars["Boolean"]["input"]>;
-  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataIngestionEdge = {

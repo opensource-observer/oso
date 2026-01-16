@@ -1,7 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { signTrinoJWT } from "@/lib/auth/auth";
-import { getTrinoClient } from "@/lib/clients/trino";
 import { logger } from "@/lib/logger";
 import type { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
@@ -12,12 +10,11 @@ import {
 } from "@/app/api/v1/osograph/utils/auth";
 import {
   CreateDatasetSchema,
+  DataIngestionsWhereSchema,
   DataModelWhereSchema,
   DatasetWhereSchema,
   RunWhereSchema,
   StaticModelWhereSchema,
-  DataIngestionsWhereSchema,
-  TableMetadataWhereSchema,
   UpdateDatasetSchema,
   MaterializationWhereSchema,
   validateInput,
@@ -27,8 +24,6 @@ import {
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import { requireOrganizationAccess } from "@/app/api/v1/osograph/utils/resolver-helpers";
-import { Column, ColumnSchema } from "@/lib/types/catalog";
 import z from "zod";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
@@ -56,71 +51,10 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     tables: async (
       _: unknown,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
+      _args: FilterableConnectionArgs,
+      _context: GraphQLContext,
     ) => {
-      const authenticatedUser = requireAuthentication(context.user);
-      const validatedWhere = validateInput(
-        TableMetadataWhereSchema,
-        args.where,
-      );
-
-      const { orgId, catalogName, schemaName, tableName } = {
-        orgId: validatedWhere.orgId.eq,
-        catalogName: validatedWhere.catalogName.eq,
-        schemaName: validatedWhere.schemaName.eq,
-        tableName: validatedWhere.tableName.eq,
-      };
-
-      const org = await requireOrganizationAccess(
-        authenticatedUser.userId,
-        orgId,
-      );
-
-      const trinoJwt = await signTrinoJWT({
-        ...authenticatedUser,
-        orgId: org.id,
-        orgName: org.org_name,
-        orgRole: "member",
-      });
-
-      const trino = getTrinoClient(trinoJwt);
-
-      const query = `
-        SELECT column_name, data_type, column_comment
-        FROM ${catalogName}.information_schema.columns
-        WHERE table_schema = '${schemaName}' AND table_name = '${tableName}'
-      `;
-      const { data: columnResult, error } = await trino.queryAll(query);
-      if (error || !columnResult) {
-        logger.error(
-          `Failed to fetch table metadata for user ${authenticatedUser.userId}:`,
-          error.message,
-        );
-        throw ServerErrors.externalService("Failed to fetch table metadata");
-      }
-
-      const results = await Promise.all(
-        columnResult
-          .flatMap((column) => column.data)
-          .map(
-            async (
-              column: (string | null)[] | undefined,
-            ): Promise<Column | null> => {
-              if (!column || column.length !== 3) {
-                return null;
-              }
-              const [columnName, columnType, columnComment] = column;
-              return ColumnSchema.parse({
-                name: columnName,
-                type: columnType,
-                description: columnComment ?? null,
-              });
-            },
-          ),
-      );
-      const filteredResults = results.filter((result) => result !== null);
-      return filteredResults;
+      throw new Error("Resolver not implemented");
     },
   },
 
@@ -478,22 +412,20 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   DataIngestionDefinition: {
     orgId: (parent: { org_id: string }) => parent.org_id,
     datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
-    dataIngestions: async (
+    dataIngestion: async (
       parent: { dataset_id: string; org_id: string },
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
+      _args: Record<string, never>,
     ) => {
-      return queryWithPagination(args, context, {
-        tableName: "data_ingestions",
-        whereSchema: DataIngestionsWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
-        basePredicate: {
-          is: [{ key: "deleted_at", value: null }],
-          eq: [{ key: "dataset_id", value: parent.dataset_id }],
-        },
-      });
+      const supabase = createAdminClient();
+
+      const { data: config } = await supabase
+        .from("data_ingestions")
+        .select("*")
+        .eq("dataset_id", parent.dataset_id)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      return config;
     },
   },
 };

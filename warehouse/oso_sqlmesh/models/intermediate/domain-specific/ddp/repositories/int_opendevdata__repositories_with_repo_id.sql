@@ -1,6 +1,6 @@
 MODEL (
   name oso.int_opendevdata__repositories_with_repo_id,
-  description 'OpenDevData repositories enriched with repo_id from OSSD (via github_graphql_id), Node ID decoding, or gharchive (via repo_name fallback)',
+  description 'OpenDevData repositories enriched with repo_id from OSSD (via github_graphql_id), pre-computed Node ID mapping, or gharchive (via repo_name fallback). Uses int_github__node_id_map for efficient Node ID decoding.',
   dialect trino,
   kind FULL,
   grain (opendevdata_id),
@@ -13,7 +13,6 @@ MODEL (
   )
 );
 
--- Match opendevdata to ossd via github_graphql_id and decode node_id
 WITH opendevdata_with_graphql_match AS (
   SELECT
     odd.id AS opendevdata_id,
@@ -24,20 +23,20 @@ WITH opendevdata_with_graphql_match AS (
     odd.num_forks AS fork_count,
     CAST(odd.is_blacklist = 1 AS BOOLEAN) AS is_opendevdata_blacklist,
     ossd.id AS repo_id_from_graphql,
-    @decode_github_node_id(NULLIF(odd.github_graphql_id, '')) AS repo_id_from_node_id
+    node_map.decoded_id AS repo_id_from_node_id
   FROM oso.stg_opendevdata__repos AS odd
   LEFT JOIN oso.stg_ossd__current_repositories AS ossd
     ON NULLIF(odd.github_graphql_id, '') = ossd.node_id
+  LEFT JOIN oso.int_github__node_id_map AS node_map
+    ON NULLIF(odd.github_graphql_id, '') = node_map.node_id
 ),
--- Identify repo_names that need fallback matching (no graphql match AND no node_id decoding)
 opendevdata_needing_fallback AS (
   SELECT DISTINCT repo_name
   FROM opendevdata_with_graphql_match
   WHERE repo_id_from_graphql IS NULL
     AND repo_id_from_node_id IS NULL
 ),
--- Get most recent name per repo_id from gharchive,
--- for repo_names that need fallback
+
 gharchive_current_names AS (
   SELECT
     ghr.repo_id,

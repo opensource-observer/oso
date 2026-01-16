@@ -31,6 +31,9 @@ import {
   PUBLIC_CACHE_BUCKET,
 } from "@/lib/config";
 import { getFromRunMetadata } from "@/lib/runs/utils";
+import { validStatusCodeOr500 } from "@/lib/utils/status-codes";
+import { ErrorDetailsSchema } from "@/app/api/v1/osograph/utils/validation";
+import { Json } from "@/lib/types/supabase";
 
 // Next.js route control
 export const revalidate = 0;
@@ -218,6 +221,27 @@ export type RetrieveAsyncSqlQueryResultsOptions = {
   user: Awaited<ReturnType<typeof getOrgUser>>;
 };
 
+function createErrorResponseFromErrorDetails(run: {
+  metadata: Json | null;
+  status_code: number;
+}): ReturnType<typeof makeErrorResponse> {
+  const errorDetails = getFromRunMetadata<string>(run, "errorDetails");
+  const { data, error, success } = ErrorDetailsSchema.safeParse(errorDetails);
+  if (!success) {
+    logger.error("Failed to parse error details from run metadata:", error);
+    // FIXME: we should setup alerts to monitor these cases
+    return makeErrorResponse(
+      "Query execution failed for unknown reasons. Contact support.",
+      500,
+    );
+  }
+  const statusCode = validStatusCodeOr500(run.status_code);
+  return makeErrorResponse(
+    `${data.error_type}: ${data.error_name} - ${data.message}`,
+    statusCode,
+  );
+}
+
 export async function retrieveAsyncSqlQueryResults({
   runId,
   user,
@@ -229,7 +253,9 @@ export async function retrieveAsyncSqlQueryResults({
   const supabase = createAdminClient();
   const { data: run, error } = await supabase
     .from("run")
-    .select("status, completed_at, logs_url, requested_by, metadata") // minimal fields
+    .select(
+      "status, completed_at, logs_url, requested_by, metadata, status_code",
+    ) // minimal fields
     .eq("id", runId)
     .single();
 
@@ -247,9 +273,12 @@ export async function retrieveAsyncSqlQueryResults({
       status: run.status,
     });
   } else if (run.status === "failed") {
-    return makeErrorResponse("Query execution failed", 500);
+    return createErrorResponseFromErrorDetails(run);
   } else if (run.status === "canceled") {
-    return makeErrorResponse("Query execution canceled", 400);
+    return makeErrorResponse(
+      "Query execution canceled",
+      validStatusCodeOr500(run.status_code),
+    );
   } else if (run.status !== "completed") {
     assertNever(run.status, `Unknown run status: ${run.status}`);
   }
