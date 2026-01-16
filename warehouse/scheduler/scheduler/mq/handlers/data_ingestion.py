@@ -82,16 +82,14 @@ class DataIngestionRunRequestHandler(RunHandler[DataIngestionRunRequest]):
             )
             return FailedResponse(message=f"Wrong dataset type: {type_def.typename__}")
 
-        ingestion_edges = type_def.data_ingestions.edges
+        config = type_def.data_ingestion
 
-        if not ingestion_edges or not ingestion_edges[0].node:
+        if not config:
             context.log.error(
                 "No data ingestion configuration found",
                 extra={"dataset_id": dataset_id},
             )
             return FailedResponse(message="No data ingestion configuration found")
-
-        config = ingestion_edges[0].node
 
         if config.factory_type != "REST":
             context.log.error(

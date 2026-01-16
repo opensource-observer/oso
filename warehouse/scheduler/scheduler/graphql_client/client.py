@@ -303,15 +303,11 @@ class Client(AsyncBaseClient):
                     typeDefinition {
                       __typename
                       ... on DataIngestionDefinition {
-                        dataIngestions(where: {deleted_at: {is: null}}, single: true) {
-                          edges {
-                            node {
-                              id
-                              datasetId
-                              factoryType
-                              config
-                            }
-                          }
+                        dataIngestion {
+                          id
+                          datasetId
+                          factoryType
+                          config
                         }
                       }
                     }
