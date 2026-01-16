@@ -31,7 +31,10 @@ import {
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 import z from "zod";
-import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
+import {
+  getUserProfile,
+  requireAuthentication,
+} from "@/app/api/v1/osograph/utils/auth";
 import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { createQueueService } from "@/lib/services/queue";
 import { DataModelRunRequest } from "@opensource-observer/osoprotobufs/data-model";
@@ -265,6 +268,44 @@ export const schedulerResolvers = {
 
   Run: {
     datasetId: (parent: RunRow) => parent.dataset_id,
+    dataset: async (parent: RunRow) => {
+      if (!parent.dataset_id) {
+        return null;
+      }
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("datasets")
+        .select("*")
+        .eq("id", parent.dataset_id)
+        .single();
+      if (error) {
+        logger.error(
+          `Error fetching dataset with id ${parent.dataset_id}: ${error.message}`,
+        );
+        throw ServerErrors.database(
+          `Failed to fetch dataset with id ${parent.dataset_id}`,
+        );
+      }
+      return data;
+    },
+    orgId: (parent: RunRow) => parent.org_id,
+    organization: async (parent: RunRow) => {
+      const supabase = createAdminClient();
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("id", parent.org_id)
+        .single();
+      if (error) {
+        logger.error(
+          `Error fetching organization with id ${parent.org_id}: ${error.message}`,
+        );
+        throw ServerErrors.database(
+          `Failed to fetch organization with id ${parent.org_id}`,
+        );
+      }
+      return data;
+    },
     triggerType: (parent: RunRow) =>
       parent.run_type === "manual"
         ? RunTriggerType.Manual
@@ -291,6 +332,13 @@ export const schedulerResolvers = {
         },
       });
     },
+    requestedBy: async (parent: RunRow) => {
+      if (!parent.requested_by) {
+        return null;
+      }
+      return getUserProfile(parent.requested_by);
+    },
+    metadata: (parent: RunRow) => parent.metadata,
   },
   Materialization: {
     runId: (parent: MaterializationRow) => parent.run_id,

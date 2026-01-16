@@ -1,3 +1,4 @@
+import logging
 import sys
 
 from dotenv import load_dotenv
@@ -37,4 +38,7 @@ def cli():
 
     configure_structured_logging()
     setup_module_logging("scheduler")
+    setup_module_logging("google", level=1000)
+    setup_module_logging("google.cloud", level=1000)
+    setup_module_logging("google.cloud.pubsub_v1", level=logging.DEBUG)
     CliApp.run(SchedulerCLI, sys.argv[1:])

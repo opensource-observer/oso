@@ -6,7 +6,7 @@ from typing import Any, List, Optional
 from pydantic import Field
 
 from .base_model import BaseModel
-from .enums import DataModelKind
+from .enums import DataModelKind, RunTriggerType
 
 
 class LatestDataModel(BaseModel):
@@ -88,6 +88,11 @@ class DataModelsEdgesNode(LatestDataModel):
     pass
 
 
+class OrganizationCommon(BaseModel):
+    id: str
+    name: str
+
+
 class DatasetCommon(BaseModel):
     id: str
     name: str
@@ -96,11 +101,39 @@ class DatasetCommon(BaseModel):
     organization: "DatasetCommonOrganization"
 
 
-class DatasetCommonOrganization(BaseModel):
+class DatasetCommonOrganization(OrganizationCommon):
+    pass
+
+
+class UserCommon(BaseModel):
     id: str
-    name: str
+    email: str
+
+
+class RunCommon(BaseModel):
+    id: str
+    metadata: Optional[Any]
+    trigger_type: RunTriggerType = Field(alias="triggerType")
+    organization: "RunCommonOrganization"
+    dataset: Optional["RunCommonDataset"]
+    requested_by: Optional["RunCommonRequestedBy"] = Field(alias="requestedBy")
+
+
+class RunCommonOrganization(OrganizationCommon):
+    pass
+
+
+class RunCommonDataset(DatasetCommon):
+    pass
+
+
+class RunCommonRequestedBy(UserCommon):
+    pass
 
 
 LatestDataModel.model_rebuild()
 DataModels.model_rebuild()
+OrganizationCommon.model_rebuild()
 DatasetCommon.model_rebuild()
+UserCommon.model_rebuild()
+RunCommon.model_rebuild()

@@ -7,14 +7,15 @@ import {
   OrganizationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
+import { UserProfilesRow } from "@/lib/types/schema-types";
 
 export const userResolvers: GraphQLResolverModule<GraphQLContext> = {
   User: {
-    fullName: (parent: { full_name: string | null }) => parent.full_name,
-    avatarUrl: (parent: { avatar_url: string | null }) => parent.avatar_url,
-
+    fullName: (parent: UserProfilesRow) => parent.full_name,
+    avatarUrl: (parent: UserProfilesRow) => parent.avatar_url,
+    email: (parent: UserProfilesRow) => parent.email,
     organizations: async (
-      parent: { id: string },
+      parent: UserProfilesRow,
       args: FilterableConnectionArgs,
       _context: GraphQLContext,
     ) => {

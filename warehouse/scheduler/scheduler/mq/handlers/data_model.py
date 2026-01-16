@@ -1,3 +1,6 @@
+import asyncio
+import random
+
 import structlog
 from oso_dagster.resources.udm_engine_adapter import (
     UserDefinedModelEngineAdapterResource,
@@ -62,6 +65,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
     ) -> HandlerResponse:
         # Process the DataModelRunRequest message
         context.log.info(f"Handling DataModelRunRequest with ID: {message.run_id}")
+
+        await asyncio.sleep(random.randint(30, 60))
 
         # Pull the model using the OSO client
         dataset_and_models = await oso_client.get_data_models(message.dataset_id)

@@ -7,11 +7,20 @@ import typing as t
 from contextlib import asynccontextmanager
 
 import structlog
+from aioprometheus.collectors import Summary
 from google.protobuf.message import Message as ProtobufMessage
+from oso_core.instrumentation import MetricsContainer
+from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.enums import RunStatus, StepStatus
+from scheduler.graphql_client.fragments import (
+    DatasetCommon,
+    OrganizationCommon,
+    RunCommon,
+    UserCommon,
+)
 from scheduler.graphql_client.input_types import (
     DataModelColumnInput,
     UpdateMetadataInput,
@@ -86,26 +95,37 @@ class OSOStepContext(StepContext):
 
 class OSORunContext(RunContext):
     @classmethod
-    def create(
+    async def create(
         cls,
         oso_client: OSOClient,
         run_id: str,
         materialization_strategy: MaterializationStrategy,
+        metrics: MetricsContainer,
     ) -> "OSORunContext":
         logger = structlog.get_logger(run_id)
-        return cls(run_id, oso_client, materialization_strategy, logger)
+
+        get_run_data = await oso_client.get_run(run_id=run_id)
+        run_data = get_run_data.runs.edges[0].node
+
+        return cls(
+            run_id, oso_client, run_data, materialization_strategy, metrics, logger
+        )
 
     def __init__(
         self,
         run_id: str,
         oso_client: OSOClient,
+        run_data: RunCommon,
         materialization_strategy: MaterializationStrategy,
+        metrics: MetricsContainer,
         logger: structlog.BoundLogger,
     ) -> None:
         self._run_id = run_id
         self._oso_client = oso_client
+        self._run_data = run_data
         self._materialization_strategy = materialization_strategy
         self._logger = logger
+        self._metrics = metrics
 
     @property
     def log(self) -> logging.Logger:
@@ -137,12 +157,13 @@ class OSORunContext(RunContext):
         step = step.start_step.step
 
         try:
-            yield OSOStepContext.create(
-                step.id,
-                self._oso_client,
-                self._materialization_strategy,
-                self._logger.bind(step=name, step_display_name=display_name),
-            )
+            async with async_time(self._metrics.summary("step_duration_ms")):
+                yield OSOStepContext.create(
+                    step.id,
+                    self._oso_client,
+                    self._materialization_strategy,
+                    self._logger.bind(step=name, step_display_name=display_name),
+                )
         except Exception as e:
             self._logger.error(f"Error in step context {name}: {e}")
             await self._oso_client.finish_step(
@@ -157,15 +178,57 @@ class OSORunContext(RunContext):
                 logs_url="https://example.com/logs",
             )
 
+    @property
+    def run_id(self) -> str:
+        return self._run_id
+
+    @property
+    def organization(self) -> OrganizationCommon:
+        return self._run_data.organization
+
+    @property
+    def dataset(self) -> t.Optional[DatasetCommon]:
+        return self._run_data.dataset
+
+    @property
+    def requested_by(self) -> t.Optional[UserCommon]:
+        return self._run_data.requested_by
+
+    @property
+    def trigger_type(self) -> str:
+        return self._run_data.trigger_type
+
 
 class RunHandler(MessageHandler[T]):
     """A message handler that processes run messages."""
+
+    def initialize_metrics(self, metrics: MetricsContainer):
+        super().initialize_metrics(metrics)
+
+        metrics.initialize_summary(
+            "run_context_load_duration_ms",
+            Summary("run_context_load_duration_ms", "Duration to load run context"),
+        )
+
+        metrics.initialize_summary(
+            "run_message_handling_duration_ms",
+            Summary(
+                "run_message_handling_duration_ms",
+                "Duration to handle run message (specifically for `handle_run_message` duration)",
+            ),
+        )
+
+        metrics.initialize_summary(
+            "step_duration_ms",
+            Summary("step_duration_ms", "Duration of each step in the run"),
+        )
 
     async def handle_message(
         self,
         message: ProtobufMessage,
         resources: ResourcesContext,
         materialization_strategy: MaterializationStrategy,
+        metrics: MetricsContainer,
     ) -> HandlerResponse:
         run_id = getattr(message, "run_id", None)
         if not run_id:
@@ -181,11 +244,13 @@ class RunHandler(MessageHandler[T]):
 
         oso_client: OSOClient = resources.resolve("oso_client")
 
-        run_context = OSORunContext.create(
-            oso_client,
-            run_id=run_id_str,
-            materialization_strategy=materialization_strategy,
-        )
+        async with async_time(metrics.summary("run_context_load_duration_ms")):
+            run_context = await OSORunContext.create(
+                oso_client,
+                run_id=run_id_str,
+                materialization_strategy=materialization_strategy,
+                metrics=metrics,
+            )
 
         # Try to set the run to running in the database for user's visibility
         try:
@@ -193,30 +258,46 @@ class RunHandler(MessageHandler[T]):
             await oso_client.start_run(run_id=run_id_str)
         except Exception as e:
             logger.error(f"Error starting run {run_id_str}: {e}")
+
             return await self.report_response(
                 oso_client=oso_client,
                 run_id_str=run_id_str,
                 response=FailedResponse(message=f"Failed to start run {run_id_str}."),
             )
 
+        run_metrics_labels = {
+            "org_id": run_context.organization.name,
+            "trigger_type": run_context.trigger_type,
+        }
         try:
-            response = await resources.run(
-                self.handle_run_message,
-                additional_inject={
-                    "message": message,
-                    "context": run_context,
-                },
-            )
+            async with async_time(
+                metrics.summary("run_message_handling_duration_ms"), run_metrics_labels
+            ):
+                response = await resources.run(
+                    self.handle_run_message,
+                    additional_inject={
+                        "message": message,
+                        "context": run_context,
+                    },
+                )
         except Exception as e:
             logger.error(f"Error handling run message for run_id {run_id_str}: {e}")
             response = FailedResponse(
                 message=f"Failed to process the message for run_id {run_id_str}."
             )
-        return await self.report_response(
-            oso_client=oso_client,
-            run_id_str=run_id_str,
-            response=response,
-        )
+
+        try:
+            return await self.report_response(
+                oso_client=oso_client,
+                run_id_str=run_id_str,
+                response=response,
+            )
+        except Exception as e:
+            logger.error(f"Error reporting response for run_id {run_id_str}: {e}")
+
+            return FailedResponse(
+                message=f"Failed to report the response for run_id {run_id_str}."
+            )
 
     async def report_response(
         self, oso_client: OSOClient, run_id_str: str, response: HandlerResponse
