@@ -17,6 +17,8 @@ spec:
   - port: http
     path: /metrics
     interval: 30s
+    basicAuth:
+      username: admin
   targetLabels:
     # We need to rename these labels because GCP does not allow '/' in label names
     # Also some of the labels are reserved by GCP so we rename them to avoid conflicts
@@ -46,6 +48,8 @@ spec:
   - port: http
     path: /metrics
     interval: 30s
+    basicAuth:
+      username: admin
   targetLabels:
     fromPod:
       - from: app.kubernetes.io/component
