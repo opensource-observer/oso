@@ -4,15 +4,25 @@ export type TableResolutionMap = {
   [unresolvedName: string]: Table;
 };
 
+export type ResolutionError = {
+  error: Error;
+  reference: string;
+};
+
+export type TableResolution = {
+  tables: TableResolutionMap;
+  errors: Array<ResolutionError>;
+};
+
 export interface TableResolver {
   resolveTables(
-    tables: TableResolutionMap,
+    tables: TableResolution,
     metadata: Record<string, unknown>,
-  ): Promise<TableResolutionMap>;
+  ): Promise<TableResolution>;
 }
 
 export type ResolveTablesOptions = {
-  tables: TableResolutionMap;
+  tables: TableResolution;
   metadata: Record<string, unknown>;
   resolvers: TableResolver[];
 };
@@ -21,7 +31,7 @@ export async function resolveTablesWithResolvers({
   tables,
   metadata,
   resolvers,
-}: ResolveTablesOptions): Promise<TableResolutionMap> {
+}: ResolveTablesOptions): Promise<TableResolution> {
   for (const resolver of resolvers) {
     tables = await resolver.resolveTables(tables, metadata);
   }

@@ -3,7 +3,11 @@
  */
 import { Table } from "@/lib/types/table";
 import { queryMetadataSchema } from "@/lib/types/query-metadata";
-import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
+import {
+  TableResolver,
+  TableResolution,
+  TableResolutionMap,
+} from "@/lib/query/resolver";
 
 /**
  * Uses metadata to infer and resolve table names. After this resolver, all
@@ -11,14 +15,14 @@ import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
  */
 export class MetadataInferredTableResolver implements TableResolver {
   async resolveTables(
-    tables: TableResolutionMap,
+    tables: TableResolution,
     metadata: Record<string, unknown>,
-  ): Promise<TableResolutionMap> {
+  ): Promise<TableResolution> {
     // Check for the orgName in metadata to infer table mappings
     const parsedMetadata = queryMetadataSchema.parse(metadata);
 
     const resolvedTables: TableResolutionMap = {};
-    for (const [unresolvedName, tableObj] of Object.entries(tables)) {
+    for (const [unresolvedName, tableObj] of Object.entries(tables.tables)) {
       if (tableObj.isFQN()) {
         resolvedTables[unresolvedName] = tableObj;
       } else {
@@ -39,6 +43,9 @@ export class MetadataInferredTableResolver implements TableResolver {
         );
       }
     }
-    return resolvedTables;
+    return {
+      tables: resolvedTables,
+      errors: [],
+    };
   }
 }

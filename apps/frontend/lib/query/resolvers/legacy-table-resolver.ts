@@ -1,13 +1,17 @@
 import { Table } from "@/lib/types/table";
-import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
+import {
+  TableResolver,
+  TableResolution,
+  TableResolutionMap,
+} from "@/lib/query/resolver";
 
 export class LegacyInferredTableResolver implements TableResolver {
   async resolveTables(
-    tables: TableResolutionMap,
+    tables: TableResolution,
     _metadata: Record<string, unknown>,
-  ): Promise<TableResolutionMap> {
+  ): Promise<TableResolution> {
     const resolvedTables: TableResolutionMap = {};
-    for (const [originalName, tableObj] of Object.entries(tables)) {
+    for (const [originalName, tableObj] of Object.entries(tables.tables)) {
       if (tableObj.isFQN()) {
         resolvedTables[originalName] = tableObj;
       } else {
@@ -30,6 +34,9 @@ export class LegacyInferredTableResolver implements TableResolver {
         }
       }
     }
-    return resolvedTables;
+    return {
+      tables: resolvedTables,
+      errors: [],
+    };
   }
 }

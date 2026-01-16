@@ -1,6 +1,12 @@
 import { SupabaseAdminClient } from "@/lib/supabase/admin";
 import { Table } from "@/lib/types/table";
-import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
+import {
+  TableResolver,
+  TableResolution,
+  TableResolutionMap,
+  ResolutionError,
+} from "@/lib/query/resolver";
+import { logger } from "@/lib/logger";
 
 export type LegacyTableMappingRule = (table: Table) => Table | null;
 
@@ -17,16 +23,16 @@ export class DBTableResolver implements TableResolver {
   }
 
   async resolveTables(
-    tables: TableResolutionMap,
+    tables: TableResolution,
     _metadata: Record<string, unknown>,
-  ): Promise<TableResolutionMap> {
+  ): Promise<TableResolution> {
     // We expect that tables given to the supabase table resolver are fully qualified
 
     // If there's a legacy rule that applies use it immediately as the response
     // for the table
     const resolvedTables: TableResolutionMap = {};
     const unresolvedTables: TableResolutionMap = {};
-    for (const [unresolvedName, tableObj] of Object.entries(tables)) {
+    for (const [unresolvedName, tableObj] of Object.entries(tables.tables)) {
       let resolvedTable: Table | null = null;
       for (const rule of this.legacyRules) {
         const result = rule(tableObj);
@@ -44,7 +50,10 @@ export class DBTableResolver implements TableResolver {
 
     // For any tables that are still unresolved, we will query the database.
     if (Object.keys(unresolvedTables).length === 0) {
-      return resolvedTables;
+      return {
+        tables: resolvedTables,
+        errors: [],
+      };
     }
     // Query the table_directory for the unresolved tables
     // We should assert that all unresolved tables are fully qualified
@@ -89,16 +98,25 @@ export class DBTableResolver implements TableResolver {
       const table = Table.fromString(row.warehouse_fqn!);
       tableFQNToTableMap[row.logical_fqn] = table;
     }
+    const resolutionErrors: Array<ResolutionError> = [];
     for (const [unresolvedName, tableObj] of Object.entries(unresolvedTables)) {
       const fqn = tableObj.toFQN();
       const resolvedTable = tableFQNToTableMap[fqn];
       if (resolvedTable) {
         resolvedTables[unresolvedName] = resolvedTable;
       } else {
-        throw new Error(`Could not resolve table for FQN ${fqn}`);
+        logger.error(`DBTableResolver: Could not resolve table for fqn ${fqn}`);
+        resolutionErrors.push({
+          error: new Error(
+            `Could not resolve table for reference ${unresolvedName}`,
+          ),
+          reference: unresolvedName,
+        });
       }
     }
-
-    return resolvedTables;
+    return {
+      tables: resolvedTables,
+      errors: resolutionErrors,
+    };
   }
 }

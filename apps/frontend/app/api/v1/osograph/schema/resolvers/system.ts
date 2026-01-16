@@ -10,7 +10,7 @@ import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import { Table } from "@/lib/types/table";
 import { LegacyInferredTableResolver } from "@/lib/query/resolvers/legacy-table-resolver";
 import { DBTableResolver } from "@/lib/query/resolvers/db-table-resolver";
-import { TableResolutionMap } from "@/lib/query/resolver";
+import { TableResolution } from "@/lib/query/resolver";
 import { MetadataInferredTableResolver } from "@/lib/query/resolvers/metadata-table-resolver";
 import {
   CreateMaterializationSchema,
@@ -26,6 +26,7 @@ import {
 import z from "zod";
 import { logger } from "@/lib/logger";
 import { Json } from "@/lib/types/supabase";
+import { ResolvedTableReference } from "@/lib/graphql/generated/graphql";
 
 type SystemMutationOptions<T extends z.ZodTypeAny, O> = {
   inputSchema: T;
@@ -444,24 +445,40 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
         ]),
       ];
 
-      let tableResolutionMap: TableResolutionMap = {};
+      let tableResolution: TableResolution = {
+        tables: {},
+        errors: [],
+      };
       for (const ref of references) {
-        tableResolutionMap[ref] = Table.fromString(ref);
+        tableResolution.tables[ref] = Table.fromString(ref);
       }
 
       for (const resolver of tableResolvers) {
-        tableResolutionMap = await resolver.resolveTables(tableResolutionMap, {
+        tableResolution = await resolver.resolveTables(tableResolution, {
           orgName: metadata?.orgName,
           datasetName: metadata?.datasetName,
         });
       }
 
-      const results = Object.entries(tableResolutionMap).map(
-        ([ref, table]) => ({
-          reference: ref,
-          fqn: table.toFQN(),
-        }),
-      );
+      const results: Array<ResolvedTableReference> = Object.entries(
+        tableResolution.tables,
+      ).map(([ref, table]) => ({
+        reference: ref,
+        fqn: table.toFQN(),
+      }));
+
+      if (tableResolution.errors.length > 0) {
+        logger.warn(
+          `Errors encountered during table resolution: ${tableResolution.errors}`,
+        );
+        // Append unresolved entries for any errors encountered
+        for (const err of tableResolution.errors) {
+          results.push({
+            reference: err.reference,
+            reason: `Error during resolution: ${err.error.message}`,
+          });
+        }
+      }
 
       return results;
     },

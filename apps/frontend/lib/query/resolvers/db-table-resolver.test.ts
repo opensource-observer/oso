@@ -236,14 +236,17 @@ describe("DBTableResolver", () => {
 
       const resolvedTables = await resolver.resolveTables(
         {
-          "some.random.table": Table.fromString(
-            `org_a_${RANDOM_SUFFIX}.user.alpha`,
-          ),
+          tables: {
+            "some.random.table": Table.fromString(
+              `org_a_${RANDOM_SUFFIX}.user.alpha`,
+            ),
+          },
+          errors: [],
         },
         {},
       );
 
-      const resolvedTable = resolvedTables["some.random.table"];
+      const resolvedTable = resolvedTables.tables["some.random.table"];
 
       // Check that this resolves to a table in the format we expect
       expect(
@@ -267,21 +270,24 @@ describe("DBTableResolver", () => {
 
       const resolvedTables = await resolver.resolveTables(
         {
-          table_00: Table.fromString(`org_a_${RANDOM_SUFFIX}.user.alpha`),
-          table_01: Table.fromString(`org_b_${RANDOM_SUFFIX}.user.alpha`),
-          table_02: Table.fromString(`org_c_${RANDOM_SUFFIX}.user.alpha`),
-          table_03: Table.fromString(`org_d_${RANDOM_SUFFIX}.user.alpha`),
-          table_04: Table.fromString(`org_e_${RANDOM_SUFFIX}.user.alpha`),
-          table_05: Table.fromString(`org_a_${RANDOM_SUFFIX}.user.bravo`),
-          table_06: Table.fromString(`org_b_${RANDOM_SUFFIX}.user.bravo`),
-          table_07: Table.fromString(`org_c_${RANDOM_SUFFIX}.user.bravo`),
-          table_08: Table.fromString(`org_d_${RANDOM_SUFFIX}.user.bravo`),
-          table_09: Table.fromString(`org_e_${RANDOM_SUFFIX}.user.bravo`),
-          table_10: Table.fromString(`org_a_${RANDOM_SUFFIX}.user.charlie`),
-          table_11: Table.fromString(`org_b_${RANDOM_SUFFIX}.user.charlie`),
-          table_12: Table.fromString(`org_c_${RANDOM_SUFFIX}.user.charlie`),
-          table_13: Table.fromString(`org_d_${RANDOM_SUFFIX}.user.charlie`),
-          table_14: Table.fromString(`org_e_${RANDOM_SUFFIX}.user.charlie`),
+          tables: {
+            table_00: Table.fromString(`org_a_${RANDOM_SUFFIX}.user.alpha`),
+            table_01: Table.fromString(`org_b_${RANDOM_SUFFIX}.user.alpha`),
+            table_02: Table.fromString(`org_c_${RANDOM_SUFFIX}.user.alpha`),
+            table_03: Table.fromString(`org_d_${RANDOM_SUFFIX}.user.alpha`),
+            table_04: Table.fromString(`org_e_${RANDOM_SUFFIX}.user.alpha`),
+            table_05: Table.fromString(`org_a_${RANDOM_SUFFIX}.user.bravo`),
+            table_06: Table.fromString(`org_b_${RANDOM_SUFFIX}.user.bravo`),
+            table_07: Table.fromString(`org_c_${RANDOM_SUFFIX}.user.bravo`),
+            table_08: Table.fromString(`org_d_${RANDOM_SUFFIX}.user.bravo`),
+            table_09: Table.fromString(`org_e_${RANDOM_SUFFIX}.user.bravo`),
+            table_10: Table.fromString(`org_a_${RANDOM_SUFFIX}.user.charlie`),
+            table_11: Table.fromString(`org_b_${RANDOM_SUFFIX}.user.charlie`),
+            table_12: Table.fromString(`org_c_${RANDOM_SUFFIX}.user.charlie`),
+            table_13: Table.fromString(`org_d_${RANDOM_SUFFIX}.user.charlie`),
+            table_14: Table.fromString(`org_e_${RANDOM_SUFFIX}.user.charlie`),
+          },
+          errors: [],
         },
         {},
       );
@@ -289,7 +295,7 @@ describe("DBTableResolver", () => {
       // Ensure all tables are resolved and all unique (this is a sanity check
       // that our test logic isn't creating duplicate references)
       const seenTableFQNs: Set<string> = new Set();
-      for (const [_, table] of Object.entries(resolvedTables)) {
+      for (const [_, table] of Object.entries(resolvedTables.tables)) {
         expect(table).toBeDefined();
         const fqn = table.toFQN();
         expect(seenTableFQNs.has(fqn)).toBe(false);

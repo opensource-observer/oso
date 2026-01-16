@@ -1541,7 +1541,7 @@ export type DataIngestionDefinition = {
   __typename?: "DataIngestionDefinition";
   /**
    * The data ingestion configuration for this dataset.
-   * Unlike DataModels and StaticModels, only ONE ingestion config is allowed per dataset.
+   * Unlike DataModels and StaticModels, only one ingestion config is allowed per dataset.
    * Returns null if no configuration has been created yet.
    */
   dataIngestion?: Maybe<DataIngestion>;
@@ -7146,6 +7146,10 @@ export type ResetSensorMutation = {
   Output: SensorOrError;
 };
 
+export type ResolvedTableReference =
+  | SystemResolvedTableReference
+  | SystemUnresolvedTableReference;
+
 export type Resource = {
   __typename?: "Resource";
   configField?: Maybe<ConfigTypeField>;
@@ -8432,7 +8436,7 @@ export type System = {
    * warehouse. This is used by the query rewriter to batch resolve table
    * references as well as other internal operations.
    */
-  resolveTables: Array<SystemResolvedTableReference>;
+  resolveTables: Array<ResolvedTableReference>;
 };
 
 export type SystemResolveTablesArgs = {
@@ -8447,6 +8451,12 @@ export type SystemResolveTablesArgs = {
 export type SystemResolvedTableReference = {
   __typename?: "SystemResolvedTableReference";
   fqn: Scalars["String"]["output"];
+  reference: Scalars["String"]["output"];
+};
+
+export type SystemUnresolvedTableReference = {
+  __typename?: "SystemUnresolvedTableReference";
+  reason: Scalars["String"]["output"];
   reference: Scalars["String"]["output"];
 };
 
