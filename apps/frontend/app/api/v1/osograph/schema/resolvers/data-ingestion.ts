@@ -2,7 +2,6 @@ import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import {
   CreateDataIngestionSchema,
   validateInput,
-  MaterializationWhereSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
 import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -15,8 +14,6 @@ import {
 import { logger } from "@/lib/logger";
 import z from "zod";
 import { DataIngestionsRow } from "@/lib/types/schema-types";
-import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
-import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 
 export const dataIngestionResolvers = {
   Mutation: {
@@ -114,25 +111,5 @@ export const dataIngestionResolvers = {
     config: (parent: DataIngestionsRow) => parent.config,
     createdAt: (parent: DataIngestionsRow) => parent.created_at,
     updatedAt: (parent: DataIngestionsRow) => parent.updated_at,
-    materializations: async (
-      parent: DataIngestionsRow,
-      args: FilterableConnectionArgs,
-      context: GraphQLContext,
-    ) => {
-      return queryWithPagination(args, context, {
-        tableName: "materialization",
-        whereSchema: MaterializationWhereSchema,
-        requireAuth: false,
-        filterByUserOrgs: false,
-        parentOrgIds: parent.org_id,
-        basePredicate: {
-          eq: [{ key: "dataset_id", value: parent.dataset_id }],
-        },
-        orderBy: {
-          key: "created_at",
-          ascending: false,
-        },
-      });
-    },
   },
 };

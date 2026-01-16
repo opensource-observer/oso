@@ -6,12 +6,6 @@ type StaticModel {
   name: String!
   createdAt: DateTime!
   updatedAt: DateTime!
-  materializations(
-    first: Int = 50
-    after: String
-    single: Boolean
-    where: JSON
-  ): MaterializationConnection!
   runs(first: Int = 50, after: String): RunConnection!
 }
 
