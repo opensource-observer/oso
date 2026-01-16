@@ -1,0 +1,117 @@
+test_int_github__node_id_map_legacy_format:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      rows:
+        - id: 1
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+    oso.stg_opendevdata__repos:
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "MDQ6VXNlcjEyMzQ1"
+          decoded_id: 12345
+
+test_int_github__node_id_map_nextgen_format:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      rows:
+        - id: 1
+          primary_github_user_id: "U_kgDOAAGBzQ"
+    oso.stg_opendevdata__repos:
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDOAAGBzQ"
+          decoded_id: 98765
+
+test_int_github__node_id_map_repo_node_ids:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      rows: []
+    oso.stg_opendevdata__repos:
+      rows:
+        - id: 1
+          github_graphql_id: "MDQ6UmVwb3NpdG9yeTEyMzQ1"
+        - id: 2
+          github_graphql_id: "R_kgDOAAGBzQ"
+  outputs:
+    query:
+      rows:
+        - node_id: "MDQ6UmVwb3NpdG9yeTEyMzQ1"
+          decoded_id: 12345
+        - node_id: "R_kgDOAAGBzQ"
+          decoded_id: 98765
+
+test_int_github__node_id_map_deduplication:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      rows:
+        - id: 1
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+        - id: 2
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1"
+    oso.stg_opendevdata__repos:
+      rows:
+        - id: 1
+          github_graphql_id: "MDQ6VXNlcjEyMzQ1"
+  outputs:
+    query:
+      rows:
+        - node_id: "MDQ6VXNlcjEyMzQ1"
+          decoded_id: 12345
+
+test_int_github__node_id_map_filters_null_and_empty:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      rows:
+        - id: 1
+          primary_github_user_id: null
+        - id: 2
+          primary_github_user_id: ""
+        - id: 3
+          primary_github_user_id: "MDQ6VXNlcjk5OTk5"
+    oso.stg_opendevdata__repos:
+      rows:
+        - id: 1
+          github_graphql_id: null
+        - id: 2
+          github_graphql_id: ""
+  outputs:
+    query:
+      rows:
+        - node_id: "MDQ6VXNlcjk5OTk5"
+          decoded_id: 99999
+
+test_int_github__node_id_map_combined_sources:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      rows:
+        - id: 1
+          primary_github_user_id: "MDQ6VXNlcjExMTEx"
+        - id: 2
+          primary_github_user_id: "U_kgDOAAGBzQ"
+    oso.stg_opendevdata__repos:
+      rows:
+        - id: 1
+          github_graphql_id: "MDQ6UmVwb3NpdG9yeTIyMjIy"
+        - id: 2
+          github_graphql_id: "R_kgDOAAGBzQ"
+  outputs:
+    query:
+      rows:
+        - node_id: "MDQ6UmVwb3NpdG9yeTIyMjIy"
+          decoded_id: 22222
+        - node_id: "MDQ6VXNlcjExMTEx"
+          decoded_id: 11111
+        - node_id: "R_kgDOAAGBzQ"
+          decoded_id: 98765
+        - node_id: "U_kgDOAAGBzQ"
+          decoded_id: 98765
