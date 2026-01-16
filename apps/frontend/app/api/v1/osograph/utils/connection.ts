@@ -29,7 +29,7 @@ export function buildConnection<T>(
 ): Connection<T> {
   const { offset, limit } = getPaginationParams(args);
 
-  const hasNextPage = nodes.length > limit;
+  const hasNextPage = nodes.length > limit && limit !== 0; // No pagination when limit = 0
 
   const trimmedNodes = hasNextPage ? nodes.slice(0, limit) : nodes;
 
