@@ -1,10 +1,10 @@
 MODEL (
   name oso.int_gharchive__developers,
-  description 'Developers (actors) from GitHub Archive commits, tracking login and author details history',
+  description 'Distinct developers (actors) from GitHub Archive commits. One row per actor_id with most recent metadata. Metadata history tracked separately in int_ddp__developer_metadata.',
   dialect trino,
   kind FULL,
-  partitioned_by (bucket(actor_id, 8), bucket(author_synthetic_id, 8)),
-  grain (actor_id, actor_login, author_name, author_email, valid_from),
+  partitioned_by bucket(actor_id, 8),
+  grain (actor_id),
   tags (
     "github",
     "ddp"
@@ -13,6 +13,7 @@ MODEL (
     has_at_least_n_rows(threshold := 0)
   )
 );
+
 
 WITH all_commits AS (
   SELECT
@@ -31,29 +32,19 @@ WITH all_commits AS (
     created_at
   FROM oso.stg_github__commits_since_20251007
 ),
-developer_history AS (
+ranked_developers AS (
   SELECT
     actor_id,
     actor_login,
     author_name,
     author_email,
-    MIN(created_at) AS valid_from
+    created_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY actor_id
+      ORDER BY created_at DESC
+    ) AS rn
   FROM all_commits
   WHERE actor_id IS NOT NULL
-  GROUP BY 1, 2, 3, 4
-),
-developer_history_with_valid_to AS (
-  SELECT
-    actor_id,
-    actor_login,
-    author_name,
-    author_email,
-    valid_from,
-    LEAD(valid_from) OVER (
-      PARTITION BY actor_id
-      ORDER BY valid_from
-    ) AS valid_to
-  FROM developer_history
 )
 
 SELECT
@@ -61,7 +52,6 @@ SELECT
   actor_login,
   author_name,
   author_email,
-  @oso_id(author_name, author_email) AS author_synthetic_id,
-  valid_from,
-  valid_to
-FROM developer_history_with_valid_to
+  @oso_id(author_name, author_email) AS author_synthetic_id
+FROM ranked_developers
+WHERE rn = 1
