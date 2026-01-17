@@ -1,0 +1,94 @@
+test_int_ddp__developers_authors_only:
+  model: oso.int_ddp__developers
+  inputs:
+    oso.int_ddp__commits_unified:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        actor_id: bigint
+        actor_login: varchar
+        author_id: bigint
+        canonical_developer_id: bigint
+        primary_github_user_id: varchar
+        is_bot: bigint
+      rows:
+        - sha: "abc123"
+          created_at: "2024-01-01 10:00:00"
+          actor_id: 100
+          actor_login: "pusher1"
+          author_id: 200
+          canonical_developer_id: 1001
+          primary_github_user_id: "MDQ6VXNlcjIwMA=="
+          is_bot: 0
+  outputs:
+    query:
+      rows:
+        - user_id: 100
+          canonical_developer_id: null
+          primary_github_user_id: null
+          is_bot: 0
+        - user_id: 200
+          canonical_developer_id: 1001
+          primary_github_user_id: "MDQ6VXNlcjIwMA=="
+          is_bot: 0
+      partial: true
+
+test_int_ddp__developers_dedup_prefers_author:
+  model: oso.int_ddp__developers
+  inputs:
+    oso.int_ddp__commits_unified:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        actor_id: bigint
+        actor_login: varchar
+        author_id: bigint
+        canonical_developer_id: bigint
+        primary_github_user_id: varchar
+        is_bot: bigint
+      rows:
+        - sha: "abc123"
+          created_at: "2024-01-01 10:00:00"
+          actor_id: 100
+          actor_login: "dev1"
+          author_id: 100
+          canonical_developer_id: 1001
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+          is_bot: 0
+  outputs:
+    query:
+      rows:
+        - user_id: 100
+          canonical_developer_id: 1001
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+          is_bot: 0
+
+test_int_ddp__developers_null_author_id:
+  model: oso.int_ddp__developers
+  inputs:
+    oso.int_ddp__commits_unified:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        actor_id: bigint
+        actor_login: varchar
+        author_id: bigint
+        canonical_developer_id: bigint
+        primary_github_user_id: varchar
+        is_bot: bigint
+      rows:
+        - sha: "xyz789"
+          created_at: "2024-01-01 10:00:00"
+          actor_id: 300
+          actor_login: "pusher_only"
+          author_id: null
+          canonical_developer_id: null
+          primary_github_user_id: null
+          is_bot: null
+  outputs:
+    query:
+      rows:
+        - user_id: 300
+          canonical_developer_id: null
+          primary_github_user_id: null
+          is_bot: 0

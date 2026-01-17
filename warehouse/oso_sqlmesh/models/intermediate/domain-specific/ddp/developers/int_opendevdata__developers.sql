@@ -1,10 +1,10 @@
 MODEL (
   name oso.int_opendevdata__developers,
-  description 'Developers from OpenDevData commits, tracking canonical developer and author details history with decoded actor_id. Uses pre-computed Node ID mapping for efficient decoding.',
+  description 'Distinct developers from OpenDevData commits. One row per canonical_developer_id with decoded actor_id. Metadata history tracked separately in int_ddp__developer_metadata.',
   dialect trino,
   kind FULL,
-  partitioned_by YEAR("valid_from"),
-  grain (canonical_developer_id, primary_github_user_id, actor_id, author_name, author_email, valid_from),
+  partitioned_by bucket(actor_id, 32),
+  grain (canonical_developer_id),
   tags (
     "opendevdata",
     "ddp"
@@ -14,52 +14,24 @@ MODEL (
   )
 );
 
-WITH developer_history AS (
+WITH ranked_developers AS (
   SELECT
     commits.canonical_developer_id,
     devs.primary_github_user_id,
-    @decode_github_node_id(devs.primary_github_user_id) AS actor_id,
+    node_map.decoded_id AS actor_id,
     commits.commit_author_name AS author_name,
     commits.commit_author_email AS author_email,
-    CONCAT(
-      @sha1_hex(SPLIT_PART(commits.commit_author_email, '@', 1)),
-      '@',
-      SPLIT_PART(commits.commit_author_email, '@', 2)
-    ) AS hashed_author_email,
-    MIN(commits.committed_at) AS valid_from
+    commits.committed_at,
+    ROW_NUMBER() OVER (
+      PARTITION BY commits.canonical_developer_id
+      ORDER BY commits.committed_at DESC
+    ) AS rn
   FROM oso.stg_opendevdata__commits AS commits
   INNER JOIN oso.stg_opendevdata__canonical_developers AS devs
     ON commits.canonical_developer_id = devs.id
-  WHERE commits.canonical_developer_id IS NOT NULL
-  GROUP BY 1, 2, 3, 4, 5, 6
-),
-developer_history_with_actor_id AS (
-  SELECT
-    dh.canonical_developer_id,
-    dh.primary_github_user_id,
-    node_map.decoded_id AS actor_id,
-    dh.author_name,
-    dh.author_email,
-    dh.hashed_author_email,
-    dh.valid_from
-  FROM developer_history AS dh
   LEFT JOIN oso.int_github__node_id_map AS node_map
-    ON dh.primary_github_user_id = node_map.node_id
-),
-developer_history_with_valid_to AS (
-  SELECT
-    canonical_developer_id,
-    primary_github_user_id,
-    actor_id,
-    author_name,
-    author_email,
-    hashed_author_email,
-    valid_from,
-    LEAD(valid_from) OVER (
-      PARTITION BY canonical_developer_id
-      ORDER BY valid_from
-    ) AS valid_to
-  FROM developer_history_with_actor_id
+    ON devs.primary_github_user_id = node_map.node_id
+  WHERE commits.canonical_developer_id IS NOT NULL
 )
 
 SELECT
@@ -68,8 +40,6 @@ SELECT
   actor_id,
   author_name,
   author_email,
-  @oso_id(author_name, author_email) AS author_synthetic_id,
-  hashed_author_email,
-  valid_from,
-  valid_to
-FROM developer_history_with_valid_to
+  @oso_id(author_name, author_email) AS author_synthetic_id
+FROM ranked_developers
+WHERE rn = 1
