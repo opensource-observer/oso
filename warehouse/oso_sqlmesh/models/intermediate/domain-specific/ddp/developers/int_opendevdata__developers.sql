@@ -3,7 +3,7 @@ MODEL (
   description 'Distinct developers from OpenDevData commits. One row per canonical_developer_id with decoded actor_id. Metadata history tracked separately in int_ddp__developer_metadata.',
   dialect trino,
   kind FULL,
-  partitioned_by bucket(actor_id, 8),
+  partitioned_by bucket(actor_id, 32),
   grain (canonical_developer_id),
   tags (
     "opendevdata",

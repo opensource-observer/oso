@@ -3,7 +3,7 @@ MODEL (
   description 'Unified developers from commits: union of authors (author_id) and actors (actor_id). user_id is the primary identifier (GitHub database ID).',
   dialect trino,
   kind FULL,
-  partitioned_by bucket(user_id, 8),
+  partitioned_by bucket(user_id, 32),
   grain (user_id),
   tags (
     "ddp",

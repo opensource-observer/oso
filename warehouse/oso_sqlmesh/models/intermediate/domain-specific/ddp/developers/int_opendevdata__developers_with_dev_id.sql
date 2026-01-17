@@ -3,7 +3,7 @@ MODEL (
   description 'Unified developer identity model linking GitHub actors with OpenDevData canonical developers. Uses commits-first architecture with ID-based matching only.',
   dialect trino,
   kind FULL,
-  partitioned_by bucket(user_id, 8),
+  partitioned_by bucket(user_id, 32),
   grain (user_id),
   tags (
     "opendevdata",

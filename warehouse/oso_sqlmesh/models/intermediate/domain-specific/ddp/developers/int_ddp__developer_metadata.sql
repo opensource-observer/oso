@@ -3,7 +3,7 @@ MODEL (
   description 'Historical developer metadata tracking all emails, names, and logins per user_id. Many-to-one relationship with developers.',
   dialect trino,
   kind FULL,
-  partitioned_by bucket(user_id, 8),
+  partitioned_by bucket(user_id, 32),
   grain (user_id, metadata_type, metadata_value),
   tags (
     "ddp",
