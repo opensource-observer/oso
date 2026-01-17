@@ -17,7 +17,6 @@ import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagin
 import {
   buildConnectionOrEmpty,
   getUserOrganizationsConnection,
-  preparePaginationRange,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
@@ -30,7 +29,10 @@ import {
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { parseWhereClause } from "@/app/api/v1/osograph/utils/where-parser";
-import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+import {
+  maybeAddQueryPagination,
+  queryWithPagination,
+} from "@/app/api/v1/osograph/utils/query-helpers";
 
 export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -202,14 +204,15 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       await requireOrgMembership(authenticatedUser.userId, parent.id);
 
       const supabase = createAdminClient();
-      const [start, end] = preparePaginationRange(args);
 
-      const { data: membersData, count } = await supabase
-        .from("users_by_organization")
-        .select("*, user_profiles(*)", { count: "exact" })
-        .eq("org_id", parent.id)
-        .is("deleted_at", null)
-        .range(start, end);
+      const { data: membersData, count } = await maybeAddQueryPagination(
+        supabase
+          .from("users_by_organization")
+          .select("*, user_profiles(*)", { count: "exact" })
+          .eq("org_id", parent.id)
+          .is("deleted_at", null),
+        args,
+      );
 
       if (!membersData || membersData.length === 0) {
         return buildConnectionOrEmpty(null, args, count);
