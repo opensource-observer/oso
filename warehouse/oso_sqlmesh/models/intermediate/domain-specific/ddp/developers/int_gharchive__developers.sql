@@ -3,7 +3,7 @@ MODEL (
   description 'Distinct developers (actors) from GitHub Archive commits. One row per actor_id with most recent metadata. Metadata history tracked separately in int_ddp__developer_metadata.',
   dialect trino,
   kind FULL,
-  partitioned_by bucket(actor_id, 8),
+  partitioned_by bucket(actor_id, 32),
   grain (actor_id),
   tags (
     "github",
