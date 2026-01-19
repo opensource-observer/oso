@@ -11,9 +11,11 @@ from .finish_run import FinishRun
 from .finish_step import FinishStep
 from .get_data_ingestion_config import GetDataIngestionConfig
 from .get_data_models import GetDataModels
+from .get_notebook import GetNotebook
 from .get_static_models import GetStaticModels
 from .input_types import DataModelColumnInput, UpdateMetadataInput
 from .resolve_tables import ResolveTables
+from .save_published_notebook_html import SavePublishedNotebookHtml
 from .start_run import StartRun
 from .start_step import StartStep
 from .update_run_metadata import UpdateRunMetadata
@@ -194,6 +196,33 @@ class Client(AsyncBaseClient):
         )
         data = self.get_data(response)
         return CreateMaterialization.model_validate(data)
+
+    async def save_published_notebook_html(
+        self, notebook_id: str, html_content: List[Any], **kwargs: Any
+    ) -> SavePublishedNotebookHtml:
+        query = gql(
+            """
+            mutation SavePublishedNotebookHtml($notebookId: ID!, $htmlContent: [Byte!]!) {
+              savePublishedNotebookHtml(
+                input: {notebookId: $notebookId, htmlContent: $htmlContent}
+              ) {
+                success
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {
+            "notebookId": notebook_id,
+            "htmlContent": html_content,
+        }
+        response = await self.execute(
+            query=query,
+            operation_name="SavePublishedNotebookHtml",
+            variables=variables,
+            **kwargs,
+        )
+        data = self.get_data(response)
+        return SavePublishedNotebookHtml.model_validate(data)
 
     async def get_data_models(self, dataset_id: str, **kwargs: Any) -> GetDataModels:
         query = gql(
@@ -409,3 +438,26 @@ class Client(AsyncBaseClient):
         )
         data = self.get_data(response)
         return ResolveTables.model_validate(data)
+
+    async def get_notebook(self, notebook_id: str, **kwargs: Any) -> GetNotebook:
+        query = gql(
+            """
+            query GetNotebook($notebookId: ID!) {
+              notebooks(where: {id: {eq: $notebookId}}, single: true) {
+                edges {
+                  node {
+                    id
+                    name
+                    data
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"notebookId": notebook_id}
+        response = await self.execute(
+            query=query, operation_name="GetNotebook", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return GetNotebook.model_validate(data)

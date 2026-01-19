@@ -80,6 +80,14 @@ mutation CreateMaterialization(
   }
 }
 
+mutation SavePublishedNotebookHtml($notebookId: ID!, $htmlContent: [Byte!]!) {
+  savePublishedNotebookHtml(
+    input: { notebookId: $notebookId, htmlContent: $htmlContent }
+  ) {
+    success
+  }
+}
+
 fragment DatasetCommon on Dataset {
   id
   name
@@ -213,3 +221,16 @@ query ResolveTables($references: [String!]!, $metadata: JSON) {
     }
   }
 }
+
+query GetNotebook($notebookId: ID!) {
+  notebooks(where: { id: { eq: $notebookId } }, single: true) {
+    edges {
+      node {
+        id
+        name
+        data
+      }
+    }
+  }
+}
+
