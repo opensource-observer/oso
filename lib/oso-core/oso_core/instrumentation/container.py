@@ -13,12 +13,11 @@ class MetricsContainer:
 
     def initialize_gauge(
         self,
-        name: str,
         gauge: Gauge,
         initial_value: int = 0,
         initial_labels: dict | None = None,
     ) -> Gauge:
-        self._gauges[name] = gauge
+        self._gauges[gauge.name] = gauge
         if initial_labels is None:
             initial_labels = {}
         gauge.set(initial_labels, initial_value)
@@ -29,12 +28,11 @@ class MetricsContainer:
 
     def initialize_counter(
         self,
-        name: str,
         counter: Counter,
         initial_value: int = 0,
         initial_labels: dict | None = None,
     ) -> Counter:
-        self._counters[name] = counter
+        self._counters[counter.name] = counter
         if initial_labels is None:
             initial_labels = {}
         counter.set(initial_labels, initial_value)
@@ -43,13 +41,13 @@ class MetricsContainer:
     def histogram(self, name: str) -> Histogram:
         return self._histograms[name]
 
-    def initialize_histogram(self, name: str, histogram: Histogram) -> Histogram:
-        self._histograms[name] = histogram
+    def initialize_histogram(self, histogram: Histogram) -> Histogram:
+        self._histograms[histogram.name] = histogram
         return histogram
 
     def summary(self, name: str) -> Summary:
         return self._summaries[name]
 
-    def initialize_summary(self, name: str, summary: Summary) -> Summary:
-        self._summaries[name] = summary
+    def initialize_summary(self, summary: Summary) -> Summary:
+        self._summaries[summary.name] = summary
         return summary

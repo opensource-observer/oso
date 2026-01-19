@@ -4,11 +4,13 @@ import typing as t
 import aiotrino
 import aiotrino.utils
 import structlog
+from aioprometheus.collectors import Counter
 from aiotrino.exceptions import (
     TrinoExternalError,
     TrinoUserError,
 )
 from duckdb import ProgrammingError
+from oso_core.instrumentation.container import MetricsContainer
 from oso_dagster.resources import GCSFileResource, TrinoResource
 from osoprotobufs.query_pb2 import QueryRunRequest
 from queryrewriter import rewrite_query
@@ -29,6 +31,14 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
     topic = "query_run_requests"
     message_type = QueryRunRequest
     schema_file_name = "query.proto"
+
+    def initialize_metrics(self, metrics: MetricsContainer):
+        metrics.initialize_counter(
+            Counter(
+                "query_response_total", "Total number of query responses processed"
+            ),
+        )
+        return super().initialize_metrics(metrics)
 
     async def handle_run_message(
         self,

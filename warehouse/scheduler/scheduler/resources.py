@@ -283,44 +283,14 @@ def metrics_factory() -> MetricsContainer:
     """Factory function to create a metrics container resource."""
     metrics = MetricsContainer()
     metrics.initialize_counter(
-        "messages_processed_total",
         Counter("messages_processed_total", "Total number of messages processed"),
     )
 
-    metrics.initialize_counter(
-        "messages_failed_total",
-        Counter(
-            "messages_failed_total", "Total number of messages that failed processing"
-        ),
-    )
-
-    metrics.initialize_counter(
-        "messages_succeeded_total",
-        Counter(
-            "messages_succeeded_total",
-            "Total number of messages that succeeded processing",
-        ),
-    )
-
-    metrics.initialize_counter(
-        "messages_skipped_total",
-        Counter("messages_skipped_total", "Total number of messages that were skipped"),
-    )
-
-    metrics.initialize_counter(
-        "messages_cancelled_total",
-        Counter(
-            "messages_cancelled_total", "Total number of messages that were cancelled"
-        ),
-    )
-
     metrics.initialize_gauge(
-        "messages_active",
         Gauge("messages_active", "Number of active messages being processed"),
     )
 
     metrics.initialize_summary(
-        "message_handling_duration_ms",
         Summary(
             "message_handling_duration_ms",
             "Duration of message handling in milliseconds",

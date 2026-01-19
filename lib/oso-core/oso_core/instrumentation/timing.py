@@ -4,18 +4,25 @@ from contextlib import asynccontextmanager
 
 from aioprometheus.collectors import Summary
 
+from .common import LabelerContext
+
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def async_time(summary: Summary, labels: dict | None = None):
+async def async_time(summary: Summary, base_labels: dict | None = None):
     """
     An asynchronous context manager to time a code block.
     """
     start_time = time.perf_counter()
+    context = LabelerContext()
+    if base_labels:
+        context.set_labels(base_labels)
     try:
-        yield
+        yield context
     finally:
         end_time = time.perf_counter()
         elapsed_time = end_time - start_time
-        summary.observe(labels or {}, elapsed_time * 1000)  # Convert to milliseconds
+        summary.observe(
+            context.get_labels(), elapsed_time * 1000
+        )  # Convert to milliseconds

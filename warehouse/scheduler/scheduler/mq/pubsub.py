@@ -310,13 +310,24 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 f"Processing queued message #{message_number} {queued_message}",
                 extra={"queued_message": queued_message},
             )
-            async with async_time(metrics.summary("message_handling_duration_ms"), {}):
+            async with async_time(
+                metrics.summary("message_handling_duration_ms")
+            ) as labeler:
                 response = await self.resources.run(
                     handler.handle_message,
                     additional_inject={
                         "message": queued_message.message,
                     },
                 )
+                match response:
+                    case SuccessResponse():
+                        labeler.add_labels({"status": "success"})
+                    case FailedResponse():
+                        labeler.add_labels({"status": "failed"})
+                    case SkipResponse():
+                        labeler.add_labels({"status": "skipped"})
+                    case CancelledResponse():
+                        labeler.add_labels({"status": "cancelled"})
 
             logger.debug(f"Finished processing queued message #{message_number}")
             await self.record_response(response_storage, queued_message, response)
@@ -346,14 +357,13 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         # Record metrics based on response type
         match response:
             case SuccessResponse():
-                metrics.counter("messages_succeeded_total").inc({})
+                metrics.counter("messages_processed_total").inc({"status": "success"})
             case FailedResponse():
-                metrics.counter("messages_failed_total").inc({})
+                metrics.counter("messages_processed_total").inc({"status": "failed"})
             case SkipResponse():
-                metrics.counter("messages_skipped_total").inc({})
+                metrics.counter("messages_processed_total").inc({"status": "skipped"})
             case CancelledResponse():
-                metrics.counter("messages_cancelled_total").inc({})
-        metrics.counter("messages_processed_total").inc({})
+                metrics.counter("messages_processed_total").inc({"status": "cancelled"})
 
     async def _get_from_queue_or_timeout(
         self, queue: AsyncQueue[_QueuedPubSubMessage], timeout: float
