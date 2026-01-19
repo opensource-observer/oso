@@ -2,7 +2,6 @@
 Special type for system related reads that are only allowed by authenticated
 service accounts that have system privileges.
 """
-
 type SystemResolvedTableReference {
   reference: String!
   fqn: String!
@@ -25,7 +24,7 @@ extend type Mutation {
   System only. Mark a run as started.
   """
   startRun(input: StartRunInput!): StartRunPayload!
-  
+
   """
   System only. Update run metadata. This can be called at any time
   """
@@ -49,7 +48,16 @@ extend type Mutation {
   """
   System only. Create a materialization for a step
   """
-  createMaterialization(input: CreateMaterializationInput!): CreateMaterializationPayload!
+  createMaterialization(
+    input: CreateMaterializationInput!
+  ): CreateMaterializationPayload!
+
+  """
+  System only. Save the generated published notebook HTML to object storage
+  """
+  savePublishedNotebookHtml(
+    input: SavePublishedNotebookHtmlInput!
+  ): SavePublishedNotebookHtmlPayload!
 }
 
 extend type Query {
@@ -134,4 +142,14 @@ type CreateMaterializationPayload {
   success: Boolean!
   message: String
   materialization: Materialization!
+}
+
+input SavePublishedNotebookHtmlInput {
+  notebookId: ID!
+  htmlContent: [Byte!]!
+}
+
+type SavePublishedNotebookHtmlPayload {
+  success: Boolean!
+  message: String
 }

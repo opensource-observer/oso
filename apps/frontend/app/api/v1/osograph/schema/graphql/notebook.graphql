@@ -60,7 +60,19 @@ extend type Mutation {
   """
   Save notebook preview image
   """
-  saveNotebookPreview(input: SaveNotebookPreviewInput!): SaveNotebookPreviewPayload!
+  saveNotebookPreview(
+    input: SaveNotebookPreviewInput!
+  ): SaveNotebookPreviewPayload!
+
+  """
+  Publish the notebook HTML to the public
+  """
+  publishNotebook(input: PublishNotebookInput!): PublishNotebookPayload!
+
+  """  
+  Unpublish the notebook
+  """
+  unpublishNotebook(notebookId: ID!): UnpublishNotebookPayload!
 }
 
 input CreateNotebookInput {
@@ -96,5 +108,20 @@ type SaveNotebookPreviewPayload {
   success: Boolean!
   notebook: Notebook
   previewUrl: String
+  message: String
+}
+
+input PublishNotebookInput {
+  notebookId: ID!
+}
+
+type PublishNotebookPayload {
+  success: Boolean!
+  message: String
+  run: Run!
+}
+
+type UnpublishNotebookPayload {
+  success: Boolean!
   message: String
 }

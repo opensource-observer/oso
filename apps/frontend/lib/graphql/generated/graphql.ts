@@ -27,6 +27,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean };
   Int: { input: number; output: number };
   Float: { input: number; output: number };
+  Byte: { input: any; output: any };
   /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.This scalar is serialized to a string in ISO 8601 format and parsed from a string in ISO 8601 format. */
   DateTimeISO: { input: any; output: any };
   /**
@@ -3485,6 +3486,8 @@ export type Mutation = {
   launchRunReexecution: LaunchRunReexecutionResult;
   /** Log telemetry about the Dagster instance. */
   logTelemetry: LogTelemetryMutationResult;
+  /** Publish the notebook HTML to the public */
+  publishNotebook: PublishNotebookPayload;
   /** Retries a set of partition backfill runs. Retrying a backfill will create a new backfill to retry any failed partitions. */
   reexecutePartitionBackfill: LaunchBackfillResult;
   /** Reloads a code location server. */
@@ -3505,6 +3508,8 @@ export type Mutation = {
   revokeInvitation: RevokeInvitationPayload;
   /** Save notebook preview image */
   saveNotebookPreview: SaveNotebookPreviewPayload;
+  /** System only. Save the generated published notebook HTML to object storage */
+  savePublishedNotebookHtml: SavePublishedNotebookHtmlPayload;
   /** Enable a schedule to launch runs for a job based on external state change. */
   scheduleDryRun: ScheduleDryRunResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
@@ -3537,6 +3542,8 @@ export type Mutation = {
   terminateRun: TerminateRunResult;
   /** Terminates a set of runs given their run IDs. */
   terminateRuns: TerminateRunsResultOrError;
+  /** Unpublish the notebook */
+  unpublishNotebook: UnpublishNotebookPayload;
   updateDataModel: CreateDataModelPayload;
   /** Update a dataset */
   updateDataset: UpdateDatasetPayload;
@@ -3747,6 +3754,11 @@ export type MutationLogTelemetryArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationPublishNotebookArgs = {
+  input: PublishNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReexecutePartitionBackfillArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
@@ -3789,6 +3801,11 @@ export type MutationRevokeInvitationArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationSaveNotebookPreviewArgs = {
   input: SaveNotebookPreviewInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationSavePublishedNotebookHtmlArgs = {
+  input: SavePublishedNotebookHtmlInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3875,6 +3892,11 @@ export type MutationTerminateRunArgs = {
 export type MutationTerminateRunsArgs = {
   runIds: Array<Scalars["String"]["input"]>;
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUnpublishNotebookArgs = {
+  notebookId: Scalars["ID"]["input"];
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -5983,6 +6005,17 @@ export type PresetNotFoundError = Error & {
   preset: Scalars["String"]["output"];
 };
 
+export type PublishNotebookInput = {
+  notebookId: Scalars["ID"]["input"];
+};
+
+export type PublishNotebookPayload = {
+  __typename?: "PublishNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run: Run;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type PythonArtifactMetadataEntry = MetadataEntry & {
   __typename?: "PythonArtifactMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -7802,6 +7835,17 @@ export type SaveNotebookPreviewPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
+export type SavePublishedNotebookHtmlInput = {
+  htmlContent: Array<Scalars["Byte"]["input"]>;
+  notebookId: Scalars["ID"]["input"];
+};
+
+export type SavePublishedNotebookHtmlPayload = {
+  __typename?: "SavePublishedNotebookHtmlPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type ScalarUnionConfigType = ConfigType & {
   __typename?: "ScalarUnionConfigType";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -8705,6 +8749,12 @@ export type UnpartitionedAssetStatus = {
   failed: Scalars["Boolean"]["output"];
   inProgress: Scalars["Boolean"]["output"];
   materialized: Scalars["Boolean"]["output"];
+};
+
+export type UnpublishNotebookPayload = {
+  __typename?: "UnpublishNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type UnsupportedOperationError = Error & {
