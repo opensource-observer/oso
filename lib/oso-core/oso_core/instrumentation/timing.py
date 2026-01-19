@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from aioprometheus.collectors import Summary
 
-from .common import LabelerContext
+from .common import MetricsLabeler
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ async def async_time(summary: Summary, base_labels: dict | None = None):
     An asynchronous context manager to time a code block.
     """
     start_time = time.perf_counter()
-    context = LabelerContext()
+    context = MetricsLabeler()
     if base_labels:
         context.set_labels(base_labels)
     try:

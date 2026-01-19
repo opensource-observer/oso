@@ -4,12 +4,13 @@ import typing as t
 import aiotrino
 import aiotrino.utils
 import structlog
-from aioprometheus.collectors import Counter
+from aioprometheus.collectors import Counter, Summary
 from aiotrino.exceptions import (
     TrinoExternalError,
     TrinoUserError,
 )
 from duckdb import ProgrammingError
+from oso_core.instrumentation.common import MetricsLabler
 from oso_core.instrumentation.container import MetricsContainer
 from oso_dagster.resources import GCSFileResource, TrinoResource
 from osoprotobufs.query_pb2 import QueryRunRequest
@@ -38,6 +39,17 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 "query_response_total", "Total number of query responses processed"
             ),
         )
+        metrics.initialize_counter(
+            Counter(
+                "query_count_total", "Total number of queries containing UDM references"
+            ),
+        )
+        metrics.initialize_summary(
+            Summary(
+                "query_row_count",
+                "Number of rows returned by queries",
+            ),
+        )
         return super().initialize_metrics(metrics)
 
     async def handle_run_message(
@@ -48,6 +60,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
         consumer_trino: TrinoResource,
         gcs: GCSFileResource,
         oso_client: Client,
+        metrics: MetricsContainer,
     ) -> HandlerResponse:
         # Process the QueryRunRequest message
         context.log.info(f"Handling QueryRunRequest with ID: {message.run_id}")
@@ -60,11 +73,15 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
 
         logger.info(f"User: {message.user}")
         logger.info(f"Query: {message.query}")
+
         try:
             query = await rewrite_query(message.query, table_resolvers)
         except TableResolutionError as e:
             logger.error(f"Table resolution error: {e}")
 
+            metrics.counter("query_response_total").inc(
+                {"response_type": "table_resolution_error"}
+            )
             return FailedResponse(
                 message=f"Table resolution error for QueryRunRequest ID: {message.run_id}",
                 status_code=404,
@@ -83,8 +100,18 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
             if table.startswith(common_settings.warehouse_shared_catalog_name):
                 contains_udm_reference = True
                 break
+
         if contains_udm_reference:
             await context.update_metadata({"containsUdmReference": True}, merge=True)
+
+        base_labeler = MetricsLabler()
+        base_labeler.add_labels(
+            {
+                "contains_udm_reference": str(contains_udm_reference).lower(),
+                "org_id": context.organization.id,
+            }
+        )
+        metrics.counter("query_count_total").inc(base_labeler.get_labels())
 
         logger.info(f"Rewritten Query: {query.rewritten_query}")
 
@@ -95,6 +122,13 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 cursor = await cursor.execute(query.rewritten_query)
             except TrinoUserError as e:
                 logger.error(f"Error executing query: {e}")
+                metrics.counter("query_response_total").inc(
+                    base_labeler.get_labels(
+                        {
+                            "response_type": "trino_user_error",
+                        }
+                    )
+                )
                 return FailedResponse(
                     message=f"Failed to execute query for QueryRunRequest ID: {message.run_id}",
                     status_code=400,
@@ -102,6 +136,10 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 )
             except TrinoExternalError as e:
                 logger.error(f"Server error while executing query: {e}")
+
+                metrics.counter("query_response_total").inc(
+                    base_labeler.get_labels({"response_type": "trino_external_error"}),
+                )
                 return FailedResponse(
                     message=f"Server error for QueryRunRequest ID: {message.run_id}",
                     status_code=500,
@@ -110,6 +148,10 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
             # This will handle errors for other dbapi exceptions so
             # we can remain compatible with duckdb as well
             except ProgrammingError as e:
+                logger.error(f"Programming error while executing query: {e}")
+                metrics.counter("query_response_total").inc(
+                    {"response_type": "programming_error"}
+                )
                 return FailedResponse(
                     message=f"Programming error for QueryRunRequest ID: {message.run_id}",
                     status_code=400,
@@ -121,6 +163,9 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 )
             except Exception as e:
                 logger.error(f"Unexpected error while executing query: {e}")
+                metrics.counter("query_response_total").inc(
+                    {"response_type": "unknown_error"}
+                )
                 return FailedResponse(
                     message=f"Unexpected error for QueryRunRequest ID: {message.run_id}",
                     status_code=500,
@@ -134,6 +179,9 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
             columns = [column.name for column in await cursor.get_description()]
             file_path = f"gs://{common_settings.query_bucket}/{convert_uuid_bytes_to_str(message.run_id)}"
             logger.info(f"Writing query results to: {file_path}")
+
+            row_count = 0
+
             with storage_client.open(
                 file_path,
                 "w",
@@ -146,8 +194,16 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 async for row in aiotrino.utils.aiter(cursor.fetchone, None):
                     if row is None:
                         continue
+                    row_count += 1
                     f.write(json.dumps(row, default=str) + "\n")
+
+            metrics.summary("query_row_count").observe(
+                base_labeler.get_labels(), row_count
+            )
         logger.info("Query results written successfully")
+        metrics.counter("query_response_total").inc(
+            base_labeler.get_labels({"response_type": "success"}),
+        )
         return SuccessResponse(
             message=f"Processed QueryRunRequest with ID: {message.run_id}"
         )

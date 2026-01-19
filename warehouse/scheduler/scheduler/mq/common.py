@@ -243,14 +243,14 @@ class RunHandler(MessageHandler[T]):
 
         async with async_time(
             metrics.summary("run_context_load_duration_ms")
-        ) as labeler:
+        ) as labeler_ctx:
             run_context = await OSORunContext.create(
                 oso_client,
                 run_id=run_id_str,
                 materialization_strategy=materialization_strategy,
                 metrics=metrics,
             )
-            labeler.add_labels({"org_id": run_context.organization.name})
+            labeler_ctx.add_labels({"org_id": run_context.organization.name})
 
         # Try to set the run to running in the database for user's visibility
         try:
