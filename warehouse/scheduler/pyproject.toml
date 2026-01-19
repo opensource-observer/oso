@@ -28,6 +28,8 @@ dependencies = [
     "structlog>=25.4.0",
     "pyjwt>=2.10.1",
     "janus>=2.0.0",
+    "playwright>=1.55.0",
+    "lzstring>=1.0.4",
 ]
 
 [tool.uv.sources]
