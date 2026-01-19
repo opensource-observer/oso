@@ -4,20 +4,18 @@ from contextlib import asynccontextmanager
 
 from aioprometheus.collectors import Summary
 
-from .common import MetricsLabeler
+from .common import MetricsLabeler, MetricsLabelerContext
 
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def async_time(summary: Summary, base_labels: dict | None = None):
+async def async_time(summary: Summary, parent_labeler: MetricsLabeler | None = None):
     """
-    An asynchronous context manager to time a code block.
+    An asynchronous context manager to time a code block in milliseconds
     """
     start_time = time.perf_counter()
-    context = MetricsLabeler()
-    if base_labels:
-        context.set_labels(base_labels)
+    context = MetricsLabelerContext(parent_labeler)
     try:
         yield context
     finally:

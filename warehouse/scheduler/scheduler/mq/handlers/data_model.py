@@ -2,6 +2,10 @@ import asyncio
 import random
 
 import structlog
+from aioprometheus.collectors import Counter, Summary
+from oso_core.instrumentation.common import MetricsLabeler
+from oso_core.instrumentation.container import MetricsContainer
+from oso_core.instrumentation.timing import async_time
 from oso_dagster.resources.udm_engine_adapter import (
     UserDefinedModelEngineAdapterResource,
 )
@@ -19,9 +23,11 @@ from scheduler.types import (
     Model,
     ModelSorter,
     RunContext,
+    StepContext,
     SuccessResponse,
 )
 from scheduler.utils import OSOClientTableResolver, ctas_query
+from sqlmesh import EngineAdapter
 
 logger = structlog.getLogger(__name__)
 
@@ -56,12 +62,43 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
     message_type = DataModelRunRequest
     schema_file_name = "data-model.proto"
 
+    def initialize_metrics(self, metrics: MetricsContainer):
+        metrics.initialize_summary(
+            Summary(
+                "data_model_selected_models_count",
+                "Total number of data models in the run request",
+            ),
+        )
+        metrics.initialize_counter(
+            Counter(
+                "data_model_response_total",
+                "Total number of data model run request responses processed",
+            ),
+        )
+
+        metrics.initialize_summary(
+            Summary(
+                "data_model_total_evaluation_duration_ms",
+                "Duration of all the selected data model runs execution in milliseconds",
+            )
+        )
+
+        metrics.initialize_summary(
+            Summary(
+                "data_model_individual_model_evaluation_duration_ms",
+                "Duration of individual data model execution in milliseconds",
+            )
+        )
+
+        return super().initialize_metrics(metrics)
+
     async def handle_run_message(
         self,
         context: RunContext,
         message: DataModelRunRequest,
         udm_engine_adapter: UserDefinedModelEngineAdapterResource,
         oso_client: Client,
+        metrics: MetricsContainer,
     ) -> HandlerResponse:
         # Process the DataModelRunRequest message
         context.log.info(f"Handling DataModelRunRequest with ID: {message.run_id}")
@@ -75,6 +112,14 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         # Get the selected models from the DataModelRunRequest
         selected_model_release_ids = message.model_release_ids
+
+        labeler = MetricsLabeler(
+            {
+                "org_id": context.organization.id,
+                "trigger_type": context.trigger_type,
+                "dataset_id": message.dataset_id,
+            }
+        )
 
         # If no specific models are provided, run all models in the dataset
         data_model_def = dataset.node.type_definition
@@ -94,6 +139,11 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 for edge in data_model_def.data_models.edges
                 if edge.node.id in selected_model_release_ids
             ]
+
+        metrics.summary("data_model_selected_models_count").observe(
+            labeler.get_labels(),
+            len(selected_models),
+        )
 
         # Remove models with no latest release
         models_with_release = [
@@ -122,6 +172,33 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 message=f"No models to run for DataModelRunRequest with ID: {message.run_id}"
             )
 
+        async with async_time(
+            metrics.summary("data_model_total_evaluation_duration_ms"), labeler
+        ):
+            await self.evaluate_models(
+                context=context,
+                udm_engine_adapter=udm_engine_adapter,
+                oso_client=oso_client,
+                converted_models=converted_models,
+                labeler=labeler,
+                metrics=metrics,
+            )
+
+        return SuccessResponse(
+            message=f"Processed DataModelRunRequest with ID: {message.run_id}"
+        )
+
+    async def evaluate_models(
+        self,
+        *,
+        context: RunContext,
+        udm_engine_adapter: UserDefinedModelEngineAdapterResource,
+        oso_client: Client,
+        converted_models: list[Model],
+        metrics: MetricsContainer,
+        labeler: MetricsLabeler,
+    ) -> None:
+        """Evaluate the provided models using the UDM engine adapter."""
         async with udm_engine_adapter.get_adapter() as adapter:
             table_resolvers: list[TableResolver] = [
                 OSOClientTableResolver(oso_client=oso_client)
@@ -134,60 +211,78 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                     name=f"evaluate_model_{model.name}",
                     display_name=f"Evaluate Model {model.name}",
                 ) as step_context:
-                    step_context.log.info(f"Starting evaluation for model {model.name}")
-
-                    assert model.language.lower() == "sql", (
-                        "Only SQL models are supported for evaluation at this time."
-                    )
-
-                    table_ref = model.table_reference()
-
-                    target_table = step_context.generate_destination_table_exp(
-                        table_ref
-                    )
-
-                    logger.info("Writing to target table: %s", target_table)
-                    adapter.create_schema(
-                        f"{target_table.catalog}.{target_table.db}",
-                        ignore_if_exists=True,
-                    )
-
-                    resolved_query = await model.resolve_query(
-                        table_resolvers=table_resolvers
-                    )
-
-                    create_query = ctas_query(resolved_query)
-
-                    adapter.ctas(
-                        table_name=target_table,
-                        query_or_df=create_query,
-                        exists=True,
-                    )
-
-                    adapter.replace_query(
-                        table_name=target_table,
-                        query_or_df=resolved_query,
-                    )
-
-                    columns = adapter.columns(table_name=target_table)
-
-                    # Create the schema for the materialization
-                    schema: list[DataModelColumnInput] = []
-                    for name, data_type in columns.items():
-                        data_type_name = data_type.sql(dialect=adapter.dialect)
-                        step_context.log.info(f"Column: {name}, Type: {data_type_name}")
-                        schema.append(
-                            DataModelColumnInput(
-                                name=name,
-                                type=data_type_name,
-                            )
+                    async with async_time(
+                        metrics.summary(
+                            "data_model_individual_model_evaluation_duration_ms"
+                        ),
+                        labeler,
+                    ):
+                        await self.evaluate_single_model(
+                            model=model,
+                            step_context=step_context,
+                            adapter=adapter,
+                            table_resolvers=table_resolvers,
+                            metrics=metrics,
+                            labeler=labeler,
                         )
 
-                    await step_context.create_materialization(
-                        table_id=table_ref.table_id,
-                        warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
-                        schema=schema,
-                    )
-        return SuccessResponse(
-            message=f"Processed DataModelRunRequest with ID: {message.run_id}"
+    async def evaluate_single_model(
+        self,
+        *,
+        model: Model,
+        step_context: StepContext,
+        adapter: EngineAdapter,
+        table_resolvers: list[TableResolver],
+        metrics: MetricsContainer,
+        labeler: MetricsLabeler,
+    ):
+        step_context.log.info(f"Starting evaluation for model {model.name}")
+
+        assert model.language.lower() == "sql", (
+            "Only SQL models are supported for evaluation at this time."
+        )
+
+        table_ref = model.table_reference()
+
+        target_table = step_context.generate_destination_table_exp(table_ref)
+
+        logger.info("Writing to target table: %s", target_table)
+        adapter.create_schema(
+            f"{target_table.catalog}.{target_table.db}",
+            ignore_if_exists=True,
+        )
+
+        resolved_query = await model.resolve_query(table_resolvers=table_resolvers)
+
+        create_query = ctas_query(resolved_query)
+
+        adapter.ctas(
+            table_name=target_table,
+            query_or_df=create_query,
+            exists=True,
+        )
+
+        adapter.replace_query(
+            table_name=target_table,
+            query_or_df=resolved_query,
+        )
+
+        columns = adapter.columns(table_name=target_table)
+
+        # Create the schema for the materialization
+        schema: list[DataModelColumnInput] = []
+        for name, data_type in columns.items():
+            data_type_name = data_type.sql(dialect=adapter.dialect)
+            step_context.log.info(f"Column: {name}, Type: {data_type_name}")
+            schema.append(
+                DataModelColumnInput(
+                    name=name,
+                    type=data_type_name,
+                )
+            )
+
+        await step_context.create_materialization(
+            table_id=table_ref.table_id,
+            warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
+            schema=schema,
         )

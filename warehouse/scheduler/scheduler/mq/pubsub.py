@@ -33,6 +33,7 @@ import uuid
 from dataclasses import dataclass
 from threading import Event, Lock
 
+from aioprometheus.collectors import Counter, Gauge, Summary
 from google.cloud.pubsub import SubscriberClient
 from google.cloud.pubsub_v1.subscriber.message import Message
 from google.protobuf.message import Message as ProtobufMessage
@@ -97,6 +98,32 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         self._metrics = metrics
         self._emulator_enabled = emulator_enabled
 
+    def initialize_metrics(self, metrics: MetricsContainer):
+        metrics.initialize_counter(
+            Counter(
+                "pubsub_messages_received_total",
+                "Total number of Pub/Sub messages received",
+            )
+        )
+        metrics.initialize_counter(
+            Counter(
+                "pubsub_messages_processed_total",
+                "Total number of Pub/Sub messages processed",
+            )
+        )
+        metrics.initialize_gauge(
+            Gauge(
+                "pubsub_messages_active",
+                "Number of Pub/Sub messages currently being processed",
+            )
+        )
+        metrics.initialize_summary(
+            Summary(
+                "pubsub_message_handling_duration_ms",
+                "Duration of Pub/Sub message handling in milliseconds",
+            )
+        )
+
     async def run_loop(self, queue: str) -> None:
         """A method that runs an endless loop listening to the given queue
 
@@ -146,7 +173,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                     continue
 
                 message_count += 1
-                metrics.counter("messages_received_total").inc({})
+                metrics.counter("pubsub_messages_received_total").inc({})
 
                 asyncio.create_task(
                     self.process_queue_message(
@@ -304,14 +331,14 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         handler: MessageHandler,
         queued_message: _QueuedPubSubMessage,
     ) -> None:
-        metrics.gauge("messages_active").inc({})
+        metrics.gauge("pubsub_messages_active").inc({})
         try:
             logger.debug(
                 f"Processing queued message #{message_number} {queued_message}",
                 extra={"queued_message": queued_message},
             )
             async with async_time(
-                metrics.summary("message_handling_duration_ms")
+                metrics.summary("pubsub_message_handling_duration_ms")
             ) as labeler:
                 response = await self.resources.run(
                     handler.handle_message,
@@ -340,7 +367,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             )
             queued_message.ready.set()
         finally:
-            metrics.gauge("messages_active").dec({})
+            metrics.gauge("pubsub_messages_active").dec({})
 
     async def record_response(
         self,
@@ -357,13 +384,21 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         # Record metrics based on response type
         match response:
             case SuccessResponse():
-                metrics.counter("messages_processed_total").inc({"status": "success"})
+                metrics.counter("pubsub_messages_processed_total").inc(
+                    {"status": "success"}
+                )
             case FailedResponse():
-                metrics.counter("messages_processed_total").inc({"status": "failed"})
+                metrics.counter("pubsub_messages_processed_total").inc(
+                    {"status": "failed"}
+                )
             case SkipResponse():
-                metrics.counter("messages_processed_total").inc({"status": "skipped"})
+                metrics.counter("pubsub_messages_processed_total").inc(
+                    {"status": "skipped"}
+                )
             case CancelledResponse():
-                metrics.counter("messages_processed_total").inc({"status": "cancelled"})
+                metrics.counter("pubsub_messages_processed_total").inc(
+                    {"status": "cancelled"}
+                )
 
     async def _get_from_queue_or_timeout(
         self, queue: AsyncQueue[_QueuedPubSubMessage], timeout: float

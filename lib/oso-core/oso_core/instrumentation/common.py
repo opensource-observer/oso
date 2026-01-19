@@ -1,11 +1,11 @@
 type LabelType = dict[str, str]
 
 
-class MetricsLabler:
+class MetricsLabeler:
     """A simple way to share labels across different instrumentations"""
 
-    def __init__(self):
-        self._labels: LabelType = {}
+    def __init__(self, initial: LabelType | None = None):
+        self._labels: LabelType = initial or {}
 
     def add_labels(self, labels: LabelType):
         self._labels.update(labels)
@@ -24,22 +24,22 @@ class MetricsLabler:
             return combined_labels
         return self._labels
 
-    def copy(self) -> "MetricsLabler":
-        new_labeler = MetricsLabler()
+    def copy(self) -> "MetricsLabeler":
+        new_labeler = MetricsLabeler()
         new_labeler.set_labels(self._labels.copy())
         return new_labeler
 
 
-class MetricsLabeler:
+class MetricsLabelerContext:
     """A context to manage labels for instrumentation. Meant to be used with
     timing or other context managers. This allows the user to add labels
     dynamically within the timed context."""
 
-    def __init__(self, labeler: MetricsLabler | None = None):
+    def __init__(self, labeler: MetricsLabeler | None = None):
         if labeler:
             self._labeler = labeler.copy()
         else:
-            self._labeler = MetricsLabler()
+            self._labeler = MetricsLabeler()
 
     def add_labels(self, labels: LabelType):
         self._labeler.add_labels(labels)

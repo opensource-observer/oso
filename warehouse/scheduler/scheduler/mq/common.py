@@ -7,9 +7,10 @@ import typing as t
 from contextlib import asynccontextmanager
 
 import structlog
-from aioprometheus.collectors import Summary
+from aioprometheus.collectors import Counter, Summary
 from google.protobuf.message import Message as ProtobufMessage
 from oso_core.instrumentation import MetricsContainer
+from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
 from scheduler.graphql_client.client import Client as OSOClient
@@ -202,7 +203,7 @@ class OSORunContext(RunContext):
 class RunHandler(MessageHandler[T]):
     """A message handler that processes run messages."""
 
-    def initialize_metrics(self, metrics: MetricsContainer):
+    def initialize_metrics(self, metrics: MetricsContainer) -> None:
         super().initialize_metrics(metrics)
 
         metrics.initialize_summary(
@@ -214,6 +215,13 @@ class RunHandler(MessageHandler[T]):
                 "run_message_handling_duration_ms",
                 "Duration to handle run message (specifically for `handle_run_message` duration)",
             ),
+        )
+
+        metrics.initialize_counter(
+            Counter(
+                "run_count_total",
+                "Total number of run requests processed",
+            )
         )
 
         metrics.initialize_summary(
@@ -252,6 +260,7 @@ class RunHandler(MessageHandler[T]):
             )
             labeler_ctx.add_labels({"org_id": run_context.organization.name})
 
+        labeler = MetricsLabeler()
         # Try to set the run to running in the database for user's visibility
         try:
             run_context.log.info(f"Reporting run {run_id_str} as started.")
@@ -259,19 +268,30 @@ class RunHandler(MessageHandler[T]):
         except Exception as e:
             logger.error(f"Error starting run {run_id_str}: {e}")
 
+            labeler.set_labels(
+                {
+                    "org_id": "unknown",
+                    "trigger_type": "unknown",
+                }
+            )
+
             return await self.report_response(
                 oso_client=oso_client,
                 run_id_str=run_id_str,
                 response=FailedResponse(message=f"Failed to start run {run_id_str}."),
+                metrics=metrics,
+                labeler=labeler,
             )
 
-        run_metrics_labels = {
-            "org_id": run_context.organization.name,
-            "trigger_type": run_context.trigger_type,
-        }
+        labeler.set_labels(
+            {
+                "org_id": run_context.organization.name,
+                "trigger_type": run_context.trigger_type,
+            }
+        )
         try:
             async with async_time(
-                metrics.summary("run_message_handling_duration_ms"), run_metrics_labels
+                metrics.summary("run_message_handling_duration_ms"), labeler
             ):
                 response = await resources.run(
                     self.handle_run_message,
@@ -291,6 +311,8 @@ class RunHandler(MessageHandler[T]):
                 oso_client=oso_client,
                 run_id_str=run_id_str,
                 response=response,
+                metrics=metrics,
+                labeler=labeler,
             )
         except Exception as e:
             logger.error(f"Error reporting response for run_id {run_id_str}: {e}")
@@ -300,7 +322,12 @@ class RunHandler(MessageHandler[T]):
             )
 
     async def report_response(
-        self, oso_client: OSOClient, run_id_str: str, response: HandlerResponse
+        self,
+        oso_client: OSOClient,
+        run_id_str: str,
+        response: HandlerResponse,
+        metrics: MetricsContainer,
+        labeler: MetricsLabeler,
     ) -> HandlerResponse:
         """Handle the response from processing a run message.
 
@@ -311,6 +338,9 @@ class RunHandler(MessageHandler[T]):
         match response:
             case AlreadyLockedMessageResponse():
                 # No need to do anything here as another worker is processing it
+                metrics.counter("run_count_total").inc(
+                    labeler.get_labels({"response_type": "already_locked"}),
+                )
                 return response
             case SkipResponse(status_code=status_code):
                 await oso_client.finish_run(
@@ -319,9 +349,15 @@ class RunHandler(MessageHandler[T]):
                     status_code=status_code,
                     logs_url="http://example.com/run_logs",
                 )
+                metrics.counter("run_count_total").inc(
+                    labeler.get_labels({"response_type": "skipped"}),
+                )
                 return response
             case FailedResponse(status_code=status_code, details=details):
                 logger.error(f"Failed to process run_id {run_id_str}.")
+                metrics.counter("run_count_total").inc(
+                    labeler.get_labels({"response_type": "failed"}),
+                )
                 await oso_client.finish_run(
                     run_id=run_id_str,
                     status=RunStatus.FAILED,
@@ -335,6 +371,9 @@ class RunHandler(MessageHandler[T]):
                 return response
             case SuccessResponse(status_code=status_code):
                 logger.info(f"Successfully processed run_id {run_id_str}.")
+                metrics.counter("run_count_total").inc(
+                    labeler.get_labels({"response_type": "success"}),
+                )
                 await oso_client.finish_run(
                     run_id=run_id_str,
                     status=RunStatus.SUCCESS,
@@ -345,6 +384,9 @@ class RunHandler(MessageHandler[T]):
             case _:
                 logger.warning(
                     f"Unhandled response type {type(response)} from run message handler for run_id {run_id_str}."
+                )
+                metrics.counter("run_count_total").inc(
+                    labeler.get_labels({"response_type": "unknown"}),
                 )
                 await oso_client.finish_run(
                     run_id=run_id_str,
