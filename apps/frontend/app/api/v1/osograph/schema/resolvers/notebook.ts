@@ -282,14 +282,14 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
         .eq("notebook_id", notebookId)
         .single();
       if (error) {
-        console.log("Failed to find published notebook:", error);
+        logger.log("Failed to find published notebook:", error);
         throw NotebookErrors.notFound();
       }
       const { error: deleteError } = await supabase.storage
         .from("published-notebooks")
         .remove([publishedNotebook.data_path]);
       if (deleteError) {
-        console.log("Failed to delete notebook file:", deleteError);
+        logger.log("Failed to delete notebook file:", deleteError);
         throw ServerErrors.database("Failed to delete notebook file");
       }
       const { error: updateError } = await supabase
@@ -300,7 +300,7 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
         })
         .eq("id", publishedNotebook.id);
       if (updateError) {
-        console.log("Failed to delete notebook file:", updateError);
+        logger.log("Failed to delete notebook file:", updateError);
         throw ServerErrors.database("Failed to delete notebook file");
       }
 
