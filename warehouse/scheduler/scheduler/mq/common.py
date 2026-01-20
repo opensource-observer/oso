@@ -7,7 +7,7 @@ import typing as t
 from contextlib import asynccontextmanager
 
 import structlog
-from aioprometheus.collectors import Counter, Summary
+from aioprometheus.collectors import Counter, Histogram
 from google.protobuf.message import Message as ProtobufMessage
 from oso_core.instrumentation import MetricsContainer
 from oso_core.instrumentation.common import MetricsLabeler
@@ -158,7 +158,7 @@ class OSORunContext(RunContext):
         step = step.start_step.step
 
         try:
-            async with async_time(self._metrics.summary("step_duration_ms")):
+            async with async_time(self._metrics.histogram("step_duration_ms")):
                 yield OSOStepContext.create(
                     step.id,
                     self._oso_client,
@@ -206,12 +206,12 @@ class RunHandler(MessageHandler[T]):
     def initialize_metrics(self, metrics: MetricsContainer) -> None:
         super().initialize_metrics(metrics)
 
-        metrics.initialize_summary(
-            Summary("run_context_load_duration_ms", "Duration to load run context"),
+        metrics.initialize_histogram(
+            Histogram("run_context_load_duration_ms", "Duration to load run context"),
         )
 
-        metrics.initialize_summary(
-            Summary(
+        metrics.initialize_histogram(
+            Histogram(
                 "run_message_handling_duration_ms",
                 "Duration to handle run message (specifically for `handle_run_message` duration)",
             ),
@@ -224,8 +224,8 @@ class RunHandler(MessageHandler[T]):
             )
         )
 
-        metrics.initialize_summary(
-            Summary("step_duration_ms", "Duration of each step in the run"),
+        metrics.initialize_histogram(
+            Histogram("step_duration_ms", "Duration of each step in the run"),
         )
 
     async def handle_message(
@@ -250,7 +250,7 @@ class RunHandler(MessageHandler[T]):
         oso_client: OSOClient = resources.resolve("oso_client")
 
         async with async_time(
-            metrics.summary("run_context_load_duration_ms")
+            metrics.histogram("run_context_load_duration_ms")
         ) as labeler_ctx:
             run_context = await OSORunContext.create(
                 oso_client,
@@ -291,7 +291,7 @@ class RunHandler(MessageHandler[T]):
         )
         try:
             async with async_time(
-                metrics.summary("run_message_handling_duration_ms"), labeler
+                metrics.histogram("run_message_handling_duration_ms"), labeler
             ):
                 response = await resources.run(
                     self.handle_run_message,

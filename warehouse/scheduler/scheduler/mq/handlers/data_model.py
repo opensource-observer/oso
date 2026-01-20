@@ -2,7 +2,7 @@ import asyncio
 import random
 
 import structlog
-from aioprometheus.collectors import Counter, Summary
+from aioprometheus.collectors import Counter, Histogram
 from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.container import MetricsContainer
 from oso_core.instrumentation.timing import async_time
@@ -63,8 +63,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
     schema_file_name = "data-model.proto"
 
     def initialize_metrics(self, metrics: MetricsContainer):
-        metrics.initialize_summary(
-            Summary(
+        metrics.initialize_histogram(
+            Histogram(
                 "data_model_selected_models_count",
                 "Total number of data models in the run request",
             ),
@@ -76,15 +76,15 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             ),
         )
 
-        metrics.initialize_summary(
-            Summary(
+        metrics.initialize_histogram(
+            Histogram(
                 "data_model_total_evaluation_duration_ms",
                 "Duration of all the selected data model runs execution in milliseconds",
             )
         )
 
-        metrics.initialize_summary(
-            Summary(
+        metrics.initialize_histogram(
+            Histogram(
                 "data_model_individual_model_evaluation_duration_ms",
                 "Duration of individual data model execution in milliseconds",
             )
@@ -140,7 +140,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 if edge.node.id in selected_model_release_ids
             ]
 
-        metrics.summary("data_model_selected_models_count").observe(
+        metrics.histogram("data_model_selected_models_count").observe(
             labeler.get_labels(),
             len(selected_models),
         )
@@ -173,7 +173,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             )
 
         async with async_time(
-            metrics.summary("data_model_total_evaluation_duration_ms"), labeler
+            metrics.histogram("data_model_total_evaluation_duration_ms"), labeler
         ):
             await self.evaluate_models(
                 context=context,
@@ -212,7 +212,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                     display_name=f"Evaluate Model {model.name}",
                 ) as step_context:
                     async with async_time(
-                        metrics.summary(
+                        metrics.histogram(
                             "data_model_individual_model_evaluation_duration_ms"
                         ),
                         labeler,

@@ -33,7 +33,7 @@ import uuid
 from dataclasses import dataclass
 from threading import Event, Lock
 
-from aioprometheus.collectors import Counter, Gauge, Summary
+from aioprometheus.collectors import Counter, Gauge, Histogram
 from google.cloud.pubsub import SubscriberClient
 from google.cloud.pubsub_v1.subscriber.message import Message
 from google.protobuf.message import Message as ProtobufMessage
@@ -117,8 +117,8 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 "Number of Pub/Sub messages currently being processed",
             )
         )
-        metrics.initialize_summary(
-            Summary(
+        metrics.initialize_histogram(
+            Histogram(
                 "pubsub_message_handling_duration_ms",
                 "Duration of Pub/Sub message handling in milliseconds",
             )
@@ -338,7 +338,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 extra={"queued_message": queued_message},
             )
             async with async_time(
-                metrics.summary("pubsub_message_handling_duration_ms")
+                metrics.histogram("pubsub_message_handling_duration_ms")
             ) as labeler:
                 response = await self.resources.run(
                     handler.handle_message,
