@@ -1,14 +1,5 @@
 {{- range .Values.app.queues -}}
-{{ $resources := .resources | default $.Values.app.resources }}
-{{ $tolerations := .tolerations | default $.Values.app.tolerations }}
-{{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
-{{ $affinity := .affinity | default $.Values.app.affinity }}
 {{ $name := required "Queue name is required" .name }}
-{{ $volumeMounts := .volumeMounts | default $.Values.app.volumeMounts }}
-{{ $volumes := .volumes | default $.Values.app.volumes }}
-{{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
-{{ $image := .image | default $.Values.app.image }}
-{{ $extraEnvVars := .envVars | default dict }}
 ---
 # Setup GKE managed prometheus monitoring for consumer-trino
 apiVersion: monitoring.googleapis.com/v1
