@@ -146,7 +146,7 @@ type CreateMaterializationPayload {
 
 input SavePublishedNotebookHtmlInput {
   notebookId: ID!
-  htmlContent: [Byte!]!
+  htmlContent: String!
 }
 
 type SavePublishedNotebookHtmlPayload {

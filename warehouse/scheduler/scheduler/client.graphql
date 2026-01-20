@@ -80,7 +80,7 @@ mutation CreateMaterialization(
   }
 }
 
-mutation SavePublishedNotebookHtml($notebookId: ID!, $htmlContent: [Byte!]!) {
+mutation SavePublishedNotebookHtml($notebookId: ID!, $htmlContent: String!) {
   savePublishedNotebookHtml(
     input: { notebookId: $notebookId, htmlContent: $htmlContent }
   ) {

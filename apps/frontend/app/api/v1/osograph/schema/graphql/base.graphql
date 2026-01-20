@@ -6,7 +6,6 @@ extend schema
 
 scalar DateTime
 scalar JSON
-scalar Byte
 
 enum MemberRole {
   owner

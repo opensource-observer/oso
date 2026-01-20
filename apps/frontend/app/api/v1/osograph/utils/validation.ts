@@ -307,6 +307,11 @@ export const CreateMaterializationSchema = z.object({
   schema: z.array(DataModelColumnSchema),
 });
 
+export const SavePublishedNotebookHtmlSchema = z.object({
+  notebookId: z.string().uuid(),
+  htmlContent: z.string(),
+});
+
 export const ResolveTablesSchema = z.object({
   references: z.array(z.string()).min(1, "At least one reference is required"),
   metadata: z

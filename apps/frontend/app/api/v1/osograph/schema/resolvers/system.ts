@@ -22,6 +22,7 @@ import {
   StartStepSchema,
   validateInput,
   UpdateMetadataSchema,
+  SavePublishedNotebookHtmlSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import z from "zod";
 import { logger } from "@/lib/logger";
@@ -397,17 +398,16 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
       },
     }),
     savePublishedNotebookHtml: systemMutation({
-      inputSchema: z.object({
-        notebookId: z.string().uuid(),
-        htmlContent: z.array(z.number().min(0).max(255)),
-      }),
+      inputSchema: SavePublishedNotebookHtmlSchema,
       resolver: async (input) => {
         const supabase = createAdminClient();
 
         const { notebookId, htmlContent } = input;
 
-        // Convert array of numbers to Uint8Array
-        const byteArray = new Uint8Array(htmlContent);
+        console.log("Encoded", htmlContent);
+
+        // Decode base64 content
+        const byteArray = Buffer.from(htmlContent, "base64");
 
         const { data: notebook } = await supabase
           .from("notebooks")

@@ -243,7 +243,7 @@ class CreateMaterializationInput(BaseModel):
 
 class SavePublishedNotebookHtmlInput(BaseModel):
     notebook_id: str = Field(alias="notebookId")
-    html_content: List[Any] = Field(alias="htmlContent")
+    html_content: str = Field(alias="htmlContent")
 
 
 CreateDataModelRevisionInput.model_rebuild()

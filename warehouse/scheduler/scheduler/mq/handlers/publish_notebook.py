@@ -1,3 +1,4 @@
+import base64
 import gzip
 import json
 import urllib.parse
@@ -160,10 +161,12 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
             logger.error("Failed to extract content from the notebook page.")
             raise RuntimeError("Content extraction failed")
 
-        gzip_content = gzip.compress(content.encode("utf-8"))
+        gzip_content = base64.b64encode(gzip.compress(content.encode("utf-8"))).decode(
+            "utf-8"
+        )
 
         response = await oso_client.save_published_notebook_html(
-            notebook_id=notebook.id, html_content=list(gzip_content)
+            notebook_id=notebook.id, html_content=gzip_content
         )
         if not response.save_published_notebook_html.success:
             logger.error("Failed to save published notebook HTML.")

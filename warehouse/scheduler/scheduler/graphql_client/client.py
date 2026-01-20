@@ -198,11 +198,11 @@ class Client(AsyncBaseClient):
         return CreateMaterialization.model_validate(data)
 
     async def save_published_notebook_html(
-        self, notebook_id: str, html_content: List[Any], **kwargs: Any
+        self, notebook_id: str, html_content: str, **kwargs: Any
     ) -> SavePublishedNotebookHtml:
         query = gql(
             """
-            mutation SavePublishedNotebookHtml($notebookId: ID!, $htmlContent: [Byte!]!) {
+            mutation SavePublishedNotebookHtml($notebookId: ID!, $htmlContent: String!) {
               savePublishedNotebookHtml(
                 input: {notebookId: $notebookId, htmlContent: $htmlContent}
               ) {
