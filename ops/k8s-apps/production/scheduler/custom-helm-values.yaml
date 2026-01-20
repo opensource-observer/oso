@@ -16,6 +16,7 @@ spec:
         - name: "data_ingestion_run_requests"
         - name: "query_run_requests"
         - name: "static_model_run_requests"
+        - name: "publish_notebook_run_requests"
       name: "oso-scheduler"
       # This only needs to appear in one of the scheduler instances for now. We
       # should likely combine these into a single scheduler chart at some point.
