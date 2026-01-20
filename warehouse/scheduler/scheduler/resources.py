@@ -1,7 +1,6 @@
 import typing as t
 
 import structlog
-from aioprometheus.collectors import Counter, Gauge, Summary
 from dlt.sources.credentials import AwsCredentials, FileSystemCredentials
 from oso_core.instrumentation import MetricsContainer
 from oso_core.resources import ResourcesContext, ResourcesRegistry, resource_factory
@@ -282,21 +281,6 @@ def upload_filesystem_credentials_factory(
 def metrics_factory() -> MetricsContainer:
     """Factory function to create a metrics container resource."""
     metrics = MetricsContainer()
-    metrics.initialize_counter(
-        Counter("messages_processed_total", "Total number of messages processed"),
-    )
-
-    metrics.initialize_gauge(
-        Gauge("messages_active", "Number of active messages being processed"),
-    )
-
-    metrics.initialize_summary(
-        Summary(
-            "message_handling_duration_ms",
-            "Duration of message handling in milliseconds",
-        ),
-    )
-
     return metrics
 
 
@@ -320,5 +304,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(dlt_destination_factory)
     registry.add(gcs_factory)
     registry.add(upload_filesystem_credentials_factory)
+    registry.add(metrics_factory)
 
     return registry

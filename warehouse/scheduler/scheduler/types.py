@@ -553,10 +553,6 @@ class GenericMessageQueueService(abc.ABC):
         listener = self.registry.get_handler(topic)
         if not listener:
             raise ValueError(f"No listener registered for topic {topic}")
-        metrics = self.resources.resolve("metrics")
-
-        assert isinstance(metrics, MetricsContainer)
-        listener.initialize_metrics(metrics)
         return listener
 
     @abc.abstractmethod
