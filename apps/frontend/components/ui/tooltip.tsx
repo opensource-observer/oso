@@ -38,6 +38,7 @@ type ToolTipProps = {
   side?: ToolTipSide; // Position of the tooltip
   forceOpen?: boolean; // Force the tooltip to show
   disabled?: boolean; // Disable the tooltip
+  noStyle?: boolean; // If true, no styles are applied to the trigger element
 };
 
 const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
@@ -62,11 +63,17 @@ const ToolTipMeta: CodeComponentMeta<ToolTipProps> = {
       type: "boolean",
       helpText: "Disable the tooltip functionality.",
     },
+    noStyle: {
+      type: "boolean",
+      description: "If true, no styles are applied to the trigger element.",
+      advanced: true,
+    },
   },
 };
 
 function ToolTip(props: ToolTipProps) {
-  const { className, trigger, content, side, forceOpen, disabled } = props;
+  const { className, trigger, content, side, forceOpen, disabled, noStyle } =
+    props;
 
   if (disabled) {
     return <div className={className}>{trigger}</div>;
@@ -76,7 +83,7 @@ function ToolTip(props: ToolTipProps) {
     <TooltipProvider>
       <TooltipRoot open={forceOpen}>
         <TooltipTrigger asChild>
-          <div className={className}>{trigger}</div>
+          {noStyle ? trigger : <div className={className}>{trigger}</div>}
         </TooltipTrigger>
         <TooltipContent side={side}>{content}</TooltipContent>
       </TooltipRoot>
