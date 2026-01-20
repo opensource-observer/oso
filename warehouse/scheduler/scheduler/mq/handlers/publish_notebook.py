@@ -1,6 +1,7 @@
 import base64
 import gzip
 import json
+import re
 import urllib.parse
 
 import structlog
@@ -160,6 +161,8 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
         if content is None:
             logger.error("Failed to extract content from the notebook page.")
             raise RuntimeError("Content extraction failed")
+
+        content = re.sub(r'(?<![\w-])id="app"', 'id="App"', content)
 
         gzip_content = base64.b64encode(gzip.compress(content.encode("utf-8"))).decode(
             "utf-8"
