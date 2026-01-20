@@ -40,12 +40,6 @@ from .fragments import (
     LatestDataModelLatestReleaseRevisionDependsOn,
     LatestDataModelLatestReleaseRevisionKindOptions,
     LatestDataModelLatestReleaseRevisionSchema,
-    OrganizationCommon,
-    RunCommon,
-    RunCommonDataset,
-    RunCommonOrganization,
-    RunCommonRequestedBy,
-    UserCommon,
 )
 from .get_data_ingestion_config import (
     GetDataIngestionConfig,
@@ -69,7 +63,6 @@ from .get_data_models import (
     GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModels,
     GetDataModelsDatasetsEdgesNodeTypeDefinitionStaticModelDefinition,
 )
-from .get_run import GetRun, GetRunRuns, GetRunRunsEdges, GetRunRunsEdgesNode
 from .get_static_models import (
     GetStaticModels,
     GetStaticModelsDatasets,
@@ -191,10 +184,6 @@ __all__ = [
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition",
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModels",
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionStaticModelDefinition",
-    "GetRun",
-    "GetRunRuns",
-    "GetRunRunsEdges",
-    "GetRunRunsEdgesNode",
     "GetStaticModels",
     "GetStaticModelsDatasets",
     "GetStaticModelsDatasetsEdges",
@@ -219,16 +208,11 @@ __all__ = [
     "LatestDataModelLatestReleaseRevisionKindOptions",
     "LatestDataModelLatestReleaseRevisionSchema",
     "MemberRole",
-    "OrganizationCommon",
     "RemoveMemberInput",
     "ResolveTables",
     "ResolveTablesSystem",
     "ResolveTablesSystemResolveTables",
     "RevokeInvitationInput",
-    "RunCommon",
-    "RunCommonDataset",
-    "RunCommonOrganization",
-    "RunCommonRequestedBy",
     "RunStatus",
     "RunTriggerType",
     "RunType",
@@ -252,5 +236,4 @@ __all__ = [
     "UpdateRunMetadataUpdateRunMetadataRun",
     "UpdateStaticModelInput",
     "Upload",
-    "UserCommon",
 ]
