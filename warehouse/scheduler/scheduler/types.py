@@ -6,11 +6,17 @@ from graphlib import TopologicalSorter
 import structlog
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
+from oso_core.instrumentation import MetricsContainer
 from oso_core.resources import ResourcesContext
 from pydantic import BaseModel, Field
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
+from scheduler.graphql_client.fragments import (
+    DatasetCommon,
+    OrganizationCommon,
+    UserCommon,
+)
 from scheduler.graphql_client.input_types import DataModelColumnInput
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
 from sqlglot import exp, parse_one
@@ -412,6 +418,36 @@ class RunContext(abc.ABC):
         """Updates the run metadata for the current run."""
         raise NotImplementedError("update_metadata must be implemented by subclasses.")
 
+    @property
+    @abc.abstractmethod
+    def run_id(self) -> str:
+        """The ID of the current run."""
+        raise NotImplementedError("run_id must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def organization(self) -> OrganizationCommon:
+        """The organization for the current run."""
+        raise NotImplementedError("organization must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def dataset(self) -> DatasetCommon | None:
+        """The dataset for the current run."""
+        raise NotImplementedError("dataset must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def requested_by(self) -> UserCommon | None:
+        """The user who requested the current run."""
+        raise NotImplementedError("requested_by must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def trigger_type(self) -> str:
+        """The trigger type for the current run."""
+        raise NotImplementedError("trigger_type must be implemented by subclasses.")
+
 
 class HandlerResponse(BaseModel):
     message: str
@@ -454,6 +490,11 @@ class SuccessResponse(HandlerResponse):
     status_code: int = Field(default=200)
 
 
+class CancelledResponse(HandlerResponse):
+    message: str = Field(default="Processing of the message was cancelled.")
+    status_code: int = Field(default=499)
+
+
 class MessageHandler(abc.ABC, t.Generic[T]):
     topic: str
     message_type: t.Type[T]
@@ -478,6 +519,9 @@ class MessageHandler(abc.ABC, t.Generic[T]):
         destination = self.new_message()
         Parse(data, destination)
         return destination
+
+    def initialize_metrics(self, metrics: MetricsContainer) -> None:
+        return None
 
 
 class MessageHandlerRegistry:
