@@ -106,23 +106,6 @@ wheels = [
 ]
 
 [[package]]
-name = "aioprometheus"
-version = "23.12.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "orjson" },
-    { name = "quantile-python" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/21/c9e882ea8a7189b7d71ffb709db24708113896e81a25e074a17f9874d8be/aioprometheus-23.12.0-py3-none-any.whl", hash = "sha256:b1a77259131153ef820b494e76439b278434eaf2a5e25dc0b8bf3d835f455960", size = 31711, upload-time = "2023-12-27T23:54:29.097Z" },
-]
-
-[package.optional-dependencies]
-aiohttp = [
-    { name = "aiohttp" },
-]
-
-[[package]]
 name = "aiosignal"
 version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4370,11 +4353,6 @@ dependencies = [
     { name = "structlog" },
 ]
 
-[package.optional-dependencies]
-aioprometheus = [
-    { name = "aioprometheus" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
@@ -4382,14 +4360,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aioprometheus", marker = "extra == 'aioprometheus'" },
     { name = "arrow", specifier = "<2.0.0" },
     { name = "orjson", specifier = ">=3.10.18" },
     { name = "pydantic-settings", specifier = ">=2.11.0" },
     { name = "sqlmesh", extras = ["trino"], specifier = ">=0.141.1,<1.0.0" },
     { name = "structlog", specifier = ">=25.4.0" },
 ]
-provides-extras = ["aioprometheus"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.2.1,<10.0.0" }]
@@ -5731,12 +5707,6 @@ wheels = [
 ]
 
 [[package]]
-name = "quantile-python"
-version = "1.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/08/16/fae6223773ceae17db7b3ce81479df01ffb30faebbbe63b55fe922c618c0/quantile-python-1.1.tar.gz", hash = "sha256:558629e88c497ef3b9b1081349c1ae6a61b53590e317724298ff54c674db7969", size = 2887, upload-time = "2015-02-11T20:21:24.489Z" }
-
-[[package]]
 name = "query-rewriter"
 version = "0.1.0"
 source = { editable = "lib/query-rewriter" }
@@ -6096,7 +6066,6 @@ name = "scheduler"
 version = "0.1.0"
 source = { editable = "warehouse/scheduler" }
 dependencies = [
-    { name = "aioprometheus", extra = ["aiohttp"] },
     { name = "ariadne-codegen" },
     { name = "duckdb" },
     { name = "google-cloud-pubsub" },
@@ -6126,7 +6095,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aioprometheus", extras = ["aiohttp"], specifier = ">=23.12.0" },
     { name = "ariadne-codegen", specifier = ">=0.16.0" },
     { name = "duckdb", specifier = ">=1.4.1" },
     { name = "google-cloud-pubsub", specifier = ">=2.33.0" },

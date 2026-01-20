@@ -78,19 +78,17 @@ describe("MetadataInferredTableResolver", () => {
     );
   });
 
-  it("should return untouched metadata if metadata is invalid (missing required fields)", async () => {
+  it("should throw error if metadata is invalid (missing required fields)", async () => {
     const invalidMetadata = {
       user: "test-user",
       // Missing timestamp, orgName, orgId
     };
 
-    const resolved = await resolver.resolveTables(
-      { table1: Table.fromString("table1") },
-      invalidMetadata,
-    );
-
-    expect(resolved).toEqual({
-      table1: Table.fromString("table1"),
-    });
+    await expect(
+      resolver.resolveTables(
+        { table1: Table.fromString("table1") },
+        invalidMetadata,
+      ),
+    ).rejects.toThrow();
   });
 });

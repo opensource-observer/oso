@@ -2,7 +2,6 @@ import typing as t
 
 import structlog
 from dlt.sources.credentials import AwsCredentials, FileSystemCredentials
-from oso_core.instrumentation import MetricsContainer
 from oso_core.resources import ResourcesContext, ResourcesRegistry, resource_factory
 from oso_dagster.resources import GCSFileResource
 from oso_dagster.resources.duckdb import DuckDBResource
@@ -59,7 +58,6 @@ def message_queue_service_factory(
     resources: ResourcesContext,
     common_settings: "CommonSettings",
     message_handler_registry: MessageHandlerRegistry,
-    metrics: MetricsContainer,
 ) -> GenericMessageQueueService:
     """Factory function to create a message queue service resource."""
     return GCPPubSubMessageQueueService(
@@ -67,7 +65,6 @@ def message_queue_service_factory(
         resources=resources,
         registry=message_handler_registry,
         emulator_enabled=common_settings.emulator_enabled,
-        metrics=metrics,
     )
 
 
@@ -277,13 +274,6 @@ def upload_filesystem_credentials_factory(
     return None
 
 
-@resource_factory("metrics")
-def metrics_factory() -> MetricsContainer:
-    """Factory function to create a metrics container resource."""
-    metrics = MetricsContainer()
-    return metrics
-
-
 def default_resource_registry(common_settings: "CommonSettings") -> ResourcesRegistry:
     registry = ResourcesRegistry()
     registry.add_singleton("common_settings", common_settings)
@@ -304,6 +294,5 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(dlt_destination_factory)
     registry.add(gcs_factory)
     registry.add(upload_filesystem_credentials_factory)
-    registry.add(metrics_factory)
 
     return registry

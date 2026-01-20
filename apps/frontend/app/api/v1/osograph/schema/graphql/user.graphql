@@ -3,6 +3,7 @@ type User {
   email: String!
   fullName: String
   avatarUrl: String
+  role: String!
   organizations(
     first: Int = 50
     after: String

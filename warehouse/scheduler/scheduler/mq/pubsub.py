@@ -33,16 +33,13 @@ import uuid
 from dataclasses import dataclass
 from threading import Event, Lock
 
-from aioprometheus.collectors import Counter, Gauge, Histogram
 from google.cloud.pubsub import SubscriberClient
 from google.cloud.pubsub_v1.subscriber.message import Message
 from google.protobuf.message import Message as ProtobufMessage
 from janus import AsyncQueue, Queue, SyncQueue
-from oso_core.instrumentation import MetricsContainer
-from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
 from scheduler.types import (
-    CancelledResponse,
+    AlreadyLockedMessageResponse,
     FailedResponse,
     GenericMessageQueueService,
     HandlerResponse,
@@ -90,39 +87,11 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         project_id: str,
         resources: ResourcesContext,
         registry: MessageHandlerRegistry,
-        metrics: MetricsContainer,
         emulator_enabled: bool = False,
     ) -> None:
         super().__init__(resources, registry)
-        self._project_id = project_id
-        self._metrics = metrics
-        self._emulator_enabled = emulator_enabled
-
-    def initialize_metrics(self, metrics: MetricsContainer):
-        metrics.initialize_counter(
-            Counter(
-                "pubsub_messages_received_total",
-                "Total number of Pub/Sub messages received",
-            )
-        )
-        metrics.initialize_counter(
-            Counter(
-                "pubsub_messages_processed_total",
-                "Total number of Pub/Sub messages processed",
-            )
-        )
-        metrics.initialize_gauge(
-            Gauge(
-                "pubsub_messages_active",
-                "Number of Pub/Sub messages currently being processed",
-            )
-        )
-        metrics.initialize_histogram(
-            Histogram(
-                "pubsub_message_handling_duration_ms",
-                "Duration of Pub/Sub message handling in milliseconds",
-            )
-        )
+        self.project_id = project_id
+        self.emulator_enabled = emulator_enabled
 
     async def run_loop(self, queue: str) -> None:
         """A method that runs an endless loop listening to the given queue
@@ -134,11 +103,6 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         # Implementation for GCP Pub/Sub listening logic goes here
 
         handler = self.get_queue_listener(queue)
-
-        metrics = self._metrics
-
-        # Initialize metrics for the handler
-        handler.initialize_metrics(metrics)
 
         # We create the queue, event, and response storage here and not as some
         # class state because they exist only in the context of this "run_loop"
@@ -171,17 +135,10 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                         )
                         break
                     continue
-
                 message_count += 1
-                metrics.counter("pubsub_messages_received_total").inc({})
-
                 asyncio.create_task(
                     self.process_queue_message(
-                        metrics,
-                        message_count,
-                        response_storage,
-                        handler,
-                        queued_message,
+                        message_count, response_storage, handler, queued_message
                     )
                 )
         except (asyncio.CancelledError, KeyboardInterrupt):
@@ -204,7 +161,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         has no internal reference to `self` as this will be used in a different
         thread so we want to limit captured state."""
 
-        emulator_enabled = self._emulator_enabled
+        emulator_enabled = self.emulator_enabled
 
         def callback(
             message_queue: SyncQueue[_QueuedPubSubMessage],
@@ -246,6 +203,11 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
 
             response = response_storage.pop_response(handle_id)
             match response:
+                case AlreadyLockedMessageResponse():
+                    logger.info(
+                        "Message is already being processed elsewhere; nack'ing"
+                    )
+                    raw_message.nack()
                 case SkipResponse():
                     logger.info("Skipping message processing as per handler response.")
                     raw_message.ack()
@@ -315,7 +277,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 run_subscriber,
                 message_queue.sync_q,
                 response_storage,
-                self._project_id,
+                self.project_id,
                 queue,
                 callback,
                 close_event,
@@ -325,39 +287,24 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
 
     async def process_queue_message(
         self,
-        metrics: MetricsContainer,
         message_number: int,
         response_storage: _ResponseStorage,
         handler: MessageHandler,
         queued_message: _QueuedPubSubMessage,
     ) -> None:
-        metrics.gauge("pubsub_messages_active").inc({})
         try:
             logger.debug(
                 f"Processing queued message #{message_number} {queued_message}",
                 extra={"queued_message": queued_message},
             )
-            async with async_time(
-                metrics.histogram("pubsub_message_handling_duration_ms")
-            ) as labeler:
-                response = await self.resources.run(
-                    handler.handle_message,
-                    additional_inject={
-                        "message": queued_message.message,
-                    },
-                )
-                match response:
-                    case SuccessResponse():
-                        labeler.add_labels({"status": "success"})
-                    case FailedResponse():
-                        labeler.add_labels({"status": "failed"})
-                    case SkipResponse():
-                        labeler.add_labels({"status": "skipped"})
-                    case CancelledResponse():
-                        labeler.add_labels({"status": "cancelled"})
+            response = await self.resources.run(
+                handler.handle_message,
+                additional_inject={
+                    "message": queued_message.message,
+                },
+            )
 
             logger.debug(f"Finished processing queued message #{message_number}")
-            await self.record_response(response_storage, queued_message, response)
             response_storage.store_response(queued_message.handle_id, response)
             queued_message.ready.set()
         except Exception as e:
@@ -366,39 +313,6 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 queued_message.handle_id, FailedResponse(message=str(e))
             )
             queued_message.ready.set()
-        finally:
-            metrics.gauge("pubsub_messages_active").dec({})
-
-    async def record_response(
-        self,
-        response_storage: _ResponseStorage,
-        queued_message: _QueuedPubSubMessage,
-        response: HandlerResponse,
-    ) -> None:
-        """Records the response for a processed message."""
-        response_storage.store_response(queued_message.handle_id, response)
-        queued_message.ready.set()
-
-        metrics = self._metrics
-
-        # Record metrics based on response type
-        match response:
-            case SuccessResponse():
-                metrics.counter("pubsub_messages_processed_total").inc(
-                    {"status": "success"}
-                )
-            case FailedResponse():
-                metrics.counter("pubsub_messages_processed_total").inc(
-                    {"status": "failed"}
-                )
-            case SkipResponse():
-                metrics.counter("pubsub_messages_processed_total").inc(
-                    {"status": "skipped"}
-                )
-            case CancelledResponse():
-                metrics.counter("pubsub_messages_processed_total").inc(
-                    {"status": "cancelled"}
-                )
 
     async def _get_from_queue_or_timeout(
         self, queue: AsyncQueue[_QueuedPubSubMessage], timeout: float
@@ -414,7 +328,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         from google.cloud import pubsub_v1
 
         publisher = pubsub_v1.PublisherClient()
-        topic_path = publisher.topic_path(self._project_id, queue)
+        topic_path = publisher.topic_path(self.project_id, queue)
 
         # Serialize the message to binary
         message_data = message.SerializeToString()

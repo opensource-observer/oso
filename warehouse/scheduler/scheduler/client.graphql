@@ -80,39 +80,14 @@ mutation CreateMaterialization(
   }
 }
 
-fragment OrganizationCommon on Organization {
-  id
-  name
-}
-
-fragment UserCommon on User {
-  id
-  email
-}
-
-fragment RunCommon on Run {
-  id
-  metadata
-  triggerType
-  organization {
-    ...OrganizationCommon
-  }
-  dataset {
-    ...DatasetCommon
-  }
-  requestedBy {
-    ...UserCommon
-  }
-}
-
-
 fragment DatasetCommon on Dataset {
   id
   name
   displayName
   description
   organization {
-    ...OrganizationCommon
+    id
+    name
   }
 }
 
@@ -167,16 +142,6 @@ fragment DataModels on DataModelConnection {
   edges {
     node {
       ...LatestDataModel
-    }
-  }
-}
-
-query GetRun($runId: ID!) {
-  runs(where: { id: { eq: $runId }}, single: true) {
-    edges {
-      node {
-        ...RunCommon
-      }
     }
   }
 }
