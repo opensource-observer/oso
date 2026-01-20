@@ -1,6 +1,6 @@
 MODEL (
   name oso.int_ddp__commits_unified,
-  description 'Unified commits from GHArchive and OpenDevData, joined on SHA. Provides both actor_id (pusher) and author_id (commit author) for each commit.',
+  description 'Unified commits from GHArchive and OpenDevData, joined on SHA. Provides both actor_id (pusher) and author_id (commit author) for each commit. Grain is (sha, repository_id) since the same commit can appear in multiple repos (forks).',
   dialect trino,
   kind INCREMENTAL_BY_TIME_RANGE (
     time_column created_at,
@@ -11,7 +11,7 @@ MODEL (
   ),
   start @github_incremental_start,
   partitioned_by DAY(created_at),
-  grain (sha),
+  grain (sha, repository_id),
   tags (
     "ddp",
     "commits",
@@ -19,7 +19,7 @@ MODEL (
     "github"
   ),
   audits (
-    not_null(columns := (sha,)),
+    not_null(columns := (sha, repository_id)),
     no_gaps(
       time_column := created_at,
       no_gap_date_part := 'day'
@@ -27,10 +27,6 @@ MODEL (
   )
 );
 
--- Merge GHArchive and OpenDevData commits on SHA.
--- GHArchive provides: actor_id (pusher), actor_login, repository_id
--- OpenDevData provides: canonical_developer_id (author identity), additions, deletions
--- We derive author_id by decoding the primary_github_user_id from canonical_devs.
 SELECT
   ghc.sha,
   ghc.created_at,
@@ -46,8 +42,6 @@ SELECT
   odc.deletions,
   odc.committed_at,
   odc.authored_at,
-  -- Derive author_id from canonical_developer_id via the node_id_map
-  -- author_id is the database ID of the commit author (distinct from actor_id which is the pusher)
   node_map.decoded_id AS author_id,
   devs.primary_github_user_id
 FROM oso.int_github__commits_all AS ghc

@@ -1,0 +1,222 @@
+# Tests for int_ddp__commits_deduped model
+# Deduplicates commits from int_ddp__commits_unified
+# Keeps first occurrence of each (sha, repository_id) by created_at
+
+test_int_ddp__commits_deduped_keeps_first:
+  model: oso.int_ddp__commits_deduped
+  description: "Should keep the first occurrence of each (sha, repository_id) by created_at"
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-31
+    deduplication_window: 180
+  inputs:
+    oso.int_ddp__commits_unified:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        repository_id: bigint
+        repository_name: varchar
+        actor_id: bigint
+        actor_login: varchar
+        author_name: varchar
+        author_email: varchar
+        canonical_developer_id: bigint
+        is_bot: bigint
+        additions: bigint
+        deletions: bigint
+        committed_at: timestamp
+        authored_at: timestamp
+        author_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        # First occurrence - should be kept
+        - sha: "duplicate_sha"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 100
+          actor_login: "first_pusher"
+          author_name: "Author"
+          author_email: "author@example.com"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 50
+          deletions: 10
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+          author_id: 100
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+        # Second occurrence - should be removed
+        - sha: "duplicate_sha"
+          created_at: "2024-01-15 11:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 200
+          actor_login: "second_pusher"
+          author_name: "Author"
+          author_email: "author@example.com"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 50
+          deletions: 10
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+          author_id: 100
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+  outputs:
+    query:
+      rows:
+        # Only the first occurrence (10:00:00) should remain
+        - sha: "duplicate_sha"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 100
+          actor_login: "first_pusher"
+          author_name: "Author"
+          author_email: "author@example.com"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 50
+          deletions: 10
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+          author_id: 100
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+
+test_int_ddp__commits_deduped_different_repos_both_kept:
+  model: oso.int_ddp__commits_deduped
+  description: "Same SHA in different repos should both be kept (grain is sha + repository_id)"
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-31
+    deduplication_window: 180
+  inputs:
+    oso.int_ddp__commits_unified:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        repository_id: bigint
+        repository_name: varchar
+        actor_id: bigint
+        actor_login: varchar
+        author_name: varchar
+        author_email: varchar
+        canonical_developer_id: bigint
+        is_bot: bigint
+        additions: bigint
+        deletions: bigint
+        committed_at: timestamp
+        authored_at: timestamp
+        author_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        # Commit in original repo
+        - sha: "shared_sha"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/original"
+          actor_id: 100
+          actor_login: "maintainer"
+          author_name: "Author"
+          author_email: "author@example.com"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 25
+          deletions: 5
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+          author_id: 300
+          primary_github_user_id: "MDQ6VXNlcjMwMA=="
+        # Same commit in fork - different repository_id
+        - sha: "shared_sha"
+          created_at: "2024-01-15 11:00:00"
+          repository_id: 2002
+          repository_name: "user/fork"
+          actor_id: 200
+          actor_login: "forker"
+          author_name: "Author"
+          author_email: "author@example.com"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 25
+          deletions: 5
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+          author_id: 300
+          primary_github_user_id: "MDQ6VXNlcjMwMA=="
+  outputs:
+    query:
+      # Both should be kept - different repository_ids
+      rows:
+        - sha: "shared_sha"
+          repository_id: 1001
+          repository_name: "org/original"
+          actor_id: 100
+        - sha: "shared_sha"
+          repository_id: 2002
+          repository_name: "user/fork"
+          actor_id: 200
+      partial: true
+
+test_int_ddp__commits_deduped_preserves_all_columns:
+  model: oso.int_ddp__commits_deduped
+  description: "Verify all columns from int_ddp__commits_unified are preserved"
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-31
+    deduplication_window: 180
+  inputs:
+    oso.int_ddp__commits_unified:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        repository_id: bigint
+        repository_name: varchar
+        actor_id: bigint
+        actor_login: varchar
+        author_name: varchar
+        author_email: varchar
+        canonical_developer_id: bigint
+        is_bot: bigint
+        additions: bigint
+        deletions: bigint
+        committed_at: timestamp
+        authored_at: timestamp
+        author_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - sha: "unique_commit"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 100
+          actor_login: "developer1"
+          author_name: "Dev One"
+          author_email: "dev1@example.com"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 100
+          deletions: 50
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+          author_id: 100
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+  outputs:
+    query:
+      rows:
+        - sha: "unique_commit"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 100
+          actor_login: "developer1"
+          author_name: "Dev One"
+          author_email: "dev1@example.com"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 100
+          deletions: 50
+          author_id: 100
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+      partial: true

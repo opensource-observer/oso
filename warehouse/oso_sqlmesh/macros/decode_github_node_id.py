@@ -228,11 +228,12 @@ def _extract_suffix_after_underscore_trino(
 def _pad_base64_duckdb(normalized_exp: exp.Expression) -> exp.Expression:
     """Add base64 padding using repeat (DuckDB)."""
     str_len = exp.Length(this=normalized_exp)
+    sub_expr = exp.Sub(
+        this=exp.Literal.number(4),
+        expression=exp.Mod(this=str_len, expression=exp.Literal.number(4)),
+    )
     padding_needed = exp.Mod(
-        this=exp.Sub(
-            this=exp.Literal.number(4),
-            expression=exp.Mod(this=str_len, expression=exp.Literal.number(4)),
-        ),
+        this=exp.Paren(this=sub_expr),
         expression=exp.Literal.number(4),
     )
     padding = exp.Anonymous(
@@ -245,11 +246,12 @@ def _pad_base64_duckdb(normalized_exp: exp.Expression) -> exp.Expression:
 def _pad_base64_trino(normalized_exp: exp.Expression) -> exp.Expression:
     """Add base64 padding using rpad (Trino)."""
     str_len = exp.Anonymous(this="length", expressions=[normalized_exp])
+    sub_expr = exp.Sub(
+        this=exp.Literal.number(4),
+        expression=exp.Mod(this=str_len, expression=exp.Literal.number(4)),
+    )
     padding_needed = exp.Mod(
-        this=exp.Sub(
-            this=exp.Literal.number(4),
-            expression=exp.Mod(this=str_len, expression=exp.Literal.number(4)),
-        ),
+        this=exp.Paren(this=sub_expr),
         expression=exp.Literal.number(4),
     )
     target_len = exp.Add(this=str_len, expression=padding_needed)

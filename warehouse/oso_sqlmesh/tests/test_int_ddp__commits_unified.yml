@@ -1,0 +1,292 @@
+# Tests for int_ddp__commits_unified model
+# Grain: (sha, repository_id) - same commit can appear in multiple repos (forks)
+
+test_int_ddp__commits_unified_basic_join:
+  model: oso.int_ddp__commits_unified
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-31
+  inputs:
+    oso.int_github__commits_all:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        repository_id: bigint
+        repository_name: varchar
+        actor_id: bigint
+        actor_login: varchar
+        author_email: varchar
+        author_name: varchar
+      rows:
+        - sha: "abc123def456"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 100
+          actor_login: "developer1"
+          author_email: "dev@example.com"
+          author_name: "Developer One"
+    oso.stg_opendevdata__commits:
+      columns:
+        sha1: varchar
+        canonical_developer_id: bigint
+        is_bot: bigint
+        additions: bigint
+        deletions: bigint
+        committed_at: timestamp
+        authored_at: timestamp
+      rows:
+        - sha1: "abc123def456"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 50
+          deletions: 10
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 5001
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows:
+        - node_id: "MDQ6VXNlcjEwMA=="
+          decoded_id: 100
+  outputs:
+    query:
+      rows:
+        - sha: "abc123def456"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 100
+          actor_login: "developer1"
+          author_email: "dev@example.com"
+          author_name: "Developer One"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 50
+          deletions: 10
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+          author_id: 100
+          primary_github_user_id: "MDQ6VXNlcjEwMA=="
+
+test_int_ddp__commits_unified_same_sha_different_repos:
+  model: oso.int_ddp__commits_unified
+  description: "Same SHA can appear in multiple repos (forks) - this is the key grain test"
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-31
+  inputs:
+    oso.int_github__commits_all:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        repository_id: bigint
+        repository_name: varchar
+        actor_id: bigint
+        actor_login: varchar
+        author_email: varchar
+        author_name: varchar
+      rows:
+        # Same commit pushed to original repo
+        - sha: "shared_commit_sha"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/original-repo"
+          actor_id: 100
+          actor_login: "maintainer"
+          author_email: "author@example.com"
+          author_name: "Author"
+        # Same commit exists in forked repo
+        - sha: "shared_commit_sha"
+          created_at: "2024-01-15 11:00:00"
+          repository_id: 2002
+          repository_name: "user/forked-repo"
+          actor_id: 200
+          actor_login: "forker"
+          author_email: "author@example.com"
+          author_name: "Author"
+    oso.stg_opendevdata__commits:
+      columns:
+        sha1: varchar
+        canonical_developer_id: bigint
+        is_bot: bigint
+        additions: bigint
+        deletions: bigint
+        committed_at: timestamp
+        authored_at: timestamp
+      rows:
+        - sha1: "shared_commit_sha"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 25
+          deletions: 5
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 5001
+          primary_github_user_id: "MDQ6VXNlcjMwMA=="
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows:
+        - node_id: "MDQ6VXNlcjMwMA=="
+          decoded_id: 300
+  outputs:
+    query:
+      # Both rows should exist - grain is (sha, repository_id)
+      rows:
+        - sha: "shared_commit_sha"
+          repository_id: 1001
+          repository_name: "org/original-repo"
+          actor_id: 100
+          actor_login: "maintainer"
+          canonical_developer_id: 5001
+          author_id: 300
+        - sha: "shared_commit_sha"
+          repository_id: 2002
+          repository_name: "user/forked-repo"
+          actor_id: 200
+          actor_login: "forker"
+          canonical_developer_id: 5001
+          author_id: 300
+      partial: true
+
+test_int_ddp__commits_unified_no_opendevdata_match:
+  model: oso.int_ddp__commits_unified
+  description: "Commits without OpenDevData match should still appear with nulls"
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-31
+  inputs:
+    oso.int_github__commits_all:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        repository_id: bigint
+        repository_name: varchar
+        actor_id: bigint
+        actor_login: varchar
+        author_email: varchar
+        author_name: varchar
+      rows:
+        - sha: "gharchive_only_commit"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 100
+          actor_login: "developer1"
+          author_email: "dev@example.com"
+          author_name: "Developer One"
+    oso.stg_opendevdata__commits:
+      columns:
+        sha1: varchar
+        canonical_developer_id: bigint
+        is_bot: bigint
+        additions: bigint
+        deletions: bigint
+        committed_at: timestamp
+        authored_at: timestamp
+      rows: []
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_github_user_id: varchar
+      rows: []
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - sha: "gharchive_only_commit"
+          repository_id: 1001
+          actor_id: 100
+          canonical_developer_id: null
+          is_bot: null
+          additions: null
+          deletions: null
+          author_id: null
+          primary_github_user_id: null
+      partial: true
+
+test_int_ddp__commits_unified_null_primary_github_user_id:
+  model: oso.int_ddp__commits_unified
+  description: "Developers without primary_github_user_id (likely deleted accounts)"
+  vars:
+    start_dt: 2024-01-01
+    end_dt: 2024-01-31
+  inputs:
+    oso.int_github__commits_all:
+      columns:
+        sha: varchar
+        created_at: timestamp
+        repository_id: bigint
+        repository_name: varchar
+        actor_id: bigint
+        actor_login: varchar
+        author_email: varchar
+        author_name: varchar
+      rows:
+        - sha: "commit_from_deleted_account"
+          created_at: "2024-01-15 10:00:00"
+          repository_id: 1001
+          repository_name: "org/repo"
+          actor_id: 100
+          actor_login: "ghost"
+          author_email: "deleted@example.com"
+          author_name: "Deleted User"
+    oso.stg_opendevdata__commits:
+      columns:
+        sha1: varchar
+        canonical_developer_id: bigint
+        is_bot: bigint
+        additions: bigint
+        deletions: bigint
+        committed_at: timestamp
+        authored_at: timestamp
+      rows:
+        - sha1: "commit_from_deleted_account"
+          canonical_developer_id: 5001
+          is_bot: 0
+          additions: 10
+          deletions: 5
+          committed_at: "2024-01-15 09:55:00"
+          authored_at: "2024-01-15 09:50:00"
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_github_user_id: varchar
+      rows:
+        # Developer exists but has no primary_github_user_id
+        - id: 5001
+          primary_github_user_id: null
+    oso.int_github__node_id_map:
+      columns:
+        node_id: varchar
+        decoded_id: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - sha: "commit_from_deleted_account"
+          repository_id: 1001
+          canonical_developer_id: 5001
+          is_bot: 0
+          author_id: null
+          primary_github_user_id: null
+      partial: true
