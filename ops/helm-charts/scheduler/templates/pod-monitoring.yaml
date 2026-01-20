@@ -1,0 +1,37 @@
+{{- range .Values.app.queues -}}
+{{ $resources := .resources | default $.Values.app.resources }}
+{{ $tolerations := .tolerations | default $.Values.app.tolerations }}
+{{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
+{{ $affinity := .affinity | default $.Values.app.affinity }}
+{{ $name := required "Queue name is required" .name }}
+{{ $volumeMounts := .volumeMounts | default $.Values.app.volumeMounts }}
+{{ $volumes := .volumes | default $.Values.app.volumes }}
+{{ $nodeSelector := .nodeSelector | default $.Values.app.nodeSelector }}
+{{ $image := .image | default $.Values.app.image }}
+{{ $extraEnvVars := .envVars | default dict }}
+---
+# Setup GKE managed prometheus monitoring for consumer-trino
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: {{ include "app.fullname" $ }}-{{ $name | replace "_" "-" }}
+spec:
+  selector:
+    matchLabels:
+      component: {{ $.Values.app.name }}
+      queue: {{ $name }}
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+  targetLabels:
+    # We need to rename these labels because GCP does not allow '/' in label names
+    # Also some of the labels are reserved by GCP so we rename them to avoid conflicts
+    fromPod:
+      - from: app.kubernetes.io/component
+        to: oso_component
+      - from: app.kubernetes.io/instance
+        to: oso_instance
+      - from: app.kubernetes.io/name
+        to: oso_name
+{{- end -}}

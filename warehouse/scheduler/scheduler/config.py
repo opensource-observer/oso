@@ -29,7 +29,10 @@ PROTOBUF_DIR = os.path.join(REPO_DIR, "lib/osoprotobufs/definitions")
 class CommonSettings(BaseSettings):
     """Common options for async worker commands"""
 
-    model_config = SettingsConfigDict(env_prefix="scheduler_")
+    model_config = SettingsConfigDict(
+        env_prefix="scheduler_",
+        env_nested_delimiter="__",
+    )
 
     k8s_enabled: bool = Field(
         default=False,
