@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20260121181648-4c72c51 # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20260121191014-6f2dedb # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       queues:
