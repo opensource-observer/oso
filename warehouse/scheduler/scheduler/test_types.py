@@ -1,6 +1,7 @@
-
 import pytest
+from oso_core.sql.compare import is_same_sql
 from scheduler.types import Model
+from sqlglot import parse_one
 
 
 def compare_sql_queries(query1: str, query2: str) -> bool:
@@ -46,5 +47,7 @@ async def test_model_parse_correctly(
 ):
     query = model.query
     resolved_query = await model.resolve_query([])
-    compare_sql_queries(query.sql("trino"), expected_query)
-    compare_sql_queries(resolved_query.sql("trino"), expected_query)
+    assert is_same_sql(query, parse_one(expected_query, dialect="trino"), "trino")
+    assert is_same_sql(
+        resolved_query, parse_one(expected_query, dialect="trino"), "trino"
+    )

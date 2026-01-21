@@ -27,10 +27,16 @@ def is_same_source_table(a: exp.Table, b: exp.Table):
     )
 
 
-def is_same_sql(a: exp.Expression, b: exp.Expression):
+def is_same_sql(
+    a: exp.Expression, b: exp.Expression, dialect: str | None = None
+) -> bool:
     diff = sql.diff(
-        normalize(qualify(sql.parse_one(a.sql()))),
-        normalize(qualify(sql.parse_one(b.sql()))),
+        normalize(
+            qualify(sql.parse_one(a.sql(), dialect=dialect), dialect=dialect),
+        ),
+        normalize(
+            qualify(sql.parse_one(b.sql(), dialect=dialect), dialect=dialect),
+        ),
     )
     for section in diff:
         if not isinstance(section, Keep):
