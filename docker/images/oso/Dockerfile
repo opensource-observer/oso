@@ -12,7 +12,7 @@ COPY . ./
 ENV UV_PROJECT_ENVIRONMENT=/usr/local/
 
 RUN uv sync --all-packages --locked
-RUN uv run playwright install chromium-headless-shell
+RUN uv run playwright install --with-deps chromium-headless-shell
 
 # Build the dagster for production
 ENV DAGSTER_ASSET_CACHE_DIR=/dagster_assets_cache
