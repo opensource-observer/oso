@@ -63,35 +63,47 @@ class TestDecodeGitHubNodeId:
     @pytest.mark.parametrize(
         "node_id,expected_id",
         [
-            # GitHub v2 format: msgpack [0, id] with urlsafe base64
-            # MsgPack formats by ID range:
-            #   FixInt (0-127): 1 byte, no marker
-            #   UInt8 (128-255): 2 bytes, marker 0xcc
-            #   UInt16 (256-65535): 3 bytes, marker 0xcd
-            #   UInt32 (65536-4.29B): 5 bytes, marker 0xce
-            #   UInt64 (>4.29B): 9 bytes, marker 0xcf
-            #
-            # FixInt (0-127) - suffix length 4 (BUG AFFECTED - needs 0 padding)
-            ("U_kgAA", 0),
-            ("U_kgAb", 27),
-            ("U_kgBO", 78),
-            ("U_kgB_", 127),
-            # UInt8 (128-255) - suffix length 6 (needs 2 padding)
-            ("U_kgDMgA", 128),
-            ("U_kgDMyA", 200),
-            ("U_kgDM_w", 255),
-            # UInt16 (256-65535) - suffix length 7 (needs 1 padding)
-            ("U_kgDNAQA", 256),
-            ("U_kgDNA-g", 1000),
-            ("U_kgDN__8", 65535),
-            # UInt32 (65536-4.29B) - suffix length 10 (needs 2 padding)
-            ("U_kgDOAAEAAA", 65536),
-            ("U_kgDOAAGGoA", 100000),
-            ("U_kgDOBbc7Ag", 95894274),
-            # UInt64 (>4.29B) - suffix length 15 (needs 1 padding)
-            ("U_kgDPAAAAASoF8gA", 5000000000),
-            # Legacy v1 format (base64 encoded "type:id" string)
-            ("MDQ6VXNlcjEyMzQ1Njc=", 1234567),
+            # --- Next-Gen v2 (MsgPack) Formats ---
+            # FixInt (0-127) - 3 bytes total
+            ("U_kgAA", 0),  # Min (0)
+            ("U_kgBA", 64),  # Median (64)
+            ("U_kgBy", 114),  # Real-world User ID
+            # UInt8 (128-255) - 4 bytes total
+            ("U_kgDMgA", 128),  # Min (128)
+            ("U_kgDMvw", 191),  # Median (191)
+            ("U_kgDM_w", 255),  # Max (255)
+            # UInt16 (256-65535) - 5 bytes total
+            ("U_kgDNAQA", 256),  # Min (256)
+            ("U_kgDNgH8", 32895),  # Median (32895)
+            ("U_kgDN__8", 65535),  # Max (65535)
+            # UInt32 (65536-4.29B) - 7 bytes total
+            ("U_kgDOAAEAAA", 65536),  # Min (65536)
+            ("U_kgDOgAB__w", 2147516415),  # Median (2147516415)
+            ("U_kgDO_____w", 4294967295),  # Max (UInt32 Max)
+            # UInt64 (>4.29B) - 11 bytes total
+            ("U_kgDPAAAAAQAAAAA", 4294967296),  # Min (UInt64 Min)
+            ("U_kgDPgAAAAH____8", 9223372039002259455),  # Median (9223372039002259455)
+            ("U_kgDP__________8", 18446744073709551615),  # Max (UInt64 Max)
+            # User IDs
+            ("U_kgDOCH_3TQ", 142604109),
+            ("U_kgDOAFB_cg", 5275506),
+            ("U_kgDOASN2_w", 19101439),
+            ("U_kgDOAe68Mg", 32422962),
+            ("U_kgDOA_d-aQ", 66551401),
+            # Repo IDs (Critical regression: these caused out-of-bounds in UInt64 path)
+            ("R_kgDOIa5_LQ", 565083949),
+            ("R_kgDOEb_ZAQ", 297785601),
+            ("R_kgDOHZb1_w", 496432639),
+            ("R_kgDOIW0T0w", 560796627),
+            ("R_kgDOF_r28w", 402323187),
+            # Bot IDs
+            ("BOT_kgDODH_GIQ", 209700385),
+            ("BOT_kgDOCr-_NA", 180338484),
+            ("BOT_kgDOCJg4_A", 144193788),
+            ("BOT_kgDOCAbJvQ", 134662589),
+            # --- Legacy v1 (Base64 "Type:ID") Formats ---
+            ("MDQ6VXNlcjEyMzQ1Njc=", 1234567),  # User:1234567
+            ("MDEwOlJlcG9zaXRvcnk3NDUyMDEyNA==", 74520124),  # Repository:74520124
         ],
     )
     def test_python_decode_matches_expected(self, node_id: str, expected_id: int):
