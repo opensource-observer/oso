@@ -500,7 +500,7 @@ class MessageHandler(abc.ABC, t.Generic[T]):
     message_type: t.Type[T]
     schema_file_name: str
 
-    async def handle_message(self, *args, **kwargs) -> HandlerResponse:
+    async def handle_message(self, message: T, *args, **kwargs) -> HandlerResponse:
         """A method to handle incoming messages"""
         raise NotImplementedError("handle_message must be implemented by subclasses.")
 
