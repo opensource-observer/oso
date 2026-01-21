@@ -348,3 +348,38 @@ export const WithDefaultValuesOverride: Story = {
     className: "w-[400px]",
   },
 };
+
+const dynamicObjectSchema: FormSchema = {
+  headers: {
+    type: "object",
+    label: "HTTP Headers",
+    allowDynamicKeys: true,
+    description: "Add custom HTTP headers as key-value pairs",
+    defaultValue: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer token123",
+    },
+  },
+  queryParams: {
+    type: "object",
+    label: "Query Parameters",
+    allowDynamicKeys: true,
+    description: "Add query parameters for the request",
+    skipIfEmpty: true,
+  },
+  metadata: {
+    type: "object",
+    label: "Custom Metadata",
+    allowDynamicKeys: true,
+    required: true,
+    description: "Required metadata fields",
+  },
+};
+
+export const WithDynamicObjects: Story = {
+  args: {
+    schema: dynamicObjectSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[700px]",
+  },
+};
