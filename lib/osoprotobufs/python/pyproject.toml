@@ -5,7 +5,7 @@ description = "Generated protobuf code for oso"
 readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
-    "protobuf==6.33.2",
+    "protobuf==6.33.4",
 ]
 
 [build-system]
