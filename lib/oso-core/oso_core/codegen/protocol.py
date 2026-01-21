@@ -4,6 +4,7 @@ import typing as t
 
 from .utils import (
     collect_used_names,
+    filter_imports,
     load_source_module,
     resolve_import_alias,
     resolve_relative_imports,
@@ -71,33 +72,12 @@ def create_protocol_module(
     used_names = collect_used_names(protocol_cls)
 
     # Filter imports from source module
-    needed_imports: t.List[ast.stmt] = []
-    for node in source_module.body:
-        if isinstance(node, ast.Import):
-            filtered_names = [
-                n for n in node.names if (n.asname or n.name) in used_names
-            ]
-            if filtered_names:
-                new_node = copy.deepcopy(node)
-                new_node.names = filtered_names
-                needed_imports.append(new_node)
-        elif isinstance(node, ast.ImportFrom):
-            # Check for star import
-            if any(n.name == "*" for n in node.names):
-                if include_star_imports:
-                    needed_imports.append(copy.deepcopy(node))
-                else:
-                    raise ValueError(
-                        f"Star import found in module: from {node.module} import *"
-                    )
-            else:
-                filtered_names = [
-                    n for n in node.names if (n.asname or n.name) in used_names
-                ]
-                if filtered_names:
-                    new_node = copy.deepcopy(node)
-                    new_node.names = filtered_names
-                    needed_imports.append(new_node)
+    needed_imports = filter_imports(
+        source_module,
+        used_names,
+        module_path=module_path,
+        include_star_imports=include_star_imports,
+    )
 
     # Resolve relative imports
     needed_imports = resolve_relative_imports(needed_imports, module_path)

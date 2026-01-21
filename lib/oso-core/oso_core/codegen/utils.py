@@ -263,32 +263,170 @@ def find_class_def(module: ast.Module, class_name: str) -> t.Optional[ast.ClassD
     return None
 
 
-def filter_imports(module: ast.Module, used_names: t.Set[str]) -> t.List[ast.stmt]:
+def is_overload(node: ast.AST) -> bool:
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        for decorator in node.decorator_list:
+            # This check is a bit crude as it doesn't verify the module
+            # used to import overload, but it's sufficient for now.
+            if isinstance(decorator, ast.Name) and decorator.id == "overload":
+                return True
+            if isinstance(decorator, ast.Attribute) and decorator.attr == "overload":
+                return True
+    return False
+
+
+def check_definition(
+    definitions: t.Dict[str, t.List[t.Tuple[t.Type[ast.AST], bool]]],
+    name: str,
+    node: ast.AST,
+):
+    node_type = type(node)
+    is_ov = is_overload(node)
+
+    if name in definitions:
+        prev_defs = definitions[name]
+
+        # If current is not a function, it's definitely an error (since we already have a definition)
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            raise ValueError(
+                f"Ambiguous name '{name}' defined multiple times in source module."
+            )
+
+        # If any previous definition was NOT a function, error
+        for prev_type, _ in prev_defs:
+            if not issubclass(prev_type, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                raise ValueError(
+                    f"Ambiguous name '{name}' defined multiple times in source module."
+                )
+
+        # Current is function, previous are functions.
+        if not is_ov:
+            # Check if we already have an implementation
+            for _, prev_is_ov in prev_defs:
+                if not prev_is_ov:
+                    raise ValueError(
+                        f"Ambiguous name '{name}' defined multiple times in source module."
+                    )
+
+        definitions[name].append((node_type, is_ov))
+    else:
+        definitions[name] = [(node_type, is_ov)]
+
+
+def check_no_shadowing(module: ast.Module) -> None:
+    """Checks that no name is defined multiple times in the module,
+    except for valid function overloads.
+
+    Args:
+        module: The AST module to check.
+
+    Raises:
+        ValueError: If a name is shadowed or defined multiple times invalidly.
+    """
+    # Map from name to list of (node_type, is_overload)
+    definitions: t.Dict[str, t.List[t.Tuple[t.Type[ast.AST], bool]]] = {}
+
+    for node in module.body:
+        if isinstance(node, ast.Import):
+            for n in node.names:
+                check_definition(definitions, n.asname or n.name, node)
+        elif isinstance(node, ast.ImportFrom):
+            if not any(n.name == "*" for n in node.names):
+                for n in node.names:
+                    check_definition(definitions, n.asname or n.name, node)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            check_definition(definitions, node.name, node)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    check_definition(definitions, target.id, node)
+        elif isinstance(node, ast.AnnAssign):
+            if isinstance(node.target, ast.Name):
+                check_definition(definitions, node.target.id, node)
+
+
+def filter_imports(
+    module: ast.Module,
+    used_names: t.Set[str],
+    module_path: t.Optional[str] = None,
+    include_star_imports: bool = False,
+) -> t.List[ast.stmt]:
     """Filters imports in a module to only include those that are used.
+
+    Also generates imports for names defined in the module itself if module_path is provided.
 
     Args:
         module: The AST module containing imports.
         used_names: A set of names that are used and should be kept.
+        module_path: The absolute path of the module (used to generate imports for locally defined names).
+        include_star_imports: If True, include star imports. If False, raises ValueError.
 
     Returns:
         A list of filtered import statements.
     """
+    check_no_shadowing(module)
+
     needed_imports: t.List[ast.stmt] = []
+    found_names: t.Set[str] = set()
+
     for node in module.body:
         if isinstance(node, ast.Import):
-            filtered_names = [
-                n for n in node.names if (n.asname or n.name) in used_names
-            ]
+            filtered_names = []
+            for n in node.names:
+                name_to_check = n.asname or n.name
+                if name_to_check in used_names:
+                    filtered_names.append(n)
+                    found_names.add(name_to_check)
+
             if filtered_names:
                 new_node = copy.deepcopy(node)
                 new_node.names = filtered_names
                 needed_imports.append(new_node)
+
         elif isinstance(node, ast.ImportFrom):
-            filtered_names = [
-                n for n in node.names if (n.asname or n.name) in used_names
+            if any(n.name == "*" for n in node.names):
+                if include_star_imports:
+                    needed_imports.append(copy.deepcopy(node))
+                else:
+                    raise ValueError(
+                        f"Star import found in module: from {node.module} import *"
+                    )
+            else:
+                filtered_names = []
+                for n in node.names:
+                    name_to_check = n.asname or n.name
+                    if name_to_check in used_names:
+                        filtered_names.append(n)
+                        found_names.add(name_to_check)
+
+                if filtered_names:
+                    new_node = copy.deepcopy(node)
+                    new_node.names = filtered_names
+                    needed_imports.append(new_node)
+
+    if module_path:
+        missing_names = used_names - found_names
+        locally_defined_names = set()
+
+        for node in module.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                locally_defined_names.add(node.name)
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        locally_defined_names.add(target.id)
+            elif isinstance(node, ast.AnnAssign):
+                if isinstance(node.target, ast.Name):
+                    locally_defined_names.add(node.target.id)
+
+        names_to_import = missing_names.intersection(locally_defined_names)
+
+        if names_to_import:
+            names_nodes = [
+                ast.alias(name=n, asname=None) for n in sorted(names_to_import)
             ]
-            if filtered_names:
-                new_node = copy.deepcopy(node)
-                new_node.names = filtered_names
-                needed_imports.append(new_node)
+            needed_imports.append(
+                ast.ImportFrom(module=module_path, names=names_nodes, level=0)
+            )
+
     return needed_imports
