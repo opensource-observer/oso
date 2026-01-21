@@ -8,14 +8,24 @@ import { NODE_ENV } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
+function urlWithSearchParams(url: string, searchParams: URLSearchParams) {
+  if (searchParams.size === 0) {
+    return url;
+  }
+  return `${url}?${searchParams.toString()}`;
+}
+
 export const GET = withPostHogTracking(async (req: NextRequest) => {
+  const searchParams = req.nextUrl.searchParams;
   const supabaseClient = await createServerClient();
   const user = await getUser(req);
 
   // Check if user is anonymous
   if (user.role === "anonymous") {
     logger.log(`/start: User is anonymous`);
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(
+      new URL(urlWithSearchParams("/login", searchParams), req.url),
+    );
   }
 
   // Check if the user is part of any any organizations
@@ -30,7 +40,13 @@ export const GET = withPostHogTracking(async (req: NextRequest) => {
   if (joinError) {
     throw joinError;
   } else if (!joinedOrgs || joinedOrgs.length <= 0) {
-    return NextResponse.redirect(new URL("/create-org", req.url));
+    return NextResponse.redirect(
+      new URL(urlWithSearchParams("/create-org", searchParams), req.url),
+    );
+  }
+
+  if (searchParams.get("next")) {
+    return NextResponse.redirect(new URL(searchParams.get("next")!, req.url));
   }
 
   // Find the user's highest tier organization
