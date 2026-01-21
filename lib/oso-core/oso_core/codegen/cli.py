@@ -15,10 +15,17 @@ class ProtocolCmd(BaseSettings):
         description="Import path in the form 'module.path:Class'"
     )
     output_path: CliPositionalArg[str] = Field(description="Path to output file")
+    use_inspect: CliPositionalArg[bool] = Field(
+        default=False,
+        description="Whether to use the inspect module to gather members (slower, but more accurate)",
+    )
 
     async def cli_cmd(self, context: CliContext) -> None:
         try:
-            protocol_mod = create_protocol_module(self.import_path)
+            protocol_mod = create_protocol_module(
+                self.import_path,
+                use_inspect=self.use_inspect,
+            )
             code = ast.unparse(protocol_mod)
 
             with open(self.output_path, "w") as f:

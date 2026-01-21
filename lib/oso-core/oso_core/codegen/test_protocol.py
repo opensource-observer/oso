@@ -358,3 +358,33 @@ class MyService:
     imports = [n for n in protocol_mod.body if isinstance(n, ast.ImportFrom)]
     star_imp = next(imp for imp in imports if imp.module == "something")
     assert star_imp.names[0].name == "*"
+
+
+def test_create_protocol_module_inspect() -> None:
+    # Use a standard library class to test inspection
+    target = "email.message:Message"
+
+    # Run with use_inspect=True
+    protocol_mod = create_protocol_module(target, use_inspect=True)
+
+    assert isinstance(protocol_mod, ast.Module)
+
+    # Check if we have ClassDef
+    cls_def = next((n for n in protocol_mod.body if isinstance(n, ast.ClassDef)), None)
+    assert cls_def is not None
+    assert cls_def.name == "MessageProtocol"
+
+    # Check if bases include Protocol
+    assert len(cls_def.bases) == 1
+    base = cls_def.bases[0]
+    assert isinstance(base, ast.Attribute)
+    assert base.attr == "Protocol"
+
+    # Check if methods are present (e.g. get_payload)
+    methods = [
+        n.name
+        for n in cls_def.body
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
+    assert "get_payload" in methods
+    assert "add_header" in methods
