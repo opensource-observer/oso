@@ -88,6 +88,7 @@ interface FormSchemaDateField extends FormSchemaFieldBase {
 interface FormSchemaObjectField extends FormSchemaFieldBase {
   type: "object";
   properties?: FormSchema;
+  allowDynamicKeys?: boolean;
 }
 
 interface FormSchemaArrayField extends FormSchemaFieldBase {
@@ -177,9 +178,34 @@ const createZodSchema = (field: FormSchemaField): FormBuilderZodField => {
       case "date":
         return z.date({ invalid_type_error: `${field.label} must be a date.` });
       case "object":
-        return field.properties
-          ? generateFormConfig(field.properties).zodSchema
-          : z.object({});
+        if (field.properties) {
+          return generateFormConfig(field.properties).zodSchema;
+        } else if (field.allowDynamicKeys) {
+          return z
+            .array(
+              z.object({
+                key: z.string().min(1, "Key cannot be empty"),
+                value: z.string(),
+              }),
+            )
+            .refine(
+              (pairs) => {
+                const keys = pairs.map((p) => p.key);
+                return keys.length === new Set(keys).size;
+              },
+              { message: "Duplicate keys are not allowed" },
+            )
+            .transform((pairs) => {
+              return pairs.reduce(
+                (acc, pair) => {
+                  acc[pair.key] = pair.value;
+                  return acc;
+                },
+                {} as Record<string, string>,
+              );
+            });
+        }
+        return z.object({});
       case "array": {
         const itemSchemas: Record<string, z.ZodTypeAny> = {
           string: z.string(),
@@ -208,26 +234,31 @@ function generateFormConfig<T extends FormSchema>(schema: T) {
   const defaultValues: Record<string, FormDefaultValue> = {};
 
   const getDefaultValueForType = (field: FormSchemaField): FormDefaultValue => {
-    if (field.defaultValue !== undefined) {
-      return field.defaultValue;
-    }
     switch (field.type) {
       case "string":
-        return "";
+        return field.defaultValue !== undefined ? field.defaultValue : "";
       case "number":
-        return undefined;
+        return field.defaultValue;
       case "boolean":
-        return false;
+        return field.defaultValue !== undefined ? field.defaultValue : false;
       case "date":
-        return undefined;
+        return field.defaultValue;
       case "array":
-        return [];
+        return field.defaultValue !== undefined ? field.defaultValue : [];
       case "object":
         if (field.properties) {
           const nested = generateFormConfig(field.properties);
           return nested.defaultValues;
+        } else if (field.allowDynamicKeys) {
+          if (field.defaultValue && typeof field.defaultValue === "object") {
+            return Object.entries(field.defaultValue).map(([key, value]) => ({
+              key,
+              value: String(value),
+            }));
+          }
+          return [];
         }
-        return {};
+        return field.defaultValue !== undefined ? field.defaultValue : {};
       default:
         return undefined;
     }
@@ -657,6 +688,231 @@ const ArrayItemRenderer: React.FC<ArrayItemRendererProps> = ({
   );
 };
 
+interface DynamicObjectFieldRendererProps {
+  currentPath: string;
+  fieldSchema: FormSchemaObjectField;
+  horizontal?: boolean;
+}
+
+const DynamicObjectFieldRenderer: React.FC<DynamicObjectFieldRendererProps> = ({
+  currentPath,
+  fieldSchema,
+  horizontal,
+}) => {
+  const { control } = useFormContext();
+  const { fields, append, remove, move } = useFieldArray({
+    control,
+    name: currentPath,
+  });
+
+  return (
+    <div
+      className={cn(
+        "space-y-3",
+        horizontal && "grid grid-cols-4 items-start gap-4",
+      )}
+    >
+      <div
+        className={cn(
+          horizontal && "text-left pt-2",
+          "flex items-center justify-between",
+        )}
+      >
+        <FormLabel>
+          {fieldSchema.label}
+          {fieldSchema.required && (
+            <span className="text-destructive ml-1">*</span>
+          )}
+        </FormLabel>
+        {!horizontal && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={() => append({ key: "", value: "" })}
+            disabled={fieldSchema.disabled}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="text-xs">Add</span>
+          </Button>
+        )}
+      </div>
+
+      <div className={cn(horizontal && "col-span-3", "space-y-2")}>
+        {fieldSchema.description && (
+          <FormDescription className="mt-0">
+            {fieldSchema.description}
+          </FormDescription>
+        )}
+
+        {fields.length === 0 ? (
+          <div className="text-sm text-muted-foreground text-center py-6 border-2 border-dashed rounded-lg bg-muted/20">
+            No properties defined
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {fields.map((field, index) => (
+              <DynamicKeyValuePairRenderer
+                key={field.id}
+                fieldPath={`${currentPath}.${index}`}
+                index={index}
+                onRemove={() => remove(index)}
+                onMove={move}
+                canMoveUp={index > 0}
+                canMoveDown={index < fields.length - 1}
+                disabled={fieldSchema.disabled}
+              />
+            ))}
+          </div>
+        )}
+
+        {horizontal && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full mt-2"
+            onClick={() => append({ key: "", value: "" })}
+            disabled={fieldSchema.disabled}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Property
+          </Button>
+        )}
+
+        <FormMessage />
+      </div>
+    </div>
+  );
+};
+
+interface DynamicKeyValuePairRendererProps {
+  fieldPath: string;
+  index: number;
+  onRemove: () => void;
+  onMove: (from: number, to: number) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  disabled?: boolean;
+}
+
+const DynamicKeyValuePairRenderer: React.FC<
+  DynamicKeyValuePairRendererProps
+> = ({
+  fieldPath,
+  index,
+  onRemove,
+  onMove,
+  canMoveUp,
+  canMoveDown,
+  disabled,
+}) => {
+  const { control } = useFormContext();
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isDragOver, setIsDragOver] = React.useState(false);
+
+  const dragHandlers = React.useMemo(
+    () => ({
+      onDragStart: (e: React.DragEvent) => {
+        setIsDragging(true);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", index.toString());
+      },
+      onDragEnd: () => setIsDragging(false),
+      onDragOver: (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setIsDragOver(true);
+      },
+      onDragLeave: () => setIsDragOver(false),
+      onDrop: (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
+        if (fromIndex !== index) onMove(fromIndex, index);
+      },
+    }),
+    [index, onMove],
+  );
+
+  const canDrag = !disabled && (canMoveUp || canMoveDown);
+
+  return (
+    <div
+      className={cn(
+        "group relative border rounded-lg bg-card transition-all duration-200",
+        isDragging && "opacity-50 scale-95",
+        isDragOver && "ring-2 ring-primary ring-offset-2",
+        !isDragging && "hover:bg-accent/5",
+      )}
+      draggable={canDrag}
+      {...dragHandlers}
+    >
+      <div className="flex items-center gap-2 p-3">
+        {(canMoveUp || canMoveDown) && (
+          <div
+            className="h-7 w-7 flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-accent rounded flex-shrink-0"
+            title="Drag to reorder"
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </div>
+        )}
+
+        <div className="flex-1 grid grid-cols-2 gap-2">
+          <FormField
+            control={control}
+            name={`${fieldPath}.key`}
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Key"
+                    disabled={disabled}
+                    className="h-9"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name={`${fieldPath}.value`}
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Value"
+                    disabled={disabled}
+                    className="h-9"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+          onClick={onRemove}
+          disabled={disabled}
+          title="Remove property"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const RenderField: React.FC<RenderFieldProps> = ({
   fieldName,
   fieldSchema,
@@ -828,6 +1084,15 @@ const RenderField: React.FC<RenderFieldProps> = ({
       );
 
     case "object":
+      if (fieldSchema.allowDynamicKeys) {
+        return (
+          <DynamicObjectFieldRenderer
+            currentPath={currentPath}
+            fieldSchema={fieldSchema}
+            horizontal={horizontal}
+          />
+        );
+      }
       return (
         <div className={cn("space-y-4 p-4 border rounded-md", objectClassName)}>
           <h3 className="font-medium">{fieldSchema.label}</h3>
