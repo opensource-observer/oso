@@ -73,7 +73,11 @@ def _get_byte_from_hex_duckdb(hex_exp: exp.Expression, pos: int) -> exp.Expressi
         safe=False,
         coalesce=False,
     )
-    return exp.Cast(this=hex_with_prefix, to=exp.DataType.build("BIGINT"))
+    # Use TRY_CAST + COALESCE to handle out-of-bounds or invalid hex gracefully
+    return exp.Coalesce(
+        this=exp.TryCast(this=hex_with_prefix, to=exp.DataType.build("BIGINT")),
+        expressions=[exp.Literal.number(0)],
+    )
 
 
 def _get_byte_from_hex_trino(hex_exp: exp.Expression, pos: int) -> exp.Expression:
@@ -84,9 +88,15 @@ def _get_byte_from_hex_trino(hex_exp: exp.Expression, pos: int) -> exp.Expressio
         start=exp.Literal.number(hex_pos),
         length=exp.Literal.number(2),
     )
-    return exp.Anonymous(
-        this="from_base",
-        expressions=[two_chars, exp.Literal.number(16)],
+    # Use TRY + COALESCE to handle out-of-bounds or invalid hex gracefully
+    return exp.Coalesce(
+        this=exp.Try(
+            this=exp.Anonymous(
+                this="from_base",
+                expressions=[two_chars, exp.Literal.number(16)],
+            )
+        ),
+        expressions=[exp.Literal.number(0)],
     )
 
 
