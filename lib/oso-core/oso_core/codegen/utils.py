@@ -245,3 +245,50 @@ def load_source_module(
             raise ValueError(f"Could not parse source file: {e}")
 
     return source_module, target_cls_obj, module_path, class_name
+
+
+def find_class_def(module: ast.Module, class_name: str) -> t.Optional[ast.ClassDef]:
+    """Finds a ClassDef node by name in a module's body.
+
+    Args:
+        module: The AST module to search.
+        class_name: The name of the class to find.
+
+    Returns:
+        The ClassDef node if found, otherwise None.
+    """
+    for node in module.body:
+        if isinstance(node, ast.ClassDef) and node.name == class_name:
+            return node
+    return None
+
+
+def filter_imports(module: ast.Module, used_names: t.Set[str]) -> t.List[ast.stmt]:
+    """Filters imports in a module to only include those that are used.
+
+    Args:
+        module: The AST module containing imports.
+        used_names: A set of names that are used and should be kept.
+
+    Returns:
+        A list of filtered import statements.
+    """
+    needed_imports: t.List[ast.stmt] = []
+    for node in module.body:
+        if isinstance(node, ast.Import):
+            filtered_names = [
+                n for n in node.names if (n.asname or n.name) in used_names
+            ]
+            if filtered_names:
+                new_node = copy.deepcopy(node)
+                new_node.names = filtered_names
+                needed_imports.append(new_node)
+        elif isinstance(node, ast.ImportFrom):
+            filtered_names = [
+                n for n in node.names if (n.asname or n.name) in used_names
+            ]
+            if filtered_names:
+                new_node = copy.deepcopy(node)
+                new_node.names = filtered_names
+                needed_imports.append(new_node)
+    return needed_imports
