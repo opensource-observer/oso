@@ -63,6 +63,12 @@ from .get_data_models import (
     GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModels,
     GetDataModelsDatasetsEdgesNodeTypeDefinitionStaticModelDefinition,
 )
+from .get_notebook import (
+    GetNotebook,
+    GetNotebookNotebooks,
+    GetNotebookNotebooksEdges,
+    GetNotebookNotebooksEdgesNode,
+)
 from .get_static_models import (
     GetStaticModels,
     GetStaticModelsDatasets,
@@ -98,9 +104,11 @@ from .input_types import (
     DataModelKindOptionsInput,
     FinishRunInput,
     FinishStepInput,
+    PublishNotebookInput,
     RemoveMemberInput,
     RevokeInvitationInput,
     SaveNotebookPreviewInput,
+    SavePublishedNotebookHtmlInput,
     StartRunInput,
     StartStepInput,
     UpdateDataModelInput,
@@ -115,6 +123,10 @@ from .resolve_tables import (
     ResolveTables,
     ResolveTablesSystem,
     ResolveTablesSystemResolveTables,
+)
+from .save_published_notebook_html import (
+    SavePublishedNotebookHtml,
+    SavePublishedNotebookHtmlSavePublishedNotebookHtml,
 )
 from .start_run import StartRun, StartRunStartRun
 from .start_step import StartStep, StartStepStartStep, StartStepStartStepStep
@@ -184,6 +196,10 @@ __all__ = [
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition",
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinitionDataModels",
     "GetDataModelsDatasetsEdgesNodeTypeDefinitionStaticModelDefinition",
+    "GetNotebook",
+    "GetNotebookNotebooks",
+    "GetNotebookNotebooksEdges",
+    "GetNotebookNotebooksEdgesNode",
     "GetStaticModels",
     "GetStaticModelsDatasets",
     "GetStaticModelsDatasetsEdges",
@@ -208,6 +224,7 @@ __all__ = [
     "LatestDataModelLatestReleaseRevisionKindOptions",
     "LatestDataModelLatestReleaseRevisionSchema",
     "MemberRole",
+    "PublishNotebookInput",
     "RemoveMemberInput",
     "ResolveTables",
     "ResolveTablesSystem",
@@ -217,6 +234,9 @@ __all__ = [
     "RunTriggerType",
     "RunType",
     "SaveNotebookPreviewInput",
+    "SavePublishedNotebookHtml",
+    "SavePublishedNotebookHtmlInput",
+    "SavePublishedNotebookHtmlSavePublishedNotebookHtml",
     "StartRun",
     "StartRunInput",
     "StartRunStartRun",

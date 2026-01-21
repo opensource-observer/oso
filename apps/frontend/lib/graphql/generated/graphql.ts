@@ -1541,7 +1541,7 @@ export type DataIngestionDefinition = {
   __typename?: "DataIngestionDefinition";
   /**
    * The data ingestion configuration for this dataset.
-   * Unlike DataModels and StaticModels, only ONE ingestion config is allowed per dataset.
+   * Unlike DataModels and StaticModels, only one ingestion config is allowed per dataset.
    * Returns null if no configuration has been created yet.
    */
   dataIngestion?: Maybe<DataIngestion>;
@@ -3485,6 +3485,8 @@ export type Mutation = {
   launchRunReexecution: LaunchRunReexecutionResult;
   /** Log telemetry about the Dagster instance. */
   logTelemetry: LogTelemetryMutationResult;
+  /** Publish the notebook HTML to the public */
+  publishNotebook: PublishNotebookPayload;
   /** Retries a set of partition backfill runs. Retrying a backfill will create a new backfill to retry any failed partitions. */
   reexecutePartitionBackfill: LaunchBackfillResult;
   /** Reloads a code location server. */
@@ -3505,6 +3507,8 @@ export type Mutation = {
   revokeInvitation: RevokeInvitationPayload;
   /** Save notebook preview image */
   saveNotebookPreview: SaveNotebookPreviewPayload;
+  /** System only. Save the generated published notebook HTML to object storage */
+  savePublishedNotebookHtml: SavePublishedNotebookHtmlPayload;
   /** Enable a schedule to launch runs for a job based on external state change. */
   scheduleDryRun: ScheduleDryRunResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
@@ -3537,6 +3541,8 @@ export type Mutation = {
   terminateRun: TerminateRunResult;
   /** Terminates a set of runs given their run IDs. */
   terminateRuns: TerminateRunsResultOrError;
+  /** Unpublish the notebook */
+  unpublishNotebook: UnpublishNotebookPayload;
   updateDataModel: CreateDataModelPayload;
   /** Update a dataset */
   updateDataset: UpdateDatasetPayload;
@@ -3747,6 +3753,11 @@ export type MutationLogTelemetryArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationPublishNotebookArgs = {
+  input: PublishNotebookInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationReexecutePartitionBackfillArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
 };
@@ -3789,6 +3800,11 @@ export type MutationRevokeInvitationArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationSaveNotebookPreviewArgs = {
   input: SaveNotebookPreviewInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationSavePublishedNotebookHtmlArgs = {
+  input: SavePublishedNotebookHtmlInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3878,6 +3894,11 @@ export type MutationTerminateRunsArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUnpublishNotebookArgs = {
+  notebookId: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationUpdateDataModelArgs = {
   input: UpdateDataModelInput;
 };
@@ -3943,6 +3964,7 @@ export type Notebook = {
   createdAt: Scalars["DateTimeISO"]["output"];
   creator: User;
   creatorId: Scalars["ID"]["output"];
+  data: Scalars["String"]["output"];
   description?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
@@ -5982,6 +6004,17 @@ export type PresetNotFoundError = Error & {
   preset: Scalars["String"]["output"];
 };
 
+export type PublishNotebookInput = {
+  notebookId: Scalars["ID"]["input"];
+};
+
+export type PublishNotebookPayload = {
+  __typename?: "PublishNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run: Run;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type PythonArtifactMetadataEntry = MetadataEntry & {
   __typename?: "PythonArtifactMetadataEntry";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -7801,6 +7834,17 @@ export type SaveNotebookPreviewPayload = {
   success: Scalars["Boolean"]["output"];
 };
 
+export type SavePublishedNotebookHtmlInput = {
+  htmlContent: Scalars["String"]["input"];
+  notebookId: Scalars["ID"]["input"];
+};
+
+export type SavePublishedNotebookHtmlPayload = {
+  __typename?: "SavePublishedNotebookHtmlPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type ScalarUnionConfigType = ConfigType & {
   __typename?: "ScalarUnionConfigType";
   description?: Maybe<Scalars["String"]["output"]>;
@@ -8704,6 +8748,12 @@ export type UnpartitionedAssetStatus = {
   failed: Scalars["Boolean"]["output"];
   inProgress: Scalars["Boolean"]["output"];
   materialized: Scalars["Boolean"]["output"];
+};
+
+export type UnpublishNotebookPayload = {
+  __typename?: "UnpublishNotebookPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type UnsupportedOperationError = Error & {

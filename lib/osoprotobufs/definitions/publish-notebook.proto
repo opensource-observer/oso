@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+/**
+  * A request to generate the static html for a notebook
+  */
+message PublishNotebookRunRequest {
+  bytes run_id = 1;
+
+  // The notebook id to be generated
+  string notebook_id = 2;
+
+  // OSO API key to run the pyoso queries in the notebook
+  string oso_api_key = 3;
+}
