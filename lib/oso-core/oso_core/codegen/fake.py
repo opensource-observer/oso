@@ -144,6 +144,7 @@ def create_fake_module(
     fake_cls.bases = []
 
     used_names = collect_used_names(fake_cls)
+    print(used_names)
     needed_imports = filter_imports(source_module, used_names, module_path=module_path)
     needed_imports = resolve_relative_imports(needed_imports, module_path)
 

@@ -11,12 +11,17 @@ from .utils import (
 )
 
 
+def default_private_methods_match(name: str) -> bool:
+    return name.startswith("_") and not (name.startswith("__") and name.endswith("__"))
+
+
 def create_protocol_module(
     target: str,
     protocol_name: t.Optional[str] = None,
     extra_imports: t.Optional[t.List[ast.stmt]] = None,
     module_source_code: t.Optional[str] = None,
     include_star_imports: bool = False,
+    private_methods_match: t.Callable[[str], bool] = default_private_methods_match,
 ) -> ast.Module:
     """
     Creates a typing.Protocol definition from a target class specified by string.
@@ -49,6 +54,8 @@ def create_protocol_module(
     new_body: t.List[ast.stmt] = []
     for node in protocol_cls.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if private_methods_match(node.name):
+                continue
             node.body = [ast.Expr(value=ast.Constant(value=...))]
             new_body.append(node)
         elif isinstance(node, ast.AnnAssign):

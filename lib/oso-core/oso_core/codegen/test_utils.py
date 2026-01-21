@@ -15,6 +15,13 @@ from oso_core.codegen.utils import filter_imports
         # 2. Import From
         ("from m import a, b", {"a"}, None, False, "from m import a"),
         ("from m import a, b", {"b"}, None, False, "from m import b"),
+        (
+            "from typing import List, Dict, Any",
+            {"List"},
+            None,
+            False,
+            "from typing import List",
+        ),
         # 3. Aliases
         ("import a as x, b as y", {"x"}, None, False, "import a as x"),
         ("from m import a as x, b as y", {"y"}, None, False, "from m import b as y"),

@@ -30,6 +30,9 @@ class MyService:
 
     async def fetch(self, url: str) -> str:
         return "data"
+
+    async def _internal_method(self) -> None:
+        pass
         
     x: int = 10
 """
