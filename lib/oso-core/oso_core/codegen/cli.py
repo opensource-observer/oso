@@ -1,0 +1,74 @@
+import ast
+import sys
+
+from oso_core.cli.utils import CliApp, CliContext
+from oso_core.codegen.fake import create_fake_module
+from oso_core.codegen.protocol import create_protocol_module
+from pydantic import Field
+from pydantic_settings import BaseSettings, CliPositionalArg, CliSubCommand
+
+
+class ProtocolCmd(BaseSettings):
+    """Generate a typing.Protocol from a class"""
+
+    import_path: CliPositionalArg[str] = Field(
+        description="Import path in the form 'module.path:Class'"
+    )
+    output_path: CliPositionalArg[str] = Field(description="Path to output file")
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        try:
+            protocol_mod = create_protocol_module(self.import_path)
+            code = ast.unparse(protocol_mod)
+
+            with open(self.output_path, "w") as f:
+                f.write(code)
+
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error generating protocol: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+class FakeCmd(BaseSettings):
+    """Generate a fake implementation of a protocol"""
+
+    import_path: CliPositionalArg[str] = Field(
+        description="Import path in the form 'module.path:Protocol'"
+    )
+    output_path: CliPositionalArg[str] = Field(description="Path to output file")
+
+    async def cli_cmd(self, context: CliContext) -> None:
+        try:
+            fake_mod = create_fake_module(self.import_path)
+            code = ast.unparse(fake_mod)
+
+            with open(self.output_path, "w") as f:
+                f.write(code)
+
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error generating fake: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+class CodegenCLI(
+    BaseSettings,
+    cli_parse_args=True,
+    cli_exit_on_error=False,
+    cli_kebab_case=True,
+    cli_prog_name="oso-core-codegen",
+):
+    protocol: CliSubCommand[ProtocolCmd]
+    fake: CliSubCommand[FakeCmd]
+
+    def cli_cmd(self, context: CliContext) -> None:
+        CliApp.run_subcommand(context, self)
+
+
+def cli():
+    CliApp.run(CodegenCLI, sys.argv[1:])
