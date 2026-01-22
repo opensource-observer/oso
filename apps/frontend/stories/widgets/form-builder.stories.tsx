@@ -383,3 +383,468 @@ export const WithDynamicObjects: Story = {
     className: "w-[700px]",
   },
 };
+
+const simpleUnionSchema: FormSchema = {
+  notificationType: {
+    type: "union",
+    label: "Notification Type",
+    required: true,
+    discriminator: "type",
+    variantSelector: "dropdown",
+    variants: [
+      {
+        value: "email",
+        label: "Email",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "email",
+            hidden: true,
+          },
+          emailAddress: {
+            type: "string",
+            label: "Email Address",
+            required: true,
+            placeholder: "user@example.com",
+          },
+          subject: {
+            type: "string",
+            label: "Subject",
+            required: true,
+            placeholder: "Notification subject",
+          },
+        },
+      },
+      {
+        value: "sms",
+        label: "SMS",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "sms",
+            hidden: true,
+          },
+          phoneNumber: {
+            type: "string",
+            label: "Phone Number",
+            required: true,
+            placeholder: "+1234567890",
+          },
+          message: {
+            type: "string",
+            label: "Message",
+            required: true,
+            placeholder: "Your message here",
+          },
+        },
+      },
+      {
+        value: "push",
+        label: "Push Notification",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "push",
+            hidden: true,
+          },
+          deviceId: {
+            type: "string",
+            label: "Device ID",
+            required: true,
+            placeholder: "device-12345",
+          },
+          title: {
+            type: "string",
+            label: "Title",
+            required: true,
+            placeholder: "Notification title",
+          },
+          body: {
+            type: "string",
+            label: "Body",
+            required: true,
+            placeholder: "Notification body",
+          },
+        },
+      },
+    ],
+  },
+};
+
+export const WithSimpleUnion: Story = {
+  args: {
+    schema: simpleUnionSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[600px]",
+  },
+};
+
+const authenticationSchema: FormSchema = {
+  apiUrl: {
+    type: "string",
+    label: "API URL",
+    required: true,
+    placeholder: "https://api.example.com",
+  },
+  authentication: {
+    type: "union",
+    label: "Authentication Method",
+    description: "Choose how to authenticate with the API",
+    discriminator: "type",
+    variantSelector: "tabs",
+    nullable: true,
+    variants: [
+      {
+        value: "bearer",
+        label: "Bearer Token",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "bearer",
+            hidden: true,
+          },
+          token: {
+            type: "string",
+            label: "Token",
+            required: true,
+            placeholder: "your-bearer-token",
+          },
+        },
+      },
+      {
+        value: "api_key",
+        label: "API Key",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "api_key",
+            hidden: true,
+          },
+          apiKey: {
+            type: "string",
+            label: "API Key",
+            required: true,
+            placeholder: "your-api-key",
+          },
+          headerName: {
+            type: "string",
+            label: "Header Name",
+            defaultValue: "X-API-Key",
+            placeholder: "X-API-Key",
+          },
+        },
+      },
+      {
+        value: "basic",
+        label: "Basic Auth",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "basic",
+            hidden: true,
+          },
+          username: {
+            type: "string",
+            label: "Username",
+            required: true,
+            placeholder: "username",
+          },
+          password: {
+            type: "string",
+            label: "Password",
+            required: true,
+            placeholder: "password",
+          },
+        },
+      },
+    ],
+  },
+};
+
+export const WithAuthenticationUnion: Story = {
+  args: {
+    schema: authenticationSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[700px]",
+  },
+};
+
+const endpointConfigSchema: FormSchema = {
+  resourceName: {
+    type: "string",
+    label: "Resource Name",
+    required: true,
+    placeholder: "users",
+  },
+  endpoint: {
+    type: "union",
+    label: "Endpoint Configuration",
+    description: "Configure the API endpoint",
+    collapseNested: false,
+    variants: [
+      {
+        value: "simple",
+        label: "Simple Path",
+        properties: {
+          path: {
+            type: "string",
+            label: "Endpoint Path",
+            required: true,
+            placeholder: "/api/users",
+          },
+        },
+      },
+      {
+        value: "advanced",
+        label: "Advanced Configuration",
+        properties: {
+          path: {
+            type: "string",
+            label: "Endpoint Path",
+            placeholder: "/api/users",
+            skipIfEmpty: true,
+          },
+          method: {
+            type: "string",
+            label: "HTTP Method",
+            options: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+            defaultValue: "GET",
+          },
+          headers: {
+            type: "object",
+            label: "Headers",
+            description: "Custom headers for this endpoint",
+            allowDynamicKeys: true,
+            skipIfEmpty: true,
+          },
+          params: {
+            type: "object",
+            label: "Query Parameters",
+            description: "Query parameters for the request",
+            allowDynamicKeys: true,
+            skipIfEmpty: true,
+          },
+        },
+      },
+    ],
+  },
+};
+
+export const WithEndpointUnion: Story = {
+  args: {
+    schema: endpointConfigSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[800px]",
+  },
+};
+
+const paginationSchema: FormSchema = {
+  dataSource: {
+    type: "string",
+    label: "Data Source",
+    required: true,
+    placeholder: "API endpoint",
+  },
+  pagination: {
+    type: "union",
+    label: "Pagination Strategy",
+    description: "Choose how to paginate through results",
+    discriminator: "type",
+    variantSelector: "dropdown",
+    nullable: true,
+    collapseNested: true,
+    variants: [
+      {
+        value: "offset",
+        label: "Offset-based",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "offset",
+            hidden: true,
+          },
+          limit: {
+            type: "number",
+            label: "Page Size",
+            required: true,
+            defaultValue: 100,
+            placeholder: "100",
+          },
+          offsetParam: {
+            type: "string",
+            label: "Offset Parameter",
+            defaultValue: "offset",
+            placeholder: "offset",
+          },
+          limitParam: {
+            type: "string",
+            label: "Limit Parameter",
+            defaultValue: "limit",
+            placeholder: "limit",
+          },
+        },
+      },
+      {
+        value: "cursor",
+        label: "Cursor-based",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "cursor",
+            hidden: true,
+          },
+          cursorPath: {
+            type: "string",
+            label: "Cursor Path (JSONPath)",
+            required: true,
+            placeholder: "$.pagination.next_cursor",
+            description: "Path to next cursor in response",
+          },
+          cursorParam: {
+            type: "string",
+            label: "Cursor Parameter",
+            defaultValue: "cursor",
+            placeholder: "cursor",
+          },
+        },
+      },
+      {
+        value: "page_number",
+        label: "Page Number",
+        properties: {
+          type: {
+            type: "string",
+            label: "Type",
+            defaultValue: "page_number",
+            hidden: true,
+          },
+          pageSize: {
+            type: "number",
+            label: "Page Size",
+            required: true,
+            defaultValue: 50,
+            placeholder: "50",
+          },
+          startPage: {
+            type: "number",
+            label: "Starting Page",
+            defaultValue: 1,
+            placeholder: "1",
+          },
+          pageParam: {
+            type: "string",
+            label: "Page Parameter",
+            defaultValue: "page",
+            placeholder: "page",
+          },
+        },
+      },
+    ],
+  },
+};
+
+export const WithPaginationUnion: Story = {
+  args: {
+    schema: paginationSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[700px]",
+  },
+};
+
+const nestedUnionSchema: FormSchema = {
+  resources: {
+    type: "array",
+    label: "API Resources",
+    itemType: "object",
+    description:
+      "Configure multiple API endpoints with different authentication",
+    itemProperties: {
+      name: {
+        type: "string",
+        label: "Name",
+        required: true,
+        placeholder: "resource_name",
+      },
+      endpoint: {
+        type: "string",
+        label: "Endpoint Path",
+        required: true,
+        placeholder: "/api/resource",
+      },
+      auth: {
+        type: "union",
+        label: "Authentication",
+        discriminator: "type",
+        variantSelector: "dropdown",
+        nullable: true,
+        collapseNested: true,
+        variants: [
+          {
+            value: "inherit",
+            label: "Inherit from Global",
+            properties: {
+              type: {
+                type: "string",
+                label: "Type",
+                defaultValue: "inherit",
+                hidden: true,
+              },
+            },
+          },
+          {
+            value: "bearer",
+            label: "Bearer Token",
+            properties: {
+              type: {
+                type: "string",
+                label: "Type",
+                defaultValue: "bearer",
+                hidden: true,
+              },
+              token: {
+                type: "string",
+                label: "Token",
+                required: true,
+                placeholder: "resource-specific-token",
+              },
+            },
+          },
+          {
+            value: "api_key",
+            label: "API Key",
+            properties: {
+              type: {
+                type: "string",
+                label: "Type",
+                defaultValue: "api_key",
+                hidden: true,
+              },
+              key: {
+                type: "string",
+                label: "API Key",
+                required: true,
+                placeholder: "resource-specific-key",
+              },
+            },
+          },
+        ],
+      },
+    },
+  },
+};
+
+export const WithNestedUnionsInArray: Story = {
+  args: {
+    schema: nestedUnionSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[900px]",
+  },
+};
