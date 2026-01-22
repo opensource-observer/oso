@@ -1,11 +1,11 @@
 import pytest
 from osoprotobufs.query_pb2 import QueryRunRequest
 from scheduler.testing.handlers import (
-    FakeTrinoResource,
     MessageHandlerTestHarness,
-    message_handler_test_harness,
+    default_message_handler_test_harness,
 )
 from scheduler.testing.resources.gcs import FakeGCSFileResource
+from scheduler.testing.resources.trino import FakeTrinoResource
 from scheduler.testing.uuids import generate_uuid_as_bytes
 from scheduler.types import SuccessResponse
 
@@ -27,7 +27,7 @@ def query_run_request_handler_harness(
     fake_trino_resource: FakeTrinoResource, fake_gcs_resource: FakeGCSFileResource
 ):
     handler = QueryRunRequestHandler()
-    harness = message_handler_test_harness(
+    harness = default_message_handler_test_harness(
         handler,
         additional_resources=[
             ("consumer_trino", fake_trino_resource),

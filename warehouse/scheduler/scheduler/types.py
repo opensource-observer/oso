@@ -5,7 +5,6 @@ from graphlib import TopologicalSorter
 import structlog
 from google.protobuf.json_format import Parse
 from google.protobuf.message import Message
-from oso_core.instrumentation import MetricsContainer
 from oso_core.resources import ResourcesContext
 from pydantic import BaseModel, Field
 from queryrewriter.rewrite import rewrite_query
@@ -520,7 +519,7 @@ class MessageHandler(abc.ABC, t.Generic[T]):
         Parse(data, destination)
         return destination
 
-    def initialize_metrics(self, metrics: MetricsContainer) -> None:
+    def initialize(self, *args, **kwargs) -> None:
         return None
 
 
@@ -548,12 +547,35 @@ class GenericMessageQueueService(abc.ABC):
     ) -> None:
         self.registry = registry
         self.resources = resources
+        self._initialized_handlers: set[str] = set()
 
-    def get_queue_listener(self, topic: str) -> MessageHandler:
-        listener = self.registry.get_handler(topic)
-        if not listener:
-            raise ValueError(f"No listener registered for topic {topic}")
-        return listener
+    def initialize_queue_handler(
+        self, resources: ResourcesContext, topic: str
+    ) -> MessageHandler:
+        handler = self.registry.get_handler(topic)
+        if not handler:
+            raise ValueError(f"No handler registered for topic {topic}")
+
+        if handler and topic not in self._initialized_handlers:
+            resources.run(
+                handler.initialize,
+            )
+            self._initialized_handlers.add(topic)
+
+        return handler
+
+    @abc.abstractmethod
+    def initialize(self, *args, **kwargs) -> None:
+        """A method to initialize the message queue service"""
+        ...
+
+    async def start(self, queue: str) -> None:
+        """A method to start the message queue service"""
+        self.resources.run(
+            self.initialize,
+        )
+
+        await self.run_loop(queue)
 
     @abc.abstractmethod
     async def run_loop(self, queue: str) -> None:

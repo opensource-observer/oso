@@ -90,7 +90,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             )
         )
 
-        return super().initialize_metrics(metrics)
+        return super().initialize(metrics)
 
     async def handle_run_message(
         self,

@@ -55,7 +55,7 @@ from scheduler.types import (
 logger = logging.getLogger(__name__)
 
 
-class _ResponseStorage:
+class ResponseStorage:
     def __init__(self) -> None:
         self._response: dict[str, HandlerResponse] = {}
         self._lock = Lock()
@@ -70,7 +70,7 @@ class _ResponseStorage:
 
 
 @dataclass
-class _QueuedPubSubMessage:
+class QueuedPubSubMessage:
     """An internal structure to represent messages internally queued for
     processing."""
 
@@ -79,8 +79,74 @@ class _QueuedPubSubMessage:
     ready: Event
 
 
-_InternalCallback = t.Callable[
-    [SyncQueue[_QueuedPubSubMessage], _ResponseStorage, Message], None
+InternalCallback = t.Callable[
+    [SyncQueue[QueuedPubSubMessage], ResponseStorage, Message], None
+]
+
+
+def run_subscriber(
+    sync_message_queue: SyncQueue[QueuedPubSubMessage],
+    response_storage: ResponseStorage,
+    project_id: str,
+    queue: str,
+    callback: InternalCallback,
+    close_event: Event,
+) -> None:
+    """Starts the GCP Pub/Sub subscriber to listen for messages.
+
+    This is designed to run in a separate thread, as the Pub/Sub client library
+    uses a callback model that is not inherently async.
+
+    Args:
+        sync_message_queue: The synchronous queue to put received messages onto.
+        response_storage: The storage to keep track of message processing responses.
+        project_id: The GCP project ID.
+        queue: The Pub/Sub subscription name.
+        callback: The callback function to handle received messages.
+        close_event: An event to signal when to stop listening for messages.
+
+    Returns:
+        None
+
+    This is declared to enable replacement of this subscriber function in tests.
+    """
+    subscriber = SubscriberClient()
+    subscription_path = subscriber.subscription_path(project_id, queue)
+
+    partial_callback = functools.partial(callback, sync_message_queue, response_storage)
+    streaming_pull_future = subscriber.subscribe(
+        subscription_path, callback=partial_callback
+    )
+    logger.info(f"Listening for messages on {subscription_path}...")
+
+    with subscriber:
+        while True:
+            try:
+                logger.debug("Waiting for messages...")
+                streaming_pull_future.result(timeout=10)
+            except TimeoutError:
+                logger.debug("Timeout reached, checking for close event.")
+                if close_event.is_set():
+                    logger.info("GCP Pub/Sub listener is shutting down cleanly")
+                    streaming_pull_future.cancel()
+                    return
+            except Exception as e:
+                logger.error(
+                    f"Listening for messages on {subscription_path} threw an exception: {e}."
+                )
+                streaming_pull_future.cancel()
+
+
+RunSubscriberFn = t.Callable[
+    [
+        SyncQueue[QueuedPubSubMessage],
+        ResponseStorage,
+        str,
+        str,
+        InternalCallback,
+        Event,
+    ],
+    None,
 ]
 
 
@@ -92,13 +158,15 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         registry: MessageHandlerRegistry,
         metrics: MetricsContainer,
         emulator_enabled: bool = False,
+        run_subscriber_fn: RunSubscriberFn = run_subscriber,
     ) -> None:
         super().__init__(resources, registry)
         self._project_id = project_id
         self._metrics = metrics
         self._emulator_enabled = emulator_enabled
+        self._run_subscriber_fn = run_subscriber_fn
 
-    def initialize_metrics(self, metrics: MetricsContainer):
+    def initialize(self, metrics: MetricsContainer):
         metrics.initialize_counter(
             Counter(
                 "pubsub_messages_received_total",
@@ -133,18 +201,15 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         """
         # Implementation for GCP Pub/Sub listening logic goes here
 
-        handler = self.get_queue_listener(queue)
+        handler = self.initialize_queue_handler(self.resources, queue)
 
         metrics = self._metrics
-
-        # Initialize metrics for the handler
-        handler.initialize_metrics(metrics)
 
         # We create the queue, event, and response storage here and not as some
         # class state because they exist only in the context of this "run_loop"
         close_event = Event()
-        message_queue: Queue[_QueuedPubSubMessage] = Queue()
-        response_storage = _ResponseStorage()
+        message_queue: Queue[QueuedPubSubMessage] = Queue()
+        response_storage = ResponseStorage()
 
         gcp_subscriber_thread = self._start_subscriber_thread(
             message_queue=message_queue,
@@ -190,6 +255,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             )
         except Exception as e:
             logger.error(f"Error in GCP Pub/Sub message listener: {e}")
+            raise
         finally:
             close_event.set()
             await gcp_subscriber_thread
@@ -199,7 +265,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         self,
         queue: str,
         handler: MessageHandler[t.Any],
-    ) -> _InternalCallback:
+    ) -> InternalCallback:
         """Creates a message callback function for GCP Pub/Sub messages. That
         has no internal reference to `self` as this will be used in a different
         thread so we want to limit captured state."""
@@ -207,8 +273,8 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         emulator_enabled = self._emulator_enabled
 
         def callback(
-            message_queue: SyncQueue[_QueuedPubSubMessage],
-            response_storage: _ResponseStorage,
+            message_queue: SyncQueue[QueuedPubSubMessage],
+            response_storage: ResponseStorage,
             raw_message: Message,
         ) -> None:
             logger.info("Received message: {}".format(raw_message.message_id))
@@ -232,7 +298,7 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
             ready_event = Event()
 
             message_queue.put(
-                _QueuedPubSubMessage(
+                QueuedPubSubMessage(
                     handle_id=handle_id, message=message, ready=ready_event
                 )
             )
@@ -263,56 +329,20 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
     def _start_subscriber_thread(
         self,
         *,
-        message_queue: Queue[_QueuedPubSubMessage],
-        response_storage: _ResponseStorage,
+        message_queue: Queue[QueuedPubSubMessage],
+        response_storage: ResponseStorage,
         queue: str,
         handler: MessageHandler[t.Any],
         close_event: Event,
     ) -> asyncio.Task[None]:
         # We declare the function here and avoid capturing `self` in the closure
-        def run_subscriber(
-            sync_message_queue: SyncQueue[_QueuedPubSubMessage],
-            response_storage: _ResponseStorage,
-            project_id: str,
-            queue: str,
-            callback: _InternalCallback,
-            close_event: Event,
-        ) -> None:
-            """Starts the GCP Pub/Sub subscriber to listen for messages."""
-            subscriber = SubscriberClient()
-            subscription_path = subscriber.subscription_path(project_id, queue)
-
-            partial_callback = functools.partial(
-                callback, sync_message_queue, response_storage
-            )
-            streaming_pull_future = subscriber.subscribe(
-                subscription_path, callback=partial_callback
-            )
-            logger.info(f"Listening for messages on {subscription_path}...")
-
-            with subscriber:
-                while True:
-                    try:
-                        logger.debug("Waiting for messages...")
-                        streaming_pull_future.result(timeout=10)
-                    except TimeoutError:
-                        logger.debug("Timeout reached, checking for close event.")
-                        if close_event.is_set():
-                            logger.info("GCP Pub/Sub listener is shutting down cleanly")
-                            streaming_pull_future.cancel()
-                            return
-                    except Exception as e:
-                        logger.error(
-                            f"Listening for messages on {subscription_path} threw an exception: {e}."
-                        )
-                        streaming_pull_future.cancel()
 
         callback = self._create_message_callback(queue, handler)
 
         # Listen for messages on the message queue
         gcp_subscriber_thread = asyncio.create_task(
             asyncio.to_thread(
-                run_subscriber,
+                self._run_subscriber_fn,
                 message_queue.sync_q,
                 response_storage,
                 self._project_id,
@@ -327,9 +357,9 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
         self,
         metrics: MetricsContainer,
         message_number: int,
-        response_storage: _ResponseStorage,
+        response_storage: ResponseStorage,
         handler: MessageHandler,
-        queued_message: _QueuedPubSubMessage,
+        queued_message: QueuedPubSubMessage,
     ) -> None:
         metrics.gauge("pubsub_messages_active").inc({})
         try:
@@ -371,8 +401,8 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
 
     async def record_response(
         self,
-        response_storage: _ResponseStorage,
-        queued_message: _QueuedPubSubMessage,
+        response_storage: ResponseStorage,
+        queued_message: QueuedPubSubMessage,
         response: HandlerResponse,
     ) -> None:
         """Records the response for a processed message."""
@@ -401,8 +431,8 @@ class GCPPubSubMessageQueueService(GenericMessageQueueService):
                 )
 
     async def _get_from_queue_or_timeout(
-        self, queue: AsyncQueue[_QueuedPubSubMessage], timeout: float
-    ) -> t.Optional[_QueuedPubSubMessage]:
+        self, queue: AsyncQueue[QueuedPubSubMessage], timeout: float
+    ) -> t.Optional[QueuedPubSubMessage]:
         try:
             return await asyncio.wait_for(queue.get(), timeout=timeout)
         except asyncio.TimeoutError:

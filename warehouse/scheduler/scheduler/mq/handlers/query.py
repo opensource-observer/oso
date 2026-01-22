@@ -34,7 +34,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
     message_type = QueryRunRequest
     schema_file_name = "query.proto"
 
-    def initialize_metrics(self, metrics: MetricsContainer):
+    def initialize(self, metrics: MetricsContainer):
         metrics.initialize_counter(
             Counter(
                 "query_response_total", "Total number of query responses processed"
@@ -52,7 +52,7 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                 "Duration of query execution in milliseconds",
             )
         )
-        return super().initialize_metrics(metrics)
+        return super().initialize(metrics=metrics)
 
     async def handle_run_message(
         self,

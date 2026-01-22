@@ -197,7 +197,7 @@ class Run(BaseSettings):
         await prometheus_service.start(addr=self.host, port=self.port)
         logger.info(f"Prometheus service started at {self.host}:{self.port}")
 
-        await message_queue_service.run_loop(self.queue)
+        await message_queue_service.start(self.queue)
 
         await prometheus_service.stop()
 

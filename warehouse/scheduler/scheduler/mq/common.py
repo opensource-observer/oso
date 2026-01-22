@@ -214,8 +214,8 @@ class OSORunContext(RunContext):
 class RunHandler(MessageHandler[T]):
     """A message handler that processes run messages."""
 
-    def initialize_metrics(self, metrics: MetricsContainer) -> None:
-        super().initialize_metrics(metrics)
+    def initialize(self, metrics: MetricsContainer) -> None:
+        super().initialize(metrics=metrics)
 
         metrics.initialize_histogram(
             Histogram("run_context_load_duration_ms", "Duration to load run context"),
