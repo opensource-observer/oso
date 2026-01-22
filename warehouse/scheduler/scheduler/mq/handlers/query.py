@@ -229,7 +229,9 @@ class QueryRunRequestHandler(RunHandler[QueryRunRequest]):
                     fixed_key_metadata={"content_encoding": "gzip"},
                 ) as f:
                     f.write(json.dumps(columns) + "\n")
+                    print("Columns:", columns)
                     async for row in aiotrino.utils.aiter(cursor.fetchone, None):
+                        print("Row???:", row)
                         if row is None:
                             continue
                         row_count += 1
