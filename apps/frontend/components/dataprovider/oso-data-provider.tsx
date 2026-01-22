@@ -54,7 +54,7 @@ const OsoDataProviderMeta: CodeComponentMeta<OsoDataProviderProps> = {
 };
 
 function OsoDataProvider(props: OsoDataProviderProps) {
-  const { dataFetches, variableName } = props;
+  const { dataFetches, variableName, expectsError } = props;
   const posthog = usePostHog();
   const key = genKey(props);
   const { client } = useOsoAppClient();
@@ -79,9 +79,12 @@ function OsoDataProvider(props: OsoDataProviderProps) {
       return result;
     },
     {
+      shouldRetryOnError: !expectsError,
       onError: (err) => {
         console.log("OsoDataProvider error:", err);
-        posthog.captureException(err, { context: "OsoDataProvider" });
+        if (!expectsError) {
+          posthog.captureException(err, { context: "OsoDataProvider" });
+        }
       },
     },
   );
