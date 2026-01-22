@@ -67,7 +67,7 @@ extend type Mutation {
   """
   Publish the notebook HTML to the public
   """
-  publishNotebook(input: PublishNotebookInput!): PublishNotebookPayload!
+  publishNotebook(notebookId: ID!): PublishNotebookPayload!
 
   """  
   Unpublish the notebook
@@ -109,10 +109,6 @@ type SaveNotebookPreviewPayload {
   notebook: Notebook
   previewUrl: String
   message: String
-}
-
-input PublishNotebookInput {
-  notebookId: ID!
 }
 
 type PublishNotebookPayload {

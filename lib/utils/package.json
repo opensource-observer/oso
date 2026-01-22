@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@types/lodash": "^4.17.6",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "winston": "^3.18.3"
   },
   "exports": {

@@ -14,6 +14,7 @@ type CommonDataProviderProps = {
   forceLoading?: boolean; // Display the loadingChildren (Studio only)
   errorChildren?: ReactNode; // Show if error
   ignoreError?: boolean; // Skip the error visual
+  expectsError?: boolean; // If one data fetch errors, don't show errorChildren and don't retry
   forceError?: boolean; // Display errorChildren (Studio only)
   useTestData?: boolean; // Use the testData prop instead of querying database
   testData?: any;
@@ -68,6 +69,12 @@ const CommonDataProviderRegistration: RegistrationProps<CommonDataProviderProps>
     ignoreError: {
       type: "boolean",
       helpText: "Don't show 'errorChildren' even if we get an error",
+      advanced: true,
+    },
+    expectsError: {
+      type: "boolean",
+      helpText:
+        "If one data fetch errors, don't show errorChildren and don't retry",
       advanced: true,
     },
     forceError: {

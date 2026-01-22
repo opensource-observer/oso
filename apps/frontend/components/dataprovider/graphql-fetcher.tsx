@@ -95,6 +95,7 @@ function GraphqlFetcher(props: GraphqlFetcherProps) {
     queryKey,
     varOverrides,
     variableName,
+    expectsError,
     ...rest
   } = props;
 
@@ -130,6 +131,9 @@ function GraphqlFetcher(props: GraphqlFetcherProps) {
         return;
       }
       return performFetch(fetchProps);
+    },
+    {
+      shouldRetryOnError: !expectsError,
     },
   );
   return (

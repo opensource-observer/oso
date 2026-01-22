@@ -1,7 +1,6 @@
 import base64
 import gzip
 import json
-import re
 import urllib.parse
 
 import structlog
@@ -132,7 +131,10 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
         content = None
         async with async_playwright() as p:
             async with await p.chromium.launch(headless=True) as browser:
-                page = await browser.new_page()
+                page = await browser.new_page(
+                    viewport={"width": 1280, "height": 720},
+                    screen={"width": 1280, "height": 720},
+                )
                 await page.goto(url, wait_until="networkidle")
                 logger.info("Page loaded, waiting for preview button...")
                 await page.wait_for_selector(
@@ -161,8 +163,6 @@ class PublishNotebookRunRequestHandler(RunHandler[PublishNotebookRunRequest]):
         if content is None:
             logger.error("Failed to extract content from the notebook page.")
             raise RuntimeError("Content extraction failed")
-
-        content = re.sub(r'(?<![\w-])id="app"', 'id="App"', content)
 
         gzip_content = base64.b64encode(gzip.compress(content.encode("utf-8"))).decode(
             "utf-8"
