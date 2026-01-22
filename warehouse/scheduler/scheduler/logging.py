@@ -2,6 +2,7 @@ import json
 import typing as t
 from datetime import datetime, timezone
 from io import StringIO
+from typing import Protocol
 
 import structlog
 from google.cloud import storage
@@ -9,14 +10,37 @@ from google.cloud import storage
 logger = structlog.get_logger(__name__)
 
 
-class BufferedBoundLogger:
-    def __init__(
-        self, base_logger: structlog.BoundLogger, buffer: "GCSLogBufferProcessor"
-    ):
+class BindableLogger(Protocol):
+    """Protocol for loggers that support structlog's bind() method."""
+
+    def bind(self, **new_values: t.Any) -> "BindableLogger": ...
+
+    @property
+    def bindings(self) -> dict[str, t.Any]: ...
+
+    def debug(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def info(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def warning(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def error(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def critical(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def exception(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+
+
+class BufferedBoundLogger(BindableLogger):
+    """Logger wrapper that buffers log entries and delegates to an underlying logger."""
+
+    _LOG_METHODS = ("debug", "info", "warning", "error", "critical", "exception")
+
+    def __init__(self, base_logger: BindableLogger, buffer: "GCSLogBufferProcessor"):
         self._logger = base_logger
         self._buffer = buffer
 
-    def _proxy_method(self, method_name: str):
+        for method_name in self._LOG_METHODS:
+            setattr(self, method_name, self._create_proxy_method(method_name))
+
+    def _create_proxy_method(self, method_name: str):
+        """Create a proxy method that logs to buffer and delegates to underlying logger."""
+
         def method(event: str | None = None, **kw: t.Any):
             event_dict = dict(kw)
             if event is not None:
@@ -33,11 +57,16 @@ class BufferedBoundLogger:
     @property
     def bindings(self) -> dict[str, t.Any]:
         """Return the bindings from the underlying logger."""
-        return self._logger._context._dict  # type: ignore
+        return self._logger.bindings
+
+    def debug(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def info(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def warning(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def error(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def critical(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
+    def exception(self, event: str | None = None, **kw: t.Any) -> t.Any: ...
 
     def __getattr__(self, name: str):
-        if name in ("debug", "info", "warning", "error", "critical", "exception"):
-            return self._proxy_method(name)
         return getattr(self._logger, name)
 
 

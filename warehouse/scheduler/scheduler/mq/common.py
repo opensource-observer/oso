@@ -2,7 +2,6 @@
 Implementations of the run context and step context for message handlers.
 """
 
-import logging
 import typing as t
 from contextlib import asynccontextmanager
 
@@ -18,7 +17,7 @@ from scheduler.graphql_client.input_types import (
     UpdateMetadataInput,
 )
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
-from scheduler.logging import BufferedBoundLogger, GCSLogBufferProcessor
+from scheduler.logging import BindableLogger, BufferedBoundLogger, GCSLogBufferProcessor
 from scheduler.types import (
     AlreadyLockedMessageResponse,
     FailedResponse,
@@ -44,7 +43,7 @@ class OSOStepContext(StepContext):
         step_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
-        logger: structlog.BoundLogger | BufferedBoundLogger,
+        logger: BindableLogger,
     ) -> "OSOStepContext":
         return cls(step_id, oso_client, materialization_strategy, logger)
 
@@ -53,7 +52,7 @@ class OSOStepContext(StepContext):
         step_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
-        logger: structlog.BoundLogger | BufferedBoundLogger,
+        logger: BindableLogger,
     ) -> None:
         self._step_id = step_id
         self._oso_client = oso_client
@@ -61,8 +60,8 @@ class OSOStepContext(StepContext):
         self._logger = logger
 
     @property
-    def log(self) -> logging.Logger:
-        return t.cast(logging.Logger, self._logger)
+    def log(self) -> BindableLogger:
+        return self._logger
 
     @property
     def materialization_strategy(self) -> MaterializationStrategy:
@@ -114,7 +113,7 @@ class OSORunContext(RunContext):
         run_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
-        logger: structlog.BoundLogger | BufferedBoundLogger,
+        logger: BindableLogger,
         log_buffer: GCSLogBufferProcessor,
     ) -> None:
         self._run_id = run_id
@@ -124,8 +123,8 @@ class OSORunContext(RunContext):
         self._log_buffer = log_buffer
 
     @property
-    def log(self) -> logging.Logger:
-        return t.cast(logging.Logger, self._logger)
+    def log(self) -> BindableLogger:
+        return self._logger
 
     @property
     def materialization_strategy(self) -> MaterializationStrategy:

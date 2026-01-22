@@ -1,5 +1,4 @@
 import abc
-import logging
 import typing as t
 from graphlib import TopologicalSorter
 
@@ -13,6 +12,7 @@ from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.input_types import DataModelColumnInput
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
+from scheduler.logging import BindableLogger
 from sqlglot import exp, parse_one
 from sqlglot.optimizer.qualify_columns import qualify_columns
 from sqlglot.optimizer.scope import build_scope
@@ -338,7 +338,7 @@ T = t.TypeVar("T", bound=Message)
 class StepContext(abc.ABC):
     @property
     @abc.abstractmethod
-    def log(self) -> logging.Logger:
+    def log(self) -> BindableLogger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
 
@@ -385,7 +385,7 @@ class RunContext(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def log(self) -> logging.Logger:
+    def log(self) -> BindableLogger:
         """A logger for the message handler context."""
         raise NotImplementedError("log must be implemented by subclasses.")
 
