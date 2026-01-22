@@ -163,8 +163,10 @@ class InspectProtocolTransformer(ProtocolTransformer):
             return None
         if type_obj is None:
             return ast.Constant(value=None)
+        if type_obj is type(None):
+            return ast.Constant(value=None)
 
-        # Handle string forward refs
+        # Handle string forward refs (fallback)
         if isinstance(type_obj, str):
             try:
                 # ast.parse returns Module -> Expr -> value
@@ -251,6 +253,13 @@ class InspectProtocolTransformer(ProtocolTransformer):
                 except ValueError:
                     continue
 
+                # Primary: Resolve type hints
+                resolved_hints = {}
+                try:
+                    resolved_hints = t.get_type_hints(member)
+                except Exception:
+                    pass
+
                 # Convert args
                 posonlyargs = []
                 args_list = []
@@ -261,7 +270,13 @@ class InspectProtocolTransformer(ProtocolTransformer):
                 kw_defaults = []
 
                 for param in sig.parameters.values():
-                    annotation = self._type_to_ast(param.annotation)
+                    # Check resolved hints first, then fallback to param.annotation
+                    if param.name in resolved_hints:
+                        param_type = resolved_hints[param.name]
+                    else:
+                        param_type = param.annotation
+
+                    annotation = self._type_to_ast(param_type)
                     arg_node = ast.arg(arg=param.name, annotation=annotation)
 
                     if param.kind == inspect.Parameter.POSITIONAL_ONLY:
@@ -293,7 +308,13 @@ class InspectProtocolTransformer(ProtocolTransformer):
                     defaults=defaults,
                 )
 
-                return_annotation = self._type_to_ast(sig.return_annotation)
+                # Return annotation
+                if "return" in resolved_hints:
+                    return_type = resolved_hints["return"]
+                else:
+                    return_type = sig.return_annotation
+
+                return_annotation = self._type_to_ast(return_type)
 
                 is_async = inspect.iscoroutinefunction(member)
 
@@ -331,6 +352,8 @@ class InspectProtocolTransformer(ProtocolTransformer):
 
 
 def default_private_methods_match(name: str) -> bool:
+    if name in ["__init__", "__new__"]:
+        return True
     return name.startswith("_") and not (name.startswith("__") and name.endswith("__"))
 
 

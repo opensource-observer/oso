@@ -5,7 +5,12 @@ from oso_core.cli.utils import CliApp, CliContext
 from oso_core.codegen.fake import create_fake_module
 from oso_core.codegen.protocol import create_protocol_module
 from pydantic import Field
-from pydantic_settings import BaseSettings, CliPositionalArg, CliSubCommand
+from pydantic_settings import (
+    BaseSettings,
+    CliImplicitFlag,
+    CliPositionalArg,
+    CliSubCommand,
+)
 
 
 class ProtocolCmd(BaseSettings):
@@ -15,7 +20,7 @@ class ProtocolCmd(BaseSettings):
         description="Import path in the form 'module.path:Class'"
     )
     output_path: CliPositionalArg[str] = Field(description="Path to output file")
-    use_inspect: CliPositionalArg[bool] = Field(
+    use_inspect: CliImplicitFlag[bool] = Field(
         default=False,
         description="Whether to use the inspect module to gather members (slower, but more accurate)",
     )
