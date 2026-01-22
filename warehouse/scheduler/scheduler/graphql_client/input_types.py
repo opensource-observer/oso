@@ -146,6 +146,10 @@ class SaveNotebookPreviewInput(BaseModel):
     preview: str
 
 
+class PublishNotebookInput(BaseModel):
+    notebook_id: str = Field(alias="notebookId")
+
+
 class AddUserByEmailInput(BaseModel):
     org_id: str = Field(alias="orgId")
     email: str
@@ -235,6 +239,11 @@ class CreateMaterializationInput(BaseModel):
     table_id: str = Field(alias="tableId")
     warehouse_fqn: str = Field(alias="warehouseFqn")
     schema_: List["DataModelColumnInput"] = Field(alias="schema")
+
+
+class SavePublishedNotebookHtmlInput(BaseModel):
+    notebook_id: str = Field(alias="notebookId")
+    html_content: str = Field(alias="htmlContent")
 
 
 CreateDataModelRevisionInput.model_rebuild()

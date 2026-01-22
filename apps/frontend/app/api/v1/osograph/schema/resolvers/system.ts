@@ -22,10 +22,13 @@ import {
   StartStepSchema,
   validateInput,
   UpdateMetadataSchema,
+  SavePublishedNotebookHtmlSchema,
 } from "@/app/api/v1/osograph/utils/validation";
 import z from "zod";
 import { logger } from "@/lib/logger";
 import { Json } from "@/lib/types/supabase";
+import { generatePublishedNotebookPath } from "@/lib/notebook/utils";
+import { revalidateTag } from "next/cache";
 
 type SystemMutationOptions<T extends z.ZodTypeAny, O> = {
   inputSchema: T;
@@ -48,6 +51,7 @@ function systemMutation<T extends z.ZodTypeAny, O>({
     if (!context.systemCredentials) {
       throw AuthenticationErrors.notAuthorized();
     }
+
     const validatedInput = validateInput(inputSchema, args.input);
     return resolver(validatedInput, context);
   };
@@ -390,6 +394,76 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           message: "Created materialization",
           success: true,
           materialization: materializationData,
+        };
+      },
+    }),
+    savePublishedNotebookHtml: systemMutation({
+      inputSchema: SavePublishedNotebookHtmlSchema,
+      resolver: async (input) => {
+        const supabase = createAdminClient();
+
+        const { notebookId, htmlContent } = input;
+
+        console.log("Encoded", htmlContent);
+
+        // Decode base64 content
+        const byteArray = Buffer.from(htmlContent, "base64");
+
+        const { data: notebook } = await supabase
+          .from("notebooks")
+          .select("org_id")
+          .eq("id", notebookId)
+          .single();
+        if (!notebook) {
+          throw ResourceErrors.notFound(`Notebook ${notebookId} not found`);
+        }
+        const filePath = generatePublishedNotebookPath(
+          notebookId,
+          notebook.org_id,
+        );
+        // Save the HTML content to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("published-notebooks")
+          .upload(filePath, byteArray, {
+            upsert: true,
+            contentType: "text/html",
+            headers: {
+              "Content-Encoding": "gzip",
+            },
+            // 5 Minute CDN cache. We will also cache on Vercel side to control it with revalidateTag
+            cacheControl: "300",
+          });
+        if (uploadError || !uploadData) {
+          throw ServerErrors.internal(
+            `Failed to upload published notebook HTML for notebook ${notebookId}: ${uploadError.message}`,
+          );
+        }
+
+        // Update the published_notebooks table with the new data path
+        const { data: publishedNotebook, error: upsertError } = await supabase
+          .from("published_notebooks")
+          .upsert(
+            {
+              notebook_id: notebookId,
+              data_path: filePath,
+              updated_at: new Date().toISOString(),
+              deleted_at: null,
+            },
+            { onConflict: "notebook_id" },
+          )
+          .select("id")
+          .single();
+
+        if (upsertError || !publishedNotebook) {
+          throw ServerErrors.internal(
+            `Failed to update published_notebooks for notebook ${notebookId}: ${upsertError.message}`,
+          );
+        }
+
+        revalidateTag(publishedNotebook.id);
+        return {
+          message: "Saved published notebook HTML",
+          success: true,
         };
       },
     }),

@@ -28,6 +28,10 @@ import {
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+import { signOsoJwt } from "@/lib/auth/auth";
+import { createQueueService } from "@/lib/services/queue/factory";
+import { PublishNotebookRunRequest } from "@opensource-observer/osoprotobufs/publish-notebook";
+import { revalidateTag } from "next/cache";
 
 const PREVIEWS_BUCKET = "notebook-previews";
 const SIGNED_URL_EXPIRY = 900;
@@ -185,6 +189,126 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
         );
         throw ServerErrors.storage("Failed to save notebook preview");
       }
+    },
+
+    publishNotebook: async (
+      _: unknown,
+      args: { input: { notebookId: string } },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const { notebookId } = args.input;
+
+      const supabase = createAdminClient();
+
+      const { data: notebook } = await supabase
+        .from("notebooks")
+        .select("id, organizations!inner(id, org_name)")
+        .eq("id", notebookId)
+        .single();
+
+      if (!notebook) {
+        throw NotebookErrors.notFound();
+      }
+
+      await requireOrgMembership(
+        authenticatedUser.userId,
+        notebook.organizations.id,
+      );
+
+      const osoToken = await signOsoJwt(authenticatedUser, {
+        orgId: notebook.organizations.id,
+        orgName: notebook.organizations.org_name,
+      });
+
+      const { data: queuedRun, error: queuedRunError } = await supabase
+        .from("run")
+        .insert({
+          org_id: notebook.organizations.id,
+          run_type: "manual",
+          requested_by: authenticatedUser.userId,
+        })
+        .select()
+        .single();
+      if (queuedRunError || !queuedRun) {
+        logger.error(
+          `Error creating run for notebook ${notebook.id}: ${queuedRunError?.message}`,
+        );
+        throw ServerErrors.database("Failed to create run request");
+      }
+
+      const queueService = createQueueService();
+
+      const runIdBuffer = Buffer.from(queuedRun.id.replace(/-/g, ""), "hex");
+      const publishMessage: PublishNotebookRunRequest = {
+        runId: new Uint8Array(runIdBuffer),
+        notebookId: notebook.id,
+        osoApiKey: osoToken,
+      };
+
+      const result = await queueService.queueMessage({
+        queueName: "publish_notebook_run_requests",
+        message: publishMessage,
+        encoder: PublishNotebookRunRequest,
+      });
+      if (!result.success) {
+        logger.error(
+          `Failed to publish message to queue: ${result.error?.message}`,
+        );
+        throw ServerErrors.queueError(
+          result.error?.message || "Failed to publish to queue",
+        );
+      }
+
+      return {
+        success: true,
+        run: queuedRun,
+        message: "Notebook publish run queued successfully",
+      };
+    },
+    unpublishNotebook: async (
+      _: unknown,
+      args: { notebookId: string },
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      const { notebookId } = args;
+
+      const supabase = createAdminClient();
+
+      const { data: publishedNotebook, error } = await supabase
+        .from("published_notebooks")
+        .select("*")
+        .eq("notebook_id", notebookId)
+        .single();
+      if (error) {
+        logger.log("Failed to find published notebook:", error);
+        throw NotebookErrors.notFound();
+      }
+      const { error: deleteError } = await supabase.storage
+        .from("published-notebooks")
+        .remove([publishedNotebook.data_path]);
+      if (deleteError) {
+        logger.log("Failed to delete notebook file:", deleteError);
+        throw ServerErrors.database("Failed to delete notebook file");
+      }
+      const { error: updateError } = await supabase
+        .from("published_notebooks")
+        .update({
+          deleted_at: new Date().toISOString(),
+          updated_by: authenticatedUser.userId,
+        })
+        .eq("id", publishedNotebook.id);
+      if (updateError) {
+        logger.log("Failed to delete notebook file:", updateError);
+        throw ServerErrors.database("Failed to delete notebook file");
+      }
+
+      revalidateTag(publishedNotebook.id);
+      return {
+        success: true,
+        message: "Notebook unpublished successfully",
+      };
     },
   },
 

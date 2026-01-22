@@ -831,6 +831,10 @@ const SidebarMenuActionMeta: CodeComponentMeta<SidebarMenuActionProps> = {
     children: "slot",
     asChild: "boolean",
     showOnHover: "boolean",
+    onChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "event", type: "object" }],
+    },
   },
 };
 

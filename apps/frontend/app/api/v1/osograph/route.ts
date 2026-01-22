@@ -7,6 +7,7 @@ import { gql } from "graphql-tag";
 import { getSystemCredentials, getUser } from "@/lib/auth/auth";
 import { buildSubgraphSchema } from "@apollo/subgraph";
 import { resolvers } from "@/app/api/v1/osograph/schema/resolvers";
+import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 
 function loadSchemas(): string {
   const schemaDir = path.join(
@@ -44,7 +45,7 @@ const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
   context: async (req) => {
     const user = await getUser(req);
     const systemCredentials = await getSystemCredentials(req);
-    return { req, user, systemCredentials };
+    return { req, user, systemCredentials } satisfies GraphQLContext;
   },
 });
 

@@ -115,6 +115,11 @@ class CommonSettings(BaseSettings):
         description="The name of the shared catalog in the data warehouse",
     )
 
+    marimo_url: str = Field(
+        default="https://marimo.oso.xyz",
+        description="The base URL for the Marimo service",
+    )
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         if not self.local_duckdb_dir_path:

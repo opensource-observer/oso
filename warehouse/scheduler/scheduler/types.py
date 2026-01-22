@@ -129,7 +129,7 @@ class Model(BaseModel):
     @property
     def query(self) -> exp.Query:
         if self._parsed_query is None:
-            parsed = parse_one(self.code)
+            parsed = parse_one(self.code, dialect=self.dialect)
             assert isinstance(parsed, exp.Query)
             self._parsed_query = t.cast(exp.Query, parsed)
         return self._parsed_query
@@ -201,7 +201,7 @@ class Model(BaseModel):
         logger.info(
             f"Finished rewriting model {self.name} as {rewrite_response.rewritten_query}."
         )
-        parsed_query = parse_one(rewrite_response.rewritten_query)
+        parsed_query = parse_one(rewrite_response.rewritten_query, dialect=self.dialect)
         assert isinstance(parsed_query, exp.Query)
         return parsed_query
 

@@ -8,7 +8,7 @@ spec:
         images:
           - name: ghcr.io/opensource-observer/oso
             newName: ghcr.io/opensource-observer/oso # {"$imagepolicy": "flux-system:oso:name"}
-            newTag: deploy-20260118203507-3cc6390 # {"$imagepolicy": "flux-system:oso:tag"}
+            newTag: deploy-20260122160338-40bdfd6 # {"$imagepolicy": "flux-system:oso:tag"}
   values:
     app:
       queues:
@@ -16,6 +16,7 @@ spec:
         - name: "data_ingestion_run_requests"
         - name: "query_run_requests"
         - name: "static_model_run_requests"
+        - name: "publish_notebook_run_requests"
       name: "oso-scheduler"
       # This only needs to appear in one of the scheduler instances for now. We
       # should likely combine these into a single scheduler chart at some point.
