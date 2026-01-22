@@ -416,3 +416,56 @@ def test_create_protocol_module_inspect_imports() -> None:
     )
     assert dependency_import is not None
     assert dependency_import.module == MyServiceWithDep.__module__
+
+
+def test_create_protocol_module_import_overrides() -> None:
+    target = f"{MyServiceWithDep.__module__}:MyServiceWithDep"
+
+    module_name = MyServiceWithDep.__module__
+    # Key: module:Name
+    key = f"{module_name}:MyDependency"
+
+    # Override to something else
+    overrides = {key: "other.module:OtherDep"}
+
+    mod = create_protocol_module(target, use_inspect=True, import_overrides=overrides)
+
+    imports = [n for n in mod.body if isinstance(n, ast.ImportFrom)]
+
+    override_import = next((i for i in imports if i.module == "other.module"), None)
+    assert override_import is not None
+
+    alias = next((n for n in override_import.names if n.name == "OtherDep"), None)
+    assert alias is not None
+    # Should be aliased to MyDependency because the code uses MyDependency
+    assert alias.asname == "MyDependency"
+
+
+def test_ast_protocol_module_import_overrides() -> None:
+    source_code = """
+from foo import Bar
+
+class MyService:
+    def process(self, b: Bar) -> None:
+        pass
+"""
+    target = "dummy:MyService"
+    overrides = {"foo:Bar": "baz:Qux"}
+
+    mod = create_protocol_module(
+        target, module_source_code=source_code, import_overrides=overrides
+    )
+
+    imports = [n for n in mod.body if isinstance(n, ast.ImportFrom)]
+
+    # We expect `from baz import Qux as Bar` (to alias to original name)
+    override_import = next((i for i in imports if i.module == "baz"), None)
+    assert override_import is not None
+
+    alias = next((n for n in override_import.names if n.name == "Qux"), None)
+    assert alias is not None
+    assert alias.asname == "Bar"
+
+    # Original import should be removed since all names were overridden
+    original_import = next((i for i in imports if i.module == "foo"), None)
+    assert original_import is None

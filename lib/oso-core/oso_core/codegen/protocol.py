@@ -55,12 +55,51 @@ class ASTProtocolTransformer(ProtocolTransformer):
         module_source_code: t.Optional[str] = None,
         include_star_imports: bool = False,
         private_methods_match: t.Optional[t.Callable[[str], bool]] = None,
+        import_overrides: t.Optional[t.Dict[str, str]] = None,
     ):
         self.module_source_code = module_source_code
         self.include_star_imports = include_star_imports
         self.private_methods_match = (
             private_methods_match or default_private_methods_match
         )
+        self.import_overrides = import_overrides or {}
+
+    def _apply_import_overrides(self, imports: t.List[ast.stmt]) -> t.List[ast.stmt]:
+        if not self.import_overrides:
+            return imports
+
+        new_imports = []
+        for stmt in imports:
+            if isinstance(stmt, ast.ImportFrom) and stmt.module:
+                new_names = []
+                for alias in stmt.names:
+                    key = f"{stmt.module}:{alias.name}"
+                    if key in self.import_overrides:
+                        target = self.import_overrides[key]
+                        new_mod, new_name = target.split(":")
+
+                        # We want to alias the new import to the old name (or its existing alias)
+                        # so that code using it remains valid.
+                        final_asname = alias.asname or alias.name
+
+                        asname_arg = final_asname if new_name != final_asname else None
+
+                        new_imports.append(
+                            ast.ImportFrom(
+                                module=new_mod,
+                                names=[ast.alias(name=new_name, asname=asname_arg)],
+                                level=0,
+                            )
+                        )
+                    else:
+                        new_names.append(alias)
+
+                if new_names:
+                    stmt.names = new_names
+                    new_imports.append(stmt)
+            else:
+                new_imports.append(stmt)
+        return new_imports
 
     def transform(self, target: str) -> ProtocolIR:
         source_module, _, module_path, class_name = load_source_module(
@@ -133,6 +172,9 @@ class ASTProtocolTransformer(ProtocolTransformer):
 
         needed_imports = resolve_relative_imports(needed_imports, module_path)
 
+        # Apply overrides
+        needed_imports = self._apply_import_overrides(needed_imports)
+
         return ProtocolIR(
             name=target_class_def.name,
             methods=methods,
@@ -144,19 +186,35 @@ class ASTProtocolTransformer(ProtocolTransformer):
 
 class InspectProtocolTransformer(ProtocolTransformer):
     def __init__(
-        self, private_methods_match: t.Optional[t.Callable[[str], bool]] = None
+        self,
+        private_methods_match: t.Optional[t.Callable[[str], bool]] = None,
+        import_overrides: t.Optional[t.Dict[str, str]] = None,
     ):
         self.private_methods_match = (
             private_methods_match or default_private_methods_match
         )
-        self.imports_map: t.Dict[str, t.Set[str]] = {}  # module -> {names}
+        self.import_overrides = import_overrides or {}
+        # module -> set of (name, asname)
+        self.imports_map: t.Dict[str, t.Set[t.Tuple[str, t.Optional[str]]]] = {}
 
     def _add_import(self, module: str, name: str):
         if module == "builtins":
             return
+
+        key = f"{module}:{name}"
+        if key in self.import_overrides:
+            target = self.import_overrides[key]
+            new_mod, new_name = target.split(":")
+            # We alias new_name to original name
+            asname = name if new_name != name else None
+            self._register_import(new_mod, new_name, asname)
+        else:
+            self._register_import(module, name, None)
+
+    def _register_import(self, module: str, name: str, asname: t.Optional[str]):
         if module not in self.imports_map:
             self.imports_map[module] = set()
-        self.imports_map[module].add(name)
+        self.imports_map[module].add((name, asname))
 
     def _type_to_ast(self, type_obj: t.Any) -> t.Optional[ast.expr]:
         if type_obj is inspect.Parameter.empty:
@@ -331,13 +389,15 @@ class InspectProtocolTransformer(ProtocolTransformer):
 
         # Generate imports statements
         imports = []
-        for mod, names in self.imports_map.items():
-            if not names:
+        for mod, name_pairs in self.imports_map.items():
+            if not name_pairs:
                 continue
+            # Sort for deterministic output
+            sorted_names = sorted(name_pairs, key=lambda x: x[0])
             imports.append(
                 ast.ImportFrom(
                     module=mod,
-                    names=[ast.alias(name=n, asname=None) for n in sorted(names)],
+                    names=[ast.alias(name=n, asname=a) for n, a in sorted_names],
                     level=0,
                 )
             )
@@ -352,8 +412,6 @@ class InspectProtocolTransformer(ProtocolTransformer):
 
 
 def default_private_methods_match(name: str) -> bool:
-    if name in ["__init__", "__new__"]:
-        return True
     return name.startswith("_") and not (name.startswith("__") and name.endswith("__"))
 
 
@@ -365,6 +423,7 @@ def create_protocol_module(
     include_star_imports: bool = False,
     private_methods_match: t.Callable[[str], bool] = default_private_methods_match,
     use_inspect: bool = False,
+    import_overrides: t.Optional[t.Dict[str, str]] = None,
 ) -> ast.Module:
     """
     Creates a typing.Protocol definition from a target class specified by string.
@@ -372,13 +431,15 @@ def create_protocol_module(
     transformer: ProtocolTransformer
     if use_inspect:
         transformer = InspectProtocolTransformer(
-            private_methods_match=private_methods_match
+            private_methods_match=private_methods_match,
+            import_overrides=import_overrides,
         )
     else:
         transformer = ASTProtocolTransformer(
             module_source_code=module_source_code,
             include_star_imports=include_star_imports,
             private_methods_match=private_methods_match,
+            import_overrides=import_overrides,
         )
 
     ir = transformer.transform(target)
