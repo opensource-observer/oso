@@ -47,6 +47,7 @@ import {
   BillingMeta,
 } from "@/components/widgets/billing";
 import { NotebookMeta, NotebookFactory } from "@/components/widgets/notebook";
+import { LogViewer, LogViewerMeta } from "@/components/widgets/log-viewer";
 import {
   EmbeddedSandbox,
   EmbeddedSandboxMeta,
@@ -107,4 +108,5 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   );
   PLASMIC.registerComponent(FormBuilder, FormBuilderMeta);
   PLASMIC.registerComponent(FormSaver, FormSaverMeta);
+  PLASMIC.registerComponent(LogViewer, LogViewerMeta);
 }
