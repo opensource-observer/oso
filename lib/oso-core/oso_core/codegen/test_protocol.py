@@ -1,5 +1,6 @@
 import ast
 import typing as t
+from dataclasses import dataclass
 
 import pytest
 from oso_core.codegen.protocol import (
@@ -388,3 +389,30 @@ def test_create_protocol_module_inspect() -> None:
     ]
     assert "get_payload" in methods
     assert "add_header" in methods
+
+
+@dataclass
+class MyDependency:
+    x: int
+
+
+class MyServiceWithDep:
+    def process(self, dep: MyDependency) -> None:
+        pass
+
+
+def test_create_protocol_module_inspect_imports() -> None:
+    target = f"{MyServiceWithDep.__module__}:MyServiceWithDep"
+
+    # Run with use_inspect=True
+    mod = create_protocol_module(target, use_inspect=True)
+
+    imports = [n for n in mod.body if isinstance(n, ast.ImportFrom)]
+
+    # Check if MyDependency is imported
+    # It should be imported from the same module
+    dependency_import = next(
+        (i for i in imports if any(n.name == "MyDependency" for n in i.names)), None
+    )
+    assert dependency_import is not None
+    assert dependency_import.module == MyServiceWithDep.__module__
