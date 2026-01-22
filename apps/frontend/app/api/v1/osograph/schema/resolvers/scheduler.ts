@@ -38,6 +38,7 @@ import { DataModelRunRequest } from "@opensource-observer/osoprotobufs/data-mode
 import { DataIngestionRunRequest } from "@opensource-observer/osoprotobufs/data-ingestion";
 import { StaticModelRunRequest } from "@opensource-observer/osoprotobufs/static-model";
 import { ProtobufEncoder, ProtobufMessage } from "@/lib/services/queue/types";
+import { getSignedUrl, parseGcsUrl } from "@/lib/clients/gcs";
 
 function mapRunStatus(status: RunRow["status"]): RunStatus {
   switch (status) {
@@ -275,6 +276,26 @@ export const schedulerResolvers = {
     status: (parent: RunRow) => mapRunStatus(parent.status),
     startedAt: (parent: RunRow) => parent.started_at,
     finishedAt: (parent: RunRow) => parent.completed_at,
+    logsUrl: async (parent: RunRow) => {
+      if (!parent.logs_url) return null;
+
+      try {
+        const parsed = parseGcsUrl(parent.logs_url);
+        if (!parsed) {
+          logger.warn(
+            `Invalid GCS URL format for run ${parent.id}: ${parent.logs_url}`,
+          );
+          return parent.logs_url;
+        }
+
+        return await getSignedUrl(parsed.bucketName, parsed.fileName, 5);
+      } catch (error) {
+        logger.error(
+          `Failed to generate signed URL for run ${parent.id}: ${error}`,
+        );
+        return parent.logs_url;
+      }
+    },
     steps: (
       parent: RunRow,
       args: FilterableConnectionArgs,
@@ -337,7 +358,26 @@ export const schedulerResolvers = {
     },
     name: (parent: StepRow) => parent.name,
     displayName: (parent: StepRow) => parent.display_name,
-    logsUrl: (parent: StepRow) => parent.logs_url,
+    logsUrl: async (parent: StepRow) => {
+      if (!parent.logs_url) return "";
+
+      try {
+        const parsed = parseGcsUrl(parent.logs_url);
+        if (!parsed) {
+          logger.warn(
+            `Invalid GCS URL format for step ${parent.id}: ${parent.logs_url}`,
+          );
+          return parent.logs_url;
+        }
+
+        return await getSignedUrl(parsed.bucketName, parsed.fileName, 5);
+      } catch (error) {
+        logger.error(
+          `Failed to generate signed URL for step ${parent.id}: ${error}`,
+        );
+        return parent.logs_url;
+      }
+    },
     startedAt: (parent: StepRow) => parent.started_at,
     finishedAt: (parent: StepRow) => parent.completed_at,
     status: (parent: StepRow) => {
