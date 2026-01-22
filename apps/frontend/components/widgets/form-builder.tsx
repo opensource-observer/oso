@@ -38,6 +38,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Plus,
   Trash2,
@@ -98,13 +100,29 @@ interface FormSchemaArrayField extends FormSchemaFieldBase {
   itemOptions?: (string | { value: string; label: string })[];
 }
 
+interface FormSchemaUnionVariant {
+  value: string;
+  label: string;
+  properties?: FormSchema;
+}
+
+interface FormSchemaUnionField extends FormSchemaFieldBase {
+  type: "union";
+  variants: FormSchemaUnionVariant[];
+  discriminator?: string;
+  variantSelector?: "dropdown" | "tabs" | "radio";
+  collapseNested?: boolean;
+  nullable?: boolean;
+}
+
 type FormSchemaField =
   | FormSchemaStringField
   | FormSchemaNumberField
   | FormSchemaBooleanField
   | FormSchemaDateField
   | FormSchemaObjectField
-  | FormSchemaArrayField;
+  | FormSchemaArrayField
+  | FormSchemaUnionField;
 
 interface FormSchema {
   [key: string]: FormSchemaField;
@@ -123,6 +141,13 @@ type FormBuilderZodField =
   | z.ZodOptional<z.ZodDate>
   | z.ZodArray<z.ZodTypeAny>
   | z.ZodOptional<z.ZodArray<z.ZodTypeAny>>
+  | z.ZodUnion<[z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]>
+  | z.ZodOptional<z.ZodUnion<[z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]>>
+  | z.ZodDiscriminatedUnion<string, z.ZodDiscriminatedUnionOption<string>[]>
+  | z.ZodOptional<
+      z.ZodDiscriminatedUnion<string, z.ZodDiscriminatedUnionOption<string>[]>
+    >
+  | z.ZodNullable<z.ZodTypeAny>
   | z.ZodEffects<any, any>;
 
 function isEmpty(value: unknown): boolean {
@@ -157,6 +182,42 @@ function applySkipIfEmpty<T extends z.ZodTypeAny>(
 ): T | z.ZodEffects<T, z.output<T> | undefined, z.input<T>> {
   if (!shouldSkip) return schema;
   return schema.transform((val) => (isEmpty(val) ? undefined : val));
+}
+
+function createZodUnion(
+  schemas: z.ZodTypeAny[],
+): z.ZodUnion<[z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]> {
+  if (schemas.length < 2) {
+    throw new Error("Union requires at least 2 schemas");
+  }
+  const [first, second, ...rest] = schemas;
+  return z.union([first, second, ...rest] as [
+    z.ZodTypeAny,
+    z.ZodTypeAny,
+    ...z.ZodTypeAny[],
+  ]);
+}
+
+function createDiscriminatedUnion(
+  discriminator: string,
+  schemas: z.ZodObject<z.ZodRawShape>[],
+): z.ZodDiscriminatedUnion<
+  string,
+  [
+    z.ZodObject<z.ZodRawShape>,
+    z.ZodObject<z.ZodRawShape>,
+    ...z.ZodObject<z.ZodRawShape>[],
+  ]
+> {
+  if (schemas.length < 2) {
+    throw new Error("Discriminated union requires at least 2 schemas");
+  }
+  const [first, second, ...rest] = schemas;
+  return z.discriminatedUnion(discriminator, [first, second, ...rest] as [
+    z.ZodObject<z.ZodRawShape>,
+    z.ZodObject<z.ZodRawShape>,
+    ...z.ZodObject<z.ZodRawShape>[],
+  ]);
 }
 
 const createZodSchema = (field: FormSchemaField): FormBuilderZodField => {
@@ -218,6 +279,67 @@ const createZodSchema = (field: FormSchemaField): FormBuilderZodField => {
         };
         return z.array(itemSchemas[field.itemType || "string"] ?? z.string());
       }
+      case "union": {
+        const unionField = field as FormSchemaUnionField;
+
+        if (unionField.variants.length === 0) {
+          return z.never();
+        }
+
+        if (unionField.variants.length === 1) {
+          const variant = unionField.variants[0];
+          if (!variant.properties) {
+            const literalSchema = z.literal(variant.value);
+            const withNullable: z.ZodTypeAny = unionField.nullable
+              ? literalSchema.nullable()
+              : literalSchema;
+            return makeOptional(withNullable);
+          }
+          const singleSchema = generateFormConfig(variant.properties).zodSchema;
+          const withNullable = unionField.nullable
+            ? singleSchema.nullable()
+            : singleSchema;
+          return makeOptional(withNullable);
+        }
+
+        const variantSchemas = unionField.variants.map((variant) => {
+          if (!variant.properties) {
+            return z.literal(variant.value);
+          }
+          return generateFormConfig(variant.properties).zodSchema;
+        });
+
+        const canUseDiscriminatedUnion =
+          unionField.discriminator &&
+          variantSchemas.length >= 2 &&
+          !unionField.nullable &&
+          unionField.required;
+
+        let unionSchema: z.ZodTypeAny;
+
+        if (canUseDiscriminatedUnion) {
+          const allAreObjects = variantSchemas.every(
+            (schema) => schema instanceof z.ZodObject,
+          );
+
+          if (allAreObjects) {
+            unionSchema = createDiscriminatedUnion(
+              unionField.discriminator!,
+              variantSchemas as z.ZodObject<z.ZodRawShape>[],
+            );
+          } else {
+            unionSchema = createZodUnion(variantSchemas);
+          }
+        } else {
+          unionSchema = createZodUnion(variantSchemas);
+        }
+
+        if (unionField.nullable) {
+          unionSchema = unionSchema.nullable();
+        }
+
+        return unionField.required ? unionSchema : unionSchema.optional();
+      }
       default:
         throw new Error(
           `Unsupported field type: ${(field as FormSchemaField).type}`,
@@ -228,6 +350,45 @@ const createZodSchema = (field: FormSchemaField): FormBuilderZodField => {
   const optionalWrapped = makeOptional(getBaseSchema());
   return applySkipIfEmpty(optionalWrapped, field.skipIfEmpty ?? false);
 };
+
+function normalizeDefaultValues(
+  values: Record<string, unknown>,
+  properties: FormSchema,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(values).map(([key, value]) => {
+      const fieldSchema = properties[key];
+
+      if (value === undefined) {
+        if (!fieldSchema) return [key, ""];
+
+        switch (fieldSchema.type) {
+          case "string":
+            return [key, ""];
+          case "number":
+            return [key, undefined];
+          case "boolean":
+            return [key, false];
+          case "date":
+            return [key, undefined];
+          case "array":
+            return [key, []];
+          case "object":
+            return [key, fieldSchema.allowDynamicKeys ? [] : {}];
+          case "union":
+            return [
+              key,
+              (fieldSchema as FormSchemaUnionField).nullable ? undefined : "",
+            ];
+          default:
+            return [key, ""];
+        }
+      }
+
+      return [key, value];
+    }),
+  );
+}
 
 function generateFormConfig<T extends FormSchema>(schema: T) {
   const zodSchema: Record<string, FormBuilderZodField> = {};
@@ -259,6 +420,42 @@ function generateFormConfig<T extends FormSchema>(schema: T) {
           return [];
         }
         return field.defaultValue !== undefined ? field.defaultValue : {};
+      case "union": {
+        const unionField = field as FormSchemaUnionField;
+
+        if (unionField.defaultValue !== undefined) {
+          return unionField.defaultValue;
+        }
+
+        if (unionField.nullable && !unionField.required) {
+          return undefined;
+        }
+
+        const firstVariant = unionField.variants[0];
+        if (!firstVariant) return undefined;
+
+        if (!firstVariant.properties) {
+          return firstVariant.value;
+        }
+
+        const variantDefaults = generateFormConfig(
+          firstVariant.properties,
+        ).defaultValues;
+
+        if (unionField.discriminator) {
+          return {
+            [unionField.discriminator]: firstVariant.value,
+            ...variantDefaults,
+          };
+        }
+
+        return Object.fromEntries(
+          Object.entries(variantDefaults).map(([key, value]) => [
+            key,
+            value === undefined ? "" : value,
+          ]),
+        );
+      }
       default:
         return undefined;
     }
@@ -509,6 +706,7 @@ const ArrayItemRenderer: React.FC<ArrayItemRendererProps> = ({
                   <FormControl>
                     <Input
                       {...field}
+                      value={field.value ?? ""}
                       placeholder={`Enter ${fieldLabel}`}
                       disabled={disabled}
                       className="h-10"
@@ -532,6 +730,7 @@ const ArrayItemRenderer: React.FC<ArrayItemRendererProps> = ({
                   <Input
                     type="number"
                     {...field}
+                    value={field.value ?? ""}
                     placeholder={`Enter ${fieldLabel}`}
                     disabled={disabled}
                     className="h-10"
@@ -868,6 +1067,7 @@ const DynamicKeyValuePairRenderer: React.FC<
                 <FormControl>
                   <Input
                     {...field}
+                    value={field.value ?? ""}
                     placeholder="Key"
                     disabled={disabled}
                     className="h-9"
@@ -886,6 +1086,7 @@ const DynamicKeyValuePairRenderer: React.FC<
                 <FormControl>
                   <Input
                     {...field}
+                    value={field.value ?? ""}
                     placeholder="Value"
                     disabled={disabled}
                     className="h-9"
@@ -910,6 +1111,299 @@ const DynamicKeyValuePairRenderer: React.FC<
         </Button>
       </div>
     </div>
+  );
+};
+
+interface UnionFieldRendererProps {
+  currentPath: string;
+  fieldSchema: FormSchemaUnionField;
+  horizontal?: boolean;
+}
+
+const UnionFieldRenderer: React.FC<UnionFieldRendererProps> = ({
+  currentPath,
+  fieldSchema,
+  horizontal,
+}) => {
+  const { watch, setValue } = useFormContext();
+  const currentValue = watch(currentPath);
+
+  const getActiveVariant = React.useCallback(() => {
+    if (currentValue === undefined || currentValue === null) {
+      if (fieldSchema.nullable) {
+        return null;
+      }
+      return fieldSchema.variants[0] || null;
+    }
+
+    if (
+      fieldSchema.discriminator &&
+      typeof currentValue === "object" &&
+      currentValue !== null
+    ) {
+      const discriminatorValue = currentValue[fieldSchema.discriminator];
+      const variant = fieldSchema.variants.find(
+        (v) => v.value === discriminatorValue,
+      );
+      if (variant) return variant;
+    }
+
+    if (typeof currentValue === "string") {
+      const stringVariant = fieldSchema.variants.find((v) => !v.properties);
+      if (stringVariant) return stringVariant;
+    }
+
+    if (typeof currentValue === "object" && currentValue !== null) {
+      const currentKeys = Object.keys(currentValue);
+
+      let bestMatch = fieldSchema.variants[0];
+      let bestMatchScore = 0;
+
+      for (const variant of fieldSchema.variants) {
+        if (!variant.properties) continue;
+
+        const variantKeys = Object.keys(variant.properties);
+        const matchingKeys = variantKeys.filter((key) =>
+          currentKeys.includes(key),
+        );
+        const score = matchingKeys.length;
+
+        if (score > bestMatchScore) {
+          bestMatch = variant;
+          bestMatchScore = score;
+        }
+      }
+
+      return bestMatch;
+    }
+
+    return fieldSchema.variants[0];
+  }, [currentValue, fieldSchema]);
+
+  const activeVariant = getActiveVariant();
+
+  const handleVariantChange = React.useCallback(
+    (variantValue: string | null) => {
+      if (variantValue === null) {
+        setValue(currentPath, null);
+        return;
+      }
+
+      const variant = fieldSchema.variants.find(
+        (v) => v.value === variantValue,
+      );
+      if (!variant) return;
+
+      if (!variant.properties) {
+        setValue(currentPath, variant.value);
+        return;
+      }
+
+      const variantDefaults = generateFormConfig(
+        variant.properties,
+      ).defaultValues;
+
+      if (fieldSchema.discriminator) {
+        const normalizedDefaults = normalizeDefaultValues(
+          variantDefaults,
+          variant.properties,
+        );
+        setValue(currentPath, {
+          [fieldSchema.discriminator]: variant.value,
+          ...normalizedDefaults,
+        });
+      } else {
+        const normalizedDefaults = normalizeDefaultValues(
+          variantDefaults,
+          variant.properties,
+        );
+        setValue(currentPath, normalizedDefaults);
+      }
+    },
+    [currentPath, fieldSchema, setValue],
+  );
+
+  return (
+    <div
+      className={cn(
+        "space-y-3",
+        horizontal && "grid grid-cols-4 items-start gap-4",
+      )}
+    >
+      <div className={cn(horizontal && "text-left pt-2")}>
+        <FormLabel>
+          {fieldSchema.label}
+          {fieldSchema.required && (
+            <span className="text-destructive ml-1">*</span>
+          )}
+        </FormLabel>
+      </div>
+
+      <div className={cn(horizontal && "col-span-3", "space-y-3")}>
+        {fieldSchema.description && (
+          <FormDescription>{fieldSchema.description}</FormDescription>
+        )}
+
+        <VariantSelector
+          variants={fieldSchema.variants}
+          activeVariant={activeVariant?.value || null}
+          onChange={handleVariantChange}
+          selectorType={fieldSchema.variantSelector || "dropdown"}
+          nullable={fieldSchema.nullable}
+        />
+
+        {activeVariant && activeVariant.properties && (
+          <VariantFieldsRenderer
+            variantProperties={activeVariant.properties}
+            currentPath={currentPath}
+            collapsed={fieldSchema.collapseNested ?? true}
+            horizontal={horizontal}
+          />
+        )}
+
+        <FormMessage />
+      </div>
+    </div>
+  );
+};
+
+interface VariantSelectorProps {
+  variants: FormSchemaUnionVariant[];
+  activeVariant: string | null;
+  onChange: (value: string | null) => void;
+  selectorType: "dropdown" | "tabs" | "radio";
+  nullable?: boolean;
+}
+
+const VariantSelector: React.FC<VariantSelectorProps> = ({
+  variants,
+  activeVariant,
+  onChange,
+  selectorType,
+  nullable,
+}) => {
+  const options = React.useMemo(() => {
+    const opts = variants.map((v) => ({ value: v.value, label: v.label }));
+    if (nullable) {
+      opts.unshift({ value: "__null__", label: "None" });
+    }
+    return opts;
+  }, [variants, nullable]);
+
+  const handleChange = (value: string) => {
+    onChange(value === "__null__" ? null : value);
+  };
+
+  switch (selectorType) {
+    case "dropdown":
+      return (
+        <Select
+          value={
+            activeVariant === null ? "__null__" : activeVariant || "__null__"
+          }
+          onValueChange={handleChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select type..." />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+
+    case "tabs":
+      return (
+        <Tabs
+          value={
+            activeVariant === null ? "__null__" : activeVariant || "__null__"
+          }
+          onValueChange={handleChange}
+        >
+          <TabsList className="w-full">
+            {options.map((opt) => (
+              <TabsTrigger key={opt.value} value={opt.value}>
+                {opt.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      );
+
+    case "radio":
+      return (
+        <ToggleGroup
+          type="single"
+          value={
+            activeVariant === null ? "__null__" : activeVariant || "__null__"
+          }
+          onValueChange={handleChange}
+        >
+          {options.map((opt) => (
+            <ToggleGroupItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      );
+
+    default:
+      return null;
+  }
+};
+
+interface VariantFieldsRendererProps {
+  variantProperties: FormSchema;
+  currentPath: string;
+  collapsed?: boolean;
+  horizontal?: boolean;
+}
+
+const VariantFieldsRenderer: React.FC<VariantFieldsRendererProps> = ({
+  variantProperties,
+  currentPath,
+  collapsed = true,
+  horizontal,
+}) => {
+  const fields = Object.entries(variantProperties).filter(
+    ([, field]) => !field.hidden,
+  );
+
+  if (fields.length === 0) {
+    return null;
+  }
+
+  const content = (
+    <div className="space-y-3 pt-2">
+      {fields.map(([key, fieldSchema]) => (
+        <RenderField
+          key={key}
+          fieldName={key}
+          fieldSchema={fieldSchema}
+          path={currentPath}
+          horizontal={horizontal}
+        />
+      ))}
+    </div>
+  );
+
+  if (!collapsed) {
+    return content;
+  }
+
+  return (
+    <Accordion type="single" collapsible defaultValue="fields">
+      <AccordionItem value="fields" className="border rounded-md px-4">
+        <AccordionTrigger className="hover:no-underline">
+          <span className="text-sm font-medium">Configuration</span>
+        </AccordionTrigger>
+        <AccordionContent>{content}</AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 };
 
@@ -944,7 +1438,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
                 {fieldSchema.options ? (
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                     disabled={fieldSchema.disabled}
                   >
                     <FormControl>
@@ -972,6 +1466,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
                     <Input
                       placeholder={fieldSchema.placeholder}
                       {...field}
+                      value={field.value ?? ""}
                       disabled={fieldSchema.disabled}
                     />
                   </FormControl>
@@ -1004,6 +1499,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
                     type="number"
                     placeholder={fieldSchema.placeholder}
                     {...field}
+                    value={field.value ?? ""}
                     disabled={fieldSchema.disabled}
                     onChange={(e) =>
                       field.onChange(
@@ -1120,6 +1616,15 @@ const RenderField: React.FC<RenderFieldProps> = ({
         />
       );
     }
+
+    case "union":
+      return (
+        <UnionFieldRenderer
+          currentPath={currentPath}
+          fieldSchema={fieldSchema}
+          horizontal={horizontal}
+        />
+      );
 
     default:
       return null;
