@@ -120,6 +120,11 @@ class CommonSettings(BaseSettings):
         description="The base URL for the Marimo service",
     )
 
+    run_logs_gcs_bucket: str = Field(
+        default="oso-run-logs",
+        description="GCS bucket for storing run logs",
+    )
+
     @model_validator(mode="after")
     def handle_generated_config(self):
         if not self.local_duckdb_dir_path:
