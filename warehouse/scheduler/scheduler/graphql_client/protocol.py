@@ -8,6 +8,7 @@ from scheduler.graphql_client.finish_run import FinishRun
 from scheduler.graphql_client.finish_step import FinishStep
 from scheduler.graphql_client.get_data_ingestion_config import GetDataIngestionConfig
 from scheduler.graphql_client.get_data_models import GetDataModels
+from scheduler.graphql_client.get_notebook import GetNotebook
 from scheduler.graphql_client.get_run import GetRun
 from scheduler.graphql_client.get_static_models import GetStaticModels
 from scheduler.graphql_client.input_types import (
@@ -15,6 +16,9 @@ from scheduler.graphql_client.input_types import (
     UpdateMetadataInput,
 )
 from scheduler.graphql_client.resolve_tables import ResolveTables
+from scheduler.graphql_client.save_published_notebook_html import (
+    SavePublishedNotebookHtml,
+)
 from scheduler.graphql_client.start_run import StartRun
 from scheduler.graphql_client.start_step import StartStep
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
@@ -54,6 +58,10 @@ class ClientProtocol(t.Protocol):
         **kwargs: Any,
     ) -> CreateMaterialization: ...
 
+    async def save_published_notebook_html(
+        self, notebook_id: str, html_content: str, **kwargs: Any
+    ) -> SavePublishedNotebookHtml: ...
+
     async def get_run(self, run_id: str, **kwargs: Any) -> GetRun: ...
 
     async def get_data_models(
@@ -74,3 +82,5 @@ class ClientProtocol(t.Protocol):
         metadata: Union[Optional[Any], UnsetType] = UNSET,
         **kwargs: Any,
     ) -> ResolveTables: ...
+
+    async def get_notebook(self, notebook_id: str, **kwargs: Any) -> GetNotebook: ...

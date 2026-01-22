@@ -8,6 +8,7 @@ from scheduler.graphql_client.finish_run import FinishRun
 from scheduler.graphql_client.finish_step import FinishStep
 from scheduler.graphql_client.get_data_ingestion_config import GetDataIngestionConfig
 from scheduler.graphql_client.get_data_models import GetDataModels
+from scheduler.graphql_client.get_notebook import GetNotebook
 from scheduler.graphql_client.get_run import GetRun
 from scheduler.graphql_client.get_static_models import GetStaticModels
 from scheduler.graphql_client.input_types import (
@@ -16,6 +17,9 @@ from scheduler.graphql_client.input_types import (
 )
 from scheduler.graphql_client.protocol import ClientProtocol
 from scheduler.graphql_client.resolve_tables import ResolveTables
+from scheduler.graphql_client.save_published_notebook_html import (
+    SavePublishedNotebookHtml,
+)
 from scheduler.graphql_client.start_run import StartRun
 from scheduler.graphql_client.start_step import StartStep
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
@@ -61,6 +65,11 @@ class FakeClientProtocol(ClientProtocol):
     ) -> CreateMaterialization:
         return ModelFactory.create_factory(CreateMaterialization).build()
 
+    async def save_published_notebook_html(
+        self, notebook_id: str, html_content: str, **kwargs: Any
+    ) -> SavePublishedNotebookHtml:
+        return ModelFactory.create_factory(SavePublishedNotebookHtml).build()
+
     async def get_run(self, run_id: str, **kwargs: Any) -> GetRun:
         return ModelFactory.create_factory(GetRun).build()
 
@@ -84,3 +93,6 @@ class FakeClientProtocol(ClientProtocol):
         **kwargs: Any,
     ) -> ResolveTables:
         return ModelFactory.create_factory(ResolveTables).build()
+
+    async def get_notebook(self, notebook_id: str, **kwargs: Any) -> GetNotebook:
+        return ModelFactory.create_factory(GetNotebook).build()
