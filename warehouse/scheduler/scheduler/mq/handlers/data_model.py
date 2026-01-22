@@ -62,7 +62,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
     message_type = DataModelRunRequest
     schema_file_name = "data-model.proto"
 
-    def initialize_metrics(self, metrics: MetricsContainer):
+    def initialize(self, metrics: MetricsContainer):
         metrics.initialize_histogram(
             Histogram(
                 "data_model_selected_models_count",
