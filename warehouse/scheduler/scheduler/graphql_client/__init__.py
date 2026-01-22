@@ -75,6 +75,7 @@ from .get_notebook import (
     GetNotebookNotebooksEdges,
     GetNotebookNotebooksEdgesNode,
 )
+from .get_run import GetRun, GetRunRuns, GetRunRunsEdges, GetRunRunsEdgesNode
 from .get_static_models import (
     GetStaticModels,
     GetStaticModelsDatasets,
@@ -110,7 +111,6 @@ from .input_types import (
     DataModelKindOptionsInput,
     FinishRunInput,
     FinishStepInput,
-    PublishNotebookInput,
     RemoveMemberInput,
     RevokeInvitationInput,
     SaveNotebookPreviewInput,
@@ -206,6 +206,10 @@ __all__ = [
     "GetNotebookNotebooks",
     "GetNotebookNotebooksEdges",
     "GetNotebookNotebooksEdgesNode",
+    "GetRun",
+    "GetRunRuns",
+    "GetRunRunsEdges",
+    "GetRunRunsEdgesNode",
     "GetStaticModels",
     "GetStaticModelsDatasets",
     "GetStaticModelsDatasetsEdges",
@@ -230,7 +234,7 @@ __all__ = [
     "LatestDataModelLatestReleaseRevisionKindOptions",
     "LatestDataModelLatestReleaseRevisionSchema",
     "MemberRole",
-    "PublishNotebookInput",
+    "OrganizationCommon",
     "RemoveMemberInput",
     "ResolveTables",
     "ResolveTablesSystem",

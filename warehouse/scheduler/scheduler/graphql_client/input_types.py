@@ -146,10 +146,6 @@ class SaveNotebookPreviewInput(BaseModel):
     preview: str
 
 
-class PublishNotebookInput(BaseModel):
-    notebook_id: str = Field(alias="notebookId")
-
-
 class AddUserByEmailInput(BaseModel):
     org_id: str = Field(alias="orgId")
     email: str
