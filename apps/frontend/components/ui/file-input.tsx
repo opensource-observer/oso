@@ -3,6 +3,7 @@ import { Upload } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { Button, ButtonMeta, ButtonProps } from "@/components/ui/button";
 
 type FileInputProps = React.ComponentProps<"input">;
 
@@ -83,4 +84,58 @@ const FileInputMeta: CodeComponentMeta<FileInputProps> = {
   },
 };
 
-export { FileInput, FileInputMeta };
+type FileInputButtonProps = ButtonProps &
+  Pick<FileInputProps, "onChange" | "accept" | "multiple">;
+
+const FileInputButton = React.forwardRef<
+  HTMLButtonElement,
+  FileInputButtonProps
+>(({ className, onChange, accept, multiple, ...props }, ref) => {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  return (
+    <div className={className}>
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        onChange={onChange}
+        accept={accept}
+        multiple={multiple}
+      />
+      <Button
+        {...props}
+        className={className}
+        ref={ref}
+        onClick={() => inputRef.current?.click()}
+      />
+    </div>
+  );
+});
+FileInputButton.displayName = "FileInputButton";
+
+const FileInputButtonMeta: CodeComponentMeta<FileInputButtonProps> = {
+  props: {
+    ...Object.fromEntries(
+      Object.entries(ButtonMeta.props).filter(([key]) => key !== "onClick"),
+    ),
+    onChange: {
+      type: "eventHandler",
+      argTypes: [{ name: "event", type: "object" }],
+    },
+    multiple: "boolean",
+    accept: "string",
+  },
+  name: "FileInputButton",
+  description: "shadcn/ui File input button component",
+  states: {
+    files: {
+      type: "readonly",
+      variableType: "object",
+      onChangeProp: "onChange",
+      onChangeArgsToValue: (event) => event.target.files,
+    },
+  },
+};
+
+export { FileInput, FileInputMeta, FileInputButton, FileInputButtonMeta };

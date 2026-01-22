@@ -268,7 +268,12 @@ import {
   CardDescriptionMeta,
   CardContentMeta,
 } from "@/components/ui/card";
-import { FileInput, FileInputMeta } from "@/components/ui/file-input";
+import {
+  FileInput,
+  FileInputButton,
+  FileInputButtonMeta,
+  FileInputMeta,
+} from "@/components/ui/file-input";
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -404,6 +409,7 @@ export function registerAllUi(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(SelectItem, SelectItemMeta);
   PLASMIC.registerComponent(Input, InputMeta);
   PLASMIC.registerComponent(FileInput, FileInputMeta);
+  PLASMIC.registerComponent(FileInputButton, FileInputButtonMeta);
   PLASMIC.registerComponent(Textarea, TextareaMeta);
   PLASMIC.registerComponent(Collapsible, CollapsibleMeta);
   PLASMIC.registerComponent(CollapsibleContent, CollapsibleContentMeta);
