@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 import structlog
 from google.protobuf.message import Message as ProtobufMessage
 from oso_core.resources import ResourcesContext
+from scheduler.config import CommonSettings
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.enums import RunStatus, StepStatus
@@ -17,6 +18,7 @@ from scheduler.graphql_client.input_types import (
     UpdateMetadataInput,
 )
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
+from scheduler.logging import BufferedBoundLogger, GCSLogBufferProcessor
 from scheduler.types import (
     AlreadyLockedMessageResponse,
     FailedResponse,
@@ -42,7 +44,7 @@ class OSOStepContext(StepContext):
         step_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
-        logger: structlog.BoundLogger,
+        logger: structlog.BoundLogger | BufferedBoundLogger,
     ) -> "OSOStepContext":
         return cls(step_id, oso_client, materialization_strategy, logger)
 
@@ -51,7 +53,7 @@ class OSOStepContext(StepContext):
         step_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
-        logger: structlog.BoundLogger,
+        logger: structlog.BoundLogger | BufferedBoundLogger,
     ) -> None:
         self._step_id = step_id
         self._oso_client = oso_client
@@ -91,21 +93,35 @@ class OSORunContext(RunContext):
         oso_client: OSOClient,
         run_id: str,
         materialization_strategy: MaterializationStrategy,
+        gcs_bucket: str,
+        gcs_project: str,
     ) -> "OSORunContext":
-        logger = structlog.get_logger(run_id)
-        return cls(run_id, oso_client, materialization_strategy, logger)
+        log_buffer = GCSLogBufferProcessor(
+            run_id=run_id,
+            gcs_bucket=gcs_bucket,
+            gcs_project=gcs_project,
+        )
+
+        base_logger = structlog.get_logger(run_id).bind(run_id=run_id)
+        buffered_logger = BufferedBoundLogger(base_logger, log_buffer)
+
+        return cls(
+            run_id, oso_client, materialization_strategy, buffered_logger, log_buffer
+        )
 
     def __init__(
         self,
         run_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
-        logger: structlog.BoundLogger,
+        logger: structlog.BoundLogger | BufferedBoundLogger,
+        log_buffer: GCSLogBufferProcessor,
     ) -> None:
         self._run_id = run_id
         self._oso_client = oso_client
         self._materialization_strategy = materialization_strategy
         self._logger = logger
+        self._log_buffer = log_buffer
 
     @property
     def log(self) -> logging.Logger:
@@ -180,11 +196,14 @@ class RunHandler(MessageHandler[T]):
         run_id_str = convert_uuid_bytes_to_str(run_id)
 
         oso_client: OSOClient = resources.resolve("oso_client")
+        common_settings: CommonSettings = resources.resolve("common_settings")
 
         run_context = OSORunContext.create(
             oso_client,
             run_id=run_id_str,
             materialization_strategy=materialization_strategy,
+            gcs_bucket=common_settings.run_logs_gcs_bucket,
+            gcs_project=common_settings.gcp_project_id,
         )
 
         # Try to set the run to running in the database for user's visibility
@@ -196,6 +215,7 @@ class RunHandler(MessageHandler[T]):
             return await self.report_response(
                 oso_client=oso_client,
                 run_id_str=run_id_str,
+                run_context=run_context,
                 response=FailedResponse(message=f"Failed to start run {run_id_str}."),
             )
 
@@ -215,17 +235,39 @@ class RunHandler(MessageHandler[T]):
         return await self.report_response(
             oso_client=oso_client,
             run_id_str=run_id_str,
+            run_context=run_context,
             response=response,
         )
 
     async def report_response(
-        self, oso_client: OSOClient, run_id_str: str, response: HandlerResponse
+        self,
+        oso_client: OSOClient,
+        run_id_str: str,
+        run_context: OSORunContext,
+        response: HandlerResponse,
     ) -> HandlerResponse:
         """Handle the response from processing a run message.
 
         Args:
             response: The response from processing the run message.
         """
+        status_map = {
+            SuccessResponse: "success",
+            FailedResponse: "failed",
+            SkipResponse: "skipped",
+            AlreadyLockedMessageResponse: "locked",
+        }
+        status = status_map.get(type(response), "unknown")
+
+        logs_url = "http://example.com/run_logs"
+        try:
+            logs_url = await run_context._log_buffer.flush(status=status) or logs_url
+        except Exception as e:
+            logger.error(
+                f"Failed to upload logs to GCS for run_id {run_id_str}: {e}",
+                exc_info=True,
+            )
+
         # Write the response to the database
         match response:
             case AlreadyLockedMessageResponse():
@@ -236,7 +278,7 @@ class RunHandler(MessageHandler[T]):
                     run_id=run_id_str,
                     status=RunStatus.CANCELED,
                     status_code=status_code,
-                    logs_url="http://example.com/run_logs",
+                    logs_url=logs_url,
                 )
                 return response
             case FailedResponse(status_code=status_code, details=details):
@@ -245,7 +287,7 @@ class RunHandler(MessageHandler[T]):
                     run_id=run_id_str,
                     status=RunStatus.FAILED,
                     status_code=status_code,
-                    logs_url="http://example.com/run_logs",
+                    logs_url=logs_url,
                     metadata=UpdateMetadataInput(
                         value={"errorDetails": details},
                         merge=True,
@@ -258,7 +300,7 @@ class RunHandler(MessageHandler[T]):
                     run_id=run_id_str,
                     status=RunStatus.SUCCESS,
                     status_code=status_code,
-                    logs_url="http://example.com/run_logs",
+                    logs_url=logs_url,
                 )
                 return response
             case _:
@@ -269,7 +311,7 @@ class RunHandler(MessageHandler[T]):
                     run_id=run_id_str,
                     status=RunStatus.FAILED,
                     status_code=500,
-                    logs_url="http://example.com/run_logs",
+                    logs_url=logs_url,
                 )
                 return FailedResponse(message="Unhandled response type.")
 
