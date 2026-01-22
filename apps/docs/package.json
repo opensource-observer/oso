@@ -31,7 +31,7 @@
     "@plasmicapp/react-web": "^0.2.398",
     "@plasmicpkgs/plasmic-basic-components": "^0.0.251",
     "clsx": "^2.1.1",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
