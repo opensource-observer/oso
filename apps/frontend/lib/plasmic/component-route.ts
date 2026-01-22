@@ -30,7 +30,6 @@ async function getComponentProps(
     );
     return {
       publishedHtml: publishedNotebook?.html,
-      notebookName: notebookName,
     };
   }
   return {};
