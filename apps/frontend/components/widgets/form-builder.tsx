@@ -306,7 +306,8 @@ const createZodSchema = (field: FormSchemaField): FormBuilderZodField => {
           if (!variant.properties) {
             return z.literal(variant.value);
           }
-          return generateFormConfig(variant.properties).zodSchema;
+          const schema = generateFormConfig(variant.properties).zodSchema;
+          return unionField.discriminator ? schema : schema.strict();
         });
 
         const canUseDiscriminatedUnion =
@@ -382,6 +383,79 @@ function normalizeDefaultValues(
             ];
           default:
             return [key, ""];
+        }
+      }
+
+      if (
+        fieldSchema?.type === "object" &&
+        fieldSchema.allowDynamicKeys &&
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+      ) {
+        return [
+          key,
+          Object.entries(value).map(([k, v]) => ({
+            key: k,
+            value: String(v),
+          })),
+        ];
+      }
+
+      if (
+        fieldSchema?.type === "object" &&
+        fieldSchema.properties &&
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+      ) {
+        return [
+          key,
+          normalizeDefaultValues(
+            value as Record<string, unknown>,
+            fieldSchema.properties,
+          ),
+        ];
+      }
+
+      if (
+        fieldSchema?.type === "union" &&
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value)
+      ) {
+        const unionField = fieldSchema as FormSchemaUnionField;
+        const valueObj = value as Record<string, unknown>;
+
+        let matchingVariant: FormSchemaUnionVariant | null = null;
+
+        if (unionField.discriminator) {
+          const discriminatorValue = valueObj[unionField.discriminator];
+          matchingVariant =
+            unionField.variants.find((v) => v.value === discriminatorValue) ||
+            null;
+        } else {
+          let bestMatchScore = 0;
+          for (const variant of unionField.variants) {
+            if (!variant.properties) continue;
+            const variantKeys = Object.keys(variant.properties);
+            const valueKeys = Object.keys(valueObj);
+            const matchingKeys = variantKeys.filter((k) =>
+              valueKeys.includes(k),
+            );
+            const score = matchingKeys.length;
+            if (score > bestMatchScore) {
+              matchingVariant = variant;
+              bestMatchScore = score;
+            }
+          }
+        }
+
+        if (matchingVariant?.properties) {
+          return [
+            key,
+            normalizeDefaultValues(valueObj, matchingVariant.properties),
+          ];
         }
       }
 
@@ -1671,7 +1745,16 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
       }, [schemaKey]);
 
     const mergedDefaultValues = React.useMemo(
-      () => ({ ...schemaDefaultValues, ...propDefaultValues }),
+      () => {
+        if (!propDefaultValues || Object.keys(propDefaultValues).length === 0) {
+          return schemaDefaultValues;
+        }
+        const normalizedPropDefaults = normalizeDefaultValues(
+          propDefaultValues,
+          schema,
+        );
+        return { ...schemaDefaultValues, ...normalizedPropDefaults };
+      },
       [], // The default values are only computed once on mount
     );
 
