@@ -3754,7 +3754,7 @@ export type MutationLogTelemetryArgs = {
 
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationPublishNotebookArgs = {
-  input: PublishNotebookInput;
+  notebookId: Scalars["ID"]["input"];
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -6002,10 +6002,6 @@ export type PresetNotFoundError = Error & {
   __typename?: "PresetNotFoundError";
   message: Scalars["String"]["output"];
   preset: Scalars["String"]["output"];
-};
-
-export type PublishNotebookInput = {
-  notebookId: Scalars["ID"]["input"];
 };
 
 export type PublishNotebookPayload = {
@@ -9014,6 +9010,33 @@ export enum Link__Purpose {
   Security = "SECURITY",
 }
 
+export type PublishNotebookMutationVariables = Exact<{
+  notebookId: Scalars["ID"]["input"];
+}>;
+
+export type PublishNotebookMutation = {
+  __typename?: "Mutation";
+  publishNotebook: {
+    __typename?: "PublishNotebookPayload";
+    success: boolean;
+    message?: string | null;
+    run: { __typename?: "Run"; id: string };
+  };
+};
+
+export type UnpublishNotebookMutationVariables = Exact<{
+  notebookId: Scalars["ID"]["input"];
+}>;
+
+export type UnpublishNotebookMutation = {
+  __typename?: "Mutation";
+  unpublishNotebook: {
+    __typename?: "UnpublishNotebookPayload";
+    success: boolean;
+    message?: string | null;
+  };
+};
+
 export type SavePreviewMutationVariables = Exact<{
   input: SaveNotebookPreviewInput;
 }>;
@@ -9453,6 +9476,120 @@ export type TimeseriesMetricsByCollectionQuery = {
   }> | null;
 };
 
+export const PublishNotebookDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "PublishNotebook" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "notebookId" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "publishNotebook" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "notebookId" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "notebookId" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "run" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  PublishNotebookMutation,
+  PublishNotebookMutationVariables
+>;
+export const UnpublishNotebookDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UnpublishNotebook" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "notebookId" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "unpublishNotebook" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "notebookId" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "notebookId" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UnpublishNotebookMutation,
+  UnpublishNotebookMutationVariables
+>;
 export const SavePreviewDocument = {
   kind: "Document",
   definitions: [
