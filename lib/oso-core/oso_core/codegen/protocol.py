@@ -412,6 +412,9 @@ class InspectProtocolTransformer(ProtocolTransformer):
 
 
 def default_private_methods_match(name: str) -> bool:
+    # By default constructor should be excluded
+    if name in ["__init__"]:
+        return True
     return name.startswith("_") and not (name.startswith("__") and name.endswith("__"))
 
 

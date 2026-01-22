@@ -24,12 +24,17 @@ class ProtocolCmd(BaseSettings):
         default=False,
         description="Whether to use the inspect module to gather members (slower, but more accurate)",
     )
+    import_overrides: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping of module import paths to override when generating the protocol",
+    )
 
     async def cli_cmd(self, context: CliContext) -> None:
         try:
             protocol_mod = create_protocol_module(
                 self.import_path,
                 use_inspect=self.use_inspect,
+                import_overrides=self.import_overrides,
             )
             code = ast.unparse(protocol_mod)
 
