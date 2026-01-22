@@ -193,12 +193,11 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
 
     publishNotebook: async (
       _: unknown,
-      args: { input: { notebookId: string } },
+      args: { notebookId: string },
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      const { notebookId } = args.input;
-
+      const { notebookId } = args;
       const supabase = createAdminClient();
 
       const { data: notebook } = await supabase
@@ -227,6 +226,9 @@ export const notebookResolvers: GraphQLResolverModule<GraphQLContext> = {
           org_id: notebook.organizations.id,
           run_type: "manual",
           requested_by: authenticatedUser.userId,
+          metadata: {
+            notebookId: notebook.id,
+          },
         })
         .select()
         .single();

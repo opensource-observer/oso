@@ -867,35 +867,64 @@ class OsoAppClient {
   async publishNotebook(args: Partial<{ notebookId: string }>) {
     console.log("publishNotebook: ", args);
     const notebookId = ensure(args.notebookId, "Missing notebookId argument");
-    const response = await fetch("/api/v1/notebooks/publish", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+
+    const PUBLISH_NOTEBOOK_MUTATION = gql(`
+      mutation PublishNotebook($notebookId: ID!) {
+        publishNotebook(notebookId: $notebookId) {
+          success
+          message
+          run {
+            id
+          }
+        }
+      }
+    `);
+
+    const data = await this.executeGraphQL(
+      PUBLISH_NOTEBOOK_MUTATION,
+      {
+        notebookId,
       },
-      body: JSON.stringify({ notebookId }),
-    });
-    const json = await response.json();
-    if (!response.ok) {
-      throw new Error("Error publishing notebook: " + json.error);
+      "Failed to publish notebook",
+    );
+
+    const payload = data.publishNotebook;
+
+    if (payload.success) {
+      logger.log(`Successfully published notebook "${notebookId}"`);
     }
-    return true;
+
+    return payload;
   }
 
   async unpublishNotebook(args: Partial<{ notebookId: string }>) {
     console.log("unpublishNotebook: ", args);
     const notebookId = ensure(args.notebookId, "Missing notebookId argument");
-    const response = await fetch("/api/v1/notebooks/publish", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
+
+    const UNPUBLISH_NOTEBOOK_MUTATION = gql(`
+      mutation UnpublishNotebook($notebookId: ID!) {
+        unpublishNotebook(notebookId: $notebookId) {
+          success
+          message
+        }
+      }
+    `);
+
+    const data = await this.executeGraphQL(
+      UNPUBLISH_NOTEBOOK_MUTATION,
+      {
+        notebookId,
       },
-      body: JSON.stringify({ notebookId }),
-    });
-    const json = await response.json();
-    if (!response.ok) {
-      throw new Error("Error unpublishing notebook: " + json.error);
+      "Failed to unpublish notebook",
+    );
+
+    const payload = data.unpublishNotebook;
+
+    if (payload.success) {
+      logger.log(`Successfully unpublished notebook "${notebookId}"`);
     }
-    return true;
+
+    return payload;
   }
 
   /**
