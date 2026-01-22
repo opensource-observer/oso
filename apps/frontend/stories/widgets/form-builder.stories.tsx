@@ -848,3 +848,130 @@ export const WithNestedUnionsInArray: Story = {
     className: "w-[900px]",
   },
 };
+
+const dynamicObjectWithDefaultsSchema: FormSchema = {
+  apiEndpoint: {
+    type: "string",
+    label: "API Endpoint",
+    required: true,
+    placeholder: "https://api.example.com",
+  },
+  headers: {
+    type: "object",
+    label: "Request Headers",
+    allowDynamicKeys: true,
+    description: "Custom headers for the API request",
+  },
+  queryParams: {
+    type: "object",
+    label: "Query Parameters",
+    allowDynamicKeys: true,
+    description: "Query parameters to send with the request",
+  },
+};
+
+export const WithDynamicObjectDefaults: Story = {
+  args: {
+    schema: dynamicObjectWithDefaultsSchema,
+    defaultValues: {
+      apiEndpoint: "https://api.github.com/repos/test/repo",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer github_pat_123",
+        "X-Custom-Header": "custom-value",
+      },
+      queryParams: {
+        page: "1",
+        per_page: "100",
+        sort: "created",
+      },
+    },
+    onSubmit: action("onSubmit"),
+    className: "w-[800px]",
+  },
+};
+
+const unionWithDynamicObjectSchema: FormSchema = {
+  resourceName: {
+    type: "string",
+    label: "Resource Name",
+    required: true,
+    placeholder: "users",
+  },
+  config: {
+    type: "union",
+    label: "Configuration Type",
+    description: "Choose how to configure this resource",
+    variantSelector: "dropdown",
+    variants: [
+      {
+        value: "basic",
+        label: "Basic Configuration",
+        properties: {
+          endpoint: {
+            type: "string",
+            label: "Endpoint URL",
+            required: true,
+            placeholder: "/api/users",
+          },
+        },
+      },
+      {
+        value: "advanced",
+        label: "Advanced Configuration",
+        properties: {
+          endpoint: {
+            type: "string",
+            label: "Endpoint URL",
+            required: true,
+            placeholder: "/api/users",
+          },
+          method: {
+            type: "string",
+            label: "HTTP Method",
+            options: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+            defaultValue: "GET",
+          },
+          headers: {
+            type: "object",
+            label: "Custom Headers",
+            description: "Headers specific to this endpoint",
+            allowDynamicKeys: true,
+            skipIfEmpty: true,
+          },
+          queryParams: {
+            type: "object",
+            label: "Query Parameters",
+            description: "Default query parameters for this endpoint",
+            allowDynamicKeys: true,
+            skipIfEmpty: true,
+          },
+        },
+      },
+    ],
+  },
+};
+
+export const WithUnionContainingDynamicObjectDefaults: Story = {
+  args: {
+    schema: unionWithDynamicObjectSchema,
+    defaultValues: {
+      resourceName: "repositories",
+      config: {
+        endpoint: "/api/v1/repositories",
+        method: "GET",
+        headers: {
+          Authorization: "Bearer token_xyz",
+          Accept: "application/vnd.github.v3+json",
+        },
+        queryParams: {
+          type: "all",
+          sort: "updated",
+          direction: "desc",
+        },
+      },
+    },
+    onSubmit: action("onSubmit"),
+    className: "w-[900px]",
+  },
+};
