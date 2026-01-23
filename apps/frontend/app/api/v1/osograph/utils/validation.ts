@@ -402,3 +402,15 @@ export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
 
   return result.data;
 }
+
+const ModelColumnContextSchema = z.object({
+  name: z.string(),
+  context: z.string(),
+});
+
+export const UpdateModelContextSchema = z.object({
+  datasetId: z.string().uuid(),
+  modelId: z.string(),
+  context: z.string().optional(),
+  columnContext: z.array(ModelColumnContextSchema).optional(),
+});

@@ -99,6 +99,7 @@ type DataIngestion {
   config: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!
+  modelContext(tableName: String!): ModelContext
 }
 
 type DatasetEdge {

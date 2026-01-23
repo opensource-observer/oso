@@ -29,6 +29,7 @@ import { logger } from "@/lib/logger";
 import { Json } from "@/lib/types/supabase";
 import { generatePublishedNotebookPath } from "@/lib/notebook/utils";
 import { revalidateTag } from "next/cache";
+import { validateTableId } from "@/app/api/v1/osograph/utils/model";
 
 type SystemMutationOptions<T extends z.ZodTypeAny, O> = {
   inputSchema: T;
@@ -313,17 +314,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
         const { stepId, tableId, schema, warehouseFqn } = input;
 
         // Assert that the tableId has one of the appropriate prefixes
-        const tableIdHasValidPrefix =
-          tableId.startsWith("data_model_") ||
-          tableId.startsWith("data_ingestion_") ||
-          tableId.startsWith("data_connection_") ||
-          tableId.startsWith("static_model_");
-        if (!tableIdHasValidPrefix) {
-          throw ValidationErrors.invalidInput(
-            "tableId",
-            "tableId must start with one of the following prefixes: data_model_, data_ingestion_, data_connection_",
-          );
-        }
+        validateTableId(tableId);
 
         logger.info(`Creating materialization for step ${stepId}`);
 
