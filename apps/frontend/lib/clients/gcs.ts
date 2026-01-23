@@ -1,5 +1,5 @@
 import { GetSignedUrlConfig, Storage } from "@google-cloud/storage";
-import { GOOGLE_PROJECT_ID, GCP_CREDENTIALS_JSON_B64 } from "@/lib/config";
+import { GCP_CREDENTIALS_JSON_B64, GOOGLE_PROJECT_ID } from "@/lib/config";
 
 // Initialize storage client
 let storage: Storage | null = null;
@@ -39,6 +39,17 @@ export async function copyFile(
     .bucket(source.bucketName)
     .file(source.fileName)
     .copy(storage.bucket(destination.bucketName).file(destination.fileName));
+}
+
+export function parseGcsUrl(
+  gcsUrl: string,
+): { bucketName: string; fileName: string } | null {
+  const match = gcsUrl.match(/^gs:\/\/([^/]+)\/(.+)$/);
+  if (!match) return null;
+  return {
+    bucketName: match[1],
+    fileName: match[2],
+  };
 }
 
 export async function getSignedUrl(
