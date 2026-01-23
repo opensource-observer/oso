@@ -59,6 +59,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   const key = genKey(props);
   const { client } = useOsoAppClient();
   const { data, mutate, error, isLoading } = useSWR(
+    // https://swr.vercel.app/docs/conditional-fetching#conditional
     client && !props.useTestData ? key : null,
     async () => {
       if (!dataFetches || _.isEmpty(dataFetches)) {
