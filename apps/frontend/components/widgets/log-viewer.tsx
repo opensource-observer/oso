@@ -1,7 +1,7 @@
 "use client";
 
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, memo } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
+import { z } from "zod";
+import { useAsync } from "react-use";
+
+const LogEntrySchema = z.object({
+  event: z.string(),
+  log_level: z.enum(["info", "error", "warning", "debug"]),
+  timestamp: z.string(),
+  extra: z.record(z.unknown()).optional(),
+});
 
 export interface LogEntry {
   event: string;
@@ -272,65 +281,58 @@ export function LogViewer({
   showTimestamp = true,
   showControls = true,
 }: LogViewerProps) {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
 
-  useEffect(() => {
+  const {
+    loading,
+    error,
+    value: logs,
+  } = useAsync(async () => {
     if (testData) {
-      setLogs(testData);
-      setLoading(false);
-      setError(null);
-      return;
+      return testData;
     }
 
     if (!logsUrl) {
-      setLogs([]);
-      setLoading(false);
-      setError(null);
-      return;
+      return [];
     }
 
-    const fetchLogs = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(logsUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch logs: ${response.statusText}`);
-        }
-        const text = await response.text();
-        const lines = text
-          .trim()
-          .split("\n")
-          .filter((line) => line.trim());
-        const parsedLogs: LogEntry[] = lines.map((line) => JSON.parse(line));
-        setLogs(parsedLogs);
-      } catch (err) {
-        logger.error("Error fetching logs:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch logs");
-        setLogs([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const response = await fetch(logsUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch logs: ${response.statusText}`);
+    }
 
-    void fetchLogs();
+    const text = await response.text();
+    const lines = text
+      .trim()
+      .split("\n")
+      .filter((line) => line.trim());
+
+    return lines.map((line, index) => {
+      const parsed = JSON.parse(line);
+      const result = LogEntrySchema.safeParse(parsed);
+
+      if (!result.success) {
+        const errors = result.error.errors
+          .map((e) => `${e.path.join(".")}: ${e.message}`)
+          .join(", ");
+        throw new Error(`Invalid log format at line ${index + 1}: ${errors}`);
+      }
+
+      return result.data;
+    });
   }, [logsUrl, testData]);
+
+  const safeLogs = logs ?? [];
 
   const filteredLogs =
     levelFilter.length === 0
-      ? logs
-      : logs.filter((log) => levelFilter.includes(log.log_level));
+      ? safeLogs
+      : safeLogs.filter((log) => levelFilter.includes(log.log_level));
 
-  const logCounts = logs.reduce(
-    (acc, log) => {
-      acc[log.log_level] = (acc[log.log_level] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+  const logCounts = safeLogs.reduce<Record<string, number>>((acc, log) => {
+    acc[log.log_level] = (acc[log.log_level] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <Card className={cn("w-full", className)}>
@@ -387,7 +389,7 @@ export function LogViewer({
             </div>
           ) : error ? (
             <div className="flex items-center justify-center py-12 text-red-600 text-sm">
-              {error}
+              {error.message}
             </div>
           ) : filteredLogs.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
