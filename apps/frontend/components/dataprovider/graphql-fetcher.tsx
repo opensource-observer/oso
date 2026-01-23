@@ -125,7 +125,10 @@ function GraphqlFetcher(props: GraphqlFetcherProps) {
   }
 
   const { data, mutate, error, isLoading } = useSWR(
-    queryKey || JSON.stringify({ type: "GraphqlFetcher", ...fetchProps }),
+    // https://swr.vercel.app/docs/conditional-fetching#conditional
+    props.useTestData
+      ? null
+      : queryKey || JSON.stringify({ type: "GraphqlFetcher", ...fetchProps }),
     () => {
       if (!query || !url) {
         return;
