@@ -27,9 +27,19 @@ import {
   ChevronRight,
   Copy,
   Check,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
+import { z } from "zod";
+import { useAsync } from "react-use";
+
+const LogEntrySchema = z.object({
+  event: z.string(),
+  log_level: z.enum(["info", "error", "warning", "debug"]),
+  timestamp: z.string(),
+  extra: z.record(z.unknown()).optional(),
+});
 
 export interface LogEntry {
   event: string;
@@ -40,7 +50,8 @@ export interface LogEntry {
 
 interface LogViewerProps {
   className?: string;
-  logs: LogEntry[];
+  logsUrl?: string;
+  testData?: LogEntry[];
   title?: string;
   maxHeight?: number;
   showTimestamp?: boolean;
@@ -263,7 +274,8 @@ LogEntryComponent.displayName = "LogEntryComponent";
 
 export function LogViewer({
   className,
-  logs = [],
+  logsUrl,
+  testData,
   title = "Console Output",
   maxHeight = 600,
   showTimestamp = true,
@@ -271,18 +283,56 @@ export function LogViewer({
 }: LogViewerProps) {
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
 
+  const {
+    loading,
+    error,
+    value: logs,
+  } = useAsync(async () => {
+    if (testData) {
+      return testData;
+    }
+
+    if (!logsUrl) {
+      return [];
+    }
+
+    const response = await fetch(logsUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch logs: ${response.statusText}`);
+    }
+
+    const text = await response.text();
+    const lines = text
+      .trim()
+      .split("\n")
+      .filter((line) => line.trim());
+
+    return lines.map((line, index) => {
+      const parsed = JSON.parse(line);
+      const result = LogEntrySchema.safeParse(parsed);
+
+      if (!result.success) {
+        const errors = result.error.errors
+          .map((e) => `${e.path.join(".")}: ${e.message}`)
+          .join(", ");
+        throw new Error(`Invalid log format at line ${index + 1}: ${errors}`);
+      }
+
+      return result.data;
+    });
+  }, [logsUrl, testData]);
+
+  const safeLogs = logs ?? [];
+
   const filteredLogs =
     levelFilter.length === 0
-      ? logs
-      : logs.filter((log) => levelFilter.includes(log.log_level));
+      ? safeLogs
+      : safeLogs.filter((log) => levelFilter.includes(log.log_level));
 
-  const logCounts = logs.reduce(
-    (acc, log) => {
-      acc[log.log_level] = (acc[log.log_level] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+  const logCounts = safeLogs.reduce<Record<string, number>>((acc, log) => {
+    acc[log.log_level] = (acc[log.log_level] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <Card className={cn("w-full", className)}>
@@ -332,7 +382,16 @@ export function LogViewer({
           className="overflow-y-auto bg-muted/30"
           style={{ maxHeight: `${maxHeight}px` }}
         >
-          {filteredLogs.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading logs...
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-12 text-red-600 text-sm">
+              {error.message}
+            </div>
+          ) : filteredLogs.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
               {levelFilter.length > 0
                 ? "No logs matching the selected filters"
@@ -373,8 +432,13 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
   description:
     "GitHub Actions-inspired console log viewer with expandable JSON metadata",
   props: {
-    logs: {
+    logsUrl: {
+      type: "string",
+      description: "URL to fetch JSONL logs from (e.g., GCS bucket URL)",
+    },
+    testData: {
       type: "array",
+      editOnly: true,
       defaultValue: [
         {
           event: "Application started",
@@ -382,6 +446,7 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
           timestamp: new Date().toISOString(),
         },
       ],
+      description: "Test logs for Plasmic editor preview",
     },
     title: {
       type: "string",
@@ -398,10 +463,6 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
     showControls: {
       type: "boolean",
       defaultValue: true,
-    },
-    onClear: {
-      type: "eventHandler",
-      argTypes: [],
     },
   },
 };
