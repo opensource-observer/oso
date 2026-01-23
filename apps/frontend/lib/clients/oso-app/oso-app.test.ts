@@ -53,6 +53,7 @@ describe("Organization Ownership", () => {
   const THIRD_ORG_ID = crypto.randomUUID();
 
   let adminSupabase: ReturnType<typeof createClient>;
+  let regularSupabase: ReturnType<typeof createClient>;
 
   beforeAll(async () => {
     adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
@@ -127,7 +128,7 @@ describe("Organization Ownership", () => {
       description: "Test admin user for org ownership tests",
     });
 
-    const regularSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+    regularSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { storageKey: "regular-org-test-auth" },
     });
     const { error: regularAuthError } =
@@ -374,6 +375,34 @@ describe("Organization Ownership", () => {
       .eq("user_role", "owner");
 
     expect(error).toBeNull();
+  });
+
+  it("should allow creating own organiation", async () => {
+    const { error } = await regularSupabase.from("organizations").insert({
+      id: THIRD_ORG_ID,
+      created_by: REGULAR_USER_ID,
+      org_name: `third_org_${THIRD_ORG_ID.substring(0, 8)}`,
+    });
+    expect(error).toBeNull();
+  });
+
+  it("shouldn't allow adding random user to organization", async () => {
+    await adminSupabase.from("organizations").insert({
+      id: THIRD_ORG_ID,
+      created_by: ADMIN_USER_ID,
+      org_name: `third_org_${THIRD_ORG_ID.substring(0, 8)}`,
+    });
+
+    const { error } = await regularSupabase
+      .from("users_by_organization")
+      .insert({
+        user_id: REGULAR_USER_ID,
+        org_id: THIRD_ORG_ID,
+        user_role: "admin",
+      });
+
+    expect(error).toBeDefined();
+    expect(error?.code).toBe("42501"); // RLS Policy error
   });
 });
 
