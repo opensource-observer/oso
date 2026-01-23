@@ -42,8 +42,7 @@ export interface LogEntry {
 interface LogViewerProps {
   className?: string;
   logsUrl?: string;
-  testData?: boolean;
-  testLogs?: LogEntry[];
+  testData?: LogEntry[];
   title?: string;
   maxHeight?: number;
   showTimestamp?: boolean;
@@ -267,8 +266,7 @@ LogEntryComponent.displayName = "LogEntryComponent";
 export function LogViewer({
   className,
   logsUrl,
-  testData = false,
-  testLogs = [],
+  testData,
   title = "Console Output",
   maxHeight = 600,
   showTimestamp = true,
@@ -281,7 +279,7 @@ export function LogViewer({
 
   useEffect(() => {
     if (testData) {
-      setLogs(testLogs || []);
+      setLogs(testData);
       setLoading(false);
       setError(null);
       return;
@@ -319,7 +317,7 @@ export function LogViewer({
     };
 
     void fetchLogs();
-  }, [logsUrl, testData, testLogs]);
+  }, [logsUrl, testData]);
 
   const filteredLogs =
     levelFilter.length === 0
@@ -437,12 +435,6 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
       description: "URL to fetch JSONL logs from (e.g., GCS bucket URL)",
     },
     testData: {
-      type: "boolean",
-      editOnly: true,
-      defaultValue: false,
-      description: "Enable test mode with sample logs (Plasmic editor only)",
-    },
-    testLogs: {
       type: "array",
       editOnly: true,
       defaultValue: [
@@ -452,7 +444,7 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
           timestamp: new Date().toISOString(),
         },
       ],
-      description: "Test logs to display when testData is enabled",
+      description: "Test logs for Plasmic editor preview",
     },
     title: {
       type: "string",

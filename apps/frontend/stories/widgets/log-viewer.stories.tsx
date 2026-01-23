@@ -183,8 +183,7 @@ const mixedLevelLogs: LogEntry[] = [
 
 export const Default: Story = {
   args: {
-    testData: true,
-    testLogs: sampleLogs,
+    testData: sampleLogs,
     title: "Console Output",
     maxHeight: 600,
     showTimestamp: true,
@@ -194,8 +193,7 @@ export const Default: Story = {
 
 export const MixedLogLevels: Story = {
   args: {
-    testData: true,
-    testLogs: mixedLevelLogs,
+    testData: mixedLevelLogs,
     title: "Application Logs",
     maxHeight: 600,
     showTimestamp: true,
@@ -205,8 +203,7 @@ export const MixedLogLevels: Story = {
 
 export const LargeDataset: Story = {
   args: {
-    testData: true,
-    testLogs: Array.from({ length: 100 }, (_, i) => ({
+    testData: Array.from({ length: 100 }, (_, i) => ({
       event: `Log entry ${i + 1}: Processing item batch`,
       log_level:
         i % 10 === 0
