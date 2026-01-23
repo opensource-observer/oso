@@ -59,7 +59,7 @@ function OsoDataProvider(props: OsoDataProviderProps) {
   const key = genKey(props);
   const { client } = useOsoAppClient();
   const { data, mutate, error, isLoading } = useSWR(
-    client ? key : null,
+    client && !props.useTestData ? key : null,
     async () => {
       if (!dataFetches || _.isEmpty(dataFetches)) {
         return;

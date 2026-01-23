@@ -125,7 +125,9 @@ function GraphqlFetcher(props: GraphqlFetcherProps) {
   }
 
   const { data, mutate, error, isLoading } = useSWR(
-    queryKey || JSON.stringify({ type: "GraphqlFetcher", ...fetchProps }),
+    props.useTestData
+      ? null
+      : queryKey || JSON.stringify({ type: "GraphqlFetcher", ...fetchProps }),
     () => {
       if (!query || !url) {
         return;
