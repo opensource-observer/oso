@@ -96,7 +96,7 @@ All requests to the OSO API must be authenticated.
 
 ### Generate an API key
 
-See [getting started with the API](../get-started/api.md) for API key creation instructions.
+See [getting started with the API](../get-started/api.mdx) for API key creation instructions.
 
 ![generate API key](./generate-api-key.png)
 
