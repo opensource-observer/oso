@@ -1,7 +1,7 @@
 "use client";
 
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
-import React, { useState, memo } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Copy,
   Check,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
@@ -40,7 +41,9 @@ export interface LogEntry {
 
 interface LogViewerProps {
   className?: string;
-  logs: LogEntry[];
+  logsUrl?: string;
+  testData?: boolean;
+  testLogs?: LogEntry[];
   title?: string;
   maxHeight?: number;
   showTimestamp?: boolean;
@@ -263,13 +266,60 @@ LogEntryComponent.displayName = "LogEntryComponent";
 
 export function LogViewer({
   className,
-  logs = [],
+  logsUrl,
+  testData = false,
+  testLogs = [],
   title = "Console Output",
   maxHeight = 600,
   showTimestamp = true,
   showControls = true,
 }: LogViewerProps) {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (testData) {
+      setLogs(testLogs || []);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    if (!logsUrl) {
+      setLogs([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    const fetchLogs = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(logsUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch logs: ${response.statusText}`);
+        }
+        const text = await response.text();
+        const lines = text
+          .trim()
+          .split("\n")
+          .filter((line) => line.trim());
+        const parsedLogs: LogEntry[] = lines.map((line) => JSON.parse(line));
+        setLogs(parsedLogs);
+      } catch (err) {
+        logger.error("Error fetching logs:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch logs");
+        setLogs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchLogs();
+  }, [logsUrl, testData, testLogs]);
 
   const filteredLogs =
     levelFilter.length === 0
@@ -332,7 +382,16 @@ export function LogViewer({
           className="overflow-y-auto bg-muted/30"
           style={{ maxHeight: `${maxHeight}px` }}
         >
-          {filteredLogs.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading logs...
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-12 text-red-600 text-sm">
+              {error}
+            </div>
+          ) : filteredLogs.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
               {levelFilter.length > 0
                 ? "No logs matching the selected filters"
@@ -373,8 +432,19 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
   description:
     "GitHub Actions-inspired console log viewer with expandable JSON metadata",
   props: {
-    logs: {
+    logsUrl: {
+      type: "string",
+      description: "URL to fetch JSONL logs from (e.g., GCS bucket URL)",
+    },
+    testData: {
+      type: "boolean",
+      editOnly: true,
+      defaultValue: false,
+      description: "Enable test mode with sample logs (Plasmic editor only)",
+    },
+    testLogs: {
       type: "array",
+      editOnly: true,
       defaultValue: [
         {
           event: "Application started",
@@ -382,6 +452,7 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
           timestamp: new Date().toISOString(),
         },
       ],
+      description: "Test logs to display when testData is enabled",
     },
     title: {
       type: "string",
@@ -398,10 +469,6 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
     showControls: {
       type: "boolean",
       defaultValue: true,
-    },
-    onClear: {
-      type: "eventHandler",
-      argTypes: [],
     },
   },
 };
