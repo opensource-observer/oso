@@ -101,6 +101,7 @@ timeseries_metrics(
         "int_events_daily__l2_transactions",
         "int_events_daily__defillama",
         "int_events_daily__github",
+        "int_events_daily__opendevdata",
         "int_events_daily__github_with_lag",
         "int_events_daily__funding",
         "int_events_aux_prs",
@@ -327,6 +328,35 @@ timeseries_metrics(
                 description="Metrics related to developer activity classifications",
             ),
             additional_tags=["data_category=code"],
+        ),
+        "developer_active_days_by_opendevdata": MetricQueryDef(
+            ref="code/active_days_by_opendevdata.sql",
+            time_aggregations=[
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            entity_types=["artifact", "project", "collection"],
+            is_intermediate=True,
+            additional_tags=["data_category=code", "source=opendevdata"],
+        ),
+        "developer_activity_classification_by_opendevdata": MetricQueryDef(
+            ref="code/developer_activity_classification_by_opendevdata.sql",
+            vars={
+                "full_time_ratio": 10 / 30,
+            },
+            time_aggregations=[
+                "monthly",
+                # "quarterly",
+                # "biannually",
+                "yearly",
+            ],
+            metadata=MetricMetadata(
+                display_name="Developer Classifications (OpenDevData)",
+                description="Metrics related to developer activity classifications based on OpenDevData",
+            ),
+            additional_tags=["data_category=code", "source=opendevdata"],
         ),
         "contributor_classifications": MetricQueryDef(
             ref="code/contributor_activity_classification.sql",
