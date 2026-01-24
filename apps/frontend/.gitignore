@@ -40,3 +40,4 @@ storybook-static
 
 # build files for pyodide packaging
 /.pyodide
+.plasmic-latest-info.txt
