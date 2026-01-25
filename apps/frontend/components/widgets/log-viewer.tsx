@@ -1,7 +1,7 @@
 "use client";
 
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
-import React, { useState, memo } from "react";
+import React, { useState, memo, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -282,21 +282,23 @@ export function LogViewer({
   showControls = true,
 }: LogViewerProps) {
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
+  const memoizedLogsUrl = useMemo(() => logsUrl, [logsUrl]);
+  const memoizedTestData = useMemo(() => testData, [testData]);
 
   const {
     loading,
     error,
     value: logs,
   } = useAsync(async () => {
-    if (testData) {
-      return testData;
+    if (memoizedTestData) {
+      return memoizedTestData;
     }
 
-    if (!logsUrl) {
+    if (!memoizedLogsUrl) {
       return [];
     }
 
-    const response = await fetch(logsUrl);
+    const response = await fetch(memoizedLogsUrl);
     if (!response.ok) {
       throw new Error(`Failed to fetch logs: ${response.statusText}`);
     }
@@ -320,7 +322,7 @@ export function LogViewer({
 
       return result.data;
     });
-  }, [logsUrl, testData]);
+  }, [memoizedLogsUrl, memoizedTestData]);
 
   const safeLogs = logs ?? [];
 
