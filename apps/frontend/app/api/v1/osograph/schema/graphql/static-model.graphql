@@ -8,6 +8,12 @@ type StaticModel {
   updatedAt: DateTime!
   modelContext: ModelContext
   runs(first: Int = 50, after: String): RunConnection!
+  materializations(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
 }
 
 type StaticModelEdge {

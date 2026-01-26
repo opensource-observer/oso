@@ -99,7 +99,14 @@ type DataIngestion {
   config: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!
-  modelContext(tableName: String!): ModelContext
+  modelContext(tableName: String!): ModelContext  
+  materializations(
+    tableName: String!
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
 }
 
 type DatasetEdge {

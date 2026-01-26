@@ -1526,9 +1526,18 @@ export type DataIngestion = {
   datasetId: Scalars["ID"]["output"];
   factoryType: DataIngestionFactoryType;
   id: Scalars["ID"]["output"];
+  materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataIngestionMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  tableName: Scalars["String"]["input"];
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataIngestionModelContextArgs = {
@@ -1574,6 +1583,7 @@ export type DataModel = {
   isEnabled: Scalars["Boolean"]["output"];
   latestRelease?: Maybe<DataModelRelease>;
   latestRevision?: Maybe<DataModelRevision>;
+  materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
@@ -1582,6 +1592,13 @@ export type DataModel = {
   revisions: DataModelRevisionConnection;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelReleasesArgs = {
@@ -8291,12 +8308,18 @@ export type StaticModel = {
   createdAt: Scalars["DateTimeISO"]["output"];
   dataset: Dataset;
   id: Scalars["ID"]["output"];
+  materializations: MaterializationConnection;
   modelContext?: Maybe<ModelContext>;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type StaticModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 export type StaticModelRunsArgs = {
