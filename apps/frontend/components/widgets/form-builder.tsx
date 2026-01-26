@@ -418,6 +418,31 @@ function normalizeDefaultValues(
         ];
       }
 
+      if (fieldSchema?.type === "array" && Array.isArray(value)) {
+        if (value.length === 0) {
+          return [key, []];
+        }
+
+        const arrayField = fieldSchema as FormSchemaArrayField;
+
+        if (arrayField.itemType === "object" && arrayField.itemProperties) {
+          return [
+            key,
+            value.map((item) => {
+              if (typeof item === "object" && item !== null) {
+                return normalizeDefaultValues(
+                  item as Record<string, unknown>,
+                  arrayField.itemProperties!,
+                );
+              }
+              return item;
+            }),
+          ];
+        }
+
+        return [key, value];
+      }
+
       if (
         fieldSchema?.type === "union" &&
         value &&
@@ -436,6 +461,8 @@ function normalizeDefaultValues(
             null;
         } else {
           let bestMatchScore = 0;
+          let bestMatchVariant: FormSchemaUnionVariant | null = null;
+
           for (const variant of unionField.variants) {
             if (!variant.properties) continue;
             const variantKeys = Object.keys(variant.properties);
@@ -445,10 +472,15 @@ function normalizeDefaultValues(
             );
             const score = matchingKeys.length;
             if (score > bestMatchScore) {
-              matchingVariant = variant;
+              bestMatchVariant = variant;
               bestMatchScore = score;
             }
           }
+
+          matchingVariant =
+            bestMatchVariant ||
+            unionField.variants.find((v) => v.properties) ||
+            null;
         }
 
         if (matchingVariant?.properties) {
@@ -457,6 +489,8 @@ function normalizeDefaultValues(
             normalizeDefaultValues(valueObj, matchingVariant.properties),
           ];
         }
+
+        return [key, value];
       }
 
       return [key, value];
