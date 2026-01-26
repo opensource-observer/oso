@@ -7,8 +7,8 @@ import httpx
 from fastmcp import Context, FastMCP
 from pydantic import BaseModel
 
-from .executor import GraphQLExecutor
-from .query_executor import QueryExecutor
+from .mutations import GraphQLExecutor
+from .queries import QueryExecutor
 from .types import AutogenMutationsConfig, MutationInfo, QueryInfo
 
 logger = logging.getLogger(__name__)
@@ -142,9 +142,9 @@ class ToolGenerator:
         tool_fn = self._create_query_tool_function(query)
 
         # Register with FastMCP decorator
-        self.mcp.tool(
-            description=query.description or f"Execute {query.name} query"
-        )(tool_fn)
+        self.mcp.tool(description=query.description or f"Execute {query.name} query")(
+            tool_fn
+        )
 
     def _create_query_tool_function(
         self,

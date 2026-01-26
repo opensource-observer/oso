@@ -9,7 +9,7 @@ from fastmcp import Client, FastMCP
 from fastmcp.exceptions import ToolError
 
 from .generator import generate_from_schema
-from .mutation_filter import RegexMutationFilter
+from .mutations import RegexMutationFilter
 from .types import AutogenMutationsConfig
 
 # Get path to test schema and queries
@@ -274,6 +274,7 @@ async def test_ensure_nested_items_are_not_requests(mock_http_client):
 @pytest.mark.asyncio
 async def test_query_tool_generation(mock_http_client):
     """Test that query tools are generated from client .graphql files."""
+
     # Update mock to return query response
     async def mock_post_query(url, json=None, **kwargs):
         mock_http_client.requests.append(

@@ -3,7 +3,7 @@
 import os
 
 from fastmcp import FastMCP
-from oso_mcp.server.graphql.mutation_filter import RegexMutationFilter
+from oso_mcp.server.graphql.mutations import RegexMutationFilter
 
 from .generator import generate_from_schema
 from .types import AutogenMutationsConfig

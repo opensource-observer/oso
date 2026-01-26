@@ -3,10 +3,9 @@
 from ariadne_codegen.schema import get_graphql_schema_from_path
 from fastmcp import FastMCP
 
-from .mutation_extractor import MutationExtractor
+from .mutations import MutationExtractor
 from .pydantic_generator import PydanticModelGenerator
-from .query_extractor import QueryExtractor
-from .query_parser import QueryDocumentParser
+from .queries import QueryDocumentParser, QueryExtractor
 from .tool_generator import ToolGenerator
 from .types import AutogenMutationsConfig
 
