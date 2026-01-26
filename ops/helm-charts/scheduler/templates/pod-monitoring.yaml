@@ -1,0 +1,28 @@
+{{- range .Values.app.queues -}}
+{{ $name := required "Queue name is required" .name }}
+---
+# Setup GKE managed prometheus monitoring for consumer-trino
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: {{ include "app.fullname" $ }}-{{ $name | replace "_" "-" }}
+spec:
+  selector:
+    matchLabels:
+      component: {{ $.Values.app.name }}
+      queue: {{ $name }}
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+  targetLabels:
+    # We need to rename these labels because GCP does not allow '/' in label names
+    # Also some of the labels are reserved by GCP so we rename them to avoid conflicts
+    fromPod:
+      - from: app.kubernetes.io/component
+        to: oso_component
+      - from: app.kubernetes.io/instance
+        to: oso_instance
+      - from: app.kubernetes.io/name
+        to: oso_name
+{{- end -}}
