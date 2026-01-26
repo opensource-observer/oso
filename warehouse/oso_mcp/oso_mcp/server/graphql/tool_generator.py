@@ -3,13 +3,12 @@
 import logging
 import typing as t
 
-import httpx
 from fastmcp import Context, FastMCP
 from pydantic import BaseModel
 
 from .mutations import GraphQLExecutor
 from .queries import QueryExecutor
-from .types import AutogenMutationsConfig, MutationInfo, QueryInfo
+from .types import HttpClientFactory, MutationInfo, QueryInfo
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,8 @@ class ToolGenerator:
         self,
         mcp: FastMCP,
         mutations: t.List[MutationInfo],
-        config: AutogenMutationsConfig,
+        graphql_endpoint: str,
+        http_client_factory: HttpClientFactory,
         queries: t.Optional[t.List[QueryInfo]] = None,
     ):
         """Initialize the tool generator.
@@ -35,7 +35,8 @@ class ToolGenerator:
         self.mcp = mcp
         self.mutations = mutations
         self.queries = queries or []
-        self.config = config
+        self.graphql_endpoint = graphql_endpoint
+        self.http_client_factory = http_client_factory
 
     def generate_mutation_tools(self) -> None:
         """Register all mutation tools."""
@@ -74,7 +75,8 @@ class ToolGenerator:
             Async tool function
         """
         # Capture config in closure
-        config = self.config
+        graphql_endpoint = self.graphql_endpoint
+        http_client_factory = self.http_client_factory
 
         # Create the async function dynamically
         async def tool_function(
@@ -96,21 +98,12 @@ class ToolGenerator:
                 if ctx:
                     await ctx.info(f"Executing {mutation.name} mutation")
 
-                # Create or get HTTP client
-                if config.http_client_factory:
-                    # Use injected factory for testing
-                    http_client = config.http_client_factory()
-                else:
-                    # Create default client with authentication
-                    headers = {}
-                    if config.api_key:
-                        headers[config.auth_header_name] = f"Bearer {config.api_key}"
-                    http_client = httpx.AsyncClient(headers=headers)
+                http_client = http_client_factory()
 
                 async with http_client:
                     # Create executor for this mutation
                     executor = GraphQLExecutor(
-                        endpoint=config.graphql_endpoint,
+                        endpoint=graphql_endpoint,
                         mutation=mutation,
                         http_client=http_client,
                     )
@@ -159,7 +152,8 @@ class ToolGenerator:
             Async tool function
         """
         # Capture config in closure
-        config = self.config
+        graphql_endpoint = self.graphql_endpoint
+        http_client_factory = self.http_client_factory
 
         # Create the async function dynamically
         async def tool_function(
@@ -181,21 +175,12 @@ class ToolGenerator:
                 if ctx:
                     await ctx.info(f"Executing {query.name} query")
 
-                # Create or get HTTP client
-                if config.http_client_factory:
-                    # Use injected factory for testing
-                    http_client = config.http_client_factory()
-                else:
-                    # Create default client with authentication
-                    headers = {}
-                    if config.api_key:
-                        headers[config.auth_header_name] = f"Bearer {config.api_key}"
-                    http_client = httpx.AsyncClient(headers=headers)
+                http_client = http_client_factory()
 
                 async with http_client:
                     # Create executor for this query
                     executor = QueryExecutor(
-                        endpoint=config.graphql_endpoint,
+                        endpoint=graphql_endpoint,
                         query_info=query,
                         http_client=http_client,
                     )

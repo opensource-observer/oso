@@ -81,6 +81,9 @@ class MutationFilter(abc.ABC):
         ...
 
 
+HttpClientFactory = t.Callable[[], httpx.AsyncClient]
+
+
 class AutogenMutationsConfig(BaseModel):
     """Configuration for tool generation from GraphQL mutations."""
 
@@ -91,15 +94,11 @@ class AutogenMutationsConfig(BaseModel):
         default_factory=list,
         description="Mutation filters to ignore certain mutations",
     )
-    api_key: t.Optional[str] = Field(
-        default=None,
-        description="API key for authentication (will use MCP_OSO_API_KEY from MCPConfig)",
-    )
     auth_header_name: str = Field(
         default="Authorization",
         description="Authentication header name",
     )
-    http_client_factory: t.Optional[t.Callable[[], httpx.AsyncClient]] = Field(
-        default=None,
+    http_client_factory: HttpClientFactory = Field(
+        default=lambda: httpx.AsyncClient(),
         description="Optional factory function that returns an httpx.AsyncClient instance for dependency injection/testing",
     )

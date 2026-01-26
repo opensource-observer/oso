@@ -19,9 +19,16 @@ logger = logging.getLogger(__name__)
 class MutationExtractor:
     """Extract mutation definitions from parsed GraphQL schema."""
 
+    def __init__(self, schema: GraphQLSchema):
+        """Initialize the mutation extractor.
+
+        Args:
+            schema: GraphQL schema
+        """
+        self.schema = schema
+
     def extract_mutations(
         self,
-        schema: GraphQLSchema,
         model_generator: PydanticModelGenerator,
         filters: list[BaseMutationFilter] | None = None,
     ) -> t.List[MutationInfo]:
@@ -35,7 +42,7 @@ class MutationExtractor:
             List of mutation information
         """
         mutations = []
-        mutation_type = self._get_mutation_type(schema)
+        mutation_type = self._get_mutation_type()
 
         if not mutation_type:
             return mutations
@@ -96,7 +103,7 @@ class MutationExtractor:
         return mutations
 
     def _get_mutation_type(
-        self, schema: GraphQLSchema
+        self,
     ) -> t.Optional[GraphQLObjectType]:
         """Get the Mutation type from schema.
 
@@ -106,7 +113,7 @@ class MutationExtractor:
         Returns:
             Mutation type or None if not present
         """
-        return schema.mutation_type
+        return self.schema.mutation_type
 
     def _extract_payload_fields(self, payload_type: GraphQLObjectType) -> t.List[str]:
         """Get top-level and one level deep fields from payload type.

@@ -13,7 +13,6 @@ from graphql import (
     GraphQLObjectType,
     GraphQLScalarType,
     GraphQLSchema,
-    NamedTypeNode,
     SelectionSetNode,
     VariableDefinitionNode,
 )
@@ -31,7 +30,7 @@ class PydanticModelGenerator:
 
     def __init__(self):
         """Initialize the model generator with a type registry."""
-        self._type_registry: dict[str, t.Type[BaseModel] | t.Type[Enum]] = {}
+        self._type_registry: dict[str, t.Type[BaseModel] | Enum] = {}
 
     def generate_input_model(
         self, input_type: GraphQLInputObjectType
@@ -82,23 +81,6 @@ class PydanticModelGenerator:
         return self._get_or_create_model(
             payload_type, max_depth=max_depth, context_prefix=""
         )
-        # type_name = payload_type.name
-
-        # # Return registered type if available
-        # if type_name in self._type_registry:
-        #     return self._type_registry[type_name]  # type: ignore
-
-        # fields = {}
-        # for field_name, field in payload_type.fields.items():
-        #     python_type, field_info = self._create_pydantic_field(
-        #         field_name, field.type, depth=depth - 1, context_prefix=type_name
-        #     )
-        #     fields[field_name] = (python_type, field_info)
-
-        # # Create the model
-        # model = create_model(type_name, **fields)
-        # self._type_registry[type_name] = model
-        # return model
 
     def _get_or_create_model(
         self, gql_type: GraphQLObjectType, max_depth: int, context_prefix
@@ -129,7 +111,7 @@ class PydanticModelGenerator:
         self._type_registry[type_name] = model
         return model
 
-    def generate_enum(self, enum_type: GraphQLEnumType) -> t.Type[Enum]:
+    def generate_enum(self, enum_type: GraphQLEnumType) -> Enum:
         """Create Python Enum from GraphQL enum type.
 
         Args:
@@ -148,7 +130,7 @@ class PydanticModelGenerator:
         enum_members = {name: value for name, value in enum_type.values.items()}
 
         # Create the enum
-        enum_klass = type(type_name, (Enum,), enum_members)
+        enum_klass = Enum(type_name, enum_members)
         self._type_registry[type_name] = enum_klass
         return enum_klass
 
@@ -357,7 +339,7 @@ class PydanticModelGenerator:
         )
 
         # Create the model
-        model = create_model(type_name, **fields) # type: ignore
+        model = create_model(type_name, **fields)  # type: ignore # pyright: ignore
         self._type_registry[type_name] = model
         return model
 
@@ -397,7 +379,10 @@ class PydanticModelGenerator:
                         fragment_model, BaseModel
                     ):
                         # Spread the fragment's fields into this model
-                        for field_name, field_info in fragment_model.model_fields.items():
+                        for (
+                            field_name,
+                            field_info,
+                        ) in fragment_model.model_fields.items():
                             # Copy the field definition from the fragment model
                             fields[field_name] = (field_info.annotation, Field())
                 # If fragment model not found, skip (it should have been generated earlier)
@@ -442,7 +427,10 @@ class PydanticModelGenerator:
                             )
                             # Sadly pylance nor mypy like the dynamic nature of
                             # create_model here.
-                            python_type = create_model(nested_type_name, **nested_fields) # type: ignore
+                            python_type = create_model(
+                                nested_type_name,
+                                **nested_fields,  # type: ignore
+                            )
                             self._type_registry[nested_type_name] = python_type
                     else:
                         # No selection set or max depth reached, skip

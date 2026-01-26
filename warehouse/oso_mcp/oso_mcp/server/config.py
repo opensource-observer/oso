@@ -34,12 +34,17 @@ class MCPConfig(BaseSettings):
     )
 
     pyoso_base_url: str = Field(
-        default="https://www.opensource.observer",
+        default="https://www.oso.xyz",
         description="Base URL for the OSO pyoso client",
     )
 
+    graphql_path: str = Field(
+        default="/api/v1/osograph",
+        description="Path for the OSO GraphQL endpoint",
+    )
+
     text2sql_endpoint: str = Field(
-        default="https://www.opensource.observer/api/v1/text2sql",
+        default="https://www.oso.xyz/api/v1/text2sql",
         description="URL endpoint for the OSO text2sql service",
     )
 
@@ -136,3 +141,8 @@ class MCPConfig(BaseSettings):
                 print(f"{env_var}: OPTIONAL (DEFAULT={default_display})")
 
         print("=" * 50)
+
+    @property
+    def graphql_endpoint(self) -> str:
+        """Get the full GraphQL endpoint URL."""
+        return f"{self.pyoso_base_url}{self.graphql_path}"
