@@ -2,6 +2,7 @@ import ast
 import copy
 import importlib
 import inspect
+import logging
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -13,6 +14,8 @@ from .utils import (
     resolve_import_alias,
     resolve_relative_imports,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -252,6 +255,15 @@ class InspectProtocolTransformer(ProtocolTransformer):
                     self._type_to_ast(a) or ast.Name(id="Any", ctx=ast.Load())
                     for a in args
                 ]
+                args_ast: list[ast.expr] = []
+                for a in args:
+                    a_ast = self._type_to_ast(a)
+                    if a_ast is None:
+                        logger.warning(
+                            f"Could not resolve type argument {a}, defaulting to Any but this will likely break unless you add an import override."
+                        )
+                        a_ast = ast.Name(id="Any", ctx=ast.Load())
+                    args_ast.append(a_ast)
 
                 # Construct subscript
                 slice_val = (
@@ -270,6 +282,9 @@ class InspectProtocolTransformer(ProtocolTransformer):
             self._add_import(module, name)
             return ast.Name(id=name, ctx=ast.Load())
 
+        logger.warning(
+            "Could not resolve type argument, defaulting to Any but this will likely break unless you add an import override."
+        )
         return ast.Name(id="Any", ctx=ast.Load())
 
     def transform(self, target: str) -> ProtocolIR:
