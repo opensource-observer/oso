@@ -6,6 +6,7 @@ type StaticModel {
   name: String!
   createdAt: DateTime!
   updatedAt: DateTime!
+  modelContext: ModelContext
   runs(first: Int = 50, after: String): RunConnection!
 }
 

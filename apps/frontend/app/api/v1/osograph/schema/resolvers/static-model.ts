@@ -28,6 +28,7 @@ import {
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 import { putSignedUrl } from "@/lib/clients/cloudflare-r2";
+import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 
 const FILES_BUCKET = "static-model-files";
 const SIGNED_URL_EXPIRY = 900;
@@ -231,6 +232,9 @@ export const staticModelResolvers = {
     },
     runs: async (parent: StaticModelRow, args: ConnectionArgs) => {
       return getModelRunConnection(parent.dataset_id, parent.id, args);
+    },
+    modelContext: async (parent: StaticModelRow) => {
+      return getModelContext(parent.dataset_id, parent.id);
     },
   },
 };

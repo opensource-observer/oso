@@ -766,6 +766,52 @@ export const modelRelationshipsSchema = z.tuple([
   }),
 ]);
 
+export const publicModelColumnContextSchema = z.object({
+  name: z.string().nullable(),
+  context: z.string().nullable(),
+});
+
+export const modelContextsInsertSchema = z.object({
+  column_context: z.array(publicModelColumnContextSchema).optional().nullable(),
+  context: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  dataset_id: z.string(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string(),
+  table_id: z.string(),
+  updated_at: z.string().optional(),
+});
+
+export const modelContextsUpdateSchema = z.object({
+  column_context: z.array(publicModelColumnContextSchema).optional().nullable(),
+  context: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  dataset_id: z.string().optional(),
+  deleted_at: z.string().optional().nullable(),
+  id: z.string().optional(),
+  org_id: z.string().optional(),
+  table_id: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+export const modelContextsRelationshipsSchema = z.tuple([
+  z.object({
+    foreignKeyName: z.literal("model_contexts_dataset_id_fkey"),
+    columns: z.tuple([z.literal("dataset_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("datasets"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+  z.object({
+    foreignKeyName: z.literal("model_contexts_org_id_fkey"),
+    columns: z.tuple([z.literal("org_id")]),
+    isOneToOne: z.literal(false),
+    referencedRelation: z.literal("organizations"),
+    referencedColumns: z.tuple([z.literal("id")]),
+  }),
+]);
+
 export const modelReleaseRowSchema = z.object({
   created_at: z.string(),
   description: z.string().nullable(),
@@ -1768,6 +1814,18 @@ export const materializationRowSchema = z.object({
   step_id: z.string().nullable(),
   table_id: z.string(),
   warehouse_fqn: z.string(),
+});
+
+export const modelContextsRowSchema = z.object({
+  column_context: z.array(publicModelColumnContextSchema).nullable(),
+  context: z.string().nullable(),
+  created_at: z.string(),
+  dataset_id: z.string(),
+  deleted_at: z.string().nullable(),
+  id: z.string(),
+  org_id: z.string(),
+  table_id: z.string(),
+  updated_at: z.string(),
 });
 
 export const modelRevisionRowSchema = z.object({

@@ -32,6 +32,7 @@ import {
 import { z } from "zod";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { ModelRow, ModelUpdate } from "@/lib/types/schema-types";
+import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 
 export const dataModelResolvers = {
   Query: {
@@ -442,6 +443,9 @@ export const dataModelResolvers = {
 
     runs: async (parent: ModelRow, args: ConnectionArgs) => {
       return getModelRunConnection(parent.dataset_id, parent.id, args);
+    },
+    modelContext: async (parent: ModelRow) => {
+      return getModelContext(parent.dataset_id, parent.id);
     },
   },
 

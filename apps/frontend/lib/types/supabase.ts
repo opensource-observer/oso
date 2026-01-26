@@ -685,6 +685,63 @@ export type Database = {
           },
         ];
       };
+      model_contexts: {
+        Row: {
+          column_context:
+            | Database["public"]["CompositeTypes"]["model_column_context"][]
+            | null;
+          context: string | null;
+          created_at: string;
+          dataset_id: string;
+          deleted_at: string | null;
+          id: string;
+          org_id: string;
+          table_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          column_context?:
+            | Database["public"]["CompositeTypes"]["model_column_context"][]
+            | null;
+          context?: string | null;
+          created_at?: string;
+          dataset_id: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_id: string;
+          table_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          column_context?:
+            | Database["public"]["CompositeTypes"]["model_column_context"][]
+            | null;
+          context?: string | null;
+          created_at?: string;
+          dataset_id?: string;
+          deleted_at?: string | null;
+          id?: string;
+          org_id?: string;
+          table_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "model_contexts_dataset_id_fkey";
+            columns: ["dataset_id"];
+            isOneToOne: false;
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "model_contexts_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       model_release: {
         Row: {
           created_at: string;
@@ -1648,6 +1705,10 @@ export type Database = {
       step_status: "running" | "success" | "failed" | "canceled";
     };
     CompositeTypes: {
+      model_column_context: {
+        name: string | null;
+        context: string | null;
+      };
       model_column_type: {
         name: string | null;
         type: string | null;
