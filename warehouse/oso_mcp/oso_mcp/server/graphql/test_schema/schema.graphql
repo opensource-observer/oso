@@ -3,7 +3,11 @@
 scalar DateTime
 
 type Query {
-  _empty: String
+  """Get a single item by ID"""
+  item(id: ID!): Item
+
+  """List items with pagination"""
+  items(limit: Int, offset: Int): [Item!]!
 }
 
 type Mutation {

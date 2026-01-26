@@ -4,12 +4,18 @@ import typing as t
 from enum import Enum
 
 from graphql import (
+    FieldNode,
+    FragmentSpreadNode,
     GraphQLEnumType,
     GraphQLInputObjectType,
     GraphQLList,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
+    GraphQLSchema,
+    NamedTypeNode,
+    SelectionSetNode,
+    VariableDefinitionNode,
 )
 from pydantic import BaseModel, Field, create_model
 
@@ -241,3 +247,224 @@ class PydanticModelGenerator:
 
         # Default to Any for unknown types
         return t.Any
+
+    def generate_model_from_variables(
+        self, operation_name: str, variable_definitions: t.List[VariableDefinitionNode]
+    ) -> t.Type[BaseModel]:
+        """Generate Pydantic model from query variable definitions.
+
+        Args:
+            operation_name: Name of the query operation (for model naming)
+            variable_definitions: List of variable definition nodes from query
+
+        Returns:
+            Dynamically created Pydantic model class for variables
+        """
+        type_name = f"{operation_name}Variables"
+
+        # Return registered type if available
+        if type_name in self._type_registry:
+            return self._type_registry[type_name]  # type: ignore
+
+        fields = {}
+        for var_def in variable_definitions:
+            var_name = var_def.variable.name.value
+            var_type = var_def.type
+
+            # Parse the variable type to determine Python type and required status
+            is_required = False
+            if isinstance(var_type, GraphQLNonNull):
+                is_required = True
+                var_type = var_type.of_type
+
+            # Handle list types
+            if isinstance(var_type, GraphQLList):
+                inner_type = var_type.of_type
+                # Handle list of non-null items
+                if isinstance(inner_type, GraphQLNonNull):
+                    inner_type = inner_type.of_type
+                # Get inner type name
+                inner_type_name = (
+                    inner_type.name if hasattr(inner_type, "name") else str(inner_type)
+                )
+                python_type = list[self._map_scalar_name_to_python(inner_type_name)]
+            else:
+                type_name_str = getattr(var_type, "name", str(var_type))
+                python_type = self._map_scalar_name_to_python(type_name_str)
+
+            # Make optional if not required
+            if not is_required:
+                python_type = t.Optional[python_type]
+                field_info = Field(default=None)
+            else:
+                field_info = Field()
+
+            fields[var_name] = (python_type, field_info)
+
+        # Create the model
+        model = create_model(f"{operation_name}Variables", **fields)
+        self._type_registry[f"{operation_name}Variables"] = model
+        return model
+
+    def _map_scalar_name_to_python(self, scalar_name: str) -> t.Any:
+        """Map GraphQL scalar type name to Python type.
+
+        Args:
+            scalar_name: GraphQL scalar type name
+
+        Returns:
+            Python type
+        """
+        scalar_map = {
+            "String": str,
+            "Int": int,
+            "Float": float,
+            "Boolean": bool,
+            "ID": str,
+            "JSON": t.Any,
+            "DateTime": str,
+        }
+        return scalar_map.get(scalar_name, t.Any)
+
+    def generate_model_from_selection_set(
+        self,
+        operation_name: str,
+        selection_set: SelectionSetNode,
+        parent_type: GraphQLObjectType,
+        schema: GraphQLSchema,
+        max_depth: int = 2,
+    ) -> t.Type[BaseModel]:
+        """Generate Pydantic model from GraphQL selection set.
+
+        Args:
+            operation_name: Name of the query operation (for model naming)
+            selection_set: Selection set from query
+            parent_type: The GraphQL type being selected from
+            schema: GraphQL schema for type lookup
+            max_depth: Maximum nesting depth for object types
+
+        Returns:
+            Dynamically created Pydantic model class for response
+        """
+        type_name = f"{operation_name}Response"
+
+        # Return registered type if available
+        if type_name in self._type_registry:
+            return self._type_registry[type_name]  # type: ignore
+
+        fields = self._build_fields_from_selection_set(
+            selection_set, parent_type, schema, max_depth, context_prefix=type_name
+        )
+
+        # Create the model
+        model = create_model(type_name, **fields) # type: ignore
+        self._type_registry[type_name] = model
+        return model
+
+    def _build_fields_from_selection_set(
+        self,
+        selection_set: SelectionSetNode,
+        parent_type: GraphQLObjectType,
+        schema: GraphQLSchema,
+        max_depth: int,
+        context_prefix: str,
+    ) -> dict[str, tuple[t.Any, t.Any]]:
+        """Recursively build Pydantic field definitions from selection set.
+
+        Args:
+            selection_set: Selection set node
+            parent_type: Parent GraphQL type
+            schema: GraphQL schema
+            max_depth: Maximum nesting depth
+            context_prefix: Prefix for nested type names
+
+        Returns:
+            Dictionary of field definitions
+        """
+        fields = {}
+
+        for selection in selection_set.selections:
+            if isinstance(selection, FragmentSpreadNode):
+                # Handle fragment spreads - include fields from the fragment model
+                fragment_name = selection.name.value
+                fragment_model_name = f"{fragment_name}Response"
+
+                # Look up the fragment model in the registry
+                if fragment_model_name in self._type_registry:
+                    fragment_model = self._type_registry[fragment_model_name]
+                    # Ensure it's a BaseModel (not an Enum)
+                    if isinstance(fragment_model, type) and issubclass(
+                        fragment_model, BaseModel
+                    ):
+                        # Spread the fragment's fields into this model
+                        for field_name, field_info in fragment_model.model_fields.items():
+                            # Copy the field definition from the fragment model
+                            fields[field_name] = (field_info.annotation, Field())
+                # If fragment model not found, skip (it should have been generated earlier)
+
+            elif isinstance(selection, FieldNode):
+                field_name = selection.name.value
+
+                # Get field definition from parent type
+                if field_name not in parent_type.fields:
+                    continue
+
+                field_def = parent_type.fields[field_name]
+                field_type = field_def.type
+
+                # Unwrap NonNull
+                is_required = isinstance(field_type, GraphQLNonNull)
+                if is_required:
+                    field_type = field_type.of_type
+
+                # Unwrap List
+                is_list = isinstance(field_type, GraphQLList)
+                if is_list:
+                    inner_type = field_type.of_type
+                    if isinstance(inner_type, GraphQLNonNull):
+                        inner_type = inner_type.of_type
+                    field_type = inner_type
+
+                # Determine Python type
+                if isinstance(field_type, GraphQLObjectType):
+                    # Nested object - recursively build model if we have selection set
+                    if selection.selection_set and max_depth > 0:
+                        nested_type_name = f"{context_prefix}{field_type.name}"
+                        if nested_type_name in self._type_registry:
+                            python_type = self._type_registry[nested_type_name]
+                        else:
+                            nested_fields = self._build_fields_from_selection_set(
+                                selection.selection_set,
+                                field_type,
+                                schema,
+                                max_depth - 1,
+                                nested_type_name,
+                            )
+                            # Sadly pylance nor mypy like the dynamic nature of
+                            # create_model here.
+                            python_type = create_model(nested_type_name, **nested_fields) # type: ignore
+                            self._type_registry[nested_type_name] = python_type
+                    else:
+                        # No selection set or max depth reached, skip
+                        continue
+                elif isinstance(field_type, GraphQLEnumType):
+                    python_type = self.generate_enum(field_type)
+                elif isinstance(field_type, GraphQLScalarType):
+                    python_type = self._map_scalar_name_to_python(field_type.name)
+                else:
+                    python_type = t.Any
+
+                # Wrap in list if needed
+                if is_list:
+                    python_type = list[python_type]
+
+                # Make optional if not required
+                if not is_required:
+                    python_type = t.Optional[python_type]
+                    field_info = Field(default=None)
+                else:
+                    field_info = Field()
+
+                fields[field_name] = (python_type, field_info)
+
+        return fields

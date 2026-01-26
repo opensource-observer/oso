@@ -12,9 +12,10 @@ from .generator import generate_from_schema
 from .mutation_filter import RegexMutationFilter
 from .types import AutogenMutationsConfig
 
-# Get path to test schema
+# Get path to test schema and queries
 CURRENT_DIR = os.path.dirname(__file__)
 TEST_SCHEMA_PATH = os.path.join(CURRENT_DIR, "test_schema/schema.graphql")
+TEST_QUERIES_PATH = os.path.join(CURRENT_DIR, "test_queries")
 
 
 @pytest.fixture
@@ -268,3 +269,90 @@ async def test_ensure_nested_items_are_not_requests(mock_http_client):
 
         assert "nestedItem" not in mutation_query
         assert "nestedItems" not in mutation_query
+
+
+@pytest.mark.asyncio
+async def test_query_tool_generation(mock_http_client):
+    """Test that query tools are generated from client .graphql files."""
+    # Update mock to return query response
+    async def mock_post_query(url, json=None, **kwargs):
+        mock_http_client.requests.append(
+            {
+                "url": url,
+                "json": json,
+                "kwargs": kwargs,
+            }
+        )
+
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "data": {
+                "item": {
+                    "id": "item-123",
+                    "name": "Test Item",
+                    "description": "A test item",
+                    "count": 5,
+                    "createdAt": "2024-01-01T00:00:00Z",
+                    "nestedItem": {
+                        "id": "nested-456",
+                        "title": "Nested Item Title",
+                    },
+                }
+            }
+        }
+        return mock_response
+
+    mock_http_client.post = mock_post_query
+
+    # Create MCP server
+    mcp = FastMCP("Test Server")
+
+    config = AutogenMutationsConfig(
+        graphql_endpoint="https://api.example.com/graphql",
+        filters=[],
+        api_key="test-api-key",
+        http_client_factory=lambda: mock_http_client,
+    )
+
+    # Generate tools for both mutations and queries
+    generate_from_schema(
+        schema_path=TEST_SCHEMA_PATH,
+        mcp=mcp,
+        config=config,
+        client_schema_path=TEST_QUERIES_PATH,
+    )
+
+    # Create client
+    client = Client(mcp)
+
+    async with client:
+        # List available tools
+        tools = await client.list_tools()
+        tool_names = [tool.name for tool in tools]
+
+        # Should have both mutation and query tools
+        assert "createItem" in tool_names  # Mutation
+        assert "GetItem" in tool_names  # Query
+        assert "ListItems" in tool_names  # Query
+
+        # Call a query tool
+        result = await client.call_tool(
+            name="GetItem",
+            arguments={
+                "variables": {"id": "item-123"},
+            },
+        )
+
+        # Verify the GraphQL request was made
+        assert len(mock_http_client.requests) == 1
+        request = mock_http_client.requests[0]
+
+        assert request["url"] == "https://api.example.com/graphql"
+        assert "query" in request["json"]
+        assert "GetItem" in request["json"]["query"]
+        assert "ItemFields" in request["json"]["query"]  # Fragment should be included
+        assert request["json"]["variables"]["id"] == "item-123"
+
+        # Verify result
+        assert len(result.content) > 0

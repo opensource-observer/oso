@@ -4,6 +4,7 @@ import abc
 import typing as t
 
 import httpx
+from graphql import FragmentDefinitionNode, OperationDefinitionNode, SelectionSetNode
 from pydantic import BaseModel, Field
 
 
@@ -24,6 +25,44 @@ class MutationInfo(BaseModel):
         description="Top-level fields to return from payload"
     )
     graphql_input_type_name: str = Field(description="Original GraphQL input type name")
+
+
+class QueryDocument(BaseModel):
+    """Represents a parsed GraphQL document containing queries and fragments."""
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    operations: t.List[OperationDefinitionNode] = Field(
+        description="All query operations found in the document"
+    )
+    fragments: t.Dict[str, FragmentDefinitionNode] = Field(
+        description="Fragment definitions by name"
+    )
+    file_path: str = Field(description="Source file path for debugging")
+
+
+class QueryInfo(BaseModel):
+    """Information about a GraphQL query extracted from client files."""
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    name: str = Field(description="The query operation name")
+    description: t.Optional[str] = Field(
+        default=None, description="Query description from comments"
+    )
+    query_string: str = Field(
+        description="The full query string with inlined fragments"
+    )
+    variable_definitions: t.List[t.Any] = Field(
+        description="Variable definitions from query (VariableDefinitionNode)"
+    )
+    input_model: t.Type[BaseModel] = Field(
+        description="Generated Pydantic model for variables"
+    )
+    payload_model: t.Type[BaseModel] = Field(
+        description="Generated Pydantic model for response"
+    )
+    selection_set: SelectionSetNode = Field(description="The fields being selected")
 
 
 class MutationFilter(abc.ABC):
