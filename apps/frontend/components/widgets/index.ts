@@ -65,6 +65,10 @@ import {
   CodeDiffMeta,
   CodeEditorMeta,
 } from "@/components/widgets/code-editor/utils";
+import {
+  ModelContextEditor,
+  ModelContextEditorMeta,
+} from "@/components/widgets/model-context-editor";
 
 export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   // Widgets
@@ -109,4 +113,5 @@ export function registerAllWidgets(PLASMIC: NextJsPlasmicComponentLoader) {
   PLASMIC.registerComponent(FormBuilder, FormBuilderMeta);
   PLASMIC.registerComponent(FormSaver, FormSaverMeta);
   PLASMIC.registerComponent(LogViewer, LogViewerMeta);
+  PLASMIC.registerComponent(ModelContextEditor, ModelContextEditorMeta);
 }

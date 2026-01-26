@@ -25,6 +25,7 @@ type Documents = {
   "\n      mutation DeleteDataModel($id: ID!) {\n        deleteDataModel(id: $id) {\n          success\n          message\n        }\n      }\n    ": typeof types.DeleteDataModelDocument;
   "\n      mutation CreateDataModelRevision($input: CreateDataModelRevisionInput!) {\n        createDataModelRevision(input: $input) {\n          success\n          message\n          dataModelRevision {\n            id\n            createdAt\n            revisionNumber\n          }\n        }\n      }\n    ": typeof types.CreateDataModelRevisionDocument;
   "\n      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {\n        createDataModelRelease(input: $input) {\n          success\n          message\n          dataModelRelease {\n            id\n          }\n        }\n      }\n    ": typeof types.CreateDataModelReleaseDocument;
+  "\n      mutation UpdateModelContext($input: UpdateModelContextInput!) {\n        updateModelContext(input: $input) {\n          success\n          message\n          modelContext {\n            id\n            context\n            columnContext {\n              name\n              context\n            }\n          }\n        }\n      }\n    ": typeof types.UpdateModelContextDocument;
   "\n      mutation CreateStaticModel($input: CreateStaticModelInput!) {\n        createStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ": typeof types.CreateStaticModelDocument;
   "\n      mutation UpdateStaticModel($input: UpdateStaticModelInput!) {\n        updateStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ": typeof types.UpdateStaticModelDocument;
   "\n      mutation DeleteStaticModel($id: ID!) {\n        deleteStaticModel(id: $id) {\n          success\n          message\n        }\n      }\n    ": typeof types.DeleteStaticModelDocument;
@@ -61,6 +62,8 @@ const documents: Documents = {
     types.CreateDataModelRevisionDocument,
   "\n      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {\n        createDataModelRelease(input: $input) {\n          success\n          message\n          dataModelRelease {\n            id\n          }\n        }\n      }\n    ":
     types.CreateDataModelReleaseDocument,
+  "\n      mutation UpdateModelContext($input: UpdateModelContextInput!) {\n        updateModelContext(input: $input) {\n          success\n          message\n          modelContext {\n            id\n            context\n            columnContext {\n              name\n              context\n            }\n          }\n        }\n      }\n    ":
+    types.UpdateModelContextDocument,
   "\n      mutation CreateStaticModel($input: CreateStaticModelInput!) {\n        createStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ":
     types.CreateStaticModelDocument,
   "\n      mutation UpdateStaticModel($input: UpdateStaticModelInput!) {\n        updateStaticModel(input: $input) {\n          success\n          message\n          staticModel {\n            id\n            name\n          }\n        }\n      }\n    ":
@@ -167,6 +170,12 @@ export function gql(
 export function gql(
   source: "\n      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {\n        createDataModelRelease(input: $input) {\n          success\n          message\n          dataModelRelease {\n            id\n          }\n        }\n      }\n    ",
 ): (typeof documents)["\n      mutation CreateDataModelRelease($input: CreateDataModelReleaseInput!) {\n        createDataModelRelease(input: $input) {\n          success\n          message\n          dataModelRelease {\n            id\n          }\n        }\n      }\n    "];
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(
+  source: "\n      mutation UpdateModelContext($input: UpdateModelContextInput!) {\n        updateModelContext(input: $input) {\n          success\n          message\n          modelContext {\n            id\n            context\n            columnContext {\n              name\n              context\n            }\n          }\n        }\n      }\n    ",
+): (typeof documents)["\n      mutation UpdateModelContext($input: UpdateModelContextInput!) {\n        updateModelContext(input: $input) {\n          success\n          message\n          modelContext {\n            id\n            context\n            columnContext {\n              name\n              context\n            }\n          }\n        }\n      }\n    "];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
