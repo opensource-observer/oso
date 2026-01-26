@@ -284,21 +284,17 @@ class InspectProtocolTransformer(ProtocolTransformer):
         attributes = []
 
         # Attributes
-        try:
-            # This handles both static and instance attributes if they are annotated
-            type_hints = t.get_type_hints(cls)
-            for name, type_hint in type_hints.items():
-                if self.private_methods_match(name):
-                    continue
+        # This handles both static and instance attributes if they are annotated
+        type_hints = t.get_type_hints(cls)
+        for name, type_hint in type_hints.items():
+            if self.private_methods_match(name):
+                continue
 
-                attributes.append(
-                    ProtocolAttribute(
-                        name=name, annotation=self._type_to_ast(type_hint), value=None
-                    )
+            attributes.append(
+                ProtocolAttribute(
+                    name=name, annotation=self._type_to_ast(type_hint), value=None
                 )
-        except Exception:
-            # cls might not support type hints or other error
-            pass
+            )
 
         # Methods
         for name, member in inspect.getmembers(cls):
