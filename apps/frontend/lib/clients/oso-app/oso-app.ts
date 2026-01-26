@@ -2891,6 +2891,60 @@ class OsoAppClient {
     return payload.dataModelRelease;
   }
 
+  async updateModelContext(
+    args: Partial<{
+      datasetId: string;
+      modelId: string;
+      context: string | null;
+      columnContext: Array<{ name: string; context: string }>;
+    }>,
+  ) {
+    const { datasetId, modelId, context, columnContext } = {
+      datasetId: ensure(args.datasetId, "Missing datasetId argument"),
+      modelId: ensure(args.modelId, "Missing modelId argument"),
+      context: args.context,
+      columnContext: args.columnContext,
+    };
+
+    const UPDATE_MODEL_CONTEXT_MUTATION = gql(`
+      mutation UpdateModelContext($input: UpdateModelContextInput!) {
+        updateModelContext(input: $input) {
+          success
+          message
+          modelContext {
+            id
+            context
+            columnContext {
+              name
+              context
+            }
+          }
+        }
+      }
+    `);
+
+    const data = await this.executeGraphQL(
+      UPDATE_MODEL_CONTEXT_MUTATION,
+      {
+        input: {
+          datasetId,
+          modelId,
+          context,
+          columnContext,
+        },
+      },
+      "Failed to update model context",
+    );
+
+    const payload = data.updateModelContext;
+
+    if (payload.success) {
+      logger.log(`Successfully updated model context for "${modelId}"`);
+    }
+
+    return payload;
+  }
+
   async createStaticModel(
     args: Partial<{
       orgId: string;

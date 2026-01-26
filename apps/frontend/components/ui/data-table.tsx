@@ -153,7 +153,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   pagination?: boolean;
   defaultPageSize?: number;
-  className: string;
+  className?: string;
   onRowSelectionListener?: (rows: TData[]) => void;
   rowActions?: RowAction[];
   themeResetClassName?: string;

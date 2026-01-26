@@ -9240,6 +9240,29 @@ export type CreateDataModelReleaseMutation = {
   };
 };
 
+export type UpdateModelContextMutationVariables = Exact<{
+  input: UpdateModelContextInput;
+}>;
+
+export type UpdateModelContextMutation = {
+  __typename?: "Mutation";
+  updateModelContext: {
+    __typename?: "UpdateModelContextPayload";
+    success: boolean;
+    message?: string | null;
+    modelContext?: {
+      __typename?: "ModelContext";
+      id: string;
+      context?: string | null;
+      columnContext?: Array<{
+        __typename?: "ModelColumnContext";
+        name: string;
+        context: string;
+      }> | null;
+    } | null;
+  };
+};
+
 export type CreateStaticModelMutationVariables = Exact<{
   input: CreateStaticModelInput;
 }>;
@@ -10224,6 +10247,92 @@ export const CreateDataModelReleaseDocument = {
 } as unknown as DocumentNode<
   CreateDataModelReleaseMutation,
   CreateDataModelReleaseMutationVariables
+>;
+export const UpdateModelContextDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateModelContext" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateModelContextInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateModelContext" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "modelContext" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "context" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "columnContext" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "name" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "context" },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateModelContextMutation,
+  UpdateModelContextMutationVariables
 >;
 export const CreateStaticModelDocument = {
   kind: "Document",
