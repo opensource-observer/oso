@@ -260,7 +260,10 @@ const LogEntryComponent = memo(
               </div>
               {hasExtra && log.extra && (
                 <CollapsibleContent>
-                  <JsonViewer data={log.extra} />
+                  <JsonViewer
+                    key={`${log.timestamp}-${log.event}-extra`}
+                    data={log.extra}
+                  />
                 </CollapsibleContent>
               )}
             </Collapsible>
@@ -415,7 +418,7 @@ export function LogViewer({
               <TableBody>
                 {filteredLogs.map((log, index) => (
                   <LogEntryComponent
-                    key={index}
+                    key={`${log.timestamp}-${log.event}-${index}`}
                     log={log}
                     showTimestamp={showTimestamp}
                   />
