@@ -37,6 +37,9 @@ class ProtocolCmd(BaseSettings):
                 import_overrides=self.import_overrides,
             )
             code = ast.unparse(protocol_mod)
+            # Unparse can potentially generate invalid syntax (eg, when there are
+            # type comments). We re-parse to ensure validity.
+            ast.parse(code)
 
             with open(self.output_path, "w") as f:
                 f.write(code)
