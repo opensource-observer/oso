@@ -1,0 +1,52 @@
+"""Test GraphQL schema for testing tool generation."""
+
+scalar DateTime
+
+type Query {
+  _empty: String
+}
+
+type Mutation {
+  """
+  Create a new item
+  """
+  createItem(input: CreateItemInput!): CreateItemPayload!
+
+  """
+  Update an existing item
+  @mcp-ignore
+  """
+  updateItem(input: UpdateItemInput!): UpdateItemPayload!
+}
+
+input CreateItemInput {
+  name: String!
+  description: String
+  count: Int
+}
+
+type CreateItemPayload {
+  success: Boolean!
+  message: String
+  item: Item
+}
+
+input UpdateItemInput {
+  id: ID!
+  name: String
+  description: String
+}
+
+type UpdateItemPayload {
+  success: Boolean!
+  message: String
+  item: Item
+}
+
+type Item {
+  id: ID!
+  name: String!
+  description: String
+  count: Int
+  createdAt: DateTime!
+}
