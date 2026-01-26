@@ -154,6 +154,18 @@ export type ModelUpdate = z.infer<typeof generated.modelUpdateSchema>;
 export type ModelRelationships = z.infer<
   typeof generated.modelRelationshipsSchema
 >;
+export type PublicModelColumnContext = z.infer<
+  typeof generated.publicModelColumnContextSchema
+>;
+export type ModelContextsInsert = z.infer<
+  typeof generated.modelContextsInsertSchema
+>;
+export type ModelContextsUpdate = z.infer<
+  typeof generated.modelContextsUpdateSchema
+>;
+export type ModelContextsRelationships = z.infer<
+  typeof generated.modelContextsRelationshipsSchema
+>;
 export type ModelReleaseRow = z.infer<typeof generated.modelReleaseRowSchema>;
 export type ModelReleaseInsert = z.infer<
   typeof generated.modelReleaseInsertSchema
@@ -427,4 +439,5 @@ export type ValidateOwnershipLimitsReturns = z.infer<
 export type MaterializationRow = z.infer<
   typeof generated.materializationRowSchema
 >;
+export type ModelContextsRow = z.infer<typeof generated.modelContextsRowSchema>;
 export type ModelRevisionRow = z.infer<typeof generated.modelRevisionRowSchema>;

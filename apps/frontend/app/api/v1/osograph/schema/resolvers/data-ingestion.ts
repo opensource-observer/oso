@@ -14,6 +14,7 @@ import {
 import { logger } from "@/lib/logger";
 import z from "zod";
 import { DataIngestionsRow } from "@/lib/types/schema-types";
+import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 
 export const dataIngestionResolvers = {
   Mutation: {
@@ -111,5 +112,11 @@ export const dataIngestionResolvers = {
     config: (parent: DataIngestionsRow) => parent.config,
     createdAt: (parent: DataIngestionsRow) => parent.created_at,
     updatedAt: (parent: DataIngestionsRow) => parent.updated_at,
+    modelContext: async (
+      parent: DataIngestionsRow,
+      args: { tableName: string },
+    ) => {
+      return getModelContext(parent.dataset_id, args.tableName);
+    },
   },
 };

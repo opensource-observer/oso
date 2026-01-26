@@ -1526,8 +1526,13 @@ export type DataIngestion = {
   datasetId: Scalars["ID"]["output"];
   factoryType: DataIngestionFactoryType;
   id: Scalars["ID"]["output"];
+  modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataIngestionModelContextArgs = {
+  tableName: Scalars["String"]["input"];
 };
 
 export type DataIngestionConnection = {
@@ -1569,6 +1574,7 @@ export type DataModel = {
   isEnabled: Scalars["Boolean"]["output"];
   latestRelease?: Maybe<DataModelRelease>;
   latestRevision?: Maybe<DataModelRevision>;
+  modelContext?: Maybe<ModelContext>;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
@@ -3408,6 +3414,29 @@ export type ModeNotFoundError = Error & {
   mode: Scalars["String"]["output"];
 };
 
+export type ModelColumnContext = {
+  __typename?: "ModelColumnContext";
+  context: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+};
+
+export type ModelColumnContextInput = {
+  context: Scalars["String"]["input"];
+  name: Scalars["String"]["input"];
+};
+
+export type ModelContext = {
+  __typename?: "ModelContext";
+  columnContext?: Maybe<Array<ModelColumnContext>>;
+  context?: Maybe<Scalars["String"]["output"]>;
+  createdAt: Scalars["DateTimeISO"]["output"];
+  datasetId: Scalars["ID"]["output"];
+  id: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  tableId: Scalars["String"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
 export type MultiPartitionStatuses = {
   __typename?: "MultiPartitionStatuses";
   primaryDimensionName: Scalars["String"]["output"];
@@ -3548,6 +3577,7 @@ export type Mutation = {
   updateDataset: UpdateDatasetPayload;
   /** Update member role */
   updateMemberRole: UpdateMemberRolePayload;
+  updateModelContext: UpdateModelContextPayload;
   /** Update a notebook */
   updateNotebook: UpdateNotebookPayload;
   /** System only. Update run metadata. This can be called at any time */
@@ -3911,6 +3941,11 @@ export type MutationUpdateDatasetArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationUpdateMemberRoleArgs = {
   input: UpdateMemberRoleInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateModelContextArgs = {
+  input: UpdateModelContextInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -8256,6 +8291,7 @@ export type StaticModel = {
   createdAt: Scalars["DateTimeISO"]["output"];
   dataset: Dataset;
   id: Scalars["ID"]["output"];
+  modelContext?: Maybe<ModelContext>;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
@@ -8794,6 +8830,20 @@ export type UpdateMemberRolePayload = {
 export type UpdateMetadataInput = {
   merge?: InputMaybe<Scalars["Boolean"]["input"]>;
   value: Scalars["JSON"]["input"];
+};
+
+export type UpdateModelContextInput = {
+  columnContext?: InputMaybe<Array<ModelColumnContextInput>>;
+  context?: InputMaybe<Scalars["String"]["input"]>;
+  datasetId: Scalars["ID"]["input"];
+  modelId: Scalars["String"]["input"];
+};
+
+export type UpdateModelContextPayload = {
+  __typename?: "UpdateModelContextPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  modelContext?: Maybe<ModelContext>;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type UpdateNotebookInput = {
