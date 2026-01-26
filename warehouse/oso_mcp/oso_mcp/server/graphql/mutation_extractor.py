@@ -5,7 +5,7 @@ import typing as t
 from graphql import GraphQLInputObjectType, GraphQLObjectType, GraphQLSchema
 
 from .pydantic_generator import PydanticModelGenerator
-from .types import MutationInfo
+from .types import MutationFilter, MutationInfo
 
 
 class MutationExtractor:
@@ -15,13 +15,14 @@ class MutationExtractor:
         self,
         schema: GraphQLSchema,
         model_generator: PydanticModelGenerator,
+        filters: list[MutationFilter] | None = None,
     ) -> t.List[MutationInfo]:
         """Extract all mutations and generate their Pydantic models.
 
         Args:
             schema: GraphQL schema
             model_generator: Pydantic model generator
-
+            filters: Optional list of MutationFilter to filter out mutations
         Returns:
             List of mutation information
         """
@@ -77,6 +78,11 @@ class MutationExtractor:
                 payload_fields=payload_fields,
                 graphql_input_type_name=input_type.name,
             )
+
+            # Apply filters if any
+            if filters:
+                if any(f.should_ignore(mutation_info) for f in filters):
+                    continue
             mutations.append(mutation_info)
 
         return mutations
@@ -94,10 +100,8 @@ class MutationExtractor:
         """
         return schema.mutation_type
 
-    def _extract_payload_fields(
-        self, payload_type: GraphQLObjectType
-    ) -> t.List[str]:
-        """Get top-level payload fields to query.
+    def _extract_payload_fields(self, payload_type: GraphQLObjectType) -> t.List[str]:
+        """Get top-level and one level deep fields from payload type.
 
         Args:
             payload_type: GraphQL object type for mutation payload

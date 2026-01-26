@@ -14,6 +14,12 @@ from graphql import (
 from pydantic import BaseModel, Field, create_model
 
 
+class UnsetNested(BaseModel):
+    """Marker for unset nested fields in Pydantic models."""
+
+    pass
+
+
 class PydanticModelGenerator:
     """Dynamically generate Pydantic models from GraphQL types."""
 
@@ -40,9 +46,15 @@ class PydanticModelGenerator:
 
         fields = {}
         for field_name, field in input_type.fields.items():
-            python_type, field_info = self._create_pydantic_field(
-                field_name, field.type
+            # When generating input models, max depth is ignored due to
+            # potentially required nested inputs
+            field_result = self._create_pydantic_field(
+                field_name, field.type, max_depth=1, context_prefix=type_name
             )
+            # Skip fields that return None (exceeded max_depth)
+            if field_result is None:
+                continue
+            python_type, field_info = field_result
             fields[field_name] = (python_type, field_info)
 
         # Create the model
@@ -51,7 +63,7 @@ class PydanticModelGenerator:
         return model
 
     def generate_payload_model(
-        self, payload_type: GraphQLObjectType
+        self, payload_type: GraphQLObjectType, max_depth: int = 2
     ) -> t.Type[BaseModel]:
         """Create Pydantic model from GraphQL payload type.
 
@@ -61,17 +73,49 @@ class PydanticModelGenerator:
         Returns:
             Dynamically created Pydantic model class
         """
-        type_name = payload_type.name
+        return self._get_or_create_model(
+            payload_type, max_depth=max_depth, context_prefix=""
+        )
+        # type_name = payload_type.name
+
+        # # Return registered type if available
+        # if type_name in self._type_registry:
+        #     return self._type_registry[type_name]  # type: ignore
+
+        # fields = {}
+        # for field_name, field in payload_type.fields.items():
+        #     python_type, field_info = self._create_pydantic_field(
+        #         field_name, field.type, depth=depth - 1, context_prefix=type_name
+        #     )
+        #     fields[field_name] = (python_type, field_info)
+
+        # # Create the model
+        # model = create_model(type_name, **fields)
+        # self._type_registry[type_name] = model
+        # return model
+
+    def _get_or_create_model(
+        self, gql_type: GraphQLObjectType, max_depth: int, context_prefix
+    ) -> t.Type[BaseModel]:
+        """Recursively create or get Pydantic model for GraphQL object type."""
+        type_name = f"{context_prefix}{gql_type.name}"
 
         # Return registered type if available
         if type_name in self._type_registry:
             return self._type_registry[type_name]  # type: ignore
 
         fields = {}
-        for field_name, field in payload_type.fields.items():
-            python_type, field_info = self._create_pydantic_field(
-                field_name, field.type
+        for field_name, field in gql_type.fields.items():
+            field_result = self._create_pydantic_field(
+                field_name,
+                field.type,
+                max_depth=max_depth - 1,
+                context_prefix=type_name,
             )
+            # Skip fields that return None (exceeded max_depth)
+            if field_result is None:
+                continue
+            python_type, field_info = field_result
             fields[field_name] = (python_type, field_info)
 
         # Create the model
@@ -95,24 +139,26 @@ class PydanticModelGenerator:
             return self._type_registry[type_name]  # type: ignore
 
         # Create enum members
-        enum_members = {value.name: value.value for value in enum_type.values}
+        enum_members = {name: value for name, value in enum_type.values.items()}
 
         # Create the enum
-        enum_class = Enum(type_name, enum_members)
-        self._type_registry[type_name] = enum_class
-        return enum_class
+        enum_klass = type(type_name, (Enum,), enum_members)
+        self._type_registry[type_name] = enum_klass
+        return enum_klass
 
     def _create_pydantic_field(
-        self, name: str, gql_type: t.Any
-    ) -> tuple[t.Any, t.Any]:
+        self, name: str, gql_type: t.Any, max_depth: int, context_prefix: str
+    ) -> tuple[t.Any, t.Any] | None:
         """Create Pydantic field definition from GraphQL type.
 
         Args:
             name: Field name
             gql_type: GraphQL type
+            max_depth: Maximum depth for nested types
+            context_prefix: Prefix for type names
 
         Returns:
-            Tuple of (python_type, field_info)
+            Tuple of (python_type, field_info) or None if field should be excluded
         """
         # Unwrap NonNull and List wrappers
         is_required = isinstance(gql_type, GraphQLNonNull)
@@ -125,9 +171,24 @@ class PydanticModelGenerator:
             # Handle list of non-null items
             if isinstance(inner_type, GraphQLNonNull):
                 inner_type = inner_type.of_type
-            python_type = list[self._map_graphql_type_to_python(inner_type)]
+            inner_python_type = self._map_graphql_type_to_python(
+                name,
+                inner_type,
+                max_depth=max_depth,
+                context_prefix=f"{context_prefix}Item",
+            )
+            if isinstance(inner_python_type, UnsetNested):
+                # Skip fields with nested types beyond max_depth
+                return None
+            python_type = list[inner_python_type]
         else:
-            python_type = self._map_graphql_type_to_python(gql_type)
+            python_type = self._map_graphql_type_to_python(
+                name, gql_type, max_depth=max_depth, context_prefix=context_prefix
+            )
+
+        if isinstance(python_type, UnsetNested):
+            # Skip fields with nested types beyond max_depth
+            return None
 
         # Make optional if not required
         if not is_required:
@@ -138,7 +199,9 @@ class PydanticModelGenerator:
 
         return python_type, field_info
 
-    def _map_graphql_type_to_python(self, field_type: t.Any) -> t.Any:
+    def _map_graphql_type_to_python(
+        self, name: str, field_type: t.Any, max_depth: int, context_prefix: str
+    ) -> t.Any:
         """Convert GraphQL type to Python type annotation.
 
         Args:
@@ -169,9 +232,12 @@ class PydanticModelGenerator:
             return self.generate_input_model(field_type)
 
         if isinstance(field_type, GraphQLObjectType):
-            # For object types in payloads, use Any for now
-            # Could be extended to generate nested models
-            return t.Any
+            # Recursively generate model for nested object types
+            if max_depth > 0:
+                return self._get_or_create_model(
+                    field_type, max_depth=max_depth, context_prefix=context_prefix
+                )
+            return UnsetNested()
 
         # Default to Any for unknown types
         return t.Any

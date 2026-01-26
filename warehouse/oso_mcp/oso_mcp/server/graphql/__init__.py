@@ -4,6 +4,6 @@ This package provides utilities to automatically generate FastMCP tools from Gra
 """
 
 from .generator import generate_from_schema
-from .types import ToolConfig
+from .types import AutogenMutationsConfig
 
-__all__ = ["generate_from_schema", "ToolConfig"]
+__all__ = ["generate_from_schema", "AutogenMutationsConfig"]

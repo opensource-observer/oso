@@ -8,7 +8,7 @@ from fastmcp import Context, FastMCP
 from pydantic import BaseModel
 
 from .executor import GraphQLExecutor
-from .types import MutationInfo, ToolConfig
+from .types import AutogenMutationsConfig, MutationInfo
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class ToolGenerator:
         self,
         mcp: FastMCP,
         mutations: t.List[MutationInfo],
-        config: ToolConfig,
+        config: AutogenMutationsConfig,
     ):
         """Initialize the tool generator.
 
@@ -83,6 +83,7 @@ class ToolGenerator:
             """
             try:
                 # Log execution
+                print("Executing mutation tool:", mutation.name)
                 if ctx:
                     await ctx.info(f"Executing {mutation.name} mutation")
 

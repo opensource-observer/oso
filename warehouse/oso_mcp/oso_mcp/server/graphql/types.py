@@ -26,30 +26,6 @@ class MutationInfo(BaseModel):
     graphql_input_type_name: str = Field(description="Original GraphQL input type name")
 
 
-class ToolConfig(BaseModel):
-    """Configuration for GraphQL tool generation."""
-
-    model_config = {"arbitrary_types_allowed": True}
-
-    graphql_endpoint: str = Field(description="GraphQL endpoint URL")
-    ignore_patterns: t.List[str] = Field(
-        default_factory=list,
-        description="Regex patterns for ignoring mutations",
-    )
-    api_key: t.Optional[str] = Field(
-        default=None,
-        description="API key for authentication (will use MCP_OSO_API_KEY from MCPConfig)",
-    )
-    auth_header_name: str = Field(
-        default="Authorization",
-        description="Authentication header name",
-    )
-    http_client_factory: t.Optional[t.Callable[[], httpx.AsyncClient]] = Field(
-        default=None,
-        description="Optional factory function that returns an httpx.AsyncClient instance for dependency injection/testing",
-    )
-
-
 class MutationFilter(abc.ABC):
     """Abstract base class for filtering mutations based on patterns."""
 
@@ -64,3 +40,27 @@ class MutationFilter(abc.ABC):
             True if mutation should be ignored, False otherwise
         """
         ...
+
+
+class AutogenMutationsConfig(BaseModel):
+    """Configuration for tool generation from GraphQL mutations."""
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    graphql_endpoint: str = Field(description="GraphQL endpoint URL")
+    filters: t.List[MutationFilter] = Field(
+        default_factory=list,
+        description="Mutation filters to ignore certain mutations",
+    )
+    api_key: t.Optional[str] = Field(
+        default=None,
+        description="API key for authentication (will use MCP_OSO_API_KEY from MCPConfig)",
+    )
+    auth_header_name: str = Field(
+        default="Authorization",
+        description="Authentication header name",
+    )
+    http_client_factory: t.Optional[t.Callable[[], httpx.AsyncClient]] = Field(
+        default=None,
+        description="Optional factory function that returns an httpx.AsyncClient instance for dependency injection/testing",
+    )

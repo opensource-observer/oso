@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(uv run pytest oso_mcp/server/graphql/test_integration.py -v)"
+      "Bash(uv run pytest oso_mcp/server/graphql/test_integration.py -v)",
+      "Bash(uv run pytest oso_mcp/server/graphql/test_integration.py::test_ensure_nested_items_are_not_requests -v)",
+      "Bash(uv run pytest warehouse/oso_mcp/oso_mcp/server/graphql/test_integration.py -v)",
+      "Bash(uv run pytest oso_mcp/server/graphql/test_generator.py -v)"
     ]
   }
 }
