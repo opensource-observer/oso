@@ -11,6 +11,7 @@ import {
   ServerErrors,
 } from "@/app/api/v1/osograph/utils/errors";
 import {
+  getMaterializations,
   getModelRunConnection,
   getResourceById,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -33,6 +34,7 @@ import { z } from "zod";
 import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { ModelRow, ModelUpdate } from "@/lib/types/schema-types";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
+import { generateTableId } from "@/app/api/v1/osograph/utils/model";
 
 export const dataModelResolvers = {
   Query: {
@@ -446,6 +448,19 @@ export const dataModelResolvers = {
     },
     modelContext: async (parent: ModelRow) => {
       return getModelContext(parent.dataset_id, parent.id);
+    },
+    materializations: async (
+      parent: ModelRow,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return getMaterializations(
+        args,
+        context,
+        parent.org_id,
+        parent.dataset_id,
+        generateTableId("USER_MODEL", parent.id),
+      );
     },
   },
 
