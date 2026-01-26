@@ -15,6 +15,7 @@ import {
 } from "@/app/api/v1/osograph/utils/auth";
 import { logger } from "@/lib/logger";
 import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import { ModelContextsRow } from "@/lib/types/schema-types";
 
 export async function getModelContext(datasetId: string, tableId: string) {
   const supabase = createAdminClient();
@@ -123,13 +124,12 @@ export const modelContextResolvers = {
     },
   },
   ModelContext: {
-    orgId: (parent: { org_id: string }) => parent.org_id,
-    datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
-    tableId: (parent: { table_id: string }) => parent.table_id,
-    context: (parent: { context: string }) => parent.context,
-    columnContext: (parent: { column_context: Record<string, any> }) =>
-      parent.column_context,
-    createdAt: (parent: { created_at: string }) => parent.created_at,
-    updatedAt: (parent: { updated_at: string }) => parent.updated_at,
+    orgId: (parent: ModelContextsRow) => parent.org_id,
+    datasetId: (parent: ModelContextsRow) => parent.dataset_id,
+    tableId: (parent: ModelContextsRow) => parent.table_id,
+    context: (parent: ModelContextsRow) => parent.context,
+    columnContext: (parent: ModelContextsRow) => parent.column_context,
+    createdAt: (parent: ModelContextsRow) => parent.created_at,
+    updatedAt: (parent: ModelContextsRow) => parent.updated_at,
   },
 };

@@ -23,6 +23,8 @@ export function generateTableId(datasetType: DatasetType, modelId: string) {
       return `static_model_${modelId}`;
     case "DATA_INGESTION":
       return `data_ingestion_${modelId}`;
+    case "DATA_CONNECTOR":
+      return `data_connection_${modelId}`;
     default:
       throw ValidationErrors.invalidInput(
         "datasetType",
