@@ -34,7 +34,7 @@ import { DataTable } from "@/components/ui/data-table";
 interface ModelContextEditorProps {
   datasetId: string;
   modelId: string;
-  schema: DataModelColumn[];
+  schema?: DataModelColumn[];
   existingContext?: Pick<ModelContext, "context" | "columnContext"> | null;
   className?: string;
 }
@@ -65,7 +65,7 @@ function ModelContextEditor(props: ModelContextEditorProps) {
 
   // Filter existing column contexts to only include columns that exist in the current schema
   const filteredColumnContexts = useMemo(() => {
-    if (!existingContext?.columnContext) return [];
+    if (!existingContext?.columnContext || !schema) return [];
 
     const schemaColumnNames = new Set(schema.map((col) => col.name));
     return existingContext.columnContext.filter((colCtx) =>
@@ -78,7 +78,7 @@ function ModelContextEditor(props: ModelContextEditorProps) {
     resolver: zodResolver(modelContextSchema),
     defaultValues: {
       tableContext: existingContext?.context || "",
-      columnContexts: schema.map((column) => {
+      columnContexts: schema?.map((column) => {
         const existingColContext = filteredColumnContexts.find(
           (ctx) => ctx.name === column.name,
         );
@@ -93,12 +93,12 @@ function ModelContextEditor(props: ModelContextEditorProps) {
   // Prepare data for DataTable
   const tableData: ColumnRow[] = useMemo(
     () =>
-      schema.map((column, index) => ({
+      schema?.map((column, index) => ({
         columnName: column.name,
         columnType: column.type,
         columnDescription: column.description,
         index,
-      })),
+      })) ?? [],
     [schema],
   );
 
@@ -165,7 +165,7 @@ function ModelContextEditor(props: ModelContextEditorProps) {
 
     try {
       // Filter out empty contexts and only include columns that exist in schema
-      const schemaColumnNames = new Set(schema.map((col) => col.name));
+      const schemaColumnNames = new Set(schema?.map((col) => col.name));
       const columnContext = data.columnContexts
         .filter((ctx) => ctx.context && ctx.context.trim() !== "")
         .filter((ctx) => schemaColumnNames.has(ctx.name))
@@ -209,43 +209,51 @@ function ModelContextEditor(props: ModelContextEditorProps) {
           Table schema and context to help the AI understand your model
         </CardDescription>
       </CardHeader>
-      <Form {...form}>
-        <form onSubmit={safeSubmit(form.handleSubmit(onSubmit))}>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="tableContext"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm">Table Context</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Describe the purpose and usage of this table..."
-                      rows={2}
-                      className="text-sm"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-2">
-              <DataTable
-                columns={columns}
-                data={tableData}
-                pagination={false}
+      {!schema || schema.length === 0 ? (
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            No schema found. Please trigger a new run
+          </p>
+        </CardContent>
+      ) : (
+        <Form {...form}>
+          <form onSubmit={safeSubmit(form.handleSubmit(onSubmit))}>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="tableContext"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm">Table Context</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Describe the purpose and usage of this table..."
+                        rows={2}
+                        className="text-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-          </CardContent>
-          <CardFooter className="pt-3">
-            <Button type="submit" disabled={isSubmitting} size="sm">
-              {isSubmitting ? "Saving..." : "Save"}
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
+
+              <div className="space-y-2">
+                <DataTable
+                  columns={columns}
+                  data={tableData}
+                  pagination={false}
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="pt-3">
+              <Button type="submit" disabled={isSubmitting} size="sm">
+                {isSubmitting ? "Saving..." : "Save"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      )}
     </Card>
   );
 }
