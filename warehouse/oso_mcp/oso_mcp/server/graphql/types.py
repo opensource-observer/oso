@@ -3,6 +3,7 @@
 import abc
 import typing as t
 
+import httpx
 from pydantic import BaseModel, Field
 
 
@@ -22,13 +23,13 @@ class MutationInfo(BaseModel):
     payload_fields: t.List[str] = Field(
         description="Top-level fields to return from payload"
     )
-    graphql_input_type_name: str = Field(
-        description="Original GraphQL input type name"
-    )
+    graphql_input_type_name: str = Field(description="Original GraphQL input type name")
 
 
 class ToolConfig(BaseModel):
     """Configuration for GraphQL tool generation."""
+
+    model_config = {"arbitrary_types_allowed": True}
 
     graphql_endpoint: str = Field(description="GraphQL endpoint URL")
     ignore_patterns: t.List[str] = Field(
@@ -42,6 +43,10 @@ class ToolConfig(BaseModel):
     auth_header_name: str = Field(
         default="Authorization",
         description="Authentication header name",
+    )
+    http_client_factory: t.Optional[t.Callable[[], httpx.AsyncClient]] = Field(
+        default=None,
+        description="Optional factory function that returns an httpx.AsyncClient instance for dependency injection/testing",
     )
 
 

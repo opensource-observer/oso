@@ -1,13 +1,16 @@
 """Generate and register FastMCP tools for mutations."""
 
+import logging
 import typing as t
 
 import httpx
-from mcp.server.fastmcp import Context, FastMCP
+from fastmcp import Context, FastMCP
+from pydantic import BaseModel
 
-from ..app import McpErrorResponse, McpSuccessResponse
 from .executor import GraphQLExecutor
 from .types import MutationInfo, ToolConfig
+
+logger = logging.getLogger(__name__)
 
 
 class ToolGenerator:
@@ -66,8 +69,9 @@ class ToolGenerator:
 
         # Create the async function dynamically
         async def tool_function(
-            input_data: mutation.input_model, ctx: Context  # type: ignore
-        ) -> t.Union[McpSuccessResponse, McpErrorResponse]:
+            input: BaseModel,
+            ctx: Context,  # type: ignore
+        ) -> BaseModel:
             """Dynamically generated tool function for GraphQL mutation.
 
             Args:
@@ -82,12 +86,18 @@ class ToolGenerator:
                 if ctx:
                     await ctx.info(f"Executing {mutation.name} mutation")
 
-                # Create HTTP client with authentication
-                headers = {}
-                if config.api_key:
-                    headers[config.auth_header_name] = f"Bearer {config.api_key}"
+                # Create or get HTTP client
+                if config.http_client_factory:
+                    # Use injected factory for testing
+                    http_client = config.http_client_factory()
+                else:
+                    # Create default client with authentication
+                    headers = {}
+                    if config.api_key:
+                        headers[config.auth_header_name] = f"Bearer {config.api_key}"
+                    http_client = httpx.AsyncClient(headers=headers)
 
-                async with httpx.AsyncClient(headers=headers) as http_client:
+                async with http_client:
                     # Create executor for this mutation
                     executor = GraphQLExecutor(
                         endpoint=config.graphql_endpoint,
@@ -96,21 +106,16 @@ class ToolGenerator:
                     )
 
                     # Execute mutation
-                    result = await executor.execute_mutation(input_data)
+                    result = await executor.execute_mutation(input)
 
                     # Return success response
-                    return McpSuccessResponse(
-                        tool_name=mutation.name,
-                        parameters=[input_data.model_dump()],
-                        results=[result.model_dump()],
-                    )
+                    return result
             except Exception as e:
-                # Return error response
-                return McpErrorResponse(
-                    tool_name=mutation.name,
-                    error=str(e),
-                    parameters=[input_data.model_dump()] if input_data else [],
-                )
+                logger.error(f"Error executing mutation {mutation.name}: {e}")
+                raise e
+
+        tool_function.__annotations__["input"] = mutation.input_model
+        tool_function.__annotations__["return"] = mutation.payload_model
 
         # Set function name for better debugging
         tool_function.__name__ = mutation.name

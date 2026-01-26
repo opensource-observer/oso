@@ -1,7 +1,7 @@
 """Main GraphQL tool generator orchestrator."""
 
 from ariadne_codegen.schema import get_graphql_schema_from_path
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from .mutation_extractor import MutationExtractor
 from .mutation_filter import RegexMutationFilter
