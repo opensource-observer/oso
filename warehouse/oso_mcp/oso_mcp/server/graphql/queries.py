@@ -5,7 +5,6 @@ import os
 import typing as t
 from graphlib import TopologicalSorter
 
-import httpx
 from graphql import (
     DocumentNode,
     FieldNode,
@@ -23,7 +22,7 @@ from graphql import (
 from pydantic import BaseModel, create_model
 
 from .pydantic_generator import PydanticModelGenerator
-from .types import QueryDocument, QueryInfo
+from .types import AsyncGraphQLClient, QueryDocument, QueryInfo
 
 logger = logging.getLogger(__name__)
 
@@ -220,25 +219,33 @@ class QueryExtractor:
     def _build_query_string(
         self, operation: OperationDefinitionNode, doc: QueryDocument
     ) -> str:
-        """Build complete query string including fragment definitions.
+        """Build complete query string with inlined fragments.
 
         Args:
             operation: Query operation node
             doc: Query document containing fragments
 
         Returns:
-            Complete GraphQL query string with fragments
+            GraphQL query string with fragments inlined
         """
-        # Print the operation
-        query_parts = [print_ast(operation)]
+        print("AFAAAAAAAAAAAAAAAAA")
+        print(doc.fragments)
+        # Inline fragments in the operation's selection set
+        inlined_selection_set = self._inline_fragments_in_selection_set(
+            operation.selection_set, doc.fragments
+        )
 
-        # Add all fragment definitions that this query uses
-        # For now, include all fragments from the document
-        # TODO: Optimize to only include referenced fragments
-        for fragment in doc.fragments.values():
-            query_parts.append(print_ast(fragment))
+        # Create a new operation node with the inlined selection set
+        inlined_operation = OperationDefinitionNode(
+            operation=operation.operation,
+            name=operation.name,
+            variable_definitions=operation.variable_definitions,
+            directives=operation.directives,
+            selection_set=inlined_selection_set,
+        )
 
-        return "\n\n".join(query_parts)
+        # Print only the operation (fragments are now inlined)
+        return print_ast(inlined_operation)
 
     def _generate_fragment_models_in_order(
         self,
@@ -315,6 +322,86 @@ class QueryExtractor:
 
         return dependencies
 
+    def _inline_fragments_in_selection_set(
+        self,
+        selection_set: SelectionSetNode,
+        fragments: t.Dict[str, FragmentDefinitionNode],
+    ) -> SelectionSetNode:
+        """Inline fragment spreads in a selection set.
+
+        Recursively replaces fragment spreads (...FragmentName) with the actual
+        field selections from the fragment definition.
+
+        Args:
+            selection_set: Selection set that may contain fragment spreads
+            fragments: Dictionary mapping fragment names to their definitions
+
+        Returns:
+            New selection set with all fragment spreads replaced by inlined fields
+        """
+        inlined_selections = []
+
+        for selection in selection_set.selections:
+            if isinstance(selection, FragmentSpreadNode):
+                # Look up the fragment definition
+                fragment_name = selection.name.value
+                if fragment_name in fragments:
+                    fragment = fragments[fragment_name]
+                    # Recursively inline fragments in the fragment's selection set
+                    inlined_fragment_selections = (
+                        self._inline_fragments_in_selection_set(
+                            fragment.selection_set,
+                            fragments,
+                        )
+                    )
+                    # Add all selections from the fragment
+                    inlined_selections.extend(inlined_fragment_selections.selections)
+                else:
+                    # If fragment not found, error
+                    raise ValueError(
+                        f"Fragment '{fragment_name}' not found for inlining."
+                    )
+
+            elif isinstance(selection, FieldNode):
+                # If the field has a nested selection set, recursively inline it
+                if selection.selection_set:
+                    inlined_nested = self._inline_fragments_in_selection_set(
+                        selection.selection_set,
+                        fragments,
+                    )
+                    # Create a new FieldNode with the inlined selection set
+                    inlined_field = FieldNode(
+                        name=selection.name,
+                        alias=selection.alias,
+                        arguments=selection.arguments,
+                        directives=selection.directives,
+                        selection_set=inlined_nested,
+                    )
+                    inlined_selections.append(inlined_field)
+                else:
+                    # No selection set, just add the field as-is
+                    inlined_selections.append(selection)
+
+            elif isinstance(selection, InlineFragmentNode):
+                # Recursively inline fragments in the inline fragment's selection set
+                if selection.selection_set:
+                    inlined_nested = self._inline_fragments_in_selection_set(
+                        selection.selection_set,
+                        fragments,
+                    )
+                    # Create a new InlineFragmentNode with the inlined selection set
+                    inlined_inline_fragment = InlineFragmentNode(
+                        type_condition=selection.type_condition,
+                        directives=selection.directives,
+                        selection_set=inlined_nested,
+                    )
+                    inlined_selections.append(inlined_inline_fragment)
+                else:
+                    inlined_selections.append(selection)
+
+        # Create and return a new SelectionSetNode with the inlined selections
+        return SelectionSetNode(selections=tuple(inlined_selections))
+
 
 class QueryExecutor:
     """Execute GraphQL queries via HTTP.
@@ -326,18 +413,18 @@ class QueryExecutor:
         self,
         endpoint: str,
         query_info: QueryInfo,
-        http_client: httpx.AsyncClient,
+        graphql_client: AsyncGraphQLClient,
     ):
         """Initialize the query executor.
 
         Args:
             endpoint: GraphQL endpoint URL
             query_info: Query information
-            http_client: Async HTTP client (caller can configure authentication)
+            graphql_client: Async GraphQL client (caller can configure authentication)
         """
         self.endpoint = endpoint
         self.query_info = query_info
-        self.http_client = http_client
+        self.graphql_client = graphql_client
 
     async def execute_query(
         self,
@@ -360,28 +447,17 @@ class QueryExecutor:
         # Convert Pydantic model to dict for variables
         variables_dict = variables.model_dump()
 
-        # Prepare request payload
-        payload = {
-            "query": self.query_info.query_string,
-            "variables": variables_dict,
-            "operationName": self.query_info.name,
-        }
-
-        headers = {
-            "Content-Type": "application/json",
-        }
-
         # Make HTTP request
-        logger.debug(f"Sending request payload: {payload}")
-        print(payload)
-        response = await self.http_client.post(
-            self.endpoint, json=payload, headers=headers
+        logger.debug(
+            f"Sending request payload: {self.query_info.query_string} with variables {variables_dict}"
         )
-        logger.debug(f"Received response: {response.text}")
-        response.raise_for_status()
-
-        # Parse response
-        result = response.json()
+        result = await self.graphql_client.execute(
+            operation_name=self.query_info.name,
+            query=self.query_info.query_string,
+            variables=variables_dict,
+            # self.endpoint, json=payload, headers=headers
+        )
+        logger.debug(f"Received response: {result}")
 
         # Check for GraphQL errors
         if "errors" in result:

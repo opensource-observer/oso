@@ -12,9 +12,9 @@ from fastmcp.exceptions import ToolError
 from oso_mcp.server.config import MCPConfig
 from pydantic import SecretStr
 
-from .generator import generate_from_schema
+from .generator import OSOAsyncGraphQLClient, generate_from_schema
 from .mutations import RegexMutationFilter
-from .types import HttpClientFactory
+from .types import GraphQLClientFactory
 
 # Get path to test schema and queries
 CURRENT_DIR = os.path.dirname(__file__)
@@ -80,12 +80,18 @@ def mock_http_client():
 
 
 @pytest.fixture
-def mock_http_client_factory(mock_http_client: httpx.AsyncClient) -> HttpClientFactory:
+def mock_http_client_factory(
+    mock_http_client: httpx.AsyncClient,
+) -> GraphQLClientFactory:
     """Return a factory that provides the mock HTTP client."""
 
     @asynccontextmanager
     async def factory():
-        yield mock_http_client
+        yield OSOAsyncGraphQLClient(
+            endpoint="https://api.example.com/graphql",
+            http_client=mock_http_client,
+            api_key="test_api_key",
+        )
 
     return factory
 
@@ -93,7 +99,7 @@ def mock_http_client_factory(mock_http_client: httpx.AsyncClient) -> HttpClientF
 @pytest.mark.asyncio
 async def test_generated_tool_makes_graphql_request(
     mcp_config: MCPConfig,
-    mock_http_client_factory: HttpClientFactory,
+    mock_http_client_factory: GraphQLClientFactory,
     mock_http_client: t.Any,
 ):
     """Test that a generated tool makes the correct GraphQL request using FastMCP Client."""
@@ -108,7 +114,7 @@ async def test_generated_tool_makes_graphql_request(
         mcp=mcp,
         config=mcp_config,
         filters=[RegexMutationFilter(patterns=["@mcp-ignore"])],  # Ignore updateItem
-        http_client_factory=mock_http_client_factory,
+        graphql_client_factory=mock_http_client_factory,
     )
 
     # Create FastMCP client to call the tool
@@ -158,7 +164,7 @@ async def test_generated_tool_makes_graphql_request(
 @pytest.mark.asyncio
 async def test_tool_handles_graphql_errors(
     mcp_config: MCPConfig,
-    mock_http_client_factory: HttpClientFactory,
+    mock_http_client_factory: GraphQLClientFactory,
     mock_http_client: t.Any,
 ):
     """Test that tools properly handle GraphQL errors."""
@@ -185,7 +191,7 @@ async def test_tool_handles_graphql_errors(
         mcp=mcp,
         config=mcp_config,
         filters=[RegexMutationFilter(patterns=["@mcp-ignore"])],
-        http_client_factory=mock_http_client_factory,
+        graphql_client_factory=mock_http_client_factory,
     )
 
     # Create client
@@ -208,7 +214,7 @@ async def test_tool_handles_graphql_errors(
 
 @pytest.mark.asyncio
 async def test_ignore_patterns_filter_mutations(
-    mcp_config: MCPConfig, mock_http_client_factory: HttpClientFactory
+    mcp_config: MCPConfig, mock_http_client_factory: GraphQLClientFactory
 ):
     """Test that mutations with ignore patterns are not registered."""
     # Create mock client
@@ -224,7 +230,7 @@ async def test_ignore_patterns_filter_mutations(
         mcp=mcp,
         config=mcp_config,
         filters=[RegexMutationFilter(patterns=["@mcp-ignore"])],
-        http_client_factory=mock_http_client_factory,
+        graphql_client_factory=mock_http_client_factory,
     )
 
     # Create client
@@ -245,7 +251,7 @@ async def test_ignore_patterns_filter_mutations(
 @pytest.mark.asyncio
 async def test_ensure_nested_items_are_not_requests(
     mcp_config: MCPConfig,
-    mock_http_client_factory: HttpClientFactory,
+    mock_http_client_factory: GraphQLClientFactory,
     mock_http_client: t.Any,
 ):
     """Test that nested items in the response are specifically not requested
@@ -259,7 +265,7 @@ async def test_ensure_nested_items_are_not_requests(
         mcp=mcp,
         config=mcp_config,
         filters=[],
-        http_client_factory=mock_http_client_factory,
+        graphql_client_factory=mock_http_client_factory,
     )
 
     # Create client
@@ -292,7 +298,7 @@ async def test_ensure_nested_items_are_not_requests(
 @pytest.mark.asyncio
 async def test_query_tool_generation(
     mcp_config: MCPConfig,
-    mock_http_client_factory: HttpClientFactory,
+    mock_http_client_factory: GraphQLClientFactory,
     mock_http_client: t.Any,
 ):
     """Test that query tools are generated from client .graphql files."""
@@ -338,7 +344,7 @@ async def test_query_tool_generation(
         config=mcp_config,
         client_schema_path=TEST_QUERIES_PATH,
         filters=[],
-        http_client_factory=mock_http_client_factory,
+        graphql_client_factory=mock_http_client_factory,
     )
 
     # Create client
@@ -369,7 +375,17 @@ async def test_query_tool_generation(
         assert request["url"] == "https://api.example.com/graphql"
         assert "query" in request["json"]
         assert "GetItem" in request["json"]["query"]
-        assert "ItemFields" in request["json"]["query"]  # Fragment should be included
+
+        # Verify fragments are inlined, not included as definitions
+        query_string = request["json"]["query"]
+        assert "...ItemFields" not in query_string  # Fragment spread should be inlined
+        assert (
+            "fragment ItemFields" not in query_string
+        )  # Fragment definition should not be included
+
+        # Verify that the actual fields from the fragment are inlined
+        for field in ["id", "name", "description", "count", "createdAt"]:
+            assert field in query_string
 
         assert request["json"]["variables"]["id"] == "item-123"
 

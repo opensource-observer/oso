@@ -5,11 +5,11 @@ import re
 import typing as t
 from enum import Enum
 
-import httpx
 from graphql import GraphQLInputObjectType, GraphQLObjectType, GraphQLSchema
 from pydantic import BaseModel
 
 from .pydantic_generator import PydanticModelGenerator
+from .types import AsyncGraphQLClient
 from .types import MutationFilter as BaseMutationFilter
 from .types import MutationInfo
 
@@ -184,7 +184,7 @@ class GraphQLExecutor:
         self,
         endpoint: str,
         mutation: MutationInfo,
-        http_client: httpx.AsyncClient,
+        graphql_client: AsyncGraphQLClient,
     ):
         """Initialize the GraphQL executor.
 
@@ -195,7 +195,7 @@ class GraphQLExecutor:
         """
         self.endpoint = endpoint
         self.mutation = mutation
-        self.http_client = http_client
+        self.graphql_client = graphql_client
 
     async def execute_mutation(
         self,
@@ -220,26 +220,13 @@ class GraphQLExecutor:
         # Build GraphQL mutation query
         mutation_query = self._build_mutation_query()
 
-        # Prepare request payload
-        payload = {
-            "query": mutation_query,
-            "variables": variables,
-            "operationName": self.mutation.name,
-        }
-
-        headers = {
-            "Content-Type": "application/json",
-        }
-
         # Make HTTP request
-        logger.debug(f"Sending request payload: {payload}")
-        response = await self.http_client.post(
-            self.endpoint, json=payload, headers=headers
+        logger.debug(f"Sending request payload: {mutation_query}")
+        result = await self.graphql_client.execute(
+            operation_name=self.mutation.name,
+            query=mutation_query,
+            variables=variables,
         )
-        response.raise_for_status()
-
-        # Parse response
-        result = response.json()
 
         # Check for GraphQL errors
         if "errors" in result:

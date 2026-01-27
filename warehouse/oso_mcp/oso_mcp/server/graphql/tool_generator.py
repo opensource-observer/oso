@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from .mutations import GraphQLExecutor
 from .queries import QueryExecutor
-from .types import HttpClientFactory, MutationInfo, QueryInfo
+from .types import GraphQLClientFactory, MutationInfo, QueryInfo
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class ToolGenerator:
         mcp: FastMCP,
         mutations: t.List[MutationInfo],
         graphql_endpoint: str,
-        http_client_factory: HttpClientFactory,
+        graphql_client_factory: GraphQLClientFactory,
         queries: t.Optional[t.List[QueryInfo]] = None,
     ):
         """Initialize the tool generator.
@@ -36,7 +36,7 @@ class ToolGenerator:
         self.mutations = mutations
         self.queries = queries or []
         self.graphql_endpoint = graphql_endpoint
-        self.http_client_factory = http_client_factory
+        self.graphql_client_factory = graphql_client_factory
 
     def generate_mutation_tools(self) -> None:
         """Register all mutation tools."""
@@ -76,7 +76,7 @@ class ToolGenerator:
         """
         # Capture config in closure
         graphql_endpoint = self.graphql_endpoint
-        http_client_factory = self.http_client_factory
+        graphql_client_factory = self.graphql_client_factory
 
         # Create the async function dynamically
         async def tool_function(
@@ -98,12 +98,12 @@ class ToolGenerator:
                 if ctx:
                     await ctx.info(f"Executing {mutation.name} mutation")
 
-                async with http_client_factory() as http_client:
+                async with graphql_client_factory() as graphql_client:
                     # Create executor for this mutation
                     executor = GraphQLExecutor(
                         endpoint=graphql_endpoint,
                         mutation=mutation,
-                        http_client=http_client,
+                        graphql_client=graphql_client,
                     )
 
                     # Execute mutation
@@ -151,7 +151,7 @@ class ToolGenerator:
         """
         # Capture config in closure
         graphql_endpoint = self.graphql_endpoint
-        http_client_factory = self.http_client_factory
+        http_client_factory = self.graphql_client_factory
 
         # Create the async function dynamically
         async def tool_function(
@@ -178,7 +178,7 @@ class ToolGenerator:
                     executor = QueryExecutor(
                         endpoint=graphql_endpoint,
                         query_info=query,
-                        http_client=http_client,
+                        graphql_client=http_client,
                     )
 
                     # Execute query

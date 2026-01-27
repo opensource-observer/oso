@@ -3,7 +3,6 @@
 import abc
 import typing as t
 
-import httpx
 from graphql import FragmentDefinitionNode, OperationDefinitionNode, SelectionSetNode
 from pydantic import BaseModel, Field
 
@@ -81,24 +80,26 @@ class MutationFilter(abc.ABC):
         ...
 
 
-HttpClientFactory = t.Callable[[], t.AsyncContextManager[httpx.AsyncClient]]
+class AsyncGraphQLClient(abc.ABC):
+    @abc.abstractmethod
+    async def execute(
+        self,
+        query: str,
+        operation_name: str,
+        variables: dict[str, t.Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> t.Any:
+        """Execute a GraphQL query or mutation.
+
+        Args:
+            query: GraphQL query or mutation string
+            operation_name: Name of the operation to execute
+            variables: Optional variables for the operation
+            headers: Additional HTTP headers
+        Returns:
+            The parsed JSON response
+        """
+        ...
 
 
-class AutogenMutationsConfig(BaseModel):
-    """Configuration for tool generation from GraphQL mutations."""
-
-    model_config = {"arbitrary_types_allowed": True}
-
-    graphql_endpoint: str = Field(description="GraphQL endpoint URL")
-    filters: t.List[MutationFilter] = Field(
-        default_factory=list,
-        description="Mutation filters to ignore certain mutations",
-    )
-    auth_header_name: str = Field(
-        default="Authorization",
-        description="Authentication header name",
-    )
-    http_client_factory: HttpClientFactory = Field(
-        default=lambda: httpx.AsyncClient(),
-        description="Optional factory function that returns an httpx.AsyncClient instance for dependency injection/testing",
-    )
+GraphQLClientFactory = t.Callable[[], t.AsyncContextManager[AsyncGraphQLClient]]

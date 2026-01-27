@@ -308,6 +308,26 @@ class PydanticModelGenerator:
         }
         return scalar_map.get(scalar_name, t.Any)
 
+    def _is_single_fragment_spread(
+        self, selection_set: SelectionSetNode
+    ) -> t.Optional[str]:
+        """Check if a selection set contains only a single fragment spread.
+
+        Args:
+            selection_set: Selection set to check
+
+        Returns:
+            Fragment name if selection set contains only one fragment spread, None otherwise
+        """
+        if len(selection_set.selections) != 1:
+            return None
+
+        selection = selection_set.selections[0]
+        if isinstance(selection, FragmentSpreadNode):
+            return selection.name.value
+
+        return None
+
     def generate_model_from_selection_set(
         self,
         operation_name: str,
@@ -414,24 +434,50 @@ class PydanticModelGenerator:
                 if isinstance(field_type, GraphQLObjectType):
                     # Nested object - recursively build model if we have selection set
                     if selection.selection_set and max_depth > 0:
-                        nested_type_name = f"{context_prefix}{field_type.name}"
-                        if nested_type_name in self._type_registry:
-                            python_type = self._type_registry[nested_type_name]
+                        # Check if selection set contains only a single fragment spread
+                        fragment_name = self._is_single_fragment_spread(
+                            selection.selection_set
+                        )
+                        if fragment_name:
+                            # Use the fragment model directly
+                            fragment_model_name = f"{fragment_name}Response"
+                            if fragment_model_name in self._type_registry:
+                                python_type = self._type_registry[fragment_model_name]
+                            else:
+                                # Fragment model not found, fall back to building a new model
+                                nested_type_name = f"{context_prefix}{field_type.name}"
+                                nested_fields = self._build_fields_from_selection_set(
+                                    selection.selection_set,
+                                    field_type,
+                                    schema,
+                                    max_depth - 1,
+                                    nested_type_name,
+                                )
+                                python_type = create_model(
+                                    nested_type_name,
+                                    **nested_fields,  # type: ignore
+                                )
+                                self._type_registry[nested_type_name] = python_type
                         else:
-                            nested_fields = self._build_fields_from_selection_set(
-                                selection.selection_set,
-                                field_type,
-                                schema,
-                                max_depth - 1,
-                                nested_type_name,
-                            )
-                            # Sadly pylance nor mypy like the dynamic nature of
-                            # create_model here.
-                            python_type = create_model(
-                                nested_type_name,
-                                **nested_fields,  # type: ignore
-                            )
-                            self._type_registry[nested_type_name] = python_type
+                            # Not a single fragment spread, build model normally
+                            nested_type_name = f"{context_prefix}{field_type.name}"
+                            if nested_type_name in self._type_registry:
+                                python_type = self._type_registry[nested_type_name]
+                            else:
+                                nested_fields = self._build_fields_from_selection_set(
+                                    selection.selection_set,
+                                    field_type,
+                                    schema,
+                                    max_depth - 1,
+                                    nested_type_name,
+                                )
+                                # Sadly pylance nor mypy like the dynamic nature of
+                                # create_model here.
+                                python_type = create_model(
+                                    nested_type_name,
+                                    **nested_fields,  # type: ignore
+                                )
+                                self._type_registry[nested_type_name] = python_type
                     else:
                         # No selection set or max depth reached, skip
                         continue
