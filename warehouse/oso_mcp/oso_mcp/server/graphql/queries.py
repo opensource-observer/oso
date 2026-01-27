@@ -228,8 +228,6 @@ class QueryExtractor:
         Returns:
             GraphQL query string with fragments inlined
         """
-        print("AFAAAAAAAAAAAAAAAAA")
-        print(doc.fragments)
         # Inline fragments in the operation's selection set
         inlined_selection_set = self._inline_fragments_in_selection_set(
             operation.selection_set, doc.fragments
