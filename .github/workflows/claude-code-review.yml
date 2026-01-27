@@ -1,0 +1,58 @@
+name: Claude Code Review
+
+env:
+  ANTHROPIC_VERTEX_PROJECT_ID: opensource-observer
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  code-review:
+    name: Run Claude Code Review
+    environment: deploy
+    runs-on: ubuntu-latest
+    if: |
+      github.event.issue.pull_request &&
+      (startsWith(github.event.comment.body, '/security-review') || startsWith(github.event.comment.body, '/code-review')) &&
+      contains(fromJson('["MEMBER", "OWNER"]'), github.event.comment.author_association)
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+          fetch-depth: 1
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS_JSON }}"
+          create_credentials_file: true
+
+      - name: Run Security Review
+        if: startsWith(github.event.comment.body, '/security-review')
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_vertex: "true"
+          prompt: "/security-review"
+          claude_args: |
+            --model claude-sonnet-4@20250514
+            --max-turns 15
+
+      - name: Run Code Review
+        if: startsWith(github.event.comment.body, '/code-review')
+        uses: anthropics/claude-code-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_vertex: "true"
+          prompt: "/code-review"
+          plugins: code-review
+          claude_args: |
+            --model claude-sonnet-4@20250514
+            --max-turns 15
