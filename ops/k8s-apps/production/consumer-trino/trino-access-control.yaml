@@ -15,6 +15,10 @@ data:
           "allow": "none"
         },
         {
+          "group": "ro-*",
+          "allow": "read-only"
+        },
+        {
           "user": "jwt-.*",
           "allow": "read-only"
         },
