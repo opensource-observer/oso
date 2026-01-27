@@ -243,3 +243,12 @@ export const MinimalSchema: Story = {
     existingContext: null,
   },
 };
+
+export const NoSchema: Story = {
+  args: {
+    datasetId: "dataset_004",
+    modelId: "pending_model",
+    schema: undefined,
+    existingContext: null,
+  },
+};

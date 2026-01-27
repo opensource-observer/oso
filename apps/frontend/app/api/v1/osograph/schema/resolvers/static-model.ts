@@ -18,6 +18,7 @@ import {
   requireOrgMembership,
 } from "@/app/api/v1/osograph/utils/auth";
 import {
+  getMaterializations,
   getModelRunConnection,
   getResourceById,
 } from "@/app/api/v1/osograph/utils/resolver-helpers";
@@ -29,6 +30,7 @@ import {
 } from "@/app/api/v1/osograph/utils/errors";
 import { putSignedUrl } from "@/lib/clients/cloudflare-r2";
 import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
+import { generateTableId } from "@/app/api/v1/osograph/utils/model";
 
 const FILES_BUCKET = "static-model-files";
 const SIGNED_URL_EXPIRY = 900;
@@ -235,6 +237,19 @@ export const staticModelResolvers = {
     },
     modelContext: async (parent: StaticModelRow) => {
       return getModelContext(parent.dataset_id, parent.id);
+    },
+    materializations: async (
+      parent: StaticModelRow,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      return getMaterializations(
+        args,
+        context,
+        parent.org_id,
+        parent.dataset_id,
+        generateTableId("STATIC_MODEL", parent.id),
+      );
     },
   },
 };
