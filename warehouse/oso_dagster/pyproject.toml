@@ -43,7 +43,7 @@ dependencies = [
     "pyiceberg[hive,s3fs]<1.0.0,>=0.8.1",
     "pyee>=12.1.1,<14.0.0",
     "aiotrino<1.0.0,>=0.2.3",
-    "websockets>=14.1,<16.0",
+    "websockets>=14.1,<17.0",
     "pydantic-settings<3.0.0,>=2.7.0",
     "oso-core",
     "pyoso",
