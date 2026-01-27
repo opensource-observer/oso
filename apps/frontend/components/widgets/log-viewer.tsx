@@ -448,7 +448,7 @@ export const LogViewerMeta: CodeComponentMeta<LogViewerProps> = {
         {
           event: "Application started",
           log_level: "info",
-          timestamp: new Date().toISOString(),
+          timestamp: "2026-01-26T20:16:11.053Z",
         },
       ],
       description: "Test logs for Plasmic editor preview",
