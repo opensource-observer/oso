@@ -472,7 +472,7 @@ async function signTrinoJWT(user: AuthOrgUser) {
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(
-      `ro-${user.orgName.trim().toLowerCase()}-${user.orgId.trim().toLowerCase()}`,
+      `ro-${user.orgName.trim().toLowerCase()}-${user.orgId.trim().replace(/-/g, "").toLowerCase()}`,
     )
     .setAudience("consumer-trino")
     .setIssuer("opensource-observer")
