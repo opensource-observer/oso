@@ -1,5 +1,8 @@
 """Main GraphQL tool generator orchestrator."""
 
+import typing as t
+from contextlib import asynccontextmanager
+
 import httpx
 from ariadne_codegen.schema import get_graphql_schema_from_path
 from fastmcp import FastMCP
@@ -15,8 +18,10 @@ from .types import HttpClientFactory, MutationFilter
 def default_http_client_factory(config: MCPConfig) -> HttpClientFactory:
     """Create a default HTTP client for GraphQL requests."""
 
-    def _http_client_factory() -> httpx.AsyncClient:
-        return httpx.AsyncClient(timeout=httpx.Timeout(10.0, read=30.0))
+    @asynccontextmanager
+    async def _http_client_factory() -> t.AsyncGenerator[httpx.AsyncClient, None]:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, read=30.0)) as client:
+            yield client
 
     return _http_client_factory
 

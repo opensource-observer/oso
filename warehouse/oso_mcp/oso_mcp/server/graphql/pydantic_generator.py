@@ -127,7 +127,7 @@ class PydanticModelGenerator:
             return self._type_registry[type_name]  # type: ignore
 
         # Create enum members
-        enum_members = {name: value for name, value in enum_type.values.items()}
+        enum_members = {name: value.value for name, value in enum_type.values.items()}
 
         # Create the enum
         enum_klass = Enum(type_name, enum_members)

@@ -314,13 +314,13 @@ query GetDataIngestionByName($orgId: ID!, $datasetName: String!) {
   }
 }
 
-query GetViewer($includeOrganizations: Boolean = true, $first: Int = 50, $after: String) {
+query GetViewer($first: Int = 50, $after: String) {
   viewer {
     id
     email
     fullName
     avatarUrl
-    organizations(first: $first, after: $after) @include(if: $includeOrganizations) {
+    organizations(first: $first, after: $after) {
       edges {
         node {
           ...OrganizationFields

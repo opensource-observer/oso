@@ -224,11 +224,18 @@ class GraphQLExecutor:
         payload = {
             "query": mutation_query,
             "variables": variables,
+            "operationName": self.mutation.name,
+        }
+
+        headers = {
+            "Content-Type": "application/json",
         }
 
         # Make HTTP request
         logger.debug(f"Sending request payload: {payload}")
-        response = await self.http_client.post(self.endpoint, json=payload)
+        response = await self.http_client.post(
+            self.endpoint, json=payload, headers=headers
+        )
         response.raise_for_status()
 
         # Parse response

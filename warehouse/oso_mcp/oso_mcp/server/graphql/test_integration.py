@@ -2,6 +2,7 @@
 
 import os
 import typing as t
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -24,7 +25,7 @@ TEST_QUERIES_PATH = os.path.join(CURRENT_DIR, "test_queries")
 @pytest.fixture
 def mcp_config():
     return MCPConfig(
-        pyoso_base_url="https://api.example.com",
+        oso_base_url="https://api.example.com",
         graphql_path="/graphql",
         oso_api_key=SecretStr("test_api_key"),
     )
@@ -82,8 +83,9 @@ def mock_http_client():
 def mock_http_client_factory(mock_http_client: httpx.AsyncClient) -> HttpClientFactory:
     """Return a factory that provides the mock HTTP client."""
 
-    def factory():
-        return mock_http_client
+    @asynccontextmanager
+    async def factory():
+        yield mock_http_client
 
     return factory
 
@@ -368,6 +370,7 @@ async def test_query_tool_generation(
         assert "query" in request["json"]
         assert "GetItem" in request["json"]["query"]
         assert "ItemFields" in request["json"]["query"]  # Fragment should be included
+
         assert request["json"]["variables"]["id"] == "item-123"
 
         # Verify result

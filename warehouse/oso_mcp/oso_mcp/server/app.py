@@ -73,7 +73,7 @@ def setup_mcp_app(config: MCPConfig):
         "OSO Data Lake Explorer",
         port=config.port,
         host=config.host,
-        dependencies=["pyoso", "python-dotenv", "requests"],
+        dependencies=["pyoso", "python-dotenv", "requests", "httpx"],
         lifespan=default_lifespan(config),
     )
 
@@ -87,7 +87,7 @@ def setup_mcp_app(config: MCPConfig):
         filters=[
             RegexMutationFilter(patterns=["@mcp-ignore", "@system-only"]),
         ],
-        client_schema_path="oso_mcp/server/graphql/queries",
+        client_schema_path=os.path.join(CURR_DIR, "graphql/queries"),
     )
 
     @mcp.tool(

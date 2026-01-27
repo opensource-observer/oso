@@ -364,11 +364,20 @@ class QueryExecutor:
         payload = {
             "query": self.query_info.query_string,
             "variables": variables_dict,
+            "operationName": self.query_info.name,
+        }
+
+        headers = {
+            "Content-Type": "application/json",
         }
 
         # Make HTTP request
         logger.debug(f"Sending request payload: {payload}")
-        response = await self.http_client.post(self.endpoint, json=payload)
+        print(payload)
+        response = await self.http_client.post(
+            self.endpoint, json=payload, headers=headers
+        )
+        logger.debug(f"Received response: {response.text}")
         response.raise_for_status()
 
         # Parse response

@@ -81,7 +81,7 @@ class MutationFilter(abc.ABC):
         ...
 
 
-HttpClientFactory = t.Callable[[], httpx.AsyncClient]
+HttpClientFactory = t.Callable[[], t.AsyncContextManager[httpx.AsyncClient]]
 
 
 class AutogenMutationsConfig(BaseModel):

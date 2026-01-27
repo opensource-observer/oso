@@ -98,9 +98,7 @@ class ToolGenerator:
                 if ctx:
                     await ctx.info(f"Executing {mutation.name} mutation")
 
-                http_client = http_client_factory()
-
-                async with http_client:
+                async with http_client_factory() as http_client:
                     # Create executor for this mutation
                     executor = GraphQLExecutor(
                         endpoint=graphql_endpoint,
@@ -175,9 +173,7 @@ class ToolGenerator:
                 if ctx:
                     await ctx.info(f"Executing {query.name} query")
 
-                http_client = http_client_factory()
-
-                async with http_client:
+                async with http_client_factory() as http_client:
                     # Create executor for this query
                     executor = QueryExecutor(
                         endpoint=graphql_endpoint,
