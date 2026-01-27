@@ -254,6 +254,14 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         resolved_query = await model.resolve_query(table_resolvers=table_resolvers)
 
+        # This is a HACK to allow for transactions to work in trino. The reason
+        # that sqlmesh has this disabled by default is that when they do their
+        # "insert_overwrite" process on Hive connectors in trino. Transactions
+        # don't work properly. So they proactively set this to false. @ravenac95
+        # will push a fix upstream for this to be set to true if _not_ using
+        # Hive connectors (we use iceberg).
+        adapter.SUPPORTS_TRANSACTIONS = True
+
         with adapter.transaction():
             # Delete existing table if it exists
             adapter.drop_table(table_name=target_table, exists=True)
