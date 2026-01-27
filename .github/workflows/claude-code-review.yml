@@ -51,8 +51,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           use_vertex: "true"
-          prompt: "/code-review"
-          plugins: code-review
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.issue.number }}'
           claude_args: |
             --model claude-sonnet-4@20250514
             --max-turns 15
