@@ -63,6 +63,7 @@ class OSOAsyncGraphQLClient(AsyncGraphQLClient):
             "Agent": "oso-mcp-client/0.0",
         }
         logger.debug(f"Executing GraphQL request: \n\n {json.dumps(payload, indent=2)}")
+        print("Executing GraphQL request: \n\n", json.dumps(payload, indent=2))
 
         # Make HTTP request
         response = await self.http_client.post(

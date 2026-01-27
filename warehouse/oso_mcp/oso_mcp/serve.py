@@ -10,7 +10,7 @@ from oso_mcp.server.config import MCPConfig
 
 load_dotenv()
 
-setup_module_logging("oso_mcp")
+setup_module_logging("")
 
 config = MCPConfig()
 
