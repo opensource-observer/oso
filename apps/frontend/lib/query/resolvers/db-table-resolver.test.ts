@@ -90,7 +90,7 @@ describe("DBTableResolver", () => {
               name: "connection",
               display_name: `Connection Dataset for ${org.org_name}`,
               created_by: TEST_USER_ID,
-              dataset_type: "DATA_CONNECTOR" as const,
+              dataset_type: "DATA_CONNECTION" as const,
             },
             {
               id: datasetIds[2],

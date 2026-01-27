@@ -26,12 +26,12 @@ enum InvitationStatus {
 Dataset types
 
 * USER_MODEL: Contains user-defined models
-* DATA_CONNECTOR: Derived from a data connector to an external data source
+* DATA_CONNECTION: Derived from a data connector to an external data source
 * DATA_INGESTION: Derived from data ingestion pipelines
 """
 enum DatasetType {
   USER_MODEL
-  DATA_CONNECTOR
+  DATA_CONNECTION
   DATA_INGESTION
   STATIC_MODEL
 }
