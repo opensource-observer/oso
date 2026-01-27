@@ -1568,7 +1568,7 @@ export type DataConnectionDefinition = {
   __typename?: "DataConnectionDefinition";
   /**
    * If the dataset is of type DATA_CONNECTION, this field will contain the data connection model
-   * associated with the dataset. Otherwise it will be null.
+   * associated with the dataset.
    */
   dataConnectionAlias: DataConnectionAlias;
   datasetId: Scalars["ID"]["output"];
@@ -1931,7 +1931,7 @@ export enum DatasetType {
 }
 
 export type DatasetTypeDefinition =
-  | DataConnection
+  | DataConnectionDefinition
   | DataIngestionDefinition
   | DataModelDefinition
   | StaticModelDefinition;
