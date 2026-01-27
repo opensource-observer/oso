@@ -14,7 +14,7 @@ read_only_user(parsed_user) if {
 public_catalogs := {"iceberg"}
 admin_users := {"admin", "sqlmesh", "carl"}
 
-# If the user is in the format `ro-<org_name>_<org_id>`, allow access if the catalog
+# If the user is in the format `ro-<org_name>-<org_id>`, allow access if the catalog
 # matches the org_name or if the catalog is "iceberg".
 user := input.context.identity.user
 parsed_user := parse_user(user)
