@@ -256,7 +256,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         with adapter.transaction():
             # Delete existing table if it exists
-            adapter.drop_table(table_name=target_table)
+            adapter.drop_table(table_name=target_table, exists=True)
 
             create_query = ctas_query(resolved_query)
 
