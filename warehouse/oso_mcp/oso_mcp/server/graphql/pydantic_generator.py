@@ -1,7 +1,7 @@
 """Pydantic model generator for GraphQL types."""
 
 import typing as t
-from enum import Enum
+from enum import StrEnum
 
 from graphql import (
     FieldNode,
@@ -30,7 +30,7 @@ class PydanticModelGenerator:
 
     def __init__(self):
         """Initialize the model generator with a type registry."""
-        self._type_registry: dict[str, t.Type[BaseModel] | Enum] = {}
+        self._type_registry: dict[str, t.Type[BaseModel] | StrEnum] = {}
 
     def generate_input_model(
         self, input_type: GraphQLInputObjectType
@@ -111,14 +111,15 @@ class PydanticModelGenerator:
         self._type_registry[type_name] = model
         return model
 
-    def generate_enum(self, enum_type: GraphQLEnumType) -> Enum:
-        """Create Python Enum from GraphQL enum type.
+    def generate_enum(self, enum_type: GraphQLEnumType) -> StrEnum:
+        """Create Python StrEnum from GraphQL enum type. StrEnum is used to
+        ensure that enum values are serialized as strings in JSON.
 
         Args:
             enum_type: GraphQL enum type
 
         Returns:
-            Dynamically created Enum class
+            Dynamically created StrEnum class
         """
         type_name = enum_type.name
 
@@ -130,7 +131,7 @@ class PydanticModelGenerator:
         enum_members = {name: value.value for name, value in enum_type.values.items()}
 
         # Create the enum
-        enum_klass = Enum(type_name, enum_members)
+        enum_klass = StrEnum(type_name, enum_members)
         self._type_registry[type_name] = enum_klass
         return enum_klass
 
@@ -394,7 +395,7 @@ class PydanticModelGenerator:
                 # Look up the fragment model in the registry
                 if fragment_model_name in self._type_registry:
                     fragment_model = self._type_registry[fragment_model_name]
-                    # Ensure it's a BaseModel (not an Enum)
+                    # Ensure it's a BaseModel (not a StrEnum)
                     if isinstance(fragment_model, type) and issubclass(
                         fragment_model, BaseModel
                     ):

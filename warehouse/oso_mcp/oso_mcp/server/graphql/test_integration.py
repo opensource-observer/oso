@@ -98,7 +98,7 @@ def mock_http_client_factory(
 
 
 @pytest.mark.asyncio
-async def test_generated_tool_makes_graphql_request(
+async def test_generated_tool_makes_graphql_mutation(
     mcp_config: MCPConfig,
     mock_http_client_factory: GraphQLClientFactory,
     mock_http_client: t.Any,
@@ -151,6 +151,10 @@ async def test_generated_tool_makes_graphql_request(
         # Verify the mutation query requests the correct fields
         for field in ["id", "name", "description", "count", "createdAt"]:
             assert field in request["json"]["query"]
+
+        # Verify the mutation query does not request some nested or unions
+        for nested_field in ["source"]:
+            assert nested_field not in request["json"]["query"]
 
         # Verify variables contain the input
         assert request["json"]["variables"]["input"]["name"] == "Test Item"

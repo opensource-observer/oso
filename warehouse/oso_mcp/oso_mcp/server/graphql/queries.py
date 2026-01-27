@@ -198,7 +198,11 @@ class QueryExtractor:
                 # Generate response model from selection set
                 # This will use fragment models where fragment spreads occur
                 payload_model = model_generator.generate_model_from_selection_set(
-                    query_name, operation.selection_set, query_type, schema
+                    query_name,
+                    operation.selection_set,
+                    query_type,
+                    schema,
+                    max_depth=100,  # Unlimited depth for hand-written queries
                 )
 
                 # Create QueryInfo
@@ -293,6 +297,7 @@ class QueryExtractor:
                     fragment.selection_set,
                     fragment_type,
                     schema,
+                    max_depth=100,  # Unlimited depth for hand-written query fragments
                 )
 
     def _get_fragment_dependencies(self, selection_set: SelectionSetNode) -> t.Set[str]:
