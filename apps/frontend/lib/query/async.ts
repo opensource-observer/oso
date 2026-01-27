@@ -182,7 +182,7 @@ export async function makeAsyncSqlQuery({
   const message: QueryRunRequest = {
     runId: new Uint8Array(Buffer.from(run.id.replace(/-/g, ""), "hex")),
     query: query,
-    user: `jwt-${user.orgName}`, // Prefix with 'jwt-' for backwards compatibility for now
+    user: `ro-${user.orgName.trim().toLowerCase()}-${user.orgId.trim().toLowerCase()}`,
     metadataJson: metadataJson,
   };
 
