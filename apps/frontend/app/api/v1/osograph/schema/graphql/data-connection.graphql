@@ -1,8 +1,14 @@
-type DataConnector {
+enum DataConnectionType {
+  POSTGRESQL
+  GSHEETS
+  BIGQUERY
+}
+
+type DataConnection {
   id: ID!
   orgId: ID!
   name: String!
-  type: String!
+  type: DataConnectionType!
   createdAt: DateTime!
   updatedAt: DateTime!
 

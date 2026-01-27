@@ -1198,7 +1198,7 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
-export type CreateDataConnectorRunRequestInput = {
+export type CreateDataConnectionRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
 
@@ -1509,15 +1509,21 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
-export type DataConnector = {
-  __typename?: "DataConnector";
+export type DataConnection = {
+  __typename?: "DataConnection";
   createdAt: Scalars["DateTimeISO"]["output"];
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
-  type: Scalars["String"]["output"];
+  type: DataConnectionType;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
+
+export enum DataConnectionType {
+  Bigquery = "BIGQUERY",
+  Gsheets = "GSHEETS",
+  Postgresql = "POSTGRESQL",
+}
 
 export type DataIngestion = {
   __typename?: "DataIngestion";
@@ -1805,7 +1811,7 @@ export type Dataset = {
   /**
    * The runs for this dataset. For USER_MODEL datasets, each run is related to individual data models.
    * FOR DATA_INGESTION datasets, each run is related to individual ingestion jobs.
-   * For DATA_CONNECTOR datasets, runs are not applicable and this field will be an empty list.
+   * For DATA_CONNECTION datasets, runs are not applicable and this field will be an empty list.
    */
   runs: RunConnection;
   tables: TableConnection;
@@ -1852,18 +1858,18 @@ export type DatasetEdge = {
  * Dataset types
  *
  * * USER_MODEL: Contains user-defined models
- * * DATA_CONNECTOR: Derived from a data connector to an external data source
+ * * DATA_CONNECTION: Derived from a data connector to an external data source
  * * DATA_INGESTION: Derived from data ingestion pipelines
  */
 export enum DatasetType {
-  DataConnector = "DATA_CONNECTOR",
+  DataConnection = "DATA_CONNECTION",
   DataIngestion = "DATA_INGESTION",
   StaticModel = "STATIC_MODEL",
   UserModel = "USER_MODEL",
 }
 
 export type DatasetTypeDefinition =
-  | DataConnector
+  | DataConnection
   | DataIngestionDefinition
   | DataModelDefinition
   | StaticModelDefinition;
@@ -3475,8 +3481,8 @@ export type Mutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   /** Cancel a run */
   cancelRun: CancelRunPayload;
-  /** Request a run for a DATA_CONNECTOR dataset */
-  createDataConnectorRunRequest: CreateRunRequestPayload;
+  /** Request a run for a DATA_CONNECTION dataset */
+  createDataConnectionRunRequest: CreateRunRequestPayload;
   createDataIngestionConfig: DataIngestion;
   /** Request a run for a DATA_INGEST dataset */
   createDataIngestionRunRequest: CreateRunRequestPayload;
@@ -3632,8 +3638,8 @@ export type MutationCancelRunArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
-export type MutationCreateDataConnectorRunRequestArgs = {
-  input: CreateDataConnectorRunRequestInput;
+export type MutationCreateDataConnectionRunRequestArgs = {
+  input: CreateDataConnectionRunRequestInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -7399,7 +7405,8 @@ export type Run = PipelineRun &
      */
     capturedLogs: CapturedLogs;
     creationTime: Scalars["Float"]["output"];
-    datasetId: Scalars["ID"]["output"];
+    dataset?: Maybe<Dataset>;
+    datasetId?: Maybe<Scalars["ID"]["output"]>;
     endTime?: Maybe<Scalars["Float"]["output"]>;
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
@@ -7414,7 +7421,10 @@ export type Run = PipelineRun &
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
     logsUrl?: Maybe<Scalars["String"]["output"]>;
+    metadata?: Maybe<Scalars["JSON"]["output"]>;
     mode: Scalars["String"]["output"];
+    orgId: Scalars["ID"]["output"];
+    organization: Organization;
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
     parentRunId?: Maybe<Scalars["String"]["output"]>;
     pipeline: PipelineReference;
@@ -8320,6 +8330,8 @@ export type StaticModel = {
 export type StaticModelMaterializationsArgs = {
   after?: InputMaybe<Scalars["String"]["input"]>;
   first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type StaticModelRunsArgs = {
@@ -8632,7 +8644,7 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
 };
 
 export type TableSource =
-  | DataConnector
+  | DataConnection
   | DataIngestion
   | DataModel
   | StaticModel;
@@ -8926,7 +8938,6 @@ export type User = {
   fullName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   organizations: OrganizationConnection;
-  role: Scalars["String"]["output"];
 };
 
 export type UserOrganizationsArgs = {
@@ -9393,7 +9404,7 @@ export type CreateDataIngestionRunRequestMutation = {
     run: {
       __typename?: "Run";
       id: string;
-      datasetId: string;
+      datasetId?: string | null;
       status: RunStatus;
       queuedAt: any;
       startedAt?: any | null;

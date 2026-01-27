@@ -1,6 +1,6 @@
 export const DATASET_TYPES = [
   "USER_MODEL",
-  "DATA_CONNECTOR",
+  "DATA_CONNECTION",
   "DATA_INGESTION",
   "STATIC_MODEL",
 ] as const;

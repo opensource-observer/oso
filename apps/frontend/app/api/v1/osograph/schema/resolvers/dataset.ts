@@ -236,7 +236,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             dataset_id: parent.id,
           };
         }
-        case "DATA_CONNECTOR":
+        case "DATA_CONNECTION":
           throw new Error(
             `Dataset type "${parent.dataset_type}" is not supported yet.`,
           );
@@ -303,7 +303,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             })),
           };
         }
-        case "DATA_CONNECTOR":
+        case "DATA_CONNECTION":
           // Table metadata is not available until after the ingestion job completes
           // Tables are created dynamically during ingestion
           return {

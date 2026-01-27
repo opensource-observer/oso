@@ -269,7 +269,7 @@ export const CreateDataIngestionRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
 });
 
-export const CreateDataConnectorRunRequestSchema = z.object({
+export const CreateDataConnectionRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
 });
 

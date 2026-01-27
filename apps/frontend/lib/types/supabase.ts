@@ -1689,7 +1689,7 @@ export type Database = {
     Enums: {
       dataset_type:
         | "USER_MODEL"
-        | "DATA_CONNECTOR"
+        | "DATA_CONNECTION"
         | "DATA_INGESTION"
         | "STATIC_MODEL";
       model_kind:
@@ -1863,7 +1863,7 @@ export const Constants = {
     Enums: {
       dataset_type: [
         "USER_MODEL",
-        "DATA_CONNECTOR",
+        "DATA_CONNECTION",
         "DATA_INGESTION",
         "STATIC_MODEL",
       ],
