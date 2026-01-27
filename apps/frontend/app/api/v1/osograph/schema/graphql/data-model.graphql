@@ -244,15 +244,10 @@ type CreateDataModelReleasePayload {
   message: String
 }
 
-type DeleteDataModelPayload {
-  success: Boolean!
-  message: String
-}
-
 extend type Mutation {
   createDataModel(input: CreateDataModelInput!): CreateDataModelPayload!
   updateDataModel(input: UpdateDataModelInput!): CreateDataModelPayload!
-  deleteDataModel(id: ID!): DeleteDataModelPayload!
+  deleteDataModel(id: ID!): SimplePayload!
   createDataModelRevision(
     input: CreateDataModelRevisionInput!
   ): CreateDataModelRevisionPayload!

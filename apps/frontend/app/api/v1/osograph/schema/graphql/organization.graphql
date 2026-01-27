@@ -8,6 +8,7 @@ type Organization {
   members(first: Int = 50, after: String, single: Boolean, where: JSON): UserConnection!
   notebooks(first: Int = 50, after: String, single: Boolean, where: JSON): NotebookConnection!
   datasets(first: Int = 50, after: String, single: Boolean, where: JSON): DatasetConnection!
+  dataConnections(first: Int = 50, after: String, single: Boolean, where: JSON): DataConnectionConnection!
 }
 
 type OrganizationMember {

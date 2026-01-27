@@ -1198,6 +1198,34 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
+export type CreateDataConnectionAliasInput = {
+  dataConnectionId: Scalars["ID"]["input"];
+  name: Scalars["String"]["input"];
+  schema: Scalars["String"]["input"];
+};
+
+export type CreateDataConnectionAliasPayload = {
+  __typename?: "CreateDataConnectionAliasPayload";
+  dataConnectionAlias?: Maybe<DataConnectionAlias>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
+export type CreateDataConnectionInput = {
+  config: Scalars["JSON"]["input"];
+  credentials: Scalars["JSON"]["input"];
+  name: Scalars["String"]["input"];
+  orgId: Scalars["ID"]["input"];
+  type: DataConnectionType;
+};
+
+export type CreateDataConnectionPayload = {
+  __typename?: "CreateDataConnectionPayload";
+  dataConnection?: Maybe<DataConnection>;
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type CreateDataConnectionRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
@@ -1517,6 +1545,40 @@ export type DataConnection = {
   orgId: Scalars["ID"]["output"];
   type: DataConnectionType;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataConnectionAlias = {
+  __typename?: "DataConnectionAlias";
+  dataConnectionId: Scalars["ID"]["output"];
+  datasetId: Scalars["ID"]["output"];
+  id: Scalars["ID"]["output"];
+  name: Scalars["String"]["output"];
+  orgId: Scalars["ID"]["output"];
+  schema: Scalars["String"]["output"];
+};
+
+export type DataConnectionConnection = {
+  __typename?: "DataConnectionConnection";
+  edges: Array<DataConnectionEdge>;
+  pageInfo: PageInfo;
+  totalCount?: Maybe<Scalars["Int"]["output"]>;
+};
+
+export type DataConnectionDefinition = {
+  __typename?: "DataConnectionDefinition";
+  /**
+   * If the dataset is of type DATA_CONNECTION, this field will contain the data connection model
+   * associated with the dataset. Otherwise it will be null.
+   */
+  dataConnectionAlias: DataConnectionAlias;
+  datasetId: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+};
+
+export type DataConnectionEdge = {
+  __typename?: "DataConnectionEdge";
+  cursor: Scalars["String"]["output"];
+  node: DataConnection;
 };
 
 export enum DataConnectionType {
@@ -1915,18 +1977,6 @@ export enum DefsStateManagementType {
   VersionedStateStorage = "VERSIONED_STATE_STORAGE",
 }
 
-export type DeleteDataModelPayload = {
-  __typename?: "DeleteDataModelPayload";
-  message?: Maybe<Scalars["String"]["output"]>;
-  success: Scalars["Boolean"]["output"];
-};
-
-export type DeleteDatasetPayload = {
-  __typename?: "DeleteDatasetPayload";
-  message?: Maybe<Scalars["String"]["output"]>;
-  success: Scalars["Boolean"]["output"];
-};
-
 export type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
   | PythonError
@@ -1954,12 +2004,6 @@ export type DeletePipelineRunSuccess = {
 export type DeleteRunMutation = {
   __typename?: "DeleteRunMutation";
   Output: DeletePipelineRunResult;
-};
-
-export type DeleteStaticModelPayload = {
-  __typename?: "DeleteStaticModelPayload";
-  message?: Maybe<Scalars["String"]["output"]>;
-  success: Scalars["Boolean"]["output"];
 };
 
 export type DimensionDefinitionType = {
@@ -3481,6 +3525,8 @@ export type Mutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   /** Cancel a run */
   cancelRun: CancelRunPayload;
+  createDataConnection: CreateDataConnectionPayload;
+  createDataConnectionAlias: CreateDataConnectionAliasPayload;
   /** Request a run for a DATA_CONNECTION dataset */
   createDataConnectionRunRequest: CreateRunRequestPayload;
   createDataIngestionConfig: DataIngestion;
@@ -3505,16 +3551,18 @@ export type Mutation = {
   createUserModelRunRequest: CreateRunRequestPayload;
   /** Sets the concurrency limit for a given concurrency key. */
   deleteConcurrencyLimit: Scalars["Boolean"]["output"];
-  deleteDataModel: DeleteDataModelPayload;
+  deleteDataConnection: SimplePayload;
+  deleteDataConnectionAlias: SimplePayload;
+  deleteDataModel: SimplePayload;
   /** Delete a dataset */
-  deleteDataset: DeleteDatasetPayload;
+  deleteDataset: SimplePayload;
   /** Deletes partitions from a dynamic partition set. */
   deleteDynamicPartitions: DeleteDynamicPartitionsResult;
   /** Deletes a run from storage. */
   deletePipelineRun: DeletePipelineRunResult;
   /** Deletes a run from storage. */
   deleteRun: DeletePipelineRunResult;
-  deleteStaticModel: DeleteStaticModelPayload;
+  deleteStaticModel: SimplePayload;
   /** System only. Mark a run as finished. */
   finishRun: FinishRunPayload;
   /** System only. Mark a step as finished */
@@ -3638,6 +3686,16 @@ export type MutationCancelRunArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataConnectionArgs = {
+  input: CreateDataConnectionInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationCreateDataConnectionAliasArgs = {
+  input: CreateDataConnectionAliasInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
 export type MutationCreateDataConnectionRunRequestArgs = {
   input: CreateDataConnectionRunRequestInput;
 };
@@ -3710,6 +3768,16 @@ export type MutationCreateUserModelRunRequestArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationDeleteConcurrencyLimitArgs = {
   concurrencyKey: Scalars["String"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationDeleteDataConnectionArgs = {
+  id: Scalars["ID"]["input"];
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationDeleteDataConnectionAliasArgs = {
+  id: Scalars["ID"]["input"];
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -4171,6 +4239,7 @@ export enum OrderBy {
 export type Organization = {
   __typename?: "Organization";
   createdAt: Scalars["DateTimeISO"]["output"];
+  dataConnections: DataConnectionConnection;
   datasets: DatasetConnection;
   description?: Maybe<Scalars["String"]["output"]>;
   displayName?: Maybe<Scalars["String"]["output"]>;
@@ -4179,6 +4248,13 @@ export type Organization = {
   name: Scalars["String"]["output"];
   notebooks: NotebookConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type OrganizationDataConnectionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type OrganizationDatasetsArgs = {
@@ -8180,6 +8256,12 @@ export type ShutdownRepositoryLocationSuccess = {
   repositoryLocationName: Scalars["String"]["output"];
 };
 
+export type SimplePayload = {
+  __typename?: "SimplePayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type Solid = {
   __typename?: "Solid";
   definition: ISolidDefinition;
@@ -9184,7 +9266,7 @@ export type DeleteDatasetMutationVariables = Exact<{
 export type DeleteDatasetMutation = {
   __typename?: "Mutation";
   deleteDataset: {
-    __typename?: "DeleteDatasetPayload";
+    __typename?: "SimplePayload";
     success: boolean;
     message?: string | null;
   };
@@ -9235,7 +9317,7 @@ export type DeleteDataModelMutationVariables = Exact<{
 export type DeleteDataModelMutation = {
   __typename?: "Mutation";
   deleteDataModel: {
-    __typename?: "DeleteDataModelPayload";
+    __typename?: "SimplePayload";
     success: boolean;
     message?: string | null;
   };
@@ -9340,7 +9422,7 @@ export type DeleteStaticModelMutationVariables = Exact<{
 export type DeleteStaticModelMutation = {
   __typename?: "Mutation";
   deleteStaticModel: {
-    __typename?: "DeleteStaticModelPayload";
+    __typename?: "SimplePayload";
     success: boolean;
     message?: string | null;
   };
