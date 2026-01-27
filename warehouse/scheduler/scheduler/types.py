@@ -10,6 +10,11 @@ from pydantic import BaseModel, Field
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
+from scheduler.graphql_client.fragments import (
+    DatasetCommon,
+    OrganizationCommon,
+    UserCommon,
+)
 from scheduler.graphql_client.input_types import DataModelColumnInput
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
 from scheduler.logging import BindableLogger
@@ -412,6 +417,36 @@ class RunContext(abc.ABC):
         """Updates the run metadata for the current run."""
         raise NotImplementedError("update_metadata must be implemented by subclasses.")
 
+    @property
+    @abc.abstractmethod
+    def run_id(self) -> str:
+        """The ID of the current run."""
+        raise NotImplementedError("run_id must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def organization(self) -> OrganizationCommon:
+        """The organization for the current run."""
+        raise NotImplementedError("organization must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def dataset(self) -> DatasetCommon | None:
+        """The dataset for the current run."""
+        raise NotImplementedError("dataset must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def requested_by(self) -> UserCommon | None:
+        """The user who requested the current run."""
+        raise NotImplementedError("requested_by must be implemented by subclasses.")
+
+    @property
+    @abc.abstractmethod
+    def trigger_type(self) -> str:
+        """The trigger type for the current run."""
+        raise NotImplementedError("trigger_type must be implemented by subclasses.")
+
 
 class HandlerResponse(BaseModel):
     message: str
@@ -454,12 +489,17 @@ class SuccessResponse(HandlerResponse):
     status_code: int = Field(default=200)
 
 
+class CancelledResponse(HandlerResponse):
+    message: str = Field(default="Processing of the message was cancelled.")
+    status_code: int = Field(default=499)
+
+
 class MessageHandler(abc.ABC, t.Generic[T]):
     topic: str
     message_type: t.Type[T]
     schema_file_name: str
 
-    async def handle_message(self, *args, **kwargs) -> HandlerResponse:
+    async def handle_message(self, message: T, *args, **kwargs) -> HandlerResponse:
         """A method to handle incoming messages"""
         raise NotImplementedError("handle_message must be implemented by subclasses.")
 
@@ -478,6 +518,9 @@ class MessageHandler(abc.ABC, t.Generic[T]):
         destination = self.new_message()
         Parse(data, destination)
         return destination
+
+    def initialize(self, *args, **kwargs) -> None:
+        return None
 
 
 class MessageHandlerRegistry:
@@ -504,12 +547,35 @@ class GenericMessageQueueService(abc.ABC):
     ) -> None:
         self.registry = registry
         self.resources = resources
+        self._initialized_handlers: set[str] = set()
 
-    def get_queue_listener(self, topic: str) -> MessageHandler:
-        listener = self.registry.get_handler(topic)
-        if not listener:
-            raise ValueError(f"No listener registered for topic {topic}")
-        return listener
+    def initialize_queue_handler(
+        self, resources: ResourcesContext, topic: str
+    ) -> MessageHandler:
+        handler = self.registry.get_handler(topic)
+        if not handler:
+            raise ValueError(f"No handler registered for topic {topic}")
+
+        if handler and topic not in self._initialized_handlers:
+            resources.run(
+                handler.initialize,
+            )
+            self._initialized_handlers.add(topic)
+
+        return handler
+
+    @abc.abstractmethod
+    def initialize(self, *args, **kwargs) -> None:
+        """A method to initialize the message queue service"""
+        ...
+
+    async def start(self, queue: str) -> None:
+        """A method to start the message queue service"""
+        self.resources.run(
+            self.initialize,
+        )
+
+        await self.run_loop(queue)
 
     @abc.abstractmethod
     async def run_loop(self, queue: str) -> None:

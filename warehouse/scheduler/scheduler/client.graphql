@@ -80,6 +80,32 @@ mutation CreateMaterialization(
   }
 }
 
+fragment OrganizationCommon on Organization {
+  id
+  name
+}
+
+fragment UserCommon on User {
+  id
+  email
+}
+
+fragment RunCommon on Run {
+  id
+  metadata
+  triggerType
+  organization {
+    ...OrganizationCommon
+  }
+  dataset {
+    ...DatasetCommon
+  }
+  requestedBy {
+    ...UserCommon
+  }
+}
+
+
 mutation SavePublishedNotebookHtml($notebookId: ID!, $htmlContent: String!) {
   savePublishedNotebookHtml(
     input: { notebookId: $notebookId, htmlContent: $htmlContent }
@@ -94,8 +120,7 @@ fragment DatasetCommon on Dataset {
   displayName
   description
   organization {
-    id
-    name
+    ...OrganizationCommon
   }
 }
 
@@ -150,6 +175,16 @@ fragment DataModels on DataModelConnection {
   edges {
     node {
       ...LatestDataModel
+    }
+  }
+}
+
+query GetRun($runId: ID!) {
+  runs(where: { id: { eq: $runId }}, single: true) {
+    edges {
+      node {
+        ...RunCommon
+      }
     }
   }
 }
