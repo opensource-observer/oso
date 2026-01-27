@@ -254,18 +254,21 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
 
         resolved_query = await model.resolve_query(table_resolvers=table_resolvers)
 
-        create_query = ctas_query(resolved_query)
+        with adapter.transaction():
+            # Delete existing table if it exists
+            adapter.drop_table(table_name=target_table, exists=True)
 
-        adapter.ctas(
-            table_name=target_table,
-            query_or_df=create_query,
-            exists=True,
-        )
+            create_query = ctas_query(resolved_query)
 
-        adapter.replace_query(
-            table_name=target_table,
-            query_or_df=resolved_query,
-        )
+            adapter.ctas(
+                table_name=target_table,
+                query_or_df=create_query,
+                exists=True,
+            )
+            adapter.replace_query(
+                table_name=target_table,
+                query_or_df=resolved_query,
+            )
 
         columns = adapter.columns(table_name=target_table)
 
