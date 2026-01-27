@@ -1,0 +1,336 @@
+# Fragments for common types
+
+fragment PageInfoFields on PageInfo {
+  hasNextPage
+  hasPreviousPage
+  startCursor
+  endCursor
+}
+
+fragment TableColumnFields on TableColumn {
+  name
+  type
+  nullable
+}
+
+fragment OrganizationFields on Organization {
+  id
+  name
+  displayName
+  description
+  createdAt
+  updatedAt
+}
+
+fragment DatasetFields on Dataset {
+  id
+  orgId
+  name
+  displayName
+  description
+  type
+  creatorId
+  isPublic
+  createdAt
+  updatedAt
+}
+
+fragment DataModelFields on DataModel {
+  id
+  orgId
+  name
+  isEnabled
+  createdAt
+  updatedAt
+}
+
+fragment DataModelRevisionFields on DataModelRevision {
+  id
+  revisionNumber
+  hash
+  description
+  language
+  createdAt
+}
+
+fragment StaticModelFields on StaticModel {
+  id
+  orgId
+  name
+  createdAt
+  updatedAt
+}
+
+fragment DataIngestionFields on DataIngestion {
+  id
+  orgId
+  datasetId
+  factoryType
+  config
+  createdAt
+  updatedAt
+}
+
+fragment NotebookFields on Notebook {
+  id
+  orgId
+  name
+  description
+  data
+  preview
+  creatorId
+  createdAt
+  updatedAt
+}
+
+# Queries
+
+query ListDatasets($first: Int = 50, $after: String, $where: JSON) {
+  datasets(first: $first, after: $after, where: $where) {
+    edges {
+      node {
+        ...DatasetFields
+      }
+      cursor
+    }
+    pageInfo {
+      ...PageInfoFields
+    }
+    totalCount
+  }
+}
+
+query ListTables($where: JSON!) {
+  tables(where: $where) {
+    ...TableColumnFields
+  }
+}
+
+query ListDataModels($first: Int = 50, $after: String, $where: JSON) {
+  dataModels(first: $first, after: $after, where: $where) {
+    edges {
+      node {
+        ...DataModelFields
+        dataset {
+          ...DatasetFields
+        }
+        latestRevision {
+          ...DataModelRevisionFields
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      ...PageInfoFields
+    }
+    totalCount
+  }
+}
+
+query ListStaticModels($first: Int = 50, $after: String, $where: JSON) {
+  staticModels(first: $first, after: $after, where: $where) {
+    edges {
+      node {
+        ...StaticModelFields
+        dataset {
+          ...DatasetFields
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      ...PageInfoFields
+    }
+    totalCount
+  }
+}
+
+query ListDataIngestions($first: Int = 50, $after: String, $where: JSON) {
+  datasets(first: $first, after: $after, where: $where) {
+    edges {
+      node {
+        ...DatasetFields
+        typeDefinition {
+          ... on DataIngestionDefinition {
+            dataIngestion {
+              ...DataIngestionFields
+            }
+          }
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      ...PageInfoFields
+    }
+    totalCount
+  }
+}
+
+query ListNotebooks($first: Int = 50, $after: String, $where: JSON) {
+  notebooks(first: $first, after: $after, where: $where) {
+    edges {
+      node {
+        ...NotebookFields
+      }
+      cursor
+    }
+    pageInfo {
+      ...PageInfoFields
+    }
+    totalCount
+  }
+}
+
+query GetNotebook($id: ID!) {
+  notebooks(where: { id: { eq: $id } }, single: true) {
+    edges {
+      node {
+        ...NotebookFields
+      }
+    }
+  }
+}
+
+query GetNotebookByName($orgId: ID!, $name: String!) {
+  notebooks(where: { orgId: { eq: $orgId }, name: { eq: $name } }, single: true) {
+    edges {
+      node {
+        ...NotebookFields
+      }
+    }
+  }
+}
+
+query GetDataModel($id: ID!) {
+  dataModels(where: { id: { eq: $id } }, single: true) {
+    edges {
+      node {
+        ...DataModelFields
+        dataset {
+          ...DatasetFields
+        }
+        latestRevision {
+          ...DataModelRevisionFields
+        }
+      }
+    }
+  }
+}
+
+query GetDataModelByName($orgId: ID!, $datasetId: ID!, $name: String!) {
+  dataModels(where: { orgId: { eq: $orgId }, datasetId: { eq: $datasetId }, name: { eq: $name } }, single: true) {
+    edges {
+      node {
+        ...DataModelFields
+        dataset {
+          ...DatasetFields
+        }
+        latestRevision {
+          ...DataModelRevisionFields
+        }
+      }
+    }
+  }
+}
+
+query GetStaticModel($id: ID!) {
+  staticModels(where: { id: { eq: $id } }, single: true) {
+    edges {
+      node {
+        ...StaticModelFields
+        dataset {
+          ...DatasetFields
+        }
+      }
+    }
+  }
+}
+
+query GetStaticModelByName($orgId: ID!, $datasetId: ID!, $name: String!) {
+  staticModels(where: { orgId: { eq: $orgId }, datasetId: { eq: $datasetId }, name: { eq: $name } }, single: true) {
+    edges {
+      node {
+        ...StaticModelFields
+        dataset {
+          ...DatasetFields
+        }
+      }
+    }
+  }
+}
+
+query GetDataset($id: ID!) {
+  datasets(where: { id: { eq: $id } }, single: true) {
+    edges {
+      node {
+        ...DatasetFields
+      }
+    }
+  }
+}
+
+query GetDatasetByName($orgId: ID!, $name: String!) {
+  datasets(where: { orgId: { eq: $orgId }, name: { eq: $name } }, single: true) {
+    edges {
+      node {
+        ...DatasetFields
+      }
+    }
+  }
+}
+
+query GetDataIngestion($datasetId: ID!) {
+  datasets(where: { id: { eq: $datasetId } }, single: true) {
+    edges {
+      node {
+        ...DatasetFields
+        typeDefinition {
+          ... on DataIngestionDefinition {
+            dataIngestion {
+              ...DataIngestionFields
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetDataIngestionByName($orgId: ID!, $datasetName: String!) {
+  datasets(where: { orgId: { eq: $orgId }, name: { eq: $datasetName } }, single: true) {
+    edges {
+      node {
+        ...DatasetFields
+        typeDefinition {
+          ... on DataIngestionDefinition {
+            dataIngestion {
+              ...DataIngestionFields
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query GetViewer($first: Int = 50, $after: String) {
+  viewer {
+    id
+    email
+    fullName
+    avatarUrl
+    organizations(first: $first, after: $after) {
+      edges {
+        node {
+          ...OrganizationFields
+        }
+        cursor
+      }
+      pageInfo {
+        ...PageInfoFields
+      }
+      totalCount
+    }
+  }
+}
