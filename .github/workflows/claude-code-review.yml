@@ -4,29 +4,28 @@ env:
   ANTHROPIC_VERTEX_PROJECT_ID: opensource-observer
 
 on:
-  issue_comment:
-    types: [created]
+  pull_request:
+    types: [labeled]
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  code-review:
-    name: Run Claude Code Review
+  security-review:
+    name: Run Security Review
     environment: deploy
     runs-on: ubuntu-latest
     if: |
-      github.event.issue.pull_request &&
-      (startsWith(github.event.comment.body, '/security-review') || startsWith(github.event.comment.body, '/code-review')) &&
-      contains(fromJson('["MEMBER", "OWNER"]'), github.event.comment.author_association)
+      github.event.pull_request.draft == false &&
+      contains(github.event.pull_request.labels.*.name, 'security-review')
 
     steps:
       - name: Checkout PR
         uses: actions/checkout@v4
         with:
-          ref: refs/pull/${{ github.event.issue.number }}/head
-          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -35,7 +34,6 @@ jobs:
           create_credentials_file: true
 
       - name: Run Security Review
-        if: startsWith(github.event.comment.body, '/security-review')
         uses: anthropics/claude-code-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -45,15 +43,35 @@ jobs:
             --model claude-sonnet-4@20250514
             --max-turns 15
 
+  code-review:
+    name: Run Code Review
+    environment: deploy
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.draft == false &&
+      contains(github.event.pull_request.labels.*.name, 'code-review')
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS_JSON }}"
+          create_credentials_file: true
+
       - name: Run Code Review
-        if: startsWith(github.event.comment.body, '/code-review')
         uses: anthropics/claude-code-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           use_vertex: "true"
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.issue.number }}'
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
           claude_args: |
             --model claude-sonnet-4@20250514
             --max-turns 15
