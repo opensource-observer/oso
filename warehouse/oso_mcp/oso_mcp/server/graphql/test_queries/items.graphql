@@ -1,5 +1,11 @@
 # Test queries for Item operations
 
+fragment FooFields on Foo {
+  id
+  name
+  description
+}
+
 fragment ItemFields on Item {
   id
   name
@@ -8,6 +14,14 @@ fragment ItemFields on Item {
   createdAt
   nestedItem {
     ...NestedItemFields
+  }
+  foos {
+    edges {
+      node {
+        ... FooFields
+      }
+    }
+    totalCount
   }
 }
 

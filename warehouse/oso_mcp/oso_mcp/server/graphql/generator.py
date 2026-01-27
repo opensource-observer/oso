@@ -1,5 +1,7 @@
 """Main GraphQL tool generator orchestrator."""
 
+import json
+import logging
 import typing as t
 from contextlib import asynccontextmanager
 
@@ -13,6 +15,8 @@ from .pydantic_generator import PydanticModelGenerator
 from .queries import QueryDocumentParser, QueryExtractor
 from .tool_generator import ToolGenerator
 from .types import AsyncGraphQLClient, GraphQLClientFactory, MutationFilter
+
+logger = logging.getLogger(__name__)
 
 
 class OSOAsyncGraphQLClient(AsyncGraphQLClient):
@@ -58,6 +62,7 @@ class OSOAsyncGraphQLClient(AsyncGraphQLClient):
             "Content-Type": "application/json",
             "Agent": "oso-mcp-client/0.0",
         }
+        logger.debug(f"Executing GraphQL request: \n\n {json.dumps(payload, indent=2)}")
 
         # Make HTTP request
         response = await self.http_client.post(

@@ -327,6 +327,25 @@ async def test_query_tool_generation(
                         "id": "nested-456",
                         "title": "Nested Item Title",
                     },
+                    "foos": {
+                        "edges": [
+                            {
+                                "node": {
+                                    "id": "foo-1",
+                                    "name": "Foo One",
+                                    "description": "First foo",
+                                }
+                            },
+                            {
+                                "node": {
+                                    "id": "foo-2",
+                                    "name": "Foo Two",
+                                    "description": "Second foo",
+                                }
+                            },
+                        ],
+                        "totalCount": 2,
+                    },
                 }
             }
         }

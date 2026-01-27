@@ -2,6 +2,30 @@
 
 scalar DateTime
 
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type Foo {
+  id: ID!
+  name: String!
+  description: String
+}
+
+type FooEdge {
+  node: Foo!
+  cursor: String!
+}
+
+type FooConnection {
+  edges: [FooEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
 type Query {
   """Get a single item by ID"""
   item(id: ID!): Item
@@ -67,4 +91,5 @@ type Item {
   createdAt: DateTime!
   nestedItem: NestedItem!
   nestedItems: [NestedItemInArray!]!
+  foos: FooConnection!
 }
