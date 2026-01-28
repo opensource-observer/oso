@@ -14,7 +14,7 @@ permissions:
 jobs:
   security-review:
     name: Run Security Review
-    environment: deploy
+    environment: claude-review
     runs-on: ubuntu-latest
     if: |
       github.event.pull_request.draft == false &&
@@ -45,7 +45,7 @@ jobs:
 
   code-review:
     name: Run Code Review
-    environment: deploy
+    environment: claude-review
     runs-on: ubuntu-latest
     if: |
       github.event.pull_request.draft == false &&
@@ -69,9 +69,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           use_vertex: "true"
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
+          plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
+          plugins: "code-review@claude-code-plugins"
+          prompt: "/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
           claude_args: |
             --model claude-sonnet-4@20250514
             --max-turns 15
