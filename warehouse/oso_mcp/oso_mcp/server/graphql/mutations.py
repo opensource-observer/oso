@@ -215,7 +215,7 @@ class GraphQLExecutor:
         """
         logger.debug(f"Executing mutation {self.mutation.name} at {self.endpoint}")
         # Convert Pydantic model to dict for variables
-        variables = {"input": input_data.model_dump()}
+        variables = {"input": input_data.model_dump(exclude_none=True)}
 
         # Build GraphQL mutation query
         mutation_query = self._build_mutation_query()

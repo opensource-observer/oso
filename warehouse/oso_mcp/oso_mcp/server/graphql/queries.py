@@ -448,7 +448,7 @@ class QueryExecutor:
         logger.debug(f"Executing query {self.query_info.name} at {self.endpoint}")
 
         # Convert Pydantic model to dict for variables
-        variables_dict = variables.model_dump()
+        variables_dict = variables.model_dump(exclude_none=True)
 
         # Make HTTP request
         logger.debug(
