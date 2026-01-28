@@ -1,0 +1,95 @@
+"""Test GraphQL schema for testing tool generation."""
+
+scalar DateTime
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type Foo {
+  id: ID!
+  name: String!
+  description: String
+}
+
+type FooEdge {
+  node: Foo!
+  cursor: String!
+}
+
+type FooConnection {
+  edges: [FooEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type Query {
+  """Get a single item by ID"""
+  item(id: ID!): Item
+
+  """List items with pagination"""
+  items(limit: Int, offset: Int): [Item!]!
+}
+
+type Mutation {
+  """
+  Create a new item
+  """
+  createItem(input: CreateItemInput!): CreateItemPayload!
+
+  """
+  Update an existing item
+  @mcp-ignore
+  """
+  updateItem(input: UpdateItemInput!): UpdateItemPayload!
+}
+
+input CreateItemInput {
+  name: String!
+  description: String
+  count: Int
+}
+
+type CreateItemPayload {
+  success: Boolean!
+  message: String
+  item: Item
+}
+
+input UpdateItemInput {
+  id: ID!
+  name: String
+  description: String
+}
+
+type UpdateItemPayload {
+  success: Boolean!
+  message: String
+  item: Item
+}
+
+type NestedItem {
+  id: ID!
+  title: String!
+  item: Item!
+}
+
+type NestedItemInArray {
+  id: ID!
+  title: String!
+  item: Item!
+}
+
+type Item {
+  id: ID!
+  name: String!
+  description: String
+  count: Int
+  createdAt: DateTime!
+  nestedItem: NestedItem!
+  nestedItems: [NestedItemInArray!]!
+  foos: FooConnection!
+}

@@ -1,0 +1,43 @@
+# Test queries for Item operations
+
+fragment FooFields on Foo {
+  id
+  name
+  description
+}
+
+fragment ItemFields on Item {
+  id
+  name
+  description
+  count
+  createdAt
+  nestedItem {
+    ...NestedItemFields
+  }
+  foos {
+    edges {
+      node {
+        ... FooFields
+      }
+    }
+    totalCount
+  }
+}
+
+fragment NestedItemFields on NestedItem {
+  id
+  title
+}
+
+query GetItem($id: ID!) {
+  item(id: $id) {
+    ...ItemFields
+  }
+}
+
+query ListItems($limit: Int, $offset: Int) {
+  items(limit: $limit, offset: $offset) {
+    ...ItemFields
+  }
+}

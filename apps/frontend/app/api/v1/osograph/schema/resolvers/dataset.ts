@@ -30,6 +30,8 @@ import { queryWithPagination } from "@/app/api/v1/osograph/utils/query-helpers";
 import { assertNever } from "@opensource-observer/utils";
 import { DataIngestionAsTableRow, DatasetsRow } from "@/lib/types/schema-types";
 import { Connection } from "@/app/api/v1/osograph/utils/connection";
+import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import { generateTableId } from "@/app/api/v1/osograph/utils/model";
 
 export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -234,7 +236,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             dataset_id: parent.id,
           };
         }
-        case "DATA_CONNECTOR":
+        case "DATA_CONNECTION":
           throw new Error(
             `Dataset type "${parent.dataset_type}" is not supported yet.`,
           );
@@ -301,7 +303,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
             })),
           };
         }
-        case "DATA_CONNECTOR":
+        case "DATA_CONNECTION":
           // Table metadata is not available until after the ingestion job completes
           // Tables are created dynamically during ingestion
           return {
@@ -426,6 +428,20 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         .maybeSingle();
 
       return config;
+    },
+    materializations: async (
+      parent: { dataset_id: string; org_id: string },
+      args: FilterableConnectionArgs & { tableName: string },
+      context: GraphQLContext,
+    ) => {
+      const { tableName, ...restArgs } = args;
+      return getMaterializations(
+        restArgs,
+        context,
+        parent.org_id,
+        parent.dataset_id,
+        generateTableId("DATA_INGESTION", tableName),
+      );
     },
   },
 };

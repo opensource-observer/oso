@@ -18,9 +18,15 @@ class InvitationStatus(str, Enum):
 
 class DatasetType(str, Enum):
     USER_MODEL = "USER_MODEL"
-    DATA_CONNECTOR = "DATA_CONNECTOR"
+    DATA_CONNECTION = "DATA_CONNECTION"
     DATA_INGESTION = "DATA_INGESTION"
     STATIC_MODEL = "STATIC_MODEL"
+
+
+class DataConnectionType(str, Enum):
+    POSTGRESQL = "POSTGRESQL"
+    GSHEETS = "GSHEETS"
+    BIGQUERY = "BIGQUERY"
 
 
 class DataIngestionFactoryType(str, Enum):

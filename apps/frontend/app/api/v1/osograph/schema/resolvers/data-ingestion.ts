@@ -4,7 +4,10 @@ import {
   validateInput,
 } from "@/app/api/v1/osograph/utils/validation";
 import { requireAuthentication } from "@/app/api/v1/osograph/utils/auth";
-import { checkMembershipExists } from "@/app/api/v1/osograph/utils/resolver-helpers";
+import {
+  checkMembershipExists,
+  getMaterializations,
+} from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   AuthenticationErrors,
@@ -14,6 +17,9 @@ import {
 import { logger } from "@/lib/logger";
 import z from "zod";
 import { DataIngestionsRow } from "@/lib/types/schema-types";
+import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
+import type { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination";
+import { generateTableId } from "@/app/api/v1/osograph/utils/model";
 
 export const dataIngestionResolvers = {
   Mutation: {
@@ -111,5 +117,25 @@ export const dataIngestionResolvers = {
     config: (parent: DataIngestionsRow) => parent.config,
     createdAt: (parent: DataIngestionsRow) => parent.created_at,
     updatedAt: (parent: DataIngestionsRow) => parent.updated_at,
+    modelContext: async (
+      parent: DataIngestionsRow,
+      args: { tableName: string },
+    ) => {
+      return getModelContext(parent.dataset_id, args.tableName);
+    },
+    materializations: async (
+      parent: DataIngestionsRow,
+      args: FilterableConnectionArgs & { tableName: string },
+      context: GraphQLContext,
+    ) => {
+      const { tableName, ...restArgs } = args;
+      return getMaterializations(
+        restArgs,
+        context,
+        parent.org_id,
+        parent.dataset_id,
+        generateTableId("DATA_INGESTION", tableName),
+      );
+    },
   },
 };

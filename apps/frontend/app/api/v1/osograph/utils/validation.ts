@@ -253,11 +253,23 @@ export const CreateDataIngestionSchema = z.object({
   config: z.record(z.any()),
 });
 
+const ModelColumnContextSchema = z.object({
+  name: z.string(),
+  context: z.string(),
+});
+
+export const UpdateModelContextSchema = z.object({
+  datasetId: z.string().uuid(),
+  modelId: z.string(),
+  context: z.string().optional(),
+  columnContext: z.array(ModelColumnContextSchema).optional(),
+});
+
 export const CreateDataIngestionRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
 });
 
-export const CreateDataConnectorRunRequestSchema = z.object({
+export const CreateDataConnectionRunRequestSchema = z.object({
   datasetId: z.string().uuid(),
 });
 

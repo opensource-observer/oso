@@ -67,7 +67,8 @@ spec:
         {{- end }}
         imagePullPolicy: Always
         ports:
-          - containerPort: 8000
+          - name: metrics
+            containerPort: {{ $.Values.app.metricsPort }}
         {{- with $resources }}
         resources:
           {{ toYaml . | nindent 10 }}
@@ -77,6 +78,9 @@ spec:
           {{- toYaml . | nindent 10 }}
         {{- end }}
         env:
+          # Set the metrics port
+          - name: SCHEDULER_RUN__PORT
+            value: "{{ $.Values.app.metricsPort }}"
           {{- range $key, $value := $.Values.app.envVars }}
           - name: {{ $key }}
             value: {{ $value | quote }}

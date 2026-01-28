@@ -1,0 +1,39 @@
+type ModelColumnContext {
+  name: String!
+  context: String!
+}
+
+input ModelColumnContextInput {
+  name: String!
+  context: String!
+}
+
+type ModelContext {
+  id: ID!
+  orgId: ID!
+  datasetId: ID!
+  tableId: String!
+  context: String
+  columnContext: [ModelColumnContext!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input UpdateModelContextInput {
+  datasetId: ID!
+  modelId: String!
+  context: String
+  columnContext: [ModelColumnContextInput!]
+}
+
+type UpdateModelContextPayload {
+  success: Boolean!
+  modelContext: ModelContext
+  message: String
+}
+
+extend type Mutation {
+  updateModelContext(
+    input: UpdateModelContextInput!
+  ): UpdateModelContextPayload!
+}

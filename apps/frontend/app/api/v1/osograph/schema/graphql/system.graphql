@@ -22,31 +22,37 @@ type System {
 extend type Mutation {
   """
   System only. Mark a run as started.
+  @system-only
   """
   startRun(input: StartRunInput!): StartRunPayload!
 
   """
   System only. Update run metadata. This can be called at any time
+  @system-only
   """
   updateRunMetadata(input: UpdateRunMetadataInput!): UpdateRunMetadataPayload!
 
   """
   System only. Mark a run as finished.
+  @system-only
   """
   finishRun(input: FinishRunInput!): FinishRunPayload!
 
   """
   System only. Mark a step as started
+  @system-only
   """
   startStep(input: StartStepInput!): StartStepPayload!
 
   """
   System only. Mark a step as finished
+  @system-only
   """
   finishStep(input: FinishStepInput!): FinishStepPayload!
 
   """
   System only. Create a materialization for a step
+  @system-only
   """
   createMaterialization(
     input: CreateMaterializationInput!
@@ -54,6 +60,7 @@ extend type Mutation {
 
   """
   System only. Save the generated published notebook HTML to object storage
+  @system-only
   """
   savePublishedNotebookHtml(
     input: SavePublishedNotebookHtmlInput!

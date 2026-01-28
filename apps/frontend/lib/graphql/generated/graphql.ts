@@ -1198,7 +1198,7 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars["String"]["output"];
 };
 
-export type CreateDataConnectorRunRequestInput = {
+export type CreateDataConnectionRunRequestInput = {
   datasetId: Scalars["ID"]["input"];
 };
 
@@ -1509,15 +1509,21 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
-export type DataConnector = {
-  __typename?: "DataConnector";
+export type DataConnection = {
+  __typename?: "DataConnection";
   createdAt: Scalars["DateTimeISO"]["output"];
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
-  type: Scalars["String"]["output"];
+  type: DataConnectionType;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };
+
+export enum DataConnectionType {
+  Bigquery = "BIGQUERY",
+  Gsheets = "GSHEETS",
+  Postgresql = "POSTGRESQL",
+}
 
 export type DataIngestion = {
   __typename?: "DataIngestion";
@@ -1526,8 +1532,22 @@ export type DataIngestion = {
   datasetId: Scalars["ID"]["output"];
   factoryType: DataIngestionFactoryType;
   id: Scalars["ID"]["output"];
+  materializations: MaterializationConnection;
+  modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataIngestionMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  tableName: Scalars["String"]["input"];
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataIngestionModelContextArgs = {
+  tableName: Scalars["String"]["input"];
 };
 
 export type DataIngestionConnection = {
@@ -1569,6 +1589,8 @@ export type DataModel = {
   isEnabled: Scalars["Boolean"]["output"];
   latestRelease?: Maybe<DataModelRelease>;
   latestRevision?: Maybe<DataModelRevision>;
+  materializations: MaterializationConnection;
+  modelContext?: Maybe<ModelContext>;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
@@ -1576,6 +1598,13 @@ export type DataModel = {
   revisions: DataModelRevisionConnection;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type DataModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type DataModelReleasesArgs = {
@@ -1782,7 +1811,7 @@ export type Dataset = {
   /**
    * The runs for this dataset. For USER_MODEL datasets, each run is related to individual data models.
    * FOR DATA_INGESTION datasets, each run is related to individual ingestion jobs.
-   * For DATA_CONNECTOR datasets, runs are not applicable and this field will be an empty list.
+   * For DATA_CONNECTION datasets, runs are not applicable and this field will be an empty list.
    */
   runs: RunConnection;
   tables: TableConnection;
@@ -1829,18 +1858,18 @@ export type DatasetEdge = {
  * Dataset types
  *
  * * USER_MODEL: Contains user-defined models
- * * DATA_CONNECTOR: Derived from a data connector to an external data source
+ * * DATA_CONNECTION: Derived from a data connector to an external data source
  * * DATA_INGESTION: Derived from data ingestion pipelines
  */
 export enum DatasetType {
-  DataConnector = "DATA_CONNECTOR",
+  DataConnection = "DATA_CONNECTION",
   DataIngestion = "DATA_INGESTION",
   StaticModel = "STATIC_MODEL",
   UserModel = "USER_MODEL",
 }
 
 export type DatasetTypeDefinition =
-  | DataConnector
+  | DataConnection
   | DataIngestionDefinition
   | DataModelDefinition
   | StaticModelDefinition;
@@ -3408,6 +3437,29 @@ export type ModeNotFoundError = Error & {
   mode: Scalars["String"]["output"];
 };
 
+export type ModelColumnContext = {
+  __typename?: "ModelColumnContext";
+  context: Scalars["String"]["output"];
+  name: Scalars["String"]["output"];
+};
+
+export type ModelColumnContextInput = {
+  context: Scalars["String"]["input"];
+  name: Scalars["String"]["input"];
+};
+
+export type ModelContext = {
+  __typename?: "ModelContext";
+  columnContext?: Maybe<Array<ModelColumnContext>>;
+  context?: Maybe<Scalars["String"]["output"]>;
+  createdAt: Scalars["DateTimeISO"]["output"];
+  datasetId: Scalars["ID"]["output"];
+  id: Scalars["ID"]["output"];
+  orgId: Scalars["ID"]["output"];
+  tableId: Scalars["String"]["output"];
+  updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
 export type MultiPartitionStatuses = {
   __typename?: "MultiPartitionStatuses";
   primaryDimensionName: Scalars["String"]["output"];
@@ -3429,8 +3481,8 @@ export type Mutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   /** Cancel a run */
   cancelRun: CancelRunPayload;
-  /** Request a run for a DATA_CONNECTOR dataset */
-  createDataConnectorRunRequest: CreateRunRequestPayload;
+  /** Request a run for a DATA_CONNECTION dataset */
+  createDataConnectionRunRequest: CreateRunRequestPayload;
   createDataIngestionConfig: DataIngestion;
   /** Request a run for a DATA_INGEST dataset */
   createDataIngestionRunRequest: CreateRunRequestPayload;
@@ -3548,6 +3600,7 @@ export type Mutation = {
   updateDataset: UpdateDatasetPayload;
   /** Update member role */
   updateMemberRole: UpdateMemberRolePayload;
+  updateModelContext: UpdateModelContextPayload;
   /** Update a notebook */
   updateNotebook: UpdateNotebookPayload;
   /** System only. Update run metadata. This can be called at any time */
@@ -3585,8 +3638,8 @@ export type MutationCancelRunArgs = {
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
-export type MutationCreateDataConnectorRunRequestArgs = {
-  input: CreateDataConnectorRunRequestInput;
+export type MutationCreateDataConnectionRunRequestArgs = {
+  input: CreateDataConnectionRunRequestInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -3911,6 +3964,11 @@ export type MutationUpdateDatasetArgs = {
 /** The root for all mutations to modify data in your Dagster instance. */
 export type MutationUpdateMemberRoleArgs = {
   input: UpdateMemberRoleInput;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationUpdateModelContextArgs = {
+  input: UpdateModelContextInput;
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -7347,7 +7405,8 @@ export type Run = PipelineRun &
      */
     capturedLogs: CapturedLogs;
     creationTime: Scalars["Float"]["output"];
-    datasetId: Scalars["ID"]["output"];
+    dataset?: Maybe<Dataset>;
+    datasetId?: Maybe<Scalars["ID"]["output"]>;
     endTime?: Maybe<Scalars["Float"]["output"]>;
     eventConnection: EventConnection;
     executionPlan?: Maybe<ExecutionPlan>;
@@ -7362,7 +7421,10 @@ export type Run = PipelineRun &
     id: Scalars["ID"]["output"];
     jobName: Scalars["String"]["output"];
     logsUrl?: Maybe<Scalars["String"]["output"]>;
+    metadata?: Maybe<Scalars["JSON"]["output"]>;
     mode: Scalars["String"]["output"];
+    orgId: Scalars["ID"]["output"];
+    organization: Organization;
     parentPipelineSnapshotId?: Maybe<Scalars["String"]["output"]>;
     parentRunId?: Maybe<Scalars["String"]["output"]>;
     pipeline: PipelineReference;
@@ -8256,11 +8318,20 @@ export type StaticModel = {
   createdAt: Scalars["DateTimeISO"]["output"];
   dataset: Dataset;
   id: Scalars["ID"]["output"];
+  materializations: MaterializationConnection;
+  modelContext?: Maybe<ModelContext>;
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
   organization: Organization;
   runs: RunConnection;
   updatedAt: Scalars["DateTimeISO"]["output"];
+};
+
+export type StaticModelMaterializationsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 export type StaticModelRunsArgs = {
@@ -8573,7 +8644,7 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
 };
 
 export type TableSource =
-  | DataConnector
+  | DataConnection
   | DataIngestion
   | DataModel
   | StaticModel;
@@ -8796,6 +8867,20 @@ export type UpdateMetadataInput = {
   value: Scalars["JSON"]["input"];
 };
 
+export type UpdateModelContextInput = {
+  columnContext?: InputMaybe<Array<ModelColumnContextInput>>;
+  context?: InputMaybe<Scalars["String"]["input"]>;
+  datasetId: Scalars["ID"]["input"];
+  modelId: Scalars["String"]["input"];
+};
+
+export type UpdateModelContextPayload = {
+  __typename?: "UpdateModelContextPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  modelContext?: Maybe<ModelContext>;
+  success: Scalars["Boolean"]["output"];
+};
+
 export type UpdateNotebookInput = {
   description?: InputMaybe<Scalars["String"]["input"]>;
   id: Scalars["ID"]["input"];
@@ -8853,7 +8938,6 @@ export type User = {
   fullName?: Maybe<Scalars["String"]["output"]>;
   id: Scalars["ID"]["output"];
   organizations: OrganizationConnection;
-  role: Scalars["String"]["output"];
 };
 
 export type UserOrganizationsArgs = {
@@ -9190,6 +9274,29 @@ export type CreateDataModelReleaseMutation = {
   };
 };
 
+export type UpdateModelContextMutationVariables = Exact<{
+  input: UpdateModelContextInput;
+}>;
+
+export type UpdateModelContextMutation = {
+  __typename?: "Mutation";
+  updateModelContext: {
+    __typename?: "UpdateModelContextPayload";
+    success: boolean;
+    message?: string | null;
+    modelContext?: {
+      __typename?: "ModelContext";
+      id: string;
+      context?: string | null;
+      columnContext?: Array<{
+        __typename?: "ModelColumnContext";
+        name: string;
+        context: string;
+      }> | null;
+    } | null;
+  };
+};
+
 export type CreateStaticModelMutationVariables = Exact<{
   input: CreateStaticModelInput;
 }>;
@@ -9297,7 +9404,7 @@ export type CreateDataIngestionRunRequestMutation = {
     run: {
       __typename?: "Run";
       id: string;
-      datasetId: string;
+      datasetId?: string | null;
       status: RunStatus;
       queuedAt: any;
       startedAt?: any | null;
@@ -10174,6 +10281,92 @@ export const CreateDataModelReleaseDocument = {
 } as unknown as DocumentNode<
   CreateDataModelReleaseMutation,
   CreateDataModelReleaseMutationVariables
+>;
+export const UpdateModelContextDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "UpdateModelContext" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "UpdateModelContextInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "updateModelContext" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "modelContext" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "context" },
+                      },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "columnContext" },
+                        selectionSet: {
+                          kind: "SelectionSet",
+                          selections: [
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "name" },
+                            },
+                            {
+                              kind: "Field",
+                              name: { kind: "Name", value: "context" },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UpdateModelContextMutation,
+  UpdateModelContextMutationVariables
 >;
 export const CreateStaticModelDocument = {
   kind: "Document",

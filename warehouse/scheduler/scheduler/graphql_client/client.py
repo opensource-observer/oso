@@ -12,6 +12,7 @@ from .finish_step import FinishStep
 from .get_data_ingestion_config import GetDataIngestionConfig
 from .get_data_models import GetDataModels
 from .get_notebook import GetNotebook
+from .get_run import GetRun
 from .get_static_models import GetStaticModels
 from .input_types import DataModelColumnInput, UpdateMetadataInput
 from .resolve_tables import ResolveTables
@@ -224,6 +225,62 @@ class Client(AsyncBaseClient):
         data = self.get_data(response)
         return SavePublishedNotebookHtml.model_validate(data)
 
+    async def get_run(self, run_id: str, **kwargs: Any) -> GetRun:
+        query = gql(
+            """
+            query GetRun($runId: ID!) {
+              runs(where: {id: {eq: $runId}}, single: true) {
+                edges {
+                  node {
+                    ...RunCommon
+                  }
+                }
+              }
+            }
+
+            fragment DatasetCommon on Dataset {
+              id
+              name
+              displayName
+              description
+              organization {
+                ...OrganizationCommon
+              }
+            }
+
+            fragment OrganizationCommon on Organization {
+              id
+              name
+            }
+
+            fragment RunCommon on Run {
+              id
+              metadata
+              triggerType
+              organization {
+                ...OrganizationCommon
+              }
+              dataset {
+                ...DatasetCommon
+              }
+              requestedBy {
+                ...UserCommon
+              }
+            }
+
+            fragment UserCommon on User {
+              id
+              email
+            }
+            """
+        )
+        variables: Dict[str, object] = {"runId": run_id}
+        response = await self.execute(
+            query=query, operation_name="GetRun", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return GetRun.model_validate(data)
+
     async def get_data_models(self, dataset_id: str, **kwargs: Any) -> GetDataModels:
         query = gql(
             """
@@ -259,8 +316,7 @@ class Client(AsyncBaseClient):
               displayName
               description
               organization {
-                id
-                name
+                ...OrganizationCommon
               }
             }
 
@@ -310,6 +366,11 @@ class Client(AsyncBaseClient):
                 }
               }
             }
+
+            fragment OrganizationCommon on Organization {
+              id
+              name
+            }
             """
         )
         variables: Dict[str, object] = {"datasetId": dataset_id}
@@ -351,9 +412,13 @@ class Client(AsyncBaseClient):
               displayName
               description
               organization {
-                id
-                name
+                ...OrganizationCommon
               }
+            }
+
+            fragment OrganizationCommon on Organization {
+              id
+              name
             }
             """
         )
@@ -401,9 +466,13 @@ class Client(AsyncBaseClient):
               displayName
               description
               organization {
-                id
-                name
+                ...OrganizationCommon
               }
+            }
+
+            fragment OrganizationCommon on Organization {
+              id
+              name
             }
             """
         )

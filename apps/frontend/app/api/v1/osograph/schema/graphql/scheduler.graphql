@@ -33,7 +33,10 @@ enum StepStatus {
 
 type Run {
   id: ID!
-  datasetId: ID!
+  orgId: ID!
+  organization: Organization!
+  datasetId: ID
+  dataset: Dataset
   triggerType: RunTriggerType!
   runType: RunType!
   requestedBy: User
@@ -43,6 +46,7 @@ type Run {
   status: RunStatus!
   logsUrl: String
   steps: StepConnection!
+  metadata: JSON
 }
 
 type RunEdge {
@@ -141,10 +145,10 @@ extend type Mutation {
   ): CreateRunRequestPayload!
 
   """
-  Request a run for a DATA_CONNECTOR dataset
+  Request a run for a DATA_CONNECTION dataset
   """
-  createDataConnectorRunRequest(
-    input: CreateDataConnectorRunRequestInput!
+  createDataConnectionRunRequest(
+    input: CreateDataConnectionRunRequestInput!
   ): CreateRunRequestPayload!
 
   """
@@ -169,7 +173,7 @@ input CreateDataIngestionRunRequestInput {
   datasetId: ID!
 }
 
-input CreateDataConnectorRunRequestInput {
+input CreateDataConnectionRunRequestInput {
   datasetId: ID!
 }
 

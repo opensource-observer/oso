@@ -36,6 +36,12 @@ SELECT
   CASE
     WHEN event_type = 'PushEvent' THEN 'COMMIT_CODE'
     WHEN event_type = 'WatchEvent' THEN 'STARRED'
+    WHEN event_type = 'IssuesEvent' THEN 'ISSUE_ACTIVITY'
+    WHEN event_type = 'PullRequestEvent' THEN 'PULL_REQUEST_ACTIVITY'
+    WHEN event_type = 'PullRequestReviewEvent' THEN 'PULL_REQUEST_REVIEW'
+    WHEN event_type = 'PullRequestReviewCommentEvent' THEN 'PULL_REQUEST_REVIEW_COMMENT'
+    WHEN event_type = 'IssueCommentEvent' THEN 'ISSUE_COMMENT'
+    WHEN event_type = 'ForkEvent' THEN 'FORKED'
     ELSE 'OTHER'
   END AS event_type,
   COUNT(*) AS amount

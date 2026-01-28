@@ -4,6 +4,8 @@
 import { Table } from "@/lib/types/table";
 import { queryMetadataSchema } from "@/lib/types/query-metadata";
 import { TableResolver, TableResolutionMap } from "@/lib/query/resolver";
+import z from "zod";
+import { logger } from "@/lib/logger";
 
 /**
  * Uses metadata to infer and resolve table names. After this resolver, all
@@ -15,7 +17,16 @@ export class MetadataInferredTableResolver implements TableResolver {
     metadata: Record<string, unknown>,
   ): Promise<TableResolutionMap> {
     // Check for the orgName in metadata to infer table mappings
-    const parsedMetadata = queryMetadataSchema.parse(metadata);
+    let parsedMetadata: z.infer<typeof queryMetadataSchema>;
+    try {
+      // If the metadata is invalid, we skip this resolver
+      parsedMetadata = queryMetadataSchema.parse(metadata);
+    } catch (e) {
+      logger.info(
+        `MetadataInferredTableResolver: Invalid metadata, skipping resolver: ${e}`,
+      );
+      return tables;
+    }
 
     const resolvedTables: TableResolutionMap = {};
     for (const [unresolvedName, tableObj] of Object.entries(tables)) {

@@ -7,6 +7,7 @@ type DataModel {
   isEnabled: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
+  modelContext: ModelContext
   revisions(
     first: Int = 50
     after: String
@@ -22,6 +23,12 @@ type DataModel {
   latestRevision: DataModelRevision
   latestRelease: DataModelRelease
   runs(first: Int = 50, after: String): RunConnection!
+  materializations(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
 }
 
 type DataModelEdge {

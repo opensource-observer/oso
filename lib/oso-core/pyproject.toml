@@ -11,11 +11,20 @@ dependencies = [
     "pydantic-settings>=2.11.0",
     "sqlmesh[trino]<1.0.0,>=0.141.1",
     "structlog>=25.4.0",
+    "polyfactory",
 ]
+
+[project.scripts]
+oso-core-codegen = "oso_core.codegen.cli:cli"
 
 [dependency-groups]
 dev = [
     "pytest>=8.2.1,<10.0.0",
+]
+
+[project.optional-dependencies]
+aioprometheus = [
+    "aioprometheus",
 ]
 
 [build-system]

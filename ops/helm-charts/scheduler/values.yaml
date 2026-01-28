@@ -4,6 +4,7 @@ global:
 app:
   queues: []
   crons: []
+  metricsPort: 8000
   # name: "oso" # This must be set
   # command: []
   # args: []

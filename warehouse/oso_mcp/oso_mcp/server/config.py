@@ -1,5 +1,4 @@
 import logging
-import os
 import typing as t
 
 from pydantic import Field, SecretStr
@@ -22,24 +21,29 @@ class MCPConfig(BaseSettings):
     model_config = mcp_config_dict()
 
     oso_api_key: SecretStr = Field(
-        default_factory=lambda: SecretStr(
-            os.environ.get(
-                "COPILOT_MCP_OSO_API_KEY", os.environ.get("MCP_OSO_API_KEY", "")
-            )
-        ),
         description="API key for the OSO API",
         json_schema_extra={
             "required": True
         },  # This is the key to make the field required
     )
 
-    pyoso_base_url: str = Field(
-        default="https://www.opensource.observer",
+    oso_base_url: str = Field(
+        default="https://www.oso.xyz",
+        description="Base URL for the OSO API",
+    )
+
+    pyoso_base_path: str = Field(
+        default="/api/v1/",
         description="Base URL for the OSO pyoso client",
     )
 
-    text2sql_endpoint: str = Field(
-        default="https://www.opensource.observer/api/v1/text2sql",
+    graphql_path: str = Field(
+        default="/api/v1/osograph",
+        description="Path for the OSO GraphQL endpoint",
+    )
+
+    text2sql_path: str = Field(
+        default="/api/v1/text2sql",
         description="URL endpoint for the OSO text2sql service",
     )
 
@@ -136,3 +140,18 @@ class MCPConfig(BaseSettings):
                 print(f"{env_var}: OPTIONAL (DEFAULT={default_display})")
 
         print("=" * 50)
+
+    @property
+    def graphql_endpoint(self) -> str:
+        """Get the full GraphQL endpoint URL."""
+        return f"{self.oso_base_url}{self.graphql_path}"
+
+    @property
+    def text2sql_endpoint(self) -> str:
+        """Get the full Text2SQL endpoint URL."""
+        return f"{self.oso_base_url}{self.text2sql_path}"
+
+    @property
+    def pyoso_base_url(self) -> str:
+        """Get the full base URL for the pyoso client."""
+        return f"{self.oso_base_url}{self.pyoso_base_path}"

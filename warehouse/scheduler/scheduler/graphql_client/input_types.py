@@ -129,6 +129,20 @@ class RevokeInvitationInput(BaseModel):
     invitation_id: str = Field(alias="invitationId")
 
 
+class ModelColumnContextInput(BaseModel):
+    name: str
+    context: str
+
+
+class UpdateModelContextInput(BaseModel):
+    dataset_id: str = Field(alias="datasetId")
+    model_id: str = Field(alias="modelId")
+    context: Optional[str] = None
+    column_context: Optional[List["ModelColumnContextInput"]] = Field(
+        alias="columnContext", default=None
+    )
+
+
 class CreateNotebookInput(BaseModel):
     org_id: str = Field(alias="orgId")
     name: str
@@ -144,10 +158,6 @@ class UpdateNotebookInput(BaseModel):
 class SaveNotebookPreviewInput(BaseModel):
     notebook_id: str = Field(alias="notebookId")
     preview: str
-
-
-class PublishNotebookInput(BaseModel):
-    notebook_id: str = Field(alias="notebookId")
 
 
 class AddUserByEmailInput(BaseModel):
@@ -176,7 +186,7 @@ class CreateDataIngestionRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
 
 
-class CreateDataConnectorRunRequestInput(BaseModel):
+class CreateDataConnectionRunRequestInput(BaseModel):
     dataset_id: str = Field(alias="datasetId")
 
 
@@ -247,6 +257,7 @@ class SavePublishedNotebookHtmlInput(BaseModel):
 
 
 CreateDataModelRevisionInput.model_rebuild()
+UpdateModelContextInput.model_rebuild()
 UpdateRunMetadataInput.model_rebuild()
 FinishRunInput.model_rebuild()
 CreateMaterializationInput.model_rebuild()

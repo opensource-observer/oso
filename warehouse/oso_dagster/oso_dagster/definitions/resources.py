@@ -17,7 +17,6 @@ from oso_dagster.resources import (
     ClickhouseResource,
     DuckdbEngineAdapterResource,
     DuckDBResource,
-    FakeUserDefinedModelResource,
     GCSFileResource,
     K8sApiResource,
     K8sResource,
@@ -30,7 +29,6 @@ from oso_dagster.resources import (
     TrinoRemoteResource,
     TrinoResource,
     UserDefinedModelEngineAdapterResource,
-    UserDefinedModelStateResource,
     load_dlt_dynamic_warehouse_destination,
     load_dlt_staging,
     load_dlt_warehouse_destination,
@@ -464,16 +462,6 @@ def udm_engine_adapter_factory(
         )
 
 
-@resource_factory("udm_state")
-@time_function(logger)
-def udm_state_factory() -> UserDefinedModelStateResource:
-    """Factory function to create a UDM state resource."""
-
-    # Use a fake UDM state resource for now as this is a stub until we implement
-    # all the APIs properly.
-    return FakeUserDefinedModelResource()
-
-
 def default_resource_registry():
     """By default we can configure all resource factories as the resource
     resolution is lazy."""
@@ -512,6 +500,5 @@ def default_resource_registry():
     registry.add(oso_app_db_factory)
     registry.add(heartbeat_factory)
     registry.add(udm_engine_adapter_factory)
-    registry.add(udm_state_factory)
 
     return registry

@@ -21,7 +21,7 @@ type Dataset {
   """
   The runs for this dataset. For USER_MODEL datasets, each run is related to individual data models.
   FOR DATA_INGESTION datasets, each run is related to individual ingestion jobs.
-  For DATA_CONNECTOR datasets, runs are not applicable and this field will be an empty list.
+  For DATA_CONNECTION datasets, runs are not applicable and this field will be an empty list.
   """
   runs(
     first: Int = 50
@@ -47,7 +47,7 @@ type Dataset {
 union DatasetTypeDefinition =
   | DataModelDefinition
   | DataIngestionDefinition
-  | DataConnector
+  | DataConnection
   | StaticModelDefinition
 
 type DataModelDefinition {
@@ -99,6 +99,14 @@ type DataIngestion {
   config: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!
+  modelContext(tableName: String!): ModelContext  
+  materializations(
+    tableName: String!
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
 }
 
 type DatasetEdge {
@@ -118,7 +126,7 @@ type TableColumn {
   nullable: Boolean!
 }
 
-union TableSource = DataModel | StaticModel | DataIngestion | DataConnector
+union TableSource = DataModel | StaticModel | DataIngestion | DataConnection
 
 type Table {
   id: ID!

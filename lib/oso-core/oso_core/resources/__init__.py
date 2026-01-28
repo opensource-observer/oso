@@ -209,6 +209,23 @@ class ResourcesContext:
             self._resolved_resources[name] = resource_factory(**deps)
         return self._resolved_resources[name]
 
+    def resolve_with_type[T](self, name: str, expected_type: t.Type[T]) -> T:
+        """Resolve a resource by name and ensure it matches the expected type.
+
+        Args:
+            name (str): The name of the resource to resolve.
+            expected_type (Type[T]): The expected type of the resource.
+        Returns:
+            T: The resolved resource.
+        """
+        resource = self.resolve(name)
+        if not isinstance(resource, expected_type):
+            raise TypeError(
+                f"Resolved resource '{name}' is not of expected type "
+                f"{expected_type.__name__}, got {type(resource).__name__} instead."
+            )
+        return resource
+
 
 def resource_factory(name: str):
     """A decorator that turns a normal function into a resource factory."""

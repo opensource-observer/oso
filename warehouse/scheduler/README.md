@@ -57,6 +57,18 @@ From inside the `warehouse/scheduler` directory, run:
 uv run ariadne-codegen
 ```
 
+## Generating GraphQL `typing.Protocol` and testing fakes
+
+We now have a tool that generates `typing.Protocol` classes and testing fakes
+from our graphql client.
+
+From inside the `warehouse/scheduler` directory, run:
+
+```bash
+uv run oso-core-codegen protocol scheduler.graphql_client.client:Client scheduler/graphql_client/protocol.py
+uv run oso-core-codegen fake scheduler.graphql_client.protocol:ClientProtocol scheduler/testing/resources/codegen/oso_client.py
+```
+
 ## Initializing Pub/Sub topics
 
 Before running the workers, you need to initialize the topic and subscription on the emulator.

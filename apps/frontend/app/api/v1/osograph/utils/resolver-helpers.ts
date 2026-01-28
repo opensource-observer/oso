@@ -19,7 +19,12 @@ import {
   type QueryPredicate,
 } from "@/app/api/v1/osograph/utils/query-builder";
 import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
-import { maybeAddQueryPagination } from "@/app/api/v1/osograph/utils/query-helpers";
+import {
+  maybeAddQueryPagination,
+  queryWithPagination,
+} from "@/app/api/v1/osograph/utils/query-helpers";
+import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
+import { MaterializationWhereSchema } from "@/app/api/v1/osograph/utils/validation";
 
 export function buildConnectionOrEmpty<T>(
   data: T[] | null | undefined,
@@ -221,4 +226,33 @@ export async function getModelRunConnection(
   }
 
   return buildConnectionOrEmpty(data, args, count);
+}
+
+export async function getMaterializations(
+  args: FilterableConnectionArgs,
+  context: GraphQLContext,
+  orgId: string,
+  datasetId: string,
+  tableId: string,
+) {
+  return queryWithPagination(args, context, {
+    tableName: "materialization",
+    whereSchema: MaterializationWhereSchema,
+    requireAuth: false,
+    filterByUserOrgs: false,
+    parentOrgIds: orgId,
+    basePredicate: {
+      eq: [
+        { key: "dataset_id", value: datasetId },
+        {
+          key: "table_id",
+          value: tableId,
+        },
+      ],
+    },
+    orderBy: {
+      key: "created_at",
+      ascending: false,
+    },
+  });
 }

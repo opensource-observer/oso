@@ -23,6 +23,17 @@ def setup_debug_logging_for_tests() -> None:
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
+@pytest.fixture(autouse=True, scope="function")
+def clear_prometheus_registry() -> t.Iterator[None]:
+    """Clears the Prometheus registry before each test to avoid metric duplication."""
+    from aioprometheus.collectors import get_registry
+
+    registry = get_registry()
+    registry.clear()
+    yield
+    registry.clear()
+
+
 def generate_random_df(rows: int = 1000) -> pl.DataFrame:
     """Generates a random dataframe with specified number of rows."""
     # generate sample data
