@@ -15,7 +15,11 @@ data:
           "allow": "none"
         },
         {
-          "group": "ro-*",
+          "user": "rw-*",
+          "allow": "all"
+        },
+        {
+          "user": "ro-*",
           "allow": "read-only"
         },
         {
