@@ -1,7 +1,7 @@
 """Pydantic model generator for GraphQL types."""
 
 import typing as t
-from enum import StrEnum
+from enum import Enum, StrEnum
 
 from graphql import (
     FieldNode,
@@ -18,6 +18,8 @@ from graphql import (
     VariableDefinitionNode,
 )
 from pydantic import BaseModel, Field, create_model
+
+from .schema_visitor import GraphQLSchemaVisitor, VisitorControl
 
 
 class UnsetNested(BaseModel):
@@ -110,6 +112,613 @@ class UnionTypeMarker:
         return t.Union[self.member_types]
 
 
+class ContextMode(Enum):
+    """Mode for model generation context."""
+
+    INPUT = "input"  # Processing GraphQLInputObjectType
+    OUTPUT = (
+        "output"  # Processing GraphQLObjectType (with optional SelectionSet filtering)
+    )
+
+
+class ModelBuilderContext:
+    """Context for tracking state during model building.
+
+    This class encapsulates all state needed during GraphQL type traversal
+    and Pydantic model generation.
+    """
+
+    def __init__(
+        self,
+        mode: ContextMode,
+        max_depth: int,
+        context_prefix: str = "",
+        selection_set: t.Optional[SelectionSetNode] = None,
+        schema: t.Optional[GraphQLSchema] = None,
+        parent_type: t.Optional[
+            t.Union[GraphQLObjectType, GraphQLInputObjectType]
+        ] = None,
+    ):
+        """Initialize model builder context.
+
+        Args:
+            mode: Context mode (INPUT or OUTPUT)
+            max_depth: Maximum nesting depth for object types
+            context_prefix: Prefix for nested type names
+            selection_set: Optional SelectionSet for field filtering (None = all fields)
+            schema: GraphQL schema (for SelectionSet mode)
+            parent_type: Parent GraphQL type being processed
+        """
+        self.mode = mode
+        self.max_depth = max_depth
+        self.current_depth = 0
+        self.context_prefix = context_prefix
+        self.selection_set = selection_set
+        self.schema = schema
+        self.parent_type = parent_type
+        self.fields: dict[str, tuple[t.Any, t.Any]] = {}
+
+
+class PydanticModelBuildContext:
+    """Context for building a single Pydantic model.
+
+    This class encapsulates all state needed while building one Pydantic model
+    from a GraphQL type. Multiple contexts can be stacked when processing nested types.
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        parent_type: t.Union[GraphQLObjectType, GraphQLInputObjectType],
+        depth: int,
+        context_prefix: str = "",
+    ):
+        """Initialize model build context.
+
+        Args:
+            model_name: Name for the Pydantic model being built
+            parent_type: GraphQL type being converted to Pydantic model
+            depth: Current nesting depth
+            context_prefix: Prefix for nested type names
+        """
+        self._model_name = model_name
+        self._parent_type = parent_type
+        self._depth = depth
+        self._context_prefix = context_prefix
+        self._fields: dict[str, tuple[t.Any, t.Any]] = {}  # Accumulated fields
+
+    @property
+    def model_name(self) -> str:
+        """Get the model name."""
+        return self._model_name
+
+    @property
+    def depth(self) -> int:
+        """Get the depth."""
+        return self._depth
+
+    @property
+    def context_prefix(self) -> str:
+        """Get the context prefix."""
+        return self._context_prefix
+
+    def add_field(self, field_name: str, python_type: t.Any, field_info: t.Any = None):
+        """Add a field to the model being built.
+
+        Args:
+            field_name: Name of the field
+            python_type: Python type annotation for the field
+            field_info: Optional Pydantic Field with metadata (default value, description, etc.)
+        """
+        self._fields[field_name] = (
+            python_type,
+            field_info if field_info is not None else ...,
+        )
+
+    def materialize(self) -> t.Type[BaseModel]:
+        """Create the Pydantic model from accumulated fields.
+
+        Returns:
+            Dynamically created Pydantic model class
+        """
+        if not self._fields:
+            # Create empty model if no fields
+            return create_model(self._model_name)
+
+        return create_model(self._model_name, **self._fields)  # type: ignore # pyright: ignore
+
+
+class PydanticModelVisitor(GraphQLSchemaVisitor):
+    """Visitor that builds Pydantic models from GraphQL types.
+
+    This visitor extends GraphQLSchemaVisitor to build Pydantic models during
+    schema traversal. It uses a stack of PydanticModelBuildContext to manage
+    nested model construction, and tracks depth to enforce max_depth limits.
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        parent_type: t.Union[GraphQLObjectType, GraphQLInputObjectType],
+        max_depth: int = 2,
+        use_context_prefix: bool = False,
+        ignore_unknown_types: bool = False,
+    ):
+        """Initialize the Pydantic model visitor.
+
+        Args:
+            model_name: Name of the root model to generate
+            parent_type: GraphQL type to start traversal from
+            max_depth: Maximum nesting depth for object types
+            use_context_prefix: If True, prefix nested type names with parent context
+            ignore_unknown_types: If True, map unknown types to Any instead of raising error
+        """
+        super().__init__()
+        self._type_registry: dict[str, t.Type[BaseModel] | StrEnum] = {}
+        self._max_depth = max_depth
+        self._use_context_prefix = use_context_prefix
+        self._root_model_name = model_name
+        self._ignore_unknown_types = ignore_unknown_types
+        self._context_stack: list[PydanticModelBuildContext] = []
+
+    @property
+    def _current_depth(self) -> int:
+        """Get the current depth based on stack size."""
+        return len(self._context_stack)
+
+    def _should_skip_depth(self) -> bool:
+        """Check if we've exceeded max depth."""
+        return self._current_depth >= self._max_depth
+
+    def _get_type_name(self, base_name: str, parent_prefix: str = "") -> str:
+        """Get the type name, potentially with context prefix.
+
+        Args:
+            base_name: Base type name from GraphQL schema
+            parent_prefix: Prefix from parent context
+
+        Returns:
+            Type name, optionally prefixed
+        """
+        if not self._use_context_prefix:
+            return base_name
+
+        if parent_prefix:
+            return f"{parent_prefix}{base_name}"
+        elif self._root_model_name:
+            return f"{self._root_model_name}{base_name}"
+        else:
+            return base_name
+
+    def _map_scalar_to_python(self, scalar_type: GraphQLScalarType) -> t.Any:
+        """Map GraphQL scalar type to Python type."""
+        scalar_map = {
+            "String": str,
+            "Int": int,
+            "Float": float,
+            "Boolean": bool,
+            "ID": str,
+            "JSON": t.Any,
+            "DateTime": str,  # ISO 8601 format
+        }
+        return scalar_map.get(scalar_type.name, t.Any)
+
+    def handle_scalar(
+        self,
+        field_name: str,
+        scalar_type: GraphQLScalarType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle a scalar type by adding it to the current context."""
+        if not self._context_stack:
+            return VisitorControl.CONTINUE
+
+        # Map to Python type
+        python_type = self._map_scalar_to_python(scalar_type)
+
+        # Apply list wrapper if needed
+        if is_list:
+            python_type = list[python_type]
+
+        # Apply optional wrapper and create field info
+        if not is_required:
+            python_type = t.Optional[python_type]
+            field_info = Field(default=None)
+        else:
+            field_info = Field()
+
+        # Add to current context
+        self._context_stack[-1].add_field(field_name, python_type, field_info)
+
+        return VisitorControl.CONTINUE
+
+    def handle_enum(
+        self,
+        field_name: str,
+        enum_type: GraphQLEnumType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle an enum type by generating a StrEnum and adding to context."""
+        # Enums are always registered with their base name (no prefix)
+        type_name = enum_type.name
+
+        # Generate enum if not in registry
+        if type_name not in self._type_registry:
+            enum_members = {
+                name: value.value for name, value in enum_type.values.items()
+            }
+            enum_klass = StrEnum(type_name, enum_members)
+            self._type_registry[type_name] = enum_klass
+
+        if not self._context_stack:
+            return VisitorControl.CONTINUE
+
+        # Get the enum from registry
+        python_type = self._type_registry[type_name]
+
+        # Apply list wrapper if needed
+        if is_list:
+            python_type = list[python_type]  # type: ignore
+
+        # Apply optional wrapper and create field info
+        if not is_required:
+            python_type = t.Optional[python_type]  # type: ignore
+            field_info = Field(default=None)
+        else:
+            field_info = Field()
+
+        # Add to current context
+        self._context_stack[-1].add_field(field_name, python_type, field_info)
+
+        return VisitorControl.CONTINUE
+
+    def handle_enter_object(
+        self,
+        field_name: str,
+        object_type: GraphQLObjectType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle entering an object type by pushing a new context."""
+        # At root level (stack is empty), use root_model_name
+        if not self._context_stack:
+            type_name = self._root_model_name
+            context_prefix = self._root_model_name if self._use_context_prefix else ""
+        else:
+            # Get parent prefix
+            parent_prefix = self._context_stack[-1].context_prefix
+
+            # Generate type name (with prefix if enabled)
+            type_name = self._get_type_name(object_type.name, parent_prefix)
+            context_prefix = (
+                f"{parent_prefix}{type_name}" if self._use_context_prefix else ""
+            )
+
+        # Check depth limit
+        if self._should_skip_depth():
+            return VisitorControl.SKIP
+
+        # Check if already in registry
+        if type_name in self._type_registry:
+            # Use existing model
+            if self._context_stack:
+                python_type = self._type_registry[type_name]
+
+                # Apply list wrapper if needed
+                if is_list:
+                    python_type = list[python_type]  # type: ignore
+
+                # Apply optional wrapper
+                if not is_required:
+                    python_type = t.Optional[python_type]  # type: ignore
+                    field_info = Field(default=None)
+                else:
+                    field_info = Field()
+
+                self._context_stack[-1].add_field(field_name, python_type, field_info)
+
+            return VisitorControl.SKIP  # Don't revisit
+
+        # Push new context for this object
+        ctx = PydanticModelBuildContext(
+            model_name=type_name,
+            parent_type=object_type,
+            depth=self._current_depth,
+            context_prefix=context_prefix,
+        )
+        self._context_stack.append(ctx)
+
+        return VisitorControl.CONTINUE
+
+    def handle_leave_object(
+        self,
+        field_name: str,
+        object_type: GraphQLObjectType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle leaving an object type by materializing the model."""
+        if not self._context_stack:
+            return VisitorControl.CONTINUE
+
+        # Pop context and build model
+        ctx = self._context_stack.pop()
+        model = ctx.materialize()
+        self._type_registry[ctx.model_name] = model
+
+        # Add to parent context if exists
+        if self._context_stack:
+            python_type: t.Any = model
+
+            # Apply list wrapper if needed
+            if is_list:
+                python_type = list[python_type]
+
+            # Apply optional wrapper
+            if not is_required:
+                python_type = t.Optional[python_type]
+                field_info = Field(default=None)
+            else:
+                field_info = Field()
+
+            self._context_stack[-1].add_field(field_name, python_type, field_info)
+
+        return VisitorControl.CONTINUE
+
+    def handle_enter_input_object(
+        self,
+        field_name: str,
+        input_type: GraphQLInputObjectType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle entering an input object type by pushing a new context."""
+        # Input types always use base name (no prefix)
+        type_name = input_type.name
+
+        # Check if already in registry
+        if type_name in self._type_registry:
+            # Use existing model
+            if self._context_stack:
+                python_type = self._type_registry[type_name]
+
+                # Apply list wrapper if needed
+                if is_list:
+                    python_type = list[python_type]  # type: ignore
+
+                # Apply optional wrapper
+                if not is_required:
+                    python_type = t.Optional[python_type]  # type: ignore
+                    field_info = Field(default=None)
+                else:
+                    field_info = Field()
+
+                self._context_stack[-1].add_field(field_name, python_type, field_info)
+
+            return VisitorControl.SKIP  # Don't revisit
+
+        # Push new context
+        ctx = PydanticModelBuildContext(
+            model_name=type_name,
+            parent_type=input_type,
+            depth=self._current_depth,
+            context_prefix="",  # Input types don't use prefix
+        )
+        self._context_stack.append(ctx)
+
+        return VisitorControl.CONTINUE
+
+    def handle_leave_input_object(
+        self,
+        field_name: str,
+        input_type: GraphQLInputObjectType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle leaving an input object type by materializing the model."""
+        if not self._context_stack:
+            return VisitorControl.CONTINUE
+
+        # Pop context and build model
+        ctx = self._context_stack.pop()
+        model = ctx.materialize()
+        self._type_registry[ctx.model_name] = model
+
+        # Add to parent context if exists
+        if self._context_stack:
+            python_type: t.Any = model
+
+            # Apply list wrapper if needed
+            if is_list:
+                python_type = list[python_type]
+
+            # Apply optional wrapper
+            if not is_required:
+                python_type = t.Optional[python_type]
+                field_info = Field(default=None)
+            else:
+                field_info = Field()
+
+            self._context_stack[-1].add_field(field_name, python_type, field_info)
+
+        return VisitorControl.CONTINUE
+
+    def handle_union(
+        self,
+        field_name: str,
+        union_type: GraphQLUnionType,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle a union type.
+
+        Unions are treated like nested objects for depth purposes - they should be
+        skipped when max_depth is reached since they contain nested object types.
+        """
+        # Check depth limit - unions should be skipped at max depth
+        if self._should_skip_depth():
+            return VisitorControl.SKIP
+
+        # TODO: Implement union handling with discriminated types
+        # For now, just add as Any
+        if self._context_stack:
+            python_type = t.Any
+            if is_list:
+                python_type = list[python_type]
+            if not is_required:
+                python_type = t.Optional[python_type]
+                field_info = Field(default=None)
+            else:
+                field_info = Field()
+            self._context_stack[-1].add_field(field_name, python_type, field_info)
+
+        return VisitorControl.CONTINUE
+
+    def handle_unknown(
+        self,
+        field_name: str,
+        gql_type: t.Any,
+        is_required: bool,
+        is_list: bool,
+    ) -> VisitorControl:
+        """Handle an unknown type."""
+        if not self._ignore_unknown_types:
+            raise TypeError(
+                f"Unsupported GraphQL type for field {field_name}: {gql_type}"
+            )
+
+        # Add as Any
+        if self._context_stack:
+            python_type = t.Any
+            if is_list:
+                python_type = list[python_type]
+            if not is_required:
+                python_type = t.Optional[python_type]
+                field_info = Field(default=None)
+            else:
+                field_info = Field()
+            self._context_stack[-1].add_field(field_name, python_type, field_info)
+
+        return VisitorControl.CONTINUE
+
+    # Public API methods for generating Pydantic models
+
+    @classmethod
+    def generate_input_model(
+        cls,
+        input_type: GraphQLInputObjectType,
+        ignore_unknown_types: bool = False,
+    ) -> t.Type[BaseModel]:
+        """Create Pydantic model from GraphQL input type.
+
+        Args:
+            input_type: GraphQL input object type
+            ignore_unknown_types: If True, map unknown types to Any instead of raising error
+
+        Returns:
+            Dynamically created Pydantic model class
+        """
+        # Create visitor with high max_depth to capture all required nested input fields
+        visitor = cls(
+            model_name=input_type.name,
+            parent_type=input_type,
+            max_depth=100,  # High depth for input types to include all required fields
+            use_context_prefix=False,
+            ignore_unknown_types=ignore_unknown_types,
+        )
+
+        # Visit the input type
+        visitor.visit(input_type, field_name="")
+
+        # Return the generated model from registry
+        return visitor._type_registry[input_type.name]  # type: ignore
+
+    @classmethod
+    def generate_payload_model(
+        cls,
+        payload_type: GraphQLObjectType,
+        max_depth: int = 2,
+        ignore_unknown_types: bool = False,
+    ) -> t.Type[BaseModel]:
+        """Create Pydantic model from GraphQL object type (visits all fields).
+
+        Args:
+            payload_type: GraphQL object type
+            max_depth: Maximum nesting depth for object types
+            ignore_unknown_types: If True, map unknown types to Any instead of raising error
+
+        Returns:
+            Dynamically created Pydantic model class
+        """
+        # Create visitor without context prefix (visits all fields)
+        visitor = cls(
+            model_name=payload_type.name,
+            parent_type=payload_type,
+            max_depth=max_depth,
+            use_context_prefix=False,
+            ignore_unknown_types=ignore_unknown_types,
+        )
+
+        # Visit the payload type (selection_set=None visits all fields)
+        visitor.visit(payload_type, field_name="")
+
+        # Return the generated model from registry
+        return visitor._type_registry[payload_type.name]  # type: ignore
+
+    @classmethod
+    def generate_model_from_selection_set(
+        cls,
+        operation_name: str,
+        selection_set: SelectionSetNode,
+        parent_type: GraphQLObjectType,
+        schema: GraphQLSchema,
+        max_depth: int = 100,
+        ignore_unknown_types: bool = False,
+        fragments: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> t.Type[BaseModel]:
+        """Create Pydantic model from GraphQL selection set (visits only selected fields).
+
+        This method is used for custom .graphql query files where only specific fields
+        are selected. Type names are prefixed with the operation name to avoid collisions.
+
+        Args:
+            operation_name: Name of the GraphQL operation
+            selection_set: SelectionSet specifying which fields to visit
+            parent_type: GraphQL object type to start from
+            schema: GraphQL schema for type lookup
+            max_depth: Maximum nesting depth for object types (default 100 for hand-written queries)
+            ignore_unknown_types: If True, map unknown types to Any instead of raising error
+            fragments: Optional dict of fragment definitions by name
+
+        Returns:
+            Dynamically created Pydantic model class
+        """
+        model_name = f"{operation_name}Response"
+
+        # Create visitor with context prefix enabled
+        visitor = cls(
+            model_name=model_name,
+            parent_type=parent_type,
+            max_depth=max_depth,
+            use_context_prefix=True,
+            ignore_unknown_types=ignore_unknown_types,
+        )
+
+        # Visit with selection_set to filter fields
+        visitor.visit(
+            parent_type,
+            field_name="",
+            selection_set=selection_set,
+            schema=schema,
+            fragments=fragments or {},
+        )
+
+        # Return the generated model from registry
+        return visitor._type_registry[model_name]  # type: ignore
+
+
 class PydanticModelGenerator:
     """Dynamically generate Pydantic models from GraphQL types."""
 
@@ -129,29 +738,10 @@ class PydanticModelGenerator:
         Returns:
             Dynamically created Pydantic model class
         """
-        type_name = input_type.name
-
-        # Return registered type if available
-        if type_name in self._type_registry:
-            return self._type_registry[type_name]  # type: ignore
-
-        fields = {}
-        for field_name, field in input_type.fields.items():
-            # When generating input models, max depth is ignored due to
-            # potentially required nested inputs
-            field_result = self._create_pydantic_field(
-                field_name, field.type, max_depth=1, context_prefix=type_name
-            )
-            # Skip fields that return None (exceeded max_depth)
-            if field_result is None:
-                continue
-            python_type, field_info = field_result
-            fields[field_name] = (python_type, field_info)
-
-        # Create the model
-        model = create_model(type_name, **fields)
-        self._type_registry[type_name] = model
-        return model
+        # Delegate to PydanticModelVisitor
+        return PydanticModelVisitor.generate_input_model(
+            input_type, ignore_unknown_types=self._ignore_unknown_types
+        )
 
     def generate_payload_model(
         self, payload_type: GraphQLObjectType, max_depth: int = 2
@@ -160,12 +750,16 @@ class PydanticModelGenerator:
 
         Args:
             payload_type: GraphQL object type for mutation payload
+            max_depth: Maximum nesting depth for object types
 
         Returns:
             Dynamically created Pydantic model class
         """
-        return self._get_or_create_model(
-            payload_type, max_depth=max_depth, context_prefix=""
+        # Delegate to PydanticModelVisitor
+        return PydanticModelVisitor.generate_payload_model(
+            payload_type,
+            max_depth=max_depth,
+            ignore_unknown_types=self._ignore_unknown_types,
         )
 
     def _get_or_create_model(
@@ -538,7 +1132,8 @@ class PydanticModelGenerator:
         selection_set: SelectionSetNode,
         parent_type: GraphQLObjectType,
         schema: GraphQLSchema,
-        max_depth: int = 2,
+        max_depth: int = 100,
+        fragments: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> t.Type[BaseModel]:
         """Generate Pydantic model from GraphQL selection set.
 
@@ -547,25 +1142,22 @@ class PydanticModelGenerator:
             selection_set: Selection set from query
             parent_type: The GraphQL type being selected from
             schema: GraphQL schema for type lookup
-            max_depth: Maximum nesting depth for object types
+            max_depth: Maximum nesting depth for object types (default 100 for hand-written queries)
+            fragments: Optional dict of fragment definitions by name
 
         Returns:
             Dynamically created Pydantic model class for response
         """
-        type_name = f"{operation_name}Response"
-
-        # Return registered type if available
-        if type_name in self._type_registry:
-            return self._type_registry[type_name]  # type: ignore
-
-        fields = self._build_fields_from_selection_set(
-            selection_set, parent_type, schema, max_depth, context_prefix=type_name
+        # Delegate to PydanticModelVisitor
+        return PydanticModelVisitor.generate_model_from_selection_set(
+            operation_name=operation_name,
+            selection_set=selection_set,
+            parent_type=parent_type,
+            schema=schema,
+            max_depth=max_depth,
+            ignore_unknown_types=self._ignore_unknown_types,
+            fragments=fragments,
         )
-
-        # Create the model
-        model = create_model(type_name, **fields)  # type: ignore # pyright: ignore
-        self._type_registry[type_name] = model
-        return model
 
     def _build_nested_object_model_from_selection(
         self,

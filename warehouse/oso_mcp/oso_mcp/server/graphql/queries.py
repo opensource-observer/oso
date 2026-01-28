@@ -203,6 +203,7 @@ class QueryExtractor:
                     query_type,
                     schema,
                     max_depth=100,  # Unlimited depth for hand-written queries
+                    fragments=doc.fragments,
                 )
 
                 # Create QueryInfo
@@ -298,6 +299,7 @@ class QueryExtractor:
                     fragment_type,
                     schema,
                     max_depth=100,  # Unlimited depth for hand-written query fragments
+                    fragments=doc.fragments,
                 )
 
     def _get_fragment_dependencies(self, selection_set: SelectionSetNode) -> t.Set[str]:
