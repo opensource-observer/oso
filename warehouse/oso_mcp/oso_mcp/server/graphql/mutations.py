@@ -240,6 +240,179 @@ class GraphQLExecutor:
         # Convert to Pydantic model
         return self.mutation.payload_model.model_validate(mutation_data)
 
+    def _unwrap_optional_type(self, field_type: t.Any) -> t.List[t.Any]:
+        """Unwrap Optional[T] by checking for Union[T, None] to get non-None
+        types.
+
+        Args:
+            field_type: Type annotation to unwrap
+
+        Returns:
+            List of non-None type arguments, or empty list if not a Union
+        """
+        origin = t.get_origin(field_type)
+        if origin is t.Union:
+            args = t.get_args(field_type)
+            # Filter out NoneType from Union to get the actual types
+            return [arg for arg in args if arg is not type(None)]
+        return []
+
+    def _is_discriminated_union(self, non_none_args: t.List[t.Any]) -> bool:
+        """Check if type arguments represent a discriminated union.
+
+        Args:
+            non_none_args: Non-None type arguments from a Union
+
+        Returns:
+            True if this is a discriminated union (multiple BaseModel types with typename__)
+        """
+        return len(non_none_args) > 1 and all(
+            isinstance(arg, type)
+            and issubclass(arg, BaseModel)
+            and "typename__" in arg.model_fields
+            for arg in non_none_args
+        )
+
+    def _extract_typename_from_literal(self, typename_field: t.Any) -> str:
+        """Extract typename string from a Literal field annotation.
+
+        Args:
+            typename_field: Field info for typename__ field
+
+        Returns:
+            The typename string value from the Literal annotation
+        """
+        typename_annotation = typename_field.annotation
+        # Handle Optional[Literal["TypeName"]]
+        if t.get_origin(typename_annotation) is t.Union:
+            typename_args = t.get_args(typename_annotation)
+            typename_annotation = next(
+                arg for arg in typename_args if arg is not type(None)
+            )
+        # Get the literal value: Literal["TypeName"] -> "TypeName"
+        return t.get_args(typename_annotation)[0]
+
+    def _build_union_member_fragment(
+        self,
+        union_member: t.Type[BaseModel],
+        indent_level: int,
+    ) -> t.Tuple[str, str]:
+        """Build an inline fragment for a single union member type.
+
+        Args:
+            union_member: Pydantic model for the union member
+            indent_level: Indentation level for formatting
+
+        Returns:
+            Tuple of (typename_value, fragment_string)
+        """
+        indent = "  " * indent_level
+
+        # Get the typename value from the Literal field
+        typename_field = union_member.model_fields["typename__"]
+        typename_value = self._extract_typename_from_literal(typename_field)
+
+        # Build fields for this union member (excluding typename__)
+        member_fields = self._build_field_selection(union_member, indent_level + 1)
+
+        if member_fields:
+            # Remove the typename__ line from member fields
+            member_field_lines = [
+                line for line in member_fields.split("\n") if "typename__" not in line
+            ]
+            member_fields_filtered = "\n".join(member_field_lines)
+
+            fragment = (
+                f"{indent}... on {typename_value} {{\n"
+                f"{member_fields_filtered}\n"
+                f"{indent}}}"
+            )
+            return typename_value, fragment
+
+        return typename_value, ""
+
+    def _build_discriminated_union_selection(
+        self,
+        field_name: str,
+        non_none_args: t.List[t.Type[BaseModel]],
+        indent_level: int,
+    ) -> str:
+        """Build GraphQL selection for a discriminated union field.
+
+        Args:
+            field_name: Name of the union field
+            non_none_args: List of union member types
+            indent_level: Indentation level for formatting
+
+        Returns:
+            GraphQL selection string with inline fragments
+        """
+        indent = "  " * indent_level
+        union_selections = []
+
+        # Always include __typename discriminator
+        union_selections.append(f"{indent}__typename")
+
+        # Build inline fragments for each union member
+        for union_member in non_none_args:
+            typename_value, fragment = self._build_union_member_fragment(
+                union_member, indent_level
+            )
+            if fragment:
+                union_selections.append(fragment)
+
+        union_query = "\n".join(union_selections)
+        return f"{indent}{field_name} {{\n{union_query}\n{indent}}}"
+
+    def _unwrap_list_type(self, field_type: t.Any) -> t.Any:
+        """Unwrap List[T] to get the inner type T.
+
+        Args:
+            field_type: Type annotation to unwrap
+
+        Returns:
+            Inner type if field_type is List[T], otherwise field_type unchanged
+        """
+        origin = t.get_origin(field_type)
+        if origin is list:
+            args = t.get_args(field_type)
+            if args:
+                return args[0]
+        return field_type
+
+    def _build_scalar_or_nested_field(
+        self,
+        field_name: str,
+        field_type: t.Any,
+        indent_level: int,
+    ) -> str:
+        """Build GraphQL selection for scalar, enum, or nested object field.
+
+        Args:
+            field_name: Name of the field
+            field_type: Type of the field
+            indent_level: Indentation level for formatting
+
+        Returns:
+            GraphQL selection string for this field
+        """
+        indent = "  " * indent_level
+
+        # Check if the field type is a Pydantic model (nested object)
+        if isinstance(field_type, type) and issubclass(field_type, BaseModel):
+            # Recursively build nested field selection
+            nested_fields = self._build_field_selection(field_type, indent_level + 1)
+            if nested_fields:
+                return f"{indent}{field_name} {{\n{nested_fields}\n{indent}}}"
+        elif isinstance(field_type, type) and issubclass(field_type, Enum):
+            # Enums are scalar values in GraphQL
+            return f"{indent}{field_name}"
+        else:
+            # Scalar field (str, int, bool, etc.)
+            return f"{indent}{field_name}"
+
+        return ""
+
     def _build_field_selection(
         self,
         model: t.Type[BaseModel],
@@ -257,97 +430,33 @@ class GraphQLExecutor:
         Returns:
             GraphQL field selection string
         """
-        indent = "  " * indent_level
         fields = []
 
         for field_name, field_info in model.model_fields.items():
-            # Get the field's annotation
             field_type = field_info.annotation
 
             # Check for discriminated unions first (before unwrapping Optional)
-            origin = t.get_origin(field_type)
-            if origin is t.Union:
-                args = t.get_args(field_type)
-                # Filter out NoneType from Union to get the actual types
-                non_none_args = [arg for arg in args if arg is not type(None)]
+            non_none_args = self._unwrap_optional_type(field_type)
+            if self._is_discriminated_union(non_none_args):
+                union_selection = self._build_discriminated_union_selection(
+                    field_name, non_none_args, indent_level
+                )
+                fields.append(union_selection)
+                continue
 
-                # Check if this is a discriminated union (all members are BaseModel with typename__)
-                if len(non_none_args) > 1 and all(
-                    isinstance(arg, type)
-                    and issubclass(arg, BaseModel)
-                    and "typename__" in arg.model_fields
-                    for arg in non_none_args
-                ):
-                    # This is a union field - build inline fragments
-                    union_selections = []
-                    union_selections.append(
-                        f"{indent}__typename"
-                    )  # Always include discriminator
-
-                    for union_member in non_none_args:
-                        # Get the typename value from the Literal field
-                        typename_field = union_member.model_fields["typename__"]
-                        # Extract the literal value (e.g., "InternalWarehouse")
-                        typename_annotation = typename_field.annotation
-                        # Handle Optional[Literal["TypeName"]]
-                        if t.get_origin(typename_annotation) is t.Union:
-                            typename_args = t.get_args(typename_annotation)
-                            typename_annotation = next(
-                                arg for arg in typename_args if arg is not type(None)
-                            )
-                        # Get the literal value
-                        typename_value = t.get_args(typename_annotation)[
-                            0
-                        ]  # Literal["TypeName"] -> "TypeName"
-
-                        # Build fields for this union member (excluding typename__)
-                        member_fields = self._build_field_selection(
-                            union_member, indent_level + 1
-                        )
-                        if member_fields:
-                            # Remove the typename__ line from member fields
-                            member_field_lines = [
-                                line
-                                for line in member_fields.split("\n")
-                                if "typename__" not in line
-                            ]
-                            member_fields_filtered = "\n".join(member_field_lines)
-
-                            union_selections.append(
-                                f"{indent}... on {typename_value} {{\n{member_fields_filtered}\n{indent}}}"
-                            )
-
-                    union_query = "\n".join(union_selections)
-                    fields.append(f"{indent}{field_name} {{\n{union_query}\n{indent}}}")
-                    continue
-
-                # Not a discriminated union, unwrap Optional
-                if non_none_args:
-                    field_type = non_none_args[0]
-                    origin = t.get_origin(field_type)
+            # Unwrap Optional types
+            if non_none_args:
+                field_type = non_none_args[0]
 
             # Unwrap List types
-            if origin is list:
-                args = t.get_args(field_type)
-                if args:
-                    field_type = args[0]
+            field_type = self._unwrap_list_type(field_type)
 
-            # Check if the field type is a Pydantic model (nested object)
-            if isinstance(field_type, type) and issubclass(field_type, BaseModel):
-                # Recursively build nested field selection
-                nested_fields = self._build_field_selection(
-                    field_type, indent_level + 1
-                )
-                if nested_fields:
-                    fields.append(
-                        f"{indent}{field_name} {{\n{nested_fields}\n{indent}}}"
-                    )
-            elif isinstance(field_type, type) and issubclass(field_type, Enum):
-                # Enums are scalar values in GraphQL
-                fields.append(f"{indent}{field_name}")
-            else:
-                # Scalar field (str, int, bool, etc.)
-                fields.append(f"{indent}{field_name}")
+            # Handle scalar, enum, or nested fields
+            field_selection = self._build_scalar_or_nested_field(
+                field_name, field_type, indent_level
+            )
+            if field_selection:
+                fields.append(field_selection)
 
         return "\n".join(fields)
 
