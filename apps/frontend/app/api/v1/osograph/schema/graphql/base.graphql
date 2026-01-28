@@ -53,3 +53,8 @@ type Query {
 type Mutation {
   _empty: String
 }
+
+type SimplePayload {
+  success: Boolean!
+  message: String
+}

@@ -47,7 +47,7 @@ type Dataset {
 union DatasetTypeDefinition =
   | DataModelDefinition
   | DataIngestionDefinition
-  | DataConnection
+  | DataConnectionDefinition
   | StaticModelDefinition
 
 type DataModelDefinition {
@@ -91,22 +91,14 @@ type DataIngestionDefinition {
   dataIngestion: DataIngestion
 }
 
-type DataIngestion {
-  id: ID!
+type DataConnectionDefinition {
   orgId: ID!
   datasetId: ID!
-  factoryType: DataIngestionFactoryType!
-  config: JSON!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  modelContext(tableName: String!): ModelContext  
-  materializations(
-    tableName: String!
-    first: Int = 50
-    after: String
-    single: Boolean
-    where: JSON
-  ): MaterializationConnection!
+  """
+  If the dataset is of type DATA_CONNECTION, this field will contain the data connection model
+  associated with the dataset.
+  """
+  dataConnectionAlias: DataConnectionAlias!
 }
 
 type DatasetEdge {
@@ -204,7 +196,7 @@ extend type Mutation {
   """
   Delete a dataset
   """
-  deleteDataset(id: ID!): DeleteDatasetPayload!
+  deleteDataset(id: ID!): SimplePayload!
 }
 
 input CreateDatasetInput {
@@ -233,10 +225,5 @@ input UpdateDatasetInput {
 type UpdateDatasetPayload {
   success: Boolean!
   dataset: Dataset
-  message: String
-}
-
-type DeleteDatasetPayload {
-  success: Boolean!
   message: String
 }

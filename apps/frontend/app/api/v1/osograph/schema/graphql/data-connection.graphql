@@ -11,6 +11,62 @@ type DataConnection {
   type: DataConnectionType!
   createdAt: DateTime!
   updatedAt: DateTime!
+}
 
-  # TODO: Add fields for the data connector configuration
+type DataConnectionEdge {
+  node: DataConnection!
+  cursor: String!
+}
+
+type DataConnectionConnection {
+  edges: [DataConnectionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type DataConnectionAlias {
+  id: ID!
+  orgId: ID!
+  datasetId: ID!
+  dataConnectionId: ID!
+  name: String!
+  schema: String!
+}
+
+extend type Mutation {
+  createDataConnection(
+    input: CreateDataConnectionInput!
+  ): CreateDataConnectionPayload!
+  deleteDataConnection(id: ID!): SimplePayload!
+
+  createDataConnectionAlias(
+    input: CreateDataConnectionAliasInput!
+  ): CreateDataConnectionAliasPayload!
+  deleteDataConnectionAlias(id: ID!): SimplePayload!
+}
+
+input CreateDataConnectionInput {
+  orgId: ID!
+  name: String!
+  type: DataConnectionType!
+  config: JSON!
+  credentials: JSON!
+}
+
+type CreateDataConnectionPayload {
+  success: Boolean!
+  dataConnection: DataConnection
+  message: String
+}
+
+input CreateDataConnectionAliasInput {
+  dataConnectionId: ID!
+  name: String!
+  schema: String!
+}
+
+type CreateDataConnectionAliasPayload {
+  success: Boolean!
+  dataConnectionAlias: DataConnectionAlias
+  message: String
 }

@@ -4,6 +4,24 @@ enum DataIngestionFactoryType {
   ARCHIVE_DIR
 }
 
+type DataIngestion {
+  id: ID!
+  orgId: ID!
+  datasetId: ID!
+  factoryType: DataIngestionFactoryType!
+  config: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  modelContext(tableName: String!): ModelContext
+  materializations(
+    tableName: String!
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
+}
+
 type DataIngestionEdge {
   node: DataIngestion!
   cursor: String!
