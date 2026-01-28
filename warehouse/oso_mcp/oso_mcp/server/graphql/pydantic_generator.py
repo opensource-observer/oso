@@ -13,6 +13,7 @@ from graphql import (
     GraphQLObjectType,
     GraphQLScalarType,
     GraphQLSchema,
+    GraphQLUnionType,
     SelectionSetNode,
     VariableDefinitionNode,
 )
@@ -135,6 +136,60 @@ class PydanticModelGenerator:
         self._type_registry[type_name] = enum_klass
         return enum_klass
 
+    def generate_union_member_model(
+        self,
+        union_type: GraphQLUnionType,
+        member_type: GraphQLObjectType,
+        max_depth: int,
+        context_prefix: str,
+    ) -> t.Type[BaseModel]:
+        """Generate a Pydantic model for a union member type.
+
+        This adds the typename__ discriminator field to the model.
+
+        Args:
+            union_type: GraphQL union type
+            member_type: GraphQL object type for this union member
+            max_depth: Maximum depth for nested types
+            context_prefix: Prefix for type names
+
+        Returns:
+            Dynamically created Pydantic model class for union member
+        """
+        # Generate the base model for this union member
+        member_model_name = f"{context_prefix}{member_type.name}"
+
+        # Check if already registered
+        if member_model_name in self._type_registry:
+            return self._type_registry[member_model_name]  # type: ignore
+
+        # Build fields from the member type
+        fields: dict[str, tuple[t.Any, t.Any]] = {}
+
+        # Add discriminator field: typename__
+        fields["typename__"] = (
+            t.Literal[member_type.name],
+            Field(alias="__typename"),
+        )
+
+        # Add all other fields from the member type
+        for field_name, field in member_type.fields.items():
+            field_result = self._create_pydantic_field(
+                field_name,
+                field.type,
+                max_depth=max_depth - 1,
+                context_prefix=member_model_name,
+            )
+            if field_result is None:
+                continue
+            python_type, field_info = field_result
+            fields[field_name] = (python_type, field_info)
+
+        # Create the model
+        model = create_model(member_model_name, **fields)  # type: ignore
+        self._type_registry[member_model_name] = model
+        return model  # type: ignore
+
     def _create_pydantic_field(
         self, name: str, gql_type: t.Any, max_depth: int, context_prefix: str
     ) -> tuple[t.Any, t.Any] | None:
@@ -174,6 +229,22 @@ class PydanticModelGenerator:
             python_type = self._map_graphql_type_to_python(
                 name, gql_type, max_depth=max_depth, context_prefix=context_prefix
             )
+
+        # Check if it's a union (tuple of ("union", (Type1, Type2, ...)))
+        if (
+            isinstance(python_type, tuple)
+            and len(python_type) == 2
+            and python_type[0] == "union"
+        ):
+            union_members = python_type[1]
+            python_type = t.Union[union_members]  # type: ignore
+            # Union fields need discriminator
+            if not is_required:
+                python_type = t.Optional[python_type]
+                field_info = Field(default=None, discriminator="typename__")
+            else:
+                field_info = Field(discriminator="typename__")
+            return python_type, field_info
 
         if isinstance(python_type, UnsetNested):
             # Skip fields with nested types beyond max_depth
@@ -226,6 +297,25 @@ class PydanticModelGenerator:
                 return self._get_or_create_model(
                     field_type, max_depth=max_depth, context_prefix=context_prefix
                 )
+            return UnsetNested()
+
+        if isinstance(field_type, GraphQLUnionType):
+            # Only generate union if we have depth remaining
+            if max_depth > 0:
+                # Get all possible types in the union
+                union_members = []
+                for member_type in field_type.types:
+                    if isinstance(member_type, GraphQLObjectType):
+                        member_model = self.generate_union_member_model(
+                            field_type, member_type, max_depth, context_prefix
+                        )
+                        union_members.append(member_model)
+
+                if union_members:
+                    # Return a special marker for union types
+                    # The field will be: Union[Type1, Type2, ...] with Field(discriminator="typename__")
+                    # We can't add Field() here, so we return a special marker
+                    return ("union", tuple(union_members))
             return UnsetNested()
 
         # Default to Any for unknown types

@@ -264,12 +264,64 @@ class GraphQLExecutor:
             # Get the field's annotation
             field_type = field_info.annotation
 
-            # Unwrap Optional types
+            # Check for discriminated unions first (before unwrapping Optional)
             origin = t.get_origin(field_type)
             if origin is t.Union:
                 args = t.get_args(field_type)
-                # Filter out NoneType from Union to get the actual type
+                # Filter out NoneType from Union to get the actual types
                 non_none_args = [arg for arg in args if arg is not type(None)]
+
+                # Check if this is a discriminated union (all members are BaseModel with typename__)
+                if len(non_none_args) > 1 and all(
+                    isinstance(arg, type)
+                    and issubclass(arg, BaseModel)
+                    and "typename__" in arg.model_fields
+                    for arg in non_none_args
+                ):
+                    # This is a union field - build inline fragments
+                    union_selections = []
+                    union_selections.append(
+                        f"{indent}__typename"
+                    )  # Always include discriminator
+
+                    for union_member in non_none_args:
+                        # Get the typename value from the Literal field
+                        typename_field = union_member.model_fields["typename__"]
+                        # Extract the literal value (e.g., "InternalWarehouse")
+                        typename_annotation = typename_field.annotation
+                        # Handle Optional[Literal["TypeName"]]
+                        if t.get_origin(typename_annotation) is t.Union:
+                            typename_args = t.get_args(typename_annotation)
+                            typename_annotation = next(
+                                arg for arg in typename_args if arg is not type(None)
+                            )
+                        # Get the literal value
+                        typename_value = t.get_args(typename_annotation)[
+                            0
+                        ]  # Literal["TypeName"] -> "TypeName"
+
+                        # Build fields for this union member (excluding typename__)
+                        member_fields = self._build_field_selection(
+                            union_member, indent_level + 1
+                        )
+                        if member_fields:
+                            # Remove the typename__ line from member fields
+                            member_field_lines = [
+                                line
+                                for line in member_fields.split("\n")
+                                if "typename__" not in line
+                            ]
+                            member_fields_filtered = "\n".join(member_field_lines)
+
+                            union_selections.append(
+                                f"{indent}... on {typename_value} {{\n{member_fields_filtered}\n{indent}}}"
+                            )
+
+                    union_query = "\n".join(union_selections)
+                    fields.append(f"{indent}{field_name} {{\n{union_query}\n{indent}}}")
+                    continue
+
+                # Not a discriminated union, unwrap Optional
                 if non_none_args:
                     field_type = non_none_args[0]
                     origin = t.get_origin(field_type)
