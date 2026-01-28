@@ -1,5 +1,7 @@
 import abc
 import typing as t
+import uuid
+from dataclasses import dataclass
 from graphlib import TopologicalSorter
 
 import structlog
@@ -24,6 +26,16 @@ from sqlglot.optimizer.scope import build_scope
 from sqlmesh.core import dialect as sqlmesh_dialect
 
 logger = structlog.getLogger(__name__)
+
+
+class StepFailedException(Exception):
+    """An exception indicating that a step has failed."""
+
+    inner_exception: Exception
+
+    def __init__(self, inner_exception: Exception) -> None:
+        self.inner_exception = inner_exception
+        super().__init__(f"Step failed due to exception: {str(inner_exception)}")
 
 
 class SchemaRetreiver(abc.ABC):
@@ -189,6 +201,7 @@ class Model(BaseModel):
     async def resolve_query(
         self,
         table_resolvers: list[TableResolver],
+        metadata: dict | None = None,
     ) -> exp.Query:
         """Users write queries to virtual names for all of the tables. These
         names must be resolved. This resolver returns a ResolvedSQLModel which
@@ -200,6 +213,7 @@ class Model(BaseModel):
         rewrite_response = await rewrite_query(
             self.query.sql(self.dialect),
             table_resolvers,
+            metadata=metadata,
             input_dialect=self.dialect,
             output_dialect=self.dialect,
         )
@@ -266,38 +280,34 @@ class Model(BaseModel):
 
         return query
 
-    def format_uuid_id_str(self, id_str: str) -> str:
-        """Removes dashes from a UUID string to make it safe for table/dataset names."""
-        return id_str.replace("-", "")
-
-    def backend_table_name(self):
-        """Returns the _actual_ table name for this model.
-
-        Table names are of the form: tbl_{model_id}.
-        """
-        return f"tbl_{self.format_uuid_id_str(self.id)}"
-
-    def backend_db_name(self):
-        """Returns the _actual_ dataset name for this model.
-
-        Dataset names are of the form: ds_{dataset_id}.
-        """
-        return f"ds_{self.format_uuid_id_str(self.dataset_id)}"
-
-    def backend_table(self) -> exp.Table:
-        """Returns the fully qualified table for this model."""
-
-        return exp.to_table(f"{self.backend_db_name()}.{self.backend_table_name()}")
-
     def __str__(self) -> str:
         return f"{self.org_name}.{self.dataset_name}.{self.name}"
 
-    def table_reference(self) -> TableReference:
-        """Get the table reference for the model itself."""
+    def user_fqn(self) -> str:
+        """Returns the user facing fully qualified name for this model."""
+        return f"{self.org_name}.{self.dataset_name}.{self.name}"
+
+    def user_table(self) -> exp.Table:
+        """Get the user facing table expression for this model."""
+        fqn = self.user_fqn()
+        return exp.to_table(fqn)
+
+    def warehouse_table_ref(self, destination_suffix: str = "") -> TableReference:
+        """Get the table reference for the model itself. This is used as the
+        destination for materializations.
+
+        Args:
+            destination_suffix: A suffix to append to the table ID for the
+                destination. If not specified a random uuid is used.
+        """
+
+        if not destination_suffix:
+            destination_suffix = uuid.uuid4().hex
+
         return TableReference(
             org_id=self.org_id,
             dataset_id=self.dataset_id,
-            table_id=f"data_model_{self.id}",
+            table_id=f"data_model_{destination_suffix}",
         )
 
 
@@ -379,6 +389,12 @@ class StepContext(abc.ABC):
         fqn = self.generate_destination_fqn(ref)
         return exp.to_table(fqn)
 
+    @property
+    @abc.abstractmethod
+    def run(self) -> "RunContextView":
+        """Get the run context for the current step."""
+        raise NotImplementedError("run must be implemented by subclasses.")
+
 
 class RunContext(abc.ABC):
     @abc.abstractmethod
@@ -446,6 +462,28 @@ class RunContext(abc.ABC):
     def trigger_type(self) -> str:
         """The trigger type for the current run."""
         raise NotImplementedError("trigger_type must be implemented by subclasses.")
+
+    @property
+    def as_view(self) -> "RunContextView":
+        """A read-only view of the run context."""
+        return RunContextView(
+            id=self.run_id,
+            organization=self.organization,
+            dataset=self.dataset,
+            requested_by=self.requested_by,
+            trigger_type=self.trigger_type,
+        )
+
+
+@dataclass(frozen=True)
+class RunContextView:
+    """A read-only view of a RunContext."""
+
+    id: str
+    organization: OrganizationCommon
+    dataset: DatasetCommon | None
+    requested_by: UserCommon | None
+    trigger_type: str
 
 
 class HandlerResponse(BaseModel):

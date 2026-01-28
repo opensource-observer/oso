@@ -1,4 +1,3 @@
-
 import structlog
 from aioprometheus.collectors import Counter, Histogram
 from oso_core.instrumentation.common import MetricsLabeler
@@ -25,6 +24,7 @@ from scheduler.types import (
     SuccessResponse,
 )
 from scheduler.utils import OSOClientTableResolver, ctas_query
+from sqlglot import exp
 from sqlmesh import EngineAdapter
 
 logger = structlog.getLogger(__name__)
@@ -195,10 +195,19 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         labeler: MetricsLabeler,
     ) -> None:
         """Evaluate the provided models using the UDM engine adapter."""
+        oso_table_resolver = OSOClientTableResolver(oso_client=oso_client)
+
+        # Resolve all of the previously materialized models so we can drop old
+        # tables opportunistically. We will need to completely change the
+        # strategy for INCREMENTAL models in the future but this will satisfy
+        # versioning in the future for FULL models.
+        previous_warehouse_tables = await oso_table_resolver.resolve_tables(
+            {model.user_fqn(): model.user_table() for model in converted_models}
+        )
+
+        table_resolvers: list[TableResolver] = [oso_table_resolver]
+
         async with udm_engine_adapter.get_adapter() as adapter:
-            table_resolvers: list[TableResolver] = [
-                OSOClientTableResolver(oso_client=oso_client)
-            ]
             logger.info("Determining model evaluation order...")
             sorter = ModelSorter(converted_models)
             async for model in sorter.ordered_iter():
@@ -213,6 +222,9 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                         ),
                         labeler,
                     ):
+                        previous_warehouse_table = previous_warehouse_tables.get(
+                            model.user_fqn()
+                        )
                         await self.evaluate_single_model(
                             model=model,
                             step_context=step_context,
@@ -220,17 +232,19 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                             table_resolvers=table_resolvers,
                             metrics=metrics,
                             labeler=labeler,
+                            previous_warehouse_table=previous_warehouse_table,
                         )
 
     async def evaluate_single_model(
         self,
         *,
-        model: Model,
         step_context: StepContext,
+        model: Model,
         adapter: EngineAdapter,
         table_resolvers: list[TableResolver],
         metrics: MetricsContainer,
         labeler: MetricsLabeler,
+        previous_warehouse_table: exp.Table | None = None,
     ):
         step_context.log.info(f"Starting evaluation for model {model.name}")
 
@@ -238,7 +252,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             "Only SQL models are supported for evaluation at this time."
         )
 
-        table_ref = model.table_reference()
+        table_ref = model.warehouse_table_ref(destination_suffix=step_context.run.id)
 
         target_table = step_context.generate_destination_table_exp(table_ref)
 
@@ -248,31 +262,28 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             ignore_if_exists=True,
         )
 
-        resolved_query = await model.resolve_query(table_resolvers=table_resolvers)
+        resolved_query = await model.resolve_query(
+            table_resolvers=table_resolvers,
+            metadata={
+                "resolutionType": "data_model_run",
+                "runId": step_context.run.id,
+                "stepId": step_context.step_id,
+                "orgName": step_context.run.organization.name,
+                "datasetName": model.dataset_name,
+            },
+        )
 
-        # This is a HACK to allow for transactions to work in trino. The reason
-        # that sqlmesh has this disabled by default is that when they do their
-        # "insert_overwrite" process on Hive connectors in trino. Transactions
-        # don't work properly. So they proactively set this to false. @ravenac95
-        # will push a fix upstream for this to be set to true if _not_ using
-        # Hive connectors (we use iceberg).
-        adapter.SUPPORTS_TRANSACTIONS = True
+        create_query = ctas_query(resolved_query)
 
-        with adapter.transaction():
-            # Delete existing table if it exists
-            adapter.drop_table(table_name=target_table, exists=True)
-
-            create_query = ctas_query(resolved_query)
-
-            adapter.ctas(
-                table_name=target_table,
-                query_or_df=create_query,
-                exists=True,
-            )
-            adapter.replace_query(
-                table_name=target_table,
-                query_or_df=resolved_query,
-            )
+        adapter.ctas(
+            table_name=target_table,
+            query_or_df=create_query,
+            exists=True,
+        )
+        adapter.replace_query(
+            table_name=target_table,
+            query_or_df=resolved_query,
+        )
 
         columns = adapter.columns(table_name=target_table)
 
@@ -293,3 +304,18 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
             schema=schema,
         )
+
+        # If we've reached this point everything has been successfully
+        # materialized. We can now drop the previous table if it exists.
+        # We do this as a best-effort attempt and log a warning if it fails.
+        if previous_warehouse_table:
+            try:
+                adapter.drop_table(
+                    table_name=previous_warehouse_table,
+                    exists=True,
+                )
+            except Exception as e:
+                step_context.log.warning(
+                    f"Failed to drop previous warehouse table "
+                    f"{previous_warehouse_table}: {e}"
+                )
