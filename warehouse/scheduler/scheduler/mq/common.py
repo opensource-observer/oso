@@ -37,6 +37,7 @@ from scheduler.types import (
     RunContext,
     SkipResponse,
     StepContext,
+    StepFailedException,
     SuccessResponse,
 )
 from scheduler.utils import convert_uuid_bytes_to_str
@@ -50,20 +51,23 @@ class OSOStepContext(StepContext):
     @classmethod
     def create(
         cls,
+        run_id: str,
         step_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
         logger: BindableLogger,
     ) -> "OSOStepContext":
-        return cls(step_id, oso_client, materialization_strategy, logger)
+        return cls(run_id, step_id, oso_client, materialization_strategy, logger)
 
     def __init__(
         self,
+        run_id: str,
         step_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
         logger: BindableLogger,
     ) -> None:
+        self._run_id = run_id
         self._step_id = step_id
         self._oso_client = oso_client
         self._materialization_strategy = materialization_strategy
@@ -94,6 +98,10 @@ class OSOStepContext(StepContext):
     def step_id(self) -> str:
         return str(self._logger.bindings.get("step", "unknown_step"))
 
+    @property
+    def run_id(self) -> str:
+        return self._run_id
+
 
 class OSORunContext(RunContext):
     @classmethod
@@ -118,7 +126,13 @@ class OSORunContext(RunContext):
         run_data = get_run_data.runs.edges[0].node
 
         return cls(
-            run_id, oso_client, run_data, materialization_strategy, buffered_logger, log_buffer, metrics
+            run_id,
+            oso_client,
+            run_data,
+            materialization_strategy,
+            buffered_logger,
+            log_buffer,
+            metrics,
         )
 
     def __init__(
@@ -171,6 +185,7 @@ class OSORunContext(RunContext):
         try:
             async with async_time(self._metrics.histogram("step_duration_ms")):
                 yield OSOStepContext.create(
+                    self._run_id,
                     step.id,
                     self._oso_client,
                     self._materialization_strategy,
@@ -183,6 +198,8 @@ class OSORunContext(RunContext):
                 status=StepStatus.FAILED,
                 logs_url="https://example.com/logs",
             )
+            # Re-raise the exception to propagate it to the run level
+            raise StepFailedException(inner_exception=e)
         else:
             await self._oso_client.finish_step(
                 step_id=step.id,
@@ -338,7 +355,7 @@ class RunHandler(MessageHandler[T]):
             )
 
     async def report_response(
-        self, 
+        self,
         oso_client: OSOClient,
         run_id_str: str,
         run_context: OSORunContext,
