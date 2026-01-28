@@ -29,9 +29,10 @@ class UnsetNested(BaseModel):
 class PydanticModelGenerator:
     """Dynamically generate Pydantic models from GraphQL types."""
 
-    def __init__(self):
+    def __init__(self, ignore_unknown_types: bool = False):
         """Initialize the model generator with a type registry."""
         self._type_registry: dict[str, t.Type[BaseModel] | StrEnum] = {}
+        self._ignore_unknown_types = ignore_unknown_types
 
     def generate_input_model(
         self, input_type: GraphQLInputObjectType
@@ -318,7 +319,8 @@ class PydanticModelGenerator:
                     return ("union", tuple(union_members))
             return UnsetNested()
 
-        # Default to Any for unknown types
+        if not self._ignore_unknown_types:
+            raise TypeError(f"Unsupported GraphQL type for field {name}: {field_type}")
         return t.Any
 
     def generate_model_from_variables(
