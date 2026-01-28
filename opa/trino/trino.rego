@@ -101,7 +101,7 @@ allow if {
 
 	# Allow if catalog belongs to the org or is a public catalog
 	is_org_catalog := startswith(current_catalog_name, concat("", [org_id, "__"]))
-	is_public_catalog := current_catalog_name in public_catalogs
+	is_public_catalog := current_catalog_name in {"iceberg", "user_shared"}
 
 	some x in [
 		is_org_catalog,
