@@ -29,6 +29,7 @@ test_int_ddp__commits_unified_basic_join:
     oso.stg_opendevdata__commits:
       columns:
         sha1: varchar
+        repo_id: bigint
         canonical_developer_id: bigint
         is_bot: bigint
         additions: bigint
@@ -37,12 +38,22 @@ test_int_ddp__commits_unified_basic_join:
         authored_at: timestamp
       rows:
         - sha1: "abc123def456"
+          repo_id: 2001
           canonical_developer_id: 5001
           is_bot: 0
           additions: 50
           deletions: 10
           committed_at: "2024-01-15 09:55:00"
           authored_at: "2024-01-15 09:50:00"
+    oso.int_opendevdata__repositories_with_repo_id:
+      columns:
+        opendevdata_id: bigint
+        repo_id: bigint
+        repo_name: varchar
+      rows:
+        - opendevdata_id: 2001
+          repo_id: 1001
+          repo_name: "org/repo"
     oso.stg_opendevdata__canonical_developers:
       columns:
         id: bigint
@@ -76,6 +87,7 @@ test_int_ddp__commits_unified_basic_join:
           authored_at: "2024-01-15 09:50:00"
           author_id: 100
           primary_github_user_id: "MDQ6VXNlcjEwMA=="
+          source: "gharchive"
 
 test_int_ddp__commits_unified_same_sha_different_repos:
   model: oso.int_ddp__commits_unified
@@ -116,6 +128,7 @@ test_int_ddp__commits_unified_same_sha_different_repos:
     oso.stg_opendevdata__commits:
       columns:
         sha1: varchar
+        repo_id: bigint
         canonical_developer_id: bigint
         is_bot: bigint
         additions: bigint
@@ -124,12 +137,22 @@ test_int_ddp__commits_unified_same_sha_different_repos:
         authored_at: timestamp
       rows:
         - sha1: "shared_commit_sha"
+          repo_id: 3001
           canonical_developer_id: 5001
           is_bot: 0
           additions: 25
           deletions: 5
           committed_at: "2024-01-15 09:55:00"
           authored_at: "2024-01-15 09:50:00"
+    oso.int_opendevdata__repositories_with_repo_id:
+      columns:
+        opendevdata_id: bigint
+        repo_id: bigint
+        repo_name: varchar
+      rows:
+        - opendevdata_id: 3001
+          repo_id: 1001
+          repo_name: "org/original-repo"
     oso.stg_opendevdata__canonical_developers:
       columns:
         id: bigint
@@ -147,6 +170,7 @@ test_int_ddp__commits_unified_same_sha_different_repos:
   outputs:
     query:
       # Both rows should exist - grain is (sha, repository_id)
+      # Original repo gets ODD enrichment, fork does not (ODD tracks by repo_id)
       rows:
         - sha: "shared_commit_sha"
           repository_id: 1001
@@ -155,13 +179,15 @@ test_int_ddp__commits_unified_same_sha_different_repos:
           actor_login: "maintainer"
           canonical_developer_id: 5001
           author_id: 300
+          source: "gharchive"
         - sha: "shared_commit_sha"
           repository_id: 2002
           repository_name: "user/forked-repo"
           actor_id: 200
           actor_login: "forker"
-          canonical_developer_id: 5001
-          author_id: 300
+          canonical_developer_id: null
+          author_id: null
+          source: "gharchive"
       partial: true
 
 test_int_ddp__commits_unified_no_opendevdata_match:
@@ -193,12 +219,19 @@ test_int_ddp__commits_unified_no_opendevdata_match:
     oso.stg_opendevdata__commits:
       columns:
         sha1: varchar
+        repo_id: bigint
         canonical_developer_id: bigint
         is_bot: bigint
         additions: bigint
         deletions: bigint
         committed_at: timestamp
         authored_at: timestamp
+      rows: []
+    oso.int_opendevdata__repositories_with_repo_id:
+      columns:
+        opendevdata_id: bigint
+        repo_id: bigint
+        repo_name: varchar
       rows: []
     oso.stg_opendevdata__canonical_developers:
       columns:
@@ -222,6 +255,7 @@ test_int_ddp__commits_unified_no_opendevdata_match:
           deletions: null
           author_id: null
           primary_github_user_id: null
+          source: "gharchive"
       partial: true
 
 test_int_ddp__commits_unified_null_primary_github_user_id:
@@ -253,6 +287,7 @@ test_int_ddp__commits_unified_null_primary_github_user_id:
     oso.stg_opendevdata__commits:
       columns:
         sha1: varchar
+        repo_id: bigint
         canonical_developer_id: bigint
         is_bot: bigint
         additions: bigint
@@ -261,12 +296,22 @@ test_int_ddp__commits_unified_null_primary_github_user_id:
         authored_at: timestamp
       rows:
         - sha1: "commit_from_deleted_account"
+          repo_id: 4001
           canonical_developer_id: 5001
           is_bot: 0
           additions: 10
           deletions: 5
           committed_at: "2024-01-15 09:55:00"
           authored_at: "2024-01-15 09:50:00"
+    oso.int_opendevdata__repositories_with_repo_id:
+      columns:
+        opendevdata_id: bigint
+        repo_id: bigint
+        repo_name: varchar
+      rows:
+        - opendevdata_id: 4001
+          repo_id: 1001
+          repo_name: "org/repo"
     oso.stg_opendevdata__canonical_developers:
       columns:
         id: bigint
@@ -289,4 +334,5 @@ test_int_ddp__commits_unified_null_primary_github_user_id:
           is_bot: 0
           author_id: null
           primary_github_user_id: null
+          source: "gharchive"
       partial: true

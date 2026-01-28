@@ -45,6 +45,7 @@ WITH ranked_commits AS (
     authored_at,
     author_id,
     primary_github_user_id,
+    source,
     ROW_NUMBER() OVER (
       PARTITION BY repository_id, sha
       ORDER BY created_at ASC
@@ -68,7 +69,8 @@ SELECT
   committed_at,
   authored_at,
   author_id,
-  primary_github_user_id
+  primary_github_user_id,
+  source
 FROM ranked_commits
 WHERE rn = 1
   AND created_at BETWEEN @start_dt AND @end_dt
