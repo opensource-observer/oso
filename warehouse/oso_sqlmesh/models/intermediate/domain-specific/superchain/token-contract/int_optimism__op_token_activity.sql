@@ -64,7 +64,10 @@ WITH op_transfers AS (
         AND data_hex != '0x' 
         AND LENGTH(data_hex) >= 3
       THEN CAST(
-        TRY(@safe_hex_to_int(SUBSTRING(data_hex, 3))) / CAST(1e18 AS DOUBLE) 
+        CAST(
+          @safe_hex_to_int(SUBSTRING(data_hex, 3), 'DECIMAL(38,0)')
+          AS DOUBLE
+        ) / CAST(1e18 AS DOUBLE) 
         AS DOUBLE
       )
       ELSE 0.0
@@ -120,6 +123,7 @@ categorized AS (
       WHEN '0x4e71d92d' THEN 'claim()'
       WHEN '0xac9650d8' THEN 'multicall(bytes[])'
       WHEN '0xb61d27f6' THEN 'execute(address,uint256,bytes)'
+      WHEN '0x6a761202' THEN 'execTransaction(address,uint256,bytes,uint8,uint256,uint256,uint256,address,address,bytes)'
       WHEN '0x1cff79cd' THEN 'execute(address,bytes)'
       WHEN '0x5c19a95c' THEN 'delegate(address)'
       ELSE 'other'
@@ -137,7 +141,7 @@ categorized AS (
         '0x32b7006d', '0xa3a79548', '0x3dbb202b'
       ) THEN 'bridge'
       WHEN function_selector IN ('0xa694fc3a', '0x2e1a7d4d', '0x3d18b912', '0x4e71d92d') THEN 'staking'
-      WHEN function_selector IN ('0xac9650d8', '0xb61d27f6', '0x1cff79cd') THEN 'meta_exec'
+      WHEN function_selector IN ('0xac9650d8', '0xb61d27f6', '0x1cff79cd', '0x6a761202') THEN 'meta_exec'
       WHEN function_selector IN ('0x5c19a95c') THEN 'governance'
       ELSE 'other'
     END AS func_bucket
