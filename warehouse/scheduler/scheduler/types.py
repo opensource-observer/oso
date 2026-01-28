@@ -390,6 +390,7 @@ class StepContext(abc.ABC):
         return exp.to_table(fqn)
 
     @property
+    @abc.abstractmethod
     def run(self) -> "RunContextView":
         """Get the run context for the current step."""
         raise NotImplementedError("run must be implemented by subclasses.")

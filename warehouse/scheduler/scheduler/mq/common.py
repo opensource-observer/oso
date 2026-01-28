@@ -35,6 +35,7 @@ from scheduler.types import (
     MaterializationStrategy,
     MessageHandler,
     RunContext,
+    RunContextView,
     SkipResponse,
     StepContext,
     StepFailedException,
@@ -51,23 +52,23 @@ class OSOStepContext(StepContext):
     @classmethod
     def create(
         cls,
-        run_id: str,
+        run: RunContextView,
         step_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
         logger: BindableLogger,
     ) -> "OSOStepContext":
-        return cls(run_id, step_id, oso_client, materialization_strategy, logger)
+        return cls(run, step_id, oso_client, materialization_strategy, logger)
 
     def __init__(
         self,
-        run_id: str,
+        run: RunContextView,
         step_id: str,
         oso_client: OSOClient,
         materialization_strategy: MaterializationStrategy,
         logger: BindableLogger,
     ) -> None:
-        self._run_id = run_id
+        self._run = run
         self._step_id = step_id
         self._oso_client = oso_client
         self._materialization_strategy = materialization_strategy
@@ -99,8 +100,8 @@ class OSOStepContext(StepContext):
         return str(self._logger.bindings.get("step", "unknown_step"))
 
     @property
-    def run_id(self) -> str:
-        return self._run_id
+    def run(self) -> RunContextView:
+        return self._run
 
 
 class OSORunContext(RunContext):
@@ -185,7 +186,7 @@ class OSORunContext(RunContext):
         try:
             async with async_time(self._metrics.histogram("step_duration_ms")):
                 yield OSOStepContext.create(
-                    self._run_id,
+                    self.as_view,
                     step.id,
                     self._oso_client,
                     self._materialization_strategy,
