@@ -15,11 +15,11 @@ data:
           "allow": "none"
         },
         {
-          "user": "rw-*",
+          "user": "rw-.*",
           "allow": "all"
         },
         {
-          "user": "ro-*",
+          "user": "ro-.*",
           "allow": "read-only"
         },
         {
