@@ -2,6 +2,7 @@ name: Claude Code Review
 
 env:
   ANTHROPIC_VERTEX_PROJECT_ID: opensource-observer
+  CLOUD_ML_REGION: global
 
 on:
   pull_request:
