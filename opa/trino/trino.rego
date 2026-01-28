@@ -21,7 +21,10 @@ read_and_write_user(parsed_user) if {
 
 public_catalogs := {"iceberg"}
 admin_users := {"admin", "sqlmesh", "carl"}
-read_operations := {"SelectFromColumns", "AccessCatalog", "FilterCatalogs", "FilterTables", "FilterColumns"}
+read_operations := {
+	"SelectFromColumns", "AccessCatalog", "FilterCatalogs", "FilterTables",
+	"FilterColumns", "ShowSchemas", "FilterSchemas", "ShowTables",
+}
 
 # If the user is in the format `ro-<org_name>-<org_id>`, allow access if the catalog
 # matches the org_name or if the catalog is "iceberg".
@@ -90,12 +93,15 @@ allow if {
 
 	input.action.operation in read_operations # Only read actions allowed
 
+	# TODO: remove this and use is_org_schema when we have shareable datasets
+	is_user_catalog := current_catalog_name == "user_shared"
+
 	# Allow if catalog/schema belongs to the org or is a public catalog
 	# Org catalogs are in the format: {org_name}__{name}
 	# Org schemas are in the format: org_{org_id}__{dataset_id}
 	some x in [
 		is_org_catalog,
-		is_org_schema,
+		is_user_catalog,
 		is_public_catalog,
 	]
 	x
