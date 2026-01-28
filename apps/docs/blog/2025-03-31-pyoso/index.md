@@ -8,7 +8,7 @@ image: ./pyoso-cover.png
 
 We're excited to introduce **Pyoso**, a new Python library that makes it easy to query and analyze open source software data and metrics from OSO. Whether you're a data scientist, researcher, or builder, Pyoso gives you direct access to all our production data sets from your favorite analysis environment.
 
-No need to manage infrastructure or wrangle database credentials. Just install the package, authenticate with [your free API key](https://www.opensource.observer/settings/api), and start querying!
+No need to manage infrastructure or wrangle database credentials. Just install the package, authenticate with your free API key, and start querying!
 
 <!-- truncate -->
 
@@ -39,7 +39,7 @@ df = client.to_pandas(query)
 print(df)
 ```
 
-Generate your API key [here](https://www.opensource.observer/settings/api).
+To generate your API key, log in to opensource.observer, navigate to your organization's **Settings → API Keys**, and create a new key.
 
 ## What you can do with it
 

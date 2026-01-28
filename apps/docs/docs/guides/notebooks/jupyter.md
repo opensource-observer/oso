@@ -33,13 +33,7 @@ If you run into issues getting set up with Jupyter, check out the [Jupyter docs]
 
 ## Authentication
 
-To access the OSO data lake, you'll need to generate an API key.
-
-1. Go to [www.opensource.observer](https://www.opensource.observer) and create a new account.
-2. Log in and go to [Account settings](https://www.opensource.observer/app/settings).
-3. In the "API Keys" section, click "+ New".
-4. Give your key a label and click "Create".
-5. Copy the key and store it securely. You won't be able to see it again.
+To access the OSO data lake, you'll need to generate an API key following [these instructions](../../get-started/python.md#generate-an-api-key).
 
 ## Connect to OSO with pyoso
 

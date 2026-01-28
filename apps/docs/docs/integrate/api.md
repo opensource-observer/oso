@@ -96,17 +96,7 @@ All requests to the OSO API must be authenticated.
 
 ### Generate an API key
 
-First, go to [www.opensource.observer](https://www.opensource.observer) and create a new account.
-
-If you already have an account, log in. Then create a new personal API key:
-
-1. Go to [Account settings](https://www.opensource.observer/app/settings)
-2. In the "API Keys" section, click "+ New"
-3. Give your key a label - this is just for you, usually to describe a key's purpose.
-4. You should see your brand new key. **Immediately** save this value, as you'll **never** see it again after refreshing the page.
-5. Click "Create" to save the key.
-
-**You can create as many keys as you like.**
+See [getting started with the API](../get-started/api.mdx) for API key creation instructions.
 
 ![generate API key](./generate-api-key.png)
 

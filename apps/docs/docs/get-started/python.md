@@ -3,7 +3,7 @@ title: "Access via Python"
 sidebar_position: 1
 ---
 
-The [OSO](https://www.opensource.observer/settings/api) API serves
+The OSO API serves
 queries on metrics and metadata about open source projects.
 You can access the full data lake via our `pyoso` Python library.
 
@@ -11,17 +11,27 @@ Let's make your first query in under five minutes.
 
 ## Generate an API key
 
-First, go to [www.opensource.observer](https://www.opensource.observer/login) and create a new account.
+1. [Log in](https://www.opensource.observer/login) to your account
+2. Navigate to your organization's **Settings → API Keys**
+3. Click **"New Key +"** and give it a descriptive name
+4. **Save your key immediately** - you won't see it again
 
-If you already have an account, [log in](https://www.opensource.observer/login). Then create a new personal API key:
+<details>
+<summary>Detailed step-by-step instructions</summary>
 
-1. Go to [Account settings](https://www.opensource.observer/settings/api)
-2. In the "API Keys" section, click "+ New"
-3. Give your key a label - this is just for you, usually to describe a key's purpose.
-4. You should see your brand new key. **Immediately** save this value, as you'll **never** see it again after refreshing the page.
-5. Click "Create" to save the key.
+1. Go to [www.opensource.observer](https://www.opensource.observer/login) and log in
+2. You'll be redirected to your organization dashboard
+3. In the left sidebar, click the dropdown next to your organization name
+4. Select **"Settings"**
+5. Navigate to **"Organization" → "API Keys"**
+6. Click **"New Key +"**
+7. Enter a descriptive label (e.g., "Production API")
+8. Copy and save your key immediately
+9. Click **"Create"**
 
 ![generate API key](../integrate/generate-api-key.png)
+
+</details>
 
 ## Install pyoso
 
