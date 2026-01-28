@@ -11,6 +11,11 @@ data:
           "allow": "owner"
         },
         {
+          "user": "rw-.*",
+          "catalog": "system",
+          "allow": "read-only"
+        },
+        {
           "catalog": "system",
           "allow": "none"
         },

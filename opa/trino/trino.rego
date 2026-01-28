@@ -121,6 +121,11 @@ allow if {
 	current_catalog_name == "user_shared" # Write users can only write to user_shared catalog
 	is_org_schema # Ensure schema belongs to the org
 }
+# For writes, we need to query the system catalog.
+allow if {
+	read_and_write_user(parsed_user)
+	current_catalog_name == "system"
+}
 
 # FOR BACKWARDS COMPATIBILITY ONLY
 # When trying to query a private catalog
