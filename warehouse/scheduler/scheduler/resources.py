@@ -27,7 +27,6 @@ from scheduler.dlt_destination import (
     DuckDBDLTDestinationResource,
     TrinoDLTDestinationResource,
 )
-from scheduler.evaluator import UserDefinedModelEvaluator
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.materialization.duckdb import DuckdbMaterializationStrategy
 from scheduler.materialization.trino import TrinoMaterializationStrategy
@@ -170,14 +169,6 @@ def k8s_resource_factory(
     return K8sApiResource()
 
 
-@resource_factory("evaluator")
-def scheduler_evaluator_factory(
-    udm_client: UserDefinedModelStateClient,
-) -> UserDefinedModelEvaluator:
-    """Factory function to create a UDM evaluator."""
-    return UserDefinedModelEvaluator(udm_client)
-
-
 @resource_factory("oso_client")
 def oso_client_factory(common_settings: "CommonSettings") -> OSOClient:
     """Factory function to create an OSO client."""
@@ -283,7 +274,6 @@ def default_resource_registry(common_settings: "CommonSettings") -> ResourcesReg
     registry.add(duckdb_resource_factory)
     registry.add(k8s_resource_factory)
     registry.add(message_queue_service_factory)
-    registry.add(scheduler_evaluator_factory)
     registry.add(udm_client_factory)
     registry.add(oso_client_factory)
     registry.add(message_handler_registry_factory)
