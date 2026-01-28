@@ -20,7 +20,7 @@ test_admin_user_allowed if {
 test_allow_execute_query_allowed if {
 	trino.allow with input as {
 		"context": {
-			"identity": {"user": "jwt-some-id"},
+			"identity": {"user": "ro-orgname-orgid"},
 			"softwareStack": {"trinoVersion": "434"},
 		},
 		"action": {"operation": "ExecuteQuery"},
@@ -30,7 +30,7 @@ test_allow_execute_query_allowed if {
 test_allow_public_catalog_allowed if {
 	trino.allow with input as {
 		"context": {
-			"identity": {"user": "jwt-some-id"},
+			"identity": {"user": "ro-orgname-orgid"},
 			"softwareStack": {"trinoVersion": "434"},
 		},
 		"action": {
@@ -44,7 +44,7 @@ test_allow_public_catalog_allowed if {
 	}
 	trino.allow with input as {
 		"context": {
-			"identity": {"user": "jwt-some-id"},
+			"identity": {"user": "ro-orgname-orgid"},
 			"softwareStack": {"trinoVersion": "434"},
 		},
 		"action": {
@@ -57,13 +57,13 @@ test_allow_public_catalog_allowed if {
 test_allow_private_catalog_allowed if {
 	trino.allow with input as {
 		"context": {
-			"identity": {"user": "jwt-some-id"},
+			"identity": {"user": "ro-orgname-orgid"},
 			"softwareStack": {"trinoVersion": "434"},
 		},
 		"action": {
 			"operation": "SelectFromColumns",
 			"resource": {"table": {
-				"catalogName": "some-id__catalog",
+				"catalogName": "orgname__catalog",
 				"schemaName": "example_schema",
 				"tableName": "example_table",
 			}},
@@ -71,12 +71,12 @@ test_allow_private_catalog_allowed if {
 	}
 	trino.allow with input as {
 		"context": {
-			"identity": {"user": "jwt-some-id"},
+			"identity": {"user": "ro-orgname-orgid"},
 			"softwareStack": {"trinoVersion": "434"},
 		},
 		"action": {
 			"operation": "AccessCatalog",
-			"resource": {"catalog": {"name": "some-id__catalog"}},
+			"resource": {"catalog": {"name": "orgname__catalog"}},
 		},
 	}
 }
@@ -84,7 +84,7 @@ test_allow_private_catalog_allowed if {
 test_allow_private_catalog_denied if {
 	not trino.allow with input as {
 		"context": {
-			"identity": {"user": "jwt-some-id"},
+			"identity": {"user": "ro-orgname-orgid"},
 			"softwareStack": {"trinoVersion": "434"},
 		},
 		"action": {
@@ -105,44 +105,10 @@ test_allow_anonymous_denied if {
 	}}
 }
 
-test_allow_dynamic_catalog_allowed if {
-	trino.allow with input as {
-		"context": {
-			"identity": {"user": "jwt-some-id"},
-			"softwareStack": {"trinoVersion": "434"},
-		},
-		"action": {
-			"operation": "SelectFromColumns",
-			"resource": {"table": {
-				"catalogName": "dynamic",
-				"schemaName": "some-id",
-				"tableName": "example_table",
-			}},
-		},
-	}
-}
-
-test_allow_dynamic_catalog_denied_wrong_schema if {
-	not trino.allow with input as {
-		"context": {
-			"identity": {"user": "jwt-some-id"},
-			"softwareStack": {"trinoVersion": "434"},
-		},
-		"action": {
-			"operation": "SelectFromColumns",
-			"resource": {"table": {
-				"catalogName": "dynamic",
-				"schemaName": "another-id",
-				"tableName": "example_table",
-			}},
-		},
-	}
-}
-
 test_allow_dynamic_catalog_denied_wrong_catalog if {
 	not trino.allow with input as {
 		"context": {
-			"identity": {"user": "jwt-some-id"},
+			"identity": {"user": "ro-orgname-orgid"},
 			"softwareStack": {"trinoVersion": "434"},
 		},
 		"action": {
@@ -156,55 +122,10 @@ test_allow_dynamic_catalog_denied_wrong_catalog if {
 	}
 }
 
-test_allow_dynamic_catalog_direct_access_allowed if {
-	trino.allow with input as {
-		"context": {
-			"identity": {"user": "jwt-some-id"},
-			"softwareStack": {"trinoVersion": "434"},
-		},
-		"action": {
-			"operation": "AccessCatalog",
-			"resource": {"catalog": {"name": "dynamic"}},
-		},
-	}
-}
-
-test_allow_dynamic_catalog_information_schema_allowed if {
-	trino.allow with input as {
-		"context": {
-			"identity": {"user": "jwt-some-id"},
-			"softwareStack": {"trinoVersion": "434"},
-		},
-		"action": {
-			"operation": "ShowSchemas",
-			"resource": {"schema": {
-				"catalogName": "dynamic",
-				"schemaName": "information_schema",
-			}},
-		},
-	}
-}
-
-test_allow_dynamic_catalog_access_schema_allowed if {
-	trino.allow with input as {
-		"context": {
-			"identity": {"user": "jwt-some-id"},
-			"softwareStack": {"trinoVersion": "434"},
-		},
-		"action": {
-			"operation": "ShowTables",
-			"resource": {"schema": {
-				"catalogName": "dynamic",
-				"schemaName": "some-id",
-			}},
-		},
-	}
-}
-
 test_allow_reading_user_shared_catalog_allowed if {
 	trino.allow with input as {
 		"context": {
-			"identity": {"user": "jwt-some-id"},
+			"identity": {"user": "ro-orgname-orgid"},
 			"softwareStack": {"trinoVersion": "434"},
 		},
 		"action": {
@@ -212,7 +133,7 @@ test_allow_reading_user_shared_catalog_allowed if {
 			"resource": {
 				"table": {
 					"catalogName": "user_shared",
-					"schemaName": "random_schema",
+					"schemaName": "org_orgid_datasetid",
 					"tableName": "random_table",
 					"columns": ["col1", "col2"]
 				},
