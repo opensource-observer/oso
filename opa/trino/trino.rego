@@ -7,12 +7,21 @@ parse_user(user) := {"prefix": prefix, "org_name": org_name, "org_id": org_id} i
 	org_id = split_user[2]
 }
 
-read_only_user(parsed_user) if {
-	parsed_user.prefix == "ro"
+read_user(parsed_user) if {
+	some x in [
+		parsed_user.prefix == "ro",
+		parsed_user.prefix == "rw",
+	]
+	x
+}
+
+read_and_write_user(parsed_user) if {
+	parsed_user.prefix == "rw"
 }
 
 public_catalogs := {"iceberg"}
 admin_users := {"admin", "sqlmesh", "carl"}
+read_operations := {"SelectFromColumns", "AccessCatalog", "FilterCatalogs", "FilterTables", "FilterColumns"}
 
 # If the user is in the format `ro-<org_name>-<org_id>`, allow access if the catalog
 # matches the org_name or if the catalog is "iceberg".
@@ -73,11 +82,13 @@ allow if {
 
 # Read user access to catalogs
 allow if {
-	read_only_user(parsed_user)
+	read_user(parsed_user)
 
 	parsed_user.org_id # Ensure org_name_id is not empty
 	parsed_user.org_name # Ensure org_name_id is not empty
 	current_catalog_name # Ensure current_catalog_name is not empty
+
+	input.action.operation in read_operations # Only read actions allowed
 
 	# Allow if catalog/schema belongs to the org or is a public catalog
 	# Org catalogs are in the format: {org_name}__{name}
@@ -88,6 +99,21 @@ allow if {
 		is_public_catalog,
 	]
 	x
+}
+
+# Write user access to catalogs.
+# Write users can only write to the user_shared catalog within their org schema.
+allow if {
+	read_and_write_user(parsed_user)
+
+	parsed_user.org_id # Ensure org_name_id is not empty
+	parsed_user.org_name # Ensure org_name_id is not empty
+	current_catalog_name # Ensure current_catalog_name is not empty
+
+	# any action allowed
+
+	current_catalog_name == "user_shared" # Write users can only write to user_shared catalog
+	is_org_schema # Ensure schema belongs to the org
 }
 
 # FOR BACKWARDS COMPATIBILITY ONLY

@@ -15,7 +15,7 @@ To use these OPA policies, you need to build them into a bundle and then upload 
 Before building and uploading to production, run the policy tests with the following command:
 
 ```sh
-opa test -v .
+opa test -v ./trino/
 ```
 
 ### Building the Policy Bundle
