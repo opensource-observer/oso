@@ -126,6 +126,8 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         dataset_name = dataset.node.name
         org_name = dataset.node.organization.name
 
+        user = f"rw-{org_name.strip().lower()}-{context.organization.id.replace('-', '').lower()}"
+
         assert isinstance(
             data_model_def,
             GetDataModelsDatasetsEdgesNodeTypeDefinitionDataModelDefinition,
@@ -179,6 +181,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 context=context,
                 udm_engine_adapter=udm_engine_adapter,
                 oso_client=oso_client,
+                user=user,
                 converted_models=converted_models,
                 labeler=labeler,
                 metrics=metrics,
@@ -194,12 +197,13 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         context: RunContext,
         udm_engine_adapter: UserDefinedModelEngineAdapterResource,
         oso_client: Client,
+        user: str,
         converted_models: list[Model],
         metrics: MetricsContainer,
         labeler: MetricsLabeler,
     ) -> None:
         """Evaluate the provided models using the UDM engine adapter."""
-        async with udm_engine_adapter.get_adapter() as adapter:
+        async with udm_engine_adapter.get_adapter(user=user) as adapter:
             table_resolvers: list[TableResolver] = [
                 OSOClientTableResolver(oso_client=oso_client)
             ]

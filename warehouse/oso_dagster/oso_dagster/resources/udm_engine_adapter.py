@@ -21,6 +21,7 @@ class UserDefinedModelEngineAdapterResource(dg.ConfigurableResource):
     @asynccontextmanager
     def get_adapter(
         self,
+        user: t.Optional[str] = None,
         log_override: t.Optional[logging.Logger] = None,
     ) -> t.AsyncGenerator[EngineAdapter, None]:
         raise NotImplementedError(
@@ -41,6 +42,7 @@ class DuckdbEngineAdapterResource(UserDefinedModelEngineAdapterResource):
     @asynccontextmanager
     async def get_adapter(
         self,
+        user: t.Optional[str] = None,
         log_override: t.Optional[logging.Logger] = None,
     ):
         from sqlmesh.core.engine_adapter.duckdb import DuckDBEngineAdapter
@@ -83,12 +85,15 @@ class TrinoEngineAdapterResource(UserDefinedModelEngineAdapterResource):
     @asynccontextmanager
     async def get_adapter(
         self,
+        user: t.Optional[str] = None,
         log_override: t.Optional[logging.Logger] = None,
     ) -> t.AsyncGenerator[EngineAdapter, None]:
         logger = log_override or module_logger
 
         async with self.trino.ensure_available(log_override=logger):
-            async with self.trino.async_get_client(log_override=logger) as conn:
+            async with self.trino.async_get_client(
+                user=user, log_override=logger
+            ) as conn:
                 logger.info("Setting up Trino engine adapter")
                 connection_config = TrinoConnectionConfig(
                     host=conn.host,

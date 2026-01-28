@@ -75,7 +75,7 @@ def udm_engine_adapter_factory(
     """Factory function to create a UDM engine adapter resource."""
 
     if common_settings.trino_enabled:
-        trino: TrinoResource = resources.resolve("trino")
+        trino: TrinoResource = resources.resolve("consumer_trino")
         return TrinoEngineAdapterResource(
             trino=trino,
         )
