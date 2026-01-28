@@ -97,7 +97,7 @@ class OSOStepContext(StepContext):
 
     @property
     def step_id(self) -> str:
-        return str(self._logger.bindings.get("step", "unknown_step"))
+        return self._step_id
 
     @property
     def run(self) -> RunContextView:
