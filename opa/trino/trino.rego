@@ -89,3 +89,23 @@ allow if {
 	]
 	x
 }
+
+# FOR BACKWARDS COMPATIBILITY ONLY
+# When trying to query a private catalog
+allow if {
+	startswith(user, "jwt-")
+	org_id := substring(user, count("jwt-"), -1)
+
+	org_id # Ensure org_id is not empty
+	current_catalog_name # Ensure current_catalog_name is not empty
+
+	# Allow if catalog belongs to the org or is a public catalog
+	is_org_catalog := startswith(current_catalog_name, concat("", [org_id, "__"]))
+	is_public_catalog := current_catalog_name in public_catalogs
+
+	some x in [
+		is_org_catalog,
+		is_public_catalog,
+	]
+	x
+}
