@@ -471,9 +471,7 @@ async function signTrinoJWT(user: AuthOrgUser) {
     userId: user.userId,
   })
     .setProtectedHeader({ alg: "HS256" })
-    .setSubject(
-      `ro-${user.orgName.trim().toLowerCase()}-${user.orgId.trim().replace(/-/g, "").toLowerCase()}`,
-    )
+    .setSubject(`jwt-${(user.orgName ?? user.email)?.trim().toLowerCase()}`)
     .setAudience("consumer-trino")
     .setIssuer("opensource-observer")
     .setExpirationTime("1h")
