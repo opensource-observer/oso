@@ -240,7 +240,7 @@ class GraphQLExecutor:
         # Convert to Pydantic model
         return self.mutation.payload_model.model_validate(mutation_data)
 
-    def _unwrap_optional_type(self, field_type: t.Any) -> t.List[t.Any]:
+    def _unwrap_union_types(self, field_type: t.Any) -> t.List[t.Any]:
         """Unwrap Optional[T] by checking for Union[T, None] to get non-None
         types.
 
@@ -257,20 +257,20 @@ class GraphQLExecutor:
             return [arg for arg in args if arg is not type(None)]
         return []
 
-    def _is_discriminated_union(self, non_none_args: t.List[t.Any]) -> bool:
+    def _is_discriminated_union(self, unioned_type_args: t.List[t.Any]) -> bool:
         """Check if type arguments represent a discriminated union.
 
         Args:
-            non_none_args: Non-None type arguments from a Union
+            unioned_type_args: Type arguments from a Union
 
         Returns:
             True if this is a discriminated union (multiple BaseModel types with typename__)
         """
-        return len(non_none_args) > 1 and all(
+        return len(unioned_type_args) > 1 and all(
             isinstance(arg, type)
             and issubclass(arg, BaseModel)
             and "typename__" in arg.model_fields
-            for arg in non_none_args
+            for arg in unioned_type_args
         )
 
     def _extract_typename_from_literal(self, typename_field: t.Any) -> str:
@@ -334,14 +334,14 @@ class GraphQLExecutor:
     def _build_discriminated_union_selection(
         self,
         field_name: str,
-        non_none_args: t.List[t.Type[BaseModel]],
+        unioned_type_args: t.List[t.Type[BaseModel]],
         indent_level: int,
     ) -> str:
         """Build GraphQL selection for a discriminated union field.
 
         Args:
             field_name: Name of the union field
-            non_none_args: List of union member types
+            unioned_type_args: List of union member types
             indent_level: Indentation level for formatting
 
         Returns:
@@ -354,7 +354,7 @@ class GraphQLExecutor:
         union_selections.append(f"{indent}__typename")
 
         # Build inline fragments for each union member
-        for union_member in non_none_args:
+        for union_member in unioned_type_args:
             typename_value, fragment = self._build_union_member_fragment(
                 union_member, indent_level
             )
@@ -435,18 +435,22 @@ class GraphQLExecutor:
         for field_name, field_info in model.model_fields.items():
             field_type = field_info.annotation
 
-            # Check for discriminated unions first (before unwrapping Optional)
-            non_none_args = self._unwrap_optional_type(field_type)
-            if self._is_discriminated_union(non_none_args):
+            # Check for discriminated unions within the field type
+            unwrapped_union_type_args = self._unwrap_union_types(field_type)
+            if self._is_discriminated_union(unwrapped_union_type_args):
                 union_selection = self._build_discriminated_union_selection(
-                    field_name, non_none_args, indent_level
+                    field_name, unwrapped_union_type_args, indent_level
                 )
                 fields.append(union_selection)
                 continue
 
-            # Unwrap Optional types
-            if non_none_args:
-                field_type = non_none_args[0]
+            # If the unwrapped union has a single type here, that means it's
+            # an Optional[T], so we can just use that type as the field type
+            if unwrapped_union_type_args:
+                assert len(unwrapped_union_type_args) == 1, (
+                    "Expected single type in unwrapped union if it's not a discriminated union"
+                )
+                field_type = unwrapped_union_type_args[0]
 
             # Unwrap List types
             field_type = self._unwrap_list_type(field_type)

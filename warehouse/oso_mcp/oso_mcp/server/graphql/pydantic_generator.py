@@ -237,7 +237,7 @@ class PydanticModelGenerator:
             and python_type[0] == "union"
         ):
             union_members = python_type[1]
-            python_type = t.Union[union_members]  # type: ignore
+            python_type = t.Union[union_members]
             # Union fields need discriminator
             if not is_required:
                 python_type = t.Optional[python_type]
