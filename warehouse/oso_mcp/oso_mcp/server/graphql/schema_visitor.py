@@ -1,8 +1,8 @@
 """Visitor pattern for traversing GraphQL schema types.
 
-This module provides a base visitor class for traversing GraphQL schema types.
-The visitor pattern separates traversal logic from processing logic, enabling
-reusable schema walking for different purposes (Pydantic models, documentation, etc.).
+This module provides a traverser and visitor interface for GraphQL schema types.
+The traverser handles all tree-walking logic, while visitors implement handlers
+to process each type encountered during traversal.
 """
 
 import typing as t
@@ -35,59 +35,55 @@ class VisitorControl(Enum):
     STOP = "stop"  # Stop all visiting immediately
 
 
-class GraphQLSchemaVisitor:
-    """Base class for visiting GraphQL schema types.
+class GraphQLSchemaTraverser:
+    """Traverses GraphQL schema types and calls visitor methods.
 
-    This visitor traverses GraphQL type definitions from a schema, calling
-    appropriate enter/leave handler methods for each type encountered.
-    The base class handles all traversal logic including SelectionSet filtering;
-    subclasses just implement handlers to process types and control traversal flow.
+    This class handles all the mechanics of walking the GraphQL type tree:
+    - Unwrapping NonNull/List wrappers
+    - Filtering fields based on selection sets
+    - Expanding fragment spreads
+    - Recursively visiting nested types
+    - Respecting VisitorControl flow
 
-    Example usage:
-        class MyVisitor(GraphQLSchemaVisitor):
-            def handle_enter_object(self, field_name, object_type, is_required, is_list):
-                print(f"Entering {field_name}: {object_type.name}")
-                return VisitorControl.CONTINUE
-
-        visitor = MyVisitor()
-        visitor.visit(some_graphql_type, field_name="root")
+    The traverser is stateless between visits - just give it a visitor and call visit().
     """
 
-    def __init__(self):
-        """Initialize the visitor."""
-        self._selection_set: t.Optional[SelectionSetNode] = None
-        self._schema: t.Optional[GraphQLSchema] = None
-        self._fragments: t.Dict[str, t.Any] = {}  # FragmentDefinitionNode by name
+    def __init__(
+        self,
+        visitor: "GraphQLSchemaVisitor",
+        selection_set: t.Optional[SelectionSetNode] = None,
+        schema: t.Optional[GraphQLSchema] = None,
+        fragments: t.Optional[t.Dict[str, t.Any]] = None,
+    ):
+        """Initialize traverser with a visitor and traversal configuration.
+
+        Args:
+            visitor: Visitor instance that will process types during traversal
+            selection_set: Optional SelectionSet to filter fields (None = all fields)
+            schema: GraphQL schema (required when selection_set is provided)
+            fragments: Optional dict of fragment definitions by name (for resolving fragment spreads)
+        """
+        self._visitor = visitor
+        self._selection_set = selection_set
+        self._schema = schema
+        self._fragments = fragments or {}
 
     def visit(
         self,
         gql_type: t.Any,
         field_name: str = "",
-        selection_set: t.Optional[SelectionSetNode] = None,
-        schema: t.Optional[GraphQLSchema] = None,
-        fragments: t.Optional[t.Dict[str, t.Any]] = None,
     ) -> VisitorControl:
         """Visit a GraphQL type and recursively visit its nested types.
 
-        This method handles all traversal logic. Subclasses should not override this.
+        This method handles all traversal logic.
 
         Args:
             gql_type: GraphQL type to visit (can be wrapped in NonNull/List)
             field_name: Name of the field being visited (empty string for root)
-            selection_set: Optional SelectionSet to filter fields (None = all fields)
-            schema: GraphQL schema (required when selection_set is provided)
-            fragments: Optional dict of fragment definitions by name (for resolving fragment spreads)
 
         Returns:
             VisitorControl indicating how traversal ended
         """
-        # Store selection_set, schema, and fragments for use during traversal
-        if selection_set is not None:
-            self._selection_set = selection_set
-        if schema is not None:
-            self._schema = schema
-        if fragments is not None:
-            self._fragments = fragments
 
         # Unwrap wrappers (NonNull, List) to get base type
         is_required = False
@@ -111,17 +107,25 @@ class GraphQLSchemaVisitor:
 
         # Dispatch to appropriate handler based on base type
         if isinstance(base_type, GraphQLScalarType):
-            return self.handle_scalar(field_name, base_type, is_required, is_list)
+            return self._visitor.handle_scalar(
+                field_name, base_type, is_required, is_list
+            )
         elif isinstance(base_type, GraphQLEnumType):
-            return self.handle_enum(field_name, base_type, is_required, is_list)
+            return self._visitor.handle_enum(
+                field_name, base_type, is_required, is_list
+            )
         elif isinstance(base_type, GraphQLObjectType):
             return self._visit_object(field_name, base_type, is_required, is_list)
         elif isinstance(base_type, GraphQLInputObjectType):
             return self._visit_input_object(field_name, base_type, is_required, is_list)
         elif isinstance(base_type, GraphQLUnionType):
-            return self.handle_union(field_name, base_type, is_required, is_list)
+            return self._visitor.handle_union(
+                field_name, base_type, is_required, is_list
+            )
         else:
-            return self.handle_unknown(field_name, base_type, is_required, is_list)
+            return self._visitor.handle_unknown(
+                field_name, base_type, is_required, is_list
+            )
 
     def _extract_selected_fields(
         self, selection_set: SelectionSetNode
@@ -173,7 +177,7 @@ class GraphQLSchemaVisitor:
     ) -> VisitorControl:
         """Visit an object type (internal - handles traversal)."""
         # Call enter hook
-        control = self.handle_enter_object(
+        control = self._visitor.handle_enter_object(
             field_name, object_type, is_required, is_list
         )
         if control == VisitorControl.STOP:
@@ -212,7 +216,7 @@ class GraphQLSchemaVisitor:
                 return VisitorControl.STOP
 
         # Call leave hook
-        control = self.handle_leave_object(
+        control = self._visitor.handle_leave_object(
             field_name, object_type, is_required, is_list
         )
         return control
@@ -226,7 +230,7 @@ class GraphQLSchemaVisitor:
     ) -> VisitorControl:
         """Visit an input object type (internal - handles traversal)."""
         # Call enter hook
-        control = self.handle_enter_input_object(
+        control = self._visitor.handle_enter_input_object(
             field_name, input_type, is_required, is_list
         )
         if control == VisitorControl.STOP:
@@ -241,12 +245,31 @@ class GraphQLSchemaVisitor:
                 return VisitorControl.STOP
 
         # Call leave hook
-        control = self.handle_leave_input_object(
+        control = self._visitor.handle_leave_input_object(
             field_name, input_type, is_required, is_list
         )
         return control
 
-    # Handler methods - subclasses override these
+
+class GraphQLSchemaVisitor:
+    """Interface for visiting GraphQL schema types during traversal.
+
+    Subclasses implement handle_* methods to process each type.
+    All handle_* methods return VisitorControl to control traversal flow.
+
+    This class defines only the visitor interface - use GraphQLSchemaTraverser
+    for the actual tree traversal.
+
+    Example usage:
+        class MyVisitor(GraphQLSchemaVisitor):
+            def handle_enter_object(self, field_name, object_type, is_required, is_list):
+                print(f"Entering {field_name}: {object_type.name}")
+                return VisitorControl.CONTINUE
+
+        visitor = MyVisitor()
+        traverser = GraphQLSchemaTraverser(visitor, selection_set=..., schema=...)
+        traverser.visit(some_graphql_type, field_name="root")
+    """
 
     def handle_scalar(
         self,

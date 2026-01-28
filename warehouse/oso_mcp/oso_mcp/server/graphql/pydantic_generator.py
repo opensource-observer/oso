@@ -19,7 +19,7 @@ from graphql import (
 )
 from pydantic import BaseModel, Field, create_model
 
-from .schema_visitor import GraphQLSchemaVisitor, VisitorControl
+from .schema_visitor import GraphQLSchemaTraverser, GraphQLSchemaVisitor, VisitorControl
 
 
 class UnsetNested(BaseModel):
@@ -629,8 +629,9 @@ class PydanticModelVisitor(GraphQLSchemaVisitor):
             ignore_unknown_types=ignore_unknown_types,
         )
 
-        # Visit the input type
-        visitor.visit(input_type, field_name="")
+        # Create traverser and visit the input type
+        traverser = GraphQLSchemaTraverser(visitor)
+        traverser.visit(input_type, field_name="")
 
         # Return the generated model from registry
         return visitor._type_registry[input_type.name]  # type: ignore
@@ -661,8 +662,9 @@ class PydanticModelVisitor(GraphQLSchemaVisitor):
             ignore_unknown_types=ignore_unknown_types,
         )
 
-        # Visit the payload type (selection_set=None visits all fields)
-        visitor.visit(payload_type, field_name="")
+        # Create traverser and visit the payload type (selection_set=None visits all fields)
+        traverser = GraphQLSchemaTraverser(visitor)
+        traverser.visit(payload_type, field_name="")
 
         # Return the generated model from registry
         return visitor._type_registry[payload_type.name]  # type: ignore
@@ -706,14 +708,14 @@ class PydanticModelVisitor(GraphQLSchemaVisitor):
             ignore_unknown_types=ignore_unknown_types,
         )
 
-        # Visit with selection_set to filter fields
-        visitor.visit(
-            parent_type,
-            field_name="",
+        # Create traverser with selection_set to filter fields
+        traverser = GraphQLSchemaTraverser(
+            visitor,
             selection_set=selection_set,
             schema=schema,
-            fragments=fragments or {},
+            fragments=fragments,
         )
+        traverser.visit(parent_type, field_name="")
 
         # Return the generated model from registry
         return visitor._type_registry[model_name]  # type: ignore
