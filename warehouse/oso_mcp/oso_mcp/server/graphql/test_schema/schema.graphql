@@ -9,10 +9,24 @@ type PageInfo {
   endCursor: String
 }
 
+type InternalWarehouse {
+  id: ID!
+  name: String!
+  location: String!
+}
+
+type ExternalWarehouse {
+  id: ID!
+  name: String!
+  location: String!
+}
+
+union ItemSource = InternalWarehouse | ExternalWarehouse
+
 type Foo {
   id: ID!
   name: String!
-  description: String
+  foo_description: String
 }
 
 type FooEdge {
@@ -92,4 +106,5 @@ type Item {
   nestedItem: NestedItem!
   nestedItems: [NestedItemInArray!]!
   foos: FooConnection!
+  source: ItemSource!
 }

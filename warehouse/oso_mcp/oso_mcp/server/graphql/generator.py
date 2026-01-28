@@ -60,7 +60,7 @@ class OSOAsyncGraphQLClient(AsyncGraphQLClient):
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "Agent": "oso-mcp-client/0.0",
+            "User-Agent": "oso-mcp-client/0.0",
         }
         logger.debug(f"Executing GraphQL request: \n\n {json.dumps(payload, indent=2)}")
 

@@ -169,7 +169,7 @@ class ToolGenerator:
             """
             try:
                 # Log execution
-                print("Executing query tool:", query.name)
+                logger.debug("Executing query tool: %s", query.name)
                 if ctx:
                     await ctx.info(f"Executing {query.name} query")
 
@@ -183,6 +183,11 @@ class ToolGenerator:
 
                     # Execute query
                     result = await executor.execute_query(variables)
+
+                    logger.debug(f"Query result: {result}")
+                    logger.debug(
+                        f"Response model as json: {result.model_dump_json(indent=2)}"
+                    )
 
                     # Return result
                     return result

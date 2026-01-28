@@ -2,10 +2,10 @@ import logging
 
 import click
 from dotenv import load_dotenv
+from oso_core.logging import setup_module_logging
 
 from .server.app import setup_mcp_app
 from .server.config import MCPConfig
-from .utils.log import setup_logging
 
 load_dotenv()
 logger = logging.getLogger("oso-mcp")
@@ -21,8 +21,11 @@ pass_config = click.make_pass_decorator(MCPConfig, ensure=True)
     help="Increase verbosity (can be used multiple times)",
 )
 @click.pass_context
-def cli(ctx, verbose):
-    setup_logging(verbose)
+def cli(ctx, verbose: int):
+    level = logging.INFO
+    if verbose >= 1:
+        level = logging.DEBUG
+    setup_module_logging("oso_mcp", level=level)
 
     ctx.obj = MCPConfig()
 

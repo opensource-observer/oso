@@ -198,7 +198,11 @@ class QueryExtractor:
                 # Generate response model from selection set
                 # This will use fragment models where fragment spreads occur
                 payload_model = model_generator.generate_model_from_selection_set(
-                    query_name, operation.selection_set, query_type, schema
+                    query_name,
+                    operation.selection_set,
+                    query_type,
+                    schema,
+                    max_depth=100,  # Unlimited depth for hand-written queries
                 )
 
                 # Create QueryInfo
@@ -228,8 +232,6 @@ class QueryExtractor:
         Returns:
             GraphQL query string with fragments inlined
         """
-        print("AFAAAAAAAAAAAAAAAAA")
-        print(doc.fragments)
         # Inline fragments in the operation's selection set
         inlined_selection_set = self._inline_fragments_in_selection_set(
             operation.selection_set, doc.fragments
@@ -295,6 +297,7 @@ class QueryExtractor:
                     fragment.selection_set,
                     fragment_type,
                     schema,
+                    max_depth=100,  # Unlimited depth for hand-written query fragments
                 )
 
     def _get_fragment_dependencies(self, selection_set: SelectionSetNode) -> t.Set[str]:
@@ -445,7 +448,7 @@ class QueryExecutor:
         logger.debug(f"Executing query {self.query_info.name} at {self.endpoint}")
 
         # Convert Pydantic model to dict for variables
-        variables_dict = variables.model_dump()
+        variables_dict = variables.model_dump(exclude_none=True)
 
         # Make HTTP request
         logger.debug(

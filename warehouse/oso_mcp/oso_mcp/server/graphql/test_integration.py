@@ -1,5 +1,6 @@
 """Integration tests for GraphQL tool generator with dependency injection."""
 
+import json
 import os
 import typing as t
 from contextlib import asynccontextmanager
@@ -97,7 +98,7 @@ def mock_http_client_factory(
 
 
 @pytest.mark.asyncio
-async def test_generated_tool_makes_graphql_request(
+async def test_generated_tool_makes_graphql_mutation(
     mcp_config: MCPConfig,
     mock_http_client_factory: GraphQLClientFactory,
     mock_http_client: t.Any,
@@ -150,6 +151,10 @@ async def test_generated_tool_makes_graphql_request(
         # Verify the mutation query requests the correct fields
         for field in ["id", "name", "description", "count", "createdAt"]:
             assert field in request["json"]["query"]
+
+        # Verify the mutation query does not request some nested or unions
+        for nested_field in ["source"]:
+            assert nested_field not in request["json"]["query"]
 
         # Verify variables contain the input
         assert request["json"]["variables"]["input"]["name"] == "Test Item"
@@ -333,15 +338,17 @@ async def test_query_tool_generation(
                                 "node": {
                                     "id": "foo-1",
                                     "name": "Foo One",
-                                    "description": "First foo",
-                                }
+                                    "foo_description": "First foo",
+                                },
+                                "cursor": "cursor-1",
                             },
                             {
                                 "node": {
                                     "id": "foo-2",
                                     "name": "Foo Two",
-                                    "description": "Second foo",
-                                }
+                                    "foo_description": "Second foo",
+                                },
+                                "cursor": "cursor-2",
                             },
                         ],
                         "totalCount": 2,
@@ -410,3 +417,16 @@ async def test_query_tool_generation(
 
         # Verify result
         assert len(result.content) > 0
+
+        # Verify that the result contains the expected data
+        item_data = json.loads(result.content[0].model_dump()["text"])
+
+        assert item_data["item"]["id"] == "item-123"
+        assert item_data["item"]["foos"]["totalCount"] == 2
+        for edge in item_data["item"]["foos"]["edges"]:
+            # Assert each edge has cursor and node with expected fields
+            assert "cursor" in edge, "Each edge should contain a cursor"
+            assert "node" in edge, "Each edge should contain a node"
+            node = edge["node"]
+            for field in ["id", "name", "foo_description"]:
+                assert field in node

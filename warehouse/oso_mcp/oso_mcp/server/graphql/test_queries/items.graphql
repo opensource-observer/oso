@@ -3,7 +3,7 @@
 fragment FooFields on Foo {
   id
   name
-  description
+  foo_description
 }
 
 fragment ItemFields on Item {
@@ -20,6 +20,7 @@ fragment ItemFields on Item {
       node {
         ... FooFields
       }
+      cursor
     }
     totalCount
   }
