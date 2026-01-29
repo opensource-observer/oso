@@ -173,6 +173,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         async with async_time(
             metrics.histogram("data_model_total_evaluation_duration_ms"), labeler
         ):
+            logger.info("Starting evaluation of selected data models")
             await self.evaluate_models(
                 context=context,
                 udm_engine_adapter=udm_engine_adapter,
@@ -205,12 +206,14 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         # tables opportunistically. We will need to completely change the
         # strategy for INCREMENTAL models in the future but this will satisfy
         # versioning in the future for FULL models.
+        logger.debug("Resolving previously materialized warehouse tables...")
         previous_warehouse_tables = await oso_table_resolver.resolve_tables(
             {model.user_fqn(): model.user_table() for model in converted_models}
         )
 
         table_resolvers: list[TableResolver] = [oso_table_resolver]
 
+        logger.debug("Opening connection to UDM engine adapter")
         async with udm_engine_adapter.get_adapter(user=user) as adapter:
             logger.info("Determining model evaluation order...")
             sorter = ModelSorter(converted_models)
@@ -229,6 +232,10 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                         previous_warehouse_table = previous_warehouse_tables.get(
                             model.user_fqn()
                         )
+                        if previous_warehouse_table:
+                            logger.debug(
+                                f"Found previous warehouse table for model {model.name}: {previous_warehouse_table}"
+                            )
                         await self.evaluate_single_model(
                             model=model,
                             step_context=step_context,

@@ -175,6 +175,9 @@ class Model(BaseModel):
                 output_dialect=self.dialect,
             )
             self._resolved_intermediate_query = rewrite_response
+            logger.debug(
+                f"Finished intermediate rewriting model {self.name} as {rewrite_response.rewritten_query}."
+            )
 
         return self._resolved_intermediate_query
 
