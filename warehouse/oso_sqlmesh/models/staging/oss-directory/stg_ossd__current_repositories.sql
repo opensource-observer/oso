@@ -27,7 +27,7 @@ WITH ranked_repositories AS (
     created_at,
     updated_at,
     ingestion_time,
-    ROW_NUMBER() OVER (PARTITION BY node_id ORDER BY ingestion_time DESC, id ASC) AS row_num
+    ROW_NUMBER() OVER (PARTITION BY LOWER(url) ORDER BY ingestion_time DESC, id ASC) AS row_num
   FROM @oso_source('bigquery.ossd.repositories')
 )
 SELECT
