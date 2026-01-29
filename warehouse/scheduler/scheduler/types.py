@@ -297,6 +297,11 @@ class Model(BaseModel):
         fqn = self.user_fqn()
         return exp.to_table(fqn)
 
+    @property
+    def table_id(self) -> str:
+        """Get the table ID for this model."""
+        return f"data_model_{self.id}"
+
     def warehouse_table_ref(self, destination_suffix: str = "") -> TableReference:
         """Get the table reference for the model itself. This is used as the
         destination for materializations.
