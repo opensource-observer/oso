@@ -84,6 +84,9 @@ export class DBTableResolver implements TableResolver {
         // If there's no warehouse_fqn it means the table is not _yet_
         // materialized. It's up to the client to raise errors if it's missing
         // any required tables even after resolution.
+        logger.info(
+          `Table ${row.logical_fqn} is not yet materialized. Skipping resolution.`,
+        );
         continue;
       }
 
