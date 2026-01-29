@@ -219,7 +219,8 @@ export async function getModelRunConnection(
     .from("run")
     .select("*")
     .eq("dataset_id", datasetId)
-    .or(`models.cs.{"${modelId}"},models.eq.{}`); // If the run contains the model ID or is an empty array
+    .or(`models.cs.{"${modelId}"},models.eq.{}`) // If the run contains the model ID or is an empty array
+    .order("queued_at", { ascending: false });
 
   if (error) {
     throw ServerErrors.database(`Failed to fetch runs: ${error.message}`);
