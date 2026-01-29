@@ -26,6 +26,7 @@ dependencies = [
     "oso-lets-go",
     "websockets>=15.0.1",
     "scheduler",
+    "pytest-timeout>=2.4.0",
 ]
 name = "oso"
 version = "1.0.0"
@@ -108,3 +109,6 @@ exclude = [
 
 [tool.isort]
 profile = "black"
+
+[tool.pytest.ini_options]
+timeout = 300

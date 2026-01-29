@@ -1,3 +1,5 @@
+import asyncio
+
 import structlog
 from aioprometheus.collectors import Counter, Histogram
 from oso_core.instrumentation.common import MetricsLabeler
@@ -295,17 +297,13 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
         ]
         resolved_query.add_comments(resolved_query_comments, prepend=True)
 
-        create_query = ctas_query(resolved_query)
+        await asyncio.to_thread(
+            self.make_synchronous_trino_requests,
+            adapter,
+            resolved_query,
+            target_table,
+        )
 
-        adapter.ctas(
-            table_name=target_table,
-            query_or_df=create_query,
-            exists=True,
-        )
-        adapter.replace_query(
-            table_name=target_table,
-            query_or_df=resolved_query,
-        )
         step_context.log.info(
             f"Model {model.name} successfully written to the warehouse"
         )
@@ -347,3 +345,21 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                     f"Failed to drop previous warehouse table "
                     f"{previous_warehouse_table}: {e}"
                 )
+
+    def make_synchronous_trino_requests(
+        self, adapter: EngineAdapter, resolved_query: exp.Query, target_table: exp.Table
+    ):
+        """Queries to the engine adapter are made using the synchronous client.
+        This method will be wrapped with asyncio.to_thread to ensure we don't
+        block the main event loop."""
+        create_query = ctas_query(resolved_query)
+
+        adapter.ctas(
+            table_name=target_table,
+            query_or_df=create_query,
+            exists=True,
+        )
+        adapter.replace_query(
+            table_name=target_table,
+            query_or_df=resolved_query,
+        )

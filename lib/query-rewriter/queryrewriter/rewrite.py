@@ -86,7 +86,12 @@ def table_transformer(table: exp.Table, new_table: exp.Table) -> TransformCallab
 def find_all_table_sources(expr: exp.Expression) -> set[exp.Table]:
     """Find all table sources in a sqlglot expression."""
 
-    def _recurse_table_scope_for_tables(scope_name: str | None, scope: Scope):
+    def _recurse_table_scope_for_tables(
+        scope_name: str | None,
+        scope: Scope,
+        visited: set[Scope],
+        recursion_stack: list[Scope],
+    ):
         tables: set[exp.Table] = set()
         for inner_scope_name, source in scope.sources.items():
             if isinstance(source, exp.Table):
@@ -95,12 +100,24 @@ def find_all_table_sources(expr: exp.Expression) -> set[exp.Table]:
                     raise ValueError(error_message)
                 tables.add(source)
             elif isinstance(source, Scope):
-                new_tables = _recurse_table_scope_for_tables(inner_scope_name, source)
+                if source in recursion_stack:
+                    raise ValueError(
+                        f"Circular reference detected in query with name {scope_name}. From {recursion_stack}"
+                    )
+                if source in visited:
+                    continue
+                visited.add(source)
+                new_stack = recursion_stack + [source]
+                new_tables = _recurse_table_scope_for_tables(
+                    inner_scope_name, source, visited, new_stack
+                )
                 tables = tables.union(new_tables)
             else:
                 raise ValueError(f"Unhandled source type: {type(source)}")
         for union_scope in scope.union_scopes:
-            new_tables = _recurse_table_scope_for_tables(scope_name, union_scope)
+            new_tables = _recurse_table_scope_for_tables(
+                scope_name, union_scope, visited, recursion_stack
+            )
             tables = tables.union(new_tables)
         return tables
 
@@ -108,7 +125,9 @@ def find_all_table_sources(expr: exp.Expression) -> set[exp.Table]:
     if not scope:
         # If there is no scope, we might not have any tables, for example: SHOW CATALOGS.
         return set()
-    return _recurse_table_scope_for_tables(None, scope)
+    return _recurse_table_scope_for_tables(
+        None, scope, visited=set(), recursion_stack=[]
+    )
 
 
 def apply_transforms_to_expression(
@@ -171,12 +190,15 @@ async def rewrite_query(
     # rewriting comparisons for tests
     qualified_statements = [qualify_tables(statement) for statement in statements]
 
+    logger.debug("Finding table references in query statements.")
     # For each statement, find table references and store the references. We
     # will resolve all the table names at once and rewrite the query at the end.
     table_references: set[exp.Table] = set()
     for statement in qualified_statements:
         tables_in_statement = find_all_table_sources(statement)
         table_references = table_references.union(tables_in_statement)
+
+    logger.debug(f"Found {len(table_references)} table references in query.")
 
     # By default, assume all tables are resolved as-is
     resolved_tables_dict = {
@@ -189,6 +211,7 @@ async def rewrite_query(
         resolved_tables_dict = await resolver.resolve_tables(resolved_tables_dict)
 
     # Rewrite the query with resolved table names
+    logger.debug("Rewriting query with resolved table names.")
     rewritten_statements: list[exp.Expression] = []
 
     table_rewriters: list[TransformCallable] = []

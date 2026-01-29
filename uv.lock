@@ -4462,6 +4462,7 @@ dependencies = [
     { name = "pandas-stubs" },
     { name = "pyarrow-stubs" },
     { name = "pyoso" },
+    { name = "pytest-timeout" },
     { name = "scheduler" },
     { name = "structlog" },
     { name = "websockets" },
@@ -4503,6 +4504,7 @@ requires-dist = [
     { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
     { name = "pyarrow-stubs", specifier = ">=17.16,<21.0" },
     { name = "pyoso", editable = "warehouse/pyoso" },
+    { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "scheduler", editable = "warehouse/scheduler" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "websockets", specifier = ">=15.0.1" },
@@ -5873,6 +5875,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-timeout"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/82/4c9ecabab13363e72d880f2fb504c5f750433b2b6f16e99f4ec21ada284c/pytest_timeout-2.4.0.tar.gz", hash = "sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a", size = 17973, upload-time = "2025-05-05T19:44:34.99Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/b6/3127540ecdf1464a00e5a01ee60a1b09175f6913f0644ac748494d9c4b21/pytest_timeout-2.4.0-py3-none-any.whl", hash = "sha256:c42667e5cdadb151aeb5b26d114aff6bdf5a907f176a007a30b940d3d865b5c2", size = 14382, upload-time = "2025-05-05T19:44:33.502Z" },
+]
+
+[[package]]
 name = "python-box"
 version = "7.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -6928,7 +6942,7 @@ wheels = [
 
 [[package]]
 name = "sqlmesh"
-version = "0.227.1"
+version = "0.228.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astor" },
@@ -6953,9 +6967,9 @@ dependencies = [
     { name = "tenacity" },
     { name = "time-machine" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/85/ca/61b9c0cf13cf7304f52815b8f65f568dc87c9a475409d8e9b033b4812eec/sqlmesh-0.227.1.tar.gz", hash = "sha256:346cfe0e9ca434420a864f5291d7c2dcce21b57a6a86f4e9e204a9f5300fbcb4", size = 13301305, upload-time = "2025-10-31T15:10:56.825Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/66/9a11da2d26d0f80531b67e6b95fef5c64c3acb9940bc19525048c62fcff3/sqlmesh-0.228.5.tar.gz", hash = "sha256:98a9de2568129ad01fdc27778d5d37153bff6ee75a13341a8f4a8cb0dad26de0", size = 13307722, upload-time = "2026-01-22T01:00:42.82Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/30/14eb49add2b8cfe961a7008e200957fd2e98038fe32998f5bd6ee6e9c58a/sqlmesh-0.227.1-py3-none-any.whl", hash = "sha256:54a888fe621ba1576ca6248aaf6234fe5a766bfe2b2048dfbf54ce628ad04def", size = 5595400, upload-time = "2025-10-31T15:10:51.689Z" },
+    { url = "https://files.pythonhosted.org/packages/47/bf/2349fabc8f4df5b2acc11021909e21244a41f50b7e8f39fd9361d67c110d/sqlmesh-0.228.5-py3-none-any.whl", hash = "sha256:8accf54d12582c258ce524474ef5d0e8bc547ce0f892ac11fc784e927764ab49", size = 5597959, upload-time = "2026-01-22T01:00:40.303Z" },
 ]
 
 [package.optional-dependencies]
