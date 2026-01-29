@@ -253,6 +253,22 @@ export const CreateDataIngestionSchema = z.object({
   config: z.record(z.any()),
 });
 
+export const CreateDataConnectionSchema = z.object({
+  orgId: z.string().uuid(),
+  name: z.string(),
+  type: z
+    .enum(["POSTGRESQL", "GSHEETS", "BIGQUERY"])
+    .transform((val) => val.toLowerCase()),
+  config: z.record(z.any()),
+  credentials: z.record(z.any()),
+});
+
+export const CreateDataConnectionAliasSchema = z.object({
+  dataConnectionId: z.string().uuid(),
+  name: z.string(),
+  schema: z.string(),
+});
+
 const ModelColumnContextSchema = z.object({
   name: z.string(),
   context: z.string(),
@@ -396,6 +412,8 @@ export const DataModelReleaseWhereSchema = createWhereSchema("model_release");
 export const RunWhereSchema = createWhereSchema("run");
 export const StepWhereSchema = createWhereSchema("step");
 export const MaterializationWhereSchema = createWhereSchema("materialization");
+export const DataConnectionWhereSchema =
+  createWhereSchema("dynamic_connectors");
 
 export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
   const result = schema.safeParse(input);
