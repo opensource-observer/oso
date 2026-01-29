@@ -13,6 +13,7 @@ from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
 from scheduler.config import CommonSettings
+from scheduler.graphql_client.client import UNSET
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.enums import RunStatus, StepStatus
@@ -251,7 +252,7 @@ class OSORunContext(RunContext):
             status=status,
             status_code=status_code,
             logs_url=logs_url,
-            metadata=metadata,
+            metadata=metadata if metadata else UNSET,
         )
 
 
