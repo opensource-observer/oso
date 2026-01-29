@@ -251,6 +251,7 @@ class OSORunContext(RunContext):
             status=status,
             status_code=status_code,
             logs_url=logs_url,
+            metadata=metadata,
         )
 
 
