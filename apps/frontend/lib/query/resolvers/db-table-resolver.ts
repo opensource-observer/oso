@@ -81,9 +81,13 @@ export class DBTableResolver implements TableResolver {
       }
 
       if (!row.warehouse_fqn) {
-        throw new Error(
-          `Missing warehouse_fqn for table_lookup row id ${row.org_id}.${row.dataset_id}.${row.table_id}`,
+        // If there's no warehouse_fqn it means the table is not _yet_
+        // materialized. It's up to the client to raise errors if it's missing
+        // any required tables even after resolution.
+        logger.info(
+          `Table ${row.logical_fqn} is not yet materialized. Skipping resolution.`,
         );
+        continue;
       }
 
       // Parse the warehouse_fqn into a Table object
