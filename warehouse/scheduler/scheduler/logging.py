@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from io import StringIO
 from typing import Protocol
 
-from google.cloud import storage
+import gcsfs
 
 system_logger = logging.getLogger(__name__)
 
@@ -79,12 +79,11 @@ class BufferedBoundLogger(BindableLogger):
 
 
 class GCSLogBufferProcessor:
-    def __init__(self, run_id: str, gcs_bucket: str, gcs_project: str):
+    def __init__(self, run_id: str, gcs_bucket: str, gcs_client: gcsfs.GCSFileSystem):
         self.run_id = run_id
         self.gcs_bucket = gcs_bucket
-        self.gcs_project = gcs_project
+        self.gcs_client = gcs_client
         self.buffer: list[dict] = []
-        self._storage_client: storage.Client | None = None
 
     def __call__(
         self,
@@ -104,24 +103,21 @@ class GCSLogBufferProcessor:
             )
             return ""
 
-        if self._storage_client is None:
-            self._storage_client = storage.Client(project=self.gcs_project)
-
         date_prefix = datetime.now(timezone.utc).strftime("%Y/%m/%d")
-        blob_name = f"run-logs/{date_prefix}/{self.run_id}/{status}.jsonl"
+        blob_path = (
+            f"{self.gcs_bucket}/run-logs/{date_prefix}/{self.run_id}/{status}.jsonl"
+        )
 
         log_content = StringIO()
         for log_entry in self.buffer:
             log_content.write(json.dumps(log_entry) + "\n")
 
         try:
-            bucket = self._storage_client.bucket(self.gcs_bucket)
-            blob = bucket.blob(blob_name)
-            blob.upload_from_string(
-                log_content.getvalue(), content_type="application/jsonl"
+            await self.gcs_client._pipe_file(
+                blob_path, log_content.getvalue().encode("utf-8")
             )
 
-            gcs_url = f"gs://{self.gcs_bucket}/{blob_name}"
+            gcs_url = f"gs://{blob_path}"
             system_logger.info(
                 "Successfully uploaded logs to GCS",
                 extra={
