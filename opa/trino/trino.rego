@@ -24,6 +24,7 @@ admin_users := {"admin", "sqlmesh", "carl"}
 read_operations := {
 	"SelectFromColumns", "AccessCatalog", "FilterCatalogs", "FilterTables",
 	"FilterColumns", "ShowSchemas", "FilterSchemas", "ShowTables",
+	"ShowColumns",
 }
 
 # If the user is in the format `ro-<org_name>-<org_id>`, allow access if the catalog
