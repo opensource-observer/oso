@@ -26,7 +26,8 @@
     "test:watch": "jest --watch",
     "update:deps": "ncu -i",
     "storybook": "storybook dev -p 3000",
-    "build:storybook": "storybook build"
+    "build:storybook": "storybook build",
+    "plasmic:info": "dotenv -e .env.local -- bash -c 'pnpm plasmic info -p $PLASMIC_PROJECT_ID >> .plasmic-latest-info.txt'"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",
@@ -148,6 +149,7 @@
     "@graphql-typed-document-node/core": "^3.2.0",
     "@leancodepl/resolve-eslint-flat-config": "^9.6.5",
     "@parcel/watcher": "^2.5.1",
+    "@plasmicapp/cli": "0.1.340",
     "@storybook/addon-a11y": "^9.1.2",
     "@storybook/addon-docs": "^9.1.2",
     "@storybook/addon-onboarding": "^9.1.2",
