@@ -12,6 +12,7 @@ from oso_core.instrumentation import MetricsContainer
 from oso_core.instrumentation.common import MetricsLabeler
 from oso_core.instrumentation.timing import async_time
 from oso_core.resources import ResourcesContext
+from oso_dagster.resources.gcs import GCSFileResource
 from scheduler.config import CommonSettings
 from scheduler.graphql_client.client import UNSET
 from scheduler.graphql_client.client import Client as OSOClient
@@ -114,13 +115,14 @@ class OSORunContext(RunContext):
         run_id: str,
         materialization_strategy: MaterializationStrategy,
         metrics: MetricsContainer,
+        gcs: "GCSFileResource",
         gcs_bucket: str,
-        gcs_project: str,
     ) -> "OSORunContext":
+        gcs_client = gcs.get_client(asynchronous=True)
         log_buffer = GCSLogBufferProcessor(
             run_id=run_id,
             gcs_bucket=gcs_bucket,
-            gcs_project=gcs_project,
+            gcs_client=gcs_client,
         )
 
         base_logger = structlog.get_logger(run_id).bind(run_id=run_id)
@@ -307,6 +309,7 @@ class RunHandler(MessageHandler[T]):
 
         oso_client: OSOClient = resources.resolve("oso_client")
         common_settings: CommonSettings = resources.resolve("common_settings")
+        gcs: GCSFileResource = resources.resolve("gcs")
 
         async with async_time(
             metrics.histogram("run_context_load_duration_ms")
@@ -316,8 +319,8 @@ class RunHandler(MessageHandler[T]):
                 run_id=run_id_str,
                 materialization_strategy=materialization_strategy,
                 metrics=metrics,
+                gcs=gcs,
                 gcs_bucket=common_settings.run_logs_gcs_bucket,
-                gcs_project=common_settings.gcp_project_id,
             )
             labeler_ctx.add_labels({"org_id": run_context.organization.name})
 
