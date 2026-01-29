@@ -1,7 +1,7 @@
 "use client";
 
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
-import React, { useState, memo, useMemo } from "react";
+import React, { useState, memo, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -285,8 +285,9 @@ export function LogViewer({
   showControls = true,
 }: LogViewerProps) {
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
-  const memoizedLogsUrl = useMemo(() => logsUrl, [logsUrl]);
   const memoizedTestData = useMemo(() => testData, [testData]);
+  const previousLogsRef = useRef<LogEntry[]>([]);
+  const previousContentRef = useRef<string | null>(null);
 
   const {
     loading,
@@ -297,22 +298,29 @@ export function LogViewer({
       return memoizedTestData;
     }
 
-    if (!memoizedLogsUrl) {
+    if (!logsUrl) {
       return [];
     }
 
-    const response = await fetch(memoizedLogsUrl);
+    const response = await fetch(logsUrl);
     if (!response.ok) {
       throw new Error(`Failed to fetch logs: ${response.statusText}`);
     }
 
     const text = await response.text();
+
+    if (text === previousContentRef.current) {
+      return previousLogsRef.current;
+    }
+
+    previousContentRef.current = text;
+
     const lines = text
       .trim()
       .split("\n")
       .filter((line) => line.trim());
 
-    return lines.map((line, index) => {
+    const parsedLogs = lines.map((line, index) => {
       const parsed = JSON.parse(line);
       const result = LogEntrySchema.safeParse(parsed);
 
@@ -325,7 +333,10 @@ export function LogViewer({
 
       return result.data;
     });
-  }, [memoizedLogsUrl, memoizedTestData]);
+
+    previousLogsRef.current = parsedLogs;
+    return parsedLogs;
+  }, [logsUrl, memoizedTestData]);
 
   const safeLogs = logs ?? [];
 
