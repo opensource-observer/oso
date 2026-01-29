@@ -295,6 +295,9 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             table_name=target_table,
             query_or_df=resolved_query,
         )
+        step_context.log.info(
+            f"Model {model.name} successfully written to the warehouse"
+        )
 
         columns = adapter.columns(table_name=target_table)
 
@@ -314,7 +317,7 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             f"Creating materialization record for run: {step_context.run.id} and step: {step_context.step_id}"
         )
         await step_context.create_materialization(
-            table_id=table_ref.table_id,
+            table_id=model.table_id,
             warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",
             schema=schema,
         )
