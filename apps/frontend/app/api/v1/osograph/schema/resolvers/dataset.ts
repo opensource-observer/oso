@@ -339,7 +339,7 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           eq: [{ key: "dataset_id", value: parent.id }],
         },
         orderBy: {
-          key: "started_at",
+          key: "queued_at",
           ascending: false,
         },
       });
