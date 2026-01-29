@@ -137,6 +137,7 @@ async def rewrite_query(
     metadata: dict | None = None,
     input_dialect: str = "trino",
     output_dialect: str | None = None,
+    prepend_resolved_tables_comment: bool = True,
 ) -> RewriteResponse:
     """
     Rewrites a SQL query written in the sqlmesh dialect using the provided table
@@ -153,6 +154,8 @@ async def rewrite_query(
         input_dialect (str): The input SQL dialect to use for the query.
         output_dialect (str | None): The output SQL dialect to use for the final
             rendering of the query. If None, uses the input dialect.
+        prepend_resolved_tables_comment (bool): Whether to prepend a comment with
+            resolved table information to the rewritten query.
 
     Returns:
         str: The rewritten SQL query.
@@ -224,6 +227,18 @@ async def rewrite_query(
     for statement in qualified_statements:
         rewritten = apply_transforms_to_expression(statement, table_rewriters)
         rewritten_statements.append(rewritten)
+
+    if prepend_resolved_tables_comment:
+        # Prepends a comment with all the resolved tables for easy debugging on
+        # the warehouse.
+        resolved_tables_comments: list[str] = ["Table Rewrite Map:"]
+        for orig_table_str, warehouse_table in resolved_tables_dict.items():
+            resolved_tables_comments.append(
+                f"  {orig_table_str} -> {raw_table_to_reference(warehouse_table)}"
+            )
+
+        first_statement = rewritten_statements[0]
+        first_statement.add_comments(resolved_tables_comments, prepend=True)
 
     # Convert rewritten statements back to SQL
     rewritten_sql_statements = [

@@ -16,6 +16,7 @@ from scheduler.config import CommonSettings
 from scheduler.graphql_client.client import Client as OSOClient
 from scheduler.graphql_client.create_materialization import CreateMaterialization
 from scheduler.graphql_client.enums import RunStatus, StepStatus
+from scheduler.graphql_client.finish_run import FinishRun
 from scheduler.graphql_client.fragments import (
     DatasetCommon,
     OrganizationCommon,
@@ -43,7 +44,7 @@ from scheduler.types import (
 )
 from scheduler.utils import convert_uuid_bytes_to_str
 
-logger = structlog.getLogger(__name__)
+system_logger = structlog.getLogger(__name__)
 
 T = t.TypeVar("T", bound=ProtobufMessage)
 
@@ -228,6 +229,30 @@ class OSORunContext(RunContext):
     def trigger_type(self) -> str:
         return self._run_data.trigger_type
 
+    async def finish_run(
+        self,
+        status: RunStatus,
+        status_code: int,
+        metadata: UpdateMetadataInput | None = None,
+    ) -> FinishRun:
+        """Finish the run with the given status."""
+
+        try:
+            logs_url = await self._log_buffer.flush(status=status)
+        except Exception as e:
+            system_logger.error(
+                f"Failed to upload logs to GCS for run_id {self._run_id}: {e}",
+                exc_info=True,
+            )
+            logs_url = ""
+
+        return await self._oso_client.finish_run(
+            run_id=self._run_id,
+            status=status,
+            status_code=status_code,
+            logs_url=logs_url,
+        )
+
 
 class RunHandler(MessageHandler[T]):
     """A message handler that processes run messages."""
@@ -266,12 +291,14 @@ class RunHandler(MessageHandler[T]):
     ) -> HandlerResponse:
         run_id = getattr(message, "run_id", None)
         if not run_id:
-            logger.error(
+            system_logger.error(
                 "Message does not contain a run_id; acknowledging and skipping."
             )
             return SkipResponse()
         if not isinstance(run_id, bytes):
-            logger.error("run_id is not of type bytes; acknowledging and skipping.")
+            system_logger.error(
+                "run_id is not of type bytes; acknowledging and skipping."
+            )
             return SkipResponse()
 
         run_id_str = convert_uuid_bytes_to_str(run_id)
@@ -298,7 +325,7 @@ class RunHandler(MessageHandler[T]):
             run_context.log.info(f"Reporting run {run_id_str} as started.")
             await oso_client.start_run(run_id=run_id_str)
         except Exception as e:
-            logger.error(f"Error starting run {run_id_str}: {e}")
+            system_logger.error(f"Error starting run {run_id_str}: {e}")
 
             labeler.set_labels(
                 {
@@ -308,7 +335,6 @@ class RunHandler(MessageHandler[T]):
             )
 
             return await self.report_response(
-                oso_client=oso_client,
                 run_id_str=run_id_str,
                 run_context=run_context,
                 response=FailedResponse(message=f"Failed to start run {run_id_str}."),
@@ -334,14 +360,15 @@ class RunHandler(MessageHandler[T]):
                     },
                 )
         except Exception as e:
-            logger.error(f"Error handling run message for run_id {run_id_str}: {e}")
+            system_logger.error(
+                f"Error handling run message for run_id {run_id_str}: {e}"
+            )
             response = FailedResponse(
                 message=f"Failed to process the message for run_id {run_id_str}."
             )
 
         try:
             return await self.report_response(
-                oso_client=oso_client,
                 run_id_str=run_id_str,
                 response=response,
                 run_context=run_context,
@@ -349,7 +376,9 @@ class RunHandler(MessageHandler[T]):
                 labeler=labeler,
             )
         except Exception as e:
-            logger.error(f"Error reporting response for run_id {run_id_str}: {e}")
+            system_logger.error(
+                f"Error reporting response for run_id {run_id_str}: {e}"
+            )
 
             return FailedResponse(
                 message=f"Failed to report the response for run_id {run_id_str}."
@@ -357,7 +386,6 @@ class RunHandler(MessageHandler[T]):
 
     async def report_response(
         self,
-        oso_client: OSOClient,
         run_id_str: str,
         run_context: OSORunContext,
         response: HandlerResponse,
@@ -369,23 +397,6 @@ class RunHandler(MessageHandler[T]):
         Args:
             response: The response from processing the run message.
         """
-        status_map = {
-            SuccessResponse: "success",
-            FailedResponse: "failed",
-            SkipResponse: "skipped",
-            AlreadyLockedMessageResponse: "locked",
-        }
-        status = status_map.get(type(response), "unknown")
-
-        logs_url = "http://example.com/run_logs"
-        try:
-            logs_url = await run_context._log_buffer.flush(status=status) or logs_url
-        except Exception as e:
-            logger.error(
-                f"Failed to upload logs to GCS for run_id {run_id_str}: {e}",
-                exc_info=True,
-            )
-
         # Write the response to the database
         match response:
             case AlreadyLockedMessageResponse():
@@ -395,26 +406,22 @@ class RunHandler(MessageHandler[T]):
                 )
                 return response
             case SkipResponse(status_code=status_code):
-                await oso_client.finish_run(
-                    run_id=run_id_str,
+                await run_context.finish_run(
                     status=RunStatus.CANCELED,
                     status_code=status_code,
-                    logs_url=logs_url,
                 )
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "skipped"}),
                 )
                 return response
             case FailedResponse(status_code=status_code, details=details):
-                logger.error(f"Failed to process run_id {run_id_str}.")
+                system_logger.error(f"Failed to process run_id {run_id_str}.")
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "failed"}),
                 )
-                await oso_client.finish_run(
-                    run_id=run_id_str,
+                await run_context.finish_run(
                     status=RunStatus.FAILED,
                     status_code=status_code,
-                    logs_url=logs_url,
                     metadata=UpdateMetadataInput(
                         value={"errorDetails": details},
                         merge=True,
@@ -422,29 +429,25 @@ class RunHandler(MessageHandler[T]):
                 )
                 return response
             case SuccessResponse(status_code=status_code):
-                logger.info(f"Successfully processed run_id {run_id_str}.")
+                system_logger.info(f"Successfully processed run_id {run_id_str}.")
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "success"}),
                 )
-                await oso_client.finish_run(
-                    run_id=run_id_str,
+                await run_context.finish_run(
                     status=RunStatus.SUCCESS,
                     status_code=status_code,
-                    logs_url=logs_url,
                 )
                 return response
             case _:
-                logger.warning(
+                system_logger.warning(
                     f"Unhandled response type {type(response)} from run message handler for run_id {run_id_str}."
                 )
                 metrics.counter("run_count_total").inc(
                     labeler.get_labels({"response_type": "unknown"}),
                 )
-                await oso_client.finish_run(
-                    run_id=run_id_str,
+                await run_context.finish_run(
                     status=RunStatus.FAILED,
                     status_code=500,
-                    logs_url=logs_url,
                 )
                 return FailedResponse(message="Unhandled response type.")
 

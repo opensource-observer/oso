@@ -273,6 +273,17 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             },
         )
 
+        # Add human readable comments for admins to more easily debug queries
+        resolved_query_comments = [
+            "Query Type: Data Model",
+            f"Organization: {step_context.run.organization.name}",
+            f"Dataset: {model.dataset_name}",
+            f"Model: {model.name}",
+            f"Run ID: {step_context.run.id}",
+            f"Step ID: {step_context.step_id}",
+        ]
+        resolved_query.add_comments(resolved_query_comments, prepend=True)
+
         create_query = ctas_query(resolved_query)
 
         adapter.ctas(
@@ -299,6 +310,9 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
                 )
             )
 
+        step_context.log.info(
+            f"Creating materialization record for run: {step_context.run.id} and step: {step_context.step_id}"
+        )
         await step_context.create_materialization(
             table_id=table_ref.table_id,
             warehouse_fqn=f"{target_table.catalog}.{target_table.db}.{target_table.name}",

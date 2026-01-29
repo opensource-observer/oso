@@ -1,13 +1,13 @@
 import json
+import logging
 import typing as t
 from datetime import datetime, timezone
 from io import StringIO
 from typing import Protocol
 
-import structlog
 from google.cloud import storage
 
-logger = structlog.get_logger(__name__)
+system_logger = logging.getLogger(__name__)
 
 
 class BindableLogger(Protocol):
@@ -46,6 +46,14 @@ class BufferedBoundLogger(BindableLogger):
             if event is not None:
                 event_dict["event"] = event
             self._buffer(None, method_name, event_dict)
+            try:
+                getattr(system_logger, method_name)(event, **kw)
+            except Exception:
+                system_logger.fatal("Failed to log to system logger", exc_info=True)
+            try:
+                getattr(self._logger, method_name)(event, **kw)
+            except Exception:
+                system_logger.fatal("Failed to log to underlying logger", exc_info=True)
             return getattr(self._logger, method_name)(event, **kw)
 
         return method
@@ -91,7 +99,9 @@ class GCSLogBufferProcessor:
 
     async def flush(self, status: str = "unknown") -> str:
         if not self.buffer:
-            logger.warning("No logs to flush for run", extra={"run_id": self.run_id})
+            system_logger.warning(
+                "No logs to flush for run", extra={"run_id": self.run_id}
+            )
             return ""
 
         if self._storage_client is None:
@@ -112,7 +122,7 @@ class GCSLogBufferProcessor:
             )
 
             gcs_url = f"gs://{self.gcs_bucket}/{blob_name}"
-            logger.info(
+            system_logger.info(
                 "Successfully uploaded logs to GCS",
                 extra={
                     "run_id": self.run_id,
@@ -122,7 +132,7 @@ class GCSLogBufferProcessor:
             )
             return gcs_url
         except Exception as e:
-            logger.error(
+            system_logger.error(
                 "Failed to upload logs to GCS",
                 extra={
                     "run_id": self.run_id,

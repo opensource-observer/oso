@@ -12,12 +12,17 @@ from pydantic import BaseModel, Field
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import RewriteResponse, TableResolver
 from scheduler.graphql_client.create_materialization import CreateMaterialization
+from scheduler.graphql_client.enums import RunStatus
+from scheduler.graphql_client.finish_run import FinishRun
 from scheduler.graphql_client.fragments import (
     DatasetCommon,
     OrganizationCommon,
     UserCommon,
 )
-from scheduler.graphql_client.input_types import DataModelColumnInput
+from scheduler.graphql_client.input_types import (
+    DataModelColumnInput,
+    UpdateMetadataInput,
+)
 from scheduler.graphql_client.update_run_metadata import UpdateRunMetadata
 from scheduler.logging import BindableLogger
 from sqlglot import exp, parse_one
@@ -473,6 +478,16 @@ class RunContext(abc.ABC):
             requested_by=self.requested_by,
             trigger_type=self.trigger_type,
         )
+
+    @abc.abstractmethod
+    async def finish_run(
+        self,
+        status: RunStatus,
+        status_code: int,
+        metadata: UpdateMetadataInput | None = None,
+    ) -> FinishRun:
+        """Finish the run with the given status."""
+        raise NotImplementedError("finish_run must be implemented by subclasses.")
 
 
 @dataclass(frozen=True)
