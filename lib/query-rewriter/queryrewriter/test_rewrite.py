@@ -1,6 +1,7 @@
 import typing as t
 
 import pytest
+from oso_core.logging import setup_module_logging
 from queryrewriter.resolvers.fake import FakeTableResolver
 from queryrewriter.rewrite import rewrite_query
 from queryrewriter.types import TableResolver
@@ -220,6 +221,7 @@ async def test_rewrite_query(
     expected_query: str,
 ):
     resolvers: t.List[TableResolver] = [fake_table_resolver]
+    setup_module_logging("queryrewriter")
 
     response = await rewrite_query(
         query=input_query,
@@ -228,6 +230,143 @@ async def test_rewrite_query(
         output_dialect=output_dialect,
     )
     assert_same_sql(response.rewritten_query, expected_query)
+
+
+@pytest.mark.parametrize(
+    "input_dialect,output_dialect,input_query",
+    [
+        (  # Force lots of recursion due to way sqlglot builds scopes
+            "trino",
+            "trino",
+            """
+            WITH alpha AS (
+                select col from "table1"
+            ), bravo AS (
+                select col from "table1" 
+            ), charlie AS (
+                select col from "table3"
+            ), delta AS (
+                select col from "table4"
+            ), echo AS (
+                select col from "table5"
+            ), foxtrot AS (
+                select col from "table6"
+            ), "golf" AS (
+                select col from "table7"
+            ), hotel AS (
+                select col from "table8"
+            ), india AS (
+                select col from "table9"
+            ), juliet AS (
+                select col from "table10"
+            ), kilo AS (
+                select col from "table11"
+            ), lima AS (
+                select col from "table12"
+            ), mike AS (
+                select col from "table13"
+            ), november AS (
+                select col from "table14"
+            ), oscar AS (
+                select col from "table15"
+            ), papa AS (
+                select col from "table16"
+            ), quebec AS (
+                select col from "table17"
+            ), romeo AS (
+                select col from "table18"
+            ), sierra AS (
+                select col from "table19"
+            ), tango AS (
+                select col from "table20"
+            ), uniform AS (
+                select col from "table21"
+            ), victor AS (
+                select col from "table22"
+            ), whiskey AS (
+                select col from "table23"
+            ), xray AS (
+                select col from "table24"
+            ), yankee AS (
+                select col from "table25"
+            ), zulu AS (
+                select col from "table26"
+            ), unioned AS (
+                select * from "alpha"
+                union all
+                select * from "bravo"
+                union all
+                select * from "charlie"
+                union all
+                select * from "delta"
+                union all
+                select * from "echo"
+                union all
+                select * from "foxtrot"
+                union all
+                select * from "golf"
+                union all
+                select * from "hotel"
+                union all
+                select * from "india"
+                union all
+                select * from "juliet"
+                union all
+                select * from "kilo"
+                union all
+                select * from "lima"
+                union all
+                select * from "mike"
+                union all
+                select * from "november"
+                union all
+                select * from "oscar"
+                union all
+                select * from "papa"
+                union all
+                select * from "quebec"
+                union all
+                select * from "romeo"
+                union all
+                select * from "sierra"
+                union all
+                select * from "tango"
+                union all
+                select * from "uniform"
+                union all
+                select * from "victor"
+                union all
+                select * from "whiskey"
+                union all
+                select * from "xray"
+                union all
+                select * from "yankee"
+                union all
+                select * from "zulu"
+            )
+            select * from "unioned"
+            """,
+        )
+    ],
+)
+@pytest.mark.asyncio
+@pytest.mark.timeout(10)
+async def test_rewrite_query_completes(
+    fake_table_resolver: TableResolver,
+    input_dialect: str,
+    output_dialect: str,
+    input_query: str,
+):
+    """Handles tests for queries that should complete without error, but we
+    don't need to check the output."""
+    resolvers: t.List[TableResolver] = [fake_table_resolver]
+
+    await rewrite_query(
+        query=input_query,
+        table_resolvers=resolvers,
+        input_dialect=input_dialect,
+        output_dialect=output_dialect,
+    )
 
 
 @pytest.mark.parametrize(
