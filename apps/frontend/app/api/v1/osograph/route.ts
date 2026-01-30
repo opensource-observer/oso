@@ -45,7 +45,15 @@ const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
   context: async (req) => {
     const user = await getUser(req);
     const systemCredentials = await getSystemCredentials(req);
-    return { req, user, systemCredentials } satisfies GraphQLContext;
+    return {
+      req,
+      user,
+      systemCredentials,
+      authCache: {
+        orgMemberships: new Map(),
+        resourcePermissions: new Map(),
+      },
+    } satisfies GraphQLContext;
   },
 });
 
