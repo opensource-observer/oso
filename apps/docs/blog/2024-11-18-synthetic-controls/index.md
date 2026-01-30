@@ -6,7 +6,7 @@ tags: [featured, perspective, research, causal inference]
 image: ./syncon.png
 ---
 
-We’ve been thinking a lot about [advanced metrics](https://docs.opensource.observer/blog/war-for-public-goods) lately. We want to get better at measuring how specific types of interventions impact the public goods ecosystem.
+We’ve been thinking a lot about [advanced metrics](https://docs.oso.xyz/blog/war-for-public-goods) lately. We want to get better at measuring how specific types of interventions impact the public goods ecosystem.
 
 For example, we frequently seek to compare the performance of projects or users who received token incentives against those who did not.
 
@@ -88,4 +88,4 @@ As George Box famously said, "all models are wrong, but some are useful."
 
 We are in the early stages of applying advanced metrics like synthetic controls to better measure incentive effects on crypto networks. Stay tuned as we share more findings.
 
-Meanwhile, you can see some examples of the synthetic control models in our [insights repo](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/syncon). Reach out on [Discord](https://www.opensource.observer/discord) if you'd like to collaborate!
+Meanwhile, you can see some examples of the synthetic control models in our [insights repo](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/syncon). Reach out on [Discord](https://www.oso.xyz/discord) if you'd like to collaborate!

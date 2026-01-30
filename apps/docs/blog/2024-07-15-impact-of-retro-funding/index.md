@@ -6,7 +6,7 @@ tags: [optimism, data science, retroactive public goods funding]
 image: ./output_10_1.png
 ---
 
-This post is a brief exploration of the before-after impact of Optimism’s Retro Funding (RF) on open source software (OSS) projects. For context, see some of our previous work on the [Optimism ecosystem](https://docs.opensource.observer/blog/tags/optimism) and especially [this one](https://docs.opensource.observer/blog/retropgf3-ecosystem-analysis) from the start of RF3 in November 2023.
+This post is a brief exploration of the before-after impact of Optimism’s Retro Funding (RF) on open source software (OSS) projects. For context, see some of our previous work on the [Optimism ecosystem](https://docs.oso.xyz/blog/tags/optimism) and especially [this one](https://docs.oso.xyz/blog/retropgf3-ecosystem-analysis) from the start of RF3 in November 2023.
 
 We explore:
 
@@ -114,7 +114,7 @@ As one might expect, there is a positive correlation between the amount of fundi
 
 ## Changes in Onchain Activity
 
-Retro Funding 3 was not designed to reward onchain activity. In fact, projects that had onchain deployments [underperformed](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3#in-the-arena-view-signals-that-live-players-and-builders-should-pick-up-on) in the round overall. RF4, on the other hand, was designed explicitly to reward onchain activity.
+Retro Funding 3 was not designed to reward onchain activity. In fact, projects that had onchain deployments [underperformed](https://docs.oso.xyz/blog/what-builders-can-learn-from-retropgf3#in-the-arena-view-signals-that-live-players-and-builders-should-pick-up-on) in the round overall. RF4, on the other hand, was designed explicitly to reward onchain activity.
 
 This next section includes comparison of onchain activity before and after RF3, but also includes the projects that were eligible for RF4. As mentioned previously, 176 projects in RF4 will be first-time recipients. In addition, there were 54 projects that were eligible for RF4 and had participated in one or more previous RF rounds.
 

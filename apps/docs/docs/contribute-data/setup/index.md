@@ -11,9 +11,9 @@ up a development Dagster instance locally, with a [`duckdb`](http://duckdb.org/)
 in order to follow along with our tutorials in the next sections.
 
 If you want to check out what Dagster looks like in production, check out
-[https://dagster.opensource.observer](https://dagster.opensource.observer)
+[https://dagster.oso.xyz](https://dagster.oso.xyz)
 Admins can trigger runs
-[here](https://admin-dagster.opensource.observer/)
+[here](https://admin-dagster.oso.xyz/)
 
 ## Setting up Dagster
 
@@ -132,15 +132,15 @@ For more details on contributing to OSO, check out
 
 After your pull request is merged into the `main` branch, a new Dagster deployment is automatically triggered. This process typically takes 10-15 minutes.
 
-You can monitor the deployment status and check the last update time for each code location in the [Deployment tab](https://dagster.opensource.observer/locations).
+You can monitor the deployment status and check the last update time for each code location in the [Deployment tab](https://dagster.oso.xyz/locations).
 
-Once the deployment is complete, Dagster will automatically recognize your new asset, and it will appear in the [Global Asset List](https://dagster.opensource.observer/assets).
+Once the deployment is complete, Dagster will automatically recognize your new asset, and it will appear in the [Global Asset List](https://dagster.oso.xyz/assets).
 
 ![Dagster assets](./dagster_assets.png)
 
 If your asset is missing, you can check for loading errors
 and the date of last code load in the
-[Deployment tab](https://dagster.opensource.observer/locations).
+[Deployment tab](https://dagster.oso.xyz/locations).
 For example, if your code has a bug and leads to a loading error,
 it may look like this:
 
@@ -150,10 +150,10 @@ it may look like this:
 
 If this is your first time adding an asset,
 we suggest reaching out to the OSO team over
-[Discord](https://www.opensource.observer/discord)
+[Discord](https://www.oso.xyz/discord)
 to run deploys manually.
 You can monitor all Dagster runs
-[here](https://dagster.opensource.observer/runs).
+[here](https://dagster.oso.xyz/runs).
 
 ![Dagster run example](./dagster_run.png)
 
@@ -171,7 +171,7 @@ We welcome any automation that can reduce the operational burden
 in our continuous deployment.
 However, before merging any job automation,
 please reach out to the OSO devops team
-on [Discord](https://www.opensource.observer/discord)
+on [Discord](https://www.oso.xyz/discord)
 with an estimate of costs, especially if it involves large BigQuery scans.
 We will reject or disable any jobs that lead to
 increased infrastructure instability or unexpected costs.

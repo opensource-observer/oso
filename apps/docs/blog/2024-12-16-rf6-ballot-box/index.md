@@ -85,7 +85,7 @@ After rating projects' impact, voters were given several options for applying a 
 
 Finally, they had the option to refine their allocations project-by-project.
 
-In our [last post](https://docs.opensource.observer/blog/rf5-ballot-box), we covered the distribution curve in detail. The RF5 distribution curve was flatter than previous rounds, despite there being major differences in the size and complexity of the projects being funded.
+In our [last post](https://docs.oso.xyz/blog/rf5-ballot-box), we covered the distribution curve in detail. The RF5 distribution curve was flatter than previous rounds, despite there being major differences in the size and complexity of the projects being funded.
 
 ![](./03-rf5-distro.png)
 
@@ -103,7 +103,7 @@ This is not as steep as the RF4 distribution curve, but is closer to the RF3 dis
 
 ### Most voters did not vote for flat distributions
 
-Unlike the [ballots in RF5](https://docs.opensource.observer/blog/rf5-ballot-box#we-got-flat-distributions-because-thats-what-voters-voted-for), most voters in RF6 did not vote for flat distributions. Citizens tended to vote for steeper distributions than guest voters.
+Unlike the [ballots in RF5](https://docs.oso.xyz/blog/rf5-ballot-box#we-got-flat-distributions-because-thats-what-voters-voted-for), most voters in RF6 did not vote for flat distributions. Citizens tended to vote for steeper distributions than guest voters.
 
 ![](./08-cv-voters-grouped.png)
 
@@ -205,4 +205,4 @@ In general, Citizens and Guests had similar preferences across this category. As
 
 The scripts for analyzing and visualizing the data are available on [our GitHub](https://github.com/opensource-observer/insights). Unfortunately, the raw voting data is not public in order to preserve voters' anonymity.
 
-If you're interested in forking this, running your own simulations on synthetic data, or an aspiring [impact data scientist](https://docs.opensource.observer/blog/impact-data-scientists), please reach out on [Discord](https://www.opensource.observer/discord). We'd love to collaborate.
+If you're interested in forking this, running your own simulations on synthetic data, or an aspiring [impact data scientist](https://docs.oso.xyz/blog/impact-data-scientists), please reach out on [Discord](https://www.oso.xyz/discord). We'd love to collaborate.

@@ -15,7 +15,7 @@ This post includes some of the domains we're interested in exploring as well as 
 If you'd like to get involved, here's what to do:
 
 1. Apply to [join the Data Collective](https://www.kariba.network/). It only takes a few minutes. We'll review, and reach out to schedule an onboarding call.
-2. Join our [Discord server](https://www.opensource.observer/discord) and say hello.
+2. Join our [Discord server](https://www.oso.xyz/discord) and say hello.
 3. Get inspiration from our Colab directory of [starter notebooks for impact metrics](https://drive.google.com/drive/folders/1I4exiLfZYgPwIGBEzuAMeGtJUhtS_DE7?usp=drive_link). We also have of them in our [Insights repo](https://github.com/opensource-observer/insights/tree/main/community/notebooks) if you prefer to run them locally.
 4. Consult [our docs](../../docs/) and especially our [impact metric spec](../../docs/references/impact-metrics/) as you prepare your analysis.
 
@@ -188,6 +188,6 @@ You can submit your impact metric to the OSO core team by posting it in our [Dis
 - Link to your code (eg, Colab or Jupyter notebook)
 - Chart or table showing the metric applied to a set of projects
 
-If you run into issues or have questions, let us know on [Discord](https://www.opensource.observer/discord).
+If you run into issues or have questions, let us know on [Discord](https://www.oso.xyz/discord).
 
 We're excited to see what you come up with!

@@ -44,4 +44,4 @@ Add the `allAuthenticatedUsers` as the "BigQuery Data Viewer"
 
 If you have reasons to keep your dataset private,
 you can reach out to us directly on our
-[Discord](https://www.opensource.observer/discord).
+[Discord](https://www.oso.xyz/discord).

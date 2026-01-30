@@ -86,7 +86,7 @@ pyoso_db_conn = marimo_db()
 
 ## Documentation
 
-For detailed documentation about the OSO dataset, please refer to the [official documentation](https://docs.opensource.observer/docs/integrate/datasets/).
+For detailed documentation about the OSO dataset, please refer to the [official documentation](https://docs.oso.xyz/docs/integrate/datasets/).
 
 ## Future Plans
 

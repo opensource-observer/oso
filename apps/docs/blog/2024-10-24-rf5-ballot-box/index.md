@@ -12,7 +12,7 @@ In some ways, this round felt like a return to earlier Retro Funding days. There
 
 However, RF5 also introduced several major twists: voting within categories, guest voters, and an expertise dimension. We’ll explain all these things in a minute.
 
-Like [our other posts](https://docs.opensource.observer/blog/rf4-ballot-box) in the “opening up the ballot box” canon, this post will analyze the shape of the rewards distribution curve and the preferences of individual voters using anonymized data. We’ll also deep dive into the results by category and compare expert vs non-expert voting patterns.
+Like [our other posts](https://docs.oso.xyz/blog/rf4-ballot-box) in the “opening up the ballot box” canon, this post will analyze the shape of the rewards distribution curve and the preferences of individual voters using anonymized data. We’ll also deep dive into the results by category and compare expert vs non-expert voting patterns.
 
 Finally, we'll tackle the key question this round sought to answer: _do experts vote differently than non-experts?_ In our view, the answer is yes. We have a lot of data on this topic, so you're welcome to draw your own conclusions.
 
@@ -48,7 +48,7 @@ Once again, you can find all the official details about the round [here](https:/
 
 ## Overall observations
 
-We’ve written before about [the significance](https://docs.opensource.observer/blog/levels-of-the-game) of the reward distribution curve. It's an important signal for builders because it communicates the reward for being a top project vs a middle project. It should motivate builders to aim for creating huge impact, and it should give them a sense of how much they can expect to receive if they do.
+We’ve written before about [the significance](https://docs.oso.xyz/blog/levels-of-the-game) of the reward distribution curve. It's an important signal for builders because it communicates the reward for being a top project vs a middle project. It should motivate builders to aim for creating huge impact, and it should give them a sense of how much they can expect to receive if they do.
 
 ### The RF5 distribution curve is pretty flat
 
@@ -58,11 +58,11 @@ Unfortunately, in our view, the RF5 curve doesn't provide a very clear signal to
 
 In fact, this was the flattest distribution of all five RF rounds. The top project, go-ethereum, received 235K OP (2.9% of the total). The median project received 93K. Even the lowest ranked project in Round 5 received 37K - more than what 70% of the projects in Round 4 received. It was a good round to be an “average” project in.
 
-In [Round 4](https://docs.opensource.observer/blog/rf4-ballot-box), by contrast, there was a steep power law distribution. This was likely the result of the [metrics-based voting](https://docs.opensource.observer/blog/impact-metrics-rf4), as top projects often had orders of magnitude more impact according to the metrics. The top projects were capped at 500K OP (2% of the total). The median project received 13K OP.
+In [Round 4](https://docs.oso.xyz/blog/rf4-ballot-box), by contrast, there was a steep power law distribution. This was likely the result of the [metrics-based voting](https://docs.oso.xyz/blog/impact-metrics-rf4), as top projects often had orders of magnitude more impact according to the metrics. The top projects were capped at 500K OP (2% of the total). The median project received 13K OP.
 
 ![](./04-rf4-distro.png)
 
-[Round 3](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3) was more of a peanut butter spread, but not as flat as Round 5. The top project (Protocol Guild) received 2.2% of the total.
+[Round 3](https://docs.oso.xyz/blog/what-builders-can-learn-from-retropgf3) was more of a peanut butter spread, but not as flat as Round 5. The top project (Protocol Guild) received 2.2% of the total.
 
 ![](./05-rf3-distro.png)
 
@@ -74,7 +74,7 @@ The flatter distribution resulted in a more equitable spread, allowing even lowe
 
 ### Smaller projects overperformed
 
-In [our RF3 analysis](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3#projects-vs-individuals), we raised the concern that voting on projects can give smaller projects a comparative advantage:
+In [our RF3 analysis](https://docs.oso.xyz/blog/what-builders-can-learn-from-retropgf3#projects-vs-individuals), we raised the concern that voting on projects can give smaller projects a comparative advantage:
 
 > In addition to the incentive for everyone to throw their name in the hat next RetroPGF, there may also be a perverse incentive for individual contributors or factions from within larger projects or DAOs to apply.
 
@@ -237,4 +237,4 @@ Some voters chose to use the [Pairwise app](https://gov.optimism.io/t/pairwise-i
 
 This is a long post, and yet I feel like I've only scratched the surface of the data here. As always, the scripts for analyzing and visualizing the data are available on [our GitHub](https://github.com/opensource-observer/insights). Unfortunately, the raw voting data is not public in order to preserve voters' anonymity.
 
-If you're interested in forking this, running your own simulations on synthetic data, or an aspiring [impact data scientist](https://docs.opensource.observer/blog/impact-data-scientists), please reach out on [Discord](https://www.opensource.observer/discord). We'd love to collaborate.
+If you're interested in forking this, running your own simulations on synthetic data, or an aspiring [impact data scientist](https://docs.oso.xyz/blog/impact-data-scientists), please reach out on [Discord](https://www.oso.xyz/discord). We'd love to collaborate.

@@ -16,7 +16,7 @@ We're always looking for new data sources to integrate with OSO. Here are the cu
 - ⚙️ [Custom Dagster Assets](./dagster.md) - Write a custom Dagster asset for unique data sources
 - 📜 Static Files - Coordinate hand-off for high-quality data via static files. This path is predominantly used for [grant funding data](./funding-data.md).
 
-Reach out to us on [Discord](https://www.opensource.observer/discord) for help.
+Reach out to us on [Discord](https://www.oso.xyz/discord) for help.
 
 ## Deprecated
 

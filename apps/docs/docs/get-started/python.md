@@ -11,7 +11,7 @@ Let's make your first query in under five minutes.
 
 ## Generate an API key
 
-1. [Log in](https://www.opensource.observer/login) to your account
+1. [Log in](https://www.oso.xyz/login) to your account
 2. Navigate to your organization's **Settings → API Keys**
 3. Click **"New Key +"** and give it a descriptive name
 4. **Save your key immediately** - you won't see it again
@@ -19,7 +19,7 @@ Let's make your first query in under five minutes.
 <details>
 <summary>Detailed step-by-step instructions</summary>
 
-1. Go to [www.opensource.observer](https://www.opensource.observer/login) and log in
+1. Go to [www.opensource.observer](https://www.oso.xyz/login) and log in
 2. You'll be redirected to your organization dashboard
 3. In the left sidebar, click the dropdown next to your organization name
 4. Select **"Settings"**

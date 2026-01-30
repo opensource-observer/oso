@@ -22,4 +22,4 @@ You can report vulnerabilities directly in the "Security" tab on our
 
 We will try to respond to all reports ASAP.
 If you need to reach us sooner, please find us on our
-[Discord](https://www.opensource.observer/discord).
+[Discord](https://www.oso.xyz/discord).

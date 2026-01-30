@@ -12,14 +12,14 @@ import Head from '@docusaurus/Head';
   <link rel="canonical" href="https://mirror.xyz/cerv1.eth/aKLPb2c9n57zNUyOkv8IirYawVba74a1gjjTAe3TPX0" />
 </Head>
 
-[Open Source Observer](https://www.opensource.observer/) is a platform for measuring the impact of open source software (OSS) contributions. We launched a few months ago with a commitment to [open source everything](https://docs.opensource.observer/blog/open-source-open-data-open-infra)_._ Here is our [hello world post](https://gov.optimism.io/t/introducing-open-source-observer-measuring-impact-of-oss-contributions-to-the-op-superchain/7071/1) on the forum ICYMI.
+[Open Source Observer](https://www.oso.xyz/) is a platform for measuring the impact of open source software (OSS) contributions. We launched a few months ago with a commitment to [open source everything](https://docs.oso.xyz/blog/open-source-open-data-open-infra)_._ Here is our [hello world post](https://gov.optimism.io/t/introducing-open-source-observer-measuring-impact-of-oss-contributions-to-the-op-superchain/7071/1) on the forum ICYMI.
 
 This report is a shallow dive on the 300+ open source software projects participating in the latest round of retroactive public goods funding (RetroPGF 3). It combines both off- and onchain data about projects.
 
 The report itself has two objectives:
 
 - Kickstart more rigorous analysis on the effectiveness of RetroPGF as a mechanism
-- Snipe some data nerds to join [our data collective](https://www.opensource.observer/data-collective)
+- Snipe some data nerds to join [our data collective](https://www.oso.xyz/data-collective)
 
 Let’s jump in.
 
@@ -27,7 +27,7 @@ Let’s jump in.
 
 # Who’s included
 
-Over 600 projects and individuals applied for RetroPGF 3. This report only includes the [311 projects](https://www.opensource.observer/explore) that are contributing open source software **_and_** that included links to GitHub repos (plus any OP Mainnet contract addresses) in their applications.
+Over 600 projects and individuals applied for RetroPGF 3. This report only includes the [311 projects](https://www.oso.xyz/explore) that are contributing open source software **_and_** that included links to GitHub repos (plus any OP Mainnet contract addresses) in their applications.
 
 We also have data on projects that applied for previous RetroPGF rounds (but not the current one). A total of 366 OSS projects are represented in the Venn diagram below, of which 205 have no prior experience with RetroPGF.
 
@@ -57,7 +57,7 @@ As expected, the cohort that received funding from both RetroPGF 2 & 3 rounds ha
 
 We can extend this further to include **_all_** OSS projects that have participated in RetroPGF at some point in their history.
 
-The cohort of 55 projects that participated in RetroPGF 1 or 2 but did not participate in RetroPGF 3 represents a fairly small share of the overall mix but includes well-known (and still very active) projects like [code4rena](https://www.opensource.observer/project/code-423n4), [Safe](https://www.opensource.observer/project/safe-global), and [Wallet Connect](https://www.opensource.observer/project/walletconnect).
+The cohort of 55 projects that participated in RetroPGF 1 or 2 but did not participate in RetroPGF 3 represents a fairly small share of the overall mix but includes well-known (and still very active) projects like [code4rena](https://www.oso.xyz/project/code-423n4), [Safe](https://www.oso.xyz/project/safe-global), and [Wallet Connect](https://www.oso.xyz/project/walletconnect).
 
 ![image|690x369](./mads-rpgf1-3.png)
 
@@ -65,7 +65,7 @@ Finally, we can see some high level trends regarding the change in developer act
 
 ![image|690x381](./before-after.png)
 
-If all of these projects were committing to the same GitHub, here’s what it would look like. It’s no surprise to see [Protocol Guild](https://www.opensource.observer/project/protocol-guild) at the top of the list with a large network of active developers, but don’t sleep on [IPFS](https://www.opensource.observer/project/ipfs) or [Synthetix](https://www.opensource.observer/project/synthetix) either.
+If all of these projects were committing to the same GitHub, here’s what it would look like. It’s no surprise to see [Protocol Guild](https://www.oso.xyz/project/protocol-guild) at the top of the list with a large network of active developers, but don’t sleep on [IPFS](https://www.oso.xyz/project/ipfs) or [Synthetix](https://www.oso.xyz/project/synthetix) either.
 
 ![image|690x2800](./mads-heatmap.png)
 
@@ -75,17 +75,17 @@ A total of 86 of 296 OSS _projects_ (not individuals) participating in RetroPGF 
 
 Here’s the same type of heatmap we saw above, now applied to projects’ active onchain users. A dark red box signifies a month where a project had more than 1000 users making transactions.
 
-Only a few projects such as [Velodrome](https://www.opensource.observer/project/velodrome) have been able to sustain high levels of onchain activity since their launch on OP a year ago.
+Only a few projects such as [Velodrome](https://www.oso.xyz/project/velodrome) have been able to sustain high levels of onchain activity since their launch on OP a year ago.
 
 ![image|690x1780](./users-heatmap.png)
 
 We can also analyze user profiles across these different projects. Of the 1.4M total users shared among these projects, around 400K interacted with at least three projects. About 40K are what I’ve called ”high value active users” who have done something onchain in the past 90 days and have made more than 30 onchain transactions total.
 
-We can plot these two dimensions for all of the onchain projects participating in RetroPGF 3. While projects like [Galxe](https://www.opensource.observer/project/galxe), [Rabbithole](https://www.opensource.observer/project/rabbithole), [Synapse](https://www.opensource.observer/project/synapse), and [Velodrome](https://www.opensource.observer/project/velodrome) stand out for having very large numbers of users in general, projects such as Clipper (by [Shipyard](https://www.opensource.observer/project/shipyard-software)), [Kwenta](https://www.opensource.observer/project/kwenta), and [Lyra](https://www.opensource.observer/project/lyra-finance) are notable for having had a large share of users who both use a variety of dapps and are high value actives.
+We can plot these two dimensions for all of the onchain projects participating in RetroPGF 3. While projects like [Galxe](https://www.oso.xyz/project/galxe), [Rabbithole](https://www.oso.xyz/project/rabbithole), [Synapse](https://www.oso.xyz/project/synapse), and [Velodrome](https://www.oso.xyz/project/velodrome) stand out for having very large numbers of users in general, projects such as Clipper (by [Shipyard](https://www.oso.xyz/project/shipyard-software)), [Kwenta](https://www.oso.xyz/project/kwenta), and [Lyra](https://www.oso.xyz/project/lyra-finance) are notable for having had a large share of users who both use a variety of dapps and are high value actives.
 
 ![image|690x687](./users-scatter.png)
 
-We can also try to attribute impact to protocols that onboarded new users to OP Mainnet who would go on to be active onchain users. Of the 40K high value active users identified above, here’s a breakdown of the first dapps (from the RetroPGF 3 cohort) they interacted with on OP. It’s notable to see that [Synapse](https://www.opensource.observer/project/synapse) (a cross-chain communications protocol) really stands out here.
+We can also try to attribute impact to protocols that onboarded new users to OP Mainnet who would go on to be active onchain users. Of the 40K high value active users identified above, here’s a breakdown of the first dapps (from the RetroPGF 3 cohort) they interacted with on OP. It’s notable to see that [Synapse](https://www.oso.xyz/project/synapse) (a cross-chain communications protocol) really stands out here.
 
 ![image|690x466](./hvaus.png)
 
@@ -93,11 +93,11 @@ We can also try to attribute impact to protocols that onboarded new users to OP 
 
 One of the most straightforward ways of measuring a project’s impact on OP Mainnet is to calculate its sequencer fees. The protocols participating RetroPGF 3 have generated a combined 148 ETH in Layer 2 sequencer fees. This is actually quite small in comparison to **_all_** activity on OP Mainnet. We’ve indexed transaction data from another ~150 projects with high levels of onchain activity on OP Mainnet and those have contributed 894 ETH at the time of writing.
 
-The treemap below shows both cohorts and the most active contributors in terms of sequencer fees. [Perpetual Protocol](https://www.opensource.observer/project/perpetual-protocol) has the largest contribution in our dataset of all projects on OP Mainnet.
+The treemap below shows both cohorts and the most active contributors in terms of sequencer fees. [Perpetual Protocol](https://www.oso.xyz/project/perpetual-protocol) has the largest contribution in our dataset of all projects on OP Mainnet.
 
 ![image|690x372](./fees-all.png)
 
-If we just zoom in on the RetroPGF 3 portion, here’s what it looks like. [Infinitism (ERC-4337) - Account Abstraction](https://www.opensource.observer/project/eth-infinitism-account-abstraction) is an important case study because its primary users are other projects providing account abstraction services, not individuals.
+If we just zoom in on the RetroPGF 3 portion, here’s what it looks like. [Infinitism (ERC-4337) - Account Abstraction](https://www.oso.xyz/project/eth-infinitism-account-abstraction) is an important case study because its primary users are other projects providing account abstraction services, not individuals.
 
 ![image|690x372](./fees-zoom.png)
 
@@ -105,7 +105,7 @@ It’s also important to look upstream of these protocols and capture the impact
 
 Our first attempt at this is something we call “downstream impact” — a way of tracing the impact of certain libraries, clients, etc on sequencer fees. We do this by looking at the dependency tree of onchain projects and identify the offchain projects they depend on.
 
-Our first version looks solely at package data from npm, a small slice of the actual dependency graph among projects. For instance, [ethers.js](https://www.opensource.observer/project/ethers-io) and [web3.js](https://www.opensource.observer/project/web3) are two very popular npm packages in the dependency graph of other onchain projects.
+Our first version looks solely at package data from npm, a small slice of the actual dependency graph among projects. For instance, [ethers.js](https://www.oso.xyz/project/ethers-io) and [web3.js](https://www.oso.xyz/project/web3) are two very popular npm packages in the dependency graph of other onchain projects.
 
 ![image|690x570](./fees-rpgf3.png)
 
@@ -115,13 +115,13 @@ Soon, we hope to be able to surface the downstream impact via a far more robust 
 
 Now that we have these graphs, we can start doing other cool things, like curating lists of projects that have contributed to different forms of impact, and surfacing new insights.
 
-For instance, if we run a network graph across the GitHub contributors in the Optimism community, there’s potential to identify projects that have had outsized impact but previously flown under the radar, such as [libp2p](https://www.opensource.observer/project/libp2p) and [Tenderly](https://www.opensource.observer/project/tenderly).
+For instance, if we run a network graph across the GitHub contributors in the Optimism community, there’s potential to identify projects that have had outsized impact but previously flown under the radar, such as [libp2p](https://www.oso.xyz/project/libp2p) and [Tenderly](https://www.oso.xyz/project/tenderly).
 
 The graph below shows teams with high network centrality participating in RetroPGF 3.
 
 ![image|690x690](./network-graph.png)
 
-We can also identify individuals that have played an outsized role in contributing to multiple projects in the Optimism ecosystem. Here’s a list of the top 150 contributors across all RetroPGF 3 projects since 2019, based on commits and PRs. Individuals like tjayrush ([TrueBlocks](https://www.opensource.observer/project/trueblocks)) and lefterisjp ([rotki](https://www.opensource.observer/project/rotki)) have a tremendous history of consistency not only on their own projects but across the ecosystem.
+We can also identify individuals that have played an outsized role in contributing to multiple projects in the Optimism ecosystem. Here’s a list of the top 150 contributors across all RetroPGF 3 projects since 2019, based on commits and PRs. Individuals like tjayrush ([TrueBlocks](https://www.oso.xyz/project/trueblocks)) and lefterisjp ([rotki](https://www.oso.xyz/project/rotki)) have a tremendous history of consistency not only on their own projects but across the ecosystem.
 
 ![image|690x1650](./devs-heatmap.png)
 
@@ -131,7 +131,7 @@ The hope is that this kind of data can take what has previously been an almost e
 
 Of course, there is a risk that any metric that starts to be heavily relied upon by funders could be easy to game. And then, per Goodhart’s Law, it ceases to be a good metric.
 
-Plurality is the best antidote for this: we need both a multitude of impact metrics and a multitude of communities assigning weight to those metrics based on different values sets. That’s why [we need you](https://www.opensource.observer/data-collective), anon.
+Plurality is the best antidote for this: we need both a multitude of impact metrics and a multitude of communities assigning weight to those metrics based on different values sets. That’s why [we need you](https://www.oso.xyz/data-collective), anon.
 
 It’s unlikely that there is much low-hanging fruit to pick here. We can agree that things like GitHub stars and the number of unique addresses that have interacted with a protocol are not great metrics.
 
@@ -139,6 +139,6 @@ But that shouldn’t prevent us from seeking out and experimenting with other me
 
 You can see my dataviz notebook [here](https://github.com/opensource-observer/insights/blob/main/notebooks/2023-11-16_OptimismEcosystemAnalysis.ipynb).
 
-If you’re a data nerd who wants to contribute to this effort, please join [our data collective](https://www.opensource.observer/data-collective).
+If you’re a data nerd who wants to contribute to this effort, please join [our data collective](https://www.oso.xyz/data-collective).
 
 Stay optimistic!

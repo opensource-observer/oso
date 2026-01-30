@@ -13,7 +13,7 @@ Install dependencies from the root
 uv sync --all-packages
 ```
 
-Get an OSO API key from [Open Source Observer](https://www.opensource.observer).
+Get an OSO API key from [Open Source Observer](https://www.oso.xyz).
 Follow the instructions in the [Getting OSO API Key](#getting-oso-api-key)
 section to obtain your key.
 
