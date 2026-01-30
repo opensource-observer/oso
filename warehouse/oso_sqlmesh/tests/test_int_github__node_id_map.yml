@@ -1,0 +1,96 @@
+test_int_github__node_id_map_repository_1:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        primary_github_user_id: varchar
+      rows: []
+    oso.stg_opendevdata__repos:
+      columns:
+        github_graphql_id: varchar
+      rows:
+        - github_graphql_id: "R_kgDOIn_9jQ"
+  outputs:
+    query:
+      rows:
+        - node_id: "R_kgDOIn_9jQ"
+          decoded_id: 578813325
+
+test_int_github__node_id_map_repository_2:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        primary_github_user_id: varchar
+      rows: []
+    oso.stg_opendevdata__repos:
+      columns:
+        github_graphql_id: varchar
+      rows:
+        - github_graphql_id: "R_kgDOIn_3Zw"
+  outputs:
+    query:
+      rows:
+        - node_id: "R_kgDOIn_3Zw"
+          decoded_id: 578811751
+
+test_int_github__node_id_map_multiple_repositories:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        primary_github_user_id: varchar
+      rows: []
+    oso.stg_opendevdata__repos:
+      columns:
+        github_graphql_id: varchar
+      rows:
+        - github_graphql_id: "R_kgDOIn_9jQ"
+        - github_graphql_id: "R_kgDOIn_3Zw"
+  outputs:
+    query:
+      rows:
+        - node_id: "R_kgDOIn_3Zw"
+          decoded_id: 578811751
+        - node_id: "R_kgDOIn_9jQ"
+          decoded_id: 578813325
+
+test_int_github__node_id_map_filters_empty_strings:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        primary_github_user_id: varchar
+      rows:
+        - primary_github_user_id: ""
+    oso.stg_opendevdata__repos:
+      columns:
+        github_graphql_id: varchar
+      rows:
+        - github_graphql_id: ""
+        - github_graphql_id: "R_kgDOIn_9jQ"
+  outputs:
+    query:
+      rows:
+        - node_id: "R_kgDOIn_9jQ"
+          decoded_id: 578813325
+
+test_int_github__node_id_map_filters_nulls:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        primary_github_user_id: varchar
+      rows:
+        - primary_github_user_id: null
+    oso.stg_opendevdata__repos:
+      columns:
+        github_graphql_id: varchar
+      rows:
+        - github_graphql_id: null
+        - github_graphql_id: "R_kgDOIn_9jQ"
+  outputs:
+    query:
+      rows:
+        - node_id: "R_kgDOIn_9jQ"
+          decoded_id: 578813325
