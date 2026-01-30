@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ValidationErrors } from "@/app/api/v1/osograph/utils/errors";
 import type { ValidTableName } from "@/app/api/v1/osograph/utils/query-builder";
 import { DATASET_TYPES } from "@/lib/types/dataset";
+import { ConnectorType } from "@/lib/types/dynamic-connector";
 
 const NAME_REGEX = /^[a-z][a-z0-9_]*$/;
 const MAX_PREVIEW_SIZE_MB = 1 * 1024 * 1024;
@@ -258,7 +259,7 @@ export const CreateDataConnectionSchema = z.object({
   name: z.string(),
   type: z
     .enum(["POSTGRESQL", "GSHEETS", "BIGQUERY"])
-    .transform((val) => val.toLowerCase()),
+    .transform((val) => val.toLowerCase() as ConnectorType),
   config: z.record(z.any()),
   credentials: z.record(z.any()),
 });
@@ -415,7 +416,10 @@ export const MaterializationWhereSchema = createWhereSchema("materialization");
 export const DataConnectionWhereSchema =
   createWhereSchema("dynamic_connectors");
 
-export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
+export function validateInput<T>(
+  schema: z.ZodType<T, any, any>,
+  input: unknown,
+): T {
   const result = schema.safeParse(input);
 
   if (!result.success) {

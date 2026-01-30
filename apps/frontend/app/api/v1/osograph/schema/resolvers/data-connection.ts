@@ -107,7 +107,6 @@ export const dataConnectionResolvers = {
       context: GraphQLContext,
     ) => {
       const authenticatedUser = requireAuthentication(context.user);
-      console.log("Creating data connection with input:", input);
       const { orgId, name, type, config, credentials } = validateInput(
         CreateDataConnectionSchema,
         input,
@@ -124,7 +123,7 @@ export const dataConnectionResolvers = {
       if (orgError || !org) {
         throw OrganizationErrors.notFound();
       }
-      validateDynamicConnector(name, type, org.org_name);
+      validateDynamicConnector(name, type, config, credentials, org.org_name);
 
       const { data, error } = await supabase
         .from("dynamic_connectors")

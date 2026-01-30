@@ -1,7 +1,22 @@
 import { ValidationErrors } from "@/app/api/v1/osograph/utils/errors";
 import { TrinoClient } from "@/lib/clients/trino";
-import { ALLOWED_CONNECTORS } from "@/lib/types/dynamic-connector";
+import {
+  ALLOWED_CONNECTORS,
+  ConnectorType,
+} from "@/lib/types/dynamic-connector";
 import { DynamicConnectorsRow } from "@/lib/types/schema-types";
+
+const REQUIRED_CONFIG_FIELDS: Record<ConnectorType, string[]> = {
+  postgresql: ["connection-url", "connection-user"],
+  gsheets: ["metadata-sheet-id"],
+  bigquery: ["project-id"],
+};
+
+const REQUIRED_CREDENTIALS_FIELDS: Record<ConnectorType, string[]> = {
+  postgresql: ["connection-password"],
+  gsheets: ["credentials-key"],
+  bigquery: ["credentials-key"],
+};
 
 // TODO(icaro): change this to use orgId
 export function getCatalogName(connector: DynamicConnectorsRow) {
@@ -10,10 +25,13 @@ export function getCatalogName(connector: DynamicConnectorsRow) {
 
 export function validateDynamicConnector(
   name: string,
-  connectorType: string,
+  connectorType: ConnectorType,
+  config: Record<string, unknown>,
+  credentials: Record<string, unknown>,
   orgName: string,
 ) {
-  if (!ALLOWED_CONNECTORS.find((c) => c === connectorType)) {
+  const type = ALLOWED_CONNECTORS.find((c) => c === connectorType);
+  if (!type) {
     throw ValidationErrors.validationFailed(
       [],
       `Invalid connector type: ${connectorType}. Allowed types are: ${ALLOWED_CONNECTORS.join(
@@ -28,6 +46,45 @@ export function validateDynamicConnector(
       [],
       `Invalid connector name: ${name}. Connector name must start with the organization name: ${orgName}`,
     );
+  }
+  const requiredConfigFields = REQUIRED_CONFIG_FIELDS[connectorType] || [];
+  const missingConfigFields = requiredConfigFields.filter(
+    (field) => !(field in config) || config[field] === "",
+  );
+  if (missingConfigFields.length > 0) {
+    throw ValidationErrors.validationFailed(
+      [],
+      `Missing required config fields for connector type ${connectorType}: ${missingConfigFields.join(
+        ", ",
+      )}`,
+    );
+  }
+  const requiredCredentialsFields =
+    REQUIRED_CREDENTIALS_FIELDS[connectorType] || [];
+  const missingCredentialsFields = requiredCredentialsFields.filter(
+    (field) => !(field in credentials) || credentials[field] === "",
+  );
+  if (missingCredentialsFields.length > 0) {
+    throw ValidationErrors.validationFailed(
+      [],
+      `Missing required credentials fields for connector type ${connectorType}: ${missingCredentialsFields.join(
+        ", ",
+      )}`,
+    );
+  }
+  const allFields = {
+    ...config,
+    ...credentials,
+  };
+
+  const quotesRegex = /['"`]/;
+  for (const [key, value] of Object.entries(allFields)) {
+    if (typeof value === "string" && quotesRegex.test(value)) {
+      throw ValidationErrors.validationFailed(
+        [],
+        `Field "${key}" contains invalid characters (quotes). Please remove any single or double quotes from the value.`,
+      );
+    }
   }
 }
 
