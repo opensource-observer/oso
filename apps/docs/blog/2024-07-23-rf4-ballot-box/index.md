@@ -8,7 +8,7 @@ image: ./ballot-box-rf4.png
 
 The voting results for Optimism's Retro Funding Round 4 (RF4) were tallied last week and [shared with the community](https://community.optimism.io/docs/citizen-house/retropgf-4/).
 
-This is the last in a [series of posts](https://docs.opensource.observer/blog/impact-metrics-rf4-deep-dive) on RF4, analyzing the ballot data from different angles. First, we cover high-level trends among voters. Then, we compare voters’ expressed preferences (from a pre-round survey) against their revealed preferences (from the voting data). Finally, we perform some clustering analysis on the votes and identify three distinct “blocs” of voters.
+This is the last in a [series of posts](https://docs.oso.xyz/blog/impact-metrics-rf4-deep-dive) on RF4, analyzing the ballot data from different angles. First, we cover high-level trends among voters. Then, we compare voters’ expressed preferences (from a pre-round survey) against their revealed preferences (from the voting data). Finally, we perform some clustering analysis on the votes and identify three distinct “blocs” of voters.
 
 Retro Funding aims for iteration and improvement. We hope these insights can inform both the evolution of impact metrics and governance discussions around impact, badgeholder composition, and round design.
 
@@ -22,7 +22,7 @@ Here’s a quick overview of the results and round mechanics. A total of 10M OP 
 
 **The average badgeholder voted on five metrics.**
 
-While a few voters included all 16 metrics, most selected between 3 to 6 metrics, with a median of 5 metrics per ballot. Some metrics were closely related, such as `gas_fees` and `log_gas_fees`, which were the same metric on different scales (linear vs logarithmic). Half of the metrics relied on a “[trusted user model](https://docs.opensource.observer/blog/impact-metrics-rf4-deep-dive#trusted-user-model)”, considering different aspects of user and network activity.
+While a few voters included all 16 metrics, most selected between 3 to 6 metrics, with a median of 5 metrics per ballot. Some metrics were closely related, such as `gas_fees` and `log_gas_fees`, which were the same metric on different scales (linear vs logarithmic). Half of the metrics relied on a “[trusted user model](https://docs.oso.xyz/blog/impact-metrics-rf4-deep-dive#trusted-user-model)”, considering different aspects of user and network activity.
 
 ![histogram](output_10_1.png)
 
@@ -36,7 +36,7 @@ Combining related metrics, `gas_fees` and `log_gas_fees` appeared in 94 out of 1
 
 **The final distribution was a power law distribution.**
 
-Previous rounds, including [Optimism’s RF3](https://docs.opensource.observer/blog/what-builders-can-learn-from-retropgf3) and [Filecoin’s RetroPGF 1](https://docs.opensource.observer/blog/fil-retropgf-1), had relatively flat distributions. In RF3, the median project received 45K OP, while a top 10% project received 100K OP. In RF4, the median project received just 13K, while a top 10% project received 117K OP. Despite RF4’s smaller overall funding (10M vs 30M tokens), top projects did significantly better, up to a cap of 500K tokens.
+Previous rounds, including [Optimism’s RF3](https://docs.oso.xyz/blog/what-builders-can-learn-from-retropgf3) and [Filecoin’s RetroPGF 1](https://docs.oso.xyz/blog/fil-retropgf-1), had relatively flat distributions. In RF3, the median project received 45K OP, while a top 10% project received 100K OP. In RF4, the median project received just 13K, while a top 10% project received 117K OP. Despite RF4’s smaller overall funding (10M vs 30M tokens), top projects did significantly better, up to a cap of 500K tokens.
 
 ![distro-all](output_13_1.png)
 

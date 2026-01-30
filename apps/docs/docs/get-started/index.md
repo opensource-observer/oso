@@ -3,7 +3,7 @@ title: "Get started"
 sidebar_position: 0
 ---
 
-[Open Source Observer](https://www.opensource.observer)
+[Open Source Observer](https://www.oso.xyz)
 is a community effort for measuring the impact of open source software.
 Our data and models evolve with the community in a way that is
 [open source, open data, open infrastructure](../../blog/open-source-open-data-open-infra).

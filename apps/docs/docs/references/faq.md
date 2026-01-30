@@ -10,7 +10,7 @@ sidebar_position: 21
 Open Source Observer is a public good.
 All of our code is [open source](https://github.com/opensource-observer/oso/).
 All of our data sets and models are [open data](../integrate/datasets/index.mdx).
-All of our infrastructure is [open](https://dagster.opensource.observer/locations) too.
+All of our infrastructure is [open](https://dagster.oso.xyz/locations) too.
 If we are going to transform funding for public goods,
 we need to live by an open source ethos.
 We are supported by grants from our generous partners, which pay for
@@ -21,7 +21,7 @@ If you want to support us, please reach out at
 
 ### I'm brand new. How do I get started?
 
-Join our [Discord](https://www.opensource.observer/discord).
+Join our [Discord](https://www.oso.xyz/discord).
 This is where we hang out most of the time and usually the best place
 to introduce yourself and ask questions.
 If you know what you're looking for, our docs are the best place
@@ -78,7 +78,7 @@ where every part of our stack is supported by a diverse network of contributors,
 
 Together, we are building a rich dependency tree of open data sets,
 which you can see on our
-[Dagster dashboard](https://dagster.opensource.observer/assets).
+[Dagster dashboard](https://dagster.oso.xyz/assets).
 Every data asset is maintained by a dedicated contributor and refreshed regularly.
 Each contributor has their own upstream dependencies and downstream dependents.
 New contributors can build on any existing data asset, including hundreds

@@ -168,4 +168,4 @@ We won't go into detail of every returning project, but here are some high level
 
 Like past iterations, the signal-to-noise ratio is very high among projects on the Octant app. The deadline to allocate rewards to these projects is 30 April 2024. If you're a staker, go allocate now! To allocate or find more information about the current set of projects, check out the [Octant App](https://octant.app/projects).
 
-If you are interested in contributing to analysis like this, we invite you to join [our data collective](https://opensource.observer/data-collective). You can also view the queries and analysis Notebook behind this and other Octant reports [here](https://github.com/opensource-observer/insights/tree/main/analysis/octant).
+If you are interested in contributing to analysis like this, we invite you to join [our data collective](https://oso.xyz/data-collective). You can also view the queries and analysis Notebook behind this and other Octant reports [here](https://github.com/opensource-observer/insights/tree/main/analysis/octant).

@@ -21,7 +21,7 @@ This post shows how you can use OSO to:
 <!-- truncate -->
 
 :::info
-You can execute these queries on the OSO Data Lake in BigQuery by following the instructions [here](https://docs.opensource.observer/docs/integrate/query-data) or setting up a local [Jupyter Notebook environment](https://docs.opensource.observer/docs/guides/notebooks/jupyter/) and using the tutorial Notebook available [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_gitcoin_tutorial.ipynb).
+You can execute these queries on the OSO Data Lake in BigQuery by following the instructions [here](https://docs.oso.xyz/docs/integrate/query-data) or setting up a local [Jupyter Notebook environment](https://docs.oso.xyz/docs/guides/notebooks/jupyter/) and using the tutorial Notebook available [here](https://github.com/opensource-observer/insights/blob/main/community/notebooks/oso_gitcoin_tutorial.ipynb).
 :::
 
 ### How to find a Gitcoin Grantee in OSO
@@ -269,4 +269,4 @@ The collaboration between OSO and Gitcoin paves the way for more community data 
 
 As the partnership progresses into the next phase, we will share more use cases and examples of how data is improving Gitcoin’s grant management and go-to-market.
 
-If you have any questions or feedback, please say hi on [Discord](https://www.opensource.observer/discord).
+If you have any questions or feedback, please say hi on [Discord](https://www.oso.xyz/discord).

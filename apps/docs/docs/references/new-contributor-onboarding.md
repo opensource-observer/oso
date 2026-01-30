@@ -64,12 +64,12 @@ You should be able to run `pnpm validate` successfully.
 
 ### Connect with the Team
 
-1. **Join Discord** - [OSO Discord Server](https://www.opensource.observer/discord)
+1. **Join Discord** - [OSO Discord Server](https://www.oso.xyz/discord)
    - Introduce yourself in the `#lobby` channel with:
      - Your name / GitHub profile
      - Brief background
      - What you'd like to work on
-2. **Join Gather** - [OSO Gather Space](https://www.opensource.observer/gather)
+2. **Join Gather** - [OSO Gather Space](https://www.oso.xyz/gather)
    - Recommended if you plan to contribute 10+ hours per week
 
 ### Daily Stand-up

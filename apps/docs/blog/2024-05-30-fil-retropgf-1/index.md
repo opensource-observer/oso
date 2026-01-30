@@ -18,7 +18,7 @@ This post will explore the results from a different angle, looking specifically 
 
 It will conclude with some brief thoughts on how metrics can help with evaluation in future RetroPGF rounds.
 
-As always, you can view the analysis notebooks [here](https://github.com/opensource-observer/insights/tree/main/analysis/filecoin/fil_retropgf) and run your own analysis using Open Source Observer data by going [here](https://docs.opensource.observer/docs/get-started/). If you want additional context for how the round was run, check out the complete Notion guide [here](https://fil-retropgf.notion.site/FIL-RetroPGF-4b6f5358440043c8bb1bf53f0297541e).
+As always, you can view the analysis notebooks [here](https://github.com/opensource-observer/insights/tree/main/analysis/filecoin/fil_retropgf) and run your own analysis using Open Source Observer data by going [here](https://docs.oso.xyz/docs/get-started/). If you want additional context for how the round was run, check out the complete Notion guide [here](https://fil-retropgf.notion.site/FIL-RetroPGF-4b6f5358440043c8bb1bf53f0297541e).
 
 <!-- truncate -->
 

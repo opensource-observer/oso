@@ -66,6 +66,6 @@ There are several ways to contribute impact metrics:
 
 We're building a network of Impact Data Scientists and want to support your contributions:
 
-- Join our [Discord](https://www.opensource.observer/discord) to connect with other contributors
+- Join our [Discord](https://www.oso.xyz/discord) to connect with other contributors
 - Post questions in our [GitHub Discussions](https://github.com/opensource-observer/oso/discussions)
 - Apply to [join the Data Collective](https://www.kariba.network/) for deeper involvement
