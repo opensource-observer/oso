@@ -96,6 +96,28 @@ function bypassesResourcePermissions(orgRole: OrgRole): boolean {
 }
 
 /**
+ * Validates that a permission level meets the required minimum and returns
+ * the ResourceAccessResult, or throws an authorization error.
+ *
+ * @param permissionLevel User's actual permission level
+ * @param requiredPermission Minimum permission level needed
+ * @returns ResourceAccessResult with admin client and permission level
+ * @throws {AuthenticationErrors.notAuthorized()} if permission is insufficient
+ */
+function validateAndReturnResourceAccess(
+  permissionLevel: PermissionLevel,
+  requiredPermission: PermissionLevel,
+): ResourceAccessResult {
+  if (hasMinimumPermission(permissionLevel, requiredPermission)) {
+    return {
+      client: createAdminClient(),
+      permissionLevel: permissionLevel as Exclude<PermissionLevel, "none">,
+    };
+  }
+  throw AuthenticationErrors.notAuthorized();
+}
+
+/**
  * Get a Supabase admin client for system-level operations.
  * Validates that systemCredentials are present in the context.
  *
@@ -150,8 +172,17 @@ export async function getOrgScopedClient(
   orgId: string,
 ): Promise<OrgAccessResult> {
   const user = requireAuthentication(context.user);
-  const client = createAdminClient();
+  const cacheKey = `${user.userId}:${orgId}`;
 
+  const cachedRole = context.authCache.orgMemberships.get(cacheKey);
+  if (cachedRole) {
+    return {
+      client: createAdminClient(),
+      orgRole: cachedRole as OrgRole,
+    };
+  }
+
+  const client = createAdminClient();
   const { data: membership } = await client
     .from("users_by_organization")
     .select("user_role")
@@ -164,10 +195,10 @@ export async function getOrgScopedClient(
     throw AuthenticationErrors.notAuthorized();
   }
 
-  return {
-    client,
-    orgRole: membership.user_role as OrgRole,
-  };
+  const orgRole = membership.user_role as OrgRole;
+  context.authCache.orgMemberships.set(cacheKey, orgRole);
+
+  return { client, orgRole };
 }
 
 /**
@@ -234,6 +265,16 @@ export async function getOrgResourceClient(
   requiredPermission: Exclude<PermissionLevel, "none"> = "read",
 ): Promise<ResourceAccessResult> {
   const user = requireAuthentication(context.user);
+  const cacheKey = `${user.userId}:${resourceType}:${resourceId}`;
+
+  const cachedPermission = context.authCache.resourcePermissions.get(cacheKey);
+  if (cachedPermission) {
+    return validateAndReturnResourceAccess(
+      cachedPermission as PermissionLevel,
+      requiredPermission,
+    );
+  }
+
   const client = createAdminClient();
   const config = RESOURCE_CONFIG[resourceType];
 
@@ -260,6 +301,7 @@ export async function getOrgResourceClient(
 
   if (orgRole && bypassesResourcePermissions(orgRole)) {
     const permissionLevel = orgRole === "owner" ? "owner" : "admin";
+    context.authCache.resourcePermissions.set(cacheKey, permissionLevel);
     return { client, permissionLevel };
   }
 
@@ -273,20 +315,13 @@ export async function getOrgResourceClient(
 
   if (userPermission) {
     const userLevel = userPermission.permission_level as PermissionLevel;
-    if (hasMinimumPermission(userLevel, requiredPermission)) {
-      return {
-        client,
-        permissionLevel: userLevel as Exclude<PermissionLevel, "none">,
-      };
-    }
-    throw AuthenticationErrors.notAuthorized();
+    context.authCache.resourcePermissions.set(cacheKey, userLevel);
+    return validateAndReturnResourceAccess(userLevel, requiredPermission);
   }
 
   if (orgRole === "member") {
-    if (hasMinimumPermission("read", requiredPermission)) {
-      return { client, permissionLevel: "read" };
-    }
-    throw AuthenticationErrors.notAuthorized();
+    context.authCache.resourcePermissions.set(cacheKey, "read");
+    return validateAndReturnResourceAccess("read", requiredPermission);
   }
 
   const { data: publicPermission } = await client
@@ -299,12 +334,8 @@ export async function getOrgResourceClient(
 
   if (publicPermission) {
     const publicLevel = publicPermission.permission_level as PermissionLevel;
-    if (hasMinimumPermission(publicLevel, requiredPermission)) {
-      return {
-        client,
-        permissionLevel: publicLevel as Exclude<PermissionLevel, "none">,
-      };
-    }
+    context.authCache.resourcePermissions.set(cacheKey, publicLevel);
+    return validateAndReturnResourceAccess(publicLevel, requiredPermission);
   }
 
   throw AuthenticationErrors.notAuthorized();
