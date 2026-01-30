@@ -14,7 +14,7 @@ that the community aims to achieve together.
 
 You can find our status page here:
 
-[https://www.opensource.observer/status](https://www.opensource.observer/status)
+[https://www.oso.xyz/status](https://www.oso.xyz/status)
 
 ## Service Definition
 
@@ -22,11 +22,11 @@ OSO is constantly experimenting with new technology and services
 to improve our infrastructure.
 We only aim to provide service availability for the following mature services:
 
-- [Dagster](https://dagster.opensource.observer)
-- [sqlmesh pipeline](https://dagster.opensource.observer/assets/sqlmesh?view=folder)
-- [API](https://www.opensource.observer/graphql)
-- [Frontend](https://www.opensource.observer)
-- [Documentation](https://docs.opensource.observer)
+- [Dagster](https://dagster.oso.xyz)
+- [sqlmesh pipeline](https://dagster.oso.xyz/assets/sqlmesh?view=folder)
+- [API](https://www.oso.xyz/graphql)
+- [Frontend](https://www.oso.xyz)
+- [Documentation](https://docs.oso.xyz)
 
 ## OSO Data
 
@@ -39,15 +39,15 @@ categorize this data into three main types
 At this time the dagster assets aren't properly grouped. However, once they are
 we should use the global asset lineage as the source of truth for asset health.
 
-[See here](https://admin-dagster.opensource.observer/asset-groups)
+[See here](https://admin-dagster.oso.xyz/asset-groups)
 :::
 
-- [Core Source Data](https://admin-dagster.opensource.observer/locations/default/jobs/materialize_core_assets_job)
+- [Core Source Data](https://admin-dagster.oso.xyz/locations/default/jobs/materialize_core_assets_job)
   - Project related data (oss-directory, op-atlas)
   - Github data
   - Superchain data
   - Anything labeled `core`
-- [Unstable Source Data](https://admin-dagster.opensource.observer/locations/default/jobs/materialize_unstable_source_assets_job)
+- [Unstable Source Data](https://admin-dagster.oso.xyz/locations/default/jobs/materialize_unstable_source_assets_job)
   - Some external 3rd party data that is not guaranteed to be reliable and may
     change without notice.
   - This is _generally_ experimental data or data that is not necessary to be
@@ -128,11 +128,11 @@ The following are the internal service level objectives (SLOs) for OSO. These ar
     - SQLMesh data audits are all-or-nothing, so they must pass or a sqlmesh materialization will fail.
 - Public Applications
   - Scope
-    - [Dagster](https://dagster.opensource.observer)
-    - [sqlmesh pipeline](https://dagster.opensource.observer/assets/sqlmesh?view=folder)
-    - [API](https://www.opensource.observer/graphql)
-    - [Frontend](https://www.opensource.observer)
-    - [Documentation](https://docs.opensource.observer)
+    - [Dagster](https://dagster.oso.xyz)
+    - [sqlmesh pipeline](https://dagster.oso.xyz/assets/sqlmesh?view=folder)
+    - [API](https://www.oso.xyz/graphql)
+    - [Frontend](https://www.oso.xyz)
+    - [Documentation](https://docs.oso.xyz)
   - Metrics
     - Availability
       - Value
@@ -195,4 +195,4 @@ Any service that does not meet its SLOs will trigger a remedial sprint to addres
 ## Outage Escalation
 
 The best way to get in touch with the team is via
-[Discord](https://www.opensource.observer/discord).
+[Discord](https://www.oso.xyz/discord).

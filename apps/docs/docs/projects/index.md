@@ -18,9 +18,9 @@ You can also check if your project is listed from [pyoso](../get-started/python.
 
 Before adding your project, check if it's already listed in [oss-directory](https://github.com/opensource-observer/oss-directory/tree/main/data/projects). Most projects are instantiated with the GitHub organization name as the project `name`. For example, Open Source Observer's project file is located at `./data/projects/o/opensource-observer.yaml`.
 
-Alternatively, you can search for projects directly in our [project explorer](https://www.opensource.observer/projects). If you locate it, then the slug in the URL is the project name. For example, `opensource-observer` is at `https://www.opensource.observer/projects/opensource-observer`.
+Alternatively, you can search for projects directly in our [project explorer](https://www.oso.xyz/projects). If you locate it, then the slug in the URL is the project name. For example, `opensource-observer` is at `https://www.oso.xyz/projects/opensource-observer`.
 
-If you're a developer, you can also lookup a project directly from [our GraphQL API](https://www.opensource.observer/graphql). Here's an example query to find the project that owns the _artifact_ `github.com/opensource-observer/oso`:
+If you're a developer, you can also lookup a project directly from [our GraphQL API](https://www.oso.xyz/graphql). Here's an example query to find the project that owns the _artifact_ `github.com/opensource-observer/oso`:
 
 ```python
 query = """
@@ -279,7 +279,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 
 ### 5. Monitor indexing status of your project data
 
-Once your pull request is merged, you can check whether your project data has been indexed by querying [our GraphQL API](https://www.opensource.observer/graphql). Here's an example query to see that the _artifact_ `github.com/opensource-observer/oso` has been indexed:
+Once your pull request is merged, you can check whether your project data has been indexed by querying [our GraphQL API](https://www.oso.xyz/graphql). Here's an example query to see that the _artifact_ `github.com/opensource-observer/oso` has been indexed:
 
 ```graphql
 query findProject {

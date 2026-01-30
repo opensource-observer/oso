@@ -170,7 +170,7 @@ Our dbt models are located in `warehouse/dbt/models/` and follow these conventio
 
 4. **Submit PR**
    - Models are deployed automatically after merge to main
-   - Monitor runs in Dagster UI: [https://dagster.opensource.observer](https://dagster.opensource.observer)
+   - Monitor runs in Dagster UI: [https://dagster.oso.xyz](https://dagster.oso.xyz)
 
 ## FAQ
 

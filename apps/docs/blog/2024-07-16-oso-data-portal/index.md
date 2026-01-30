@@ -28,7 +28,7 @@ and [Lens](../../docs/integrate/datasets#lens) data.
 To learn more, check out the data portal here:
 
 <p style={{"text-align": "center"}}>
-[opensource.observer/data](https://www.opensource.observer/data)
+[opensource.observer/data](https://www.oso.xyz/data)
 </p>
 
 ![data portal](./landing-page.png)
@@ -44,32 +44,32 @@ A huge thank you to our data partners from
 
 We are living in a world where open ecosystems are out-innovating closed ecosystems.
 As firm believers in the power of open source, we are growing a
-[network of impact data scientists](https://docs.opensource.observer/blog/impact-data-scientists)
+[network of impact data scientists](https://docs.oso.xyz/blog/impact-data-scientists)
 to help demonstrate and visualize the immense impact that
 open source software is having on the world, starting with crypto ecosystems.
 We hope that better understanding of the impact of open source will lead to
 better appreciation, higher engagement, and ultimately deeper investments
 into open source technologies.
 For example, OSO data is used in the latest
-[Optimism retrofunding round](https://docs.opensource.observer/blog/impact-metrics-rf4-deep-dive)
+[Optimism retrofunding round](https://docs.oso.xyz/blog/impact-metrics-rf4-deep-dive)
 to distribute >$10M to builders.
 
 ## What can I do with this data?
 
-We have written [several guides](https://docs.opensource.observer/docs/integrate/)
+We have written [several guides](https://docs.oso.xyz/docs/integrate/)
 on how to leverage this data, from immediately
-[making queries in BigQuery](https://docs.opensource.observer/docs/get-started/),
+[making queries in BigQuery](https://docs.oso.xyz/docs/get-started/),
 to exploring the data in a
-[Python notebook](https://docs.opensource.observer/docs/integrate/python-notebooks),
+[Python notebook](https://docs.oso.xyz/docs/integrate/python-notebooks),
 to integrating with a
-[3rd party data tool](https://docs.opensource.observer/docs/integrate/3rd-party),
-like [Hex](https://docs.opensource.observer/docs/integrate/3rd-party#hex-example),
+[3rd party data tool](https://docs.oso.xyz/docs/integrate/3rd-party),
+like [Hex](https://docs.oso.xyz/docs/integrate/3rd-party#hex-example),
 or [Tableau](https://cloud.google.com/bigquery/docs/analyze-data-tableau).
 If you end up using this data, we only ask that you share what you've learned and tag us
 [@OSObserver](https://x.com/osobserver).
 
 You should start by subscribing to a dataset from our
-[Data Overview](https://docs.opensource.observer/docs/integrate/overview/).
+[Data Overview](https://docs.oso.xyz/docs/integrate/overview/).
 Once you've subscribed, you can run queries in your favorite data tool.
 
 For example to get a summary of code activity for
@@ -124,6 +124,6 @@ which is continuously deployed from our
 
 If you love supporting open source like we do, reach out to us over
 [email](mailto:info@karibalabs.co) or
-[Discord](https://www.opensource.observer/discord). We are hiring founding engineers,
-[onboarding new data sources](https://docs.opensource.observer/docs/contribute/),
+[Discord](https://www.oso.xyz/discord). We are hiring founding engineers,
+[onboarding new data sources](https://docs.oso.xyz/docs/contribute/),
 and working with our partners to evolve our understanding of impact.

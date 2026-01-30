@@ -163,4 +163,4 @@ To explore the clusters in detail, [**click here**](https://octant-epoch-analysi
 
 By making the data both accessible and interactive, we hope that funders, project teams, and the broader community can utilize this data to tailor strategies, drive meaningful impact, and optimize funding decisions. With these tools, we can collectively amplify open source innovation and shape the future of thriving digital ecosystems.
 
-If you're interested in forking this, running your own grant analytics, or an aspiring [impact data scientist](https://docs.opensource.observer/blog/impact-data-scientists/), please reach out on [Discord](https://www.opensource.observer/discord). We'd love to collaborate.
+If you're interested in forking this, running your own grant analytics, or an aspiring [impact data scientist](https://docs.oso.xyz/blog/impact-data-scientists/), please reach out on [Discord](https://www.oso.xyz/discord). We'd love to collaborate.

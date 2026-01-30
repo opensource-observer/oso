@@ -20,7 +20,7 @@ Let's make your first query in under five minutes.
 
 ## Generate an API key
 
-1. [Log in](https://www.opensource.observer/login) to your account
+1. [Log in](https://www.oso.xyz/login) to your account
 2. Navigate to your organization's **Settings → API Keys**
 3. Click **"New Key +"** and give it a descriptive name
 4. **Save your key immediately** - you won't see it again
@@ -28,7 +28,7 @@ Let's make your first query in under five minutes.
 <details>
 <summary>Detailed step-by-step instructions</summary>
 
-1. Go to [www.opensource.observer](https://www.opensource.observer/login) and log in
+1. Go to [www.opensource.observer](https://www.oso.xyz/login) and log in
 2. You'll be redirected to your organization dashboard
 3. In the left sidebar, click the dropdown next to your organization name
 4. Select **"Settings"**
@@ -44,7 +44,7 @@ Let's make your first query in under five minutes.
 ## Prepare your query
 
 You can navigate to our
-[public GraphQL explorer](https://www.opensource.observer/graphql)
+[public GraphQL explorer](https://www.oso.xyz/graphql)
 to explore the schema and execute test queries.
 
 ![GraphQL explorer](../integrate/api-explorer.gif)
@@ -70,7 +70,7 @@ query GetProjects {
 All API requests are sent to the following URL:
 
 ```
-https://www.opensource.observer/api/v1/graphql
+https://www.oso.xyz/api/v1/graphql
 ```
 
 In order to authenticate with the API service, you have to use the `Authorization` HTTP header and `Bearer` authentication on all HTTP requests
@@ -83,7 +83,7 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $DEVELOPER_API_KEY" \
   -d '{"query":"query GetProjects { oso_projectsV1(limit: 10) { description displayName projectId projectName projectNamespace projectSource } }"}' \
-  https://www.opensource.observer/api/v1/graphql
+  https://www.oso.xyz/api/v1/graphql
 ```
   </TabItem>
   <TabItem value="javascript" label="JavaScript">
@@ -105,7 +105,7 @@ const headers = {
   'Authorization': `Bearer ${DEVELOPER_API_KEY}`,
 };
 
-const response = await fetch('https://www.opensource.observer/api/v1/graphql', {
+const response = await fetch('https://www.oso.xyz/api/v1/graphql', {
   method: 'POST',
   headers: headers,
   body: JSON.stringify({
@@ -140,7 +140,7 @@ headers = {
 }
 
 response = requests.post(
-    'https://www.opensource.observer/api/v1/graphql',
+    'https://www.oso.xyz/api/v1/graphql',
     json={'query': query},
     headers=headers
 )

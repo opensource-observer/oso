@@ -11,7 +11,7 @@ This guide explains how to import data into OSO using Google Cloud Storage (GCS)
 
 We strongly prefer data partners that can provide updated live datasets over static snapshots. Datasets that use this method will require OSO sponsorship for storing the data, as we take on the costs of converting it into a BigQuery dataset and associated long-term storage costs.
 
-If you believe your data storage qualifies to be sponsored by OSO, please reach out to us on [Discord](https://www.opensource.observer/discord).
+If you believe your data storage qualifies to be sponsored by OSO, please reach out to us on [Discord](https://www.oso.xyz/discord).
 
 :::note Alternative Options
 If you prefer to handle the data storage yourself, check out the [Connect via BigQuery guide](./bq-data-transfer.md).
@@ -21,7 +21,7 @@ If you prefer to handle the data storage yourself, check out the [Connect via Bi
 
 ### 1. Set Up GCS Access
 
-Coordinate with the OSO engineering team directly on [Discord](https://www.opensource.observer/discord) to:
+Coordinate with the OSO engineering team directly on [Discord](https://www.oso.xyz/discord) to:
 
 - Get write permissions to our GCS bucket
 - Set up your Google service account
@@ -152,4 +152,4 @@ In the [OSO monorepo](https://github.com/opensource-observer/oso), you'll find m
 3. Create your asset file in the `warehouse/oso_dagster/assets/` directory
 4. Test your asset locally using the [Dagster tutorial](https://docs.dagster.io/tutorial)
 
-Need help? Reach out to us on [Discord](https://www.opensource.observer/discord).
+Need help? Reach out to us on [Discord](https://www.oso.xyz/discord).

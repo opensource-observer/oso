@@ -92,7 +92,7 @@ For the asset to run in OSO production, we will need access to
 your secrets (e.g. password or connection string).
 At this time there is no automated process for this.
 You can contact the OSO team on our
-[Discord](https://www.opensource.observer/discord).
+[Discord](https://www.oso.xyz/discord).
 Be prepared to provide credentials via a secure method of transmission.
 Also remember to update any firewall settings that may be required for us
 to access your database server.

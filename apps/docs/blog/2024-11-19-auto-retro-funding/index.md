@@ -31,7 +31,7 @@ hard to scale**, limiting their potential.
 Take [Optimism’s Retro Funding](https://retrofunding.optimism.io) as an example.
 Each round involves hundreds of hours of scoring and deliberation by voters, and
 even then, **fair fund allocation isn’t guaranteed**
-([source](https://docs.opensource.observer/blog/rf5-ballot-box)). Human scoring
+([source](https://docs.oso.xyz/blog/rf5-ballot-box)). Human scoring
 is not only tedious but can also create perverse incentives, like prioritizing
 popularity over true merit.
 

@@ -8,7 +8,7 @@ image: ./events-model.png
 
 Voting for Optimism’s fourth round of Retroactive Public Goods Funding (“Retro Funding”) opened on June 27 and will run until July 11, 2024. You can check out the voting interface [here](https://round4.optimism.io/welcome).
 
-As discussed in our companion post, [Impact Metrics for Optimism Retro Funding 4](https://docs.opensource.observer/blog/impact-metrics-rf4), the round is a significant departure from the previous three rounds. This round, voters will be comparing just 16 metrics – and using their ballots to construct a weighting function that can be applied consistently to the roughly 200 projects in the round.
+As discussed in our companion post, [Impact Metrics for Optimism Retro Funding 4](https://docs.oso.xyz/blog/impact-metrics-rf4), the round is a significant departure from the previous three rounds. This round, voters will be comparing just 16 metrics – and using their ballots to construct a weighting function that can be applied consistently to the roughly 200 projects in the round.
 
 This post is a deeper dive on the work we did at Open Source Observer to help organize data about projects and prepare Optimism badgeholders for voting.
 
@@ -18,7 +18,7 @@ This post is a deeper dive on the work we did at Open Source Observer to help or
 
 We built a first-of-its-kind data pipeline for the Superchain: not only the data but also all source code, query logic, and underlying infrastructure is publicly available for use. We aren’t aware of any other fully open data pipelines of this size or complexity built this way.
 
-You can check out the docs for how to get or build on top of the data [here](https://docs.opensource.observer/docs/integrate/).
+You can check out the docs for how to get or build on top of the data [here](https://docs.oso.xyz/docs/integrate/).
 
 ![image](./data-overview.png)
 
@@ -26,7 +26,7 @@ You can also see the full data model [here](https://models.opensource.observer/#
 
 ![image](./data-model.png)
 
-You can even view the complete pipeline and see the status of each job [here](https://dagster.opensource.observer/).
+You can even view the complete pipeline and see the status of each job [here](https://dagster.oso.xyz/).
 
 ![image](./data-pipeline.png)
 
@@ -36,7 +36,7 @@ Although this infrastructure was critical to generating the metrics for RF4, it 
 
 There previously didn’t exist a unified transaction + trace model for the Superchain. Dune, for example, [currently](https://docs.dune.com/data-catalog/overview#evm-chains) includes Base, Optimism mainnet, and Zora chains – but not Frax, Metal, or Mode.
 
-With data generously provided by GoldSky, Open Source Observer built a unified Superchain event model which anyone [can access directly](https://docs.opensource.observer/docs/integrate/) and do whatever they want with. Although the model contains all Superchain transactions and traces, it does not have logs in it (yet).
+With data generously provided by GoldSky, Open Source Observer built a unified Superchain event model which anyone [can access directly](https://docs.oso.xyz/docs/integrate/) and do whatever they want with. Although the model contains all Superchain transactions and traces, it does not have logs in it (yet).
 
 A unified events model means you can write a query like this:
 
@@ -48,7 +48,7 @@ where
   and event_type = ‘CONTRACT_INVOCATION_DAILY_COUNT’
 ```
 
-And generate a graph that looks like this in your [preferred visualization tool](https://docs.opensource.observer/docs/integrate/3rd-party):
+And generate a graph that looks like this in your [preferred visualization tool](https://docs.oso.xyz/docs/integrate/3rd-party):
 
 ![image](./events-model.png)
 
@@ -76,7 +76,7 @@ As described in [our docs](../../docs/guides/oss-directory/artifact), OSS Direct
 
 ![image](./oss-directory.png)
 
-You can get the data by cloning the repo, through [our API](https://docs.opensource.observer/docs/integrate/api), and as an [NPM package](https://docs.opensource.observer/docs/integrate/oss-directory#npm-library). We also quietly released a [Python package](https://pypi.org/project/oss-directory/) last week! You can install it with `pip install oss-directory`.
+You can get the data by cloning the repo, through [our API](https://docs.oso.xyz/docs/integrate/api), and as an [NPM package](https://docs.oso.xyz/docs/integrate/oss-directory#npm-library). We also quietly released a [Python package](https://pypi.org/project/oss-directory/) last week! You can install it with `pip install oss-directory`.
 
 ### Contract discovery model
 
@@ -160,7 +160,7 @@ The other exception was for transactions made to EOA bridges. These were treated
 
 There were many excellent suggestions for impact metrics leading up to the round.
 
-In the end, we arrived at a hopefully well-balanced set of 16 metrics. You can get the full details on the metrics from our companion post [here](https://docs.opensource.observer/blog/impact-metrics-rf4). We expect even more recommendations to emerge now that voting is open.
+In the end, we arrived at a hopefully well-balanced set of 16 metrics. You can get the full details on the metrics from our companion post [here](https://docs.oso.xyz/blog/impact-metrics-rf4). We expect even more recommendations to emerge now that voting is open.
 
 The governance forum also includes a [lengthy post](https://gov.optimism.io/t/retro-funding-4-impact-metrics-a-collective-experiment/8226) detailing the full process of arriving at a distilled set of impact metrics together with badgeholders.
 
@@ -184,13 +184,13 @@ Finally, we have a visualization of a more experimental metric: OpenRank Trusted
 
 ![image](./top-40.png)
 
-For more information about any of the metrics, you can see the [full list](https://docs.opensource.observer/blog/impact-metrics-rf4#current-metrics) or view the underlying model and source code [here](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project) or in [our GitHub](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain/metrics).
+For more information about any of the metrics, you can see the [full list](https://docs.oso.xyz/blog/impact-metrics-rf4#current-metrics) or view the underlying model and source code [here](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project) or in [our GitHub](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain/metrics).
 
 ## Links and resources to learn more
 
 Finally, we've included an appendix of relevant resources maintained by OSO:
 
-- Docs on how to directly query or integrate with OSO data: [https://docs.opensource.observer/docs/integrate/](https://docs.opensource.observer/docs/integrate/)
+- Docs on how to directly query or integrate with OSO data: [https://docs.oso.xyz/docs/integrate/](https://docs.oso.xyz/docs/integrate/)
 - Catalog (and compiled query logic) of all OSO models: [https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project)
 - Interactive visual of the complete data pipeline leading up to impact metrics: [https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project?g_v=1&g_i=%2Brf4_impact_metrics_by_project%2B](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project?g_v=1&g_i=%2Brf4_impact_metrics_by_project%2B)
 - Tagged project artifacts: [https://github.com/opensource-observer/oss-directory](https://github.com/opensource-observer/oss-directory)
@@ -198,4 +198,4 @@ Finally, we've included an appendix of relevant resources maintained by OSO:
 - Dumps of trusted addresses and contract attribution: [https://github.com/opensource-observer/insights/tree/main/analysis/optimism/retrofunding4/data](https://github.com/opensource-observer/insights/tree/main/analysis/optimism/retrofunding4/data)
 - CSV version of impact metrics: [https://github.com/opensource-observer/insights/blob/main/analysis/optimism/retrofunding4/data/op_rf4_impact_metrics_by_project.csv](https://github.com/opensource-observer/insights/blob/main/analysis/optimism/retrofunding4/data/op_rf4_impact_metrics_by_project.csv)
 
-If you have further questions, please reach out to us on [Discord](https://www.opensource.observer/discord). We're excited to see what the community builds on top of this data and how it can be used to inform future rounds of Retro Funding!
+If you have further questions, please reach out to us on [Discord](https://www.oso.xyz/discord). We're excited to see what the community builds on top of this data and how it can be used to inform future rounds of Retro Funding!

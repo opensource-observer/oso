@@ -15,6 +15,7 @@ for user operations on the website.
 - Authentication >> URL Configuration
   - Add allowed redirect URIs
     - `https://www.opensource.observer/**`
+    - `https://www.oso.xyz/**`
     - `http://localhost:3000/**`
 - Authentication >> Hooks
   - Enable the "hasura_token_hook" hook under the "public" schema
