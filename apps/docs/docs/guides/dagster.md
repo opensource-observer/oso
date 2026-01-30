@@ -24,7 +24,7 @@ in the future.
 ## Job schedules
 
 All automated job schedules can be found on our public
-[Dagster dashboard](https://dagster.opensource.observer/automation).
+[Dagster dashboard](https://dagster.oso.xyz/automation).
 
 Currently, our main data pipeline runs once per week on Sundays.
 
@@ -34,7 +34,7 @@ Dagster alert sensors are configured in
 [`warehouse/oso_dagster/factories/alerts.py`](https://github.com/opensource-observer/oso/blob/main/warehouse/oso_dagster/factories/alerts.py)
 
 Right now, alerts are reported to `#alerts` in the
-[OSO Discord server](https://www.opensource.observer/discord).
+[OSO Discord server](https://www.oso.xyz/discord).
 
 ## Secrets Management
 
@@ -86,7 +86,7 @@ You can see
 
 When you are ready to run your assets in production,
 please reach out to the core OSO team on
-[Discord](https://www.opensource.observer/discord).
+[Discord](https://www.oso.xyz/discord).
 We will arrange a secure way to share your secrets
 into our production keystore.
 

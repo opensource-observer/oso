@@ -146,4 +146,4 @@ After setting up your archive node:
 2. **Document node-specific configuration** for your team
 3. **Integrate with existing OSO infrastructure** (Dagster assets)
 
-For additional support, reach out to the OSO team through [Discord](https://www.opensource.observer/discord).
+For additional support, reach out to the OSO team through [Discord](https://www.oso.xyz/discord).

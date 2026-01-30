@@ -72,7 +72,7 @@ We're just getting started. In the coming months, we'll be adding support for:
 - Integration with visualization tools like Hex and Streamlit
 - More helper functions for common queries
 
-Regardless of whether you're an aspiring data scientist or seasoned SQL monkey, we'd love for you to try it out and show off your creations. You can also join our [Discord](https://www.opensource.observer/discord) to connect with other contributors and share what you're building.
+Regardless of whether you're an aspiring data scientist or seasoned SQL monkey, we'd love for you to try it out and show off your creations. You can also join our [Discord](https://www.oso.xyz/discord) to connect with other contributors and share what you're building.
 
 To learn more, check out the [Pyoso docs](../../docs/get-started/python).
 

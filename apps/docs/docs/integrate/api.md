@@ -15,13 +15,13 @@ and [Python notebooks](../guides/notebooks/index.mdx).
 All API requests are sent to the following URL:
 
 ```
-https://www.opensource.observer/api/v1/graphql
+https://www.oso.xyz/api/v1/graphql
 ```
 
 ### GraphQL Explorer
 
 You can navigate to our
-[public GraphQL explorer](https://www.opensource.observer/graphql)
+[public GraphQL explorer](https://www.oso.xyz/graphql)
 to explore the schema and execute test queries.
 
 ![GraphQL explorer](./api-explorer.gif)
@@ -34,7 +34,7 @@ The most stable models will be versioned mart models.
 We will monitor usage of mart models, both to ensure quality of service
 and to deprecate models that are no longer used.
 
-Please join us on [Discord](https://www.opensource.observer/discord) to stay up to date on updates.
+Please join us on [Discord](https://www.oso.xyz/discord) to stay up to date on updates.
 :::
 
 ### Example queries
@@ -118,5 +118,5 @@ All requests are rate limited. There are currently 2 separate rate limit tiers:
 - Developers who have been accepted into the [Kariba Data Collective](https://www.kariba.network) will be subject to a higher rate limit.
 
 :::warning
-We are still currently adjusting our rate limits based on capacity and demand. If you feel like your rate limit is too low, please reach out to us on our [Discord](https://www.opensource.observer/discord).
+We are still currently adjusting our rate limits based on capacity and demand. If you feel like your rate limit is too low, please reach out to us on our [Discord](https://www.oso.xyz/discord).
 :::

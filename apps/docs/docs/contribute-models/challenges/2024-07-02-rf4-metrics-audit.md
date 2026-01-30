@@ -21,7 +21,7 @@ The downstream models most relevant to this audit are available in interactive f
 
 The auditor will need a strong command of SQL and blockchain concepts. Experience with dbt and working in a BigQuery environment will be helpful.
 
-_Important: If you are interested in participating in the bounty, please join our [Discord](https://opensource.observer/discord) and provide a short introduction, including a link to your GitHub profile. We will review your profile and let you know if you are eligible to participate._
+_Important: If you are interested in participating in the bounty, please join our [Discord](https://oso.xyz/discord) and provide a short introduction, including a link to your GitHub profile. We will review your profile and let you know if you are eligible to participate._
 
 ## Scope of audit
 
@@ -75,7 +75,7 @@ The final deliverable should be sent by email to carl[at]karibalabs[dot]co
 
 ## Deadline
 
-If you are interested in participating, you must let us know (via [Discord](https://opensource.observer/discord)) by 2024-07-03 23:59 UTC.
+If you are interested in participating, you must let us know (via [Discord](https://oso.xyz/discord)) by 2024-07-03 23:59 UTC.
 
 The submission deadline for audit reports is 2024-07-08 23:59 UTC.
 

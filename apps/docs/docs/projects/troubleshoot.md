@@ -4,7 +4,7 @@ sidebar_position: 5
 ---
 
 :::tip
-If you can't find an answer to your question here, please jump into our [Discord](https://www.opensource.observer/discord) and ask in the #help channel. If you spot a bug or have a feature request, please [open an issue](https://github.com/opensource-observer/oso/issues).
+If you can't find an answer to your question here, please jump into our [Discord](https://www.oso.xyz/discord) and ask in the #help channel. If you spot a bug or have a feature request, please [open an issue](https://github.com/opensource-observer/oso/issues).
 :::
 
 You can troubleshoot your project from [pyoso](../get-started/python.md) or using our [GraphQL API](../get-started/api.mdx).
@@ -16,8 +16,8 @@ Our full indexer currently runs weekly on Sundays. Therefore, it may take up to 
 If it's been more than a week and you still don't see your project data, there are a few things you can check:
 
 - Confirm that your project is correctly listed in the [oss-directory](https://github.com/opensource-observer/oss-directory).
-- Check if we've pulled the data from oss-directory recently. Our pipeline is public and runs weekly. You can see the latest run [here](https://dagster.opensource.observer/assets/ossd).
-- Check if the full pipeline has run or encountered an error. You can see the status of the `projects_v1` model [here](https://dagster.opensource.observer/assets/dbt/production/projects_v1). If the latest run has failed, you will see a red X under "Latest materialization" at the top of the page.
+- Check if we've pulled the data from oss-directory recently. Our pipeline is public and runs weekly. You can see the latest run [here](https://dagster.oso.xyz/assets/ossd).
+- Check if the full pipeline has run or encountered an error. You can see the status of the `projects_v1` model [here](https://dagster.oso.xyz/assets/dbt/production/projects_v1). If the latest run has failed, you will see a red X under "Latest materialization" at the top of the page.
 
 If all of these checks pass, then try running a quick query in pyoso to confirm the data is missing:
 
@@ -30,7 +30,7 @@ WHERE project_name = 'your-project-name'
 df = client.to_pandas(query)
 ```
 
-If the project is still missing, send us a message in [Discord](https://www.opensource.observer/discord) and we'll take a look.
+If the project is still missing, send us a message in [Discord](https://www.oso.xyz/discord) and we'll take a look.
 
 ## My Project Started Earlier Than Your Data Shows
 
@@ -40,7 +40,7 @@ If your project began as part of a private repository, then we won't have event 
 
 If your project was initially created in another Git hosting service (eg, GitLab, Bitbucket, etc), then we won't have event data until the project was moved to GitHub.
 
-If your project has had multiple owners and/or aliases, then there could be an edge case in one of our models or in gharchive. You can add the historic aliases to the project file as additional `github` URLs. If this doesn't resolve the issue or you have some other bizarre edge case, please reach out to us in [Discord](https://www.opensource.observer/discord) and we'll take a look.
+If your project has had multiple owners and/or aliases, then there could be an edge case in one of our models or in gharchive. You can add the historic aliases to the project file as additional `github` URLs. If this doesn't resolve the issue or you have some other bizarre edge case, please reach out to us in [Discord](https://www.oso.xyz/discord) and we'll take a look.
 
 ## Someeone Else Claimed One of My Project Artifacts
 
@@ -154,7 +154,7 @@ If you run into issues, check out [GitHub's instructions](https://docs.github.co
 
 ### 5. Monitor indexing status of your project data
 
-Once your pull request is merged, you can check whether your project data has been indexed by querying [our GraphQL API](https://www.opensource.observer/graphql). Here's an example query to see that the _artifact_ `github.com/opensource-observer/oso` has been indexed:
+Once your pull request is merged, you can check whether your project data has been indexed by querying [our GraphQL API](https://www.oso.xyz/graphql). Here's an example query to see that the _artifact_ `github.com/opensource-observer/oso` has been indexed:
 
 ```graphql
 query findProject {
