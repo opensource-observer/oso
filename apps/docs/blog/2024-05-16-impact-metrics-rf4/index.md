@@ -34,7 +34,7 @@ This page explains where the metrics come from and includes a working list of al
 
 This section explains where the underlying data comes from and how it gets transformed.
 
-One thing to make crystal clear is that Open Source Observer relies 100% on public datasets, meaning anyone can verify the integrity of the source data. All of our code is open source, so anyone can audit our models and query logic. Finally, even our data pipelines and indexing infrastructure is open to the community, so you can run your own experiments, train your own models, even connect your own data sources! _You can read about OSO’s commitment to open source, open data, and open infrastructure [here](https://docs.opensource.observer/blog/open-source-open-data-open-infra)._
+One thing to make crystal clear is that Open Source Observer relies 100% on public datasets, meaning anyone can verify the integrity of the source data. All of our code is open source, so anyone can audit our models and query logic. Finally, even our data pipelines and indexing infrastructure is open to the community, so you can run your own experiments, train your own models, even connect your own data sources! _You can read about OSO’s commitment to open source, open data, and open infrastructure [here](https://docs.oso.xyz/blog/open-source-open-data-open-infra)._
 
 ### Data Sources
 
@@ -55,7 +55,7 @@ For metrics that look at transactions, we are collaborating with the OP data tea
 
 ![image|690x211](./data-transformations.png)
 
-The definitions and query logic for each impact model is available [here](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project). The underlying SQL/dbt is available on our GitHub [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain) and can be simulated in a data science environment by following the docs [here](https://docs.opensource.observer/docs/integrate/data-science).
+The definitions and query logic for each impact model is available [here](https://models.opensource.observer/#!/model/model.opensource_observer.rf4_impact_metrics_by_project). The underlying SQL/dbt is available on our GitHub [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain) and can be simulated in a data science environment by following the docs [here](https://docs.oso.xyz/docs/integrate/data-science).
 
 ### Metrics Framework
 
@@ -113,7 +113,7 @@ group by
   project_id
 ```
 
-Once again, all of the source code is available from our repo [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain). We recently wrapped a [data challenge](https://docs.opensource.observer/docs/contribute/challenges/2024-04-05_data_challenge_01/) to get analysts’ input and additional proposals for impact metrics.
+Once again, all of the source code is available from our repo [here](https://github.com/opensource-observer/oso/tree/main/warehouse/dbt/models/marts/superchain). We recently wrapped a [data challenge](https://docs.oso.xyz/docs/contribute/challenges/2024-04-05_data_challenge_01/) to get analysts’ input and additional proposals for impact metrics.
 
 ## Current Metrics
 

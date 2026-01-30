@@ -14,7 +14,7 @@ Occassionally we post data science bounties and run community competitions. Each
 See our list of [Data Challenges](./) or historical bounties on
 [Bountycaster](https://www.bountycaster.xyz/fid/19412).
 
-The best way to learn about new data bounties is to follow us on [Twitter](https://twitter.com/OSObserver) or join our [Discord](https://www.opensource.observer/discord).
+The best way to learn about new data bounties is to follow us on [Twitter](https://twitter.com/OSObserver) or join our [Discord](https://www.oso.xyz/discord).
 
 ## Ongoing Bounties
 

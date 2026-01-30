@@ -107,7 +107,7 @@ CLI will automatically start and manage the Docker container when needed.
 export OSO_API_KEY="your-oso-api-key-here"
 ```
 
-Get your API key from [OSO Dashboard](https://www.opensource.observer/).
+Get your API key from [OSO Dashboard](https://www.oso.xyz/).
 
 **Or create `~/.gemini/.env` file**:
 

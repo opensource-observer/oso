@@ -30,7 +30,7 @@ Dagster is the central data orchestration system, which manages the entire pipel
 from the data ingestion (e.g. via [dlt](https://docs.dagster.io/integrations/embedded-elt/dlt) connectors) to the [sqlmesh](https://github.com/opensource-observer/dagster-sqlmesh) pipeline.
 
 You can see our public Dagster dashboard at
-[https://dagster.opensource.observer/](https://dagster.opensource.observer/).
+[https://dagster.oso.xyz/](https://dagster.oso.xyz/).
 
 ### Data Lakehouse
 
@@ -67,7 +67,7 @@ on the systems used. This also powers the OSO website.
 ### OSO Website
 
 The OSO website is served at
-[https://www.opensource.observer](https://www.opensource.observer).
+[https://www.oso.xyz](https://www.oso.xyz).
 This website provides an easy to use public view into the data.
 We currently use [Next.js](https://nextjs.org/)
 hosted by [Vercel](https://vercel.com/).
@@ -84,7 +84,7 @@ All code is open source in our
 All data, including every stage in our pipeline, is publicly available via
 [pyoso](../get-started/python.md).
 All data orchestration is visible in our public
-[Dagster dashboard](https://dagster.opensource.observer/).
+[Dagster dashboard](https://dagster.oso.xyz/).
 
 You can read more about our open philosophy on our
 [blog](https://kariba.substack.com/p/open-source-open-data-open-infra).

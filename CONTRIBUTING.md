@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing! There are many ways to contribute, and this document should not be considered encompassing.
 
-If you have a general question on how to use and deploy our software, please read our [Documentation](https://docs.opensource.observer/docs/) or join our [community server on Discord](https://www.opensource.observer/discord).
+If you have a general question on how to use and deploy our software, please read our [Documentation](https://docs.oso.xyz/docs/) or join our [community server on Discord](https://www.oso.xyz/discord).
 
 For concrete feature requests and/or bug reports, please file an issue in this
 repository as described below.
@@ -69,7 +69,6 @@ Our development environment is documented in our [README](https://github.com/ope
 - **File issues:** Please make sure to first file an issue (i.e. feature request, bug report) before you actually start work on something.
 
 - **Create branches:** If you have write permissions to the repository, you can create user-id prefixed branches (e.g. user/feature/foobar) in the main repository. Otherwise, fork the main repository and create your branches there.
-
   - Good habit: regularly rebase to the `HEAD` of `main` branch of the main repository to make sure you prevent nasty conflicts:
 
     ```bash
@@ -86,13 +85,11 @@ Our development environment is documented in our [README](https://github.com/ope
     _Note that you are allowed to force push into your development branches._
 
 - **Use draft pull requests for work-in-progress:**
-
   - The draft state signals that the code is not ready for review, but still gives a nice URL to track the ongoing work.
 
 - _main_ branch is protected and will require at least 1 code review approval from a code owner before it can be merged.
 
 - When coding, please follow these standard practices:
-
   - **Write tests:** Especially when fixing bugs, make a test so we know that we’ve fixed the bug and prevent it from reappearing in the future.
   - **Logging:** Please follow the logging conventions in the rest of the code base.
   - **Instrumentation:** Please following the instrumentation conventions in the rest of the code.
@@ -103,11 +100,9 @@ Our development environment is documented in our [README](https://github.com/ope
 - **Documentation:** Please write documentation in the code as you go. If possible, also consider updating/augmenting the [developer documentation].
 
 - **Check CI:** Don’t break the build!
-
   - Make sure all tests pass before submitting your pull request for review.
 
 - **Signal PR review:**
-
   - Mark the draft pull request as _Ready for review_.
   - Please include good high-level descriptions of what the pull request does.
   - The description should include references to all GitHub issues addressed by the pull request. Include the status ("done", "partially done", etc).
@@ -115,7 +110,6 @@ Our development environment is documented in our [README](https://github.com/ope
   - After you are nearing review (and definitely before merge) **squash commits into logical parts** (avoid squashing over merged commits, use rebase first!). Use proper commit messages which explain what was changed in the given commit and why.
 
 - **Disclose AI use:**
-
   - If the PR was AI-generated, you must disclose the process that you used, including but not limited to:
     - Which agent did you use? (e.g. Claude Code, Cursor, Gemini, etc)
     - Which LLM model did you use? (e.g. GPT5, Sonnet, etc)
@@ -123,7 +117,6 @@ Our development environment is documented in our [README](https://github.com/ope
   - If we find that you did not take adequate measures to ensure the code quality of your submission, we will close your PR and ask you re-try.
 
 - **Get a code review:**
-
   - Code owners will be automatically assigned to review based on the files that were changed.
   - You can generally look up the last few people to edit the file to get the best person to review.
   - When addressing the review: Make sure to address all comments, and respond to them so that the reviewer knows what has happened (e.g. "done" or "acknowledged" or "I don't think so because ...").
