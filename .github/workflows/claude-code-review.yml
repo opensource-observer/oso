@@ -53,8 +53,8 @@ jobs:
             - If no security issues found, use `gh pr comment` to post one brief summary
             - Be concise: max 2 sentences per inline comment
           claude_args: |
-            --model claude-sonnet-4@20250514
-            --max-turns 15
+            --model ${{ vars.CLAUDE_MODEL }}
+            --max-turns ${{ vars.CLAUDE_MAX_TURNS }}
             --allowedTools "Read,Grep,Bash(git diff*),Bash(git status),Bash(git log),Bash(gh pr*),mcp__github_inline_comment__create_inline_comment"
             --disallowedTools "WebSearch,WebFetch"
 
@@ -101,7 +101,7 @@ jobs:
             - Post ONE summary comment at the end using `gh pr comment`
             - Be concise: max 2 sentences per inline comment
           claude_args: |
-            --model claude-sonnet-4@20250514
-            --max-turns 15
+            --model ${{ vars.CLAUDE_MODEL }}
+            --max-turns ${{ vars.CLAUDE_MAX_TURNS }}
             --allowedTools "Read,Grep,Glob,Bash(git diff*),Bash(git status),Bash(git log),Bash(gh pr*),mcp__github_inline_comment__create_inline_comment"
             --disallowedTools "WebSearch,WebFetch"
