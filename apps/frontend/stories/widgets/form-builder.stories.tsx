@@ -975,3 +975,55 @@ export const WithUnionContainingDynamicObjectDefaults: Story = {
     className: "w-[900px]",
   },
 };
+
+const validationErrorSchema: FormSchema = {
+  username: {
+    type: "string",
+    label: "Username",
+    required: true,
+    description: "Your unique username",
+  },
+  email: {
+    type: "string",
+    label: "Email Address",
+    required: true,
+  },
+  profile: {
+    type: "object",
+    label: "Profile Information",
+    properties: {
+      bio: {
+        type: "string",
+        label: "Biography",
+        required: true,
+      },
+      age: {
+        type: "number",
+        label: "Age",
+        required: true,
+      },
+    },
+  },
+  tags: {
+    type: "array",
+    label: "Tags",
+    itemType: "string",
+    required: true,
+    description: "At least one tag is required",
+  },
+  apiKey: {
+    type: "string",
+    label: "API Key",
+    required: true,
+    advanced: true,
+    advancedGroup: "Advanced Settings",
+  },
+};
+
+export const WithValidationErrors: Story = {
+  args: {
+    schema: validationErrorSchema,
+    onSubmit: action("onSubmit"),
+    className: "w-[600px]",
+  },
+};
