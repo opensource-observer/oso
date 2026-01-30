@@ -26,7 +26,7 @@ WITH grants AS (
     JSON_EXTRACT_SCALAR(f.metadata, '$.token_amount') AS amount_op,
     JSON_EXTRACT_SCALAR(f.metadata, '$.application_name') AS application_name,
     JSON_EXTRACT_SCALAR(f.metadata, '$.initial_delivery_date')
-      AS initial_delivery_date
+      AS initial_delivery_date_raw
   FROM oso.stg_ossd__current_funding AS f
   LEFT JOIN oso.projects_v1 AS p
     ON f.to_project_name = p.project_name
@@ -41,7 +41,10 @@ SELECT
   grant_pool_name::VARCHAR AS grant_round,
   grant_mechanism::VARCHAR AS grant_mechanism,
   amount_op::DOUBLE AS amount_op,
-  initial_delivery_date::DATE AS initial_delivery_date,
+  COALESCE(
+    TRY_CAST(initial_delivery_date_raw AS DATE),
+    CAST('1970-01-01' AS DATE)
+  ) AS initial_delivery_date,
   amount_usd::DOUBLE AS amount_usd,
   project_name::VARCHAR AS oso_project_name,
   display_name::VARCHAR AS oso_project_display_name,
