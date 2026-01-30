@@ -24,7 +24,7 @@ export default defineConfig(resolveFlatConfig([
     ...rootConfig,
     includeIgnoreFile(gitignorePath),
     {
-        ignores: ["lib/graphql/generated/**", "osolint/**"],
+        ignores: ["lib/graphql/generated/**"],
     },
     ...fixupConfigRules(compat.extends(
         "next/core-web-vitals",
