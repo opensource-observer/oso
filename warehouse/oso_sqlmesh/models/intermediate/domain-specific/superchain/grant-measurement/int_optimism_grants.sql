@@ -42,7 +42,7 @@ SELECT
   grant_mechanism::VARCHAR AS grant_mechanism,
   amount_op::DOUBLE AS amount_op,
   COALESCE(
-    TRY_CAST(initial_delivery_date_raw AS DATE),
+    TRY_CAST(SPLIT_PART(initial_delivery_date_raw, ' ', 1) AS DATE),
     CAST('1970-01-01' AS DATE)
   ) AS initial_delivery_date,
   amount_usd::DOUBLE AS amount_usd,

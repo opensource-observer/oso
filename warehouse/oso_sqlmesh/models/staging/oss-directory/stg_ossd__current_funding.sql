@@ -15,8 +15,8 @@ SELECT
     0.0
   ) AS amount,
   COALESCE(
-    TRY_CAST(funding.funding_date AS TIMESTAMP),
-    CAST('1970-01-01' AS TIMESTAMP)
+    TRY_CAST(SPLIT_PART(funding.funding_date, ' ', 1) AS TIMESTAMP(6)),
+    CAST('1970-01-01' AS TIMESTAMP(6))
   ) AS funding_date,
   LOWER(funding.from_funder_name) AS from_funder_name,
   LOWER(funding.grant_pool_name) AS grant_pool_name,
