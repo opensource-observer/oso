@@ -1,74 +1,858 @@
-test_int_github__node_id_map_repository_1:
+# FixInt (0-127) - 3 bytes total
+test_int_github__node_id_map_fixint_min:
   model: oso.int_github__node_id_map
   inputs:
     oso.stg_opendevdata__canonical_developers:
       columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
         primary_github_user_id: varchar
-      rows: []
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgAA"
     oso.stg_opendevdata__repos:
       columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
         github_graphql_id: varchar
-      rows:
-        - github_graphql_id: "R_kgDOIn_9jQ"
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
   outputs:
     query:
       rows:
-        - node_id: "R_kgDOIn_9jQ"
-          decoded_id: 578813325
+        - node_id: "U_kgAA"
+          decoded_id: 0
 
-test_int_github__node_id_map_repository_2:
+test_int_github__node_id_map_fixint_median:
   model: oso.int_github__node_id_map
   inputs:
     oso.stg_opendevdata__canonical_developers:
       columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgBA"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgBA"
+          decoded_id: 64
+
+test_int_github__node_id_map_fixint_real_world:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgBy"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgBy"
+          decoded_id: 114
+
+test_int_github__node_id_map_fixint_max:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgB_"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgB_"
+          decoded_id: 127
+
+# UInt8 (128-255) - 4 bytes total
+test_int_github__node_id_map_uint8_min:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDMgA"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDMgA"
+          decoded_id: 128
+
+test_int_github__node_id_map_uint8_median:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDMvw"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDMvw"
+          decoded_id: 191
+
+test_int_github__node_id_map_uint8_max:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDM_w"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDM_w"
+          decoded_id: 255
+
+# UInt16 (256-65535) - 5 bytes total
+test_int_github__node_id_map_uint16_min:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDNAQA"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDNAQA"
+          decoded_id: 256
+
+test_int_github__node_id_map_uint16_median:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDNgH8"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDNgH8"
+          decoded_id: 32895
+
+test_int_github__node_id_map_uint16_max:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDN__8"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDN__8"
+          decoded_id: 65535
+
+# UInt32 (65536-4.29B) - 7 bytes total
+test_int_github__node_id_map_uint32_min:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDOAAEAAA"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDOAAEAAA"
+          decoded_id: 65536
+
+test_int_github__node_id_map_uint32_median:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDOgAB__w"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDOgAB__w"
+          decoded_id: 2147516415
+
+test_int_github__node_id_map_uint32_max:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDO_____w"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDO_____w"
+          decoded_id: 4294967295
+
+# UInt64 (>4.29B) - 11 bytes total
+test_int_github__node_id_map_uint64_min:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDPAAAAAQAAAAA"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDPAAAAAQAAAAA"
+          decoded_id: 4294967296
+
+test_int_github__node_id_map_uint64_bigint_max_minus_1:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDPf_________4"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDPf_________4"
+          decoded_id: 9223372036854775806
+
+# Real-world User IDs
+test_int_github__node_id_map_user_ids:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "U_kgDOCH_3TQ"
+        - id: 2
+          primary_developer_email_identity_id: 2
+          primary_github_user_id: "U_kgDOAFB_cg"
+        - id: 3
+          primary_developer_email_identity_id: 3
+          primary_github_user_id: "U_kgDOASN2_w"
+        - id: 4
+          primary_developer_email_identity_id: 4
+          primary_github_user_id: "U_kgDOAe68Mg"
+        - id: 5
+          primary_developer_email_identity_id: 5
+          primary_github_user_id: "U_kgDOA_d-aQ"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "U_kgDOAFB_cg"
+          decoded_id: 5275506
+        - node_id: "U_kgDOASN2_w"
+          decoded_id: 19101439
+        - node_id: "U_kgDOAe68Mg"
+          decoded_id: 32422962
+        - node_id: "U_kgDOA_d-aQ"
+          decoded_id: 66551401
+        - node_id: "U_kgDOCH_3TQ"
+          decoded_id: 142604109
+
+# Repo IDs (Critical regression: these caused out-of-bounds in UInt64 path)
+test_int_github__node_id_map_repo_ids:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
         primary_github_user_id: varchar
       rows: []
     oso.stg_opendevdata__repos:
       columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
         github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
       rows:
-        - github_graphql_id: "R_kgDOIn_3Zw"
+        - id: 1
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo1"
+          github_graphql_id: "R_kgDOIa5_LQ"
+          link: "https://github.com/org/repo1"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
+        - id: 2
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo2"
+          github_graphql_id: "R_kgDOEb_ZAQ"
+          link: "https://github.com/org/repo2"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
+        - id: 3
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo3"
+          github_graphql_id: "R_kgDOHZb1_w"
+          link: "https://github.com/org/repo3"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
+        - id: 4
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo4"
+          github_graphql_id: "R_kgDOIW0T0w"
+          link: "https://github.com/org/repo4"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
+        - id: 5
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo5"
+          github_graphql_id: "R_kgDOF_r28w"
+          link: "https://github.com/org/repo5"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
+  outputs:
+    query:
+      rows:
+        - node_id: "R_kgDOEb_ZAQ"
+          decoded_id: 297785601
+        - node_id: "R_kgDOF_r28w"
+          decoded_id: 402323187
+        - node_id: "R_kgDOHZb1_w"
+          decoded_id: 496432639
+        - node_id: "R_kgDOIW0T0w"
+          decoded_id: 560796627
+        - node_id: "R_kgDOIa5_LQ"
+          decoded_id: 565083949
+
+# Repo IDs with underscore in base64 suffix (regression: split on all _ broke Trino)
+test_int_github__node_id_map_repo_ids_with_underscore:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows: []
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows:
+        - id: 1
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo1"
+          github_graphql_id: "R_kgDOIn_9jQ"
+          link: "https://github.com/org/repo1"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
+        - id: 2
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo2"
+          github_graphql_id: "R_kgDOIn_3Zw"
+          link: "https://github.com/org/repo2"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
   outputs:
     query:
       rows:
         - node_id: "R_kgDOIn_3Zw"
           decoded_id: 578811751
+        - node_id: "R_kgDOIn_9jQ"
+          decoded_id: 578813325
 
-test_int_github__node_id_map_multiple_repositories:
+# Bot IDs
+test_int_github__node_id_map_bot_ids:
   model: oso.int_github__node_id_map
   inputs:
     oso.stg_opendevdata__canonical_developers:
       columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "BOT_kgDODH_GIQ"
+        - id: 2
+          primary_developer_email_identity_id: 2
+          primary_github_user_id: "BOT_kgDOCr-_NA"
+        - id: 3
+          primary_developer_email_identity_id: 3
+          primary_github_user_id: "BOT_kgDOCJg4_A"
+        - id: 4
+          primary_developer_email_identity_id: 4
+          primary_github_user_id: "BOT_kgDOCAbJvQ"
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "BOT_kgDOCAbJvQ"
+          decoded_id: 134662589
+        - node_id: "BOT_kgDOCJg4_A"
+          decoded_id: 144193788
+        - node_id: "BOT_kgDOCr-_NA"
+          decoded_id: 180338484
+        - node_id: "BOT_kgDODH_GIQ"
+          decoded_id: 209700385
+
+# Legacy v1 (Base64 "Type:ID") Formats
+test_int_github__node_id_map_legacy_user:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
+        primary_github_user_id: varchar
+      rows:
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: "MDQ6VXNlcjEyMzQ1Njc="
+    oso.stg_opendevdata__repos:
+      columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
+        github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
+      rows: []
+  outputs:
+    query:
+      rows:
+        - node_id: "MDQ6VXNlcjEyMzQ1Njc="
+          decoded_id: 1234567
+
+test_int_github__node_id_map_legacy_repository:
+  model: oso.int_github__node_id_map
+  inputs:
+    oso.stg_opendevdata__canonical_developers:
+      columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
         primary_github_user_id: varchar
       rows: []
     oso.stg_opendevdata__repos:
       columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
         github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
       rows:
-        - github_graphql_id: "R_kgDOIn_9jQ"
-        - github_graphql_id: "R_kgDOIn_3Zw"
+        - id: 1
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo1"
+          github_graphql_id: "MDEwOlJlcG9zaXRvcnk3NDUyMDEyNA=="
+          link: "https://github.com/org/repo1"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
   outputs:
     query:
       rows:
-        - node_id: "R_kgDOIn_3Zw"
-          decoded_id: 578811751
-        - node_id: "R_kgDOIn_9jQ"
-          decoded_id: 578813325
+        - node_id: "MDEwOlJlcG9zaXRvcnk3NDUyMDEyNA=="
+          decoded_id: 74520124
 
+# Filter tests
 test_int_github__node_id_map_filters_empty_strings:
   model: oso.int_github__node_id_map
   inputs:
     oso.stg_opendevdata__canonical_developers:
       columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
         primary_github_user_id: varchar
       rows:
-        - primary_github_user_id: ""
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: ""
     oso.stg_opendevdata__repos:
       columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
         github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
       rows:
-        - github_graphql_id: ""
-        - github_graphql_id: "R_kgDOIn_9jQ"
+        - id: 1
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo1"
+          github_graphql_id: ""
+          link: "https://github.com/org/repo1"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
+        - id: 2
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo2"
+          github_graphql_id: "R_kgDOIn_9jQ"
+          link: "https://github.com/org/repo2"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
   outputs:
     query:
       rows:
@@ -80,15 +864,49 @@ test_int_github__node_id_map_filters_nulls:
   inputs:
     oso.stg_opendevdata__canonical_developers:
       columns:
+        id: bigint
+        primary_developer_email_identity_id: bigint
         primary_github_user_id: varchar
       rows:
-        - primary_github_user_id: null
+        - id: 1
+          primary_developer_email_identity_id: 1
+          primary_github_user_id: null
     oso.stg_opendevdata__repos:
       columns:
+        id: bigint
+        created_at: timestamp(6)
+        repo_created_at: timestamp(6)
+        name: varchar
         github_graphql_id: varchar
+        link: varchar
+        organization_id: bigint
+        num_stars: bigint
+        num_forks: bigint
+        num_issues: bigint
+        is_blacklist: bigint
       rows:
-        - github_graphql_id: null
-        - github_graphql_id: "R_kgDOIn_9jQ"
+        - id: 1
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo1"
+          github_graphql_id: null
+          link: "https://github.com/org/repo1"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
+        - id: 2
+          created_at: "2024-01-01 00:00:00.000000"
+          repo_created_at: "2024-01-01 00:00:00.000000"
+          name: "repo2"
+          github_graphql_id: "R_kgDOIn_9jQ"
+          link: "https://github.com/org/repo2"
+          organization_id: 1
+          num_stars: 0
+          num_forks: 0
+          num_issues: 0
+          is_blacklist: 0
   outputs:
     query:
       rows:
