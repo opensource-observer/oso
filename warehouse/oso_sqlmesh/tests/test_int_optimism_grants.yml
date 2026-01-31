@@ -2,6 +2,14 @@ test_int_optimism_grants_date_parsing:
   model: oso.int_optimism_grants
   inputs:
     oso.stg_ossd__current_funding:
+      columns:
+        to_project_name: text
+        amount: double
+        funding_date: "timestamp(6)"
+        from_funder_name: text
+        grant_pool_name: text
+        metadata: text
+        file_path: text
       rows:
         # Test 1: Valid date format (from earlier seasons)
         - to_project_name: "test-project"
@@ -118,8 +126,7 @@ test_int_optimism_grants_date_parsing:
           oso_project_name: "test-project"
           oso_project_display_name: "Test Project"
           oso_project_id: "proj_123"
-        # Expected: Malformed date - DuckDB parses it, Trino would fallback
-        # The TRY_CAST protects against Trino failures while allowing DuckDB to parse
+        # Expected: Date with single-digit hour parses correctly
         - funding_date: 2025-11-01
           application_name: "Highway"
           grant_round: "grants_season_8"
@@ -152,7 +159,7 @@ test_int_optimism_grants_date_parsing:
           oso_project_name: "velodrome"
           oso_project_display_name: "Velodrome Finance"
           oso_project_id: "proj_abc"
-        # Expected: Second malformed date entry - DuckDB parses it
+        # Expected: Date with single-digit hour parses correctly
         - funding_date: 2025-11-01
           application_name: "Highway"
           grant_round: "grants_season_8"
@@ -163,7 +170,7 @@ test_int_optimism_grants_date_parsing:
           oso_project_name: "highway-plus"
           oso_project_display_name: "Highway Plus"
           oso_project_id: "proj_456"
-        # Expected: Malformed date with special characters - DuckDB parses it
+        # Expected: Date with single-digit hour parses correctly
         - funding_date: 2025-11-01
           application_name: "Metrom"
           grant_round: "grants_season_8"
@@ -174,7 +181,7 @@ test_int_optimism_grants_date_parsing:
           oso_project_name: "metrom-xyz"
           oso_project_display_name: "Metrom"
           oso_project_id: "proj_def"
-        # Expected: Additional malformed date from production error - DuckDB parses it
+        # Expected: Date with single-digit hour parses correctly
         - funding_date: 2024-12-01
           application_name: "New Project"
           grant_round: "grants_season_8"
@@ -185,7 +192,7 @@ test_int_optimism_grants_date_parsing:
           oso_project_name: "new-project"
           oso_project_display_name: "New Project"
           oso_project_id: "proj_new"
-        # Expected: Row 3088 from funding_data.csv - DuckDB parses the malformed date
+        # Expected: Date with single-digit hour parses correctly
         - funding_date: 2024-09-01
           application_name: "OETH on OP (1 of 3)"
           grant_round: "grants_season_6"
