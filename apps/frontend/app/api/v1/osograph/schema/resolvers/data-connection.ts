@@ -123,7 +123,7 @@ export const dataConnectionResolvers = {
       if (orgError || !org) {
         throw OrganizationErrors.notFound();
       }
-      validateDynamicConnector(name, type, config, credentials, org.org_name);
+      validateDynamicConnector(name, type, org.org_name);
 
       const { data, error } = await supabase
         .from("dynamic_connectors")
