@@ -36,7 +36,7 @@ WITH grants AS (
 )
 
 SELECT
-  funding_date::DATE AS funding_date,
+  COALESCE(TRY_CAST(funding_date AS DATE), DATE '1970-01-01') AS funding_date,
   application_name::VARCHAR AS application_name,
   grant_pool_name::VARCHAR AS grant_round,
   grant_mechanism::VARCHAR AS grant_mechanism,

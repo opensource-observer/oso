@@ -5,7 +5,7 @@ test_int_optimism_grants_date_parsing:
       columns:
         to_project_name: text
         amount: double
-        funding_date: "timestamp(6)"
+        funding_date: timestamp(6)
         from_funder_name: text
         grant_pool_name: text
         metadata: text
