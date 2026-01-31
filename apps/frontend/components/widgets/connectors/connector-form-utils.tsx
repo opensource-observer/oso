@@ -18,7 +18,7 @@ const connectorNameSchema = z
     "Invalid name, valid characters are a-z 0-9 _",
   );
 
-function ConnectorNameField<T extends { connector_name: string }>({
+function ConnectorNameField<T extends { connectorName: string }>({
   control,
 }: {
   control: Control<T>;
@@ -26,7 +26,7 @@ function ConnectorNameField<T extends { connector_name: string }>({
   return (
     <FormField
       control={control}
-      name={"connector_name" as FieldPath<T>}
+      name={"connectorName" as FieldPath<T>}
       render={({ field }) => (
         <FormItem>
           <FormLabel>Connector Name</FormLabel>

@@ -14,7 +14,6 @@ import {
 } from "@/lib/types/permissions";
 import {
   dynamicColumnContextsRowSchema,
-  dynamicConnectorsInsertSchema,
   dynamicConnectorsRowSchema,
   dynamicTableContextsRowSchema,
   connectorRelationshipsInsertSchema,
@@ -23,7 +22,6 @@ import type {
   ConnectorRelationshipsRow,
   ConnectorRelationshipsInsert,
   DynamicColumnContextsRow,
-  DynamicConnectorsInsert,
   DynamicConnectorsRow,
   DynamicTableContextsRow,
 } from "@/lib/types/schema-types";
@@ -36,6 +34,7 @@ import {
   animals,
 } from "unique-names-generator";
 import { DatasetType } from "@/lib/types/dataset";
+import { DataConnectionType } from "@/lib/graphql/generated/graphql";
 
 const ADMIN_USER_ROLE = "admin";
 
@@ -1195,34 +1194,59 @@ class OsoAppClient {
    */
   async createConnector(
     args: Partial<{
-      data: DynamicConnectorsInsert;
+      data: {
+        orgId: string;
+        connectorName: string;
+        connectorType: string;
+        config: Record<string, any>;
+      };
       credentials: Record<string, string>;
     }>,
-  ): Promise<Tables<"dynamic_connectors">> {
-    const data = dynamicConnectorsInsertSchema.parse(args.data);
-    const credentials = ensure(args.credentials, "credentials are required");
+  ) {
+    const { data: dataInput, credentials } = {
+      data: ensure(args.data, "Missing data argument"),
+      credentials: ensure(args.credentials, "Missing credentials argument"),
+    };
 
-    const customHeaders = await this.createSupabaseAuthHeaders();
+    const CREATE_DATA_CONNECTION_MUTATION = gql(`
+      mutation CreateDataConnection($input: CreateDataConnectionInput!) {
+        createDataConnection(input: $input) {
+          success
+          message
+          dataConnection {
+            id
+            orgId
+            name
+            type
+            config
+          }
+        }
+      }
+    `);
 
-    const response = await fetch("/api/v1/connector", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...customHeaders,
+    const data = await this.executeGraphQL(
+      CREATE_DATA_CONNECTION_MUTATION,
+      {
+        input: {
+          orgId: dataInput.orgId,
+          name: dataInput.connectorName,
+          type: dataInput.connectorType.toUpperCase() as DataConnectionType,
+          config: dataInput.config,
+          credentials: credentials,
+        },
       },
-      body: JSON.stringify({
-        data,
-        credentials,
-      }),
-    });
+      "Failed to create data connection",
+    );
 
-    const json = await response.json();
+    const payload = data.createDataConnection;
 
-    if (!response.ok) {
-      throw new Error("Error creating connector: " + json.error);
+    if (payload.success) {
+      logger.log(
+        `Successfully created data connection "${dataInput.connectorName}"`,
+      );
     }
 
-    return dynamicConnectorsRowSchema.parse(json);
+    return payload.dataConnection;
   }
 
   /**
@@ -1231,29 +1255,31 @@ class OsoAppClient {
    * @returns Promise<void>
    */
   async deleteConnector(args: Partial<{ id: string }>): Promise<void> {
-    const id = ensure(
-      args.id,
-      "id is required for deleting a dynamic connector",
-    );
+    const { id } = {
+      id: ensure(args.id, "Missing id argument"),
+    };
 
-    const customHeaders = await this.createSupabaseAuthHeaders();
-    const searchParams = new URLSearchParams({ id });
+    const DELETE_DATA_CONNECTION_MUTATION = gql(`
+      mutation DeleteDataConnection($id: ID!) {
+        deleteDataConnection(id: $id) {
+          success
+          message
+        }
+      }
+    `);
 
-    const response = await fetch(
-      `/api/v1/connector?${searchParams.toString()}`,
+    const data = await this.executeGraphQL(
+      DELETE_DATA_CONNECTION_MUTATION,
       {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          ...customHeaders,
-        },
+        id,
       },
+      "Failed to delete data connection",
     );
 
-    const json = await response.json();
+    const payload = data.deleteDataConnection;
 
-    if (!response.ok) {
-      throw new Error("Error deleting connector: " + json.error);
+    if (payload.success) {
+      logger.log(`Successfully deleted data connection "${id}"`);
     }
   }
 

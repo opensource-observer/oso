@@ -28,7 +28,7 @@ const postgresConnectorConfigSchema = z.object({
 });
 
 const postgresFormSchema = z.object({
-  connector_name: connectorNameSchema,
+  connectorName: connectorNameSchema,
   config: postgresConnectorConfigSchema,
 });
 
@@ -48,7 +48,7 @@ export function PostgresConnectorForm(props: PostgresConnectorFormProps) {
   const form = useForm<PostgresFormData>({
     resolver: zodResolver(postgresFormSchema),
     defaultValues: {
-      connector_name: "",
+      connectorName: "",
       config: {
         "connection-url": "",
         "connection-user": "",
@@ -61,8 +61,8 @@ export function PostgresConnectorForm(props: PostgresConnectorFormProps) {
     (data: PostgresFormData) => {
       onSubmit(
         {
-          connector_name: data.connector_name,
-          connector_type: "postgresql",
+          connectorName: data.connectorName,
+          connectorType: "postgresql",
           config: {
             "connection-url": data.config["connection-url"].startsWith("jdbc:")
               ? data.config["connection-url"]

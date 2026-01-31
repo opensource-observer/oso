@@ -28,7 +28,7 @@ const bigQueryConnectorConfigSchema = z.object({
 });
 
 const bigQueryFormSchema = z.object({
-  connector_name: connectorNameSchema,
+  connectorName: connectorNameSchema,
   config: bigQueryConnectorConfigSchema,
 });
 
@@ -48,7 +48,7 @@ export function BigQueryConnectorForm(props: BigQueryConnectorFormProps) {
   const form = useForm<BigQueryFormData>({
     resolver: zodResolver(bigQueryFormSchema),
     defaultValues: {
-      connector_name: "",
+      connectorName: "",
       config: {
         "project-id": "",
         "credentials-key": "",
@@ -60,8 +60,8 @@ export function BigQueryConnectorForm(props: BigQueryConnectorFormProps) {
     (data: BigQueryFormData) => {
       onSubmit(
         {
-          connector_name: data.connector_name,
-          connector_type: "bigquery",
+          connectorName: data.connectorName,
+          connectorType: "bigquery",
           config: {
             "bigquery.project-id": data.config["project-id"],
           },

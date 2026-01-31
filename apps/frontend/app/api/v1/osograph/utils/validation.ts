@@ -2,6 +2,11 @@ import { z } from "zod";
 import { ValidationErrors } from "@/app/api/v1/osograph/utils/errors";
 import type { ValidTableName } from "@/app/api/v1/osograph/utils/query-builder";
 import { DATASET_TYPES } from "@/lib/types/dataset";
+import {
+  ConnectorType,
+  DYNAMIC_CONNECTOR_NAME_REGEX,
+  DYNAMIC_CONNECTOR_VALUES_REGEX,
+} from "@/lib/types/dynamic-connector";
 
 const NAME_REGEX = /^[a-z][a-z0-9_]*$/;
 const MAX_PREVIEW_SIZE_MB = 1 * 1024 * 1024;
@@ -253,6 +258,71 @@ export const CreateDataIngestionSchema = z.object({
   config: z.record(z.any()),
 });
 
+const BaseDataConnectionSchema = {
+  orgId: z.string().uuid("Invalid organization ID"),
+  name: z
+    .string()
+    .min(1, "DataConnection name is required")
+    .regex(
+      DYNAMIC_CONNECTOR_NAME_REGEX,
+      "DataConnection name can only contain letters, numbers, and underscores",
+    ),
+};
+
+export const CreateDataConnectionSchema = z.discriminatedUnion("type", [
+  z.object({
+    ...BaseDataConnectionSchema,
+    type: z
+      .literal("POSTGRESQL")
+      .transform(() => "postgresql" as ConnectorType),
+    config: z
+      .object({
+        "connection-url": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+        "connection-user": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+      })
+      .strict(),
+    credentials: z
+      .object({
+        "connection-password": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...BaseDataConnectionSchema,
+    type: z.literal("GSHEETS").transform(() => "gsheets" as ConnectorType),
+    config: z
+      .object({
+        "metadata-sheet-id": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+      })
+      .strict(),
+    credentials: z
+      .object({
+        "credentials-key": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...BaseDataConnectionSchema,
+    type: z.literal("BIGQUERY").transform(() => "bigquery" as ConnectorType),
+    config: z
+      .object({
+        "project-id": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+      })
+      .strict(),
+    credentials: z
+      .object({
+        "credentials-key": z.string().regex(DYNAMIC_CONNECTOR_VALUES_REGEX),
+      })
+      .strict(),
+  }),
+]);
+
+export const CreateDataConnectionAliasSchema = z.object({
+  dataConnectionId: z.string().uuid(),
+  name: z.string(),
+  schema: z.string(),
+});
+
 const ModelColumnContextSchema = z.object({
   name: z.string(),
   context: z.string(),
@@ -396,8 +466,13 @@ export const DataModelReleaseWhereSchema = createWhereSchema("model_release");
 export const RunWhereSchema = createWhereSchema("run");
 export const StepWhereSchema = createWhereSchema("step");
 export const MaterializationWhereSchema = createWhereSchema("materialization");
+export const DataConnectionWhereSchema =
+  createWhereSchema("dynamic_connectors");
 
-export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
+export function validateInput<T>(
+  schema: z.ZodType<T, any, any>,
+  input: unknown,
+): T {
   const result = schema.safeParse(input);
 
   if (!result.success) {

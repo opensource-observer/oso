@@ -7,5 +7,6 @@ export const ALLOWED_CONNECTORS = [
 export type ConnectorType = (typeof ALLOWED_CONNECTORS)[number];
 
 export const DYNAMIC_CONNECTOR_NAME_REGEX = /^[a-z][a-z0-9_]*$/;
+export const DYNAMIC_CONNECTOR_VALUES_REGEX = /^[^'"`\n]*$/;
 
 export const DEFAULT_OSO_TABLE_ID = "$oso$";

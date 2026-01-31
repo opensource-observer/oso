@@ -9,6 +9,7 @@ type DataConnection {
   orgId: ID!
   name: String!
   type: DataConnectionType!
+  config: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -33,11 +34,27 @@ type DataConnectionAlias {
   schema: String!
 }
 
+extend type Query {
+  """
+  Query data connections with optional filtering and pagination.
+
+  The where parameter accepts a JSON object with field-level filtering.
+  Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+  """
+  dataConnections(
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): DataConnectionConnection!
+}
+
 extend type Mutation {
   createDataConnection(
     input: CreateDataConnectionInput!
   ): CreateDataConnectionPayload!
   deleteDataConnection(id: ID!): SimplePayload!
+  syncDataConnection(id: ID!): SimplePayload!
 
   createDataConnectionAlias(
     input: CreateDataConnectionAliasInput!
@@ -56,6 +73,12 @@ input CreateDataConnectionInput {
 type CreateDataConnectionPayload {
   success: Boolean!
   dataConnection: DataConnection
+  message: String
+}
+
+type SyncDataConnectionPayload {
+  success: Boolean!
+  run: Run!
   message: String
 }
 

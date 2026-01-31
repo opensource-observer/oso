@@ -28,7 +28,7 @@ const googleSheetsConnectorConfigSchema = z.object({
 });
 
 const googleSheetsFormSchema = z.object({
-  connector_name: connectorNameSchema,
+  connectorName: connectorNameSchema,
   config: googleSheetsConnectorConfigSchema,
 });
 
@@ -50,7 +50,7 @@ export function GoogleSheetsConnectorForm(
   const form = useForm<GoogleSheetsFormData>({
     resolver: zodResolver(googleSheetsFormSchema),
     defaultValues: {
-      connector_name: "",
+      connectorName: "",
       config: {
         "credentials-key": "",
         "metadata-sheet-id": "",
@@ -62,8 +62,8 @@ export function GoogleSheetsConnectorForm(
     (data: GoogleSheetsFormData) => {
       onSubmit(
         {
-          connector_name: data.connector_name,
-          connector_type: "gsheets",
+          connectorName: data.connectorName,
+          connectorType: "gsheets",
           config: {
             "gsheets.metadata-sheet-id": data.config["metadata-sheet-id"],
           },

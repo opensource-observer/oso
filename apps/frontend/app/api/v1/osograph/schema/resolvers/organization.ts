@@ -21,6 +21,7 @@ import {
 import { GraphQLResolverModule } from "@/app/api/v1/osograph/types/utils";
 import {
   AddUserByEmailSchema,
+  DataConnectionWhereSchema,
   DatasetWhereSchema,
   NotebookWhereSchema,
   OrganizationWhereSchema,
@@ -33,6 +34,7 @@ import {
   maybeAddQueryPagination,
   queryWithPagination,
 } from "@/app/api/v1/osograph/utils/query-helpers";
+import { OrganizationsRow } from "@/lib/types/schema-types";
 
 export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
   Query: {
@@ -256,6 +258,26 @@ export const organizationResolvers: GraphQLResolverModule<GraphQLContext> = {
       return queryWithPagination(args, context, {
         tableName: "datasets",
         whereSchema: DatasetWhereSchema,
+        requireAuth: false,
+        filterByUserOrgs: false,
+        parentOrgIds: parent.id,
+        basePredicate: {
+          is: [{ key: "deleted_at", value: null }],
+        },
+      });
+    },
+
+    dataConnections: async (
+      parent: OrganizationsRow,
+      args: FilterableConnectionArgs,
+      context: GraphQLContext,
+    ) => {
+      const authenticatedUser = requireAuthentication(context.user);
+      await requireOrgMembership(authenticatedUser.userId, parent.id);
+
+      return queryWithPagination(args, context, {
+        tableName: "dynamic_connectors",
+        whereSchema: DataConnectionWhereSchema,
         requireAuth: false,
         filterByUserOrgs: false,
         parentOrgIds: parent.id,

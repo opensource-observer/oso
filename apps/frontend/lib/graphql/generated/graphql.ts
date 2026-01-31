@@ -1539,6 +1539,7 @@ export type DagsterTypeOrError =
 
 export type DataConnection = {
   __typename?: "DataConnection";
+  config: Scalars["JSON"]["output"];
   createdAt: Scalars["DateTimeISO"]["output"];
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
@@ -3539,7 +3540,10 @@ export type Mutation = {
   createDataset: CreateDatasetPayload;
   /** Create an invitation */
   createInvitation: CreateInvitationPayload;
-  /** System only. Create a materialization for a step */
+  /**
+   * System only. Create a materialization for a step
+   * @system-only
+   */
   createMaterialization: CreateMaterializationPayload;
   /** Create a new notebook */
   createNotebook: CreateNotebookPayload;
@@ -3563,9 +3567,15 @@ export type Mutation = {
   /** Deletes a run from storage. */
   deleteRun: DeletePipelineRunResult;
   deleteStaticModel: SimplePayload;
-  /** System only. Mark a run as finished. */
+  /**
+   * System only. Mark a run as finished.
+   * @system-only
+   */
   finishRun: FinishRunPayload;
-  /** System only. Mark a step as finished */
+  /**
+   * System only. Mark a step as finished
+   * @system-only
+   */
   finishStep: FinishStepPayload;
   /** Frees concurrency slots. */
   freeConcurrencySlots: Scalars["Boolean"]["output"];
@@ -3607,7 +3617,10 @@ export type Mutation = {
   revokeInvitation: RevokeInvitationPayload;
   /** Save notebook preview image */
   saveNotebookPreview: SaveNotebookPreviewPayload;
-  /** System only. Save the generated published notebook HTML to object storage */
+  /**
+   * System only. Save the generated published notebook HTML to object storage
+   * @system-only
+   */
   savePublishedNotebookHtml: SavePublishedNotebookHtmlPayload;
   /** Enable a schedule to launch runs for a job based on external state change. */
   scheduleDryRun: ScheduleDryRunResult;
@@ -3623,18 +3636,25 @@ export type Mutation = {
   setSensorCursor: SensorOrError;
   /** Shuts down a code location server. */
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
-  /** System only. Mark a run as started. */
+  /**
+   * System only. Mark a run as started.
+   * @system-only
+   */
   startRun: StartRunPayload;
   /** Enable a schedule to launch runs for a job at a fixed interval. */
   startSchedule: ScheduleMutationResult;
   /** Enable a sensor to launch runs for a job based on external state change. */
   startSensor: SensorOrError;
-  /** System only. Mark a step as started */
+  /**
+   * System only. Mark a step as started
+   * @system-only
+   */
   startStep: StartStepPayload;
   /** Disable a schedule from launching runs for a job. */
   stopRunningSchedule: ScheduleMutationResult;
   /** Disable a sensor from launching runs for a job. */
   stopSensor: StopSensorMutationResultOrError;
+  syncDataConnection: SimplePayload;
   /** Terminates a run. */
   terminatePipelineExecution: TerminateRunResult;
   /** Terminates a run. */
@@ -3651,7 +3671,10 @@ export type Mutation = {
   updateModelContext: UpdateModelContextPayload;
   /** Update a notebook */
   updateNotebook: UpdateNotebookPayload;
-  /** System only. Update run metadata. This can be called at any time */
+  /**
+   * System only. Update run metadata. This can be called at any time
+   * @system-only
+   */
   updateRunMetadata: UpdateRunMetadataPayload;
   updateStaticModel: CreateStaticModelPayload;
   /** Deletes asset history from storage. */
@@ -3994,6 +4017,11 @@ export type MutationStopSensorArgs = {
   id?: InputMaybe<Scalars["String"]["input"]>;
   jobOriginId?: InputMaybe<Scalars["String"]["input"]>;
   jobSelectorId?: InputMaybe<Scalars["String"]["input"]>;
+};
+
+/** The root for all mutations to modify data in your Dagster instance. */
+export type MutationSyncDataConnectionArgs = {
+  id: Scalars["ID"]["input"];
 };
 
 /** The root for all mutations to modify data in your Dagster instance. */
@@ -6209,6 +6237,13 @@ export type Query = {
   /** Retrieve the captured log metadata for a given log key. */
   capturedLogsMetadata: CapturedLogsMetadata;
   /**
+   * Query data connections with optional filtering and pagination.
+   *
+   * The where parameter accepts a JSON object with field-level filtering.
+   * Each field can have comparison operators: eq, neq, gt, gte, lt, lte, in, like, ilike, is
+   */
+  dataConnections: DataConnectionConnection;
+  /**
    * List all data models with optional filtering and pagination.
    *
    * The where parameter accepts a JSON object with field-level filtering.
@@ -6569,6 +6604,14 @@ export type QueryCapturedLogsArgs = {
 /** The root for all queries to retrieve data from the Dagster instance. */
 export type QueryCapturedLogsMetadataArgs = {
   logKey: Array<Scalars["String"]["input"]>;
+};
+
+/** The root for all queries to retrieve data from the Dagster instance. */
+export type QueryDataConnectionsArgs = {
+  after?: InputMaybe<Scalars["String"]["input"]>;
+  first?: InputMaybe<Scalars["Int"]["input"]>;
+  single?: InputMaybe<Scalars["Boolean"]["input"]>;
+  where?: InputMaybe<Scalars["JSON"]["input"]>;
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -9203,6 +9246,40 @@ export type UnpublishNotebookMutation = {
   };
 };
 
+export type CreateDataConnectionMutationVariables = Exact<{
+  input: CreateDataConnectionInput;
+}>;
+
+export type CreateDataConnectionMutation = {
+  __typename?: "Mutation";
+  createDataConnection: {
+    __typename?: "CreateDataConnectionPayload";
+    success: boolean;
+    message?: string | null;
+    dataConnection?: {
+      __typename?: "DataConnection";
+      id: string;
+      orgId: string;
+      name: string;
+      type: DataConnectionType;
+      config: any;
+    } | null;
+  };
+};
+
+export type DeleteDataConnectionMutationVariables = Exact<{
+  id: Scalars["ID"]["input"];
+}>;
+
+export type DeleteDataConnectionMutation = {
+  __typename?: "Mutation";
+  deleteDataConnection: {
+    __typename?: "SimplePayload";
+    success: boolean;
+    message?: string | null;
+  };
+};
+
 export type SavePreviewMutationVariables = Exact<{
   input: SaveNotebookPreviewInput;
 }>;
@@ -9778,6 +9855,127 @@ export const UnpublishNotebookDocument = {
 } as unknown as DocumentNode<
   UnpublishNotebookMutation,
   UnpublishNotebookMutationVariables
+>;
+export const CreateDataConnectionDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "CreateDataConnection" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: {
+            kind: "Variable",
+            name: { kind: "Name", value: "input" },
+          },
+          type: {
+            kind: "NonNullType",
+            type: {
+              kind: "NamedType",
+              name: { kind: "Name", value: "CreateDataConnectionInput" },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "createDataConnection" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "input" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "input" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+                {
+                  kind: "Field",
+                  name: { kind: "Name", value: "dataConnection" },
+                  selectionSet: {
+                    kind: "SelectionSet",
+                    selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "orgId" } },
+                      { kind: "Field", name: { kind: "Name", value: "name" } },
+                      { kind: "Field", name: { kind: "Name", value: "type" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "config" },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateDataConnectionMutation,
+  CreateDataConnectionMutationVariables
+>;
+export const DeleteDataConnectionDocument = {
+  kind: "Document",
+  definitions: [
+    {
+      kind: "OperationDefinition",
+      operation: "mutation",
+      name: { kind: "Name", value: "DeleteDataConnection" },
+      variableDefinitions: [
+        {
+          kind: "VariableDefinition",
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
+          type: {
+            kind: "NonNullType",
+            type: { kind: "NamedType", name: { kind: "Name", value: "ID" } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: "SelectionSet",
+        selections: [
+          {
+            kind: "Field",
+            name: { kind: "Name", value: "deleteDataConnection" },
+            arguments: [
+              {
+                kind: "Argument",
+                name: { kind: "Name", value: "id" },
+                value: {
+                  kind: "Variable",
+                  name: { kind: "Name", value: "id" },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: "SelectionSet",
+              selections: [
+                { kind: "Field", name: { kind: "Name", value: "success" } },
+                { kind: "Field", name: { kind: "Name", value: "message" } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  DeleteDataConnectionMutation,
+  DeleteDataConnectionMutationVariables
 >;
 export const SavePreviewDocument = {
   kind: "Document",
