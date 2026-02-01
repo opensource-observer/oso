@@ -85,7 +85,7 @@ test_stg_ossd__current_funding_date_parsing:
         # Expected: Date with double-digit hour extracts date portion correctly
         - to_project_name: "normal-timestamp"
           amount: 3000.0
-          funding_date: 2024-09-01 00:00:00
+          funding_date: 2024-09-01 12:00:00
           from_funder_name: "optimism"
           grant_pool_name: "grants_season_6"
           metadata: '{"token_amount": "1500"}'
