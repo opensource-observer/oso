@@ -223,14 +223,15 @@ def _extract_suffix_after_underscore_trino(
     node_id_exp: exp.Expression,
 ) -> exp.Expression:
     """Extract substring after first underscore (Trino)."""
+    underscore_pos = exp.Anonymous(
+        this="strpos",
+        expressions=[node_id_exp, exp.Literal.string("_")],
+    )
     return exp.Anonymous(
-        this="element_at",
+        this="substr",
         expressions=[
-            exp.Anonymous(
-                this="split",
-                expressions=[node_id_exp, exp.Literal.string("_")],
-            ),
-            exp.Literal.number(2),
+            node_id_exp,
+            exp.Add(this=underscore_pos, expression=exp.Literal.number(1)),
         ],
     )
 

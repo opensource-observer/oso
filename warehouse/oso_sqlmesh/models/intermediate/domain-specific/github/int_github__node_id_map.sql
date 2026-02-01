@@ -9,7 +9,8 @@ MODEL (
     "ddp"
   ),
   audits (
-    has_at_least_n_rows(threshold := 0)
+    has_at_least_n_rows(threshold := 0),
+    not_null(columns := (node_id, decoded_id))
   )
 );
 
