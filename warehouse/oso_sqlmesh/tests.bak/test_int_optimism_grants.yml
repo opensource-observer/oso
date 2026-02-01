@@ -1,0 +1,206 @@
+test_int_optimism_grants_date_parsing:
+  model: oso.int_optimism_grants
+  inputs:
+    oso.stg_ossd__current_funding:
+      columns:
+        to_project_name: text
+        amount: double
+        funding_date: "timestamp(6)"
+        from_funder_name: text
+        grant_pool_name: text
+        metadata: text
+        file_path: text
+      rows:
+        # Test 1: Valid date format (from earlier seasons)
+        - to_project_name: "test-project"
+          amount: 10000.0
+          funding_date: 2024-06-15 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_8"
+          metadata: '{"initial_delivery_date": "2024-08-01", "token_amount": "5000", "application_name": "Test Application"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Test 2: Malformed date with single-digit hour (from grants_season_8.csv)
+        - to_project_name: "highway-plus"
+          amount: 2100.0
+          funding_date: 2025-11-01 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_8"
+          metadata: '{"initial_delivery_date": "2026-01-13 0:00:00", "token_amount": "6000", "application_name": "Highway"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Test 3: NULL initial_delivery_date (from grants_season_8.csv lines 1989-2001)
+        - to_project_name: "open-source-monitoring"
+          amount: 18200.0
+          funding_date: 2025-11-01 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_8"
+          metadata: '{"application_name": "Open Source Monitoring", "token_amount": "52000", "initial_delivery_date": null}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Test 4: Missing initial_delivery_date field (from retrofunding_s8.csv)
+        - to_project_name: "velodrome"
+          amount: 3750.0
+          funding_date: 2025-09-08 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "retrofunding_s8_onchain_builders"
+          metadata: '{"application_name": "Velodrome Finance", "token_amount": "5000", "project_id": "0x08df6e20a3cfabbaf8f34d4f4d048fe7da40447c24be0f3ad513db6f13c755dd"}'
+          file_path: "data/funders/optimism/uploads/retrofunding_s8.csv"
+        # Test 5: Multiple malformed dates from same project (highway-plus pattern)
+        - to_project_name: "highway-plus"
+          amount: 16379.999999999998
+          funding_date: 2025-11-01 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_8"
+          metadata: '{"initial_delivery_date": "2026-01-13 0:00:00", "token_amount": "46800", "application_name": "Highway"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Test 6: Project with carriage return in address (metrom-xyz pattern)
+        - to_project_name: "metrom-xyz"
+          amount: 980.0
+          funding_date: 2025-11-01 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_8"
+          metadata: '{"initial_delivery_date": "2026-01-13 0:00:00", "token_amount": "2800", "application_name": "Metrom", "l2_address": "0x5A973117Dd273676bf4D14313b80562DC8973ba9\r"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Test 7: Additional malformed date from production error (2025-01-01 0:00:00)
+        - to_project_name: "new-project"
+          amount: 5000.0
+          funding_date: 2024-12-01 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_8"
+          metadata: '{"initial_delivery_date": "2025-01-01 0:00:00", "token_amount": "15000", "application_name": "New Project"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Test 8: Row 3088 from funding_data.csv - originprotocol with malformed date
+        - to_project_name: "originprotocol"
+          amount: 2109.38
+          funding_date: 2024-09-01 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_6"
+          metadata: '{"application_name": "OETH on OP (1 of 3)", "token_amount": "1586", "initial_delivery_date": "2024-12-01 0:00:00"}'
+          file_path: "data/funders/optimism/uploads/grants_season_6.csv"
+    oso.projects_v1:
+      rows:
+        - project_name: "test-project"
+          project_source: "OSS_DIRECTORY"
+          project_namespace: "oso"
+          display_name: "Test Project"
+          project_id: "proj_123"
+        - project_name: "highway-plus"
+          project_source: "OSS_DIRECTORY"
+          project_namespace: "oso"
+          display_name: "Highway Plus"
+          project_id: "proj_456"
+        - project_name: "open-source-monitoring"
+          project_source: "OSS_DIRECTORY"
+          project_namespace: "oso"
+          display_name: "Open Source Monitoring"
+          project_id: "proj_789"
+        - project_name: "velodrome"
+          project_source: "OSS_DIRECTORY"
+          project_namespace: "oso"
+          display_name: "Velodrome Finance"
+          project_id: "proj_abc"
+        - project_name: "metrom-xyz"
+          project_source: "OSS_DIRECTORY"
+          project_namespace: "oso"
+          display_name: "Metrom"
+          project_id: "proj_def"
+        - project_name: "new-project"
+          project_source: "OSS_DIRECTORY"
+          project_namespace: "oso"
+          display_name: "New Project"
+          project_id: "proj_new"
+        - project_name: "originprotocol"
+          project_source: "OSS_DIRECTORY"
+          project_namespace: "oso"
+          display_name: "Origin Protocol"
+          project_id: "proj_origin"
+  outputs:
+    query:
+      rows:
+        # Expected: Valid date parses correctly
+        - funding_date: 2024-06-15
+          application_name: "Test Application"
+          grant_round: "grants_season_8"
+          grant_mechanism: "GRANTS_COUNCIL"
+          amount_op: 5000.0
+          initial_delivery_date: 2024-08-01
+          amount_usd: 10000.0
+          oso_project_name: "test-project"
+          oso_project_display_name: "Test Project"
+          oso_project_id: "proj_123"
+        # Expected: Malformed date - Trino falls back to sentinel
+        # The TRY_CAST protects against Trino failures
+        - funding_date: 2025-11-01
+          application_name: "Highway"
+          grant_round: "grants_season_8"
+          grant_mechanism: "GRANTS_COUNCIL"
+          amount_op: 6000.0
+          initial_delivery_date: 1970-01-01
+          amount_usd: 2100.0
+          oso_project_name: "highway-plus"
+          oso_project_display_name: "Highway Plus"
+          oso_project_id: "proj_456"
+        # Expected: NULL date falls back to sentinel
+        - funding_date: 2025-11-01
+          application_name: "Open Source Monitoring"
+          grant_round: "grants_season_8"
+          grant_mechanism: "GRANTS_COUNCIL"
+          amount_op: 52000.0
+          initial_delivery_date: 1970-01-01
+          amount_usd: 18200.0
+          oso_project_name: "open-source-monitoring"
+          oso_project_display_name: "Open Source Monitoring"
+          oso_project_id: "proj_789"
+        # Expected: Missing field falls back to sentinel
+        - funding_date: 2025-09-08
+          application_name: "Velodrome Finance"
+          grant_round: "retrofunding_s8_onchain_builders"
+          grant_mechanism: "RETRO_FUNDING"
+          amount_op: 5000.0
+          initial_delivery_date: 1970-01-01
+          amount_usd: 3750.0
+          oso_project_name: "velodrome"
+          oso_project_display_name: "Velodrome Finance"
+          oso_project_id: "proj_abc"
+        # Expected: Second malformed date entry - Trino falls back to sentinel
+        - funding_date: 2025-11-01
+          application_name: "Highway"
+          grant_round: "grants_season_8"
+          grant_mechanism: "GRANTS_COUNCIL"
+          amount_op: 46800.0
+          initial_delivery_date: 1970-01-01
+          amount_usd: 16379.999999999998
+          oso_project_name: "highway-plus"
+          oso_project_display_name: "Highway Plus"
+          oso_project_id: "proj_456"
+        # Expected: Malformed date with special characters - Trino falls back to sentinel
+        - funding_date: 2025-11-01
+          application_name: "Metrom"
+          grant_round: "grants_season_8"
+          grant_mechanism: "GRANTS_COUNCIL"
+          amount_op: 2800.0
+          initial_delivery_date: 1970-01-01
+          amount_usd: 980.0
+          oso_project_name: "metrom-xyz"
+          oso_project_display_name: "Metrom"
+          oso_project_id: "proj_def"
+        # Expected: Additional malformed date from production error - Trino falls back to sentinel
+        - funding_date: 2024-12-01
+          application_name: "New Project"
+          grant_round: "grants_season_8"
+          grant_mechanism: "GRANTS_COUNCIL"
+          amount_op: 15000.0
+          initial_delivery_date: 1970-01-01
+          amount_usd: 5000.0
+          oso_project_name: "new-project"
+          oso_project_display_name: "New Project"
+          oso_project_id: "proj_new"
+        # Expected: Row 3088 from funding_data.csv - Trino falls back to sentinel
+        - funding_date: 2024-09-01
+          application_name: "OETH on OP (1 of 3)"
+          grant_round: "grants_season_6"
+          grant_mechanism: "GRANTS_COUNCIL"
+          amount_op: 1586.0
+          initial_delivery_date: 1970-01-01
+          amount_usd: 2109.38
+          oso_project_name: "originprotocol"
+          oso_project_display_name: "Origin Protocol"
+          oso_project_id: "proj_origin"
