@@ -278,22 +278,30 @@ export async function getOrgResourceClient(
   const client = createAdminClient();
   const config = RESOURCE_CONFIG[resourceType];
 
-  const { data: resource } = await client
-    .from(config.table)
-    .select("org_id")
-    .eq("id", resourceId)
-    .is("deleted_at", null)
-    .single();
+  const resourceCacheKey = `${resourceType}:${resourceId}`;
+  let orgId = context.authCache.resourceOrgIds.get(resourceCacheKey);
 
-  if (!resource) {
-    throw AuthenticationErrors.notAuthorized();
+  if (!orgId) {
+    const { data: resource } = await client
+      .from(config.table)
+      .select("org_id")
+      .eq("id", resourceId)
+      .is("deleted_at", null)
+      .single();
+
+    if (!resource) {
+      throw AuthenticationErrors.notAuthorized();
+    }
+
+    orgId = resource.org_id;
+    context.authCache.resourceOrgIds.set(resourceCacheKey, orgId);
   }
 
   const { data: membership } = await client
     .from("users_by_organization")
     .select("user_role")
     .eq("user_id", user.userId)
-    .eq("org_id", resource.org_id)
+    .eq("org_id", orgId)
     .is("deleted_at", null)
     .single();
 

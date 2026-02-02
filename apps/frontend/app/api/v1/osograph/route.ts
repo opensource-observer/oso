@@ -52,6 +52,7 @@ const apolloHandler = startServerAndCreateNextHandler<NextRequest>(server, {
       authCache: {
         orgMemberships: new Map(),
         resourcePermissions: new Map(),
+        resourceOrgIds: new Map(),
       },
     } satisfies GraphQLContext;
   },
