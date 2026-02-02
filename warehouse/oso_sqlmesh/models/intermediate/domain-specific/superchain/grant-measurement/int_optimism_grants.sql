@@ -36,13 +36,17 @@ WITH grants AS (
 )
 
 SELECT
-  funding_date::DATE AS funding_date,
+  COALESCE(
+    TRY(CAST(funding_date AS DATE)),
+    CAST('1970-01-01' AS DATE)
+  ) AS funding_date,
   application_name::VARCHAR AS application_name,
   grant_pool_name::VARCHAR AS grant_round,
   grant_mechanism::VARCHAR AS grant_mechanism,
   amount_op::DOUBLE AS amount_op,
   COALESCE(
-    TRY_CAST(initial_delivery_date_raw AS DATE),
+    TRY(CAST(date_parse(initial_delivery_date_raw, '%Y-%m-%d %k:%i:%s') AS DATE)),
+    TRY(CAST(initial_delivery_date_raw AS DATE)),
     CAST('1970-01-01' AS DATE)
   ) AS initial_delivery_date,
   amount_usd::DOUBLE AS amount_usd,

@@ -1,0 +1,100 @@
+test_stg_ossd__current_funding_date_parsing:
+  model: oso.stg_ossd__current_funding
+  inputs:
+    # This is for trino testing
+    bigquery.ossd.funding: &funding_data
+      columns:
+        to_project_name: text
+        amount: text
+        funding_date: text
+        from_funder_name: text
+        grant_pool_name: text
+        metadata: text
+        file_path: text
+      rows:
+        # Test 1: Valid date format YYYY-MM-DD (most common pattern)
+        - to_project_name: "Test-Project"
+          amount: "10000.0"
+          funding_date: "2024-06-15"
+          from_funder_name: "Optimism"
+          grant_pool_name: "Grants_Season_8"
+          metadata: '{"token_amount": "5000"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Test 2: Date with timestamp and single-digit hour (problem case)
+        - to_project_name: "Highway-Plus"
+          amount: "2100.0"
+          funding_date: "2025-11-01 0:00:00"
+          from_funder_name: "Optimism"
+          grant_pool_name: "Grants_Season_8"
+          metadata: '{"token_amount": "6000"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Test 3: NULL/empty funding_date - should fallback to sentinel
+        - to_project_name: "Empty-Date-Project"
+          amount: "5000.0"
+          funding_date: ""
+          from_funder_name: "Optimism"
+          grant_pool_name: "Grants_Season_7"
+          metadata: '{"token_amount": "2500"}'
+          file_path: "data/funders/optimism/uploads/grants_season_7.csv"
+        # Test 4: Date with double-digit hour timestamp
+        - to_project_name: "Normal-Timestamp"
+          amount: "3000.0"
+          funding_date: "2024-09-01 12:00:00"
+          from_funder_name: "Optimism"
+          grant_pool_name: "Grants_Season_6"
+          metadata: '{"token_amount": "1500"}'
+          file_path: "data/funders/optimism/uploads/grants_season_6.csv"
+        # Test 5: Variable digit date format YYYY-M-D
+        - to_project_name: "Short-Date-Project"
+          amount: "1000.0"
+          funding_date: "2024-1-5"
+          from_funder_name: "Optimism"
+          grant_pool_name: "Grants_Season_5"
+          metadata: '{"token_amount": "500"}'
+          file_path: "data/funders/optimism/uploads/grants_season_5.csv"
+    # This is for duckdb testing
+    sources__bigquery__ossd.funding: *funding_data
+
+  outputs:
+    query:
+      rows:
+        # Expected: Valid date parses correctly
+        - to_project_name: "test-project"
+          amount: 10000.0
+          funding_date: 2024-06-15 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_8"
+          metadata: '{"token_amount": "5000"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Expected: Date with single-digit hour extracts date portion correctly
+        - to_project_name: "highway-plus"
+          amount: 2100.0
+          funding_date: 2025-11-01 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_8"
+          metadata: '{"token_amount": "6000"}'
+          file_path: "data/funders/optimism/uploads/grants_season_8.csv"
+        # Expected: Empty date falls back to sentinel 1970-01-01
+        - to_project_name: "empty-date-project"
+          amount: 5000.0
+          funding_date: 1970-01-01 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_7"
+          metadata: '{"token_amount": "2500"}'
+          file_path: "data/funders/optimism/uploads/grants_season_7.csv"
+        # Expected: Date with double-digit hour extracts date portion correctly
+        - to_project_name: "normal-timestamp"
+          amount: 3000.0
+          funding_date: 2024-09-01 12:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_6"
+          metadata: '{"token_amount": "1500"}'
+          file_path: "data/funders/optimism/uploads/grants_season_6.csv"
+        # Expected: Variable digit date parses correctly
+        - to_project_name: "short-date-project"
+          amount: 1000.0
+          funding_date: 2024-01-05 00:00:00
+          from_funder_name: "optimism"
+          grant_pool_name: "grants_season_5"
+          metadata: '{"token_amount": "500"}'
+          file_path: "data/funders/optimism/uploads/grants_season_5.csv"

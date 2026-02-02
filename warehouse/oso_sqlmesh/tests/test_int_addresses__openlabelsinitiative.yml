@@ -1,0 +1,74 @@
+test_int_addresses__openlabelsinitiative_chain_id_parsing:
+  model: oso.int_addresses__openlabelsinitiative
+  inputs:
+    oso.stg_openlabelsinitiative__labels_decoded:
+      columns:
+        id: text
+        chain_id: text
+        address: text
+        tag_id: text
+        tag_value: text
+        attester: text
+      rows:
+        # Test 1: Valid EIP-155 chain ID (Optimism)
+        - id: "1"
+          chain_id: "eip155:10"
+          address: "0xabc123"
+          tag_id: "is_eoa"
+          tag_value: "true"
+          attester: "0xattester1"
+        # Test 2: The ':any' wildcard case
+        - id: "2"
+          chain_id: "eip155:any"
+          address: "0xdef456"
+          tag_id: "is_eoa"
+          tag_value: "true"
+          attester: "0xattester2"
+        # Test 3: StarkNet SN_MAIN (non-numeric, will be NULL and filtered out)
+        - id: "3"
+          chain_id: "starknet:SN_MAIN"
+          address: "0xstark789"
+          tag_id: "is_eoa"
+          tag_value: "true"
+          attester: "0xattester3"
+        # Test 4: Invalid non-numeric reference (should be NULL, filtered by JOIN)
+        - id: "4"
+          chain_id: "solana:mainnet"
+          address: "0xsol123"
+          tag_id: "is_eoa"
+          tag_value: "true"
+          attester: "0xattester4"
+    oso.int_chainlist:
+      columns:
+        chain_id: bigint
+        chainlist_name: text
+        oso_chain_name: text
+        display_name: text
+      rows:
+        - chain_id: 10
+          chainlist_name: "OP Mainnet"
+          oso_chain_name: "OPTIMISM"
+          display_name: "OP Mainnet"
+        - chain_id: 1
+          chainlist_name: "Ethereum Mainnet"
+          oso_chain_name: "MAINNET"
+          display_name: "Ethereum"
+  outputs:
+    query:
+      rows:
+        # Test 1: Valid EIP-155 → chain_id 10
+        - address: "0xabc123"
+          chain_id: 10
+          chain: "OPTIMISM"
+          owner_project: null
+          usage_category: null
+          address_type: "EOA"
+        # Test 2: :any → chain_id 1
+        - address: "0xdef456"
+          chain_id: 1
+          chain: "MAINNET"
+          owner_project: null
+          usage_category: null
+          address_type: "EOA"
+        # Test 3: starknet:SN_MAIN → NULL chain_id, filtered out by JOIN (not in output)
+        # Test 4: solana:mainnet → NULL chain_id, filtered out by JOIN (not in output)

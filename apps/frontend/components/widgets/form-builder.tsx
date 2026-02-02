@@ -182,7 +182,7 @@ function applySkipIfEmpty<T extends z.ZodTypeAny>(
   shouldSkip: boolean,
 ): T | z.ZodEffects<T, z.output<T> | undefined, z.input<T>> {
   if (!shouldSkip) return schema;
-  return schema.transform((val) => (isEmpty(val) ? undefined : val));
+  return schema.transform((val) => (isEmpty(val) ? null : val));
 }
 
 function createZodUnion(
@@ -231,10 +231,18 @@ const createZodSchema = (field: FormSchemaField): FormBuilderZodField => {
         return field.required
           ? z.string().min(1, { message: `${field.label} is required.` })
           : z.string();
-      case "number":
-        return z.number({
+      case "number": {
+        const baseSchema = z.number({
           invalid_type_error: `${field.label} must be a number.`,
         });
+        const withOptional = field.required
+          ? baseSchema
+          : baseSchema.optional();
+        return z.preprocess(
+          (val) => (Number.isNaN(val) ? undefined : val),
+          withOptional,
+        );
+      }
       case "boolean":
         return z.boolean();
       case "date":
@@ -843,13 +851,7 @@ const ArrayItemRenderer: React.FC<ArrayItemRendererProps> = ({
                     placeholder={`Enter ${fieldLabel}`}
                     disabled={disabled}
                     className="h-10"
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === ""
-                          ? undefined
-                          : Number(e.target.value),
-                      )
-                    }
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -1610,13 +1612,7 @@ const RenderField: React.FC<RenderFieldProps> = ({
                     {...field}
                     value={field.value ?? ""}
                     disabled={fieldSchema.disabled}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === ""
-                          ? undefined
-                          : Number(e.target.value),
-                      )
-                    }
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
                   />
                 </FormControl>
                 {fieldSchema.description && (

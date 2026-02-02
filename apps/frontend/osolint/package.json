@@ -1,0 +1,14 @@
+{
+  "name": "eslint-plugin-oso-frontend",
+  "version": "1.0.0",
+  "description": "Custom ESLint rules for OSO frontend",
+  "type": "module",
+  "main": "index.mjs",
+  "private": true,
+  "dependencies": {
+    "@typescript-eslint/utils": "^8.39.1"
+  },
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  }
+}

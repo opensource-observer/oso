@@ -1,0 +1,6 @@
+{
+  "enabledPlugins": {
+    "agent-browser@agent-browser": true,
+    "frontend-design@claude-code-plugins": true
+  }
+}

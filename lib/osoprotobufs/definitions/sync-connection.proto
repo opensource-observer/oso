@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+/**
+ * A request to sync the schema for a particular data connection.
+ */
+message SyncConnectionRunRequest {
+  bytes run_id = 1;
+
+  string connection_id = 2;
+}
