@@ -5,16 +5,22 @@ from typing import Any, Dict, List, Optional, Union
 
 from .async_base_client import AsyncBaseClient
 from .base_model import UNSET, UnsetType
+from .create_data_connection_datasets import CreateDataConnectionDatasets
 from .create_materialization import CreateMaterialization
 from .enums import RunStatus, StepStatus
 from .finish_run import FinishRun
 from .finish_step import FinishStep
+from .get_data_connection import GetDataConnection
 from .get_data_ingestion_config import GetDataIngestionConfig
 from .get_data_models import GetDataModels
 from .get_notebook import GetNotebook
 from .get_run import GetRun
 from .get_static_models import GetStaticModels
-from .input_types import DataModelColumnInput, UpdateMetadataInput
+from .input_types import (
+    DataConnectionSchemaInput,
+    DataModelColumnInput,
+    UpdateMetadataInput,
+)
 from .resolve_tables import ResolveTables
 from .save_published_notebook_html import SavePublishedNotebookHtml
 from .start_run import StartRun
@@ -530,3 +536,67 @@ class Client(AsyncBaseClient):
         )
         data = self.get_data(response)
         return GetNotebook.model_validate(data)
+
+    async def get_data_connection(
+        self, connection_id: str, **kwargs: Any
+    ) -> GetDataConnection:
+        query = gql(
+            """
+            query GetDataConnection($connectionId: ID!) {
+              dataConnections(where: {id: {eq: $connectionId}}, single: true) {
+                edges {
+                  node {
+                    id
+                    orgId
+                    name
+                    type
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {"connectionId": connection_id}
+        response = await self.execute(
+            query=query,
+            operation_name="GetDataConnection",
+            variables=variables,
+            **kwargs,
+        )
+        data = self.get_data(response)
+        return GetDataConnection.model_validate(data)
+
+    async def create_data_connection_datasets(
+        self,
+        run_id: str,
+        org_id: str,
+        data_connection_id: str,
+        schemas: List[DataConnectionSchemaInput],
+        **kwargs: Any,
+    ) -> CreateDataConnectionDatasets:
+        query = gql(
+            """
+            mutation CreateDataConnectionDatasets($runId: ID!, $orgId: ID!, $dataConnectionId: ID!, $schemas: [DataConnectionSchemaInput!]!) {
+              createDataConnectionDatasets(
+                input: {runId: $runId, orgId: $orgId, dataConnectionId: $dataConnectionId, schemas: $schemas}
+              ) {
+                success
+                message
+              }
+            }
+            """
+        )
+        variables: Dict[str, object] = {
+            "runId": run_id,
+            "orgId": org_id,
+            "dataConnectionId": data_connection_id,
+            "schemas": schemas,
+        }
+        response = await self.execute(
+            query=query,
+            operation_name="CreateDataConnectionDatasets",
+            variables=variables,
+            **kwargs,
+        )
+        data = self.get_data(response)
+        return CreateDataConnectionDatasets.model_validate(data)
