@@ -9,6 +9,7 @@ import { FlatCompat } from "@eslint/eslintrc";
 import { fixupConfigRules } from "@eslint/compat";
 import rootConfig from "../../eslint.config.mjs";
 import { resolveFlatConfig } from "@leancodepl/resolve-eslint-flat-config";
+import osoFrontendRules from "./osolint/index.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,6 +69,18 @@ export default defineConfig(resolveFlatConfig([
                 rootDir: ".",
                 prefix: "@",
             }],
+        },
+    },
+    {
+        files: ["app/api/v1/osograph/schema/resolvers/**/*.{ts,tsx}"],
+
+        plugins: {
+            "oso-frontend": osoFrontendRules,
+        },
+
+        rules: {
+            "oso-frontend/access-control/no-direct-admin-client": "error",
+            "oso-frontend/access-control/enforce-access-tier-helpers": "error",
         },
     },
 ]));
