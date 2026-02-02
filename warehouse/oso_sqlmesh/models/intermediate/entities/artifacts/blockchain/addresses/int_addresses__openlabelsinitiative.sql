@@ -8,16 +8,33 @@ MODEL(
   )
 );
 
-WITH pivoted AS (
+WITH filtered_addresses AS (
+  SELECT DISTINCT
+    address,
+    tag_id,
+    tag_value,
+    SPLIT_PART(chain_id, ':', 2) AS chain_id_str
+  FROM oso.stg_openlabelsinitiative__labels_decoded
+  WHERE
+    chain_id LIKE '%:%'
+    AND tag_id IN (
+      'owner_project', 'usage_category',
+      'is_eoa', 'is_proxy', 'is_factory_contract', 
+      'is_paymaster', 'is_safe_contract',
+      'deployer_address', 'erc_type'
+    )
+),
+
+pivoted AS (
   SELECT
     CASE WHEN tag_id = 'deployer_address' THEN tag_value ELSE address END
       AS address,
-    CASE
-      WHEN chain_id LIKE '%:any' THEN 1
-      WHEN chain_id LIKE '%:%' AND REGEXP_LIKE(SPLIT_PART(chain_id, ':', 2), '^\d+$')
-        THEN CAST(SPLIT_PART(chain_id, ':', 2) AS BIGINT)
-      ELSE NULL
-    END AS chain_id,
+    TRY_CAST(
+      CASE
+        WHEN chain_id_str LIKE 'any' THEN 1
+        ELSE TRY_CAST(chain_id_str AS BIGINT)
+      END AS BIGINT
+    ) AS chain_id,
     MAX(CASE WHEN tag_id = 'owner_project' THEN tag_value ELSE NULL END)
       AS owner_project,
     MAX(CASE WHEN tag_id = 'usage_category' THEN tag_value ELSE NULL END)
@@ -34,7 +51,7 @@ WITH pivoted AS (
         ELSE []
       END
     )) AS address_types
-  FROM oso.stg_openlabelsinitiative__labels_decoded AS labels
+  FROM filtered_addresses
   GROUP BY 1,2
 ),
 
