@@ -278,34 +278,37 @@ export async function getOrgResourceClient(
   const client = createAdminClient();
   const config = RESOURCE_CONFIG[resourceType];
 
-  const resourceCacheKey = `${resourceType}:${resourceId}`;
-  let orgId = context.authCache.resourceOrgIds.get(resourceCacheKey);
-
-  if (!orgId) {
-    const { data: resource } = await client
-      .from(config.table)
-      .select("org_id")
-      .eq("id", resourceId)
-      .is("deleted_at", null)
-      .single();
-
-    if (!resource) {
-      throw AuthenticationErrors.notAuthorized();
-    }
-
-    orgId = resource.org_id;
-    context.authCache.resourceOrgIds.set(resourceCacheKey, orgId);
-  }
-
-  const { data: membership } = await client
-    .from("users_by_organization")
-    .select("user_role")
-    .eq("user_id", user.userId)
-    .eq("org_id", orgId)
+  const { data: resource } = await client
+    .from(config.table)
+    .select("org_id")
+    .eq("id", resourceId)
     .is("deleted_at", null)
     .single();
 
-  const orgRole = membership?.user_role as OrgRole | undefined;
+  if (!resource) {
+    throw AuthenticationErrors.notAuthorized();
+  }
+
+  // Check orgMemberships cache before querying DB
+  const membershipCacheKey = `${user.userId}:${resource.org_id}`;
+  let orgRole = context.authCache.orgMemberships.get(membershipCacheKey) as
+    | OrgRole
+    | undefined;
+
+  if (!orgRole) {
+    const { data: membership } = await client
+      .from("users_by_organization")
+      .select("user_role")
+      .eq("user_id", user.userId)
+      .eq("org_id", resource.org_id)
+      .is("deleted_at", null)
+      .single();
+
+    if (membership) {
+      orgRole = membership.user_role as OrgRole;
+      context.authCache.orgMemberships.set(membershipCacheKey, orgRole);
+    }
+  }
 
   if (orgRole && bypassesResourcePermissions(orgRole)) {
     const permissionLevel = orgRole === "owner" ? "owner" : "admin";
