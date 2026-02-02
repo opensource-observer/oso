@@ -10,7 +10,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { AlertCircle, XCircle } from "lucide-react";
-import type { FormSchema, FormSchemaField } from "@/components/widgets/form-builder";
+import type {
+  FormSchema,
+  FormSchemaField,
+} from "@/components/widgets/form-builder";
 
 interface ErrorItem {
   id: string;
