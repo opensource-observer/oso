@@ -25,23 +25,6 @@ WITH filtered_addresses AS (
     )
 ),
 
-WITH filtered_addresses AS (
-  SELECT DISTINCT
-    address,
-    tag_id,
-    tag_value,
-    SPLIT_PART(chain_id, ':', 2) AS chain_id_str
-  FROM oso.stg_openlabelsinitiative__labels_decoded
-  WHERE
-    chain_id LIKE '%:%'
-    AND tag_id IN (
-      'owner_project', 'usage_category',
-      'is_eoa', 'is_proxy', 'is_factory_contract', 
-      'is_paymaster', 'is_safe_contract',
-      'deployer_address', 'erc_type'
-    )
-),
-
 pivoted AS (
   SELECT
     CASE WHEN tag_id = 'deployer_address' THEN tag_value ELSE address END
