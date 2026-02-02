@@ -151,6 +151,9 @@ export const dataConnectionResolvers = {
       if (trinoError) {
         // Best effort try to cleanup the connector from supabase
         await supabase.from("dynamic_connectors").delete().eq("id", data.id);
+        throw ServerErrors.externalService(
+          `Error creating catalog: ${trinoError}`,
+        );
       }
 
       await syncDataConnection(supabase, authenticatedUser.userId, data);
