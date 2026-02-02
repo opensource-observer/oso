@@ -1,6 +1,10 @@
 {
   "enabledPlugins": {
     "agent-browser@agent-browser": true,
-    "frontend-design@claude-code-plugins": true
+    "frontend-design@claude-code-plugins": true,
+    "differential-review@trailofbits": true,
+    "sharp-edges@trailofbits": true,
+    "variant-analysis@trailofbits": true,
+    "fix-review@trailofbits": true
   }
 }
