@@ -10,77 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { AlertCircle, XCircle } from "lucide-react";
-
-interface FormSchemaFieldBase {
-  label: string;
-  required?: boolean;
-  description?: string;
-  defaultValue?: unknown;
-  placeholder?: string;
-  disabled?: boolean;
-  hidden?: boolean;
-  advanced?: boolean;
-  advancedGroup?: string;
-  skipIfEmpty?: boolean;
-}
-
-interface FormSchemaStringField extends FormSchemaFieldBase {
-  type: "string";
-  options?: (string | { value: string; label: string })[];
-}
-
-interface FormSchemaNumberField extends FormSchemaFieldBase {
-  type: "number";
-}
-
-interface FormSchemaBooleanField extends FormSchemaFieldBase {
-  type: "boolean";
-}
-
-interface FormSchemaDateField extends FormSchemaFieldBase {
-  type: "date";
-}
-
-interface FormSchemaObjectField extends FormSchemaFieldBase {
-  type: "object";
-  properties?: FormSchema;
-  allowDynamicKeys?: boolean;
-}
-
-interface FormSchemaArrayField extends FormSchemaFieldBase {
-  type: "array";
-  itemType?: "string" | "number" | "object" | "boolean" | "date";
-  itemProperties?: FormSchema;
-  itemOptions?: (string | { value: string; label: string })[];
-}
-
-interface FormSchemaUnionVariant {
-  value: string;
-  label: string;
-  properties?: FormSchema;
-}
-
-interface FormSchemaUnionField extends FormSchemaFieldBase {
-  type: "union";
-  variants: FormSchemaUnionVariant[];
-  discriminator?: string;
-  variantSelector?: "dropdown" | "tabs" | "radio";
-  collapseNested?: boolean;
-  nullable?: boolean;
-}
-
-type FormSchemaField =
-  | FormSchemaStringField
-  | FormSchemaNumberField
-  | FormSchemaBooleanField
-  | FormSchemaDateField
-  | FormSchemaObjectField
-  | FormSchemaArrayField
-  | FormSchemaUnionField;
-
-interface FormSchema {
-  [key: string]: FormSchemaField;
-}
+import type { FormSchema, FormSchemaField } from "@/components/widgets/form-builder";
 
 interface ErrorItem {
   id: string;
