@@ -48,6 +48,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { CodeComponentMeta } from "@plasmicapp/loader-nextjs";
+import { FormErrorBanner } from "@/components/widgets/form-error-banner";
 
 type PrimitiveValue = string | number | boolean | Date;
 type FormDefaultValue =
@@ -1872,6 +1873,9 @@ const FormBuilder: React.FC<FormBuilderProps> = React.forwardRef(
                 </Accordion>
               );
             })()}
+
+            <FormErrorBanner schema={schema} />
+
             {horizontal ? (
               <div className="grid grid-cols-4 items-start gap-4">
                 <div className="col-start-2 col-span-3 flex justify-end">
