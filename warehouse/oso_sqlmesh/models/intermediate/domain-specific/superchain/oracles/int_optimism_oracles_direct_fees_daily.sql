@@ -36,7 +36,7 @@ WITH events AS (
 addresses_per_txn AS (
   SELECT
     transaction_hash,
-    COUNT(DISTINCT oracle_address) AS num_addresses
+    COUNT(DISTINCT oracle_address)::DOUBLE AS num_addresses
   FROM events
   GROUP BY 1
 )
@@ -46,7 +46,7 @@ SELECT
   e.oracle_name,
   e.oracle_address,
   SUM(e.read_fees) AS read_fees,
-  SUM(1.0 / apt.num_addresses) AS transaction_count
+  SUM(1.0 / apt.num_addresses)::DOUBLE AS transaction_count
 FROM events AS e
 JOIN addresses_per_txn AS apt
   ON e.transaction_hash = apt.transaction_hash
