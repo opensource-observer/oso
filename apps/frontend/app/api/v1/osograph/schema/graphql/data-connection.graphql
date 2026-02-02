@@ -30,7 +30,6 @@ type DataConnectionAlias {
   orgId: ID!
   datasetId: ID!
   dataConnectionId: ID!
-  name: String!
   schema: String!
 }
 
@@ -55,11 +54,6 @@ extend type Mutation {
   ): CreateDataConnectionPayload!
   deleteDataConnection(id: ID!): SimplePayload!
   syncDataConnection(id: ID!): SimplePayload!
-
-  createDataConnectionAlias(
-    input: CreateDataConnectionAliasInput!
-  ): CreateDataConnectionAliasPayload!
-  deleteDataConnectionAlias(id: ID!): SimplePayload!
 }
 
 input CreateDataConnectionInput {
@@ -79,17 +73,5 @@ type CreateDataConnectionPayload {
 type SyncDataConnectionPayload {
   success: Boolean!
   run: Run!
-  message: String
-}
-
-input CreateDataConnectionAliasInput {
-  dataConnectionId: ID!
-  name: String!
-  schema: String!
-}
-
-type CreateDataConnectionAliasPayload {
-  success: Boolean!
-  dataConnectionAlias: DataConnectionAlias
   message: String
 }
