@@ -75,7 +75,7 @@ SELECT
   ae.to_address,
   apps.to_project_name,
   ae.l2_tx_fees,
-  ae.tx_count
+  ae.tx_count::double as tx_count
 FROM amortized_events AS ae
 LEFT JOIN apps
   ON ae.to_address = apps.artifact_name
