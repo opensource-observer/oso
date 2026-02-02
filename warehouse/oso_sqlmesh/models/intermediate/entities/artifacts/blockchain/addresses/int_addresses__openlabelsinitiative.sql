@@ -14,8 +14,8 @@ WITH pivoted AS (
       AS address,
     CASE
       WHEN chain_id LIKE '%:any' THEN 1
-      WHEN chain_id LIKE '%:%'
-        THEN TRY(CAST(SPLIT_PART(chain_id, ':', 2) AS BIGINT))
+      WHEN chain_id LIKE '%:%' AND REGEXP_LIKE(SPLIT_PART(chain_id, ':', 2), '^\d+$')
+        THEN CAST(SPLIT_PART(chain_id, ':', 2) AS BIGINT)
       ELSE NULL
     END AS chain_id,
     MAX(CASE WHEN tag_id = 'owner_project' THEN tag_value ELSE NULL END)
