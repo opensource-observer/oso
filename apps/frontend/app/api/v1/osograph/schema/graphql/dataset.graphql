@@ -161,25 +161,6 @@ extend type Query {
     single: Boolean
     where: JSON
   ): DatasetConnection!
-
-  """
-  Get table column metadata. The where parameter must include:
-  - orgId: Organization ID
-  - catalogName: Catalog name
-  - schemaName: Schema name
-  - tableName: Table name
-
-  Example:
-  ```json
-  {
-    "orgId": { "eq": "org-uuid" },
-    "catalogName": { "eq": "user_iceberg" },
-    "schemaName": { "eq": "ds_schema" },
-    "tableName": { "eq": "my_table" }
-  }
-  ```
-  """
-  tables(where: JSON!): [TableColumn!]!
 }
 
 extend type Mutation {
