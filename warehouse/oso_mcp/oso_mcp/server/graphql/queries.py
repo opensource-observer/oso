@@ -631,24 +631,63 @@ class QueryDocumentTraverser:
         return VisitorControl.CONTINUE
 
 
-class QueryExtractor:
-    """Extract query information from parsed GraphQL query documents."""
+class QueryCollector:
+    """Collects QueryInfo from parsed GraphQL query documents.
 
-    def extract_queries(
+    This class processes QueryDocument objects and generates Pydantic models
+    for each query operation found. It follows a similar pattern to
+    MutationCollectorVisitor for API consistency.
+
+    Example:
+        parser = QueryDocumentParser(schema)
+        query_docs = parser.parse_directory(client_schema_path)
+
+        collector = QueryCollector(schema)
+        queries = collector.collect_from_documents(query_docs)
+    """
+
+    def __init__(
         self,
         schema: GraphQLSchema,
-        query_docs: t.List[QueryDocument],
-        model_generator: PydanticModelGenerator,
-    ) -> t.List[QueryInfo]:
-        """Extract all queries and generate their Pydantic models."""
-        queries = []
+        ignore_unknown_types: bool = False,
+    ):
+        """Initialize the query collector.
 
-        query_type = schema.query_type
+        Args:
+            schema: GraphQL schema for type resolution
+            ignore_unknown_types: If True, map unknown types to Any instead of raising error
+        """
+        self._schema = schema
+        self._ignore_unknown_types = ignore_unknown_types
+        self._queries: t.List[QueryInfo] = []
+        self._type_registry: t.Dict[str, t.Any] = {}
+
+    @property
+    def queries(self) -> t.List[QueryInfo]:
+        """Get the collected queries."""
+        return self._queries
+
+    def collect_from_documents(
+        self,
+        query_docs: t.List[QueryDocument],
+    ) -> t.List[QueryInfo]:
+        """Collect all queries from the provided documents.
+
+        Args:
+            query_docs: List of parsed QueryDocument objects
+
+        Returns:
+            List of QueryInfo objects for each query operation
+        """
+        self._queries = []
+        self._type_registry = {}
+
+        query_type = self._schema.query_type
         if not query_type:
             raise ValueError("Schema does not have a Query type defined")
 
         for doc in query_docs:
-            self._generate_fragment_models(doc, model_generator)
+            self._generate_fragment_models(doc)
 
             for operation in doc.operations:
                 if not operation.name:
@@ -662,13 +701,13 @@ class QueryExtractor:
 
                 variable_definitions = [v.ast_node for v in operation.variables]
                 if variable_definitions:
-                    input_model = model_generator.generate_model_from_variables(
+                    input_model = self._generate_variables_model(
                         query_name, variable_definitions
                     )
                 else:
                     input_model = create_model(f"{query_name}Variables")
 
-                payload_model = self._generate_payload_model(operation, query_name, doc)
+                payload_model = self._generate_payload_model(operation, query_name)
 
                 query_info = QueryInfo(
                     name=query_name,
@@ -680,15 +719,11 @@ class QueryExtractor:
                     selection_set=operation.ast_node.selection_set,
                 )
 
-                queries.append(query_info)
+                self._queries.append(query_info)
 
-        return queries
+        return self._queries
 
-    def _generate_fragment_models(
-        self,
-        doc: QueryDocument,
-        model_generator: PydanticModelGenerator,
-    ) -> None:
+    def _generate_fragment_models(self, doc: QueryDocument) -> None:
         """Generate Pydantic models for all fragments in the document."""
         for fragment_name, fragment in doc.fragments.items():
             visitor = PydanticModelVisitor(
@@ -696,21 +731,36 @@ class QueryExtractor:
                 parent_type=fragment.type_condition,
                 max_depth=100,
                 use_context_prefix=True,
-                ignore_unknown_types=model_generator._ignore_unknown_types,
+                ignore_unknown_types=self._ignore_unknown_types,
             )
             traverser = QueryDocumentTraverser(visitor, expand_fragments=True)
             traverser.traverse_fragment(fragment)
 
             if f"{fragment_name}Response" in visitor._type_registry:
-                model_generator._type_registry[f"{fragment_name}Response"] = (
+                self._type_registry[f"{fragment_name}Response"] = (
                     visitor._type_registry[f"{fragment_name}Response"]
                 )
+
+    def _generate_variables_model(
+        self,
+        operation_name: str,
+        variable_definitions: t.List[t.Any],
+    ) -> t.Type[BaseModel]:
+        """Generate Pydantic model from query variable definitions."""
+        from .pydantic_generator import PydanticModelGenerator
+
+        # Use PydanticModelGenerator for variable model generation
+        generator = PydanticModelGenerator(
+            ignore_unknown_types=self._ignore_unknown_types
+        )
+        return generator.generate_model_from_variables(
+            operation_name, variable_definitions
+        )
 
     def _generate_payload_model(
         self,
         operation: QueryDocumentOperation,
         query_name: str,
-        doc: QueryDocument,
     ) -> t.Type[BaseModel]:
         """Generate Pydantic model for operation response."""
         model_name = f"{query_name}Response"
@@ -720,7 +770,7 @@ class QueryExtractor:
             parent_type=operation.root_type,
             max_depth=100,
             use_context_prefix=True,
-            ignore_unknown_types=False,
+            ignore_unknown_types=self._ignore_unknown_types,
         )
         traverser = QueryDocumentTraverser(visitor, expand_fragments=True)
         traverser.traverse_operation(operation)
