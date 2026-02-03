@@ -26,10 +26,6 @@ class MutationInfo(BaseModel):
     graphql_input_type_name: str = Field(description="Original GraphQL input type name")
 
 
-# Note: QueryDocument has been moved to query_document.py as an enriched
-# representation with schema type resolution.
-
-
 class QueryInfo(BaseModel):
     """Information about a GraphQL query extracted from client files."""
 
