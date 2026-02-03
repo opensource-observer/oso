@@ -7,6 +7,7 @@ enum DataConnectionType {
 type DataConnection {
   id: ID!
   orgId: ID!
+  organization: Organization!
   name: String!
   type: DataConnectionType!
   config: JSON!

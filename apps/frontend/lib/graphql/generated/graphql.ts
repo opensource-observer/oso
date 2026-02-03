@@ -1538,6 +1538,7 @@ export type DataConnection = {
   id: Scalars["ID"]["output"];
   name: Scalars["String"]["output"];
   orgId: Scalars["ID"]["output"];
+  organization: Organization;
   type: DataConnectionType;
   updatedAt: Scalars["DateTimeISO"]["output"];
 };

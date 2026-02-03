@@ -18,6 +18,7 @@ from scheduler.types import (
     RunContext,
     SuccessResponse,
 )
+from scheduler.utils import get_trino_user
 
 EXCLUDED_SCHEMAS = {"information_schema"}
 MAX_CONCURRENT_QUERIES = 5  # Number of concurrent queries to run
@@ -124,7 +125,7 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
 
             data_connection = edges[0].node
             catalog_name = data_connection.name.lower()
-            org_id = data_connection.org_id
+            organization = data_connection.organization
         except Exception as e:
             context.log.error("Failed to get data connection", extra={"error": str(e)})
             return FailedResponse(
@@ -133,11 +134,13 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
 
         context.log.info(
             "Found data connection",
-            extra={"catalog_name": catalog_name, "org_id": org_id},
+            extra={"catalog_name": catalog_name, "org_id": organization.id},
         )
 
+        user = get_trino_user("ro", organization.id, organization.name)
+
         # Use a single Trino client for all queries
-        async with consumer_trino.async_get_client() as client:
+        async with consumer_trino.async_get_client(user=user) as client:
             # Get all schemas
             try:
                 cursor = await client.cursor()
@@ -217,7 +220,7 @@ class SyncConnectionRunRequestHandler(RunHandler[SyncConnectionRunRequest]):
 
                 await oso_client.create_data_connection_datasets(
                     run_id=context.run_id,
-                    org_id=org_id,
+                    org_id=organization.id,
                     data_connection_id=connection_id,
                     schemas=schema_inputs,
                 )

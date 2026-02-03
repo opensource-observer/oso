@@ -57,6 +57,7 @@ from .get_data_connection import (
     GetDataConnectionDataConnections,
     GetDataConnectionDataConnectionsEdges,
     GetDataConnectionDataConnectionsEdgesNode,
+    GetDataConnectionDataConnectionsEdgesNodeOrganization,
 )
 from .get_data_ingestion_config import (
     GetDataIngestionConfig,
@@ -212,6 +213,7 @@ __all__ = [
     "GetDataConnectionDataConnections",
     "GetDataConnectionDataConnectionsEdges",
     "GetDataConnectionDataConnectionsEdgesNode",
+    "GetDataConnectionDataConnectionsEdgesNodeOrganization",
     "GetDataIngestionConfig",
     "GetDataIngestionConfigDatasets",
     "GetDataIngestionConfigDatasetsEdges",

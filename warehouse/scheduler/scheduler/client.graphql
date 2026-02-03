@@ -274,7 +274,9 @@ query GetDataConnection($connectionId: ID!) {
     edges {
       node {
         id
-        orgId
+        organization {
+          ...OrganizationCommon
+        }
         name
         type
       }

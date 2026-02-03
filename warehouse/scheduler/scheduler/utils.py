@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 
 import structlog
 from aiotrino.exceptions import TrinoQueryError
@@ -15,6 +16,10 @@ def convert_uuid_bytes_to_str(uuid_bytes: bytes) -> str:
     """Convert UUID bytes to a string representation."""
 
     return str(uuid.UUID(bytes=uuid_bytes))
+
+
+def get_trino_user(user_type: Literal["rw", "ro"], org_id: str, org_name: str) -> str:
+    return f"{user_type}-{org_name.strip().lower()}-{org_id.replace('-', '').lower()}"
 
 
 def ctas_query(query: exp.Query):

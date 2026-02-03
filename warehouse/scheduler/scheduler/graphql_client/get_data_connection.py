@@ -7,6 +7,7 @@ from pydantic import Field
 
 from .base_model import BaseModel
 from .enums import DataConnectionType
+from .fragments import OrganizationCommon
 
 
 class GetDataConnection(BaseModel):
@@ -25,11 +26,16 @@ class GetDataConnectionDataConnectionsEdges(BaseModel):
 
 class GetDataConnectionDataConnectionsEdgesNode(BaseModel):
     id: str
-    org_id: str = Field(alias="orgId")
+    organization: "GetDataConnectionDataConnectionsEdgesNodeOrganization"
     name: str
     type: DataConnectionType
+
+
+class GetDataConnectionDataConnectionsEdgesNodeOrganization(OrganizationCommon):
+    pass
 
 
 GetDataConnection.model_rebuild()
 GetDataConnectionDataConnections.model_rebuild()
 GetDataConnectionDataConnectionsEdges.model_rebuild()
+GetDataConnectionDataConnectionsEdgesNode.model_rebuild()

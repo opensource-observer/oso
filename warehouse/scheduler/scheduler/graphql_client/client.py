@@ -547,12 +547,19 @@ class Client(AsyncBaseClient):
                 edges {
                   node {
                     id
-                    orgId
+                    organization {
+                      ...OrganizationCommon
+                    }
                     name
                     type
                   }
                 }
               }
+            }
+
+            fragment OrganizationCommon on Organization {
+              id
+              name
             }
             """
         )

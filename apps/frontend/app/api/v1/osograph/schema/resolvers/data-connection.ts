@@ -274,11 +274,11 @@ export const dataConnectionResolvers = {
 
   DataConnection: {
     orgId: (parent: DynamicConnectorsRow) => parent.org_id,
-    createdAt: (parent: DynamicConnectorsRow) => parent.created_at,
-    updatedAt: (parent: DynamicConnectorsRow) => parent.updated_at,
     organization: (parent: DynamicConnectorsRow) => {
       return getOrganization(parent.org_id);
     },
+    createdAt: (parent: DynamicConnectorsRow) => parent.created_at,
+    updatedAt: (parent: DynamicConnectorsRow) => parent.updated_at,
     name: (parent: DynamicConnectorsRow) => parent.connector_name,
     type: (parent: DynamicConnectorsRow) => parent.connector_type.toUpperCase(),
   },
