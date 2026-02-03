@@ -229,9 +229,11 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
           };
         }
         case "DATA_CONNECTION":
-          throw new Error(
-            `Dataset type "${parent.dataset_type}" is not supported yet.`,
-          );
+          return {
+            __typename: "DataConnectionDefinition",
+            org_id: parent.org_id,
+            dataset_id: parent.id,
+          };
         default:
           assertNever(
             parent.dataset_type,
@@ -434,6 +436,23 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         parent.dataset_id,
         generateTableId("DATA_INGESTION", tableName),
       );
+    },
+  },
+
+  DataConnectionDefinition: {
+    orgId: (parent: { org_id: string }) => parent.org_id,
+    datasetId: (parent: { dataset_id: string }) => parent.dataset_id,
+    dataConnectionAlias: async (parent: { dataset_id: string }) => {
+      const supabase = createAdminClient();
+
+      const { data: alias } = await supabase
+        .from("data_connection_alias")
+        .select("*")
+        .eq("dataset_id", parent.dataset_id)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      return alias;
     },
   },
 };

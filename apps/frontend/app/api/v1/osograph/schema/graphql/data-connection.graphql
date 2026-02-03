@@ -31,6 +31,13 @@ type DataConnectionAlias {
   datasetId: ID!
   dataConnectionId: ID!
   schema: String!
+  materializations(
+    tableName: String!
+    first: Int = 50
+    after: String
+    single: Boolean
+    where: JSON
+  ): MaterializationConnection!
 }
 
 extend type Query {
