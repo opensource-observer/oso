@@ -50,14 +50,6 @@ export const datasetResolvers: GraphQLResolverModule<GraphQLContext> = {
         },
       });
     },
-
-    tables: async (
-      _: unknown,
-      _args: FilterableConnectionArgs,
-      _context: GraphQLContext,
-    ) => {
-      throw new Error("Resolver not implemented");
-    },
   },
 
   Mutation: {

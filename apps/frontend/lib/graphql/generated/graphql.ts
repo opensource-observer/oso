@@ -6447,24 +6447,6 @@ export type Query = {
   staticModels: StaticModelConnection;
   /** System only. Access system level queries. */
   system: System;
-  /**
-   * Get table column metadata. The where parameter must include:
-   * - orgId: Organization ID
-   * - catalogName: Catalog name
-   * - schemaName: Schema name
-   * - tableName: Table name
-   *
-   * Example:
-   * ```json
-   * {
-   *   "orgId": { "eq": "org-uuid" },
-   *   "catalogName": { "eq": "user_iceberg" },
-   *   "schemaName": { "eq": "ds_schema" },
-   *   "tableName": { "eq": "my_table" }
-   * }
-   * ```
-   */
-  tables: Array<TableColumn>;
   /** Provides fields for testing behavior */
   test?: Maybe<TestFields>;
   /** Retrieve a top level resource by its location name, repository name, and resource name. */
@@ -7085,11 +7067,6 @@ export type QueryStaticModelsArgs = {
   first?: InputMaybe<Scalars["Int"]["input"]>;
   single?: InputMaybe<Scalars["Boolean"]["input"]>;
   where?: InputMaybe<Scalars["JSON"]["input"]>;
-};
-
-/** The root for all queries to retrieve data from the Dagster instance. */
-export type QueryTablesArgs = {
-  where: Scalars["JSON"]["input"];
 };
 
 /** The root for all queries to retrieve data from the Dagster instance. */
@@ -8655,6 +8632,13 @@ export type SubscriptionCapturedLogsArgs = {
 export type SubscriptionPipelineRunLogsArgs = {
   cursor?: InputMaybe<Scalars["String"]["input"]>;
   runId: Scalars["ID"]["input"];
+};
+
+export type SyncDataConnectionPayload = {
+  __typename?: "SyncDataConnectionPayload";
+  message?: Maybe<Scalars["String"]["output"]>;
+  run: Run;
+  success: Scalars["Boolean"]["output"];
 };
 
 export type System = {
