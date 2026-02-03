@@ -12,8 +12,7 @@ from oso_mcp.server.config import MCPConfig
 
 from .mutations import MutationExtractor
 from .pydantic_generator import PydanticModelGenerator
-from .queries import QueryExtractor
-from .query_document_parser import QueryDocumentParser
+from .queries import QueryDocumentParser, QueryExtractor
 from .tool_generator import ToolGenerator
 from .types import AsyncGraphQLClient, GraphQLClientFactory, MutationFilter
 
