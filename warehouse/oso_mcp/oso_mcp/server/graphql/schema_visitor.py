@@ -35,7 +35,7 @@ class VisitorControl(Enum):
     STOP = "stop"  # Stop all visiting immediately
 
 
-class GraphQLSchemaTraverser:
+class GraphQLSchemaTypeTraverser:
     """Traverses GraphQL schema types and calls visitor methods.
 
     This class handles all the mechanics of walking the GraphQL type tree:
@@ -50,7 +50,7 @@ class GraphQLSchemaTraverser:
 
     def __init__(
         self,
-        visitor: "GraphQLSchemaVisitor",
+        visitor: "GraphQLSchemaTypeVisitor",
         selection_set: t.Optional[SelectionSetNode] = None,
         schema: t.Optional[GraphQLSchema] = None,
         fragments: t.Optional[t.Dict[str, t.Any]] = None,
@@ -251,7 +251,7 @@ class GraphQLSchemaTraverser:
         return control
 
 
-class GraphQLSchemaVisitor:
+class GraphQLSchemaTypeVisitor:
     """Interface for visiting GraphQL schema types during traversal.
 
     Subclasses implement handle_* methods to process each type.

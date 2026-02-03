@@ -19,7 +19,11 @@ from graphql import (
 )
 from pydantic import BaseModel, Field, create_model
 
-from .schema_visitor import GraphQLSchemaTraverser, GraphQLSchemaVisitor, VisitorControl
+from .schema_visitor import (
+    GraphQLSchemaTypeTraverser,
+    GraphQLSchemaTypeVisitor,
+    VisitorControl,
+)
 
 
 class UnsetNested(BaseModel):
@@ -228,7 +232,7 @@ class PydanticModelBuildContext:
         return create_model(self._model_name, **self._fields)  # type: ignore # pyright: ignore
 
 
-class PydanticModelVisitor(GraphQLSchemaVisitor):
+class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
     """Visitor that builds Pydantic models from GraphQL types.
 
     This visitor extends GraphQLSchemaVisitor to build Pydantic models during
@@ -630,7 +634,7 @@ class PydanticModelVisitor(GraphQLSchemaVisitor):
         )
 
         # Create traverser and visit the input type
-        traverser = GraphQLSchemaTraverser(visitor)
+        traverser = GraphQLSchemaTypeTraverser(visitor)
         traverser.visit(input_type, field_name="")
 
         # Return the generated model from registry
@@ -663,7 +667,7 @@ class PydanticModelVisitor(GraphQLSchemaVisitor):
         )
 
         # Create traverser and visit the payload type (selection_set=None visits all fields)
-        traverser = GraphQLSchemaTraverser(visitor)
+        traverser = GraphQLSchemaTypeTraverser(visitor)
         traverser.visit(payload_type, field_name="")
 
         # Return the generated model from registry
@@ -709,7 +713,7 @@ class PydanticModelVisitor(GraphQLSchemaVisitor):
         )
 
         # Create traverser with selection_set to filter fields
-        traverser = GraphQLSchemaTraverser(
+        traverser = GraphQLSchemaTypeTraverser(
             visitor,
             selection_set=selection_set,
             schema=schema,
