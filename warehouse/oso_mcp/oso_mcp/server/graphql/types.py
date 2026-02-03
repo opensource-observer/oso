@@ -3,7 +3,7 @@
 import abc
 import typing as t
 
-from graphql import FragmentDefinitionNode, OperationDefinitionNode, SelectionSetNode
+from graphql import SelectionSetNode
 from pydantic import BaseModel, Field
 
 
@@ -26,18 +26,8 @@ class MutationInfo(BaseModel):
     graphql_input_type_name: str = Field(description="Original GraphQL input type name")
 
 
-class QueryDocument(BaseModel):
-    """Represents a parsed GraphQL document containing queries and fragments."""
-
-    model_config = {"arbitrary_types_allowed": True}
-
-    operations: t.List[OperationDefinitionNode] = Field(
-        description="All query operations found in the document"
-    )
-    fragments: t.Dict[str, FragmentDefinitionNode] = Field(
-        description="Fragment definitions by name"
-    )
-    file_path: str = Field(description="Source file path for debugging")
+# Note: QueryDocument has been moved to query_document.py as an enriched
+# representation with schema type resolution.
 
 
 class QueryInfo(BaseModel):

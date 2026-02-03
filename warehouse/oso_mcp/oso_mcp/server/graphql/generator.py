@@ -12,7 +12,8 @@ from oso_mcp.server.config import MCPConfig
 
 from .mutations import MutationExtractor
 from .pydantic_generator import PydanticModelGenerator
-from .queries import QueryDocumentParser, QueryExtractor
+from .queries import QueryExtractor
+from .query_document_parser import QueryDocumentParser
 from .tool_generator import ToolGenerator
 from .types import AsyncGraphQLClient, GraphQLClientFactory, MutationFilter
 
@@ -117,9 +118,9 @@ def generate_from_schema(
     # Extract queries from client files if provided
     queries = []
     if client_schema_path:
-        # Parse client query files
-        parser = QueryDocumentParser(client_schema_path)
-        query_docs = parser.parse_all()
+        # Parse client query files (new parser requires schema for type resolution)
+        parser = QueryDocumentParser(schema)
+        query_docs = parser.parse_directory(client_schema_path)
 
         # Extract queries
         query_extractor = QueryExtractor()
