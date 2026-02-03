@@ -130,7 +130,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .eq("id", runId)
           .single();
         if (runError || !runData) {
-          throw ResourceErrors.notFound(`Run ${runId} not found`);
+          throw ResourceErrors.notFound("Run", runId);
         }
         // Update the status of the run to "RUNNING"
         const { data: updatedRun, error: updateError } = await supabase
@@ -164,7 +164,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .eq("id", runId)
           .single();
         if (runError || !runData) {
-          throw ResourceErrors.notFound(`Run ${runId} not found`);
+          throw ResourceErrors.notFound("Run", runId);
         }
 
         const updatedMetadata = updateMetadata(runData.metadata, metadata);
@@ -207,7 +207,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .eq("id", runId)
           .single();
         if (runError || !runData) {
-          throw ResourceErrors.notFound(`Run ${runId} not found`);
+          throw ResourceErrors.notFound("Run", runId);
         }
 
         const updatedMetadata = updateMetadata(
@@ -250,7 +250,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .eq("id", runId)
           .single();
         if (runError || !runData) {
-          throw ResourceErrors.notFound(`Run ${runId} not found`);
+          throw ResourceErrors.notFound("Run", runId);
         }
 
         // We start a new step for the given run
@@ -287,7 +287,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .eq("id", stepId)
           .single();
         if (stepError || !stepData) {
-          throw ResourceErrors.notFound(`Step ${stepId} not found`);
+          throw ResourceErrors.notFound("Step", stepId);
         }
         // Update the status and logsUrl of the step based on the input
         const { data: updatedStep, error: updateError } = await supabase
@@ -332,7 +332,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .single();
         if (stepError || !stepData) {
           logger.error(`Step ${stepId} not found: ${stepError?.message}`);
-          throw ResourceErrors.notFound(`Step ${stepId} not found`);
+          throw ResourceErrors.notFound("Step", stepId);
         }
 
         // Get the dataset id from the run associated with the step
@@ -345,7 +345,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           logger.error(
             `Run for step ${stepId} not found: ${runError?.message}`,
           );
-          throw ResourceErrors.notFound(`Run for step ${stepId} not found`);
+          throw ResourceErrors.notFound("Run for step", stepId);
         }
 
         if (runData.dataset_id === null) {
@@ -412,7 +412,7 @@ export const systemResolvers: GraphQLResolverModule<GraphQLContext> = {
           .eq("id", notebookId)
           .single();
         if (!notebook) {
-          throw ResourceErrors.notFound(`Notebook ${notebookId} not found`);
+          throw ResourceErrors.notFound("Notebook", notebookId);
         }
         const filePath = generatePublishedNotebookPath(
           notebookId,

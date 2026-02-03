@@ -43,7 +43,7 @@ CREATE OR REPLACE VIEW "public"."data_connection_as_table" WITH (security_invoke
   SELECT
     latest_materializations.org_id AS org_id,
     latest_materializations.dataset_id AS dataset_id,
-    -- Extract table name by removing 'data_ingestion_' prefix (16 chars including underscore)
+    -- Extract table name by removing 'data_connection_' prefix (17 chars including underscore)
     SUBSTRING(latest_materializations.table_id FROM 17) AS table_name,
     latest_materializations.table_id AS table_id
   FROM latest_materializations
