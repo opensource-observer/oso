@@ -12,6 +12,7 @@ from graphql import (
     FieldNode,
     FragmentSpreadNode,
     GraphQLEnumType,
+    GraphQLField,
     GraphQLInputObjectType,
     GraphQLList,
     GraphQLNonNull,
@@ -60,13 +61,23 @@ class GraphQLSchemaTypeTraverser:
         Args:
             visitor: Visitor instance that will process types during traversal
             selection_set: Optional SelectionSet to filter fields (None = all fields)
-            schema: GraphQL schema (required when selection_set is provided)
+            schema: GraphQL schema (required when selection_set is provided,
+                   and for mutation/query field detection)
             fragments: Optional dict of fragment definitions by name (for resolving fragment spreads)
         """
         self._visitor = visitor
         self._selection_set = selection_set
         self._schema = schema
         self._fragments = fragments or {}
+
+        # Track root type names for mutation/query field detection
+        self._mutation_type_name: t.Optional[str] = None
+        self._query_type_name: t.Optional[str] = None
+        if schema:
+            if schema.mutation_type:
+                self._mutation_type_name = schema.mutation_type.name
+            if schema.query_type:
+                self._query_type_name = schema.query_type.name
 
     def visit(
         self,
@@ -186,6 +197,10 @@ class GraphQLSchemaTypeTraverser:
             # Skip this object's fields but continue with siblings
             return VisitorControl.CONTINUE
 
+        # Check if this is a mutation or query root type
+        is_mutation_type = object_type.name == self._mutation_type_name
+        is_query_type = object_type.name == self._query_type_name
+
         # Determine which fields to visit based on selection_set
         if self._selection_set is not None:
             # Extract fields and their nested selection sets
@@ -202,15 +217,21 @@ class GraphQLSchemaTypeTraverser:
             ]
 
         # Traverse each field
-        for child_field_name, field, nested_selection_set in fields_to_visit:
-            # Visit the field's type recursively
-            # Save and update selection_set for this field's nested selections
-            prev_selection_set = self._selection_set
-            self._selection_set = nested_selection_set
+        for child_field_name, field_def, nested_selection_set in fields_to_visit:
+            # Check if this is a mutation or query field and use special handlers
+            if is_mutation_type:
+                control = self._visit_mutation_field(child_field_name, field_def)
+            elif is_query_type:
+                control = self._visit_query_field(child_field_name, field_def)
+            else:
+                # Regular field traversal
+                # Save and update selection_set for this field's nested selections
+                prev_selection_set = self._selection_set
+                self._selection_set = nested_selection_set
 
-            control = self.visit(field.type, field_name=child_field_name)
+                control = self.visit(field_def.type, field_name=child_field_name)
 
-            self._selection_set = prev_selection_set
+                self._selection_set = prev_selection_set
 
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
@@ -220,6 +241,92 @@ class GraphQLSchemaTypeTraverser:
             field_name, object_type, is_required, is_list
         )
         return control
+
+    def _unwrap_type(self, gql_type: t.Any) -> t.Any:
+        """Unwrap NonNull and List wrappers to get the base type."""
+        if isinstance(gql_type, GraphQLNonNull):
+            gql_type = gql_type.of_type
+        if isinstance(gql_type, GraphQLList):
+            inner_type = gql_type.of_type
+            if isinstance(inner_type, GraphQLNonNull):
+                gql_type = inner_type.of_type
+            else:
+                gql_type = inner_type
+        return gql_type
+
+    def _visit_mutation_field(
+        self,
+        field_name: str,
+        field_def: GraphQLField,
+    ) -> VisitorControl:
+        """Visit a mutation field with enter/leave hooks."""
+        # Extract and unwrap input type from 'input' argument
+        input_type: t.Optional[GraphQLInputObjectType] = None
+        input_arg = field_def.args.get("input")
+        if input_arg:
+            unwrapped = self._unwrap_type(input_arg.type)
+            if isinstance(unwrapped, GraphQLInputObjectType):
+                input_type = unwrapped
+
+        # Unwrap return type
+        return_type = self._unwrap_type(field_def.type)
+
+        # Enter mutation field
+        control = self._visitor.handle_enter_mutation_field(
+            field_name, field_def, input_type, return_type
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        if control == VisitorControl.SKIP:
+            # Still call leave hook even when skipping
+            return self._visitor.handle_leave_mutation_field(
+                field_name, field_def, input_type, return_type
+            )
+
+        # Visit return type's fields (if object type)
+        if isinstance(return_type, GraphQLObjectType):
+            for child_name, child_def in return_type.fields.items():
+                control = self.visit(child_def.type, field_name=child_name)
+                if control == VisitorControl.STOP:
+                    return VisitorControl.STOP
+
+        # Leave mutation field
+        return self._visitor.handle_leave_mutation_field(
+            field_name, field_def, input_type, return_type
+        )
+
+    def _visit_query_field(
+        self,
+        field_name: str,
+        field_def: GraphQLField,
+    ) -> VisitorControl:
+        """Visit a query field with enter/leave hooks."""
+        # Unwrap return type
+        return_type = self._unwrap_type(field_def.type)
+
+        # Enter query field
+        control = self._visitor.handle_enter_query_field(
+            field_name, field_def, return_type
+        )
+        if control == VisitorControl.STOP:
+            return VisitorControl.STOP
+        if control == VisitorControl.SKIP:
+            # Still call leave hook even when skipping
+            return self._visitor.handle_leave_query_field(
+                field_name, field_def, return_type
+            )
+
+        # Visit return type's fields (if object type)
+        if isinstance(return_type, GraphQLObjectType):
+            for child_name, child_def in return_type.fields.items():
+                control = self.visit(child_def.type, field_name=child_name)
+                if control == VisitorControl.STOP:
+                    return VisitorControl.STOP
+
+        # Leave query field
+        return self._visitor.handle_leave_query_field(
+            field_name, field_def, return_type
+        )
 
     def _visit_input_object(
         self,
@@ -425,6 +532,97 @@ class GraphQLSchemaTypeVisitor:
             gql_type: The unknown type
             is_required: Whether wrapped in GraphQLNonNull
             is_list: Whether wrapped in GraphQLList
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    # Mutation field hooks (enter/leave pair)
+
+    def handle_enter_mutation_field(
+        self,
+        field_name: str,
+        field_def: GraphQLField,
+        input_type: t.Optional[GraphQLInputObjectType],
+        return_type: t.Any,
+    ) -> VisitorControl:
+        """Called when entering a mutation field during schema traversal.
+
+        This hook is called for each field on the schema's Mutation type,
+        providing access to the full field definition including arguments.
+
+        Args:
+            field_name: Name of the mutation (e.g., "createUser")
+            field_def: Full field definition with description, directives, args
+            input_type: The input argument type (extracted and unwrapped from 'input' arg),
+                       or None if no 'input' argument exists
+            return_type: The mutation's return/payload type (unwrapped)
+
+        Returns:
+            CONTINUE to traverse the return type's fields
+            SKIP to skip traversing the return type (leave hook still called)
+            STOP to halt traversal entirely
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_leave_mutation_field(
+        self,
+        field_name: str,
+        field_def: GraphQLField,
+        input_type: t.Optional[GraphQLInputObjectType],
+        return_type: t.Any,
+    ) -> VisitorControl:
+        """Called when leaving a mutation field after visiting its return type.
+
+        Args:
+            field_name: Name of the mutation
+            field_def: Full field definition
+            input_type: The input argument type, or None
+            return_type: The mutation's return/payload type (unwrapped)
+
+        Returns:
+            VisitorControl to control traversal flow
+        """
+        return VisitorControl.CONTINUE
+
+    # Query field hooks (enter/leave pair)
+
+    def handle_enter_query_field(
+        self,
+        field_name: str,
+        field_def: GraphQLField,
+        return_type: t.Any,
+    ) -> VisitorControl:
+        """Called when entering a query field during schema traversal.
+
+        This hook is called for each field on the schema's Query type,
+        providing access to the full field definition including arguments.
+
+        Args:
+            field_name: Name of the query (e.g., "getUser")
+            field_def: Full field definition with description, directives, args
+            return_type: The query's return type (unwrapped)
+
+        Returns:
+            CONTINUE to traverse the return type's fields
+            SKIP to skip traversing the return type (leave hook still called)
+            STOP to halt traversal entirely
+        """
+        return VisitorControl.CONTINUE
+
+    def handle_leave_query_field(
+        self,
+        field_name: str,
+        field_def: GraphQLField,
+        return_type: t.Any,
+    ) -> VisitorControl:
+        """Called when leaving a query field after visiting its return type.
+
+        Args:
+            field_name: Name of the query
+            field_def: Full field definition
+            return_type: The query's return type (unwrapped)
 
         Returns:
             VisitorControl to control traversal flow

@@ -1,12 +1,18 @@
 """Pydantic model generator for GraphQL types."""
 
+from __future__ import annotations
+
 import typing as t
 from enum import Enum, StrEnum
+
+if t.TYPE_CHECKING:
+    from .types import MutationFilter, MutationInfo
 
 from graphql import (
     FieldNode,
     FragmentSpreadNode,
     GraphQLEnumType,
+    GraphQLField,
     GraphQLInputObjectType,
     GraphQLList,
     GraphQLNonNull,
@@ -1335,3 +1341,87 @@ class PydanticModelGenerator:
                     )
 
         return fields
+
+
+class MutationCollectorVisitor(GraphQLSchemaTypeVisitor):
+    """Collects MutationInfo during schema traversal using mutation field hooks.
+
+    This visitor implements the handle_enter_mutation_field hook to collect
+    mutation information as the schema's Mutation type is traversed.
+
+    Example:
+        visitor = MutationCollectorVisitor(schema, filters)
+        traverser = GraphQLSchemaTypeTraverser(visitor, schema=schema)
+        if schema.mutation_type:
+            traverser.visit(schema.mutation_type, field_name="")
+        mutations = visitor.mutations
+    """
+
+    def __init__(
+        self,
+        schema: GraphQLSchema,
+        filters: list[MutationFilter] | None = None,
+        ignore_unknown_types: bool = False,
+    ):
+        """Initialize the mutation collector visitor.
+
+        Args:
+            schema: GraphQL schema being traversed
+            filters: Optional list of MutationFilter to filter out mutations
+            ignore_unknown_types: If True, map unknown types to Any instead of raising error
+        """
+        self._schema = schema
+        self._filters: list[MutationFilter] = filters or []
+        self._ignore_unknown_types = ignore_unknown_types
+        self._mutations: list[MutationInfo] = []
+
+    @property
+    def mutations(self) -> list[MutationInfo]:
+        """Get the collected mutations."""
+        return self._mutations
+
+    def handle_enter_mutation_field(
+        self,
+        field_name: str,
+        field_def: GraphQLField,
+        input_type: GraphQLInputObjectType | None,
+        return_type: t.Any,
+    ) -> VisitorControl:
+        """Handle entering a mutation field - collect mutation info.
+
+        This is called for each field on the Mutation type. We extract the
+        input and return types and generate Pydantic models for them.
+        """
+        # Import at runtime to avoid circular import
+        from .types import MutationInfo
+
+        # Skip mutations without input type
+        if not input_type:
+            return VisitorControl.SKIP
+
+        # Skip if return type is not an object
+        if not isinstance(return_type, GraphQLObjectType):
+            return VisitorControl.SKIP
+
+        # Generate models using PydanticModelVisitor
+        input_model = PydanticModelVisitor.generate_input_model(
+            input_type, ignore_unknown_types=self._ignore_unknown_types
+        )
+        payload_model = PydanticModelVisitor.generate_payload_model(
+            return_type, ignore_unknown_types=self._ignore_unknown_types
+        )
+
+        mutation_info = MutationInfo(
+            name=field_name,
+            description=field_def.description or "",
+            input_model=input_model,
+            payload_model=payload_model,
+            payload_fields=list(return_type.fields.keys()),
+            graphql_input_type_name=input_type.name,
+        )
+
+        # Apply filters
+        if not any(f.should_ignore(mutation_info) for f in self._filters):
+            self._mutations.append(mutation_info)
+
+        return VisitorControl.SKIP  # Don't need to traverse payload fields

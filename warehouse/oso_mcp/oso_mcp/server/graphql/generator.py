@@ -10,9 +10,9 @@ from ariadne_codegen.schema import get_graphql_schema_from_path
 from fastmcp import FastMCP
 from oso_mcp.server.config import MCPConfig
 
-from .mutations import MutationExtractor
-from .pydantic_generator import PydanticModelGenerator
+from .pydantic_generator import MutationCollectorVisitor, PydanticModelGenerator
 from .queries import QueryDocumentParser, QueryExtractor
+from .schema_visitor import GraphQLSchemaTypeTraverser
 from .tool_generator import ToolGenerator
 from .types import AsyncGraphQLClient, GraphQLClientFactory, MutationFilter
 
@@ -107,12 +107,15 @@ def generate_from_schema(
     # Load GraphQL schema
     schema = get_graphql_schema_from_path(schema_path)
 
-    # Create Pydantic model generator
+    # Create Pydantic model generator (still needed for query extraction)
     model_generator = PydanticModelGenerator()
 
-    # Extract mutations from schema
-    mutation_extractor = MutationExtractor(schema)
-    mutations = mutation_extractor.extract_mutations(model_generator, filters)
+    # Extract mutations from schema using visitor pattern
+    mutation_visitor = MutationCollectorVisitor(schema, filters)
+    traverser = GraphQLSchemaTypeTraverser(mutation_visitor, schema=schema)
+    if schema.mutation_type:
+        traverser.visit(schema.mutation_type, field_name="")
+    mutations = mutation_visitor.mutations
 
     # Extract queries from client files if provided
     queries = []
