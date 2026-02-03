@@ -442,11 +442,6 @@ class QueryDocumentParser:
         return is_required, is_list, gql_type
 
 
-# =============================================================================
-# QueryDocumentTraverser
-# =============================================================================
-
-
 class QueryDocumentTraverser:
     """Traverses QueryDocument and calls GraphQLSchemaTypeVisitor methods.
 
