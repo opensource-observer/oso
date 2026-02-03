@@ -58,6 +58,19 @@ type FormDefaultValue =
   | null
   | undefined;
 
+const getTypeDefault = (fieldType: string): unknown => {
+  const typeDefaults: Record<string, unknown> = {
+    number: undefined,
+    date: undefined,
+    string: "",
+    boolean: false,
+    array: [],
+    object: {},
+    union: undefined,
+  };
+  return typeDefaults[fieldType] ?? "";
+};
+
 interface FormSchemaFieldBase {
   label: string;
   required?: boolean;
@@ -182,7 +195,7 @@ function applySkipIfEmpty<T extends z.ZodTypeAny>(
   shouldSkip: boolean,
 ): T | z.ZodEffects<T, z.output<T> | undefined, z.input<T>> {
   if (!shouldSkip) return schema;
-  return schema.transform((val) => (isEmpty(val) ? null : val));
+  return schema.transform((val) => (isEmpty(val) ? undefined : val));
 }
 
 function createZodUnion(
@@ -238,10 +251,15 @@ const createZodSchema = (field: FormSchemaField): FormBuilderZodField => {
         const withOptional = field.required
           ? baseSchema
           : baseSchema.optional();
-        return z.preprocess(
-          (val) => (Number.isNaN(val) ? undefined : val),
-          withOptional,
-        );
+        return z.preprocess((val) => {
+          if (
+            field.skipIfEmpty &&
+            (val === "" || val === null || val === undefined)
+          ) {
+            return undefined;
+          }
+          return Number.isNaN(val) ? undefined : val;
+        }, withOptional);
       }
       case "boolean":
         return z.boolean();
@@ -386,10 +404,7 @@ function normalizeDefaultValues(
           case "object":
             return [key, fieldSchema.allowDynamicKeys ? [] : {}];
           case "union":
-            return [
-              key,
-              (fieldSchema as FormSchemaUnionField).nullable ? undefined : "",
-            ];
+            return [key, undefined];
           default:
             return [key, ""];
         }
@@ -566,11 +581,13 @@ function generateFormConfig<T extends FormSchema>(schema: T) {
           };
         }
 
+        const variantProps = firstVariant.properties || {};
         return Object.fromEntries(
-          Object.entries(variantDefaults).map(([key, value]) => [
-            key,
-            value === undefined ? "" : value,
-          ]),
+          Object.entries(variantDefaults).map(([key, value]) => {
+            if (value !== undefined) return [key, value];
+            const fieldType = variantProps[key]?.type;
+            return [key, getTypeDefault(fieldType || "string")];
+          }),
         );
       }
       default:
@@ -640,7 +657,13 @@ const ArrayFieldRenderer: React.FC<ArrayFieldRendererProps> = ({
 
     if (fieldSchema.itemType === "object" && fieldSchema.itemProperties) {
       return Object.entries(fieldSchema.itemProperties).reduce(
-        (acc, [key, field]) => ({ ...acc, [key]: field.defaultValue ?? "" }),
+        (acc, [key, field]) => ({
+          ...acc,
+          [key]:
+            field.defaultValue !== undefined
+              ? field.defaultValue
+              : getTypeDefault(field.type),
+        }),
         {},
       );
     }
