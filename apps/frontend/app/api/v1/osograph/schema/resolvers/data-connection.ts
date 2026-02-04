@@ -33,6 +33,7 @@ import { FilterableConnectionArgs } from "@/app/api/v1/osograph/utils/pagination
 import { SyncConnectionRunRequest } from "@opensource-observer/osoprotobufs/sync-connection";
 import { getMaterializations } from "@/app/api/v1/osograph/utils/resolver-helpers";
 import { generateTableId } from "@/app/api/v1/osograph/utils/model";
+import { getModelContext } from "@/app/api/v1/osograph/schema/resolvers/model-context";
 
 async function syncDataConnection(
   supabase: SupabaseAdminClient,
@@ -229,6 +230,30 @@ export const dataConnectionResolvers = {
         );
       }
 
+      const { data: datasets, error } = await supabase
+        .from("data_connection_alias")
+        .select("id, datasets(id)")
+        .eq("data_connection_id", id);
+      if (error) {
+        logger.error("Failed to delete datasets:", error);
+        throw ServerErrors.database(
+          `Failed to delete datasets: ${error.message}`,
+        );
+      }
+      const { error: deleteError } = await supabase
+        .from("datasets")
+        .delete()
+        .in(
+          "id",
+          datasets.map((d) => d.datasets.id),
+        );
+      if (deleteError) {
+        logger.error("Failed to delete datasets:", deleteError);
+        throw ServerErrors.database(
+          `Failed to delete datasets: ${deleteError.message}`,
+        );
+      }
+
       return {
         success: true,
         message: "Data connection deleted successfully",
@@ -291,6 +316,12 @@ export const dataConnectionResolvers = {
       parent.data_connection_id,
     createdAt: (parent: DataConnectionAliasRow) => parent.created_at,
     updatedAt: (parent: DataConnectionAliasRow) => parent.updated_at,
+    modelContext: async (
+      parent: DataConnectionAliasRow,
+      args: { tableName: string },
+    ) => {
+      return getModelContext(parent.dataset_id, args.tableName);
+    },
     materializations: async (
       parent: DataConnectionAliasRow,
       args: FilterableConnectionArgs & { tableName: string },

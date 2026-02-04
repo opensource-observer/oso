@@ -32,6 +32,7 @@ type DataConnectionAlias {
   datasetId: ID!
   dataConnectionId: ID!
   schema: String!
+  modelContext(tableName: String!): ModelContext
   materializations(
     tableName: String!
     first: Int = 50

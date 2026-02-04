@@ -1549,6 +1549,7 @@ export type DataConnectionAlias = {
   datasetId: Scalars["ID"]["output"];
   id: Scalars["ID"]["output"];
   materializations: MaterializationConnection;
+  modelContext?: Maybe<ModelContext>;
   orgId: Scalars["ID"]["output"];
   schema: Scalars["String"]["output"];
 };
@@ -1559,6 +1560,10 @@ export type DataConnectionAliasMaterializationsArgs = {
   single?: InputMaybe<Scalars["Boolean"]["input"]>;
   tableName: Scalars["String"]["input"];
   where?: InputMaybe<Scalars["JSON"]["input"]>;
+};
+
+export type DataConnectionAliasModelContextArgs = {
+  tableName: Scalars["String"]["input"];
 };
 
 export type DataConnectionConnection = {
