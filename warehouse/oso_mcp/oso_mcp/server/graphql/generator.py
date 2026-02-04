@@ -10,8 +10,8 @@ from ariadne_codegen.schema import get_graphql_schema_from_path
 from fastmcp import FastMCP
 from oso_mcp.server.config import MCPConfig
 
-from .pydantic_generator import MutationCollectorVisitor, PydanticModelGenerator
-from .queries import QueryDocumentParser, QueryExtractor
+from .pydantic_generator import MutationCollectorVisitor
+from .queries import QueryCollector, QueryDocumentParser
 from .schema_visitor import GraphQLSchemaTypeTraverser
 from .tool_generator import ToolGenerator
 from .types import AsyncGraphQLClient, GraphQLClientFactory, MutationFilter
@@ -107,9 +107,6 @@ def generate_from_schema(
     # Load GraphQL schema
     schema = get_graphql_schema_from_path(schema_path)
 
-    # Create Pydantic model generator (still needed for query extraction)
-    model_generator = PydanticModelGenerator()
-
     # Extract mutations from schema using visitor pattern
     mutation_visitor = MutationCollectorVisitor(schema, filters)
     traverser = GraphQLSchemaTypeTraverser(mutation_visitor, schema=schema)
@@ -120,13 +117,13 @@ def generate_from_schema(
     # Extract queries from client files if provided
     queries = []
     if client_schema_path:
-        # Parse client query files (new parser requires schema for type resolution)
+        # Parse client query files (parser requires schema for type resolution)
         parser = QueryDocumentParser(schema)
         query_docs = parser.parse_directory(client_schema_path)
 
-        # Extract queries
-        query_extractor = QueryExtractor()
-        queries = query_extractor.extract_queries(schema, query_docs, model_generator)
+        # Collect queries using visitor pattern
+        query_collector = QueryCollector(schema)
+        queries = query_collector.collect_from_documents(query_docs)
 
     if not graphql_client_factory:
         graphql_client_factory = default_http_client_factory(config)
