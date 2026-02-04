@@ -7,6 +7,7 @@ This module provides:
 - QueryExecutor for executing queries
 """
 
+import json
 import logging
 import os
 import typing as t
@@ -34,8 +35,7 @@ from graphql import (
 )
 from pydantic import BaseModel, create_model
 
-from .pydantic_generator import PydanticModelVisitor
-from .schema_visitor import GraphQLSchemaTypeVisitor, VisitorControl
+from .pydantic_generator import PydanticModelBuildContext, PydanticModelVisitor
 from .types import (
     AsyncGraphQLClient,
     QueryDocument,
@@ -46,8 +46,11 @@ from .types import (
     QueryDocumentOperation,
     QueryDocumentSelection,
     QueryDocumentVariable,
+    QueryDocumentVisitor,
     QueryInfo,
     SchemaType,
+    TraverserProtocol,
+    VisitorControl,
 )
 
 logger = logging.getLogger(__name__)
@@ -325,7 +328,6 @@ class QueryDocumentParser:
                 selections.append(
                     self._build_inline_fragment(selection, parent_type, fragments)
                 )
-
         return selections
 
     def _build_field(
@@ -442,7 +444,7 @@ class QueryDocumentParser:
         return is_required, is_list, gql_type
 
 
-class QueryDocumentTraverser:
+class QueryDocumentTraverser(TraverserProtocol):
     """Traverses QueryDocument and calls GraphQLSchemaTypeVisitor methods.
 
     This traverser enables reusing PydanticModelVisitor (or any other
@@ -464,7 +466,7 @@ class QueryDocumentTraverser:
 
     def __init__(
         self,
-        visitor: GraphQLSchemaTypeVisitor,
+        visitor: QueryDocumentVisitor,
         expand_fragments: bool = True,
     ):
         """Initialize the traverser.
@@ -477,24 +479,36 @@ class QueryDocumentTraverser:
         self._expand_fragments = expand_fragments
         self._visited_fragments: t.Set[str] = set()
 
-    def traverse(self, document: QueryDocument) -> VisitorControl:
-        """Traverse all operations in the document."""
-        for operation in document.operations:
-            control = self.traverse_operation(operation)
-            if control == VisitorControl.STOP:
-                return VisitorControl.STOP
-        return VisitorControl.CONTINUE
+    def walk(self, graphql_type: QueryDocument | SchemaType) -> None:
+        """Traverse all operations and fragments in the document.
 
-    def traverse_operation(self, operation: QueryDocumentOperation) -> VisitorControl:
+        Args:
+            document: QueryDocument to traverse
+        """
+        assert isinstance(graphql_type, QueryDocument), (
+            "QueryDocumentTraverser requires QueryDocument to walk"
+        )
+        document = graphql_type
+
+        # Traverse fragments first in topological order
+        for fragment_name, fragment in document.fragments.items():
+            control = self._traverse_fragment(fragment)
+            if control == VisitorControl.STOP:
+                return None
+
+        for operation in document.operations:
+            control = self._traverse_operation(operation)
+            if control == VisitorControl.STOP:
+                return None
+        return None
+
+    def _traverse_operation(self, operation: QueryDocumentOperation) -> VisitorControl:
         """Traverse a single operation."""
         self._visited_fragments = set()
 
         # Enter the root object type
-        control = self._visitor.handle_enter_object(
-            field_name="",
-            object_type=operation.root_type,
-            is_required=True,
-            is_list=False,
+        control = self._visitor.handle_enter_operation(
+            operation=operation,
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
@@ -508,22 +522,16 @@ class QueryDocumentTraverser:
                 return VisitorControl.STOP
 
         # Leave the root object type
-        return self._visitor.handle_leave_object(
-            field_name="",
-            object_type=operation.root_type,
-            is_required=True,
-            is_list=False,
+        return self._visitor.handle_leave_operation(
+            operation=operation,
         )
 
-    def traverse_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
+    def _traverse_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
         """Traverse a fragment definition."""
         self._visited_fragments = set()
 
-        control = self._visitor.handle_enter_object(
-            field_name="",
-            object_type=fragment.type_condition,
-            is_required=True,
-            is_list=False,
+        control = self._visitor.handle_enter_fragment(
+            fragment=fragment,
         )
         if control == VisitorControl.STOP:
             return VisitorControl.STOP
@@ -535,22 +543,19 @@ class QueryDocumentTraverser:
             if control == VisitorControl.STOP:
                 return VisitorControl.STOP
 
-        return self._visitor.handle_leave_object(
-            field_name="",
-            object_type=fragment.type_condition,
-            is_required=True,
-            is_list=False,
+        return self._visitor.handle_leave_fragment(
+            fragment=fragment,
         )
 
     def _visit_selection(self, selection: QueryDocumentSelection) -> VisitorControl:
         """Dispatch to appropriate visit method based on selection type."""
-        if isinstance(selection, QueryDocumentField):
-            return self._visit_field(selection)
-        elif isinstance(selection, QueryDocumentFragmentSpread):
-            return self._visit_fragment_spread(selection)
-        elif isinstance(selection, QueryDocumentInlineFragment):
-            return self._visit_inline_fragment(selection)
-        return VisitorControl.CONTINUE
+        match selection:
+            case QueryDocumentField():
+                return self._visit_field(selection)
+            case QueryDocumentFragmentSpread():
+                return self._visit_fragment_spread(selection)
+            case QueryDocumentInlineFragment():
+                return self._visit_inline_fragment(selection)
 
     def _visit_field(self, field: QueryDocumentField) -> VisitorControl:
         """Visit a field - dispatches to appropriate visitor method based on type."""
@@ -642,13 +647,16 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         parser = QueryDocumentParser(schema)
         query_docs = parser.parse_directory(client_schema_path)
 
-        collector = QueryCollectorVisitor(schema)
-        queries = collector.collect_from_documents(query_docs)
+        visitor = QueryCollectorVisitor(schema)
+        traverser = QueryDocumentTraverser(visitor)
+        traverser.walk(query_doc)
+        queries = visitor.queries
     """
 
     def __init__(
         self,
         schema: GraphQLSchema,
+        document: QueryDocument,
         ignore_unknown_types: bool = False,
     ):
         """Initialize the query collector visitor.
@@ -671,6 +679,7 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         )
         self._schema = schema
         self._queries: t.List[QueryInfo] = []
+        self._document = document
         # _type_registry is inherited from PydanticModelVisitor
 
     @property
@@ -678,106 +687,81 @@ class QueryCollectorVisitor(PydanticModelVisitor):
         """Get the collected queries."""
         return self._queries
 
-    def collect_from_documents(
-        self,
-        query_docs: t.List[QueryDocument],
-    ) -> t.List[QueryInfo]:
-        """Collect all queries from the provided documents.
-
-        Args:
-            query_docs: List of parsed QueryDocument objects
-
-        Returns:
-            List of QueryInfo objects for each query operation
-        """
-        self._queries = []
-        # Clear inherited type registry for fresh collection
-        self._type_registry.clear()
-
-        for doc in query_docs:
-            self._generate_fragment_models(doc)
-
-            for operation in doc.operations:
-                if not operation.name:
-                    raise ValueError(
-                        f"Anonymous queries are not supported. "
-                        f"All query operations must have names in file: {doc.file_path}"
-                    )
-
-                query_name = operation.name
-                query_string = self._build_query_string(operation, doc)
-
-                variable_definitions = [v.ast_node for v in operation.variables]
-                if variable_definitions:
-                    input_model = self._generate_variables_model(
-                        query_name, variable_definitions
-                    )
-                else:
-                    input_model = create_model(f"{query_name}Variables")
-
-                payload_model = self._generate_payload_model(operation, query_name)
-
-                query_info = QueryInfo(
-                    name=query_name,
-                    description=None,
-                    query_string=query_string,
-                    variable_definitions=variable_definitions,
-                    input_model=input_model,
-                    payload_model=payload_model,
-                    selection_set=operation.ast_node.selection_set,
-                )
-
-                self._queries.append(query_info)
-
-        return self._queries
-
-    def _generate_fragment_models(self, doc: QueryDocument) -> None:
-        """Generate Pydantic models for all fragments in the document."""
-        for fragment_name, fragment in doc.fragments.items():
-            model_name = f"{fragment_name}Response"
-
-            # Clear context stack for fresh depth counting
-            self._context_stack.clear()
-            # Set root model name for this fragment
-            self._root_model_name = model_name
-
-            # Traverse fragment using self as visitor
-            traverser = QueryDocumentTraverser(self, expand_fragments=True)
-            traverser.traverse_fragment(fragment)
-
-            # Model is now in inherited _type_registry
-
-    def _generate_variables_model(
-        self,
-        operation_name: str,
-        variable_definitions: t.List[t.Any],
-    ) -> t.Type[BaseModel]:
-        """Generate Pydantic model from query variable definitions."""
-        return PydanticModelVisitor.generate_model_from_variables(
-            operation_name,
-            variable_definitions,
-            ignore_unknown_types=self._ignore_unknown_types,
-        )
-
-    def _generate_payload_model(
-        self,
-        operation: QueryDocumentOperation,
-        query_name: str,
-    ) -> t.Type[BaseModel]:
-        """Generate Pydantic model for operation response."""
-        model_name = f"{query_name}Response"
+    def handle_enter_operation(
+        self, operation: QueryDocumentOperation
+    ) -> VisitorControl:
+        """Handle entering an operation definition."""
+        model_name = f"{operation.name}Response"
+        self._root_model_name = model_name
 
         # Clear context stack for fresh depth counting
         self._context_stack.clear()
-        # Set root model name for this operation
-        self._root_model_name = model_name
 
-        # Traverse operation using self as visitor
-        traverser = QueryDocumentTraverser(self, expand_fragments=True)
-        traverser.traverse_operation(operation)
+        # Push context for the root response model
+        # This ensures query fields (like 'item') become fields of the response model
+        ctx = PydanticModelBuildContext(
+            model_name=model_name,
+            parent_type=operation.root_type,
+            depth=0,
+            context_prefix=model_name if self._use_context_prefix else "",
+        )
+        self._context_stack.append(ctx)
 
-        # Return model from inherited type registry
-        return self._type_registry[model_name]  # type: ignore
+        return VisitorControl.CONTINUE
+
+    def handle_leave_operation(
+        self, operation: QueryDocumentOperation
+    ) -> VisitorControl:
+        """Handle leaving an operation definition."""
+        # Pop the root context and materialize the model
+        ctx = self._context_stack.pop()
+        payload_model = ctx.materialize()
+        self._type_registry[ctx.model_name] = payload_model
+
+        # Generate variable model (uses static method, not traversal)
+        variable_definitions = [v.ast_node for v in operation.variables]
+        if variable_definitions:
+            input_model = PydanticModelVisitor.generate_model_from_variables(
+                operation.name,
+                variable_definitions,
+                ignore_unknown_types=self._ignore_unknown_types,
+            )
+        else:
+            input_model = create_model(f"{operation.name}Variables")
+
+        # Build query string with inlined fragments
+        query_string = self._build_query_string(operation, self._document)
+
+        assert isinstance(payload_model, type), (
+            "Payload model must be a Pydantic model class"
+        )
+        assert issubclass(payload_model, BaseModel), (
+            "Payload model must be a subclass of BaseModel"
+        )
+
+        # Create and collect QueryInfo
+        query_info = QueryInfo(
+            name=operation.name,
+            description=None,
+            query_string=query_string,
+            variable_definitions=variable_definitions,
+            input_model=input_model,
+            payload_model=payload_model,
+            selection_set=operation.ast_node.selection_set,
+        )
+        self._queries.append(query_info)
+
+        return VisitorControl.CONTINUE
+
+    def handle_enter_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
+        """Handle entering a fragment definition."""
+        # Set root model name for this fragment
+        self._root_model_name = f"{fragment.name}Response"
+        return VisitorControl.CONTINUE
+
+    def handle_leave_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
+        """Handle leaving a fragment definition."""
+        return VisitorControl.CONTINUE
 
     def _build_query_string(
         self, operation: QueryDocumentOperation, doc: QueryDocument
@@ -897,5 +881,11 @@ class QueryExecutor:
             raise Exception(f"GraphQL errors: {', '.join(error_messages)}")
 
         data = result.get("data", {})
+
+        logger.debug(f"Response data: {json.dumps(data, indent=2)}")
+        logger.debug(
+            "Payload model json schema: %s",
+            json.dumps(self.query_info.payload_model.model_json_schema(), indent=2),
+        )
 
         return self.query_info.payload_model.model_validate(data)
