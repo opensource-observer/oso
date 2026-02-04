@@ -1287,29 +1287,36 @@ class OsoAppClient {
    * Syncs a dynamic connector to refresh its schema and metadata.
    * @param id
    */
-  async syncConnector(args: Partial<{ id: string }>): Promise<void> {
+  async syncConnector(args: Partial<{ id: string }>) {
     const id = ensure(args.id, "id is required to sync connector");
 
-    const customHeaders = await this.createSupabaseAuthHeaders();
-    const searchParams = new URLSearchParams({ id });
+    const SYNC_DATA_CONNECTION_MUTATION = gql(`
+      mutation SyncDataConnection($id: ID!) {
+        syncDataConnection(id: $id) {
+          success
+          message
+          run {
+            id
+          }
+        }
+      }
+    `);
 
-    const response = await fetch(
-      `/api/v1/connector/sync?${searchParams.toString()}`,
+    const data = await this.executeGraphQL(
+      SYNC_DATA_CONNECTION_MUTATION,
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...customHeaders,
-        },
+        id,
       },
+      "Failed to sync data connection",
     );
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Error syncing connector: ${error.error}`);
+    const payload = data.syncDataConnection;
+
+    if (payload.success) {
+      logger.log(`Successfully created run to sync data connection "${id}"`);
     }
 
-    return;
+    return payload;
   }
 
   /**

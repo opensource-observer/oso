@@ -61,7 +61,7 @@ extend type Mutation {
     input: CreateDataConnectionInput!
   ): CreateDataConnectionPayload!
   deleteDataConnection(id: ID!): SimplePayload!
-  syncDataConnection(id: ID!): SimplePayload!
+  syncDataConnection(id: ID!): SyncDataConnectionPayload!
 }
 
 input CreateDataConnectionInput {
