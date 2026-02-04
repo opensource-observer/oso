@@ -454,11 +454,19 @@ class QueryDocumentTraverser(TraverserProtocol):
 
     Example:
         visitor = PydanticModelVisitor(
-            model_name="GetUserResponse",
+            model_name="",  # Unused - create context manually for custom names
             parent_type=query_type,
             max_depth=100,
             use_context_prefix=True,
         )
+        # For custom model names, create initial context before traversal
+        ctx = PydanticModelBuildContext(
+            model_name="GetUserResponse",
+            parent_type=query_type,
+            depth=0,
+            context_prefix="GetUserResponse",
+        )
+        visitor._context_stack.append(ctx)
         traverser = QueryDocumentTraverser(visitor)
         traverser.traverse_operation(operation)
         model = visitor._type_registry["GetUserResponse"]
@@ -671,7 +679,7 @@ class QueryCollectorVisitor(PydanticModelVisitor):
 
         # Initialize parent visitor with query-specific settings
         super().__init__(
-            model_name="",  # Set dynamically per operation
+            model_name="",  # Unused - contexts created during traversal
             parent_type=query_type,
             max_depth=100,  # Queries need deeper traversal than mutations
             use_context_prefix=True,  # Prefix nested types with operation name
@@ -692,7 +700,6 @@ class QueryCollectorVisitor(PydanticModelVisitor):
     ) -> VisitorControl:
         """Handle entering an operation definition."""
         model_name = f"{operation.name}Response"
-        self._root_model_name = model_name
 
         # Clear context stack for fresh depth counting
         self._context_stack.clear()
@@ -755,8 +762,14 @@ class QueryCollectorVisitor(PydanticModelVisitor):
 
     def handle_enter_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
         """Handle entering a fragment definition."""
-        # Set root model name for this fragment
-        self._root_model_name = f"{fragment.name}Response"
+        model_name = f"{fragment.name}Response"
+        ctx = PydanticModelBuildContext(
+            model_name=model_name,
+            parent_type=fragment.type_condition,
+            depth=0,
+            context_prefix=model_name if self._use_context_prefix else "",
+        )
+        self._context_stack.append(ctx)
         return VisitorControl.CONTINUE
 
     def handle_leave_fragment(self, fragment: QueryDocumentFragment) -> VisitorControl:
