@@ -24,7 +24,6 @@ from graphql import (
 from pydantic import BaseModel, Field, create_model
 
 from .schema_visitor import (
-    GraphQLSchemaTypeTraverser,
     GraphQLSchemaTypeVisitor,
     VisitorControl,
 )
@@ -614,121 +613,6 @@ class PydanticModelVisitor(GraphQLSchemaTypeVisitor):
         return VisitorControl.CONTINUE
 
     # Public API methods for generating Pydantic models
-
-    @classmethod
-    def generate_input_model(
-        cls,
-        input_type: GraphQLInputObjectType,
-        ignore_unknown_types: bool = False,
-    ) -> t.Type[BaseModel]:
-        """Create Pydantic model from GraphQL input type.
-
-        Args:
-            input_type: GraphQL input object type
-            ignore_unknown_types: If True, map unknown types to Any instead of raising error
-
-        Returns:
-            Dynamically created Pydantic model class
-        """
-        # Create visitor with high max_depth to capture all required nested input fields
-        visitor = cls(
-            model_name=input_type.name,
-            parent_type=input_type,
-            max_depth=100,  # High depth for input types to include all required fields
-            use_context_prefix=False,
-            ignore_unknown_types=ignore_unknown_types,
-        )
-
-        # Create traverser and visit the input type
-        traverser = GraphQLSchemaTypeTraverser(visitor)
-        traverser.visit(input_type, field_name="")
-
-        # Return the generated model from registry
-        return visitor._type_registry[input_type.name]  # type: ignore
-
-    @classmethod
-    def generate_payload_model(
-        cls,
-        payload_type: GraphQLObjectType,
-        max_depth: int = 2,
-        ignore_unknown_types: bool = False,
-    ) -> t.Type[BaseModel]:
-        """Create Pydantic model from GraphQL object type (visits all fields).
-
-        Args:
-            payload_type: GraphQL object type
-            max_depth: Maximum nesting depth for object types
-            ignore_unknown_types: If True, map unknown types to Any instead of raising error
-
-        Returns:
-            Dynamically created Pydantic model class
-        """
-        # Create visitor without context prefix (visits all fields)
-        visitor = cls(
-            model_name=payload_type.name,
-            parent_type=payload_type,
-            max_depth=max_depth,
-            use_context_prefix=False,
-            ignore_unknown_types=ignore_unknown_types,
-        )
-
-        # Create traverser and visit the payload type (selection_set=None visits all fields)
-        traverser = GraphQLSchemaTypeTraverser(visitor)
-        traverser.visit(payload_type, field_name="")
-
-        # Return the generated model from registry
-        return visitor._type_registry[payload_type.name]  # type: ignore
-
-    @classmethod
-    def generate_model_from_selection_set(
-        cls,
-        operation_name: str,
-        selection_set: SelectionSetNode,
-        parent_type: GraphQLObjectType,
-        schema: GraphQLSchema,
-        max_depth: int = 100,
-        ignore_unknown_types: bool = False,
-        fragments: t.Optional[t.Dict[str, t.Any]] = None,
-    ) -> t.Type[BaseModel]:
-        """Create Pydantic model from GraphQL selection set (visits only selected fields).
-
-        This method is used for custom .graphql query files where only specific fields
-        are selected. Type names are prefixed with the operation name to avoid collisions.
-
-        Args:
-            operation_name: Name of the GraphQL operation
-            selection_set: SelectionSet specifying which fields to visit
-            parent_type: GraphQL object type to start from
-            schema: GraphQL schema for type lookup
-            max_depth: Maximum nesting depth for object types (default 100 for hand-written queries)
-            ignore_unknown_types: If True, map unknown types to Any instead of raising error
-            fragments: Optional dict of fragment definitions by name
-
-        Returns:
-            Dynamically created Pydantic model class
-        """
-        model_name = f"{operation_name}Response"
-
-        # Create visitor with context prefix enabled
-        visitor = cls(
-            model_name=model_name,
-            parent_type=parent_type,
-            max_depth=max_depth,
-            use_context_prefix=True,
-            ignore_unknown_types=ignore_unknown_types,
-        )
-
-        # Create traverser with selection_set to filter fields
-        traverser = GraphQLSchemaTypeTraverser(
-            visitor,
-            selection_set=selection_set,
-            schema=schema,
-            fragments=fragments,
-        )
-        traverser.visit(parent_type, field_name="")
-
-        # Return the generated model from registry
-        return visitor._type_registry[model_name]  # type: ignore
 
     @classmethod
     def generate_model_from_variables(
