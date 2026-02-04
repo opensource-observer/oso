@@ -1,30 +1,39 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
+import {
+  getOrganization,
+  requireOrgMembership,
+} from "@/app/api/v1/osograph/utils/auth";
 import {
   buildConnection,
-  type Connection,
   emptyConnection,
+  type Connection,
 } from "@/app/api/v1/osograph/utils/connection";
+import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
 import type {
   ConnectionArgs,
   FilterableConnectionArgs,
 } from "@/app/api/v1/osograph/utils/pagination";
 import {
-  getOrganization,
-  requireOrgMembership,
-} from "@/app/api/v1/osograph/utils/auth";
-import { Database } from "@/lib/types/supabase";
-import {
   buildQuery,
   mergePredicates,
   type QueryPredicate,
 } from "@/app/api/v1/osograph/utils/query-builder";
-import { ServerErrors } from "@/app/api/v1/osograph/utils/errors";
 import {
   maybeAddQueryPagination,
   queryWithPagination,
 } from "@/app/api/v1/osograph/utils/query-helpers";
-import { GraphQLContext } from "@/app/api/v1/osograph/types/context";
 import { MaterializationWhereSchema } from "@/app/api/v1/osograph/utils/validation";
+import {
+  createAdminClient,
+  type SupabaseAdminClient,
+} from "@/lib/supabase/admin";
+import { Database } from "@/lib/types/supabase";
+import {
+  invitationsRowSchema,
+  organizationsRowSchema,
+  runRowSchema,
+} from "@/lib/types/schema";
+import { z } from "zod";
 
 export function buildConnectionOrEmpty<T>(
   data: T[] | null | undefined,
@@ -39,8 +48,15 @@ export function buildConnectionOrEmpty<T>(
 
 export async function getUserOrganizationIds(
   userId: string,
+  adminClient: SupabaseAdminClient,
+): Promise<string[]>;
+/** @deprecated */
+export async function getUserOrganizationIds(userId: string): Promise<string[]>;
+export async function getUserOrganizationIds(
+  userId: string,
+  adminClient?: SupabaseAdminClient,
 ): Promise<string[]> {
-  const supabase = createAdminClient();
+  const supabase = adminClient ?? createAdminClient();
 
   const { data: memberships } = await supabase
     .from("users_by_organization")
@@ -54,9 +70,28 @@ export async function getUserOrganizationIds(
 export async function getUserOrganizationsConnection(
   userId: string,
   args: FilterableConnectionArgs,
+  additionalPredicate: Partial<QueryPredicate<"organizations">>,
+  adminClient: SupabaseAdminClient,
+): Promise<Connection<z.infer<typeof organizationsRowSchema>>>;
+export async function getUserOrganizationsConnection(
+  userId: string,
+  args: FilterableConnectionArgs,
+  additionalPredicate: undefined,
+  adminClient: SupabaseAdminClient,
+): Promise<Connection<z.infer<typeof organizationsRowSchema>>>;
+/** @deprecated */
+export async function getUserOrganizationsConnection(
+  userId: string,
+  args: FilterableConnectionArgs,
   additionalPredicate?: Partial<QueryPredicate<"organizations">>,
+): Promise<Connection<z.infer<typeof organizationsRowSchema>>>;
+export async function getUserOrganizationsConnection(
+  userId: string,
+  args: FilterableConnectionArgs,
+  additionalPredicate?: Partial<QueryPredicate<"organizations">>,
+  adminClient?: SupabaseAdminClient,
 ) {
-  const supabase = createAdminClient();
+  const supabase = adminClient ?? createAdminClient();
 
   const membershipPredicate: Partial<QueryPredicate<"users_by_organization">> =
     {
@@ -115,13 +150,32 @@ export async function getUserOrganizationsConnection(
 export async function getUserInvitationsConnection(
   email: string | null | undefined,
   args: ConnectionArgs,
+  additionalPredicate: Partial<QueryPredicate<"invitations">>,
+  adminClient: SupabaseAdminClient,
+): Promise<Connection<z.infer<typeof invitationsRowSchema>>>;
+export async function getUserInvitationsConnection(
+  email: string | null | undefined,
+  args: ConnectionArgs,
+  additionalPredicate: undefined,
+  adminClient: SupabaseAdminClient,
+): Promise<Connection<z.infer<typeof invitationsRowSchema>>>;
+/** @deprecated */
+export async function getUserInvitationsConnection(
+  email: string | null | undefined,
+  args: ConnectionArgs,
   additionalPredicate?: Partial<QueryPredicate<"invitations">>,
+): Promise<Connection<z.infer<typeof invitationsRowSchema>>>;
+export async function getUserInvitationsConnection(
+  email: string | null | undefined,
+  args: ConnectionArgs,
+  additionalPredicate?: Partial<QueryPredicate<"invitations">>,
+  adminClient?: SupabaseAdminClient,
 ) {
   if (!email) {
     return emptyConnection();
   }
 
-  const supabase = createAdminClient();
+  const supabase = adminClient ?? createAdminClient();
   const userEmail = email.toLowerCase();
 
   const basePredicate: Partial<QueryPredicate<"invitations">> = {
@@ -160,15 +214,34 @@ export async function requireOrganizationAccess(userId: string, orgId: string) {
   return org;
 }
 
+export async function getResourceById<T>(
+  params: {
+    tableName: keyof Database["public"]["Tables"];
+    id: string;
+    userId: string;
+    checkMembership?: boolean;
+  },
+  adminClient: SupabaseAdminClient,
+): Promise<T | null>;
+/** @deprecated */
 export async function getResourceById<T>(params: {
   tableName: keyof Database["public"]["Tables"];
   id: string;
   userId: string;
   checkMembership?: boolean;
-}): Promise<T | null> {
+}): Promise<T | null>;
+export async function getResourceById<T>(
+  params: {
+    tableName: keyof Database["public"]["Tables"];
+    id: string;
+    userId: string;
+    checkMembership?: boolean;
+  },
+  adminClient?: SupabaseAdminClient,
+): Promise<T | null> {
   const { tableName, id, userId, checkMembership = true } = params;
 
-  const supabase = createAdminClient();
+  const supabase = adminClient ?? createAdminClient();
   const { data: resource, error } = await supabase
     .from(tableName)
     .select("*")
@@ -195,8 +268,19 @@ export async function getResourceById<T>(params: {
 export async function checkMembershipExists(
   userId: string,
   orgId: string,
+  adminClient: SupabaseAdminClient,
+): Promise<boolean>;
+/** @deprecated */
+export async function checkMembershipExists(
+  userId: string,
+  orgId: string,
+): Promise<boolean>;
+export async function checkMembershipExists(
+  userId: string,
+  orgId: string,
+  adminClient?: SupabaseAdminClient,
 ): Promise<boolean> {
-  const supabase = createAdminClient();
+  const supabase = adminClient ?? createAdminClient();
 
   const { data: existingMembership } = await supabase
     .from("users_by_organization")
@@ -213,8 +297,21 @@ export async function getModelRunConnection(
   datasetId: string,
   modelId: string,
   args: ConnectionArgs,
+  adminClient: SupabaseAdminClient,
+): Promise<Connection<z.infer<typeof runRowSchema>>>;
+/** @deprecated */
+export async function getModelRunConnection(
+  datasetId: string,
+  modelId: string,
+  args: ConnectionArgs,
+): Promise<Connection<z.infer<typeof runRowSchema>>>;
+export async function getModelRunConnection(
+  datasetId: string,
+  modelId: string,
+  args: ConnectionArgs,
+  adminClient?: SupabaseAdminClient,
 ) {
-  const supabase = createAdminClient();
+  const supabase = adminClient ?? createAdminClient();
   const { data, count, error } = await supabase
     .from("run")
     .select("*")
