@@ -283,12 +283,27 @@ class GraphQLSchemaTypeTraverser:
                 field_name, field_def, input_type, return_type
             )
 
-        # Visit return type's fields (if object type)
+        # Visit input type first (allows visitor to build input model via inherited hooks)
+        if input_type is not None:
+            control = self._visit_input_object(
+                field_name="input",
+                input_type=input_type,
+                is_required=True,
+                is_list=False,
+            )
+            if control == VisitorControl.STOP:
+                return VisitorControl.STOP
+
+        # Visit return type as an object (allows visitor to build payload model via inherited hooks)
         if isinstance(return_type, GraphQLObjectType):
-            for child_name, child_def in return_type.fields.items():
-                control = self.visit(child_def.type, field_name=child_name)
-                if control == VisitorControl.STOP:
-                    return VisitorControl.STOP
+            control = self._visit_object(
+                field_name=field_name,
+                object_type=return_type,
+                is_required=True,
+                is_list=False,
+            )
+            if control == VisitorControl.STOP:
+                return VisitorControl.STOP
 
         # Leave mutation field
         return self._visitor.handle_leave_mutation_field(

@@ -34,7 +34,7 @@ from graphql import (
 )
 from pydantic import BaseModel, create_model
 
-from .pydantic_generator import PydanticModelGenerator, PydanticModelVisitor
+from .pydantic_generator import PydanticModelVisitor
 from .schema_visitor import GraphQLSchemaTypeVisitor, VisitorControl
 from .types import (
     AsyncGraphQLClient,
@@ -747,14 +747,10 @@ class QueryCollector:
         variable_definitions: t.List[t.Any],
     ) -> t.Type[BaseModel]:
         """Generate Pydantic model from query variable definitions."""
-        from .pydantic_generator import PydanticModelGenerator
-
-        # Use PydanticModelGenerator for variable model generation
-        generator = PydanticModelGenerator(
-            ignore_unknown_types=self._ignore_unknown_types
-        )
-        return generator.generate_model_from_variables(
-            operation_name, variable_definitions
+        return PydanticModelVisitor.generate_model_from_variables(
+            operation_name,
+            variable_definitions,
+            ignore_unknown_types=self._ignore_unknown_types,
         )
 
     def _generate_payload_model(
