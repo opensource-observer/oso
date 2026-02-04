@@ -265,7 +265,10 @@ class DataModelRunRequestHandler(RunHandler[DataModelRunRequest]):
             "Only SQL models are supported for evaluation at this time."
         )
 
-        table_ref = model.warehouse_table_ref(destination_suffix=step_context.run.id)
+        # If we use the run id for the table ref we will accidentally write to
+        # the same place for all tables in a dataset. We need to use the step id
+        # to ensure uniqueness per model.
+        table_ref = model.warehouse_table_ref(destination_suffix=step_context.step_id)
 
         target_table = step_context.generate_destination_table_exp(table_ref)
 
