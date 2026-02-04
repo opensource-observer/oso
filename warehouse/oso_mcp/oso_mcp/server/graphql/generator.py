@@ -11,7 +11,7 @@ from fastmcp import FastMCP
 from oso_mcp.server.config import MCPConfig
 
 from .pydantic_generator import MutationCollectorVisitor
-from .queries import QueryCollector, QueryDocumentParser
+from .queries import QueryCollectorVisitor, QueryDocumentParser
 from .schema_visitor import GraphQLSchemaTypeTraverser
 from .tool_generator import ToolGenerator
 from .types import AsyncGraphQLClient, GraphQLClientFactory, MutationFilter
@@ -122,7 +122,7 @@ def generate_from_schema(
         query_docs = parser.parse_directory(client_schema_path)
 
         # Collect queries using visitor pattern
-        query_collector = QueryCollector(schema)
+        query_collector = QueryCollectorVisitor(schema)
         queries = query_collector.collect_from_documents(query_docs)
 
     if not graphql_client_factory:

@@ -631,18 +631,18 @@ class QueryDocumentTraverser:
         return VisitorControl.CONTINUE
 
 
-class QueryCollector:
+class QueryCollectorVisitor(PydanticModelVisitor):
     """Collects QueryInfo from parsed GraphQL query documents.
 
-    This class processes QueryDocument objects and generates Pydantic models
-    for each query operation found. It follows a similar pattern to
-    MutationCollectorVisitor for API consistency.
+    This class inherits from PydanticModelVisitor to leverage inherited
+    hooks for building Pydantic models during QueryDocument traversal.
+    Similar pattern to MutationCollectorVisitor.
 
     Example:
         parser = QueryDocumentParser(schema)
         query_docs = parser.parse_directory(client_schema_path)
 
-        collector = QueryCollector(schema)
+        collector = QueryCollectorVisitor(schema)
         queries = collector.collect_from_documents(query_docs)
     """
 
@@ -651,16 +651,27 @@ class QueryCollector:
         schema: GraphQLSchema,
         ignore_unknown_types: bool = False,
     ):
-        """Initialize the query collector.
+        """Initialize the query collector visitor.
 
         Args:
             schema: GraphQL schema for type resolution
             ignore_unknown_types: If True, map unknown types to Any instead of raising error
         """
+        query_type = schema.query_type
+        if not query_type:
+            raise ValueError("Schema does not have a Query type defined")
+
+        # Initialize parent visitor with query-specific settings
+        super().__init__(
+            model_name="",  # Set dynamically per operation
+            parent_type=query_type,
+            max_depth=100,  # Queries need deeper traversal than mutations
+            use_context_prefix=True,  # Prefix nested types with operation name
+            ignore_unknown_types=ignore_unknown_types,
+        )
         self._schema = schema
-        self._ignore_unknown_types = ignore_unknown_types
         self._queries: t.List[QueryInfo] = []
-        self._type_registry: t.Dict[str, t.Any] = {}
+        # _type_registry is inherited from PydanticModelVisitor
 
     @property
     def queries(self) -> t.List[QueryInfo]:
@@ -680,11 +691,8 @@ class QueryCollector:
             List of QueryInfo objects for each query operation
         """
         self._queries = []
-        self._type_registry = {}
-
-        query_type = self._schema.query_type
-        if not query_type:
-            raise ValueError("Schema does not have a Query type defined")
+        # Clear inherited type registry for fresh collection
+        self._type_registry.clear()
 
         for doc in query_docs:
             self._generate_fragment_models(doc)
@@ -726,20 +734,18 @@ class QueryCollector:
     def _generate_fragment_models(self, doc: QueryDocument) -> None:
         """Generate Pydantic models for all fragments in the document."""
         for fragment_name, fragment in doc.fragments.items():
-            visitor = PydanticModelVisitor(
-                model_name=f"{fragment_name}Response",
-                parent_type=fragment.type_condition,
-                max_depth=100,
-                use_context_prefix=True,
-                ignore_unknown_types=self._ignore_unknown_types,
-            )
-            traverser = QueryDocumentTraverser(visitor, expand_fragments=True)
+            model_name = f"{fragment_name}Response"
+
+            # Clear context stack for fresh depth counting
+            self._context_stack.clear()
+            # Set root model name for this fragment
+            self._root_model_name = model_name
+
+            # Traverse fragment using self as visitor
+            traverser = QueryDocumentTraverser(self, expand_fragments=True)
             traverser.traverse_fragment(fragment)
 
-            if f"{fragment_name}Response" in visitor._type_registry:
-                self._type_registry[f"{fragment_name}Response"] = (
-                    visitor._type_registry[f"{fragment_name}Response"]
-                )
+            # Model is now in inherited _type_registry
 
     def _generate_variables_model(
         self,
@@ -761,17 +767,17 @@ class QueryCollector:
         """Generate Pydantic model for operation response."""
         model_name = f"{query_name}Response"
 
-        visitor = PydanticModelVisitor(
-            model_name=model_name,
-            parent_type=operation.root_type,
-            max_depth=100,
-            use_context_prefix=True,
-            ignore_unknown_types=self._ignore_unknown_types,
-        )
-        traverser = QueryDocumentTraverser(visitor, expand_fragments=True)
+        # Clear context stack for fresh depth counting
+        self._context_stack.clear()
+        # Set root model name for this operation
+        self._root_model_name = model_name
+
+        # Traverse operation using self as visitor
+        traverser = QueryDocumentTraverser(self, expand_fragments=True)
         traverser.traverse_operation(operation)
 
-        return visitor._type_registry[model_name]  # type: ignore
+        # Return model from inherited type registry
+        return self._type_registry[model_name]  # type: ignore
 
     def _build_query_string(
         self, operation: QueryDocumentOperation, doc: QueryDocument
